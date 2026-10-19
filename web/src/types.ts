@@ -1,0 +1,94 @@
+// Mirrors the FastAPI response models in src/partylinks/api.py.
+export interface EventSummary {
+  id: string;
+  slug: string | null;
+  source: string;
+  source_event_id: string;
+  url: string;
+  title: string;
+  start_at: string | null;
+  end_at: string | null;
+  local_date: string | null;
+  day_of_week: string | null;
+  time_slot: string | null;
+  is_weekend: boolean | null;
+  venue_name: string | null;
+  venue_slug: string | null;
+  address: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  in_target_city: boolean | null;
+  genres: string[];
+  event_types: string[];
+  lineup: string[];
+  min_age: number | null;
+  image_url: string | null;
+  cover_url: string | null;
+  currency: string;
+  min_price: number | null;
+  max_price: number | null;
+  entry_type: "free" | "paid" | "free_and_paid" | "unknown";
+  has_free_entry: boolean;
+  is_sold_out: boolean;
+  last_seen_at: string;
+}
+
+export interface Ticket {
+  source_ticket_id: string | null;
+  name: string;
+  description: string | null;
+  kind: string;
+  status: string;
+  price: number | null;
+  service_fee: number | null;
+  total_price: number | null;
+  original_price: number | null;
+  price_rounds: number[];
+  currency: string;
+  admits: number;
+  is_free: boolean;
+  pay_at_door: boolean;
+  is_sold_out: boolean;
+  is_active: boolean;
+  remaining: number | null;
+}
+
+export interface EventImage {
+  id: number;
+  url: string;
+  stored_url: string | null;
+}
+
+export interface EventDetail extends EventSummary {
+  description: string | null;
+  organizer: string | null;
+  artists: string[];
+  tickets: Ticket[];
+  images: EventImage[];
+}
+
+export interface EventPage {
+  total: number;
+  page: number;
+  page_size: number;
+  items: EventSummary[];
+}
+
+export interface Facet {
+  value: string;
+  events: number;
+}
+
+export interface Categories {
+  genres: Facet[];
+  dates: Facet[];
+  days_of_week: Facet[];
+  time_slots: Facet[];
+  entry_types: Facet[];
+  venues: Facet[];
+  cities: Facet[];
+  lineup: Facet[];
+  event_types: Facet[];
+  sources: Facet[];
+}

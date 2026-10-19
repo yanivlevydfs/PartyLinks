@@ -1,0 +1,258 @@
+# PartyLinks configuration.
+# Every value can be overridden by an environment variable using the
+# PARTYLINKS_ prefix and "__" as the nesting delimiter, e.g.
+#   PARTYLINKS_DATABASE__URL=postgresql+psycopg://user:pass@host/db
+#   PARTYLINKS_SOURCES__GOOUT__ENABLED=false
+
+timezone: Asia/Jerusalem
+
+database:
+  url: sqlite:///data/partylinks.db
+  echo: false
+
+api:
+  host: 0.0.0.0
+  port: 8000
+  default_page_size: 50
+  max_page_size: 200
+
+scheduler:
+  enabled: true
+  # Run every enabled source once when the API process starts.
+  run_on_startup: false
+  misfire_grace_seconds: 600
+  # Each source runs on its own thread; a run exceeding this is stopped and recorded as failed.
+  run_timeout_seconds: 1800
+
+# Transport defaults. Each source gets its own isolated HTTP client built from
+# these values; any key can be overridden per source under `sources.<name>.http`.
+http:
+  timeout_seconds: 30
+  max_retries: 3
+  backoff_seconds: 2
+  request_delay_seconds: 0.5
+  # Parallel requests per source (listing pages, event details, artwork).
+  concurrency: 8
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+  accept_language: "he-IL,he;q=0.9,en;q=0.8"
+
+# Post-scrape normalization. Runs after a scraper has finished and never
+# influences how any source is fetched.
+enrichment:
+  target_city:
+    name: Tel Aviv
+    # Events whose city/address matches none of these are flagged out-of-city.
+    aliases: ["tel aviv", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "tlv", "jaffa", "yafo",
+              "תל אביב", "תל-אביב", "תל אביב-יפו", "תל אביב יפו", "ת\"א", "ת״א", "יפו"]
+    # Drop out-of-city events instead of storing them flagged.
+    drop_other_cities: false
+  # Canonical genre -> keywords, matched case-insensitively against the genres and
+  # event types each source declares and (if detect_genres_from_text) title + description.
+  genres:
+    techno: ["techno", "melodic techno", "hard techno", "peak time", "industrial techno", "acid techno",
+             "minimal techno", "טכנו", "מלודיק טכנו"]
+    house: ["house", "deep house", "tech house", "progressive house", "melodic house", "organic house",
+            "afro house", "minimal", "האוס", "דיפ האוס", "טק האוס"]
+    trance: ["trance", "psytrance", "psy trance", "psy", "goa", "full on", "fullon", "progressive trance",
+             "forest", "טראנס", "פסיכדלי", "גואה"]
+    hip_hop: ["hip hop", "hiphop", "hip-hop", "rap", "trap", "drill", "היפ הופ", "היפהופ", "ראפ", "טראפ"]
+    rnb: ["r&b", "rnb", "r'n'b", "soul", "neo soul", "ר&ב", "סול"]
+    mainstream: ["mainstream", "commercial", "top 40", "top40", "hits", "מיינסטרים", "להיטים", "קומרשיאל"]
+    pop: ["pop", "k-pop", "kpop", "פופ"]
+    reggaeton_latin: ["reggaeton", "latin", "latino", "salsa", "bachata", "kizomba", "cumbia", "dembow",
+                      "רגאטון", "לטינית", "לטיני", "סלסה", "בצ'אטה", "בצאטה"]
+    afro: ["afrobeats", "afrobeat", "afro beats", "amapiano", "afro", "אפרו", "אמאפיאנו"]
+    dancehall_reggae: ["dancehall", "reggae", "dub", "דאנסהול", "רגאיי", "רגאי"]
+    mizrahi: ["mizrahi", "eastern", "מזרחית", "מזרחי", "ים תיכוני", "ים תיכונית"]
+    israeli: ["israeli", "israeli artists", "ישראלית", "ישראלי", "עברית", "שירי ארץ ישראל"]
+    greek: ["greek", "יוונית", "יווני", "בוזוקי"]
+    arabic: ["arabic", "arab", "ערבית", "ערבי"]
+    disco_funk: ["disco", "nu disco", "nu-disco", "funk", "boogie", "דיסקו", "פאנק"]
+    drum_and_bass: ["drum and bass", "drum & bass", "drum n bass", "dnb", "d&b", "jungle", "דראם אנד בייס"]
+    bass_dubstep: ["dubstep", "bass music", "riddim", "breakbeat", "breaks", "uk garage", "garage", "דאבסטפ"]
+    hardstyle: ["hardstyle", "hard dance", "hardcore", "gabber", "הארדסטייל"]
+    edm: ["edm", "big room", "electro house", "festival anthems"]
+    electronic: ["electronic", "electronica", "underground", "dj-set", "dj set", "rave", "אלקטרונית",
+                 "אלקטרוני", "אנדרגראונד", "רייב"]
+    downtempo_chill: ["downtempo", "chill", "chillout", "ambient", "lounge", "organic", "צ'יל", "לאונג'"]
+    throwback: ["80s", "90s", "2000s", "00s", "throwback", "retro", "nostalgia", "שנות ה-90", "שנות ה90",
+                "שנות ה-80", "שנות ה80", "נוסטלגיה", "רטרו"]
+    rock_indie: ["rock", "indie", "alternative", "metal", "punk", "רוק", "אינדי", "אלטרנטיבי", "מטאל", "פאנק רוק"]
+    jazz: ["jazz", "swing", "blues", "ג'אז", "גאז", "סווינג", "בלוז"]
+    world_balkan: ["balkan", "world music", "ethnic", "gypsy", "בלקן", "אתני", "מוזיקת עולם"]
+    # Not "concert": Selector labels every party "Concert".
+    live_show: ["live show", "liveshow", "live shows", "live band", "הופעה חיה", "מופע חי", "מופעי לייב"]
+    lgbt: ["lgbt", "lgbtq", "gay", "queer", "pride", "drag", "להט\"ב", "גאווה", "דראג"]
+    stand_up: ["stand up", "standup", "stand-up", "comedy", "סטנדאפ", "קומדיה"]
+    karaoke: ["karaoke", "קריוקי"]
+  detect_genres_from_text: true
+  # A ticket tier named with one of these and priced 0 is treated as free entry.
+  # DJ / performer extraction from descriptions. A line matching a header keyword
+  # starts a lineup block; following short lines are taken as names.
+  lineup:
+    header_keywords: ["line up", "lineup", "line-up", "full line up", "ליינאפ", "ליין אפ", "על העמדה",
+                      "djs", "dj's", "דיג'יים", "דיג׳יים", "תקלוט", "מתקלטים", "artists", "אמנים"]
+    max_names: 20
+    max_name_length: 40
+    max_name_words: 5
+    # Lines that look like names but are placeholders.
+    ignore: ["to be announced", "tba", "tbd", "soon", "בקרוב", "יוכרז בהמשך", "main stage", "stage"]
+  # Local-time categorization of event start.
+  time_slots:
+    - {name: morning, start_hour: 6, end_hour: 12}
+    - {name: afternoon, start_hour: 12, end_hour: 18}
+    - {name: evening, start_hour: 18, end_hour: 22}
+    - {name: night, start_hour: 22, end_hour: 6}
+  weekend_days: [thursday, friday, saturday]
+  # A 0-priced tier named with one of these is a registration whose price is paid
+  # at the venue: classified as paid, and an amount in its name becomes its price.
+  pay_at_door_keywords: ["מזומן", "בכניסה", "בקופה", "תשלום באתר", "תשלום במקום",
+                         "pay at the door", "pay at door", "cash", "at the door", "on site"]
+  free_entry_keywords: ["חינם", "free", "כניסה חופשית", "ללא עלות", "רשימה", "guest list", "guestlist"]
+
+# Deletes events (and their downloaded artwork) that ended before
+# local midnight `keep_days_back` days ago. 1 = keep yesterday onwards.
+retention:
+  enabled: true
+  cron: "5 4 * * *"
+  keep_days_back: 1
+
+# Event artwork. Source URLs are always stored; image files are fetched only if
+# `download` is on and kept either inside the database (BLOB in event_images) or on disk.
+media:
+  download: true
+  storage: database          # database | filesystem
+  directory: data/media      # used when storage = filesystem
+  max_bytes: 15000000
+  allowed_content_types: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]
+
+sources:
+  goout:
+    enabled: true
+    cron: "15 */3 * * *"
+    base_url: https://www.go-out.co
+    list_endpoint: /endOne/getEventsByTypeNew
+    event_page_path: /event/{url}
+    tickets_endpoint: /endOne/loadEventTickets
+    # Artwork lives under /events/ (the schema.org image URLs return 403).
+    image_url_templates:
+      - "https://images.go-out.co/events/{event_id}{cover_timestamp}_coverImage.jpg"
+      - "https://images.go-out.co/events/{event_id}{cover_timestamp}_whatsappImage.jpg"
+    event_types: ["אירועים", "מועדוני לילה"]
+    location: IL
+    page_size: 8
+    max_pages: 100
+
+  eventer:
+    enabled: true
+    cron: "25 */3 * * *"
+    base_url: https://www.eventer.co.il
+    categories: ["parties"]
+    list_path: /sliders/categories/{category}/events.js
+    event_details_path: /events/explainNames/{link_name}.js
+    ticket_types_path: /events/{event_id}/ticketTypes.js
+
+  zygo:
+    enabled: true
+    cron: "35 */3 * * *"
+    site_url: https://zygo.co.il
+    api_url: https://api.zygo.co.il
+    city_slug: tel-aviv
+    list_path: /v1/event/{city_slug}
+    event_page_path: /event/{event_id}/zygo
+    # The API caps pages at 10 and returns a shuffled order, so the list is
+    # re-walked until a full pass yields no new ids.
+    page_size: 10
+    max_pages: 50
+    max_passes: 4
+
+  tickchak:
+    enabled: true
+    cron: "45 */3 * * *"
+    site_url: https://live.tickchak.co.il
+    api_url: https://api-live.tickchak.co.il
+    category_slug: parties
+    city_slug: tel-aviv
+    section_data_path: /sectionData/{section_id}
+    custom_events_path: /customEventsNew
+    page_size: 20
+    max_pages: 50
+
+  selector:
+    enabled: true
+    cron: "55 */3 * * *"
+    site_url: https://selector.org.il
+    api_url: https://api.selector.org.il
+    list_path: /event/list
+    event_path: /event
+    event_page_path: /e/{event_link}
+    page_size: 20
+    max_pages: 50
+    # Empty list = keep every event type. "Concert" is what Selector labels "Parties".
+    allowed_event_types: []
+
+  barby:
+    enabled: true
+    cron: "5 */3 * * *"
+    site_url: https://barby.co.il
+    list_path: /api/shows/find
+    show_path: /api/shows/show/{show_id}
+    tiers_path: /api/shows/tier-price/{show_id}
+    event_page_path: /show/{show_id}
+    image_url_template: "https://images.barby.co.il/Logos/{image}"
+    venue_name: בארבי
+    address: קיבוץ גלויות 52, תל אביב-יפו
+    city: תל אביב-יפו
+    latitude: 32.0535
+    longitude: 34.7627
+
+  grayclub:
+    enabled: true
+    cron: "50 */3 * * *"
+    site_url: https://grayclub.co.il
+    # Branch page whose "load more" button carries the branch term id.
+    branch_path: /gray-%d7%aa%d7%9c-%d7%90%d7%91%d7%99%d7%91/
+    ajax_path: /wp-admin/admin-ajax.php
+    ajax_action: load_more_shows
+    city: תל אביב-יפו
+    page_size: 50
+    max_pages: 20
+    selectors:
+      load_more_button: button.loadmoreshows
+      card: div.article-list
+      card_link: a.divImg
+      card_image: a.divImg img
+      title: h1
+      description: section.event_detail_sec .info_box
+      price: .sidebar-cart .price bdi
+      info_items: .sidebar-cart li
+      purchase_link: .cart_btn a
+      banner_images: .event_banner img
+    labels:
+      show_start: תחילת מופע
+      doors_open: פתיחת דלתות
+      address: כתובת
+      show_type: סוג מופע
+      parking: חניון קרוב
+
+  # chillz.com is behind a Vercel Security Checkpoint. Runs are recorded as
+  # "blocked" until the owner allows PartyLinks; then collection starts with no
+  # code change. Supply the agreed access header via the environment only:
+  #   PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS='{"x-partylinks-key": "<secret>"}'
+  chillz:
+    enabled: true
+    cron: "40 */3 * * *"
+    site_url: https://chillz.com
+    sitemap_path: /sitemap.xml
+    include_path_prefix: /en/
+    exclude_path_prefixes: ["/en/explore/"]
+    recent_days: 120
+    max_pages: 3000
+    checkpoint_markers: ["Vercel Security Checkpoint"]
+    # Event pages you open in your browser and save (Ctrl+S) here are imported every run.
+    inbox_dir: data/chillz_inbox
+    live: true
+    http:
+      user_agent: "PartyLinks/1.0 (event aggregator; contact via site owner)"
+      concurrency: 4
+      request_delay_seconds: 1.0

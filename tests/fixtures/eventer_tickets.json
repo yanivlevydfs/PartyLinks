@@ -1,0 +1,80 @@
+{
+ "_id": "6a5c6e9743bb59b456b75c8a",
+ "ticketTypes": [
+  {
+   "_id": "6a5c6e9743bb59b456b75c8c",
+   "name": "Entry Ticket",
+   "originalName": "Entry Ticket",
+   "description": "מחיר מלא כולל 5% דמי טיפול",
+   "demandPicture": false,
+   "multiGuestPricing": {},
+   "isHidingStock": false,
+   "isHidingEndingTime": false,
+   "seatColor": "#197fc2",
+   "order": 0,
+   "areas": [],
+   "price": 109,
+   "saleRound": null,
+   "roundAmount": -1,
+   "toDate": "2026-10-23T02:30:00.000Z",
+   "remaining": -1,
+   "originalPrice": 109,
+   "saleRounds": [],
+   "isPurchaseWithCouponOnly": false,
+   "standingOrderBillingFrequency": {
+    "amount": 1,
+    "type": "months"
+   }
+  },
+  {
+   "_id": "6aadbc83c60b28e76566e332",
+   "name": "הרשמה חינם בהגעה עד 23:30",
+   "originalName": "הרשמה חינם בהגעה עד 23:30",
+   "demandPicture": false,
+   "multiGuestPricing": {},
+   "isHidingStock": false,
+   "isHidingEndingTime": false,
+   "seatColor": "#197fc2",
+   "order": 1,
+   "areas": [],
+   "price": 0,
+   "saleRound": null,
+   "roundAmount": -1,
+   "toDate": "2026-10-23T02:00:00.000Z",
+   "remaining": -1,
+   "originalPrice": 0,
+   "saleRounds": [],
+   "isPurchaseWithCouponOnly": false,
+   "standingOrderBillingFrequency": {
+    "amount": 1,
+    "type": "months"
+   }
+  }
+ ],
+ "totalRemaining": -1,
+ "allowMultipleTickets": 0,
+ "startDate": "2026-10-22T19:30:00.000Z",
+ "linkName": "m302f",
+ "jsonLdData": [
+  {
+   "@type": "Offer",
+   "name": "Entry Ticket",
+   "price": 109,
+   "priceCurrency": "ILS",
+   "availability": "https://schema.org/InStock",
+   "validFrom": "2026-07-19T06:28:39.000Z",
+   "validThrough": "2026-10-23T02:30:00.000Z",
+   "url": "https://www.eventer.co.il/m302f"
+  },
+  {
+   "@type": "Offer",
+   "name": "הרשמה חינם בהגעה עד 23:30",
+   "price": 0,
+   "priceCurrency": "ILS",
+   "availability": "https://schema.org/InStock",
+   "validFrom": "2026-07-19T06:28:39.000Z",
+   "validThrough": "2026-10-23T02:00:00.000Z",
+   "url": "https://www.eventer.co.il/m302f"
+  }
+ ]
+}

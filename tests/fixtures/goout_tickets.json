@@ -1,0 +1,113 @@
+{
+ "status": true,
+ "tickets": [
+  {
+   "Title": "כרטיסים מוזלים למקדימים",
+   "Cash": false,
+   "Comment": "",
+   "Active": false,
+   "singleRound": true,
+   "Require_ID": true,
+   "Require_Email": true,
+   "Require_DOB": true,
+   "AutoGender": false,
+   "Rounds": [
+    {
+     "Price": 15,
+     "RoundIndex": 0
+    }
+   ],
+   "ticket_id": 186740,
+   "ticket_index": 186740,
+   "SaleEnd": "2026-10-21T04:00:00.000",
+   "dynamicField": [],
+   "binLimit": false,
+   "binList": [],
+   "sale_limit": 5,
+   "donation_ticket": false,
+   "eventId": "6ad5d9db4b18d81c2451751b",
+   "images": [],
+   "_id": "6ad5d9ee4b18d81c24517696",
+   "SeatsChannel": [],
+   "position": 0,
+   "Price": 15,
+   "Commision": 5,
+   "RoundIndex": 0,
+   "display": "NOT_ACTIVE",
+   "round_index": 0,
+   "next_round_index": 0
+  },
+  {
+   "Title": "כרטיס כניסה",
+   "Cash": false,
+   "Comment": "",
+   "Active": true,
+   "singleRound": true,
+   "Require_ID": true,
+   "Require_Email": true,
+   "Require_DOB": true,
+   "AutoGender": false,
+   "Rounds": [
+    {
+     "Price": 30,
+     "RoundIndex": 0
+    }
+   ],
+   "ticket_id": 186752,
+   "ticket_index": 186752,
+   "SaleEnd": "2026-10-21T04:00:00.000",
+   "dynamicField": [],
+   "binLimit": false,
+   "binList": [],
+   "sale_limit": 5,
+   "donation_ticket": false,
+   "eventId": "6ad5d9db4b18d81c2451751b",
+   "images": [],
+   "_id": "6ad5d9ee4b18d81c24517696",
+   "SeatsChannel": [],
+   "position": 1,
+   "Price": 30,
+   "Commision": 5,
+   "RoundIndex": 0,
+   "display": "ACTIVE",
+   "round_index": 0,
+   "next_round_index": 0
+  },
+  {
+   "Title": "הזדמנות אחרונה",
+   "Cash": false,
+   "Comment": "",
+   "Active": true,
+   "singleRound": true,
+   "Require_ID": true,
+   "Require_Email": true,
+   "Require_DOB": true,
+   "AutoGender": false,
+   "Rounds": [
+    {
+     "Price": 50,
+     "RoundIndex": 0
+    }
+   ],
+   "ticket_id": 186753,
+   "ticket_index": 186753,
+   "SaleEnd": "2026-10-21T04:00:00.000",
+   "dynamicField": [],
+   "binLimit": false,
+   "binList": [],
+   "sale_limit": 5,
+   "donation_ticket": false,
+   "eventId": "6ad5d9db4b18d81c2451751b",
+   "images": [],
+   "_id": "6ad5d9ee4b18d81c24517696",
+   "SeatsChannel": [],
+   "position": 2,
+   "Price": 50,
+   "Commision": 5,
+   "RoundIndex": 0,
+   "display": "ACTIVE",
+   "round_index": 0,
+   "next_round_index": 0
+  }
+ ]
+}

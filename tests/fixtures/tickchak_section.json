@@ -1,0 +1,213 @@
+{
+ "sectionId": 4,
+ "sectionType": "eventSlider",
+ "events": [
+  {
+   "date": 1792859400,
+   "endDate": 1792879200,
+   "entityId": "eWnaRRadL",
+   "image": {
+    "image": "https://static.tickchak.co.il/all/liveNew_090TULp3VUNDWGZzcWJDVMhnaydnY5F1Vu_b90zdClXW3tCbwIUVwJFOkNFaIlUerZ3S.webp_ef53a92a-6e52-4f2c-ba3a-72e92d434c78.webp",
+    "credit": "אילוסטרציה באמצעות AI",
+    "isDefaultImage": true
+   },
+   "isTickchak": 0,
+   "soldOut": 0,
+   "lastTickets": 0,
+   "preSale": 0,
+   "mainCategory": 1,
+   "title": "Jam Be L♡ve",
+   "description": null,
+   "link": "https://www.go-out.co/event/jambelove",
+   "pageUrl": "https://www.go-out.co/event/jambelove",
+   "projectId": null,
+   "projectTitle": null,
+   "eid": null,
+   "projectFriendlyUrl": null,
+   "provider": "goout",
+   "isPromoted": 0,
+   "artistId": null,
+   "venueInfo.approved": 0,
+   "minPrice": "37.10",
+   "maxPrice": "37.10",
+   "artists": [],
+   "venue": {
+    "venueId": "vBLWBKlnP",
+    "title": "המקצוע 6",
+    "approved": 0,
+    "city": {
+     "cityId": "cKqLzljrz",
+     "title": "תל אביב"
+    },
+    "area": {
+     "areaId": "rZrjwWjVv",
+     "title": "אזור המרכז"
+    }
+   },
+   "url": "/shows/event/eWnaRRadL",
+   "metaTitle": "Jam Be L♡ve",
+   "metaDescription": "Jam Be L♡ve - הופעה עם הלהיטים הגדולים! יום שבת 24/10/2026 🎉 עוד הופעה בקטגוריית הופעות חיות , כרטיסים במחירים מיוחדים  - הזמן עכשיו לפני שיגמרו!",
+   "isStartedEvent": false,
+   "isPastEvent": false,
+   "followed": {},
+   "id": 486199
+  },
+  {
+   "date": 1794506430,
+   "endDate": 1794563430,
+   "entityId": "eNLqdZRJn",
+   "image": {
+    "image": "https://d1csfbqi9qqnoz.cloudfront.net/1788771194152-image.jpg",
+    "credit": "",
+    "isDefaultImage": false
+   },
+   "isTickchak": 0,
+   "soldOut": 0,
+   "lastTickets": 0,
+   "preSale": 0,
+   "mainCategory": 1,
+   "title": "באלישג חוזר לבמה",
+   "description": "באלישג חוזר לבמה.\n\nאחרי תקופה שבה עצרתי הכול, התמודדתי עם לא מעט דברים מאחורי הקלעים ולקחתי צעד אחורה כדי לסדר את החיים ואת הראש — אני חוזר.\n\nלא אותו באלישג שהיה. חזק יותר. חכם יותר. חד יותר.\n\nעכשיו הגיע הזמן לחזור למקום שבו הכול התחיל — לבמה, למוזיקה ולקהל האמיתי שלי.\n\nאני מחכה לפגוש אתכם פנים אל פנים, להרגיש את האנרגיה ולתת לכם הופעה שתזכיר לכולם למה באלישג כאן.\n\nהפעם אין עצירות. רק קדימה.\n\nבאלישג הוא אחד השמות הבולטים והמסקרנים בגל החדש של ההיפ הופ הישראלי. עם סאונד ייחודי שמשלב בין ראפ אותנטי, וייבים עכשוויים והשפעות מהרחוב – הוא מצליח לייצר זהות מוזיקלית ברורה ובלתי מתפשרת.\n\nהמוזיקה של באלישג מביאה סיפור אישי אמיתי, עם טקסטים חדים, רגש מדויק ופלואו שמתחבר לקהל רחב. השירים שלו נוגעים בנושאים של מציאות יומיומית, מערכות יחסים ושאיפה להצלחה – בצורה כנה וישירה.\n\nבשנה האחרונה באלישג מראה עלייה מתמדת בחשיפה, עם קהל שהולך וגדל ברשתות החברתיות ובפלטפורמות הסטרימינג. ההופעות שלו מתאפיינות באנרגיה גבוהה, חיבור חזק לקהל ונוכחות בימתית שמבדילה אותו מאחרים.\n\nמאחורי ההפקה עומד צוות מקצועי שמביא סאונד עדכני, איכותי ותחרותי ברמה הגבוהה ביותר.\n\nבאלישג ממשיך לבסס את מקומו כאמן מוביל בסצנה, עם חזון ברור וחתימה מוזיקלית שלא ניתן להתעלם ממנה\n\nההופעה פתוחה לכל הגילאים\n\nקטינים יוכלו להיכנס בליווי הורה בלבד!!",
+   "link": "https://zygo.co.il/event/6a9e7b7a040f986905a658e4/ZF10m94c4",
+   "pageUrl": "https://zygo.co.il/event/350921077763121399/ZF10m94c4",
+   "projectId": null,
+   "projectTitle": null,
+   "eid": null,
+   "projectFriendlyUrl": null,
+   "provider": "zygo",
+   "isPromoted": 0,
+   "artistId": null,
+   "venueInfo.approved": 1,
+   "minPrice": "100.00",
+   "maxPrice": "120.00",
+   "artists": [
+    {
+     "artistId": "arLrWbkxl",
+     "title": "באלישג",
+     "titleEn": "Balishag",
+     "countEvents": 1,
+     "friendlyUrl": "balishag",
+     "ownership": 0,
+     "social": "{\"instagram\":\"https:\\/\\/www.instagram.com\\/balishag__?igsh=dXR0cnR2aWQycGk3\"}",
+     "music": "{\"youtube\":\"https:\\/\\/www.youtube.com\\/@balishagTv\",\"appleMusic\":\"https:\\/\\/music.apple.com\\/il\\/album\\/w-ep\\/1745967821\",\"deezer\":\"https:\\/\\/www.deezer.com\\/us\\/artist\\/154530992\",\"SoundCloud\":\"https:\\/\\/m.soundcloud.com\\/blyshg\",\"spotify\":\"https:\\/\\/open.spotify.com\\/artist\\/1zZ8q7ULCRLJDqRN2kMxC2\",\"youtubeMusic\":\"https:\\/\\/music.youtube.com\\/channel\\/UCMPp_4t346-ku8nKmXxXMow\"}",
+     "website": null,
+     "entitiesId": "476724",
+     "entityIsMain": true,
+     "producerId": null,
+     "categories": {
+      "mainType": "shows",
+      "all": [
+       {
+        "categoryId": "kXyjBRjaM",
+        "title": "הופעות חיות",
+        "titleEn": "Live Shows",
+        "friendlyUrl": "shows"
+       }
+      ]
+     },
+     "id": 4715,
+     "url": "/balishag"
+    }
+   ],
+   "venue": {
+    "venueId": "vwAjDvDLV",
+    "title": "מועדון גגרין",
+    "approved": 1,
+    "city": {
+     "cityId": "cKqLzljrz",
+     "title": "תל אביב"
+    },
+    "area": {
+     "areaId": "rZrjwWjVv",
+     "title": "אזור המרכז"
+    }
+   },
+   "url": "/shows/event/eNLqdZRJn",
+   "metaTitle": "באלישג חוזר לבמה",
+   "metaDescription": "באלישג חוזר לבמה - הופעה עם הלהיטים הגדולים! יום חמישי 12/11/2026 🎉 עוד הופעה בקטגוריית הופעות חיות , כרטיסים במחירים מיוחדים  - הזמן עכשיו לפני שיגמרו!",
+   "isStartedEvent": false,
+   "isPastEvent": false,
+   "followed": {},
+   "id": 476724
+  },
+  {
+   "date": 1794513600,
+   "endDate": null,
+   "entityId": "eGnmdplmj",
+   "image": {
+    "image": "https://static.tickchak.co.il/all/liveNew_090zd45kM3QWcN5EZFRHbZJnS0U1MHBlNu_w90TUvZHWzVkNX9EM1MWV5JnZkJzalB3T.webp_1f95e6e3-ac10-4332-af94-661253932b95.webp",
+    "credit": null,
+    "isDefaultImage": true
+   },
+   "isTickchak": 0,
+   "soldOut": 0,
+   "lastTickets": 1,
+   "preSale": 0,
+   "mainCategory": 1,
+   "title": "עמרי סמדר לייב",
+   "description": null,
+   "link": "https://barby.co.il/show/5503",
+   "pageUrl": "https://barby.co.il/show/5503",
+   "projectId": null,
+   "projectTitle": null,
+   "eid": null,
+   "projectFriendlyUrl": null,
+   "provider": "barby",
+   "isPromoted": 0,
+   "artistId": "aWjYaazjG",
+   "venueInfo.approved": 1,
+   "minPrice": "170.00",
+   "maxPrice": "170.00",
+   "artists": [
+    {
+     "artistId": "aWjYaazjG",
+     "title": "עמרי סמדר",
+     "titleEn": "Omri Smadar",
+     "countEvents": 1,
+     "friendlyUrl": "omri-smadar",
+     "ownership": 0,
+     "social": "{\"instagram\":\"https:\\/\\/www.instagram.com\\/omri_smadar\\/\",\"facebook\":\"https:\\/\\/www.facebook.com\\/OmriSmadarOfficial\\/?locale=he_IL\"}",
+     "music": "{\"spotify\":\"https:\\/\\/open.spotify.com\\/artist\\/0qnD30FBRPes7ZFDvsEBAv?autoplay=true\",\"youtube\":\"https:\\/\\/www.youtube.com\\/channel\\/UCDJ0aQXQOlyHRQr-sYF3tAg\",\"appleMusic\":\"https:\\/\\/music.apple.com\\/il\\/artist\\/omri-smadar\\/1230663229\",\"youtubeMusic\":\"https:\\/\\/music.youtube.com\\/channel\\/UCr_KCRzdQoUuCOB1TpWautg\"}",
+     "website": null,
+     "entitiesId": "477403",
+     "entityIsMain": true,
+     "producerId": null,
+     "categories": {
+      "mainType": "shows",
+      "all": [
+       {
+        "categoryId": "kJGnmAnvm",
+        "title": "מסיבות",
+        "titleEn": "Parties",
+        "friendlyUrl": "parties"
+       }
+      ]
+     },
+     "id": 4770,
+     "url": "/omri-smadar"
+    }
+   ],
+   "venue": {
+    "venueId": "vJnkzkojm",
+    "title": "מועדון הבארבי",
+    "approved": 1,
+    "city": {
+     "cityId": "cKqLzljrz",
+     "title": "תל אביב"
+    },
+    "area": {
+     "areaId": "rZrjwWjVv",
+     "title": "אזור המרכז"
+    }
+   },
+   "url": "/shows/event/eGnmdplmj",
+   "metaTitle": "עמרי סמדר לייב",
+   "metaDescription": "עמרי סמדר לייב - הופעה עם הלהיטים הגדולים! יום חמישי 12/11/2026 🎉 עוד הופעה בקטגוריית הופעות חיות , כרטיסים במחירים מיוחדים  - הזמן עכשיו לפני שיגמרו!",
+   "isStartedEvent": false,
+   "isPastEvent": false,
+   "followed": {},
+   "id": 477403
+  }
+ ],
+ "count": 3
+}

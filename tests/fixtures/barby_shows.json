@@ -1,0 +1,122 @@
+{
+ "2": {
+  "listed": {
+   "showId": "5485",
+   "showDate": "21/10/2026",
+   "showTime": "20:00",
+   "showSold": "481",
+   "showSoldMaxBuy": "1000",
+   "showNum2SoldOut": "0",
+   "showPrice": "85",
+   "showTierPriceType": "2",
+   "showName": "ויתרתי VS כוח וידאו",
+   "showImage": "LOGO_5312_1786443936591.jpeg",
+   "showTitle": "<p class=\"ql-direction-rtl ql-align-right\"><br></p>",
+   "showSeatType": "מופע עמידה",
+   "showType": "",
+   "showShortTitle": "<p class=\"ql-direction-rtl ql-align-right\"><br></p>",
+   "showShortLogo": "",
+   "showM_logo2Active": "0",
+   "showM_showHome": "1",
+   "notbybarbtsellsoldout": "0",
+   "showGuestsNames": ""
+  },
+  "details": {
+   "showId": "5485",
+   "showDate": "21/10/2026",
+   "showTime": "20:00",
+   "showName": "ויתרתי VS כוח וידאו",
+   "showImage": "LOGO_5312_1786443936591.jpeg",
+   "showTitle": "<p class=\"ql-direction-rtl ql-align-right\"><br></p>",
+   "showSeatType": "מופע עמידה",
+   "showShortTitle": "<p class=\"ql-direction-rtl ql-align-right\"><br></p>",
+   "showShortLogo": "",
+   "showType": "",
+   "description": "<p class=\"ql-align-center ql-direction-rtl\"><strong style=\"font-size: 45px;\">ויתרתי VS כוח וידאו</strong></p><p><span style=\"font-size: 24px;\">רגע לפני שהמדינה הולכת לקלפי, אנחנו הולכים להרעיד את את הבארבי.</span></p><p><span style=\"font-size: 24px;\">ב־21.10, שבוע לפני הבחירות, אנחנו מציגים את הקואליציה האידיאלית שלכם: </span></p><p><strong style=\"font-size: 24px;\"><u>ויתרתי</u></strong><span style=\"font-size: 24px;\"> – להקת הפאנק ששרפה מתנ״ס, חוגגת את השקת האלבום החדש שלה “פירה בתוך הראש”. שירים מכל התקופות, הפתעות ושלל הפעלות לקהל.</span></p><p><strong style=\"font-size: 24px;\">שירה ובס: איתי זבולון | גיטרות: יונתן כספי | תופים: נמרוד ליברמן |&nbsp;גיטרה שנייה: אלון רנצר</strong></p><p><br></p><p><strong style=\"font-size: 24px;\"><u>כוח וידאו</u></strong><span style=\"font-size: 24px;\"> – הסופרגרופ של המטאל הישראלי: </span><strong style=\"font-size: 24px;\">שאול לוריא (קין והבל 90210), תמוז דקל (טטרן), רוי חן (בום פם) ומור סטניסלב פורת (חצץ)</strong><span style=\"font-size: 24px;\"> – חוגגים את השקת הויניל הכפול של אלבומם הראשון, “הסוף”. סט מלא של האלבום, בתוספת הפתעות.</span></p><p><span style=\"font-size: 24px;\">מופע פותח – מטאטא השמד – להקת העל של נדב לוזיה (נינט), עוזי רמירז (קרולינה) וטאפש (שלומי שבן). </span></p><p><span style=\"font-size: 24px;\">תתכוננו לרקוד מהר. ב21.10 כולם באים לבארבי על פי חוק!</span></p><p><span style=\"font-size: 24px;\">ליין אפ: 20:00 מטאטא השמד | 20:45 ויתרתי | 22:00 כוח וידאו</span></p><p><span style=\"font-size: 24px;\">לא לאחר!</span></p><p><strong style=\"font-size: 24px;\">מחיר 85 למקדימים ואז 105 שח </strong></p>",
+   "PixselSellDisplay": "1",
+   "FBInit4show": "1253388609886928",
+   "ytube": "",
+   "isSoldOut": false
+  },
+  "tiers": [
+   {
+    "_id": "6a7af980140739bed770e37c",
+    "fee_id": "1624",
+    "TierName": "מחיר למקדימים",
+    "TierPrice": "85",
+    "TierQuentity": "200",
+    "ShowId": "5312",
+    "shows2id": "5485",
+    "pricetype": "2",
+    "sold": 200,
+    "__v": 0
+   },
+   {
+    "_id": "6a7af980140739bed770e37e",
+    "fee_id": "1625",
+    "TierName": "מחיר רגיל",
+    "TierPrice": "105",
+    "TierQuentity": "800",
+    "ShowId": "5312",
+    "shows2id": "5485",
+    "pricetype": "2",
+    "sold": 286,
+    "__v": 0
+   }
+  ]
+ },
+ "1": {
+  "listed": {
+   "showId": "5562",
+   "showDate": "20/10/2026",
+   "showTime": "21:00",
+   "showSold": 1090,
+   "showSoldMaxBuy": "1090",
+   "showNum2SoldOut": "500",
+   "showPrice": "245",
+   "showTierPriceType": "1",
+   "showName": "איתי לוי - בבארבי  ",
+   "showImage": "LOGO_5389_1791898676758.jpeg",
+   "showTitle": "<p class=\"ql-direction-rtl ql-align-right\"><br></p>",
+   "showSeatType": "מופע עמידה",
+   "showType": "",
+   "showShortTitle": "<p class=\"ql-direction-rtl ql-align-right\"><br></p>",
+   "showShortLogo": "",
+   "showM_logo2Active": "0",
+   "showM_showHome": "1",
+   "notbybarbtsellsoldout": "0",
+   "showGuestsNames": ""
+  },
+  "details": {
+   "showId": "5562",
+   "showDate": "20/10/2026",
+   "showTime": "21:00",
+   "showName": "איתי לוי - בבארבי  ",
+   "showImage": "LOGO_5389_1791898676758.jpeg",
+   "showTitle": "<p class=\"ql-direction-rtl ql-align-right\"><br></p>",
+   "showSeatType": "מופע עמידה",
+   "showShortTitle": "<p class=\"ql-direction-rtl ql-align-right\"><br></p>",
+   "showShortLogo": "",
+   "showType": "",
+   "description": "<p class=\"ql-direction-rtl ql-align-center\"><strong style=\"font-size: 32px;\">איתי לוי </strong></p><p class=\"ql-direction-rtl ql-align-center\"><strong style=\"font-size: 32px;\">עקב הטירוף מופע נוסף - בבארבי </strong></p><p><span style=\"font-size: 24px;\">אחרי הצלחת שני המופעים הראשונים ולאור הביקוש: איתי לוי פותח מופעים נוספים בבארבי. אחרי הופעות ענק על הבמות הגדולות בישראל, איתי לוי ממשיך את סדרת המופעים בבארבי עם מופעים נוספים. זוהי הזדמנות פז לקהל של לוי, לחוות את הזמר מקרוב במופעים אינטימיים ומיוחדים באחד ממועדוני ההופעות האייקוניים בישראל. ההכרזה מגיעה בעיצומה של תקופה עמוסת הופעות והצלחות עבור לוי, אחרי מופע 360 סולד אאוט בהיכל מנורה, שתי הופעות בקיסריה ושלושה מופעים בלייב פארק ראשון לציון. אלבומו החדש \"13\" ממשיך לשבור שיאים, עם שירים שנכנסו לכל הפלייליסטים המובילים, צברו מיליוני האזנות, שברו את TikTok עם עשרות אלפי שימושים וממשיכים לככב במצעדים של תחנות הרדיו והרשתות החברתיות. לוי זכה השנה בפרסי זמר השנה ואיש השנה, לצד זכיות באלבום השנה, הופעת השנה ושיר השנה.</span></p><p class=\"ql-align-center\"><span style=\"font-size: 24px;\">מדובר ברצף של הצלחות, כאשר אלבומו הקודם של לוי זכה פעמיים בפרס אלבום השנה ולתשבוחות רבות מהמבקרים על סגנונו הייחודי.</span></p><p class=\"ql-align-center\"><strong style=\"font-size: 24px;\">מחיר 245 שח </strong></p><p class=\"ql-direction-rtl ql-align-center\"><br></p>",
+   "PixselSellDisplay": "1",
+   "FBInit4show": "965310345116512",
+   "ytube": "",
+   "isSoldOut": true
+  },
+  "tiers": {
+   "_id": "6ace33a59e3d0cd24c43ecc9",
+   "id": "5562",
+   "show_id": "5389",
+   "m_date": "20/10/2026",
+   "m_time": "21:00",
+   "m_prices": "",
+   "nochair_price": "245",
+   "nochair_max_buy": "1090",
+   "num2soldout": "500",
+   "tierPriceType": "1",
+   "sold": 1090,
+   "__v": 0
+  }
+ }
+}

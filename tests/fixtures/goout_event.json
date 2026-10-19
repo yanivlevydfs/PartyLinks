@@ -1,0 +1,281 @@
+{
+ "props": {
+  "pageProps": {
+   "event": {
+    "_id": "6ad5d9db4b18d81c2451751b",
+    "StartingDate": "2026-10-20T21:00:00.000",
+    "StartingTime": "2026-10-20T21:00:00.000",
+    "Adress": "שדרות רוטשילד 33, תל אביב-יפו, ישראל",
+    "Title": "HIVE TLV HIP HOP // TUESDAY 20.10",
+    "EndingDate": "2026-10-21T04:00:00.000",
+    "EndingTime": "2026-10-21T04:00:00.000",
+    "MusicType": [
+     "היפ הופ"
+    ],
+    "EnglishAddress": "Rothschild Blvd 33, Tel Aviv-Yafo, Israel",
+    "EventType": "מועדוני לילה",
+    "Location": {
+     "lat": 32.0638547,
+     "lng": 34.7735046,
+     "city": "Tel Aviv-Yafo",
+     "state": "Tel Aviv District",
+     "country": "Israel",
+     "country_code": "IL",
+     "geo_city_id": "6a15982272b832bd09c65b77",
+     "_id": "6ad5d9ee4b18d81c24517694"
+    },
+    "TimeZone": "Asia/Jerusalem",
+    "DefaultLanguage": "he",
+    "EventCurrency": {
+     "currency": "ILS",
+     "signature": "₪",
+     "local_name": "שקל ישראלי",
+     "_id": "6ad5d9ee4b18d81c24517693"
+    },
+    "FacebookValidation": false,
+    "InstagramValidation": false,
+    "EventPublicity": "פומבי",
+    "MinimumAge": 18,
+    "Url": "1792399854329",
+    "MetaCapiAccessToken": "",
+    "GoogleAnalytics": "",
+    "ProducersName": "Hive Tlv",
+    "TiktokPixel": "",
+    "NightsApproved": true,
+    "FacebookOrInstagram": true,
+    "EventSerial": 50051,
+    "Country": "Israel",
+    "SmsSystem": "019",
+    "SeasonPassEvent": true,
+    "hideRelatedEvents": false,
+    "total_sale_limit": 5,
+    "BulkBuy": true,
+    "goout_promoted": false,
+    "FullDate": {
+     "starting": {
+      "time": {
+       "hours": "21",
+       "minutes": "00"
+      },
+      "date": {
+       "day": "20",
+       "month": "10",
+       "year": "2026",
+       "year_short": "26"
+      }
+     },
+     "ending": {
+      "time": {
+       "hours": "04",
+       "minutes": "00"
+      },
+      "date": {
+       "day": "21",
+       "month": "10",
+       "year": "2026",
+       "year_short": "26"
+      }
+     }
+    },
+    "promotionalMailCount": 0,
+    "Using3DS": false,
+    "vat_checkbox": false,
+    "isDraft": false,
+    "step": 5,
+    "tags": [],
+    "targetAgeGroup": [
+     "18–21",
+     "21–25",
+     "26–35",
+     "36–50"
+    ],
+    "isHebrewTitle": false,
+    "isHebrewAdress": true,
+    "isHebrewEnglishAddress": false,
+    "artists": [],
+    "__v": 0,
+    "CoverImageContentType": "image/jpeg",
+    "CoverImageTimestamp": 1792403787340,
+    "GroupPurchase": false,
+    "pspApproved": true,
+    "purchaseProcessDisclaimerStatus": false,
+    "role_english": "Owner",
+    "role_hebrew": "בעלים",
+    "scanVerificationLimit": 0,
+    "sitemapLastmod": "2026-10-19T10:01:47+00:00",
+    "terminalMeta": {
+     "is3DS": false,
+     "isGoOutOwned": true,
+     "supportsApplePay": true,
+     "supportsGooglePay": true
+    },
+    "eventConfig": {
+     "approved_sms_service": false
+    },
+    "Blurhash": "L3DlHQti00Dl$+a5DknU~XIU.P=~",
+    "Description": "English follows 🖤\n──────────\n HIVE TLV HIP HOP\n.הפעם אנחנו נפגשים במועדון ההייב ללילה של היפ הופ, אפרוביט וכל מה שביניהם\nמהקלאסיקות שכולם מכירים ועד הדברים הכי חדשים ברחבה - להיטים, באנגרז, משאפים.ורמיקסים שיריצו אותנו לאורך כל הלילה\n:‎על העמדה🎧 YULI &amp; UR MAMA🎧 DJ DOREL\n.עם סטים שינועו בין ק...",
+    "Tickets": [
+     {
+      "Title": "",
+      "SaleEnd": "2026-10-19T13:47:47.369Z",
+      "SaleStart": "2026-10-19T13:47:47.369Z",
+      "Amount": "150",
+      "Price": 200,
+      "Cash": false,
+      "Comment": "",
+      "sold": 0,
+      "Commision": 5,
+      "Active": true
+     }
+    ],
+    "owner_full_name": "Hive Tlv",
+    "hide_go_out_marketing_acceptance": false,
+    "isValidSL": false,
+    "purchaseConfig": {
+     "blocklist": false,
+     "whitelist": false
+    },
+    "allowSecondaryDeliveryMail": false,
+    "isResellTicketEvent": false,
+    "schemaOrg": [
+     {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      "name": "HIVE TLV HIP HOP // TUESDAY 20.10",
+      "about": {
+       "@type": "Thing",
+       "name": "מועדוני לילה"
+      },
+      "description": "English follows ────────── HIVE TLV HIP HOP.הפעם אנחנו נפגשים במועדון ההייב ללילה של היפ הופ, אפרוביט וכל מה שביניהםמהקלאסיקות שכולם מכירים ועד הדברים הכי חדשים ברחבה - להיטים, באנגרז, משאפים.ורמיקסים שיריצו אותנו לאורך כל הלילה:‎על העמדה YULI & UR MAMA DJ DOREL.עם סטים שינועו בין ק...",
+      "eventStatus": "https://schema.org/EventScheduled",
+      "image": [
+       "https://images.go-out.co/6ad5d9db4b18d81c2451751b1792403787340_coverImage.jpg"
+      ],
+      "startDate": "2026-10-20T21:00:00+03:00",
+      "endDate": "2026-10-21T04:00:00+03:00",
+      "doorTime": "2026-10-20T21:00:00+03:00",
+      "location": {
+       "@type": "Place",
+       "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "שדרות רוטשילד 33, תל אביב-יפו, ישראל"
+       }
+      },
+      "organizer": {
+       "@type": "Organization",
+       "name": "Hive Tlv",
+       "legalName": "קואלה 33 הפקות בעמ",
+       "keywords": [
+        "Hive Tlv",
+        "קואלה 33 הפקות בעמ",
+        "Hive Tlv tickets",
+        "קואלה 33 הפקות בעמ tickets"
+       ]
+      },
+      "keywords": [
+       "HIVE TLV HIP HOP // TUESDAY 20.10",
+       "HIVE TLV HIP HOP // TUESDAY 20.10 tickets",
+       "HIVE TLV HIP HOP // TUESDAY 20.10 information",
+       "HIVE TLV HIP HOP // TUESDAY 20.10 details"
+      ],
+      "url": "https://go-out.co/event/1792399854329",
+      "offers": {
+       "@type": "Offer",
+       "url": "https://go-out.co/event/1792399854329",
+       "price": "30.00",
+       "priceCurrency": "ILS",
+       "availability": "https://schema.org/InStock",
+       "acceptedPaymentMethod": [
+        "http://purl.org/goodrelations/v1#DirectDebit",
+        "http://purl.org/goodrelations/v1#GoogleCheckout"
+       ],
+       "priceValidUntil": "2026-10-21T07:00:00+03:00",
+       "validFrom": "2026-10-19T12:00:00+03:00"
+      }
+     },
+     {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "כרטיס כניסה",
+      "description": "Ticket for the HIVE TLV HIP HOP // TUESDAY 20.10 event.",
+      "offers": {
+       "@type": "Offer",
+       "url": "https://go-out.co/event/1792399854329",
+       "price": "30.00",
+       "priceCurrency": "ILS",
+       "availability": "https://schema.org/InStock",
+       "acceptedPaymentMethod": [
+        "http://purl.org/goodrelations/v1#DirectDebit",
+        "http://purl.org/goodrelations/v1#GoogleCheckout"
+       ],
+       "priceValidUntil": "2026-10-21T07:00:00+03:00",
+       "validFrom": "2026-10-19T12:00:00+03:00"
+      }
+     },
+     {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+       {
+        "@type": "Question",
+        "name": "איפה מתקיים האירוע HIVE TLV HIP HOP // TUESDAY 20.10?",
+        "acceptedAnswer": {
+         "@type": "Answer",
+         "text": "HIVE TLV HIP HOP // TUESDAY 20.10 מתקיים בכתובת שדרות רוטשילד 33, תל אביב-יפו, ישראל."
+        }
+       },
+       {
+        "@type": "Question",
+        "name": "איך מגיעים ל-HIVE TLV HIP HOP // TUESDAY 20.10 בתחבורה ציבורית?",
+        "acceptedAnswer": {
+         "@type": "Answer",
+         "text": "הדרך הקלה ביותר להגיע ל-HIVE TLV HIP HOP // TUESDAY 20.10 היא באמצעות תחבורה ציבורית. ניתן למצוא את המסלול הטוב ביותר מהמיקום הנוכחי שלך בלחיצה כאן: <a href=\"https://www.google.com/maps/dir/?api=1&destination=%D7%A9%D7%93%D7%A8%D7%95%D7%AA%20%D7%A8%D7%95%D7%98%D7%A9%D7%99%D7%9C%D7%93%2033%2C%20%D7%AA%D7%9C%20%D7%90%D7%91%D7%99%D7%91-%D7%99%D7%A4%D7%95%2C%20%D7%99%D7%A9%D7%A8%D7%90%D7%9C\" target=\"_blank\" rel=\"noopener noreferrer\">קבלת הנחיות הגעה ל-שדרות רוטשילד 33, תל אביב-יפו, ישראל.</a>\nאנא בדקו שוב את ההנחיות הללו, שכן ייתכן שהן אינן מדויקות. מיקום האירוע עשוי להשתנות בהתאם להחלטת המארגן."
+        }
+       },
+       {
+        "@type": "Question",
+        "name": "מתי מתקיים האירוע HIVE TLV HIP HOP // TUESDAY 20.10?",
+        "acceptedAnswer": {
+         "@type": "Answer",
+         "text": "HIVE TLV HIP HOP // TUESDAY 20.10 עתיד להתקיים בתאריך אוקטובר 20, 2026."
+        }
+       },
+       {
+        "@type": "Question",
+        "name": "באיזו שעה מתחיל האירוע HIVE TLV HIP HOP // TUESDAY 20.10?",
+        "acceptedAnswer": {
+         "@type": "Answer",
+         "text": "HIVE TLV HIP HOP // TUESDAY 20.10 מתוכנן להתחיל בשעה 21:00."
+        }
+       },
+       {
+        "@type": "Question",
+        "name": "כמה עולה כרטיס ל-HIVE TLV HIP HOP // TUESDAY 20.10?",
+        "acceptedAnswer": {
+         "@type": "Answer",
+         "text": "מחירי הכרטיסים ל-HIVE TLV HIP HOP // TUESDAY 20.10 מתחילים ב-31.50₪ (מחיר סופי כולל עמלות)."
+        }
+       },
+       {
+        "@type": "Question",
+        "name": "איך מקבלים את הכרטיסים לאחר הרכישה ב-GO-OUT?",
+        "acceptedAnswer": {
+         "@type": "Answer",
+         "text": "מיד עם סיום הרכישה עבור HIVE TLV HIP HOP // TUESDAY 20.10, הכרטיסים יישלחו אליכם בדוא״ל (לפעמים גם באמצעות SMS). בנוסף, הכרטיסים זמינים תמיד באזור האישי שלכם (My Wallet) באפליקציית GO-OUT. ביום האירוע, פשוט מציגים את הברקוד בכניסה מהטלפון הנייד."
+        }
+       },
+       {
+        "@type": "Question",
+        "name": "האם הרכישה ב-GO-OUT לHIVE TLV HIP HOP // TUESDAY 20.10 היא רשמית ובטוחה?",
+        "acceptedAnswer": {
+         "@type": "Answer",
+         "text": "כן, GO-OUT היא פלטפורמת הכרטוס הרשמית עבור רוב אירועי HIVE TLV HIP HOP // TUESDAY 20.10, מה שמבטיח כניסה חלקה ללא חשש מכרטיסים מזויפים."
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ }
+}

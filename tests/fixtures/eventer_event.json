@@ -1,0 +1,188 @@
+{
+ "event": {
+  "_id": "6a5c6e9743bb59b456b75c8a",
+  "producer": {
+   "_id": "63cd2e1255ab1f2758064143",
+   "publicName": "מון קלאב 2022 בע\"מ",
+   "isBlockEventerPromotionalCheckbox": false,
+   "companyType": 1,
+   "ticketTypeLabels": {}
+  },
+  "status": 1,
+  "name": "THURSDAY MOON | MAINSTREAM | 22.10",
+  "eventType": 1,
+  "ageLimit": 18,
+  "ticketPlatform": {
+   "eventCategories": {
+    "subEventCategoryRefs": [],
+    "subEventCategoryStrings": []
+   },
+   "isHandled": true,
+   "isHidden": false,
+   "isPending": false,
+   "artists": [],
+   "venues": [
+    "63f0a9f4cd384f30dba03a2e"
+   ],
+   "productions": [],
+   "articles": [],
+   "experiences": [],
+   "orderHot": 1000000,
+   "klaviyoLists": [],
+   "categories": [
+    {
+     "category": "5a8d34e69c563f000ff4711c",
+     "order": 30,
+     "_id": "6a8ad235f3d2ab4265f22560"
+    },
+    {
+     "category": "62fb716837ee4bb82c7b0c29",
+     "order": 45,
+     "_id": "6a8ad235f3d2ab4265f22561"
+    }
+   ],
+   "blockWelcomeMessage": true,
+   "images": {
+    "imageDefault": "https://images.eventer.co.il/marketingImage/548aa721-f144-4a88-a565-3ce61648259a.jpeg",
+    "imageDefaultAlt": "",
+    "imageMobile": "https://images.eventer.co.il/marketingImage/548aa721-f144-4a88-a565-3ce61648259a.jpeg",
+    "imageMobileAlt": "",
+    "imageSquare": "https://images.eventer.co.il/marketingImage/548aa721-f144-4a88-a565-3ce61648259a.jpeg",
+    "imageSquareAlt": "",
+    "imageWide": "https://images.eventer.co.il/marketingImage/548aa721-f144-4a88-a565-3ce61648259a.jpeg",
+    "imageWideAlt": ""
+   },
+   "metadata": {
+    "metadataDescription": "מכירת הכרטיסים הרשמית לאירוע THURSDAY MOON | MAINSTREAM במועדון מון צ'יילד (Moonchild) בנמל תל אביב! חוגגים ביום חמישי בלילה (22.10.2026) תחת כיפת השמיים מול הגלים והבריזה. חוויית OPEN AIR עם מוזיקת MAINSTREAM & EDM: DOR HADAD, SHANELLE, RON LEVY ו-SEAN ALONI. פתיחת שערים ב-22:30. שריינו כרטיסים עכשיו באתר איוונטר Eventer.",
+    "metadataImage": "https://images.eventer.co.il/marketingImage/548aa721-f144-4a88-a565-3ce61648259a.jpeg",
+    "metadataTitle": "כרטיסים למסיבה | מון צ'יילד Thursday Moon | 22.10 | איוונטר Eventer"
+   },
+   "name": "THURSDAY MOON | MAINSTREAM | 22.10"
+  },
+  "location": {
+   "latitude": 32.1001718,
+   "longitude": 34.7744699,
+   "timezone": "Asia/Jerusalem",
+   "addressLocality": "תל אביב-יפו",
+   "addressRegion": "מחוז תל אביב",
+   "addressCountry": "IL",
+   "postalCode": "6350705"
+  },
+  "locationDescription": "Moonchild - מון צ'ילד, Tel Aviv-Yafo, ישראל",
+  "locationDescriptions": {
+   "he_IL": "",
+   "en_EN": "",
+   "ru_RU": "",
+   "fr_FR": ""
+  },
+  "hideStartTime": false,
+  "hideEndTime": true,
+  "hideOpenDoors": false,
+  "schedule": {
+   "start": "2026-10-22 22:30",
+   "end": "2026-10-23 05:30",
+   "openDoors": "22:30",
+   "cancellationDeadline": "2025-03-14 02:00"
+  },
+  "ticketTypeTabs": [],
+  "showMap": true,
+  "askForGender": true,
+  "pngBanner": true,
+  "eventDesc": "<h5 class=\"ql-direction-rtl ql-align-center\" style=\"direction: rtl;text-align: center;\"><strong></strong></h5><p class=\"ql-direction-rtl ql-align-center\" style=\"direction: rtl;text-align: center;\"><font size=\"5\"><b></b></font></p><h3 style=\"text-align: center;\"><strong></strong></h3><p class=\"ql-align-center\" style=\"text-align: center;\"><strong></strong></p><p class=\"ql-align-center\" style=\"text-align: center;\"><strong>THURSDAY MOON</strong></p><p class=\"ql-align-center\" style=\"text-align: center;\"><strong> MAINSTREAM OPEN AIR EXPERIENCE</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> 22.10 | FROM 22:30</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><br></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong>⚠️ פתיחת שערים 22:30 ⚠️</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><br></p><h5 class=\"ql-direction-rtl ql-align-center\" style=\"direction: rtl;text-align: center;\"><strong>הצטרפו לקבוצת הווצאפ ותהנו מעדכונים לגבי כל האירועים מכל הז׳אנרים בתל אביב! 👇🏻</strong></h5><h5 class=\"ql-align-center ql-direction-rtl\" style=\"direction: ltr; text-align: center;\" dir=\"ltr\"><br></h5><h5 class=\"ql-align-center ql-direction-rtl\" style=\"direction: ltr; text-align: center;\" dir=\"ltr\"><a href=\"https://chat.whatsapp.com/GzDUCCoVyLo4UjqZRySeM3?mode=gi_t\">https://chat.whatsapp.com/GzDUCCoVyLo4UjqZRySeM3?mode=gi_t</a></h5><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><br></p><p class=\"ql-align-right ql-direction-rtl\" style=\"direction: rtl;text-align: right;\"><br></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong>יש לילות שפשוט חוזרים שוב — כי הם עובדים.</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> ליין קבוע, קהל מדויק, ואנרגיה שלא מתפשרת.</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><br></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong>כל חמישי מחדש אנחנו נפגשים בלוקיישן על הים,</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> בלב נמל ת״א, מול הגלים והבריזה — תחת כיפת שמיים.</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> רחבה פתוחה, וייב נקי, ואווירה שמרגישים מהרגע הראשון.</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><br></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong>זה לא אירוע חד פעמי —</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> זה הבית של ימי חמישי.</strong></p><p class=\"ql-align-center\" style=\"text-align: center;\"><br></p><p class=\"ql-align-center\" style=\"text-align: center;\"><strong>100% MAINSTREAM</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><br></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong>בלי משחקים, בלי סטיות —</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> רק הלהיטים הנכונים,</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> האנשים הנכונים,</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> והקצב שמחזיק רחבה כל הלילה.</strong></p><p class=\"ql-align-center\" style=\"text-align: center;\"><br></p><p class=\"ql-align-center\" style=\"text-align: center;\"><strong>🎧 LINE UP</strong></p><p class=\"ql-align-center\" style=\"text-align: center;\"><br></p><p class=\"ql-align-center\" style=\"text-align: center;\"><strong>MAIN STAGE – MAINSTREAM &amp; EDM:</strong></p><p class=\"ql-align-center\" style=\"text-align: center;\"><br></p><p class=\"ql-align-center\" style=\"text-align: center;\">DOR HADAD</p><p class=\"ql-align-center\" style=\"text-align: center;\">SHANELLE</p><p class=\"ql-align-center\" style=\"text-align: center;\">RON LEVY</p><p class=\"ql-align-center\" style=\"text-align: center;\">SEAN ALONI</p><p class=\"ql-align-center\" style=\"text-align: center;\">I</p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><br></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong>📅 חמישי | 22.10</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> ⏰ 22:30</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><br></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong>כמות כרטיסים מוגבלת.</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> הכניסה לקהל שמבין את הוייב.</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><br></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong>זה לא עוד לילה —</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><strong> זה הרגל</strong></p><p class=\"ql-align-center ql-direction-rtl\" style=\"direction: rtl;text-align: center;\"><br style=\"font-size: medium;text-align: center;\"></p><p class=\"ql-align-right ql-direction-rtl\" style=\"direction: rtl;text-align: right;\"><br class=\"Apple-interchange-newline\"></p>",
+  "colorScheme": "#ffffff",
+  "colorScheme2": "#000",
+  "background": "",
+  "thumbnail": "https://images.eventer.co.il/thumbnail/da5b555a-9d29-44d8-9158-ae4b46fcce9a.jpeg",
+  "mobileBackground": "",
+  "mobilePhoto": "https://images.eventer.co.il/mobilePhoto/756d8e6a-a078-4e7f-97d4-300b882645ae.jpeg",
+  "boxOpacity": "09",
+  "ticketTypeGroups": [],
+  "googlePixel": "",
+  "googleConversionId": null,
+  "googleConversionLabel": "",
+  "googleAnalyticsId": "",
+  "googleAnalyticsDomain": "",
+  "taboolaPixel": "",
+  "outbrainPixel": "",
+  "tiktokPixel": "",
+  "isLiveStreamEvent": false,
+  "fbPhoto": "https://images.eventer.co.il/fbPhoto/e8c3115f-6a7a-43c9-932c-063285beb27d.jpeg",
+  "multipleCreditCards": false,
+  "isSupportMultiLanguage": true,
+  "supportedLanguages": {
+   "he_IL": true,
+   "en_EN": true,
+   "ru_RU": true,
+   "fr_FR": true
+  },
+  "defaultLanguage": "he_IL",
+  "defaultCurrency": "ILS",
+  "isSupportMultiCurrency": false,
+  "supportedCurrencies": {
+   "ILS": true,
+   "USD": false,
+   "EUR": false,
+   "GBP": false
+  },
+  "isBlockEventerPromotionalCheckbox": false,
+  "promotionalApproval": {
+   "isRequestingApproval": true,
+   "isAutoTick": false
+  },
+  "ticketDelivery": {
+   "homePrint": true
+  },
+  "membership": {
+   "membershipGroups": []
+  },
+  "eventCategories": {
+   "topEventCategoryRef": "5a8d3bb903127100107d02fe",
+   "topEventCategoryString": "Festivals",
+   "subEventCategoryRefs": [
+    "5a91320d44082445f88ff2fa",
+    "5a8d3dad03127100107d0304",
+    "5a8d3dbd5cbedd000f059b8e"
+   ],
+   "subEventCategoryStrings": [
+    "Other",
+    "Israeli Artists",
+    "International Artists"
+   ]
+  },
+  "isUseCancellationDeadline": false,
+  "linkName": "m302f"
+ },
+ "production": {
+  "_id": "63cd2e1255ab1f2758064143",
+  "publicName": "מון קלאב 2022 בע\"מ",
+  "isBlockEventerPromotionalCheckbox": false,
+  "companyType": 1,
+  "ticketTypeLabels": {}
+ },
+ "fbPixel": "1795818647703435",
+ "jsonLdData": {
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": "THURSDAY MOON | MAINSTREAM | 22.10",
+  "description": "מכירת הכרטיסים הרשמית לאירוע THURSDAY MOON | MAINSTREAM במועדון מון צ'יילד (Moonchild) בנמל תל אביב! חוגגים ביום חמישי בלילה (22.10.2026) תחת כיפת השמיים מול הגלים והבריזה. חוויית OPEN AIR עם מוזיקת MAINSTREAM & EDM: DOR HADAD, SHANELLE, RON LEVY ו-SEAN ALONI. פתיחת שערים ב-22:30. שריינו כרטיסים עכשיו באתר איוונטר Eventer.",
+  "image": "https://images.eventer.co.il/fbPhoto/e8c3115f-6a7a-43c9-932c-063285beb27d.jpeg",
+  "startDate": "2026-10-22T19:30:00.000Z",
+  "endDate": "2026-10-23T02:30:00.000Z",
+  "doorTime": "2026-10-22T19:30:00.000Z",
+  "location": {
+   "@type": "Place",
+   "name": "Moonchild - מון צ'ילד, Tel Aviv-Yafo, ישראל",
+   "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "IL",
+    "addressLocality": "תל אביב-יפו",
+    "addressRegion": "מחוז תל אביב",
+    "streetAddress": null,
+    "postalCode": "6350705"
+   }
+  },
+  "url": "https://www.eventer.co.il/m302f",
+  "eventStatus": "http://schema.org/EventScheduled",
+  "eventAttendanceMode": "http://schema.org/OfflineEventAttendanceMode"
+ }
+}
