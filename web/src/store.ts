@@ -7,13 +7,14 @@ export interface Filters {
   when: string; // "all" | "tonight" | "weekend" | YYYY-MM-DD
   genres: string[];
   slot: string | null;
+  areas: string[];
   freeOnly: boolean;
   hideSoldOut: boolean;
   sort: string;
 }
 
 const DEFAULT_FILTERS: Filters = {
-  q: "", when: "all", genres: [], slot: null, freeOnly: false, hideSoldOut: false, sort: "start_at",
+  q: "", when: "all", genres: [], slot: null, areas: [], freeOnly: false, hideSoldOut: false, sort: "start_at",
 };
 
 interface State {

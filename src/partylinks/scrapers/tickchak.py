@@ -52,17 +52,21 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         hierarchy = _hierarchy_params(page.get("breadcrumbs") or [])
 
         items: dict[str, dict[str, Any]] = {}
-        for item in ((page_state.get("data") or {}).get("event") or {}).get("all", {}).values():
-            items.setdefault(item.get("entityId"), item)
+        preloaded = ((page_state.get("data") or {}).get("event") or {}).get("all")
+        for item in preloaded.values() if isinstance(preloaded, dict) else []:
+            if isinstance(item, dict):
+                items.setdefault(item.get("entityId"), item)
 
         listings = [
             self._paginate(s.api_url + s.section_data_path.format(section_id=sid), "events", hierarchy + _model(sid))
             for sid in discover_section_ids(page)
         ]
         listings.append(self._paginate(s.api_url + s.custom_events_path, "customEvents", hierarchy))
-        for listing in await asyncio.gather(*listings):  # every slider in parallel
-            for item in listing:
-                items.setdefault(item.get("entityId"), item)
+        # Every slider in parallel; a failing slider is recorded and the others still count.
+        for listing in await asyncio.gather(*(self.optional("slider", listing) for listing in listings)):
+            for item in listing or []:
+                if isinstance(item, dict):
+                    items.setdefault(item.get("entityId"), item)
 
         items.pop(None, None)
         self.log.info("listed %d events", len(items))
@@ -70,14 +74,13 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
             try:
                 yield parse_event(item, s.site_url)
             except Exception as exc:  # noqa: BLE001 - isolate per-item failures
-                self.failures.append(f"{entity_id}: {type(exc).__name__}: {exc}")
-                self.log.warning("skipped %s: %s", entity_id, exc)
+                self.record_failure(str(entity_id), exc)
 
     async def _paginate(self, url: str, key: str, params: list[tuple[str, Any]]) -> list[dict[str, Any]]:
         size = self.settings.page_size
 
         async def page(index: int) -> tuple[list[dict[str, Any]], int | None]:
-            payload = await self.get_json(url, params=[("limit", size), ("offset", index * size), *params])
+            payload = await self.get_json(url, params=[("limit", size), ("offset", index * size), *params], expect=dict)
             return payload.get(key) or [], payload.get("count")
 
         return await self.paginate(page, size, self.settings.max_pages)
@@ -97,7 +100,8 @@ def _model(section_id: str) -> list[tuple[str, Any]]:
 
 def _hierarchy_params(breadcrumbs: list[dict[str, Any]]) -> list[tuple[str, Any]]:
     params: list[tuple[str, Any]] = []
-    for index, crumb in enumerate(breadcrumbs):
+    crumbs = [c for c in breadcrumbs if isinstance(c, dict) and c.get("type") and c.get("id") is not None]
+    for index, crumb in enumerate(crumbs):
         params += [(f"pageHierarchy[{index}][type]", crumb["type"]), (f"pageHierarchy[{index}][id]", crumb["id"])]
     return params
 
@@ -111,7 +115,8 @@ def discover_section_ids(page: dict[str, Any]) -> list[str]:
         if section.get("type") == SLIDER_SECTION:
             ids.append(sid)
         elif section.get("type") == LOOP_SECTION and section.get("content") == "event":
-            ids += [f"{sid}_{slider['id']}" for slider in (loops.get(sid) or {}).get("sliders") or []]
+            sliders = (loops.get(sid) or {}).get("sliders") or []
+            ids += [f"{sid}_{slider['id']}" for slider in sliders if isinstance(slider, dict) and slider.get("id")]
     return ids
 
 

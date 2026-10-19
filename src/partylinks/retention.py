@@ -1,4 +1,5 @@
-"""Retention: purge events that are over, together with their tickets and artwork files."""
+"""Retention: purge events that are over (with tickets and artwork), old run history, and
+give the freed space back to the OS."""
 
 from __future__ import annotations
 
@@ -6,10 +7,10 @@ import logging
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, delete, or_, select
 
 from partylinks.config import RetentionSettings
-from partylinks.db import Database, EventRow, delete_events
+from partylinks.db import Database, EventRow, ScrapeRunRow, delete_events
 from partylinks.media import MediaStore
 
 log = logging.getLogger(__name__)
@@ -23,9 +24,13 @@ def retention_cutoff(settings: RetentionSettings, timezone: str, now: datetime |
 
 
 def purge_expired(db: Database, media: MediaStore, settings: RetentionSettings, timezone: str) -> int:
-    """Delete events that ended before the cutoff. Returns the number of events removed."""
+    """Delete events that started before the cutoff (local midnight, today - keep_days_back).
+
+    The start date decides, not the end: some listings carry an end date weeks later
+    (e.g. a recurring "season" page) and must not linger as if they were upcoming.
+    """
     cutoff = retention_cutoff(settings, timezone)
-    finished = func.coalesce(EventRow.end_at, EventRow.start_at)
+    finished = EventRow.start_at
     with db.session() as session:
         expired = session.scalars(
             select(EventRow.id).where(
@@ -37,6 +42,17 @@ def purge_expired(db: Database, media: MediaStore, settings: RetentionSettings, 
             )
         ).all()
         files = delete_events(session, expired)
+        runs = session.execute(
+            delete(ScrapeRunRow).where(
+                ScrapeRunRow.started_at < cutoff - timedelta(days=settings.keep_runs_days),
+                ScrapeRunRow.status != "running",
+            )
+        ).rowcount
     removed_files = media.delete_files(files)
-    log.info("retention: removed %d events and %d artwork files older than %s", len(expired), removed_files, cutoff)
+    log.info(
+        "retention: removed %d events, %d artwork files and %d runs older than %s",
+        len(expired), removed_files, runs, cutoff,
+    )  # fmt: skip
+    if settings.reclaim_space and (expired or runs):
+        db.reclaim_space()
     return len(expired)

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useCategories, type Params } from "../api";
 import { genreLabel } from "../i18n";
 import { useStore } from "../store";
-import { Chip, EventGrid, Hero, today, useT } from "../ui";
+import { Chip, EventGrid, Hero, label, today, TZ, useT } from "../ui";
 
 export default function Home() {
   const { t, lang } = useT();
@@ -22,12 +22,14 @@ export default function Home() {
     q: f.q.length >= 2 ? f.q : undefined,
     genre: f.genres,
     time_slot: f.slot ?? undefined,
+    area: f.areas,
     free_entry: f.freeOnly ? "true" : undefined,
     sold_out: f.hideSoldOut ? "false" : undefined,
     ...(f.when === "tonight" ? { date: today() } : f.when === "weekend" ? { weekend: "true" } : f.when !== "all" ? { date: f.when } : {}),
   };
 
   const toggleGenre = (g: string) => set("genres", f.genres.includes(g) ? f.genres.filter((x) => x !== g) : [...f.genres, g]);
+  const toggleArea = (a: string) => set("areas", f.areas.includes(a) ? f.areas.filter((x) => x !== a) : [...f.areas, a]);
   const dates = (cats?.dates ?? []).filter((d) => d.value >= today()).slice(0, 10);
 
   return (
@@ -43,10 +45,21 @@ export default function Home() {
             <Chip on={f.when === "weekend"} onClick={() => set("when", "weekend")}>{t.weekend}</Chip>
             {dates.map((d) => (
               <Chip key={d.value} on={f.when === d.value} onClick={() => set("when", d.value)}>
-                {new Date(d.value + "T12:00:00").toLocaleDateString(t.locale, { weekday: "short", day: "numeric", month: "numeric" })}
+                {new Date(d.value + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, weekday: "short", day: "numeric", month: "numeric" })}
               </Chip>
             ))}
           </div>
+
+          {!!cats?.areas?.length && (
+            <div className="chips" role="group" aria-label={t.area}>
+              <Chip on={f.areas.length === 0} onClick={() => set("areas", [])}>📍 {t.allAreas}</Chip>
+              {cats.areas.map((a) => (
+                <Chip key={a.value} on={f.areas.includes(a.value)} onClick={() => toggleArea(a.value)}>
+                  {label(t.areas, a.value)} <small>{a.events}</small>
+                </Chip>
+              ))}
+            </div>
+          )}
 
           {!!cats?.genres.length && (
             <div className="chips" role="group" aria-label={t.genres}>

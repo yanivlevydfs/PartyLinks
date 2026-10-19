@@ -64,6 +64,21 @@ def test_retention_keeps_yesterday_onwards(tmp_path: Path) -> None:
     assert remaining == {"test:yesterday", "test:future"}
 
 
+def test_retention_shrinks_sqlite_file(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    db = seed(settings, [event("old", datetime.now(UTC) - timedelta(days=4))])
+    with db.session() as session:
+        session.query(ImageRow).update({ImageRow.data: b"x" * 5_000_000, ImageRow.downloaded_at: datetime.now(UTC)})
+    db.reclaim_space()
+    before = db.storage_stats()["file_bytes"] or 0
+
+    assert purge_expired(db, MediaStore(settings.media, db), settings.retention, settings.timezone) == 1
+
+    after = db.storage_stats()
+    assert (after["file_bytes"] or 0) < before // 5  # artwork bytes went back to the OS
+    assert after["wal_bytes"] == 0
+
+
 def test_api_filters_categories_and_stored_image(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     future = datetime.now(UTC) + timedelta(days=2)
@@ -87,3 +102,29 @@ def test_api_filters_categories_and_stored_image(tmp_path: Path) -> None:
         categories = client.get("/categories").json()
         assert {"value": "free_and_paid", "events": 2} in categories["entry_types"]
         assert client.get("/sources").status_code == 200
+
+
+def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
+    import json
+
+    from partylinks.seo import event_jsonld
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [event("a", future, title="Techno </script> night")])
+
+    with db.session() as session:
+        row = session.query(EventRow).one()
+        data = event_jsonld(row, settings)
+    assert data["@type"] == "Event" or data["@type"] == "MusicEvent"
+    assert data["startDate"].endswith(("+02:00", "+03:00"))  # Israel time
+    assert {o["price"] for o in data["offers"]} == {0.0, 80.0}
+    assert data["location"]["address"]["addressCountry"] == "IL"
+    json.dumps(data, ensure_ascii=False, default=str)
+
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        robots = client.get("/robots.txt").text
+        assert "Disallow: /admin" in robots and "Sitemap: http://localhost:8000/sitemap.xml" in robots
+        sitemap = client.get("/sitemap.xml").text
+        assert "/event/" in sitemap and 'hreflang="en"' in sitemap
+        assert "Techno </script> night" in client.get("/llms.txt").text

@@ -28,7 +28,8 @@ Every scraper reads the site's own JSON over plain HTTP. It doesn't parse HTML l
 - **The database is written in bulk.** Each batch of events is saved with a fixed number of statements: a multi-row `INSERT … ON CONFLICT DO UPDATE` for events, one delete and one multi-row insert for tickets, and bulk insert, update and delete for images. Retention deletes in bulk. SQLite runs in WAL mode so threads can write concurrently.
 - **Enrichment runs after scraping** (`enrichment.py`). It maps genres to canonical names, extracts lineups from descriptions, adds local date, weekday, time slot and weekend flags, sets the entry type (`free`, `paid`, `free_and_paid`) and matches the target city. All of it is driven by config.
 - **Artwork** URLs are always stored. The images themselves are downloaded and kept either in the database (`event_images.data`, the default) or on disk, and served at `/images/{id}`. The image type is detected from the file bytes.
-- **Retention.** A daily job deletes events that ended before yesterday (`keep_days_back: 1`), together with their tickets and artwork.
+- **Retention.** A daily job (Israel time) deletes events that ended before yesterday (`keep_days_back: 1`) with their tickets and artwork, plus run history older than `keep_runs_days`. On SQLite it then returns the freed pages to the OS (incremental auto-vacuum, enabled automatically) and truncates the WAL, so the file actually shrinks.
+- **Duplicates are merged, not deleted** (`dedup.py`). The same party often appears several times: one page per promoter or entry time, and on several platforms. Every listing is kept (each is a real purchase link with its own prices), but matching listings share a `group_id` and one is primary. Two listings match when they have the same date and either one links to the other, or they have a similar title (dates and emojis ignored), start within an hour of each other and share a location. `/events` returns one event per group with a `listings` count; `/events/{id}` lists the others under `alternatives`; `include_duplicates=true` returns every listing.
 - **Every run is recorded** in `scrape_runs` with counts, a status (`success`/`partial`/`failed`) and per-event failures.
 
 ```
@@ -67,7 +68,7 @@ Docs are at `http://localhost:8000/docs`.
 ### Website (React + TypeScript, Hebrew / English)
 
 Pages: parties with filters, `/event/<id>`, `/map` (events with coordinates), `/venues`, `/venue/<name>`, `/artists`, `/artist/<name>`.
-Stack: Vite, React Router, TanStack Query, zustand, Leaflet (CARTO dark tiles).
+Stack: Vite, React Router, TanStack Query, zustand, Leaflet (OpenStreetMap tiles, darkened in CSS).
 
 Windows shortcuts in the repo root:
 
@@ -92,11 +93,40 @@ npm run build      # web/dist, then served by `python -m partylinks serve` at ht
 | GET | `/events` | filters: `source`, `genre`, `artist`, `venue`, `city`, `in_target_city`, `entry_type` (`free`/`paid`/`free_and_paid`), `free_entry`, `sold_out`, `day_of_week`, `time_slot`, `weekend`, `date`, `date_from`, `date_to`, `min_price`, `max_price`, `q`, `upcoming` (default true); `sort`; `page`, `page_size` |
 | GET | `/events/{id}` | full event: tickets (kind, status, price, fee, total, rounds) and images; id is `<source>:<source_event_id>` |
 | GET | `/images/{id}` | stored artwork bytes |
+| GET | `/events?include_duplicates=true` | every listing instead of one per real event |
 | GET | `/categories` | counts per genre, date, weekday, time slot, entry type, venue, city, lineup, event type, source |
 | GET | `/sources` | config, running state, next run, last run |
 | POST | `/sources/{name}/run` | trigger a run now (202; 409 if already running) |
 | GET | `/runs` | run history; filter by `source`, `status` |
 | GET/POST | `/maintenance/retention` | retention settings and next run / purge now |
+
+## SEO, social previews and AI visibility
+
+The site is a React app, but every public page (`/`, `/event/<slug>`, `/venue/<name>`, `/artist/<name>`, `/venues`, `/artists`, `/map`) is served by FastAPI (`seo.py`) with its own:
+- `<title>` and description, canonical URL, and hreflang tags for Hebrew and English (`?lang=en`)
+- Open Graph and Twitter card tags (the event artwork, or `og-default.png`) and Tel Aviv geo tags
+- schema.org JSON-LD: `MusicEvent`/`Event` with offers, place, performers, and Israel-time dates; plus `BreadcrumbList`, `ItemList`, `WebSite`, `Organization`, `MusicVenue` and `Person`
+- a plain-HTML copy of the content for crawlers and LLMs that don't run JavaScript
+
+Crawl files are generated live:
+- `/sitemap.xml`: every upcoming event, venue and artist, with hreflang alternates
+- `/robots.txt`: search engines and AI crawlers allowed, `/admin` blocked
+- `/llms.txt`: a site summary, the API, and the next 400 events
+
+Unknown pages return a real 404. Set `site.base_url` to the public domain when you deploy. Favicons and the web manifest are in `web/public/`.
+
+## Admin console
+
+`/admin` is not linked from the site and is marked `noindex`. It has:
+- **overview:** events, storage and scheduler at a glance
+- **sources:** run now, pause or resume each schedule, last-run results
+- **runs:** history with errors
+- **config:** edit `settings.yaml` with validation, automatic backups in `config/backups/`, and live apply without a restart
+- **maintenance:** purge now, reclaim space, full vacuum, regroup duplicates
+
+All times are shown in Asia/Jerusalem.
+
+Access: set `PARTYLINKS_ADMIN__TOKEN` (environment or `.env`) and sign in with it. Without a token, only requests from the same machine are accepted, and proxied requests never count as local. The same rule guards `POST /sources/{name}/run` and `POST /maintenance/retention`.
 
 ## Configuration
 

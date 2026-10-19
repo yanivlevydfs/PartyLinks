@@ -45,19 +45,24 @@ class BarbyScraper(BaseScraper[BarbySettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        payload = await self.get_json(s.site_url + s.list_path)
-        shows = ((payload.get("returnShow") or {}).get("show")) or []
+        payload = await self.get_json(s.site_url + s.list_path, expect=dict)
+        listing = payload.get("returnShow")
+        shows = [show for show in (listing.get("show") if isinstance(listing, dict) else None) or [] if isinstance(show, dict)]
         self.log.info("listed %d events", len(shows))
-        for event in await self.map_isolated(shows, self._fetch_event, label=lambda show: str(show.get("showId"))):
+        async for event in self.stream_isolated(shows, self._fetch_event, label=lambda show: str(show.get("showId"))):
             yield event
 
     async def _fetch_event(self, listed: dict[str, Any]) -> ScrapedEvent:
         s = self.settings
-        show_id = listed["showId"]
+        show_id = listed.get("showId")
+        if not show_id:
+            raise ParseError("showId missing")
+        # Detail/tier endpoints down -> save the show from its listing data.
         details, tiers = await asyncio.gather(
-            self.get_json(s.site_url + s.show_path.format(show_id=show_id)),
-            self.get_json(s.site_url + s.tiers_path.format(show_id=show_id)),
+            self.optional(f"{show_id} details", self.get_json(s.site_url + s.show_path.format(show_id=show_id))),
+            self.optional(f"{show_id} tiers", self.get_json(s.site_url + s.tiers_path.format(show_id=show_id))),
         )
+        details = details if isinstance(details, dict) else {}
         return parse_event(listed, details, tiers, s, self.timezone)
 
 

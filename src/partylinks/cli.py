@@ -14,6 +14,7 @@ import asyncio
 import logging
 import sys
 
+from pydantic import ValidationError
 from sqlalchemy import select
 
 from partylinks.config import get_settings
@@ -65,7 +66,8 @@ def _chillz_links() -> int:
 
     settings = get_settings()
     scraper = build_scraper("chillz", settings)
-    assert isinstance(scraper, ChillzScraper)
+    if not isinstance(scraper, ChillzScraper):
+        raise TypeError("the 'chillz' source is not the Chillz scraper")
 
     async def discover() -> list:  # type: ignore[type-arg]
         async with scraper:
@@ -118,6 +120,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
+    try:
+        return _dispatch(args)
+    except ValidationError as exc:  # broken config.yaml / PARTYLINKS_* env: say what, no traceback
+        print(f"invalid configuration:\n{exc}", file=sys.stderr)
+        return 2
+
+
+def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "serve":
         return _serve()
     if args.command == "scrape":

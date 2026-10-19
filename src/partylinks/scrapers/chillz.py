@@ -38,7 +38,7 @@ from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.config import project_path
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
-from partylinks.parsing import clean_str, html_to_text, jsonld_nodes, parse_iso, schema_types, to_decimal
+from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, parse_iso, schema_types, to_decimal
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 EVENT_TYPES = {"event", "musicevent", "festival", "socialevent", "danceevent", "theaterevent", "comedyevent"}
@@ -86,10 +86,12 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
         self.log.info("discovered %d candidate pages", len(urls))
         if not urls:
             return
-        # Probe one page first: a checkpoint stops the run here (SourceBlockedError).
-        first = await self._fetch_event(urls[0])
-        rest = await self.map_isolated(urls[1:], self._fetch_event, label=lambda u: u)
-        for event in [e for e in [first, *rest] if e is not None]:
+        # Probe one page first: a checkpoint stops the run here (SourceBlockedError);
+        # any other error on the probe page only skips that page.
+        first = await self.optional(urls[0], self._fetch_event(urls[0]))
+        if first is not None:
+            yield first
+        async for event in self.stream_isolated(urls[1:], self._fetch_event, label=lambda u: u):
             yield event
 
     def _read_inbox(self) -> list[ScrapedEvent]:
@@ -125,7 +127,10 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
         if sitemap_url in seen:
             return []
         seen.add(sitemap_url)
-        root = ET.fromstring((await self.request("GET", sitemap_url)).content)
+        try:
+            root = ET.fromstring((await self.request("GET", sitemap_url)).content)
+        except ET.ParseError as exc:
+            raise ParseError(f"{sitemap_url}: not a valid sitemap") from exc
         entries = [
             (_child_text(node, "loc"), _child_text(node, "lastmod"))
             for node in root
@@ -135,7 +140,8 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
             pages: list[tuple[str, datetime | None]] = []
             for loc, _ in entries:
                 if loc and self._same_site(loc):
-                    pages += await self._discover(loc, seen)
+                    # One broken child sitemap must not hide the others.
+                    pages += await self.optional(f"sitemap {loc}", self._discover(loc, seen)) or []
             return pages
         cutoff = datetime.now(UTC) - timedelta(days=self.settings.recent_days)
         found: dict[str, datetime | None] = {}

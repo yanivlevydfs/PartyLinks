@@ -11,6 +11,7 @@ export interface EventSummary {
   local_date: string | null;
   day_of_week: string | null;
   time_slot: string | null;
+  area: string | null;
   is_weekend: boolean | null;
   venue_name: string | null;
   venue_slug: string | null;
@@ -78,6 +79,7 @@ export interface EventPage {
 export interface Facet {
   value: string;
   events: number;
+  area?: string; // venues only
 }
 
 export interface Categories {
@@ -85,6 +87,7 @@ export interface Categories {
   dates: Facet[];
   days_of_week: Facet[];
   time_slots: Facet[];
+  areas: Facet[];
   entry_types: Facet[];
   venues: Facet[];
   cities: Facet[];

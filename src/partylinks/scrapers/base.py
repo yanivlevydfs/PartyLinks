@@ -2,7 +2,19 @@
 
 Every source owns one subclass of :class:`BaseScraper`, its own settings model and
 its own HTTP client instance. Nothing here knows about any specific site; the
-only things shared are the retry/rate-limit transport and the output model.
+only things shared are the retry/rate-limit transport, the resilient listing /
+detail helpers and the output model.
+
+Resilience rules implemented here (so every source gets them):
+* transient HTTP errors are retried with backoff, honouring ``Retry-After``;
+  a concurrency slot is held only while a request is in flight, not while waiting;
+* a body that is not the JSON shape a caller expects raises ``ParseError``;
+* a failing listing page or detail item is recorded in ``failures`` and skipped -
+  it never discards what other pages/items already returned;
+* details stream out as they complete, so the service saves progressively and a
+  timeout or block keeps everything collected so far;
+* ``SourceBlockedError`` (site refuses automated access) stops the source at once
+  and cancels in-flight work.
 """
 
 from __future__ import annotations
@@ -10,20 +22,22 @@ from __future__ import annotations
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
+from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine, Iterable
 from typing import Any, ClassVar, Self, TypeVar
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field
-from tenacity import AsyncRetrying, retry_if_exception, stop_after_attempt, wait_exponential
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from tenacity import AsyncRetrying, RetryCallState, retry_if_exception, stop_after_attempt, wait_exponential
 
-from partylinks.config import HttpSettings
+from partylinks.config import HttpSettings, validate_cron
 from partylinks.models import ScrapedEvent
+from partylinks.parsing import ParseError, to_int
 
 T = TypeVar("T")
 R = TypeVar("R")
 
 RETRYABLE_STATUS = frozenset({408, 425, 429, 500, 502, 503, 504})
+MAX_RETRY_AFTER_SECONDS = 120
 
 
 class SourceSettings(BaseModel):
@@ -35,6 +49,11 @@ class SourceSettings(BaseModel):
     cron: str = Field(..., description="Crontab expression (5 fields) in the app timezone")
     # Per-source overrides of the global `http` block.
     http: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("cron")
+    @classmethod
+    def _valid_cron(cls, value: str) -> str:
+        return validate_cron(value)
 
 
 class SourceBlockedError(RuntimeError):
@@ -51,18 +70,41 @@ def _is_retryable(exc: BaseException) -> bool:
     return isinstance(exc, httpx.TransportError)
 
 
+def _retry_after(exc: BaseException | None) -> float | None:
+    if not isinstance(exc, httpx.HTTPStatusError):
+        return None
+    seconds = to_int(exc.response.headers.get("Retry-After"))
+    return min(float(seconds), MAX_RETRY_AFTER_SECONDS) if seconds is not None and seconds >= 0 else None
+
+
+async def gather_or_cancel[X](coros: Iterable[Coroutine[Any, Any, X]]) -> list[X]:
+    """``asyncio.gather`` that cancels the remaining tasks when one raises."""
+    tasks = [asyncio.ensure_future(c) for c in coros]
+    try:
+        return list(await asyncio.gather(*tasks))
+    except BaseException:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        raise
+
+
 class BaseScraper[S: SourceSettings](ABC):
     name: ClassVar[str]
     settings_model: ClassVar[type[SourceSettings]]
 
     def __init__(self, settings: S, http: HttpSettings, timezone: str) -> None:
         self.settings = settings
-        self.http = HttpSettings.model_validate(http.model_dump() | settings.http)
+        overrides = dict(settings.http)
+        # Headers merge with the global ones instead of replacing them.
+        overrides["headers"] = {**http.headers, **HttpSettings.model_validate({"headers": overrides.get("headers", {})}).headers}
+        self.http = HttpSettings.model_validate(http.model_dump() | overrides)
         self.timezone = timezone
         self.log = logging.getLogger(f"partylinks.scrapers.{self.name}")
         self.failures: list[str] = []
         self._client: httpx.AsyncClient | None = None
         self._semaphore = asyncio.Semaphore(self.http.concurrency)
+        self._backoff = wait_exponential(multiplier=self.http.backoff_seconds, max=60)
 
     # ----------------------------------------------------------------- lifecycle
     async def __aenter__(self) -> Self:
@@ -96,81 +138,150 @@ class BaseScraper[S: SourceSettings](ABC):
         """Yield every event currently listed by the source, following all pagination."""
 
     # ----------------------------------------------------------------- transport
+    def _wait(self, state: RetryCallState) -> float:
+        """Server-requested Retry-After when given, otherwise exponential backoff."""
+        retry_after = _retry_after(state.outcome.exception() if state.outcome else None)
+        return retry_after if retry_after is not None else self._backoff(state)
+
     async def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         if self._client is None:
             raise RuntimeError(f"{type(self).__name__} must be used as an async context manager")
-        async with self._semaphore:
-            async for attempt in AsyncRetrying(
-                stop=stop_after_attempt(self.http.max_retries + 1),
-                wait=wait_exponential(multiplier=self.http.backoff_seconds, max=60),
-                retry=retry_if_exception(_is_retryable),
-                reraise=True,
-            ):
-                with attempt:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(self.http.max_retries + 1),
+            wait=self._wait,
+            retry=retry_if_exception(_is_retryable),
+            reraise=True,
+        ):
+            with attempt:
+                async with self._semaphore:  # held per attempt, never while backing off
                     if self.http.request_delay_seconds:
                         await asyncio.sleep(self.http.request_delay_seconds)
                     response = await self._client.request(method, url, **kwargs)
-                    if self.is_blocked(response):
-                        raise SourceBlockedError(f"{self.name}: access denied by the site ({response.status_code})")
-                    response.raise_for_status()
+                if self.is_blocked(response):
+                    raise SourceBlockedError(f"{self.name}: access denied by the site ({response.status_code})")
+                response.raise_for_status()
         return response
 
-    async def get_json(self, url: str, **kwargs: Any) -> Any:
-        return (await self.request("GET", url, **kwargs)).json()
+    async def get_json(self, url: str, *, expect: type | None = None, **kwargs: Any) -> Any:
+        return _json(await self.request("GET", url, **kwargs), expect)
 
-    async def post_json(self, url: str, **kwargs: Any) -> Any:
-        return (await self.request("POST", url, **kwargs)).json()
+    async def post_json(self, url: str, *, expect: type | None = None, **kwargs: Any) -> Any:
+        return _json(await self.request("POST", url, **kwargs), expect)
 
     async def get_text(self, url: str, **kwargs: Any) -> str:
         return (await self.request("GET", url, **kwargs)).text
 
-    # ----------------------------------------------------------------- helpers
+    # ----------------------------------------------------------------- failure log
+    def record_failure(self, what: str, exc: BaseException) -> None:
+        message = f"{what}: {type(exc).__name__}: {exc}"[:500]
+        self.failures.append(message)
+        self.log.warning("skipped %s", message)
+
+    async def optional(self, what: str, call: Awaitable[T]) -> T | None:
+        """Secondary data (tickets, details): on failure record it and return None, so the
+        item is still saved with what its primary data provides."""
+        try:
+            return await call
+        except SourceBlockedError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - degrade instead of dropping the item
+            self.record_failure(what, exc)
+            return None
+
+    # ----------------------------------------------------------------- listings
     async def paginate(
         self,
         fetch_page: Callable[[int], Awaitable[tuple[list[T], int | None]]],
         page_size: int,
         max_pages: int,
     ) -> list[T]:
-        """Collect every page of a listing, fetching pages in parallel.
+        """Collect every page of a listing ("load more"), fetching pages in parallel.
 
-        ``fetch_page(index)`` returns ``(items, total)``; ``total`` may be None when the
-        API does not report it. With a known total all remaining pages are requested
-        at once; otherwise pages are fetched in windows of ``concurrency`` until a
-        short or empty page marks the end ("load more" exhausted).
+        ``fetch_page(index)`` returns ``(items, total)``; ``total`` may be None. With a
+        known total all remaining pages are requested at once; otherwise windows of
+        ``concurrency`` pages are fetched until a short page marks the end. A failing
+        page (after retries) is recorded and skipped; the first page must succeed.
         """
+
+        async def page(index: int) -> tuple[list[T], int | None, bool]:
+            try:
+                batch, total = await fetch_page(index)
+                return list(batch or []), to_int(total), True
+            except SourceBlockedError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - one bad page never discards the others
+                self.record_failure(f"listing page {index}", exc)
+                return [], None, False
+
         first, total = await fetch_page(0)
-        items = list(first)
-        if len(first) < page_size:
+        items = list(first or [])
+        total = to_int(total)
+        if len(items) < page_size:
+            if total is not None and total > len(items):
+                self.log.warning("first page has %d of %d items: page size capped below %d?", len(items), total, page_size)
             return items
+
         if total is not None:
-            last = min(max_pages, -(-total // page_size))
-            for batch, _ in await asyncio.gather(*(fetch_page(i) for i in range(1, last))):
+            needed = -(-total // page_size)
+            if needed > max_pages:
+                self.log.warning("listing truncated at max_pages=%d (%d items reported)", max_pages, total)
+            for batch, _, _ in await gather_or_cancel(page(i) for i in range(1, min(needed, max_pages))):
                 items.extend(batch)
             return items
+
         window = self.http.concurrency
         for start in range(1, max_pages, window):
-            pages = await asyncio.gather(*(fetch_page(i) for i in range(start, min(start + window, max_pages))))
-            for batch, _ in pages:
+            pages = await gather_or_cancel(page(i) for i in range(start, min(start + window, max_pages)))
+            for batch, _, _ in pages:
                 items.extend(batch)
-            if any(len(batch) < page_size for batch, _ in pages):
-                break
+            succeeded = [batch for batch, _, ok in pages if ok]
+            if not succeeded or any(len(batch) < page_size for batch in succeeded):
+                return items
+        self.log.warning("listing truncated at max_pages=%d", max_pages)
         return items
 
-    async def map_isolated(
-        self, items: Iterable[T], fn: Callable[[T], Awaitable[R]], label: Callable[[T], str]
-    ) -> list[R]:
-        """Run ``fn`` over ``items`` concurrently; one failing item never aborts the rest."""
+    # ----------------------------------------------------------------- details
+    async def stream_isolated(
+        self, items: Iterable[T], fn: Callable[[T], Awaitable[R | None]], label: Callable[[T], str]
+    ) -> AsyncIterator[R]:
+        """Run ``fn`` over ``items`` concurrently and yield results as they complete.
+
+        One failing item is recorded and skipped; results are yielded immediately so
+        they are saved progressively. ``SourceBlockedError`` cancels the rest.
+        """
 
         async def guarded(item: T) -> R | None:
             try:
                 return await fn(item)
             except SourceBlockedError:
-                raise  # the whole source is refused: stop, don't count it per item
+                raise
             except Exception as exc:  # noqa: BLE001 - isolate per-item failures
-                message = f"{label(item)}: {type(exc).__name__}: {exc}"
-                self.failures.append(message)
-                self.log.warning("skipped %s", message)
+                try:
+                    name = label(item)
+                except Exception:  # noqa: BLE001 - a bad item must not break its own error report
+                    name = repr(item)[:80]
+                self.record_failure(name, exc)
                 return None
 
-        results = await asyncio.gather(*(guarded(item) for item in items))
-        return [result for result in results if result is not None]
+        tasks = [asyncio.ensure_future(guarded(item)) for item in items]
+        try:
+            for next_done in asyncio.as_completed(tasks):
+                result = await next_done
+                if result is not None:
+                    yield result
+        finally:
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+
+def _json(response: httpx.Response, expect: type | None) -> Any:
+    """Decoded JSON body; a non-JSON body (HTML error page with 200) or wrong shape -> ParseError."""
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        content_type = response.headers.get("content-type", "?")
+        raise ParseError(f"{response.request.url}: expected JSON, got {content_type}") from exc
+    if expect is not None and not isinstance(payload, expect):
+        raise ParseError(f"{response.request.url}: expected {expect.__name__}, got {type(payload).__name__}")
+    return payload

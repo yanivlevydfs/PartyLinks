@@ -33,7 +33,15 @@ export function priceLabel(e: EventSummary, t: Strings) {
 
 export const venuePath = (name: string) => `/venue/${encodeURIComponent(name)}`;
 export const artistPath = (name: string) => `/artist/${encodeURIComponent(name)}`;
-export const eventPath = (id: string) => `/event/${encodeURIComponent(id)}`;
+// Pretty slug URLs (the API resolves either slug or id); same paths the server renders for crawlers.
+export const eventPath = (e: { id: string; slug: string | null }) => `/event/${encodeURIComponent(e.slug ?? e.id)}`;
+
+/** Browser tab title for the current page. */
+export function useTitle(title: string | undefined) {
+  useEffect(() => {
+    if (title) document.title = `${title} · PartyLinks`;
+  }, [title]);
+}
 
 // --------------------------------------------------------------------------- layout
 export function Layout() {
@@ -97,7 +105,7 @@ export function Card({ e }: { e: EventSummary }) {
   const { t, lang } = useT();
   const price = priceLabel(e, t);
   return (
-    <Link className="card" to={eventPath(e.id)}>
+    <Link className="card" to={eventPath(e)}>
       <div className="card-img">
         <Img src={e.cover_url ?? e.image_url} alt={e.title} className="cover" />
         <div className="date-badge">
@@ -113,7 +121,9 @@ export function Card({ e }: { e: EventSummary }) {
       <div className="card-body">
         <h3 dir="auto">{e.title}</h3>
         <p className="meta">{fmtDate(e.start_at, t, { weekday: "long", hour: "2-digit", minute: "2-digit" })}</p>
-        {e.venue_name && <p className="meta">📍 {e.venue_name}{e.city ? ` · ${e.city}` : ""}</p>}
+        {(e.venue_name || e.area) && (
+          <p className="meta">📍 {[e.venue_name, e.area && label(t.areas, e.area)].filter(Boolean).join(" · ")}</p>
+        )}
         {e.lineup.length > 0 && <p className="meta">🎧 {e.lineup.slice(0, 4).join(" · ")}</p>}
         <div className="tags">
           {e.genres.slice(0, 3).map((g) => <span key={g} className="tag">{genreLabel(lang, g)}</span>)}

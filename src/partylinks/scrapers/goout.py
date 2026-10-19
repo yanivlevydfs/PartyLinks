@@ -26,6 +26,7 @@ from partylinks.parsing import (
     next_data,
     parse_iso,
     to_decimal,
+    to_float,
     to_int,
 )
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -50,7 +51,7 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         refs = await self._list_event_urls()
         self.log.info("listed %d events", len(refs))
-        for event in await self.map_isolated(refs, self._fetch_event, label=lambda ref: ref):
+        async for event in self.stream_isolated(refs, self._fetch_event, label=lambda ref: ref):
             yield event
 
     async def _list_event_urls(self) -> list[str]:
@@ -67,8 +68,9 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
                     "location": s.location,
                     "recivedDate": received,
                 },
+                expect=dict,
             )
-            return payload.get("events") or [], None
+            return [e for e in payload.get("events") or [] if isinstance(e, dict)], None
 
         items = await self.paginate(page, s.page_size, s.max_pages)
         return list(dict.fromkeys(str(item["Url"]) for item in items if item.get("Url")))
@@ -78,7 +80,8 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
         page_url = s.base_url + s.event_page_path.format(url=url_id)
         page_html, tickets = await asyncio.gather(
             self.get_text(page_url),
-            self.get_json(s.base_url + s.tickets_endpoint, params={"eventUrl": url_id}),
+            # Tiers endpoint down -> still save the event with schema.org offers.
+            self.optional(f"{url_id} tickets", self.get_json(s.base_url + s.tickets_endpoint, params={"eventUrl": url_id})),
         )
         return parse_event(next_data(page_html), page_url, self.timezone, tickets, s.image_url_templates)
 
@@ -102,7 +105,9 @@ def parse_event(
     images = [t.format(event_id=event["_id"], cover_timestamp=cover) for t in image_url_templates or [] if cover]
     offers = [o for s in schemas for o in _as_list(s.get("offers")) if isinstance(o, dict)]
 
-    raw_tickets = (tickets_payload or {}).get("tickets") if (tickets_payload or {}).get("status") else None
+    tickets_payload = tickets_payload if isinstance(tickets_payload, dict) else {}
+    raw_tickets = tickets_payload.get("tickets") if tickets_payload.get("status") else None
+    raw_tickets = [t for t in raw_tickets or [] if isinstance(t, dict)]
     tickets = (
         [_parse_ticket(t, currency, tz) for t in raw_tickets]
         if raw_tickets
@@ -121,8 +126,8 @@ def parse_event(
         venue_name=_venue_from_address(event.get("Adress")),
         address=clean_str(event.get("EnglishAddress")) or clean_str(event.get("Adress")),
         city=clean_str(location.get("city")),
-        latitude=location.get("lat"),
-        longitude=location.get("lng"),
+        latitude=to_float(location.get("lat")),
+        longitude=to_float(location.get("lng")),
         source_genres=[g for g in event.get("MusicType") or [] if g],
         event_types=[t for t in [event.get("EventType")] if t],
         artists=[
@@ -162,7 +167,9 @@ _DISPLAY_STATUS = {
 def _parse_ticket(ticket: dict[str, Any], currency: str, tz: str) -> TicketTier:
     price = to_decimal(ticket.get("Price"))
     commission = to_decimal(ticket.get("Commision"))
-    rounds = sorted(ticket.get("Rounds") or [], key=lambda r: r.get("RoundIndex", 0))
+    rounds = sorted(
+        (r for r in ticket.get("Rounds") or [] if isinstance(r, dict)), key=lambda r: to_int(r.get("RoundIndex")) or 0
+    )
     status = _DISPLAY_STATUS.get(str(ticket.get("display")).upper())
     if status is None:
         status = TierStatus.ON_SALE if ticket.get("Active") else TierStatus.CLOSED
@@ -172,7 +179,7 @@ def _parse_ticket(ticket: dict[str, Any], currency: str, tz: str) -> TicketTier:
         description=clean_str(ticket.get("Comment")),
         price=price,
         service_fee=(price * commission / 100).quantize(CENTS) if price and commission else None,
-        price_rounds=[float(r["Price"]) for r in rounds if r.get("Price") is not None],
+        price_rounds=[p for r in rounds if (p := to_float(r.get("Price"))) is not None],
         currency=currency,
         is_free=price == 0,
         status=status,

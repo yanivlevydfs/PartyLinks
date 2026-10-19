@@ -25,6 +25,7 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 _DATE = re.compile(r"(\d{1,2})\.(\d{1,2})\.(\d{4})")
 _TIME = re.compile(r"(\d{1,2}):(\d{2})")
 _EVENT_ID = re.compile(r"/event/(\d+)/(\d+)/?")
+_PRICE = re.compile(r"\d+(?:\.\d+)?")
 
 
 class GraySelectors(BaseModel):
@@ -81,12 +82,13 @@ class GrayclubScraper(BaseScraper[GrayclubSettings]):
                     "discount_category": "",
                 },
                 headers={"X-Requested-With": "XMLHttpRequest"},
+                expect=dict,
             )
-            return parse_cards(payload.get("htmldata") or "", s.selectors), None
+            return parse_cards(str(payload.get("htmldata") or ""), s.selectors), None
 
         cards = {c["url"]: c for c in await self.paginate(page, s.page_size, s.max_pages)}
         self.log.info("listed %d events", len(cards))
-        for event in await self.map_isolated(cards.values(), self._fetch_event, label=lambda c: c["url"]):
+        async for event in self.stream_isolated(cards.values(), self._fetch_event, label=lambda c: c["url"]):
             yield event
 
     async def _branch_term_id(self) -> str:
@@ -132,7 +134,9 @@ def parse_event(page_html: str, card: dict[str, str], s: GrayclubSettings, timez
         )
 
     price_node = tree.css_first(sel.price)
-    price = to_decimal(re.sub(r"[^\d.]", "", price_node.text())) if price_node else None
+    # First number only: "80-120 ₪" is 80, not 80120.
+    price_match = _PRICE.search(price_node.text()) if price_node else None
+    price = to_decimal(price_match.group(0)) if price_match else None
     purchase = tree.css_first(sel.purchase_link)
     og_image = tree.css_first('meta[property="og:image"]')
     images = [

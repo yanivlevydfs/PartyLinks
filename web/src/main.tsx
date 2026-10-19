@@ -6,11 +6,17 @@ import EventPage from "./pages/EventPage";
 import Home from "./pages/Home";
 import { ArtistPage, ArtistsIndex, VenuePage, VenuesIndex } from "./pages/Browse";
 import NotFound from "./pages/NotFound";
+import { useStore } from "./store";
 import { Layout } from "./ui";
 import "./styles.css";
 
 // Leaflet is only loaded when the map is opened.
 const MapPage = lazy(() => import("./pages/MapPage"));
+const AdminPage = lazy(() => import("./pages/Admin"));
+
+// ?lang=en / ?lang=he (used by hreflang links and the sitemap) picks the language.
+const urlLang = new URLSearchParams(location.search).get("lang");
+if (urlLang === "he" || urlLang === "en") useStore.getState().setLang(urlLang);
 
 const router = createBrowserRouter([
   {
@@ -23,6 +29,7 @@ const router = createBrowserRouter([
       { path: "/venue/:name", element: <VenuePage /> },
       { path: "/artists", element: <ArtistsIndex /> },
       { path: "/artist/:name", element: <ArtistPage /> },
+      { path: "/admin", element: <Suspense><AdminPage /></Suspense> },
       { path: "*", element: <NotFound /> },
     ],
   },

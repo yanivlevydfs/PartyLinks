@@ -45,7 +45,7 @@ class SelectorScraper(BaseScraper[SelectorSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         ids = await self._list_event_ids()
         self.log.info("listed %d events", len(ids))
-        for event in await self.map_isolated(ids, self._fetch_event, label=str):
+        async for event in self.stream_isolated(ids, self._fetch_event, label=str):
             yield event
 
     async def _list_event_ids(self) -> list[int]:
@@ -56,8 +56,9 @@ class SelectorScraper(BaseScraper[SelectorSettings]):
             payload = await self.get_json(
                 s.api_url + s.list_path,
                 params={"skip": index * s.page_size, "take": s.page_size, "dateType": "start"},
+                expect=dict,
             )
-            return payload.get("list") or [], payload.get("totalCount")
+            return [i for i in payload.get("list") or [] if isinstance(i, dict)], payload.get("totalCount")
 
         items = await self.paginate(page, s.page_size, s.max_pages)
         return list(
@@ -70,7 +71,7 @@ class SelectorScraper(BaseScraper[SelectorSettings]):
 
     async def _fetch_event(self, event_id: int) -> ScrapedEvent:
         s = self.settings
-        event = await self.get_json(s.api_url + s.event_path, params={"id": event_id})
+        event = await self.get_json(s.api_url + s.event_path, params={"id": event_id}, expect=dict)
         return parse_event(event, s.site_url + s.event_page_path)
 
 
@@ -83,7 +84,7 @@ def parse_event(event: dict[str, Any], page_url_template: str) -> ScrapedEvent:
     tickets = [
         _parse_ticket(t, fee_rate)
         for t in event.get("tickets") or []
-        if not t.get("isDeleted") and not t.get("isOnlyByLinkAvailable")
+        if isinstance(t, dict) and not t.get("isDeleted") and not t.get("isOnlyByLinkAvailable")
     ]
     priced = [t.price for t in tickets if t.price is not None and t.is_active]
     pictures = [m["link"] for m in event.get("mediaFiles") or [] if m.get("type") == "picture" and m.get("link")]

@@ -16,7 +16,7 @@ from typing import Any
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent, TicketTier
-from partylinks.parsing import ParseError, clean_str, html_to_text, next_data, parse_iso, to_decimal, to_int
+from partylinks.parsing import ParseError, clean_str, html_to_text, next_data, parse_iso, to_decimal, to_float, to_int
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 
@@ -41,7 +41,7 @@ class ZygoScraper(BaseScraper[ZygoSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         ids = await self._list_event_ids()
         self.log.info("listed %d events", len(ids))
-        for event in await self.map_isolated(ids, self._fetch_event, label=lambda i: i):
+        async for event in self.stream_isolated(ids, self._fetch_event, label=lambda i: i):
             yield event
 
     async def _list_event_ids(self) -> list[str]:
@@ -49,7 +49,8 @@ class ZygoScraper(BaseScraper[ZygoSettings]):
         url = s.api_url + s.list_path.format(city_slug=s.city_slug)
 
         async def page(index: int) -> tuple[list[dict[str, Any]], None]:
-            return await self.get_json(url, params={"limit": s.page_size, "skip": index * s.page_size}) or [], None
+            batch = await self.get_json(url, params={"limit": s.page_size, "skip": index * s.page_size}, expect=list)
+            return [item for item in batch if isinstance(item, dict)], None
 
         seen: dict[str, None] = {}
         for pass_no in range(1, s.max_passes + 1):
@@ -77,7 +78,7 @@ def parse_event(data: dict[str, Any], page_url: str) -> ScrapedEvent:
     currency = event.get("currency") or "ILS"
     price_range = event.get("priceRange") or {}
     fee_rate = None if event.get("producerAbsorbsFee") else to_decimal(event.get("feeRate"))
-    tickets = [_parse_ticket(t, currency, fee_rate) for t in event.get("tickets") or []]
+    tickets = [_parse_ticket(t, currency, fee_rate) for t in event.get("tickets") or [] if isinstance(t, dict)]
 
     return ScrapedEvent(
         source=ZygoScraper.name,
@@ -89,8 +90,8 @@ def parse_event(data: dict[str, Any], page_url: str) -> ScrapedEvent:
         end_at=parse_iso(event.get("endDate")),
         address=address,
         city=_city_from_address(address),
-        latitude=location.get("lat"),
-        longitude=location.get("lng"),
+        latitude=to_float(location.get("lat")),
+        longitude=to_float(location.get("lng")),
         source_genres=[_label(t) for t in [*(event.get("tags") or []), *(event.get("eventTags") or [])] if _label(t)],
         artists=[_label(a) for a in event.get("artists") or [] if _label(a)],
         min_age=to_int(event.get("minAge")),

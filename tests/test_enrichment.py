@@ -103,3 +103,18 @@ def test_zero_priced_pay_at_door_tier_is_paid_with_price_from_name() -> None:
 def test_free_at_the_door_stays_free() -> None:
     event = ENRICHER.enrich(make(tickets=[TicketTier(name="חינם בכניסה עד 00:00", price=Decimal(0))]))
     assert event is not None and event.tickets[0].kind.value == "free" and not event.tickets[0].pay_at_door
+
+
+def test_area_by_keyword_then_coordinates() -> None:
+    areas = Enricher(SETTINGS.enrichment, SETTINGS.timezone).areas
+    # Keyword in the address wins.
+    assert areas.match("בארבי", "קיבוץ גלויות 52, תל אביב-יפו", None, None, True) == "south"
+    assert areas.match("Gray Club", "אבן גבירול 30", None, None, True) == "center"
+    assert areas.match("Cappella", "Cappella, הארבעה, Tel Aviv-Yafo", 32.0698, 34.786, True) == "business"
+    # "Tel Aviv-Yafo" in an address must not mean Jaffa.
+    assert areas.match("Humble Club", "Rothschild Blvd 19, Tel Aviv-Yafo", 32.0633, 34.7742, True) == "rothschild"
+    # No keyword: nearest center within its radius.
+    assert areas.match("Moonchild", "Moonchild, Tel Aviv-Yafo", 32.1002, 34.7745, True) == "north"
+    assert areas.match("Somewhere", None, 31.0, 35.0, True) is None
+    # Outside the target city.
+    assert areas.match("Lobby Night Club", "מקלף 1, חיפה", 32.789, 34.98, False) == "outside"

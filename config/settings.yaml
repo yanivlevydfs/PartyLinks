@@ -10,6 +10,12 @@ database:
   url: sqlite:///data/partylinks.db
   echo: false
 
+# The public website (React app in web/). base_url is used in canonical links, the sitemap,
+# JSON-LD, llms.txt and share previews: set it to the real domain when deployed.
+site:
+  base_url: http://localhost:8000
+  name: PartyLinks
+
 api:
   host: 0.0.0.0
   port: 8000
@@ -104,11 +110,67 @@ enrichment:
     - {name: evening, start_hour: 18, end_hour: 22}
     - {name: night, start_hour: 22, end_hour: 6}
   weekend_days: [thursday, friday, saturday]
+  # Areas of Tel Aviv for the "area" filter. First keyword hit (address / venue name) wins;
+  # otherwise the nearest center within radius_m (meters). Events outside the target city
+  # get area "outside". Labels for the site live in web/src/i18n.ts (areas).
+  areas:
+    - key: jaffa
+      keywords: ["יפו העתיקה", "נמל יפו", "שוק הפשפשים", "עג'מי", "יפת", "שדרות ירושלים",
+                 "old jaffa", "jaffa port", "flea market", "ajami", "yefet", "jerusalem blvd"]
+      center: [32.0515, 34.7560]
+      radius_m: 1100
+    - key: south
+      keywords: ["פלורנטין", "קיבוץ גלויות", "סלמה", "אברבנאל", "האומן", "הזרם", "בן צבי", "המקצוע", "הלוחמים",
+                 "שוק הסיטונאי", "florentin", "kibbutz galuyot", "salame", "salameh", "abarbanel", "haoman",
+                 "hazerem", "ben-zvi", "ben zvi", "halohamim"]
+      center: [32.0545, 34.7735]
+      radius_m: 1300
+    - key: rothschild
+      keywords: ["רוטשילד", "לילנבלום", "אלנבי", "נחלת בנימין", "מונטיפיורי", "הרצל", "שינקין", "נווה צדק",
+                 "rothschild", "lilienblum", "allenby", "nahalat binyamin", "montefiore", "herzl", "sheinkin",
+                 "neve tzedek"]
+      center: [32.0640, 34.7735]
+      radius_m: 900
+    - key: business
+      keywords: ["הארבעה", "שרונה", "מנחם בגין", "עזריאלי", "יגאל אלון", "קפלן", "החשמונאים", "תובל",
+                 "ha'arba'a", "haarbaa", "sarona", "menakhem begin", "menachem begin", "azrieli", "yigal alon",
+                 "kaplan", "hashmonaim", "tuval"]
+      center: [32.0705, 34.7870]
+      radius_m: 900
+    - key: beach
+      keywords: ["טיילת", "הרברט סמואל", "הירקון", "גורדון", "פרישמן", "promenade", "herbert samuel",
+                 "hayarkon", "gordon beach"]
+      center: [32.0820, 34.7685]
+      radius_m: 700
+    - key: center
+      keywords: ["דיזנגוף", "קינג ג'ורג", "אבן גבירול", "בן יהודה", "בוגרשוב", "כיכר רבין", "אלנבי צפון",
+                 "dizengoff", "king george", "ibn gabirol", "ben yehuda", "bograshov", "rabin square"]
+      center: [32.0790, 34.7770]
+      radius_m: 1300
+    - key: north
+      keywords: ["נמל תל אביב", "נמל ת\"א", "התערוכה", "האנגר", "רוקח", "אקספו", "רמת אביב", "פארק הירקון",
+                 "tel aviv port", "hata'arucha", "hataarucha", "hangar", "rokach", "expo tel aviv", "ramat aviv",
+                 "yarkon park"]
+      center: [32.1010, 34.7820]
+      radius_m: 2000
   # A 0-priced tier named with one of these is a registration whose price is paid
   # at the venue: classified as paid, and an amount in its name becomes its price.
   pay_at_door_keywords: ["מזומן", "בכניסה", "בקופה", "תשלום באתר", "תשלום במקום",
                          "pay at the door", "pay at door", "cash", "at the door", "on site"]
   free_entry_keywords: ["חינם", "free", "כניסה חופשית", "ללא עלות", "רשימה", "guest list", "guestlist"]
+
+# The same party is listed several times (one page per promoter or entry time,
+# several ticket platforms). All listings are kept; matching ones share a group and
+# one is primary. The API returns primaries and shows the rest as alternatives.
+dedup:
+  enabled: true
+  title_similarity: 0.85
+  max_start_gap_minutes: 60
+  max_distance_meters: 300
+  title_stopwords: ["the", "x", "and", "with", "feat", "ft", "tlv", "tel", "aviv", "night", "party",
+                    "מסיבת", "מסיבה", "ב", "עם", "את"]
+  # Direct sellers before aggregators; first listed wins as the primary listing.
+  source_priority: [goout, eventer, zygo, selector, barby, grayclub, chillz, tickchak]
 
 # Deletes events (and their downloaded artwork) that ended before
 # local midnight `keep_days_back` days ago. 1 = keep yesterday onwards.
@@ -116,6 +178,10 @@ retention:
   enabled: true
   cron: "5 4 * * *"
   keep_days_back: 1
+  # Scrape run history (scrape_runs) older than this many days is deleted as well.
+  keep_runs_days: 30
+  # SQLite: after a purge, return the freed pages to the OS so the DB file shrinks.
+  reclaim_space: true
 
 # Event artwork. Source URLs are always stored; image files are fetched only if
 # `download` is on and kept either inside the database (BLOB in event_images) or on disk.

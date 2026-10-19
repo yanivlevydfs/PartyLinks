@@ -2,13 +2,14 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { Ticket } from "../types";
-import { artistPath, fmtDate, Img, label, money, priceLabel, useT, venuePath } from "../ui";
+import { artistPath, fmtDate, Img, label, money, priceLabel, useT, useTitle, venuePath } from "../ui";
 
 export default function EventPage() {
   const { id = "" } = useParams();
   const { t, lang } = useT();
   const navigate = useNavigate();
   const { data: e, isError, isPending } = useEvent(id);
+  useTitle(e?.title);
   const back = () => (history.state?.idx > 0 ? navigate(-1) : navigate("/"));
 
   if (isError) return <p className="msg wrap">{t.error}</p>;

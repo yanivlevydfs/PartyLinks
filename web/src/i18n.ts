@@ -6,6 +6,7 @@ export const STRINGS = {
     dir: "rtl",
     nav: { parties: "מסיבות", map: "מפה", venues: "מקומות", artists: "אמנים" },
     venuesTitle: "מקומות",
+    searchList: "חיפוש לפי שם…",
     artistsTitle: "אמנים ו־DJs",
     upcomingAt: "מסיבות קרובות",
     noLocation: (n: number) => `${n} מסיבות ללא מיקום על המפה`,
@@ -54,6 +55,12 @@ export const STRINGS = {
     status: { on_sale: "במכירה", sold_out: "אזל", coming_soon: "בקרוב", closed: "סגור" },
     entry: { free: "חינם", paid: "בתשלום", free_and_paid: "חינם + בתשלום", unknown: "לא ידוע" },
     slots: { morning: "בוקר", afternoon: "צהריים", evening: "ערב", night: "לילה" },
+    area: "אזור",
+    allAreas: "כל העיר",
+    areas: <Record<string, string>>{
+      south: "פלורנטין והדרום", rothschild: "רוטשילד ונווה צדק", center: "מרכז העיר", business: "שרונה והמגדלים",
+      beach: "חוף וטיילת", north: "נמל והצפון", jaffa: "יפו", outside: "מחוץ לתל אביב",
+    },
     days: {
       sunday: "ראשון", monday: "שני", tuesday: "שלישי", wednesday: "רביעי",
       thursday: "חמישי", friday: "שישי", saturday: "שבת",
@@ -72,6 +79,7 @@ export const STRINGS = {
     dir: "ltr",
     nav: { parties: "Parties", map: "Map", venues: "Venues", artists: "Artists" },
     venuesTitle: "Venues",
+    searchList: "Search by name…",
     artistsTitle: "Artists & DJs",
     upcomingAt: "Upcoming parties",
     noLocation: (n: number) => `${n} parties have no map location`,
@@ -120,6 +128,12 @@ export const STRINGS = {
     status: { on_sale: "On sale", sold_out: "Sold out", coming_soon: "Coming soon", closed: "Closed" },
     entry: { free: "Free", paid: "Paid", free_and_paid: "Free + paid", unknown: "Unknown" },
     slots: { morning: "Morning", afternoon: "Afternoon", evening: "Evening", night: "Night" },
+    area: "Area",
+    allAreas: "Whole city",
+    areas: <Record<string, string>>{
+      south: "Florentin & South", rothschild: "Rothschild & Neve Tzedek", center: "City Center", business: "Sarona & Towers",
+      beach: "Beach & Promenade", north: "Port & North", jaffa: "Jaffa", outside: "Outside Tel Aviv",
+    },
     days: {
       sunday: "Sunday", monday: "Monday", tuesday: "Tuesday", wednesday: "Wednesday",
       thursday: "Thursday", friday: "Friday", saturday: "Saturday",

@@ -127,6 +127,7 @@ class ScrapedEvent(BaseModel):
     day_of_week: str | None = None
     time_slot: str | None = None
     is_weekend: bool | None = None
+    area: str | None = None
 
     @field_validator("start_at", "end_at")
     @classmethod

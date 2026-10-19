@@ -6,16 +6,16 @@ import html
 import json
 import re
 import unicodedata
-from datetime import datetime, timezone
+from datetime import datetime, timezone, tzinfo
 from decimal import Decimal, InvalidOperation
 from typing import Any
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from selectolax.lexbor import LexborHTMLParser
 
 _WS = re.compile(r"[ \t\r\f\v]+")
 # Bidi marks / zero-width characters that sources leave around Hebrew text.
-_INVISIBLE = re.compile("[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]")
+_INVISIBLE = re.compile("[\x00\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]")
 _BLANK_LINES = re.compile(r"\n{3,}")
 
 
@@ -89,19 +89,52 @@ def to_int(value: Any) -> int | None:
         return None
 
 
-def parse_iso(value: str | None, default_tz: str | None = None) -> datetime | None:
-    """Parse an ISO-8601 string; naive values are interpreted in ``default_tz`` (else UTC)."""
-    if not value:
+def zone(name: str | None) -> tzinfo:
+    """ZoneInfo for ``name``; unknown or empty names fall back to UTC instead of raising."""
+    if not name:
+        return timezone.utc
+    try:
+        return ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError):
+        return timezone.utc
+
+
+def parse_iso(value: Any, default_tz: str | None = None) -> datetime | None:
+    """Parse an ISO-8601 string; naive values are interpreted in ``default_tz`` (else UTC).
+
+    Anything unparseable (other formats, numbers, garbage) yields None rather than
+    raising, so one odd field never drops a whole event.
+    """
+    if not isinstance(value, str) or not value.strip():
         return None
-    dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    try:
+        dt = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=ZoneInfo(default_tz) if default_tz else timezone.utc)
+        dt = dt.replace(tzinfo=zone(default_tz))
     return dt
 
 
 def from_unix(value: Any) -> datetime | None:
-    seconds = to_int(value)
-    return datetime.fromtimestamp(seconds, tz=timezone.utc) if seconds else None
+    """Unix timestamp in seconds or milliseconds; invalid values yield None."""
+    number = to_float(value)
+    if not number:
+        return None
+    if number > 1e11:  # milliseconds
+        number /= 1000
+    try:
+        return datetime.fromtimestamp(number, tz=timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        return None
+
+
+def to_float(value: Any) -> float | None:
+    try:
+        number = float(value) if value not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+    return number if number is not None and number == number else None  # drop NaN
 
 
 _SLUG_DROP = re.compile(r"[^\w\s-]", re.UNICODE)

@@ -1,18 +1,19 @@
 """Post-scrape normalization and categorization.
 
 Adds canonical genres, the DJ/performer lineup, local date / weekday / time slot,
-free-vs-paid entry and target-city matching. It runs on finished
+free-vs-paid entry, target-city matching and the area of the city. It runs on finished
 ``ScrapedEvent`` objects only, so it never affects how any source is fetched.
 """
 
 from __future__ import annotations
 
 import hashlib
+import math
 import re
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from partylinks.config import EnrichmentSettings
+from partylinks.config import AreaSettings, EnrichmentSettings
 from partylinks.models import EntryType, ScrapedEvent, TicketKind
 from partylinks.parsing import slugify
 
@@ -34,6 +35,50 @@ def _keyword_pattern(keywords: list[str]) -> re.Pattern[str] | None:
         if k.strip()
     ]
     return re.compile("|".join(parts)) if parts else None
+
+
+OUTSIDE_AREA = "outside"
+
+
+def _meters(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Equirectangular distance: plenty accurate inside one city."""
+    lat = math.radians((a[0] + b[0]) / 2)
+    dx = math.radians(b[1] - a[1]) * math.cos(lat)
+    dy = math.radians(b[0] - a[0])
+    return 6_371_000 * math.hypot(dx, dy)
+
+
+class AreaMatcher:
+    """Area of the target city for an event (also used to backfill stored rows)."""
+
+    def __init__(self, areas: list[AreaSettings]) -> None:
+        self._areas = [(area, _keyword_pattern(area.keywords)) for area in areas]
+
+    def match(
+        self,
+        venue_name: str | None,
+        address: str | None,
+        latitude: float | None,
+        longitude: float | None,
+        in_target_city: bool | None,
+    ) -> str | None:
+        if not self._areas:
+            return None
+        if in_target_city is False:
+            return OUTSIDE_AREA
+        text = " | ".join(filter(None, [venue_name, address])).lower()
+        for area, pattern in self._areas:
+            if text and pattern and pattern.search(text):
+                return area.key
+        if latitude is None or longitude is None:
+            return None
+        here = (latitude, longitude)
+        near = [(_meters(here, a.center), a.key) for a, _ in self._areas if a.center]
+        best = min(((d, key) for d, key in near if d <= self._radius(key)), default=None)
+        return best[1] if best else None
+
+    def _radius(self, key: str) -> float:
+        return next(a.radius_m for a, _ in self._areas if a.key == key)
 
 
 # An amount in a tier name ("מזומן בכניסה 180₪", "כרטיס מזומן 120"); never a time like 23:30.
@@ -62,6 +107,7 @@ class Enricher:
         self._lineup_header = _keyword_pattern(settings.lineup.header_keywords)
         self._lineup_ignore = {w.casefold() for w in settings.lineup.ignore}
         self._weekend = {d.lower() for d in settings.weekend_days}
+        self.areas = AreaMatcher(settings.areas)
 
     def enrich(self, event: ScrapedEvent) -> ScrapedEvent | None:
         """Return the enriched event, or ``None`` if config says to drop it."""
@@ -73,6 +119,7 @@ class Enricher:
         event.has_free_entry = event.entry_type in (EntryType.FREE, EntryType.FREE_AND_PAID)
         self._categorize_time(event)
         event.in_target_city = self._in_target_city(event)
+        event.area = self.areas.match(event.venue_name, event.address, event.latitude, event.longitude, event.in_target_city)
         if event.in_target_city is False and self.settings.target_city.drop_other_cities:
             return None
         return event

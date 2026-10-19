@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import logging
+
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy import (
     JSON,
     Boolean,
+    ColumnElement,
     LargeBinary,
     Date,
     DateTime,
@@ -20,9 +23,13 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
+    Table,
     Text,
     TypeDecorator,
+    bindparam,
     create_engine,
+    inspect,
+    text,
     delete,
     insert,
     select,
@@ -30,10 +37,14 @@ from sqlalchemy import (
 )
 from sqlalchemy import event as sa_event
 from sqlalchemy.engine import Engine, make_url
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 
 from partylinks.config import project_path
 from partylinks.models import ScrapedEvent
+
+
+log = logging.getLogger(__name__)
 
 
 def utcnow() -> datetime:
@@ -84,6 +95,7 @@ class EventRow(Base):
     local_date: Mapped[date | None] = mapped_column(Date, index=True)
     day_of_week: Mapped[str | None] = mapped_column(String(16), index=True)
     time_slot: Mapped[str | None] = mapped_column(String(32), index=True)
+    area: Mapped[str | None] = mapped_column(String(32), index=True)
     is_weekend: Mapped[bool | None] = mapped_column(Boolean, index=True)
     min_age: Mapped[int | None] = mapped_column(Integer)
     organizer: Mapped[str | None] = mapped_column(Text)
@@ -97,6 +109,17 @@ class EventRow(Base):
     extra: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     first_seen_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
+    # Listings of the same real event share a group; exactly one is primary (see dedup.py).
+    group_id: Mapped[str | None] = mapped_column(String(128), index=True)
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    # Best offer across every listing of the group, so a free / cheaper listing on another
+    # source is never hidden behind the primary one. Filters and price sort use these.
+    group_size: Mapped[int] = mapped_column(Integer, default=1)
+    group_min_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), index=True)
+    group_max_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    group_has_free_entry: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    group_entry_type: Mapped[str] = mapped_column(String(16), default="unknown", index=True)
+    best_listing_id: Mapped[str | None] = mapped_column(String(128))
 
     tickets: Mapped[list[TicketRow]] = relationship(
         back_populates="event", cascade="all, delete-orphan", order_by="TicketRow.position"
@@ -156,6 +179,7 @@ class ImageRow(Base):
     size_bytes: Mapped[int | None] = mapped_column(Integer)
     downloaded_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     error: Mapped[str | None] = mapped_column(Text)
+    error_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
 
     event: Mapped[EventRow] = relationship(back_populates="images")
 
@@ -176,12 +200,36 @@ class ScrapeRunRow(Base):
     failures: Mapped[list[str]] = mapped_column(JSON, default=list)
 
 
+def _literal_default(column: Any) -> str | None:
+    """SQL literal of a column's scalar Python default (bool/int/str), else None."""
+    value = getattr(column.default, "arg", None)
+    if isinstance(value, bool):
+        return "1" if value else "0"
+    if isinstance(value, int | float):
+        return str(value)
+    if isinstance(value, str):
+        return "'" + value.replace("'", "''") + "'"
+    return None
+
+
 def _sqlite_pragmas(dbapi_connection: Any, _record: Any) -> None:
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA journal_mode=WAL")  # concurrent readers while a source writes
     cursor.execute("PRAGMA synchronous=NORMAL")
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
+
+
+SQLITE_INCREMENTAL_VACUUM = 2  # PRAGMA auto_vacuum value
+
+
+def upcoming_filter() -> ColumnElement[bool]:
+    """Events from the retention cutoff onwards (by START date): today - keep_days_back."""
+    from partylinks.config import get_settings  # local: config is loaded lazily
+    from partylinks.retention import retention_cutoff  # local: retention imports db
+
+    settings = get_settings()
+    return EventRow.start_at >= retention_cutoff(settings.retention, settings.timezone)
 
 
 class Database:
@@ -205,7 +253,103 @@ class Database:
         self._sessions = sessionmaker(self.engine, expire_on_commit=False)
 
     def create_schema(self) -> None:
+        """Create missing tables and add columns introduced since the DB was created.
+
+        ponytail: additive-only auto-migration (new nullable columns); switch to Alembic
+        once a change needs renames, type changes or data backfills.
+        """
         Base.metadata.create_all(self.engine)
+        existing = inspect(self.engine)
+        with self.engine.begin() as conn:
+            for table in Base.metadata.sorted_tables:
+                present = {c["name"] for c in existing.get_columns(table.name)}
+                for column in table.columns:
+                    if column.name in present:
+                        continue
+                    ddl = column.type.compile(dialect=self.engine.dialect)
+                    default = _literal_default(column)
+                    suffix = f" DEFAULT {default}" if default is not None else ""
+                    conn.execute(text(f'ALTER TABLE {table.name} ADD COLUMN "{column.name}" {ddl}{suffix}'))
+                    if default is not None:  # existing rows get the model default, not NULL
+                        conn.execute(text(f'UPDATE {table.name} SET "{column.name}" = {default}'))
+                    log.info("schema: added column %s.%s", table.name, column.name)
+                for index in table.indexes:  # indexes of columns added above
+                    index.create(conn, checkfirst=True)
+        if self.is_sqlite:
+            self._enable_incremental_vacuum()
+
+    # ------------------------------------------------------------------ SQLite disk space
+    @property
+    def is_sqlite(self) -> bool:
+        return self.engine.dialect.name == "sqlite"
+
+    def _autocommit(self) -> Any:
+        return self.engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+
+    def _enable_incremental_vacuum(self) -> None:
+        """One-time switch to ``auto_vacuum=INCREMENTAL`` so purges can shrink the file cheaply."""
+        with self._autocommit() as conn:
+            if conn.exec_driver_sql("PRAGMA auto_vacuum").scalar() == SQLITE_INCREMENTAL_VACUUM:
+                return
+            log.info("sqlite: enabling incremental auto-vacuum (one-time full VACUUM)")
+            try:
+                conn.exec_driver_sql("PRAGMA auto_vacuum=INCREMENTAL")
+                conn.exec_driver_sql("VACUUM")  # the mode only takes effect after a rebuild
+            except OperationalError as exc:  # e.g. another process holds the DB; retried next start
+                log.warning("sqlite: could not enable incremental auto-vacuum: %s", exc)
+
+    def storage_stats(self) -> dict[str, int | None]:
+        """DB file size and reusable (free) space, in bytes. SQLite only; None elsewhere."""
+        if not self.is_sqlite:
+            return {"file_bytes": None, "wal_bytes": None, "free_bytes": None}
+        with self._autocommit() as conn:
+            page_size = conn.exec_driver_sql("PRAGMA page_size").scalar() or 0
+            pages = conn.exec_driver_sql("PRAGMA page_count").scalar() or 0
+            free = conn.exec_driver_sql("PRAGMA freelist_count").scalar() or 0
+        wal = Path(f"{self.engine.url.database}-wal")
+        return {
+            "file_bytes": page_size * pages,
+            "wal_bytes": wal.stat().st_size if wal.is_file() else 0,
+            "free_bytes": page_size * free,
+        }
+
+    def reclaim_space(self, full: bool = False) -> int:
+        """Return the pages of deleted rows to the OS. Returns the bytes freed (SQLite only).
+
+        Incremental vacuum is quick and runs alongside scrapers; ``full`` rewrites the whole
+        file (also defragments) and needs the DB to be idle for a moment.
+        PostgreSQL reuses deleted space through its own autovacuum, so this is a no-op there.
+        """
+        if not self.is_sqlite:
+            return 0
+        before = self.storage_stats()
+        with self._autocommit() as conn:
+            incremental = conn.exec_driver_sql("PRAGMA auto_vacuum").scalar() == SQLITE_INCREMENTAL_VACUUM
+            if incremental and not full:
+                # Each step frees one page; drain the statement on the raw cursor (SQLAlchemy would stop early).
+                conn.connection.driver_connection.execute("PRAGMA incremental_vacuum").fetchall()
+            else:
+                conn.exec_driver_sql("VACUUM")
+            conn.exec_driver_sql("PRAGMA wal_checkpoint(TRUNCATE)").fetchall()
+        after = self.storage_stats()
+        freed = sum(before[k] or 0 for k in ("file_bytes", "wal_bytes")) - sum(
+            after[k] or 0 for k in ("file_bytes", "wal_bytes")
+        )
+        log.info("sqlite: reclaimed %d bytes (%s vacuum)", freed, "full" if full or not incremental else "incremental")
+        return max(freed, 0)
+
+    def mark_interrupted_runs(self) -> int:
+        """Runs still 'running' when the process starts were killed mid-way: record that."""
+        with self.session() as session:
+            result = session.execute(
+                update(ScrapeRunRow)
+                .where(ScrapeRunRow.status == "running")
+                .values(status="interrupted", error="process stopped before the run finished", finished_at=utcnow())
+            )
+            count = result.rowcount or 0
+        if count:
+            log.warning("marked %d unfinished runs as interrupted", count)
+        return count
 
     @contextmanager
     def session(self) -> Iterator[Session]:
@@ -217,9 +361,16 @@ class Database:
 _EVENT_FIELDS = (
     "source", "source_event_id", "slug", "venue_slug", "title", "description", "start_at", "end_at", "venue_name", "address",
     "city", "latitude", "longitude", "in_target_city", "genres", "source_genres", "event_types", "artists",
-    "lineup", "local_date", "day_of_week", "time_slot", "is_weekend", "min_age", "organizer", "image_url",
+    "lineup", "local_date", "day_of_week", "time_slot", "is_weekend", "area", "min_age", "organizer", "image_url",
     "currency", "min_price", "max_price", "has_free_entry", "entry_type", "is_sold_out", "extra",
 )  # fmt: skip
+
+
+# Maintained by dedup.regroup; an upsert of an existing row must not reset them.
+_GROUP_COLUMNS = {
+    "group_id", "is_primary", "group_size", "group_min_price", "group_max_price",
+    "group_has_free_entry", "group_entry_type", "best_listing_id",
+}  # fmt: skip
 
 
 def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int, list[str]]:
@@ -240,10 +391,13 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
 
     event_rows = [
         {"id": e.event_id, "url": str(e.url), "first_seen_at": now, "last_seen_at": now,
+         "group_id": e.event_id, "is_primary": True, "group_size": 1, "group_min_price": e.min_price,
+         "group_max_price": e.max_price, "group_has_free_entry": e.has_free_entry,
+         "group_entry_type": e.entry_type, "best_listing_id": e.event_id,
          **{f: getattr(e, f) for f in _EVENT_FIELDS}}
-        for e in events
+        for e in sorted(events, key=lambda e: e.event_id)  # consistent lock order across writers
     ]  # fmt: skip
-    session.execute(_upsert(session, EventRow, event_rows, key="id", keep={"id", "first_seen_at"}))
+    session.execute(_upsert(session, EventRow, event_rows, key="id", keep=_GROUP_COLUMNS | {"id", "first_seen_at"}))
 
     session.execute(delete(TicketRow).where(TicketRow.event_id.in_(ids)))
     ticket_rows = [
@@ -263,12 +417,31 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
     if stale:
         session.execute(delete(ImageRow).where(ImageRow.id.in_([row.id for row in stale])))
     moved = [{"id": known[key].id, "position": pos} for key, pos in wanted.items() if key in known]
-    if moved:
-        session.execute(update(ImageRow), moved)
+    bulk_update_by_id(session, ImageRow, moved)
     added = [{"event_id": eid, "url": url, "position": pos} for (eid, url), pos in wanted.items() if (eid, url) not in known]
     if added:
         session.execute(insert(ImageRow), added)
     return len(events), [row.local_path for row in stale if row.local_path]
+
+
+def bulk_update_by_id(session: Session, model: type[Base], rows: list[dict[str, Any]]) -> None:
+    """``UPDATE ... WHERE id = :id`` executemany via Core.
+
+    Unlike ORM bulk update it does not fail when a row was deleted meanwhile (e.g. by
+    retention); that row is simply skipped. Rows are sorted by id so concurrent writers
+    lock rows in the same order (no deadlocks on PostgreSQL).
+    """
+    if not rows:
+        return
+    table = cast(Table, model.__table__)
+    columns = [c for c in rows[0] if c != "id"]
+    stmt = (
+        table.update()
+        .where(table.c.id == bindparam("_id"))
+        .values({c: bindparam(f"_v_{c}") for c in columns})
+    )
+    params = [{"_id": r["id"], **{f"_v_{c}": r[c] for c in columns}} for r in sorted(rows, key=lambda r: r["id"])]
+    session.execute(stmt, params)
 
 
 def _upsert(session: Session, model: type[Base], rows: list[dict[str, Any]], key: str, keep: set[str]) -> Any:

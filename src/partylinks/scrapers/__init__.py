@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import logging
+
+from pydantic import ValidationError
+
 from partylinks.config import Settings
 from partylinks.scrapers.barby import BarbyScraper
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -12,6 +16,8 @@ from partylinks.scrapers.grayclub import GrayclubScraper
 from partylinks.scrapers.selector import SelectorScraper
 from partylinks.scrapers.tickchak import TickchakScraper
 from partylinks.scrapers.zygo import ZygoScraper
+
+log = logging.getLogger(__name__)
 
 SCRAPERS: dict[str, type[BaseScraper]] = {
     cls.name: cls
@@ -38,11 +44,38 @@ def source_settings(name: str, settings: Settings) -> SourceSettings:
         raise UnknownSourceError(name)
     if name not in settings.sources:
         raise UnknownSourceError(f"{name} has no block under `sources` in the config")
-    return SCRAPERS[name].settings_model.model_validate(settings.sources[name])
+    block = settings.sources[name]
+    if block is None:
+        raise ValueError(f"{name}: config block is empty")
+    return SCRAPERS[name].settings_model.model_validate(block)
 
 
 def configured_sources(settings: Settings) -> dict[str, SourceSettings]:
-    return {name: source_settings(name, settings) for name in SCRAPERS if name in settings.sources}
+    """Valid source blocks. An invalid block disables only that source (see source_errors)."""
+    valid: dict[str, SourceSettings] = {}
+    for name in SCRAPERS:
+        if name in settings.sources:
+            try:
+                valid[name] = source_settings(name, settings)
+            except (ValidationError, ValueError, TypeError) as exc:
+                log.error("source %s disabled: invalid config: %s", name, _short(exc))
+    return valid
+
+
+def source_errors(settings: Settings) -> dict[str, str]:
+    """Config errors per source (and unknown source names) for /health and /sources."""
+    errors: dict[str, str] = {name: "no scraper with this name" for name in settings.sources if name not in SCRAPERS}
+    for name in SCRAPERS:
+        if name in settings.sources:
+            try:
+                source_settings(name, settings)
+            except (ValidationError, ValueError, TypeError) as exc:
+                errors[name] = _short(exc)
+    return errors
+
+
+def _short(exc: Exception) -> str:
+    return " ".join(str(exc).split())[:300]
 
 
 def build_scraper(name: str, settings: Settings) -> BaseScraper:

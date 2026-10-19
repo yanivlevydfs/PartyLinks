@@ -3,13 +3,14 @@ import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
 import { Link } from "react-router-dom";
 import { useAllEvents } from "../api";
 import type { EventSummary } from "../types";
-import { eventPath, fmtDate, useT, venuePath } from "../ui";
+import { eventPath, fmtDate, useT, useTitle, venuePath } from "../ui";
 
 const TEL_AVIV: [number, number] = [32.0809, 34.7806];
 
 export default function MapPage() {
   const { t } = useT();
   const { data, isError, isPending } = useAllEvents();
+  useTitle(t.nav.map);
 
   // One pin per location; a venue usually hosts many events.
   const spots = new Map<string, EventSummary[]>();
@@ -32,9 +33,11 @@ export default function MapPage() {
         )}
       </div>
       <MapContainer center={TEL_AVIV} zoom={13} className="map" scrollWheelZoom>
+        {/* Keyless OSM tiles, darkened in CSS (.map .leaflet-tile-pane). */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         {[...spots.entries()].map(([key, list]) => (
           <CircleMarker
@@ -49,7 +52,7 @@ export default function MapPage() {
                 <ul>
                   {list.slice(0, 8).map((e) => (
                     <li key={e.id}>
-                      <Link to={eventPath(e.id)}>
+                      <Link to={eventPath(e)}>
                         <small>{fmtDate(e.start_at, t, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</small>
                         <span dir="auto">{e.title}</span>
                       </Link>
