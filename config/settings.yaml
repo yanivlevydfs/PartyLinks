@@ -249,7 +249,7 @@ enrichment:
     - key: negev
       places: ["אשדוד", "אשקלון", "באר שבע", "קריית גת", "קרית גת", "קריית מלאכי", "קרית מלאכי", "נתיבות", "אופקים",
                "שדרות", "דימונה", "ערד", "ירוחם", "מצפה רמון", "עומר", "להבים", "מיתר", "חצרים", "באר טוביה", "גן יבנה",
-               "עשרת", "אשכול", "ערבה", "שיטים", "עין יהב",
+               "עשרת", "אשכול", "ערבה", "שיטים", "עין יהב", "shittim",
                "ashdod", "ashkelon", "beersheba", "be'er sheva", "beer sheva", "kiryat gat", "netivot", "ofakim",
                "sderot", "dimona", "arad", "mitzpe ramon", "omer", "eshkol", "arava", "shitim", "ein yahav"]
       boxes: [[29.4, 31.77, 34.2, 35.6], [31.77, 31.85, 34.2, 34.72]]
@@ -264,7 +264,7 @@ enrichment:
       places: ["עכו", "נהריה", "כרמיאל", "טבריה", "עפולה", "צפת", "ראש פינה", "נוף הגליל", "נצרת", "יקנעם", "מגדל העמק",
                "מעלות תרשיחא", "מעלו תרשיחא", "מעלות", "בית שאן", "שבי ציון", "כפר בלום", "הגושרים", "כנרת", "עין חרוד",
                "יפעת", "עין השופט", "רמת ישי", "תל עדשים", "מגדל", "יסוד המעלה", "כברי", "אל-רום", "אל רום",
-               "עמק המעיינות", "עמק הירדן", "צפון הארץ", "החולה", "אגמון החולה", "חזון", "חמדיה", "קצרין", "מטולה", "קריית שמונה", "קרית שמונה", "גולן", "לוטם", "עמק יזרעאל",
+               "עמק המעיינות", "עמק הירדן", "צפון הארץ", "צפון", "north district", "החולה", "אגמון החולה", "חזון", "חמדיה", "קצרין", "מטולה", "קריית שמונה", "קרית שמונה", "גולן", "לוטם", "עמק יזרעאל",
                "akko", "acre", "nahariya", "karmiel", "tiberias", "afula", "safed", "tzfat", "rosh pina", "nazareth",
                "yokneam", "beit shean", "hagoshrim", "kinneret", "ramat yishai", "migdal", "lotem", "katzrin",
                "metula", "kiryat shmona", "golan"]
@@ -272,7 +272,7 @@ enrichment:
     - key: sharon
       places: ["השרון", "רעננה", "כפר סבא", "הרצליה", "נתניה", "כפר יונה", "תל מונד", "קדימה", "אבן יהודה", "פרדסיה",
                "חדרה", "פרדס חנה", "כרכור", "קיסריה", "אור עקיבא", "בנימינה", "גבעת חיים", "גן שמואל", "עין שמר",
-               "כפר ויתקין", "רשפון", "מכמורת", "גלילות", "אליכין",
+               "כפר ויתקין", "רשפון", "מכמורת", "גלילות", "אליכין", "עמק חפר", "hefer valley",
                "hasharon", "raanana", "ra'anana", "kfar saba", "herzliya", "netanya", "kfar yona", "kadima",
                "even yehuda", "hadera", "pardes hanna", "caesarea", "or akiva", "binyamina", "glilot"]
       boxes: [[32.13, 32.55, 34.7, 35.6]]
@@ -281,14 +281,14 @@ enrichment:
                "יהוד", "אור יהודה", "גבעת שמואל", "ראש העין", "גני תקווה", "שוהם", "סביון", "ראשון לציון", "נס ציונה",
                "רחובות", "יבנה", "באר יעקב", "לוד", "רמלה", "מודיעין", "איירפורט סיטי", "קריית שדה התעופה",
                "קרית שדה התעופה", "נתב\"ג", "גבעת ברנר", "גדרה", "גדרות", "מזכרת בתיה", "משמר השבעה", "בית דגן",
-               "השפלה", "מרכז הארץ", "אלעד", "אורנית", "אריאל", "נען", "מזור", "מישר", "נווה ירק", "בית יצחק",
+               "השפלה", "מרכז הארץ", "מרכז ארץ ישראל", "כפר רות", "אלעד", "אורנית", "אריאל", "נען", "מזור", "מישר", "נווה ירק", "בית יצחק",
                "ramat gan", "givatayim", "bnei brak", "holon", "bat yam", "petah tikva", "petach tikva",
                "kiryat ono", "yehud", "or yehuda", "rosh haayin", "rosh ha'ayin", "shoham", "rishon lezion",
                "rishon le zion", "ness ziona", "nes ziona", "rehovot", "yavne", "lod", "ramla", "modiin", "modi'in",
                "airport city", "gedera", "ariel", "center district", "mazor", "meishar"]
       boxes: [[31.77, 32.13, 34.6, 35.6]]
     - key: abroad
-      places: ["חו\"ל", "יוון", "קפריסין", "תאילנד", "פטרוברדין", "athina", "athens", "thessaloniki", "iraklio",
+      places: ["חו\"ל", "יוון", "גרמניה", "הונגריה", "בודפשט", "דברצן", "germany", "hungary", "קפריסין", "תאילנד", "פטרוברדין", "athina", "athens", "thessaloniki", "iraklio",
                "heraklion", "afidnes", "greece", "cyprus", "limassol", "larnaca", "ayia napa", "amsterdam", "roma",
                "rome", "milano", "barcelona", "berlin", "london", "paris", "prague", "budapest", "debrecen",
                "bucurești", "bucharest", "varna", "sofia", "ko pha-ngan", "phangan", "bangkok", "goa",
