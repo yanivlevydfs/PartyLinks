@@ -690,6 +690,18 @@ sources:
     http:
       concurrency: 4
 
+  comy:
+    # Comy stand-up box office (WordPress). Tickets are sold on PRES (tickets.comy.co.il), whose
+    # robots.txt disallows all, so the home page lists show pages (/event/<slug>/) and each page
+    # is parsed for its performances (date, time, place, PRES/Gray Club link, sold-out badge).
+    enabled: true
+    cron: "33 6,18 * * *"
+    site_url: https://comy.co.il
+    listing_path: /
+    event_page_prefix: /event/
+    http:
+      concurrency: 4
+
   smarticket:
     # Smarticket white-label box offices: one GET /api/shows per tenant (prices inline).
     # The vendor's main site disallows /api/ (tenant hosts have no robots.txt), so stay gentle:
