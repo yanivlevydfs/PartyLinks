@@ -171,7 +171,8 @@ def test_city_names_are_canonical() -> None:
     assert enricher.canonical_city("השרון", "השרון 14, תל אביב-יפו") == "תל אביב"
     assert enricher.canonical_city("השרון", None, "מייז תל אביב | MAZE TLV") == "תל אביב"
     assert enricher.canonical_city("6473303", None) is None  # zip code
-    assert enricher.canonical_city("Eilat", None) == "Eilat"  # unknown city kept
+    assert enricher.canonical_city("Mitzpe Ramon", None) == "Mitzpe Ramon"  # unknown city kept
+    assert enricher.canonical_city("Eilat", None) == "אילת"
 
 
 def test_geocoding_reuses_known_places_and_rejects_vague_hits(tmp_path: Path) -> None:

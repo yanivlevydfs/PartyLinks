@@ -103,6 +103,17 @@ enrichment:
     - {key: tel-aviv, he: "תל אביב", en: Tel Aviv, aliases: *tel_aviv, center: [32.08, 34.78], radius_m: 9000}
     - {key: jerusalem, he: "ירושלים", en: Jerusalem, aliases: ["jerusalem", "ירושלים", "י-ם", "י\"ם"], center: [31.78, 35.21], radius_m: 12000}
     - {key: haifa, he: "חיפה", en: Haifa, aliases: ["haifa", "חיפה"], center: [32.80, 35.00], radius_m: 10000}
+    - {key: kfar-saba, he: "כפר סבא", en: Kfar Saba, aliases: ["kfar saba", "kefar sava"], center: [32.175, 34.907], radius_m: 5000}
+    - {key: herzliya, he: "הרצליה", en: Herzliya, aliases: ["herzliya", "herzeliya"], center: [32.163, 34.844], radius_m: 6000}
+    - {key: raanana, he: "רעננה", en: Ra'anana, aliases: ["raanana", "ra'anana"], center: [32.184, 34.871], radius_m: 4000}
+    - {key: hod-hasharon, he: "הוד השרון", en: Hod HaSharon, aliases: ["hod hasharon", "hod ha-sharon"], center: [32.150, 34.892], radius_m: 4000}
+    - {key: ramat-hasharon, he: "רמת השרון", en: Ramat HaSharon, aliases: ["ramat hasharon"], center: [32.146, 34.839], radius_m: 4000}
+    - {key: netanya, he: "נתניה", en: Netanya, aliases: ["netanya", "natanya"], center: [32.322, 34.853], radius_m: 7000}
+    - {key: petah-tikva, he: "פתח תקווה", en: Petah Tikva, aliases: ["petah tikva", "petach tikva", "petah tiqva", "פתח תקוה"], center: [32.087, 34.887], radius_m: 6000}
+    - {key: ramat-gan, he: "רמת גן", en: Ramat Gan, aliases: ["ramat gan"], center: [32.068, 34.824], radius_m: 5000}
+    - {key: ashdod, he: "אשדוד", en: Ashdod, aliases: ["ashdod"], center: [31.804, 34.655], radius_m: 7000}
+    - {key: ashkelon, he: "אשקלון", en: Ashkelon, aliases: ["ashkelon"], center: [31.669, 34.571], radius_m: 7000}
+    - {key: eilat, he: "אילת", en: Eilat, aliases: ["eilat", "elat"], center: [29.558, 34.952], radius_m: 8000}
   # Canonical genre -> keywords, matched case-insensitively against the genres and
   # event types each source declares and (if detect_genres_from_text) title + description.
   genres:
@@ -598,3 +609,40 @@ sources:
       - {key: ipo, url: "https://ipo.presglobal.store", city: "תל אביב"}
       - {key: lessin, url: "https://lessin.presglobal.store", venue: "תיאטרון בית ליסין", city: "תל אביב"}
       - {key: khan, url: "https://khan.pres.global", venue: "תיאטרון החאן", city: "ירושלים"}
+
+  smarticket:
+    # Smarticket white-label box offices: one GET /api/shows per tenant (prices inline).
+    # The vendor's main site disallows /api/ (tenant hosts have no robots.txt), so stay gentle:
+    # concurrency 2, one call per tenant. An empty /api/shows (Petah Tikva) falls back to the
+    # calendar feed in 6-month windows.
+    enabled: true
+    cron: "8 * * * *"
+    tenant_domain: smarticket.co.il
+    shows_path: /api/shows
+    event_page_path: /event/{id}
+    uploads_path: /uploads/
+    calendar_path: /api/show_theater/get_events_calendar
+    calendar_windows: 2
+    http:
+      concurrency: 2
+      user_agent: "Pulse/1.0 (event aggregator; contact via site owner)"
+    tenants:
+      - {host: tzavta, venue_name: צוותא, city: תל אביב}
+      - {host: tmuna, venue_name: תמונע, city: תל אביב}
+      - {host: sdc, venue_name: מרכז סוזן דלל, city: תל אביב}
+      - {host: gesher, venue_name: תיאטרון גשר, city: תל אביב}
+      - {host: batsheva, venue_name: להקת בת שבע, city: תל אביב}
+      - {host: incubator, venue_name: תיאטרון האינקובטור, city: תל אביב}
+      - {host: yiddishpiel, venue_name: יידישפיל, city: תל אביב}
+      - {host: inbal, venue_name: תיאטרון ענבל, city: תל אביב}
+      - {host: tickets.raanana.muni.il, venue_name: רעננה, city: רעננה}
+      - {host: ksaba, venue_name: היכל התרבות כפר סבא, city: כפר סבא}
+      - {host: hoh-herzliya, venue_name: היכל אמנויות הבמה הרצליה, city: הרצליה}
+      - {host: herzliya, venue_name: עיריית הרצליה, city: הרצליה}
+      - {host: aluma, venue_name: עלומה הוד השרון, city: הוד השרון}
+      - {host: ramathasharon, venue_name: רמת השרון, city: רמת השרון}
+      - {host: netanya, venue_name: היכל התרבות נתניה, city: נתניה}
+      - {host: petah-tikva, venue_name: היכל התרבות פתח תקווה, city: פתח תקווה}
+      - {host: mbe-rg, venue_name: בית עמנואל רמת גן, city: רמת גן}
+      - {host: ashdod, venue_name: אשדוד, city: אשדוד}
+      - {host: ashkelon, venue_name: אשקלון, city: אשקלון}

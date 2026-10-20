@@ -1,0 +1,240 @@
+[
+ {
+  "id": 922,
+  "category": "בידור",
+  "title": "חנוך דאום",
+  "image": "upld6a2a85828d46f143136352.png",
+  "content": null,
+  "brief": null,
+  "url": "חנוך_דאום",
+  "tags": "\"\"",
+  "video": null,
+  "permalink": "/show/922",
+  "gallery": [],
+  "events": [
+   {
+    "show": 922,
+    "id": 17950,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": false,
+    "end_time": "22:15",
+    "duration": 75,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-31",
+    "show_time": "21:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא 1",
+    "permalink": "/event/17950",
+    "time_label": "21:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 742,
+      "name": "רגיל",
+      "price": 149,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "149"
+   }
+  ]
+ },
+ {
+  "id": 4270,
+  "category": "פרינג'",
+  "title": "פצעים",
+  "image": "upld6a2a841eb16d4666016341.png",
+  "content": null,
+  "brief": null,
+  "url": "פצעים",
+  "tags": null,
+  "video": null,
+  "permalink": "/show/4270",
+  "gallery": [],
+  "events": [
+   {
+    "show": 4270,
+    "id": 18147,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": false,
+    "membership_availability": true,
+    "end_time": "22:00",
+    "duration": 60,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-11-30",
+    "show_time": "21:00",
+    "unavailability_msg": "ההצגה לא תתקיים",
+    "title": null,
+    "content": null,
+    "event_place": "צוותא 2",
+    "permalink": "/event/18147",
+    "time_label": "21:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 80,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "80"
+   }
+  ]
+ },
+ {
+  "id": 4323,
+  "category": "סטנד אפ",
+  "title": "עמית ויינברג סטנדאפ",
+  "image": "upld6a7323862074b090433892.png",
+  "content": null,
+  "brief": null,
+  "url": "עמית_ויינברג_סטנדאפ",
+  "tags": null,
+  "video": null,
+  "permalink": "/show/4323",
+  "gallery": [],
+  "events": [
+   {
+    "show": 4323,
+    "id": 18126,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": false,
+    "membership_availability": true,
+    "end_time": "23:30",
+    "duration": 90,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-10-22",
+    "show_time": "22:00",
+    "unavailability_msg": "הכרטיסים אזלו",
+    "title": null,
+    "content": null,
+    "event_place": "צוותא 2",
+    "permalink": "/event/18126",
+    "time_label": "22:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 90,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "90"
+   },
+   {
+    "show": 4323,
+    "id": 18307,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "23:30",
+    "duration": 150,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2027-01-02",
+    "show_time": "21:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא 2",
+    "permalink": "/event/18307",
+    "time_label": "21:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 100,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "100"
+   }
+  ]
+ },
+ {
+  "id": 4430,
+  "category": null,
+  "title": "התחרות",
+  "image": "upld6aa7c23e0e90e850785030.jpg",
+  "content": null,
+  "brief": null,
+  "url": "התחרות",
+  "tags": null,
+  "video": null,
+  "permalink": "/show/4430",
+  "gallery": [],
+  "events": [
+   {
+    "show": 4430,
+    "id": 18241,
+    "sale_exists": false,
+    "tickets_available": false,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "21:10",
+    "duration": 70,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-10-26",
+    "show_time": "20:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא 1",
+    "permalink": "/event/18241",
+    "time_label": "20:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 1115,
+      "name": "חיילים ומילואימניקים (בהצגת תעודה) - אדום",
+      "price": 85,
+      "color": "#a10606"
+     },
+     {
+      "id": 1116,
+      "name": "חיילים ומילואימניקים (בהצגת תעודה) - כחול",
+      "price": 85,
+      "color": "#2aaacd"
+     },
+     {
+      "id": 1113,
+      "name": "רגיל אדום",
+      "price": 100,
+      "color": "#a10606"
+     },
+     {
+      "id": 1114,
+      "name": "רגיל כחול",
+      "price": 100,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "85 - 100"
+   }
+  ]
+ }
+]

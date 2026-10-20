@@ -1,0 +1,109 @@
+{
+ "success": true,
+ "description": null,
+ "result": [
+  {
+   "id": 10398,
+   "name": "מצחיקונת",
+   "start_date": "2026-10-20",
+   "start_time": "20:30",
+   "end_date": "2026-10-20",
+   "end_time": "23:10",
+   "image": "upld6a69b80e74d3b471049332.jpg",
+   "thumbnail_calendar": "/uploads/thumbs/thmb6a69b80e8f8dc917977482.jpg",
+   "website_available": 1,
+   "membership_availability": 1,
+   "website_memberships_types_seasons": [],
+   "website_left_tickets_count": 43,
+   "website_all_left_tickets_count": 43,
+   "website_pricelist": [
+    {
+     "code": true,
+     "rate": null,
+     "level": null,
+     "price": 229,
+     "discrete": 1,
+     "condition": "code",
+     "rate_name": null,
+     "level_name": null,
+     "must_choose": "0",
+     "ticket_type": 1177,
+     "ticket_type_name": "מסבסד-אריה ניר"
+    },
+    {
+     "code": null,
+     "rate": null,
+     "level": null,
+     "price": 249,
+     "discrete": 0,
+     "condition": "none",
+     "rate_name": null,
+     "level_name": null,
+     "must_choose": "0",
+     "ticket_type": 1134,
+     "ticket_type_name": "יציע"
+    },
+    {
+     "code": null,
+     "rate": null,
+     "level": null,
+     "price": 279,
+     "discrete": 0,
+     "condition": "active_member",
+     "rate_name": null,
+     "level_name": null,
+     "must_choose": "0",
+     "ticket_type": 1151,
+     "ticket_type_name": "מחיר למנויים"
+    },
+    {
+     "code": null,
+     "rate": 24,
+     "level": null,
+     "price": 299,
+     "discrete": 0,
+     "condition": "none",
+     "rate_name": "מחיר מלא",
+     "level_name": null,
+     "must_choose": "0",
+     "ticket_type": 831,
+     "ticket_type_name": "מחיר מלא"
+    }
+   ],
+   "website_visibility_start": "2026-07-29 11:24:05",
+   "website_visibility_end": "2026-10-20 20:45:00"
+  },
+  {
+   "id": 10380,
+   "name": "הרצאה | פריז תחת הכיבוש הנאצי",
+   "start_date": "2026-10-21",
+   "start_time": "18:00",
+   "end_date": "2026-10-21",
+   "end_time": "19:00",
+   "image": "upld6a5481c3b6c94331114198.jpg",
+   "thumbnail_calendar": "/uploads/thumbs/thmb6a5481c3c0986882928800.jpg",
+   "website_available": 1,
+   "membership_availability": 1,
+   "website_memberships_types_seasons": [],
+   "website_left_tickets_count": 0,
+   "website_all_left_tickets_count": 0,
+   "website_pricelist": [
+    {
+     "code": null,
+     "rate": 24,
+     "level": null,
+     "price": 10,
+     "discrete": 0,
+     "condition": "none",
+     "rate_name": "מחיר מלא",
+     "level_name": null,
+     "must_choose": "0",
+     "ticket_type": 831,
+     "ticket_type_name": "מחיר מלא"
+    }
+   ],
+   "website_visibility_start": "2026-07-13 09:14:49",
+   "website_visibility_end": "2026-10-21 18:15:00"
+  }
+ ]
+}
