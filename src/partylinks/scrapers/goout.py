@@ -18,6 +18,7 @@ from typing import Any
 
 from pydantic import Field
 
+from partylinks.artists import ArtistProfile
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import (
     ParseError,
@@ -42,6 +43,14 @@ class GoOutSettings(SourceSettings):
     location: str = "IL"
     page_size: int = Field(8, ge=1)
     max_pages: int = Field(100, ge=1)
+    # Extra listing feeds behind site pages (GET ?limit&skip&recivedDate&location), e.g. /tickets/weekend.
+    # They list events the by-type feed misses; only items of ``event_types`` are kept.
+    extra_feeds: list[str] = Field(default_factory=list)
+    extra_page_size: int = Field(50, ge=1)
+    # The site's curated "artists" section (POST {skip}, 10 per page). Empty endpoint = skip.
+    artists_endpoint: str = ""
+    artist_image_template: str = ""  # {artist_url}, {timestamp}
+    artist_page_path: str = "/artist/{artist_url}"
 
 
 class GoOutScraper(BaseScraper[GoOutSettings]):
@@ -51,6 +60,9 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         refs = await self._list_event_urls()
         self.log.info("listed %d events", len(refs))
+        if self.settings.artists_endpoint:
+            self.artist_profiles = await self.optional("artists", self._list_artists()) or []
+            self.log.info("listed %d artists", len(self.artist_profiles))
         async for event in self.stream_isolated(refs, self._fetch_event, label=lambda ref: ref):
             yield event
 
@@ -73,7 +85,45 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
             return [e for e in payload.get("events") or [] if isinstance(e, dict)], None
 
         items = await self.paginate(page, s.page_size, s.max_pages)
+        for feed in s.extra_feeds:
+            extra = await self.optional(feed, self._list_feed(feed, received))
+            items += [e for e in extra or [] if e.get("EventType") in s.event_types]
         return list(dict.fromkeys(str(item["Url"]) for item in items if item.get("Url")))
+
+    async def _list_artists(self) -> list[ArtistProfile]:
+        s = self.settings
+        page_size = 10  # fixed by the site
+
+        async def page(index: int) -> tuple[list[dict[str, Any]], None]:
+            payload = await self.post_json(s.base_url + s.artists_endpoint, json={"skip": index * page_size}, expect=dict)
+            return [a for a in payload.get("artists") or [] if isinstance(a, dict)], None
+
+        return [
+            ArtistProfile(
+                name=name,
+                source=self.name,
+                kind=clean_str(a.get("type")),
+                genre=clean_str(a.get("music_type")),
+                image_url=s.artist_image_template.format(artist_url=slug, timestamp=a["profileImageTimeStamp"])
+                if s.artist_image_template and a.get("profileImageTimeStamp") else None,
+                spotify_url=clean_str(a.get("spotify_url")),
+                profile_url=s.base_url + s.artist_page_path.format(artist_url=slug),
+            )
+            for a in await self.paginate(page, page_size, s.max_pages)
+            if (name := clean_str(a.get("name"))) and (slug := clean_str(a.get("artistUrl")))
+        ]
+
+    async def _list_feed(self, feed: str, received: str) -> list[dict[str, Any]]:
+        s = self.settings
+
+        async def page(index: int) -> tuple[list[dict[str, Any]], None]:
+            params = {"limit": s.extra_page_size, "skip": index * s.extra_page_size, "recivedDate": received,
+                      "location": s.location}  # fmt: skip
+            payload = await self.get_json(s.base_url + feed, params=params)
+            events = payload.get("events") if isinstance(payload, dict) else None
+            return [e for e in events or [] if isinstance(e, dict)], None
+
+        return await self.paginate(page, s.extra_page_size, s.max_pages)
 
     async def _fetch_event(self, url_id: str) -> ScrapedEvent:
         s = self.settings

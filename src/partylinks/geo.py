@@ -16,7 +16,8 @@ import logging
 import re
 import threading
 import time
-from dataclasses import dataclass
+from collections import Counter
+from dataclasses import dataclass, field
 from datetime import timedelta
 
 import httpx
@@ -106,11 +107,12 @@ def candidates(row: EventRow) -> list[str]:
         for key in street_variants(address):
             out.append(f"{key}, {town}".rstrip(", "))
     if venue:
-        town = city or "תל אביב"
-        out += [f"{v}, {town}" for v in venue_variants(venue)]
+        # Unknown city: assume Tel Aviv unless the event is known to be elsewhere.
+        town = city or ("" if row.in_target_city is False else "תל אביב")
+        out += [f"{v}, {town}".rstrip(", ") for v in venue_variants(venue)]
         # "מועדון גגרין" -> "גגרין, תל אביב" (OSM names the place without "club" / "מועדון").
         if (bare := re.sub(r"\s+", " ", _GENERIC_VENUE_WORDS.sub(" ", venue)).strip(" -,")) and len(bare) >= 3:
-            out.append(f"{bare}, {city or 'תל אביב'}")
+            out.append(f"{bare}, {town}".rstrip(", "))
     return list(dict.fromkeys(q for q in out if len(q) >= 4))
 
 
@@ -152,12 +154,26 @@ def _venue_match(known: dict[str, tuple[float, float]], name: str | None) -> tup
 
 @dataclass
 class GeoStats:
-    missing: int = 0
-    located: int = 0
-    lookups: int = 0
+    missing: int = 0  # upcoming events without coordinates before this pass
+    located: int = 0  # ... placed by this pass
+    lookups: int = 0  # Nominatim requests made
+    not_found: int = 0  # still unplaced: every query was tried and missed (retried after retry_failed_days)
+    no_place: int = 0  # still unplaced: no venue name or address to look up
+    unplaced_venues: list[str] = field(default_factory=list)  # most frequent, worth a manual pin
 
     def as_dict(self) -> dict[str, int]:
-        return {"missing": self.missing, "located": self.located, "lookups": self.lookups}
+        return {"missing": self.missing, "located": self.located, "lookups": self.lookups,
+                "not_found": self.not_found, "no_place": self.no_place}  # fmt: skip
+
+    def summary(self) -> str:
+        if not self.missing:
+            return "every upcoming event has coordinates"
+        text = (f"{self.missing} upcoming events without coordinates: {self.located} placed now, "
+                f"{self.lookups} new lookups; still unplaced: {self.not_found} not found earlier (cached), "
+                f"{self.no_place} without venue/address")  # fmt: skip
+        if self.unplaced_venues:
+            text += "; pin in geocoding.venues: " + ", ".join(f'"{v}"' for v in self.unplaced_venues)
+        return text
 
 
 class Geocoder:
@@ -181,6 +197,7 @@ class Geocoder:
             cache = {c.query: c for c in session.scalars(select(GeoCacheRow).where(GeoCacheRow.found.is_(True)))}
             missing = session.scalars(select(EventRow).where(upcoming_filter(), EventRow.latitude.is_(None))).all()
             stats.missing = len(missing)
+            unplaced: Counter[str] = Counter()
             for row in missing:
                 point = (
                     self._pin(row)
@@ -192,7 +209,13 @@ class Geocoder:
                     row.latitude, row.longitude = point
                     row.area = self.areas.match(row.venue_name, row.address, *point, row.in_target_city)
                     stats.located += 1
-        log.info("geocoding: %s", stats.as_dict())
+                elif candidates(row):
+                    stats.not_found += 1
+                    unplaced[row.venue_name or row.address or ""] += 1
+                else:
+                    stats.no_place += 1
+        stats.unplaced_venues = [v for v, _ in unplaced.most_common(5) if v]
+        log.info("geocoding: %s", stats.summary())
         return stats
 
     # ------------------------------------------------------------------ sources of coordinates
@@ -223,7 +246,8 @@ class Geocoder:
             return False
         if row.in_target_city and not any(k in _city_key(hit.city) for k in self._city_keys):
             return False  # e.g. "Kibbutz Galuyot 52" resolved to Bnei Brak
-        area = self.areas.keyword_area(row.venue_name, row.address)
+        # Area keywords are Tel Aviv streets ("הרצל", "בן יהודה" exist in every town).
+        area = self.areas.keyword_area(row.venue_name, row.address) if row.in_target_city is not False else None
         center = self.areas.center(area) if area else None
         return center is None or meters(center, (hit.latitude, hit.longitude)) <= self.settings.max_area_distance_m
 

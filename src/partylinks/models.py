@@ -7,7 +7,16 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field, HttpUrl, computed_field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    HttpUrl,
+    computed_field,
+    field_validator,
+    model_validator,
+)
+
+from partylinks.artists import ArtistProfile
 
 
 class TierStatus(StrEnum):
@@ -102,6 +111,8 @@ class ScrapedEvent(BaseModel):
     event_types: list[str] = Field(default_factory=list)
     # Performers / DJs exactly as the source lists them.
     artists: list[str] = Field(default_factory=list)
+    # Links / photo the source gives for those artists; saved to the artist book, not the event.
+    artist_profiles: list[ArtistProfile] = Field(default_factory=list)
     min_age: int | None = None
     organizer: str | None = None
     # Primary artwork plus every other image the source exposes (flyers, banners, gallery).

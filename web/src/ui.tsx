@@ -89,7 +89,7 @@ export function Layout() {
       </header>
       <Outlet />
       <footer className="foot wrap">
-        PartyLinks · Tel Aviv · <Link to="/accessibility">{t.accessibility}</Link>
+        PartyLinks · Israel · <Link to="/accessibility">{t.accessibility}</Link>
       </footer>
     </>
   );

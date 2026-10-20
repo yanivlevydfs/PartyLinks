@@ -24,11 +24,13 @@ from sqlalchemy.orm import Session, selectinload, undefer
 from partylinks import seo
 from partylinks.admin import AdminDep
 from partylinks.admin import router as admin_router
-from partylinks.config import LOG_FORMAT, Settings, get_settings
+from partylinks.config import Settings, get_settings
 from partylinks.db import Database, DealChangeRow, EventRow, ImageRow, ScrapeRunRow, upcoming_filter
+from partylinks.logs import setup_logging
 from partylinks.models import EntryType
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
+from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
 
 FACET_LIMIT = 1000  # venue / artist lists on the site are searched client-side
@@ -238,6 +240,14 @@ class FacetValue(BaseModel):
     events: int
     # Venues only: the area of the city the venue is in.
     area: str | None = None
+    # Artists only, when a ticket site curates the artist (see artists.py): verified profile.
+    verified: bool | None = None
+    image_url: str | None = None
+    kind: str | None = None
+    genre: str | None = None
+    spotify_url: str | None = None
+    profile_url: str | None = None
+    links: list[str] | None = None
 
 
 class Categories(BaseModel):
@@ -294,11 +304,7 @@ class _SiteFiles(StaticFiles):
 
 def create_app(settings: Settings | None = None, start_scheduler: bool | None = None) -> FastAPI:
     settings = settings or get_settings()
-    if not logging.getLogger().handlers:  # `serve --reload` workers never run cli.main()'s setup
-        logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
-    # One line per outgoing request (hundreds per run) buried the real warnings: keep only problems.
-    for noisy in ("httpx", "httpcore"):
-        logging.getLogger(noisy).setLevel(logging.WARNING)
+    setup_logging(settings.logging)  # also for `serve --reload` workers, which never run cli.main()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
@@ -329,9 +335,12 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
     app = FastAPI(
         title="PartyLinks API",
         version="0.1.0",
-        description="Tel Aviv party events scraped from Israeli ticketing sites.",
+        description="Party events across Israel scraped from Israeli ticketing sites.",
         lifespan=lifespan,
+        **({} if settings.security.api_docs else {"docs_url": None, "redoc_url": None, "openapi_url": None}),
     )
+    app.state.settings = settings  # read by SecurityMiddleware before the lifespan finishes too
+    app.add_middleware(SecurityMiddleware)
     _register_routes(app)
     app.include_router(admin_router)
     # The React site (web/), once built with `npm run build`. Mounted last so API routes win.
@@ -655,7 +664,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         return FileResponse(path, media_type=media_type, headers=headers)
 
     @app.get("/categories", response_model=Categories, response_model_exclude_none=True, tags=["events"])
-    def categories(session: SessionDep, upcoming: bool = True) -> Categories:
+    def categories(request: Request, session: SessionDep, upcoming: bool = True) -> Categories:
         # Only the facet columns (not descriptions/extra JSON); each real event counted once.
         query = select(
             EventRow.genres, EventRow.local_date, EventRow.day_of_week, EventRow.time_slot, EventRow.area,
@@ -678,7 +687,17 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
                 shown, total = merged.get(name.casefold(), (name, 0))
                 merged[name.casefold()] = (shown, total + n)
             ranked = sorted(merged.values(), key=lambda item: -item[1])[:FACET_LIMIT]
-            return [FacetValue(value=v, events=n) for v, n in ranked]
+            profiles = request.app.state.service.artists.profiles()
+            out = []
+            for name, n in ranked:
+                if p := profiles.get(name.casefold()):
+                    out.append(FacetValue(
+                        value=p.name, events=n, verified=True, image_url=p.image_url, kind=p.kind, genre=p.genre,
+                        spotify_url=p.spotify_url, profile_url=p.profile_url, links=p.links or None,
+                    ))  # fmt: skip
+                else:
+                    out.append(FacetValue(value=name, events=n))
+            return out
 
         venue_area = {r.venue_name: r.area for r in rows if r.venue_name and r.area}
         return Categories(

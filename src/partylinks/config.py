@@ -36,6 +36,17 @@ def project_path(path: str | Path) -> Path:
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
+class LoggingSettings(BaseModel):
+    level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    # text: for people; json: one object per line for log platforms (Railway, Datadog, ...).
+    format: Literal["text", "json"] = "text"
+    access_log: bool = True  # one line per HTTP request
+    # Optional rotating log file (relative to the project); unset on hosts that collect stdout.
+    file: str | None = None
+    file_max_mb: int = Field(10, ge=1)
+    file_backups: int = Field(5, ge=0)
+
+
 class DatabaseSettings(BaseModel):
     url: str = "sqlite:///data/partylinks.db"
     echo: bool = False
@@ -80,6 +91,10 @@ class HttpSettings(BaseModel):
     # Extra request headers, e.g. a partner access key agreed with a site owner.
     # Keep secrets in the environment: PARTYLINKS_SOURCES__<NAME>__HTTP__HEADERS='{"x-key": "..."}'
     headers: dict[str, str] = Field(default_factory=dict)
+    # Outgoing proxy for scraping, e.g. "http://user:pass@host:port" or "socks5://host:1080"
+    # (socks needs `pip install httpx[socks]`), so source sites never see the server's own IP.
+    # Keep credentials in the environment: PARTYLINKS_HTTP__PROXY=...
+    proxy: str | None = None
 
     @field_validator("headers", mode="before")
     @classmethod
@@ -254,6 +269,34 @@ class AdminSettings(BaseModel):
     token: SecretStr | None = None
 
 
+class SecuritySettings(BaseModel):
+    """Request filtering in front of the site and API (see partylinks.security)."""
+
+    enabled: bool = True
+    # Reverse proxies (nginx, Caddy, a tunnel) whose X-Forwarded-For / -Proto are trusted for the
+    # real client address. Anyone else sending those headers is ignored. Restart to apply.
+    trusted_proxies: list[str] = Field(default_factory=lambda: ["127.0.0.1", "::1"])
+    # Host names the site answers to (e.g. ["partylinks.co.il", "www.partylinks.co.il"]).
+    # Empty = any host. localhost always works.
+    allowed_hosts: list[str] = Field(default_factory=list)
+    # Requests per client IP per minute; over it = 429. Admin API has its own, lower limit.
+    rate_limit_per_minute: int = Field(300, ge=1)
+    admin_rate_limit_per_minute: int = Field(30, ge=1)
+    # Vulnerability probes (/.env, /wp-login.php...), failed admin logins and rate-limit hits are
+    # strikes; this many within ban_minutes bans the IP for ban_minutes.
+    ban_after_strikes: int = Field(5, ge=1)
+    ban_minutes: float = Field(60, gt=0)
+    max_body_bytes: int = Field(1_000_000, ge=1)
+    # Interactive API docs at /docs, /redoc and /openapi.json. Off = a smaller map for attackers.
+    api_docs: bool = False
+    # Crawlers that only harvest data (SEO tools, dataset scrapers): disallowed in robots.txt
+    # and refused with 403 (matched case-insensitively in the User-Agent).
+    blocked_bots: list[str] = Field(default_factory=lambda: [
+        "AhrefsBot", "SemrushBot", "MJ12bot", "DotBot", "Bytespider", "PetalBot", "DataForSeoBot",
+        "BLEXBot", "serpstatbot", "MegaIndex", "Barkrowler", "ZoominfoBot", "Scrapy",
+    ])  # fmt: skip
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="PARTYLINKS_",
@@ -265,6 +308,7 @@ class Settings(BaseSettings):
 
     timezone: str = "Asia/Jerusalem"
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
+    logging: LoggingSettings = Field(default_factory=LoggingSettings)
     api: ApiSettings = Field(default_factory=ApiSettings)
     scheduler: SchedulerSettings = Field(default_factory=SchedulerSettings)
     http: HttpSettings = Field(default_factory=HttpSettings)
@@ -275,6 +319,7 @@ class Settings(BaseSettings):
     admin: AdminSettings = Field(default_factory=AdminSettings)
     site: SiteSettings = Field(default_factory=SiteSettings)
     geocoding: GeocodingSettings = Field(default_factory=GeocodingSettings)
+    security: SecuritySettings = Field(default_factory=SecuritySettings)
     # Raw per-source blocks; each scraper validates its own block with its own model.
     # None = a block whose keys are all commented out (reported as invalid, not a crash).
     sources: dict[str, dict[str, Any] | None] = Field(default_factory=dict)

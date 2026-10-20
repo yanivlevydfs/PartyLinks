@@ -1,0 +1,74 @@
+{
+ "slides": [
+  {
+   "_id": "5ed4d6c1f46723001ad26a2c",
+   "isVisible": true,
+   "title": "בוריס ברצ'ה | Boris Brejcha",
+   "slideType": 1,
+   "objectRef": {
+    "_id": "5ed4d6c0f46723001ad26a2b",
+    "isDeleted": false,
+    "isForTestUsers": false,
+    "isShowInOpenSite": true,
+    "order": 5
+   },
+   "subTitleType": 1,
+   "linkName": "boris_brejcha",
+   "url": "/artists/boris_brejcha",
+   "subTitle": "",
+   "images": {
+    "imageDefault": "https://images.eventer.co.il/artists/492e130f-75da-45b5-b8a4-ce85d86f64a2.jpg",
+    "imageSquare": "https://images.eventer.co.il/artists/8425e5c6-458e-43ff-8694-45f2b69f20f8.jpg"
+   },
+   "__v": 0,
+   "lut": "2026-10-20T06:20:50.370Z"
+  },
+  {
+   "_id": "5b8fe70ffcf49b000f4338bf",
+   "__v": 0,
+   "title": "הקולקטיב | Acollective",
+   "slideType": 1,
+   "subTitleType": 1,
+   "linkName": "acollective",
+   "subTitle": "",
+   "isVisible": true,
+   "objectRef": {
+    "_id": "5b0d49a38c32860014faf112",
+    "isDeleted": false,
+    "isForTestUsers": false,
+    "isShowInOpenSite": true,
+    "order": 202
+   },
+   "url": "/artists/acollective",
+   "images": {
+    "imageSquare": "https://images.eventer.co.il/artists/d3710669-ddec-45f8-95aa-5255309ce8c2.jpg",
+    "imageDefault": "https://images.eventer.co.il/artists/3384fe66-275f-48cf-8e13-59c769bc659c.jpg"
+   },
+   "lut": "2026-10-20T06:20:50.370Z"
+  },
+  {
+   "_id": "5d2ef7803ad09f00147a474b",
+   "__v": 0,
+   "lut": "2026-10-20T06:20:50.372Z",
+   "title": "אדריאטיק | Adriatique",
+   "objectRef": {
+    "_id": "5d2ef7803ad09f00147a474a",
+    "isDeleted": false,
+    "isShowInOpenSite": true,
+    "isForTestUsers": false,
+    "order": 203
+   },
+   "linkName": "adriatique",
+   "url": "/artists/adriatique",
+   "isVisible": true,
+   "slideType": 1,
+   "subTitleType": 1,
+   "subTitle": "",
+   "images": {
+    "imageDefault": "https://images.eventer.co.il/artists/3cdeb3bb-6c13-4c01-b68a-40d666b64581.jpg",
+    "imageSquare": "https://images.eventer.co.il/artists/6711e206-99c6-40bd-8935-90e2dcee6c34.jpg"
+   }
+  }
+ ],
+ "page": null
+}

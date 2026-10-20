@@ -69,6 +69,7 @@ def parse_event(page_html: str, url: str, default_tz: str) -> ScrapedEvent:
     data = event.model_dump()
     data.update(
         source=MegaticketsScraper.name,
+        artist_profiles=[{**p, "source": MegaticketsScraper.name} for p in data["artist_profiles"]],
         # streetAddress already ends with the city.
         address=clean_str(address.get("streetAddress")) or event.address,
         city=clean_str(address.get("addressLocality")) or event.city,

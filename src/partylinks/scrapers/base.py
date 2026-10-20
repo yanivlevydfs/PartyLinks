@@ -29,6 +29,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from tenacity import AsyncRetrying, RetryCallState, retry_if_exception, stop_after_attempt, wait_exponential
 
+from partylinks.artists import ArtistProfile
 from partylinks.config import HttpSettings, validate_cron
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, to_int
@@ -105,6 +106,11 @@ class BaseScraper[S: SourceSettings](ABC):
         self.timezone = timezone
         self.log = logging.getLogger(f"partylinks.scrapers.{self.name}")
         self.failures: list[str] = []
+        # Artists the site curates (photo, type, links); the service saves them to the artist book.
+        self.artist_profiles: list[ArtistProfile] = []
+        # Profiles this source already saved, by casefolded name (filled by the service), so a
+        # catalog that needs a request per artist only fetches the new ones.
+        self.known_artists: dict[str, ArtistProfile] = {}
         # Artwork URLs already stored per source_event_id (filled by the service before a run),
         # so a source that needs an extra request per event for artwork can skip known events.
         self.known_images: dict[str, list[str]] = {}
@@ -120,6 +126,7 @@ class BaseScraper[S: SourceSettings](ABC):
         self._client = httpx.AsyncClient(
             timeout=self.http.timeout_seconds,
             follow_redirects=True,
+            proxy=self.http.proxy,
             headers={
                 "User-Agent": self.http.user_agent,
                 "Accept-Language": self.http.accept_language,

@@ -36,9 +36,18 @@ import httpx
 from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser
 
+from partylinks.artists import ArtistProfile
 from partylinks.config import project_path
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
-from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, parse_iso, schema_types, to_decimal
+from partylinks.parsing import (
+    ParseError,
+    clean_str,
+    html_to_text,
+    jsonld_nodes,
+    parse_iso,
+    schema_types,
+    to_decimal,
+)
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 EVENT_TYPES = {"event", "musicevent", "festival", "socialevent", "danceevent", "theaterevent", "comedyevent"}
@@ -211,6 +220,7 @@ def parse_page(page_html: str, url: str, default_tz: str) -> ScrapedEvent | None
         latitude=_float(geo.get("latitude")) if isinstance(geo, dict) else None,
         longitude=_float(geo.get("longitude")) if isinstance(geo, dict) else None,
         artists=[n for p in _as_list(event.get("performer")) if (n := clean_str(_name(p)))],
+        artist_profiles=[a for p in _as_list(event.get("performer")) if (a := _performer(p))],
         organizer=clean_str(_name(_first(event.get("organizer")))),
         images=[*_images(event.get("image")), *([og_image] if og_image else [])],
         currency=next((t.currency for t in tickets), currency_default),
@@ -278,6 +288,19 @@ def _city(address: Any) -> str | None:
         return locality
     parts = [p.strip() for p in (_address_text(address) or "").split(",") if p.strip()]
     return parts[-2] if len(parts) >= 3 else None
+
+
+def _performer(value: Any) -> ArtistProfile | None:
+    """A schema.org Person that links somewhere (bare names stay plain lineup entries)."""
+    if not isinstance(value, dict) or not (name := clean_str(value.get("name"))):
+        return None
+    links = [u for u in [*_as_list(value.get("sameAs")), value.get("url")] if isinstance(u, str) and u.startswith("http")]
+    spotify = next((u for u in links if "spotify.com" in u), None)
+    other = next((u for u in links if u != spotify), None)
+    image = next(iter(_images(value.get("image"))), None)
+    if not (spotify or other or image):
+        return None
+    return ArtistProfile(name=name, source=ChillzScraper.name, image_url=image, spotify_url=spotify, profile_url=other)
 
 
 def _name(value: Any) -> Any:

@@ -7,8 +7,9 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+from partylinks.artists import ArtistBook, ArtistProfile
 from partylinks.models import TicketKind, TierStatus
-from partylinks.scrapers import eventer, goout, selector, tickchak, zygo
+from partylinks.scrapers import barby, eventer, goout, grayclub, hulyo, mevalim, selector, tickchak, zygo
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TZ = "Asia/Jerusalem"
@@ -67,6 +68,20 @@ def test_tickchak_section_items() -> None:
 
     assert events and all(e.url.host == "live.tickchak.co.il" for e in events)
     assert all(e.min_price is not None and e.extra["provider"] for e in events)
+
+
+def test_tickchak_artist_profiles_merge_into_artist_book(tmp_path: Path) -> None:
+    items = load("tickchak_section")["events"]
+    profiles = [p for item in items for p in tickchak.parse_event(item, "https://live.tickchak.co.il").artist_profiles]
+    balishag = next(p for p in profiles if p.name == "Balishag")
+    assert balishag.profile_url == "https://live.tickchak.co.il/balishag"
+    assert balishag.spotify_url and "spotify.com" in balishag.spotify_url
+
+    book = ArtistBook(tmp_path / "artists.db")
+    book.save_profiles([ArtistProfile("Balishag", "goout", image_url="https://img/b.jpg")])
+    book.save_profiles([balishag])  # a sparser profile from another source keeps the photo
+    stored = book.profiles()["balishag"]
+    assert stored.image_url == "https://img/b.jpg" and stored.spotify_url == balishag.spotify_url
 
 
 def test_tickchak_discovers_sections_from_page_layout() -> None:
@@ -131,7 +146,8 @@ def test_hulyo_feed_filters_areas_and_merges_promoted() -> None:
     cfg = hulyo.HulyoSettings.model_validate(Settings().sources["hulyo"])
     feed = load("hulyo_shows")
     assert len(hulyo.list_deals(feed, [])) == 3
-    deals = hulyo.list_deals(feed, cfg.areas)
+    assert cfg.areas == []  # every area
+    deals = hulyo.list_deals(feed, ["תל אביב והמרכז"])
     assert len(deals) == 1 and deals[0]["areaName"] == "תל אביב והמרכז"
 
     event = hulyo.parse_event(deals[0], cfg, TZ)
@@ -189,7 +205,7 @@ def test_mevalim_reuses_stored_artwork_without_a_request() -> None:
 
     scraper.get_text = no_network  # type: ignore[method-assign]
     event = ScrapedEvent(source="mevalim", source_event_id="1", url="https://tickets.example/event/1", title="Show")
-    result = asyncio.run(scraper._with_artwork(event, "https://www.mevalim.co.il/central/"))  # type: ignore[attr-defined]
+    result = asyncio.run(scraper._with_artwork(event))  # type: ignore[attr-defined]
     assert result.images == ["https://img.example/stored.jpg"]
 
 
@@ -208,4 +224,59 @@ def test_mevalim_skips_artwork_for_events_that_will_be_dropped() -> None:
 
     scraper.get_text = no_network  # type: ignore[method-assign]
     haifa = ScrapedEvent(source="mevalim", source_event_id="9", url="https://tickets.example/event/9", title="X", city="חיפה")
-    assert asyncio.run(scraper._with_artwork(haifa, "https://www.mevalim.co.il/central/")).images == []  # type: ignore[attr-defined]
+    assert asyncio.run(scraper._with_artwork(haifa)).images == []  # type: ignore[attr-defined]
+
+
+def test_eventer_artist_catalog_keeps_both_spellings_and_links() -> None:
+    slide = load("eventer_artists")["slides"][0]
+    profiles = eventer.parse_artist(slide, load("eventer_artist"), "https://www.eventer.co.il/artists/{link_name}")
+    assert [p.name for p in profiles] == ["בוריס ברצ'ה", "Boris Brejcha"]
+    boris = profiles[1]
+    assert boris.profile_url == "https://www.eventer.co.il/artists/boris_brejcha"
+    assert boris.image_url and boris.image_url.startswith("https://images.eventer.co.il/")
+    assert "https://www.instagram.com/borisbrejcha" in boris.links
+    # Catalog only (artist already known): photo and page, no links.
+    assert eventer.parse_artist(slide, {}, "https://e/{link_name}")[1].links == []
+
+
+def test_mevalim_artist_pages_drop_placeholder_photos() -> None:
+    pages = load("mevalim_artist_pages")
+    photos = {695988: "https://www.mevalim.co.il/wp-content/uploads/a.jpg"}  # 115240 (placeholder) not resolved
+    profiles = [p for page in pages if (p := mevalim.parse_artist_page(page, "singer", photos))]
+    assert [p.name for p in profiles] == ["עופר ניסים", "שרים החלונות הגבוהים", "האחים זו-ארץ"]
+    assert profiles[0].image_url is None and profiles[1].image_url == photos[695988]
+    assert profiles[0].kind == "singer" and profiles[0].profile_url.startswith("https://www.mevalim.co.il/shows/")
+    assert mevalim.parse_artist_page({"title": {"rendered": "הופעות חיות בחיפה"}}, "singer", {}) is None
+
+
+def test_barby_show_name_gives_headliner_and_guests() -> None:
+    cases = {
+        "איתי לוי - בבארבי": ["איתי לוי"],
+        "ויתרתי VS כוח וידאו": ["ויתרתי", "כוח וידאו"],
+        "אקו x מיצי: THE NEW ACT!": ["אקו", "מיצי"],
+        "רונה קינן - במופע להקה חדש! אורחים :שלומי שבן , ערן צור.": ["רונה קינן", "שלומי שבן", "ערן צור"],
+        "זהבה בן-חוגגת יום הולדת עם אורחים מיוחדים": ["זהבה בן"],
+        "מסיבת העשורים הגדולה - ריקודים": [],
+        "מופע המחווה ל-Avenged Sevenfold": [],
+    }
+    for name, expected in cases.items():
+        assert barby.show_artists(name, "") == expected, name
+    assert barby.show_artists("אריאל זילבר בבארבי- 50 שנה", " חיים רומנו ושמוליק בודגוב") == [
+        "אריאל זילבר", "חיים רומנו", "שמוליק בודגוב",
+    ]
+
+
+def test_hulyo_deal_title_gives_the_star_only() -> None:
+    assert hulyo.deal_artists("נחום דידי במופע סטנד  אפ") == ["נחום דידי"]
+    assert hulyo.deal_artists("איש הגשם- בכיכובם של דביר בנדק ודן שפירא") == ["דביר בנדק", "דן שפירא"]
+    assert hulyo.deal_artists('שירים מהסרטים" מירי חן מארחת את משה להב ') == ["מירי חן", "משה להב"]
+    assert hulyo.deal_artists("Dancing Queen - מופע מחווה ללהקת ABBA") == []
+    assert hulyo.deal_artists("גרושים") == []  # a play
+
+
+def test_grayclub_artist_page_profile() -> None:
+    page = (FIXTURES / "grayclub_artist.html").read_text(encoding="utf-8")
+    profile = grayclub.parse_artist_page(page, "https://grayclub.co.il/shows-artist/x/", grayclub.GrayArtistSelectors())
+    assert profile and profile.name == "שלומית אהרון"
+    assert profile.image_url and profile.image_url.endswith(".jpg")
+    assert any("instagram.com" in link for link in profile.links)

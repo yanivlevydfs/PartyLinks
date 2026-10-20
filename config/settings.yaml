@@ -10,6 +10,15 @@ database:
   url: sqlite:///data/partylinks.db
   echo: false
 
+# One format for app, uvicorn and access lines. INFO -> stdout, WARNING+ -> stderr, UTF-8, "\n".
+logging:
+  level: INFO                # DEBUG | INFO | WARNING | ERROR (`-v` forces DEBUG)
+  format: text               # text | json (one JSON object per line, for Railway / log platforms)
+  access_log: true           # one line per HTTP request
+  file: data/logs/partylinks.log   # rotating file; empty on hosts that collect stdout
+  file_max_mb: 10
+  file_backups: 5
+
 # The public website (React app in web/). base_url is used in canonical links, the sitemap,
 # JSON-LD, llms.txt and share previews: set it to the real domain when deployed.
 site:
@@ -23,6 +32,27 @@ site:
     phone: ""
     updated: 2026-10-20    # last review of the statement
 
+# Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
+# https, no framing), vulnerability-scanner and data-harvester blocking, per-IP rate limits and
+# temporary bans (probes such as /.env or /wp-login.php, wrong admin tokens, rate-limit hits).
+security:
+  enabled: true
+  # Reverse proxy in front (nginx / Caddy / Cloudflare tunnel): only these addresses may tell us
+  # the visitor's real IP via X-Forwarded-For. Restart after changing.
+  trusted_proxies: ["127.0.0.1", "::1"]
+  # The site's real host names once deployed, e.g. ["partylinks.co.il", "www.partylinks.co.il"].
+  # Empty = any Host header accepted.
+  allowed_hosts: []
+  rate_limit_per_minute: 300
+  admin_rate_limit_per_minute: 30
+  ban_after_strikes: 5
+  ban_minutes: 60
+  max_body_bytes: 1000000
+  # /docs, /redoc, /openapi.json
+  api_docs: false
+  blocked_bots: [AhrefsBot, SemrushBot, MJ12bot, DotBot, Bytespider, PetalBot, DataForSeoBot, BLEXBot,
+                 serpstatbot, MegaIndex, Barkrowler, ZoominfoBot, Scrapy]
+
 api:
   host: 0.0.0.0
   port: 8000
@@ -30,7 +60,8 @@ api:
   max_page_size: 200
 
 scheduler:
-  enabled: true
+  # Paused on request (2026-10-20): set back to true to resume hourly scans.
+  enabled: false
   # Run every enabled source once when the API process starts.
   run_on_startup: false
   misfire_grace_seconds: 600
@@ -48,6 +79,9 @@ http:
   concurrency: 8
   user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
   accept_language: "he-IL,he;q=0.9,en;q=0.8"
+  # Outgoing proxy for scraping and image downloads, so source sites see the proxy's IP, not
+  # the server's. Put credentials in .env (PARTYLINKS_HTTP__PROXY=http://user:pass@host:port).
+  proxy: null
 
 # Post-scrape normalization. Runs after a scraper has finished and never
 # influences how any source is fetched.
@@ -57,9 +91,9 @@ enrichment:
     # Events whose city/address matches none of these are flagged out-of-city.
     aliases: ["tel aviv", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "tlv", "jaffa", "yafo",
               "תל אביב", "תל-אביב", "תל אביב-יפו", "תל אביב יפו", "ת\"א", "ת״א", "יפו"]
-    # Tel Aviv only: events matched to another city are not imported, and stored ones are
-    # purged. Events with no location information at all are kept (their city is unknown).
-    drop_other_cities: true
+    # false = every city in Israel is imported (in_target_city only flags Tel Aviv events for
+    # the area filter). true = Tel Aviv only: other cities are not imported and are purged.
+    drop_other_cities: false
   # Canonical genre -> keywords, matched case-insensitively against the genres and
   # event types each source declares and (if detect_genres_from_text) title + description.
   genres:
@@ -208,7 +242,7 @@ dedup:
 geocoding:
   enabled: true
   url: https://nominatim.openstreetmap.org/search
-  user_agent: "PartyLinks/0.1 (Tel Aviv party listings)"
+  user_agent: "PartyLinks/0.1 (Israel party listings)"
   min_interval_seconds: 1.1
   max_lookups_per_run: 120
   country_codes: il
@@ -229,6 +263,9 @@ geocoding:
     "היכל התרבות תל אביב": [32.0734714, 34.7800344]    # Charles Bronfman Auditorium
     "תיאטרון גשר": [32.0560976, 34.7600771]            # Gesher Theatre, Jaffa
     "נא לגעת": [32.0529513, 34.7503489]                # Nalaga'at Center, Jaffa Port
+    "maze tlv": [32.0622584, 34.7789901]               # MAZE nightclub, HaSharon 12 (OSM nightclub node)
+    "the place tlv": [32.0535, 34.7627]                # THE PLACE, Kibbutz Galuyot 52 (old Barby building)
+    "פולי בר": [32.0644504, 34.7759825]                # Polly, Rothschild Blvd 60 (OSM tags its city as Holon by mistake)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
@@ -265,32 +302,48 @@ sources:
     image_url_templates:
       - "https://images.go-out.co/events/{event_id}{cover_timestamp}_coverImage.jpg"
       - "https://images.go-out.co/events/{event_id}{cover_timestamp}_whatsappImage.jpg"
-    event_types: ["אירועים", "מועדוני לילה"]
+    # go-out.co category chips: nightlife = אירועים + מועדוני לילה, "פסטיבלים והופעות" = פסטיבל.
+    event_types: ["אירועים", "מועדוני לילה", "פסטיבל"]
     location: IL
     page_size: 8
-    max_pages: 100
+    max_pages: 500
+    # Feeds behind go-out.co/tickets/weekend and /tickets/today; they list events the by-type feed misses.
+    extra_feeds: ["/endOne/getWeekendEvents", "/endOne/getTodayEvents"]
+    extra_page_size: 50
+    # The "אמנים" section of go-out.co: photo, DJ/producer, genre, Spotify; saved to the artist dictionary.
+    artists_endpoint: /endOne/getArtistsList
+    artist_image_template: "https://images.go-out.co/artistImages/{artist_url}{timestamp}_artistImage.jpg"
+    artist_page_path: /artist/{artist_url}
 
   eventer:
     enabled: true
     cron: "25 * * * *"
     base_url: https://www.eventer.co.il
+    # Read on top of every category and slider found on the home page (discover).
     categories: ["parties"]
+    discover: true
     list_path: /sliders/categories/{category}/events.js
     event_details_path: /events/explainNames/{link_name}.js
     ticket_types_path: /events/{event_id}/ticketTypes.js
+    # Artist catalog (~180, photo + social links); profiles of new artists are fetched up to max_new_artists a run.
+    artists_path: /eventContainer/Artist/listByType.js
+    artist_path: /Artist/{link_name}/byLink.js
+    artist_page_path: /artists/{link_name}
+    max_new_artists: 40
 
   zygo:
     enabled: true
     cron: "35 * * * *"
     site_url: https://zygo.co.il
     api_url: https://api.zygo.co.il
-    city_slug: tel-aviv
+    # Empty = all of Israel (/v1/event); a slug such as tel-aviv narrows it to one city.
+    city_slug: ""
     list_path: /v1/event/{city_slug}
     event_page_path: /event/{event_id}/zygo
     # The API caps pages at 10 and returns a shuffled order, so the list is
     # re-walked until a full pass yields no new ids.
     page_size: 10
-    max_pages: 50
+    max_pages: 300
     max_passes: 4
 
   tickchak:
@@ -299,11 +352,12 @@ sources:
     site_url: https://live.tickchak.co.il
     api_url: https://api-live.tickchak.co.il
     category_slug: parties
-    city_slug: tel-aviv
+    # Empty = the category page for all of Israel; a slug such as tel-aviv narrows it.
+    city_slug: ""
     section_data_path: /sectionData/{section_id}
     custom_events_path: /customEventsNew
     page_size: 20
-    max_pages: 50
+    max_pages: 200
 
   selector:
     enabled: true
@@ -314,7 +368,7 @@ sources:
     event_path: /event
     event_page_path: /e/{event_link}
     page_size: 20
-    max_pages: 50
+    max_pages: 200
     # Empty list = keep every event type. "Concert" is what Selector labels "Parties".
     allowed_event_types: []
 
@@ -337,13 +391,21 @@ sources:
     enabled: true
     cron: "50 * * * *"
     site_url: https://grayclub.co.il
-    # Branch page whose "load more" button carries the branch term id.
-    branch_path: /gray-%d7%aa%d7%9c-%d7%90%d7%91%d7%99%d7%91/
+    # Every branch: page whose "load more" button carries the branch term id.
+    branches:
+      - {path: /gray-%d7%aa%d7%9c-%d7%90%d7%91%d7%99%d7%91/, city: תל אביב-יפו}
+      - {path: /gray-%d7%99%d7%94%d7%95%d7%93/, city: יהוד}
+      - {path: /gray-%d7%9e%d7%95%d7%93%d7%99%d7%a2%d7%99%d7%9f/, city: מודיעין}
     ajax_path: /wp-admin/admin-ajax.php
     ajax_action: load_more_shows
-    city: תל אביב-יפו
+    # Artist pages (~160: photo, Instagram / Facebook / YouTube); new ones read up to max_new_artists a run.
+    artist_sitemap_path: /artist-sitemap.xml
+    max_new_artists: 40
     page_size: 50
     max_pages: 20
+    http:
+      concurrency: 3          # event pages of every branch: a burst got 429 Too Many Requests
+      request_delay_seconds: 0.7
     selectors:
       load_more_button: button.loadmoreshows
       card: div.article-list
@@ -366,25 +428,40 @@ sources:
     enabled: true
     cron: "10 * * * *"
     site_url: https://www.mevalim.co.il
-    # Region page: prints the ajax nonce and hosts the performances table.
-    region_path: /central/
+    # Every region page (prints the ajax nonce and hosts the performances table) with the
+    # data-table-id of its "upcoming shows" load-more button. Regions overlap; ids are merged.
+    regions:
+      - {path: /central/, table_id: 40265}
+      - {path: /hasharon/, table_id: 39960}
+      - {path: /hashfela/, table_id: 40275}
+      - {path: /north/, table_id: 39956}
+      - {path: /haifa/, table_id: 44229}
+      - {path: /jerusalem/, table_id: 44247}
+      - {path: /jerusalem-district/, table_id: 40285}
+      - {path: /south/, table_id: 40298}
+      - {path: /beer-sheva/, table_id: 43956}
+      - {path: /shows/, table_id: 39747}     # nationwide "upcoming live shows"
     ajax_path: /wp-admin/admin-ajax.php
     ajax_action: mevalim_load_more_events
-    table_id: 40265      # "הופעות במרכז" table (data-table-id on its load-more button)
+    # Artist pages (WordPress children of /shows/ and /stand-up/): name, photo, page link.
+    artist_catalogs:
+      - {parent: 10993, kind: singer}     # /shows/
+      - {parent: 10296, kind: comedian}   # /stand-up/
+    placeholder_media: [10786, 115240]    # site star / logo shown when a page has no photo
     page_size: 20
-    max_pages: 100
+    max_pages: 200
     http:
       concurrency: 3          # artwork pages: a burst got 429 Too Many Requests
       request_delay_seconds: 0.7
 
-  # One static feed with every show deal in Israel; kept for the listed areas.
+  # One static feed with every show deal in Israel; empty areas = keep every area.
   hulyo:
     enabled: true
     cron: "20 * * * *"
     site_url: https://www.hulyo.co.il
     feed_path: /dynamic/client/shows.json
     event_page_path: /product?id={id}&category=shows&step=show-details
-    areas: ["תל אביב והמרכז"]
+    areas: []
 
   # chillz.com is behind a Vercel Security Checkpoint. Runs are recorded as
   # "blocked" until the owner allows PartyLinks; then collection starts with no
@@ -415,7 +492,7 @@ sources:
     # robots.txt disallows /api/ and /search: listing and details come from public pages only.
     list_path: /events
     event_page_path: /events/{slug}
-    max_events: 500
+    max_events: 5000
 
   eventbuzz:
     enabled: true

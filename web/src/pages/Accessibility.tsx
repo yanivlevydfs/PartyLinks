@@ -31,7 +31,7 @@ const TEXT = {
     limitsTitle: "מגבלות ידועות",
     limits: [
       "פרטי האירועים, הכרזות והתמונות מגיעים מאתרי הכרטיסים של המפיקים. ייתכן שכרזות מכילות טקסט בתוך התמונה ללא תיאור מלא; פרטי האירוע עצמם מוצגים תמיד גם כטקסט.",
-      "המפה היא רכיב חזותי. אותו מידע זמין גם ברשימות המקומות והמסיבות.",
+      "המפה היא רכיב חזותי. אותו מידע זמין גם ברשימות המקומות והאירועים.",
       "רכישת הכרטיסים נעשית באתרים חיצוניים, שהנגישות שלהם באחריות המפעילים שלהם.",
     ],
     contactTitle: "פניות בנושא נגישות",
@@ -42,7 +42,7 @@ const TEXT = {
     phone: "טלפון",
     contactMissing: "פרטי רכז/ת הנגישות יפורסמו בקרוב.",
     updated: "ההצהרה עודכנה לאחרונה בתאריך",
-    back: "לכל המסיבות",
+    back: "לכל האירועים",
   },
   en: {
     title: "Accessibility statement",
@@ -76,7 +76,7 @@ const TEXT = {
     phone: "Phone",
     contactMissing: "The accessibility coordinator's details will be published soon.",
     updated: "This statement was last updated on",
-    back: "All parties",
+    back: "All events",
   },
 };
 

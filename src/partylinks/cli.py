@@ -11,16 +11,15 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import logging
-import os
 import sys
 
 from pydantic import ValidationError
 from sqlalchemy import select
 
 from partylinks.artists import ArtistBook
-from partylinks.config import LOG_FORMAT, get_settings
+from partylinks.config import get_settings
 from partylinks.db import Database
+from partylinks.logs import setup_logging
 from partylinks.scrapers import SCRAPERS, build_scraper, configured_sources
 from partylinks.service import RunResult, ScrapeService
 
@@ -57,14 +56,18 @@ def _serve(reload: bool = False) -> int:
     from partylinks.config import project_path
 
     settings = get_settings()
+    # Only these proxies may set the client address (X-Forwarded-For); the Server header is dropped.
+    net = {"proxy_headers": True, "forwarded_allow_ips": ",".join(settings.security.trusted_proxies), "server_header": False}
     if reload:
         # Development: restart on any change under src/. Config changes don't need it (admin -> apply).
+        # Only the worker writes the log file: two processes on one file break rotation on Windows.
+        setup_logging(settings.logging.model_copy(update={"file": None}))
         uvicorn.run(
             "partylinks.api:create_app", factory=True, reload=True, reload_dirs=[str(project_path("src"))],
-            host=settings.api.host, port=settings.api.port,
+            host=settings.api.host, port=settings.api.port, log_config=None, **net,
         )  # fmt: skip
     else:
-        uvicorn.run(create_app(settings), host=settings.api.host, port=settings.api.port)
+        uvicorn.run(create_app(settings), host=settings.api.host, port=settings.api.port, log_config=None, **net)
     return 0
 
 
@@ -140,16 +143,8 @@ def main(argv: list[str] | None = None) -> int:
     artists.add_argument("action", choices=["list", "add", "block", "unblock"])
     artists.add_argument("names", nargs="*", metavar="NAME")
     args = parser.parse_args(argv)
-    if sys.platform == "win32":
-        os.system("")  # turn on ANSI colours in cmd.exe (otherwise uvicorn logs show "←[32m")
-
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format=LOG_FORMAT,
-    )
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-
     try:
+        setup_logging(get_settings().logging, args.verbose)
         return _dispatch(args)
     except ValidationError as exc:  # broken config.yaml / PARTYLINKS_* env: say what, no traceback
         print(f"invalid configuration:\n{exc}", file=sys.stderr)

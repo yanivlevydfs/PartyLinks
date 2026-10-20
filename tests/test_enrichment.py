@@ -90,6 +90,14 @@ def test_artist_book_learns_and_blocks(tmp_path: Path) -> None:
     assert event is not None and event.lineup == ["MOSKO", "MILLERO", "ADARU"]
 
 
+def test_featured_artists_spotted_in_text() -> None:
+    enricher = Enricher(SETTINGS.enrichment, SETTINGS.timezone)
+    enricher.learn_artists([], featured=["Adam Ten", "Dali", "Melodic", "ko", "עדן בן זקן", "חיים"])
+    text = "ערב melodic techno עם ADAM TEN ו-DALI, והפתעה: עדן בן זקן. dali אינו שם; Kobe. חיים טובים"
+    event = enricher.enrich(make(title="Kosmos", description=text))
+    assert event is not None and event.lineup == ["Adam Ten", "Dali", "עדן בן זקן"]
+
+
 def test_time_categories_in_local_timezone() -> None:
     event = ENRICHER.enrich(make())
     assert event is not None
@@ -134,7 +142,10 @@ def test_entry_type_from_price_range_without_tiers() -> None:
 
 def test_target_city_matching() -> None:
     assert ENRICHER.enrich(make()).in_target_city is True  # type: ignore[union-attr]
-    assert ENRICHER.enrich(make(address="Haifa, Israel")) is None  # Tel Aviv only: other cities are dropped
+    haifa = ENRICHER.enrich(make(address="Haifa, Israel"))  # every city is kept, flagged outside
+    assert haifa is not None and haifa.in_target_city is False and haifa.area == "outside"
+    tlv_only = SETTINGS.enrichment.model_copy(update={"target_city": SETTINGS.enrichment.target_city.model_copy(update={"drop_other_cities": True})})
+    assert Enricher(tlv_only, SETTINGS.timezone).enrich(make(address="Haifa, Israel")) is None
 
 
 def test_slugs_are_readable_unique_and_keep_hebrew() -> None:

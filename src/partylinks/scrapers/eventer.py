@@ -1,7 +1,10 @@
 """Eventer (eventer.co.il).
 
-Listing: ``/sliders/categories/<category>/events.js`` returns the complete category
-slider as JSON in one response (the site has no further pages for it).
+Listing: every event the site lists. ``/sliders/list.js`` describes the home page: its
+"categories" slider names the categories (``/sliders/categories/<category>/events.js``)
+and every other slider is read with ``/sliders/<linkName>/byLink.js``. Each returns its
+complete slide list in one response. Only event slides are kept (sliders also hold
+venues, artists, articles). ``categories`` from the config are always read as well.
 Details: ``/events/explainNames/<linkName>.js`` (event + JSON-LD) and
 ``/events/<id>/ticketTypes.js`` (all ticket tiers incl. free registrations).
 """
@@ -10,22 +13,44 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from typing import Any
+from urllib.parse import quote
 
 from pydantic import Field
 
+from partylinks.artists import ArtistProfile
 from partylinks.models import ScrapedEvent, TicketTier
-from partylinks.parsing import ParseError, clean_str, html_to_text, parse_iso, to_decimal, to_float, to_int
+from partylinks.parsing import (
+    ParseError,
+    clean_str,
+    html_to_text,
+    parse_iso,
+    to_decimal,
+    to_float,
+    to_int,
+)
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 
 UNLIMITED = -1
+CATEGORIES_SLIDER = 6  # sliderType of the home page's category tiles
+EVENT_SLIDE = 5  # slideType of an event (1 artist, 2 venue, 3 production, 8 article...)
 
 
 class EventerSettings(SourceSettings):
     base_url: str
-    categories: list[str] = Field(min_length=1)
+    categories: list[str] = Field(default_factory=list)
     list_path: str
+    # Read every category and slider the home page shows, not only `categories`.
+    discover: bool = True
+    sliders_path: str = "/sliders/list.js"
+    slider_path: str = "/sliders/{link_name}/byLink.js"
     event_details_path: str
     ticket_types_path: str
+    # The site's artist catalog (one request) and each artist's profile (social links). Empty = skip.
+    artists_path: str = ""
+    artist_path: str = "/Artist/{link_name}/byLink.js"
+    artist_page_path: str = "/artists/{link_name}"
+    # New artists whose profile is fetched per run; the rest are saved from the catalog alone.
+    max_new_artists: int = Field(40, ge=0)
 
 
 class EventerScraper(BaseScraper[EventerSettings]):
@@ -35,24 +60,44 @@ class EventerScraper(BaseScraper[EventerSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         link_names = await self._list_link_names()
         self.log.info("listed %d events", len(link_names))
+        if self.settings.artists_path:
+            self.artist_profiles = await self.optional("artists", self._list_artists()) or []
+            self.log.info("listed %d artists", len(self.artist_profiles))
         async for event in self.stream_isolated(link_names, self._fetch_event, label=lambda n: n):
             yield event
 
     async def _list_link_names(self) -> list[str]:
         s = self.settings
+        categories, sliders = list(s.categories), []
+        if s.discover:
+            for slider in await self.optional("slider list", self.get_json(s.base_url + s.sliders_path, expect=list)) or []:
+                if not isinstance(slider, dict):
+                    continue
+                if slider.get("sliderType") == CATEGORIES_SLIDER:
+                    categories += [str(c["linkName"]) for c in slider.get("slides") or [] if isinstance(c, dict) and c.get("linkName")]
+                elif slider.get("linkName"):
+                    sliders.append(str(slider["linkName"]))
+        listings = [(f"category {c}", s.base_url + s.list_path.format(category=c), dict) for c in dict.fromkeys(categories)]
+        listings += [(f"slider {n}", s.base_url + s.slider_path.format(link_name=n), list) for n in dict.fromkeys(sliders)]
+
         seen: dict[str, None] = {}
-        for category in s.categories:
-            try:  # one renamed/broken category must not hide the others
-                payload = await self.get_json(s.base_url + s.list_path.format(category=category), expect=dict)
+        for label, url, shape in listings:
+            try:  # one renamed/broken listing must not hide the others
+                payload = await self.get_json(url, expect=shape)
             except SourceBlockedError:
                 raise
             except Exception as exc:  # noqa: BLE001
-                self.record_failure(f"category {category}", exc)
+                self.record_failure(label, exc)
                 continue
-            slides = [slide for slide in payload.get("slides") or [] if isinstance(slide, dict)]
-            seen.update((str(slide["linkName"]), None) for slide in slides if slide.get("linkName"))
+            if isinstance(payload, list):  # byLink.js: [slider]
+                payload = payload[0] if payload and isinstance(payload[0], dict) else {}
+            seen.update(
+                (str(slide["linkName"]), None)
+                for slide in payload.get("slides") or []
+                if isinstance(slide, dict) and slide.get("linkName") and slide.get("slideType", EVENT_SLIDE) == EVENT_SLIDE
+            )
         if not seen and self.failures:
-            raise ParseError("every category listing failed")
+            raise ParseError("every listing failed")
         return list(seen)
 
     async def _fetch_event(self, link_name: str) -> ScrapedEvent:
@@ -67,6 +112,42 @@ class EventerScraper(BaseScraper[EventerSettings]):
             f"{link_name} tickets", self.get_json(s.base_url + s.ticket_types_path.format(event_id=event_id), expect=dict)
         ) or {}
         return parse_event(details, tickets_payload, f"{s.base_url}/{link_name}", self.timezone)
+
+
+    async def _list_artists(self) -> list[ArtistProfile]:
+        s = self.settings
+        catalog = await self.get_json(s.base_url + s.artists_path, expect=dict)
+        slides = [a for a in catalog.get("slides") or [] if isinstance(a, dict) and a.get("linkName") and a.get("title")]
+        new = [a for a in slides if not set(map(str.casefold, artist_names(a["title"]))) <= self.known_artists.keys()]
+        details: dict[str, dict[str, Any]] = {}
+        for slide in new[: s.max_new_artists]:
+            link = str(slide["linkName"])
+            path = s.artist_path.format(link_name=quote(link))
+            details[link] = await self.optional(f"artist {link}", self.get_json(s.base_url + path, expect=dict)) or {}
+        return [p for a in slides for p in parse_artist(a, details.get(str(a["linkName"])) or {}, s.base_url + s.artist_page_path)]
+
+
+def artist_names(title: str) -> list[str]:
+    """"בוריס ברצ'ה | Boris Brejcha" -> both spellings, so either one is spotted in event text."""
+    return [n for part in title.split("|") if (n := clean_str(part))]
+
+
+def parse_artist(slide: dict[str, Any], details: dict[str, Any], page_template: str) -> list[ArtistProfile]:
+    images = details.get("images") or slide.get("images") or {}
+    links = [
+        u for key in ("instagramLink", "youtubeLink", "soundcloudLink", "facebookLink", "webSiteLink", "wikipediaLink")
+        if isinstance(u := details.get(key), str) and u.startswith("http")
+    ]
+    return [
+        ArtistProfile(
+            name=name,
+            source=EventerScraper.name,
+            image_url=clean_str(images.get("imageSquare") or images.get("imageDefault")),
+            profile_url=page_template.format(link_name=quote(str(slide["linkName"]))),
+            links=links,
+        )
+        for name in artist_names(str(slide.get("title")))
+    ]
 
 
 def parse_event(details: dict[str, Any], tickets_payload: dict[str, Any], page_url: str, default_tz: str) -> ScrapedEvent:

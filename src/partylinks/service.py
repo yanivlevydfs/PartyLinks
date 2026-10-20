@@ -225,7 +225,9 @@ class ScrapeService:
 
     async def _run(self, source: str, trigger: str) -> RunResult:
         run_id = await asyncio.to_thread(_with_db_retry, "start run", lambda: self._create_run(source, trigger))
-        self.enricher.learn_artists(*await asyncio.to_thread(self.artists.load))
+        known, blocked = await asyncio.to_thread(self.artists.load)
+        profiles = await asyncio.to_thread(self.artists.profiles)
+        self.enricher.learn_artists(known, blocked, featured=[p.name for p in profiles.values()])
         found = saved = 0
         status, error = "success", None
         scraper = None
@@ -245,6 +247,7 @@ class ScrapeService:
             async with deadline:
                 scraper = build_scraper(source, self.settings)
                 scraper.known_images = await asyncio.to_thread(self._known_images, source)
+                scraper.known_artists = {key: p for key, p in profiles.items() if p.source == source}
                 scraper.wanted = lambda event: not self.enricher.is_dropped(event)
                 failures = scraper.failures
                 async with scraper:
@@ -253,6 +256,7 @@ class ScrapeService:
                             if self._stopping.is_set():
                                 raise _StopRequested
                             found += 1
+                            scraper.artist_profiles += event.artist_profiles
                             if _finished_before(event, self.settings):  # already over; never stored
                                 continue
                             try:
@@ -293,6 +297,10 @@ class ScrapeService:
                 await self._post_step(source, "regroup", failures, asyncio.to_thread(self.regroup))
             # Saving overwrote coordinates with what the source sent; restore / look up the rest.
             await self._post_step(source, "geocode", failures, asyncio.to_thread(self.geocode))
+        if scraper is not None and scraper.artist_profiles:  # used for lineups from the next run on
+            await self._post_step(
+                source, "artist profiles", failures, asyncio.to_thread(self.artists.save_profiles, scraper.artist_profiles)
+            )
         if status == "success" and failures:
             status = "partial"
 

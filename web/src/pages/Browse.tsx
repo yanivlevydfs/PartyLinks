@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useCategories, useEvents } from "../api";
 import type { Facet } from "../types";
-import { artistPath, Chip, EventGrid, Hero, label, useT, useTitle, venuePath } from "../ui";
+import { artistPath, Chip, EventGrid, Hero, Img, label, useT, useTitle, venuePath } from "../ui";
 
 function FacetIndex({ title, facets, path, byArea }: {
   title: string; facets: Facet[] | undefined; path: (v: string) => string; byArea?: boolean;
@@ -34,9 +34,10 @@ function FacetIndex({ title, facets, path, byArea }: {
         {shown?.length === 0 && <p className="msg">{t.empty}</p>}
         <div className="facet-grid">
           {shown?.map((f) => (
-            <Link key={f.value} className="facet" to={path(f.value)}>
-              <b dir="auto">{f.value}</b>
-              <small>{t.events(f.events)}{f.area ? ` · ${label(t.areas, f.area)}` : ""}</small>
+            <Link key={f.value} className={"facet" + (f.image_url ? " with-photo" : "")} to={path(f.value)}>
+              {f.image_url && <Img src={f.image_url} alt="" className="facet-photo" />}
+              <b dir="auto">{f.value}{f.verified && <Verified />}</b>
+              <small>{t.events(f.events)}{f.area ? ` · ${label(t.areas, f.area)}` : ""}{f.kind ? ` · ${f.kind.toUpperCase()}` : ""}</small>
             </Link>
           ))}
         </div>
@@ -81,17 +82,42 @@ export function VenuePage() {
   );
 }
 
+function Verified() {
+  const { t } = useT();
+  return <span className="verified" title={t.verified} aria-label={t.verified}>✓</span>;
+}
+
 export function ArtistPage() {
   const { name = "" } = useParams();
   const { t } = useT();
   useTitle(name);
+  // Same query cache as the artists index: no extra request.
+  const profile = useCategories().data?.lineup.find((f) => f.verified && f.value.toLowerCase() === name.toLowerCase());
   return (
     <>
-      <Hero title={name}><p className="sub">🎧 {t.lineup}</p></Hero>
+      <Hero title={profile?.value ?? name}>
+        {profile?.image_url && <Img src={profile.image_url} alt={profile.value} className="artist-photo" />}
+        <p className="sub">
+          🎧 {[profile?.kind?.toUpperCase(), profile?.genre].filter(Boolean).join(" · ") || t.lineup}
+          {profile?.verified && <Verified />}
+        </p>
+        {[profile?.spotify_url, ...(profile?.links ?? []), profile?.profile_url].filter((u): u is string => !!u).map((u) => (
+          <a key={u} className="sub" href={u} target="_blank" rel="noopener noreferrer">{siteName(u)} ↗</a>
+        ))}
+      </Hero>
       <main className="wrap">
         <h4 className="section-title">{t.upcomingAt}</h4>
         <EventGrid params={{ artist: name }} />
       </main>
     </>
   );
+}
+
+// "https://www.instagram.com/x" -> "instagram"
+function siteName(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^(www|m|open|he|en)\./, "").split(".")[0];
+  } catch {
+    return url;
+  }
 }

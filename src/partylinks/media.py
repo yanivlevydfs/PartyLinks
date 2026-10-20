@@ -97,7 +97,7 @@ class MediaStore:
         semaphore = asyncio.Semaphore(http.concurrency)
         stored_count = failed_count = 0
         async with httpx.AsyncClient(
-            timeout=http.timeout_seconds, follow_redirects=True, headers={"User-Agent": http.user_agent}
+            timeout=http.timeout_seconds, follow_redirects=True, proxy=http.proxy, headers={"User-Agent": http.user_agent}
         ) as client:
             # Chunks bound memory (BLOBs) and SQL parameters, and keep what finished if a later chunk fails.
             for chunk in _chunks(pending, PERSIST_CHUNK):

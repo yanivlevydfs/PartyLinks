@@ -5,7 +5,7 @@ import { useAllEvents } from "../api";
 import type { EventSummary } from "../types";
 import { eventPath, fmtDate, Sources, useT, useTitle, venuePath } from "../ui";
 
-const TEL_AVIV: [number, number] = [32.0809, 34.7806];
+const ISRAEL: [number, number] = [31.9, 34.95];
 
 export default function MapPage() {
   const { t } = useT();
@@ -32,7 +32,7 @@ export default function MapPage() {
           </>
         )}
       </div>
-      <MapContainer center={TEL_AVIV} zoom={13} className="map" scrollWheelZoom>
+      <MapContainer center={ISRAEL} zoom={8} className="map" scrollWheelZoom>
         {/* Keyless OSM tiles, darkened in CSS (.map .leaflet-tile-pane). */}
         <TileLayer
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"

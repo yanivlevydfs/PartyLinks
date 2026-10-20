@@ -143,6 +143,7 @@ class Enricher:
         # Artist dictionary, loaded by the service from artists.py (empty when enriching standalone).
         self._known: set[str] = set()
         self._blocked: set[str] = set()
+        self._featured: tuple[re.Pattern[str] | None, dict[str, str]] = (None, {})
         self._weekend = {d.lower() for d in settings.weekend_days}
         self.areas = AreaMatcher(settings.areas)
 
@@ -190,7 +191,7 @@ class Enricher:
 
     # ------------------------------------------------------------------ lineup
     def _lineup(self, event: ScrapedEvent) -> list[str]:
-        names = [*event.artists, *self._lineup_from_text(event.description)]
+        names = [*event.artists, *self._lineup_from_text(event.description), *self._featured_in(event)]
         venue = (event.venue_name or "").casefold()
         unique: dict[str, str] = {}
         for raw in names:
@@ -200,11 +201,36 @@ class Enricher:
                     unique.setdefault(name.casefold(), name)
         return list(unique.values())[: self.settings.lineup.max_names]
 
-    def learn_artists(self, known: Iterable[str], blocked: Iterable[str] = ()) -> None:
-        """Artist dictionary: single-word known names split glued ones; blocked names are never artists."""
+    def learn_artists(self, known: Iterable[str], blocked: Iterable[str] = (), featured: Iterable[str] = ()) -> None:
+        """Artist dictionary: single-word known names split glued ones; blocked names are never artists;
+        featured (curated, e.g. Go-Out's artists) are also spotted anywhere in the title / description."""
         min_len = self.settings.lineup.min_known_length
         self._known = {k.casefold() for k in known if " " not in k.strip() and len(k.strip()) >= min_len}
         self._blocked = {b.casefold() for b in blocked}
+        # A name that is also a genre word ("Melodic" in "melodic techno") or very short ("ko") is not spotted,
+        # nor a one-word name with no Latin letter: Hebrew has no capitals to tell "חיים" / "כהן" from plain words.
+        genre_parts = {part for words in self._genre_words for part in words.split()}
+        spot = sorted(
+            {n.strip() for n in featured
+             if len(n.strip()) >= min_len and n.strip().casefold() not in genre_parts | self._blocked
+             and (" " in n.strip() or re.search(r"[A-Za-z]", n))},
+            key=len, reverse=True,
+        )  # fmt: skip
+        # Multi-word names match in any case; one-word names only as written or in capitals ("Dali" / "DALI").
+        parts = [
+            rf"(?i:{re.escape(n)})" if " " in n else rf"{re.escape(n)}|{re.escape(n.upper())}" for n in spot
+        ]
+        self._featured = (
+            re.compile(rf"(?<![\w&]){'(?:' + '|'.join(parts) + ')'}(?![\w&])") if parts else None,
+            {n.casefold(): n for n in spot},
+        )
+
+    def _featured_in(self, event: ScrapedEvent) -> list[str]:
+        pattern, spelling = self._featured
+        if pattern is None:
+            return []
+        text = f"{event.title}\n{event.description or ''}"
+        return [spelling[m.group(0).casefold()] for m in pattern.finditer(text)]
 
     def _unglue(self, name: str) -> list[str]:
         """"MOSKOMILLEROADARU" -> MOSKO, MILLERO, ADARU when MILLERO is a known artist.

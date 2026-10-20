@@ -5,11 +5,14 @@ Details per show, fetched in parallel: ``/api/shows/show/<id>`` (description,
 sold-out flag) and ``/api/shows/tier-price/<id>`` (ticket tiers with quantity
 and sold count). ``tierPriceType`` is 1 = single price, 2 = sequential rounds
 (early bird, regular...), 3 = parallel tiers (adult / child).
+Artists: the site has no artist data; the headliner leads ``showName`` ("איתי לוי - בבארבי",
+"ויתרתי VS כוח וידאו", "... אורחת אפרת גוש") and ``showGuestsNames`` is rarely filled.
 """
 
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any
@@ -20,6 +23,14 @@ from partylinks.parsing import ParseError, clean_str, html_to_text, to_decimal, 
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 SINGLE_PRICE = "1"
+
+# Themed nights / tributes / non-shows: the name is not an artist.
+_NOT_ARTIST = re.compile(r"מסיבת|חוזרת ל|מחווה|tribute|שירות הלקוחות|הלילה", re.IGNORECASE)
+_GUESTS = re.compile(r"אורח(?:ת|ים)?(?:\s+מיוחד(?:ת|ים)?)?(?![֐-׿])\s*[:\-]?\s*(.+)$")
+_HEAD_END = re.compile(r"\s+-\s*|-\s+|\s*:\s*|,|(?<=\S)-(?=חוגג|מופע|לאור)")
+_TAIL = re.compile(r"\s*(?:בבארבי|מגיע(?:ה|ים)? לבארבי.*|חוזר(?:ת)? לבארבי.*|לראשונה.*|לייב|והלהקה|במופע.*|חוגג(?:ת)?.*)\s*$")
+_ACTS = re.compile(r"\s+(?:VS|x|&|\+)\s+", re.IGNORECASE)
+_NAMES = re.compile(r"\s*,\s*|\s+ו(?=\S)")
 
 
 class BarbySettings(SourceSettings):
@@ -89,6 +100,7 @@ def parse_event(
         latitude=s.latitude,
         longitude=s.longitude,
         event_types=[t for t in (clean_str(show.get("showType")), clean_str(show.get("showSeatType"))) if t],
+        artists=show_artists(show.get("showName"), show.get("showGuestsNames")),
         images=[s.image_url_template.format(image=image)] if image else [],
         min_price=min(priced, default=None),
         max_price=max(priced, default=None),
@@ -101,6 +113,25 @@ def parse_event(
             "tier_price_type": show.get("showTierPriceType"),
         },
     )
+
+
+def show_artists(show_name: Any, guests: Any) -> list[str]:
+    """Headliner(s) from the show name, then guests ("אורחת: X, Y" in the name, or the guests field).
+
+    ponytail: pattern rules over free text; a themed night that slips through is fixed with
+    ``partylinks artists block``. Upgrade path: match against the artist book only.
+    """
+    name = " ".join(str(show_name or "").split())
+    if not name or _NOT_ARTIST.search(name):
+        return []
+    names: list[str] = []
+    if match := _GUESTS.search(name):
+        names += _NAMES.split(match.group(1).strip(" ."))
+        name = name[: match.start()]
+    head = _TAIL.sub("", _HEAD_END.split(name)[0]).strip(" .-")
+    names = [*_ACTS.split(head), *names, *_NAMES.split(" ".join(str(guests or "").split()))]
+    out = [n for raw in names if (n := raw.strip(" .-")) and len(n.split()) <= 4 and not n.startswith("מיוחד")]
+    return list(dict.fromkeys(out))
 
 
 def _parse_tiers(listed: dict[str, Any], tiers: Any) -> list[TicketTier]:

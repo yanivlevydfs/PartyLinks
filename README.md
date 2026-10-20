@@ -92,6 +92,29 @@ npm run dev        # http://localhost:5173, proxies the API on :8000
 npm run build      # web/dist, then served by `python -m partylinks serve` at http://localhost:8000/
 ```
 
+### Deploy to Railway
+
+The repo ships a `Dockerfile` (builds the website, then runs API + scheduler + site in one
+container) and `railway.json` (Dockerfile build, `/health` check, one replica).
+
+1. Create a project from this repo (Railway picks up `railway.json`).
+2. **Add a volume mounted at `/app/data`.** It holds the SQLite DB, the artist dictionary and the
+   images; without it every deploy starts empty.
+3. Variables:
+   - `PARTYLINKS_ADMIN__TOKEN` — a long random string (admin console and mutating API).
+   - `PARTYLINKS_SITE__BASE_URL` — only for a custom domain; otherwise the Railway public domain is used.
+   - `PARTYLINKS_SECURITY__ALLOWED_HOSTS` — e.g. `["partylinks.co.il","www.partylinks.co.il"]` (optional).
+4. Generate a domain (Settings → Networking). The app listens on Railway's `$PORT`.
+
+Keep one replica: SQLite and the scheduler are single-instance. Logs are JSON lines on stdout
+(`level`, `logger`, `message`), warnings and errors on stderr, so Railway's log filters work.
+
+### Logs
+
+One format everywhere (app, uvicorn, access lines), configured under `logging:` in
+`config/settings.yaml`: INFO to stdout, WARNING+ to stderr, UTF-8, plus a rotating file at
+`data/logs/partylinks.log` locally (10 MB × 5). `format: json` gives one JSON object per line.
+
 ## API
 
 | Method | Path | Notes |

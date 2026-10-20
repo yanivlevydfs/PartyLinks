@@ -103,6 +103,14 @@ export interface Facet {
   value: string;
   events: number;
   area?: string; // venues only
+  // Artists only: verified profile curated by a ticket site (Go-Out, Eventer, Mevalim...).
+  verified?: boolean;
+  image_url?: string;
+  kind?: string; // dj / producer / singer
+  genre?: string;
+  spotify_url?: string;
+  profile_url?: string;
+  links?: string[]; // Instagram, YouTube, SoundCloud, website...
 }
 
 export interface Categories {

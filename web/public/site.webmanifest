@@ -1,7 +1,7 @@
 {
-  "name": "PartyLinks · Tel Aviv parties",
+  "name": "PartyLinks · Events in Israel",
   "short_name": "PartyLinks",
-  "description": "Every Tel Aviv party in one place: dates, lineups, tickets and prices.",
+  "description": "Every event in Israel in one place: dates, lineups, tickets and prices.",
   "lang": "he",
   "dir": "rtl",
   "start_url": "/",

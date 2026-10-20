@@ -13,11 +13,13 @@ per-event request is needed. Ticket tiers live on the upstream provider.
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import AsyncIterator
 from typing import Any
 
 from pydantic import Field
 
+from partylinks.artists import ArtistProfile
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, from_unix, next_data, to_decimal
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -30,7 +32,7 @@ class TickchakSettings(SourceSettings):
     site_url: str
     api_url: str
     category_slug: str
-    city_slug: str
+    city_slug: str = ""  # empty = the category page for all of Israel
     section_data_path: str
     custom_events_path: str
     page_size: int = Field(20, ge=1)
@@ -46,7 +48,7 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        state = next_data(await self.get_text(f"{s.site_url}/{s.category_slug}/{s.city_slug}"))
+        state = next_data(await self.get_text(f"{s.site_url}/{s.category_slug}/{s.city_slug}".rstrip("/")))
         page_state = _initial_state(state)
         page = page_state.get("page") or {}
         hierarchy = _hierarchy_params(page.get("breadcrumbs") or [])
@@ -84,6 +86,25 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
             return payload.get(key) or [], payload.get("count")
 
         return await self.paginate(page, size, self.settings.max_pages)
+
+
+def _profile(artist: dict[str, Any], site_url: str) -> ArtistProfile | None:
+    name = clean_str(artist.get("titleEn") or artist.get("title"))
+    path = clean_str(artist.get("url"))
+    if not name or not path:
+        return None
+    try:  # streaming links arrive as a JSON string
+        music = json.loads(artist.get("music") or "{}")
+    except ValueError:
+        music = {}
+    genres = [c.get("titleEn") or c.get("title") for c in (artist.get("categories") or {}).get("all") or []]
+    return ArtistProfile(
+        name=name,
+        source=TickchakScraper.name,
+        genre=clean_str(", ".join(g for g in genres if g)),
+        spotify_url=clean_str(music.get("spotify")) if isinstance(music, dict) else None,
+        profile_url=site_url + path if path.startswith("/") else path,
+    )
 
 
 def _initial_state(data: dict[str, Any]) -> dict[str, Any]:
@@ -141,6 +162,7 @@ def parse_event(item: dict[str, Any], site_url: str) -> ScrapedEvent:
         city=clean_str((venue.get("city") or {}).get("title")),
         event_types=sorted(categories),
         artists=[name for a in artists if (name := clean_str(a.get("titleEn") or a.get("title")))],
+        artist_profiles=[p for a in artists if (p := _profile(a, site_url))],
         images=_artwork(item),
         min_price=to_decimal(item.get("minPrice")),
         max_price=to_decimal(item.get("maxPrice")),

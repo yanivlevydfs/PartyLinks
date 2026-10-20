@@ -1,1 +1,1 @@
-"""PartyLinks: scheduled Tel Aviv party-event scraper with a REST API."""
+"""PartyLinks: scheduled Israel-wide party-event scraper with a REST API."""

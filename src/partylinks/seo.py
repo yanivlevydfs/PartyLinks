@@ -26,7 +26,6 @@ from sqlalchemy.orm import Session, selectinload
 from partylinks.config import Settings
 from partylinks.db import EventRow, upcoming_filter
 
-TEL_AVIV = (32.0809, 34.7806)
 LIST_LIMIT = 60  # events listed on index pages
 LLMS_LIMIT = 400
 DESC_LIMIT = 300
@@ -35,16 +34,20 @@ AI_CRAWLERS = [
     "PerplexityBot", "Perplexity-User", "Google-Extended", "Applebot-Extended", "CCBot", "Bingbot",
 ]  # fmt: skip
 
+# Operational / private endpoints crawlers have no business indexing.
+ROBOTS_PRIVATE = ["/admin", "/admin/api/", "/docs", "/redoc", "/openapi.json", "/health", "/runs", "/sources",
+                  "/maintenance", "/changes"]
+
 TEXT = {
     "he": {
-        "site_title": "PartyLinks · כל המסיבות בתל אביב",
-        "site_desc": "כל המסיבות והאירועים בתל אביב במקום אחד: תאריכים, ליינאפ, מחירי כרטיסים, כניסה חופשית, מקומות ומפה. מתעדכן כל הזמן.",
-        "upcoming": "מסיבות קרובות בתל אביב",
-        "venues": "מקומות מסיבות בתל אביב",
-        "artists": "אמנים ו־DJs בתל אביב",
-        "map": "מפת מסיבות בתל אביב",
-        "venue_desc": "מסיבות ואירועים קרובים ב{name}, תל אביב: תאריכים, ליינאפ וכרטיסים.",
-        "artist_desc": "ההופעות והמסיבות הקרובות של {name} בתל אביב: תאריכים, מקומות וכרטיסים.",
+        "site_title": "PartyLinks · כל האירועים בישראל",
+        "site_desc": "כל האירועים, המסיבות וההופעות בכל הארץ במקום אחד: תאריכים, ליינאפ, מחירי כרטיסים, כניסה חופשית, מקומות ומפה. מתעדכן כל הזמן.",
+        "upcoming": "אירועים קרובים בכל הארץ",
+        "venues": "מקומות אירועים בכל הארץ",
+        "artists": "אמנים ו־DJs בישראל",
+        "map": "מפת האירועים של ישראל",
+        "venue_desc": "אירועים קרובים ב{name}: תאריכים, ליינאפ וכרטיסים.",
+        "artist_desc": "האירועים וההופעות הקרובים של {name}: תאריכים, מקומות וכרטיסים.",
         "free": "כניסה חופשית",
         "from": "החל מ־₪{p}",
         "lineup": "ליינאפ",
@@ -54,14 +57,14 @@ TEXT = {
         "locale": "he_IL",
     },
     "en": {
-        "site_title": "PartyLinks · Every Tel Aviv party",
-        "site_desc": "Every party and club night in Tel Aviv in one place: dates, lineups, ticket prices, free entry, venues and a map. Always up to date.",
-        "upcoming": "Upcoming parties in Tel Aviv",
-        "venues": "Party venues in Tel Aviv",
-        "artists": "Artists & DJs playing Tel Aviv",
-        "map": "Tel Aviv party map",
-        "venue_desc": "Upcoming parties and events at {name}, Tel Aviv: dates, lineups and tickets.",
-        "artist_desc": "{name}'s upcoming shows and parties in Tel Aviv: dates, venues and tickets.",
+        "site_title": "PartyLinks · Every event in Israel",
+        "site_desc": "Every event, party and show in Israel in one place: dates, lineups, ticket prices, free entry, venues and a map. Always up to date.",
+        "upcoming": "Upcoming events in Israel",
+        "venues": "Event venues in Israel",
+        "artists": "Artists & DJs playing Israel",
+        "map": "Israel events map",
+        "venue_desc": "Upcoming events at {name}: dates, lineups and tickets.",
+        "artist_desc": "{name}'s upcoming events and shows in Israel: dates, venues and tickets.",
         "free": "Free entry",
         "from": "From ₪{p}",
         "lineup": "Lineup",
@@ -155,11 +158,11 @@ def _event_list_html(rows: list[EventRow], cfg: Settings, lang: str) -> str:
 def _place(row: EventRow) -> dict[str, Any]:
     place: dict[str, Any] = {
         "@type": "Place",
-        "name": row.venue_name or row.address or row.city or "Tel Aviv",
+        "name": row.venue_name or row.address or row.city or "Israel",
         "address": {
             "@type": "PostalAddress",
             "streetAddress": row.address or None,
-            "addressLocality": row.city or "Tel Aviv",
+            "addressLocality": row.city or None,
             "addressCountry": "IL",
         },
     }
@@ -260,7 +263,7 @@ def _website(cfg: Settings, lang: str) -> list[dict[str, Any]]:
         "name": cfg.site.name,
         "url": cfg.site.base_url + "/",
         "logo": cfg.site.base_url + "/icon-512.png",
-        "areaServed": {"@type": "City", "name": "Tel Aviv-Yafo", "address": {"@type": "PostalAddress", "addressCountry": "IL"}},
+        "areaServed": {"@type": "Country", "name": "Israel"},
     }
     site = {
         "@context": "https://schema.org",
@@ -446,7 +449,6 @@ def render(template: str, page: Page, cfg: Settings) -> str:
     image = page.image or f"{cfg.site.base_url}/og-default.png"
     t = TEXT[page.lang]
     other = "en" if page.lang == "he" else "he"
-    lat, lon = TEL_AVIV
     head = [
         f"<title>{escape(page.title)}</title>",
         f'<meta name="description" content="{escape(page.description)}" />',
@@ -468,11 +470,9 @@ def render(template: str, page: Page, cfg: Settings) -> str:
         f'<meta name="twitter:title" content="{escape(page.title)}" />',
         f'<meta name="twitter:description" content="{escape(page.description)}" />',
         f'<meta name="twitter:image" content="{escape(image)}" />',
-        # Local signals: the whole site is about Tel Aviv-Yafo.
-        '<meta name="geo.region" content="IL-TA" />',
-        '<meta name="geo.placename" content="Tel Aviv-Yafo" />',
-        f'<meta name="geo.position" content="{lat};{lon}" />',
-        f'<meta name="ICBM" content="{lat}, {lon}" />',
+        # Local signals: the whole site is about Israel.
+        '<meta name="geo.region" content="IL" />',
+        '<meta name="geo.placename" content="Israel" />',
         '<link rel="alternate" type="text/plain" title="llms.txt" href="/llms.txt" />',
         *(_jsonld_tag(d) for d in page.jsonld),
     ]
@@ -517,12 +517,14 @@ def sitemap(session: Session, cfg: Settings) -> str:
 
 
 def robots(cfg: Settings) -> str:
-    private = "Disallow: /admin\nDisallow: /admin/api/\n"
+    private = "".join(f"Disallow: {p}\n" for p in ROBOTS_PRIVATE)
     ai = "".join(f"User-agent: {bot}\n" for bot in AI_CRAWLERS)
+    blocked = "".join(f"User-agent: {bot}\n" for bot in cfg.security.blocked_bots)
     return (
-        f"# Search engines and AI assistants are welcome: the party listings are public.\n"
+        f"# Search engines and AI assistants are welcome: the event listings are public.\n"
         f"User-agent: *\nAllow: /\n{private}\n{ai}Allow: /\n{private}\n"
-        f"Sitemap: {cfg.site.base_url}/sitemap.xml\n"
+        + (f"# Data harvesters: not welcome (also refused by the server).\n{blocked}Disallow: /\n\n" if blocked else "")
+        + f"Sitemap: {cfg.site.base_url}/sitemap.xml\n"
     )
 
 
@@ -534,7 +536,7 @@ def llms_txt(session: Session, cfg: Settings) -> str:
     lines = [
         f"# {cfg.site.name}",
         "",
-        "> Every party, club night and music event in Tel Aviv-Yafo, Israel, collected from Israeli "
+        "> Every event, party, show and club night in Israel, collected from Israeli "
         "ticketing sites and updated several times a day. For each event: date and time (Israel time, "
         "Asia/Jerusalem), venue and address, lineup / DJs, genres, minimum age, every ticket tier with "
         "its price in ILS (₪), free-entry flags, and a link to buy tickets on the original site.",
@@ -542,7 +544,7 @@ def llms_txt(session: Session, cfg: Settings) -> str:
         f"Last updated: {now:%Y-%m-%d %H:%M} (Asia/Jerusalem). Site languages: Hebrew (default) and English (`?lang=en`).",
         "",
         "## Pages",
-        f"- [Upcoming parties]({base}/): all upcoming events, filterable by date, genre, time of day and free entry",
+        f"- [Upcoming events]({base}/): all upcoming events, filterable by date, genre, time of day and free entry",
         f"- [Map]({base}/map): events with a location",
         f"- [Venues]({base}/venues): every venue with upcoming events",
         f"- [Artists]({base}/artists): DJs and performers with upcoming shows",
@@ -553,9 +555,9 @@ def llms_txt(session: Session, cfg: Settings) -> str:
         "beach, north, jaffa, outside), `min_price`, `max_price`, `q`; paged with `page`, `page_size`",
         f"- [Event detail]({base}/events/{{id}}): tickets, prices, fees, images",
         f"- [Categories]({base}/categories): counts per genre, date, venue, artist",
-        f"- [OpenAPI schema]({base}/openapi.json)",
+        *([f"- [OpenAPI schema]({base}/openapi.json)"] if cfg.security.api_docs else []),
         "",
-        f"## Upcoming parties (next {len(rows)})",
+        f"## Upcoming events (next {len(rows)})",
     ]
     for r in rows:
         genres = f" · {', '.join(r.genres)}" if r.genres else ""

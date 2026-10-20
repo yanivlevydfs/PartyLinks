@@ -1,6 +1,7 @@
 """ZYGO (zygo.co.il).
 
-Listing: ``GET api.zygo.co.il/v1/event/<city>?limit&skip``. The API caps pages
+Listing: ``GET api.zygo.co.il/v1/event?limit&skip`` (all of Israel; ``/v1/event/<city>``
+narrows it to one city when ``city_slug`` is set). The API caps pages
 at 10 items and returns them in a shuffled order, so ``skip`` alone can miss
 events. The list is therefore walked repeatedly until a full pass yields no new
 ids (bounded by ``max_passes``).
@@ -26,7 +27,7 @@ CENTS = Decimal("0.01")
 class ZygoSettings(SourceSettings):
     site_url: str
     api_url: str
-    city_slug: str
+    city_slug: str = ""  # empty = every city
     list_path: str
     event_page_path: str
     page_size: int = Field(10, ge=1)
@@ -46,7 +47,7 @@ class ZygoScraper(BaseScraper[ZygoSettings]):
 
     async def _list_event_ids(self) -> list[str]:
         s = self.settings
-        url = s.api_url + s.list_path.format(city_slug=s.city_slug)
+        url = s.api_url + s.list_path.format(city_slug=s.city_slug).rstrip("/")
 
         async def page(index: int) -> tuple[list[dict[str, Any]], None]:
             batch = await self.get_json(url, params={"limit": s.page_size, "skip": index * s.page_size}, expect=list)
@@ -136,8 +137,9 @@ def _parse_ticket(ticket: dict[str, Any], currency: str, fee_rate: Decimal | Non
 
 
 def _city_from_address(address: str | None) -> str | None:
-    """Google-formatted addresses end with "..., <city>, <country>"."""
-    parts = [p.strip() for p in (address or "").split(",") if p.strip()]
+    """Google-formatted addresses end with "..., <city> [<zip>], <country>"."""
+    parts = [p.strip(" 0123456789") for p in (address or "").split(",")]
+    parts = [p for p in parts if p]
     return parts[-2] if len(parts) >= 2 else None
 
 
