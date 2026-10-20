@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 
 from collections.abc import Iterator, Sequence
+from collections import defaultdict
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -106,9 +109,19 @@ class EventRow(Base):
     has_free_entry: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     entry_type: Mapped[str] = mapped_column(String(16), default="unknown", index=True)
     is_sold_out: Mapped[bool] = mapped_column(Boolean, default=False)
+    free_sold_out: Mapped[bool] = mapped_column(Boolean, default=False)
     extra: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     first_seen_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
+    # False once a complete run of the source no longer lists it (cancelled / pulled / hidden);
+    # set back to True as soon as the source lists it again.
+    is_listed: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    # Fingerprint of what a buyer sees (tiers, prices, statuses, free entry) and when it last changed.
+    offers_hash: Mapped[str | None] = mapped_column(String(40))
+    offers_changed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, index=True)
+    # Free entry stops at this time ("free until 23:30"); None = no known end. Group-wide too.
+    free_entry_until: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    group_free_entry_until: Mapped[datetime | None] = mapped_column(UTCDateTime)
     # Listings of the same real event share a group; exactly one is primary (see dedup.py).
     group_id: Mapped[str | None] = mapped_column(String(128), index=True)
     is_primary: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
@@ -184,6 +197,39 @@ class ImageRow(Base):
     event: Mapped[EventRow] = relationship(back_populates="images")
 
 
+class GeoCacheRow(Base):
+    """One geocoder lookup (hit or miss), so each address is only ever asked once."""
+
+    __tablename__ = "geo_cache"
+
+    query: Mapped[str] = mapped_column(String(300), primary_key=True)
+    found: Mapped[bool] = mapped_column(Boolean)
+    latitude: Mapped[float | None] = mapped_column(Float)
+    longitude: Mapped[float | None] = mapped_column(Float)
+    # Nominatim's precision ("place" = house number, "road", "amenity", "city", ...) and city name.
+    kind: Mapped[str | None] = mapped_column(String(32))
+    city: Mapped[str | None] = mapped_column(String(120))
+    label: Mapped[str | None] = mapped_column(Text)
+    looked_up_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class DealChangeRow(Base):
+    """One change to a deal between two scans: price, free entry, availability, tiers, listing."""
+
+    __tablename__ = "deal_changes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"), index=True)
+    source: Mapped[str] = mapped_column(String(32), index=True)
+    at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
+    # new | price_down | price_up | free_entry_started | free_entry_ended | sold_out |
+    # back_on_sale | tiers_changed | delisted | relisted
+    kind: Mapped[str] = mapped_column(String(32), index=True)
+    old: Mapped[str | None] = mapped_column(Text)
+    new: Mapped[str | None] = mapped_column(Text)
+    detail: Mapped[str | None] = mapped_column(Text)
+
+
 class ScrapeRunRow(Base):
     __tablename__ = "scrape_runs"
 
@@ -196,6 +242,9 @@ class ScrapeRunRow(Base):
     events_found: Mapped[int] = mapped_column(Integer, default=0)
     events_saved: Mapped[int] = mapped_column(Integer, default=0)
     events_failed: Mapped[int] = mapped_column(Integer, default=0)
+    # Already-known events whose tickets / prices changed in this run, and events no longer listed.
+    events_changed: Mapped[int | None] = mapped_column(Integer, default=0)
+    events_unlisted: Mapped[int | None] = mapped_column(Integer, default=0)
     error: Mapped[str | None] = mapped_column(Text)
     failures: Mapped[list[str]] = mapped_column(JSON, default=list)
 
@@ -224,12 +273,23 @@ SQLITE_INCREMENTAL_VACUUM = 2  # PRAGMA auto_vacuum value
 
 
 def upcoming_filter() -> ColumnElement[bool]:
-    """Events from the retention cutoff onwards (by START date): today - keep_days_back."""
+    """Current events only: today onwards, plus last night's parties still in progress."""
     from partylinks.config import get_settings  # local: config is loaded lazily
-    from partylinks.retention import retention_cutoff  # local: retention imports db
+    from partylinks.retention import current_clause  # local: retention imports db
 
     settings = get_settings()
-    return EventRow.start_at >= retention_cutoff(settings.retention, settings.timezone)
+    # ...and still listed by its source (see EventRow.is_listed).
+    return EventRow.is_listed.is_not(False) & current_clause(settings.retention, settings.timezone)
+
+
+def offers_hash(event: ScrapedEvent) -> str:
+    """Fingerprint of everything a buyer cares about. Ignores "remaining" counters, which tick constantly."""
+    tiers = [
+        (t.name, str(t.price), str(t.service_fee), t.price_rounds, t.status.value, t.is_free, t.pay_at_door, t.admits)
+        for t in event.tickets
+    ]
+    data = [tiers, str(event.min_price), str(event.max_price), event.is_sold_out, event.entry_type.value]
+    return hashlib.sha1(json.dumps(data, ensure_ascii=False, default=str).encode()).hexdigest()
 
 
 class Database:
@@ -362,14 +422,15 @@ _EVENT_FIELDS = (
     "source", "source_event_id", "slug", "venue_slug", "title", "description", "start_at", "end_at", "venue_name", "address",
     "city", "latitude", "longitude", "in_target_city", "genres", "source_genres", "event_types", "artists",
     "lineup", "local_date", "day_of_week", "time_slot", "is_weekend", "area", "min_age", "organizer", "image_url",
-    "currency", "min_price", "max_price", "has_free_entry", "entry_type", "is_sold_out", "extra",
+    "currency", "min_price", "max_price", "has_free_entry", "entry_type", "is_sold_out", "free_sold_out", "extra",
+    "free_entry_until",
 )  # fmt: skip
 
 
 # Maintained by dedup.regroup; an upsert of an existing row must not reset them.
 _GROUP_COLUMNS = {
     "group_id", "is_primary", "group_size", "group_min_price", "group_max_price",
-    "group_has_free_entry", "group_entry_type", "best_listing_id",
+    "group_has_free_entry", "group_entry_type", "best_listing_id", "group_free_entry_until",
 }  # fmt: skip
 
 
@@ -388,16 +449,37 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
         return 0, []
     now = utcnow()
     ids = [e.event_id for e in events]
+    # "Changed at" only moves when the offers really changed (a new event counts as changed now).
+    stored = {
+        row.id: (row.offers_hash, row.offers_changed_at)
+        for row in session.execute(
+            select(EventRow.id, EventRow.offers_hash, EventRow.offers_changed_at).where(EventRow.id.in_(ids))
+        )
+    }
+    hashes = {e.event_id: offers_hash(e) for e in events}
+
+    def changed_at(event_id: str) -> datetime | None:
+        if event_id not in stored:
+            return now  # new event
+        old_hash, old_at = stored[event_id]
+        if old_hash is None:
+            return old_at  # stored before fingerprints existed: no evidence of a change
+        return old_at if old_hash == hashes[event_id] else now
 
     event_rows = [
         {"id": e.event_id, "url": str(e.url), "first_seen_at": now, "last_seen_at": now,
          "group_id": e.event_id, "is_primary": True, "group_size": 1, "group_min_price": e.min_price,
          "group_max_price": e.max_price, "group_has_free_entry": e.has_free_entry,
-         "group_entry_type": e.entry_type, "best_listing_id": e.event_id,
+         "group_entry_type": e.entry_type, "best_listing_id": e.event_id, "is_listed": True,
+         "group_free_entry_until": e.free_entry_until,
+         "offers_hash": hashes[e.event_id], "offers_changed_at": changed_at(e.event_id),
          **{f: getattr(e, f) for f in _EVENT_FIELDS}}
         for e in sorted(events, key=lambda e: e.event_id)  # consistent lock order across writers
     ]  # fmt: skip
+    changes = _deal_changes_for(session, events, hashes, now)
     session.execute(_upsert(session, EventRow, event_rows, key="id", keep=_GROUP_COLUMNS | {"id", "first_seen_at"}))
+    if changes:
+        session.execute(insert(DealChangeRow), changes)
 
     session.execute(delete(TicketRow).where(TicketRow.event_id.in_(ids)))
     ticket_rows = [
@@ -444,6 +526,88 @@ def bulk_update_by_id(session: Session, model: type[Base], rows: list[dict[str, 
     session.execute(stmt, params)
 
 
+def _deal_changes_for(
+    session: Session, events: Sequence[ScrapedEvent], hashes: dict[str, str], now: datetime
+) -> list[dict[str, Any]]:
+    """Change rows for every event whose deal differs from what is stored (read before overwrite)."""
+    ids = [e.event_id for e in events]
+    previous = {
+        r.id: r
+        for r in session.execute(
+            select(
+                EventRow.id, EventRow.offers_hash, EventRow.min_price, EventRow.has_free_entry,
+                EventRow.is_sold_out, EventRow.is_listed,
+            ).where(EventRow.id.in_(ids))
+        )
+    }  # fmt: skip
+    changed = [i for i in ids if i in previous and previous[i].offers_hash != hashes[i]]
+    old_tiers: dict[str, dict[str, Any]] = defaultdict(dict)
+    if changed:
+        for t in session.execute(
+            select(TicketRow.event_id, TicketRow.name, TicketRow.price, TicketRow.status).where(
+                TicketRow.event_id.in_(changed)
+            )
+        ):
+            old_tiers[t.event_id][t.name] = t
+    rows: list[dict[str, Any]] = []
+    for event in events:
+        for change in deal_changes(previous.get(event.event_id), old_tiers.get(event.event_id, {}), event, hashes):
+            rows.append({"event_id": event.event_id, "source": event.source, "at": now, **change})
+    return rows
+
+
+def deal_changes(
+    previous: Any, old_tiers: dict[str, Any], event: ScrapedEvent, hashes: dict[str, str]
+) -> list[dict[str, str | None]]:
+    """What changed for a buyer between the stored deal and the freshly scraped one."""
+
+    def change(kind: str, old: Any = None, new: Any = None, detail: str | None = None) -> dict[str, str | None]:
+        return {"kind": kind, "old": _text(old), "new": _text(new), "detail": detail}
+
+    if previous is None:
+        return [change("new", new=event.min_price)]
+    found = [change("relisted")] if previous.is_listed is False else []
+    if previous.offers_hash == hashes[event.event_id]:
+        return found
+    if previous.min_price is not None and event.min_price is not None and previous.min_price != event.min_price:
+        found.append(change("price_down" if event.min_price < previous.min_price else "price_up",
+                            previous.min_price, event.min_price))  # fmt: skip
+    if bool(previous.has_free_entry) != event.has_free_entry:
+        found.append(change("free_entry_started" if event.has_free_entry else "free_entry_ended"))
+    if bool(previous.is_sold_out) != event.is_sold_out:
+        found.append(change("sold_out" if event.is_sold_out else "back_on_sale"))
+    new_tiers = {t.name: t for t in event.tickets}
+    detail = [f"+{name} ({_text(new_tiers[name].price)})" for name in new_tiers.keys() - old_tiers.keys()]
+    detail += [f"-{name}" for name in old_tiers.keys() - new_tiers.keys()]
+    for name in old_tiers.keys() & new_tiers.keys():
+        before, after = old_tiers[name], new_tiers[name]
+        if before.price != after.price:
+            detail.append(f"~{name}: {_text(before.price)} -> {_text(after.price)}")
+        if before.status != after.status.value:
+            detail.append(f"~{name}: {before.status} -> {after.status.value}")
+    if detail:
+        found.append(change("tiers_changed", detail="; ".join(sorted(detail))[:2000]))
+    return found
+
+
+def record_delisted(session: Session, source: str, event_ids: Sequence[str]) -> None:
+    now = utcnow()
+    if event_ids:
+        session.execute(
+            insert(DealChangeRow),
+            [{"event_id": i, "source": source, "at": now, "kind": "delisted", "old": None, "new": None,
+              "detail": None} for i in event_ids],
+        )  # fmt: skip
+
+
+def _text(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, Decimal):
+        return f"{value.normalize():f}"
+    return str(value)
+
+
 def _upsert(session: Session, model: type[Base], rows: list[dict[str, Any]], key: str, keep: set[str]) -> Any:
     """Dialect-specific multi-row upsert (SQLite and PostgreSQL share the syntax)."""
     dialect = session.get_bind().dialect.name
@@ -465,6 +629,7 @@ def delete_events(session: Session, event_ids: Sequence[str]) -> list[str]:
         files += [p for p in session.scalars(select(ImageRow.local_path).where(ImageRow.event_id.in_(chunk))) if p]
         session.execute(delete(TicketRow).where(TicketRow.event_id.in_(chunk)))
         session.execute(delete(ImageRow).where(ImageRow.event_id.in_(chunk)))
+        session.execute(delete(DealChangeRow).where(DealChangeRow.event_id.in_(chunk)))
         session.execute(delete(EventRow).where(EventRow.id.in_(chunk)))
     return files
 

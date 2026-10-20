@@ -107,6 +107,7 @@ function Admin() {
         ))}
       </nav>
       {ov.isError && !authError && <p className="adm-err">{String(ov.error)}</p>}
+      {ov.data?.warnings?.map((w: string) => <p key={w} className="adm-warn adm-banner">⚠ {w}</p>)}
       {tab === "overview" && <Overview data={ov.data} />}
       {tab === "sources" && <Sources />}
       {tab === "runs" && <Runs />}
@@ -189,6 +190,7 @@ function Overview({ data }: { data: any }) {
         <div className="adm-stats">
           <Stat label="Upcoming" value={data.events.upcoming} />
           <Stat label="In database" value={data.events.total} />
+          <Stat label="Not on map" value={data.events.upcoming_without_location} />
           <Stat label="Ticket tiers" value={data.tickets} />
         </div>
       </Card>
@@ -289,7 +291,7 @@ function Runs() {
       {runs.isError && <p className="adm-err">{String(runs.error)}</p>}
       <div className="adm-scroll">
         <table className="adm-table">
-          <thead><tr><th>#</th><th>Source</th><th>Trigger</th><th>Status</th><th>Started</th><th>Took</th><th>Found / saved / failed</th></tr></thead>
+          <thead><tr><th>#</th><th>Source</th><th>Trigger</th><th>Status</th><th>Started</th><th>Took</th><th>Found / saved / failed</th><th title="Known events whose tickets or prices changed">Changed</th><th title="No longer listed by the source">Removed</th></tr></thead>
           <tbody>
             {(runs.data ?? []).map((r) => (
               <RunRow key={r.id} r={r} />
@@ -315,10 +317,12 @@ function RunRow({ r }: { r: any }) {
         <td>{when(r.started_at)}</td>
         <td>{took == null ? "…" : took < 120 ? `${took}s` : `${Math.round(took / 60)}m`}</td>
         <td>{r.events_found} / {r.events_saved} / {r.events_failed}</td>
+        <td>{r.events_changed ?? "—"}</td>
+        <td>{r.events_unlisted ?? "—"}</td>
       </tr>
       {open && (
         <tr className="adm-detail">
-          <td colSpan={7}>
+          <td colSpan={9}>
             {r.error && <pre className="adm-err">{r.error}</pre>}
             {r.failures?.length > 0 && <pre>{r.failures.join("\n")}</pre>}
           </td>
@@ -422,6 +426,13 @@ function Maintenance({ data }: { data: any }) {
           run={() => post("/admin/api/maintenance/vacuum?full=true")}
           render={(x) => `Freed ${bytes(x.freed_bytes)}`}
         />
+      </Card>
+      <Card title="Map locations">
+        <p className="adm-note">
+          {data.events.upcoming_without_location} upcoming events have no coordinates. Fills them from manual pins
+          (<code>geocoding.venues</code>), other events at the same venue / address, then OpenStreetMap (1 lookup per second, cached).
+        </p>
+        <Action label="Locate missing events" run={() => post("/admin/api/maintenance/geocode")} render={(x) => `Located ${x.located} of ${x.missing} (${x.lookups} new lookups)`} />
       </Card>
       <Card title="Areas">
         <p className="adm-note">Re-derive every event's area of the city from <code>enrichment.areas</code> (also runs on start and config apply).</p>

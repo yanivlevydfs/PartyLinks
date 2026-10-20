@@ -82,6 +82,10 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
         "events": {
             "total": session.scalar(select(func.count()).select_from(EventRow)) or 0,
             "upcoming": session.scalar(select(func.count()).select_from(EventRow).where(upcoming)) or 0,
+            "upcoming_without_location": session.scalar(
+                select(func.count()).select_from(EventRow).where(upcoming, EventRow.latitude.is_(None))
+            )
+            or 0,
             "per_source": {s: n for s, n in per_source},
             "upcoming_per_source": {s: n for s, n in upcoming_per_source},
         },
@@ -90,6 +94,14 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
         "runs": session.scalar(select(func.count()).select_from(ScrapeRunRow)) or 0,
         "storage": request.app.state.db.storage_stats(),
         "database": make_url(cfg.database.url).render_as_string(hide_password=True),
+        "warnings": [
+            *([] if cfg.site.accessibility.has_contact else [
+                "Accessibility statement has no coordinator contact (site.accessibility in Config) - required by law in Israel."
+            ]),
+            *(["site.base_url is still localhost: canonical links, sitemap and share previews point to it."]
+              if "localhost" in cfg.site.base_url else []),
+            *([] if cfg.admin.token else ["No admin token set: admin works from this machine only."]),
+        ],  # fmt: skip
         "retention": {**cfg.retention.model_dump(), "next_run_at": next_run_times(scheduler).get(RETENTION_JOB_ID)},
         "scheduler": {
             "enabled": scheduler is not None,
@@ -259,6 +271,12 @@ async def vacuum(request: Request, full: bool = False) -> dict[str, Any]:
     db = request.app.state.db
     freed = await asyncio.to_thread(db.reclaim_space, full)
     return {"freed_bytes": freed, "storage": db.storage_stats()}
+
+
+@router.post("/maintenance/geocode")
+async def geocode(request: Request) -> dict[str, int]:
+    """Find map coordinates for upcoming events that only have an address."""
+    return await asyncio.to_thread(request.app.state.service.geocode)
 
 
 @router.post("/maintenance/areas")

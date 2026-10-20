@@ -15,7 +15,7 @@ from sqlalchemy import text
 
 from partylinks.api import create_app
 from partylinks.config import HttpSettings, Settings
-from partylinks.db import Database, EventRow, ImageRow, ScrapeRunRow, bulk_update_by_id, upsert_events
+from partylinks.db import Database, EventRow, ScrapeRunRow, bulk_update_by_id, upsert_events
 from partylinks.media import MediaStore
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, from_unix, parse_iso
@@ -195,3 +195,19 @@ def test_events_that_started_before_yesterday_are_never_shown(tmp_path: Path) ->
         assert health.status_code == 200 and health.json()["checks"]["database"] == "ok"
         assert client.get("/events", params={"q": "100%_off"}).status_code == 200  # wildcards escaped
         assert client.get("/events", params={"genre": ["x"] * 50}).status_code == 422  # bounded params
+
+
+def test_current_event_rule_at_2am() -> None:
+    from zoneinfo import ZoneInfo
+
+    from partylinks.retention import is_current
+
+    s, tz = Settings().retention, "Asia/Jerusalem"
+    at = lambda d, h, m=0: datetime(2026, 10, d, h, m, tzinfo=ZoneInfo(tz))  # noqa: E731
+    now = at(20, 2)  # Tuesday 02:00
+    assert not is_current(at(19, 21), None, s, tz, now)  # yesterday's 21:00 show (the screenshot): over
+    assert not is_current(at(19, 21), at(19, 23), s, tz, now)  # ended before midnight: over
+    assert is_current(at(19, 23), at(20, 5), s, tz, now)  # last night's party still going: kept until 05:00
+    assert not is_current(at(19, 23), at(20, 5), s, tz, at(20, 6))  # ...and gone after it ends
+    assert not is_current(at(1, 22), at(30, 4), s, tz, now)  # "season" listing that started weeks ago
+    assert is_current(at(20, 22), None, s, tz, now)  # tonight

@@ -121,6 +121,10 @@ class ScrapedEvent(BaseModel):
     genres: list[str] = Field(default_factory=list)
     lineup: list[str] = Field(default_factory=list)
     has_free_entry: bool = False
+    # Latest sale end among the free tiers still on sale (None = no known end).
+    free_entry_until: datetime | None = None
+    # Had a free tier that is gone (sold out / closed) while paid tickets remain.
+    free_sold_out: bool = False
     entry_type: EntryType = EntryType.UNKNOWN
     in_target_city: bool | None = None
     local_date: date | None = None

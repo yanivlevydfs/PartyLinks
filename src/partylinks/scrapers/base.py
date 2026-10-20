@@ -49,6 +49,9 @@ class SourceSettings(BaseModel):
     cron: str = Field(..., description="Crontab expression (5 fields) in the app timezone")
     # Per-source overrides of the global `http` block.
     http: dict[str, Any] = Field(default_factory=dict)
+    # After a complete, error-free run, hide upcoming events this source no longer lists
+    # (cancelled / pulled). Turn off for sources whose listing is not the full catalogue.
+    unlist_missing: bool = True
 
     @field_validator("cron")
     @classmethod

@@ -3,7 +3,7 @@ import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
 import { Link } from "react-router-dom";
 import { useAllEvents } from "../api";
 import type { EventSummary } from "../types";
-import { eventPath, fmtDate, useT, useTitle, venuePath } from "../ui";
+import { eventPath, fmtDate, Sources, useT, useTitle, venuePath } from "../ui";
 
 const TEL_AVIV: [number, number] = [32.0809, 34.7806];
 
@@ -55,6 +55,7 @@ export default function MapPage() {
                       <Link to={eventPath(e)}>
                         <small>{fmtDate(e.start_at, t, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</small>
                         <span dir="auto">{e.title}</span>
+                        <Sources e={e} />
                       </Link>
                     </li>
                   ))}

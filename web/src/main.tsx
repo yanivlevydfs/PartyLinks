@@ -6,6 +6,7 @@ import EventPage from "./pages/EventPage";
 import Home from "./pages/Home";
 import { ArtistPage, ArtistsIndex, VenuePage, VenuesIndex } from "./pages/Browse";
 import NotFound from "./pages/NotFound";
+import AccessibilityPage from "./pages/Accessibility";
 import { useStore } from "./store";
 import { Layout } from "./ui";
 import "./styles.css";
@@ -29,11 +30,16 @@ const router = createBrowserRouter([
       { path: "/venue/:name", element: <VenuePage /> },
       { path: "/artists", element: <ArtistsIndex /> },
       { path: "/artist/:name", element: <ArtistPage /> },
+      { path: "/accessibility", element: <AccessibilityPage /> },
       { path: "/admin", element: <Suspense><AdminPage /></Suspense> },
       { path: "*", element: <NotFound /> },
     ],
   },
 ]);
+
+// Accessibility widget (Sienna): text size, contrast, dyslexia font, stop animations, big cursor...
+// Its own chunk, loaded after the app; it follows <html lang> so עב/EN switches its language too.
+import("sienna-accessibility");
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, retry: 1 } } });
 

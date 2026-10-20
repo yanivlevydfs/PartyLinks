@@ -15,6 +15,13 @@ database:
 site:
   base_url: http://localhost:8000
   name: PartyLinks
+  # Accessibility statement at /accessibility (Israeli standard IS 5568). The law requires a real
+  # accessibility coordinator who can be reached: fill these in before going public.
+  accessibility:
+    coordinator: ""        # full name
+    email: ""
+    phone: ""
+    updated: 2026-10-20    # last review of the statement
 
 api:
   host: 0.0.0.0
@@ -172,12 +179,34 @@ dedup:
   # Direct sellers before aggregators; first listed wins as the primary listing.
   source_priority: [goout, eventer, zygo, selector, barby, grayclub, chillz, tickchak]
 
-# Deletes events (and their downloaded artwork) that ended before
-# local midnight `keep_days_back` days ago. 1 = keep yesterday onwards.
+# Coordinates for events whose source gives only an address, so they show on the map.
+# Order: manual pins below -> another event at the same venue / street address -> cached or new
+# OpenStreetMap Nominatim lookup (max 1 request/second; every answer is cached in geo_cache).
+# Only street / building level hits are used, never a city or region centroid.
+geocoding:
+  enabled: true
+  url: https://nominatim.openstreetmap.org/search
+  user_agent: "PartyLinks/0.1 (Tel Aviv party listings)"
+  min_interval_seconds: 1.1
+  max_lookups_per_run: 120
+  country_codes: il
+  retry_failed_days: 14
+  max_area_distance_m: 2500
+  viewbox: "34.739,32.030,34.852,32.147"   # Tel Aviv-Yafo: preferred, not exclusive
+  results_per_query: 5
+  # Manual pins, only for a place OpenStreetMap doesn't know (normally empty):
+  #   "venue or address keyword": [lat, lon]
+  venues: {}
+
+# Only current events exist: today (local) onwards. Yesterday and earlier are never
+# imported, never shown and purged. Exception: a party that started last night and is
+# still in progress (end time ahead, started < in_progress_max_hours ago) stays until it ends.
 retention:
   enabled: true
-  cron: "5 4 * * *"
-  keep_days_back: 1
+  cron: "5 * * * *"  # hourly: anything over disappears within the hour
+  keep_days_back: 0
+  keep_in_progress: true
+  in_progress_max_hours: 16
   # Scrape run history (scrape_runs) older than this many days is deleted as well.
   keep_runs_days: 30
   # SQLite: after a purge, return the freed pages to the OS so the DB file shrinks.
@@ -195,7 +224,7 @@ media:
 sources:
   goout:
     enabled: true
-    cron: "15 */3 * * *"
+    cron: "15 * * * *"
     base_url: https://www.go-out.co
     list_endpoint: /endOne/getEventsByTypeNew
     event_page_path: /event/{url}
@@ -211,7 +240,7 @@ sources:
 
   eventer:
     enabled: true
-    cron: "25 */3 * * *"
+    cron: "25 * * * *"
     base_url: https://www.eventer.co.il
     categories: ["parties"]
     list_path: /sliders/categories/{category}/events.js
@@ -220,7 +249,7 @@ sources:
 
   zygo:
     enabled: true
-    cron: "35 */3 * * *"
+    cron: "35 * * * *"
     site_url: https://zygo.co.il
     api_url: https://api.zygo.co.il
     city_slug: tel-aviv
@@ -234,7 +263,7 @@ sources:
 
   tickchak:
     enabled: true
-    cron: "45 */3 * * *"
+    cron: "45 * * * *"
     site_url: https://live.tickchak.co.il
     api_url: https://api-live.tickchak.co.il
     category_slug: parties
@@ -246,7 +275,7 @@ sources:
 
   selector:
     enabled: true
-    cron: "55 */3 * * *"
+    cron: "55 * * * *"
     site_url: https://selector.org.il
     api_url: https://api.selector.org.il
     list_path: /event/list
@@ -259,7 +288,7 @@ sources:
 
   barby:
     enabled: true
-    cron: "5 */3 * * *"
+    cron: "5 * * * *"
     site_url: https://barby.co.il
     list_path: /api/shows/find
     show_path: /api/shows/show/{show_id}
@@ -274,7 +303,7 @@ sources:
 
   grayclub:
     enabled: true
-    cron: "50 */3 * * *"
+    cron: "50 * * * *"
     site_url: https://grayclub.co.il
     # Branch page whose "load more" button carries the branch term id.
     branch_path: /gray-%d7%aa%d7%9c-%d7%90%d7%91%d7%99%d7%91/
@@ -307,7 +336,7 @@ sources:
   #   PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS='{"x-partylinks-key": "<secret>"}'
   chillz:
     enabled: true
-    cron: "40 */3 * * *"
+    cron: "40 * * * *"
     site_url: https://chillz.com
     sitemap_path: /sitemap.xml
     include_path_prefix: /en/

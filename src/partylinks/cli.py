@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import logging
+import os
 import sys
 
 from pydantic import ValidationError
@@ -48,13 +49,21 @@ def _scrape(names: list[str]) -> int:
     return 0 if all(isinstance(r, RunResult) and r.status != "failed" for r in results) else 1
 
 
-def _serve() -> int:
+def _serve(reload: bool = False) -> int:
     import uvicorn
 
     from partylinks.api import create_app
+    from partylinks.config import project_path
 
     settings = get_settings()
-    uvicorn.run(create_app(settings), host=settings.api.host, port=settings.api.port)
+    if reload:
+        # Development: restart on any change under src/. Config changes don't need it (admin -> apply).
+        uvicorn.run(
+            "partylinks.api:create_app", factory=True, reload=True, reload_dirs=[str(project_path("src"))],
+            host=settings.api.host, port=settings.api.port,
+        )  # fmt: skip
+    else:
+        uvicorn.run(create_app(settings), host=settings.api.host, port=settings.api.port)
     return 0
 
 
@@ -106,13 +115,16 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="partylinks")
     parser.add_argument("-v", "--verbose", action="store_true")
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("serve", help="run the REST API with the scheduler")
+    serve = sub.add_parser("serve", help="run the REST API with the scheduler")
+    serve.add_argument("--reload", action="store_true", help="restart automatically when code under src/ changes")
     scrape = sub.add_parser("scrape", help="run sources once")
     scrape.add_argument("sources", nargs="*", metavar="SOURCE", help=f"any of: {', '.join(SCRAPERS)}")
     sub.add_parser("sources", help="list configured sources")
     sub.add_parser("cleanup", help="purge events that are over (retention)")
     sub.add_parser("chillz-links", help="write a page of Chillz links to open and save into the inbox")
     args = parser.parse_args(argv)
+    if sys.platform == "win32":
+        os.system("")  # turn on ANSI colours in cmd.exe (otherwise uvicorn logs show "←[32m")
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -129,7 +141,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "serve":
-        return _serve()
+        return _serve(args.reload)
     if args.command == "scrape":
         return _scrape(args.sources)
     if args.command == "cleanup":

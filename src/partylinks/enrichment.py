@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+from datetime import datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -24,6 +25,10 @@ _LIST_SPLIT = re.compile(r"\s*(?:,|\||•|/|·)\s*")
 # "DJ NAME" written inline in running text (names are capitalized words).
 _INLINE_DJ = re.compile(r"\bDJ\s+([A-Z0-9][\w.&'’-]*(?:\s+[A-Z0-9][\w.&'’-]*){0,2})")
 _SENTENCE_END = (".", "!", "?", "…")
+# Words that may sit next to the keyword in a real lineup header ("THE LINE UP", "הליינאפ").
+_HEADER_FILLER = {"ה", "ו", "וה", "שלנו", "המלא", "הרזידנט", "resident", "the", "our", "full", "official", "-", "–", "—", "|"}
+# Hebrew-only lines this long are sentences ("ברוח היום במה כולה ישראלית"), not names.
+_MAX_HEBREW_NAME_WORDS = 3
 
 
 def _keyword_pattern(keywords: list[str]) -> re.Pattern[str] | None:
@@ -40,7 +45,7 @@ def _keyword_pattern(keywords: list[str]) -> re.Pattern[str] | None:
 OUTSIDE_AREA = "outside"
 
 
-def _meters(a: tuple[float, float], b: tuple[float, float]) -> float:
+def meters(a: tuple[float, float], b: tuple[float, float]) -> float:
     """Equirectangular distance: plenty accurate inside one city."""
     lat = math.radians((a[0] + b[0]) / 2)
     dx = math.radians(b[1] - a[1]) * math.cos(lat)
@@ -66,16 +71,25 @@ class AreaMatcher:
             return None
         if in_target_city is False:
             return OUTSIDE_AREA
+        if key := self.keyword_area(venue_name, address):
+            return key
+        if latitude is None or longitude is None:
+            return None
+        here = (latitude, longitude)
+        near = [(meters(here, a.center), a.key) for a, _ in self._areas if a.center]
+        best = min(((d, key) for d, key in near if d <= self._radius(key)), default=None)
+        return best[1] if best else None
+
+    def keyword_area(self, venue_name: str | None, address: str | None) -> str | None:
+        """Area named by a street / neighbourhood keyword in the text, ignoring coordinates."""
         text = " | ".join(filter(None, [venue_name, address])).lower()
         for area, pattern in self._areas:
             if text and pattern and pattern.search(text):
                 return area.key
-        if latitude is None or longitude is None:
-            return None
-        here = (latitude, longitude)
-        near = [(_meters(here, a.center), a.key) for a, _ in self._areas if a.center]
-        best = min(((d, key) for d, key in near if d <= self._radius(key)), default=None)
-        return best[1] if best else None
+        return None
+
+    def center(self, key: str) -> tuple[float, float] | None:
+        return next((a.center for a, _ in self._areas if a.key == key), None)
 
     def _radius(self, key: str) -> float:
         return next(a.radius_m for a, _ in self._areas if a.key == key)
@@ -116,7 +130,13 @@ class Enricher:
         event.lineup = self._lineup(event)
         self._mark_free_tiers(event)
         event.entry_type = self._entry_type(event)
-        event.has_free_entry = event.entry_type in (EntryType.FREE, EntryType.FREE_AND_PAID)
+        # Free entry = a free ticket you can still get; a sold-out event offers none.
+        all_gone = event.is_sold_out or (bool(event.tickets) and not any(t.is_active for t in event.tickets))
+        event.has_free_entry = not all_gone and event.entry_type in (EntryType.FREE, EntryType.FREE_AND_PAID)
+        event.free_entry_until = _free_entry_until(event) if event.has_free_entry else None
+        event.free_sold_out = not event.has_free_entry and any(
+            t.kind is TicketKind.FREE and not t.is_active for t in event.tickets
+        )
         self._categorize_time(event)
         event.in_target_city = self._in_target_city(event)
         event.area = self.areas.match(event.venue_name, event.address, event.latitude, event.longitude, event.in_target_city)
@@ -159,7 +179,7 @@ class Enricher:
         i = 0
         while i < len(lines):
             header = _strip_decor(lines[i])
-            if not (header and len(header.split()) <= 4 and self._lineup_header.search(header.lower())):
+            if not (header and len(header.split()) <= 4 and self._is_lineup_header(lines[i], header)):
                 i += 1
                 continue
             # "LINEUP: A, B, C" on one line.
@@ -183,6 +203,16 @@ class Enricher:
         names += [f"DJ {m.group(1)}" for m in _INLINE_DJ.finditer(text)]
         return names
 
+    def _is_lineup_header(self, raw: str, header: str) -> bool:
+        """"LINE UP" / "🎧 הליינאפ" / "Lineup tonight:" - not a promo bullet like "🎶 ליינאפ מטורף"."""
+        head = re.sub(r"\(.*?\)", " ", header.partition(":")[0].lower())  # "הליינאפ (לפי א״ב)"
+        match = self._lineup_header.search(head) if self._lineup_header else None
+        if match is None:
+            return False
+        rest = [w for w in (head[: match.start()] + " " + head[match.end() :]).split() if w not in _HEADER_FILLER]
+        # Promo bullets are Hebrew prose ("ליינאפ מטורף"); "LINEUP — LIVE PERFORMANCES" is still a header.
+        return not rest or (len(rest) <= 2 and all(w.isascii() for w in rest)) or raw.rstrip().endswith(":")
+
     def _as_name(self, value: str) -> str | None:
         cfg = self.settings.lineup
         name = _LEADING_WITH.sub("", _strip_decor(value)).strip(" +-–—")
@@ -190,6 +220,7 @@ class Enricher:
             not name
             or len(name) > cfg.max_name_length
             or len(name.split()) > cfg.max_name_words
+            or (not re.search(r"[a-z]", name, re.IGNORECASE) and len(name.split()) > _MAX_HEBREW_NAME_WORDS)
             or name.endswith(_SENTENCE_END)
             or "http" in name.lower()
             or _DATE_OR_TIME.search(name)
@@ -214,7 +245,10 @@ class Enricher:
 
     @staticmethod
     def _entry_type(event: ScrapedEvent) -> EntryType:
-        kinds = {t.kind for t in event.tickets if t.kind is not TicketKind.UNKNOWN}
+        # A sold-out / closed tier is no longer an offer: "free until 00:00 — sold out" + 99 ₪ is a paid event.
+        # Fully sold-out events keep their type (the sold_out flag covers them).
+        tiers = [t for t in event.tickets if t.is_active] or event.tickets
+        kinds = {t.kind for t in tiers if t.kind is not TicketKind.UNKNOWN}
         if not kinds and event.min_price is not None:
             kinds.add(TicketKind.FREE if event.min_price == 0 else TicketKind.PAID)
             if event.max_price is not None and event.max_price > 0:
@@ -241,3 +275,14 @@ class Enricher:
         if not haystack or self._city is None:
             return None
         return bool(self._city.search(haystack))
+
+
+def _free_entry_until(event: ScrapedEvent) -> datetime | None:
+    """When free entry stops: the latest sale end of the active free tiers ("free until 23:30").
+
+    None when any active free tier has no end (free all night) or none is known.
+    """
+    ends = [t.sale_end for t in event.tickets if t.kind is TicketKind.FREE and t.is_active]
+    if not ends or any(end is None for end in ends):
+        return None
+    return max(e for e in ends if e is not None)

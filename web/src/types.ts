@@ -32,7 +32,17 @@ export interface EventSummary {
   entry_type: "free" | "paid" | "free_and_paid" | "unknown";
   has_free_entry: boolean;
   is_sold_out: boolean;
+  free_sold_out: boolean;
   last_seen_at: string;
+  first_seen_at: string;
+  is_listed: boolean;
+  offers_changed_at: string | null;
+  // Across duplicate listings of the same event (see api.py EventSummary).
+  listings?: number;
+  sources?: string[];
+  group_min_price?: number | null;
+  group_has_free_entry?: boolean;
+  group_entry_type?: EventSummary["entry_type"];
 }
 
 export interface Ticket {
@@ -67,6 +77,19 @@ export interface EventDetail extends EventSummary {
   artists: string[];
   tickets: Ticket[];
   images: EventImage[];
+  alternatives?: Alternative[];
+}
+
+/** Another store selling the same event. */
+export interface Alternative {
+  id: string;
+  source: string;
+  url: string;
+  min_price: number | null;
+  max_price: number | null;
+  entry_type: EventSummary["entry_type"];
+  has_free_entry: boolean;
+  is_sold_out: boolean;
 }
 
 export interface EventPage {

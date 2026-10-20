@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useCategories, type Params } from "../api";
 import { genreLabel } from "../i18n";
 import { useStore } from "../store";
@@ -39,7 +39,7 @@ export default function Home() {
       </Hero>
       <main className="wrap">
         <div className="filters">
-          <div className="chips" role="group" aria-label={t.when}>
+          <FilterRow label={t.when}>
             <Chip on={f.when === "all"} onClick={() => set("when", "all")}>{t.all}</Chip>
             <Chip on={f.when === "tonight"} onClick={() => set("when", "tonight")}>{t.tonight}</Chip>
             <Chip on={f.when === "weekend"} onClick={() => set("when", "weekend")}>{t.weekend}</Chip>
@@ -48,36 +48,42 @@ export default function Home() {
                 {new Date(d.value + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, weekday: "short", day: "numeric", month: "numeric" })}
               </Chip>
             ))}
-          </div>
+          </FilterRow>
 
           {!!cats?.areas?.length && (
-            <div className="chips" role="group" aria-label={t.area}>
-              <Chip on={f.areas.length === 0} onClick={() => set("areas", [])}>📍 {t.allAreas}</Chip>
+            <FilterRow label={t.area}>
+              <Chip on={f.areas.length === 0} onClick={() => set("areas", [])}>{t.allAreas}</Chip>
               {cats.areas.map((a) => (
                 <Chip key={a.value} on={f.areas.includes(a.value)} onClick={() => toggleArea(a.value)}>
                   {label(t.areas, a.value)} <small>{a.events}</small>
                 </Chip>
               ))}
-            </div>
+            </FilterRow>
           )}
 
           {!!cats?.genres.length && (
-            <div className="chips" role="group" aria-label={t.genres}>
+            <FilterRow label={t.genres}>
               {cats.genres.map((g) => (
                 <Chip key={g.value} on={f.genres.includes(g.value)} onClick={() => toggleGenre(g.value)}>
                   {genreLabel(lang, g.value)} <small>{g.events}</small>
                 </Chip>
               ))}
-            </div>
+            </FilterRow>
           )}
 
-          <div className="chips" role="group" aria-label={t.slot}>
+          <FilterRow label={t.slot}>
             {Object.entries(t.slots).map(([k, name]) => (
               <Chip key={k} on={f.slot === k} onClick={() => set("slot", f.slot === k ? null : k)}>{name}</Chip>
             ))}
-            <span className="sep" />
-            <Chip on={f.freeOnly} onClick={() => set("freeOnly", !f.freeOnly)}>{t.freeOnly}</Chip>
-            <Chip on={f.hideSoldOut} onClick={() => set("hideSoldOut", !f.hideSoldOut)}>{t.hideSoldOut}</Chip>
+          </FilterRow>
+
+          <div className="filter-bar">
+            <Chip className="toggle free" on={f.freeOnly} onClick={() => set("freeOnly", !f.freeOnly)}>
+              <span className="tick" aria-hidden /> {t.freeOnly}
+            </Chip>
+            <Chip className="toggle" on={f.hideSoldOut} onClick={() => set("hideSoldOut", !f.hideSoldOut)}>
+              <span className="tick" aria-hidden /> {t.hideSoldOut}
+            </Chip>
             <label className="sort">
               {t.sort}
               <select value={f.sort} onChange={(e) => set("sort", e.target.value)}>
@@ -91,5 +97,14 @@ export default function Home() {
         <EventGrid params={params} />
       </main>
     </>
+  );
+}
+
+function FilterRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="frow" role="group" aria-label={label}>
+      <span className="frow-label">{label}</span>
+      <div className="chips">{children}</div>
+    </div>
   );
 }

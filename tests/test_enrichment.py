@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import Any
 
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
@@ -27,8 +28,8 @@ w/ SEAN ALONI
 """
 
 
-def make(**overrides: object) -> ScrapedEvent:
-    base: dict[str, object] = {
+def make(**overrides: Any) -> ScrapedEvent:
+    base: dict[str, Any] = {
         "source": "test",
         "source_event_id": "1",
         "url": "https://example.com/e/1",
@@ -45,6 +46,12 @@ def test_lineup_extracted_from_description() -> None:
     event = ENRICHER.enrich(make())
     assert event is not None
     assert event.lineup == ["DOR HADAD", "MIA B2B MIKA", "SEAN ALONI", "DJ REYES"]
+
+
+def test_promo_bullets_are_not_a_lineup() -> None:
+    promo = "🎶 ליינאפ מטורף\n🌿 לוקיישן קסום\n🌀 סאונד ללא פשרות…\n\n🎧 הליינאפ\n\nברוח היום במה כולה ישראלית 🇮🇱\n"
+    event = ENRICHER.enrich(make(description=promo))
+    assert event is not None and event.lineup == []
 
 
 def test_time_categories_in_local_timezone() -> None:
@@ -66,6 +73,22 @@ def test_entry_type_free_and_paid() -> None:
     event = ENRICHER.enrich(make(tickets=tiers))
     assert event is not None
     assert event.entry_type is EntryType.FREE_AND_PAID and event.has_free_entry
+
+
+def test_sold_out_free_tier_is_not_free_entry() -> None:
+    tiers = [
+        TicketTier(name="להרשמה חינם עד השעה 00:00", price=Decimal(0), is_sold_out=True),
+        TicketTier(name="Entry Ticket", price=Decimal(99)),
+    ]
+    event = ENRICHER.enrich(make(tickets=tiers))
+    assert event is not None
+    assert event.entry_type is EntryType.PAID and not event.has_free_entry and event.free_sold_out
+
+
+def test_sold_out_event_is_not_free_entry() -> None:
+    tiers = [TicketTier(name="כניסה חינם", price=Decimal(0), is_sold_out=True)]
+    event = ENRICHER.enrich(make(tickets=tiers, is_sold_out=True))
+    assert event is not None and not event.has_free_entry
 
 
 def test_entry_type_from_price_range_without_tiers() -> None:

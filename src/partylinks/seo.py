@@ -409,6 +409,31 @@ def map_page(session: Session, cfg: Settings, lang: str) -> Page:
     )
 
 
+def accessibility_page(session: Session, cfg: Settings, lang: str) -> Page:
+    a = cfg.site.accessibility
+    he = lang == "he"
+    title = "הצהרת נגישות" if he else "Accessibility statement"
+    text = (
+        f"{cfg.site.name} פועל להנגשת האתר לכלל הגולשים, בהתאם לתקנות שוויון זכויות לאנשים עם מוגבלות "
+        "(התאמות נגישות לשירות), התשע\"ג-2013, ולתקן הישראלי ת\"י 5568 (WCAG 2.0 ברמה AA)."
+        if he
+        else f"{cfg.site.name} works to make this website accessible to everyone, per the Israeli Equal Rights for "
+        "Persons with Disabilities regulations (2013) and Israeli Standard IS 5568 (WCAG 2.0 level AA)."
+    )
+    contact = ""
+    if a.has_contact:
+        items = [a.coordinator, a.email, a.phone]
+        contact = "<ul>" + "".join(f"<li>{escape(i)}</li>" for i in items if i) + "</ul>"
+    return Page(
+        title=f"{title} · {cfg.site.name}",
+        description=text,
+        path="/accessibility",
+        lang=lang,
+        jsonld=[_breadcrumbs(cfg, lang, (title, "/accessibility"))],
+        body=f"<h1>{title}</h1><p>{escape(text)}</p>{contact}",
+    )
+
+
 # --------------------------------------------------------------------------- render
 def _jsonld_tag(data: dict[str, Any]) -> str:
     # "</" inside a string would close the script element early.
@@ -469,7 +494,7 @@ def _strip_title(html: str, keep: str) -> str:
 # --------------------------------------------------------------------------- crawl files
 def sitemap(session: Session, cfg: Settings) -> str:
     rows = session.scalars(select(EventRow).where(upcoming_filter()).order_by(EventRow.start_at)).all()
-    paths: list[tuple[str, datetime | None]] = [("/", None), ("/map", None), ("/venues", None), ("/artists", None)]
+    paths: list[tuple[str, datetime | None]] = [("/", None), ("/map", None), ("/venues", None), ("/artists", None), ("/accessibility", None)]
     paths += [(event_path(r), r.last_seen_at) for r in rows]
     paths += [(f"/venue/{quote(n, safe='')}", None) for n in _names(session, "venues")]
     paths += [(f"/artist/{quote(n, safe='')}", None) for n in _names(session, "artists")]
@@ -597,6 +622,10 @@ def register(app: FastAPI, site_dir: Path) -> None:
     @app.get("/artists", include_in_schema=False)
     def artists(request: Request) -> HTMLResponse:
         return page(request, lambda s, c, lang: index_page(s, c, lang, "artists"))
+
+    @app.get("/accessibility", include_in_schema=False)
+    def accessibility(request: Request) -> HTMLResponse:
+        return page(request, accessibility_page)
 
     @app.get("/map", include_in_schema=False)
     def map_(request: Request) -> HTMLResponse:

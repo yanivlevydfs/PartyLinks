@@ -9,3 +9,4 @@ tenacity>=9.0
 uvicorn>=0.32
 # tests
 pytest>=8
+types-PyYAML>=6

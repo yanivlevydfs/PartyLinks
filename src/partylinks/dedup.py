@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 
 _GROUP_FIELDS = (
     "group_id", "is_primary", "group_size", "group_min_price", "group_max_price",
-    "group_has_free_entry", "group_entry_type", "best_listing_id",
+    "group_has_free_entry", "group_entry_type", "best_listing_id", "group_free_entry_until",
 )  # fmt: skip
 
 
@@ -64,6 +64,8 @@ class _Listing:
     min_price: Decimal | None
     max_price: Decimal | None
     entry_type: str
+    has_free_entry: bool
+    free_entry_until: datetime | None = None
 
 
 def title_key(title: str | None, stopwords: set[str]) -> str:
@@ -130,7 +132,8 @@ class Deduplicator:
             "group_size": len(members),
             "group_min_price": best.min_price,
             "group_max_price": max(maxima) if maxima else None,
-            "group_has_free_entry": "free" in kinds,
+            "group_has_free_entry": any(m.has_free_entry for m in members),
+            "group_free_entry_until": _latest_free_until(members),
             "group_entry_type": entry_type,
             "best_listing_id": best.id,
         }
@@ -143,6 +146,7 @@ class Deduplicator:
                 EventRow.id, EventRow.source, EventRow.title, EventRow.local_date, EventRow.start_at,
                 EventRow.latitude, EventRow.longitude, EventRow.venue_slug, EventRow.url, EventRow.extra,
                 EventRow.first_seen_at, EventRow.min_price, EventRow.max_price, EventRow.entry_type,
+                EventRow.has_free_entry, EventRow.free_entry_until,
             )
         ).all()  # fmt: skip
         tier_counts = _tier_counts(session)
@@ -155,6 +159,7 @@ class Deduplicator:
                 links_to=url_key(_str((r.extra or {}).get("purchase_url") if isinstance(r.extra, dict) else None)) or None,
                 tiers=tier_counts.get(r.id, 0), first_seen=r.first_seen_at,
                 min_price=r.min_price, max_price=r.max_price, entry_type=r.entry_type,
+                has_free_entry=r.has_free_entry, free_entry_until=r.free_entry_until,
             )  # fmt: skip
             if r.local_date is None:
                 updates += self._group_rows([listing])
@@ -194,3 +199,11 @@ class Deduplicator:
 def _tier_counts(session: Session) -> dict[str, int]:
     rows = session.execute(select(TicketRow.event_id, func.count()).group_by(TicketRow.event_id))
     return {event_id: count for event_id, count in rows}
+
+
+def _latest_free_until(members: list[_Listing]) -> datetime | None:
+    """Free entry for the event lasts as long as its longest-lasting free listing (None = open-ended)."""
+    free = [m.free_entry_until for m in members if m.has_free_entry]
+    if not free or any(until is None for until in free):
+        return None
+    return max(u for u in free if u is not None)

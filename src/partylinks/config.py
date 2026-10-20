@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 from functools import lru_cache
+from datetime import date
 from pathlib import Path
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
@@ -149,7 +150,12 @@ class DedupSettings(BaseModel):
 class RetentionSettings(BaseModel):
     enabled: bool = True
     cron: str = "5 4 * * *"
-    keep_days_back: int = Field(1, ge=0)
+    # 0 = only events from today (local) onwards; yesterday and earlier are over.
+    keep_days_back: int = Field(0, ge=0)
+    # A party that started last night and is still going stays until its end time
+    # (only if it started within this many hours, so multi-week "season" listings don't).
+    keep_in_progress: bool = True
+    in_progress_max_hours: float = Field(16, gt=0)
 
     @field_validator("cron")
     @classmethod
@@ -172,10 +178,48 @@ class MediaSettings(BaseModel):
     allowed_content_types: list[str] = Field(default_factory=list)
 
 
+class GeocodingSettings(BaseModel):
+    """Coordinates for events whose source gives only an address (OpenStreetMap Nominatim)."""
+
+    enabled: bool = True
+    url: str = "https://nominatim.openstreetmap.org/search"
+    # Nominatim's policy: identify the app, at most one request per second, cache results.
+    user_agent: str = "PartyLinks/0.1 (Tel Aviv party listings)"
+    min_interval_seconds: float = Field(1.1, ge=1)
+    max_lookups_per_run: int = Field(120, ge=0)
+    country_codes: str = "il"
+    # Prefer hits inside this box (lon1,lat1,lon2,lat2; Tel Aviv-Yafo) without excluding the rest.
+    viewbox: str = "34.739,32.030,34.852,32.147"
+    # Results requested per query; the first one that passes the checks is used.
+    results_per_query: int = Field(5, ge=1, le=10)
+    retry_failed_days: int = Field(14, ge=1)
+    # A hit further than this from the area its address keywords name is a same-name street elsewhere.
+    max_area_distance_m: float = Field(2500, gt=0)
+    # Manual pins, only for places OpenStreetMap doesn't know: venue-name / address keyword
+    # (case-insensitive) -> [lat, lon]. Checked first.
+    venues: dict[str, tuple[float, float]] = Field(default_factory=dict)
+
+
+class AccessibilitySettings(BaseModel):
+    """Accessibility statement (/accessibility). Israeli law (Equal Rights for Persons with
+    Disabilities regulations, 2013, reg. 35) requires a reachable accessibility coordinator."""
+
+    coordinator: str = ""
+    email: str = ""
+    phone: str = ""
+    # Date the statement was last reviewed (shown on the page).
+    updated: date | None = None
+
+    @property
+    def has_contact(self) -> bool:
+        return bool(self.coordinator and (self.email or self.phone))
+
+
 class SiteSettings(BaseModel):
     # Public address of the website (no trailing slash): canonical links, sitemap, JSON-LD, share previews.
     base_url: str = "http://localhost:8000"
     name: str = "PartyLinks"
+    accessibility: AccessibilitySettings = Field(default_factory=AccessibilitySettings)
 
     @field_validator("base_url")
     @classmethod
@@ -209,6 +253,7 @@ class Settings(BaseSettings):
     media: MediaSettings = Field(default_factory=MediaSettings)
     admin: AdminSettings = Field(default_factory=AdminSettings)
     site: SiteSettings = Field(default_factory=SiteSettings)
+    geocoding: GeocodingSettings = Field(default_factory=GeocodingSettings)
     # Raw per-source blocks; each scraper validates its own block with its own model.
     # None = a block whose keys are all commented out (reported as invalid, not a crash).
     sources: dict[str, dict[str, Any] | None] = Field(default_factory=dict)

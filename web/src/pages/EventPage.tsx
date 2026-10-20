@@ -2,7 +2,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { Ticket } from "../types";
-import { artistPath, fmtDate, Img, label, money, priceLabel, useT, useTitle, venuePath } from "../ui";
+import { artistPath, fmtDate, freshness, Img, label, money, priceLabel, sourceName, Sources, useT, useTitle, venuePath } from "../ui";
 
 export default function EventPage() {
   const { id = "" } = useParams();
@@ -27,6 +27,13 @@ export default function EventPage() {
       <div className="wrap e-wrap">
         <button className="back" onClick={back}>{lang === "he" ? "→" : "←"} {t.back}</button>
 
+        {!e.is_listed && <p className="e-notice warn" role="status">⚠ {t.unlisted}</p>}
+        {freshness(e) === "updated" && e.offers_changed_at && (
+          <p className="e-notice" role="status">
+            ↻ {t.updatedAgo(Math.floor((Date.now() - new Date(e.offers_changed_at).getTime()) / 3600000))}
+          </p>
+        )}
+
         <div className="e-top">
           <div className="e-poster">
             <Img src={hero} alt={e.title} className="e-img" />
@@ -35,11 +42,12 @@ export default function EventPage() {
           <div className="e-info">
             <div className="tags">
               {e.genres.map((g) => <span key={g} className="tag">{genreLabel(lang, g)}</span>)}
-              {e.min_age && <span className="tag age">{t.age(e.min_age)}</span>}
+              {!!e.min_age && <span className="tag age">{t.age(e.min_age)}</span>}
               <span className={"tag entry " + e.entry_type}>{label(t.entry, e.entry_type)}</span>
               {e.is_sold_out && <span className="tag sold">{t.soldOut}</span>}
             </div>
             <h1 dir="auto">{e.title}</h1>
+            <Sources e={e} />
 
             <ul className="facts">
               <li><i>📅</i>{fmtDate(e.start_at, t, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</li>
@@ -69,8 +77,19 @@ export default function EventPage() {
             </ul>
 
             <a className="buy" href={e.url} target="_blank" rel="noopener noreferrer">
-              {t.buy} ↗ <small>{e.source}</small>
+              {t.buy} ↗ <small>{sourceName(e.source)}</small>
             </a>
+            {!!e.alternatives?.length && (
+              <div className="alts">
+                <span>{t.alsoAt}</span>
+                {e.alternatives.map((a) => (
+                  <a key={a.id} className="alt" href={a.url} target="_blank" rel="noopener noreferrer">
+                    <b>{sourceName(a.source)}</b>
+                    <small>{a.is_sold_out ? t.soldOut : priceLabel({ ...a, currency: e.currency }, t) || "—"}</small> ↗
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

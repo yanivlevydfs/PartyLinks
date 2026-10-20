@@ -17,15 +17,15 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, s
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from pydantic import BaseModel, ConfigDict, Field, computed_field
-from sqlalchemy import ColumnElement, String, cast, func, or_, select
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from sqlalchemy import ColumnElement, String, and_, cast, func, not_, or_, select
 from sqlalchemy.orm import Session, selectinload, undefer
 
 from partylinks import seo
 from partylinks.admin import AdminDep
 from partylinks.admin import router as admin_router
 from partylinks.config import Settings, get_settings
-from partylinks.db import Database, EventRow, ImageRow, ScrapeRunRow, upcoming_filter
+from partylinks.db import Database, DealChangeRow, EventRow, ImageRow, ScrapeRunRow, upcoming_filter
 from partylinks.models import EntryType
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
@@ -40,6 +40,9 @@ class _Out(BaseModel):
 
 
 class TicketOut(_Out):
+    """A ticket tier as it stands NOW: a sale window that closed (or has not opened)
+    since the last scan is reflected immediately, without waiting for the next scan."""
+
     source_ticket_id: str | None
     name: str
     description: str | None
@@ -59,6 +62,34 @@ class TicketOut(_Out):
     remaining: int | None
     sale_start: datetime | None
     sale_end: datetime | None
+
+    @model_validator(mode="after")
+    def _live_status(self) -> TicketOut:
+        now = datetime.now(UTC)
+        if self.status == "on_sale" and self.sale_end is not None and _utc(self.sale_end) <= now:
+            self.status, self.is_active = "closed", False
+        elif self.status == "on_sale" and self.sale_start is not None and _utc(self.sale_start) > now:
+            self.status, self.is_active = "coming_soon", False
+        return self
+
+
+class DealChangeOut(_Out):
+    """A change to a deal detected between two scans."""
+
+    event_id: str
+    source: str
+    at: datetime
+    kind: str
+    old: str | None
+    new: str | None
+    detail: str | None
+
+
+class ChangeFeedItem(DealChangeOut):
+    title: str
+    slug: str | None
+    url: str
+    start_at: datetime | None
 
 
 class ImageOut(_Out):
@@ -108,7 +139,13 @@ class EventSummaryOut(_Out):
     entry_type: str
     has_free_entry: bool
     is_sold_out: bool
+    free_sold_out: bool
     last_seen_at: datetime
+    first_seen_at: datetime
+    # False when the source stopped listing it (cancelled / pulled); hidden from upcoming lists.
+    is_listed: bool = True
+    # Last time tickets / prices / free entry / sold-out changed (first seen counts as a change).
+    offers_changed_at: datetime | None = None
     # Duplicate listings of the same event (other promoters / platforms) share a group.
     # The group_* fields cover every listing, so a free / cheaper offer elsewhere is never hidden.
     group_id: str | None
@@ -116,8 +153,11 @@ class EventSummaryOut(_Out):
     group_min_price: float | None
     group_max_price: float | None
     group_has_free_entry: bool
+    group_free_entry_until: datetime | None = None
     group_entry_type: str
     best_deal: DealOut | None = None
+    # Every ticket site selling this event (this listing's first, then the rest of its group).
+    sources: list[str] = []
 
 
 class DealOut(_Out):
@@ -154,10 +194,11 @@ class EventOut(EventSummaryOut):
     artists: list[str]
     organizer: str | None
     extra: dict[str, Any]
-    first_seen_at: datetime
     tickets: list[TicketOut]
     images: list[ImageOut]
     alternatives: list[AlternativeOut] = []
+    # Recent deal changes (newest first): price moves, free entry ending, tiers added...
+    changes: list[DealChangeOut] = []
 
 
 class EventPage(BaseModel):
@@ -177,6 +218,8 @@ class RunOut(_Out):
     events_found: int
     events_saved: int
     events_failed: int
+    events_changed: int | None = None
+    events_unlisted: int | None = None
     error: str | None
     failures: list[str]
 
@@ -262,6 +305,10 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
         scheduler = build_scheduler(settings, service) if run_scheduler else None
         app.state.settings, app.state.db, app.state.service, app.state.scheduler = settings, db, service, scheduler
         app.state.tasks = set()
+        # Map coordinates for address-only events; network lookups run in the background.
+        geocoding = asyncio.create_task(asyncio.to_thread(service.geocode))
+        app.state.tasks.add(geocoding)
+        geocoding.add_done_callback(app.state.tasks.discard)
         if scheduler:
             scheduler.start()
         try:
@@ -306,9 +353,43 @@ def _best_deals(session: Session, rows: Sequence[EventRow]) -> dict[str, DealOut
     return {d.id: DealOut.model_validate(d) for d in session.scalars(select(EventRow).where(EventRow.id.in_(ids)))}
 
 
+def _group_sources(session: Session, rows: Sequence[EventRow]) -> dict[str, list[str]]:
+    """Ticket sites per duplicate group, loaded in one query for a whole page."""
+    groups = {r.group_id for r in rows if r.group_id}
+    found: dict[str, set[str]] = {}
+    if groups:
+        for group_id, source in session.execute(
+            select(EventRow.group_id, EventRow.source).where(EventRow.group_id.in_(groups)).distinct()
+        ):
+            found.setdefault(group_id, set()).add(source)
+    return {
+        r.id: [r.source, *sorted(found.get(r.group_id or "", set()) - {r.source})]
+        for r in rows
+    }
+
+
+def _summary_extras(session: Session, rows: Sequence[EventRow]) -> dict[str, dict[str, Any]]:
+    deals = _best_deals(session, rows)
+    sources = _group_sources(session, rows)
+    return {
+        r.id: {"best_deal": deals.get(r.best_listing_id) if r.best_listing_id else None, "sources": sources[r.id]}
+        for r in rows
+    }
+
+
 log = logging.getLogger(__name__)
 
 MAX_LIST_PARAMS = 20
+EVENT_CHANGES_LIMIT = 20
+
+
+def current_clause_for_feed() -> ColumnElement[bool]:
+    """The change feed covers current, still-listed events (a delisting is itself a change)."""
+    return or_(upcoming_filter(), and_(EventRow.is_listed.is_(False), EventRow.start_at >= datetime.now(UTC)))
+
+
+def _utc(value: datetime) -> datetime:
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
 MAX_TEXT_PARAM = 100
 
 
@@ -328,6 +409,12 @@ def _json_contains(column: Any, values: list[str]) -> ColumnElement[bool]:
 
 
 def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route handlers
+    @app.get("/site", tags=["meta"])
+    def site_info(request: Request) -> dict[str, Any]:
+        """Public site details the website shows (name, accessibility contact)."""
+        site = request.app.state.settings.site
+        return {"name": site.name, "base_url": site.base_url, "accessibility": site.accessibility.model_dump(mode="json")}
+
     @app.get("/health", tags=["meta"])
     def health(request: Request, response: Response) -> dict[str, Any]:
         """Liveness + readiness: DB reachable, scheduler alive, per-source freshness, config errors."""
@@ -425,7 +512,11 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         if entry_type:
             filters.append(EventRow.group_entry_type.in_([e.value for e in entry_type]))
         if free_entry is not None:
-            filters.append(EventRow.group_has_free_entry.is_(free_entry))
+            free_now = and_(
+                EventRow.group_has_free_entry.is_(True),
+                or_(EventRow.group_free_entry_until.is_(None), EventRow.group_free_entry_until > datetime.now(UTC)),
+            )
+            filters.append(free_now if free_entry else not_(free_now))
         if sold_out is not None:
             filters.append(EventRow.is_sold_out.is_(sold_out))
         if day_of_week:
@@ -469,11 +560,8 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
             .limit(size)
             .options(selectinload(EventRow.images))
         ).all()
-        deals = _best_deals(session, rows)
-        items = [
-            EventSummaryOut.model_validate(r).model_copy(update={"best_deal": deals.get(r.best_listing_id) if r.best_listing_id else None})
-            for r in rows
-        ]
+        extras = _summary_extras(session, rows)
+        items = [EventSummaryOut.model_validate(r).model_copy(update=extras[r.id]) for r in rows]
         return EventPage(total=total, page=page, page_size=size, items=items)
 
     @app.get("/events/{event_ref}", response_model=EventOut, tags=["events"])
@@ -496,12 +584,48 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
             if row.group_id
             else []
         )
+        listing_ids = [row.id, *(a.id for a in alternatives)]  # changes of every listing of the event
+        changes = session.scalars(
+            select(DealChangeRow)
+            .where(DealChangeRow.event_id.in_(listing_ids))
+            .order_by(DealChangeRow.at.desc(), DealChangeRow.id.desc())
+            .limit(EVENT_CHANGES_LIMIT)
+        ).all()
         return EventOut.model_validate(row).model_copy(
             update={
                 "alternatives": [AlternativeOut.model_validate(a) for a in alternatives],
-                "best_deal": _best_deals(session, [row]).get(row.best_listing_id) if row.best_listing_id else None,
+                "changes": [DealChangeOut.model_validate(c) for c in changes],
+                **_summary_extras(session, [row])[row.id],
             }
         )
+
+    @app.get("/changes", response_model=list[ChangeFeedItem], tags=["events"])
+    def deal_changes_feed(
+        session: SessionDep,
+        since: Annotated[datetime | None, Query(description="Default: last 24 hours")] = None,
+        kind: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="e.g. price_down (repeatable)")] = None,
+        source: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS)] = None,
+        limit: Annotated[int, Query(ge=1, le=500)] = 100,
+    ) -> list[ChangeFeedItem]:
+        """Deal changes across current events, newest first: price drops, free entry ending, new tiers..."""
+        since = _aware_utc(since) if since else datetime.now(UTC) - timedelta(hours=24)
+        query = (
+            select(DealChangeRow, EventRow.title, EventRow.slug, EventRow.url, EventRow.start_at)
+            .join(EventRow, EventRow.id == DealChangeRow.event_id)
+            .where(DealChangeRow.at >= since, current_clause_for_feed())
+            .order_by(DealChangeRow.at.desc(), DealChangeRow.id.desc())
+            .limit(limit)
+        )
+        if kind:
+            query = query.where(DealChangeRow.kind.in_(kind))
+        if source:
+            query = query.where(DealChangeRow.source.in_(source))
+        return [
+            ChangeFeedItem.model_validate(
+                {**DealChangeOut.model_validate(c).model_dump(), "title": t, "slug": sl, "url": u, "start_at": st}
+            )
+            for c, t, sl, u, st in session.execute(query).all()
+        ]
 
     @app.get("/images/{image_id}", tags=["events"], response_class=Response)
     def get_image(image_id: int, request: Request, session: SessionDep) -> Response:
@@ -537,7 +661,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
             query = query.where(upcoming_filter())
         rows = session.execute(query).all()
 
-        def facet(values: Callable[[EventRow], list[Any]], limit: int | None = FACET_LIMIT) -> list[FacetValue]:
+        def facet(values: Callable[[Any], list[Any]], limit: int | None = FACET_LIMIT) -> list[FacetValue]:
             counts = Counter(str(v) for row in rows for v in values(row) if v not in (None, ""))
             return [FacetValue(value=v, events=n) for v, n in counts.most_common(limit)]
 

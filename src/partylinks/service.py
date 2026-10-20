@@ -29,17 +29,28 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, TypeVar
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError
 
 from partylinks.config import Settings
-from partylinks.db import Database, EventRow, ScrapeRunRow, start_run, upsert_events, utcnow
+from partylinks.db import (
+    Database,
+    EventRow,
+    ScrapeRunRow,
+    record_delisted,
+    start_run,
+    upcoming_filter,
+    upsert_events,
+    utcnow,
+)
+from partylinks.venues import resolve_venues
 from partylinks.dedup import Deduplicator
 from partylinks.enrichment import Enricher
+from partylinks.geo import Geocoder
 from partylinks.media import MediaStore
 from partylinks.models import ScrapedEvent
-from partylinks.retention import purge_expired, retention_cutoff
-from partylinks.scrapers import SCRAPERS, build_scraper
+from partylinks.retention import is_current, purge_expired
+from partylinks.scrapers import SCRAPERS, build_scraper, source_settings
 from partylinks.scrapers.base import SourceBlockedError
 
 log = logging.getLogger(__name__)
@@ -97,6 +108,8 @@ class ScrapeService:
         self.enricher = Enricher(settings.enrichment, settings.timezone)
         self.media = MediaStore(settings.media, db)
         self.deduplicator = Deduplicator(settings.dedup)
+        self.geocoder = Geocoder(settings.geocoding, self.enricher.areas, settings.enrichment.target_city.aliases, db)
+        self._geo_lock = threading.Lock()  # one geocoding pass at a time (Nominatim rate limit)
         self._locks = {name: threading.Lock() for name in SCRAPERS}
         self._retention_lock = threading.Lock()
         self._dedup_lock = threading.Lock()  # regrouping spans all sources
@@ -145,6 +158,11 @@ class ScrapeService:
         """Run several sources in parallel; one failing never affects the others."""
         return await asyncio.gather(*(self.run_source(s, trigger) for s in sources), return_exceptions=True)
 
+    def geocode(self, network: bool = True) -> dict[str, int]:
+        """Give map coordinates to upcoming events that have only an address."""
+        with self._geo_lock:
+            return self.geocoder.locate_missing(network).as_dict()
+
     def recompute_areas(self) -> int:
         """Re-derive ``area`` for every stored event from the current config. Returns rows changed."""
         matcher = self.enricher.areas
@@ -164,6 +182,7 @@ class ScrapeService:
 
     def _regroup_once(self) -> int:
         with self.db.session() as session:
+            resolve_venues(session)  # before grouping: a shared venue helps match duplicates
             return self.deduplicator.regroup(session)
 
     async def purge_expired(self) -> int:
@@ -203,7 +222,6 @@ class ScrapeService:
         failures: list[str] = []
         batch: dict[str, ScrapedEvent] = {}
         timeout = self.settings.scheduler.run_timeout_seconds
-        cutoff = retention_cutoff(self.settings.retention, self.settings.timezone)
 
         async def flush() -> None:
             nonlocal saved
@@ -223,7 +241,7 @@ class ScrapeService:
                             if self._stopping.is_set():
                                 raise _StopRequested
                             found += 1
-                            if _finished_before(event, cutoff):  # already past retention; don't store
+                            if _finished_before(event, self.settings):  # already over; never stored
                                 continue
                             try:
                                 enriched = self.enricher.enrich(event)
@@ -261,8 +279,15 @@ class ScrapeService:
                 await self._post_step(source, "artwork", failures, self.media.download_pending(source, scraper.http))
             if self.settings.dedup.enabled:
                 await self._post_step(source, "regroup", failures, asyncio.to_thread(self.regroup))
+            # Saving overwrote coordinates with what the source sent; restore / look up the rest.
+            await self._post_step(source, "geocode", failures, asyncio.to_thread(self.geocode))
         if status == "success" and failures:
             status = "partial"
+
+        try:
+            await asyncio.to_thread(_with_db_retry, "track changes", lambda: self._track_changes(source, run_id, status))
+        except Exception:  # noqa: BLE001 - bookkeeping only; the events are saved
+            log.exception("source %s: change tracking failed", source)
 
         result = RunResult(run_id, source, status, found, saved, len(failures), error)
         try:
@@ -305,6 +330,30 @@ class ScrapeService:
         self.media.delete_files(orphaned_files)
         return saved
 
+    def _track_changes(self, source: str, run_id: int, status: str) -> None:
+        """Record how many known events changed offers in this run; unlist the ones that vanished."""
+        with self.db.session() as session:
+            run = session.get(ScrapeRunRow, run_id)
+            if run is None:
+                return
+            started = run.started_at
+            run.events_changed = session.scalar(
+                select(func.count()).select_from(EventRow).where(
+                    EventRow.source == source, EventRow.offers_changed_at >= started, EventRow.first_seen_at < started
+                )
+            )
+            run.events_unlisted = 0
+            # Only a complete run proves an event is gone; a partial / failed / blocked one proves nothing.
+            if status == "success" and source_settings(source, self.settings).unlist_missing:
+                gone = session.scalars(
+                    select(EventRow.id).where(EventRow.source == source, EventRow.last_seen_at < started, upcoming_filter())
+                ).all()
+                if gone:
+                    session.execute(update(EventRow).where(EventRow.id.in_(gone)).values(is_listed=False))
+                    record_delisted(session, source, gone)
+                run.events_unlisted = len(gone)
+                log.info("source %s: %d events no longer listed", source, len(gone))
+
     def _finish_run(self, result: RunResult, failures: list[str]) -> None:
         with self.db.session() as session:
             run = session.get(ScrapeRunRow, result.run_id)
@@ -319,6 +368,6 @@ class ScrapeService:
             run.failures = failures[:200]
 
 
-def _finished_before(event: ScrapedEvent, cutoff: datetime) -> bool:
-    """Same rule as retention: started before the cutoff -> never stored."""
-    return event.start_at is not None and event.start_at < cutoff
+def _finished_before(event: ScrapedEvent, settings: Settings) -> bool:
+    """Same rule as display and retention (retention.is_current): over -> never stored."""
+    return not is_current(event.start_at, event.end_at, settings.retention, settings.timezone)
