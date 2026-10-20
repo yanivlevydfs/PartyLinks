@@ -666,6 +666,7 @@ sources:
     skip_titles: ["בדיקה", "שוברים"]
     hosts:
       - {key: kupat, url: "https://tickets.kupat.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
+      - {key: comy, url: "https://tickets.comy.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
       # Hosts without artwork in the API read it from the theatre's site (exact by presentation id).
       - {key: cameri, url: "https://tickets.cameri.co.il", city: "תל אביב",
          artwork_index: "https://www.cameri.co.il/wp-json/wp/v2/show?per_page=100&_fields=link"}
@@ -694,7 +695,8 @@ sources:
     # Comy stand-up box office (WordPress). Tickets are sold on PRES (tickets.comy.co.il), whose
     # robots.txt disallows all, so the home page lists show pages (/event/<slug>/) and each page
     # is parsed for its performances (date, time, place, PRES/Gray Club link, sold-out badge).
-    enabled: true
+    # Off: the comy host under `pres` reads the same shows with city, prices and tickets left.
+    enabled: false
     cron: "33 6,18 * * *"
     site_url: https://comy.co.il
     listing_path: /
