@@ -388,3 +388,25 @@ def test_logging_is_quiet_by_default_and_debug_logs_everything(tmp_path: Path) -
         assert client.post("/admin/api/logging", json={"on": False}).json() == {"debug": False}
         assert not log.filter(access(200))
     set_debug(False)
+
+
+def test_bare_venue_names_take_their_city_from_other_events(tmp_path: Path) -> None:
+    from partylinks.service import ScrapeService
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [
+        event("addressed", future, venue_name="Ezra Bar", address="Ezra 5, Tel Aviv"),
+        event("bare", future, venue_name="Ezra Bar", address=None),  # same venue, no address
+        event("sarona", future, venue_name="Sarona Park", address=None),  # a Tel Aviv area keyword
+        event("placed", future, venue_name="Somewhere", address=None, latitude=32.08, longitude=34.78),
+        event("haifa", future, venue_name="Haifa Port Bar", address=None),
+        event("unknown", future, venue_name="Nowhere", address=None),
+    ])  # fmt: skip
+    service = ScrapeService(settings, db)
+    service.recompute_areas()
+    with db.session() as session:
+        rows = {r.source_event_id: (r.in_target_city, r.area) for r in session.query(EventRow)}
+    service.shutdown()
+    assert rows["bare"][0] is True and rows["sarona"] == (True, "business") and rows["placed"][0] is True
+    assert rows["haifa"] == (False, "haifa") and rows["unknown"] == (None, None)

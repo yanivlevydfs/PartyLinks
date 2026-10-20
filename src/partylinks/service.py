@@ -24,6 +24,7 @@ import logging
 import re
 import threading
 import time
+from collections import Counter
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -48,7 +49,7 @@ from partylinks.db import (
 )
 from partylinks.venues import resolve_venues
 from partylinks.dedup import Deduplicator
-from partylinks.enrichment import Enricher
+from partylinks.enrichment import Enricher, meters
 from partylinks.geo import Geocoder
 from partylinks.media import MediaStore
 from partylinks.models import ScrapedEvent
@@ -170,19 +171,39 @@ class ScrapeService:
     def geocode(self, network: bool = True) -> dict[str, int]:
         """Give map coordinates to upcoming events that have only an address."""
         with self._geo_lock:
-            return self.geocoder.locate_missing(network, stop=self._stopping).as_dict()
+            stats = self.geocoder.locate_missing(network, stop=self._stopping).as_dict()
+        self.recompute_areas()  # new events and new coordinates: place them in a city / region
+        return stats
 
     def recompute_areas(self) -> int:
-        """Re-derive ``area`` and the canonical ``city`` of every stored event from the current config.
-        Returns rows changed."""
-        matcher = self.enricher.areas
+        """Re-derive the canonical ``city``, ``in_target_city`` and ``area`` of every stored event from
+        the current config. An event with only a venue name takes the city other events at that venue
+        name, else its coordinates decide. Returns rows changed."""
+        enricher, matcher = self.enricher, self.enricher.areas
+        target = next(
+            (c for c in self.settings.enrichment.cities if c.en == self.settings.enrichment.target_city.name), None
+        )
         changed = 0
         with self.db.session() as session:
-            for row in session.scalars(select(EventRow)):
-                city = self.enricher.canonical_city(row.city, row.address, row.venue_name)
-                area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, row.in_target_city, city)
-                if (area, city) != (row.area, row.city):
-                    row.area, row.city, changed = area, city, changed + 1
+            rows = session.scalars(select(EventRow)).all()
+            cities = [enricher.canonical_city(r.city, r.address, r.venue_name) for r in rows]
+            inside = [enricher.in_target_city(c, r.address, r.venue_name) for r, c in zip(rows, cities, strict=True)]
+            # Venues whose events give a city or address: the most common answer per venue name.
+            votes = Counter(
+                (r.venue_name.casefold(), i) for r, i in zip(rows, inside, strict=True)
+                if r.venue_name and i is not None and (r.city or r.address)
+            )
+            venue_inside: dict[str, bool] = {}
+            for (venue, i), _ in votes.most_common():
+                venue_inside.setdefault(venue, i)
+            for row, city, here in zip(rows, cities, inside, strict=True):
+                if here is None and row.venue_name:
+                    here = venue_inside.get(row.venue_name.casefold())
+                if here is None and row.latitude is not None and row.longitude is not None and target and target.center:
+                    here = meters(target.center, (row.latitude, row.longitude)) <= target.radius_m
+                area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, here, city)
+                if (area, city, here) != (row.area, row.city, row.in_target_city):
+                    row.area, row.city, row.in_target_city, changed = area, city, here, changed + 1
         log.info("areas/cities: updated %d events", changed)
         return changed
 

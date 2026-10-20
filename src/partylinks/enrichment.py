@@ -171,7 +171,7 @@ class Enricher:
 
     def is_dropped(self, event: ScrapedEvent) -> bool:
         """True when enrich() would drop the event (another city while focusing on one)."""
-        return self.settings.target_city.drop_other_cities and self._in_target_city(event) is False
+        return self.settings.target_city.drop_other_cities and self.in_target_city(event.city, event.address, event.venue_name) is False
 
     def enrich(self, event: ScrapedEvent) -> ScrapedEvent | None:
         """Return the enriched event, or ``None`` if config says to drop it."""
@@ -189,7 +189,7 @@ class Enricher:
         )
         self._categorize_time(event)
         event.city = self.canonical_city(event.city, event.address, event.venue_name)
-        event.in_target_city = self._in_target_city(event)
+        event.in_target_city = self.in_target_city(event.city, event.address, event.venue_name)
         event.area = self.areas.match(
             event.venue_name, event.address, event.latitude, event.longitude, event.in_target_city, event.city
         )
@@ -418,11 +418,20 @@ class Enricher:
                 return max(hits)[1]
         return None if city is None or city.strip().isdigit() else city.strip()
 
-    def _in_target_city(self, event: ScrapedEvent) -> bool | None:
-        haystack = " | ".join(filter(None, [event.city, event.address, event.venue_name])).lower()
+    def in_target_city(self, city: str | None, address: str | None, venue: str | None) -> bool | None:
+        """Whether the event is in the target city. A city or address that names another place means no;
+        a bare venue name ("Sarona Park", "Ezra Bar") decides only when it names a street / area of the
+        city (yes) or a place in another region (no), and is otherwise unknown (None)."""
+        haystack = " | ".join(filter(None, [city, address, venue])).lower()
         if not haystack or self._city is None:
             return None
-        return bool(self._city.search(haystack))
+        if self._city.search(haystack):
+            return True
+        if city or address:
+            return False
+        if self.areas.keyword_area(venue, None):
+            return True
+        return False if self.areas.region(None, venue, None, None, None) != OUTSIDE_AREA else None
 
 
 def _place_pattern(names: list[str]) -> re.Pattern[str] | None:
