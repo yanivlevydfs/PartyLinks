@@ -131,3 +131,12 @@ def test_scrape_hosts(monkeypatch) -> None:
     assert tour.image_url and tour.image_url.startswith("https://cdn.presglobal.pro/lessin/feature/")
     assert [(t.name, t.price) for t in tour.tickets] == [("אולם", Decimal(50))]
     assert tour_sold.is_sold_out and tour_sold.tickets[0].price == Decimal(50)
+
+
+def test_og_image_is_encoded_and_skips_wordpress_placeholder() -> None:
+    from partylinks.parsing import og_image
+
+    page = '<meta property="og:image" content="https://cdn.example/uploads/פוסטר.jpg">'
+    assert og_image(page) == "https://cdn.example/uploads/%D7%A4%D7%95%D7%A1%D7%98%D7%A8.jpg"
+    assert og_image('<meta property="og:image" content="https://x.example/wp-admin/admin-ajax.png">') is None
+    assert og_image("<html></html>") is None

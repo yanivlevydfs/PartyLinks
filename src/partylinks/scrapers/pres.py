@@ -11,6 +11,12 @@ Every configured host serves the same JSON API:
   hosts) ``imageData``, a CDN image URL. The ``featureIds`` filter is ignored by the
   server, so one call per host covers all shows. Hosts without ``imageData`` may serve
   artwork from a media path (``image_path``; Kupat's ``/api/features/<id>/media/...``).
+* Artwork from the theatre's own site, for hosts with neither (Cameri, Habima, Opera, Khan):
+  ``artwork_json`` is Habima's ``allShowsData.json`` (``presentations.he[featureId]`` lists
+  presentation ids, ``shows.he[featureId].img`` the poster). ``artwork_index`` is a WP REST
+  list of shows (``link``) or an HTML page whose show links match ``artwork_page_link``; each show page links its
+  performances (``<host>/order/<presentationId>``) and carries the poster as ``og:image``.
+  Exact by presentation id; skipped while every performance already has stored artwork.
 * Prices: ``/api/presentations/<id>/ticketGroups`` returns price levels with their
   tickets (price, basePrice, serviceCharge). It is read once per show, from its next
   performance, and applied to all of that show's performances. Newer hosts answer GET;
@@ -23,11 +29,12 @@ venues, so the same performance can appear under two hosts; dedup merges them.
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any, Literal
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -36,6 +43,7 @@ from partylinks.parsing import (
     ParseError,
     clean_str,
     html_to_text,
+    og_image,
     parse_iso,
     to_decimal,
     to_float,
@@ -69,6 +77,10 @@ class PresHost(BaseModel):
     ticket_groups_method: Literal["GET", "POST"] = "GET"
     # Artwork path for shows without ``imageData``, formatted with ``feature_id``.
     image_path: str | None = None
+    # Artwork from the theatre's own site (see the module docstring).
+    artwork_json: str | None = None
+    artwork_index: str | None = None
+    artwork_page_link: str | None = None  # show-page links in an HTML ``artwork_index``
 
 
 class PresSettings(SourceSettings):
@@ -140,12 +152,56 @@ class PresScraper(BaseScraper[PresSettings]):
             ]
         )
         shows = upcoming_shows(
-            listing.get("presentations") or [],
+            (listing or {}).get("presentations") or [],
             s.skip_titles,
             _now(self.timezone),
             self.timezone,
         )
-        return shows, {str(f["id"]): f for f in features or [] if isinstance(f, dict) and f.get("id") is not None}
+        by_id = {str(f["id"]): f for f in features or [] if isinstance(f, dict) and f.get("id") is not None}
+        missing = [
+            fid for fid, rows in shows.items()
+            if not clean_str((by_id.get(fid) or {}).get("imageData"))
+            and any(f"{host.key}:{r['id']}" not in self.known_images for r in rows)
+        ]  # fmt: skip
+        if missing and not host.image_path and (host.artwork_json or host.artwork_index):
+            posters = await self.optional(f"{host.key} artwork", self._site_artwork(host)) or {}
+            feature_of = {str(r["id"]): fid for fid, rows in shows.items() for r in rows}
+            for pid, image in posters.items():
+                if (fid := feature_of.get(pid)) in missing:
+                    by_id.setdefault(fid, {})["imageData"] = image
+        return shows, by_id
+
+    async def _site_artwork(self, host: PresHost) -> dict[str, str]:
+        """Poster URL per presentation id, from the theatre's own site."""
+        if host.artwork_json:
+            data = await self.get_json(host.artwork_json, expect=dict)
+            shows = (data.get("shows") or {}).get("he") or {}
+            return {
+                str(pid): quote(img, safe=":/%?=&")
+                for fid, pids in ((data.get("presentations") or {}).get("he") or {}).items()
+                if (img := clean_str((shows.get(fid) or {}).get("img")))
+                for p in pids or []
+                if (pid := p.get("id") if isinstance(p, dict) else p) is not None
+            }
+        if not host.artwork_index:
+            return {}
+        index = await self.get_text(host.artwork_index)
+        try:  # a WP REST list of shows
+            pages = [link for item in json.loads(index) if isinstance(item, dict) and (link := item.get("link"))]
+        except ValueError:  # an HTML listing page
+            pages = re.findall(host.artwork_page_link, index) if host.artwork_page_link else []
+        pages = list(dict.fromkeys(pages))
+        order = re.compile(re.escape(host.url) + r"/order/(\d+)")
+        posters: dict[str, str] = {}
+        async for page, html in self.stream_isolated(
+            pages, self._page, label=lambda url: f"{host.key} artwork page {url}"
+        ):
+            if image := og_image(html):
+                posters.update(dict.fromkeys(order.findall(html), image))
+        return posters
+
+    async def _page(self, url: str) -> tuple[str, str]:
+        return url, await self.get_text(url)
 
     async def _ticket_groups(self, host: PresHost, presentation_id: Any) -> Any:
         url = host.url + self.settings.ticket_groups_path.format(id=presentation_id)
@@ -179,11 +235,10 @@ def parse_ticket_groups(payload: dict[str, Any]) -> list[TicketTier]:
     groups = payload.get("ticketGroups") or {}
     tiers = []
     for group in groups.values() if isinstance(groups, dict) else groups:
-        tickets = [t for t in (group or {}).get("tickets") or [] if to_decimal(t.get("price")) is not None]
-        if not tickets:
+        priced = [(p, t) for t in (group or {}).get("tickets") or [] if (p := to_decimal(t.get("price"))) is not None]
+        if not priced:
             continue
-        full = max(tickets, key=lambda t: to_decimal(t["price"]))
-        price = to_decimal(full["price"])
+        price, full = max(priced, key=lambda pt: pt[0])
         base = to_decimal(full.get("basePrice"))
         fee = to_decimal(full.get("serviceCharge"))
         tiers.append(

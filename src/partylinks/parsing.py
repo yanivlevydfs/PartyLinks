@@ -9,6 +9,7 @@ import unicodedata
 from datetime import datetime, timezone, tzinfo
 from decimal import Decimal, InvalidOperation
 from typing import Any
+from urllib.parse import quote
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from selectolax.lexbor import LexborHTMLParser
@@ -29,6 +30,13 @@ def next_data(page_html: str) -> dict[str, Any]:
     if node is None:
         raise ParseError("__NEXT_DATA__ script not found")
     return json.loads(node.text())
+
+
+def og_image(page_html: str) -> str | None:
+    """A page's ``og:image``, percent-encoded; WordPress's ``admin-ajax.png`` fallback is not artwork."""
+    node = LexborHTMLParser(page_html).css_first('meta[property="og:image"]')
+    image = clean_str(node.attributes.get("content")) if node else None
+    return quote(image, safe=":/%?=&") if image and "admin-ajax" not in image else None
 
 
 def jsonld_nodes(page_html: str) -> list[dict[str, Any]]:

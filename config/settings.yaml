@@ -663,12 +663,17 @@ sources:
     skip_titles: ["בדיקה", "שוברים"]
     hosts:
       - {key: kupat, url: "https://tickets.kupat.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
-      - {key: cameri, url: "https://tickets.cameri.co.il", city: "תל אביב"}
-      - {key: habima, url: "https://tickets.habima.co.il", venue: "תיאטרון הבימה", city: "תל אביב"}
-      - {key: opera, url: "https://tickets.israel-opera.co.il", venue: "האופרה הישראלית", city: "תל אביב"}
+      # Hosts without artwork in the API read it from the theatre's site (exact by presentation id).
+      - {key: cameri, url: "https://tickets.cameri.co.il", city: "תל אביב",
+         artwork_index: "https://www.cameri.co.il/wp-json/wp/v2/show?per_page=100&_fields=link"}
+      - {key: habima, url: "https://tickets.habima.co.il", venue: "תיאטרון הבימה", city: "תל אביב",
+         artwork_json: "https://www.habima.co.il/wp-content/themes/tyco-wp/cache/allShowsData.json"}
+      - {key: opera, url: "https://tickets.israel-opera.co.il", venue: "האופרה הישראלית", city: "תל אביב",
+         artwork_index: "https://www.israel-opera.co.il/wp-json/wp/v2/show?per_page=100&orderby=modified&_fields=link"}
       - {key: ipo, url: "https://ipo.presglobal.store", city: "תל אביב"}
       - {key: lessin, url: "https://lessin.presglobal.store", venue: "תיאטרון בית ליסין", city: "תל אביב"}
-      - {key: khan, url: "https://khan.pres.global", venue: "תיאטרון החאן", city: "ירושלים"}
+      - {key: khan, url: "https://khan.pres.global", venue: "תיאטרון החאן", city: "ירושלים",
+         artwork_index: "https://www.khan.co.il/shows-list", artwork_page_link: 'https://www\.khan\.co\.il/shows/\d+/[^"]+'}
 
   smarticket:
     # Smarticket white-label box offices: one GET /api/shows per tenant (prices inline).

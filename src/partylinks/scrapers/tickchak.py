@@ -21,8 +21,8 @@ from pydantic import Field
 
 from partylinks.artists import ArtistProfile
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, from_unix, next_data, to_decimal
-from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.parsing import ParseError, clean_str, from_unix, next_data, og_image, to_decimal
+from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 
 SLIDER_SECTION = "eventSlider"
 LOOP_SECTION = "loopSections"
@@ -53,7 +53,7 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         page = page_state.get("page") or {}
         hierarchy = _hierarchy_params(page.get("breadcrumbs") or [])
 
-        items: dict[str, dict[str, Any]] = {}
+        items: dict[Any, dict[str, Any]] = {}
         preloaded = ((page_state.get("data") or {}).get("event") or {}).get("all")
         for item in preloaded.values() if isinstance(preloaded, dict) else []:
             if isinstance(item, dict):
@@ -74,9 +74,27 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         self.log.info("listed %d events", len(items))
         for entity_id, item in items.items():
             try:
-                yield parse_event(item, s.site_url)
+                event = parse_event(item, s.site_url)
             except Exception as exc:  # noqa: BLE001 - isolate per-item failures
                 self.record_failure(str(entity_id), exc)
+                continue
+            if not event.images and (link := clean_str(item.get("link"))):
+                await self._provider_artwork(event, link)
+            yield event
+
+    async def _provider_artwork(self, event: ScrapedEvent, link: str) -> None:
+        """Listings copied from another box office carry no artwork here; its page has it.
+        Read once: stored artwork is reused on later runs."""
+        image = (self.known_images.get(event.source_event_id) or [None])[0]
+        if image is None:
+            try:
+                image = og_image(await self.get_text(link))
+            except SourceBlockedError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - optional artwork; some providers refuse bots
+                self.log.info("no provider artwork for %s: %s", event.source_event_id, exc)
+        if image:
+            event.images, event.image_url = [image], image
 
     async def _paginate(self, url: str, key: str, params: list[tuple[str, Any]]) -> list[dict[str, Any]]:
         size = self.settings.page_size
