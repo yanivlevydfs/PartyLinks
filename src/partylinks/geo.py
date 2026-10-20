@@ -207,7 +207,7 @@ class Geocoder:
         with self.db.session() as session:
             known_venue, known_street = self._known(session)
             cache = {c.query: c for c in session.scalars(select(GeoCacheRow).where(GeoCacheRow.found.is_(True)))}
-            missing = session.scalars(select(EventRow).where(upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_(None))).all()
+            missing = session.scalars(select(EventRow).where(upcoming_filter(), EventRow.latitude.is_(None))).all()
             stats.missing = len(missing)
             unplaced: Counter[str] = Counter()
             for row in missing:
@@ -295,7 +295,7 @@ class Geocoder:
             cache = {c.query: c for c in session.scalars(select(GeoCacheRow))}
             pending = [
                 row
-                for row in session.scalars(select(EventRow).where(upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_(None)))
+                for row in session.scalars(select(EventRow).where(upcoming_filter(), EventRow.latitude.is_(None)))
                 if not (self._pin(row) or _venue_match(known_venue, row.venue_name) or street_key(row.address) in known_street)
             ]
             session.expunge_all()

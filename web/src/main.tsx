@@ -4,14 +4,21 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider, useLocation } from "react-router-dom";
 import EventPage from "./pages/EventPage";
 import Home from "./pages/Home";
-import Abroad from "./pages/Abroad";
 import { ArtistPage, ArtistsIndex, VenuePage, VenuesIndex } from "./pages/Browse";
 import NotFound from "./pages/NotFound";
 import AccessibilityPage from "./pages/Accessibility";
 import { BlogIndex, BlogPost } from "./pages/Blog";
+import PrivacyPage from "./pages/Privacy";
 import { useStore } from "./store";
 import { Layout } from "./ui";
 import "./styles.css";
+// Self-hosted fonts: no request (and no visitor IP) goes to Google Fonts.
+import "@fontsource/heebo/400.css";
+import "@fontsource/heebo/500.css";
+import "@fontsource/heebo/700.css";
+import "@fontsource/heebo/900.css";
+import "@fontsource/rubik/700.css";
+import "@fontsource/rubik/900.css";
 
 // Leaflet is only loaded when the map is opened.
 const MapPage = lazy(() => import("./pages/MapPage"));
@@ -42,7 +49,6 @@ const router = createBrowserRouter([
       { path: "/city/:city", element: <Landing landing="city" /> },
       { path: "/event/:id", element: <EventPage /> },
       { path: "/map", element: <Suspense><MapPage /></Suspense> },
-      { path: "/abroad", element: <Abroad /> },
       { path: "/venues", element: <VenuesIndex /> },
       { path: "/venue/:name", element: <VenuePage /> },
       { path: "/artists", element: <ArtistsIndex /> },
@@ -53,6 +59,7 @@ const router = createBrowserRouter([
       { path: "/accessibility", element: <AccessibilityPage /> },
       { path: "/admin", element: <Suspense><AdminPage /></Suspense> },
       { path: "*", element: <NotFound /> },
+      { path: "/privacy", element: <PrivacyPage /> },
     ],
   },
 ]);

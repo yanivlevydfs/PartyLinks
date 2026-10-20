@@ -99,6 +99,9 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
             *([] if cfg.site.accessibility.has_contact else [
                 "Accessibility statement has no coordinator contact (site.accessibility in Config) - required by law in Israel."
             ]),
+            *([] if cfg.site.privacy.email else [
+                "Privacy policy has no contact email (site.privacy.email in Config): visitors need a way to send privacy requests."
+            ]),
             *(["site.base_url is still localhost: canonical links, sitemap and share previews point to it."]
               if "localhost" in cfg.site.base_url else []),
             *([] if cfg.admin.token else ["No admin token set: admin works from this machine only."]),

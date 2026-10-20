@@ -39,10 +39,10 @@ DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
 CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "default-src 'self'",
     "script-src 'self'",
-    # Leaflet positions tiles with inline styles; the fonts come from Google Fonts.
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    # Leaflet positions tiles with inline styles. Fonts are self-hosted (no Google Fonts: privacy).
+    "style-src 'self' 'unsafe-inline'",
     # The accessibility widget fetches its language packs and dyslexia font from jsDelivr (URLs hardcoded).
-    "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net/npm/sienna-accessibility/",
+    "font-src 'self' https://cdn.jsdelivr.net/npm/sienna-accessibility/",
     "img-src 'self' data: blob: https:",  # map tiles and event artwork hosted by the sources
     "connect-src 'self' https://cdn.jsdelivr.net/npm/sienna-accessibility/",
     "object-src 'none'",

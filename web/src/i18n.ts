@@ -4,8 +4,7 @@ export type Lang = "he" | "en";
 export const STRINGS = {
   he: {
     dir: "rtl",
-    nav: { parties: "אירועים", map: "מפה", abroad: "חו״ל", venues: "מקומות", artists: "אמנים", blog: "מגזין" },
-    abroad: { title: "הופעות ופסטיבלים בחו״ל", intro: "כרטיסים וחבילות להופעות ולפסטיבלים בעולם." },
+    nav: { parties: "אירועים", map: "מפה", venues: "מקומות", artists: "אמנים", blog: "מגזין" },
     blog: {
       title: "המגזין",
       intro: "מדריכים, טיפים והמלצות לחיי הלילה בישראל, עם אירועים שמתעדכנים כל הזמן.",
@@ -21,6 +20,14 @@ export const STRINGS = {
     searchList: "חיפוש לפי שם…",
     accessibility: "הצהרת נגישות",
     isNew: "חדש",
+    privacy: "מדיניות פרטיות",
+    cookieSettings: "הגדרות עוגיות",
+    mapGate: {
+      title: "המפה נטענת מ-OpenStreetMap",
+      text: "כדי להציג את המפה, הדפדפן יפנה לשרתי OpenStreetMap, שיקבלו את כתובת ה-IP שלך. הנקודות של האירועים כבר מסומנות; אישור יציג את רקע המפה.",
+      once: "הצגת המפה הפעם",
+      always: "הצגה תמיד",
+    },
     updatedBadge: "עודכן",
     updatedAgo: (h: number) => (h < 1 ? "הכרטיסים עודכנו עכשיו" : `הכרטיסים והמחירים עודכנו לפני ${h} שעות`),
     unlisted: "האירוע הוסר מאתר המקור (בוטל או ירד מהמכירה). מומלץ לבדוק באתר לפני שמגיעים.",
@@ -112,8 +119,7 @@ export const STRINGS = {
   },
   en: {
     dir: "ltr",
-    nav: { parties: "Events", map: "Map", abroad: "Abroad", venues: "Venues", artists: "Artists", blog: "Magazine" },
-    abroad: { title: "Concerts and festivals abroad", intro: "Tickets and packages for concerts and festivals around the world." },
+    nav: { parties: "Events", map: "Map", venues: "Venues", artists: "Artists", blog: "Magazine" },
     blog: {
       title: "Magazine",
       intro: "Guides and tips for nightlife in Israel, with live event lists. Articles are in Hebrew.",
@@ -130,6 +136,14 @@ export const STRINGS = {
     accessibility: "Accessibility statement",
     isNew: "New",
     updatedBadge: "Updated",
+    privacy: "Privacy policy",
+    cookieSettings: "Cookie settings",
+    mapGate: {
+      title: "The map loads from OpenStreetMap",
+      text: "To show the map, your browser will contact OpenStreetMap's servers, which receive your IP address. The event pins are already shown; allowing it adds the map underneath.",
+      once: "Show the map this time",
+      always: "Always show",
+    },
     updatedAgo: (h: number) => (h < 1 ? "Tickets updated just now" : `Tickets and prices updated ${h}h ago`),
     unlisted: "This event was removed from its source site (cancelled or pulled). Check there before you go.",
     artistsTitle: "Artists & DJs",

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useCategories, useEvents, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
+import { CookieConsent, useConsent } from "./consent";
 import { useStore } from "./store";
 import type { EventSummary } from "./types";
 
@@ -66,6 +67,7 @@ export function Layout() {
   const { t, lang } = useT();
   const setLang = useStore((s) => s.setLang);
   const cats = useCategories().data;
+  const openConsent = useConsent((s) => s.openSettings);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -74,13 +76,13 @@ export function Layout() {
 
   return (
     <>
+      <CookieConsent />
       <header className="top">
         <div className="wrap top-row">
           <Link className="logo" to="/">{lang === "he" ? <>דו<span>פק</span></> : <>Pul<span>se</span></>}</Link>
           <nav className="nav">
             <NavLink to="/" end>{t.nav.parties}</NavLink>
             <NavLink to="/map">{t.nav.map}</NavLink>
-            <NavLink to="/abroad">{t.nav.abroad}</NavLink>
             <NavLink to="/venues">{t.nav.venues}</NavLink>
             <NavLink to="/artists">{t.nav.artists}</NavLink>
             <NavLink to="/blog">{t.nav.blog}</NavLink>
@@ -105,6 +107,8 @@ export function Layout() {
         </nav>
         {lang === "he" ? "דופק · ישראל" : "Pulse · Israel"} · <Link to="/accessibility">{t.accessibility}</Link>
       </footer>
+        {" · "}<Link to="/privacy">{t.privacy}</Link>
+        {" · "}<button className="linkish" onClick={openConsent}>{t.cookieSettings}</button>
     </>
   );
 }

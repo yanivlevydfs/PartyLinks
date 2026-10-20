@@ -19,7 +19,6 @@ export interface EventSummary {
   city: string | null;
   latitude: number | null;
   longitude: number | null;
-  country: string | null;
   in_target_city: boolean | null;
   genres: string[];
   event_types: string[];

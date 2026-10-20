@@ -106,8 +106,6 @@ class ScrapedEvent(BaseModel):
     city: str | None = None
     latitude: float | None = None
     longitude: float | None = None
-    # ISO country code of an event abroad (None = Israel); abroad events have their own section.
-    country: str | None = None
     # Genres as reported by the source (normalized later by enrichment).
     source_genres: list[str] = Field(default_factory=list)
     event_types: list[str] = Field(default_factory=list)

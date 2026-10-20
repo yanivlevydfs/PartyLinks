@@ -34,6 +34,11 @@ site:
     email: ""
     phone: ""
     updated: 2026-10-20    # last review of the statement
+  # Privacy and cookie policy at /privacy (Israeli Privacy Protection Law, Amendment 13): a contact
+  # for access / correction / deletion requests. The cookie banner itself is in web/src/consent.tsx.
+  privacy:
+    email: ""
+    updated: 2026-10-20    # last review of the policy
 
 # Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
 # https, no framing), vulnerability-scanner and data-harvester blocking, per-IP rate limits and
@@ -690,19 +695,6 @@ sources:
     event_page_prefix: /announce/
     http:
       concurrency: 4
-
-  tiktik:
-    # TikTik Online: tickets and packages for concerts and festivals abroad (WooCommerce). The
-    # Store API lists the music category (~2,000 products); each product page's MusicEvent
-    # JSON-LD gives date, venue, city and country. Events abroad live in the /abroad section.
-    enabled: true
-    cron: "27 4,16 * * *"
-    site_url: https://www.tiktik-online.co.il
-    products_path: /wp-json/wc/store/v1/products
-    category_id: 8
-    http:
-      concurrency: 4
-      request_delay_seconds: 0.2
 
   comy:
     # Comy stand-up box office (WordPress). Tickets are sold on PRES (tickets.comy.co.il), whose

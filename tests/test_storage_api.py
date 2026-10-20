@@ -139,6 +139,9 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
         assert "Disallow: /admin" in robots and "Sitemap: http://localhost:8000/sitemap.xml" in robots
         sitemap = client.get("/sitemap.xml").text
         assert "/event/" in sitemap and 'hreflang="en"' in sitemap
+        # Privacy and cookie policy: crawlable, and its contact comes from /site.
+        assert "/privacy" in sitemap and "מדיניות פרטיות" in client.get("/privacy").text
+        assert "email" in client.get("/site").json()["privacy"]
         assert "Techno </script> night" in client.get("/llms.txt").text
 
 

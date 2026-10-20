@@ -277,11 +277,21 @@ class AccessibilitySettings(BaseModel):
         return bool(self.coordinator and (self.email or self.phone))
 
 
+class PrivacySettings(BaseModel):
+    """Privacy and cookie policy (/privacy). The Israeli Privacy Protection Law (Amendment 13) expects
+    a way to reach the site about access, correction and deletion requests."""
+
+    email: str = ""
+    # Date the policy was last reviewed (shown on the page).
+    updated: date | None = None
+
+
 class SiteSettings(BaseModel):
     # Public address of the website (no trailing slash): canonical links, sitemap, JSON-LD, share previews.
     base_url: str = "http://localhost:8000"
     name: str = "Pulse"
     accessibility: AccessibilitySettings = Field(default_factory=AccessibilitySettings)
+    privacy: PrivacySettings = Field(default_factory=PrivacySettings)
 
     @field_validator("base_url")
     @classmethod
