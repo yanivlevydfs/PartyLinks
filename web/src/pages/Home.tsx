@@ -1,14 +1,26 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useParams } from "react-router-dom";
 import { useCategories, type Params } from "../api";
 import { genreLabel } from "../i18n";
 import { useStore } from "../store";
-import { Chip, EventGrid, Hero, label, today, TZ, useT } from "../ui";
+import { Chip, EventGrid, Hero, label, today, TZ, useT, useTitle } from "../ui";
 
-export default function Home() {
+// Landing routes (/tonight, /weekend, /genre/:genre) are the home page with its filters preset;
+// the server renders the same URLs with their own title, description and FAQ for crawlers.
+export default function Home({ landing }: { landing?: "tonight" | "weekend" | "genre" }) {
   const { t, lang } = useT();
   const f = useStore((s) => s.filters);
   const set = useStore((s) => s.setFilter);
   const cats = useCategories().data;
+  const { genre } = useParams();
+
+  useEffect(() => {
+    if (!landing) return;
+    set("when", landing === "genre" ? "all" : landing);
+    set("genres", landing === "genre" && genre ? [genre] : []);
+  }, [landing, genre, set]);
+  const title = landing === "genre" ? t.landing.genre(genreLabel(lang, genre ?? "")) : landing ? t.landing[landing] : t.tagline;
+  useTitle(landing ? title : undefined);
 
   // Debounce the search box; the store keeps what was typed.
   const [q, setQ] = useState(f.q);
@@ -34,7 +46,7 @@ export default function Home() {
 
   return (
     <>
-      <Hero title={t.tagline}>
+      <Hero title={title}>
         <input className="search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.search} aria-label={t.search} />
       </Hero>
       <main className="wrap">

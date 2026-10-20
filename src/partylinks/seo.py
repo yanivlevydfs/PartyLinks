@@ -10,8 +10,9 @@ copy of the content inside ``#root`` that React replaces on load. Also serves ``
 from __future__ import annotations
 
 import json
+from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -20,7 +21,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse
-from sqlalchemy import String, cast, or_, select
+from sqlalchemy import ColumnElement, String, cast, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from partylinks.config import Settings
@@ -74,6 +75,28 @@ TEXT = {
         "locale": "en_US",
     },
 }
+
+
+# Landing pages answer what people actually search for ("מה עושים הערב", "מסיבות טכנו") with a live
+# list and an FAQ whose answers are computed from the listings, so search and AI engines can quote them.
+GENRES_HE = {
+    "techno": "טכנו", "house": "האוס", "trance": "טראנס", "hip_hop": "היפ הופ", "rnb": "R&B", "mainstream": "מיינסטרים",
+    "pop": "פופ", "reggaeton_latin": "רגאטון / לטיני", "afro": "אפרו", "dancehall_reggae": "דאנסהול / רגאיי",
+    "mizrahi": "מזרחית", "israeli": "מוזיקה ישראלית", "greek": "יוונית", "arabic": "ערבית", "disco_funk": "דיסקו / פאנק",
+    "drum_and_bass": "דראם אנד בייס", "bass_dubstep": "בייס / דאבסטפ", "hardstyle": "הארדסטייל", "edm": "EDM",
+    "electronic": "מוזיקה אלקטרונית", "downtempo_chill": "צ׳יל", "throwback": "נוסטלגיה", "rock_indie": "רוק / אינדי",
+    "jazz": "ג׳אז", "world_balkan": "בלקן / וורלד", "live_show": "הופעות חיות", "lgbt": "גאווה", "stand_up": "סטנדאפ",
+    "karaoke": "קריוקי",
+}  # fmt: skip
+GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
+                 "stand_up": "Stand-up comedy", "live_show": "Live music"}  # fmt: skip
+GENRE_PAGE_MIN = 3  # fewer upcoming events than this: no landing page (thin content)
+
+
+def genre_label(genre: str, lang: str) -> str:
+    if lang == "he":
+        return GENRES_HE.get(genre, genre)
+    return GENRES_EN_FIX.get(genre, genre.replace("_", " ").title())
 
 
 @dataclass
@@ -288,8 +311,8 @@ def home_page(session: Session, cfg: Settings, lang: str) -> Page:
         path="/",
         lang=lang,
         jsonld=[*_website(cfg, lang), _item_list(rows, cfg, t["upcoming"])],
-        body=f"<h1>{escape(t['site_title'])}</h1><p>{escape(t['site_desc'])}</p><h2>{escape(t['upcoming'])}</h2>"
-        + _event_list_html(rows, cfg, lang),
+        body=f"<h1>{escape(t['site_title'])}</h1><p>{escape(t['site_desc'])}</p>{_landing_links(session, lang)}"
+        f"<h2>{escape(t['upcoming'])}</h2>" + _event_list_html(rows, cfg, lang),
     )
 
 
@@ -437,6 +460,119 @@ def accessibility_page(session: Session, cfg: Settings, lang: str) -> Page:
     )
 
 
+# --------------------------------------------------------------------------- landing pages
+def _genre_filter(genre: str) -> ColumnElement[bool]:
+    return cast(EventRow.genres, String).like(f'%"{genre}"%')
+
+
+def _landing_where(kind: str, cfg: Settings, genre: str | None) -> list[ColumnElement[bool]]:
+    today = datetime.now(ZoneInfo(cfg.timezone)).date()
+    if kind == "tonight":
+        return [EventRow.local_date == today]
+    if kind == "weekend":
+        return [EventRow.is_weekend.is_(True), EventRow.local_date <= today + timedelta(days=7)]
+    return [_genre_filter(genre or "")]
+
+
+def genre_counts(session: Session) -> dict[str, int]:
+    """Genres with enough upcoming events for a landing page, most events first."""
+    counts: Counter[str] = Counter()
+    for genres in session.scalars(select(EventRow.genres).where(upcoming_filter())):
+        counts.update(genres or [])
+    return {g: n for g, n in counts.most_common() if n >= GENRE_PAGE_MIN}
+
+
+def _landing_text(kind: str, lang: str, genre: str | None) -> tuple[str, str, str]:
+    """(h1 / title, meta description, intro paragraph)."""
+    g = genre_label(genre or "", lang)
+    if lang == "he":
+        return {
+            "tonight": ("מה עושים הערב? כל האירועים הערב בישראל",
+                        "מה עושים הערב: כל המסיבות, ההופעות, הסטנדאפ וההצגות של הערב בישראל, עם שעות, מחירים, כניסה חופשית וכרטיסים.",
+                        "כל האירועים שמתקיימים הערב, מעודכן כמה פעמים ביום מאתרי הכרטיסים בישראל."),
+            "weekend": ("מה עושים בסוף השבוע? אירועים ומסיבות בסופ״ש",
+                        "מסיבות, הופעות ואירועים לסוף השבוע הקרוב בישראל: חמישי, שישי ושבת, עם מחירים וכרטיסים.",
+                        "כל האירועים של סוף השבוע הקרוב, מחמישי ועד מוצאי שבת."),
+            "genre": (f"{g}: אירועים ומסיבות קרובים בישראל",
+                      f"כל אירועי ה{g} הקרובים בישראל: תאריכים, ליינאפ, מקומות, מחירי כרטיסים וכניסה חופשית.",
+                      f"כל אירועי ה{g} הקרובים, מכל אתרי הכרטיסים במקום אחד."),
+        }[kind]  # fmt: skip
+    return {
+        "tonight": ("What's on tonight in Israel",
+                    "Everything happening tonight in Israel: parties, live music, stand-up and shows, with times, prices, free entry and tickets.",
+                    "Every event happening tonight, refreshed several times a day from Israeli ticketing sites."),
+        "weekend": ("What's on this weekend in Israel",
+                    "Parties, concerts and events for the coming weekend in Israel (Thursday to Saturday), with prices and tickets.",
+                    "Every event this coming weekend, Thursday through Saturday night."),
+        "genre": (f"{g} events in Israel",
+                  f"Upcoming {g} events in Israel: dates, lineups, venues, ticket prices and free entry.",
+                  f"Every upcoming {g} event, from every ticketing site in one place."),
+    }[kind]  # fmt: skip
+
+
+def _faq(rows: list[EventRow], kind: str, lang: str, label: str, site: str) -> list[tuple[str, str]]:
+    """Questions people ask, answered from the live listings (what AI answer engines quote)."""
+    he = lang == "he"
+    scope = {"tonight": ("הערב", "tonight"), "weekend": ("בסוף השבוע", "this weekend"),
+             "genre": (f"בז׳אנר {label}", f"for {label}")}[kind][0 if he else 1]  # fmt: skip
+    free = [r for r in rows if r.entry_type == "free" or r.min_price == 0]
+    priced = sorted((r for r in rows if r.min_price), key=lambda r: r.min_price or 0)
+    venues = [v for v, _ in Counter(r.venue_name for r in rows if r.venue_name).most_common(3)]
+    qa = [(
+        f"כמה אירועים יש {scope}?" if he else f"How many events are on {scope}?",
+        f"כרגע יש {len(rows)} אירועים {scope} ב-{site}." if he else f"There are currently {len(rows)} events {scope} on {site}.",
+    )]  # fmt: skip
+    if free:
+        names = ", ".join(r.title for r in free[:3])
+        qa.append((
+            f"יש אירועים בכניסה חופשית {scope}?" if he else f"Are there free events {scope}?",
+            f"כן, {len(free)} אירועים בכניסה חופשית, למשל: {names}." if he else f"Yes, {len(free)} free events, such as {names}.",
+        ))  # fmt: skip
+    if priced:
+        r, price = priced[0], f"{float(priced[0].min_price or 0):g}"
+        at = f" ב{r.venue_name}" if he and r.venue_name else f" at {r.venue_name}" if r.venue_name else ""
+        qa.append((
+            f"מה הכרטיס הכי זול {scope}?" if he else f"What is the cheapest ticket {scope}?",
+            f"{r.title}{at}, החל מ־₪{price}." if he else f"{r.title}{at}, from ₪{price}.",
+        ))  # fmt: skip
+    if venues:
+        qa.append((f"איפה יש הכי הרבה אירועים {scope}?" if he else f"Which venues have the most events {scope}?", ", ".join(venues) + "."))
+    return qa
+
+
+def landing_page(session: Session, cfg: Settings, lang: str, kind: str, genre: str | None = None) -> Page | None:
+    if kind == "genre" and genre not in genre_counts(session):
+        return None
+    rows = _upcoming(session, *_landing_where(kind, cfg, genre), limit=500)
+    title, desc, intro = _landing_text(kind, lang, genre)
+    path = f"/genre/{genre}" if kind == "genre" else f"/{kind}"
+    faq = _faq(rows, kind, lang, genre_label(genre or "", lang), cfg.site.name)
+    faq_ld = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq],
+    }
+    faq_html = "".join(f"<h3>{escape(q)}</h3><p>{escape(a)}</p>" for q, a in faq)
+    return Page(
+        title=f"{title} · {cfg.site.name}",
+        description=desc,
+        path=path,
+        lang=lang,
+        image=_cover(cfg, rows[0]) if rows else None,
+        jsonld=[_item_list(rows[:LIST_LIMIT], cfg, title), faq_ld, _breadcrumbs(cfg, lang, (title, path))],
+        body=f"<h1>{escape(title)}</h1><p>{escape(intro)}</p>" + _event_list_html(rows[:LIST_LIMIT], cfg, lang)
+        + f"<section><h2>{'שאלות נפוצות' if lang == 'he' else 'FAQ'}</h2>{faq_html}</section>",
+    )
+
+
+def _landing_links(session: Session, lang: str) -> str:
+    """Links from the home page, so crawlers reach every landing page."""
+    he = lang == "he"
+    links = [("/tonight", "מה עושים הערב" if he else "Tonight"), ("/weekend", "סוף השבוע" if he else "This weekend")]
+    links += [(f"/genre/{g}", genre_label(g, lang)) for g in genre_counts(session)]
+    return "<nav><ul>" + "".join(f'<li><a href="{p}">{escape(n)}</a></li>' for p, n in links) + "</ul></nav>"
+
+
 # --------------------------------------------------------------------------- render
 def _jsonld_tag(data: dict[str, Any]) -> str:
     # "</" inside a string would close the script element early.
@@ -495,6 +631,8 @@ def _strip_title(html: str, keep: str) -> str:
 def sitemap(session: Session, cfg: Settings) -> str:
     rows = session.scalars(select(EventRow).where(upcoming_filter()).order_by(EventRow.start_at)).all()
     paths: list[tuple[str, datetime | None]] = [("/", None), ("/map", None), ("/venues", None), ("/artists", None), ("/accessibility", None)]
+    today = datetime.now(ZoneInfo(cfg.timezone))  # landing pages change every day
+    paths += [("/tonight", today), ("/weekend", today)] + [(f"/genre/{g}", today) for g in genre_counts(session)]
     paths += [(event_path(r), r.last_seen_at) for r in rows]
     paths += [(f"/venue/{quote(n, safe='')}", None) for n in _names(session, "venues")]
     paths += [(f"/artist/{quote(n, safe='')}", None) for n in _names(session, "artists")]
@@ -548,6 +686,10 @@ def llms_txt(session: Session, cfg: Settings) -> str:
         f"- [Map]({base}/map): events with a location",
         f"- [Venues]({base}/venues): every venue with upcoming events",
         f"- [Artists]({base}/artists): DJs and performers with upcoming shows",
+        f"- [Tonight]({base}/tonight?lang=en): what's on tonight, with an FAQ (free events, cheapest ticket)",
+        f"- [This weekend]({base}/weekend?lang=en): events Thursday to Saturday",
+        *(f"- [{genre_label(g, 'en')}]({base}/genre/{g}?lang=en): upcoming {genre_label(g, 'en')} events"
+          for g in genre_counts(session)),
         "",
         "## Data (JSON API, no key needed)",
         f"- [Events]({base}/events): filters `date=YYYY-MM-DD`, `weekend=true`, `genre`, `artist`, `venue`, "
@@ -632,6 +774,18 @@ def register(app: FastAPI, site_dir: Path) -> None:
     @app.get("/map", include_in_schema=False)
     def map_(request: Request) -> HTMLResponse:
         return page(request, map_page)
+
+    @app.get("/tonight", include_in_schema=False)
+    def tonight(request: Request) -> HTMLResponse:
+        return page(request, lambda s, c, lang: landing_page(s, c, lang, "tonight"))
+
+    @app.get("/weekend", include_in_schema=False)
+    def weekend(request: Request) -> HTMLResponse:
+        return page(request, lambda s, c, lang: landing_page(s, c, lang, "weekend"))
+
+    @app.get("/genre/{genre}", include_in_schema=False)
+    def genre(genre: str, request: Request) -> HTMLResponse:
+        return page(request, lambda s, c, lang: landing_page(s, c, lang, "genre", genre))
 
     @app.get("/admin", include_in_schema=False)
     def admin(request: Request) -> HTMLResponse:

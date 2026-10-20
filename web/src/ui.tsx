@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { useEvents, type Params } from "./api";
+import { useCategories, useEvents, type Params } from "./api";
 import { STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { useStore } from "./store";
 import type { EventSummary } from "./types";
@@ -65,6 +65,7 @@ export function useTitle(title: string | undefined) {
 export function Layout() {
   const { t, lang } = useT();
   const setLang = useStore((s) => s.setLang);
+  const cats = useCategories().data;
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -89,6 +90,13 @@ export function Layout() {
       </header>
       <Outlet />
       <footer className="foot wrap">
+        <nav className="foot-links" aria-label={t.genres}>
+          <Link to="/tonight">{t.tonight}</Link>
+          <Link to="/weekend">{t.weekend}</Link>
+          {cats?.genres.filter((g) => g.events >= 3).slice(0, 12).map((g) => (
+            <Link key={g.value} to={`/genre/${g.value}`}>{genreLabel(lang, g.value)}</Link>
+          ))}
+        </nav>
         {lang === "he" ? "דופק · ישראל" : "Pulse · Israel"} · <Link to="/accessibility">{t.accessibility}</Link>
       </footer>
     </>

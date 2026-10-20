@@ -141,6 +141,21 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
         assert "Techno </script> night" in client.get("/llms.txt").text
 
 
+def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    tz = ZoneInfo(settings.timezone)
+    tonight = datetime.combine(datetime.now(tz).date(), time(23, 30), tzinfo=tz)
+    seed(settings, [event(str(i), tonight + timedelta(days=i)) for i in range(3)])
+
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        techno = client.get("/genre/techno")
+        assert techno.status_code == 200 and '"FAQPage"' in techno.text
+        assert "כרגע יש 3 אירועים" in techno.text and "כן, 3 אירועים בכניסה חופשית" in techno.text  # answers come from the listings
+        assert client.get("/genre/karaoke").status_code == 404  # no events: no thin page
+        assert "Techno night 0" in client.get("/tonight?lang=en").text
+        assert "/genre/techno" in client.get("/sitemap.xml").text and "/tonight" in client.get("/").text
+
+
 def test_geocoding_reuses_known_places_and_rejects_vague_hits(tmp_path: Path) -> None:
     from partylinks.db import GeoCacheRow
     from partylinks.geo import Geocoder, candidates, street_key
