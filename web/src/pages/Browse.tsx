@@ -101,7 +101,7 @@ export function ArtistPage() {
           🎧 {[profile?.kind?.toUpperCase(), profile?.genre].filter(Boolean).join(" · ") || t.lineup}
           {profile?.verified && <Verified />}
         </p>
-        {[profile?.spotify_url, ...(profile?.links ?? []), profile?.profile_url].filter((u): u is string => !!u).map((u) => (
+        {[profile?.spotify_url, ...(profile?.links ?? []), profile?.profile_url].filter((u): u is string => !!u && /^https?:\/\//i.test(u)).map((u) => (
           <a key={u} className="sub" href={u} target="_blank" rel="noopener noreferrer">{siteName(u)} ↗</a>
         ))}
       </Hero>

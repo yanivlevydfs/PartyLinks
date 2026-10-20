@@ -23,10 +23,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PARTYLINKS_SECURITY__TRUSTED_PROXIES='["*"]'
 WORKDIR /app
 
-# Runtime dependencies only (the [project] list in pyproject.toml), cached apart from the code.
-COPY pyproject.toml ./
-RUN python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml','rb'))['project']['dependencies']))" > /tmp/req.txt \
- && pip install -r /tmp/req.txt && rm /tmp/req.txt
+# Runtime dependencies pinned to exact versions, so a deploy never picks up an untested release.
+# Regenerate after changing pyproject.toml:
+#   uv pip compile pyproject.toml --python-version 3.12 --python-platform linux -o requirements.lock
+COPY requirements.lock ./
+RUN pip install -r requirements.lock && rm requirements.lock \
+ && useradd --system --no-create-home --shell /usr/sbin/nologin app
 
 COPY src/ src/
 COPY config/ config/
@@ -38,4 +40,6 @@ COPY --from=web /web/dist web/dist
 EXPOSE 8000
 
 # $PORT is set by Railway; the public domain becomes the site's canonical URL unless set explicitly.
-CMD ["sh", "-c", "export PARTYLINKS_API__PORT=\"${PORT:-8000}\"; if [ -z \"$PARTYLINKS_SITE__BASE_URL\" ] && [ -n \"$RAILWAY_PUBLIC_DOMAIN\" ]; then export PARTYLINKS_SITE__BASE_URL=\"https://$RAILWAY_PUBLIC_DOMAIN\"; fi; exec python -m partylinks serve"]
+# Starts as root only to hand the volume (mounted root-owned) and config/ (admin edits, backups) to
+# the unprivileged "app" user, then drops to it.
+CMD ["sh", "-c", "export PARTYLINKS_API__PORT=\"${PORT:-8000}\"; if [ -z \"$PARTYLINKS_SITE__BASE_URL\" ] && [ -n \"$RAILWAY_PUBLIC_DOMAIN\" ]; then export PARTYLINKS_SITE__BASE_URL=\"https://$RAILWAY_PUBLIC_DOMAIN\"; fi; mkdir -p data && chown -R app:app data config && exec setpriv --reuid=app --regid=app --clear-groups python -m partylinks serve"]

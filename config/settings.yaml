@@ -49,8 +49,9 @@ security:
   # the visitor's real IP via X-Forwarded-For. Restart after changing.
   trusted_proxies: ["127.0.0.1", "::1"]
   # The site's real host names once deployed, e.g. ["partylinks.co.il", "www.partylinks.co.il"].
-  # Empty = any Host header accepted.
-  allowed_hosts: []
+  # Empty = any Host header accepted. localhost always works; healthcheck.railway.app is Railway's
+  # deploy health probe (without it no deploy goes live).
+  allowed_hosts: ["tlv.up.railway.app", "web-production-c14b4.up.railway.app", "healthcheck.railway.app"]
   rate_limit_per_minute: 300
   admin_rate_limit_per_minute: 30
   ban_after_strikes: 5

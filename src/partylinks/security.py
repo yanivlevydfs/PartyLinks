@@ -60,6 +60,18 @@ HEADERS = [
 # Public listings may be reused briefly by browsers and a CDN in front (Cloudflare), so a burst of
 # visitors hits the database once per window. Vite asset names carry a content hash: cache forever.
 PUBLIC_API = ("/events", "/categories", "/changes", "/site", "/posts")
+MAX_TRACKED = 50_000  # client addresses kept in each in-memory table before idle ones are dropped
+
+
+def _forwarded_client(scope: dict[str, Any], cfg: SecuritySettings) -> None:
+    """With ``trusted_proxies: ["*"]`` uvicorn takes the FIRST X-Forwarded-For entry, which the
+    visitor writes. The LAST one is the address our own proxy saw: use it, for every layer below."""
+    if cfg.trusted_proxies != ["*"]:
+        return  # an explicit list: uvicorn already picks the first untrusted address from the right
+    values = [v.decode("latin-1") for k, v in scope["headers"] if k == b"x-forwarded-for"]
+    last = ",".join(values).rsplit(",", 1)[-1].strip()
+    if last:
+        scope["client"] = (last, 0)
 
 
 def _cache_policy(path: str) -> bytes | None:
@@ -99,13 +111,18 @@ class Guard:
             self.banned[ip] = now + cfg.ban_minutes * 60
             self.strikes.pop(ip, None)
             log.warning("banned %s for %g min (last strike: %s)", ip, cfg.ban_minutes, reason)
+        if len(self.strikes) > MAX_TRACKED or len(self.banned) > MAX_TRACKED:  # many addresses: drop expired
+            for key in [k for k, w in self.strikes.items() if not w or w[-1] <= now - cfg.ban_minutes * 60]:
+                del self.strikes[key]
+            for key in [k for k, until in self.banned.items() if until <= now]:
+                del self.banned[key]
 
     def over_limit(self, ip: str, bucket: str, limit: int, now: float) -> bool:
         window = self.hits[(ip, bucket)]
         if self._count(window, now, 60) >= limit:
             return True
         window.append(now)
-        if len(self.hits) > 50_000:  # drop idle clients so memory stays bounded
+        if len(self.hits) > MAX_TRACKED:  # drop idle clients so memory stays bounded
             for key in [k for k, w in self.hits.items() if not w or w[-1] <= now - 60]:
                 del self.hits[key]
         return False
@@ -123,6 +140,7 @@ class SecurityMiddleware:
         if not cfg.enabled:
             return await self.app(scope, receive, send)
 
+        _forwarded_client(scope, cfg)
         ip = scope["client"][0] if scope.get("client") else "unknown"
         local = ip in LOOPBACK
         path: str = scope["path"]

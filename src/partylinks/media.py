@@ -161,8 +161,7 @@ class MediaStore:
         data = b"".join(chunks)
         # CDNs often mislabel images (application/octet-stream, image/jpg): trust the bytes.
         content_type = sniff_image_type(data) or declared
-        allowed = self.settings.allowed_content_types
-        if allowed and content_type not in allowed:
+        if content_type not in self.settings.allowed_content_types:
             raise ValueError(f"not an image (declared {declared!r})")
         return data, content_type
 

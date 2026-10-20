@@ -237,7 +237,10 @@ class MediaSettings(BaseModel):
     max_bytes: int = Field(15_000_000, ge=1)
     # A failed download (timeout, 503...) is retried on runs after this many hours.
     retry_failed_after_hours: float = Field(6, gt=0)
-    allowed_content_types: list[str] = Field(default_factory=list)
+    # Never SVG / HTML: they would run as pages on this site's origin.
+    allowed_content_types: list[str] = Field(
+        default_factory=lambda: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]
+    )
 
 
 class GeocodingSettings(BaseModel):

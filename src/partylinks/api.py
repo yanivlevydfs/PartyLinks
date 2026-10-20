@@ -23,7 +23,7 @@ from sqlalchemy import ColumnElement, String, and_, cast, func, not_, or_, selec
 from sqlalchemy.orm import Session, selectinload, undefer
 
 from partylinks import seo
-from partylinks.admin import AdminDep
+from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.config import Settings, get_settings
 from partylinks.db import Database, DealChangeRow, EventRow, ImageRow, ScrapeRunRow, upcoming_filter
@@ -482,6 +482,10 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         }
         if (scheduler is not None and not scheduler.running) or report["checks"]["config_errors"] or retention.last_error:
             report["status"] = "degraded"
+        try:  # the details (source names, error messages) are for the admin; monitors only need the status
+            require_admin(request)
+        except HTTPException:
+            return {"status": report["status"]}
         return report
 
     @app.get("/events", response_model=EventPage, tags=["events"])
@@ -742,7 +746,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
             sources=facet(lambda r: [r.source], None),
         )
 
-    @app.get("/sources", response_model=list[SourceOut], tags=["sources"])
+    @app.get("/sources", response_model=list[SourceOut], tags=["sources"], dependencies=[AdminDep])
     def list_sources(request: Request, session: SessionDep) -> list[SourceOut]:
         service: ScrapeService = request.app.state.service
         next_runs = next_run_times(request.app.state.scheduler)
@@ -784,7 +788,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         task.add_done_callback(request.app.state.tasks.discard)
         return {"status": "started", "source": name}
 
-    @app.get("/runs", response_model=list[RunOut], tags=["sources"])
+    @app.get("/runs", response_model=list[RunOut], tags=["sources"], dependencies=[AdminDep])
     def list_runs(
         session: SessionDep,
         source: str | None = None,
@@ -805,7 +809,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         except SourceBusyError as exc:
             raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
 
-    @app.get("/maintenance/retention", tags=["maintenance"])
+    @app.get("/maintenance/retention", tags=["maintenance"], dependencies=[AdminDep])
     def retention_status(request: Request) -> dict[str, Any]:
         cfg: Settings = request.app.state.settings
         state = request.app.state.service.retention_state

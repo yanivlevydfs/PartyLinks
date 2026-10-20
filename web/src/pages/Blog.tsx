@@ -77,7 +77,8 @@ export function BlogPost() {
   const onClick = (e: MouseEvent) => {
     const a = (e.target as HTMLElement).closest("a");
     const href = a?.getAttribute("href");
-    if (href?.startsWith("/") && !e.metaKey && !e.ctrlKey) {
+    // "//host" and "/\host" leave the site: react-router 6 would follow them (GHSA-wrjc-x8rr-h8h6).
+    if (href && /^\/(?![/\\])/.test(href) && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
       navigate(href);
     }

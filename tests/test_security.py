@@ -57,3 +57,29 @@ def test_cache_and_compression(tmp_path: Path) -> None:
         # A wrong token on an admin-only API route counts as a strike too, not only under /admin.
         assert outsider.post("/maintenance/retention", headers={"authorization": "Bearer nope"}).status_code == 401
         assert outsider.get("/health").status_code == 403
+
+
+def test_spoofed_forwarded_for_is_ignored(tmp_path: Path) -> None:
+    """Behind a proxy (trusted_proxies ["*"]) the visitor writes the first X-Forwarded-For entry: a
+    fake 127.0.0.1 there must not make the request local (no limits, no bans)."""
+    settings = settings_for(tmp_path)
+    settings.security.trusted_proxies = ["*"]
+    settings.security.rate_limit_per_minute = 2
+    app = create_app(settings, start_scheduler=False)
+    spoof = {"x-forwarded-for": "127.0.0.1, 198.51.100.9"}
+    with TestClient(app, client=("10.0.0.2", 1)) as proxy:
+        assert [proxy.get("/health", headers=spoof).status_code for _ in range(3)] == [200, 200, 429]
+        assert proxy.get("/admin/api/overview", headers=spoof).status_code == 403  # no token: not local
+
+
+def test_internals_are_admin_only(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    settings.admin.token = SecretStr("s3cret")
+    app = create_app(settings, start_scheduler=False)
+    admin = {"authorization": "Bearer s3cret"}
+    with TestClient(app, client=("198.51.100.4", 1)) as outsider:
+        for path in ("/runs", "/sources", "/maintenance/retention"):
+            assert outsider.get(path).status_code == 401, path
+            assert outsider.get(path, headers=admin).status_code == 200, path
+        assert outsider.get("/health").json().keys() == {"status"}
+        assert "checks" in outsider.get("/health", headers=admin).json()
