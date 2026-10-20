@@ -678,6 +678,18 @@ sources:
       - {key: khan, url: "https://khan.pres.global", venue: "תיאטרון החאן", city: "ירושלים",
          artwork_index: "https://www.khan.co.il/shows-list", artwork_page_link: 'https://www\.khan\.co\.il/shows/\d+/[^"]+'}
 
+  kupatbravo:
+    # Kupat Bravo box office (nationwide; own platform, no API). Sitemap lists every show page
+    # (~740); each page's microdata has every performance (hall, address, price, tickets left).
+    # Resells theatre/opera seats also scraped via PRES, so cross-source duplicates are expected.
+    enabled: true
+    cron: "41 6,18 * * *"
+    site_url: https://kupatbravo.co.il
+    sitemap_path: /sitemaphe.xml
+    event_page_prefix: /announce/
+    http:
+      concurrency: 4
+
   smarticket:
     # Smarticket white-label box offices: one GET /api/shows per tenant (prices inline).
     # The vendor's main site disallows /api/ (tenant hosts have no robots.txt), so stay gentle:
