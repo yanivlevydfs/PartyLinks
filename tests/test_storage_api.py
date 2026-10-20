@@ -225,6 +225,26 @@ def test_geocoding_reuses_known_places_and_rejects_vague_hits(tmp_path: Path) ->
     assert stats.located == 3
 
 
+def test_geocoder_drops_placeholder_and_out_of_city_source_points(tmp_path: Path) -> None:
+    from partylinks.geo import Geocoder
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    fallback = {"latitude": 32.0681, "longitude": 34.7622}  # one point a source gives every venue it can't place
+    db = seed(settings, [
+        event("negev", future, venue_name="JIMMYWHO", latitude=31.046, longitude=34.852),  # centre of Israel
+        *(event(f"fb{i}", future, venue_name=name, **fallback) for i, name in enumerate(["Humble", "Kuli Alma", "Radio EPGB", "Teder"])),
+        event("real", future, venue_name="Barby", latitude=32.0535, longitude=34.7601),
+        event("real2", future, venue_name="Barby", latitude=32.0535, longitude=34.7601),  # same venue twice is fine
+    ])  # fmt: skip
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    assert geo.drop_bad_points() == 5
+    with db.session() as session:
+        placed = {r.source_event_id for r in session.query(EventRow) if r.latitude is not None}
+    assert placed == {"real", "real2"}
+
+
 def test_rescrape_tracks_offer_changes_and_unlists_vanished_events(tmp_path: Path) -> None:
     import time
 

@@ -16,14 +16,14 @@ import logging
 import re
 import threading
 import time
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import timedelta
 
 import httpx
 from sqlalchemy import select
 
-from partylinks.config import GeocodingSettings
+from partylinks.config import CitySettings, GeocodingSettings
 from partylinks.db import Database, EventRow, GeoCacheRow, upcoming_filter, utcnow
 from partylinks.enrichment import AreaMatcher, meters
 
@@ -42,6 +42,9 @@ _STREET_WORDS = re.compile(
 )
 _STREET_NUMBER = re.compile(r"^((?:[^\W\d_][\w'׳\-]*\s+){1,4}\d{1,4})(?!\d)")  # "Ben Yehuda 102"
 _DASHES = re.compile(r"[\s\-–־_]+")
+
+# One point given for this many different venues is a source's fallback ("somewhere in Tel Aviv"), not a place.
+PLACEHOLDER_VENUES = 4
 
 # One request at a time across every source thread (Nominatim usage policy).
 _rate_lock = threading.Lock()
@@ -68,6 +71,10 @@ _GENERIC_VENUE_WORDS = re.compile(
     r"מועדון|club|bar|lounge|tlv|tel[\s\-]*aviv(?:[\s\-]*yafo)?|תל[\s\-]*אביב(?:[\s\-]*יפו)?|\bthe\b",
     re.IGNORECASE,
 )
+
+
+def _point(row: EventRow) -> tuple[float, float]:
+    return round(row.latitude or 0, 5), round(row.longitude or 0, 5)
 
 
 def venue_key(name: str | None) -> str | None:
@@ -177,8 +184,12 @@ class GeoStats:
 
 
 class Geocoder:
-    def __init__(self, settings: GeocodingSettings, areas: AreaMatcher, target_city_aliases: list[str], db: Database) -> None:
+    def __init__(
+        self, settings: GeocodingSettings, areas: AreaMatcher, target_city_aliases: list[str], db: Database,
+        cities: list[CitySettings] | None = None,
+    ) -> None:
         self.settings = settings
+        self._cities = {c.he: c for c in cities or [] if c.center}
         self.areas = areas
         self.db = db
         self._city_keys = {_city_key(a) for a in target_city_aliases if a.strip()}
@@ -190,6 +201,7 @@ class Geocoder:
         stats = GeoStats()
         if not self.settings.enabled:
             return stats
+        self.drop_bad_points()
         if network:
             stats.lookups = self._lookup_new(stop)
         with self.db.session() as session:
@@ -217,6 +229,28 @@ class Geocoder:
         stats.unplaced_venues = [v for v, _ in unplaced.most_common(5) if v]
         log.info("geocoding: %s", stats.summary())
         return stats
+
+    def drop_bad_points(self) -> int:
+        """Source coordinates are not always real: Go-Out sends the centre of Israel (in the Negev)
+        or one fixed Tel Aviv point when it has no location. Clear points far outside the event's
+        city and points shared by several different venues; the pass then places those events
+        from their venue or address like any other. ponytail: runs after every scrape, so a source
+        that re-sends a bad point shows it on the map until that source's geocode step."""
+        with self.db.session() as session:
+            rows = session.scalars(select(EventRow).where(EventRow.latitude.is_not(None))).all()
+            venues: defaultdict[tuple[float, float], set[str]] = defaultdict(set)
+            for r in rows:
+                venues[_point(r)].add(venue_key(r.venue_name) or street_key(r.address) or "")
+            dropped = 0
+            for r in rows:
+                city = self._cities.get(r.city or "")
+                far = city is not None and meters(city.center, (r.latitude, r.longitude)) > city.radius_m  # type: ignore[arg-type]
+                if far or len(venues[_point(r)]) >= PLACEHOLDER_VENUES:
+                    r.latitude = r.longitude = None
+                    dropped += 1
+        if dropped:
+            log.info("geocoding: dropped %d source coordinates that are placeholders or outside the city", dropped)
+        return dropped
 
     # ------------------------------------------------------------------ sources of coordinates
     def _pin(self, row: EventRow) -> tuple[float, float] | None:

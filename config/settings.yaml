@@ -98,9 +98,10 @@ enrichment:
   # appears in its city field, else the last one named in its address (the city follows the
   # street: "שדרות ירושלים 19, תל אביב"). Each city with enough events gets a /city/<key> page.
   cities:
-    - {key: tel-aviv, he: "תל אביב", en: Tel Aviv, aliases: *tel_aviv}
-    - {key: jerusalem, he: "ירושלים", en: Jerusalem, aliases: ["jerusalem", "ירושלים", "י-ם", "י\"ם"]}
-    - {key: haifa, he: "חיפה", en: Haifa, aliases: ["haifa", "חיפה"]}
+    # center / radius_m: coordinates farther away are a source error and get re-geocoded.
+    - {key: tel-aviv, he: "תל אביב", en: Tel Aviv, aliases: *tel_aviv, center: [32.08, 34.78], radius_m: 9000}
+    - {key: jerusalem, he: "ירושלים", en: Jerusalem, aliases: ["jerusalem", "ירושלים", "י-ם", "י\"ם"], center: [31.78, 35.21], radius_m: 12000}
+    - {key: haifa, he: "חיפה", en: Haifa, aliases: ["haifa", "חיפה"], center: [32.80, 35.00], radius_m: 10000}
   # Canonical genre -> keywords, matched case-insensitively against the genres and
   # event types each source declares and (if detect_genres_from_text) title + description.
   genres:

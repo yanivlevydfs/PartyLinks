@@ -114,6 +114,9 @@ class CitySettings(BaseModel):
     he: str  # canonical name stored on events
     en: str
     aliases: list[str] = Field(default_factory=list)
+    # Events of this city whose coordinates lie farther than radius_m from center are mis-placed.
+    center: tuple[float, float] | None = None
+    radius_m: float = Field(10000, gt=0)
 
 
 class LineupSettings(BaseModel):

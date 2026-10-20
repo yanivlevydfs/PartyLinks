@@ -114,7 +114,9 @@ class ScrapeService:
                 self.artists.record(n for lineup in session.scalars(select(EventRow.lineup)) for n in lineup or [])
         self.media = MediaStore(settings.media, db)
         self.deduplicator = Deduplicator(settings.dedup)
-        self.geocoder = Geocoder(settings.geocoding, self.enricher.areas, settings.enrichment.target_city.aliases, db)
+        self.geocoder = Geocoder(
+            settings.geocoding, self.enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+        )
         self._geo_lock = threading.Lock()  # one geocoding pass at a time (Nominatim rate limit)
         self._locks = {name: threading.Lock() for name in SCRAPERS}
         self._retention_lock = threading.Lock()
