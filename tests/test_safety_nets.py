@@ -180,3 +180,30 @@ def test_failed_retention_is_reported_for_health(tmp_path: Path, monkeypatch: An
     assert service.retention_state.last_error == "RuntimeError: disk full during purge"
     assert not service.retention_running
     service.shutdown()
+
+
+def test_event_without_artwork_keeps_or_borrows_one() -> None:
+    from datetime import UTC, datetime
+
+    from partylinks.models import ScrapedEvent
+    from partylinks.service import fill_artwork, title_key
+
+    def event(eid: str, title: str) -> ScrapedEvent:
+        return ScrapedEvent(source="mevalim", source_event_id=eid, url="https://x.example", title=title,
+                            start_at=datetime(2026, 11, 1, 20, tzinfo=UTC))  # fmt: skip
+
+    assert title_key("יוסי וג'אגר - תיאטרון הבימה") == title_key("יוסי וג׳אגר") is not None
+    assert title_key("A-1") is None  # too short to match safely
+    by_title = {title_key("Yossi & Jagger"): "https://img/borrowed.jpg"}
+
+    kept = event("1", "Yossi & Jagger - Habima")
+    fill_artwork(kept, {"1": ["https://img/own.jpg"]}, by_title)
+    assert kept.image_url == "https://img/own.jpg"  # its own earlier artwork wins
+
+    borrowed = event("2", "Yossi & Jagger - Habima")
+    fill_artwork(borrowed, {}, by_title)
+    assert borrowed.images == ["https://img/borrowed.jpg"] == [borrowed.image_url]
+
+    unknown = event("3", "Something else")
+    fill_artwork(unknown, {}, by_title)
+    assert unknown.images == [] and unknown.image_url is None

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import threading
 import time
 from collections.abc import Callable
@@ -251,6 +252,7 @@ class ScrapeService:
             async with deadline:
                 scraper = build_scraper(source, self.settings)
                 scraper.known_images = await asyncio.to_thread(self._known_images, source)
+                artwork = await asyncio.to_thread(self._artwork_by_title, source)
                 scraper.known_artists = {key: p for key, p in profiles.items() if p.source == source}
                 scraper.wanted = lambda event: not self.enricher.is_dropped(event)
                 failures = scraper.failures
@@ -269,6 +271,8 @@ class ScrapeService:
                                 scraper.record_failure(f"{event.event_id} enrichment", exc)
                                 continue
                             if enriched is not None:
+                                if not enriched.images:
+                                    fill_artwork(enriched, scraper.known_images, artwork)
                                 batch[enriched.event_id] = enriched
                             if len(batch) >= SAVE_BATCH_SIZE:
                                 await flush()
@@ -363,6 +367,21 @@ class ScrapeService:
                 known.setdefault(event_id, []).append(url)
         return known
 
+    def _artwork_by_title(self, source: str) -> dict[str, str]:
+        """Stored primary artwork per title key; ``source``'s own listings win over other sources'."""
+        found: dict[str, str] = {}
+        with self.db.session() as session:
+            rows = session.execute(
+                select(EventRow.source, EventRow.title, ImageRow.url)
+                .join(ImageRow, ImageRow.event_id == EventRow.id)
+                .where(ImageRow.position == 0, ImageRow.downloaded_at.is_not(None))
+                .order_by(EventRow.source == source)  # own source last, so it overwrites
+            )
+            for _, title, url in rows:
+                if key := title_key(title):
+                    found[key] = url
+        return found
+
     def _save_batch(self, events: list[ScrapedEvent]) -> int:
         with self.db.session() as session:
             saved, orphaned_files = upsert_events(session, events)
@@ -406,6 +425,20 @@ class ScrapeService:
             run.events_failed = result.events_failed
             run.error = result.error
             run.failures = failures[:200]
+
+
+def title_key(title: str | None) -> str | None:
+    """Show name for matching artwork across listings: "Name - Venue" and punctuation ignored."""
+    key = re.sub(r"\W+", " ", (title or "").split(" - ")[0]).strip().casefold()
+    return key if len(key) >= 4 else None
+
+
+def fill_artwork(event: ScrapedEvent, known: dict[str, list[str]], by_title: dict[str, str]) -> None:
+    """An event its source gives no artwork keeps what it had (e.g. before selling out),
+    else borrows the artwork of another listing of the same show."""
+    images = known.get(event.source_event_id) or ([url] if (url := by_title.get(title_key(event.title) or "")) else [])
+    if images:
+        event.images, event.image_url = list(images), images[0]
 
 
 def _finished_before(event: ScrapedEvent, settings: Settings) -> bool:
