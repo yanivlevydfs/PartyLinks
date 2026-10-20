@@ -516,6 +516,27 @@ def privacy_page(session: Session, cfg: Settings, lang: str) -> Page:
     )
 
 
+def terms_page(session: Session, cfg: Settings, lang: str) -> Page:
+    he = lang == "he"
+    title = "תנאי שימוש" if he else "Terms of use"
+    text = (
+        f"{cfg.site.name} רק אוסף ומציג אירועים שנמכרים באתרים אחרים, ואינו מוכר כרטיסים ואינו צד לעסקה. האתר "
+        "ובעליו אינם אחראים לאירועים, לתוכנם, למחירים או לשינויי מחיר; הרכישה באחריות אתר הכרטיסים והמארגן."
+        if he
+        else f"{cfg.site.name} only collects and shows events sold on other sites; it sells no tickets and is not a "
+        "party to any purchase. The site and its owners are not responsible for the events, their content, prices "
+        "or price changes; purchases are the responsibility of the ticketing site and the organizer."
+    )
+    return Page(
+        title=f"{title} · {cfg.site.name}",
+        description=text,
+        path="/terms",
+        lang=lang,
+        jsonld=[_breadcrumbs(cfg, lang, (title, "/terms"))],
+        body=f"<h1>{title}</h1><p>{escape(text)}</p>",
+    )
+
+
 # --------------------------------------------------------------------------- landing pages
 # kind: "tonight" | "weekend" | "genre" | "city", or "genre_tonight" / "genre_weekend" for one genre
 # tonight or this weekend ("טכנו הערב", "סטנדאפ בסופ״ש"). Every page needs GENRE_PAGE_MIN events.
@@ -743,7 +764,7 @@ def _strip_title(html: str, keep: str) -> str:
 # --------------------------------------------------------------------------- crawl files
 def sitemap(session: Session, cfg: Settings) -> str:
     rows = session.scalars(select(EventRow).where(upcoming_filter()).order_by(EventRow.start_at)).all()
-    paths: list[tuple[str, date | None]] = [("/", None), ("/map", None), ("/abroad", None), ("/venues", None), ("/artists", None), ("/accessibility", None), ("/privacy", None)]
+    paths: list[tuple[str, date | None]] = [("/", None), ("/map", None), ("/abroad", None), ("/venues", None), ("/artists", None), ("/accessibility", None), ("/privacy", None), ("/terms", None)]
     today = datetime.now(ZoneInfo(cfg.timezone))  # landing pages change every day
     paths += [(p, today) for p, _, _ in _landing_paths(session, cfg)]
     paths += [(event_path(r), r.last_seen_at) for r in rows]
@@ -905,6 +926,10 @@ def register(app: FastAPI, site_dir: Path) -> None:
     @app.get("/privacy", include_in_schema=False)
     def privacy(request: Request) -> HTMLResponse:
         return page(request, privacy_page)
+
+    @app.get("/terms", include_in_schema=False)
+    def terms(request: Request) -> HTMLResponse:
+        return page(request, terms_page)
 
     @app.get("/map", include_in_schema=False)
     def map_(request: Request) -> HTMLResponse:

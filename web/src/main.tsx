@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import AccessibilityPage from "./pages/Accessibility";
 import { BlogIndex, BlogPost } from "./pages/Blog";
 import PrivacyPage from "./pages/Privacy";
+import TermsPage from "./pages/Terms";
 import { useStore } from "./store";
 import { Layout } from "./ui";
 import "./styles.css";
@@ -62,6 +63,7 @@ const router = createBrowserRouter([
       { path: "/admin", element: <Suspense><AdminPage /></Suspense> },
       { path: "*", element: <NotFound /> },
       { path: "/privacy", element: <PrivacyPage /> },
+      { path: "/terms", element: <TermsPage /> },
     ],
   },
 ]);

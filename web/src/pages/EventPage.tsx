@@ -79,6 +79,7 @@ export default function EventPage() {
             <a className="buy" href={e.url} target="_blank" rel="noopener noreferrer">
               {t.buy} ↗ <small>{sourceName(e.source)}</small>
             </a>
+            <p className="buy-note">{t.buyNote} <Link to="/terms">{t.terms}</Link></p>
             <Share path={eventPath(e)} title={e.title} />
             {!!e.alternatives?.length && (
               <div className="alts">

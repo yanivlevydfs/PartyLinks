@@ -372,6 +372,8 @@ button, input, select { font: inherit; color: inherit; }
 .alt:hover { border-color: var(--line-hot); }
 .alt small { color: var(--muted); }
 .buy small { font-weight: 400; opacity: .8; font-size: 13px; }
+.buy-note { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 8px 0 0; }
+.buy-note a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 @keyframes pulse { 50% { box-shadow: 0 0 55px rgb(255 46 147 / .75), inset 0 0 0 1px rgb(255 255 255 / .25); } }
 
 .foot { color: var(--muted); padding: 40px 16px; text-align: center; margin-top: 48px; border-top: 1px solid var(--line); font-family: var(--display); letter-spacing: 2px; }

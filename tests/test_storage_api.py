@@ -141,6 +141,7 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
         assert "/event/" in sitemap and 'hreflang="en"' in sitemap
         # Privacy and cookie policy: crawlable, and its contact comes from /site.
         assert "/privacy" in sitemap and "מדיניות פרטיות" in client.get("/privacy").text
+        assert "/terms" in sitemap and "אינם אחראים" in client.get("/terms").text
         assert "email" in client.get("/site").json()["privacy"]
         assert "Techno </script> night" in client.get("/llms.txt").text
 

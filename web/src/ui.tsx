@@ -107,6 +107,7 @@ export function Layout() {
           ))}
         </nav>
         {lang === "he" ? "פולס · ישראל" : "Pulse · Israel"} · <Link to="/accessibility">{t.accessibility}</Link>
+        {" · "}<Link to="/terms">{t.terms}</Link>
         {" · "}<Link to="/privacy">{t.privacy}</Link>
         {" · "}<button className="linkish" onClick={openConsent}>{t.cookieSettings}</button>
         <p className="foot-disclaimer">{t.disclaimer}</p>
