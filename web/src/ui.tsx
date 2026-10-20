@@ -209,8 +209,7 @@ export function Card({ e }: { e: EventSummary }) {
       </div>
       <div className="card-body">
         <h3 dir="auto">{e.title}</h3>
-        {/* The badge on the image already gives the date: here only the weekday and time. */}
-        <p className="meta">{fmtDate(e.start_at, t, { weekday: "short", hour: "2-digit", minute: "2-digit" })}</p>
+        <p className="meta">{fmtDate(e.start_at, t, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
         {(e.venue_name || e.area) && (
           <p className="meta">📍 {[e.venue_name, e.area && label(t.areas, e.area)].filter(Boolean).join(" · ")}</p>
         )}
