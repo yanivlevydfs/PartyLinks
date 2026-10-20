@@ -2,7 +2,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { Ticket } from "../types";
-import { artistPath, fmtDate, freshness, Img, label, money, priceLabel, sourceName, Sources, useT, useTitle, venuePath } from "../ui";
+import { artistPath, eventPath, fmtDate, freshness, Img, label, money, priceLabel, Share, sourceName, Sources, useT, useTitle, venuePath } from "../ui";
 
 export default function EventPage() {
   const { id = "" } = useParams();
@@ -79,6 +79,7 @@ export default function EventPage() {
             <a className="buy" href={e.url} target="_blank" rel="noopener noreferrer">
               {t.buy} ↗ <small>{sourceName(e.source)}</small>
             </a>
+            <Share path={eventPath(e)} title={e.title} />
             {!!e.alternatives?.length && (
               <div className="alts">
                 <span>{t.alsoAt}</span>

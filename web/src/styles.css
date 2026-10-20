@@ -214,8 +214,14 @@ button, input, select { font: inherit; color: inherit; }
   transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s, border-color .35s;
   animation: rise .5s both;
 }
+/* The wrapper lifts on hover so the share row (outside the card's link) moves with the card. */
+.card-wrap { position: relative; display: flex; transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
+.card-wrap:hover { transform: translateY(-6px); }
+.card-wrap > .card { flex: 1; }
+.card-wrap .card-body { padding-bottom: 58px; }
+.card-wrap > .share { position: absolute; inset-inline-end: 16px; bottom: 16px; }
 .card:hover {
-  transform: translateY(-6px); text-shadow: none; border-color: var(--line-hot);
+  text-shadow: none; border-color: var(--line-hot);
   box-shadow: 0 18px 50px -10px rgb(255 46 147 / .45), 0 0 0 1px rgb(157 77 255 / .3);
 }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
@@ -289,6 +295,18 @@ button, input, select { font: inherit; color: inherit; }
 .more button:active, .buy:active { transform: scale(.97); }
 .more button:disabled { opacity: .6; cursor: wait; }
 .buy { animation: pulse 2.6s ease-in-out infinite; }
+.share { display: flex; gap: 8px; }
+.e-info > .share { margin-top: 14px; }
+.share-btn {
+  display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  color: var(--text); background: rgb(255 255 255 / .06); border: 1px solid var(--line);
+  transition: background .2s, color .2s, border-color .2s, transform .2s;
+}
+.share-btn svg { width: 18px; height: 18px; }
+.share-btn:hover, .share-btn:focus-visible { transform: scale(1.1); text-shadow: none; color: #fff; }
+.share-btn.whatsapp:hover, .share-btn.whatsapp:focus-visible { background: #25d366; border-color: #25d366; }
+.share-btn.facebook:hover, .share-btn.facebook:focus-visible { background: #1877f2; border-color: #1877f2; }
+.share-btn.x:hover, .share-btn.x:focus-visible { background: #000; border-color: #fff; }
 .alts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; color: var(--muted); font-size: 14px; }
 .alt {
   display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px;

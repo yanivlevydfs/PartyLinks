@@ -170,6 +170,8 @@ export function Card({ e }: { e: EventSummary }) {
     t,
   );
   return (
+    // The share links sit beside the card's link (links cannot nest), drawn inside its frame.
+    <div className="card-wrap">
     <Link className="card" to={eventPath(e)}>
       <div className="card-img">
         <Img src={e.cover_url ?? e.image_url} alt={e.title} className="cover" />
@@ -201,6 +203,40 @@ export function Card({ e }: { e: EventSummary }) {
         </div>
       </div>
     </Link>
+    <Share path={eventPath(e)} title={e.title} />
+    </div>
+  );
+}
+
+const SHARE_ICONS: Record<string, ReactNode> = {
+  whatsapp: (
+    <>
+      <path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8.6 7.4c.2-.4.5-.5.8-.5h.6c.2 0 .4.1.5.4l.8 1.9c.1.2 0 .5-.1.7l-.6.7c-.1.2-.2.4 0 .6.6 1 1.4 1.8 2.4 2.4.2.1.5.1.6 0l.7-.8c.2-.2.4-.2.7-.1l1.8.9c.3.1.4.3.4.5v.6c0 .4-.2.9-.7 1.2-.6.4-1.5.6-2.6.2-1.9-.7-3.7-2.4-4.7-4.2-.6-1.1-.8-2.2-.6-3.1z" />
+    </>
+  ),
+  facebook: <path d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.8c0-.9.3-1.6 1.6-1.6h1.7V4.4c-.3 0-1.3-.1-2.5-.1-2.5 0-4.1 1.5-4.1 4.2v2.3H7.4V14h2.8v8z" />,
+  x: <path d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L1.8 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z" />,
+};
+
+/** WhatsApp / Facebook / X share links for a page of this site. */
+export function Share({ path, title }: { path: string; title: string }) {
+  const { t } = useT();
+  const url = encodeURIComponent(window.location.origin + path);
+  const text = encodeURIComponent(title);
+  const targets = [
+    ["whatsapp", "WhatsApp", `https://wa.me/?text=${text}%20${url}`],
+    ["facebook", "Facebook", `https://www.facebook.com/sharer/sharer.php?u=${url}`],
+    ["x", "X", `https://x.com/intent/post?text=${text}&url=${url}`],
+  ];
+  return (
+    <div className="share">
+      {targets.map(([key, name, href]) => (
+        <a key={key} className={"share-btn " + key} href={href} target="_blank" rel="noopener noreferrer" aria-label={t.shareOn(name)} title={t.shareOn(name)}>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>{SHARE_ICONS[key]}</svg>
+        </a>
+      ))}
+    </div>
   );
 }
 
