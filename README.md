@@ -1,4 +1,4 @@
-# Pulse (דופק)
+# Pulse (פולס)
 
 A Python backend that collects Tel Aviv party events from Israeli ticketing sites on a schedule. For every event it captures:
 

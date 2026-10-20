@@ -224,7 +224,7 @@ def _blog_ld(cfg: Settings, posts: list[Post], name: str, path: str) -> dict[str
 
 
 def _title(lang: str) -> str:
-    return "המגזין של דופק: מדריכים לחיי הלילה" if lang == "he" else "Pulse magazine: nightlife guides"
+    return "המגזין של פולס: מדריכים לחיי הלילה" if lang == "he" else "Pulse magazine: nightlife guides"
 
 
 def _desc(lang: str) -> str:
