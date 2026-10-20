@@ -335,3 +335,31 @@ def test_blog_posts_pages_feed_and_live_embeds(tmp_path: Path, monkeypatch: pyte
         if page.status_code != 404:  # server-rendered pages need the React build (web/dist)
             assert '"BlogPosting"' in page.text and '"FAQPage"' in page.text
             assert "Techno night 0" in page.text and 'hreflang="en"' not in page.text
+
+
+def test_admin_scan_runs_all_enabled_or_the_chosen_sources(tmp_path: Path) -> None:
+    from concurrent.futures import Future
+
+    from partylinks.scrapers import configured_sources
+    from partylinks.service import SourceBusyError
+
+    settings = settings_for(tmp_path)
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        calls: list[str] = []
+
+        def fake_start(name: str, trigger: str = "manual") -> Future:
+            if name == "barby":
+                raise SourceBusyError("barby is already running")
+            calls.append(name)
+            done: Future = Future()
+            done.set_result(None)
+            return done
+
+        client.app.state.service.start_source = fake_start
+        everything = client.post("/admin/api/scan").json()
+        enabled = [n for n, s in configured_sources(settings).items() if s.enabled]
+        assert set(everything["started"]) | set(everything["busy"]) == set(enabled) and everything["busy"] == ["barby"]
+        calls.clear()
+        assert client.post("/admin/api/scan", json={"sources": ["goout", "eventer"]}).json()["started"] == ["goout", "eventer"]
+        assert calls == ["goout", "eventer"]
+        assert client.post("/admin/api/scan", json={"sources": ["nope"]}).status_code == 404

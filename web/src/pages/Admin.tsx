@@ -228,9 +228,19 @@ function Sources() {
   const jobs = useQuery({ queryKey: ["overview"], queryFn: () => call("/admin/api/overview") });
   const paused = new Set<string>((jobs.data?.scheduler.jobs ?? []).filter((j: any) => j.paused).map((j: any) => j.id));
   const schedulerOn = jobs.data?.scheduler.enabled;
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const toggle = (name: string) => setPicked((p) => { const n = new Set(p); n.has(name) ? n.delete(name) : n.add(name); return n; });
+  const all = sources.data ?? [];
+  const scanned = (r: any) => `Started ${r.started.length}` + (r.busy.length ? `, already running: ${r.busy.join(", ")}` : "");
   if (sources.isError) return <p className="adm-err">{String(sources.error)}</p>;
   return (
     <>
+      <div className="adm-bar">
+        <Action label="Run full scan" run={() => post("/admin/api/scan")} confirm="Scan every enabled source now?" render={scanned} />
+        <Action label={`Run selected (${picked.size})`} kind="ghost" render={scanned}
+          run={() => (picked.size ? post("/admin/api/scan", { sources: [...picked] }) : Promise.reject(new Error("Tick the sources to scan first")))} />
+        {picked.size > 0 && <button className="adm-btn ghost" onClick={() => setPicked(new Set())}>Clear</button>}
+      </div>
       {schedulerOn && (
         <div className="adm-bar">
           <Action label="Pause all schedules" run={() => post("/admin/api/scheduler/pause")} kind="ghost" />
@@ -241,11 +251,16 @@ function Sources() {
       <div className="adm-scroll">
         <table className="adm-table">
           <thead>
-            <tr><th>Source</th><th>Schedule</th><th>Next run</th><th>Last run</th><th>Found / saved / failed</th><th /></tr>
+            <tr>
+              <th><input type="checkbox" aria-label="Select all sources" checked={all.length > 0 && picked.size === all.length}
+                onChange={(e) => setPicked(e.target.checked ? new Set(all.map((s) => s.name)) : new Set())} /></th>
+              <th>Source</th><th>Schedule</th><th>Next run</th><th>Last run</th><th>Found / saved / failed</th><th />
+            </tr>
           </thead>
           <tbody>
             {(sources.data ?? []).map((s) => (
               <tr key={s.name} className={s.enabled ? "" : "off"}>
+                <td><input type="checkbox" aria-label={`Select ${s.name}`} checked={picked.has(s.name)} onChange={() => toggle(s.name)} /></td>
                 <td><b>{s.name}</b>{!s.enabled && <small> disabled</small>}</td>
                 <td><code>{s.cron}</code></td>
                 <td>{paused.has(s.name) ? <Status s="paused" /> : when(s.next_run_at)}</td>

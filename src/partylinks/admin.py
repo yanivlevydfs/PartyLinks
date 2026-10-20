@@ -25,7 +25,7 @@ from partylinks.config import Settings, config_path, get_settings, project_path
 from partylinks.db import EventRow, ImageRow, ScrapeRunRow, TicketRow, upcoming_filter
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import configured_sources
-from partylinks.service import ScrapeService
+from partylinks.service import ScrapeService, SourceBusyError
 
 log = logging.getLogger(__name__)
 
@@ -134,6 +134,40 @@ def scheduler_control(action: str, request: Request) -> dict[str, str]:
     else:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "action must be pause or resume")
     return {"status": action}
+
+
+class ScanIn(BaseModel):
+    sources: list[str] | None = None  # None = every enabled source
+
+
+@router.post("/scan")
+async def scan(request: Request, body: ScanIn | None = None) -> dict[str, list[str]]:
+    """Start the chosen sources now, or every enabled one (works with the scheduler off).
+    Sources already running are skipped and reported as busy."""
+    service: ScrapeService = request.app.state.service
+    configured = configured_sources(request.app.state.settings)
+    chosen = body.sources if body and body.sources else [n for n, s in configured.items() if s.enabled]
+    if unknown := [n for n in chosen if n not in configured]:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"unknown sources: {', '.join(unknown)}")
+    started, busy = [], []
+    for name in chosen:
+        try:
+            future = service.start_source(name, trigger="admin")
+        except SourceBusyError:
+            busy.append(name)
+            continue
+        started.append(name)
+        task = asyncio.create_task(_watch(name, asyncio.wrap_future(future)))
+        request.app.state.tasks.add(task)
+        task.add_done_callback(request.app.state.tasks.discard)
+    return {"started": started, "busy": busy}
+
+
+async def _watch(name: str, run: Any) -> None:
+    try:
+        await run
+    except Exception:  # noqa: BLE001 - the run row records the outcome
+        log.exception("admin full scan: %s failed", name)
 
 
 @router.post("/jobs/{job_id}/{action}")
