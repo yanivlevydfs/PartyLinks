@@ -410,9 +410,6 @@ sources:
     ticket_types_path: /events/{event_id}/ticketTypes.js
     # Artist catalog (~180, photo + social links); profiles of new artists are fetched up to max_new_artists a run.
     artists_path: /eventContainer/Artist/listByType.js
-    # Producers whose full event list is read too: toMix (to-mix.co.il) embeds its Eventer
-    # profile for checkout, and most of its ~200 performances are on no Eventer slider.
-    users: ["tomix"]
     artist_path: /Artist/{link_name}/byLink.js
     artist_page_path: /artists/{link_name}
     max_new_artists: 40
@@ -693,6 +690,19 @@ sources:
     event_page_prefix: /announce/
     http:
       concurrency: 4
+
+  tiktik:
+    # TikTik Online: tickets and packages for concerts and festivals abroad (WooCommerce). The
+    # Store API lists the music category (~2,000 products); each product page's MusicEvent
+    # JSON-LD gives date, venue, city and country. Events abroad live in the /abroad section.
+    enabled: true
+    cron: "27 4,16 * * *"
+    site_url: https://www.tiktik-online.co.il
+    products_path: /wp-json/wc/store/v1/products
+    category_id: 8
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.2
 
   comy:
     # Comy stand-up box office (WordPress). Tickets are sold on PRES (tickets.comy.co.il), whose

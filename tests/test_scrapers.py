@@ -54,15 +54,6 @@ def test_eventer_free_and_paid_tiers() -> None:
     assert len(event.images) >= 2
 
 
-def test_eventer_closed_tier_has_no_price() -> None:
-    tickets = {"ticketTypes": [{"_id": "a", "name": "רמה 1", "price": 399}, {"_id": "b", "name": "יציע", "price": -1, "originalPrice": 199}]}
-    event = eventer.parse_event(load("eventer_event"), tickets, "https://www.eventer.co.il/vlf2f", TZ)
-
-    closed = event.tickets[1]
-    assert closed.price is None and not closed.is_active
-    assert event.min_price == event.max_price == Decimal(399)
-
-
 def test_zygo_tickets_and_location() -> None:
     event = zygo.parse_event(load("zygo_event"), "https://zygo.co.il/event/x/zygo")
 

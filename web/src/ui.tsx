@@ -80,6 +80,7 @@ export function Layout() {
           <nav className="nav">
             <NavLink to="/" end>{t.nav.parties}</NavLink>
             <NavLink to="/map">{t.nav.map}</NavLink>
+            <NavLink to="/abroad">{t.nav.abroad}</NavLink>
             <NavLink to="/venues">{t.nav.venues}</NavLink>
             <NavLink to="/artists">{t.nav.artists}</NavLink>
             <NavLink to="/blog">{t.nav.blog}</NavLink>

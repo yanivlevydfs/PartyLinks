@@ -4,7 +4,8 @@ export type Lang = "he" | "en";
 export const STRINGS = {
   he: {
     dir: "rtl",
-    nav: { parties: "אירועים", map: "מפה", venues: "מקומות", artists: "אמנים", blog: "מגזין" },
+    nav: { parties: "אירועים", map: "מפה", abroad: "חו״ל", venues: "מקומות", artists: "אמנים", blog: "מגזין" },
+    abroad: { title: "הופעות ופסטיבלים בחו״ל", intro: "כרטיסים וחבילות להופעות ולפסטיבלים בעולם." },
     blog: {
       title: "המגזין",
       intro: "מדריכים, טיפים והמלצות לחיי הלילה בישראל, עם אירועים שמתעדכנים כל הזמן.",
@@ -111,7 +112,8 @@ export const STRINGS = {
   },
   en: {
     dir: "ltr",
-    nav: { parties: "Events", map: "Map", venues: "Venues", artists: "Artists", blog: "Magazine" },
+    nav: { parties: "Events", map: "Map", abroad: "Abroad", venues: "Venues", artists: "Artists", blog: "Magazine" },
+    abroad: { title: "Concerts and festivals abroad", intro: "Tickets and packages for concerts and festivals around the world." },
     blog: {
       title: "Magazine",
       intro: "Guides and tips for nightlife in Israel, with live event lists. Articles are in Hebrew.",
