@@ -152,6 +152,11 @@ def test_geocoding_reuses_known_places_and_rejects_vague_hits(tmp_path: Path) ->
     from partylinks.geo import venue_key
     assert venue_key("מועדון הבארבי") == venue_key("בארבי")
     assert venue_key("Jimmy who tel aviv") == venue_key("JIMMYWHO? Bar & Lounge")
+    from partylinks.geo import venue_variants
+    assert "מוזיאון תל אביב" in venue_variants("מוזיאון תל אביב, אולם אסיא")
+    assert "הוואנה" in venue_variants("הוואנה מיוזיק קלאב")
+    assert "אולם" not in venue_variants("אולם ברטונוב")  # a generic word alone would match any hall
+    assert not any(v.endswith(" תל") for v in venue_variants("גריי תל אביב"))
 
     settings = settings_for(tmp_path)
     settings.geocoding.venues = {"gray club": (32.075175, 34.78205)}
@@ -227,3 +232,17 @@ def test_rescrape_tracks_offer_changes_and_unlists_vanished_events(tmp_path: Pat
         upsert_events(session, [gone])
         assert session.get(EventRow, "selector:gone").is_listed is True
     service.shutdown()
+
+
+def test_other_cities_are_purged_when_focusing_on_tel_aviv(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [
+        event("tlv", future),
+        event("haifa", future, address="Herzl 1, Haifa, Israel"),
+        event("unknown", future, address=None),  # no location info: city unknown, kept
+    ])  # fmt: skip
+    media = MediaStore(settings.media, db)
+    purge_expired(db, media, settings.retention, settings.timezone, drop_other_cities=True)
+    with db.session() as session:
+        assert {row.id for row in session.query(EventRow)} == {"test:tlv", "test:unknown"}

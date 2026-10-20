@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session, selectinload, undefer
 from partylinks import seo
 from partylinks.admin import AdminDep
 from partylinks.admin import router as admin_router
-from partylinks.config import Settings, get_settings
+from partylinks.config import LOG_FORMAT, Settings, get_settings
 from partylinks.db import Database, DealChangeRow, EventRow, ImageRow, ScrapeRunRow, upcoming_filter
 from partylinks.models import EntryType
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
@@ -294,6 +294,11 @@ class _SiteFiles(StaticFiles):
 
 def create_app(settings: Settings | None = None, start_scheduler: bool | None = None) -> FastAPI:
     settings = settings or get_settings()
+    if not logging.getLogger().handlers:  # `serve --reload` workers never run cli.main()'s setup
+        logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+    # One line per outgoing request (hundreds per run) buried the real warnings: keep only problems.
+    for noisy in ("httpx", "httpcore"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
@@ -665,6 +670,16 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
             counts = Counter(str(v) for row in rows for v in values(row) if v not in (None, ""))
             return [FacetValue(value=v, events=n) for v, n in counts.most_common(limit)]
 
+        def artist_facet() -> list[FacetValue]:
+            # "Pettra" / "PETTRA" are one artist: merge case-insensitively, show the most used spelling.
+            spellings = Counter(str(v) for row in rows for v in row.lineup or [] if v)
+            merged: dict[str, tuple[str, int]] = {}
+            for name, n in spellings.most_common():
+                shown, total = merged.get(name.casefold(), (name, 0))
+                merged[name.casefold()] = (shown, total + n)
+            ranked = sorted(merged.values(), key=lambda item: -item[1])[:FACET_LIMIT]
+            return [FacetValue(value=v, events=n) for v, n in ranked]
+
         venue_area = {r.venue_name: r.area for r in rows if r.venue_name and r.area}
         return Categories(
             genres=facet(lambda r: r.genres or [], None),
@@ -675,7 +690,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
             entry_types=facet(lambda r: [r.group_entry_type], None),
             venues=[f.model_copy(update={"area": venue_area.get(f.value)}) for f in facet(lambda r: [r.venue_name])],
             cities=facet(lambda r: [r.city]),
-            lineup=facet(lambda r: r.lineup or []),
+            lineup=artist_facet(),
             event_types=facet(lambda r: r.event_types or []),
             sources=facet(lambda r: [r.source], None),
         )

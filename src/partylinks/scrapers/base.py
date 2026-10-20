@@ -105,6 +105,12 @@ class BaseScraper[S: SourceSettings](ABC):
         self.timezone = timezone
         self.log = logging.getLogger(f"partylinks.scrapers.{self.name}")
         self.failures: list[str] = []
+        # Artwork URLs already stored per source_event_id (filled by the service before a run),
+        # so a source that needs an extra request per event for artwork can skip known events.
+        self.known_images: dict[str, list[str]] = {}
+        # Whether an event will be kept (e.g. it is in the target city). Set by the service; a
+        # source spends extra per-event requests (artwork) only on events that pass it.
+        self.wanted: Callable[[ScrapedEvent], bool] = lambda event: True
         self._client: httpx.AsyncClient | None = None
         self._semaphore = asyncio.Semaphore(self.http.concurrency)
         self._backoff = wait_exponential(multiplier=self.http.backoff_seconds, max=60)

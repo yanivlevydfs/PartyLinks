@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -23,6 +24,8 @@ async def _scheduled_run(service: ScrapeService, source: str) -> None:
         await service.run_source(source, trigger="schedule")
     except SourceBusyError:
         log.info("skipping scheduled %s run: previous run still in progress", source)
+    except asyncio.CancelledError:
+        log.info("scheduled %s run stopped: server shutting down (recorded as interrupted)", source)
     except Exception:  # noqa: BLE001 - keep the job scheduled; the next run tries again
         log.exception("scheduled run of %s failed before it could be recorded", source)
 

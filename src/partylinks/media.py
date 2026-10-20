@@ -104,8 +104,9 @@ class MediaStore:
                 results = await asyncio.gather(
                     *(self._download(client, semaphore, source, image_id, url) for image_id, url in chunk)
                 )
-                stored = [r for r in results if "error" not in r]
-                failed = [r for r in results if "error" in r]
+                # Success rows carry error=None (to clear an earlier failure), so test the value.
+                stored = [r for r in results if r.get("error") is None]
+                failed = [r for r in results if r.get("error") is not None]
                 await asyncio.to_thread(self._persist, stored, failed)
                 stored_count, failed_count = stored_count + len(stored), failed_count + len(failed)
         log.info("%s artwork: %d stored, %d failed", source, stored_count, failed_count)

@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
+from partylinks.artists import ArtistBook
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
 from partylinks.models import EntryType, ScrapedEvent, TicketTier
@@ -45,13 +47,47 @@ def make(**overrides: Any) -> ScrapedEvent:
 def test_lineup_extracted_from_description() -> None:
     event = ENRICHER.enrich(make())
     assert event is not None
-    assert event.lineup == ["DOR HADAD", "MIA B2B MIKA", "SEAN ALONI", "DJ REYES"]
+    assert event.lineup == ["DOR HADAD", "MIA", "MIKA", "SEAN ALONI", "DJ REYES"]
 
 
 def test_promo_bullets_are_not_a_lineup() -> None:
     promo = "🎶 ליינאפ מטורף\n🌿 לוקיישן קסום\n🌀 סאונד ללא פשרות…\n\n🎧 הליינאפ\n\nברוח היום במה כולה ישראלית 🇮🇱\n"
     event = ENRICHER.enrich(make(description=promo))
     assert event is not None and event.lineup == []
+
+
+def test_lineup_names_are_cleaned_and_split() -> None:
+    text = (
+        "LINE UP\nAZVELOS - Birthday Set\nrotemx {Q}\nLANDAU B2B ANSTY\nYAARA RONמיינסטרים עד הבוקר\n"
+        "DRESS CODE: SHREK\n\nTBA LINE UP\n\nHIP HOP\nTATTOO ZONE\nALON VAINER\n\nKIPI\n\n"
+        "ינגנו DJ Orel Amos ו-PLECEL, לפי DJ Mag. DJ\xa0PERLMAN\nAFROPIANO\n"
+    )
+    event = ENRICHER.enrich(make(description=text))
+    assert event is not None
+    assert event.lineup == ["AZVELOS", "rotemx", "LANDAU", "ANSTY", "YAARA RON", "ALON VAINER", "KIPI",
+                            "DJ Orel Amos", "DJ PERLMAN"]  # fmt: skip
+
+
+def test_glued_names_split_on_known_artists() -> None:
+    enricher = Enricher(SETTINGS.enrichment, SETTINGS.timezone)
+    enricher.learn_artists(["MILLERO", "DALI", "Jackie", "MISSTAKEN", "MOSKOMILLEROADARU", "DJ SHAY"])
+    text = "LINE UP -\nMOSKOMILLEROADARU\nDALIASKDODI\nJACKIEDERISIUS\nDJ JUDASZMISSTAKENAND MORE TBA\nGOLDSCHLAGER\n"
+    event = enricher.enrich(make(description=text))
+    assert event is not None
+    assert event.lineup == ["MOSKO", "MILLERO", "ADARU", "DALI", "ASKDODI", "JACKIE", "DERISIUS",
+                            "DJ JUDASZ", "MISSTAKEN", "GOLDSCHLAGER"]  # fmt: skip
+
+
+def test_artist_book_learns_and_blocks(tmp_path: Path) -> None:
+    book = ArtistBook(tmp_path / "artists.db")
+    book.record(["MILLERO", "MILLERO", "Shalos"])
+    book.set("OPEN AIR", blocked=True)
+    known, blocked = book.load()
+    assert known == {"millero", "shalos"} and blocked == {"open air"}
+    enricher = Enricher(SETTINGS.enrichment, SETTINGS.timezone)
+    enricher.learn_artists(known, blocked)
+    event = enricher.enrich(make(description="LINE UP\nMOSKOMILLEROADARU\nOPEN AIR\n"))
+    assert event is not None and event.lineup == ["MOSKO", "MILLERO", "ADARU"]
 
 
 def test_time_categories_in_local_timezone() -> None:
@@ -98,7 +134,7 @@ def test_entry_type_from_price_range_without_tiers() -> None:
 
 def test_target_city_matching() -> None:
     assert ENRICHER.enrich(make()).in_target_city is True  # type: ignore[union-attr]
-    assert ENRICHER.enrich(make(address="Haifa, Israel")).in_target_city is False  # type: ignore[union-attr]
+    assert ENRICHER.enrich(make(address="Haifa, Israel")) is None  # Tel Aviv only: other cities are dropped
 
 
 def test_slugs_are_readable_unique_and_keep_hebrew() -> None:
@@ -141,3 +177,14 @@ def test_area_by_keyword_then_coordinates() -> None:
     assert areas.match("Somewhere", None, 31.0, 35.0, True) is None
     # Outside the target city.
     assert areas.match("Lobby Night Club", "מקלף 1, חיפה", 32.789, 34.98, False) == "outside"
+
+
+def test_hebrew_city_names_match_whole_words_only() -> None:
+    def city(**fields: object) -> bool | None:
+        event = ENRICHER.enrich(make(**({"address": None} | fields)))
+        return False if event is None else event.in_target_city  # None = dropped as another city
+
+    assert city(city="ראשון לציון", venue_name="פטיפון בר ראשון לציון") is False  # "יפו" inside "פטיפון"
+    assert city(venue_name="מסיבה ביפו העתיקה") is True  # attached prefix letter
+    assert city(address="שדרות רוטשילד 24, תל אביב-יפו") is True
+    assert city(venue_name="הודנא בר, ת\"א") is True

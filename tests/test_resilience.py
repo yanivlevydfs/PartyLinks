@@ -211,3 +211,24 @@ def test_current_event_rule_at_2am() -> None:
     assert not is_current(at(19, 23), at(20, 5), s, tz, at(20, 6))  # ...and gone after it ends
     assert not is_current(at(1, 22), at(30, 4), s, tz, now)  # "season" listing that started weeks ago
     assert is_current(at(20, 22), None, s, tz, now)  # tonight
+
+
+def test_artwork_run_with_successes_and_failures_persists_both(tmp_path: Path, monkeypatch: Any) -> None:
+    settings, db = db_for(tmp_path)
+    settings.media.storage = "database"
+    with db.session() as session:
+        upsert_events(session, [event("a", images=["https://img.example/ok.jpg", "https://img.example/broken.jpg"])])
+    media = MediaStore(settings.media, db)
+
+    async def fake_fetch(client: Any, url: str) -> tuple[bytes, str]:
+        if "broken" in url:
+            raise ValueError("not an image")
+        return b"\xff\xd8\xffjpeg", "image/jpeg"
+
+    monkeypatch.setattr(media, "_fetch", fake_fetch)
+    stored, failed = asyncio.run(media.download_pending("test", HttpSettings()))
+    assert (stored, failed) == (1, 1)
+    with db.session() as session:
+        rows = {r.url: (r.downloaded_at is not None, r.error) for r in session.execute(text("select url, downloaded_at, error from event_images"))}
+    assert rows["https://img.example/ok.jpg"] == (True, None)
+    assert rows["https://img.example/broken.jpg"][0] is False and "not an image" in rows["https://img.example/broken.jpg"][1]

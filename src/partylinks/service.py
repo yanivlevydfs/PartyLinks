@@ -32,10 +32,12 @@ from typing import Any, TypeVar
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError
 
+from partylinks.artists import ArtistBook
 from partylinks.config import Settings
 from partylinks.db import (
     Database,
     EventRow,
+    ImageRow,
     ScrapeRunRow,
     record_delisted,
     start_run,
@@ -106,6 +108,10 @@ class ScrapeService:
         self.settings = settings
         self.db = db
         self.enricher = Enricher(settings.enrichment, settings.timezone)
+        self.artists = ArtistBook(settings.enrichment.lineup.artists_db)
+        if not self.artists.load()[0]:  # first start: seed the dictionary from the lineups already stored
+            with db.session() as session:
+                self.artists.record(n for lineup in session.scalars(select(EventRow.lineup)) for n in lineup or [])
         self.media = MediaStore(settings.media, db)
         self.deduplicator = Deduplicator(settings.dedup)
         self.geocoder = Geocoder(settings.geocoding, self.enricher.areas, settings.enrichment.target_city.aliases, db)
@@ -205,7 +211,10 @@ class ScrapeService:
             try:
                 removed = _with_db_retry(
                     "retention",
-                    lambda: purge_expired(self.db, self.media, self.settings.retention, self.settings.timezone),
+                    lambda: purge_expired(
+                        self.db, self.media, self.settings.retention, self.settings.timezone,
+                        drop_other_cities=self.settings.enrichment.target_city.drop_other_cities,
+                    ),
                 )
             except Exception as exc:
                 state.last_error = f"{type(exc).__name__}: {exc}"[:500]
@@ -216,6 +225,7 @@ class ScrapeService:
 
     async def _run(self, source: str, trigger: str) -> RunResult:
         run_id = await asyncio.to_thread(_with_db_retry, "start run", lambda: self._create_run(source, trigger))
+        self.enricher.learn_artists(*await asyncio.to_thread(self.artists.load))
         found = saved = 0
         status, error = "success", None
         scraper = None
@@ -234,6 +244,8 @@ class ScrapeService:
         try:
             async with deadline:
                 scraper = build_scraper(source, self.settings)
+                scraper.known_images = await asyncio.to_thread(self._known_images, source)
+                scraper.wanted = lambda event: not self.enricher.is_dropped(event)
                 failures = scraper.failures
                 async with scraper:
                     try:
@@ -325,10 +337,25 @@ class ScrapeService:
                 failures.append(f"{event.event_id} not saved: {type(exc).__name__}: {str(exc).splitlines()[0]}"[:500])
         return saved
 
+    def _known_images(self, source: str) -> dict[str, list[str]]:
+        """Stored artwork URLs per event of ``source``, in display order."""
+        known: dict[str, list[str]] = {}
+        with self.db.session() as session:
+            rows = session.execute(
+                select(EventRow.source_event_id, ImageRow.url)
+                .join(ImageRow, ImageRow.event_id == EventRow.id)
+                .where(EventRow.source == source)
+                .order_by(EventRow.id, ImageRow.position)
+            )
+            for event_id, url in rows:
+                known.setdefault(event_id, []).append(url)
+        return known
+
     def _save_batch(self, events: list[ScrapedEvent]) -> int:
         with self.db.session() as session:
             saved, orphaned_files = upsert_events(session, events)
         self.media.delete_files(orphaned_files)
+        self.artists.record(name for e in events for name in e.lineup)
         return saved
 
     def _track_changes(self, source: str, run_id: int, status: str) -> None:

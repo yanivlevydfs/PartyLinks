@@ -106,11 +106,38 @@ def candidates(row: EventRow) -> list[str]:
         for key in street_variants(address):
             out.append(f"{key}, {town}".rstrip(", "))
     if venue:
-        out.append(f"{venue}, {city or 'תל אביב'}")
+        town = city or "תל אביב"
+        out += [f"{v}, {town}" for v in venue_variants(venue)]
         # "מועדון גגרין" -> "גגרין, תל אביב" (OSM names the place without "club" / "מועדון").
         if (bare := re.sub(r"\s+", " ", _GENERIC_VENUE_WORDS.sub(" ", venue)).strip(" -,")) and len(bare) >= 3:
             out.append(f"{bare}, {city or 'תל אביב'}")
     return list(dict.fromkeys(q for q in out if len(q) >= 4))
+
+
+# A name made only of one of these would match any hall / theatre / bar in town.
+_GENERIC_NAMES = {
+    "אולם", "תיאטרון", "מוזיאון", "מרכז", "מועדון", "בר", "היכל", "סטודיו", "אודיטוריום", "קלאב", "גלריה",
+    "פאב", "חדר", "במה", "club", "bar", "hall", "center", "centre", "studio", "theater", "theatre", "the",
+}  # fmt: skip
+
+
+_TRAILING_CITY = re.compile(r"[\s,\-]*(?:תל[\s\-]*אביב(?:[\s\-]*יפו)?|ת\"א(?:[\s\-]*יפו)?|ת״א|tel[\s\-]*aviv(?:[\s\-]*yafo)?)$", re.IGNORECASE)
+
+
+def venue_variants(venue: str) -> list[str]:
+    """'מוזיאון תל אביב, אולם אסיא' -> ['מוזיאון תל אביב, אולם אסיא', 'מוזיאון תל אביב', 'מוזיאון תל', ...]:
+    OSM names places shorter than ticket sites do ("הוואנה מיוזיק קלאב" is "האוונה קלאב").
+    Every hit is still checked for precision and city before it is used."""
+    first = re.split(r"\s*[,|–]\s*|\s+-\s+", venue)[0].strip()
+    no_city = _TRAILING_CITY.sub("", first).strip()  # "גריי תל אביב" -> "גריי"
+    words = no_city.split()
+    shorter = [" ".join(words[:n]) for n in range(len(words) - 1, 0, -1)]
+    shorter = [v for v in shorter if v.split()[-1].lower() not in {"תל", "tel"}]  # never cut inside "תל אביב"
+    keep = [
+        v for v in [venue, first, no_city, *shorter]
+        if v.lower() not in _GENERIC_NAMES and (len(v.split()) > 1 or len(v) >= 5)
+    ]  # fmt: skip
+    return list(dict.fromkeys(keep))
 
 
 def _venue_match(known: dict[str, tuple[float, float]], name: str | None) -> tuple[float, float] | None:

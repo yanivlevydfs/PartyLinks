@@ -24,6 +24,7 @@ from pydantic_settings import (
 )
 
 CONFIG_ENV_VAR = "PARTYLINKS_CONFIG"
+LOG_FORMAT = "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
 # Relative paths in the config (DB file, media, inboxes) resolve against the project
 # root, so commands work from any working directory.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -98,7 +99,22 @@ class LineupSettings(BaseModel):
     max_names: int = Field(20, ge=1)
     max_name_length: int = Field(40, ge=1)
     max_name_words: int = Field(5, ge=1)
+    # Hebrew-only lines longer than this are sentences, not names.
+    max_hebrew_name_words: int = Field(3, ge=1)
     ignore: list[str] = Field(default_factory=list)
+    # Words that may sit next to a header keyword in a real lineup header ("THE LINE UP", "הליינאפ שלנו").
+    header_filler: list[str] = Field(default_factory=list)
+    # A line with one of these words is a stage / area / date sub-header, never a name ("HIP HOP STAGE").
+    not_name_words: list[str] = Field(default_factory=list)
+    # "DJ <word>" in running text that is not a name ("DJ Mag", "DJ Night").
+    inline_dj_stopwords: list[str] = Field(default_factory=list)
+    # Set descriptions cut from a name: "<qualifier> <word>" ("AZVELOS - Birthday Set", "NARDO WICK — MAIN EVENT").
+    set_words: list[str] = Field(default_factory=list)
+    set_qualifiers: list[str] = Field(default_factory=list)
+    # Artist dictionary (its own SQLite file) used to split names a source glued together.
+    artists_db: str = "data/artists.db"
+    min_known_length: int = Field(4, ge=2)  # shorter known names are never used as split points
+    min_glued_length: int = Field(9, ge=4)  # shorter words are never split
 
 
 class TimeSlot(BaseModel):

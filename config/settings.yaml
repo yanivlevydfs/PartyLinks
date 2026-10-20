@@ -57,8 +57,9 @@ enrichment:
     # Events whose city/address matches none of these are flagged out-of-city.
     aliases: ["tel aviv", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "tlv", "jaffa", "yafo",
               "תל אביב", "תל-אביב", "תל אביב-יפו", "תל אביב יפו", "ת\"א", "ת״א", "יפו"]
-    # Drop out-of-city events instead of storing them flagged.
-    drop_other_cities: false
+    # Tel Aviv only: events matched to another city are not imported, and stored ones are
+    # purged. Events with no location information at all are kept (their city is unknown).
+    drop_other_cities: true
   # Canonical genre -> keywords, matched case-insensitively against the genres and
   # event types each source declares and (if detect_genres_from_text) title + description.
   genres:
@@ -108,8 +109,24 @@ enrichment:
     max_names: 20
     max_name_length: 40
     max_name_words: 5
-    # Lines that look like names but are placeholders.
-    ignore: ["to be announced", "tba", "tbd", "soon", "בקרוב", "יוכרז בהמשך", "main stage", "stage"]
+    max_hebrew_name_words: 3
+    # Lines that look like names but are placeholders ("and" / "more": leftovers of "...AND MORE TBA").
+    ignore: ["to be announced", "tba", "tbd", "soon", "בקרוב", "יוכרז בהמשך", "main stage", "stage", "and", "more"]
+    header_filler: ["ה", "ו", "וה", "שלנו", "המלא", "הרזידנט", "resident", "the", "our", "full", "official",
+                    "-", "–", "—", "|"]
+    not_name_words: ["stage", "zone", "market", "bar", "area", "room", "floor", "tent",
+                     "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
+                     "january", "february", "march", "april", "june", "july", "august", "september",
+                     "october", "november", "december"]
+    inline_dj_stopwords: ["mag", "night", "party", "set", "sets", "latino", "broadcast", "booth", "stage",
+                          "line", "lineup"]
+    set_words: ["set", "show", "event", "performance"]
+    set_qualifiers: ["birthday", "b-day", "retro", "extended", "special", "closing", "opening", "live", "main",
+                     "vinyl", "all night long"]
+    # Artist dictionary: every saved lineup name, kept after events expire; set blocked=1 on a row to reject a name.
+    artists_db: data/artists.db
+    min_known_length: 4
+    min_glued_length: 9
   # Local-time categorization of event start.
   time_slots:
     - {name: morning, start_hour: 6, end_hour: 12}
@@ -199,9 +216,19 @@ geocoding:
   max_area_distance_m: 2500
   viewbox: "34.739,32.030,34.852,32.147"   # Tel Aviv-Yafo: preferred, not exclusive
   results_per_query: 5
-  # Manual pins, only for a place OpenStreetMap doesn't know (normally empty):
+  # Manual pins for recurring venues whose source gives a venue name but no address
+  # (matched as a substring of venue name / address). Coordinates are from OpenStreetMap,
+  # checked by hand; venues OSM does not know precisely are left off the map, not guessed.
   #   "venue or address keyword": [lat, lon]
-  venues: {}
+  venues:
+    "הוואנה מיוזיק קלאב": [32.0743385, 34.7957614]     # Havana Music Club, Yigal Alon
+    "מוזיאון תל אביב": [32.0775956, 34.7866422]        # Tel Aviv Museum of Art, Shaul HaMelech 27 (all halls)
+    "סוזן דלל": [32.0602817, 34.7643775]               # Suzanne Dellal Centre, Neve Tzedek
+    "הודנא בר": [32.0580561, 34.7670774]               # Hudna Bar, Florentin
+    "אולם ברטונוב": [32.0727967, 34.7790242]           # Bertonov Hall, Habima Theatre
+    "היכל התרבות תל אביב": [32.0734714, 34.7800344]    # Charles Bronfman Auditorium
+    "תיאטרון גשר": [32.0560976, 34.7600771]            # Gesher Theatre, Jaffa
+    "נא לגעת": [32.0529513, 34.7503489]                # Nalaga'at Center, Jaffa Port
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
@@ -346,6 +373,9 @@ sources:
     table_id: 40265      # "הופעות במרכז" table (data-table-id on its load-more button)
     page_size: 20
     max_pages: 100
+    http:
+      concurrency: 3          # artwork pages: a burst got 429 Too Many Requests
+      request_delay_seconds: 0.7
 
   # One static feed with every show deal in Israel; kept for the listed areas.
   hulyo:

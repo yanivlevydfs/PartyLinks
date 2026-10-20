@@ -156,3 +156,56 @@ def test_mevalim_rows_deal_price_and_sold_out() -> None:
     assert not on_sale.is_sold_out
 
     assert sold.is_sold_out and str(sold.url) == region and sold.min_price is None
+
+
+def test_mevalim_artwork_from_event_page() -> None:
+    from partylinks.scrapers import mevalim
+
+    # Shape of a tickets.mevalim.co.il event page (Next.js): optimizer <img> + og:image.
+    page = (
+        '<html><head><meta property="og:image" content="https://tickets-api.mevalim.co.il/up/social.jpg">'
+        '</head><body><img alt="" src="/_next/image?url=https%3A%2F%2Ftickets-api.mevalim.co.il%2Fup%2Fmain.jpeg'
+        '&amp;w=1920&amp;q=75"></body></html>'
+    )
+    assert mevalim.parse_artwork(page) == [
+        "https://tickets-api.mevalim.co.il/up/main.jpeg",
+        "https://tickets-api.mevalim.co.il/up/social.jpg",
+    ]
+    assert mevalim.parse_artwork("<html><body>no artwork</body></html>") == []
+
+
+def test_mevalim_reuses_stored_artwork_without_a_request() -> None:
+    import asyncio
+
+    from partylinks.config import Settings
+    from partylinks.models import ScrapedEvent
+    from partylinks.scrapers import build_scraper
+
+    scraper = build_scraper("mevalim", Settings())
+    scraper.known_images = {"1": ["https://img.example/stored.jpg"]}
+
+    async def no_network(*args: object, **kwargs: object) -> str:
+        raise AssertionError("an event with stored artwork must not be fetched")
+
+    scraper.get_text = no_network  # type: ignore[method-assign]
+    event = ScrapedEvent(source="mevalim", source_event_id="1", url="https://tickets.example/event/1", title="Show")
+    result = asyncio.run(scraper._with_artwork(event, "https://www.mevalim.co.il/central/"))  # type: ignore[attr-defined]
+    assert result.images == ["https://img.example/stored.jpg"]
+
+
+def test_mevalim_skips_artwork_for_events_that_will_be_dropped() -> None:
+    import asyncio
+
+    from partylinks.config import Settings
+    from partylinks.models import ScrapedEvent
+    from partylinks.scrapers import build_scraper
+
+    scraper = build_scraper("mevalim", Settings())
+    scraper.wanted = lambda event: event.city == "תל אביב"
+
+    async def no_network(*args: object, **kwargs: object) -> str:
+        raise AssertionError("an event outside the target city must not be fetched")
+
+    scraper.get_text = no_network  # type: ignore[method-assign]
+    haifa = ScrapedEvent(source="mevalim", source_event_id="9", url="https://tickets.example/event/9", title="X", city="חיפה")
+    assert asyncio.run(scraper._with_artwork(haifa, "https://www.mevalim.co.il/central/")).images == []  # type: ignore[attr-defined]

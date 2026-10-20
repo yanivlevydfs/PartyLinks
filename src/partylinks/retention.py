@@ -7,7 +7,7 @@ import logging
 from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import ColumnElement, and_, delete, not_, or_, select
+from sqlalchemy import ColumnElement, and_, false, delete, not_, or_, select
 
 from partylinks.config import RetentionSettings
 from partylinks.db import Database, EventRow, ScrapeRunRow, delete_events
@@ -64,7 +64,9 @@ def current_clause(settings: RetentionSettings, timezone: str, now: datetime | N
     return or_(upcoming, in_progress)
 
 
-def purge_expired(db: Database, media: MediaStore, settings: RetentionSettings, timezone: str) -> int:
+def purge_expired(
+    db: Database, media: MediaStore, settings: RetentionSettings, timezone: str, drop_other_cities: bool = False
+) -> int:
     """Delete events that are over (see :func:`is_current`) with their tickets and artwork.
 
     The start date decides, not a far end date: some listings carry an end weeks later
@@ -78,6 +80,8 @@ def purge_expired(db: Database, media: MediaStore, settings: RetentionSettings, 
                     and_(EventRow.start_at.is_not(None), not_(current_clause(settings, timezone))),
                     # Undated events disappear once the source stops listing them.
                     and_(EventRow.start_at.is_(None), EventRow.last_seen_at < cutoff),
+                    # Out of the target city (only when the config focuses on one city).
+                    EventRow.in_target_city.is_(False) if drop_other_cities else false(),
                 )
             )
         ).all()

@@ -171,7 +171,7 @@ def test_scheduled_jobs_survive_unexpected_errors(caplog: Any) -> None:
 def test_failed_retention_is_reported_for_health(tmp_path: Path, monkeypatch: Any) -> None:
     service, _ = make_service(tmp_path)
 
-    def failing_purge(*args: Any) -> int:
+    def failing_purge(*args: Any, **kwargs: Any) -> int:
         raise RuntimeError("disk full during purge")
 
     monkeypatch.setattr(service_module, "purge_expired", failing_purge)

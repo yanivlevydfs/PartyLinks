@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+from collections.abc import Iterable
 from datetime import datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -22,13 +23,22 @@ _EDGE_DECOR = re.compile(r"^[^\w'\"(]+|[^\w'\")]+$")
 _LEADING_WITH = re.compile(r"^(?:w/|with|feat\.?|ft\.?)\s+", re.IGNORECASE)
 _DATE_OR_TIME = re.compile(r"\d{1,2}\s*[./:]\s*\d{1,2}")
 _LIST_SPLIT = re.compile(r"\s*(?:,|\||•|/|·)\s*")
-# "DJ NAME" written inline in running text (names are capitalized words).
-_INLINE_DJ = re.compile(r"\bDJ\s+([A-Z0-9][\w.&'’-]*(?:\s+[A-Z0-9][\w.&'’-]*){0,2})")
+# "DJ NAME" written inline in running text: upper-case words on the same line ("DJ Mag" / "DJ Night" are not names).
+_DJ_WORD = r"[A-ZÀ-Þ0-9](?:[\w&'’-]|\.(?=\w))*"  # "MR.BLACK" keeps its dot; "Mag." ends the name
+_INLINE_DJ = re.compile(rf"\bDJ[^\S\n]+({_DJ_WORD}(?:[^\S\n]+{_DJ_WORD}){{0,2}})")
+# Back-to-back sets are separate artists: "LANDAU B2B ANSTY", "NYx × Ansty".
+_COLLAB = re.compile(r"\s+(?:b2b|f2f|vs\.?|x|×)\s+|\s+b2b(?=[A-Z])", re.IGNORECASE)
+# Notes after a name: "rotemx {Q}", "Ravid Polianski (Birthday)", "distørpya {GERMANY" (closer already stripped).
+_ANNOTATION = re.compile(r"\s*[(\[{].*$")
+_TBA = re.compile(r"(?:\s+and)?\s*more\s+tba\b.*$|\s*\b(?:tba|t\.b\.a\.?)(?:\s.*)?$", re.IGNORECASE)
+_DJ_DASH = re.compile(r"^dj\s*[-–—:]\s*", re.IGNORECASE)
+_HEBREW = re.compile(r"[֐-׿].*$")
 _SENTENCE_END = (".", "!", "?", "…")
-# Words that may sit next to the keyword in a real lineup header ("THE LINE UP", "הליינאפ").
-_HEADER_FILLER = {"ה", "ו", "וה", "שלנו", "המלא", "הרזידנט", "resident", "the", "our", "full", "official", "-", "–", "—", "|"}
-# Hebrew-only lines this long are sentences ("ברוח היום במה כולה ישראלית"), not names.
-_MAX_HEBREW_NAME_WORDS = 3
+
+
+def _words_pattern(words: list[str]) -> str:
+    """Regex alternation of whole words (matches nothing for an empty list)."""
+    return rf"\b(?:{'|'.join(re.escape(w) for w in words if w.strip()) or '(?!)'})\b"
 
 
 def _keyword_pattern(keywords: list[str]) -> re.Pattern[str] | None:
@@ -117,11 +127,28 @@ class Enricher:
         }
         self._free = _keyword_pattern(settings.free_entry_keywords)
         self._pay_at_door = _keyword_pattern(settings.pay_at_door_keywords)
-        self._city = _keyword_pattern(settings.target_city.aliases)
+        self._city = _place_pattern(settings.target_city.aliases)
         self._lineup_header = _keyword_pattern(settings.lineup.header_keywords)
         self._lineup_ignore = {w.casefold() for w in settings.lineup.ignore}
+        self._genre_words = {w.casefold() for words in settings.genres.values() for w in words}
+        lineup = settings.lineup
+        self._header_filler = {w.casefold() for w in lineup.header_filler}
+        self._inline_dj_stop = {w.casefold() for w in lineup.inline_dj_stopwords}
+        self._not_a_name = re.compile(_words_pattern(lineup.not_name_words), re.IGNORECASE)
+        # "AZVELOS - Birthday Set", "KOSTA retro set", "NARDO WICK — MAIN EVENT", "EPIPHONY LIVE SHOW"
+        qualifiers = "|".join(re.escape(w) for w in lineup.set_qualifiers) or "(?!)"
+        self._set_suffix = re.compile(
+            rf"\s*(?:[-–—]\s*)?(?:(?:{qualifiers})\s+)?{_words_pattern(lineup.set_words)}.*$", re.IGNORECASE
+        )
+        # Artist dictionary, loaded by the service from artists.py (empty when enriching standalone).
+        self._known: set[str] = set()
+        self._blocked: set[str] = set()
         self._weekend = {d.lower() for d in settings.weekend_days}
         self.areas = AreaMatcher(settings.areas)
+
+    def is_dropped(self, event: ScrapedEvent) -> bool:
+        """True when enrich() would drop the event (another city while focusing on one)."""
+        return self.settings.target_city.drop_other_cities and self._in_target_city(event) is False
 
     def enrich(self, event: ScrapedEvent) -> ScrapedEvent | None:
         """Return the enriched event, or ``None`` if config says to drop it."""
@@ -164,12 +191,49 @@ class Enricher:
     # ------------------------------------------------------------------ lineup
     def _lineup(self, event: ScrapedEvent) -> list[str]:
         names = [*event.artists, *self._lineup_from_text(event.description)]
+        venue = (event.venue_name or "").casefold()
         unique: dict[str, str] = {}
-        for name in names:
-            key = name.casefold()
-            if key not in self._lineup_ignore:
-                unique.setdefault(key, name)
+        for raw in names:
+            for part in (p for piece in _COLLAB.split(raw) for p in self._unglue(piece)):
+                name = self._as_name(part)
+                if name is not None and name.casefold() not in venue:  # "Haoman 17" is the venue, not a DJ
+                    unique.setdefault(name.casefold(), name)
         return list(unique.values())[: self.settings.lineup.max_names]
+
+    def learn_artists(self, known: Iterable[str], blocked: Iterable[str] = ()) -> None:
+        """Artist dictionary: single-word known names split glued ones; blocked names are never artists."""
+        min_len = self.settings.lineup.min_known_length
+        self._known = {k.casefold() for k in known if " " not in k.strip() and len(k.strip()) >= min_len}
+        self._blocked = {b.casefold() for b in blocked}
+
+    def _unglue(self, name: str) -> list[str]:
+        """"MOSKOMILLEROADARU" -> MOSKO, MILLERO, ADARU when MILLERO is a known artist.
+
+        ponytail: substring match against known names, so a real name that contains a known one
+        gets split; block the wrong pieces in the artists DB. Upgrade path: a per-artist allowlist.
+        """
+        words = name.split()
+        for i, word in enumerate(words):
+            pieces = self._split_word(word)
+            if len(pieces) > 1:
+                pieces[0] = " ".join([*words[:i], pieces[0]])
+                pieces[-1] = " ".join([pieces[-1], *words[i + 1 :]])
+                return pieces
+        return [name]
+
+    def _split_word(self, word: str) -> list[str]:
+        low = word.casefold()
+        if len(low) < self.settings.lineup.min_glued_length or len(low) != len(word):
+            return [word]
+        for known in sorted(self._known, key=len, reverse=True):
+            at = low.find(known) if len(known) < len(low) else -1  # a glued word was often recorded as known itself
+            if at < 0:
+                continue
+            before, hit, after = word[:at], word[at : at + len(known)], word[at + len(known) :]
+            if any(0 < len(side) < 3 for side in (before, after)):
+                continue
+            return [*(self._split_word(before) if before else []), hit, *(self._split_word(after) if after else [])]
+        return [word]
 
     def _lineup_from_text(self, text: str | None) -> list[str]:
         if not text or self._lineup_header is None:
@@ -190,9 +254,18 @@ class Enricher:
             while i < len(lines):
                 candidate = _strip_decor(lines[i])
                 if not candidate:
-                    if collected:
+                    # Lists spaced by blank lines ("🔥 OSHI\n\n🔥 ORIGAMI") go on while the next line is a Latin name.
+                    nxt = _strip_decor(lines[i + 1]) if i + 1 < len(lines) else ""
+                    if collected and not (re.search(r"[a-z]", nxt, re.IGNORECASE) and self._as_name(nxt)):
                         break
                 elif lines[i].strip().endswith(":"):  # stage / sub-header, e.g. "MAIN STAGE:"
+                    collected = False
+                elif (
+                    (candidate.startswith("(") and candidate.endswith(")"))  # "(MAINSTREAM, EDM, HARDSTYLE)"
+                    or not _TBA.sub("", candidate).strip()  # "TBA LINE UP"
+                    or candidate.casefold() in self._genre_words  # "HIP HOP" stage header
+                    or self._not_a_name.search(candidate)  # "2ND STAGE – HIP HOP"
+                ):
                     collected = False
                 elif name := self._as_name(candidate):
                     names.append(name)
@@ -200,7 +273,9 @@ class Enricher:
                 else:
                     break
                 i += 1
-        names += [f"DJ {m.group(1)}" for m in _INLINE_DJ.finditer(text)]
+        names += [
+            f"DJ {m.group(1)}" for m in _INLINE_DJ.finditer(text) if m.group(1).split()[0].casefold() not in self._inline_dj_stop
+        ]
         return names
 
     def _is_lineup_header(self, raw: str, header: str) -> bool:
@@ -209,22 +284,32 @@ class Enricher:
         match = self._lineup_header.search(head) if self._lineup_header else None
         if match is None:
             return False
-        rest = [w for w in (head[: match.start()] + " " + head[match.end() :]).split() if w not in _HEADER_FILLER]
+        rest = [w for w in (head[: match.start()] + " " + head[match.end() :]).split() if w not in self._header_filler]
         # Promo bullets are Hebrew prose ("ליינאפ מטורף"); "LINEUP — LIVE PERFORMANCES" is still a header.
         return not rest or (len(rest) <= 2 and all(w.isascii() for w in rest)) or raw.rstrip().endswith(":")
 
     def _as_name(self, value: str) -> str | None:
         cfg = self.settings.lineup
-        name = _LEADING_WITH.sub("", _strip_decor(value)).strip(" +-–—")
+        name = _DJ_DASH.sub("DJ ", _LEADING_WITH.sub("", _strip_decor(value)))
+        if re.match(r"[a-z]", name, re.IGNORECASE):
+            name = _HEBREW.sub("", name)  # "YAARA RONמיינסטרים עד הבוקר" (source glued the next line)
+        for pattern in (_ANNOTATION, _TBA, self._set_suffix):
+            name = pattern.sub("", name)
+        name = name.strip(" +-–—,.")
         if (
-            not name
+            len(name) < 2
+            or ":" in name  # "DRESS CODE: SHREK"
             or len(name) > cfg.max_name_length
             or len(name.split()) > cfg.max_name_words
-            or (not re.search(r"[a-z]", name, re.IGNORECASE) and len(name.split()) > _MAX_HEBREW_NAME_WORDS)
+            or (not re.search(r"[a-z]", name, re.IGNORECASE) and len(name.split()) > cfg.max_hebrew_name_words)
             or name.endswith(_SENTENCE_END)
             or "http" in name.lower()
             or _DATE_OR_TIME.search(name)
+            or re.search(r"\b(?:19|20)\d\d\b", name)  # "22 OCTOBER 2026"
+            or self._not_a_name.search(name)
             or name.casefold() in self._lineup_ignore
+            or name.casefold() in self._blocked
+            or name.casefold() in self._genre_words  # "HIP HOP" / "MAINSTREAM" stage sub-headers
         ):
             return None
         return name
@@ -275,6 +360,19 @@ class Enricher:
         if not haystack or self._city is None:
             return None
         return bool(self._city.search(haystack))
+
+
+def _place_pattern(names: list[str]) -> re.Pattern[str] | None:
+    """Whole-word place names. Unlike genre keywords, Hebrew names must not match inside
+    other words ("יפו" inside "פטיפון" made a Rishon LeZion bar count as Tel Aviv), but
+    may carry one attached Hebrew prefix letter ("ביפו", "מתל אביב")."""
+    parts = [
+        rf"(?<![\w]){re.escape(n.lower())}(?![\w])" if n.isascii()
+        else rf"(?<![\w])[ובהלמשכ]?{re.escape(n.lower())}(?![\w])"
+        for n in names
+        if n.strip()
+    ]
+    return re.compile("|".join(parts)) if parts else None
 
 
 def _free_entry_until(event: ScrapedEvent) -> datetime | None:

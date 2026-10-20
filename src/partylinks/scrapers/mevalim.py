@@ -5,18 +5,25 @@ The region page (e.g. ``/central/``) holds a table of upcoming performances fed 
 ``page``). The request needs the ``mevalimAjax.nonce`` printed on the region page.
 Each row carries everything we keep: performance id, title, date+time, hall, city,
 category, producer, deal + original price (base64 JSON in ``data-item``) and the
-purchase link (``#updates`` when sold out). No detail requests are made (no artwork).
+purchase link (``#updates`` when sold out).
+Artwork: each event's own page (tickets.mevalim.co.il, Next.js) is fetched in parallel
+for its main image (the ``/_next/image?url=`` source) and ``og:image``; a page that
+fails only leaves that event without artwork. Sold-out rows have no page to fetch.
+Only events that will be kept (``wanted``: e.g. in the target city) and have no stored
+artwork are fetched (``refetch_artwork`` forces every page). Fetching every listed event
+each hour got the source to answer 429 Too Many Requests.
 """
 
 from __future__ import annotations
 
 import base64
+import html
 import json
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import parse_qs, urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
 from pydantic import Field
@@ -38,6 +45,10 @@ class MevalimSettings(SourceSettings):
     table_id: int
     page_size: int = Field(20, ge=1)
     max_pages: int = Field(100, ge=1)
+    # Fetch each event page for its artwork (one extra request per event)...
+    fetch_artwork: bool = True
+    # ...on every run, instead of only for events with no stored artwork yet.
+    refetch_artwork: bool = False
 
 
 class MevalimScraper(BaseScraper[MevalimSettings]):
@@ -79,8 +90,45 @@ class MevalimScraper(BaseScraper[MevalimSettings]):
                 continue
             events[event.source_event_id] = event  # pages overlap by a row or two
         self.log.info("listed %d events", len(events))
-        for event in events.values():
+        if not s.fetch_artwork:
+            for event in events.values():
+                yield event
+            return
+        region_url = s.site_url + s.region_path
+        async for event in self.stream_isolated(
+            events.values(), lambda e: self._with_artwork(e, region_url), label=lambda e: e.source_event_id
+        ):
             yield event
+
+    async def _with_artwork(self, event: ScrapedEvent, region_url: str) -> ScrapedEvent:
+        known = self.known_images.get(event.source_event_id)
+        if known and not self.settings.refetch_artwork:  # artwork rarely changes: no request
+            event.image_url, event.images = known[0], known
+            return event
+        if str(event.url) == region_url or not self.wanted(event):  # sold out, or dropped later anyway
+            return event
+        page = await self.optional(f"{event.source_event_id} artwork", self.get_text(str(event.url)))
+        images = parse_artwork(page) if page else []
+        if images:
+            event.image_url, event.images = images[0], images
+        return event
+
+
+def parse_artwork(page_html: str) -> list[str]:
+    """Event artwork from its page: the main image first, then the social (og:image) one."""
+    tree = LexborHTMLParser(page_html)
+    found: list[str] = []
+    for img in tree.css("img[src]"):
+        src = img.attributes.get("src") or ""
+        if "/_next/image" in src:  # Next.js optimizer: the original is the `url` query parameter
+            original = parse_qs(urlsplit(html.unescape(src)).query).get("url", [""])[0]
+            if original.startswith("http"):
+                found.append(original)
+                break
+    og = tree.css_first('meta[property="og:image"]')
+    if og and (content := og.attributes.get("content") or "").startswith("http"):
+        found.append(content)
+    return list(dict.fromkeys(found))
 
 
 def parse_rows(fragment: str) -> list[LexborNode]:

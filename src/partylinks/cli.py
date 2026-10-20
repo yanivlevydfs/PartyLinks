@@ -18,7 +18,8 @@ import sys
 from pydantic import ValidationError
 from sqlalchemy import select
 
-from partylinks.config import get_settings
+from partylinks.artists import ArtistBook
+from partylinks.config import LOG_FORMAT, get_settings
 from partylinks.db import Database
 from partylinks.scrapers import SCRAPERS, build_scraper, configured_sources
 from partylinks.service import RunResult, ScrapeService
@@ -105,6 +106,19 @@ def _cleanup() -> int:
     return 0
 
 
+def _artists(action: str, names: list[str]) -> int:
+    book = ArtistBook(get_settings().enrichment.lineup.artists_db)
+    if action == "list":
+        sys.stdout.reconfigure(errors="replace")  # type: ignore[union-attr]  # cp1252 console vs "BĘÃTFÓØT"
+        for name, seen, blocked in book.rows():
+            print(f"{seen:>4}  {'BLOCKED ' if blocked else ''}{name}")
+        return 0
+    for name in names:
+        book.set(name, blocked=action == "block")
+    print(f"{action}: {len(names)} name(s); applied on the next scrape")
+    return 0
+
+
 def _sources() -> int:
     for name, cfg in configured_sources(get_settings()).items():
         print(f"{name:<10} {'enabled ' if cfg.enabled else 'disabled'}  cron='{cfg.cron}'")
@@ -122,13 +136,16 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("sources", help="list configured sources")
     sub.add_parser("cleanup", help="purge events that are over (retention)")
     sub.add_parser("chillz-links", help="write a page of Chillz links to open and save into the inbox")
+    artists = sub.add_parser("artists", help="curate the artist dictionary (used to split glued names)")
+    artists.add_argument("action", choices=["list", "add", "block", "unblock"])
+    artists.add_argument("names", nargs="*", metavar="NAME")
     args = parser.parse_args(argv)
     if sys.platform == "win32":
         os.system("")  # turn on ANSI colours in cmd.exe (otherwise uvicorn logs show "←[32m")
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
+        format=LOG_FORMAT,
     )
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
@@ -148,6 +165,8 @@ def _dispatch(args: argparse.Namespace) -> int:
         return _cleanup()
     if args.command == "chillz-links":
         return _chillz_links()
+    if args.command == "artists":
+        return _artists(args.action, args.names)
     return _sources()
 
 
