@@ -421,7 +421,9 @@ sources:
     discover: true
     # Producers whose full event list is read too: toMix (to-mix.co.il) embeds its Eventer
     # profile for checkout, and most of its ~200 performances are on no Eventer slider.
-    users: ["tomix"]
+    # forumclub: Forum club, Beersheba (not every night reaches the parties slider);
+    # syrup: Syrup club, Haifa.
+    users: ["tomix", "forumclub", "syrup"]
     list_path: /sliders/categories/{category}/events.js
     event_details_path: /events/explainNames/{link_name}.js
     ticket_types_path: /events/{event_id}/ticketTypes.js
