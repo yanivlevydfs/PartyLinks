@@ -39,6 +39,8 @@ AI_CRAWLERS = [
 ROBOTS_PRIVATE = ["/admin", "/admin/api/", "/docs", "/redoc", "/openapi.json", "/health", "/runs", "/sources",
                   "/maintenance", "/changes"]
 
+CURRENCY_SYMBOLS = {"ILS": "₪", "EUR": "€", "USD": "$", "GBP": "£"}
+
 TEXT: dict[str, dict[str, str]] = {
     "he": {
         "site_title": "Pulse דופק · כל האירועים בישראל",
@@ -47,10 +49,12 @@ TEXT: dict[str, dict[str, str]] = {
         "venues": "מקומות אירועים בכל הארץ",
         "artists": "אמנים ו־DJs בישראל",
         "map": "מפת האירועים של ישראל",
+        "abroad": "הופעות ופסטיבלים בחו״ל",
+        "abroad_desc": "כרטיסים וחבילות להופעות ופסטיבלים בחו״ל: תאריכים, מקומות ומחירים.",
         "venue_desc": "אירועים קרובים ב{name}: תאריכים, ליינאפ וכרטיסים.",
         "artist_desc": "האירועים וההופעות הקרובים של {name}: תאריכים, מקומות וכרטיסים.",
         "free": "כניסה חופשית",
-        "from": "החל מ־₪{p}",
+        "from": "החל מ־{p}",
         "lineup": "ליינאפ",
         "tickets": "לכרטיסים",
         "not_found": "העמוד לא נמצא",
@@ -63,10 +67,12 @@ TEXT: dict[str, dict[str, str]] = {
         "venues": "Event venues in Israel",
         "artists": "Artists & DJs playing Israel",
         "map": "Israel events map",
+        "abroad": "Concerts and festivals abroad",
+        "abroad_desc": "Tickets and packages for concerts and festivals abroad: dates, venues and prices.",
         "venue_desc": "Upcoming events at {name}: dates, lineups and tickets.",
         "artist_desc": "{name}'s upcoming events and shows in Israel: dates, venues and tickets.",
         "free": "Free entry",
-        "from": "From ₪{p}",
+        "from": "From {p}",
         "lineup": "Lineup",
         "tickets": "Tickets",
         "not_found": "Page not found",
@@ -141,7 +147,10 @@ def _when(row: EventRow, cfg: Settings, lang: str) -> str:
 def _price(row: EventRow, lang: str) -> str:
     if row.entry_type == "free" or row.min_price == 0:
         return TEXT[lang]["free"]
-    return TEXT[lang]["from"].format(p=f"{float(row.min_price):g}") if row.min_price is not None else ""
+    if row.min_price is None:
+        return ""
+    symbol = CURRENCY_SYMBOLS.get(row.currency, f"{row.currency} ")
+    return TEXT[lang]["from"].format(p=f"{symbol}{float(row.min_price):g}")
 
 
 def _summary(row: EventRow, cfg: Settings, lang: str) -> str:
@@ -164,7 +173,7 @@ def _upcoming(session: Session, *where: Any, limit: int = LIST_LIMIT) -> list[Ev
     return list(
         session.scalars(
             select(EventRow)
-            .where(upcoming_filter(), *where)
+            .where(upcoming_filter(), EventRow.country.is_(None), *where)
             .order_by(EventRow.start_at)
             .limit(limit)
             .options(selectinload(EventRow.images))
@@ -438,6 +447,28 @@ def map_page(session: Session, cfg: Settings, lang: str) -> Page:
     )
 
 
+def abroad_page(session: Session, cfg: Settings, lang: str) -> Page:
+    t = TEXT[lang]
+    rows = list(
+        session.scalars(
+            select(EventRow)
+            .where(upcoming_filter(), EventRow.country.is_not(None), EventRow.is_primary.is_(True))
+            .order_by(EventRow.start_at)
+            .limit(LIST_LIMIT)
+            .options(selectinload(EventRow.images))
+        )
+    )
+    return Page(
+        title=f"{t['abroad']} · {cfg.site.name}",
+        description=t["abroad_desc"],
+        path="/abroad",
+        lang=lang,
+        jsonld=[_breadcrumbs(cfg, lang, (t["abroad"], "/abroad"))],
+        body=f"<h1>{escape(t['abroad'])}</h1>" + _event_list_html(rows, cfg, lang),
+        noindex=not rows,
+    )
+
+
 def accessibility_page(session: Session, cfg: Settings, lang: str) -> Page:
     a = cfg.site.accessibility
     he = lang == "he"
@@ -508,7 +539,7 @@ def genre_counts(session: Session, cfg: Settings | None = None, when: str | None
     """Genres with enough upcoming events (tonight / this weekend) for a landing page, most events first."""
     counts: Counter[str] = Counter()
     where = _when_where(when, cfg) if cfg else []
-    for genres in session.scalars(select(EventRow.genres).where(upcoming_filter(), *where)):
+    for genres in session.scalars(select(EventRow.genres).where(upcoming_filter(), EventRow.country.is_(None), *where)):
         counts.update(genres or [])
     return {g: n for g, n in counts.most_common() if n >= GENRE_PAGE_MIN}
 
@@ -711,7 +742,7 @@ def _strip_title(html: str, keep: str) -> str:
 # --------------------------------------------------------------------------- crawl files
 def sitemap(session: Session, cfg: Settings) -> str:
     rows = session.scalars(select(EventRow).where(upcoming_filter()).order_by(EventRow.start_at)).all()
-    paths: list[tuple[str, date | None]] = [("/", None), ("/map", None), ("/venues", None), ("/artists", None), ("/accessibility", None), ("/privacy", None)]
+    paths: list[tuple[str, date | None]] = [("/", None), ("/map", None), ("/abroad", None), ("/venues", None), ("/artists", None), ("/accessibility", None), ("/privacy", None)]
     today = datetime.now(ZoneInfo(cfg.timezone))  # landing pages change every day
     paths += [(p, today) for p, _, _ in _landing_paths(session, cfg)]
     paths += [(event_path(r), r.last_seen_at) for r in rows]
@@ -877,6 +908,10 @@ def register(app: FastAPI, site_dir: Path) -> None:
     @app.get("/map", include_in_schema=False)
     def map_(request: Request) -> HTMLResponse:
         return page(request, map_page)
+
+    @app.get("/abroad", include_in_schema=False)
+    def abroad(request: Request) -> HTMLResponse:
+        return page(request, abroad_page)
 
     @app.get("/tonight", include_in_schema=False)
     def tonight(request: Request) -> HTMLResponse:

@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider, useLocation } from "react-router-dom";
 import EventPage from "./pages/EventPage";
 import Home from "./pages/Home";
+import Abroad from "./pages/Abroad";
 import { ArtistPage, ArtistsIndex, VenuePage, VenuesIndex } from "./pages/Browse";
 import NotFound from "./pages/NotFound";
 import AccessibilityPage from "./pages/Accessibility";
@@ -49,6 +50,7 @@ const router = createBrowserRouter([
       { path: "/city/:city", element: <Landing landing="city" /> },
       { path: "/event/:id", element: <EventPage /> },
       { path: "/map", element: <Suspense><MapPage /></Suspense> },
+      { path: "/abroad", element: <Abroad /> },
       { path: "/venues", element: <VenuesIndex /> },
       { path: "/venue/:name", element: <VenuePage /> },
       { path: "/artists", element: <ArtistsIndex /> },

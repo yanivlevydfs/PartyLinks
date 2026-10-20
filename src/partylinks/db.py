@@ -89,6 +89,7 @@ class EventRow(Base):
     city: Mapped[str | None] = mapped_column(String(128), index=True)
     latitude: Mapped[float | None] = mapped_column(Float)
     longitude: Mapped[float | None] = mapped_column(Float)
+    country: Mapped[str | None] = mapped_column(String(2), index=True)
     in_target_city: Mapped[bool | None] = mapped_column(Boolean, index=True)
     genres: Mapped[list[str]] = mapped_column(JSON, default=list)
     source_genres: Mapped[list[str]] = mapped_column(JSON, default=list)
@@ -420,7 +421,7 @@ class Database:
 # --------------------------------------------------------------------------- writes
 _EVENT_FIELDS = (
     "source", "source_event_id", "slug", "venue_slug", "title", "description", "start_at", "end_at", "venue_name", "address",
-    "city", "latitude", "longitude", "in_target_city", "genres", "source_genres", "event_types", "artists",
+    "city", "latitude", "longitude", "country", "in_target_city", "genres", "source_genres", "event_types", "artists",
     "lineup", "local_date", "day_of_week", "time_slot", "is_weekend", "area", "min_age", "organizer", "image_url",
     "currency", "min_price", "max_price", "has_free_entry", "entry_type", "is_sold_out", "free_sold_out", "extra",
     "free_entry_until",

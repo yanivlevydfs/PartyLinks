@@ -129,6 +129,7 @@ class EventSummaryOut(_Out):
     city: str | None
     latitude: float | None
     longitude: float | None
+    country: str | None
     in_target_city: bool | None
     genres: list[str]
     event_types: list[str]
@@ -494,6 +495,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         venue_slug: Annotated[str | None, Query(description="Exact venue slug")] = None,
         city: Annotated[str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="City contains")] = None,
         in_target_city: Annotated[bool | None, Query(description="Matched to the configured target city")] = None,
+        abroad: Annotated[bool, Query(description="Events abroad instead of events in Israel")] = False,
         entry_type: Annotated[list[EntryType] | None, Query(max_length=MAX_LIST_PARAMS, description="free / paid / free_and_paid")] = None,
         free_entry: Annotated[bool | None, Query(description="Has at least one free ticket tier")] = None,
         sold_out: bool | None = None,
@@ -535,6 +537,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
             )
         if in_target_city is not None:
             filters.append(EventRow.in_target_city.is_(in_target_city))
+        filters.append(EventRow.country.is_not(None) if abroad else EventRow.country.is_(None))
         if entry_type:
             filters.append(EventRow.group_entry_type.in_([e.value for e in entry_type]))
         if free_entry is not None:
@@ -682,7 +685,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
             EventRow.genres, EventRow.local_date, EventRow.day_of_week, EventRow.time_slot, EventRow.area,
             EventRow.group_entry_type, EventRow.venue_name, EventRow.city, EventRow.lineup, EventRow.event_types,
             EventRow.source, EventRow.in_target_city,
-        ).where(EventRow.is_primary.is_(True))  # fmt: skip
+        ).where(EventRow.is_primary.is_(True), EventRow.country.is_(None))  # fmt: skip
         if upcoming:
             query = query.where(upcoming_filter())
         rows = session.execute(query).all()
