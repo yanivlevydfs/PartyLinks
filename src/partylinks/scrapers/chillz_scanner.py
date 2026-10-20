@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PartyLinks Chillz public-page scanner.
+Pulse Chillz public-page scanner.
 
 Discovers URLs from Chillz's public sitemap and extracts event metadata only
 from pages the backend is permitted to access. It does not bypass Vercel
@@ -40,7 +40,7 @@ CACHE_TTL_SECONDS = int(float(os.getenv("CHILLZ_CACHE_TTL_HOURS", "6")) * 3600)
 MAX_PAGES = int(os.getenv("CHILLZ_MAX_PAGES", "100"))
 TIMEOUT_SECONDS = 15
 MAX_RESPONSE_BYTES = 3_000_000
-USER_AGENT = "PartyLinksDealScanner/1.0 (authorized public-page metadata collection)"
+USER_AGENT = "PulseDealScanner/1.0 (authorized public-page metadata collection)"
 
 FIELDS = ("event_name", "venue", "date", "price", "ticket_url", "last_seen")
 

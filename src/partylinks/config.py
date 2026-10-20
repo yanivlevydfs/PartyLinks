@@ -220,7 +220,7 @@ class GeocodingSettings(BaseModel):
     enabled: bool = True
     url: str = "https://nominatim.openstreetmap.org/search"
     # Nominatim's policy: identify the app, at most one request per second, cache results.
-    user_agent: str = "PartyLinks/0.1 (Tel Aviv party listings)"
+    user_agent: str = "Pulse/0.1 (Israel event listings)"
     min_interval_seconds: float = Field(1.1, ge=1)
     max_lookups_per_run: int = Field(120, ge=0)
     country_codes: str = "il"
@@ -254,7 +254,7 @@ class AccessibilitySettings(BaseModel):
 class SiteSettings(BaseModel):
     # Public address of the website (no trailing slash): canonical links, sitemap, JSON-LD, share previews.
     base_url: str = "http://localhost:8000"
-    name: str = "PartyLinks"
+    name: str = "Pulse"
     accessibility: AccessibilitySettings = Field(default_factory=AccessibilitySettings)
 
     @field_validator("base_url")

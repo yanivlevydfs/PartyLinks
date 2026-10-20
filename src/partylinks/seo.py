@@ -40,7 +40,7 @@ ROBOTS_PRIVATE = ["/admin", "/admin/api/", "/docs", "/redoc", "/openapi.json", "
 
 TEXT = {
     "he": {
-        "site_title": "PartyLinks · כל האירועים בישראל",
+        "site_title": "Pulse דופק · כל האירועים בישראל",
         "site_desc": "כל האירועים, המסיבות וההופעות בכל הארץ במקום אחד: תאריכים, ליינאפ, מחירי כרטיסים, כניסה חופשית, מקומות ומפה. מתעדכן כל הזמן.",
         "upcoming": "אירועים קרובים בכל הארץ",
         "venues": "מקומות אירועים בכל הארץ",
@@ -57,7 +57,7 @@ TEXT = {
         "locale": "he_IL",
     },
     "en": {
-        "site_title": "PartyLinks · Every event in Israel",
+        "site_title": "Pulse · Every event in Israel",
         "site_desc": "Every event, party and show in Israel in one place: dates, lineups, ticket prices, free entry, venues and a map. Always up to date.",
         "upcoming": "Upcoming events in Israel",
         "venues": "Event venues in Israel",
@@ -232,7 +232,7 @@ def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
 
 
 def _breadcrumbs(cfg: Settings, lang: str, *crumbs: tuple[str, str]) -> dict[str, Any]:
-    items = [("PartyLinks", "/"), *crumbs]
+    items = [(cfg.site.name, "/"), *crumbs]
     return {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",

@@ -15,7 +15,7 @@ Access: chillz.com sits behind a Vercel Security Checkpoint. This scraper never
 tries to pass it. A checkpoint response raises ``SourceBlockedError`` on the
 first page probed, so a blocked run costs two requests and is recorded as
 ``blocked`` (inbox events of that run are still saved). Once the site owner
-allows PartyLinks (e.g. a Firewall bypass rule on a secret header supplied via
+allows Pulse (e.g. a Firewall bypass rule on a secret header supplied via
 ``PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS``), live collection starts with no
 code changes.
 """

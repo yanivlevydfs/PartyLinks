@@ -1,4 +1,4 @@
-# PartyLinks configuration.
+# Pulse configuration.
 # Every value can be overridden by an environment variable using the
 # PARTYLINKS_ prefix and "__" as the nesting delimiter, e.g.
 #   PARTYLINKS_DATABASE__URL=postgresql+psycopg://user:pass@host/db
@@ -23,7 +23,7 @@ logging:
 # JSON-LD, llms.txt and share previews: set it to the real domain when deployed.
 site:
   base_url: http://localhost:8000
-  name: PartyLinks
+  name: Pulse
   # Accessibility statement at /accessibility (Israeli standard IS 5568). The law requires a real
   # accessibility coordinator who can be reached: fill these in before going public.
   accessibility:
@@ -242,7 +242,7 @@ dedup:
 geocoding:
   enabled: true
   url: https://nominatim.openstreetmap.org/search
-  user_agent: "PartyLinks/0.1 (Israel party listings)"
+  user_agent: "Pulse/0.1 (Israel event listings)"
   min_interval_seconds: 1.1
   max_lookups_per_run: 120
   country_codes: il
@@ -464,7 +464,7 @@ sources:
     areas: []
 
   # chillz.com is behind a Vercel Security Checkpoint. Runs are recorded as
-  # "blocked" until the owner allows PartyLinks; then collection starts with no
+  # "blocked" until the owner allows Pulse; then collection starts with no
   # code change. Supply the agreed access header via the environment only:
   #   PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS='{"x-partylinks-key": "<secret>"}'
   chillz:
@@ -481,7 +481,7 @@ sources:
     inbox_dir: data/chillz_inbox
     live: true
     http:
-      user_agent: "PartyLinks/1.0 (event aggregator; contact via site owner)"
+      user_agent: "Pulse/1.0 (event aggregator; contact via site owner)"
       concurrency: 4
       request_delay_seconds: 1.0
 

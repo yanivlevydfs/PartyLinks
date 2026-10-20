@@ -57,7 +57,7 @@ export const eventPath = (e: { id: string; slug: string | null }) => `/event/${e
 /** Browser tab title for the current page. */
 export function useTitle(title: string | undefined) {
   useEffect(() => {
-    if (title) document.title = `${title} · PartyLinks`;
+    if (title) document.title = `${title} · Pulse`;
   }, [title]);
 }
 
@@ -89,7 +89,7 @@ export function Layout() {
       </header>
       <Outlet />
       <footer className="foot wrap">
-        PartyLinks · Israel · <Link to="/accessibility">{t.accessibility}</Link>
+        Pulse · Israel · <Link to="/accessibility">{t.accessibility}</Link>
       </footer>
     </>
   );

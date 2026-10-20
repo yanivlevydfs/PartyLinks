@@ -1,4 +1,4 @@
-# PartyLinks
+# Pulse (דופק)
 
 A Python backend that collects Tel Aviv party events from Israeli ticketing sites on a schedule. For every event it captures:
 
@@ -24,7 +24,7 @@ Scrapers read the site's own JSON (or schema.org data) over plain HTTP where it 
 
 **Checked and not added:** T-TLV (no live site at t-tlv.com), Ticketnet (ticketnet.co.il no longer answers; last working capture 2024), GetIn (public catalogue has no Israeli events right now; the getin.xyz sitemap + schema.org pages would work if that changes).
 
-**Chillz (`chillz`)** sits behind a Vercel Security Checkpoint (a JavaScript bot challenge), so live runs are recorded as `blocked` until Chillz allows PartyLinks (a Firewall rule on the `PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS` key, an IP allowlist, or an API/export). Until then, use the **inbox**: open an event page in your browser, save it with `Ctrl+S` into `data/chillz_inbox/`, and every run imports it with all ticket tiers, artwork, venue and categories. Saved pages keep their original URL, so they never duplicate events collected live later.
+**Chillz (`chillz`)** sits behind a Vercel Security Checkpoint (a JavaScript bot challenge), so live runs are recorded as `blocked` until Chillz allows Pulse (a Firewall rule on the `PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS` key, an IP allowlist, or an API/export). Until then, use the **inbox**: open an event page in your browser, save it with `Ctrl+S` into `data/chillz_inbox/`, and every run imports it with all ticket tiers, artwork, venue and categories. Saved pages keep their original URL, so they never duplicate events collected live later.
 
 ## Design
 

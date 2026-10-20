@@ -65,7 +65,7 @@ export default function AdminPage() {
     meta.content = "noindex, nofollow";
     document.head.appendChild(meta);
     const title = document.title;
-    document.title = "PartyLinks · Admin";
+    document.title = "Pulse · Admin";
     return () => { meta.remove(); document.title = title; };
   }, []);
   return (
