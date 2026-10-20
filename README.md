@@ -76,6 +76,14 @@ Docs are at `http://localhost:8000/docs`.
 Pages: parties with filters, `/event/<id>`, `/map` (events with coordinates), `/venues`, `/venue/<name>`, `/artists`, `/artist/<name>`.
 Stack: Vite, React Router, TanStack Query, zustand, Leaflet (OpenStreetMap tiles, darkened in CSS).
 
+Legal pages: `/accessibility` (IS 5568) and `/privacy` (Privacy Protection Law, Amendment 13). The cookie consent banner and the list of everything stored on the device live in `web/src/consent.tsx`; OpenStreetMap tiles load only with consent. Fonts are self-hosted.
+
+#### Open items (legal)
+
+- [ ] **Privacy contact email**: `site.privacy.email` in `config/settings.yaml` is empty, so `/privacy` says the address "will be published soon" and the admin page shows a warning. Fill it in once there is an address for privacy requests.
+- [ ] **Accessibility coordinator**: `site.accessibility` (name + email or phone) is also empty; the law requires a reachable coordinator.
+- [ ] Have the privacy policy text reviewed by a lawyer.
+
 Windows shortcuts in the repo root:
 
 | File | Does |
