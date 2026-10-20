@@ -4,7 +4,9 @@ Listing: every event the site lists. ``/sliders/list.js`` describes the home pag
 "categories" slider names the categories (``/sliders/categories/<category>/events.js``)
 and every other slider is read with ``/sliders/<linkName>/byLink.js``. Each returns its
 complete slide list in one response. Only event slides are kept (sliders also hold
-venues, artists, articles). ``categories`` from the config are always read as well.
+venues, artists, articles). ``categories`` from the config are always read as well, and
+so is every event of each producer in ``users`` (``/user/<linkName>/getData``, the profile
+page a producer embeds on its own site; e.g. toMix, whose shows are mostly not on sliders).
 Details: ``/events/explainNames/<linkName>.js`` (event + JSON-LD) and
 ``/events/<id>/ticketTypes.js`` (all ticket tiers incl. free registrations).
 """
@@ -43,6 +45,9 @@ class EventerSettings(SourceSettings):
     discover: bool = True
     sliders_path: str = "/sliders/list.js"
     slider_path: str = "/sliders/{link_name}/byLink.js"
+    # Producer profiles (user linkNames) whose whole event list is read on top of the sliders.
+    users: list[str] = Field(default_factory=list)
+    user_events_path: str = "/user/{user}/getData"
     event_details_path: str
     ticket_types_path: str
     # The site's artist catalog (one request) and each artist's profile (social links). Empty = skip.
@@ -79,6 +84,7 @@ class EventerScraper(BaseScraper[EventerSettings]):
                     sliders.append(str(slider["linkName"]))
         listings = [(f"category {c}", s.base_url + s.list_path.format(category=c), dict) for c in dict.fromkeys(categories)]
         listings += [(f"slider {n}", s.base_url + s.slider_path.format(link_name=n), list) for n in dict.fromkeys(sliders)]
+        listings += [(f"user {u}", s.base_url + s.user_events_path.format(user=u), dict) for u in dict.fromkeys(s.users)]
 
         seen: dict[str, None] = {}
         for label, url, shape in listings:
@@ -93,7 +99,7 @@ class EventerScraper(BaseScraper[EventerSettings]):
                 payload = payload[0] if payload and isinstance(payload[0], dict) else {}
             seen.update(
                 (str(slide["linkName"]), None)
-                for slide in payload.get("slides") or []
+                for slide in payload.get("slides") or payload.get("events") or []  # user getData: events
                 if isinstance(slide, dict) and slide.get("linkName") and slide.get("slideType", EVENT_SLIDE) == EVENT_SLIDE
             )
         if not seen and self.failures:
@@ -202,6 +208,8 @@ def parse_event(details: dict[str, Any], tickets_payload: dict[str, Any], page_u
 
 def _parse_ticket(ticket: dict[str, Any], currency: str) -> TicketTier:
     price = to_decimal(ticket.get("price"))
+    closed = price is not None and price < 0  # -1 = tier not on sale (originalPrice keeps the face value)
+    price = None if closed else price
     remaining = to_int(ticket.get("remaining"))
     remaining = None if remaining in (None, UNLIMITED) else remaining
     return TicketTier(
@@ -212,7 +220,7 @@ def _parse_ticket(ticket: dict[str, Any], currency: str) -> TicketTier:
         original_price=to_decimal(ticket.get("originalPrice")),
         currency=currency,
         is_free=price == 0,
-        is_active=not ticket.get("isPurchaseWithCouponOnly", False),
+        is_active=not (closed or ticket.get("isPurchaseWithCouponOnly", False)),
         is_sold_out=remaining == 0,
         remaining=remaining,
         sale_end=parse_iso(ticket.get("toDate")),
