@@ -60,7 +60,8 @@ api:
   max_page_size: 200
 
 scheduler:
-  # Paused on request (2026-10-20): set back to true to resume hourly scans.
+  # Always off here, so a local run (localhost) never scrapes. Production turns it on with
+  # PARTYLINKS_SCHEDULER__ENABLED=true (and RUN_ON_STARTUP=true) in the Railway service variables.
   enabled: false
   # Run every enabled source once when the API process starts.
   run_on_startup: false
