@@ -380,6 +380,7 @@ def test_logging_is_quiet_by_default_and_debug_logs_everything(tmp_path: Path) -
         log = logging.getLogger("uvicorn.access")
         assert not debug_enabled() and logging.getLogger().level == logging.WARNING
         assert not log.filter(access(200)) and log.filter(access(404)) and log.filter(access(500))
+        assert log.isEnabledFor(logging.INFO)  # a failed request still gets through a WARNING root
 
         assert client.post("/admin/api/logging", json={"on": True}).json() == {"debug": True}
         assert logging.getLogger().level == logging.DEBUG and log.filter(access(200))

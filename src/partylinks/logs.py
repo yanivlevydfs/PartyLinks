@@ -79,6 +79,7 @@ def set_debug(on: bool) -> None:
     """Everything (DEBUG, every request, HTTP client lines) or back to the configured level."""
     logging.getLogger().setLevel(logging.DEBUG if on else _level)
     access = logging.getLogger("uvicorn.access")
+    access.setLevel(logging.INFO)  # request lines are INFO: kept below a WARNING root, filtered instead
     if on:
         access.removeFilter(_failed_only)
     else:
