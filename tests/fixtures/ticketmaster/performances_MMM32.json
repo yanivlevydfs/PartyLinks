@@ -1,0 +1,22 @@
+{
+ "status": "SUCCESS",
+ "data": [
+  {
+   "eventCode": "MMM32",
+   "performanceCode": "001",
+   "dateInfo": null,
+   "venueName": "היכל מנורה מבטחים ",
+   "venueCity": "תל אביב - יפו",
+   "performanceDate": 1793818800000,
+   "status": "s02_soldout",
+   "perfType": null,
+   "doorOpeningTime": null,
+   "campaignTitle": null,
+   "priceInfo": null,
+   "insured": false,
+   "active": false
+  }
+ ],
+ "errors": null,
+ "warnings": null
+}

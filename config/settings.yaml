@@ -535,3 +535,47 @@ sources:
     # robots.txt disallows /api; the public listing page embeds every event.
     listing_path: /explore/all
     event_page_path: /event/{event_id}
+
+  epgb:
+    # Radio EPGB club: public Supabase table read with the anon key embedded in the homepage
+    # (extracted each run; supabase_url is a fallback only). No prices in the data.
+    enabled: true
+    cron: "42 * * * *"
+    site_url: https://epgb.co.il
+    page_path: /
+    event_page_path: /event.html?id={id}
+    events_path: /rest/v1/events
+    supabase_url: https://qdgedsxhlcmgtrkxaxsu.supabase.co
+    venue_name: Radio EPGB
+    address: שד"ל 7, תל אביב
+    city: תל אביב
+
+  leaan:
+    # Ticketing site (shows, stand-up, kids, sport). The homepage __NEXT_DATA__ search index lists
+    # ~all events in one request; sitemap ids missing from it are read from their event page.
+    enabled: true
+    cron: "32 * * * *"
+    site_url: https://www.leaan.co.il
+    listing_path: /
+    event_page_path: /events/{slug}/{event_id}   # slug is ignored by the site
+    sitemap_path: /sitemap.xml                   # empty = no backfill
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.7
+
+  ticketmaster:
+    # Ticketmaster Israel: event codes from the sitemap, then detail + performances per event and
+    # price levels per wanted performance. One event per performance.
+    enabled: true
+    cron: "22 * * * *"
+    site_url: https://www.ticketmaster.co.il
+    sitemap_path: /wbtxapi/api/v1/siteMap/event
+    event_path: /wbtxapi/api/v1/bxcached/event/getEventDetail/{code}/INTERNET/iw
+    performances_path: /wbtxapi/api/v1/bxcached/event/getPerformanceList/{code}/INTERNET/iw
+    prices_path: /wbtxapi/api/v1/bxcached/event/getPriceByProfiles/{code}/{perf}/INTERNET/iw
+    performance_page_path: /performance/{code}/{perf}/ALL/iw
+    image_url_template: "https://www.ticketmaster.co.il/static/images/live/event/eventimages/{image}"
+    wide_image_url_template: "https://www.ticketmaster.co.il/static/images/live/event/eventimages/wide/{image}"
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.3

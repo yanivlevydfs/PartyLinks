@@ -10,16 +10,19 @@ from partylinks.config import Settings
 from partylinks.scrapers.barby import BarbyScraper
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.chillz import ChillzScraper
+from partylinks.scrapers.epgb import EpgbScraper
 from partylinks.scrapers.eventbuzz import EventbuzzScraper
 from partylinks.scrapers.eventer import EventerScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
 from partylinks.scrapers.hulyo import HulyoScraper
+from partylinks.scrapers.leaan import LeaanScraper
 from partylinks.scrapers.megatickets import MegaticketsScraper
 from partylinks.scrapers.mevalim import MevalimScraper
 from partylinks.scrapers.popit import PopitScraper
 from partylinks.scrapers.selector import SelectorScraper
 from partylinks.scrapers.tickchak import TickchakScraper
+from partylinks.scrapers.ticketmaster import TicketmasterScraper
 from partylinks.scrapers.zygo import ZygoScraper
 
 log = logging.getLogger(__name__)
@@ -40,6 +43,9 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         MegaticketsScraper,
         EventbuzzScraper,
         PopitScraper,
+        EpgbScraper,
+        LeaanScraper,
+        TicketmasterScraper,
     )
 }
 

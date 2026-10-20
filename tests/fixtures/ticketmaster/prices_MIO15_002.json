@@ -1,0 +1,463 @@
+{
+ "status": "SUCCESS",
+ "data": {
+  "12705030": [
+   {
+    "blocks": [
+     {
+      "number": 0,
+      "description": "אולם           ",
+      "code": "HAL1",
+      "dressType": 0
+     },
+     {
+      "number": 1,
+      "description": "אולם           ",
+      "code": "HAL2",
+      "dressType": 0
+     },
+     {
+      "number": 2,
+      "description": "אולם           ",
+      "code": "HAL4",
+      "dressType": 0
+     },
+     {
+      "number": 3,
+      "description": "אולם           ",
+      "code": "HAL5",
+      "dressType": 0
+     },
+     {
+      "number": 18,
+      "description": "פיט            ",
+      "code": "PIT1",
+      "dressType": 0
+     },
+     {
+      "number": 19,
+      "description": "פיט            ",
+      "code": "PIT2",
+      "dressType": 0
+     }
+    ],
+    "value": 32900,
+    "servicePrice": 0,
+    "description": "אולם",
+    "code": "1",
+    "priceLevel": "1",
+    "handicap": false,
+    "concessionInfos": [
+     {
+      "name": "מחיר מלא",
+      "code": "AA",
+      "amount": 0
+     }
+    ],
+    "minPrice": 32900,
+    "maxPrice": 32900,
+    "campaignFactorValue": 1
+   },
+   {
+    "blocks": [
+     {
+      "number": 4,
+      "description": "תא ימין        ",
+      "code": "BOXR",
+      "dressType": 0
+     },
+     {
+      "number": 5,
+      "description": "גלריה ימין     ",
+      "code": "GALR",
+      "dressType": 0
+     },
+     {
+      "number": 6,
+      "description": "תא שמאל        ",
+      "code": "BOXL",
+      "dressType": 0
+     },
+     {
+      "number": 7,
+      "description": "גלריה שמאל     ",
+      "code": "GALL",
+      "dressType": 0
+     }
+    ],
+    "value": 28900,
+    "servicePrice": 0,
+    "description": "תא+ גלריה",
+    "code": "2",
+    "priceLevel": "2",
+    "handicap": false,
+    "concessionInfos": [
+     {
+      "name": "מחיר מלא",
+      "code": "AA",
+      "amount": 0
+     }
+    ],
+    "minPrice": 28900,
+    "maxPrice": 28900,
+    "campaignFactorValue": 1
+   },
+   {
+    "blocks": [
+     {
+      "number": 8,
+      "description": "יציע מרכז      ",
+      "code": "BLC1",
+      "dressType": 0
+     },
+     {
+      "number": 9,
+      "description": "יציע מרכז      ",
+      "code": "BLC2",
+      "dressType": 0
+     }
+    ],
+    "value": 23900,
+    "servicePrice": 0,
+    "description": "יציע מרכז",
+    "code": "3",
+    "priceLevel": "3",
+    "handicap": false,
+    "concessionInfos": [
+     {
+      "name": "מחיר מלא",
+      "code": "AA",
+      "amount": 0
+     }
+    ],
+    "minPrice": 23900,
+    "maxPrice": 23900,
+    "campaignFactorValue": 1
+   },
+   {
+    "blocks": [
+     {
+      "number": 10,
+      "description": "יציע שמאל      ",
+      "code": "BLL1",
+      "dressType": 0
+     },
+     {
+      "number": 11,
+      "description": "יציע שמאל      ",
+      "code": "BLL2",
+      "dressType": 0
+     },
+     {
+      "number": 12,
+      "description": "יציע שמאל      ",
+      "code": "BLL3",
+      "dressType": 0
+     },
+     {
+      "number": 14,
+      "description": "יציע ימין      ",
+      "code": "BLR1",
+      "dressType": 0
+     },
+     {
+      "number": 15,
+      "description": "יציע ימין      ",
+      "code": "BLR2",
+      "dressType": 0
+     },
+     {
+      "number": 16,
+      "description": "יציע ימין      ",
+      "code": "BLR3",
+      "dressType": 0
+     },
+     {
+      "number": 17,
+      "description": "יציע ימין      ",
+      "code": "BLR4",
+      "dressType": 0
+     }
+    ],
+    "value": 19900,
+    "servicePrice": 0,
+    "description": "יציע צדדי",
+    "code": "4",
+    "priceLevel": "4",
+    "handicap": false,
+    "concessionInfos": [
+     {
+      "name": "מחיר מלא",
+      "code": "AA",
+      "amount": 0
+     }
+    ],
+    "minPrice": 19900,
+    "maxPrice": 19900,
+    "campaignFactorValue": 1
+   },
+   {
+    "blocks": [
+     {
+      "number": 5,
+      "description": "גלריה ימין     ",
+      "code": "GALR",
+      "dressType": 0
+     },
+     {
+      "number": 7,
+      "description": "גלריה שמאל     ",
+      "code": "GALL",
+      "dressType": 0
+     }
+    ],
+    "value": 19900,
+    "servicePrice": 0,
+    "description": "כיסא מונגש",
+    "code": "5",
+    "priceLevel": "5",
+    "handicap": true,
+    "concessionInfos": [
+     {
+      "name": "מחיר מלא",
+      "code": "AA",
+      "amount": 0
+     }
+    ],
+    "minPrice": 19900,
+    "maxPrice": 19900,
+    "campaignFactorValue": 1
+   }
+  ],
+  "12705035": [
+   {
+    "blocks": [
+     {
+      "number": 0,
+      "description": "אולם           ",
+      "code": "HAL1",
+      "dressType": 0
+     },
+     {
+      "number": 1,
+      "description": "אולם           ",
+      "code": "HAL2",
+      "dressType": 0
+     },
+     {
+      "number": 2,
+      "description": "אולם           ",
+      "code": "HAL4",
+      "dressType": 0
+     },
+     {
+      "number": 3,
+      "description": "אולם           ",
+      "code": "HAL5",
+      "dressType": 0
+     },
+     {
+      "number": 18,
+      "description": "פיט            ",
+      "code": "PIT1",
+      "dressType": 0
+     },
+     {
+      "number": 19,
+      "description": "פיט            ",
+      "code": "PIT2",
+      "dressType": 0
+     }
+    ],
+    "value": 32900,
+    "servicePrice": 0,
+    "description": "אולם",
+    "code": "1",
+    "priceLevel": "1",
+    "handicap": false,
+    "concessionInfos": [
+     {
+      "name": "Fly Card",
+      "code": "FK",
+      "amount": -10000
+     }
+    ],
+    "minPrice": 22900,
+    "maxPrice": 22900,
+    "campaignFactorValue": 1
+   },
+   {
+    "blocks": [
+     {
+      "number": 4,
+      "description": "תא ימין        ",
+      "code": "BOXR",
+      "dressType": 0
+     },
+     {
+      "number": 5,
+      "description": "גלריה ימין     ",
+      "code": "GALR",
+      "dressType": 0
+     },
+     {
+      "number": 6,
+      "description": "תא שמאל        ",
+      "code": "BOXL",
+      "dressType": 0
+     },
+     {
+      "number": 7,
+      "description": "גלריה שמאל     ",
+      "code": "GALL",
+      "dressType": 0
+     }
+    ],
+    "value": 28900,
+    "servicePrice": 0,
+    "description": "תא+ גלריה",
+    "code": "2",
+    "priceLevel": "2",
+    "handicap": false,
+    "concessionInfos": [
+     {
+      "name": "Fly Card",
+      "code": "FK",
+      "amount": -10000
+     }
+    ],
+    "minPrice": 18900,
+    "maxPrice": 18900,
+    "campaignFactorValue": 1
+   },
+   {
+    "blocks": [
+     {
+      "number": 8,
+      "description": "יציע מרכז      ",
+      "code": "BLC1",
+      "dressType": 0
+     },
+     {
+      "number": 9,
+      "description": "יציע מרכז      ",
+      "code": "BLC2",
+      "dressType": 0
+     }
+    ],
+    "value": 23900,
+    "servicePrice": 0,
+    "description": "יציע מרכז",
+    "code": "3",
+    "priceLevel": "3",
+    "handicap": false,
+    "concessionInfos": [
+     {
+      "name": "Fly Card",
+      "code": "FK",
+      "amount": -10000
+     }
+    ],
+    "minPrice": 13900,
+    "maxPrice": 13900,
+    "campaignFactorValue": 1
+   },
+   {
+    "blocks": [
+     {
+      "number": 10,
+      "description": "יציע שמאל      ",
+      "code": "BLL1",
+      "dressType": 0
+     },
+     {
+      "number": 11,
+      "description": "יציע שמאל      ",
+      "code": "BLL2",
+      "dressType": 0
+     },
+     {
+      "number": 12,
+      "description": "יציע שמאל      ",
+      "code": "BLL3",
+      "dressType": 0
+     },
+     {
+      "number": 14,
+      "description": "יציע ימין      ",
+      "code": "BLR1",
+      "dressType": 0
+     },
+     {
+      "number": 15,
+      "description": "יציע ימין      ",
+      "code": "BLR2",
+      "dressType": 0
+     },
+     {
+      "number": 16,
+      "description": "יציע ימין      ",
+      "code": "BLR3",
+      "dressType": 0
+     },
+     {
+      "number": 17,
+      "description": "יציע ימין      ",
+      "code": "BLR4",
+      "dressType": 0
+     }
+    ],
+    "value": 19900,
+    "servicePrice": 0,
+    "description": "יציע צדדי",
+    "code": "4",
+    "priceLevel": "4",
+    "handicap": false,
+    "concessionInfos": [
+     {
+      "name": "Fly Card",
+      "code": "FK",
+      "amount": -10000
+     }
+    ],
+    "minPrice": 9900,
+    "maxPrice": 9900,
+    "campaignFactorValue": 1
+   },
+   {
+    "blocks": [
+     {
+      "number": 5,
+      "description": "גלריה ימין     ",
+      "code": "GALR",
+      "dressType": 0
+     },
+     {
+      "number": 7,
+      "description": "גלריה שמאל     ",
+      "code": "GALL",
+      "dressType": 0
+     }
+    ],
+    "value": 19900,
+    "servicePrice": 0,
+    "description": "כיסא מונגש",
+    "code": "5",
+    "priceLevel": "5",
+    "handicap": true,
+    "concessionInfos": [
+     {
+      "name": "Fly Card",
+      "code": "FK",
+      "amount": -10000
+     }
+    ],
+    "minPrice": 9900,
+    "maxPrice": 9900,
+    "campaignFactorValue": 1
+   }
+  ]
+ },
+ "errors": null,
+ "warnings": null
+}

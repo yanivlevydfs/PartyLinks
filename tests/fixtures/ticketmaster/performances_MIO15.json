@@ -1,0 +1,52 @@
+{
+ "status": "SUCCESS",
+ "data": [
+  {
+   "eventCode": "MIO15",
+   "performanceCode": "001",
+   "dateInfo": null,
+   "venueName": "בית האופרה - המשכן לאמנויות הבמה",
+   "venueCity": "תל אביב - יפו",
+   "performanceDate": 1793817000000,
+   "status": "s00_closed",
+   "perfType": null,
+   "doorOpeningTime": null,
+   "campaignTitle": null,
+   "priceInfo": null,
+   "insured": false,
+   "active": false
+  },
+  {
+   "eventCode": "MIO15",
+   "performanceCode": "002",
+   "dateInfo": null,
+   "venueName": "בית האופרה - המשכן לאמנויות הבמה",
+   "venueCity": "תל אביב - יפו",
+   "performanceDate": 1793903400000,
+   "status": "s01_onsale",
+   "perfType": null,
+   "doorOpeningTime": null,
+   "campaignTitle": null,
+   "priceInfo": null,
+   "insured": false,
+   "active": false
+  },
+  {
+   "eventCode": "MIO15",
+   "performanceCode": "003",
+   "dateInfo": null,
+   "venueName": "בית האופרה - המשכן לאמנויות הבמה",
+   "venueCity": "תל אביב - יפו",
+   "performanceDate": 1793964600000,
+   "status": "s00_closed",
+   "perfType": null,
+   "doorOpeningTime": null,
+   "campaignTitle": null,
+   "priceInfo": null,
+   "insured": false,
+   "active": false
+  }
+ ],
+ "errors": null,
+ "warnings": null
+}
