@@ -15,7 +15,7 @@ Cloudflare answers some clients with a challenge (``cf-mitigated: challenge``): 
 from __future__ import annotations
 
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from datetime import datetime, timedelta
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
@@ -178,7 +178,7 @@ def parse_event(page_html: str, url: str, s: SecretTelAvivSettings, timezone: st
         source=SecretTelAvivScraper.name,
         source_event_id=event_slug(url, s),
         url=url,
-        title=clean_str(title_node.text()) if title_node else "",
+        title=(clean_str(title_node.text()) if title_node else None) or "",
         description=html_to_text("".join(description)),
         start_at=start_at,
         end_at=end_at,
@@ -206,12 +206,12 @@ def parse_when(header: str, placeholder_end: str, tz: ZoneInfo) -> tuple[datetim
     return start, end if end > start else end + timedelta(days=1)
 
 
-def _clock(t: tuple[str, str, str]) -> tuple[int, int]:
+def _clock(t: Sequence[str]) -> tuple[int, int]:
     hour, minute, half = int(t[0]) % 12, int(t[1]), t[2].lower()
     return hour + (12 if half == "pm" else 0), minute
 
 
-def _same(t: tuple[str, str, str], text: str) -> bool:
+def _same(t: Sequence[str], text: str) -> bool:
     m = _TIME.search(text)
     return bool(m) and _clock(t) == _clock(m.groups())
 
