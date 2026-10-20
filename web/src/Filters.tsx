@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useCategories, useEvents, type Params } from "./api";
 import { genreLabel } from "./i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "./store";
-import { Chip, label, today, TZ, useT } from "./ui";
+import { Chip, label, sourceName, today, TZ, useT } from "./ui";
 
 // The one home-page filter: its state lives in the store, the API query comes from filterParams(),
 // and every landing page (/tonight, /genre/x, /city/x) only presets that same state.
@@ -13,6 +13,7 @@ export function filterParams(f: FilterState): Params {
     sort: f.sort,
     q: f.q.length >= 2 ? f.q : undefined,
     genre: f.genres,
+    source: f.shops,
     time_slot: f.slot ?? undefined,
     // Tel Aviv: the target city, optionally narrowed to neighbourhoods. Other regions: their area key + a city.
     in_target_city: f.region === "tel_aviv" ? "true" : undefined,
@@ -28,6 +29,7 @@ const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x
 
 const MOBILE = "(max-width: 760px)";
 const GENRES_SHOWN = 12; // desktop: the busiest genres; the rest behind "+N more"
+const SHOPS_SHOWN = 8; // same for ticket sites
 
 function useMedia(query: string) {
   const [on, setOn] = useState(() => matchMedia(query).matches);
@@ -53,7 +55,7 @@ export function Filters() {
   // Same query as the grid below: shares its cache, so the sheet's "Show N" costs no request.
   const total = useEvents(filterParams(f)).data?.pages[0]?.total;
 
-  const extras = (f.region ? 1 : 0) + f.areas.length + (f.city ? 1 : 0) + f.genres.length + (f.slot ? 1 : 0) + (f.hideSoldOut ? 1 : 0);
+  const extras = (f.region ? 1 : 0) + f.areas.length + (f.city ? 1 : 0) + f.genres.length + f.shops.length + (f.slot ? 1 : 0) + (f.hideSoldOut ? 1 : 0);
   const dirty = extras > 0 || f.freeOnly || f.when !== "all";
   const clear = () => set({ ...DEFAULT_FILTERS, q: f.q, sort: f.sort });
 
@@ -120,6 +122,7 @@ export function Filters() {
               {f.areas.map((a) => <Pill key={a} onClear={() => set({ areas: f.areas.filter((x) => x !== a) })}>{label(t.areas, a)}</Pill>)}
               {f.city && <Pill onClear={() => set({ city: null })}>{f.city}</Pill>}
               {f.genres.map((g) => <Pill key={g} onClear={() => set({ genres: f.genres.filter((x) => x !== g) })}>{genreLabel(lang, g)}</Pill>)}
+              {f.shops.map((s) => <Pill key={s} onClear={() => set({ shops: f.shops.filter((x) => x !== s) })}>{sourceName(s)}</Pill>)}
               {f.slot && <Pill onClear={() => set({ slot: null })}>{label(t.slots, f.slot)}</Pill>}
               {f.freeOnly && <Pill onClear={() => set({ freeOnly: false })}>{t.freeOnly}</Pill>}
               {f.hideSoldOut && <Pill onClear={() => set({ hideSoldOut: false })}>{t.hideSoldOut}</Pill>}
@@ -187,6 +190,7 @@ function Rows({ all }: { all?: boolean }) {
   const set = useStore((s) => s.setFilters);
   const cats = useCategories().data;
   const [moreGenres, setMoreGenres] = useState(false);
+  const [moreShops, setMoreShops] = useState(false);
 
   const regionKeys = new Set(cats?.regions?.map((r) => r.value));
   // Under Tel Aviv: its neighbourhoods. Under another region: its cities.
@@ -197,6 +201,9 @@ function Rows({ all }: { all?: boolean }) {
   const genres = [...(cats?.genres ?? [])].sort((a, b) => b.events - a.events);
   const shownGenres = all || moreGenres ? genres : genres.filter((g, i) => i < GENRES_SHOWN || f.genres.includes(g.value));
   const hidden = genres.length - shownGenres.length;
+  const shops = cats?.sources ?? []; // busiest first
+  const shownShops = all || moreShops ? shops : shops.filter((s, i) => i < SHOPS_SHOWN || f.shops.includes(s.value));
+  const hiddenShops = shops.length - shownShops.length;
 
   return (
     <>
@@ -237,6 +244,21 @@ function Rows({ all }: { all?: boolean }) {
           {!all && (hidden > 0 || moreGenres) && (
             <button className="chip more-chip" onClick={() => setMoreGenres(!moreGenres)} aria-expanded={moreGenres}>
               {moreGenres ? t.less : t.moreN(hidden)}
+            </button>
+          )}
+        </FilterRow>
+      )}
+
+      {shops.length > 1 && (
+        <FilterRow label={t.shop}>
+          {shownShops.map((s) => (
+            <Chip key={s.value} on={f.shops.includes(s.value)} onClick={() => set({ shops: toggle(f.shops, s.value) })}>
+              {sourceName(s.value)} <small>{s.events}</small>
+            </Chip>
+          ))}
+          {!all && (hiddenShops > 0 || moreShops) && (
+            <button className="chip more-chip" onClick={() => setMoreShops(!moreShops)} aria-expanded={moreShops}>
+              {moreShops ? t.less : t.moreN(hiddenShops)}
             </button>
           )}
         </FilterRow>

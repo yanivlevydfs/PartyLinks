@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from sqlalchemy import ColumnElement, String, and_, cast, func, not_, or_, select
-from sqlalchemy.orm import Session, selectinload, undefer
+from sqlalchemy.orm import Session, aliased, selectinload, undefer
 
 from partylinks import seo
 from partylinks.admin import AdminDep, require_admin
@@ -526,7 +526,10 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         tz = ZoneInfo(cfg.timezone)
         filters: list[ColumnElement[bool]] = []
         if source:
-            filters.append(EventRow.source.in_(source))
+            # Any listing of the event's group sold there: a party also on Zygo shows under Zygo
+            # even when the group's primary listing is Go-Out's.
+            listing = aliased(EventRow)
+            filters.append(EventRow.group_id.in_(select(listing.group_id).where(listing.source.in_(source))))
         if genre:
             filters.append(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(genre)))
         if artist:
@@ -718,6 +721,12 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
                     out.append(FacetValue(value=name, events=n))
             return out
 
+        # Per ticket site: real events it sells (every listing of a group counts, once per group).
+        listings = select(EventRow.group_id, EventRow.source).where(EventRow.country.is_(None)).distinct()
+        if upcoming:
+            listings = listings.where(upcoming_filter())
+        group_sources = Counter(source for _, source in session.execute(listings))
+
         venue_area = {r.venue_name: r.area for r in rows if r.venue_name and r.area}
         region_keys = request.app.state.service.enricher.areas.region_keys
 
@@ -743,7 +752,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
             ],
             lineup=artist_facet(),
             event_types=facet(lambda r: r.event_types or []),
-            sources=facet(lambda r: [r.source], None),
+            sources=[FacetValue(value=s, events=n) for s, n in group_sources.most_common()],
         )
 
     @app.get("/sources", response_model=list[SourceOut], tags=["sources"], dependencies=[AdminDep])

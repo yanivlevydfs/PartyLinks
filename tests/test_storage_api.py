@@ -416,6 +416,25 @@ def test_bare_venue_names_take_their_city_from_other_events(tmp_path: Path) -> N
     assert rows["haifa"] == (False, "haifa") and rows["unknown"] == (None, None)
 
 
+def test_filter_by_ticket_site_matches_any_listing_of_the_event(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [
+        event("party", future, source="goout"),
+        event("party-z", future, source="zygo"),  # the same party, also sold on Zygo
+        event("other", future, source="goout", title="Hip hop night"),
+    ])  # fmt: skip
+    with db.session() as session:  # as dedup leaves them: one group, Go-Out's listing primary
+        row = session.get(EventRow, "zygo:party-z")
+        assert row is not None
+        row.group_id, row.is_primary = "goout:party", False
+
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        assert [e["id"] for e in client.get("/events", params={"source": "zygo"}).json()["items"]] == ["goout:party"]
+        sources = {f["value"]: f["events"] for f in client.get("/categories").json()["sources"]}
+        assert sources == {"goout": 2, "zygo": 1}
+
+
 def test_stored_events_abroad_get_a_country(tmp_path: Path) -> None:
     """Rows saved before countries were set: recompute moves them out of the Israeli feed."""
     from partylinks.service import ScrapeService
