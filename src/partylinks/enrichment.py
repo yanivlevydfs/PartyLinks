@@ -54,6 +54,9 @@ def _keyword_pattern(keywords: list[str]) -> re.Pattern[str] | None:
 
 OUTSIDE_AREA = "outside"
 ABROAD_AREA = "abroad"
+# ISO 3166 "unknown": an event abroad whose country the source does not give. Any country code
+# keeps an event out of the Israeli feed and in the abroad section.
+UNKNOWN_COUNTRY = "ZZ"
 
 
 def meters(a: tuple[float, float], b: tuple[float, float]) -> float:
@@ -193,6 +196,8 @@ class Enricher:
         event.area = self.areas.match(
             event.venue_name, event.address, event.latitude, event.longitude, event.in_target_city, event.city
         )
+        if event.area == ABROAD_AREA and not event.country:  # coordinates outside Israel (Go-Out abroad)
+            event.country = UNKNOWN_COUNTRY
         if event.in_target_city is False and self.settings.target_city.drop_other_cities:
             return None
         return event

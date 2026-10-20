@@ -49,7 +49,7 @@ from partylinks.db import (
 )
 from partylinks.venues import resolve_venues
 from partylinks.dedup import Deduplicator
-from partylinks.enrichment import Enricher, meters
+from partylinks.enrichment import ABROAD_AREA, UNKNOWN_COUNTRY, Enricher, meters
 from partylinks.geo import Geocoder
 from partylinks.media import MediaStore
 from partylinks.models import ScrapedEvent
@@ -202,8 +202,10 @@ class ScrapeService:
                 if here is None and row.latitude is not None and row.longitude is not None and target and target.center:
                     here = meters(target.center, (row.latitude, row.longitude)) <= target.radius_m
                 area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, here, city)
-                if (area, city, here) != (row.area, row.city, row.in_target_city):
-                    row.area, row.city, row.in_target_city, changed = area, city, here, changed + 1
+                country = row.country or (UNKNOWN_COUNTRY if area == ABROAD_AREA else None)
+                if (area, city, here, country) != (row.area, row.city, row.in_target_city, row.country):
+                    row.area, row.city, row.in_target_city, row.country = area, city, here, country
+                    changed += 1
         log.info("areas/cities: updated %d events", changed)
         return changed
 

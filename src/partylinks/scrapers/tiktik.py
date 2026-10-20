@@ -5,7 +5,8 @@ to the music category, 100 products a page, total in ``X-WP-Total``. Its prices 
 ILS but are euros, and it has no date or venue. Details: each product page carries a
 schema.org ``MusicEvent`` (start, venue, city, country, performer, low/high price in EUR).
 One ``ScrapedEvent`` per product; ``source_event_id`` is the product id. Every event gets
-``country`` (ISO code), which keeps it out of the Israeli feed and in the abroad section.
+``country`` (ISO code; "ZZ" when the page names none, since TikTik sells only abroad), which
+keeps it out of the Israeli feed and in the abroad section.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from typing import Any
 
 from pydantic import Field
 
+from partylinks.enrichment import UNKNOWN_COUNTRY
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import (
     ParseError,
@@ -96,7 +98,7 @@ def parse_product(page_html: str, url: str, timezone: str) -> ScrapedEvent | Non
         end_at=parse_iso(event.get("endDate"), timezone) if "T" in str(event.get("endDate", "")) else None,
         venue_name=clean_str(location.get("name")),
         city=clean_str(address.get("addressLocality")),
-        country=country if country and country != "IL" else None,
+        country=None if country == "IL" else country or UNKNOWN_COUNTRY,
         artists=[artist] if artist else [],
         images=[image] if image else [],
         currency=clean_str(offers.get("priceCurrency")) or "EUR",

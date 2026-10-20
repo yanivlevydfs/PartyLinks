@@ -148,6 +148,14 @@ def test_target_city_matching() -> None:
     assert Enricher(tlv_only, SETTINGS.timezone).enrich(make(address="Haifa, Israel")) is None
 
 
+def test_event_abroad_gets_a_country() -> None:
+    """Go-Out sells nights in Rome / Athens: coordinates abroad move them out of the Israeli feed."""
+    rome = ENRICHER.enrich(make(address="Via Roma 1, Roma, Italy", latitude=41.9, longitude=12.5))
+    assert rome is not None and rome.area == "abroad" and rome.country == "ZZ"
+    haifa = ENRICHER.enrich(make(address="Haifa, Israel"))
+    assert haifa is not None and haifa.country is None
+
+
 def test_slugs_are_readable_unique_and_keep_hebrew() -> None:
     a = ENRICHER.enrich(make(title="מסיבת טכנו | Thursday!", venue_name="Moonchild - מון צ'ילד"))
     b = ENRICHER.enrich(make(source_event_id="2", title="מסיבת טכנו | Thursday!"))

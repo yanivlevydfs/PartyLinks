@@ -37,3 +37,10 @@ def test_tiktik_package_date_only() -> None:
 
 def test_tiktik_page_without_event() -> None:
     assert tiktik.parse_product("<html></html>", SITE + "gift/", "Asia/Jerusalem") is None
+
+
+def test_tiktik_page_without_country_is_still_abroad() -> None:
+    """Some pages (Westlife Belfast) give only the city: still abroad, never in the Israeli feed."""
+    page = (FIXTURES / "sting.html").read_text(encoding="utf-8").replace('"addressCountry": "US"', '"x": 0')
+    e = tiktik.parse_product(page, SITE + "x/", "Asia/Jerusalem")
+    assert e is not None and e.city == "Las Vegas" and e.country == "ZZ"
