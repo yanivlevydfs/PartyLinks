@@ -142,6 +142,11 @@ class DedupSettings(BaseModel):
     title_similarity: float = Field(0.85, ge=0, le=1)
     max_start_gap_minutes: int = Field(60, ge=0)
     max_distance_meters: float = Field(300, ge=0)
+    # Near-identical title at (almost) the same start time: allow a coarser location, e.g. an
+    # aggregator that pins "Tel Aviv Port" instead of the club inside it.
+    strong_title_similarity: float = Field(0.95, ge=0, le=1)
+    strong_max_start_gap_minutes: int = Field(15, ge=0)
+    strong_max_distance_meters: float = Field(1500, ge=0)
     title_stopwords: list[str] = Field(default_factory=list)
     # Which listing represents a merged event (first = preferred). Unlisted sources rank last.
     source_priority: list[str] = Field(default_factory=list)

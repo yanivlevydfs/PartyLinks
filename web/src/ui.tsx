@@ -35,6 +35,7 @@ export function priceLabel(e: Pick<EventSummary, "entry_type" | "min_price" | "h
 const SOURCE_NAMES: Record<string, string> = {
   goout: "Go-Out", eventer: "Eventer", zygo: "Zygo", tickchak: "Tickchak",
   selector: "Selector", barby: "Barby", grayclub: "Gray Club", chillz: "Chillz",
+  mevalim: "Mevalim", hulyo: "Hulyo",
 };
 export const sourceName = (source: string) => SOURCE_NAMES[source] ?? source;
 
@@ -162,7 +163,7 @@ export function Card({ e }: { e: EventSummary }) {
       </div>
       <div className="card-body">
         <h3 dir="auto">{e.title}</h3>
-        <p className="meta">{fmtDate(e.start_at, t, { weekday: "long", hour: "2-digit", minute: "2-digit" })}</p>
+        <p className="meta">{fmtDate(e.start_at, t, { weekday: "long", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
         {(e.venue_name || e.area) && (
           <p className="meta">📍 {[e.venue_name, e.area && label(t.areas, e.area)].filter(Boolean).join(" · ")}</p>
         )}

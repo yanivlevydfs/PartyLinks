@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8", "types-PyYAML>=6"]
+dev = ["pytest>=8", "types-PyYAML>=6", "ruff>=0.17"]
 
 [project.scripts]
 partylinks = "partylinks.cli:main"

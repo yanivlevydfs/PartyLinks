@@ -16,8 +16,13 @@ Everything is served through a REST API.
 | `zygo` (zygo.co.il) | `api.zygo.co.il/v1/event/<city>`, `skip` plus repeated passes (the API shuffles results) | `__NEXT_DATA__` on the event page, including tickets |
 | `tickchak` (live.tickchak.co.il) | slider sections found in the page's `__NEXT_DATA__`; `offset` until `count` | carried in the list items (aggregator: price range + provider link) |
 | `selector` (selector.org.il) | `api.selector.org.il/event/list`, `skip`/`take` until `totalCount` | `/event?id=<id>`, including tickets |
+| `megatickets` (megatickets.co.il) | public `/events` page (event links; robots.txt disallows `/api/`) | schema.org `MusicEvent` JSON-LD on the event page, including tickets |
+| `eventbuzz` (eventbuzz.co.il) | `/events` (single server-rendered page) | `/lp/event/<slug>` HTML; selectors and labels in config |
+| `popit` (popit.events) | `/explore/all`; the page data embeds every event (robots.txt disallows `/api`) | none needed; no ticket tiers (links out to the seller, merged by dedup) |
 
-Every scraper reads the site's own JSON over plain HTTP. It doesn't parse HTML layouts and doesn't need a browser.
+Scrapers read the site's own JSON (or schema.org data) over plain HTTP where it exists; Eventbuzz has none, so its HTML is parsed with selectors kept in config. No browser is needed.
+
+**Checked and not added:** T-TLV (no live site at t-tlv.com), Ticketnet (ticketnet.co.il no longer answers; last working capture 2024), GetIn (public catalogue has no Israeli events right now; the getin.xyz sitemap + schema.org pages would work if that changes).
 
 **Chillz (`chillz`)** sits behind a Vercel Security Checkpoint (a JavaScript bot challenge), so live runs are recorded as `blocked` until Chillz allows PartyLinks (a Firewall rule on the `PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS` key, an IP allowlist, or an API/export). Until then, use the **inbox**: open an event page in your browser, save it with `Ctrl+S` into `data/chillz_inbox/`, and every run imports it with all ticket tiers, artwork, venue and categories. Saved pages keep their original URL, so they never duplicate events collected live later.
 

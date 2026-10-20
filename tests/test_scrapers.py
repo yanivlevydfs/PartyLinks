@@ -122,3 +122,37 @@ def test_grayclub_cards_and_event_page() -> None:
     assert event.start_at is not None and (event.start_at.hour, event.start_at.minute) == (21, 0)
     assert event.min_price == Decimal(98) and event.tickets[0].kind is TicketKind.PAID
     assert event.address and event.extra["purchase_url"] and event.images
+
+
+def test_hulyo_feed_filters_areas_and_merges_promoted() -> None:
+    from partylinks.config import Settings
+    from partylinks.scrapers import hulyo
+
+    cfg = hulyo.HulyoSettings.model_validate(Settings().sources["hulyo"])
+    feed = load("hulyo_shows")
+    assert len(hulyo.list_deals(feed, [])) == 3
+    deals = hulyo.list_deals(feed, cfg.areas)
+    assert len(deals) == 1 and deals[0]["areaName"] == "תל אביב והמרכז"
+
+    event = hulyo.parse_event(deals[0], cfg, TZ)
+    assert event.title and event.venue_name and event.address
+    assert event.start_at is not None and event.start_at.utcoffset() is not None
+    assert event.min_price is not None and event.tickets[0].kind is TicketKind.PAID
+    assert f"id={deals[0]['id']}" in str(event.url)
+
+
+def test_mevalim_rows_deal_price_and_sold_out() -> None:
+    from partylinks.scrapers import mevalim
+
+    rows = mevalim.parse_rows((FIXTURES / "mevalim_rows.html").read_text(encoding="utf-8"))
+    region = "https://www.mevalim.co.il/central/"
+    on_sale, sold = (mevalim.parse_row(r, region, TZ) for r in rows)
+
+    assert on_sale.source_event_id == "131652" and on_sale.title == "חידון חברים"
+    assert (on_sale.venue_name, on_sale.city) == ("ספוט הוסטל", "תל אביב")
+    assert on_sale.start_at is not None and (on_sale.start_at.day, on_sale.start_at.hour) == (20, 21)
+    assert on_sale.min_price == Decimal(54) and on_sale.extra["original_price"] == 66
+    assert str(on_sale.url) == "https://tickets.mevalim.co.il/event/dV8dtbEB15BVjYo"  # tracking query dropped
+    assert not on_sale.is_sold_out
+
+    assert sold.is_sold_out and str(sold.url) == region and sold.min_price is None

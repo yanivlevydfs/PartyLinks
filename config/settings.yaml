@@ -174,6 +174,11 @@ dedup:
   title_similarity: 0.85
   max_start_gap_minutes: 60
   max_distance_meters: 300
+  # Same title (95%+) and start within 15 min: one listing may only pin the area
+  # ("Tel Aviv Port") instead of the club, so allow up to 1500 m.
+  strong_title_similarity: 0.95
+  strong_max_start_gap_minutes: 15
+  strong_max_distance_meters: 1500
   title_stopwords: ["the", "x", "and", "with", "feat", "ft", "tlv", "tel", "aviv", "night", "party",
                     "מסיבת", "מסיבה", "ב", "עם", "את"]
   # Direct sellers before aggregators; first listed wins as the primary listing.
@@ -330,6 +335,27 @@ sources:
       show_type: סוג מופע
       parking: חניון קרוב
 
+  mevalim:
+    enabled: true
+    cron: "10 * * * *"
+    site_url: https://www.mevalim.co.il
+    # Region page: prints the ajax nonce and hosts the performances table.
+    region_path: /central/
+    ajax_path: /wp-admin/admin-ajax.php
+    ajax_action: mevalim_load_more_events
+    table_id: 40265      # "הופעות במרכז" table (data-table-id on its load-more button)
+    page_size: 20
+    max_pages: 100
+
+  # One static feed with every show deal in Israel; kept for the listed areas.
+  hulyo:
+    enabled: true
+    cron: "20 * * * *"
+    site_url: https://www.hulyo.co.il
+    feed_path: /dynamic/client/shows.json
+    event_page_path: /product?id={id}&category=shows&step=show-details
+    areas: ["תל אביב והמרכז"]
+
   # chillz.com is behind a Vercel Security Checkpoint. Runs are recorded as
   # "blocked" until the owner allows PartyLinks; then collection starts with no
   # code change. Supply the agreed access header via the environment only:
@@ -351,3 +377,45 @@ sources:
       user_agent: "PartyLinks/1.0 (event aggregator; contact via site owner)"
       concurrency: 4
       request_delay_seconds: 1.0
+
+  megatickets:
+    enabled: true
+    cron: "0 * * * *"
+    site_url: https://www.megatickets.co.il
+    # robots.txt disallows /api/ and /search: listing and details come from public pages only.
+    list_path: /events
+    event_page_path: /events/{slug}
+    max_events: 500
+
+  eventbuzz:
+    enabled: true
+    cron: "30 * * * *"
+    site_url: https://eventbuzz.co.il
+    # Single server-rendered listing page (no API, no pagination).
+    listing_path: /events
+    event_path_prefix: /lp/event/
+    selectors:
+      card_link: .content-element a[href]
+      info_items: .detailsDiv .text-center
+      description: .descDiv
+      # The ticket table is rendered twice (desktop + mobile); rows are deduped by id.
+      ticket_row: tr[id^="tid-"]
+      ticket_name: td
+      ticket_price: input.priceTag
+      ticket_original_price: input.origPriceTag
+      ticket_remaining: input.tickAvailable
+      ticket_on_sale: select.tQuantity
+      service_fee: "#servicefeesum"
+    labels:
+      start: התחלה
+      location: מיקום
+
+  popit:
+    # Aggregator: today every listing links out to Zygo (merged by dedup via extra.purchase_url);
+    # adds lineups, genres and coordinates. No ticket tiers (Popit only links to the seller).
+    enabled: true
+    cron: "28 * * * *"
+    site_url: https://popit.events
+    # robots.txt disallows /api; the public listing page embeds every event.
+    listing_path: /explore/all
+    event_page_path: /event/{event_id}

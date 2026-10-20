@@ -142,13 +142,13 @@ class Geocoder:
         self._pins = {k.lower(): v for k, v in settings.venues.items()}
 
     # ------------------------------------------------------------------ public
-    def locate_missing(self, network: bool = True) -> GeoStats:
+    def locate_missing(self, network: bool = True, stop: threading.Event | None = None) -> GeoStats:
         """Fill coordinates of upcoming events that have none. Safe to call any time."""
         stats = GeoStats()
         if not self.settings.enabled:
             return stats
         if network:
-            stats.lookups = self._lookup_new()
+            stats.lookups = self._lookup_new(stop)
         with self.db.session() as session:
             known_venue, known_street = self._known(session)
             cache = {c.query: c for c in session.scalars(select(GeoCacheRow).where(GeoCacheRow.found.is_(True)))}
@@ -201,7 +201,7 @@ class Geocoder:
         return center is None or meters(center, (hit.latitude, hit.longitude)) <= self.settings.max_area_distance_m
 
     # ------------------------------------------------------------------ network
-    def _lookup_new(self) -> int:
+    def _lookup_new(self, stop: threading.Event | None = None) -> int:
         """Ask Nominatim for events still without a place: per event, candidates in order,
         stopping at the first trusted answer. Misses are cached and retried after a while."""
         retry_before = utcnow() - timedelta(days=self.settings.retry_failed_days)
@@ -220,6 +220,8 @@ class Geocoder:
             headers={"User-Agent": self.settings.user_agent, "Accept-Language": "he,en"}, timeout=20
         ) as client:
             for row in pending:
+                if stop is not None and stop.is_set():
+                    return asked  # shutting down: don't hold the process for minutes of 1 req/s lookups
                 for query in candidates(row):
                     hit = cache.get(query)
                     if hit is None or (not hit.found and hit.looked_up_at < retry_before):

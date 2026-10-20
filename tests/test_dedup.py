@@ -95,3 +95,16 @@ def test_free_or_cheaper_listing_on_another_source_is_never_hidden(tmp_path: Pat
         assert client.get("/events", params={"max_price": 50}).json()["total"] == 1
         detail = client.get("/events/goout:a").json()
         assert [t["kind"] for t in detail["alternatives"][0]["tickets"]] == ["free", "paid"]
+
+
+def test_area_level_pin_merges_only_on_same_title_and_time(tmp_path: Path) -> None:
+    port = (32.0962, 34.7732)  # an aggregator's "Tel Aviv Port" pin, ~460 m from the club
+    _, groups = grouped(tmp_path, [
+        listing("goout", "a", "FRIDAY MAINSTREAM | 06.11"),
+        listing("popit", "b", "FRIDAY MAINSTREAM | 06.11", where=port),
+        listing("popit", "c", "SATURDAY TECHNO NIGHT", where=port),  # other party, same coarse pin
+        listing("popit", "d", "FRIDAY MAINSTREAM | 06.11", start=START + timedelta(hours=2), where=port),
+    ])  # fmt: skip
+    assert groups["goout:a"][0] == groups["popit:b"][0]
+    assert groups["popit:c"][0] != groups["goout:a"][0]
+    assert groups["popit:d"][0] != groups["goout:a"][0]  # same title, different time

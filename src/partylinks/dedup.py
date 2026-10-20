@@ -109,7 +109,16 @@ class Deduplicator:
             return False
         distance = _distance_m(a, b)
         if distance is not None:
-            return distance <= self.settings.max_distance_meters
+            if distance <= self.settings.max_distance_meters:
+                return True
+            s = self.settings
+            gap = abs((a.start - b.start).total_seconds()) if a.start and b.start else None
+            return (
+                gap is not None
+                and gap <= s.strong_max_start_gap_minutes * 60
+                and matcher.ratio() >= s.strong_title_similarity
+                and distance <= s.strong_max_distance_meters
+            )
         if a.venue_slug and b.venue_slug:
             return a.venue_slug == b.venue_slug
         return True  # one side has no location: title + time decide

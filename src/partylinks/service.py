@@ -161,7 +161,7 @@ class ScrapeService:
     def geocode(self, network: bool = True) -> dict[str, int]:
         """Give map coordinates to upcoming events that have only an address."""
         with self._geo_lock:
-            return self.geocoder.locate_missing(network).as_dict()
+            return self.geocoder.locate_missing(network, stop=self._stopping).as_dict()
 
     def recompute_areas(self) -> int:
         """Re-derive ``area`` for every stored event from the current config. Returns rows changed."""
@@ -284,10 +284,11 @@ class ScrapeService:
         if status == "success" and failures:
             status = "partial"
 
-        try:
-            await asyncio.to_thread(_with_db_retry, "track changes", lambda: self._track_changes(source, run_id, status))
-        except Exception:  # noqa: BLE001 - bookkeeping only; the events are saved
-            log.exception("source %s: change tracking failed", source)
+        if not self._stopping.is_set():  # shutting down: the run is recorded as interrupted on next start
+            try:
+                await asyncio.to_thread(_with_db_retry, "track changes", lambda: self._track_changes(source, run_id, status))
+            except Exception:  # noqa: BLE001 - bookkeeping only; the events are saved
+                log.exception("source %s: change tracking failed", source)
 
         result = RunResult(run_id, source, status, found, saved, len(failures), error)
         try:
