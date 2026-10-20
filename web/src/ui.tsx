@@ -75,7 +75,7 @@ export function Layout() {
     <>
       <header className="top">
         <div className="wrap top-row">
-          <Link className="logo" to="/">Pul<span>se</span></Link>
+          <Link className="logo" to="/">{lang === "he" ? <>דו<span>פק</span></> : <>Pul<span>se</span></>}</Link>
           <nav className="nav">
             <NavLink to="/" end>{t.nav.parties}</NavLink>
             <NavLink to="/map">{t.nav.map}</NavLink>
@@ -89,7 +89,7 @@ export function Layout() {
       </header>
       <Outlet />
       <footer className="foot wrap">
-        Pulse · Israel · <Link to="/accessibility">{t.accessibility}</Link>
+        {lang === "he" ? "דופק · ישראל" : "Pulse · Israel"} · <Link to="/accessibility">{t.accessibility}</Link>
       </footer>
     </>
   );
