@@ -126,3 +126,36 @@ export interface Categories {
   event_types: Facet[];
   sources: Facet[];
 }
+
+export interface PostCategory {
+  key: string;
+  he: string;
+  en: string;
+  posts?: number;
+}
+
+export interface PostSummary {
+  slug: string;
+  title: string;
+  description: string;
+  date: string;
+  updated: string;
+  category: PostCategory;
+  image: string | null;
+  read_minutes: number;
+}
+
+export interface PostList {
+  categories: PostCategory[];
+  items: PostSummary[];
+}
+
+/** A post body: HTML chunks and live event lists (an /events query). */
+export type PostBlock = { html: string } | { events: Record<string, string> };
+
+export interface Post extends PostSummary {
+  blocks: PostBlock[];
+  toc: { id: string; title: string }[];
+  faq: { q: string; a: string }[];
+  related: PostSummary[];
+}

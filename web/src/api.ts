@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import type { Categories, EventDetail, EventPage, EventSummary } from "./types";
+import type { Categories, EventDetail, EventPage, EventSummary, Post, PostList } from "./types";
 
 export type Params = Record<string, string | string[] | undefined>;
 
@@ -50,3 +50,9 @@ export const useEvent = (id: string) =>
 
 export const useCategories = () =>
   useQuery({ queryKey: ["categories"], queryFn: () => getJSON<Categories>("/categories"), staleTime: 5 * 60_000 });
+
+export const usePosts = (category?: string) =>
+  useQuery({ queryKey: ["posts", category], queryFn: () => getJSON<PostList>(`/posts${category ? `?category=${encodeURIComponent(category)}` : ""}`) });
+
+export const usePost = (slug: string) =>
+  useQuery({ queryKey: ["post", slug], queryFn: () => getJSON<Post>(`/posts/${encodeURIComponent(slug)}`) });

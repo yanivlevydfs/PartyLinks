@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -39,7 +39,7 @@ AI_CRAWLERS = [
 ROBOTS_PRIVATE = ["/admin", "/admin/api/", "/docs", "/redoc", "/openapi.json", "/health", "/runs", "/sources",
                   "/maintenance", "/changes"]
 
-TEXT = {
+TEXT: dict[str, dict[str, str]] = {
     "he": {
         "site_title": "Pulse דופק · כל האירועים בישראל",
         "site_desc": "כל האירועים, המסיבות וההופעות בכל הארץ במקום אחד: תאריכים, ליינאפ, מחירי כרטיסים, כניסה חופשית, מקומות ומפה. מתעדכן כל הזמן.",
@@ -54,7 +54,6 @@ TEXT = {
         "lineup": "ליינאפ",
         "tickets": "לכרטיסים",
         "not_found": "העמוד לא נמצא",
-        "days": ["שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת", "ראשון"],
         "locale": "he_IL",
     },
     "en": {
@@ -71,9 +70,12 @@ TEXT = {
         "lineup": "Lineup",
         "tickets": "Tickets",
         "not_found": "Page not found",
-        "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
         "locale": "en_US",
     },
+}
+DAYS = {
+    "he": ["שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת", "ראשון"],
+    "en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
 }
 
 
@@ -111,6 +113,7 @@ class Page:
     noindex: bool = False
     status: int = 200
     og_type: str = "website"
+    langs: tuple[str, ...] = ("he", "en")  # languages the content exists in (blog posts: Hebrew only)
 
 
 # --------------------------------------------------------------------------- helpers
@@ -132,7 +135,7 @@ def _when(row: EventRow, cfg: Settings, lang: str) -> str:
     if row.start_at is None:
         return ""
     local = row.start_at.astimezone(ZoneInfo(cfg.timezone))
-    return f"{TEXT[lang]['days'][local.weekday()]} {local:%d/%m/%Y %H:%M}"
+    return f"{DAYS[lang][local.weekday()]} {local:%d/%m/%Y %H:%M}"
 
 
 def _price(row: EventRow, lang: str) -> str:
@@ -624,7 +627,7 @@ def landing_page(
 
 def _landing_links(session: Session, cfg: Settings, lang: str) -> str:
     """Links from the home page, so crawlers reach every landing page."""
-    links = [(p, he if lang == "he" else en) for p, he, en in _landing_paths(session, cfg)]
+    links = [(p, he if lang == "he" else en) for p, he, en in [*_landing_paths(session, cfg), ("/blog", "המגזין", "Magazine")]]
     return "<nav><ul>" + "".join(f'<li><a href="{p}">{escape(n)}</a></li>' for p, n in links) + "</ul></nav>"
 
 
@@ -636,7 +639,7 @@ def _jsonld_tag(data: dict[str, Any]) -> str:
 
 
 def render(template: str, page: Page, cfg: Settings) -> str:
-    canonical = _url(cfg, page.path, page.lang)
+    canonical = _url(cfg, page.path, page.lang if page.lang in page.langs else page.langs[0])
     image = page.image or f"{cfg.site.base_url}/og-default.png"
     t = TEXT[page.lang]
     other = "en" if page.lang == "he" else "he"
@@ -644,9 +647,9 @@ def render(template: str, page: Page, cfg: Settings) -> str:
         f"<title>{escape(page.title)}</title>",
         f'<meta name="description" content="{escape(page.description)}" />',
         f'<link rel="canonical" href="{escape(canonical)}" />',
-        f'<link rel="alternate" hreflang="he" href="{escape(_url(cfg, page.path, "he"))}" />',
-        f'<link rel="alternate" hreflang="en" href="{escape(_url(cfg, page.path, "en"))}" />',
-        f'<link rel="alternate" hreflang="x-default" href="{escape(_url(cfg, page.path, "he"))}" />',
+        *(f'<link rel="alternate" hreflang="{code}" href="{escape(_url(cfg, page.path, code))}" />'
+          for code in page.langs if len(page.langs) > 1),
+        *([f'<link rel="alternate" hreflang="x-default" href="{escape(_url(cfg, page.path, "he"))}" />'] if len(page.langs) > 1 else []),
         '<meta name="robots" content="noindex, nofollow" />' if page.noindex
         else '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />',
         f'<meta property="og:type" content="{page.og_type}" />',
@@ -656,7 +659,7 @@ def render(template: str, page: Page, cfg: Settings) -> str:
         f'<meta property="og:url" content="{escape(canonical)}" />',
         f'<meta property="og:image" content="{escape(image)}" />',
         f'<meta property="og:locale" content="{t["locale"]}" />',
-        f'<meta property="og:locale:alternate" content="{TEXT[other]["locale"]}" />',
+        *([f'<meta property="og:locale:alternate" content="{TEXT[other]["locale"]}" />'] if len(page.langs) > 1 else []),
         '<meta name="twitter:card" content="summary_large_image" />',
         f'<meta name="twitter:title" content="{escape(page.title)}" />',
         f'<meta name="twitter:description" content="{escape(page.description)}" />',
@@ -665,6 +668,7 @@ def render(template: str, page: Page, cfg: Settings) -> str:
         '<meta name="geo.region" content="IL" />',
         '<meta name="geo.placename" content="Israel" />',
         '<link rel="alternate" type="text/plain" title="llms.txt" href="/llms.txt" />',
+        f'<link rel="alternate" type="application/rss+xml" title="{escape(cfg.site.name)}" href="/blog/rss.xml" />',
         *(_jsonld_tag(d) for d in page.jsonld),
     ]
     html = template.replace("<!--seo-->", "\n    ".join(head), 1)
@@ -685,7 +689,7 @@ def _strip_title(html: str, keep: str) -> str:
 # --------------------------------------------------------------------------- crawl files
 def sitemap(session: Session, cfg: Settings) -> str:
     rows = session.scalars(select(EventRow).where(upcoming_filter()).order_by(EventRow.start_at)).all()
-    paths: list[tuple[str, datetime | None]] = [("/", None), ("/map", None), ("/venues", None), ("/artists", None), ("/accessibility", None)]
+    paths: list[tuple[str, date | None]] = [("/", None), ("/map", None), ("/venues", None), ("/artists", None), ("/accessibility", None)]
     today = datetime.now(ZoneInfo(cfg.timezone))  # landing pages change every day
     paths += [(p, today) for p, _, _ in _landing_paths(session, cfg)]
     paths += [(event_path(r), r.last_seen_at) for r in rows]
@@ -701,6 +705,16 @@ def sitemap(session: Session, cfg: Settings) -> str:
             f'<xhtml:link rel="alternate" hreflang="x-default" href="{he}"/>'
         )
         urls += [f"<url><loc>{u}</loc>{lastmod}{alternates}</url>" for u in (he, en)]
+    # The blog is Hebrew only: one URL each, no alternates.
+    from partylinks import blog
+
+    posts = blog.load_posts(cfg)
+    blog_paths = [("/blog", posts[0].modified if posts else None)]
+    blog_paths += [(f"/blog/category/{k}", None) for k in sorted({p.category for p in posts})]
+    blog_paths += [(f"/blog/{p.slug}", p.modified) for p in posts]
+    for path, modified in blog_paths:
+        lastmod = f"<lastmod>{modified:%Y-%m-%d}</lastmod>" if modified else ""
+        urls.append(f"<url><loc>{escape(_url(cfg, path))}</loc>{lastmod}</url>")
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
@@ -723,6 +737,8 @@ def robots(cfg: Settings) -> str:
 
 def llms_txt(session: Session, cfg: Settings) -> str:
     """https://llmstxt.org — a plain summary of the site and its live listings for AI assistants."""
+    from partylinks import blog
+
     base = cfg.site.base_url
     rows = _upcoming(session, limit=LLMS_LIMIT)
     now = datetime.now(ZoneInfo(cfg.timezone))
@@ -744,11 +760,15 @@ def llms_txt(session: Session, cfg: Settings) -> str:
         *(f"- [{en}]({base}{p}?lang=en): upcoming events, with an FAQ (free events, cheapest ticket)"
           for p, _, en in _landing_paths(session, cfg)),
         "",
+        "## Magazine (Hebrew guides, with live event lists)",
+        *(f"- [{p.title}]({base}/blog/{p.slug}): {p.description}" for p in blog.load_posts(cfg)),
+        "",
         "## Data (JSON API, no key needed)",
         f"- [Events]({base}/events): filters `date=YYYY-MM-DD`, `weekend=true`, `genre`, `artist`, `venue`, "
         "`city`, `free_entry=true`, `time_slot` (morning/afternoon/evening/night), `area` (south, rothschild, center, business, "
         "beach, north, jaffa, outside), `min_price`, `max_price`, `q`; paged with `page`, `page_size`",
         f"- [Event detail]({base}/events/{{id}}): tickets, prices, fees, images",
+        f"- [Magazine posts]({base}/posts): blog posts as JSON; `/posts/{{slug}}` for one post",
         f"- [Categories]({base}/categories): counts per genre, date, venue, artist",
         *([f"- [OpenAPI schema]({base}/openapi.json)"] if cfg.security.api_docs else []),
         "",
@@ -781,9 +801,9 @@ def register(app: FastAPI, site_dir: Path) -> None:
         with request.app.state.db.session() as session:
             return PlainTextResponse(llms_txt(session, cfg(request)), media_type="text/markdown; charset=utf-8")
 
+    from partylinks import blog
+
     index = site_dir / "index.html"
-    if not index.is_file():
-        return
 
     def page(request: Request, build: Any) -> HTMLResponse:
         lang = "en" if request.query_params.get("lang") == "en" else "he"
@@ -795,6 +815,10 @@ def register(app: FastAPI, site_dir: Path) -> None:
                           body=f"<h1>{t['not_found']}</h1>")  # fmt: skip
         html = render(index.read_text(encoding="utf-8"), result, cfg(request))
         return HTMLResponse(html, status_code=result.status)
+
+    blog.register(app, page if index.is_file() else None)
+    if not index.is_file():
+        return
 
     @app.get("/", include_in_schema=False)
     def home(request: Request) -> HTMLResponse:

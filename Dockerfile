@@ -30,6 +30,7 @@ RUN python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml
 
 COPY src/ src/
 COPY config/ config/
+COPY content/ content/
 COPY --from=web /web/dist web/dist
 
 # SQLite DB, artist dictionary, images, inboxes: mount a volume here or everything resets on deploy.

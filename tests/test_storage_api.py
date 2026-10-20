@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from partylinks.api import create_app
@@ -278,3 +279,39 @@ def test_other_cities_are_purged_when_focusing_on_tel_aviv(tmp_path: Path) -> No
     purge_expired(db, media, settings.retention, settings.timezone, drop_other_cities=True)
     with db.session() as session:
         assert {row.id for row in session.query(EventRow)} == {"test:tlv", "test:unknown"}
+
+
+def test_blog_posts_pages_feed_and_live_embeds(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from partylinks import blog
+
+    settings = settings_for(tmp_path)
+    tz = ZoneInfo(settings.timezone)
+    tonight = datetime.combine(datetime.now(tz).date(), time(23, 30), tzinfo=tz)
+    seed(settings, [event(str(i), tonight + timedelta(days=i)) for i in range(3)])
+    content = tmp_path / "blog"
+    content.mkdir()
+    (content / "guide.html").write_text(
+        '---\ntitle: "מדריך טכנו"\ndescription: "תיאור"\ndate: 2026-01-01\ncategory: music\n'
+        'faq:\n  - q: "שאלה?"\n    a: "תשובה."\n---\n<h2>הכי טוב</h2><p>שלום</p>\n<!--events genre=techno limit=2-->\n<p>סוף</p>',
+        encoding="utf-8",
+    )
+    (content / "later.html").write_text("---\ntitle: t\ndescription: d\ndate: 2999-01-01\n---\n<p>x</p>", encoding="utf-8")
+    (content / "broken.html").write_text("---\ntitle: [\n---\n", encoding="utf-8")
+
+    posts = blog.load_posts(settings, content)
+    assert [p.slug for p in posts] == ["guide"]  # future-dated and broken posts are hidden
+    assert blog.toc(posts[0]) == [{"id": "הכי-טוב", "title": "הכי טוב"}]
+    assert [list(b) for b in blog.blocks(posts[0], settings)] == [["html"], ["events"], ["html"]]
+    assert blog.blocks(posts[0], settings)[1]["events"] == {"page_size": "2", "genre": "techno"}
+
+    monkeypatch.setattr(blog, "CONTENT_DIR", content)
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        assert client.get("/posts").json()["items"][0]["category"]["key"] == "music"
+        assert client.get("/posts/guide").json()["faq"] == [{"q": "שאלה?", "a": "תשובה."}]
+        assert client.get("/posts/later").status_code == 404
+        assert "מדריך טכנו" in client.get("/blog/rss.xml").text
+        assert "/blog/guide" in client.get("/sitemap.xml").text and "/blog/guide" in client.get("/llms.txt").text
+        page = client.get("/blog/guide")
+        if page.status_code != 404:  # server-rendered pages need the React build (web/dist)
+            assert '"BlogPosting"' in page.text and '"FAQPage"' in page.text
+            assert "Techno night 0" in page.text and 'hreflang="en"' not in page.text

@@ -58,7 +58,7 @@ HEADERS = [
 ]
 # Public listings may be reused briefly by browsers and a CDN in front (Cloudflare), so a burst of
 # visitors hits the database once per window. Vite asset names carry a content hash: cache forever.
-PUBLIC_API = ("/events", "/categories", "/changes", "/site")
+PUBLIC_API = ("/events", "/categories", "/changes", "/site", "/posts")
 
 
 def _cache_policy(path: str) -> bytes | None:

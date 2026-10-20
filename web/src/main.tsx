@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import { ArtistPage, ArtistsIndex, VenuePage, VenuesIndex } from "./pages/Browse";
 import NotFound from "./pages/NotFound";
 import AccessibilityPage from "./pages/Accessibility";
+import { BlogIndex, BlogPost } from "./pages/Blog";
 import { useStore } from "./store";
 import { Layout } from "./ui";
 import "./styles.css";
@@ -44,6 +45,9 @@ const router = createBrowserRouter([
       { path: "/venue/:name", element: <VenuePage /> },
       { path: "/artists", element: <ArtistsIndex /> },
       { path: "/artist/:name", element: <ArtistPage /> },
+      { path: "/blog", element: <BlogIndex /> },
+      { path: "/blog/category/:category", element: <BlogIndex /> },
+      { path: "/blog/:slug", element: <BlogPost /> },
       { path: "/accessibility", element: <AccessibilityPage /> },
       { path: "/admin", element: <Suspense><AdminPage /></Suspense> },
       { path: "*", element: <NotFound /> },
