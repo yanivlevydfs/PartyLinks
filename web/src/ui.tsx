@@ -75,7 +75,7 @@ export function Layout() {
     <>
       <header className="top">
         <div className="wrap top-row">
-          <Link className="logo" to="/">Party<span>Links</span></Link>
+          <Link className="logo" to="/">Pul<span>se</span></Link>
           <nav className="nav">
             <NavLink to="/" end>{t.nav.parties}</NavLink>
             <NavLink to="/map">{t.nav.map}</NavLink>
