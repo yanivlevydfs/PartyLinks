@@ -410,14 +410,14 @@ sources:
     # Read on top of every category and slider found on the home page (discover).
     categories: ["parties"]
     discover: true
+    # Producers whose full event list is read too: toMix (to-mix.co.il) embeds its Eventer
+    # profile for checkout, and most of its ~200 performances are on no Eventer slider.
+    users: ["tomix"]
     list_path: /sliders/categories/{category}/events.js
     event_details_path: /events/explainNames/{link_name}.js
     ticket_types_path: /events/{event_id}/ticketTypes.js
     # Artist catalog (~180, photo + social links); profiles of new artists are fetched up to max_new_artists a run.
     artists_path: /eventContainer/Artist/listByType.js
-    # Producers whose full event list is read too: toMix (to-mix.co.il) embeds its Eventer
-    # profile for checkout, and most of its ~200 performances are on no Eventer slider.
-    users: ["tomix"]
     artist_path: /Artist/{link_name}/byLink.js
     artist_page_path: /artists/{link_name}
     max_new_artists: 40
@@ -724,6 +724,21 @@ sources:
     event_page_prefix: /event/
     http:
       concurrency: 4
+
+  eventim:
+    # Eventim Israel: event pages from the events sitemap (gzip, ~660), each parsed from its
+    # schema.org JSON-LD (venue, performer, prices per seating category). robots.txt disallows
+    # /api/ and /search/; the homepage refuses non-browser clients, the sitemap and pages do not.
+    enabled: true
+    cron: "13 8,20 * * *"
+    site_url: https://www.eventim.co.il
+    sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
+    http:
+      # A browser user agent from a non-browser client gets the connection dropped; an honest one does not.
+      user_agent: "Mozilla/5.0 (compatible; PartyLinks/1.0)"
+      # Akamai answers 403 after ~100 quick requests (the run then stops as blocked): one at a time.
+      concurrency: 1
+      request_delay_seconds: 1.5
 
   smarticket:
     # Smarticket white-label box offices: one GET /api/shows per tenant (prices inline).
