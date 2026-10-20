@@ -23,6 +23,7 @@ export const STRINGS = {
     isNew: "חדש",
     privacy: "מדיניות פרטיות",
     cookieSettings: "הגדרות עוגיות",
+    disclaimer: "פולס רק אוסף ומציג אירועים שנמכרים באתרים אחרים. האתר ובעליו אינם אחראים לאירועים, לתוכנם, למחירים או לשינויי מחיר. הרכישה וכל פרטי האירוע הם באחריות המארגן ואתר הכרטיסים.",
     mapGate: {
       title: "המפה נטענת מ-OpenStreetMap",
       text: "כדי להציג את המפה, הדפדפן יפנה לשרתי OpenStreetMap, שיקבלו את כתובת ה-IP שלך. הנקודות של האירועים כבר מסומנות; אישור יציג את רקע המפה.",
@@ -147,6 +148,7 @@ export const STRINGS = {
     updatedBadge: "Updated",
     privacy: "Privacy policy",
     cookieSettings: "Cookie settings",
+    disclaimer: "Pulse only collects and shows events sold on other sites. The site and its owners are not responsible for the events, their content, prices or price changes. Purchases and all event details are the responsibility of the organizer and the ticket site.",
     mapGate: {
       title: "The map loads from OpenStreetMap",
       text: "To show the map, your browser will contact OpenStreetMap's servers, which receive your IP address. The event pins are already shown; allowing it adds the map underneath.",

@@ -109,6 +109,7 @@ export function Layout() {
         {lang === "he" ? "פולס · ישראל" : "Pulse · Israel"} · <Link to="/accessibility">{t.accessibility}</Link>
         {" · "}<Link to="/privacy">{t.privacy}</Link>
         {" · "}<button className="linkish" onClick={openConsent}>{t.cookieSettings}</button>
+        <p className="foot-disclaimer">{t.disclaimer}</p>
       </footer>
       {/* Phones: the main sections as a thumb-reach tab bar instead of a header row that scrolls off. */}
       <nav className="tabbar" aria-label={t.nav.parties}>
