@@ -25,6 +25,7 @@ export default function MapPage() {
   return (
     <main className="map-page">
       <div className="map-bar wrap">
+        <h1 className="sr-only">{t.nav.map}</h1>
         {isError ? t.error : isPending ? t.loading : (
           <>
             <span>{t.onMap(placed)}</span>

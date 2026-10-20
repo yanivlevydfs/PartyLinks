@@ -15,7 +15,7 @@ export interface Filters {
   sort: string;
 }
 
-const DEFAULT_FILTERS: Filters = {
+export const DEFAULT_FILTERS: Filters = {
   q: "", when: "all", genres: [], slot: null, region: null, areas: [], city: null, freeOnly: false, hideSoldOut: false, sort: "start_at",
 };
 
@@ -24,7 +24,10 @@ interface State {
   setLang: (lang: Lang) => void;
   // Home-page filters live here so they survive visiting an event and coming back.
   filters: Filters;
-  setFilter: <K extends keyof Filters>(key: K, value: Filters[K]) => void;
+  setFilters: (patch: Partial<Filters>) => void;
+  // Set by a landing page (/city/x, /genre/x...): its preset is dropped when the plain home page opens.
+  preset: boolean;
+  setPreset: (preset: boolean) => void;
 }
 
 export const useStore = create<State>()(
@@ -33,7 +36,9 @@ export const useStore = create<State>()(
       lang: "he",
       setLang: (lang) => set({ lang }),
       filters: DEFAULT_FILTERS,
-      setFilter: (key, value) => set((s) => ({ filters: { ...s.filters, [key]: value } })),
+      setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
+      preset: false,
+      setPreset: (preset) => set({ preset }),
     }),
     { name: "partylinks", partialize: (s) => ({ lang: s.lang }) },
   ),
