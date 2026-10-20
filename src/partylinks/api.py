@@ -332,12 +332,15 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
             service.shutdown()
             db.engine.dispose()
 
+    docs = settings.security.api_docs
     app = FastAPI(
         title="Pulse API",
         version="0.1.0",
         description="Party events across Israel scraped from Israeli ticketing sites.",
         lifespan=lifespan,
-        **({} if settings.security.api_docs else {"docs_url": None, "redoc_url": None, "openapi_url": None}),
+        docs_url="/docs" if docs else None,
+        redoc_url="/redoc" if docs else None,
+        openapi_url="/openapi.json" if docs else None,
     )
     app.state.settings = settings  # read by SecurityMiddleware before the lifespan finishes too
     app.add_middleware(SecurityMiddleware)
