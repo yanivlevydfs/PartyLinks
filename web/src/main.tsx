@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, useLocation } from "react-router-dom";
 import EventPage from "./pages/EventPage";
 import Home from "./pages/Home";
 import { ArtistPage, ArtistsIndex, VenuePage, VenuesIndex } from "./pages/Browse";
@@ -19,16 +19,25 @@ const AdminPage = lazy(() => import("./pages/Admin"));
 const urlLang = new URLSearchParams(location.search).get("lang");
 if (urlLang === "he" || urlLang === "en") useStore.getState().setLang(urlLang);
 
+// Landing URLs that exist as routes but not as pages (/city/haifa with no events, an unknown genre):
+// the server answered 404, which it marks noindex (landing pages never are). Show the 404 page for
+// that URL instead of an empty listing.
+const serverMissing = document.querySelector('meta[name="robots"][content^="noindex"]') ? location.pathname : null;
+type LandingKind = "tonight" | "weekend" | "genre" | "city";
+function Landing({ landing }: { landing: LandingKind }) {
+  return useLocation().pathname === serverMissing ? <NotFound /> : <Home landing={landing} />;
+}
+
 const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
       { path: "/", element: <Home /> },
-      { path: "/tonight", element: <Home landing="tonight" /> },
-      { path: "/weekend", element: <Home landing="weekend" /> },
-      { path: "/genre/:genre", element: <Home landing="genre" /> },
-      { path: "/genre/:genre/:when", element: <Home landing="genre" /> },
-      { path: "/city/:city", element: <Home landing="city" /> },
+      { path: "/tonight", element: <Landing landing="tonight" /> },
+      { path: "/weekend", element: <Landing landing="weekend" /> },
+      { path: "/genre/:genre", element: <Landing landing="genre" /> },
+      { path: "/genre/:genre/:when", element: <Landing landing="genre" /> },
+      { path: "/city/:city", element: <Landing landing="city" /> },
       { path: "/event/:id", element: <EventPage /> },
       { path: "/map", element: <Suspense><MapPage /></Suspense> },
       { path: "/venues", element: <VenuesIndex /> },
