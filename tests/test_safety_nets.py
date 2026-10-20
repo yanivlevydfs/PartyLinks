@@ -85,6 +85,30 @@ def test_shutdown_stops_a_running_source_and_keeps_what_it_collected(tmp_path: P
         assert session.query(ScrapeRunRow).one().status == "interrupted"
 
 
+def test_shutdown_saves_even_when_the_thread_pool_is_closed(tmp_path: Path, monkeypatch: Any) -> None:
+    """At interpreter exit asyncio.to_thread refuses work; the final save and run record still land."""
+    service, db = make_service(tmp_path)
+    monkeypatch.setattr(service_module, "build_scraper", lambda name, settings: _SlowSource(service._stopping))
+    to_thread = asyncio.to_thread
+
+    async def closed_after_shutdown(fn: Any, *args: Any) -> Any:
+        if service._stopping.is_set():
+            raise RuntimeError("cannot schedule new futures after shutdown")
+        return await to_thread(fn, *args)
+
+    monkeypatch.setattr(service_module.asyncio, "to_thread", closed_after_shutdown)
+    _SlowSource.first_yielded.clear()
+
+    future = service.start_source("goout", trigger="test")
+    assert _SlowSource.first_yielded.wait(timeout=10)
+    service.shutdown()
+
+    assert future.result(timeout=10).status == "interrupted"
+    with db.session() as session:
+        assert [e.source_event_id for e in session.query(EventRow)] == ["before-shutdown"]
+        assert session.query(ScrapeRunRow).one().status == "interrupted"
+
+
 def test_no_new_runs_start_after_shutdown(tmp_path: Path) -> None:
     service, _ = make_service(tmp_path)
     service.shutdown()

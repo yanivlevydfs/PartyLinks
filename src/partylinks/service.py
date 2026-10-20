@@ -224,6 +224,14 @@ class ScrapeService:
         return await asyncio.wrap_future(self._maintenance.submit(self._purge_in_thread))
 
     # ------------------------------------------------------------------ worker threads
+    async def _blocking[R](self, fn: Callable[..., R], *args: Any) -> R:
+        """Run blocking work off the event loop; inline while shutting down. The interpreter then
+        refuses new thread-pool work ("cannot schedule new futures after shutdown"), and this source
+        has its own thread anyway, so saving inline only holds up this source."""
+        if self._stopping.is_set():
+            return fn(*args)
+        return await asyncio.to_thread(fn, *args)
+
     def _run_in_thread(self, source: str, trigger: str, lock: threading.Lock) -> RunResult:
         try:
             return asyncio.run(self._run(source, trigger))
@@ -266,7 +274,7 @@ class ScrapeService:
             if batch:
                 events = list(batch.values())
                 batch.clear()
-                saved += await asyncio.to_thread(self._save, events, failures)
+                saved += await self._blocking(self._save, events, failures)
 
         deadline = asyncio.timeout(timeout)
         try:
@@ -326,7 +334,7 @@ class ScrapeService:
                 await self._post_step(source, "regroup", failures, asyncio.to_thread(self.regroup))
             # Saving overwrote coordinates with what the source sent; restore / look up the rest.
             await self._post_step(source, "geocode", failures, asyncio.to_thread(self.geocode))
-        if scraper is not None and scraper.artist_profiles:  # used for lineups from the next run on
+        if scraper is not None and scraper.artist_profiles and not self._stopping.is_set():  # lineups, next run on
             await self._post_step(
                 source, "artist profiles", failures, asyncio.to_thread(self.artists.save_profiles, scraper.artist_profiles)
             )
@@ -341,7 +349,7 @@ class ScrapeService:
 
         result = RunResult(run_id, source, status, found, saved, len(failures), error)
         try:
-            await asyncio.to_thread(_with_db_retry, "finish run", lambda: self._finish_run(result, failures))
+            await self._blocking(_with_db_retry, "finish run", lambda: self._finish_run(result, failures))
         except Exception:  # noqa: BLE001 - startup recovery marks it interrupted later
             log.exception("source %s: could not record run %s", source, run_id)
         log.info("source %s finished: %s", source, result)
