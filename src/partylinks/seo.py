@@ -715,7 +715,7 @@ def _jsonld_tag(data: dict[str, Any]) -> str:
 
 def render(template: str, page: Page, cfg: Settings) -> str:
     canonical = _url(cfg, page.path, page.lang if page.lang in page.langs else page.langs[0])
-    image = page.image or f"{cfg.site.base_url}/og-default.png"
+    image = page.image or f"{cfg.site.base_url}/og-default.png?v=pulse"
     t = TEXT[page.lang]
     other = "en" if page.lang == "he" else "he"
     head = [
