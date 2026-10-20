@@ -33,8 +33,8 @@ COPY config/ config/
 COPY content/ content/
 COPY --from=web /web/dist web/dist
 
-# SQLite DB, artist dictionary, images, inboxes: mount a volume here or everything resets on deploy.
-VOLUME ["/app/data"]
+# SQLite DB, artist dictionary, images, inboxes: mount a volume at /app/data or everything resets on
+# deploy (Railway: a service volume; it refuses a VOLUME instruction here).
 EXPOSE 8000
 
 # $PORT is set by Railway; the public domain becomes the site's canonical URL unless set explicitly.
