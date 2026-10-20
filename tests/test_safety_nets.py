@@ -218,7 +218,9 @@ def test_event_without_artwork_keeps_or_borrows_one() -> None:
 
     assert title_key("יוסי וג'אגר - תיאטרון הבימה") == title_key("יוסי וג׳אגר") is not None
     assert title_key("A-1") is None  # too short to match safely
-    by_title = {title_key("Yossi & Jagger"): "https://img/borrowed.jpg"}
+    key = title_key("Yossi & Jagger")
+    assert key is not None
+    by_title = {key: "https://img/borrowed.jpg"}
 
     kept = event("1", "Yossi & Jagger - Habima")
     fill_artwork(kept, {"1": ["https://img/own.jpg"]}, by_title)
