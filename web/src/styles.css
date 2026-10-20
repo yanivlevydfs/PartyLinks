@@ -55,11 +55,11 @@ button, input, select { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 8px; }
 ::selection { background: var(--pink); color: #fff; }
 
-.wrap { max-width: 1280px; margin: 0 auto; padding: 0 16px; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); }
 
 /* ------------------------------------------------------------------ header */
 .top {
-  position: sticky; top: 0; z-index: 1000;
+  position: sticky; top: 0; z-index: 1000; padding-top: env(safe-area-inset-top);
   background: rgb(6 4 11 / .6);
   backdrop-filter: blur(18px) saturate(1.4);
   border-bottom: 1px solid var(--line);
@@ -205,7 +205,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 
 /* ------------------------------------------------------------------ cards */
-.grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
+.grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr)); }
 .card {
   position: relative; display: flex; flex-direction: column;
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
@@ -301,7 +301,7 @@ button, input, select { font: inherit; color: inherit; }
 .foot { color: var(--muted); padding: 40px 16px; text-align: center; margin-top: 48px; border-top: 1px solid var(--line); font-family: var(--display); letter-spacing: 2px; }
 
 /* ------------------------------------------------------------------ event page */
-.event { position: relative; isolation: isolate; padding-bottom: 20px; }
+.event { position: relative; isolation: isolate; padding-bottom: 20px; overflow-x: clip; }
 .e-backdrop {
   position: absolute; inset: 0 0 auto; height: 620px; z-index: -1;
   background: center / cover no-repeat;
@@ -348,11 +348,11 @@ button, input, select { font: inherit; color: inherit; }
 .t-price { text-align: end; flex: none; }
 .t-price b { font: 900 20px/1.1 var(--display); }
 .desc { white-space: pre-line; color: #ddd3f5; margin: 0; max-width: 75ch; font-size: 16px; }
-.gallery { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.gallery { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr)); }
 .g-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); }
 
 /* ------------------------------------------------------------------ venues / artists */
-.facet-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.facet-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); }
 .facet {
   display: grid; gap: 4px; padding: 18px 20px; color: var(--text);
   background: var(--panel); border: 1px solid var(--line); border-radius: 16px; backdrop-filter: blur(8px);
@@ -373,7 +373,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 
 /* ------------------------------------------------------------------ map */
-.map-page { display: flex; flex-direction: column; height: calc(100vh - 68px); }
+.map-page { display: flex; flex-direction: column; height: calc(100dvh - 68px - env(safe-area-inset-top)); }
 .map-bar { display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; padding-block: 12px; color: var(--text); font-weight: 500; }
 .map-bar small { color: var(--muted); }
 .map { flex: 1; min-height: 360px; background: #0a0612; }
@@ -422,11 +422,11 @@ button, input, select { font: inherit; color: inherit; }
   color: var(--muted); text-transform: capitalize; font-weight: 500;
 }
 .adm-tabs button.on { color: var(--text); border-bottom-color: var(--pink); text-shadow: 0 0 12px rgb(255 46 147 / .5); }
-.adm-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.adm-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); }
 .adm-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; backdrop-filter: blur(10px); display: grid; gap: 12px; align-content: start; }
 .adm-card.wide { grid-column: 1 / -1; }
 .adm-card h3 { margin: 0; font: 700 12px/1 var(--display); letter-spacing: 2.5px; text-transform: uppercase; color: var(--pink); }
-.adm-stats { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.adm-stats { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(110px, 100%), 1fr)); }
 .adm-stat { display: grid; gap: 2px; min-width: 0; }
 .adm-stat small { color: var(--muted); font-size: 12px; }
 .adm-stat b { font: 900 24px/1.1 var(--display); }
@@ -652,7 +652,7 @@ html .asw-menu-btn svg { filter: drop-shadow(0 1px 2px rgb(40 0 80 / .6)); }
 
 /* ------------------------------------------------------------------ magazine */
 a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
-.post-grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); margin-top: 22px; }
+.post-grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); margin-top: 22px; }
 .post-card {
   display: flex; flex-direction: column; overflow: hidden; color: inherit;
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
@@ -686,7 +686,7 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 .post ul, .post ol { padding-inline-start: 22px; }
 .post li { margin: 6px 0; }
 .post strong { color: #fff; }
-.post-events { margin: 22px 0; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.post-events { margin: 22px 0; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); }
 .post a.card { text-decoration: none; color: inherit; }
 .post-faq details { border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin: 10px 0; background: var(--panel); }
 .post-faq summary { cursor: pointer; font-weight: 700; }
