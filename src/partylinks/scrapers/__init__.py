@@ -27,6 +27,7 @@ from partylinks.scrapers.secrettelaviv import SecretTelAvivScraper
 from partylinks.scrapers.pres import PresScraper
 from partylinks.scrapers.selector import SelectorScraper
 from partylinks.scrapers.smarticket import SmarticketScraper
+from partylinks.scrapers.teder import TederScraper
 from partylinks.scrapers.tickchak import TickchakScraper
 from partylinks.scrapers.ticketmaster import TicketmasterScraper
 from partylinks.scrapers.tiktik import TiktikScraper
@@ -62,6 +63,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         SecretTelAvivScraper,
         TiktikScraper,
         GagarinScraper,
+        TederScraper,
     )
 }
 

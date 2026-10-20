@@ -359,6 +359,7 @@ geocoding:
     "היכל התרבות תל אביב": [32.0734714, 34.7800344]    # Charles Bronfman Auditorium
     "תיאטרון גשר": [32.0560976, 34.7600771]            # Gesher Theatre, Jaffa
     "נא לגעת": [32.0529513, 34.7503489]                # Nalaga'at Center, Jaffa Port
+    "בית רומנו": [32.0599, 34.7716]                    # Beit Romano (Teder, Rafi), Derech Yafo 9
     "maze tlv": [32.0622584, 34.7789901]               # MAZE nightclub, HaSharon 12 (OSM nightclub node)
     "the place tlv": [32.0535, 34.7627]                # THE PLACE, Kibbutz Galuyot 52 (old Barby building)
     "פולי בר": [32.0644504, 34.7759825]                # Polly, Rothschild Blvd 60 (OSM tags its city as Holon by mistake)
@@ -719,6 +720,30 @@ sources:
     http:
       concurrency: 4
       request_delay_seconds: 0.2
+
+  teder:
+    # Teder radio's nights at Beit Romano (Rafi room, yard, studio): no API, so the homepage's
+    # event cards are read and each /events/<id> page parsed. Most nights are free and on no
+    # ticket site. robots.txt is absent (404).
+    enabled: true
+    cron: "27 8,20 * * *"
+    site_url: https://www.teder.fm
+    listing_path: /
+    event_path_prefix: /events/
+    selectors:
+      card_link: .category-events a.link
+      title: h1.content-main-title
+      date: .content-header .item-date
+      time: .content-header .item-time
+      room: .content-header .location-txt
+      price: .content-header .event-price
+      description: section.content-body
+    free_labels: [כניסה חופשית, כניסה חינם]
+    venue_name: בית רומנו
+    address: דרך יפו 9, תל אביב-יפו
+    city: תל אביב-יפו
+    http:
+      concurrency: 2
 
   gagarin:
     # Gagarin club (gagarin.co.il): WordPress + The Events Calendar, whose JSON API lists every

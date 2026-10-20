@@ -19,6 +19,7 @@ Everything is served through a REST API.
 | `megatickets` (megatickets.co.il) | public `/events` page (event links; robots.txt disallows `/api/`) | schema.org `MusicEvent` JSON-LD on the event page, including tickets |
 | `eventbuzz` (eventbuzz.co.il) | `/events` (single server-rendered page) | `/lp/event/<slug>` HTML; selectors and labels in config |
 | `popit` (popit.events) | `/explore/all`; the page data embeds every event (robots.txt disallows `/api`) | none needed; no ticket tiers (links out to the seller, merged by dedup) |
+| `teder` (teder.fm, Beit Romano / Rafi) | event cards on the homepage | `/events/<id>` HTML; free entry read from the description; selectors in config |
 
 Scrapers read the site's own JSON (or schema.org data) over plain HTTP where it exists; Eventbuzz has none, so its HTML is parsed with selectors kept in config. No browser is needed.
 
