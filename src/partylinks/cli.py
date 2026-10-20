@@ -57,7 +57,9 @@ def _serve(reload: bool = False) -> int:
 
     settings = get_settings()
     # Only these proxies may set the client address (X-Forwarded-For); the Server header is dropped.
-    net = {"proxy_headers": True, "forwarded_allow_ips": ",".join(settings.security.trusted_proxies), "server_header": False}
+    net = {"proxy_headers": True, "forwarded_allow_ips": ",".join(settings.security.trusted_proxies), "server_header": False,
+           # Shed load past this many open connections (503) instead of slowing to a crawl; drop idle keep-alives fast.
+           "limit_concurrency": 200, "timeout_keep_alive": 5}
     if reload:
         # Development: restart on any change under src/. Config changes don't need it (admin -> apply).
         # Only the worker writes the log file: two processes on one file break rotation on Windows.

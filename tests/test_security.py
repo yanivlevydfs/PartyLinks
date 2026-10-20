@@ -42,3 +42,18 @@ def test_rate_limit_and_admin_brute_force(tmp_path: Path) -> None:
         assert b.get("/admin/api/overview", headers={"authorization": "Bearer nope"}).status_code == 401
         assert b.get("/admin/api/overview", headers={"authorization": "Bearer nope"}).status_code == 401
         assert b.get("/admin/api/overview", headers={"authorization": "Bearer s3cret"}).status_code == 403  # banned
+
+
+def test_cache_and_compression(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    settings.admin.token = SecretStr("s3cret")
+    settings.security.ban_after_strikes = 1
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app) as local, TestClient(app, client=("198.51.100.3", 1)) as outsider:
+        events = local.get("/events?size=100", headers={"accept-encoding": "gzip"})
+        assert events.headers["cache-control"].startswith("public, max-age=30")
+        assert "cache-control" not in local.get("/health").headers  # monitors always see live state
+        assert local.get("/admin/api/overview", headers={"authorization": "Bearer s3cret"}).headers["cache-control"] == "no-store"
+        # A wrong token on an admin-only API route counts as a strike too, not only under /admin.
+        assert outsider.post("/maintenance/retention", headers={"authorization": "Bearer nope"}).status_code == 401
+        assert outsider.get("/health").status_code == 403

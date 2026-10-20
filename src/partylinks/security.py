@@ -56,6 +56,17 @@ HEADERS = [
     (b"permissions-policy", b"camera=(), microphone=(), payment=(), usb=(), geolocation=(self)"),
     (b"cross-origin-opener-policy", b"same-origin"),
 ]
+# Public listings may be reused briefly by browsers and a CDN in front (Cloudflare), so a burst of
+# visitors hits the database once per window. Vite asset names carry a content hash: cache forever.
+PUBLIC_API = ("/events", "/categories", "/changes", "/site")
+
+
+def _cache_policy(path: str) -> bytes | None:
+    if path.startswith("/assets/"):
+        return b"public, max-age=31536000, immutable"
+    if path.startswith(PUBLIC_API):
+        return b"public, max-age=30, stale-while-revalidate=60"
+    return None
 
 
 class Guard:
@@ -155,6 +166,7 @@ class SecurityMiddleware:
 
         docs = path.startswith(DOCS_PATHS)  # Swagger UI needs inline scripts and a CDN
         https = scope.get("scheme") == "https"
+        cache = _cache_policy(path) if scope["method"] in ("GET", "HEAD") else None
 
         async def send_with_headers(message: dict[str, Any]) -> None:
             if message["type"] == "http.response.start":
@@ -166,8 +178,10 @@ class SecurityMiddleware:
                     out.append((b"strict-transport-security", b"max-age=31536000; includeSubDomains"))
                 if admin:
                     out.append((b"cache-control", b"no-store"))
-                    if message["status"] == 401 and not local:  # wrong token: brute-force guard
-                        self.guard.strike(ip, cfg, "bad admin token", time.monotonic())
+                elif cache and message["status"] == 200 and not any(k.lower() == b"cache-control" for k, _ in out):
+                    out.append((b"cache-control", cache))
+                if message["status"] == 401 and not local:  # wrong admin token on any route: brute-force guard
+                    self.guard.strike(ip, cfg, "bad admin token", time.monotonic())
                 message = {**message, "headers": out}
             await send(message)
 

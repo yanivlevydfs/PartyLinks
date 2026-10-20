@@ -14,6 +14,7 @@ from typing import Annotated, Any
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -343,7 +344,8 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
         openapi_url="/openapi.json" if docs else None,
     )
     app.state.settings = settings  # read by SecurityMiddleware before the lifespan finishes too
-    app.add_middleware(SecurityMiddleware)
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    app.add_middleware(SecurityMiddleware)  # outermost: rejects before any work is done
     _register_routes(app)
     app.include_router(admin_router)
     # The React site (web/), once built with `npm run build`. Mounted last so API routes win.
