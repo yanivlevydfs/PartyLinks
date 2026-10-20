@@ -44,10 +44,15 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
     : landing ? t.landing[landing] : t.tagline;
   useTitle(landing ? title : undefined);
 
-  // Debounce the search box; the store keeps what was typed.
+  // Debounce the search box; the store keeps what was typed. A new search starts from a clean
+  // filter, so leftover filters (date, area, genre...) never hide what was searched for.
   const [q, setQ] = useState(f.q);
   useEffect(() => {
-    const id = setTimeout(() => set({ q: q.trim() }), 300);
+    const id = setTimeout(() => {
+      const text = q.trim();
+      if (text === useStore.getState().filters.q) return;
+      set(text ? { ...DEFAULT_FILTERS, q: text } : { q: text });
+    }, 300);
     return () => clearTimeout(id);
   }, [q, set]);
 
