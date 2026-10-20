@@ -36,7 +36,7 @@ export function priceLabel(e: Pick<EventSummary, "entry_type" | "min_price" | "h
 const SOURCE_NAMES: Record<string, string> = {
   goout: "Go-Out", eventer: "Eventer", zygo: "Zygo", tickchak: "Tickchak",
   selector: "Selector", barby: "Barby", grayclub: "Gray Club", chillz: "Chillz",
-  mevalim: "Mevalim", hulyo: "Hulyo",
+  mevalim: "Mevalim", hulyo: "Hulyo", gagarin: "Gagarin",
 };
 export const sourceName = (source: string) => SOURCE_NAMES[source] ?? source;
 

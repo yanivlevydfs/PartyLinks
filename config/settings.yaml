@@ -720,6 +720,20 @@ sources:
       concurrency: 4
       request_delay_seconds: 0.2
 
+  gagarin:
+    # Gagarin club (gagarin.co.il): WordPress + The Events Calendar, whose JSON API lists every
+    # upcoming night. The site leaves the venue empty, so it is set here; the description's link to
+    # the seller (GO-OUT, Eventbuzz...) merges this listing with the seller's own.
+    enabled: true
+    cron: "46 8,20 * * *"
+    site_url: https://gagarin.co.il
+    venue_name: "גגרין | Gagarin Tel Aviv"
+    address: "קיבוץ גלויות 13, תל אביב-יפו"
+    city: תל אביב-יפו
+    ticket_hosts: [go-out.co, eventbuzz.co.il, eventer.co.il, zygo.co.il, tickchak.co.il, selector.org.il,
+                   smarticket.co.il, popit.events, leaan.co.il]
+    skip_categories: ["בקרוב", "כרטיסים זמינים לרכישה"]
+
   comy:
     # Comy stand-up box office (WordPress). Tickets are sold on PRES (tickets.comy.co.il), whose
     # robots.txt disallows all, so the home page lists show pages (/event/<slug>/) and each page
