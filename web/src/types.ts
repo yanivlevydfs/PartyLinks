@@ -102,7 +102,7 @@ export interface EventPage {
 export interface Facet {
   value: string;
   events: number;
-  area?: string; // venues only
+  area?: string; // venues: area of Tel Aviv; cities: region of the country
   // Artists only: verified profile curated by a ticket site (Go-Out, Eventer, Mevalim...).
   verified?: boolean;
   image_url?: string;
@@ -119,6 +119,7 @@ export interface Categories {
   days_of_week: Facet[];
   time_slots: Facet[];
   areas: Facet[];
+  regions: Facet[];
   entry_types: Facet[];
   venues: Facet[];
   cities: Facet[];

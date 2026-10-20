@@ -164,6 +164,15 @@ class AreaSettings(BaseModel):
     radius_m: float = Field(1000, gt=0)
 
 
+class RegionSettings(BaseModel):
+    """A region of the country, for events outside the target city. Matched by a place name in
+    the city / address / venue first, then by coordinates inside one of ``boxes``."""
+
+    key: str
+    places: list[str] = Field(default_factory=list)
+    boxes: list[tuple[float, float, float, float]] = Field(default_factory=list)  # lat_min, lat_max, lng_min, lng_max
+
+
 class EnrichmentSettings(BaseModel):
     target_city: TargetCitySettings = Field(default_factory=TargetCitySettings)
     cities: list[CitySettings] = Field(default_factory=list)
@@ -174,6 +183,9 @@ class EnrichmentSettings(BaseModel):
     weekend_days: list[str] = Field(default_factory=list)
     # Areas of the target city, in priority order; events outside it get area "outside".
     areas: list[AreaSettings] = Field(default_factory=list)
+    # Regions of the country, in priority order; an event outside the target city gets its region
+    # key as area ("abroad" when its coordinates fall in no box, else "outside").
+    regions: list[RegionSettings] = Field(default_factory=list)
     free_entry_keywords: list[str] = Field(default_factory=list)
     pay_at_door_keywords: list[str] = Field(default_factory=list)
 

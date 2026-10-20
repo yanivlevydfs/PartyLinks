@@ -86,10 +86,14 @@ export const STRINGS = {
     entry: { free: "חינם", paid: "בתשלום", free_and_paid: "חינם + בתשלום", unknown: "לא ידוע" },
     slots: { morning: "בוקר", afternoon: "צהריים", evening: "ערב", night: "לילה" },
     area: "אזור",
-    allAreas: "כל האזורים",
+    allAreas: "כל הארץ",
+    neighborhood: "שכונה",
+    city: "עיר",
     areas: <Record<string, string>>{
       south: "פלורנטין והדרום", rothschild: "רוטשילד ונווה צדק", center: "מרכז העיר", business: "שרונה והמגדלים",
-      beach: "חוף וטיילת", north: "נמל והצפון", jaffa: "יפו", outside: "מחוץ לתל אביב",
+      beach: "חוף וטיילת", north: "נמל והצפון", jaffa: "יפו", outside: "אחר",
+      tel_aviv: "תל אביב", gush_dan: "גוש דן והמרכז", sharon: "השרון", jerusalem: "ירושלים והסביבה",
+      haifa: "חיפה והקריות", galilee: "הצפון והגליל", negev: "הדרום והנגב", eilat: "אילת", abroad: "חו״ל",
     },
     days: {
       sunday: "ראשון", monday: "שני", tuesday: "שלישי", wednesday: "רביעי",
@@ -189,10 +193,14 @@ export const STRINGS = {
     entry: { free: "Free", paid: "Paid", free_and_paid: "Free + paid", unknown: "Unknown" },
     slots: { morning: "Morning", afternoon: "Afternoon", evening: "Evening", night: "Night" },
     area: "Area",
-    allAreas: "All areas",
+    allAreas: "All of Israel",
+    neighborhood: "Neighborhood",
+    city: "City",
     areas: <Record<string, string>>{
       south: "Florentin & South", rothschild: "Rothschild & Neve Tzedek", center: "City Center", business: "Sarona & Towers",
-      beach: "Beach & Promenade", north: "Port & North", jaffa: "Jaffa", outside: "Outside Tel Aviv",
+      beach: "Beach & Promenade", north: "Port & North", jaffa: "Jaffa", outside: "Other",
+      tel_aviv: "Tel Aviv", gush_dan: "Gush Dan & Center", sharon: "Sharon", jerusalem: "Jerusalem area",
+      haifa: "Haifa & Krayot", galilee: "North & Galilee", negev: "South & Negev", eilat: "Eilat", abroad: "Abroad",
     },
     days: {
       sunday: "Sunday", monday: "Monday", tuesday: "Tuesday", wednesday: "Wednesday",

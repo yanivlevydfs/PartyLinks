@@ -178,8 +178,8 @@ class ScrapeService:
         changed = 0
         with self.db.session() as session:
             for row in session.scalars(select(EventRow)):
-                area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, row.in_target_city)
                 city = self.enricher.canonical_city(row.city, row.address, row.venue_name)
+                area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, row.in_target_city, city)
                 if (area, city) != (row.area, row.city):
                     row.area, row.city, changed = area, city, changed + 1
         log.info("areas/cities: updated %d events", changed)

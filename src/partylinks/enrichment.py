@@ -15,7 +15,7 @@ from datetime import datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from partylinks.config import AreaSettings, EnrichmentSettings
+from partylinks.config import AreaSettings, EnrichmentSettings, RegionSettings
 from partylinks.models import EntryType, ScrapedEvent, TicketKind
 from partylinks.parsing import slugify
 
@@ -53,6 +53,7 @@ def _keyword_pattern(keywords: list[str]) -> re.Pattern[str] | None:
 
 
 OUTSIDE_AREA = "outside"
+ABROAD_AREA = "abroad"
 
 
 def meters(a: tuple[float, float], b: tuple[float, float]) -> float:
@@ -64,10 +65,13 @@ def meters(a: tuple[float, float], b: tuple[float, float]) -> float:
 
 
 class AreaMatcher:
-    """Area of the target city for an event (also used to backfill stored rows)."""
+    """Area of the target city, or region of the country outside it, for an event
+    (also used to backfill stored rows)."""
 
-    def __init__(self, areas: list[AreaSettings]) -> None:
+    def __init__(self, areas: list[AreaSettings], regions: list[RegionSettings] | None = None) -> None:
         self._areas = [(area, _keyword_pattern(area.keywords)) for area in areas]
+        self._regions = [(r, _place_pattern(r.places)) for r in regions or []]
+        self.region_keys = {r.key for r in regions or []} | {ABROAD_AREA, OUTSIDE_AREA}
 
     def match(
         self,
@@ -76,11 +80,12 @@ class AreaMatcher:
         latitude: float | None,
         longitude: float | None,
         in_target_city: bool | None,
+        city: str | None = None,
     ) -> str | None:
         if not self._areas:
             return None
         if in_target_city is False:
-            return OUTSIDE_AREA
+            return self.region(city, venue_name, address, latitude, longitude)
         if key := self.keyword_area(venue_name, address):
             return key
         if latitude is None or longitude is None:
@@ -89,6 +94,22 @@ class AreaMatcher:
         near = [(meters(here, a.center), a.key) for a, _ in self._areas if a.center]
         best = min(((d, key) for d, key in near if d <= self._radius(key)), default=None)
         return best[1] if best else None
+
+    def region(
+        self, city: str | None, venue_name: str | None, address: str | None,
+        latitude: float | None, longitude: float | None,
+    ) -> str:
+        """Region of an event outside the target city: a named place (city first), then coordinates."""
+        for text in (city, address, venue_name):
+            for region, pattern in self._regions:
+                if text and pattern and pattern.search(text.lower()):
+                    return region.key
+        if latitude is None or longitude is None or not self._regions:
+            return OUTSIDE_AREA
+        for region, _ in self._regions:
+            if any(a <= latitude <= b and c <= longitude <= d for a, b, c, d in region.boxes):
+                return region.key
+        return ABROAD_AREA
 
     def keyword_area(self, venue_name: str | None, address: str | None) -> str | None:
         """Area named by a street / neighbourhood keyword in the text, ignoring coordinates."""
@@ -146,7 +167,7 @@ class Enricher:
         self._blocked: set[str] = set()
         self._featured: tuple[re.Pattern[str] | None, dict[str, str]] = (None, {})
         self._weekend = {d.lower() for d in settings.weekend_days}
-        self.areas = AreaMatcher(settings.areas)
+        self.areas = AreaMatcher(settings.areas, settings.regions)
 
     def is_dropped(self, event: ScrapedEvent) -> bool:
         """True when enrich() would drop the event (another city while focusing on one)."""
@@ -169,7 +190,9 @@ class Enricher:
         self._categorize_time(event)
         event.city = self.canonical_city(event.city, event.address, event.venue_name)
         event.in_target_city = self._in_target_city(event)
-        event.area = self.areas.match(event.venue_name, event.address, event.latitude, event.longitude, event.in_target_city)
+        event.area = self.areas.match(
+            event.venue_name, event.address, event.latitude, event.longitude, event.in_target_city, event.city
+        )
         if event.in_target_city is False and self.settings.target_city.drop_other_cities:
             return None
         return event

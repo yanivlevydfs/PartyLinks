@@ -219,7 +219,7 @@ class Geocoder:
                 )
                 if point:
                     row.latitude, row.longitude = point
-                    row.area = self.areas.match(row.venue_name, row.address, *point, row.in_target_city)
+                    row.area = self.areas.match(row.venue_name, row.address, *point, row.in_target_city, row.city)
                     stats.located += 1
                 elif candidates(row):
                     stats.not_found += 1

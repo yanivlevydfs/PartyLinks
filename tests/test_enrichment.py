@@ -143,7 +143,7 @@ def test_entry_type_from_price_range_without_tiers() -> None:
 def test_target_city_matching() -> None:
     assert ENRICHER.enrich(make()).in_target_city is True  # type: ignore[union-attr]
     haifa = ENRICHER.enrich(make(address="Haifa, Israel"))  # every city is kept, flagged outside
-    assert haifa is not None and haifa.in_target_city is False and haifa.area == "outside"
+    assert haifa is not None and haifa.in_target_city is False and haifa.area == "haifa"
     tlv_only = SETTINGS.enrichment.model_copy(update={"target_city": SETTINGS.enrichment.target_city.model_copy(update={"drop_other_cities": True})})
     assert Enricher(tlv_only, SETTINGS.timezone).enrich(make(address="Haifa, Israel")) is None
 
@@ -186,8 +186,13 @@ def test_area_by_keyword_then_coordinates() -> None:
     # No keyword: nearest center within its radius.
     assert areas.match("Moonchild", "Moonchild, Tel Aviv-Yafo", 32.1002, 34.7745, True) == "north"
     assert areas.match("Somewhere", None, 31.0, 35.0, True) is None
-    # Outside the target city.
-    assert areas.match("Lobby Night Club", "מקלף 1, חיפה", 32.789, 34.98, False) == "outside"
+    # Outside the target city: the region, by place name (city first), then by coordinates.
+    assert areas.match("Lobby Night Club", "מקלף 1, חיפה", 32.789, 34.98, False) == "haifa"
+    assert areas.match("Bar", "אחוזה 120", None, None, False, "רעננה") == "sharon"
+    assert areas.match("Bar", "Main St", 31.25, 34.79, False) == "negev"
+    assert areas.match("Club", "Somewhere", 52.37, 4.9, False) == "abroad"
+    assert areas.match("Club", None, None, None, False, "Amsterdam") == "abroad"
+    assert areas.match("Club", None, None, None, False) == "outside"
 
 
 def test_hebrew_city_names_match_whole_words_only() -> None:

@@ -7,14 +7,16 @@ export interface Filters {
   when: string; // "all" | "tonight" | "weekend" | YYYY-MM-DD
   genres: string[];
   slot: string | null;
-  areas: string[];
+  region: string | null; // "tel_aviv" or a region of the country
+  areas: string[]; // Tel Aviv neighbourhoods, when region is tel_aviv
+  city: string | null; // a city of the region, when region is another one
   freeOnly: boolean;
   hideSoldOut: boolean;
   sort: string;
 }
 
 const DEFAULT_FILTERS: Filters = {
-  q: "", when: "all", genres: [], slot: null, areas: [], freeOnly: false, hideSoldOut: false, sort: "start_at",
+  q: "", when: "all", genres: [], slot: null, region: null, areas: [], city: null, freeOnly: false, hideSoldOut: false, sort: "start_at",
 };
 
 interface State {

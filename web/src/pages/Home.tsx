@@ -39,8 +39,9 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
     q: f.q.length >= 2 ? f.q : undefined,
     genre: f.genres,
     time_slot: f.slot ?? undefined,
-    area: f.areas,
-    city: cityName?.he,
+    in_target_city: f.region === "tel_aviv" ? "true" : undefined,
+    area: f.region === "tel_aviv" ? f.areas : f.region ? [f.region] : [],
+    city: cityName?.he ?? f.city ?? undefined,
     free_entry: f.freeOnly ? "true" : undefined,
     sold_out: f.hideSoldOut ? "false" : undefined,
     ...(f.when === "tonight" ? { date: today() } : f.when === "weekend" ? { weekend: "true" } : f.when !== "all" ? { date: f.when } : {}),
@@ -48,6 +49,16 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
 
   const toggleGenre = (g: string) => set("genres", f.genres.includes(g) ? f.genres.filter((x) => x !== g) : [...f.genres, g]);
   const toggleArea = (a: string) => set("areas", f.areas.includes(a) ? f.areas.filter((x) => x !== a) : [...f.areas, a]);
+  const pickRegion = (r: string | null) => {
+    set("region", r === f.region ? null : r);
+    set("areas", []);
+    set("city", null);
+  };
+  const regionKeys = new Set(cats?.regions?.map((r) => r.value));
+  // Under Tel Aviv: its neighbourhoods. Under another region: its cities.
+  const subAreas = f.region === "tel_aviv"
+    ? (cats?.areas ?? []).filter((a) => !regionKeys.has(a.value) && a.value !== "outside" && a.value !== "abroad")
+    : (cats?.cities ?? []).filter((c) => f.region && c.area === f.region);
   const dates = (cats?.dates ?? []).filter((d) => d.value >= today()).slice(0, 10);
 
   return (
@@ -68,12 +79,27 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
             ))}
           </FilterRow>
 
-          {!!cats?.areas?.length && (
+          {!!cats?.regions?.length && !cityName && (
             <FilterRow label={t.area}>
-              <Chip on={f.areas.length === 0} onClick={() => set("areas", [])}>{t.allAreas}</Chip>
-              {cats.areas.map((a) => (
+              <Chip on={!f.region} onClick={() => pickRegion(null)}>{t.allAreas}</Chip>
+              {cats.regions.map((r) => (
+                <Chip key={r.value} on={f.region === r.value} onClick={() => pickRegion(r.value)}>
+                  {label(t.areas, r.value)} <small>{r.events}</small>
+                </Chip>
+              ))}
+            </FilterRow>
+          )}
+
+          {f.region && subAreas.length > 1 && !cityName && (
+            <FilterRow label={f.region === "tel_aviv" ? t.neighborhood : t.city}>
+              <Chip on={!f.areas.length && !f.city} onClick={() => { set("areas", []); set("city", null); }}>{t.all}</Chip>
+              {subAreas.map((a) => f.region === "tel_aviv" ? (
                 <Chip key={a.value} on={f.areas.includes(a.value)} onClick={() => toggleArea(a.value)}>
                   {label(t.areas, a.value)} <small>{a.events}</small>
+                </Chip>
+              ) : (
+                <Chip key={a.value} on={f.city === a.value} onClick={() => set("city", f.city === a.value ? null : a.value)}>
+                  {a.value} <small>{a.events}</small>
                 </Chip>
               ))}
             </FilterRow>

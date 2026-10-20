@@ -239,7 +239,7 @@ class SourceOut(BaseModel):
 class FacetValue(BaseModel):
     value: str
     events: int
-    # Venues only: the area of the city the venue is in.
+    # Venues: the area of the city the venue is in. Cities: the region of the country.
     area: str | None = None
     # Artists only, when a ticket site curates the artist (see artists.py): verified profile.
     verified: bool | None = None
@@ -259,6 +259,8 @@ class Categories(BaseModel):
     days_of_week: list[FacetValue]
     time_slots: list[FacetValue]
     areas: list[FacetValue]
+    # Regions of the country: "tel_aviv" (the target city) plus the configured region keys.
+    regions: list[FacetValue]
     entry_types: list[FacetValue]
     venues: list[FacetValue]
     cities: list[FacetValue]
@@ -674,7 +676,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         query = select(
             EventRow.genres, EventRow.local_date, EventRow.day_of_week, EventRow.time_slot, EventRow.area,
             EventRow.group_entry_type, EventRow.venue_name, EventRow.city, EventRow.lineup, EventRow.event_types,
-            EventRow.source,
+            EventRow.source, EventRow.in_target_city,
         ).where(EventRow.is_primary.is_(True))  # fmt: skip
         if upcoming:
             query = query.where(upcoming_filter())
@@ -705,15 +707,28 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
             return out
 
         venue_area = {r.venue_name: r.area for r in rows if r.venue_name and r.area}
+        region_keys = request.app.state.service.enricher.areas.region_keys
+
+        def region(r: Any) -> str | None:
+            return "tel_aviv" if r.in_target_city else r.area if r.area in region_keys else None
+
+        city_regions = Counter((r.city, reg) for r in rows if r.city and (reg := region(r)))
+        city_region: dict[str, str] = {}
+        for (city, reg), _ in city_regions.most_common():
+            city_region.setdefault(city, reg)  # a city's most common region
         return Categories(
             genres=facet(lambda r: r.genres or [], None),
             dates=sorted(facet(lambda r: [r.local_date], None), key=lambda f: f.value),
             days_of_week=facet(lambda r: [r.day_of_week], None),
             time_slots=facet(lambda r: [r.time_slot], None),
             areas=facet(lambda r: [r.area], None),
+            regions=facet(lambda r: [region(r)], None),
             entry_types=facet(lambda r: [r.group_entry_type], None),
             venues=[f.model_copy(update={"area": venue_area.get(f.value)}) for f in facet(lambda r: [r.venue_name])],
-            cities=facet(lambda r: [r.city]),
+            cities=[
+                f.model_copy(update={"area": city_region.get(f.value)})
+                for f in facet(lambda r: [r.city])
+            ],
             lineup=artist_facet(),
             event_types=facet(lambda r: r.event_types or []),
             sources=facet(lambda r: [r.source], None),
