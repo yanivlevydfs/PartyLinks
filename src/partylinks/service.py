@@ -202,7 +202,9 @@ class ScrapeService:
                 if here is None and row.latitude is not None and row.longitude is not None and target and target.center:
                     here = meters(target.center, (row.latitude, row.longitude)) <= target.radius_m
                 area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, here, city)
-                country = row.country or (UNKNOWN_COUNTRY if area == ABROAD_AREA else None)
+                scraper = SCRAPERS.get(row.source)
+                abroad = area == ABROAD_AREA or (scraper is not None and scraper.abroad_only)
+                country = row.country or (UNKNOWN_COUNTRY if abroad else None)
                 if (area, city, here, country) != (row.area, row.city, row.in_target_city, row.country):
                     row.area, row.city, row.in_target_city, row.country = area, city, here, country
                     changed += 1

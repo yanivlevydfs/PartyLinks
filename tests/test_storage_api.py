@@ -416,6 +416,28 @@ def test_bare_venue_names_take_their_city_from_other_events(tmp_path: Path) -> N
     assert rows["haifa"] == (False, "haifa") and rows["unknown"] == (None, None)
 
 
+def test_stored_events_abroad_get_a_country(tmp_path: Path) -> None:
+    """Rows saved before countries were set: recompute moves them out of the Israeli feed."""
+    from partylinks.service import ScrapeService
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [
+        event("belfast", future, source="tiktik", venue_name="SSE Arena", address=None, city="Belfast"),
+        event("rome", future, address="Roma, Italy", latitude=41.9, longitude=12.5),
+        event("tlv", future),
+    ])  # fmt: skip
+    with db.session() as session:  # as stored by the old code: no country anywhere
+        for row in session.query(EventRow):
+            row.country = None
+    service = ScrapeService(settings, db)
+    service.recompute_areas()
+    with db.session() as session:
+        countries = {r.source_event_id: r.country for r in session.query(EventRow)}
+    service.shutdown()
+    assert countries == {"belfast": "ZZ", "rome": "ZZ", "tlv": None}
+
+
 def test_umbrella_genre_includes_its_sub_genres(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     settings.enrichment.genre_families = {"electronic": ["techno", "house"], "israeli": ["mizrahi"]}

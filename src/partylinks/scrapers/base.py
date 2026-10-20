@@ -96,6 +96,8 @@ async def gather_or_cancel[X](coros: Iterable[Coroutine[Any, Any, X]]) -> list[X
 class BaseScraper[S: SourceSettings](ABC):
     name: ClassVar[str]
     settings_model: ClassVar[type[SourceSettings]]
+    # Sells only events abroad: a stored event of this source with no country is abroad too.
+    abroad_only: ClassVar[bool] = False
 
     def __init__(self, settings: S, http: HttpSettings, timezone: str) -> None:
         self.settings = settings

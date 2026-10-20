@@ -43,6 +43,7 @@ class TiktikSettings(SourceSettings):
 class TiktikScraper(BaseScraper[TiktikSettings]):
     name = "tiktik"
     settings_model = TiktikSettings
+    abroad_only = True
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
