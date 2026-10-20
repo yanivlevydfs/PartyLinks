@@ -646,3 +646,17 @@ sources:
       - {host: mbe-rg, venue_name: בית עמנואל רמת גן, city: רמת גן}
       - {host: ashdod, venue_name: אשדוד, city: אשדוד}
       - {host: ashkelon, venue_name: אשקלון, city: אשקלון}
+
+  secrettelaviv:
+    # Curated city listings (WordPress Events Manager, HTML only). /tickets holds every upcoming
+    # event (50 rows a page, ?pno=N); each event page gives date, venue, categories, original-event link.
+    # Cloudflare may challenge automated clients: the run then stops as "blocked" (never worked around).
+    enabled: true
+    cron: "52 * * * *"
+    site_url: https://www.secrettelaviv.com
+    listing_paths: [/tickets]
+    page_size: 50
+    max_pages: 20
+    http:
+      concurrency: 2            # small site: ~380 event pages a run
+      request_delay_seconds: 1.0
