@@ -107,12 +107,30 @@ export function Layout() {
           ))}
         </nav>
         {lang === "he" ? "דופק · ישראל" : "Pulse · Israel"} · <Link to="/accessibility">{t.accessibility}</Link>
-      </footer>
         {" · "}<Link to="/privacy">{t.privacy}</Link>
         {" · "}<button className="linkish" onClick={openConsent}>{t.cookieSettings}</button>
+      </footer>
+      {/* Phones: the main sections as a thumb-reach tab bar instead of a header row that scrolls off. */}
+      <nav className="tabbar" aria-label={t.nav.parties}>
+        {TABS.map(([to, key, icon]) => (
+          <NavLink key={to} to={to} end={to === "/"}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{icon}</svg>
+            <span>{t.nav[key]}</span>
+          </NavLink>
+        ))}
+      </nav>
     </>
   );
 }
+
+const TABS: [string, keyof Strings["nav"], ReactNode][] = [
+  ["/", "parties", <><path d="M4 9.5 12 4l8 5.5V20H4z" /><path d="M9.5 20v-6h5v6" /></>],
+  ["/map", "map", <><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></>],
+  ["/venues", "venues", <><path d="M3 20h18M5 20V9l7-5 7 5v11" /><path d="M10 20v-5h4v5" /></>],
+  ["/artists", "artists", <><path d="M4 14v-2a8 8 0 0 1 16 0v2" /><rect x="3" y="14" width="4" height="6" rx="1.5" /><rect x="17" y="14" width="4" height="6" rx="1.5" /></>],
+  ["/abroad", "abroad", <><path d="m2.5 13.5 19-7-4 13-5.5-4-3 3v-5z" /><path d="m12 15.5 9.5-9" /></>],
+  ["/blog", "blog", <><path d="M5 4h11l3 3v13H5z" /><path d="M9 10h6M9 14h6M9 18h4" /></>],
+];
 
 export function Hero({ title, children }: { title: string; children?: ReactNode }) {
   return (
@@ -189,7 +207,8 @@ export function Card({ e }: { e: EventSummary }) {
       </div>
       <div className="card-body">
         <h3 dir="auto">{e.title}</h3>
-        <p className="meta">{fmtDate(e.start_at, t, { weekday: "long", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+        {/* The badge on the image already gives the date: here only the weekday and time. */}
+        <p className="meta">{fmtDate(e.start_at, t, { weekday: "short", hour: "2-digit", minute: "2-digit" })}</p>
         {(e.venue_name || e.area) && (
           <p className="meta">📍 {[e.venue_name, e.area && label(t.areas, e.area)].filter(Boolean).join(" · ")}</p>
         )}
@@ -203,7 +222,41 @@ export function Card({ e }: { e: EventSummary }) {
         </div>
       </div>
     </Link>
-    <Share path={eventPath(e)} title={e.title} />
+    <ShareButton path={eventPath(e)} title={e.title} />
+    </div>
+  );
+}
+
+/** One compact share button: the phone's own share sheet where there is one, else the share links in a popover. */
+export function ShareButton({ path, title }: { path: string; title: string }) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (ev: Event) => {
+      if (ev instanceof KeyboardEvent ? ev.key === "Escape" : !ref.current?.contains(ev.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, [open]);
+  const click = () => {
+    const url = window.location.origin + path;
+    if (navigator.share && matchMedia("(pointer: coarse)").matches) navigator.share({ title, url }).catch(() => {});
+    else setOpen(!open);
+  };
+  return (
+    <div className="share-one" ref={ref}>
+      <button className="share-btn" onClick={click} aria-label={t.share} title={t.share} aria-expanded={open}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4" />
+        </svg>
+      </button>
+      {open && <div className="share-pop"><Share path={path} title={title} /></div>}
     </div>
   );
 }

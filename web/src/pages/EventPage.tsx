@@ -128,6 +128,14 @@ export default function EventPage() {
           </section>
         )}
       </div>
+      {/* Phones: price + the ticket link stay in reach while reading lineup, tickets and description. */}
+      <div className="buy-bar">
+        <div>
+          <b>{e.is_sold_out ? t.soldOut : price}</b>
+          <small>{sourceName(e.source)}</small>
+        </div>
+        <a className="buy" href={e.url} target="_blank" rel="noopener noreferrer">{t.buy} ↗</a>
+      </div>
     </article>
   );
 }
