@@ -142,6 +142,10 @@ button, input, select { font: inherit; color: inherit; }
           mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent);
 }
 .chips::-webkit-scrollbar { display: none; }
+/* Desktop has room: wrap instead of scrolling, so no chip (or the selected one) is ever cut off. */
+@media (min-width: 761px) {
+  .chips { flex-wrap: wrap; overflow: visible; padding: 8px 0; -webkit-mask-image: none; mask-image: none; }
+}
 .chip {
   flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
   background: rgb(255 255 255 / .03); border: 1px solid var(--line); border-radius: 999px;
@@ -644,4 +648,54 @@ html .asw-menu-btn svg { filter: drop-shadow(0 1px 2px rgb(40 0 80 / .6)); }
   .nf-stage { grid-template-columns: auto; }
   .nf-speaker { display: none; }
   .nf-string { height: 36px; }
+}
+
+/* ------------------------------------------------------------------ magazine */
+a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
+.post-grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); margin-top: 22px; }
+.post-card {
+  display: flex; flex-direction: column; overflow: hidden; color: inherit;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  transition: transform .35s cubic-bezier(.2, .8, .2, 1), border-color .35s, box-shadow .35s;
+}
+.post-card:hover { transform: translateY(-4px); border-color: var(--line-hot); box-shadow: 0 0 30px rgb(255 46 147 / .25); }
+.post-img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.post-img.noimg { display: grid; place-items: center; font-size: 42px; background: var(--grad); opacity: .5; }
+.post-card-body { display: grid; gap: 8px; padding: 18px 20px 20px; }
+.post-card-body h3 { margin: 0; font: 700 21px/1.25 var(--display); }
+.post-card-body p { margin: 0; color: var(--muted); line-height: 1.55; }
+.post-card-body small { color: var(--muted); }
+.post-cat { color: var(--pink); font: 700 12px/1 var(--display); letter-spacing: 2px; }
+.post-card.featured { display: grid; grid-template-columns: 1.3fr 1fr; }
+.post-card.featured .post-img { height: 100%; aspect-ratio: auto; min-height: 260px; }
+.post-card.featured .post-card-body { align-content: center; padding: 28px 32px; }
+.post-card.featured h3 { font-size: clamp(24px, 3vw, 34px); }
+
+.post-layout { display: grid; grid-template-columns: 240px minmax(0, 760px); gap: 48px; justify-content: center; align-items: start; }
+.post-layout:not(:has(.post-toc)) { grid-template-columns: minmax(0, 760px); }
+.post-toc { position: sticky; top: 90px; display: grid; gap: 10px; font-size: 14px; }
+.post-toc b { color: var(--pink); font: 700 12px/1 var(--display); letter-spacing: 2px; }
+.post-toc ol { margin: 0; padding-inline-start: 18px; display: grid; gap: 8px; }
+.post-toc a { color: var(--muted); }
+.post-toc a:hover { color: var(--text); }
+.post { font-size: 18px; line-height: 1.8; }
+.post-lead { font-size: 21px; color: var(--muted); margin-top: 0; }
+.post h2 { margin: 44px 0 12px; font: 800 clamp(24px, 3vw, 32px)/1.2 var(--display); scroll-margin-top: 90px; }
+.post h3 { margin: 28px 0 8px; font: 700 20px/1.3 var(--display); }
+.post a { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; }
+.post ul, .post ol { padding-inline-start: 22px; }
+.post li { margin: 6px 0; }
+.post strong { color: #fff; }
+.post-events { margin: 22px 0; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.post a.card { text-decoration: none; color: inherit; }
+.post-faq details { border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin: 10px 0; background: var(--panel); }
+.post-faq summary { cursor: pointer; font-weight: 700; }
+.post-faq details p { margin: 10px 0 0; color: var(--muted); }
+
+@media (max-width: 900px) {
+  .post-layout { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .post-toc { position: static; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+  .post-card.featured { grid-template-columns: 1fr; }
+  .post-card.featured .post-img { min-height: 0; aspect-ratio: 16 / 9; }
+  .post { font-size: 17px; }
 }

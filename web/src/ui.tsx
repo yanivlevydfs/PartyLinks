@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useCategories, useEvents, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
@@ -82,6 +82,7 @@ export function Layout() {
             <NavLink to="/map">{t.nav.map}</NavLink>
             <NavLink to="/venues">{t.nav.venues}</NavLink>
             <NavLink to="/artists">{t.nav.artists}</NavLink>
+            <NavLink to="/blog">{t.nav.blog}</NavLink>
           </nav>
           <button className="lang" onClick={() => setLang(lang === "he" ? "en" : "he")} aria-label="Language">
             {lang === "he" ? "EN" : "עב"}
@@ -93,6 +94,7 @@ export function Layout() {
         <nav className="foot-links" aria-label={t.genres}>
           <Link to="/tonight">{t.tonight}</Link>
           <Link to="/weekend">{t.weekend}</Link>
+          <Link to="/blog">{t.nav.blog}</Link>
           {Object.entries(CITIES).filter(([, c]) => (cats?.cities.find((x) => x.value === c.he)?.events ?? 0) >= 3).map(([key, c]) => (
             <Link key={key} to={`/city/${key}`}>{c[lang]}</Link>
           ))}
@@ -119,8 +121,13 @@ export function Hero({ title, children }: { title: string; children?: ReactNode 
 
 // --------------------------------------------------------------------------- bits
 export function Chip({ on, onClick, children, className }: { on: boolean; onClick: () => void; children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  // In a scrolling chip row (mobile), bring a preselected chip (/genre/hip_hop) into view.
+  useEffect(() => {
+    if (on) ref.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <button className={"chip" + (className ? " " + className : "") + (on ? " on" : "")} aria-pressed={on} onClick={onClick}>
+    <button ref={ref} className={"chip" + (className ? " " + className : "") + (on ? " on" : "")} aria-pressed={on} onClick={onClick}>
       {children}
     </button>
   );
