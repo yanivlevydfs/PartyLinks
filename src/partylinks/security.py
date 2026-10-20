@@ -41,9 +41,10 @@ CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "script-src 'self'",
     # Leaflet positions tiles with inline styles; the fonts come from Google Fonts.
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
+    # The accessibility widget fetches its language packs and dyslexia font from jsDelivr (URLs hardcoded).
+    "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net/npm/sienna-accessibility/",
     "img-src 'self' data: blob: https:",  # map tiles and event artwork hosted by the sources
-    "connect-src 'self'",
+    "connect-src 'self' https://cdn.jsdelivr.net/npm/sienna-accessibility/",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
