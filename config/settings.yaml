@@ -12,9 +12,12 @@ database:
 
 # One format for app, uvicorn and access lines. INFO -> stdout, WARNING+ -> stderr, UTF-8, "\n".
 logging:
-  level: INFO                # DEBUG | INFO | WARNING | ERROR (`-v` forces DEBUG)
+  level: WARNING             # DEBUG | INFO | WARNING | ERROR: warnings and errors only by default
+  # Debug mode: everything (DEBUG level, every HTTP request, the HTTP client's lines). `-v`, the
+  # env var PARTYLINKS_LOGGING__DEBUG=true, or the switch in /admin (runtime, until restart).
+  debug: false
   format: text               # text | json (one JSON object per line, for Railway / log platforms)
-  access_log: true           # one line per HTTP request
+  access_log: true           # HTTP request lines: only failed ones (4xx/5xx) unless debug is on
   file: data/logs/partylinks.log   # rotating file; empty on hosts that collect stdout
   file_max_mb: 10
   file_backups: 5

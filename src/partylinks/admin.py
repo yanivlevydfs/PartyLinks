@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 
 from partylinks.config import Settings, config_path, get_settings, project_path
 from partylinks.db import EventRow, ImageRow, ScrapeRunRow, TicketRow, upcoming_filter
+from partylinks.logs import debug_enabled, set_debug
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import configured_sources
 from partylinks.service import ScrapeService, SourceBusyError
@@ -168,6 +169,23 @@ async def _watch(name: str, run: Any) -> None:
         await run
     except Exception:  # noqa: BLE001 - the run row records the outcome
         log.exception("admin full scan: %s failed", name)
+
+
+class DebugIn(BaseModel):
+    on: bool
+
+
+@router.get("/logging")
+def logging_state() -> dict[str, bool]:
+    return {"debug": debug_enabled()}
+
+
+@router.post("/logging")
+def logging_switch(body: DebugIn) -> dict[str, bool]:
+    """Debug logging on/off for this process, until restart (logging.debug in the YAML decides then)."""
+    set_debug(body.on)
+    log.warning("debug logging switched %s from admin", "on" if body.on else "off")
+    return {"debug": debug_enabled()}
 
 
 @router.post("/jobs/{job_id}/{action}")

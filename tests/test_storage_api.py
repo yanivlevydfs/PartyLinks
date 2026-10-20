@@ -364,3 +364,26 @@ def test_admin_scan_runs_all_enabled_or_the_chosen_sources(tmp_path: Path) -> No
         assert client.post("/admin/api/scan", json={"sources": ["goout", "eventer"]}).json()["started"] == ["goout", "eventer"]
         assert calls == ["goout", "eventer"]
         assert client.post("/admin/api/scan", json={"sources": ["nope"]}).status_code == 404
+
+
+def test_logging_is_quiet_by_default_and_debug_logs_everything(tmp_path: Path) -> None:
+    import logging
+
+    from partylinks.logs import debug_enabled, set_debug
+
+    def access(status: int) -> logging.LogRecord:
+        return logging.LogRecord("uvicorn.access", logging.INFO, "", 0, '%s - "%s %s HTTP/%s" %d',
+                                 ("1.2.3.4:0", "GET", "/images/1", "1.1", status), None)  # fmt: skip
+
+    settings = settings_for(tmp_path)
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        log = logging.getLogger("uvicorn.access")
+        assert not debug_enabled() and logging.getLogger().level == logging.WARNING
+        assert not log.filter(access(200)) and log.filter(access(404)) and log.filter(access(500))
+
+        assert client.post("/admin/api/logging", json={"on": True}).json() == {"debug": True}
+        assert logging.getLogger().level == logging.DEBUG and log.filter(access(200))
+        assert client.get("/admin/api/logging").json() == {"debug": True}
+        assert client.post("/admin/api/logging", json={"on": False}).json() == {"debug": False}
+        assert not log.filter(access(200))
+    set_debug(False)

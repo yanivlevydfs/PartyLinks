@@ -6,7 +6,9 @@
   for log platforms; ``text`` is for people;
 * streams are UTF-8 with ``\\n`` endings whatever the console code page (Hebrew titles never
   crash a log call on Windows);
-* an optional rotating UTF-8 file (``logging.file``) gets the same lines.
+* an optional rotating UTF-8 file (``logging.file``) gets the same lines;
+* quiet by default (``level: WARNING``, request lines only for 4xx/5xx); debug mode logs
+  everything and can be switched on at runtime with :func:`set_debug`.
 """
 
 from __future__ import annotations
@@ -54,6 +56,37 @@ class _RotatingFile(logging.handlers.RotatingFileHandler):
         return open(self.baseFilename, self.mode, encoding=self.encoding, errors=self.errors, newline="\n")
 
 
+class _FailedRequestsOnly(logging.Filter):
+    """uvicorn access lines carry (client, method, path, http_version, status): keep 4xx/5xx."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args if isinstance(record.args, tuple) else ()
+        try:
+            return len(args) < 5 or int(args[4]) >= 400
+        except (TypeError, ValueError):
+            return True
+
+
+_failed_only = _FailedRequestsOnly()
+_level = logging.WARNING  # the configured level, restored when debug is switched off
+
+
+def debug_enabled() -> bool:
+    return logging.getLogger().level == logging.DEBUG and _failed_only not in logging.getLogger("uvicorn.access").filters
+
+
+def set_debug(on: bool) -> None:
+    """Everything (DEBUG, every request, HTTP client lines) or back to the configured level."""
+    logging.getLogger().setLevel(logging.DEBUG if on else _level)
+    access = logging.getLogger("uvicorn.access")
+    if on:
+        access.removeFilter(_failed_only)
+    else:
+        access.addFilter(_failed_only)
+    for name in _QUIET:
+        logging.getLogger(name).setLevel(logging.DEBUG if on else logging.WARNING)
+
+
 class _UvicornName(logging.Filter):
     """uvicorn logs its lifecycle as "uvicorn.error" even at INFO; show it as "uvicorn"."""
 
@@ -94,13 +127,12 @@ def setup_logging(settings: LoggingSettings, verbose: bool = False) -> None:
         handler.addFilter(_UvicornName())
         setattr(handler, _MARK, True)
         root.addHandler(handler)
-    root.setLevel(logging.DEBUG if verbose else getattr(logging, settings.level))
-
-    for name in _QUIET:
-        logging.getLogger(name).setLevel(logging.WARNING)
+    global _level
+    _level = getattr(logging, settings.level)
     # uvicorn's loggers go through the root handlers instead of their own colour-coded ones.
     for name in _UVICORN:
         log = logging.getLogger(name)
         log.handlers.clear()
         log.propagate = True
     logging.getLogger("uvicorn.access").disabled = not settings.access_log
+    set_debug(verbose or settings.debug)

@@ -285,6 +285,27 @@ function Sources() {
   );
 }
 
+function DebugCard() {
+  const qc = useQueryClient();
+  const state = useQuery({ queryKey: ["logging"], queryFn: () => call<{ debug: boolean }>("/admin/api/logging") });
+  const on = !!state.data?.debug;
+  const flip = useMutation({ mutationFn: () => post("/admin/api/logging", { on: !on }), onSettled: () => qc.invalidateQueries({ queryKey: ["logging"] }) });
+  return (
+    <Card title="Logging">
+      <p className="adm-note">
+        Normally only warnings, errors and failed requests are logged. Debug logs everything (every request, scraper HTTP calls,
+        details) until the next restart; set <code>logging.debug: true</code> to keep it on.
+      </p>
+      <div className="adm-action">
+        <button className={`adm-btn ${on ? "" : "ghost"}`} onClick={() => flip.mutate()} disabled={flip.isPending || state.isLoading}>
+          {on ? "Debug is ON: switch off" : "Switch debug on"}
+        </button>
+        {flip.isError && <span className="adm-err">{String((flip.error as Error).message)}</span>}
+      </div>
+    </Card>
+  );
+}
+
 function Runs() {
   const [source, setSource] = useState("");
   const [status, setStatus] = useState("");
@@ -453,6 +474,7 @@ function Maintenance({ data }: { data: any }) {
         <p className="adm-note">Re-derive every event's area of the city from <code>enrichment.areas</code> (also runs on start and config apply).</p>
         <Action label="Recompute areas" run={() => post("/admin/api/maintenance/areas")} render={(x) => `${x.updated} events updated`} />
       </Card>
+      <DebugCard />
       <Card title="Duplicates">
         <p className="adm-note">Recompute which listings from different sources are the same party.</p>
         <Action label="Regroup duplicates" run={() => post("/admin/api/maintenance/regroup")} render={(x) => `${x.merged_groups} merged groups`} />

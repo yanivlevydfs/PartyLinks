@@ -37,10 +37,13 @@ def project_path(path: str | Path) -> Path:
 
 
 class LoggingSettings(BaseModel):
-    level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "WARNING"
+    # Debug mode: DEBUG level, every HTTP request (not only failed ones) and the HTTP client's own
+    # lines. Also switchable at runtime from /admin, until the next restart.
+    debug: bool = False
     # text: for people; json: one object per line for log platforms (Railway, Datadog, ...).
     format: Literal["text", "json"] = "text"
-    access_log: bool = True  # one line per HTTP request
+    access_log: bool = True  # HTTP request lines: only failed ones (4xx/5xx) unless debug is on
     # Optional rotating log file (relative to the project); unset on hosts that collect stdout.
     file: str | None = None
     file_max_mb: int = Field(10, ge=1)
