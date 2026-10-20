@@ -22,7 +22,7 @@ export const STRINGS = {
     events: (n: number) => `${n} אירועים`,
     locale: "he-IL",
     tagline: "כל האירועים במקום אחד.",
-    landing: { tonight: "מה עושים הערב?", weekend: "מה עושים בסופ״ש?", genre: (g: string) => `${g}: כל האירועים` },
+    landing: { tonight: "מה עושים הערב?", weekend: "מה עושים בסופ״ש?", genre: (g: string) => `${g}: כל האירועים`, city: (c: string) => `מה עושים ב${c}?`, genreTonight: (g: string) => `${g} הערב`, genreWeekend: (g: string) => `${g} בסופ״ש` },
     search: "חיפוש אירוע, אמן, מקום…",
     all: "הכל",
     tonight: "הערב",
@@ -104,7 +104,7 @@ export const STRINGS = {
     events: (n: number) => `${n} events`,
     locale: "en-GB",
     tagline: "All the events in one place.",
-    landing: { tonight: "What's on tonight?", weekend: "What's on this weekend?", genre: (g: string) => `${g} events` },
+    landing: { tonight: "What's on tonight?", weekend: "What's on this weekend?", genre: (g: string) => `${g} events`, city: (c: string) => `What's on in ${c}?`, genreTonight: (g: string) => `${g} tonight`, genreWeekend: (g: string) => `${g} this weekend` },
     search: "Search event, artist, venue…",
     all: "All",
     tonight: "Tonight",
@@ -168,3 +168,10 @@ export function genreLabel(lang: Lang, g: string): string {
   if (lang === "he") return STRINGS.he.genre[g] ?? g;
   return EN_GENRE_FIX[g] ?? g.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+// Mirrors enrichment.cities in config/settings.yaml: URL key -> canonical name stored on events.
+export const CITIES: Record<string, { he: string; en: string }> = {
+  "tel-aviv": { he: "תל אביב", en: "Tel Aviv" },
+  jerusalem: { he: "ירושלים", en: "Jerusalem" },
+  haifa: { he: "חיפה", en: "Haifa" },
+};

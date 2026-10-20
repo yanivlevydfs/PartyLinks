@@ -128,6 +128,7 @@ class Enricher:
         self._free = _keyword_pattern(settings.free_entry_keywords)
         self._pay_at_door = _keyword_pattern(settings.pay_at_door_keywords)
         self._city = _place_pattern(settings.target_city.aliases)
+        self._cities = [(c.he, p) for c in settings.cities if (p := _place_pattern([c.he, c.en, *c.aliases]))]
         self._lineup_header = _keyword_pattern(settings.lineup.header_keywords)
         self._lineup_ignore = {w.casefold() for w in settings.lineup.ignore}
         self._genre_words = {w.casefold() for words in settings.genres.values() for w in words}
@@ -166,6 +167,7 @@ class Enricher:
             t.kind is TicketKind.FREE and not t.is_active for t in event.tickets
         )
         self._categorize_time(event)
+        event.city = self.canonical_city(event.city, event.address, event.venue_name)
         event.in_target_city = self._in_target_city(event)
         event.area = self.areas.match(event.venue_name, event.address, event.latitude, event.longitude, event.in_target_city)
         if event.in_target_city is False and self.settings.target_city.drop_other_cities:
@@ -381,6 +383,18 @@ class Enricher:
         event.is_weekend = event.day_of_week in self._weekend
 
     # ------------------------------------------------------------------ city
+    def canonical_city(self, city: str | None, address: str | None, venue: str | None = None) -> str | None:
+        """One spelling per city ("Tel Aviv-Yafo", "תל אביב-יפו" -> "תל אביב"). The city field wins;
+        otherwise the city named last in the address (streets are often named after cities:
+        "שדרות ירושלים 19, תל אביב"), then in the venue name. Unknown cities are kept; zip codes dropped."""
+        for text in (city, address, venue):
+            if not text:
+                continue
+            hits = [(m.start(), name) for name, p in self._cities for m in p.finditer(text.lower())]
+            if hits:
+                return max(hits)[1]
+        return None if city is None or city.strip().isdigit() else city.strip()
+
     def _in_target_city(self, event: ScrapedEvent) -> bool | None:
         haystack = " | ".join(filter(None, [event.city, event.address, event.venue_name])).lower()
         if not haystack or self._city is None:

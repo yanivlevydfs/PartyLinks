@@ -170,15 +170,17 @@ class ScrapeService:
             return self.geocoder.locate_missing(network, stop=self._stopping).as_dict()
 
     def recompute_areas(self) -> int:
-        """Re-derive ``area`` for every stored event from the current config. Returns rows changed."""
+        """Re-derive ``area`` and the canonical ``city`` of every stored event from the current config.
+        Returns rows changed."""
         matcher = self.enricher.areas
         changed = 0
         with self.db.session() as session:
             for row in session.scalars(select(EventRow)):
                 area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, row.in_target_city)
-                if area != row.area:
-                    row.area, changed = area, changed + 1
-        log.info("areas: updated %d events", changed)
+                city = self.enricher.canonical_city(row.city, row.address, row.venue_name)
+                if (area, city) != (row.area, row.city):
+                    row.area, row.city, changed = area, city, changed + 1
+        log.info("areas/cities: updated %d events", changed)
         return changed
 
     def regroup(self) -> int:

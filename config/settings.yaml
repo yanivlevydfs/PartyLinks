@@ -89,11 +89,18 @@ enrichment:
   target_city:
     name: Tel Aviv
     # Events whose city/address matches none of these are flagged out-of-city.
-    aliases: ["tel aviv", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "tlv", "jaffa", "yafo",
+    aliases: &tel_aviv ["tel aviv", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "tlv", "jaffa", "yafo",
               "תל אביב", "תל-אביב", "תל אביב-יפו", "תל אביב יפו", "ת\"א", "ת״א", "יפו"]
     # false = every city in Israel is imported (in_target_city only flags Tel Aviv events for
     # the area filter). true = Tel Aviv only: other cities are not imported and are purged.
     drop_other_cities: false
+  # Canonical cities: an event's city is rewritten to the name of the first city whose alias
+  # appears in its city field, else the last one named in its address (the city follows the
+  # street: "שדרות ירושלים 19, תל אביב"). Each city with enough events gets a /city/<key> page.
+  cities:
+    - {key: tel-aviv, he: "תל אביב", en: Tel Aviv, aliases: *tel_aviv}
+    - {key: jerusalem, he: "ירושלים", en: Jerusalem, aliases: ["jerusalem", "ירושלים", "י-ם", "י\"ם"]}
+    - {key: haifa, he: "חיפה", en: Haifa, aliases: ["haifa", "חיפה"]}
   # Canonical genre -> keywords, matched case-insensitively against the genres and
   # event types each source declares and (if detect_genres_from_text) title + description.
   genres:

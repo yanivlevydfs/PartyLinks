@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useCategories, useEvents, type Params } from "./api";
-import { STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
+import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { useStore } from "./store";
 import type { EventSummary } from "./types";
 
@@ -93,6 +93,9 @@ export function Layout() {
         <nav className="foot-links" aria-label={t.genres}>
           <Link to="/tonight">{t.tonight}</Link>
           <Link to="/weekend">{t.weekend}</Link>
+          {Object.entries(CITIES).filter(([, c]) => (cats?.cities.find((x) => x.value === c.he)?.events ?? 0) >= 3).map(([key, c]) => (
+            <Link key={key} to={`/city/${key}`}>{c[lang]}</Link>
+          ))}
           {cats?.genres.filter((g) => g.events >= 3).slice(0, 12).map((g) => (
             <Link key={g.value} to={`/genre/${g.value}`}>{genreLabel(lang, g.value)}</Link>
           ))}

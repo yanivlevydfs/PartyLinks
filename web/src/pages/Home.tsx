@@ -1,25 +1,30 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import { useCategories, type Params } from "../api";
-import { genreLabel } from "../i18n";
+import { CITIES, genreLabel } from "../i18n";
 import { useStore } from "../store";
 import { Chip, EventGrid, Hero, label, today, TZ, useT, useTitle } from "../ui";
 
-// Landing routes (/tonight, /weekend, /genre/:genre) are the home page with its filters preset;
+// Landing routes (/tonight, /weekend, /genre/:genre[/tonight|weekend], /city/:city) are the home page with its filters preset;
 // the server renders the same URLs with their own title, description and FAQ for crawlers.
-export default function Home({ landing }: { landing?: "tonight" | "weekend" | "genre" }) {
+export default function Home({ landing }: { landing?: "tonight" | "weekend" | "genre" | "city" }) {
   const { t, lang } = useT();
   const f = useStore((s) => s.filters);
   const set = useStore((s) => s.setFilter);
   const cats = useCategories().data;
-  const { genre } = useParams();
+  const { genre, when, city } = useParams();
+  const cityName = landing === "city" && city ? CITIES[city] : undefined;
 
   useEffect(() => {
     if (!landing) return;
-    set("when", landing === "genre" ? "all" : landing);
+    set("when", landing === "tonight" || landing === "weekend" ? landing : landing === "genre" && (when === "tonight" || when === "weekend") ? when : "all");
     set("genres", landing === "genre" && genre ? [genre] : []);
-  }, [landing, genre, set]);
-  const title = landing === "genre" ? t.landing.genre(genreLabel(lang, genre ?? "")) : landing ? t.landing[landing] : t.tagline;
+  }, [landing, genre, when, set]);
+  const g = genreLabel(lang, genre ?? "");
+  const title =
+    landing === "genre" ? (when === "tonight" ? t.landing.genreTonight(g) : when === "weekend" ? t.landing.genreWeekend(g) : t.landing.genre(g))
+    : landing === "city" ? t.landing.city(cityName?.[lang] ?? city ?? "")
+    : landing ? t.landing[landing] : t.tagline;
   useTitle(landing ? title : undefined);
 
   // Debounce the search box; the store keeps what was typed.
@@ -35,6 +40,7 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
     genre: f.genres,
     time_slot: f.slot ?? undefined,
     area: f.areas,
+    city: cityName?.he,
     free_entry: f.freeOnly ? "true" : undefined,
     sold_out: f.hideSoldOut ? "false" : undefined,
     ...(f.when === "tonight" ? { date: today() } : f.when === "weekend" ? { weekend: "true" } : f.when !== "all" ? { date: f.when } : {}),

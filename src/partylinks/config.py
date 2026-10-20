@@ -109,6 +109,13 @@ class TargetCitySettings(BaseModel):
     drop_other_cities: bool = False
 
 
+class CitySettings(BaseModel):
+    key: str  # URL slug: /city/<key>
+    he: str  # canonical name stored on events
+    en: str
+    aliases: list[str] = Field(default_factory=list)
+
+
 class LineupSettings(BaseModel):
     header_keywords: list[str] = Field(default_factory=list)
     max_names: int = Field(20, ge=1)
@@ -156,6 +163,7 @@ class AreaSettings(BaseModel):
 
 class EnrichmentSettings(BaseModel):
     target_city: TargetCitySettings = Field(default_factory=TargetCitySettings)
+    cities: list[CitySettings] = Field(default_factory=list)
     genres: dict[str, list[str]] = Field(default_factory=dict)
     detect_genres_from_text: bool = True
     lineup: LineupSettings = Field(default_factory=LineupSettings)

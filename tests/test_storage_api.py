@@ -154,6 +154,23 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
         assert client.get("/genre/karaoke").status_code == 404  # no events: no thin page
         assert "Techno night 0" in client.get("/tonight?lang=en").text
         assert "/genre/techno" in client.get("/sitemap.xml").text and "/tonight" in client.get("/").text
+        city = client.get("/city/tel-aviv")  # "Tel Aviv-Yafo, Israel" was stored as the canonical "תל אביב"
+        assert city.status_code == 200 and "מה עושים בתל אביב" in city.text
+        assert client.get("/city/haifa").status_code == 404
+        assert client.get("/genre/techno/weekend").status_code in (200, 404)  # depends on today's weekday
+        assert client.get("/genre/techno/someday").status_code == 404
+        assert "/city/tel-aviv" in client.get("/sitemap.xml").text
+
+
+def test_city_names_are_canonical() -> None:
+    enricher = Enricher(settings_for(Path(".")).enrichment, "Asia/Jerusalem")
+    assert enricher.canonical_city("Tel Aviv-Yafo", None) == "תל אביב"
+    assert enricher.canonical_city("תל אביב-יפו", None) == "תל אביב"
+    assert enricher.canonical_city(None, "שדרות ירושלים 19, תל אביב-יפו, ישראל") == "תל אביב"  # street named after a city
+    assert enricher.canonical_city("השרון", "השרון 14, תל אביב-יפו") == "תל אביב"
+    assert enricher.canonical_city("השרון", None, "מייז תל אביב | MAZE TLV") == "תל אביב"
+    assert enricher.canonical_city("6473303", None) is None  # zip code
+    assert enricher.canonical_city("Eilat", None) == "Eilat"  # unknown city kept
 
 
 def test_geocoding_reuses_known_places_and_rejects_vague_hits(tmp_path: Path) -> None:
