@@ -1,5 +1,5 @@
 """Existing deals stay current: every change is recorded, free entry expires on time,
-closed sale windows show as closed between scans, sources scan hourly."""
+closed sale windows show as closed between scans, sources scan twice a day."""
 
 from __future__ import annotations
 
@@ -114,12 +114,15 @@ def test_tier_whose_sale_window_closed_shows_closed_between_scans(tmp_path: Path
     }
 
 
-# ------------------------------------------------------------------ 4. hourly scans
-def test_every_source_scans_every_hour() -> None:
+# ------------------------------------------------------------------ 4. twice-daily, staggered scans
+def test_every_source_scans_twice_a_day_at_its_own_time() -> None:
     settings = Settings()
     start = datetime(2026, 10, 20, 0, 0, tzinfo=UTC)
+    firsts = {}
     for name, source in configured_sources(settings).items():
         trigger = CronTrigger.from_crontab(source.cron, timezone="UTC")
         first = trigger.get_next_fire_time(None, start)
         second = trigger.get_next_fire_time(first, first + timedelta(seconds=1))
-        assert second - first == timedelta(hours=1), f"{name} runs every {second - first}"
+        assert second - first == timedelta(hours=12), f"{name} runs every {second - first}"
+        firsts[name] = first
+    assert len(set(firsts.values())) == len(firsts), "two sources share a start time"
