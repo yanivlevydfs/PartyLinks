@@ -313,7 +313,7 @@ media:
 sources:
   goout:
     enabled: true
-    cron: "15 * * * *"
+    cron: "35 6,18 * * *"
     base_url: https://www.go-out.co
     list_endpoint: /endOne/getEventsByTypeNew
     event_page_path: /event/{url}
@@ -337,7 +337,7 @@ sources:
 
   eventer:
     enabled: true
-    cron: "25 * * * *"
+    cron: "56 6,18 * * *"
     base_url: https://www.eventer.co.il
     # Read on top of every category and slider found on the home page (discover).
     categories: ["parties"]
@@ -353,7 +353,7 @@ sources:
 
   zygo:
     enabled: true
-    cron: "35 * * * *"
+    cron: "24 7,19 * * *"
     site_url: https://zygo.co.il
     api_url: https://api.zygo.co.il
     # Empty = all of Israel (/v1/event); a slug such as tel-aviv narrows it to one city.
@@ -368,7 +368,7 @@ sources:
 
   tickchak:
     enabled: true
-    cron: "45 * * * *"
+    cron: "45 7,19 * * *"
     site_url: https://live.tickchak.co.il
     api_url: https://api-live.tickchak.co.il
     category_slug: parties
@@ -381,7 +381,7 @@ sources:
 
   selector:
     enabled: true
-    cron: "55 * * * *"
+    cron: "6 8,20 * * *"
     site_url: https://selector.org.il
     api_url: https://api.selector.org.il
     list_path: /event/list
@@ -394,7 +394,7 @@ sources:
 
   barby:
     enabled: true
-    cron: "5 * * * *"
+    cron: "7 6,18 * * *"
     site_url: https://barby.co.il
     list_path: /api/shows/find
     show_path: /api/shows/show/{show_id}
@@ -409,7 +409,7 @@ sources:
 
   grayclub:
     enabled: true
-    cron: "50 * * * *"
+    cron: "52 7,19 * * *"
     site_url: https://grayclub.co.il
     # Every branch: page whose "load more" button carries the branch term id.
     branches:
@@ -446,7 +446,7 @@ sources:
 
   mevalim:
     enabled: true
-    cron: "10 * * * *"
+    cron: "21 6,18 * * *"
     site_url: https://www.mevalim.co.il
     # Every region page (prints the ajax nonce and hosts the performances table) with the
     # data-table-id of its "upcoming shows" load-more button. Regions overlap; ids are merged.
@@ -477,7 +477,7 @@ sources:
   # One static feed with every show deal in Israel; empty areas = keep every area.
   hulyo:
     enabled: true
-    cron: "20 * * * *"
+    cron: "42 6,18 * * *"
     site_url: https://www.hulyo.co.il
     feed_path: /dynamic/client/shows.json
     event_page_path: /product?id={id}&category=shows&step=show-details
@@ -489,7 +489,7 @@ sources:
   #   PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS='{"x-partylinks-key": "<secret>"}'
   chillz:
     enabled: true
-    cron: "40 * * * *"
+    cron: "31 7,19 * * *"
     site_url: https://chillz.com
     sitemap_path: /sitemap.xml
     include_path_prefix: /en/
@@ -507,7 +507,7 @@ sources:
 
   megatickets:
     enabled: true
-    cron: "0 * * * *"
+    cron: "0 6,18 * * *"
     site_url: https://www.megatickets.co.il
     # robots.txt disallows /api/ and /search: listing and details come from public pages only.
     list_path: /events
@@ -516,7 +516,7 @@ sources:
 
   eventbuzz:
     enabled: true
-    cron: "30 * * * *"
+    cron: "10 7,19 * * *"
     site_url: https://eventbuzz.co.il
     # Single server-rendered listing page (no API, no pagination).
     listing_path: /events
@@ -541,7 +541,7 @@ sources:
     # Aggregator: today every listing links out to Zygo (merged by dedup via extra.purchase_url);
     # adds lineups, genres and coordinates. No ticket tiers (Popit only links to the seller).
     enabled: true
-    cron: "28 * * * *"
+    cron: "3 7,19 * * *"
     site_url: https://popit.events
     # robots.txt disallows /api; the public listing page embeds every event.
     listing_path: /explore/all
@@ -551,7 +551,7 @@ sources:
     # Radio EPGB club: public Supabase table read with the anon key embedded in the homepage
     # (extracted each run; supabase_url is a fallback only). No prices in the data.
     enabled: true
-    cron: "42 * * * *"
+    cron: "38 7,19 * * *"
     site_url: https://epgb.co.il
     page_path: /
     event_page_path: /event.html?id={id}
@@ -565,7 +565,7 @@ sources:
     # Ticketing site (shows, stand-up, kids, sport). The homepage __NEXT_DATA__ search index lists
     # ~all events in one request; sitemap ids missing from it are read from their event page.
     enabled: true
-    cron: "32 * * * *"
+    cron: "17 7,19 * * *"
     site_url: https://www.leaan.co.il
     listing_path: /
     event_page_path: /events/{slug}/{event_id}   # slug is ignored by the site
@@ -578,7 +578,7 @@ sources:
     # Ticketmaster Israel: event codes from the sitemap, then detail + performances per event and
     # price levels per wanted performance. One event per performance.
     enabled: true
-    cron: "22 * * * *"
+    cron: "49 6,18 * * *"
     site_url: https://www.ticketmaster.co.il
     sitemap_path: /wbtxapi/api/v1/siteMap/event
     event_path: /wbtxapi/api/v1/bxcached/event/getEventDetail/{code}/INTERNET/iw
@@ -595,7 +595,7 @@ sources:
     # PRES ticketing platform: one API per box office (theatres, opera, IPO, Kupat Tel Aviv).
     # Kupat also resells other venues' seats, so cross-host duplicates are expected (dedup merges them).
     enabled: true
-    cron: "12 * * * *"
+    cron: "28 6,18 * * *"
     presentations_path: /api/presentations/
     features_path: /api/features/
     ticket_groups_path: /api/presentations/{id}/ticketGroups
@@ -616,7 +616,7 @@ sources:
     # concurrency 2, one call per tenant. An empty /api/shows (Petah Tikva) falls back to the
     # calendar feed in 6-month windows.
     enabled: true
-    cron: "8 * * * *"
+    cron: "14 6,18 * * *"
     tenant_domain: smarticket.co.il
     shows_path: /api/shows
     event_page_path: /event/{id}
@@ -652,7 +652,7 @@ sources:
     # event (50 rows a page, ?pno=N); each event page gives date, venue, categories, original-event link.
     # Cloudflare may challenge automated clients: the run then stops as "blocked" (never worked around).
     enabled: true
-    cron: "52 * * * *"
+    cron: "59 7,19 * * *"
     site_url: https://www.secrettelaviv.com
     listing_paths: [/tickets]
     page_size: 50

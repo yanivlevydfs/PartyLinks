@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -17,6 +17,7 @@ from partylinks.service import ScrapeService, SourceBusyError
 log = logging.getLogger(__name__)
 
 RETENTION_JOB_ID = "retention"
+STARTUP_STAGGER = timedelta(minutes=3)
 
 
 async def _scheduled_run(service: ScrapeService, source: str) -> None:
@@ -41,11 +42,12 @@ async def _scheduled_retention(service: ScrapeService) -> None:
 
 def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOScheduler:
     scheduler = AsyncIOScheduler(timezone=settings.timezone)
-    # APScheduler treats an explicit next_run_time=None as "paused", so only pass it when set.
-    startup = {"next_run_time": datetime.now(ZoneInfo(settings.timezone))} if settings.scheduler.run_on_startup else {}
-    for name, source in configured_sources(settings).items():
-        if not source.enabled:
-            continue
+    now = datetime.now(ZoneInfo(settings.timezone))
+    enabled = [(n, s) for n, s in configured_sources(settings).items() if s.enabled]
+    for index, (name, source) in enumerate(enabled):
+        # Startup runs are spread out so a deploy never fires every source at once.
+        # APScheduler treats an explicit next_run_time=None as "paused", so only pass it when set.
+        startup = {"next_run_time": now + index * STARTUP_STAGGER} if settings.scheduler.run_on_startup else {}
         try:  # one bad trigger skips only that source
             scheduler.add_job(
                 _scheduled_run,
