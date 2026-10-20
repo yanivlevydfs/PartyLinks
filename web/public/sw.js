@@ -1,8 +1,22 @@
-// This site has no service worker. Browsers that installed one on this address (another app that
-// ran on the same localhost port, or an older deploy) keep asking for /sw.js; this one removes itself
-// and reloads the open tabs so they load straight from the network.
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", async () => {
-  await self.registration.unregister();
-  for (const client of await self.clients.matchAll({ type: "window" })) client.navigate(client.url);
+// Offline page only: a page load that fails (no connection) gets /offline.html. Nothing else is
+// cached, so the site is always fresh online. Bump VERSION when offline.html changes.
+const VERSION = "offline-v1";
+const OFFLINE = "/offline.html";
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll([OFFLINE, "/favicon.svg"])));
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode !== "navigate") return;
+  event.respondWith(fetch(event.request).catch(() => caches.match(OFFLINE)));
 });

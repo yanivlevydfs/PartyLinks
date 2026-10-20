@@ -81,3 +81,15 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </StrictMode>,
 );
+
+// The designed page has painted: fade the boot screen out (see index.html).
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  const boot = document.getElementById("boot");
+  boot?.classList.add("done");
+  setTimeout(() => boot?.remove(), 400);
+}));
+
+// Offline page: the service worker answers a failed page load with /offline.html.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
