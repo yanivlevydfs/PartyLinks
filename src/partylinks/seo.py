@@ -522,8 +522,9 @@ def privacy_page(session: Session, cfg: Settings, lang: str) -> Page:
 WHENS = ("tonight", "weekend")
 
 
-def _genre_filter(genre: str) -> ColumnElement[bool]:
-    return cast(EventRow.genres, String).like(f'%"{genre}"%')
+def _genre_filter(genre: str, cfg: Settings) -> ColumnElement[bool]:
+    # An umbrella genre ("electronic") also matches its sub-genres (techno, house...).
+    return or_(*(cast(EventRow.genres, String).like(f'%"{g}"%') for g in cfg.enrichment.expand_genres([genre])))
 
 
 def _when_where(when: str | None, cfg: Settings) -> list[ColumnElement[bool]]:
@@ -540,7 +541,7 @@ def genre_counts(session: Session, cfg: Settings | None = None, when: str | None
     counts: Counter[str] = Counter()
     where = _when_where(when, cfg) if cfg else []
     for genres in session.scalars(select(EventRow.genres).where(upcoming_filter(), EventRow.country.is_(None), *where)):
-        counts.update(genres or [])
+        counts.update(cfg.enrichment.with_parents(genres or []) if cfg else genres or [])
     return {g: n for g, n in counts.most_common() if n >= GENRE_PAGE_MIN}
 
 
@@ -554,7 +555,7 @@ def _landing_paths(session: Session, cfg: Settings) -> list[tuple[str, str, str]
     """(path, Hebrew name, English name) of every landing page that currently has enough events."""
     out = [("/tonight", "מה עושים הערב", "Tonight"), ("/weekend", "סוף השבוע", "This weekend")]
     out += [(f"/city/{c.key}", c.he, c.en) for c in city_pages(session, cfg)]
-    out += [(f"/genre/{g}", genre_label(g, "he"), genre_label(g, "en")) for g in genre_counts(session)]
+    out += [(f"/genre/{g}", genre_label(g, "he"), genre_label(g, "en")) for g in genre_counts(session, cfg)]
     for when, he, en in (("tonight", "הערב", "tonight"), ("weekend", "בסופ״ש", "this weekend")):
         out += [(f"/genre/{g}/{when}", f"{genre_label(g, 'he')} {he}", f"{genre_label(g, 'en')} {en}")
                 for g in genre_counts(session, cfg, when)]  # fmt: skip
@@ -647,7 +648,7 @@ def landing_page(
     if kind.startswith("genre"):
         if genre not in genre_counts(session, cfg, when):
             return None
-        where.append(_genre_filter(genre or ""))
+        where.append(_genre_filter(genre or "", cfg))
         label, path = genre_label(genre or "", lang), f"/genre/{genre}" + (f"/{when}" if when else "")
     elif kind == "city":
         found = next((c for c in city_pages(session, cfg) if c.key == city), None)

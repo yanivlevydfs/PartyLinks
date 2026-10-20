@@ -413,3 +413,23 @@ def test_bare_venue_names_take_their_city_from_other_events(tmp_path: Path) -> N
     service.shutdown()
     assert rows["bare"][0] is True and rows["sarona"] == (True, "business") and rows["placed"][0] is True
     assert rows["haifa"] == (False, "haifa") and rows["unknown"] == (None, None)
+
+
+def test_umbrella_genre_includes_its_sub_genres(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    settings.enrichment.genre_families = {"electronic": ["techno", "house"], "israeli": ["mizrahi"]}
+    future = datetime.now(UTC) + timedelta(days=2)
+    seed(settings, [
+        event("techno", future),
+        event("house", future, title="Deep house sunset"),
+        event("hiphop", future, title="Hip hop night"),
+        event("mizrahi", future, title="ערב מזרחית"),
+    ])  # fmt: skip
+
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda genre: {e["id"] for e in client.get("/events", params={"genre": genre}).json()["items"]}
+        assert ids("electronic") == {"test:techno", "test:house"}
+        assert ids("techno") == {"test:techno"}  # a sub-genre stays narrow
+        assert ids("israeli") == {"test:mizrahi"}
+        counts = {g["value"]: g["events"] for g in client.get("/categories").json()["genres"]}
+        assert counts["electronic"] == 2 and counts["israeli"] == 1

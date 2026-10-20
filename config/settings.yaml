@@ -162,6 +162,13 @@ enrichment:
     lgbt: ["lgbt", "lgbtq", "gay", "queer", "pride", "drag", "להט\"ב", "גאווה", "דראג"]
     stand_up: ["stand up", "standup", "stand-up", "comedy", "סטנדאפ", "קומדיה"]
     karaoke: ["karaoke", "קריוקי"]
+  # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
+  genre_families:
+    electronic: [techno, house, trance, afro, drum_and_bass, bass_dubstep, hardstyle, edm, downtempo_chill]
+    israeli: [mizrahi]
+    # Linked both ways: either one shows both.
+    hip_hop: [rnb]
+    rnb: [hip_hop]
   detect_genres_from_text: true
   # A ticket tier named with one of these and priced 0 is treated as free entry.
   # DJ / performer extraction from descriptions. A line matching a header keyword

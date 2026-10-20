@@ -528,7 +528,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         if source:
             filters.append(EventRow.source.in_(source))
         if genre:
-            filters.append(_json_contains(EventRow.genres, genre))
+            filters.append(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(genre)))
         if artist:
             filters.append(cast(EventRow.lineup, String).ilike(_contains(artist), escape="\\"))
         if venue:
@@ -729,7 +729,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         for (city, reg), _ in city_regions.most_common():
             city_region.setdefault(city, reg)  # a city's most common region
         return Categories(
-            genres=facet(lambda r: r.genres or [], None),
+            genres=facet(lambda r: request.app.state.settings.enrichment.with_parents(r.genres or []), None),
             dates=sorted(facet(lambda r: [r.local_date], None), key=lambda f: f.value),
             days_of_week=facet(lambda r: [r.day_of_week], None),
             time_slots=facet(lambda r: [r.time_slot], None),

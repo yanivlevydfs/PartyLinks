@@ -140,7 +140,7 @@ def embed_params(raw: str, cfg: Settings) -> dict[str, str]:
 def _embed_rows(session: Any, params: dict[str, str], cfg: Settings) -> list[EventRow]:
     where: list[ColumnElement[bool]] = []
     if "genre" in params:
-        where.append(seo._genre_filter(params["genre"]))
+        where.append(seo._genre_filter(params["genre"], cfg))
     if "date" in params:
         where += seo._when_where("tonight", cfg)
     if "weekend" in params:

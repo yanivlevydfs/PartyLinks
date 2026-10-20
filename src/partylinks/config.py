@@ -180,6 +180,8 @@ class EnrichmentSettings(BaseModel):
     target_city: TargetCitySettings = Field(default_factory=TargetCitySettings)
     cities: list[CitySettings] = Field(default_factory=list)
     genres: dict[str, list[str]] = Field(default_factory=dict)
+    # Umbrella genres: filtering or counting the parent ("electronic") includes every listed sub-genre.
+    genre_families: dict[str, list[str]] = Field(default_factory=dict)
     detect_genres_from_text: bool = True
     lineup: LineupSettings = Field(default_factory=LineupSettings)
     time_slots: list[TimeSlot] = Field(default_factory=list)
@@ -191,6 +193,15 @@ class EnrichmentSettings(BaseModel):
     regions: list[RegionSettings] = Field(default_factory=list)
     free_entry_keywords: list[str] = Field(default_factory=list)
     pay_at_door_keywords: list[str] = Field(default_factory=list)
+
+    def expand_genres(self, genres: list[str]) -> list[str]:
+        """The genres plus every sub-genre of the umbrella ones among them (for filters)."""
+        return list(dict.fromkeys(x for g in genres for x in (g, *self.genre_families.get(g, []))))
+
+    def with_parents(self, genres: list[str]) -> list[str]:
+        """An event's genres plus the umbrella genres they fall under (for counts)."""
+        parents = [p for p, subs in self.genre_families.items() if p not in genres and any(g in subs for g in genres)]
+        return [*genres, *parents]
 
 
 class DedupSettings(BaseModel):
