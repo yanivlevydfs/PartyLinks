@@ -579,3 +579,22 @@ sources:
     http:
       concurrency: 4
       request_delay_seconds: 0.3
+
+  pres:
+    # PRES ticketing platform: one API per box office (theatres, opera, IPO, Kupat Tel Aviv).
+    # Kupat also resells other venues' seats, so cross-host duplicates are expected (dedup merges them).
+    enabled: true
+    cron: "12 * * * *"
+    presentations_path: /api/presentations/
+    features_path: /api/features/
+    ticket_groups_path: /api/presentations/{id}/ticketGroups
+    event_page_path: /order/{id}
+    skip_titles: ["בדיקה", "שוברים"]
+    hosts:
+      - {key: kupat, url: "https://tickets.kupat.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
+      - {key: cameri, url: "https://tickets.cameri.co.il", city: "תל אביב"}
+      - {key: habima, url: "https://tickets.habima.co.il", venue: "תיאטרון הבימה", city: "תל אביב"}
+      - {key: opera, url: "https://tickets.israel-opera.co.il", venue: "האופרה הישראלית", city: "תל אביב"}
+      - {key: ipo, url: "https://ipo.presglobal.store", city: "תל אביב"}
+      - {key: lessin, url: "https://lessin.presglobal.store", venue: "תיאטרון בית ליסין", city: "תל אביב"}
+      - {key: khan, url: "https://khan.pres.global", venue: "תיאטרון החאן", city: "ירושלים"}

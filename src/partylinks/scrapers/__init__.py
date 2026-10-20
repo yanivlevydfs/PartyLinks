@@ -20,6 +20,7 @@ from partylinks.scrapers.leaan import LeaanScraper
 from partylinks.scrapers.megatickets import MegaticketsScraper
 from partylinks.scrapers.mevalim import MevalimScraper
 from partylinks.scrapers.popit import PopitScraper
+from partylinks.scrapers.pres import PresScraper
 from partylinks.scrapers.selector import SelectorScraper
 from partylinks.scrapers.tickchak import TickchakScraper
 from partylinks.scrapers.ticketmaster import TicketmasterScraper
@@ -46,6 +47,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         EpgbScraper,
         LeaanScraper,
         TicketmasterScraper,
+        PresScraper,
     )
 }
 
