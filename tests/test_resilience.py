@@ -234,11 +234,12 @@ def test_artwork_run_with_successes_and_failures_persists_both(tmp_path: Path, m
     assert rows["https://img.example/broken.jpg"][0] is False and "not an image" in rows["https://img.example/broken.jpg"][1]
 
 
-def test_source_proxy_reaches_only_proxied_sources() -> None:
+def test_source_proxy_reaches_every_source_unless_opted_out() -> None:
     http = HttpSettings(source_proxy="http://p:1")
-    marked = _Probe(SourceSettings(cron="0 * * * *", proxied=True), http, "UTC")
-    plain = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
-    assert marked.http.proxy == "http://p:1" and plain.http.proxy is None
+    default = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
+    opted_out = _Probe(SourceSettings(cron="0 * * * *", proxied=False), http, "UTC")
+    assert default.http.proxy == "http://p:1" and opted_out.http.proxy is None
+    assert _Probe(SourceSettings(cron="0 * * * *"), HttpSettings(), "UTC").http.proxy is None  # local: direct
 
 
 def test_proxy_pool_moves_on_only_when_the_proxy_fails() -> None:

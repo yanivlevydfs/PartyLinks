@@ -607,7 +607,6 @@ sources:
   #   PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS='{"x-partylinks-key": "<secret>"}'
   chillz:
     enabled: true
-    proxied: true             # refuses the server's IP: goes through http.source_proxy
     cron: "31 7,19 * * *"
     site_url: https://chillz.com
     sitemap_path: /sitemap.xml
@@ -816,7 +815,6 @@ sources:
     # schema.org JSON-LD (venue, performer, prices per seating category). robots.txt disallows
     # /api/ and /search/; the homepage refuses non-browser clients, the sitemap and pages do not.
     enabled: true
-    proxied: true             # refuses the server's IP: goes through http.source_proxy
     cron: "13 8,20 * * *"
     site_url: https://www.eventim.co.il
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
@@ -950,7 +948,6 @@ sources:
     # Cloudflare may challenge automated clients: the run then stops as "blocked" (never worked around),
     # after saving the events new to us as the feed gives them.
     enabled: true
-    proxied: true             # refuses the server's IP: goes through http.source_proxy
     cron: "59 7,19 * * *"
     site_url: https://www.secrettelaviv.com
     http:

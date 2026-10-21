@@ -98,8 +98,8 @@ class HttpSettings(BaseModel):
     # (socks needs `pip install httpx[socks]`), so source sites never see the server's own IP.
     # Keep credentials in the environment: PARTYLINKS_HTTP__PROXY=...
     proxy: str | None = None
-    # Proxy for only the sources whose block sets `proxied: true` (sites that refuse the server's
-    # IP), so one variable covers them all: PARTYLINKS_HTTP__SOURCE_PROXY=... A comma-separated
+    # Proxy for every source (unless its block sets `proxied: false`), set only on Railway so the
+    # sites never see the server's IP: PARTYLINKS_HTTP__SOURCE_PROXY=... A comma-separated
     # list is a failover pool: a source moves to the next URL only when the proxy itself fails.
     source_proxy: str | None = None
 

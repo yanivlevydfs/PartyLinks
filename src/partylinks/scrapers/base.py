@@ -53,8 +53,9 @@ class SourceSettings(BaseModel):
     # After a complete, error-free run, hide upcoming events this source no longer lists
     # (cancelled / pulled). Turn off for sources whose listing is not the full catalogue.
     unlist_missing: bool = True
-    # Send this source through `http.source_proxy` (a site that refuses the server's IP).
-    proxied: bool = False
+    # Send this source through `http.source_proxy`. On by default: every source goes through it on
+    # Railway, where the variable is set; locally it is unset, so requests go direct.
+    proxied: bool = True
 
     @field_validator("cron")
     @classmethod
