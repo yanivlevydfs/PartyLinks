@@ -18,6 +18,7 @@ from partylinks.scrapers.eventim import EventimScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
 from partylinks.scrapers.hulyo import HulyoScraper
+from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
 from partylinks.scrapers.kupatbravo import KupatbravoScraper
 from partylinks.scrapers.leaan import LeaanScraper
 from partylinks.scrapers.makore import MakoreScraper
@@ -66,6 +67,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         GagarinScraper,
         TederScraper,
         MakoreScraper,
+        JerusalemTheatreScraper,
     )
 }
 

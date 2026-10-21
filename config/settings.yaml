@@ -885,3 +885,16 @@ sources:
     categories: ["/browse/category/חיי-לילה", "/browse/category/הופעות-חיות"]
     http:
       concurrency: 4
+
+  jerusalemtheatre:
+    # Jerusalem Theatre: its own box office. One request to the site's board feed lists every
+    # upcoming performance (~145) with genre, image and page link; no prices (box office only).
+    # Film screenings are left out. robots.txt allows everything but the admin paths.
+    enabled: true
+    cron: "33 7,19 * * *"
+    site_url: https://www.jerusalem-theatre.co.il
+    board_path: /na_ajax.php
+    venue_name: תיאטרון ירושלים
+    address: דוד מרכוס 20
+    city: ירושלים
+    skip_groups: [eventGrp_cinema]

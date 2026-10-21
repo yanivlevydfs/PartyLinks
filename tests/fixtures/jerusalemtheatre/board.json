@@ -1,0 +1,148 @@
+{
+ "items": {
+  "1792605600": {
+   "id": "4593",
+   "type": "eventsClass",
+   "date_next": 1792605600,
+   "title": "האהבות שלנו",
+   "subtitle": "",
+   "title_short": "האהבות שלנו",
+   "friendly": "",
+   "length": "117 דקות",
+   "ticketing": "8600",
+   "updateticketing": "N",
+   "subscribers": false,
+   "free": false,
+   "groups": [
+    "grp_33"
+   ],
+   "group": "grp_33",
+   "parent-group": "eventGrp_cinema",
+   "groups-order": {
+    "grp_33": "0"
+   },
+   "link": "https://www.jerusalem-theatre.co.il/%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D/4593/%D7%94%D7%90%D7%94%D7%91%D7%95%D7%AA_%D7%A9%D7%9C%D7%A0%D7%95",
+   "img": "https://www.jerusalem-theatre.co.il/prdPics/eventsClass/4593_435992_event_img.jpg",
+   "dates": [
+    {
+     "date": 1792605600,
+     "hall": "65",
+     "ticket": "35619",
+     "series": "",
+     "status": "open",
+     "remark": "עברית עם כתוביות בעברית Hebrew with Hebrew subtitles"
+    },
+    {
+     "date": 1792958400,
+     "hall": "65",
+     "ticket": "35634",
+     "series": "",
+     "status": "open",
+     "remark": "עברית עם כתוביות בעברית Hebrew with Hebrew subtitles"
+    },
+    {
+     "date": 1793122200,
+     "hall": "64",
+     "ticket": "35635",
+     "status": "open",
+     "remark": "עברית עם כתוביות בעברית Hebrew with Hebrew subtitles"
+    }
+   ],
+   "ticket": "35619",
+   "status": "open",
+   "series": "",
+   "remark": "עברית עם כתוביות בעברית Hebrew with Hebrew subtitles"
+  },
+  "1794861000": {
+   "id": "4394",
+   "type": "eventsClass",
+   "date_next": 1794861000,
+   "title": "יאסו – האהבה היוונית שלי",
+   "subtitle": "התיאטרון הישראלי ותיאטרון השחר",
+   "title_short": "יאסו – האהבה היוונית שלי",
+   "friendly": "",
+   "length": "כשעה וחצי ללא הפסקה",
+   "ticketing": "8470",
+   "updateticketing": "N",
+   "subscribers": false,
+   "free": false,
+   "groups": [
+    "grp_30"
+   ],
+   "group": "grp_30",
+   "parent-group": "eventGrp_theatre",
+   "groups-order": {
+    "grp_30": "0"
+   },
+   "link": "https://www.jerusalem-theatre.co.il/%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D/4394/%D7%99%D7%90%D7%A1%D7%95_%E2%80%93_%D7%94%D7%90%D7%94%D7%91%D7%94_%D7%94%D7%99%D7%95%D7%95%D7%A0%D7%99%D7%AA_%D7%A9%D7%9C%D7%99",
+   "img": "https://www.jerusalem-theatre.co.il/prdPics/eventsClass/4394_128035_event_img.jpg",
+   "dates": [
+    {
+     "date": 1794861000,
+     "hall": "62",
+     "ticket": "35311",
+     "status": "open",
+     "remark": ""
+    }
+   ],
+   "ticket": "35311",
+   "status": "open",
+   "series": null,
+   "remark": ""
+  },
+  "1797962400": {
+   "id": "4555",
+   "type": "eventsClass",
+   "date_next": 1797962400,
+   "title": "סטודנטים מהאקדמיה למוסיקה ולמחול בירושלים: מחווה לזמרות ולזמרי הג'אז הגדולים של אמריקה",
+   "subtitle": "פסטיבל פסנתרים ה-13",
+   "title_short": "סטודנטים מהאקדמיה למוסיקה ולמחול בירושלים: מחווה לזמרות ולזמרי הג'אז הגדולים של אמריקה",
+   "friendly": "",
+   "length": "כחמישים דקות ללא הפסקה",
+   "ticketing": "",
+   "updateticketing": "N",
+   "subscribers": false,
+   "free": true,
+   "groups": [
+    "grp_4554",
+    "grp_35",
+    "grp_34"
+   ],
+   "group": "grp_4554",
+   "parent-group": "eventGrp_festivals",
+   "groups-order": {
+    "grp_4554": "0",
+    "grp_35": "0",
+    "grp_34": "0"
+   },
+   "link": "https://www.jerusalem-theatre.co.il/%D7%90%D7%99%D7%A8%D7%95%D7%A2%D7%99%D7%9D/4555/%D7%A1%D7%98%D7%95%D7%93%D7%A0%D7%98%D7%99%D7%9D_%D7%9E%D7%94%D7%90%D7%A7%D7%93%D7%9E%D7%99%D7%94_%D7%9C%D7%9E%D7%95%D7%A1%D7%99%D7%A7%D7%94_%D7%95%D7%9C%D7%9E%D7%97%D7%95%D7%9C_%D7%91%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D%3A_%D7%9E%D7%97%D7%95%D7%95%D7%94_%D7%9C%D7%96%D7%9E%D7%A8%D7%95%D7%AA_%D7%95%D7%9C%D7%96%D7%9E%D7%A8%D7%99_%D7%94%D7%92%27%D7%90%D7%96_%D7%94%D7%92%D7%93%D7%95%D7%9C%D7%99%D7%9D_%D7%A9%D7%9C_%D7%90%D7%9E%D7%A8%D7%99%D7%A7%D7%94",
+   "img": "https://www.jerusalem-theatre.co.il/images/default/event.jpg?t=1790079947",
+   "dates": [
+    {
+     "date": 1797962400,
+     "hall": "351",
+     "status": "free"
+    }
+   ],
+   "ticket": null,
+   "status": "free",
+   "series": null,
+   "remark": null
+  }
+ },
+ "groups": {
+  "eventGrp_festivals": {
+   "id": "eventGrp_festivals",
+   "title": "פסטיבלים"
+  },
+  "eventGrp_cinema": {
+   "id": "eventGrp_cinema",
+   "title": "קולנוע"
+  },
+  "eventGrp_theatre": {
+   "id": "eventGrp_theatre",
+   "title": "תיאטרון"
+  }
+ },
+ "months": {}
+}
