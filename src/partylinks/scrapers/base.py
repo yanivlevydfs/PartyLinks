@@ -106,8 +106,12 @@ class BaseScraper[S: SourceSettings](ABC):
         overrides = dict(settings.http)
         # Headers merge with the global ones instead of replacing them.
         overrides["headers"] = {**http.headers, **HttpSettings.model_validate({"headers": overrides.get("headers", {})}).headers}
-        if settings.proxied and http.source_proxy:
-            overrides.setdefault("proxy", http.source_proxy)
+        # A proxied source starts on the first URL of `source_proxy` and moves to the next only when
+        # the proxy itself fails (never because the site refused us). A per-source proxy wins.
+        pool = [p.strip() for p in (http.source_proxy or "").split(",") if p.strip()] if settings.proxied else []
+        self._spare_proxies = pool[1:] if pool and "proxy" not in overrides else []
+        if pool:
+            overrides.setdefault("proxy", pool[0])
         self.http = HttpSettings.model_validate(http.model_dump() | overrides)
         self.timezone = timezone
         self.log = logging.getLogger(f"partylinks.scrapers.{self.name}")
@@ -124,15 +128,26 @@ class BaseScraper[S: SourceSettings](ABC):
         # source spends extra per-event requests (artwork) only on events that pass it.
         self.wanted: Callable[[ScrapedEvent], bool] = lambda event: True
         self._client: httpx.AsyncClient | None = None
+        self._retired_clients: list[httpx.AsyncClient] = []  # replaced after a proxy failure; closed at exit
         self._semaphore = asyncio.Semaphore(self.http.concurrency)
         self._backoff = wait_exponential(multiplier=self.http.backoff_seconds, max=60)
 
     # ----------------------------------------------------------------- lifecycle
     async def __aenter__(self) -> Self:
-        self._client = httpx.AsyncClient(
+        self._client = self._new_client(self.http.proxy)
+        return self
+
+    async def __aexit__(self, *exc_info: object) -> None:
+        for client in [*self._retired_clients, self._client]:
+            if client is not None:
+                await client.aclose()
+        self._client, self._retired_clients = None, []
+
+    def _new_client(self, proxy: str | None) -> httpx.AsyncClient:
+        return httpx.AsyncClient(
             timeout=self.http.timeout_seconds,
             follow_redirects=True,
-            proxy=self.http.proxy,
+            proxy=proxy,
             headers={
                 "User-Agent": self.http.user_agent,
                 "Accept-Language": self.http.accept_language,
@@ -140,12 +155,15 @@ class BaseScraper[S: SourceSettings](ABC):
                 **self.http.headers,
             },
         )
-        return self
 
-    async def __aexit__(self, *exc_info: object) -> None:
-        if self._client is not None:
-            await self._client.aclose()
-            self._client = None
+    def _next_proxy(self, failed: httpx.AsyncClient, exc: Exception) -> None:
+        """Move to the next proxy of the pool, once per failed client (parallel requests share it)."""
+        if failed is not self._client or not self._spare_proxies:
+            return
+        proxy = self._spare_proxies.pop(0)
+        self.log.warning("proxy failed (%s): switching to %s", type(exc).__name__, proxy.rpartition("@")[2])
+        self._retired_clients.append(failed)
+        self._client = self._new_client(proxy)
 
     def is_blocked(self, response: httpx.Response) -> bool:
         """Sources override this to recognise their site's access-denied responses."""
@@ -178,7 +196,12 @@ class BaseScraper[S: SourceSettings](ABC):
                 async with self._semaphore:  # held per attempt, never while backing off
                     if self.http.request_delay_seconds:
                         await asyncio.sleep(self.http.request_delay_seconds)
-                    response = await self._client.request(method, url, **kwargs)
+                    client = self._client
+                    try:
+                        response = await client.request(method, url, **kwargs)
+                    except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as exc:
+                        self._next_proxy(client, exc)  # retried on the next proxy (a TransportError)
+                        raise
                 if self.is_blocked(response):
                     raise SourceBlockedError(f"{self.name}: access denied by the site ({response.status_code})")
                 response.raise_for_status()

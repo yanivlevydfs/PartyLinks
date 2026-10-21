@@ -239,3 +239,24 @@ def test_source_proxy_reaches_only_proxied_sources() -> None:
     marked = _Probe(SourceSettings(cron="0 * * * *", proxied=True), http, "UTC")
     plain = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
     assert marked.http.proxy == "http://p:1" and plain.http.proxy is None
+
+
+def test_proxy_pool_moves_on_only_when_the_proxy_fails() -> None:
+    http = HttpSettings(source_proxy="http://u:p@a:1, http://u:p@b:2")
+    scraper = _Probe(SourceSettings(cron="0 * * * *", proxied=True), http, "UTC")
+    assert scraper.http.proxy == "http://u:p@a:1" and scraper._spare_proxies == ["http://u:p@b:2"]
+
+    async def run() -> None:
+        async with scraper:
+            first = scraper._client
+            assert first is not None
+            scraper._next_proxy(first, httpx.ProxyError("CONNECT 500"))
+            second = scraper._client
+            assert second is not first and scraper._spare_proxies == []
+            scraper._next_proxy(first, httpx.ProxyError("late failure of the old client"))
+            assert scraper._client is second  # parallel failures of one client move on once
+            scraper._next_proxy(second, httpx.ProxyError("pool spent"))
+            assert scraper._client is second  # nothing left: stays, the retries then give up
+        assert scraper._client is None and scraper._retired_clients == []
+
+    asyncio.run(run())
