@@ -18,13 +18,14 @@ Optional environment variables:
 from __future__ import annotations
 
 import html
+import http.client
 import json
 import logging
 import os
 import re
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from pathlib import Path
@@ -49,7 +50,7 @@ FIELDS = ("event_name", "venue", "date", "price", "ticket_url", "last_seen")
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def clean(value: Any) -> str | None:
@@ -100,7 +101,7 @@ def fetch(url: str) -> tuple[int | None, str | None, bytes | None, dict[str, str
     except HTTPError as exc:
         try:
             body = exc.read(200_000)
-        except Exception:
+        except (OSError, http.client.HTTPException):  # connection dropped mid-body: the status still counts
             body = b""
         return exc.code, exc.headers.get("Content-Type", ""), body, dict(exc.headers.items())
     except (URLError, TimeoutError, OSError) as exc:
@@ -169,8 +170,8 @@ def event_from_page(url: str, body: bytes, content_type: str) -> dict[str, Any]:
     if "html" in (content_type or "").lower() or "<html" in text[:1000].lower():
         try:
             parser.feed(text)
-        except Exception:
-            pass
+        except (ValueError, AssertionError) as exc:  # malformed markup: keep what was parsed before it
+            log.debug("unparsable HTML at %s: %s", url, exc)
 
     nodes = parse_jsonld(parser.jsonld)
     event_nodes = [
@@ -224,7 +225,7 @@ def discover_sitemap_urls(sitemap_url: str = SITEMAP_URL, seen: set[str] | None 
         return []
     seen.add(sitemap_url)
 
-    status, content_type, body, _ = fetch(sitemap_url)
+    status, _, body, _ = fetch(sitemap_url)
     if status != 200 or not body:
         log.warning("[sitemap] unavailable: HTTP %s (%s)", status, sitemap_url)
         return []
@@ -270,7 +271,7 @@ def retry_after_seconds(headers: dict[str, str]) -> int | None:
         try:
             target = parsedate_to_datetime(value)
             return max(0, int((target - datetime.now(target.tzinfo)).total_seconds()))
-        except Exception:
+        except (TypeError, ValueError, IndexError):  # neither seconds nor an HTTP date
             return None
 
 
