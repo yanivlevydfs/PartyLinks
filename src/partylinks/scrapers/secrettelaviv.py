@@ -85,15 +85,11 @@ class SecretTelAvivScraper(BaseScraper[SecretTelAvivSettings]):
     settings_model = SecretTelAvivSettings
 
     def is_blocked(self, response: httpx.Response) -> bool:
-        return (
-            response.headers.get("cf-mitigated") == "challenge"
-        )  # Cloudflare bot check
+        return response.headers.get("cf-mitigated") == "challenge"  # Cloudflare bot check
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        feed = parse_feed(
-            await self.get_text(s.site_url + s.feed_path), s, self.timezone
-        )
+        feed = parse_feed(await self.get_text(s.site_url + s.feed_path), s, self.timezone)
         self.log.info("listed %d events", len(feed))
         done: set[str] = set()
 
@@ -107,16 +103,12 @@ class SecretTelAvivScraper(BaseScraper[SecretTelAvivSettings]):
                 return self._feed_only(event)
 
         try:
-            async for event in self.stream_isolated(
-                feed, detail, label=lambda e: str(e.url)
-            ):
+            async for event in self.stream_isolated(feed, detail, label=lambda e: str(e.url)):
                 done.add(event.source_event_id)
                 yield event
         except SourceBlockedError:
             for event in feed:
-                if event.source_event_id not in done and (
-                    kept := self._feed_only(event)
-                ):
+                if event.source_event_id not in done and (kept := self._feed_only(event)):
                     yield kept
             raise
 
@@ -185,11 +177,7 @@ def parse_feed(ics: str, s: SecretTelAvivSettings, timezone: str) -> list[Scrape
                 start_at=start,
                 end_at=end if end and start and end > start else None,
                 venue_name=clean_str(venue),
-                source_genres=[
-                    c.strip().lower()
-                    for c in (props.get("CATEGORIES") or "").split(",")
-                    if c.strip()
-                ],
+                source_genres=[c.strip().lower() for c in (props.get("CATEGORIES") or "").split(",") if c.strip()],
                 image_url=image if image and image.startswith("http") else None,
                 extra={"purchase_url": None},
             ),
@@ -202,17 +190,13 @@ def _ical_time(value: str | None, tz: ZoneInfo) -> datetime | None:
     return datetime(*(int(g or 0) for g in m.groups()), tzinfo=tz) if m else None
 
 
-def parse_event(
-    page_html: str, url: str, s: SecretTelAvivSettings, timezone: str
-) -> ScrapedEvent:
+def parse_event(page_html: str, url: str, s: SecretTelAvivSettings, timezone: str) -> ScrapedEvent:
     tree = LexborHTMLParser(page_html)
     sel, labels = s.selectors, s.labels
     body = tree.css_first(sel.body)
     if body is None:
         raise ParseError("event body not found")
-    blocks = [
-        node for node in body.iter() if node.tag and node.tag[0].isalpha()
-    ]  # elements only
+    blocks = [node for node in body.iter() if node.tag and node.tag[0].isalpha()]  # elements only
     header = blocks[0].text(separator=" ") if blocks and blocks[0].tag == "p" else ""
     start_at, end_at = parse_when(header, s.placeholder_end_time, ZoneInfo(timezone))
 
@@ -262,13 +246,9 @@ def parse_event(
     )
 
 
-def parse_when(
-    header: str, placeholder_end: str, tz: ZoneInfo
-) -> tuple[datetime | None, datetime | None]:
+def parse_when(header: str, placeholder_end: str, tz: ZoneInfo) -> tuple[datetime | None, datetime | None]:
     """Start / end from the date line; an end before the start rolls over to the next day."""
-    days = [
-        (int(d), _MONTHS.get(m.lower()), int(y)) for d, m, y in _DATE.findall(header)
-    ]
+    days = [(int(d), _MONTHS.get(m.lower()), int(y)) for d, m, y in _DATE.findall(header)]
     days = [(y, m, d) for d, m, y in days if m]
     if not days:
         return None, None
@@ -297,10 +277,6 @@ def _em_location(header: LexborNode) -> tuple[str | None, str | None, str | None
     venue = clean_str(link.text()) if link else None
     lines = re.split(r"<br\s*/?>", header.html or "", flags=re.IGNORECASE)
     line = html_to_text(lines[1]) if venue and len(lines) > 1 else None
-    parts = (
-        [p.strip() for p in line.split(" - ", 1)[1].split(",")]
-        if line and " - " in line
-        else []
-    )
+    parts = [p.strip() for p in line.split(" - ", 1)[1].split(",")] if line and " - " in line else []
     parts = [p for p in parts if p]
     return venue, (parts[0] if parts else None), (parts[1] if len(parts) > 1 else None)

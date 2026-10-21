@@ -53,6 +53,8 @@ class SourceSettings(BaseModel):
     # After a complete, error-free run, hide upcoming events this source no longer lists
     # (cancelled / pulled). Turn off for sources whose listing is not the full catalogue.
     unlist_missing: bool = True
+    # Send this source through `http.source_proxy` (a site that refuses the server's IP).
+    proxied: bool = False
 
     @field_validator("cron")
     @classmethod
@@ -104,6 +106,8 @@ class BaseScraper[S: SourceSettings](ABC):
         overrides = dict(settings.http)
         # Headers merge with the global ones instead of replacing them.
         overrides["headers"] = {**http.headers, **HttpSettings.model_validate({"headers": overrides.get("headers", {})}).headers}
+        if settings.proxied and http.source_proxy:
+            overrides.setdefault("proxy", http.source_proxy)
         self.http = HttpSettings.model_validate(http.model_dump() | overrides)
         self.timezone = timezone
         self.log = logging.getLogger(f"partylinks.scrapers.{self.name}")

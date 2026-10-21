@@ -98,6 +98,9 @@ class HttpSettings(BaseModel):
     # (socks needs `pip install httpx[socks]`), so source sites never see the server's own IP.
     # Keep credentials in the environment: PARTYLINKS_HTTP__PROXY=...
     proxy: str | None = None
+    # Proxy for only the sources whose block sets `proxied: true` (sites that refuse the server's
+    # IP), so one variable covers them all: PARTYLINKS_HTTP__SOURCE_PROXY=...
+    source_proxy: str | None = None
 
     @field_validator("headers", mode="before")
     @classmethod

@@ -25,19 +25,14 @@ def _page(name: str) -> str:
 
 
 def test_feed_lists_every_event() -> None:
-    events = {
-        e.source_event_id: e
-        for e in secrettelaviv.parse_feed(_page("feed.ics"), CFG, TZ)
-    }
+    events = {e.source_event_id: e for e in secrettelaviv.parse_feed(_page("feed.ics"), CFG, TZ)}
     assert set(events) == {
         "the-fifth-european-night-of-literature-liebling-haus",
         "alien-transport-frequency-gagarin-club",
         "midburn-festival",
     }
     gagarin = events["alien-transport-frequency-gagarin-club"]
-    assert (
-        gagarin.title == "Alien Transport & Frequency @ Gagarin Club"
-    )  # same title as the event page
+    assert gagarin.title == "Alien Transport & Frequency @ Gagarin Club"  # same title as the event page
     assert gagarin.venue_name == "Gagarin Club"
     assert gagarin.start_at == datetime(2026, 10, 26, 23, 0, tzinfo=ZoneInfo(TZ))
     assert gagarin.end_at is None  # "11:55 pm" is the site's placeholder end
@@ -62,9 +57,7 @@ def test_blocked_run_still_saves_new_feed_events() -> None:
             return httpx.Response(200, text=_page("feed.ics"))
         return httpx.Response(403, headers={"cf-mitigated": "challenge"})
 
-    scraper = secrettelaviv.SecretTelAvivScraper(
-        CFG, HttpSettings(request_delay_seconds=0, backoff_seconds=0), TZ
-    )
+    scraper = secrettelaviv.SecretTelAvivScraper(CFG, HttpSettings(request_delay_seconds=0, backoff_seconds=0), TZ)
     scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     scraper.known_images = {"midburn-festival": ["x"]}  # stored: keeps its full details
     got: list[str] = []
@@ -99,9 +92,7 @@ def test_event_page_fields() -> None:
     assert event.extra["purchase_url"] == "https://www.instagram.com/p/DeZn7lAKMF0/"
     assert event.description and event.description.startswith("English")
     assert "Crazy Astronaut" in event.description
-    assert (
-        "Location" not in event.description and "Secret Deals" not in event.description
-    )
+    assert "Location" not in event.description and "Secret Deals" not in event.description
 
 
 def test_multi_day_event_runs_to_last_day() -> None:
@@ -113,8 +104,6 @@ def test_multi_day_event_runs_to_last_day() -> None:
 
 
 def test_end_after_midnight_rolls_to_next_day() -> None:
-    start, end = secrettelaviv.parse_when(
-        "Fri 30 October 2026 | 11:00 pm - 5:00 am", "11:55 pm", ZoneInfo(TZ)
-    )
+    start, end = secrettelaviv.parse_when("Fri 30 October 2026 | 11:00 pm - 5:00 am", "11:55 pm", ZoneInfo(TZ))
     assert start == datetime(2026, 10, 30, 23, 0, tzinfo=ZoneInfo(TZ))
     assert end == datetime(2026, 10, 31, 5, 0, tzinfo=ZoneInfo(TZ))

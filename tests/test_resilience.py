@@ -232,3 +232,10 @@ def test_artwork_run_with_successes_and_failures_persists_both(tmp_path: Path, m
         rows = {r.url: (r.downloaded_at is not None, r.error) for r in session.execute(text("select url, downloaded_at, error from event_images"))}
     assert rows["https://img.example/ok.jpg"] == (True, None)
     assert rows["https://img.example/broken.jpg"][0] is False and "not an image" in rows["https://img.example/broken.jpg"][1]
+
+
+def test_source_proxy_reaches_only_proxied_sources() -> None:
+    http = HttpSettings(source_proxy="http://p:1")
+    marked = _Probe(SourceSettings(cron="0 * * * *", proxied=True), http, "UTC")
+    plain = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
+    assert marked.http.proxy == "http://p:1" and plain.http.proxy is None
