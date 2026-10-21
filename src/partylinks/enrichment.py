@@ -162,6 +162,11 @@ class Enricher:
         self._genres = {
             genre: pattern for genre, words in settings.genres.items() if (pattern := _place_pattern(words, prefixes=2))
         }
+        self._declared = {
+            genre: pattern
+            for genre, words in settings.declared_genres.items()
+            if (pattern := _place_pattern(words, prefixes=2))
+        }
         self._talk = _place_pattern(settings.talk_keywords, prefixes=2)
         self._free = _keyword_pattern(settings.free_entry_keywords)
         self._pay_at_door = _keyword_pattern(settings.pay_at_door_keywords)
@@ -230,9 +235,15 @@ class Enricher:
         declared = " | ".join([*event.source_genres, *event.event_types]).lower()
         talk = self._talk is not None and self._talk.search(event.title.lower())
         text = f"{event.title}\n{event.description or ''}".lower() if self.settings.detect_genres_from_text and not talk else ""
-        return sorted(
-            genre for genre, pattern in self._genres.items() if pattern.search(declared) or pattern.search(text)
-        )
+        found = {genre for genre, pattern in self._genres.items() if pattern.search(declared)}
+        found |= {genre for genre, pattern in self._declared.items() if pattern.search(declared)}
+        from_text = {genre for genre, pattern in self._genres.items() if pattern.search(text)}
+        # A tech talk or conference ("Israeli startups", "the music industry's AI") has a subject, not a
+        # music genre: its text is read only for the talk genres.
+        talk_genres = set(self.settings.expand_genres(self.settings.talk_genres))
+        if (found | from_text) & talk_genres:
+            from_text &= talk_genres
+        return sorted(found | from_text)
 
     # ------------------------------------------------------------------ lineup
     def _lineup(self, event: ScrapedEvent) -> list[str]:

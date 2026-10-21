@@ -230,3 +230,23 @@ def test_named_region_overrides_far_coordinates() -> None:
     areas = ENRICHER.areas
     assert areas.contradicts(None, "פילוסוף קיבוץ הגושרים", None, 30.99, 35.35)  # placed in the Negev
     assert not areas.contradicts(None, "פילוסוף קיבוץ הגושרים", None, 33.22, 35.62)
+
+
+def test_tech_event_text_gives_tech_genres_not_music() -> None:
+    from partylinks.config import get_settings
+    from partylinks.enrichment import Enricher
+    from partylinks.models import ScrapedEvent
+
+    settings = get_settings()
+    enricher = Enricher(settings.enrichment, settings.timezone)
+
+    def genres(title: str, description: str, declared: list[str]) -> list[str]:
+        event = ScrapedEvent(source="x", source_event_id="1", url="https://example.com", title=title,
+                             description=description, event_types=declared)  # fmt: skip
+        return enricher._detect_genres(event)
+
+    meetup = genres("Founders night", "Israeli startup founders talk GenAI and kubernetes", ["Technology"])
+    assert meetup == ["ai", "cloud_devops", "hi_tech", "startups"]  # not "israeli"
+    assert genres("AI night", "", ["AI"]) == ["ai"]  # "ai" trusted only when declared
+    assert "ai" not in genres("Rave", "AI generated visuals all night, techno", [])
+    assert genres("מסיבה ישראלית", "להיטים ישראליים", []) == ["israeli", "mainstream"]

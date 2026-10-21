@@ -25,6 +25,7 @@ from partylinks.scrapers.kupatbravo import KupatbravoScraper
 from partylinks.scrapers.leaan import LeaanScraper
 from partylinks.scrapers.luma import LumaScraper
 from partylinks.scrapers.makore import MakoreScraper
+from partylinks.scrapers.meetup import MeetupScraper
 from partylinks.scrapers.megatickets import MegaticketsScraper
 from partylinks.scrapers.mevalim import MevalimScraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
@@ -76,6 +77,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         LumaScraper,
         GeektimeScraper,
         PeopleComputersScraper,
+        MeetupScraper,
     )
 }
 

@@ -1,0 +1,161 @@
+{
+ "data": {
+  "recommendedEvents": {
+   "pageInfo": {
+    "hasNextPage": false,
+    "endCursor": "MzE2OTY2ODcy"
+   },
+   "edges": [
+    {
+     "node": {
+      "id": "316958546",
+      "title": "Core C++ 2026 :: Lightning talks meetup",
+      "dateTime": "2026-10-21T17:00:00+03:00",
+      "endTime": "2026-10-21T19:00:00+03:00",
+      "eventUrl": "https://www.meetup.com/corecpp/events/316958546/",
+      "eventType": "PHYSICAL",
+      "status": "ACTIVE",
+      "description": "Join us for an informal, fast-paced community evening right after Day 2 of the **Core C++ 2026** conference! Whether you spent the week diving into C++ or are just dropping by for the evening, **everyone is welcome** \\- no conference ticket required\\.\n\n**What is the Vibe?**\nWe’re hosting an open stage for **5-minute lightning talks**. The rules are simple:\n\n* **Keep it short:** 5 minutes max.\n* **",
+      "venue": {
+       "name": "Tel Aviv Cinematheque",
+       "address": "HaArba'a St 5, Tel Aviv-Yafo, Israel",
+       "city": "Tel Aviv-Yafo",
+       "lat": 32.070707,
+       "lon": 34.783452,
+       "country": "il"
+      },
+      "group": {
+       "name": "Core C++",
+       "topicCategory": {
+        "urlkey": "technology",
+        "name": "Technology"
+       }
+      },
+      "featuredEventPhoto": {
+       "highResUrl": "https://secure.meetupstatic.com/photos/event/1/4/9/2/highres_536645266.jpeg"
+      },
+      "feeSettings": null
+     }
+    },
+    {
+     "node": {
+      "id": "316692733",
+      "title": "DevDay Exchange Community: Tel Aviv",
+      "dateTime": "2026-10-21T18:00:00+03:00",
+      "endTime": "2026-10-21T20:00:00+03:00",
+      "eventUrl": "https://www.meetup.com/openai-codex-israel-user-group/events/316692733/",
+      "eventType": "PHYSICAL",
+      "status": "ACTIVE",
+      "description": "​Let’s start with what engineers are building with Codex today, then look at what OpenAI DevDay could change next.\n​Three community members will each give a seven-minute show & tell of a project they’ve built with Codex.\n\nWe’ll follow that with a DevDay recap focused on the announcements that matter to engineers: what’s new, what we’re curious to try, and how it might shape the kinds of projects w",
+      "venue": {
+       "name": "Yitzhak Sadeh St 6",
+       "address": "Yitzhak Sadeh St 6, Tel Aviv-Yafo, Israel",
+       "city": "Tel Aviv-Yafo",
+       "lat": 32.065321,
+       "lon": 34.784548,
+       "country": "il"
+      },
+      "group": {
+       "name": "Codex Israel User Group",
+       "topicCategory": {
+        "urlkey": "technology",
+        "name": "Technology"
+       }
+      },
+      "featuredEventPhoto": {
+       "highResUrl": "https://secure.meetupstatic.com/photos/event/2/8/8/9/highres_536290377.jpeg"
+      },
+      "feeSettings": null
+     }
+    },
+    {
+     "node": {
+      "id": "316935392",
+      "title": "סדנת חשיפה לריתוך",
+      "dateTime": "2026-10-28T18:00:00+02:00",
+      "endTime": "2026-10-28T20:00:00+02:00",
+      "eventUrl": "https://www.meetup.com/makelab-israel-for-innovation-making-and-creativity/events/316935392/",
+      "eventType": "PHYSICAL",
+      "status": "ACTIVE",
+      "description": "בסדנה נכיר את העקרונות הבסיסיים של תחום הריתוך, נתנסה בעבודה עם כלי העבודה השונים, נחשף לסוגי הריתוך השונים ותצברו ידע שיסייע לכם להבין את התהליך ואת טכניקות העבודה הנדרשות.\n\nעלות: 240 ש\"ח למבוגר/ת. לתושבי יהוד-מונוסון: 190 ש\"ח למבוגר/ת.\n\nשימו לב: לא מספיק להרשם פה, יש להרשם גם בקישור הבא\n[https://www.makelab.org.il/registration/welding](https://www.makelab.org.il/registration/welding)",
+      "venue": {
+       "name": "MakeLab המעבדה לחדשנות ועשיינות - מייקלאב",
+       "address": "Avraham Giron St 3",
+       "city": "Yehud-Monosson",
+       "lat": 32.027325,
+       "lon": 34.894787,
+       "country": "il"
+      },
+      "group": {
+       "name": "Makelab Israel for Innovation, Making and Creativity",
+       "topicCategory": {
+        "urlkey": "technology",
+        "name": "Technology"
+       }
+      },
+      "featuredEventPhoto": {
+       "highResUrl": "https://secure.meetupstatic.com/photos/event/9/9/c/d/highres_522159373.jpeg"
+      },
+      "feeSettings": {
+       "amount": 65.0,
+       "currency": "EUR"
+      }
+     }
+    },
+    {
+     "node": {
+      "id": "316867243",
+      "title": "Shift Left Without Slowing Down: Security That Developers Don't Bypass at OWASP ",
+      "dateTime": "2026-10-24T14:56:00+03:00",
+      "endTime": "2026-10-24T16:11:00+03:00",
+      "eventUrl": "https://www.meetup.com/gdg-amman/events/316867243/",
+      "eventType": "PHYSICAL",
+      "status": "ACTIVE",
+      "description": "Join us at Shift Left Without Slowing Down: Security That Developers Don't Bypass at OWASP Amman.\n\nRegistration is coming soon\n\nAgenda\n\n---\n\nHosted By\n\nHiba Metani, UXC NN/g Certified | GDG Amman Founder\n\nUXC NN/g Certified | UX Research Manager | ResearchOps Specialist | GDG Amman Lead | Women Techmaker Ambassador\n\nAhmad Alsharif, Lead Organizer & Google Cloud Authorized Trainer\n\nAhmad Alsharif i",
+      "venue": {
+       "name": "Amman",
+       "address": "OWASP Amman",
+       "city": "Amman",
+       "lat": 31.954378,
+       "lon": 35.910576,
+       "country": "JO"
+      },
+      "group": {
+       "name": "GDG Amman",
+       "topicCategory": {
+        "urlkey": "technology",
+        "name": "Technology"
+       }
+      },
+      "featuredEventPhoto": null,
+      "feeSettings": null
+     }
+    },
+    {
+     "node": {
+      "id": "316801496",
+      "title": "H4 Run #1443 \"Halloween Hash: Get Spooked or Get Naked\"",
+      "dateTime": "2026-10-31T15:00:00+02:00",
+      "endTime": "2026-10-31T18:00:00+02:00",
+      "eventUrl": "https://www.meetup.com/the-holy-hash-house-harriers-h4/events/316801496/",
+      "eventType": "PHYSICAL",
+      "status": "ACTIVE",
+      "description": "Hares: Tipsy Gipsy and Pervarotti\n\nAlright, slacker-hashers, you got your September break. Back to work!\nYou get a treat: A Halloween Hash! That means: Scary costumes! (or just come naked)\n\nOn after @ Tipsy Gipsy's!\n\n**When:** Saturday 31 Oct, 3 pm (tentative)\n**Where:** TBA\n\nJoin us wankers! (It costs 25 shekel)\nMagic Dyke",
+      "venue": null,
+      "group": {
+       "name": "Holyland Hash House Harriers (H4)",
+       "topicCategory": {
+        "urlkey": "travel-outdoor",
+        "name": "Travel & Outdoor"
+       }
+      },
+      "featuredEventPhoto": {
+       "highResUrl": "https://secure.meetupstatic.com/photos/event/2/e/0/highres_536400736.jpeg"
+      },
+      "feeSettings": null
+     }
+    }
+   ]
+  }
+ }
+}

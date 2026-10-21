@@ -162,16 +162,40 @@ enrichment:
     lgbt: ["lgbt", "lgbtq", "gay", "queer", "pride", "drag", "להט\"ב", "גאווה", "דראג"]
     stand_up: ["stand up", "standup", "stand-up", "comedy", "סטנדאפ", "קומדיה"]
     karaoke: ["karaoke", "קריוקי"]
-    # Not plain "tech" ("tech house") or "ai"; Luma's ai/tech/crypto categories arrive as "hi-tech".
-    hi_tech: ["hi-tech", "high-tech", "hitech", "הייטק", "היי-טק", "startup", "startups", "סטארטאפ", "סטארטאפים",
-              "hackathon", "האקתון", "meetup", "מיטאפ", "developers", "מפתחים", "בינה מלאכותית", "cyber", "סייבר"]
+    # Hi-tech and its sub-fields (family below). Not plain "tech" ("tech house"), "ai" or "security":
+    # those are only trusted as a source's declared category (declared_genres).
+    hi_tech: ["hi-tech", "high-tech", "hitech", "הייטק", "היי-טק", "hackathon", "האקתון", "meetup", "מיטאפ",
+              "tech meetup", "tech talks"]
+    ai: ["artificial intelligence", "בינה מלאכותית", "genai", "gen ai", "generative ai", "llm", "llms",
+         "machine learning", "למידת מכונה", "deep learning", "ai agents", "agentic", "סוכני ai", "chatgpt"]
+    cyber: ["cyber", "cybersecurity", "סייבר", "אבטחת מידע", "appsec", "devsecops", "infosec"]
+    software_dev: ["developers", "מפתחים", "software engineering", "הנדסת תוכנה", "פיתוח תוכנה", "programming",
+                   "coding", "open source", "קוד פתוח", "frontend", "backend", "javascript", "typescript", "python",
+                   "golang", "webgl"]
+    data: ["data science", "data engineering", "big data", "דאטה", "airflow", "data engineers"]
+    cloud_devops: ["devops", "kubernetes", "cloud computing", "מחשוב ענן", "aws", "azure", "gcp", "sre",
+                   "platform engineering"]
+    startups: ["startup", "startups", "סטארטאפ", "סטארטאפים", "founders", "יזמות", "יזמים", "venture capital",
+               "fundraising", "גיוס הון"]
+    product: ["product management", "product managers", "ניהול מוצר", "מנהלי מוצר", "ux", "product design"]
+    gaming: ["game dev", "gamedev", "game development", "פיתוח משחקים", "esports", "גיימינג"]
+    web3: ["web3", "blockchain", "בלוקצ'יין", "בלוקצ׳יין", "crypto", "קריפטו", "defi"]
     conference: ["conference", "summit", "expo", "כנס", "כנסים", "ועידה", "ועידת"]
     # Not "קאמרי": that is the Cameri Theatre.
     classical_opera: ["opera", "אופרה", "אופרות", "classical music", "chamber music", "מוזיקה קלאסית", "קלאסית",
                       "קאמרית", "מוזיקה קאמרית", "symphony", "סימפונית", "philharmonic", "פילהרמונית",
                       "recital", "רסיטל", "string quartet", "רביעיית מיתרים", "mozart", "מוצרט", "beethoven", "בטהובן"]
+  # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
+  declared_genres:
+    hi_tech: ["technology", "tech"]
+    ai: ["ai"]
+    cyber: ["security"]
+    software_dev: ["development"]  # not "פיתוח": Geektime also has "פיתוח קריירה"
+    data: ["data"]
+    cloud_devops: ["ענן", "cloud", "תשתיות"]
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
+    hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
     electronic: [techno, house, trance, afro, drum_and_bass, bass_dubstep, hardstyle, edm, downtempo_chill]
     israeli: [mizrahi]
     # Linked both ways: either one shows both.
@@ -179,6 +203,8 @@ enrichment:
     rnb: [hip_hop]
   detect_genres_from_text: true
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
+  # Tech events and conferences ("Israeli startups") are talks: their text is read only for these genres.
+  talk_genres: [hi_tech, conference]
   talk_keywords: ["הרצאה", "הרצאות", "lecture", "סדנה", "סדנת", "workshop", "קפה דעת"]
   # A ticket tier named with one of these and priced 0 is treated as free entry.
   # DJ / performer extraction from descriptions. A line matching a header keyword
@@ -950,3 +976,13 @@ sources:
     enabled: true
     cron: "37 7,19 * * *"
     feed_url: https://events.co.il/feed.rss
+
+  meetup:
+    # Meetup: community meetups (tech talks, developer groups, startups). One GraphQL query, no login:
+    # in-person events near Tel Aviv within 150 km (~40), venues in Israel only. robots.txt only
+    # blocks feeds.
+    enabled: true
+    cron: "41 7,19 * * *"
+    graphql_url: https://www.meetup.com/gql2
+    latitude: 32.07
+    longitude: 34.77

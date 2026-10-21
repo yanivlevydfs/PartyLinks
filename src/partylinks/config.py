@@ -184,12 +184,17 @@ class EnrichmentSettings(BaseModel):
     target_city: TargetCitySettings = Field(default_factory=TargetCitySettings)
     cities: list[CitySettings] = Field(default_factory=list)
     genres: dict[str, list[str]] = Field(default_factory=dict)
+    # More words per genre matched only against what the source declares (its categories), never the
+    # title or description: too short or common to trust in free text ("AI", "ענן").
+    declared_genres: dict[str, list[str]] = Field(default_factory=dict)
     # Umbrella genres: filtering or counting the parent ("electronic") includes every listed sub-genre.
     genre_families: dict[str, list[str]] = Field(default_factory=dict)
     detect_genres_from_text: bool = True
     # A title with one of these is a talk, not a party: genres it describes ("the birth of house and
     # techno") are its subject, so only the genres its source declares are kept.
     talk_keywords: list[str] = Field(default_factory=list)
+    # An event with one of these genres (or their sub-genres) is a talk too: its text gives no music genres.
+    talk_genres: list[str] = Field(default_factory=list)
     lineup: LineupSettings = Field(default_factory=LineupSettings)
     time_slots: list[TimeSlot] = Field(default_factory=list)
     weekend_days: list[str] = Field(default_factory=list)
@@ -241,6 +246,7 @@ class RetentionSettings(BaseModel):
     @classmethod
     def _valid_cron(cls, value: str) -> str:
         return validate_cron(value)
+
     # Scrape run history older than this is deleted too.
     keep_runs_days: int = Field(30, ge=1)
     # SQLite only: give the space of deleted rows back to the OS after a purge.
