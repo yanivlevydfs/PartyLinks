@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 from sqlalchemy import (
     JSON,
@@ -40,7 +40,7 @@ from sqlalchemy import (
 from sqlalchemy import event as sa_event
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, ORMExecuteState, Session, mapped_column, relationship, sessionmaker
 
 from partylinks.config import project_path
 from partylinks.models import ScrapedEvent
@@ -292,7 +292,26 @@ def offers_hash(event: ScrapedEvent) -> str:
     return hashlib.sha1(json.dumps(data, ensure_ascii=False, default=str).encode()).hexdigest()
 
 
+def _note_write(state: ORMExecuteState) -> None:
+    if not state.is_select:  # INSERT / UPDATE / DELETE (bulk or Core) or raw SQL
+        state.session.info["wrote"] = True
+
+
+def _note_flush(session: Session, _context: Any) -> None:
+    session.info["wrote"] = True  # changed ORM objects
+
+
+def _count_commit(session: Session) -> None:
+    # After the real COMMIT: a reader that sees the new count also sees the new rows.
+    if session.info.pop("wrote", False):
+        Database.changes += 1
+
+
 class Database:
+    # Committed writing transactions in this process (any Database): cached API responses
+    # keyed by it go stale the moment data changes.
+    changes: ClassVar[int] = 0
+
     def __init__(self, url: str, echo: bool = False) -> None:
         parsed = make_url(url)
         if parsed.get_backend_name() == "sqlite" and parsed.database not in (None, "", ":memory:"):
@@ -314,6 +333,9 @@ class Database:
         if is_sqlite:
             sa_event.listen(self.engine, "connect", _sqlite_pragmas)
         self._sessions = sessionmaker(self.engine, expire_on_commit=False)
+        sa_event.listen(self._sessions, "do_orm_execute", _note_write)
+        sa_event.listen(self._sessions, "after_flush", _note_flush)
+        sa_event.listen(self._sessions, "after_commit", _count_commit)
 
     def create_schema(self) -> None:
         """Create missing tables and add columns introduced since the DB was created.

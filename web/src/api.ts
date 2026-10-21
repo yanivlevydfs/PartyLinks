@@ -1,10 +1,9 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import type { Categories, EventDetail, EventPage, EventSummary, Post, PostList } from "./types";
+import type { Categories, EventDetail, EventPage, MapPins, Post, PostList } from "./types";
 
 export type Params = Record<string, string | string[] | undefined>;
 
 const PAGE_SIZE = 24;
-const MAX_PAGE_SIZE = 200; // api.max_page_size in config/settings.yaml
 
 async function getJSON<T>(url: string): Promise<T> {
   const res = await fetch(url);
@@ -30,20 +29,10 @@ export function useEvents(params: Params) {
   });
 }
 
-/** Every upcoming event matching the filter (all pages), for the map. */
-export function useAllEvents(params: Params = {}) {
-  const qs = toQuery({ ...params, page_size: String(MAX_PAGE_SIZE) });
-  return useQuery({
-    queryKey: ["events", "all", qs],
-    queryFn: async () => {
-      const items: EventSummary[] = [];
-      for (let page = 1; ; page++) {
-        const d = await getJSON<EventPage>(`/events?${qs}&page=${page}`);
-        items.push(...d.items);
-        if (page * d.page_size >= d.total) return items;
-      }
-    },
-  });
+/** Every event matching the filter that has coordinates, in one request, for the map. */
+export function useMapEvents(params: Params = {}) {
+  const qs = toQuery(params);
+  return useQuery({ queryKey: ["events", "map", qs], queryFn: () => getJSON<MapPins>(`/events/map?${qs}`) });
 }
 
 export const useEvent = (id: string) =>

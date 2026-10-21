@@ -2,11 +2,11 @@ import "leaflet/dist/leaflet.css";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAllEvents } from "../api";
+import { useMapEvents } from "../api";
 import { useAllowed, useConsent } from "../consent";
 import { Filters, filterParams } from "../Filters";
 import { useStore } from "../store";
-import type { EventSummary } from "../types";
+import type { MapEvent } from "../types";
 import { eventPath, fmtDate, Sources, useT, useTitle, venuePath } from "../ui";
 
 const ISRAEL: [number, number] = [31.9, 34.95];
@@ -20,7 +20,7 @@ export default function MapPage() {
   useEffect(() => {
     if (useStore.getState().filters.when === "all") set({ when: "tonight" });
   }, [set]);
-  const { data, isError, isPending } = useAllEvents(filterParams({ ...f, sort: "start_at" }));
+  const { data, isError, isPending } = useMapEvents(filterParams({ ...f, sort: "start_at" }));
   useTitle(t.nav.map);
   // Tiles come from OpenStreetMap's servers (they see the visitor's IP): only with consent,
   // given in the cookie settings or here, for this visit or for good.
@@ -30,14 +30,13 @@ export default function MapPage() {
   const showTiles = allowed || once;
 
   // One pin per location; a venue usually hosts many events.
-  const spots = new Map<string, EventSummary[]>();
-  for (const e of data ?? []) {
-    if (e.latitude == null || e.longitude == null) continue;
+  const spots = new Map<string, MapEvent[]>();
+  for (const e of data?.items ?? []) {
     const key = `${e.latitude.toFixed(4)},${e.longitude.toFixed(4)}`;
     spots.set(key, [...(spots.get(key) ?? []), e]);
   }
-  const placed = [...spots.values()].reduce((n, list) => n + list.length, 0);
-  const unplaced = (data?.length ?? 0) - placed;
+  const placed = data?.items.length ?? 0;
+  const unplaced = data?.unplaced ?? 0;
 
   return (
     <main className="map-page">
@@ -60,11 +59,11 @@ export default function MapPage() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
         )}
-        <FitTo points={[...spots.values()].map((l) => [l[0].latitude!, l[0].longitude!] as [number, number])} />
+        <FitTo points={[...spots.values()].map((l) => [l[0].latitude, l[0].longitude] as [number, number])} />
         {[...spots.entries()].map(([key, list]) => (
           <CircleMarker
             key={key}
-            center={[list[0].latitude!, list[0].longitude!]}
+            center={[list[0].latitude, list[0].longitude]}
             // Small pins that grow slowly: big ones merged into one pink blob over the whole country.
             radius={Math.min(5 + Math.log2(list.length) * 2, 14)}
             pathOptions={{ color: "#ff2e93", fillColor: "#ff2e93", fillOpacity: 0.7, weight: 1 }}

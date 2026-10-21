@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select, update
 
 from partylinks.api import create_app
 from partylinks.config import Settings
@@ -475,3 +476,35 @@ def test_umbrella_genre_includes_its_sub_genres(tmp_path: Path) -> None:
         assert ids("israeli") == {"test:mizrahi"}
         counts = {g["value"]: g["events"] for g in client.get("/categories").json()["genres"]}
         assert counts["electronic"] == 2 and counts["israeli"] == 1
+
+
+def test_only_committed_writes_count_as_data_changes(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    start = datetime.now(UTC) + timedelta(days=1)
+    db = seed(settings, [event("a", start)])
+    before = Database.changes
+    with db.session() as session:
+        session.scalars(select(EventRow)).all()
+    assert Database.changes == before
+    with pytest.raises(RuntimeError), db.session() as session:
+        session.execute(update(EventRow).values(title="rolled back"))
+        raise RuntimeError
+    assert Database.changes == before
+    with db.session() as session:
+        session.execute(update(EventRow).values(title="renamed"))
+    assert Database.changes == before + 1
+
+
+def test_cached_responses_follow_writes_and_map_returns_located_events(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    start = datetime.now(UTC) + timedelta(days=1)
+    db = seed(settings, [event("a", start, latitude=32.0636, longitude=34.7749)])
+    with TestClient(create_app(settings)) as client:
+        assert client.get("/events").json()["total"] == 1
+        enricher = Enricher(settings.enrichment, settings.timezone)
+        with db.session() as session:
+            upsert_events(session, [e for e in [enricher.enrich(event("b", start, address=None))] if e])
+        assert client.get("/events").json()["total"] == 2  # not the cached page from before the write
+        pins = client.get("/events/map").json()
+        assert "test:a" in [p["id"] for p in pins["items"]] and len(pins["items"]) + pins["unplaced"] == 2
+        assert set(pins["items"][0]) == {"id", "slug", "title", "start_at", "venue_name", "latitude", "longitude", "source", "sources"}

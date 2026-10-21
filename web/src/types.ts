@@ -101,6 +101,17 @@ export interface EventPage {
   items: EventSummary[];
 }
 
+/** A map pin (GET /events/map): just what its popup shows. */
+export type MapEvent = Pick<EventSummary, "id" | "slug" | "title" | "start_at" | "venue_name" | "source" | "sources"> & {
+  latitude: number;
+  longitude: number;
+};
+
+export interface MapPins {
+  items: MapEvent[];
+  unplaced: number; // matching events without coordinates
+}
+
 export interface Facet {
   value: string;
   events: number;

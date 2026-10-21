@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
+import time
 from collections import Counter
 from collections.abc import AsyncGenerator, Callable, Iterator, Sequence
 from contextlib import asynccontextmanager
@@ -19,7 +21,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from sqlalchemy import ColumnElement, String, and_, cast, func, not_, or_, select
-from sqlalchemy.orm import Session, aliased, selectinload, undefer
+from sqlalchemy.orm import Session, aliased, defer, load_only, selectinload, undefer
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from partylinks import seo
@@ -213,6 +215,27 @@ class EventPage(BaseModel):
     items: list[EventSummaryOut]
 
 
+class MapEventOut(_Out):
+    """A pin on the map: only what its popup shows."""
+
+    id: str
+    slug: str | None
+    title: str
+    start_at: datetime | None
+    venue_name: str | None
+    latitude: float
+    longitude: float
+    source: str
+    sources: list[str] = []
+
+
+class MapOut(BaseModel):
+    """Every matching event that has coordinates, in one response."""
+
+    items: list[MapEventOut]
+    unplaced: int  # matching events without coordinates
+
+
 class RunOut(_Out):
     id: int
     source: str
@@ -309,6 +332,47 @@ class _SiteFiles(StaticFiles):
             return response
 
 
+class ResponseCache:
+    """JSON bodies of public reads, reused until a write commits (``Database.changes``) or ``ttl``
+    passes ("upcoming" and "free until" move with the clock).
+
+    ponytail: per-process dict, wiped when the data changes or it outgrows ``max_bytes``; fine for
+    the single uvicorn worker. Writes from another process are only seen after ``ttl``.
+    """
+
+    def __init__(self, ttl: float = 60, max_bytes: int = 64 << 20) -> None:
+        self.ttl, self.max_bytes = ttl, max_bytes
+        self._items: dict[tuple[str, str], tuple[float, bytes]] = {}
+        self._bytes = 0
+        self._changes = Database.changes
+        self._lock = threading.Lock()
+
+    def get(self, key: tuple[str, str], build: Callable[[], bytes]) -> bytes:
+        changes, now = Database.changes, time.monotonic()  # read before building: a write during it wins
+        hit = self._items.get(key)
+        if hit and changes == self._changes and now - hit[0] < self.ttl:
+            return hit[1]
+        body = build()
+        with self._lock:
+            if changes > self._changes or self._bytes + len(body) > self.max_bytes:
+                self._items.clear()
+                self._bytes = 0
+                self._changes = max(changes, self._changes)
+            if changes == self._changes:  # not built from data older than the cache's
+                old = self._items.pop(key, None)
+                self._bytes += len(body) - (len(old[1]) if old else 0)
+                self._items[key] = (now, body)
+        return body
+
+
+def _cached(request: Request, build: Callable[[], BaseModel], *, exclude_none: bool = False) -> Response:
+    """The endpoint's JSON from the response cache (built and stored on a miss)."""
+    cache: ResponseCache = request.app.state.response_cache
+    key = (request.url.path, request.url.query)
+    body = cache.get(key, lambda: build().model_dump_json(by_alias=True, exclude_none=exclude_none).encode())
+    return Response(body, media_type="application/json")
+
+
 def create_app(settings: Settings | None = None, start_scheduler: bool | None = None) -> FastAPI:
     settings = settings or get_settings()
     setup_logging(settings.logging)  # also for `serve --reload` workers, which never run cli.main()
@@ -350,6 +414,7 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
         openapi_url="/openapi.json" if docs else None,
     )
     app.state.settings = settings  # read by SecurityMiddleware before the lifespan finishes too
+    app.state.response_cache = ResponseCache()
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     app.add_middleware(SecurityMiddleware)  # outermost: rejects before any work is done
     _register_routes(app)
@@ -375,7 +440,13 @@ def _best_deals(session: Session, rows: Sequence[EventRow]) -> dict[str, DealOut
     ids = {r.best_listing_id for r in rows if r.best_listing_id}
     if not ids:
         return {}
-    return {d.id: DealOut.model_validate(d) for d in session.scalars(select(EventRow).where(EventRow.id.in_(ids)))}
+    deal_columns = load_only(
+        EventRow.id, EventRow.source, EventRow.url, EventRow.min_price, EventRow.has_free_entry, EventRow.entry_type
+    )
+    return {
+        d.id: DealOut.model_validate(d)
+        for d in session.scalars(select(EventRow).where(EventRow.id.in_(ids)).options(deal_columns))
+    }
 
 
 def _group_sources(session: Session, rows: Sequence[EventRow]) -> dict[str, list[str]]:
@@ -491,10 +562,8 @@ def _register_routes(app: FastAPI) -> None:
             return {"status": report["status"]}
         return report
 
-    @app.get("/events", response_model=EventPage, tags=["events"])
-    def list_events(
+    def event_filters(
         request: Request,
-        session: SessionDep,
         source: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="Source name (repeatable)")] = None,
         genre: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="Canonical genre, any-of (repeatable)")] = None,
         artist: Annotated[str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="DJ / performer in the lineup")] = None,
@@ -521,12 +590,9 @@ def _register_routes(app: FastAPI) -> None:
         min_price: Annotated[float | None, Query(ge=0)] = None,
         max_price: Annotated[float | None, Query(ge=0)] = None,
         q: Annotated[str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="Search title/description/venue/lineup")] = None,
-        sort: EventSort = EventSort.start_asc,
-        page: Annotated[int, Query(ge=1)] = 1,
-        page_size: Annotated[int | None, Query(ge=1)] = None,
-    ) -> EventPage:
+    ) -> list[ColumnElement[bool]]:
+        """WHERE clauses of the event filters, shared by the list and the map."""
         cfg: Settings = request.app.state.settings
-        size = min(page_size or cfg.api.default_page_size, cfg.api.max_page_size)
         tz = ZoneInfo(cfg.timezone)
         filters: list[ColumnElement[bool]] = []
         if source:
@@ -595,18 +661,62 @@ def _register_routes(app: FastAPI) -> None:
                     cast(EventRow.lineup, String).ilike(pattern, escape="\\"),
                 )
             )
-        total = session.scalar(select(func.count()).select_from(EventRow).where(*filters)) or 0
-        rows = session.scalars(
-            select(EventRow)
-            .where(*filters)
-            .order_by(_SORT_COLUMNS[sort], EventRow.start_at, EventRow.id)
-            .offset((page - 1) * size)
-            .limit(size)
-            .options(selectinload(EventRow.images))
-        ).all()
-        extras = _summary_extras(session, rows)
-        items = [EventSummaryOut.model_validate(r).model_copy(update=extras[r.id]) for r in rows]
-        return EventPage(total=total, page=page, page_size=size, items=items)
+        return filters
+
+    # A default, not Annotated: string annotations (``from __future__``) cannot see this local function.
+    event_filters_dep = Depends(event_filters)
+
+    @app.get("/events", response_model=EventPage, tags=["events"])
+    def list_events(
+        request: Request,
+        session: SessionDep,
+        filters: list[ColumnElement[bool]] = event_filters_dep,
+        sort: EventSort = EventSort.start_asc,
+        page: Annotated[int, Query(ge=1)] = 1,
+        page_size: Annotated[int | None, Query(ge=1)] = None,
+    ) -> Response:
+        cfg: Settings = request.app.state.settings
+        size = min(page_size or cfg.api.default_page_size, cfg.api.max_page_size)
+
+        def build() -> EventPage:
+            total = session.scalar(select(func.count()).select_from(EventRow).where(*filters)) or 0
+            rows = session.scalars(
+                select(EventRow)
+                .where(*filters)
+                .order_by(_SORT_COLUMNS[sort], EventRow.start_at, EventRow.id)
+                .offset((page - 1) * size)
+                .limit(size)
+                # Cards never show the long text columns.
+                .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
+            ).all()
+            extras = _summary_extras(session, rows)
+            items = [EventSummaryOut.model_validate(r).model_copy(update=extras[r.id]) for r in rows]
+            return EventPage(total=total, page=page, page_size=size, items=items)
+
+        return _cached(request, build)
+
+    @app.get("/events/map", response_model=MapOut, tags=["events"])
+    def map_events(
+        request: Request, session: SessionDep, filters: list[ColumnElement[bool]] = event_filters_dep
+    ) -> Response:
+        """All matching events with coordinates at once (the list's filters, no paging)."""
+
+        def build() -> MapOut:
+            located = and_(EventRow.latitude.is_not(None), EventRow.longitude.is_not(None))
+            rows = session.execute(
+                select(
+                    EventRow.id, EventRow.slug, EventRow.title, EventRow.start_at, EventRow.venue_name,
+                    EventRow.latitude, EventRow.longitude, EventRow.source, EventRow.group_id,
+                )
+                .where(*filters, located)
+                .order_by(EventRow.start_at, EventRow.id)
+            ).all()  # fmt: skip
+            unplaced = session.scalar(select(func.count()).select_from(EventRow).where(*filters, not_(located))) or 0
+            sources = _group_sources(session, rows)  # type: ignore[arg-type]
+            items = [MapEventOut.model_validate(r).model_copy(update={"sources": sources[r.id]}) for r in rows]
+            return MapOut(items=items, unplaced=unplaced)
+
+        return _cached(request, build)
 
     @app.get("/events/{event_ref}", response_model=EventOut, tags=["events"])
     def get_event(event_ref: str, session: SessionDep) -> EventOut:
@@ -694,7 +804,10 @@ def _register_routes(app: FastAPI) -> None:
         return FileResponse(path, media_type=media_type, headers=headers)
 
     @app.get("/categories", response_model=Categories, response_model_exclude_none=True, tags=["events"])
-    def categories(request: Request, session: SessionDep, upcoming: bool = True) -> Categories:
+    def categories(request: Request, session: SessionDep, upcoming: bool = True) -> Response:
+        return _cached(request, lambda: build_categories(request, session, upcoming), exclude_none=True)
+
+    def build_categories(request: Request, session: Session, upcoming: bool) -> Categories:
         # Only the facet columns (not descriptions/extra JSON); each real event counted once.
         query = select(
             EventRow.genres, EventRow.local_date, EventRow.day_of_week, EventRow.time_slot, EventRow.area,
