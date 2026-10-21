@@ -133,6 +133,9 @@ export const STRINGS = {
       hi_tech: "הייטק", conference: "כנסים", classical_opera: "קלאסית / אופרה",
       ai: "AI ובינה מלאכותית", cyber: "סייבר", software_dev: "פיתוח תוכנה", data: "דאטה", cloud_devops: "ענן ו-DevOps",
       startups: "סטארטאפים ויזמות", product: "ניהול מוצר", gaming: "גיימינג", web3: "בלוקצ׳יין ו-Web3",
+      festival: "פסטיבלים", meetups: "מפגשים", culture: "תרבות", exhibitions: "תערוכות", workshops: "סדנאות",
+      screenings: "הקרנות", markets: "שווקים וקניות", food: "אוכל", environment: "סביבה", religious: "דת ומסורת",
+      holidays: "חגים", sport: "ספורט",
     },
   },
   en: {

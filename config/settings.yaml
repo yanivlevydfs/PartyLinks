@@ -196,6 +196,20 @@ enrichment:
     software_dev: ["development"]  # not "פיתוח": Geektime also has "פיתוח קריירה"
     data: ["data"]
     cloud_devops: ["ענן", "cloud", "תשתיות"]
+    # Secret Tel Aviv's categories (its parties are told apart by their music genres).
+    live_show: ["live music", "livemusic", "international artists"]
+    festival: ["music festivals", "music festival"]
+    meetups: ["meetups", "community"]
+    culture: ["culture highlights", "culture"]
+    exhibitions: ["exhibitions", "exhibition"]
+    workshops: ["workshop", "workshops"]
+    screenings: ["sceening", "screening", "screenings"]
+    markets: ["shopping"]
+    food: ["food events", "food"]
+    environment: ["environmental"]
+    religious: ["religious"]
+    holidays: ["holidays", "halloween"]
+    sport: ["sport"]
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
