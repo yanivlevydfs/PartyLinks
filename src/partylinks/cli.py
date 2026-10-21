@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import sys
+import logging
 
 from pydantic import ValidationError
 from sqlalchemy import select
@@ -23,6 +23,9 @@ from partylinks.logs import setup_logging
 from partylinks.scrapers import SCRAPERS, build_scraper, configured_sources
 from partylinks.service import RunResult, ScrapeService
 
+# Command results. INFO even under the WARNING default: they are what the command reports.
+log = logging.getLogger("partylinks.cli")
+
 
 def _scrape(names: list[str]) -> int:
     settings = get_settings()
@@ -30,7 +33,7 @@ def _scrape(names: list[str]) -> int:
     selected = names or [name for name, cfg in sources.items() if cfg.enabled]
     unknown = [n for n in selected if n not in sources]
     if unknown:
-        print(f"unknown or unconfigured source(s): {', '.join(unknown)}", file=sys.stderr)
+        log.error("unknown or unconfigured source(s): %s", ", ".join(unknown))
         return 2
 
     db = Database(settings.database.url, settings.database.echo)
@@ -42,10 +45,11 @@ def _scrape(names: list[str]) -> int:
     service.shutdown()
     for name, r in zip(selected, results, strict=True):
         if not isinstance(r, RunResult):
-            print(f"{name:<10} crashed  {type(r).__name__}: {r}")
+            log.error("%-10s crashed  %s: %s", name, type(r).__name__, r)
             continue
-        print(f"{r.source:<10} {r.status:<8} found={r.events_found} saved={r.events_saved} "
-              f"failed={r.events_failed}{'  error=' + r.error if r.error else ''}")  # fmt: skip
+        log.log(logging.ERROR if r.status == "failed" else logging.INFO,
+                "%-10s %-8s found=%d saved=%d failed=%d%s", r.source, r.status, r.events_found, r.events_saved,
+                r.events_failed, "  error=" + r.error if r.error else "")  # fmt: skip
     return 0 if all(isinstance(r, RunResult) and r.status != "failed" for r in results) else 1
 
 
@@ -96,7 +100,7 @@ def _chillz_links() -> int:
     inbox = project_path(scraper.settings.inbox_dir or "data/chillz_inbox")
     target = project_path("data/chillz_links.html")
     write_links_page(target, pages, imported, inbox)
-    print(f"{len(pages)} pages ({len(imported)} already imported) -> {target}")
+    log.info("%d pages (%d already imported) -> %s", len(pages), len(imported), target)
     return 0
 
 
@@ -107,26 +111,25 @@ def _cleanup() -> int:
     service = ScrapeService(settings, db)
     removed = asyncio.run(service.purge_expired())
     service.shutdown()
-    print(f"removed {removed} expired events")
+    log.info("removed %d expired events", removed)
     return 0
 
 
 def _artists(action: str, names: list[str]) -> int:
     book = ArtistBook(get_settings().enrichment.lineup.artists_db)
     if action == "list":
-        sys.stdout.reconfigure(errors="replace")  # type: ignore[union-attr]  # cp1252 console vs "BĘÃTFÓØT"
         for name, seen, blocked in book.rows():
-            print(f"{seen:>4}  {'BLOCKED ' if blocked else ''}{name}")
+            log.info("%4d  %s%s", seen, "BLOCKED " if blocked else "", name)
         return 0
     for name in names:
         book.set(name, blocked=action == "block")
-    print(f"{action}: {len(names)} name(s); applied on the next scrape")
+    log.info("%s: %d name(s); applied on the next scrape", action, len(names))
     return 0
 
 
 def _sources() -> int:
     for name, cfg in configured_sources(get_settings()).items():
-        print(f"{name:<10} {'enabled ' if cfg.enabled else 'disabled'}  cron='{cfg.cron}'")
+        log.info("%-10s %s  cron='%s'", name, "enabled " if cfg.enabled else "disabled", cfg.cron)
     return 0
 
 
@@ -147,9 +150,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         setup_logging(get_settings().logging, args.verbose)
+        log.setLevel(logging.INFO)
         return _dispatch(args)
     except ValidationError as exc:  # broken config.yaml / PARTYLINKS_* env: say what, no traceback
-        print(f"invalid configuration:\n{exc}", file=sys.stderr)
+        # Logging is not set up yet (the config is what failed): Python's fallback handler writes to stderr.
+        log.error("invalid configuration:\n%s", exc)
         return 2
 
 

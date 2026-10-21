@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import html
 import json
+import logging
 import os
 import re
 import time
@@ -31,6 +32,8 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
+
+log = logging.getLogger("partylinks.chillz_scanner")
 
 BASE_URL = "https://chillz.com"
 SITEMAP_URL = f"{BASE_URL}/sitemap.xml"
@@ -223,13 +226,13 @@ def discover_sitemap_urls(sitemap_url: str = SITEMAP_URL, seen: set[str] | None 
 
     status, content_type, body, _ = fetch(sitemap_url)
     if status != 200 or not body:
-        print(f"[sitemap] unavailable: HTTP {status} ({sitemap_url})")
+        log.warning("[sitemap] unavailable: HTTP %s (%s)", status, sitemap_url)
         return []
 
     try:
         root = ET.fromstring(body)
     except ET.ParseError:
-        print(f"[sitemap] invalid XML: {sitemap_url}")
+        log.warning("[sitemap] invalid XML: %s", sitemap_url)
         return []
 
     tag = root.tag.rsplit("}", 1)[-1].lower()
@@ -330,7 +333,7 @@ def main() -> None:
 
     urls = discover_sitemap_urls()
     urls = urls[:MAX_PAGES]
-    print(f"Discovered {len(urls)} event candidate URLs.")
+    log.info("Discovered %d event candidate URLs.", len(urls))
 
     deals: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
@@ -348,12 +351,12 @@ def main() -> None:
                 "extraction": result.get("extraction"),
             })
 
-        print(f"[{index}/{len(urls)}] {result.get('status')}: {url}")
+        log.info("[%d/%d] %s: %s", index, len(urls), result.get("status"), url)
 
         # A conservative pause between page requests. Stop if the origin starts
         # returning checkpoint responses instead of increasing request pressure.
         if result.get("status") == "blocked_by_checkpoint":
-            print("Checkpoint encountered; stopping to avoid repeated blocked requests.")
+            log.warning("Checkpoint encountered; stopping to avoid repeated blocked requests.")
             break
         if index < len(urls):
             time.sleep(1.0)
@@ -369,9 +372,9 @@ def main() -> None:
         "diagnostics": diagnostics,
     }
     save_json(OUTPUT_PATH, output)
-    print(f"\nSaved {len(deals)} deals to {OUTPUT_PATH}")
-    print(f"Cache: {CACHE_PATH}")
+    log.info("Saved %d deals to %s (cache: %s)", len(deals), OUTPUT_PATH, CACHE_PATH)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     main()
