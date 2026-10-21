@@ -1,0 +1,49 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//wp-events-plugin.com//7.1.7//EN
+TZID:Asia/Jerusalem
+X-WR-TIMEZONE:Asia/Jerusalem
+BEGIN:VEVENT
+UID:39659@secrettelaviv.com
+DTSTART;TZID=Asia/Jerusalem:20261020T190000
+DTEND;TZID=Asia/Jerusalem:20261021T220000
+DTSTAMP:20261012T060058Z
+URL:https://www.secrettelaviv.com/tickets/the-fifth-european-night-of-lite
+ rature-liebling-haus
+SUMMARY:The fifth European Night of Literature @ Liebling Haus -  - 20/10/2
+ 026 - 21/10/2026 - 7:00 pm - 10:00 pm
+DESCRIPTION:Two nights of stories\, music\, and literature ✨
+ATTACH;FMTTYPE=image/jpeg:https://www.secrettelaviv.com/wp-content/uploads
+ /2026/10/image-167.jpg
+CATEGORIES:Culture Highlights,Free Events,Meetups,Sceening,Workshop
+END:VEVENT
+BEGIN:VEVENT
+UID:39744@secrettelaviv.com
+DTSTART;TZID=Asia/Jerusalem:20261026T230000
+DTEND;TZID=Asia/Jerusalem:20261026T235500
+DTSTAMP:20261013T074706Z
+URL:https://www.secrettelaviv.com/tickets/alien-transport-frequency-gagari
+ n-club
+SUMMARY:Alien Transport & Frequency @ Gagarin Club -  - 26/10/2026 - 11:00 
+ pm - 11:55 pm
+DESCRIPTION:Crazy Astronaut leads an epic night at Gagarin ✨
+ATTACH;FMTTYPE=image/jpeg:https://www.secrettelaviv.com/wp-content/uploads
+ /2026/10/image-248.jpg
+CATEGORIES:International Artists,Israeli Musicians,Parties,Rave
+END:VEVENT
+BEGIN:VEVENT
+UID:63@secrettelaviv.com
+DTSTART;TZID=Asia/Jerusalem;VALUE=DATE:20261102
+DTEND;TZID=Asia/Jerusalem;VALUE=DATE:20261108
+DTSTAMP:20260512T081443Z
+URL:https://www.secrettelaviv.com/tickets/midburn-festival
+SUMMARY:Midburn Festival 2026 -  - 02/11/2026 - 07/11/2026 - All Day
+DESCRIPTION:Burning Man’s Israeli offshoot\, and now the second largest r
+ egional Burning Man after Africa Burns\, Midburn is a special 5-day festiv
+ al held in the Negev.
+ATTACH;FMTTYPE=image/jpeg:https://www.secrettelaviv.com/wp-content/uploads
+ /2021/05/e43185_fa87f35af77543f88078ea31e114d84bmv2.png
+CATEGORIES:Community,Culture Highlights,Meetups,Midburn,Music
+ Festivals,Outside of Tel Aviv,Parties,Sukkot
+END:VEVENT
+END:VCALENDAR
