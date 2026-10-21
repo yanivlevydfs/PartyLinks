@@ -284,6 +284,7 @@ class ScrapeService:
             async with deadline:
                 scraper = build_scraper(source, self.settings)
                 scraper.known_images = await asyncio.to_thread(self._known_images, source)
+                scraper.linked_urls = await asyncio.to_thread(self._linked_urls, source)
                 artwork = await asyncio.to_thread(self._artwork_by_title, source)
                 scraper.known_artists = {key: p for key, p in profiles.items() if p.source == source}
                 scraper.wanted = lambda event: not self.enricher.is_dropped(event)
@@ -398,6 +399,13 @@ class ScrapeService:
             for event_id, url in rows:
                 known.setdefault(event_id, []).append(url)
         return known
+
+    def _linked_urls(self, source: str) -> list[str]:
+        """Ticket links of other sources' upcoming events (aggregators such as Popit link out)."""
+        url = EventRow.extra["purchase_url"].as_string()
+        with self.db.session() as session:
+            rows = session.scalars(select(url).where(EventRow.source != source, url.is_not(None), upcoming_filter()))
+            return list(dict.fromkeys(rows))
 
     def _artwork_by_title(self, source: str) -> dict[str, str]:
         """Stored primary artwork per title key; ``source``'s own listings win over other sources'."""

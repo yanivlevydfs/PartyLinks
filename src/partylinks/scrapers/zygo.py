@@ -6,6 +6,8 @@ at 10 items and returns them in a shuffled order, so ``skip`` alone can miss
 events. The list is therefore walked repeatedly until a full pass yields no new
 ids (bounded by ``max_passes``).
 Details: the event page's ``__NEXT_DATA__`` holds the event incl. ticket tiers.
+Private events are not in the list; the ones another site links to (Popit sells through
+Zygo) are read from those linked pages, so dedup can merge them and they get prices.
 """
 
 from __future__ import annotations
@@ -40,9 +42,14 @@ class ZygoScraper(BaseScraper[ZygoSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         ids = await self._list_event_ids()
-        self.log.info("listed %d events", len(ids))
-        async for event in self.stream_isolated(ids, self._fetch_event, label=lambda i: i):
-            yield event
+        prefix = self.settings.site_url + "/event/"
+        linked = [url for url in self.linked_urls if url.startswith(prefix)]
+        self.log.info("listed %d events, %d more linked from other sites", len(ids), len(linked))
+        seen: set[str] = set()  # a linked page can be a listed event under its other id
+        async for event in self.stream_isolated([*ids, *linked], self._fetch_event, label=lambda i: i):
+            if event.source_event_id not in seen:
+                seen.add(event.source_event_id)
+                yield event
 
     async def _list_event_ids(self) -> list[str]:
         s = self.settings
@@ -63,7 +70,11 @@ class ZygoScraper(BaseScraper[ZygoSettings]):
         return list(seen)
 
     async def _fetch_event(self, event_id: str) -> ScrapedEvent:
-        page_url = self.settings.site_url + self.settings.event_page_path.format(event_id=event_id)
+        """``event_id`` is a listed id, or a linked page's full URL."""
+        if event_id.startswith("http"):
+            page_url = event_id
+        else:
+            page_url = self.settings.site_url + self.settings.event_page_path.format(event_id=event_id)
         return parse_event(next_data(await self.get_text(page_url)), page_url)
 
 
