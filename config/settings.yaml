@@ -861,6 +861,8 @@ sources:
       - {host: netanya, venue_name: היכל התרבות נתניה, city: נתניה}
       - {host: petah-tikva, venue_name: היכל התרבות פתח תקווה, city: פתח תקווה}
       - {host: mbe-rg, venue_name: בית עמנואל רמת גן, city: רמת גן}
+      - {host: ramat-gan, venue_name: עיריית רמת גן, city: רמת גן}
+      - {host: even-yehuda, venue_name: מועצה מקומית אבן יהודה, city: אבן יהודה}
       - {host: ashdod, venue_name: אשדוד, city: אשדוד}
       - {host: ashkelon, venue_name: אשקלון, city: אשקלון}
       # Theatres, music and comedy. A tenant playing in several cities has no city: the hall names it.
