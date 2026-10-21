@@ -37,7 +37,7 @@ AI_CRAWLERS = [
 
 # Operational / private endpoints crawlers have no business indexing.
 ROBOTS_PRIVATE = ["/admin", "/admin/api/", "/docs", "/redoc", "/openapi.json", "/health", "/runs", "/sources",
-                  "/maintenance", "/changes"]
+                  "/maintenance", "/changes", "/go/"]
 
 CURRENCY_SYMBOLS = {"ILS": "₪", "EUR": "€", "USD": "$", "GBP": "£"}
 
@@ -135,6 +135,12 @@ def event_path(row: EventRow) -> str:
     return f"/event/{quote(row.slug or row.id, safe='')}"
 
 
+def go_path(event_id: str) -> str:
+    """Our redirect to the seller's page (GET /go/...): ticket links are handed out one click at a
+    time, rate-limited, and never appear in bulk in the API or the pages."""
+    return f"/go/{quote(event_id, safe='')}"
+
+
 def _cover(cfg: Settings, row: EventRow) -> str | None:
     if row.cover_url:
         return cfg.site.base_url + row.cover_url
@@ -224,7 +230,7 @@ def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, An
             "price": float(t.total_price if t.total_price is not None else t.price or 0),
             "priceCurrency": t.currency,
             "availability": availability.get(t.status, "https://schema.org/InStock"),
-            "url": row.url,
+            "url": _url(cfg, go_path(row.id)),
             "validFrom": _iso(t.sale_start, cfg),
         }
         for t in row.tickets
@@ -238,7 +244,7 @@ def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, An
             "lowPrice": float(row.min_price),
             "highPrice": float(row.max_price if row.max_price is not None else row.min_price),
             "priceCurrency": row.currency,
-            "url": row.url,
+            "url": _url(cfg, go_path(row.id)),
             "availability": "https://schema.org/SoldOut" if row.is_sold_out else "https://schema.org/InStock",
         }
     return None
@@ -265,7 +271,6 @@ def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
         "performer": [{"@type": "Person", "name": n, "url": _url(cfg, f"/artist/{quote(n, safe='')}")} for n in row.lineup] or None,
         "organizer": {"@type": "Organization", "name": row.organizer} if row.organizer else None,
         "offers": _offers(row, cfg),
-        "sameAs": row.url,
     }
     return {k: v for k, v in data.items() if v not in (None, [], "")}
 
@@ -364,7 +369,7 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
             f"<article><h1>{escape(row.title)}</h1><p>{escape(_when(row, cfg, lang))}</p>"
             f"<p>{venue_link} {escape(where)}</p><p>{escape(_price(row, lang))}</p>{lineup}"
             f"<p>{escape(_clip(row.description, 2000))}</p>"
-            f'<p><a href="{escape(row.url)}" rel="noopener">{t["tickets"]} ({escape(row.source)})</a></p></article>'
+            f'<p><a href="{escape(go_path(row.id))}" rel="nofollow noopener">{t["tickets"]} ({escape(row.source)})</a></p></article>'
         ),
     )
 

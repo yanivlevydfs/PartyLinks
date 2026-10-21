@@ -176,6 +176,10 @@ class SecurityMiddleware:
             if self.guard.over_limit(ip, "admin" if admin else "all", limit, now):
                 self.guard.strike(ip, cfg, "rate limit", now)
                 return await reject(429, "too many requests", [(b"retry-after", b"60")])
+            # Ticket links (/go/...) are what a harvester wants: a person clicks a handful a minute.
+            if path.startswith("/go/") and self.guard.over_limit(ip, "go", cfg.go_rate_limit_per_minute, now):
+                self.guard.strike(ip, cfg, "ticket link rate limit", now)
+                return await reject(429, "too many requests", [(b"retry-after", b"60")])
         try:
             length = int(headers.get("content-length") or 0)
         except ValueError:

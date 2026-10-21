@@ -508,3 +508,19 @@ def test_cached_responses_follow_writes_and_map_returns_located_events(tmp_path:
         pins = client.get("/events/map").json()
         assert "test:a" in [p["id"] for p in pins["items"]] and len(pins["items"]) + pins["unplaced"] == 2
         assert set(pins["items"][0]) == {"id", "slug", "title", "start_at", "venue_name", "latitude", "longitude", "source", "sources"}
+
+
+def test_seller_links_leave_only_through_the_rate_limited_redirect(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    start = datetime.now(UTC) + timedelta(days=1)
+    seed(settings, [event("a", start, url="https://seller.example/a", extra={"purchase_url": "https://seller.example/buy"})])
+    with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}) as client:
+        pages = [client.get(p).text for p in ("/events", "/events/test:a", "/events/map", "/changes", "/event/test:a")]
+        assert not [p for p in pages if "seller.example" in p]
+        assert client.get("/events/test:a").json()["url"] == "/go/test%3Aa"
+        go = client.get("/go/test%3Aa", follow_redirects=False)
+        assert go.status_code == 302 and go.headers["location"] == "https://seller.example/a"
+    limit = settings.security.go_rate_limit_per_minute
+    with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}, client=("203.0.113.9", 1)) as client:
+        codes = [client.get("/go/test%3Aa", follow_redirects=False).status_code for _ in range(limit + 1)]
+        assert codes[:limit] == [302] * limit and codes[-1] == 429

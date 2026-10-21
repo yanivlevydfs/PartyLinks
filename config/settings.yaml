@@ -54,6 +54,8 @@ security:
   allowed_hosts: ["tlv.up.railway.app", "web-production-c14b4.up.railway.app", "healthcheck.railway.app"]
   rate_limit_per_minute: 300
   admin_rate_limit_per_minute: 30
+  # Ticket links (/go/...): the sellers' URLs are handed out one click at a time.
+  go_rate_limit_per_minute: 20
   ban_after_strikes: 5
   ban_minutes: 60
   max_body_bytes: 1000000
@@ -66,7 +68,8 @@ api:
   host: 0.0.0.0
   port: 8000
   default_page_size: 50
-  max_page_size: 200
+  # Small pages: dumping every event takes many requests (the site asks for 24, the map uses /events/map).
+  max_page_size: 50
 
 scheduler:
   # Always off here, so a local run (localhost) never scrapes. Production turns it on with

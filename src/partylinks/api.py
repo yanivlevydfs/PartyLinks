@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from sqlalchemy import ColumnElement, String, and_, cast, func, not_, or_, select
@@ -94,6 +94,11 @@ class ChangeFeedItem(DealChangeOut):
     url: str
     start_at: datetime | None
 
+    @model_validator(mode="after")
+    def _go(self) -> ChangeFeedItem:
+        self.url = seo.go_path(self.event_id)  # never the seller's link itself
+        return self
+
 
 class ImageOut(_Out):
     id: int
@@ -114,6 +119,7 @@ class EventSummaryOut(_Out):
     slug: str | None
     source: str
     source_event_id: str
+    # Our /go/ redirect, not the seller's link (see seo.go_path).
     url: str
     title: str
     start_at: datetime | None
@@ -164,6 +170,11 @@ class EventSummaryOut(_Out):
     # Every ticket site selling this event (this listing's first, then the rest of its group).
     sources: list[str] = []
 
+    @model_validator(mode="after")
+    def _go(self) -> EventSummaryOut:
+        self.url = seo.go_path(self.id)
+        return self
+
 
 class DealOut(_Out):
     """The cheapest listing of an event across all sources (free entry wins)."""
@@ -174,6 +185,11 @@ class DealOut(_Out):
     min_price: float | None
     has_free_entry: bool
     entry_type: str
+
+    @model_validator(mode="after")
+    def _go(self) -> DealOut:
+        self.url = seo.go_path(self.id)
+        return self
 
 
 class AlternativeOut(_Out):
@@ -192,6 +208,11 @@ class AlternativeOut(_Out):
     is_sold_out: bool
     tickets: list[TicketOut]
 
+    @model_validator(mode="after")
+    def _go(self) -> AlternativeOut:
+        self.url = seo.go_path(self.id)
+        return self
+
 
 class EventOut(EventSummaryOut):
     description: str | None
@@ -199,6 +220,11 @@ class EventOut(EventSummaryOut):
     artists: list[str]
     organizer: str | None
     extra: dict[str, Any]
+
+    @model_validator(mode="after")
+    def _no_seller_link(self) -> EventOut:
+        self.extra = {k: v for k, v in self.extra.items() if k != "purchase_url"}
+        return self
     tickets: list[TicketOut]
     images: list[ImageOut]
     alternatives: list[AlternativeOut] = []
@@ -715,6 +741,16 @@ def _register_routes(app: FastAPI) -> None:
             return MapOut(items=items, unplaced=unplaced)
 
         return _cached(request, build)
+
+    @app.get("/go/{event_id:path}", include_in_schema=False)
+    def go(event_id: str, session: SessionDep) -> RedirectResponse:
+        """The seller's page of one listing: the only place a ticket link leaves the server
+        (one click at a time, rate-limited by SecurityMiddleware)."""
+        url = session.scalar(select(EventRow.url).where(EventRow.id == event_id))
+        if not url or not url.startswith(("https://", "http://")):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "event not found")
+        headers = {"Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow"}
+        return RedirectResponse(url, status.HTTP_302_FOUND, headers=headers)
 
     @app.get("/events/{event_ref}", response_model=EventOut, tags=["events"])
     def get_event(event_ref: str, session: SessionDep) -> EventOut:

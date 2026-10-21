@@ -347,6 +347,7 @@ class SecuritySettings(BaseModel):
     # Requests per client IP per minute; over it = 429. Admin API has its own, lower limit.
     rate_limit_per_minute: int = Field(300, ge=1)
     admin_rate_limit_per_minute: int = Field(30, ge=1)
+    go_rate_limit_per_minute: int = Field(20, ge=1)
     # Vulnerability probes (/.env, /wp-login.php...), failed admin logins and rate-limit hits are
     # strikes; this many within ban_minutes bans the IP for ban_minutes.
     ban_after_strikes: int = Field(5, ge=1)
