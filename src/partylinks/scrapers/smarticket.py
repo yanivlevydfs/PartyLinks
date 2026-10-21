@@ -50,6 +50,8 @@ class SmarticketTenant(BaseModel):
     # Used when a performance has no hall (``event_place``).
     venue_name: str | None = None
     city: str | None = None
+    # The halls are rooms of this one venue ("אולם 1", "במה ראשית"): the venue is venue_name.
+    rooms: bool = False
 
 
 class SmarticketSettings(SourceSettings):
@@ -194,7 +196,7 @@ def parse_event(
         description=html_to_text(performance.get("content") or show.get("content") or show.get("brief")),
         start_at=start,
         end_at=end,
-        venue_name=clean_str(performance.get("event_place")) or tenant.venue_name,
+        venue_name=(None if tenant.rooms else clean_str(performance.get("event_place"))) or tenant.venue_name,
         city=tenant.city,
         source_genres=[category] if category else [],
         images=[f"https://{host}{s.uploads_path}{image}"] if image else [],

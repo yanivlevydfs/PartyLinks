@@ -829,6 +829,38 @@ sources:
       - {host: mbe-rg, venue_name: בית עמנואל רמת גן, city: רמת גן}
       - {host: ashdod, venue_name: אשדוד, city: אשדוד}
       - {host: ashkelon, venue_name: אשקלון, city: אשקלון}
+      # Theatres, music and comedy. A tenant playing in several cities has no city: the hall names it.
+      - {host: ht1, venue_name: תיאטרון חיפה, city: חיפה, rooms: true}
+      - {host: hth, venue_name: תיאטרון חולון, city: חולון, rooms: true}
+      - {host: htrl, venue_name: היכל התרבות ראשון לציון, city: ראשון לציון}
+      - {host: ltrl, venue_name: אודיטוריום ראשון לציון, city: ראשון לציון}
+      - {host: habama, venue_name: מרכז הבמה גני תקווה, city: גני תקווה}
+      - {host: bac, venue_name: בית אבי חי, city: ירושלים}
+      - {host: shablul, venue_name: שבלול, city: תל אביב}
+      - {host: comedybar, venue_name: קומדי בר}
+      - {host: jso, venue_name: התזמורת הסימפונית ירושלים}
+      - {host: isorl, venue_name: התזמורת הסימפונית ראשון לציון}
+      # Municipal and regional culture halls.
+      - {host: modiin, venue_name: היכל התרבות מודיעין, city: מודיעין}
+      - {host: rehovot, venue_name: בית העם רחובות, city: רחובות}
+      - {host: batyam, venue_name: היכל התרבות בת ים, city: בת ים}
+      - {host: shoham, venue_name: מרכז אמנויות הבמה שוהם, city: שוהם}
+      - {host: lod, venue_name: היכל התרבות לוד, city: לוד}
+      - {host: ramla, venue_name: היכל התרבות רמלה, city: רמלה}
+      - {host: kfaryona, venue_name: היכל התרבות כפר יונה, city: כפר יונה}
+      - {host: savyon, venue_name: מרכז התרבות סביון, city: סביון}
+      - {host: oranit, venue_name: תרבותא אורנית, city: אורנית}
+      - {host: ariel, venue_name: היכל התרבות אריאל, city: אריאל}
+      - {host: tiberias, venue_name: היכל התרבות יד שטרית טבריה, city: טבריה}
+      - {host: afula, venue_name: היכל התרבות עפולה, city: עפולה}
+      - {host: maalot, venue_name: היכל התרבות מעלות תרשיחא, city: מעלות-תרשיחא}
+      - {host: yokneam, venue_name: תיאטרון יקנעם, city: יקנעם}
+      - {host: kiryat-yam, venue_name: היכל התרבות קריית ים, city: קריית ים}
+      - {host: netivot, venue_name: משכן פיס היכל התרבות נתיבות, city: נתיבות}
+      - {host: menashe, venue_name: היכל התרבות מנשה}
+      - {host: misgav, venue_name: מרכז קלור משגב}
+      - {host: eshkol, venue_name: מועצה אזורית אשכול}
+      - {host: hof-ashkelon, venue_name: מועצה אזורית חוף אשקלון}
 
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming

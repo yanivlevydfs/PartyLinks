@@ -50,6 +50,14 @@ def _events() -> dict[str, object]:
     return {e.source_event_id: e for show, p in pairs if (e := parse_event(show, p, TZAVTA, SETTINGS, TZ))}
 
 
+def test_rooms_tenant_keeps_its_own_venue_name() -> None:
+    rooms = TZAVTA.model_copy(update={"rooms": True})
+    show, performance = next((s, p) for s, p in iter_performances(parse_shows_body(_body(), "tzavta.smarticket.co.il"))
+                             if p["id"] == 17950)  # fmt: skip
+    event = parse_event(show, performance, rooms, SETTINGS, TZ)
+    assert event is not None and event.venue_name == "צוותא" and event.extra["hall"] == "צוותא 1"
+
+
 def test_tenant_host() -> None:
     assert tenant_host("tzavta", "smarticket.co.il") == "tzavta.smarticket.co.il"
     assert tenant_host("tickets.raanana.muni.il", "smarticket.co.il") == "tickets.raanana.muni.il"
