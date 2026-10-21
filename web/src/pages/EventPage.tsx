@@ -52,9 +52,13 @@ export default function EventPage() {
             <ul className="facts">
               <li><i>📅</i>{fmtDate(e.start_at, t, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</li>
               <li>
-                <i>🕘</i>{fmtDate(e.start_at, t, time)}
-                {e.end_at && ` – ${fmtDate(e.end_at, t, time)}`}
-                {e.time_slot && ` · ${label(t.slots, e.time_slot)}`}
+                <i>🕘</i>
+                {/* Each time isolated, the range in the page's direction: in Hebrew the start sits on the right. */}
+                <span dir={lang === "he" ? "rtl" : "ltr"}>
+                  <bdi>{fmtDate(e.start_at, t, time)}</bdi>
+                  {e.end_at && <> – <bdi>{fmtDate(e.end_at, t, time)}</bdi></>}
+                  {e.time_slot && ` · ${label(t.slots, e.time_slot)}`}
+                </span>
               </li>
               {(e.venue_name || e.address) && (
                 <li>
