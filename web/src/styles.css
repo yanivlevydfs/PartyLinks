@@ -452,10 +452,10 @@ button, input, select { font: inherit; color: inherit; }
 }
 
 /* ------------------------------------------------------------------ map */
-.map-page { display: flex; flex-direction: column; height: calc(100dvh - 68px - env(safe-area-inset-top)); }
+.map-page { display: flex; flex-direction: column; min-height: calc(100dvh - 68px - env(safe-area-inset-top)); }
 .map-bar { display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; padding-block: 12px; color: var(--text); font-weight: 500; }
 .map-bar small { color: var(--muted); }
-.map, .map.leaflet-container { flex: 1; min-height: 360px; background: #0a0612; }
+.map, .map.leaflet-container { flex: 1; min-height: 65vh; background: #0a0612; }
 /* Night-mode map: invert the light OSM tiles and tint them violet. */
 .map .leaflet-tile-pane { filter: invert(1) hue-rotate(200deg) brightness(.9) contrast(.85) saturate(.55); }
 .map-page + .foot { display: none; }
@@ -467,10 +467,11 @@ button, input, select { font: inherit; color: inherit; }
 .map.leaflet-container { font: inherit; }
 .map .leaflet-control-attribution { background: rgb(6 4 11 / .7) !important; color: var(--muted); }
 .map .leaflet-control-attribution a { color: var(--muted); }
-.leaflet-interactive { filter: drop-shadow(0 0 6px var(--pink)); }
+.leaflet-interactive { filter: drop-shadow(0 0 2px var(--pink)); }
 .pop { min-width: 200px; }
 .pop-venue { display: block; font: 700 16px/1.2 var(--display); color: var(--pink) !important; margin-bottom: 6px; }
-.pop ul { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
+.pop ul { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; max-height: 45vh; overflow-y: auto; }
+.pop-count { display: block; color: var(--muted); margin-bottom: 6px; }
 .pop li a { display: grid; color: var(--text) !important; }
 .pop li small { color: var(--cyan); }
 
@@ -877,7 +878,7 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .tabbar svg { width: 23px; height: 23px; }
   .tabbar a.active { color: #fff; }
   .tabbar a.active svg { color: var(--pink); filter: drop-shadow(0 2px 6px rgb(255 46 147 / .6)); }
-  .map-page { height: calc(100dvh - 56px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+  .map-page { min-height: calc(100dvh - 56px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
 
   .buy-bar {
     position: fixed; z-index: 999; inset: auto 0 calc(60px + env(safe-area-inset-bottom));

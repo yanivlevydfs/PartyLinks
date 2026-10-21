@@ -1,9 +1,11 @@
 import "leaflet/dist/leaflet.css";
-import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
-import { useState } from "react";
+import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAllEvents } from "../api";
 import { useAllowed, useConsent } from "../consent";
+import { Filters, filterParams } from "../Filters";
+import { useStore } from "../store";
 import type { EventSummary } from "../types";
 import { eventPath, fmtDate, Sources, useT, useTitle, venuePath } from "../ui";
 
@@ -11,7 +13,14 @@ const ISRAEL: [number, number] = [31.9, 34.95];
 
 export default function MapPage() {
   const { t } = useT();
-  const { data, isError, isPending } = useAllEvents();
+  // The home page's filter (same store): the map shows what the list shows, not every event at once.
+  const f = useStore((s) => s.filters);
+  const set = useStore((s) => s.setFilters);
+  // Every date at once is thousands of pins (and a slow load): the map opens on tonight.
+  useEffect(() => {
+    if (useStore.getState().filters.when === "all") set({ when: "tonight" });
+  }, [set]);
+  const { data, isError, isPending } = useAllEvents(filterParams({ ...f, sort: "start_at" }));
   useTitle(t.nav.map);
   // Tiles come from OpenStreetMap's servers (they see the visitor's IP): only with consent,
   // given in the cookie settings or here, for this visit or for good.
@@ -32,6 +41,7 @@ export default function MapPage() {
 
   return (
     <main className="map-page">
+      <div className="wrap"><Filters /></div>
       <div className="map-bar wrap">
         <h1 className="sr-only">{t.nav.map}</h1>
         {isError ? t.error : isPending ? t.loading : (
@@ -50,16 +60,19 @@ export default function MapPage() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
         )}
+        <FitTo points={[...spots.values()].map((l) => [l[0].latitude!, l[0].longitude!] as [number, number])} />
         {[...spots.entries()].map(([key, list]) => (
           <CircleMarker
             key={key}
             center={[list[0].latitude!, list[0].longitude!]}
-            radius={Math.min(8 + list.length * 1.5, 24)}
-            pathOptions={{ color: "#ff2e93", fillColor: "#ff2e93", fillOpacity: 0.55, weight: 2 }}
+            // Small pins that grow slowly: big ones merged into one pink blob over the whole country.
+            radius={Math.min(5 + Math.log2(list.length) * 2, 14)}
+            pathOptions={{ color: "#ff2e93", fillColor: "#ff2e93", fillOpacity: 0.7, weight: 1 }}
           >
             <Popup>
               <div className="pop">
                 {list[0].venue_name && <Link className="pop-venue" to={venuePath(list[0].venue_name)}>{list[0].venue_name}</Link>}
+                <small className="pop-count">{t.results(list.length)}</small>
                 <ul>
                   {list.slice(0, 8).map((e) => (
                     <li key={e.id}>
@@ -89,4 +102,14 @@ export default function MapPage() {
       )}
     </main>
   );
+}
+
+/** Zoom to the pins whenever the filter changes what is shown. */
+function FitTo({ points }: { points: [number, number][] }) {
+  const map = useMap();
+  const key = points.map((p) => p.join()).sort().join("|");
+  useEffect(() => {
+    if (points.length) map.fitBounds(points, { padding: [30, 30], maxZoom: 15 });
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
 }

@@ -30,14 +30,15 @@ export function useEvents(params: Params) {
   });
 }
 
-/** Every upcoming event (all pages), for the map. */
-export function useAllEvents() {
+/** Every upcoming event matching the filter (all pages), for the map. */
+export function useAllEvents(params: Params = {}) {
+  const qs = toQuery({ ...params, page_size: String(MAX_PAGE_SIZE) });
   return useQuery({
-    queryKey: ["events", "all"],
+    queryKey: ["events", "all", qs],
     queryFn: async () => {
       const items: EventSummary[] = [];
       for (let page = 1; ; page++) {
-        const d = await getJSON<EventPage>(`/events?page_size=${MAX_PAGE_SIZE}&page=${page}`);
+        const d = await getJSON<EventPage>(`/events?${qs}&page=${page}`);
         items.push(...d.items);
         if (page * d.page_size >= d.total) return items;
       }
