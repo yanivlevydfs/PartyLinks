@@ -459,7 +459,7 @@ sources:
     # profile for checkout, and most of its ~200 performances are on no Eventer slider.
     # forumclub: Forum club, Beersheba (not every night reaches the parties slider);
     # syrup: Syrup club, Haifa.
-    users: ["tomix", "forumclub", "syrup"]
+    users: ["tomix", "forumclub", "syrup", "levontin7", "mazkeka", "hangar11"]
     list_path: /sliders/categories/{category}/events.js
     event_details_path: /events/explainNames/{link_name}.js
     ticket_types_path: /events/{event_id}/ticketTypes.js
@@ -863,6 +863,50 @@ sources:
       - {host: mbe-rg, venue_name: בית עמנואל רמת גן, city: רמת גן}
       - {host: ramat-gan, venue_name: עיריית רמת גן, city: רמת גן}
       - {host: even-yehuda, venue_name: מועצה מקומית אבן יהודה, city: אבן יהודה}
+      # Found through Tickchak LIVE's venue pages (2026-10-21). Museums and kids' workshop tenants left out.
+      - {host: tickets.friends-hist.co.il, venue_name: FRIENDS מועדוני תרבות}
+      - {host: ethos, venue_name: אתוס - אודיטוריום חיפה, city: חיפה, skip_categories: ["סינמטק", "גן החיות"]}
+      - {host: t-g, venue_name: תיאטרון גבעתיים, city: גבעתיים}
+      - {host: mozkin, venue_name: היכל התרבות קריית מוצקין, city: קריית מוצקין}
+      - {host: katedra, venue_name: הקתדרה - מוזיאון ארץ ישראל, city: תל אביב}
+      - {host: matnaskg, venue_name: היכל התרבות קריית גת, city: קריית גת}
+      - {host: heichal-hm, venue_name: היכל התרבות איירפורט סיטי, city: איירפורט סיטי}
+      - {host: mishkanb7, venue_name: המשכן לאמנויות הבמה באר שבע, city: באר שבע}
+      - {host: mishkan-ashdod, venue_name: המשכן לאמנויות הבמה אשדוד, city: אשדוד}
+      - {host: matnasgan, venue_name: מרכז קהילתי מזרח נתניה, city: נתניה}
+      - {host: makombalev, venue_name: היכל התרבות ראש העין, city: ראש העין}
+      - {host: t-hazafon, venue_name: תיאטרון הצפון}
+      - {host: betshemesh, venue_name: היכל התרבות בית שמש, city: בית שמש}
+      - {host: htjer, venue_name: היכל פיס לתרבות ולאמנויות ירושלים, city: ירושלים}
+      - {host: eyz, venue_name: תרבות בעמק יזרעאל}
+      - {host: phk, venue_name: מרכז אמנויות הבמה פרדס חנה כרכור, city: פרדס חנה-כרכור}
+      - {host: eilatmuni, venue_name: עיריית אילת, city: אילת}
+      - {host: yadal, venue_name: תיאטרון יד למגינים}
+      - {host: htma, venue_name: היכל התרבות מעלה אדומים, city: מעלה אדומים}
+      - {host: ofektivi, venue_name: היכל התרבות אופקים, city: אופקים}
+      - {host: galil-elion, venue_name: תרבות גליל עליון}
+      - {host: megido, venue_name: מגדה - מרכז תרבות מגידו}
+      - {host: telmond, venue_name: "מתנ\"ס תל מונד", city: תל מונד}
+      - {host: htorakiva, venue_name: היכל התרבות אור עקיבא, city: אור עקיבא}
+      - {host: lotus, venue_name: לוטוס משרד כרטיסים, city: רחובות}
+      - {host: pardesia, venue_name: מרכז קהילתי פרדסיה, city: פרדסיה}
+      - {host: hhn, venue_name: היכל התרבות נהריה, city: נהריה}
+      - {host: castilia, venue_name: קסטיליה הפקות}
+      - {host: htbeithaam, venue_name: היכל התרבות בית העם ירושלים, city: ירושלים}
+      - {host: isb7, venue_name: הסינפונייטה הישראלית באר שבע}
+      - {host: gderot, venue_name: בית העם גדרות}
+      - {host: matnasmrl, venue_name: "מתנ\"ס שיכוני המזרח ראשון לציון", city: ראשון לציון}
+      - {host: thehebrewtheater, venue_name: התיאטרון העברי}
+      - {host: papi, venue_name: פאפי - תיאטרון ילדים}
+      - {host: m-zion, venue_name: מבשרת ציון, city: מבשרת ציון}
+      - {host: symphonette, venue_name: סימפונט רעננה}
+      - {host: nifgashim, venue_name: נפגשים}
+      - {host: shamayim, venue_name: שמים הפקות מוזיקה}
+      - {host: zfatarbut, venue_name: היכל התרבות צפת, city: צפת}
+      - {host: andalusit, venue_name: המרכז לתרבות האנדלוסית}
+      - {host: eilot, venue_name: מרכז קהילה חבל אילות}
+      - {host: teatron-hashaa, venue_name: תיאטרון השעה הישראלי}
+      - {host: tjo, venue_name: תזמורת ירושלים מזרח ומערב}
       - {host: ashdod, venue_name: אשדוד, city: אשדוד}
       - {host: ashkelon, venue_name: אשקלון, city: אשקלון}
       # Theatres, music and comedy. A tenant playing in several cities has no city: the hall names it.
