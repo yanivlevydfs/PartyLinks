@@ -140,3 +140,13 @@ def test_og_image_is_encoded_and_skips_wordpress_placeholder() -> None:
     assert og_image(page) == "https://cdn.example/uploads/%D7%A4%D7%95%D7%A1%D7%98%D7%A8.jpg"
     assert og_image('<meta property="og:image" content="https://x.example/wp-admin/admin-ajax.png">') is None
     assert og_image("<html></html>") is None
+
+
+def test_poster_fallback_reads_the_hero_image() -> None:
+    import re
+
+    pattern = re.compile('<img class="" src="([^"]+)"')
+    page = '<img src="/logo.svg"><img class="" src="https://cdn.example/uploads/הלו-בטי.jpg?a=1&amp;b=2" loading="lazy">'
+    assert pres._poster(pattern, page) == "https://cdn.example/uploads/%D7%94%D7%9C%D7%95-%D7%91%D7%98%D7%99.jpg?a=1&b=2"
+    assert pres._poster(pattern, "<html></html>") is None
+    assert pres._poster(None, page) is None

@@ -29,6 +29,7 @@ venues, so the same performance can appear under two hosts; dedup merges them.
 
 from __future__ import annotations
 
+import html as html_lib
 import json
 import re
 from collections.abc import AsyncIterator
@@ -79,8 +80,10 @@ class PresHost(BaseModel):
     image_path: str | None = None
     # Artwork from the theatre's own site (see the module docstring).
     artwork_json: str | None = None
-    artwork_index: str | None = None
+    artwork_index: str | list[str] | None = None
     artwork_page_link: str | None = None  # show-page links in an HTML ``artwork_index``
+    # Poster ``src`` on show pages without an ``og:image`` (Cameri's guest shows).
+    artwork_image: str | None = None
 
 
 class PresSettings(SourceSettings):
@@ -185,18 +188,23 @@ class PresScraper(BaseScraper[PresSettings]):
             }
         if not host.artwork_index:
             return {}
-        index = await self.get_text(host.artwork_index)
-        try:  # a WP REST list of shows
-            pages = [link for item in json.loads(index) if isinstance(item, dict) and (link := item.get("link"))]
-        except ValueError:  # an HTML listing page
-            pages = re.findall(host.artwork_page_link, index) if host.artwork_page_link else []
+        pages: list[str] = []
+        indexes = [host.artwork_index] if isinstance(host.artwork_index, str) else host.artwork_index
+        for url in indexes:
+            # A past page number (WP answers 400 once the list shrinks) only loses that page.
+            index = await self.optional(f"{host.key} artwork index {url}", self.get_text(url)) or "[]"
+            try:  # a WP REST list of shows
+                pages += [link for item in json.loads(index) if isinstance(item, dict) and (link := item.get("link"))]
+            except ValueError:  # an HTML listing page
+                pages += re.findall(host.artwork_page_link, index) if host.artwork_page_link else []
         pages = list(dict.fromkeys(pages))
+        fallback = re.compile(host.artwork_image) if host.artwork_image else None
         order = re.compile(re.escape(host.url) + r"/order/(\d+)")
         posters: dict[str, str] = {}
         async for page, html in self.stream_isolated(
             pages, self._page, label=lambda url: f"{host.key} artwork page {url}"
         ):
-            if image := og_image(html):
+            if image := og_image(html) or _poster(fallback, html):
                 posters.update(dict.fromkeys(order.findall(html), image))
         return posters
 
@@ -208,6 +216,12 @@ class PresScraper(BaseScraper[PresSettings]):
         if host.ticket_groups_method == "POST":
             return await self.post_json(url, json={}, expect=dict)
         return await self.get_json(url, expect=dict)
+
+
+def _poster(pattern: re.Pattern[str] | None, page_html: str) -> str | None:
+    """The poster ``src`` an ``artwork_image`` pattern finds on a page, percent-encoded."""
+    m = pattern.search(page_html) if pattern else None
+    return quote(html_lib.unescape(m.group(1)), safe=":/%?=&") if m else None
 
 
 def upcoming_shows(
