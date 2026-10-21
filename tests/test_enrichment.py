@@ -183,6 +183,25 @@ def test_free_at_the_door_stays_free() -> None:
     assert event is not None and event.tickets[0].kind.value == "free" and not event.tickets[0].pay_at_door
 
 
+def test_zero_priced_code_redemption_is_not_free_entry() -> None:
+    tiers = [
+        TicketTier(name="קוד למימוש מועדונים - כרטיס כניסה למוזיאון", price=Decimal(0), is_free=True),
+        TicketTier(name="מבוגר", price=Decimal(40)),
+    ]
+    event = ENRICHER.enrich(make(tickets=tiers))
+    assert event is not None and not event.has_free_entry and event.entry_type is EntryType.PAID
+    assert event.min_price == Decimal(40)
+
+
+def test_discount_from_original_price_or_coupon_text() -> None:
+    plain = ENRICHER.enrich(make(tickets=[TicketTier(name="רגיל", price=Decimal(80))]))
+    cheaper = ENRICHER.enrich(make(tickets=[TicketTier(name="מוקדם", price=Decimal(60), original_price=Decimal(80))]))
+    coded = ENRICHER.enrich(make(description="לפרטים נוספים וקוד הנחה שלחו לנו הודעה"))
+    assert plain is not None and not plain.has_discount
+    assert cheaper is not None and cheaper.has_discount
+    assert coded is not None and coded.has_discount
+
+
 def test_area_by_keyword_then_coordinates() -> None:
     areas = Enricher(SETTINGS.enrichment, SETTINGS.timezone).areas
     # Keyword in the address wins.

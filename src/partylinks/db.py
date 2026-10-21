@@ -109,6 +109,7 @@ class EventRow(Base):
     entry_type: Mapped[str] = mapped_column(String(16), default="unknown", index=True)
     is_sold_out: Mapped[bool] = mapped_column(Boolean, default=False)
     free_sold_out: Mapped[bool] = mapped_column(Boolean, default=False)
+    has_discount: Mapped[bool] = mapped_column(Boolean, default=False)
     extra: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     first_seen_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
@@ -425,7 +426,7 @@ _EVENT_FIELDS = (
     "city", "latitude", "longitude", "country", "in_target_city", "genres", "source_genres", "event_types", "artists",
     "lineup", "local_date", "day_of_week", "time_slot", "is_weekend", "area", "min_age", "organizer", "image_url",
     "currency", "min_price", "max_price", "has_free_entry", "entry_type", "is_sold_out", "free_sold_out", "extra",
-    "free_entry_until",
+    "free_entry_until", "has_discount",
 )  # fmt: skip
 
 

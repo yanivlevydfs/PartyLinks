@@ -205,6 +205,8 @@ class EnrichmentSettings(BaseModel):
     regions: list[RegionSettings] = Field(default_factory=list)
     free_entry_keywords: list[str] = Field(default_factory=list)
     pay_at_door_keywords: list[str] = Field(default_factory=list)
+    # A discount code is on offer ("קוד הנחה"); a 0 price tier that says so is a code redemption, not free entry.
+    coupon_keywords: list[str] = Field(default_factory=list)
 
     def expand_genres(self, genres: list[str]) -> list[str]:
         """The genres plus every sub-genre of the umbrella ones among them (for filters)."""

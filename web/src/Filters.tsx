@@ -20,6 +20,7 @@ export function filterParams(f: FilterState): Params {
     area: f.region === "tel_aviv" ? f.areas : f.region ? [f.region] : [],
     city: f.region !== "tel_aviv" ? f.city ?? undefined : undefined,
     free_entry: f.freeOnly ? "true" : undefined,
+    discount: f.discountOnly ? "true" : undefined,
     sold_out: f.hideSoldOut ? "false" : undefined,
     ...(f.when === "tonight" ? { date: today() } : f.when === "weekend" ? { weekend: "true" } : f.when !== "all" ? { date: f.when } : {}),
   };
@@ -55,7 +56,7 @@ export function Filters() {
   // Same query as the grid below: shares its cache, so the sheet's "Show N" costs no request.
   const total = useEvents(filterParams(f)).data?.pages[0]?.total;
 
-  const extras = (f.region ? 1 : 0) + f.areas.length + (f.city ? 1 : 0) + f.genres.length + f.shops.length + (f.slot ? 1 : 0) + (f.hideSoldOut ? 1 : 0);
+  const extras = (f.region ? 1 : 0) + f.areas.length + (f.city ? 1 : 0) + f.genres.length + f.shops.length + (f.slot ? 1 : 0) + (f.hideSoldOut ? 1 : 0) + (f.discountOnly ? 1 : 0);
   const dirty = extras > 0 || f.freeOnly || f.when !== "all";
   const clear = () => set({ ...DEFAULT_FILTERS, q: f.q, sort: f.sort });
 
@@ -70,6 +71,11 @@ export function Filters() {
       <Chip className="toggle free" on={f.freeOnly} onClick={() => set({ freeOnly: !f.freeOnly })}>
         <span className="tick" aria-hidden /> {t.freeOnly}
       </Chip>
+      {!mobile && (
+        <Chip className="toggle" on={f.discountOnly} onClick={() => set({ discountOnly: !f.discountOnly })}>
+          <span className="tick" aria-hidden /> {t.discountOnly}
+        </Chip>
+      )}
       {!mobile && (
         <Chip className="toggle" on={f.hideSoldOut} onClick={() => set({ hideSoldOut: !f.hideSoldOut })}>
           <span className="tick" aria-hidden /> {t.hideSoldOut}
@@ -125,6 +131,7 @@ export function Filters() {
               {f.shops.map((s) => <Pill key={s} onClear={() => set({ shops: f.shops.filter((x) => x !== s) })}>{sourceName(s)}</Pill>)}
               {f.slot && <Pill onClear={() => set({ slot: null })}>{label(t.slots, f.slot)}</Pill>}
               {f.freeOnly && <Pill onClear={() => set({ freeOnly: false })}>{t.freeOnly}</Pill>}
+              {f.discountOnly && <Pill onClear={() => set({ discountOnly: false })}>{t.discountOnly}</Pill>}
               {f.hideSoldOut && <Pill onClear={() => set({ hideSoldOut: false })}>{t.hideSoldOut}</Pill>}
               <button className="f-clear" onClick={clear}>{t.clearFilters}</button>
             </div>
@@ -140,6 +147,9 @@ export function Filters() {
               <div className="f-sheet-toggles">
                 <Chip className="toggle free" on={f.freeOnly} onClick={() => set({ freeOnly: !f.freeOnly })}>
                   <span className="tick" aria-hidden /> {t.freeOnly}
+                </Chip>
+                <Chip className="toggle" on={f.discountOnly} onClick={() => set({ discountOnly: !f.discountOnly })}>
+                  <span className="tick" aria-hidden /> {t.discountOnly}
                 </Chip>
                 <Chip className="toggle" on={f.hideSoldOut} onClick={() => set({ hideSoldOut: !f.hideSoldOut })}>
                   <span className="tick" aria-hidden /> {t.hideSoldOut}
@@ -186,6 +196,7 @@ export function Relax() {
     ...(f.slot ? [[label(t.slots, f.slot), { slot: null }] as [string, Partial<FilterState>]] : []),
     ...(f.region ? [[label(t.areas, f.region), { region: null, areas: [], city: null }] as [string, Partial<FilterState>]] : []),
     ...f.shops.map((s) => [sourceName(s), { shops: f.shops.filter((x) => x !== s) }] as [string, Partial<FilterState>]),
+    ...(f.discountOnly ? [[t.discountOnly, { discountOnly: false }] as [string, Partial<FilterState>]] : []),
     ...(f.hideSoldOut ? [[t.hideSoldOut, { hideSoldOut: false }] as [string, Partial<FilterState>]] : []),
   ];
   if (!options.length) return <p className="msg">{t.empty}</p>;

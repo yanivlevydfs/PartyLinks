@@ -348,6 +348,7 @@ enrichment:
   pay_at_door_keywords: ["מזומן", "בכניסה", "בקופה", "תשלום באתר", "תשלום במקום",
                          "pay at the door", "pay at door", "cash", "at the door", "on site"]
   free_entry_keywords: ["חינם", "free", "כניסה חופשית", "ללא עלות", "רשימה", "guest list", "guestlist"]
+  coupon_keywords: ["קופון", "קוד הנחה", "קוד הטבה", "קוד למימוש", "מימוש קוד", "coupon", "promo code", "discount code"]
 
 # The same party is listed several times (one page per promoter or entry time,
 # several ticket platforms). All listings are kept; matching ones share a group and
@@ -718,7 +719,7 @@ sources:
     features_path: /api/features/
     ticket_groups_path: /api/presentations/{id}/ticketGroups
     event_page_path: /order/{id}
-    skip_titles: ["בדיקה", "שוברים"]
+    skip_titles: ["בדיקה", "שוברים", "תשלום בקופה"]
     hosts:
       - {key: kupat, url: "https://tickets.kupat.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
       - {key: comy, url: "https://tickets.comy.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}

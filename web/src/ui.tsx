@@ -222,6 +222,7 @@ export function Card({ e }: { e: EventSummary }) {
           {e.free_sold_out && !e.is_sold_out && !(e.group_has_free_entry ?? e.has_free_entry) && (
             <span className="tag sold">{t.freeSoldOut}</span>
           )}
+          {e.has_discount && !e.is_sold_out && <span className="tag deal">{t.discountOnly}</span>}
           {e.genres.slice(0, 3).map((g) => <span key={g} className="tag">{genreLabel(lang, g)}</span>)}
           {!!e.min_age && <span className="tag age">{t.age(e.min_age)}</span>}
         </div>

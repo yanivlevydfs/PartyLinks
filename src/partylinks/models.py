@@ -138,6 +138,8 @@ class ScrapedEvent(BaseModel):
     free_entry_until: datetime | None = None
     # Had a free tier that is gone (sold out / closed) while paid tickets remain.
     free_sold_out: bool = False
+    # A ticket sells below its original price, or the text offers a discount code.
+    has_discount: bool = False
     entry_type: EntryType = EntryType.UNKNOWN
     in_target_city: bool | None = None
     local_date: date | None = None

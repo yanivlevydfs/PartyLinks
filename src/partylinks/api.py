@@ -144,6 +144,7 @@ class EventSummaryOut(_Out):
     has_free_entry: bool
     is_sold_out: bool
     free_sold_out: bool
+    has_discount: bool = False
     last_seen_at: datetime
     first_seen_at: datetime
     # False when the source stopped listing it (cancelled / pulled); hidden from upcoming lists.
@@ -505,6 +506,7 @@ def _register_routes(app: FastAPI) -> None:
         entry_type: Annotated[list[EntryType] | None, Query(max_length=MAX_LIST_PARAMS, description="free / paid / free_and_paid")] = None,
         free_entry: Annotated[bool | None, Query(description="Has at least one free ticket tier")] = None,
         sold_out: bool | None = None,
+        discount: Annotated[bool | None, Query(description="A listing of the event is discounted or offers a code")] = None,
         day_of_week: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="e.g. thursday (repeatable)")] = None,
         time_slot: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="e.g. night (repeatable)")] = None,
         area: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="Area of the city, e.g. south (repeatable)")] = None,
@@ -557,6 +559,10 @@ def _register_routes(app: FastAPI) -> None:
             filters.append(free_now if free_entry else not_(free_now))
         if sold_out is not None:
             filters.append(EventRow.is_sold_out.is_(sold_out))
+        if discount is not None:
+            listing = aliased(EventRow)
+            discounted = EventRow.group_id.in_(select(listing.group_id).where(listing.has_discount.is_(True)))
+            filters.append(discounted if discount else not_(discounted))
         if day_of_week:
             filters.append(EventRow.day_of_week.in_([d.lower() for d in day_of_week]))
         if time_slot:

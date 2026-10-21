@@ -357,6 +357,7 @@ button, input, select { font: inherit; color: inherit; }
   background: rgb(157 77 255 / .14); border: 1px solid rgb(157 77 255 / .35); color: #d8c6ff;
 }
 .tag.age { color: var(--cyan); border-color: rgb(25 227 255 / .4); background: rgb(25 227 255 / .1); }
+.tag.deal { color: var(--lime); border-color: color-mix(in srgb, var(--lime) 45%, transparent); background: color-mix(in srgb, var(--lime) 10%, transparent); }
 .tag.sold { color: var(--red); border-color: rgb(255 77 109 / .5); background: rgb(255 77 109 / .1); }
 .tag.entry.free, .tag.entry.free_and_paid { color: var(--lime); border-color: rgb(182 255 59 / .45); background: rgb(182 255 59 / .08); }
 

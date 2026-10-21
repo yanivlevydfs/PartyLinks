@@ -34,6 +34,7 @@ export interface EventSummary {
   has_free_entry: boolean;
   is_sold_out: boolean;
   free_sold_out: boolean;
+  has_discount?: boolean;
   last_seen_at: string;
   first_seen_at: string;
   is_listed: boolean;

@@ -94,7 +94,7 @@ class SmarticketScraper(BaseScraper[SmarticketSettings]):
             except Exception as exc:  # noqa: BLE001 - one bad performance never drops the tenant
                 self.record_failure(f"{tenant.host}:{performance.get('id')}", exc)
                 continue
-            if event is not None and (event.end_at or event.start_at) >= now:
+            if event is not None and event.start_at is not None and (event.end_at or event.start_at) >= now:
                 events.append(event)
         self.log.info("%s: %d upcoming events", tenant.host, len(events))
         return events

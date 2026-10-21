@@ -170,6 +170,7 @@ class Enricher:
         self._talk = _place_pattern(settings.talk_keywords, prefixes=2)
         self._free = _keyword_pattern(settings.free_entry_keywords)
         self._pay_at_door = _keyword_pattern(settings.pay_at_door_keywords)
+        self._coupon = _keyword_pattern(settings.coupon_keywords)
         self._city = _place_pattern(settings.target_city.aliases)
         self._cities = [(c.he, p) for c in settings.cities if (p := _place_pattern([c.he, c.en, *c.aliases]))]
         self._lineup_header = _keyword_pattern(settings.lineup.header_keywords)
@@ -209,6 +210,10 @@ class Enricher:
         event.free_sold_out = not event.has_free_entry and any(
             t.kind is TicketKind.FREE and not t.is_active for t in event.tickets
         )
+        event.has_discount = any(
+            t.is_active and t.price is not None and t.original_price is not None and t.original_price > t.price
+            for t in event.tickets
+        ) or bool(self._coupon and self._coupon.search((event.description or "").lower()))
         self._categorize_time(event)
         event.city = self.canonical_city(event.city, event.address, event.venue_name)
         event.in_target_city = self.in_target_city(event.city, event.address, event.venue_name)
@@ -404,6 +409,9 @@ class Enricher:
                 tier.price = _amount(text)
             elif tier.price is None and says_free:
                 tier.is_free = True
+            elif tier.price == 0 and not says_free and self._coupon and self._coupon.search(text):
+                # "קוד למימוש מועדונים" at 0: redeems a club voucher, the price is not 0 for anyone else.
+                tier.price, tier.is_free = None, False
         priced = [t.price for t in event.tickets if t.price is not None and t.is_active]
         if priced:
             event.min_price, event.max_price = min(priced), max(priced)

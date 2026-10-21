@@ -12,12 +12,13 @@ export interface Filters {
   city: string | null; // a city of the region, when region is another one
   shops: string[]; // ticket sites (API ?source=)
   freeOnly: boolean;
+  discountOnly: boolean;
   hideSoldOut: boolean;
   sort: string;
 }
 
 export const DEFAULT_FILTERS: Filters = {
-  q: "", when: "all", genres: [], slot: null, region: null, areas: [], city: null, shops: [], freeOnly: false, hideSoldOut: false, sort: "start_at",
+  q: "", when: "all", genres: [], slot: null, region: null, areas: [], city: null, shops: [], freeOnly: false, discountOnly: false, hideSoldOut: false, sort: "start_at",
 };
 
 interface State {
