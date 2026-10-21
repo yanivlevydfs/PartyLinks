@@ -131,7 +131,7 @@ enrichment:
     house: ["house", "deep house", "tech house", "progressive house", "melodic house", "organic house",
             "afro house", "minimal", "האוס", "דיפ האוס", "טק האוס"]
     trance: ["trance", "psytrance", "psy trance", "psy", "goa", "full on", "fullon", "progressive trance",
-             "forest", "טראנס", "פסיכדלי", "גואה"]
+             "forest", "טראנס", "פסיכדלי", "פסיכדלית", "גואה"]
     hip_hop: ["hip hop", "hiphop", "hip-hop", "rap", "trap", "drill", "היפ הופ", "היפהופ", "ראפ", "טראפ"]
     rnb: ["r&b", "rnb", "r'n'b", "soul", "neo soul", "ר&ב", "סול"]
     mainstream: ["mainstream", "commercial", "top 40", "top40", "hits", "מיינסטרים", "להיטים", "קומרשיאל"]
@@ -170,6 +170,8 @@ enrichment:
     hip_hop: [rnb]
     rnb: [hip_hop]
   detect_genres_from_text: true
+  # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
+  talk_keywords: ["הרצאה", "הרצאות", "lecture", "סדנה", "סדנת", "workshop", "קפה דעת"]
   # A ticket tier named with one of these and priced 0 is treated as free entry.
   # DJ / performer extraction from descriptions. A line matching a header keyword
   # starts a lineup block; following short lines are taken as names.

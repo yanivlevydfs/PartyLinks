@@ -298,7 +298,7 @@ export function Share({ path, title }: { path: string; title: string }) {
 }
 
 /** Paged event grid for any /events filter set. */
-export function EventGrid({ params }: { params: Params }) {
+export function EventGrid({ params, empty }: { params: Params; empty?: ReactNode }) {
   const { t } = useT();
   const q = useEvents(params);
   const items = q.data?.pages.flatMap((p) => p.items) ?? [];
@@ -309,7 +309,7 @@ export function EventGrid({ params }: { params: Params }) {
   return (
     <>
       <p className="count">{t.results(total)}</p>
-      {items.length === 0 && <p className="msg">{t.empty}</p>}
+      {items.length === 0 && (empty ?? <p className="msg">{t.empty}</p>)}
       <div className="grid">{items.map((e) => <Card key={e.id} e={e} />)}</div>
       {q.hasNextPage && (
         <div className="more">

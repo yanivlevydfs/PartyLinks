@@ -212,3 +212,21 @@ def test_hebrew_city_names_match_whole_words_only() -> None:
     assert city(venue_name="מסיבה ביפו העתיקה") is True  # attached prefix letter
     assert city(address="שדרות רוטשילד 24, תל אביב-יפו") is True
     assert city(venue_name="הודנא בר, ת\"א") is True
+
+
+def test_hebrew_genre_words_match_whole_words_only() -> None:
+    lecture = make(title="קפה דעת", description="האתגרים החברתיים והטכנולוגיים של ישראל")
+    assert "techno" not in ENRICHER._detect_genres(lecture)  # "טכנו" inside "טכנולוגיים"
+    party = make(title="FRIDAY", description="והטכנו הכי טוב בעיר")
+    assert "techno" in ENRICHER._detect_genres(party)  # attached prefixes still count
+
+
+def test_talk_takes_no_genres_from_its_description() -> None:
+    talk = make(title="הרצאה - ריקוד המכונה", description="כך נולדו ההיפ הופ, ההאוס והטכנו")
+    assert ENRICHER._detect_genres(talk) == []
+
+
+def test_named_region_overrides_far_coordinates() -> None:
+    areas = ENRICHER.areas
+    assert areas.contradicts(None, "פילוסוף קיבוץ הגושרים", None, 30.99, 35.35)  # placed in the Negev
+    assert not areas.contradicts(None, "פילוסוף קיבוץ הגושרים", None, 33.22, 35.62)

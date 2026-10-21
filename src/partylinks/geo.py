@@ -245,6 +245,11 @@ class Geocoder:
             for r in rows:
                 city = self._cities.get(r.city or "")
                 far = city is not None and meters(city.center, (r.latitude, r.longitude)) > city.radius_m  # type: ignore[arg-type]
+                # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
+                far = far or (
+                    r.in_target_city is False
+                    and self.areas.contradicts(r.city, r.venue_name, r.address, r.latitude, r.longitude)  # type: ignore[arg-type]
+                )
                 if far or len(venues[_point(r)]) >= PLACEHOLDER_VENUES:
                     r.latitude = r.longitude = None
                     dropped += 1
@@ -280,6 +285,10 @@ class Geocoder:
             return False
         if row.in_target_city and not any(k in _city_key(hit.city) for k in self._city_keys):
             return False  # e.g. "Kibbutz Galuyot 52" resolved to Bnei Brak
+        if row.in_target_city is False and self.areas.contradicts(
+            row.city, row.venue_name, row.address, hit.latitude, hit.longitude
+        ):
+            return False
         # Area keywords are Tel Aviv streets ("הרצל", "בן יהודה" exist in every town).
         area = self.areas.keyword_area(row.venue_name, row.address) if row.in_target_city is not False else None
         center = self.areas.center(area) if area else None

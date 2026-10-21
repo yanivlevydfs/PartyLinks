@@ -103,16 +103,29 @@ class AreaMatcher:
         latitude: float | None, longitude: float | None,
     ) -> str:
         """Region of an event outside the target city: a named place (city first), then coordinates."""
-        for text in (city, address, venue_name):
-            for region, pattern in self._regions:
-                if text and pattern and pattern.search(text.lower()):
-                    return region.key
+        if named := self.named_region(city, venue_name, address):
+            return named.key
         if latitude is None or longitude is None or not self._regions:
             return OUTSIDE_AREA
         for region, _ in self._regions:
-            if any(a <= latitude <= b and c <= longitude <= d for a, b, c, d in region.boxes):
+            if _in_boxes(region, latitude, longitude):
                 return region.key
         return ABROAD_AREA
+
+    def named_region(self, city: str | None, venue_name: str | None, address: str | None) -> RegionSettings | None:
+        """Region of the first place named in the city, address or venue name (in that order)."""
+        for text in (city, address, venue_name):
+            for region, pattern in self._regions:
+                if text and pattern and pattern.search(text.lower()):
+                    return region
+        return None
+
+    def contradicts(
+        self, city: str | None, venue_name: str | None, address: str | None, latitude: float, longitude: float
+    ) -> bool:
+        """True when the text names a region whose boxes miss the point ("קיבוץ הגושרים" placed in the Negev)."""
+        named = self.named_region(city, venue_name, address)
+        return named is not None and bool(named.boxes) and not _in_boxes(named, latitude, longitude)
 
     def keyword_area(self, venue_name: str | None, address: str | None) -> str | None:
         """Area named by a street / neighbourhood keyword in the text, ignoring coordinates."""
@@ -147,8 +160,9 @@ class Enricher:
         self.settings = settings
         self.tz = ZoneInfo(timezone)
         self._genres = {
-            genre: pattern for genre, words in settings.genres.items() if (pattern := _keyword_pattern(words))
+            genre: pattern for genre, words in settings.genres.items() if (pattern := _place_pattern(words, prefixes=2))
         }
+        self._talk = _place_pattern(settings.talk_keywords, prefixes=2)
         self._free = _keyword_pattern(settings.free_entry_keywords)
         self._pay_at_door = _keyword_pattern(settings.pay_at_door_keywords)
         self._city = _place_pattern(settings.target_city.aliases)
@@ -214,7 +228,8 @@ class Enricher:
     # ------------------------------------------------------------------ genres
     def _detect_genres(self, event: ScrapedEvent) -> list[str]:
         declared = " | ".join([*event.source_genres, *event.event_types]).lower()
-        text = f"{event.title}\n{event.description or ''}".lower() if self.settings.detect_genres_from_text else ""
+        talk = self._talk is not None and self._talk.search(event.title.lower())
+        text = f"{event.title}\n{event.description or ''}".lower() if self.settings.detect_genres_from_text and not talk else ""
         return sorted(
             genre for genre, pattern in self._genres.items() if pattern.search(declared) or pattern.search(text)
         )
@@ -437,13 +452,18 @@ class Enricher:
         return False if self.areas.region(None, venue, None, None, None) != OUTSIDE_AREA else None
 
 
-def _place_pattern(names: list[str]) -> re.Pattern[str] | None:
-    """Whole-word place names. Unlike genre keywords, Hebrew names must not match inside
-    other words ("יפו" inside "פטיפון" made a Rishon LeZion bar count as Tel Aviv), but
-    may carry one attached Hebrew prefix letter ("ביפו", "מתל אביב")."""
+def _in_boxes(region: RegionSettings, latitude: float, longitude: float) -> bool:
+    return any(a <= latitude <= b and c <= longitude <= d for a, b, c, d in region.boxes)
+
+
+def _place_pattern(names: list[str], prefixes: int = 1) -> re.Pattern[str] | None:
+    """Whole-word place names (and genre words). Hebrew names must not match inside other
+    words ("יפו" inside "פטיפון" made a Rishon LeZion bar count as Tel Aviv, "טכנו" inside
+    "טכנולוגיים" made a lecture techno), but may carry attached Hebrew prefix letters
+    ("ביפו", "מתל אביב", "והטכנו")."""
     parts = [
         rf"(?<![\w]){re.escape(n.lower())}(?![\w])" if n.isascii()
-        else rf"(?<![\w])[ובהלמשכ]?{re.escape(n.lower())}(?![\w])"
+        else rf"(?<![\w])[ובהלמשכ]{{0,{prefixes}}}{re.escape(n.lower())}(?![\w])"
         for n in names
         if n.strip()
     ]

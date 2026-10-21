@@ -187,6 +187,9 @@ class EnrichmentSettings(BaseModel):
     # Umbrella genres: filtering or counting the parent ("electronic") includes every listed sub-genre.
     genre_families: dict[str, list[str]] = Field(default_factory=dict)
     detect_genres_from_text: bool = True
+    # A title with one of these is a talk, not a party: genres it describes ("the birth of house and
+    # techno") are its subject, so only the genres its source declares are kept.
+    talk_keywords: list[str] = Field(default_factory=list)
     lineup: LineupSettings = Field(default_factory=LineupSettings)
     time_slots: list[TimeSlot] = Field(default_factory=list)
     weekend_days: list[str] = Field(default_factory=list)

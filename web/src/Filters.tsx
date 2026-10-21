@@ -174,6 +174,37 @@ export function Filters() {
   );
 }
 
+/** Empty result: one button per active filter, showing how many events dropping it would bring back. */
+export function Relax() {
+  const { t, lang } = useT();
+  const f = useStore((s) => s.filters);
+  const set = useStore((s) => s.setFilters);
+  const options: [string, Partial<FilterState>][] = [
+    ...(f.freeOnly ? [[t.freeOnly, { freeOnly: false }] as [string, Partial<FilterState>]] : []),
+    ...(f.when !== "all" ? [[f.when === "tonight" ? t.tonight : f.when === "weekend" ? t.weekend : f.when.split("-").reverse().slice(0, 2).join("."), { when: "all" }] as [string, Partial<FilterState>]] : []),
+    ...f.genres.map((g) => [genreLabel(lang, g), { genres: f.genres.filter((x) => x !== g) }] as [string, Partial<FilterState>]),
+    ...(f.slot ? [[label(t.slots, f.slot), { slot: null }] as [string, Partial<FilterState>]] : []),
+    ...(f.region ? [[label(t.areas, f.region), { region: null, areas: [], city: null }] as [string, Partial<FilterState>]] : []),
+    ...f.shops.map((s) => [sourceName(s), { shops: f.shops.filter((x) => x !== s) }] as [string, Partial<FilterState>]),
+    ...(f.hideSoldOut ? [[t.hideSoldOut, { hideSoldOut: false }] as [string, Partial<FilterState>]] : []),
+  ];
+  if (!options.length) return <p className="msg">{t.empty}</p>;
+  return (
+    <div className="msg">
+      <p>{t.relax}</p>
+      <div className="relax">
+        {options.map(([name, patch]) => <RelaxOption key={name} name={name} params={filterParams({ ...f, ...patch })} onClick={() => set(patch)} />)}
+      </div>
+    </div>
+  );
+}
+
+function RelaxOption({ name, params, onClick }: { name: string; params: Params; onClick: () => void }) {
+  const { t } = useT();
+  const total = useEvents(params).data?.pages[0]?.total;
+  return total ? <button className="f-pill" onClick={onClick}>{t.without(name, total)}</button> : null;
+}
+
 function Pill({ children, onClear }: { children: ReactNode; onClear: () => void }) {
   const { t } = useT();
   return (

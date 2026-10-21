@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useCategories } from "../api";
-import { Filters, filterParams } from "../Filters";
+import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore } from "../store";
 import { EventGrid, Hero, useT, useTitle } from "../ui";
@@ -63,7 +63,7 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
       </Hero>
       <main className="wrap">
         <Filters />
-        <EventGrid params={filterParams(f)} />
+        <EventGrid params={filterParams(f)} empty={<Relax />} />
       </main>
     </>
   );
