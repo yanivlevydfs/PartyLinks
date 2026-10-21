@@ -36,8 +36,6 @@ from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
 
-FACET_LIMIT = 1000  # venue / artist lists on the site are searched client-side
-
 
 # --------------------------------------------------------------------------- schemas
 class _Out(BaseModel):
@@ -818,9 +816,9 @@ def _register_routes(app: FastAPI) -> None:
             query = query.where(upcoming_filter())
         rows = session.execute(query).all()
 
-        def facet(values: Callable[[Any], list[Any]], limit: int | None = FACET_LIMIT) -> list[FacetValue]:
+        def facet(values: Callable[[Any], list[Any]]) -> list[FacetValue]:
             counts = Counter(str(v) for row in rows for v in values(row) if v not in (None, ""))
-            return [FacetValue(value=v, events=n) for v, n in counts.most_common(limit)]
+            return [FacetValue(value=v, events=n) for v, n in counts.most_common()]
 
         def artist_facet() -> list[FacetValue]:
             # "Pettra" / "PETTRA" are one artist: merge case-insensitively, show the most used spelling.
@@ -829,7 +827,7 @@ def _register_routes(app: FastAPI) -> None:
             for name, n in spellings.most_common():
                 shown, total = merged.get(name.casefold(), (name, 0))
                 merged[name.casefold()] = (shown, total + n)
-            ranked = sorted(merged.values(), key=lambda item: -item[1])[:FACET_LIMIT]
+            ranked = sorted(merged.values(), key=lambda item: -item[1])  # all of them: the site searches the list
             profiles = request.app.state.service.artists.profiles()
             out = []
             for name, n in ranked:
@@ -848,24 +846,26 @@ def _register_routes(app: FastAPI) -> None:
             listings = listings.where(upcoming_filter())
         group_sources = Counter(source for _, source in session.execute(listings))
 
-        venue_area = {r.venue_name: r.area for r in rows if r.venue_name and r.area}
         region_keys = request.app.state.service.enricher.areas.region_keys
 
         def region(r: Any) -> str | None:
             return "tel_aviv" if r.in_target_city else r.area if r.area in region_keys else None
+
+        # The same regions as the home filter (not Tel Aviv neighbourhoods mixed with regions).
+        venue_area = {r.venue_name: reg for r in rows if r.venue_name and (reg := region(r))}
 
         city_regions = Counter((r.city, reg) for r in rows if r.city and (reg := region(r)))
         city_region: dict[str, str] = {}
         for (city, reg), _ in city_regions.most_common():
             city_region.setdefault(city, reg)  # a city's most common region
         return Categories(
-            genres=facet(lambda r: request.app.state.settings.enrichment.with_parents(r.genres or []), None),
-            dates=sorted(facet(lambda r: [r.local_date], None), key=lambda f: f.value),
-            days_of_week=facet(lambda r: [r.day_of_week], None),
-            time_slots=facet(lambda r: [r.time_slot], None),
-            areas=facet(lambda r: [r.area], None),
-            regions=facet(lambda r: [region(r)], None),
-            entry_types=facet(lambda r: [r.group_entry_type], None),
+            genres=facet(lambda r: request.app.state.settings.enrichment.with_parents(r.genres or [])),
+            dates=sorted(facet(lambda r: [r.local_date]), key=lambda f: f.value),
+            days_of_week=facet(lambda r: [r.day_of_week]),
+            time_slots=facet(lambda r: [r.time_slot]),
+            areas=facet(lambda r: [r.area]),
+            regions=facet(lambda r: [region(r)]),
+            entry_types=facet(lambda r: [r.group_entry_type]),
             venues=[f.model_copy(update={"area": venue_area.get(f.value)}) for f in facet(lambda r: [r.venue_name])],
             cities=[
                 f.model_copy(update={"area": city_region.get(f.value)})

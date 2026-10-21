@@ -115,7 +115,7 @@ export interface MapPins {
 export interface Facet {
   value: string;
   events: number;
-  area?: string; // venues: area of Tel Aviv; cities: region of the country
+  area?: string; // venues / cities: region of the country
   // Artists only: verified profile curated by a ticket site (Go-Out, Eventer, Mevalim...).
   verified?: boolean;
   image_url?: string;
