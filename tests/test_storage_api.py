@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, time, timedelta
-from zoneinfo import ZoneInfo
 from decimal import Decimal
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
@@ -181,8 +181,8 @@ def test_city_names_are_canonical() -> None:
 
 def test_geocoding_reuses_known_places_and_rejects_vague_hits(tmp_path: Path) -> None:
     from partylinks.db import GeoCacheRow
-    from partylinks.geo import Geocoder, candidates, street_key
     from partylinks.enrichment import Enricher
+    from partylinks.geo import Geocoder, candidates, street_key
 
     assert street_key("דרך קיבוץ גלויות 52, תל אביב-יפו, ישראל") == "קיבוץ גלויות 52"
     assert street_key("אבן גבירול 30 קומה -1") == "אבן גבירול 30"

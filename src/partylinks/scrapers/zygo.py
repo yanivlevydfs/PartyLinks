@@ -20,7 +20,6 @@ from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text, next_data, parse_iso, to_decimal, to_float, to_int
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
-
 CENTS = Decimal("0.01")
 
 

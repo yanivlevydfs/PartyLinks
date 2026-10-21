@@ -314,14 +314,12 @@ class Enricher:
                     nxt = _strip_decor(lines[i + 1]) if i + 1 < len(lines) else ""
                     if collected and not (re.search(r"[a-z]", nxt, re.IGNORECASE) and self._as_name(nxt)):
                         break
-                elif lines[i].strip().endswith(":"):  # stage / sub-header, e.g. "MAIN STAGE:"
-                    collected = False
-                elif (
+                elif lines[i].strip().endswith(":") or (
                     (candidate.startswith("(") and candidate.endswith(")"))  # "(MAINSTREAM, EDM, HARDSTYLE)"
                     or not _TBA.sub("", candidate).strip()  # "TBA LINE UP"
                     or candidate.casefold() in self._genre_words  # "HIP HOP" stage header
                     or self._not_a_name.search(candidate)  # "2ND STAGE – HIP HOP"
-                ):
+                ):  # stage / sub-header, e.g. "MAIN STAGE:"
                     collected = False
                 elif name := self._as_name(candidate):
                     names.append(name)

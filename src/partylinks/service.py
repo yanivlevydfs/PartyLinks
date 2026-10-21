@@ -29,7 +29,7 @@ from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, TypeVar
+from typing import Any
 
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import DataError, IntegrityError, OperationalError
@@ -47,7 +47,6 @@ from partylinks.db import (
     upsert_events,
     utcnow,
 )
-from partylinks.venues import resolve_venues
 from partylinks.dedup import Deduplicator
 from partylinks.enrichment import ABROAD_AREA, UNKNOWN_COUNTRY, Enricher, meters
 from partylinks.geo import Geocoder
@@ -56,12 +55,12 @@ from partylinks.models import ScrapedEvent
 from partylinks.retention import is_current, purge_expired
 from partylinks.scrapers import SCRAPERS, build_scraper, source_settings
 from partylinks.scrapers.base import SourceBlockedError
+from partylinks.venues import resolve_venues
 
 log = logging.getLogger(__name__)
 
 SAVE_BATCH_SIZE = 200
 DB_RETRIES = 4
-T = TypeVar("T")
 
 
 class SourceBusyError(RuntimeError):
@@ -92,7 +91,7 @@ class RetentionState:
     history: list[str] = field(default_factory=list)
 
 
-def _with_db_retry(what: str, fn: Callable[[], T]) -> T:
+def _with_db_retry[T](what: str, fn: Callable[[], T]) -> T:
     """Retry a blocking DB call on lock contention (SQLite 'database is locked')."""
     for attempt in range(1, DB_RETRIES + 1):
         try:
@@ -320,13 +319,13 @@ class ScrapeService:
             log.error("source %s %s", source, error)
         except _StopRequested:
             status, error = "interrupted", "service shutting down"
-        except Exception as exc:  # noqa: BLE001 - a run must always be recorded
+        except Exception as exc:
             log.exception("source %s failed", source)
             status, error = "failed", f"{type(exc).__name__}: {exc}"[:500]
         finally:
             try:
                 await flush()  # whatever was collected is always saved
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 log.exception("source %s: final save failed", source)
                 status, error = "failed", f"save failed: {type(exc).__name__}: {exc}"[:500]
 
@@ -348,13 +347,13 @@ class ScrapeService:
         if not self._stopping.is_set():  # shutting down: the run is recorded as interrupted on next start
             try:
                 await asyncio.to_thread(_with_db_retry, "track changes", lambda: self._track_changes(source, run_id, status))
-            except Exception:  # noqa: BLE001 - bookkeeping only; the events are saved
+            except Exception:
                 log.exception("source %s: change tracking failed", source)
 
         result = RunResult(run_id, source, status, found, saved, len(failures), error)
         try:
             await self._blocking(_with_db_retry, "finish run", lambda: self._finish_run(result, failures))
-        except Exception:  # noqa: BLE001 - startup recovery marks it interrupted later
+        except Exception:
             log.exception("source %s: could not record run %s", source, run_id)
         log.info("source %s finished: %s", source, result)
         return result
@@ -363,7 +362,7 @@ class ScrapeService:
     async def _post_step(source: str, what: str, failures: list[str], step: Any) -> None:
         try:
             await step
-        except Exception as exc:  # noqa: BLE001 - events are already saved
+        except Exception as exc:
             log.exception("source %s: %s failed", source, what)
             failures.append(f"{what}: {type(exc).__name__}: {exc}"[:500])
 

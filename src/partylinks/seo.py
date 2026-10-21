@@ -820,10 +820,10 @@ def llms_txt(session: Session, cfg: Settings) -> str:
     lines = [
         f"# {cfg.site.name}",
         "",
-        "> Every event, party, show and club night in Israel, collected from Israeli "
+        ("> Every event, party, show and club night in Israel, collected from Israeli "
         "ticketing sites and updated several times a day. For each event: date and time (Israel time, "
         "Asia/Jerusalem), venue and address, lineup / DJs, genres, minimum age, every ticket tier with "
-        "its price in ILS (₪), free-entry flags, and a link to buy tickets on the original site.",
+        "its price in ILS (₪), free-entry flags, and a link to buy tickets on the original site."),
         "",
         f"Last updated: {now:%Y-%m-%d %H:%M} (Asia/Jerusalem). Site languages: Hebrew (default) and English (`?lang=en`).",
         "",
@@ -839,9 +839,9 @@ def llms_txt(session: Session, cfg: Settings) -> str:
         *(f"- [{p.title}]({base}/blog/{p.slug}): {p.description}" for p in blog.load_posts(cfg)),
         "",
         "## Data (JSON API, no key needed)",
-        f"- [Events]({base}/events): filters `date=YYYY-MM-DD`, `weekend=true`, `genre`, `artist`, `venue`, "
+        (f"- [Events]({base}/events): filters `date=YYYY-MM-DD`, `weekend=true`, `genre`, `artist`, `venue`, "
         "`city`, `free_entry=true`, `time_slot` (morning/afternoon/evening/night), `area` (south, rothschild, center, business, "
-        "beach, north, jaffa, outside), `min_price`, `max_price`, `q`; paged with `page`, `page_size`",
+        "beach, north, jaffa, outside), `min_price`, `max_price`, `q`; paged with `page`, `page_size`"),
         f"- [Event detail]({base}/events/{{id}}): tickets, prices, fees, images",
         f"- [Magazine posts]({base}/posts): blog posts as JSON; `/posts/{{slug}}` for one post",
         f"- [Categories]({base}/categories): counts per genre, date, venue, artist",

@@ -7,7 +7,7 @@ import logging
 from datetime import UTC, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import ColumnElement, and_, false, delete, not_, or_, select
+from sqlalchemy import ColumnElement, and_, delete, false, not_, or_, select
 
 from partylinks.config import RetentionSettings
 from partylinks.db import Database, EventRow, ScrapeRunRow, delete_events

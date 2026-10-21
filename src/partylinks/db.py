@@ -5,9 +5,8 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-
-from collections.abc import Iterator, Sequence
 from collections import defaultdict
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -18,12 +17,12 @@ from sqlalchemy import (
     JSON,
     Boolean,
     ColumnElement,
-    LargeBinary,
     Date,
     DateTime,
     Float,
     ForeignKey,
     Integer,
+    LargeBinary,
     Numeric,
     String,
     Table,
@@ -31,11 +30,11 @@ from sqlalchemy import (
     TypeDecorator,
     bindparam,
     create_engine,
-    inspect,
-    text,
     delete,
     insert,
+    inspect,
     select,
+    text,
     update,
 )
 from sqlalchemy import event as sa_event
@@ -45,7 +44,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, rela
 
 from partylinks.config import project_path
 from partylinks.models import ScrapedEvent
-
 
 log = logging.getLogger(__name__)
 

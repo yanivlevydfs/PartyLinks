@@ -24,8 +24,8 @@ from partylinks.scrapers.makore import MakoreScraper
 from partylinks.scrapers.megatickets import MegaticketsScraper
 from partylinks.scrapers.mevalim import MevalimScraper
 from partylinks.scrapers.popit import PopitScraper
-from partylinks.scrapers.secrettelaviv import SecretTelAvivScraper
 from partylinks.scrapers.pres import PresScraper
+from partylinks.scrapers.secrettelaviv import SecretTelAvivScraper
 from partylinks.scrapers.selector import SelectorScraper
 from partylinks.scrapers.smarticket import SmarticketScraper
 from partylinks.scrapers.teder import TederScraper

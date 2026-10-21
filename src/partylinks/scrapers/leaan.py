@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from partylinks.models import ScrapedEvent, TicketTier
@@ -50,7 +50,7 @@ class LeaanScraper(BaseScraper[LeaanSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         page_url = s.site_url + s.event_page_path
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         raws = listing_events(await self.get_text(s.site_url + s.listing_path))
         if not raws:
             raise ParseError("no events in the homepage search index")

@@ -203,7 +203,7 @@ def test_current_event_rule_at_2am() -> None:
     from partylinks.retention import is_current
 
     s, tz = Settings().retention, "Asia/Jerusalem"
-    at = lambda d, h, m=0: datetime(2026, 10, d, h, m, tzinfo=ZoneInfo(tz))  # noqa: E731
+    at = lambda d, h, m=0: datetime(2026, 10, d, h, m, tzinfo=ZoneInfo(tz))
     now = at(20, 2)  # Tuesday 02:00
     assert not is_current(at(19, 21), None, s, tz, now)  # yesterday's 21:00 show (the screenshot): over
     assert not is_current(at(19, 21), at(19, 23), s, tz, now)  # ended before midnight: over

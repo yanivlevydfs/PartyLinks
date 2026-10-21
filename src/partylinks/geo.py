@@ -333,7 +333,7 @@ class Geocoder:
                         "q": query, "format": "jsonv2", "limit": self.settings.results_per_query,
                         "addressdetails": 1, "countrycodes": self.settings.country_codes,
                         "viewbox": self.settings.viewbox,
-                    },  # fmt: skip
+                    },
                 )
                 response.raise_for_status()
                 results = response.json()

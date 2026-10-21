@@ -105,7 +105,7 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
             *(["site.base_url is still localhost: canonical links, sitemap and share previews point to it."]
               if "localhost" in cfg.site.base_url else []),
             *([] if cfg.admin.token else ["No admin token set: admin works from this machine only."]),
-        ],  # fmt: skip
+        ],
         "retention": {**cfg.retention.model_dump(), "next_run_at": next_run_times(scheduler).get(RETENTION_JOB_ID)},
         "scheduler": {
             "enabled": scheduler is not None,
@@ -170,7 +170,7 @@ async def scan(request: Request, body: ScanIn | None = None) -> dict[str, list[s
 async def _watch(name: str, run: Any) -> None:
     try:
         await run
-    except Exception:  # noqa: BLE001 - the run row records the outcome
+    except Exception:
         log.exception("admin full scan: %s failed", name)
 
 
@@ -280,7 +280,7 @@ def post_validate(body: ConfigIn) -> dict[str, Any]:
 @router.put("/config")
 async def put_config(body: ConfigIn, request: Request) -> dict[str, Any]:
     """Validate, back up the current file, save, then apply without a restart when possible."""
-    new, errors = validate_config(body.yaml)
+    _, errors = validate_config(body.yaml)
     if errors:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, {"errors": errors})
     path = config_path()

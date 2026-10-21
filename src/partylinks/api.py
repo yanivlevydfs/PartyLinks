@@ -17,10 +17,10 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, s
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from sqlalchemy import ColumnElement, String, and_, cast, func, not_, or_, select
 from sqlalchemy.orm import Session, aliased, selectinload, undefer
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from partylinks import seo
 from partylinks.admin import AdminDep, require_admin
@@ -430,7 +430,7 @@ def _json_contains(column: Any, values: list[str]) -> ColumnElement[bool]:
     return or_(*(cast(column, String).ilike(f'%"{v}"%') for v in values))
 
 
-def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route handlers
+def _register_routes(app: FastAPI) -> None:
     @app.get("/site", tags=["meta"])
     def site_info(request: Request) -> dict[str, Any]:
         """Public site details the website shows (name, accessibility and privacy contacts)."""
@@ -789,7 +789,7 @@ def _register_routes(app: FastAPI) -> None:  # noqa: C901 - flat list of route h
         async def run() -> None:
             try:
                 await asyncio.wrap_future(future)
-            except Exception:  # noqa: BLE001 - surfaced in logs; the run row records the outcome
+            except Exception:
                 log.exception("API-triggered run of %s failed", name)
 
         task = asyncio.create_task(run())

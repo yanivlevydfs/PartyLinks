@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -12,7 +12,7 @@ from partylinks.scrapers import leaan
 FIXTURES = Path(__file__).parent / "fixtures" / "leaan"
 TZ = "Asia/Jerusalem"
 URL = "https://www.leaan.co.il/events/{slug}/{event_id}"
-NOW = datetime(2026, 10, 20, 12, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 20, 12, 0, tzinfo=UTC)
 
 
 def _read(name: str) -> str:
@@ -31,7 +31,7 @@ def test_leaan_listing_events() -> None:
     assert banai.start_at == datetime(2026, 11, 11, 21, 30, tzinfo=ZoneInfo(TZ))
     assert (banai.venue_name, banai.address, banai.city) == ("מועדון הגריי", "דם המכבים 69", "מודיעין")
     assert banai.source_genres == ["מוזיקה"]
-    assert banai.min_price == banai.max_price == Decimal("220") and not banai.tickets
+    assert banai.min_price == banai.max_price == Decimal(220) and not banai.tickets
     assert banai.image_url and len(banai.images) == 3
     assert banai.description and "ליאת בנאי" in banai.description
 
@@ -39,7 +39,7 @@ def test_leaan_listing_events() -> None:
     assert standup is not None and standup.min_age == 18 and standup.extra["labels"] == ["18+"]
 
     match = parsed["7951"]
-    assert match is not None and match.min_price == Decimal("75") and match.max_price is None
+    assert match is not None and match.min_price == Decimal(75) and match.max_price is None
     assert match.extra["purchase_url"] == "https://tickets.leaan.net/event/--cbxrhu" and match.extra["sport"]
 
 
@@ -48,7 +48,7 @@ def test_leaan_event_page_tiers() -> None:
     assert event is not None and event.source_event_id == "7957"
     assert event.city == "תל אביב" and event.venue_name == "היכל קבוצת שלמה"
     assert len(event.tickets) == 10 and event.tickets[0].name == "נוער/חייל - לא מסומן"
-    assert (event.min_price, event.max_price) == (Decimal("90"), Decimal("400"))
+    assert (event.min_price, event.max_price) == (Decimal(90), Decimal(400))
 
 
 def test_leaan_sitemap_ids() -> None:

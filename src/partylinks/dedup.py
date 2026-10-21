@@ -179,7 +179,7 @@ class Deduplicator:
         for listings in by_day.values():
             parent = {item.id: item.id for item in listings}
 
-            def find(x: str) -> str:
+            def find(x: str, parent: dict[str, str] = parent) -> str:
                 while parent[x] != x:
                     parent[x] = parent[parent[x]]
                     x = parent[x]

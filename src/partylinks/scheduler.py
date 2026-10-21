@@ -27,7 +27,7 @@ async def _scheduled_run(service: ScrapeService, source: str) -> None:
         log.info("skipping scheduled %s run: previous run still in progress", source)
     except asyncio.CancelledError:
         log.info("scheduled %s run stopped: server shutting down (recorded as interrupted)", source)
-    except Exception:  # noqa: BLE001 - keep the job scheduled; the next run tries again
+    except Exception:
         log.exception("scheduled run of %s failed before it could be recorded", source)
 
 
@@ -36,7 +36,7 @@ async def _scheduled_retention(service: ScrapeService) -> None:
         await service.purge_expired()
     except SourceBusyError:
         log.info("skipping scheduled retention: already running")
-    except Exception:  # noqa: BLE001 - outcome is kept in service.retention_state for /health
+    except Exception:
         log.exception("scheduled retention failed")
 
 

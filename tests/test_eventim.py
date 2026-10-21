@@ -37,10 +37,10 @@ def _ld(status: str) -> str:
 
 def test_sitemap_keeps_event_pages_only() -> None:
     xml = (
-        "<urlset><url><loc>https://www.eventim.co.il/event/a-22285519/</loc></url>"
-        "<url><loc>https://www.eventim.co.il/artist/a/</loc></url>"
-        "<url><loc>https://www.eventim.co.il/event/a-22285519/</loc></url></urlset>"
-    ).encode()
+        b"<urlset><url><loc>https://www.eventim.co.il/event/a-22285519/</loc></url>"
+        b"<url><loc>https://www.eventim.co.il/artist/a/</loc></url>"
+        b"<url><loc>https://www.eventim.co.il/event/a-22285519/</loc></url></urlset>"
+    )
     assert sitemap_event_urls(xml) == ["https://www.eventim.co.il/event/a-22285519/"]
 
 

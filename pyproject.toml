@@ -36,3 +36,7 @@ pythonpath = ["src"]
 [tool.pyrefly]
 search-path = ["src"]
 # Use the interpreter VS Code is configured with (.vscode/settings.json), which has the deps.
+
+[tool.ruff]
+# The code is written to ~120 columns; the 88 default made isort wrap imports that fit.
+line-length = 120

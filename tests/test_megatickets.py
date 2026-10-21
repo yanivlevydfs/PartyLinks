@@ -34,8 +34,8 @@ def test_parse_event() -> None:
     tiers = {t.name: t for t in event.tickets}
     assert len(tiers) == 4
     assert tiers["מחיר השקה"].status is TierStatus.SOLD_OUT
-    assert tiers["מכירה מוקדמת"].price == Decimal("179") and tiers["מכירה מוקדמת"].is_active
-    assert (event.min_price, event.max_price) == (Decimal("179"), Decimal("299"))
+    assert tiers["מכירה מוקדמת"].price == Decimal(179) and tiers["מכירה מוקדמת"].is_active
+    assert (event.min_price, event.max_price) == (Decimal(179), Decimal(299))
     assert not event.is_sold_out
 
 

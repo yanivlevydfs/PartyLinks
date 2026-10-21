@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import html
 import json
+import math
 import re
 import unicodedata
-from datetime import datetime, timezone, tzinfo
+from datetime import UTC, datetime, tzinfo
 from decimal import Decimal, InvalidOperation
 from typing import Any
 from urllib.parse import quote
@@ -100,11 +101,11 @@ def to_int(value: Any) -> int | None:
 def zone(name: str | None) -> tzinfo:
     """ZoneInfo for ``name``; unknown or empty names fall back to UTC instead of raising."""
     if not name:
-        return timezone.utc
+        return UTC
     try:
         return ZoneInfo(name)
     except (ZoneInfoNotFoundError, ValueError):
-        return timezone.utc
+        return UTC
 
 
 def parse_iso(value: Any, default_tz: str | None = None) -> datetime | None:
@@ -116,7 +117,7 @@ def parse_iso(value: Any, default_tz: str | None = None) -> datetime | None:
     if not isinstance(value, str) or not value.strip():
         return None
     try:
-        dt = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(value.strip())
     except ValueError:
         return None
     if dt.tzinfo is None:
@@ -132,7 +133,7 @@ def from_unix(value: Any) -> datetime | None:
     if number > 1e11:  # milliseconds
         number /= 1000
     try:
-        return datetime.fromtimestamp(number, tz=timezone.utc)
+        return datetime.fromtimestamp(number, tz=UTC)
     except (OverflowError, OSError, ValueError):
         return None
 
@@ -142,7 +143,7 @@ def to_float(value: Any) -> float | None:
         number = float(value) if value not in (None, "") else None
     except (TypeError, ValueError):
         return None
-    return number if number is not None and number == number else None  # drop NaN
+    return number if number is not None and not math.isnan(number) else None
 
 
 _SLUG_DROP = re.compile(r"[^\w\s-]", re.UNICODE)

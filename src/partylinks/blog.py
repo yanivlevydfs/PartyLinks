@@ -40,8 +40,8 @@ CATEGORIES = {  # key -> (Hebrew, English)
     "music": ("מוזיקה וז׳אנרים", "Music"),
     "tips": ("טיפים", "Tips"),
 }
-EMBED = re.compile(r"<!--\s*events\b(.*?)-->", re.S)
-H2 = re.compile(r"<h2>(.*?)</h2>", re.S)
+EMBED = re.compile(r"<!--\s*events\b(.*?)-->", re.DOTALL)
+H2 = re.compile(r"<h2>(.*?)</h2>", re.DOTALL)
 EMBED_MAX = 24
 EMBED_DEFAULT = 6
 WORDS_PER_MINUTE = 200
@@ -111,7 +111,7 @@ def _anchor_headings(body: str) -> str:
 
 def toc(post: Post) -> list[dict[str, str]]:
     return [{"id": m[1], "title": unescape(re.sub(r"<[^>]+>", "", m[2]))}
-            for m in re.finditer(r'<h2 id="([^"]*)">(.*?)</h2>', post.body, re.S)]  # fmt: skip
+            for m in re.finditer(r'<h2 id="([^"]*)">(.*?)</h2>', post.body, re.DOTALL)]  # fmt: skip
 
 
 # --------------------------------------------------------------------------- live event embeds

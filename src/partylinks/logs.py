@@ -18,7 +18,6 @@ import logging
 import logging.handlers
 import sys
 from datetime import UTC, datetime
-from io import TextIOWrapper
 from typing import IO, Any
 
 from partylinks.config import LOG_FORMAT, LoggingSettings, project_path

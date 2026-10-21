@@ -9,11 +9,11 @@ run, so artwork fetching stays isolated per source like scraping.
 from __future__ import annotations
 
 import asyncio
-from datetime import timedelta
 import hashlib
 import logging
 import mimetypes
 from collections.abc import Iterable
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 

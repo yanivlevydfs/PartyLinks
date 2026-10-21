@@ -167,7 +167,7 @@ def test_slugs_are_readable_unique_and_keep_hebrew() -> None:
 
 def test_zero_priced_pay_at_door_tier_is_paid_with_price_from_name() -> None:
     tiers = [
-        TicketTier(name="‏כרטיס מזומן 120", price=Decimal(0)),
+        TicketTier(name="\u200fכרטיס מזומן 120", price=Decimal(0)),
         TicketTier(name="רשומים חינם עד 00:30", price=Decimal(0)),
     ]
     event = ENRICHER.enrich(make(tickets=tiers))
