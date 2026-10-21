@@ -264,6 +264,26 @@ button, input, select { font: inherit; color: inherit; }
   text-shadow: 0 0 14px rgb(255 46 147 / .6);
 }
 
+/* --------------------------------------------------------------- trending */
+.trending { margin: 24px 0 8px; padding: 22px 0 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.trending-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 0 22px 14px; }
+.trending h2 { margin: 0; font: 800 20px/1.2 var(--display); letter-spacing: 1px; text-transform: uppercase; }
+.trending h2 span { color: var(--pink); }
+.trending-head p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.trending-nav { display: flex; gap: 6px; direction: ltr; }
+.trending-nav button {
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2);
+  color: var(--text); font-size: 20px; line-height: 1; cursor: pointer;
+}
+.trending-nav button:hover { border-color: var(--line-hot); }
+.trending-row {
+  display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  padding: 6px 22px 4px; scroll-padding-inline: 22px;
+}
+.trending-row::-webkit-scrollbar { display: none; }
+.trending-row > .card-wrap { flex: 0 0 min(260px, 78vw); scroll-snap-align: start; }
+@media (max-width: 760px) { .trending-nav { display: none; } }
+
 /* ------------------------------------------------------------------ cards */
 .grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr)); }
 .card {

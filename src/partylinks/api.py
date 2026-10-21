@@ -280,6 +280,7 @@ class EventSort(StrEnum):
     price_asc = "min_price"
     price_desc = "-min_price"
     seen_desc = "-last_seen_at"
+    trending = "-group_size"  # listed on the most ticket sites first
 
 
 _SORT_COLUMNS = {
@@ -288,6 +289,7 @@ _SORT_COLUMNS = {
     EventSort.price_asc: EventRow.group_min_price.asc(),
     EventSort.price_desc: EventRow.group_min_price.desc(),
     EventSort.seen_desc: EventRow.last_seen_at.desc(),
+    EventSort.trending: EventRow.group_size.desc(),
 }
 
 
@@ -591,7 +593,7 @@ def _register_routes(app: FastAPI) -> None:
         rows = session.scalars(
             select(EventRow)
             .where(*filters)
-            .order_by(_SORT_COLUMNS[sort], EventRow.id)
+            .order_by(_SORT_COLUMNS[sort], EventRow.start_at, EventRow.id)
             .offset((page - 1) * size)
             .limit(size)
             .options(selectinload(EventRow.images))

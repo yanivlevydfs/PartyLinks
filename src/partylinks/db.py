@@ -306,6 +306,9 @@ class Database:
             pool_pre_ping=not is_sqlite,
             # Sources write from separate threads: wait for locks instead of failing.
             connect_args={"timeout": 30, "check_same_thread": False} if is_sqlite else {},
+            # SQLite connections are cheap and WAL lets readers run beside writers: with the default cap
+            # (5 + 10) a scrape's source threads held every connection and page requests timed out.
+            **({"max_overflow": -1} if is_sqlite else {}),
         )
         if is_sqlite:
             sa_event.listen(self.engine, "connect", _sqlite_pragmas)

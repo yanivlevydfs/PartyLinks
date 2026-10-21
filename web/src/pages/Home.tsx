@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useCategories } from "../api";
+import { useCategories, useEvents } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore } from "../store";
-import { EventGrid, Hero, useT, useTitle } from "../ui";
+import { Card, EventGrid, Hero, useT, useTitle } from "../ui";
 
 // Landing routes (/tonight, /weekend, /genre/:genre[/tonight|weekend], /city/:city) are the home page with its filters preset;
 // the server renders the same URLs with their own title, description and FAQ for crawlers.
@@ -62,9 +62,42 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
         <input className="search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.search} aria-label={t.search} />
       </Hero>
       <main className="wrap">
+        {!landing && !f.q && <Trending />}
         <Filters />
         <EventGrid params={filterParams(f)} empty={<Relax />} />
       </main>
     </>
+  );
+}
+
+const TRENDING_DAYS = 14;
+
+/** A sideways row of the events sold on the most ticket sites in the next two weeks. */
+function Trending() {
+  const { t } = useT();
+  const row = useRef<HTMLDivElement>(null);
+  // Day-granular, so the query key stays stable within a visit.
+  const until = new Date(Date.now() + TRENDING_DAYS * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const items = (useEvents({ sort: "-group_size", date_to: until, page_size: "12" }).data?.pages[0]?.items ?? []).filter(
+    (e) => (e.listings ?? 1) > 1,
+  );
+  if (items.length < 3) return null;
+  const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.8, behavior: "smooth" });
+  return (
+    <section className="trending">
+      <div className="trending-head">
+        <div>
+          <h2>{t.trending} <span aria-hidden>↗</span></h2>
+          <p>{t.trendingSub}</p>
+        </div>
+        <div className="trending-nav">
+          <button onClick={() => scroll(-1)} aria-label="‹">‹</button>
+          <button onClick={() => scroll(1)} aria-label="›">›</button>
+        </div>
+      </div>
+      <div className="trending-row" ref={row}>
+        {items.map((e) => <Card key={e.id} e={e} />)}
+      </div>
+    </section>
   );
 }
