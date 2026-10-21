@@ -164,14 +164,23 @@ button, input, select { font: inherit; color: inherit; }
 .chip.on small { background: rgb(0 0 0 / .22); color: #fff; }
 .chip .wd { color: var(--muted); font-size: 12px; }
 .chip.on .wd { color: rgb(255 255 255 / .85); }
-.more-chip { border-style: dashed; color: var(--cyan); }
-.more-chip:hover { border-color: var(--cyan); background: rgb(25 227 255 / .07); }
+/* Desktop drop-down buttons and the one drawer they open. */
+.f-drop { font-weight: 600; }
+.f-drop b {
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--pink); color: #fff; font-size: 12px;
+}
+.f-drop .caret { color: var(--muted); font-size: 11px; transition: transform .2s; }
+.f-drop.open { border-color: var(--line-hot); background: rgb(255 46 147 / .1); }
+.f-drop.open .caret { transform: rotate(180deg); }
+.f-drawer { border-top: 1px solid rgb(160 120 255 / .08); padding: 4px 0; animation: drawer-in .2s ease-out; }
+@keyframes drawer-in { from { opacity: 0; transform: translateY(-4px); } }
+.filters > .f-active { padding-top: 8px; }
 
 .filter-bar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   border-top: 1px solid rgb(160 120 255 / .08); padding: 10px 0 6px;
 }
-.chips.seg { gap: 4px; }
 /* On/off switches (not single-choice chips): checkbox look. */
 .chip.toggle { padding-inline-start: 9px; }
 .chip.toggle .tick {

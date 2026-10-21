@@ -29,8 +29,7 @@ export function filterParams(f: FilterState): Params {
 const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
 const MOBILE = "(max-width: 760px)";
-const GENRES_SHOWN = 12; // desktop: the busiest genres; the rest behind "+N more"
-const SHOPS_SHOWN = 8; // same for ticket sites
+type Panel = "area" | "genre" | "more";
 
 function useMedia(query: string) {
   const [on, setOn] = useState(() => matchMedia(query).matches);
@@ -43,9 +42,10 @@ function useMedia(query: string) {
   return on;
 }
 
-// Desktop: one panel (dates on one line, top genres, a bar for time / toggles / sort).
-// Phones: dates + a bar with "Filters (n)", free entry and sort; everything else in a bottom sheet,
-// and what is selected shows as removable pills, so nothing is set without being visible.
+// Desktop: dates on one line, then a bar of drop-down buttons (area / genres / more) that open one
+// drawer at a time, plus the main toggles and sort.
+// Phones: dates + a bar with "Filters (n)", free entry and sort; everything else in a bottom sheet.
+// Both: what is selected shows as removable pills, so nothing is set without being visible.
 export function Filters() {
   const { t, lang } = useT();
   const f = useStore((s) => s.filters);
@@ -53,6 +53,7 @@ export function Filters() {
   const cats = useCategories().data;
   const mobile = useMedia(MOBILE);
   const sheet = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState<Panel | null>(null);
   // Same query as the grid below: shares its cache, so the sheet's "Show N" costs no request.
   const total = useEvents(filterParams(f)).data?.pages[0]?.total;
 
@@ -76,11 +77,6 @@ export function Filters() {
           <span className="tick" aria-hidden /> {t.discountOnly}
         </Chip>
       )}
-      {!mobile && (
-        <Chip className="toggle" on={f.hideSoldOut} onClick={() => set({ hideSoldOut: !f.hideSoldOut })}>
-          <span className="tick" aria-hidden /> {t.hideSoldOut}
-        </Chip>
-      )}
     </>
   );
   const sort = (
@@ -93,6 +89,27 @@ export function Filters() {
       </select>
     </label>
   );
+
+  const active = dirty && (
+    <div className="f-active">
+      {f.when !== "all" && <Pill onClear={() => set({ when: "all" })}>{whenLabel}</Pill>}
+      {f.region && <Pill onClear={() => set({ region: null, areas: [], city: null })}>{label(t.areas, f.region)}</Pill>}
+      {f.areas.map((a) => <Pill key={a} onClear={() => set({ areas: f.areas.filter((x) => x !== a) })}>{label(t.areas, a)}</Pill>)}
+      {f.city && <Pill onClear={() => set({ city: null })}>{f.city}</Pill>}
+      {f.genres.map((g) => <Pill key={g} onClear={() => set({ genres: f.genres.filter((x) => x !== g) })}>{genreLabel(lang, g)}</Pill>)}
+      {f.shops.map((s) => <Pill key={s} onClear={() => set({ shops: f.shops.filter((x) => x !== s) })}>{sourceName(s)}</Pill>)}
+      {f.slot && <Pill onClear={() => set({ slot: null })}>{label(t.slots, f.slot)}</Pill>}
+      {f.freeOnly && <Pill onClear={() => set({ freeOnly: false })}>{t.freeOnly}</Pill>}
+      {f.discountOnly && <Pill onClear={() => set({ discountOnly: false })}>{t.discountOnly}</Pill>}
+      {f.hideSoldOut && <Pill onClear={() => set({ hideSoldOut: false })}>{t.hideSoldOut}</Pill>}
+      <button className="f-clear" onClick={clear}>{t.clearFilters}</button>
+    </div>
+  );
+  const panels: [Panel, string, number][] = [
+    ["area", t.area, (f.region ? 1 : 0) + f.areas.length + (f.city ? 1 : 0)],
+    ["genre", t.genres, f.genres.length],
+    ["more", t.moreFilters, f.shops.length + (f.slot ? 1 : 0) + (f.hideSoldOut ? 1 : 0)],
+  ];
 
   return (
     <div className="filters">
@@ -121,21 +138,7 @@ export function Filters() {
             {toggles}
             {sort}
           </div>
-          {dirty && (
-            <div className="f-active">
-              {f.when !== "all" && <Pill onClear={() => set({ when: "all" })}>{whenLabel}</Pill>}
-              {f.region && <Pill onClear={() => set({ region: null, areas: [], city: null })}>{label(t.areas, f.region)}</Pill>}
-              {f.areas.map((a) => <Pill key={a} onClear={() => set({ areas: f.areas.filter((x) => x !== a) })}>{label(t.areas, a)}</Pill>)}
-              {f.city && <Pill onClear={() => set({ city: null })}>{f.city}</Pill>}
-              {f.genres.map((g) => <Pill key={g} onClear={() => set({ genres: f.genres.filter((x) => x !== g) })}>{genreLabel(lang, g)}</Pill>)}
-              {f.shops.map((s) => <Pill key={s} onClear={() => set({ shops: f.shops.filter((x) => x !== s) })}>{sourceName(s)}</Pill>)}
-              {f.slot && <Pill onClear={() => set({ slot: null })}>{label(t.slots, f.slot)}</Pill>}
-              {f.freeOnly && <Pill onClear={() => set({ freeOnly: false })}>{t.freeOnly}</Pill>}
-              {f.discountOnly && <Pill onClear={() => set({ discountOnly: false })}>{t.discountOnly}</Pill>}
-              {f.hideSoldOut && <Pill onClear={() => set({ hideSoldOut: false })}>{t.hideSoldOut}</Pill>}
-              <button className="f-clear" onClick={clear}>{t.clearFilters}</button>
-            </div>
-          )}
+          {active}
           <dialog className="f-sheet" ref={sheet} aria-label={t.filtersBtn}
             onClick={(e) => e.target === e.currentTarget && sheet.current?.close()}>
             <div className="f-sheet-head">
@@ -143,7 +146,7 @@ export function Filters() {
               <button className="f-x" onClick={() => sheet.current?.close()} aria-label={t.close}>✕</button>
             </div>
             <div className="f-sheet-body">
-              <Rows all />
+              <Rows />
               <div className="f-sheet-toggles">
                 <Chip className="toggle free" on={f.freeOnly} onClick={() => set({ freeOnly: !f.freeOnly })}>
                   <span className="tick" aria-hidden /> {t.freeOnly}
@@ -166,18 +169,19 @@ export function Filters() {
         </>
       ) : (
         <>
-          <Rows />
           <div className="filter-bar">
-            <div className="chips seg" role="group" aria-label={t.slot}>
-              {Object.entries(t.slots).map(([k, name]) => (
-                <Chip key={k} on={f.slot === k} onClick={() => set({ slot: f.slot === k ? null : k })}>{name}</Chip>
-              ))}
-            </div>
+            {panels.map(([k, name, n]) => (
+              <button key={k} className={"chip f-drop" + (open === k ? " open" : "")} aria-expanded={open === k}
+                onClick={() => setOpen(open === k ? null : k)}>
+                {name}{n > 0 && <b>{n}</b>}<span className="caret" aria-hidden>▾</span>
+              </button>
+            ))}
             <span className="sep" aria-hidden />
             {toggles}
-            {dirty && <button className="f-clear" onClick={clear}>✕ {t.clearFilters}</button>}
             {sort}
           </div>
+          {open && <div className="f-drawer"><Rows only={open} /></div>}
+          {active}
         </>
       )}
     </div>
@@ -225,31 +229,25 @@ function Pill({ children, onClear }: { children: ReactNode; onClear: () => void 
   );
 }
 
-/** Area, neighbourhood / city, genres (and, in the phone sheet, time of day). */
-function Rows({ all }: { all?: boolean }) {
+/** One drawer's rows (desktop), or all of them (the phone sheet). */
+function Rows({ only }: { only?: Panel }) {
   const { t, lang } = useT();
   const f = useStore((s) => s.filters);
   const set = useStore((s) => s.setFilters);
   const cats = useCategories().data;
-  const [moreGenres, setMoreGenres] = useState(false);
-  const [moreShops, setMoreShops] = useState(false);
+  const show = (p: Panel) => !only || only === p;
 
   const regionKeys = new Set(cats?.regions?.map((r) => r.value));
   // Under Tel Aviv: its neighbourhoods. Under another region: its cities.
   const subAreas = f.region === "tel_aviv"
     ? (cats?.areas ?? []).filter((a) => !regionKeys.has(a.value) && a.value !== "outside" && a.value !== "abroad")
     : (cats?.cities ?? []).filter((c) => f.region && c.area === f.region);
-  // Busiest first; a selected genre always stays visible.
-  const genres = [...(cats?.genres ?? [])].sort((a, b) => b.events - a.events);
-  const shownGenres = all || moreGenres ? genres : genres.filter((g, i) => i < GENRES_SHOWN || f.genres.includes(g.value));
-  const hidden = genres.length - shownGenres.length;
+  const genres = [...(cats?.genres ?? [])].sort((a, b) => b.events - a.events); // busiest first
   const shops = cats?.sources ?? []; // busiest first
-  const shownShops = all || moreShops ? shops : shops.filter((s, i) => i < SHOPS_SHOWN || f.shops.includes(s.value));
-  const hiddenShops = shops.length - shownShops.length;
 
   return (
     <>
-      {!!cats?.regions?.length && (
+      {show("area") && !!cats?.regions?.length && (
         <FilterRow label={t.area}>
           <Chip on={!f.region} onClick={() => set({ region: null, areas: [], city: null })}>{t.allAreas}</Chip>
           {cats.regions.map((r) => (
@@ -261,7 +259,7 @@ function Rows({ all }: { all?: boolean }) {
         </FilterRow>
       )}
 
-      {f.region && subAreas.length > 1 && (
+      {show("area") && f.region && subAreas.length > 1 && (
         <FilterRow label={f.region === "tel_aviv" ? t.neighborhood : t.city}>
           <Chip on={!f.areas.length && !f.city} onClick={() => set({ areas: [], city: null })}>{t.all}</Chip>
           {subAreas.map((a) => f.region === "tel_aviv" ? (
@@ -276,41 +274,36 @@ function Rows({ all }: { all?: boolean }) {
         </FilterRow>
       )}
 
-      {genres.length > 0 && (
+      {show("genre") && genres.length > 0 && (
         <FilterRow label={t.genres}>
-          {shownGenres.map((g) => (
+          {genres.map((g) => (
             <Chip key={g.value} on={f.genres.includes(g.value)} onClick={() => set({ genres: toggle(f.genres, g.value) })}>
               {genreLabel(lang, g.value)} <small>{g.events}</small>
             </Chip>
           ))}
-          {!all && (hidden > 0 || moreGenres) && (
-            <button className="chip more-chip" onClick={() => setMoreGenres(!moreGenres)} aria-expanded={moreGenres}>
-              {moreGenres ? t.less : t.moreN(hidden)}
-            </button>
-          )}
         </FilterRow>
       )}
 
-      {shops.length > 1 && (
+      {show("more") && shops.length > 1 && (
         <FilterRow label={t.shop}>
-          {shownShops.map((s) => (
+          {shops.map((s) => (
             <Chip key={s.value} on={f.shops.includes(s.value)} onClick={() => set({ shops: toggle(f.shops, s.value) })}>
               {sourceName(s.value)} <small>{s.events}</small>
             </Chip>
           ))}
-          {!all && (hiddenShops > 0 || moreShops) && (
-            <button className="chip more-chip" onClick={() => setMoreShops(!moreShops)} aria-expanded={moreShops}>
-              {moreShops ? t.less : t.moreN(hiddenShops)}
-            </button>
-          )}
         </FilterRow>
       )}
 
-      {all && (
+      {show("more") && (
         <FilterRow label={t.slot}>
           {Object.entries(t.slots).map(([k, name]) => (
             <Chip key={k} on={f.slot === k} onClick={() => set({ slot: f.slot === k ? null : k })}>{name}</Chip>
           ))}
+          {only && (
+            <Chip className="toggle" on={f.hideSoldOut} onClick={() => set({ hideSoldOut: !f.hideSoldOut })}>
+              <span className="tick" aria-hidden /> {t.hideSoldOut}
+            </Chip>
+          )}
         </FilterRow>
       )}
     </>
