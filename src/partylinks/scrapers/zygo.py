@@ -103,8 +103,8 @@ def parse_event(data: dict[str, Any], page_url: str) -> ScrapedEvent:
         city=_city_from_address(address),
         latitude=to_float(location.get("lat")),
         longitude=to_float(location.get("lng")),
-        source_genres=[_label(t) for t in [*(event.get("tags") or []), *(event.get("eventTags") or [])] if _label(t)],
-        artists=[_label(a) for a in event.get("artists") or [] if _label(a)],
+        source_genres=[g for t in [*(event.get("tags") or []), *(event.get("eventTags") or [])] if (g := _label(t))],
+        artists=[name for a in event.get("artists") or [] if (name := _label(a))],
         min_age=to_int(event.get("minAge")),
         organizer=clean_str((event.get("produced_by") or {}).get("name"))
         or clean_str((event.get("creator") or {}).get("username")),
