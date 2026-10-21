@@ -837,3 +837,14 @@ sources:
     http:
       concurrency: 2            # small site: ~380 event pages a run
       request_delay_seconds: 1.0
+
+  makore:
+    # Makore ("מה קורה"): an events guide for all of Israel (workshops, tours, kids' activities too),
+    # so only these category pages are read. Each page's JSON-LD ItemList gives ~28 events with venue,
+    # coordinates, price and box office link; page N is ?pages=N. robots.txt allows all but /admin.
+    enabled: true
+    cron: "41 9,21 * * *"
+    site_url: https://www.makore.co.il
+    categories: ["/browse/category/חיי-לילה", "/browse/category/הופעות-חיות"]
+    http:
+      concurrency: 4
