@@ -116,5 +116,5 @@ def parse_event(node: dict[str, Any], timezone: str) -> ScrapedEvent | None:
                 currency=currency,
                 is_free=price is None,
             )
-        ],  # fmt: skip
+        ],
     )

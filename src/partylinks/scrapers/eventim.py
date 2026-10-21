@@ -20,6 +20,7 @@ from __future__ import annotations
 import gzip
 import json
 import re
+import urllib.parse
 from collections.abc import AsyncIterator
 from decimal import Decimal
 from typing import Any
@@ -52,6 +53,10 @@ class EventimSettings(SourceSettings):
     site_url: str
     sitemap_path: str
     max_events: int = Field(1500, ge=1)
+    # Event pages whose (decoded) URL holds one of these words: all when empty. Zappa uses it to
+    # read only its own clubs, and Eventim skips the same words so no event is read twice.
+    url_words: list[str] = Field(default_factory=list)
+    skip_url_words: list[str] = Field(default_factory=list)
 
 
 class EventimScraper(BaseScraper[EventimSettings]):
@@ -72,19 +77,39 @@ class EventimScraper(BaseScraper[EventimSettings]):
         s = self.settings
         body = (await self.request("GET", s.site_url + s.sitemap_path)).content
         urls = sitemap_event_urls(gzip.decompress(body) if body[:2] == b"\x1f\x8b" else body)
+        urls = pick_urls(urls, s.url_words, s.skip_url_words)
         if len(urls) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
         return urls[: s.max_events]
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
-        return parse_event(await self.get_text(url), url, self.timezone)
+        return parse_event(await self.get_text(url), url, self.timezone, self.name)
+
+
+class ZappaScraper(EventimScraper):
+    """Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni.
+
+    Zappa belongs to Eventim: zappa-club.co.il is served by Eventim's Akamai and its shows are
+    Eventim event pages, so this reads the Eventim sitemap's pages named for Zappa (``url_words``)
+    with the Eventim parser and stores them as their own source.
+    """
+
+    name = "zappa"
+
+
+def pick_urls(urls: list[str], words: list[str], skip: list[str]) -> list[str]:
+    def has(url: str, needles: list[str]) -> bool:
+        decoded = urllib.parse.unquote(url).casefold()
+        return any(n.casefold() in decoded for n in needles)
+
+    return [u for u in urls if (not words or has(u, words)) and not has(u, skip)]
 
 
 def sitemap_event_urls(xml: bytes) -> list[str]:
     return list(dict.fromkeys(u for u in _LOC.findall(xml.decode("utf-8")) if "/event/" in u and _EVENT_ID.search(u)))
 
 
-def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
+def parse_event(page_html: str, url: str, timezone: str, source: str = "eventim") -> ScrapedEvent | None:
     """One event page; None when the event is cancelled."""
     meta = page_meta(page_html)
     if meta is None:
@@ -108,7 +133,7 @@ def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
     image = og_image(page_html) or clean_str(meta.get("event_series_image"))
     event_id = clean_str(meta.get("event_id")) or (m.group(1) if (m := _EVENT_ID.search(url)) else url)
     return ScrapedEvent(
-        source=EventimScraper.name,
+        source=source,
         source_event_id=event_id,
         url=url,
         title=clean_str(meta.get("event_name")) or clean_str(ld.get("name")) or "",

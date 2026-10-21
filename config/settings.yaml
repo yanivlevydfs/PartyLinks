@@ -818,6 +818,7 @@ sources:
     cron: "13 8,20 * * *"
     site_url: https://www.eventim.co.il
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
+    skip_url_words: ["זאפה", "אמפי-שוני"]   # read by the zappa source
     http:
       # A browser user agent from a non-browser client gets the connection dropped; an honest one does not.
       user_agent: "Mozilla/5.0 (compatible; PartyLinks/1.0)"
@@ -1029,3 +1030,17 @@ sources:
     graphql_url: https://www.meetup.com/gql2
     latitude: 32.07
     longitude: 34.77
+
+  zappa:
+    # Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni. Zappa belongs to
+    # Eventim (zappa-club.co.il is Eventim's Akamai), so this reads the Eventim sitemap's Zappa
+    # pages (~180) with the Eventim parser; the eventim source skips them. Same Akamai limits.
+    enabled: true
+    cron: "47 9,21 * * *"
+    site_url: https://www.eventim.co.il
+    sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
+    url_words: ["זאפה", "אמפי-שוני"]
+    http:
+      user_agent: "Mozilla/5.0 (compatible; PartyLinks/1.0)"
+      concurrency: 1
+      request_delay_seconds: 1.5

@@ -15,7 +15,7 @@ from partylinks.scrapers.drop import DropScraper
 from partylinks.scrapers.epgb import EpgbScraper
 from partylinks.scrapers.eventbuzz import EventbuzzScraper
 from partylinks.scrapers.eventer import EventerScraper
-from partylinks.scrapers.eventim import EventimScraper
+from partylinks.scrapers.eventim import EventimScraper, ZappaScraper
 from partylinks.scrapers.geektime import GeektimeScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
@@ -78,6 +78,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         GeektimeScraper,
         PeopleComputersScraper,
         MeetupScraper,
+        ZappaScraper,
     )
 }
 

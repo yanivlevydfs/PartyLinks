@@ -70,3 +70,17 @@ def test_unavailable_event_is_sold_out() -> None:
     event = parse_event(PAGE_META % "0|0" + TICKETS, URL, TZ)
     assert event is not None and event.is_sold_out
     assert all(t.status.value == "sold_out" for t in event.tickets)
+
+
+def test_zappa_pages_go_to_the_zappa_source_only() -> None:
+    from partylinks.scrapers.eventim import pick_urls
+
+    urls = [
+        "https://www.eventim.co.il/event/נונו-זאפה-ירושלים-22296371/",
+        "https://www.eventim.co.il/event/%D7%96%D7%90%D7%A4%D7%94-%D7%97%D7%99%D7%A4%D7%94-1/",  # encoded
+        "https://www.eventim.co.il/event/הופעה-אמפי-שוני-2/",
+        "https://www.eventim.co.il/event/קולות-מן-השמיים-סטודיו-אנט-22318978/",
+    ]
+    words = ["זאפה", "אמפי-שוני"]
+    assert pick_urls(urls, words, []) == urls[:3]
+    assert pick_urls(urls, [], words) == urls[3:]
