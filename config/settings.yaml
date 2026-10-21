@@ -162,6 +162,14 @@ enrichment:
     lgbt: ["lgbt", "lgbtq", "gay", "queer", "pride", "drag", "להט\"ב", "גאווה", "דראג"]
     stand_up: ["stand up", "standup", "stand-up", "comedy", "סטנדאפ", "קומדיה"]
     karaoke: ["karaoke", "קריוקי"]
+    # Not plain "tech" ("tech house") or "ai"; Luma's ai/tech/crypto categories arrive as "hi-tech".
+    hi_tech: ["hi-tech", "high-tech", "hitech", "הייטק", "היי-טק", "startup", "startups", "סטארטאפ", "סטארטאפים",
+              "hackathon", "האקתון", "meetup", "מיטאפ", "developers", "מפתחים", "בינה מלאכותית", "cyber", "סייבר"]
+    conference: ["conference", "summit", "expo", "כנס", "כנסים", "ועידה", "ועידת"]
+    # Not "קאמרי": that is the Cameri Theatre.
+    classical_opera: ["opera", "אופרה", "אופרות", "classical music", "chamber music", "מוזיקה קלאסית", "קלאסית",
+                      "קאמרית", "מוזיקה קאמרית", "symphony", "סימפונית", "philharmonic", "פילהרמונית",
+                      "recital", "רסיטל", "string quartet", "רביעיית מיתרים", "mozart", "מוצרט", "beethoven", "בטהובן"]
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     electronic: [techno, house, trance, afro, drum_and_bass, bass_dubstep, hardstyle, edm, downtempo_chill]
@@ -839,6 +847,8 @@ sources:
       - {host: shablul, venue_name: שבלול, city: תל אביב}
       - {host: comedybar, venue_name: קומדי בר}
       - {host: jso, venue_name: התזמורת הסימפונית ירושלים}
+      - {host: ico, venue_name: התזמורת הקאמרית הישראלית}
+      - {host: felicja, venue_name: מרכז פליציה בלומנטל, city: תל אביב}
       - {host: isorl, venue_name: התזמורת הסימפונית ראשון לציון}
       # Municipal and regional culture halls.
       - {host: modiin, venue_name: היכל התרבות מודיעין, city: מודיעין}
@@ -910,3 +920,33 @@ sources:
     sitemap_path: /sitemap.xml
     http:
       concurrency: 4
+
+  luma:
+    # Luma (luma.com): RSVP pages for tech meetups, hi-tech conferences and startup events.
+    # Public JSON API: events near each center (cursor-paged, ~130 across Israel), then one
+    # /event/get per event for description, place, categories and ticket types.
+    enabled: true
+    cron: "23 7,19 * * *"
+    api_url: https://api.lu.ma
+    site_url: https://luma.com
+    centers:
+      - {latitude: 32.08, longitude: 34.78}   # Tel Aviv (reaches Jerusalem too)
+      - {latitude: 32.80, longitude: 35.00}   # Haifa
+      - {latitude: 31.25, longitude: 34.79}   # Beersheba
+    http:
+      concurrency: 4
+
+  geektime:
+    # Geektime's hi-tech events calendar: one GET of /event/ lists every upcoming card (no API).
+    # Online-only events are skipped; anyone can submit, so spam titles are skipped too.
+    enabled: true
+    cron: "29 7,19 * * *"
+    page_url: https://www.geektime.co.il/event/
+    skip_title_words: ["gold bar"]
+
+  peoplecomputers:
+    # People & Computers (anashim umahshevim): hi-tech conferences, all in one RSS feed (~10).
+    # robots.txt allows everything.
+    enabled: true
+    cron: "37 7,19 * * *"
+    feed_url: https://events.co.il/feed.rss

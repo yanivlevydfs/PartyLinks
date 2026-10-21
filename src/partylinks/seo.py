@@ -94,10 +94,11 @@ GENRES_HE = {
     "drum_and_bass": "דראם אנד בייס", "bass_dubstep": "בייס / דאבסטפ", "hardstyle": "הארדסטייל", "edm": "EDM",
     "electronic": "מוזיקה אלקטרונית", "downtempo_chill": "צ׳יל", "throwback": "נוסטלגיה", "rock_indie": "רוק / אינדי",
     "jazz": "ג׳אז", "world_balkan": "בלקן / וורלד", "live_show": "הופעות חיות", "lgbt": "גאווה", "stand_up": "סטנדאפ",
-    "karaoke": "קריוקי",
+    "karaoke": "קריוקי", "hi_tech": "הייטק", "conference": "כנסים", "classical_opera": "קלאסית / אופרה",
 }  # fmt: skip
 GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
-                 "stand_up": "Stand-up comedy", "live_show": "Live music"}  # fmt: skip
+                 "stand_up": "Stand-up comedy", "live_show": "Live music",
+                 "hi_tech": "Hi-tech", "classical_opera": "Classical / Opera"}  # fmt: skip
 GENRE_PAGE_MIN = 3  # fewer upcoming events than this: no landing page (thin content)
 
 

@@ -16,15 +16,18 @@ from partylinks.scrapers.epgb import EpgbScraper
 from partylinks.scrapers.eventbuzz import EventbuzzScraper
 from partylinks.scrapers.eventer import EventerScraper
 from partylinks.scrapers.eventim import EventimScraper
+from partylinks.scrapers.geektime import GeektimeScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
 from partylinks.scrapers.hulyo import HulyoScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
 from partylinks.scrapers.kupatbravo import KupatbravoScraper
 from partylinks.scrapers.leaan import LeaanScraper
+from partylinks.scrapers.luma import LumaScraper
 from partylinks.scrapers.makore import MakoreScraper
 from partylinks.scrapers.megatickets import MegaticketsScraper
 from partylinks.scrapers.mevalim import MevalimScraper
+from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
 from partylinks.scrapers.popit import PopitScraper
 from partylinks.scrapers.pres import PresScraper
 from partylinks.scrapers.secrettelaviv import SecretTelAvivScraper
@@ -70,6 +73,9 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         MakoreScraper,
         JerusalemTheatreScraper,
         DropScraper,
+        LumaScraper,
+        GeektimeScraper,
+        PeopleComputersScraper,
     )
 }
 
