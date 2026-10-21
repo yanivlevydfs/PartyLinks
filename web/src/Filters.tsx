@@ -29,7 +29,7 @@ export function filterParams(f: FilterState): Params {
 const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
 const MOBILE = "(max-width: 760px)";
-type Panel = "area" | "genre" | "more";
+type Panel = "area" | "genre" | "shop" | "slot";
 
 function useMedia(query: string) {
   const [on, setOn] = useState(() => matchMedia(query).matches);
@@ -42,7 +42,7 @@ function useMedia(query: string) {
   return on;
 }
 
-// Desktop: dates on one line, then a bar of drop-down buttons (area / genres / more) that open one
+// Desktop: dates on one line, then a bar of drop-down buttons (area / genres / ticket site / time) that open one
 // drawer at a time, plus the main toggles and sort.
 // Phones: dates + a bar with "Filters (n)", free entry and sort; everything else in a bottom sheet.
 // Both: what is selected shows as removable pills, so nothing is set without being visible.
@@ -77,6 +77,11 @@ export function Filters() {
           <span className="tick" aria-hidden /> {t.discountOnly}
         </Chip>
       )}
+      {!mobile && (
+        <Chip className="toggle" on={f.hideSoldOut} onClick={() => set({ hideSoldOut: !f.hideSoldOut })}>
+          <span className="tick" aria-hidden /> {t.hideSoldOut}
+        </Chip>
+      )}
     </>
   );
   const sort = (
@@ -108,7 +113,8 @@ export function Filters() {
   const panels: [Panel, string, number][] = [
     ["area", t.area, (f.region ? 1 : 0) + f.areas.length + (f.city ? 1 : 0)],
     ["genre", t.genres, f.genres.length],
-    ["more", t.moreFilters, f.shops.length + (f.slot ? 1 : 0) + (f.hideSoldOut ? 1 : 0)],
+    ["shop", t.shop, f.shops.length],
+    ["slot", t.slot, f.slot ? 1 : 0],
   ];
 
   return (
@@ -284,7 +290,7 @@ function Rows({ only }: { only?: Panel }) {
         </FilterRow>
       )}
 
-      {show("more") && shops.length > 1 && (
+      {show("shop") && shops.length > 1 && (
         <FilterRow label={t.shop}>
           {shops.map((s) => (
             <Chip key={s.value} on={f.shops.includes(s.value)} onClick={() => set({ shops: toggle(f.shops, s.value) })}>
@@ -294,16 +300,11 @@ function Rows({ only }: { only?: Panel }) {
         </FilterRow>
       )}
 
-      {show("more") && (
+      {show("slot") && (
         <FilterRow label={t.slot}>
           {Object.entries(t.slots).map(([k, name]) => (
             <Chip key={k} on={f.slot === k} onClick={() => set({ slot: f.slot === k ? null : k })}>{name}</Chip>
           ))}
-          {only && (
-            <Chip className="toggle" on={f.hideSoldOut} onClick={() => set({ hideSoldOut: !f.hideSoldOut })}>
-              <span className="tick" aria-hidden /> {t.hideSoldOut}
-            </Chip>
-          )}
         </FilterRow>
       )}
     </>
