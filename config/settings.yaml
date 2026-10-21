@@ -1055,3 +1055,39 @@ sources:
     tenant_url: https://b7t.smarticket.co.il
     http:
       concurrency: 2
+
+  arenas:
+    # Arenas, stadiums and amphitheaters have no box office of their own: each show is sold by its
+    # promoter (Eventim, Leaan, Ticketmaster...). Their Tickchak LIVE venue pages gather every
+    # seller's shows there; only the venue-scoped sliders are read. Slugs from
+    # static.tickchak.co.il/sitemaps/venue.xml. robots.txt allows everything.
+    enabled: true
+    cron: "57 7,19 * * *"
+    site_url: https://live.tickchak.co.il
+    api_url: https://api-live.tickchak.co.il
+    section_data_path: /sectionData/{section_id}
+    custom_events_path: /customEventsNew
+    page_size: 20
+    max_pages: 20
+    venue_slugs:
+      - tel-aviv-menorah-hall          # היכל מנורה מבטחים
+      - peace-arena-jerusalem          # פיס ארנה ירושלים
+      - shlomo-group-arena             # היכל קבוצת שלמה
+      - haifa-romema-arena             # היכל רוממה חיפה
+      - ashkelon-sports-arena
+      - toto-hall-holon                # היכל טוטו חולון
+      - bloomfield-tel-aviv            # אצטדיון בלומפילד
+      - sammy-ofer-stadium             # אצטדיון סמי עופר
+      - teddy-stadium                  # אצטדיון טדי
+      - netanya-stadium
+      - live-park-rishon-lezion        # לייב פארק
+      - yarkon-park-tel-aviv-ganey-yehoshua   # פארק הירקון / גני יהושע
+      - sultan-pool                    # בריכת הסולטן
+      - caesarea-amphitheatre          # האמפי בקיסריה
+      - wohl-amphitheatre              # אמפי וול
+      - ashdod-amphitheater
+      - ramat-gan-national-park-amphitheater
+      - raanana-park-amphitheater
+      - the-tel-aviv-culture-hall      # היכל התרבות תל אביב
+      - pavilion-1-expo-tel-aviv       # אקספו תל אביב
+      - hangar-11-tel-aviv             # האנגר 11

@@ -46,15 +46,40 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
     def default_headers(self) -> dict[str, str]:
         return {"Origin": self.settings.site_url, "Referer": self.settings.site_url + "/"}
 
+    # Whether a page's preloaded events and its loop sliders count. On a venue page both hold
+    # other venues' events (the loops are city-wide), so ArenasScraper keeps only its event sliders.
+    use_preloaded = True
+    use_loops = True
+
+    def page_paths(self) -> list[str]:
+        s = self.settings
+        return [f"{s.category_slug}/{s.city_slug}".rstrip("/")]
+
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        state = next_data(await self.get_text(f"{s.site_url}/{s.category_slug}/{s.city_slug}".rstrip("/")))
-        page_state = _initial_state(state)
+        items: dict[Any, dict[str, Any]] = {}
+        for path in self.page_paths():
+            for entity_id, item in (await self._page_items(path)).items():
+                items.setdefault(entity_id, item)
+        self.log.info("listed %d events", len(items))
+        for entity_id, item in items.items():
+            try:
+                event = parse_event(item, s.site_url, self.name)
+            except Exception as exc:  # noqa: BLE001 - isolate per-item failures
+                self.record_failure(str(entity_id), exc)
+                continue
+            if not event.images and (link := clean_str(item.get("link"))):
+                await self._provider_artwork(event, link)
+            yield event
+
+    async def _page_items(self, path: str) -> dict[Any, dict[str, Any]]:
+        s = self.settings
+        page_state = _initial_state(next_data(await self.get_text(f"{s.site_url}/{path}")))
         page = page_state.get("page") or {}
         hierarchy = _hierarchy_params(page.get("breadcrumbs") or [])
 
         items: dict[Any, dict[str, Any]] = {}
-        preloaded = ((page_state.get("data") or {}).get("event") or {}).get("all")
+        preloaded = ((page_state.get("data") or {}).get("event") or {}).get("all") if self.use_preloaded else None
         for item in preloaded.values() if isinstance(preloaded, dict) else []:
             if isinstance(item, dict):
                 items.setdefault(item.get("entityId"), item)
@@ -62,6 +87,7 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         listings = [
             self._paginate(s.api_url + s.section_data_path.format(section_id=sid), "events", hierarchy + _model(sid))
             for sid in discover_section_ids(page)
+            if self.use_loops or "_" not in sid
         ]
         listings.append(self._paginate(s.api_url + s.custom_events_path, "customEvents", hierarchy))
         # Every slider in parallel; a failing slider is recorded and the others still count.
@@ -71,16 +97,7 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
                     items.setdefault(item.get("entityId"), item)
 
         items.pop(None, None)
-        self.log.info("listed %d events", len(items))
-        for entity_id, item in items.items():
-            try:
-                event = parse_event(item, s.site_url)
-            except Exception as exc:  # noqa: BLE001 - isolate per-item failures
-                self.record_failure(str(entity_id), exc)
-                continue
-            if not event.images and (link := clean_str(item.get("link"))):
-                await self._provider_artwork(event, link)
-            yield event
+        return items
 
     async def _provider_artwork(self, event: ScrapedEvent, link: str) -> None:
         """Listings copied from another box office carry no artwork here; its page has it.
@@ -159,7 +176,7 @@ def discover_section_ids(page: dict[str, Any]) -> list[str]:
     return ids
 
 
-def parse_event(item: dict[str, Any], site_url: str) -> ScrapedEvent:
+def parse_event(item: dict[str, Any], site_url: str, source: str = "tickchak") -> ScrapedEvent:
     venue = item.get("venue") or {}
     artists = item.get("artists") or []
     categories = {
@@ -169,7 +186,7 @@ def parse_event(item: dict[str, Any], site_url: str) -> ScrapedEvent:
         if c.get("titleEn") or c.get("title")
     }
     return ScrapedEvent(
-        source=TickchakScraper.name,
+        source=source,
         source_event_id=str(item["entityId"]),
         url=site_url + item["url"] if str(item.get("url", "")).startswith("/") else item.get("pageUrl"),
         title=clean_str(item.get("title")) or "",
@@ -200,3 +217,23 @@ def _artwork(item: dict[str, Any]) -> list[str]:
     """Default images are generic category illustrations, not the event's artwork."""
     image = item.get("image") or {}
     return [image["image"]] if image.get("image") and not image.get("isDefaultImage") else []
+
+
+class ArenasSettings(TickchakSettings):
+    category_slug: str = ""
+    # Tickchak LIVE venue pages (live.tickchak.co.il/<slug>), one per arena / stadium / amphitheater.
+    venue_slugs: list[str]
+
+
+class ArenasScraper(TickchakScraper):
+    """Arenas, stadiums and amphitheaters: they have no box office of their own (each show is sold by
+    its promoter on Eventim, Leaan, Ticketmaster...), so their Tickchak LIVE venue pages, which gather
+    every seller's shows at that venue, are the one listing per venue."""
+
+    name = "arenas"
+    settings_model = ArenasSettings  # type: ignore[assignment]
+    use_preloaded = False
+    use_loops = False
+
+    def page_paths(self) -> list[str]:
+        return list(dict.fromkeys(self.settings.venue_slugs))  # type: ignore[attr-defined]
