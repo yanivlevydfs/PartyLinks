@@ -898,3 +898,15 @@ sources:
     address: דוד מרכוס 20
     city: ירושלים
     skip_groups: [eventGrp_cinema]
+
+  drop:
+    # Drop (tdrop.net): self-serve ticketing for party producers (raves, house parties, festivals).
+    # The sitemap's lastmod is each event's date, so only upcoming pages are read (~50); each page's
+    # Event JSON-LD gives the details. Its prices all read "0", so they are left unknown.
+    # robots.txt allows everything.
+    enabled: true
+    cron: "17 8,20 * * *"
+    site_url: https://tdrop.net
+    sitemap_path: /sitemap.xml
+    http:
+      concurrency: 4

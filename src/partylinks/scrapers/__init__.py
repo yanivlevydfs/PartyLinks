@@ -11,6 +11,7 @@ from partylinks.scrapers.barby import BarbyScraper
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.chillz import ChillzScraper
 from partylinks.scrapers.comy import ComyScraper
+from partylinks.scrapers.drop import DropScraper
 from partylinks.scrapers.epgb import EpgbScraper
 from partylinks.scrapers.eventbuzz import EventbuzzScraper
 from partylinks.scrapers.eventer import EventerScraper
@@ -68,6 +69,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         TederScraper,
         MakoreScraper,
         JerusalemTheatreScraper,
+        DropScraper,
     )
 }
 
