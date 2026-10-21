@@ -1044,3 +1044,14 @@ sources:
       user_agent: "Mozilla/5.0 (compatible; PartyLinks/1.0)"
       concurrency: 1
       request_delay_seconds: 1.5
+
+  beershevatheatre:
+    # Be'er Sheva Theatre: its Smarticket tenant (b7t) answers /api/shows and the calendar empty, so
+    # the performances are taken from the links on the theatre's home and schedule pages (~40),
+    # each read from its iframe page's Event JSON-LD. robots.txt allows everything.
+    enabled: true
+    cron: "53 6,18 * * *"
+    listing_urls: ["https://b7t.co.il/", "https://b7t.co.il/לוח-הצגות/"]
+    tenant_url: https://b7t.smarticket.co.il
+    http:
+      concurrency: 2

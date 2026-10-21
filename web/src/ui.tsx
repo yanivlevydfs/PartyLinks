@@ -40,7 +40,7 @@ const SOURCE_NAMES: Record<string, string> = {
   popit: "Popit", epgb: "Radio EPGB", leaan: "Leaan", kupatbravo: "Kupat Bravo", comy: "Comy", eventim: "Eventim",
   ticketmaster: "Ticketmaster", pres: "PRES", smarticket: "Smarticket", secrettelaviv: "Secret Tel Aviv",
   tiktik: "TikTik", teder: "Teder", makore: "Makore", jerusalemtheatre: "Jerusalem Theatre", drop: "Drop", luma: "Luma", geektime: "Geektime",
-  peoplecomputers: "People & Computers", meetup: "Meetup", zappa: "Zappa",
+  peoplecomputers: "People & Computers", meetup: "Meetup", zappa: "Zappa", beershevatheatre: "Be'er Sheva Theatre",
 };
 export const sourceName = (source: string) => SOURCE_NAMES[source] ?? source;
 
