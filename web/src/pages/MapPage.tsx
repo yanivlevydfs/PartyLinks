@@ -1,6 +1,8 @@
 import "leaflet/dist/leaflet.css";
-import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
-import { useEffect, useState } from "react";
+import { divIcon } from "leaflet";
+import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap, useMapEvent } from "react-leaflet";
+import { useEffect, useMemo, useState } from "react";
+import Supercluster from "supercluster";
 import { Link } from "react-router-dom";
 import { useMapEvents } from "../api";
 import { useAllowed, useConsent } from "../consent";
@@ -60,34 +62,7 @@ export default function MapPage() {
           />
         )}
         <FitTo points={[...spots.values()].map((l) => [l[0].latitude, l[0].longitude] as [number, number])} />
-        {[...spots.entries()].map(([key, list]) => (
-          <CircleMarker
-            key={key}
-            center={[list[0].latitude, list[0].longitude]}
-            // Small pins that grow slowly: big ones merged into one pink blob over the whole country.
-            radius={Math.min(5 + Math.log2(list.length) * 2, 14)}
-            pathOptions={{ color: "#ff2e93", fillColor: "#ff2e93", fillOpacity: 0.7, weight: 1 }}
-          >
-            <Popup>
-              <div className="pop">
-                {list[0].venue_name && <Link className="pop-venue" to={venuePath(list[0].venue_name)}>{list[0].venue_name}</Link>}
-                <small className="pop-count">{t.results(list.length)}</small>
-                <ul>
-                  {list.slice(0, 8).map((e) => (
-                    <li key={e.id}>
-                      <Link to={eventPath(e)}>
-                        <small>{fmtDate(e.start_at, t, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</small>
-                        <span dir="auto">{e.title}</span>
-                        <Sources e={e} />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                {list.length > 8 && list[0].venue_name && <Link to={venuePath(list[0].venue_name)}>+{list.length - 8}</Link>}
-              </div>
-            </Popup>
-          </CircleMarker>
-        ))}
+        <Pins spots={[...spots.values()]} />
       </MapContainer>
       {!showTiles && (
         <div className="map-gate" role="region" aria-label={t.mapGate.title}>
@@ -100,6 +75,75 @@ export default function MapPage() {
         </div>
       )}
     </main>
+  );
+}
+
+/** Nearby spots merge into one numbered bubble (supercluster); a click zooms in until they split. */
+function Pins({ spots }: { spots: MapEvent[][] }) {
+  const map = useMap();
+  const [, redraw] = useState(0);
+  useMapEvent("moveend", () => redraw((n) => n + 1));
+  const ids = spots.map((l) => l[0].id).join();
+  const index = useMemo(() => {
+    const sc = new Supercluster<{ list: MapEvent[] }, { n: number }>({
+      radius: 60,
+      maxZoom: 17,
+      map: (p) => ({ n: p.list.length }),
+      reduce: (acc, p) => { acc.n += p.n; },
+    });
+    sc.load(spots.map((list) => ({
+      type: "Feature",
+      properties: { list },
+      geometry: { type: "Point", coordinates: [list[0].longitude, list[0].latitude] },
+    })));
+    return sc;
+  }, [ids]); // eslint-disable-line react-hooks/exhaustive-deps
+  const b = map.getBounds();
+  return index.getClusters([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], Math.round(map.getZoom())).map((c) => {
+    const [lng, lat] = c.geometry.coordinates;
+    if (!("cluster" in c.properties)) return <Spot key={c.properties.list[0].id} list={c.properties.list} />;
+    const { cluster_id: id, n } = c.properties;
+    const size = Math.round(Math.min(30 + Math.log2(n) * 5, 56));
+    return (
+      <Marker
+        key={`c${id}`}
+        position={[lat, lng]}
+        icon={divIcon({ className: "cluster", html: `<span>${n}</span>`, iconSize: [size, size] })}
+        eventHandlers={{ click: () => map.setView([lat, lng], index.getClusterExpansionZoom(id)) }}
+      />
+    );
+  });
+}
+
+/** One location and its events. */
+function Spot({ list }: { list: MapEvent[] }) {
+  const { t } = useT();
+  return (
+    <CircleMarker
+      center={[list[0].latitude, list[0].longitude]}
+      // Small pins that grow slowly: big ones merged into one pink blob over the whole country.
+      radius={Math.min(5 + Math.log2(list.length) * 2, 14)}
+      pathOptions={{ color: "#ff2e93", fillColor: "#ff2e93", fillOpacity: 0.7, weight: 1 }}
+    >
+      <Popup>
+        <div className="pop">
+          {list[0].venue_name && <Link className="pop-venue" to={venuePath(list[0].venue_name)}>{list[0].venue_name}</Link>}
+          <small className="pop-count">{t.results(list.length)}</small>
+          <ul>
+            {list.slice(0, 8).map((e) => (
+              <li key={e.id}>
+                <Link to={eventPath(e)}>
+                  <small>{fmtDate(e.start_at, t, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</small>
+                  <span dir="auto">{e.title}</span>
+                  <Sources e={e} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {list.length > 8 && list[0].venue_name && <Link to={venuePath(list[0].venue_name)}>+{list.length - 8}</Link>}
+        </div>
+      </Popup>
+    </CircleMarker>
   );
 }
 
