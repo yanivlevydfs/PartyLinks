@@ -138,7 +138,10 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         robots = client.get("/robots.txt").text
         assert "Disallow: /admin" in robots and "Sitemap: http://localhost:8000/sitemap.xml" in robots
-        sitemap = client.get("/sitemap.xml").text
+        index = client.get("/sitemap.xml").text
+        assert "<sitemapindex" in index and "/sitemap-1.xml" in index and "/sitemap-2.xml" not in index
+        assert client.get("/sitemap-2.xml").status_code == 404 and client.get("/sitemap-0.xml").status_code == 404
+        sitemap = client.get("/sitemap-1.xml").text
         assert "/event/" in sitemap and 'hreflang="en"' in sitemap
         # Privacy and cookie policy: crawlable, and its contact comes from /site.
         assert "/privacy" in sitemap and "מדיניות פרטיות" in client.get("/privacy").text
@@ -159,13 +162,13 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
         assert "כרגע יש 3 אירועים" in techno.text and "כן, 3 אירועים בכניסה חופשית" in techno.text  # answers come from the listings
         assert client.get("/genre/karaoke").status_code == 404  # no events: no thin page
         assert "Techno night 0" in client.get("/tonight?lang=en").text
-        assert "/genre/techno" in client.get("/sitemap.xml").text and "/tonight" in client.get("/").text
+        assert "/genre/techno" in client.get("/sitemap-1.xml").text and "/tonight" in client.get("/").text
         city = client.get("/city/tel-aviv")  # "Tel Aviv-Yafo, Israel" was stored as the canonical "תל אביב"
         assert city.status_code == 200 and "מה עושים בתל אביב" in city.text
         assert client.get("/city/haifa").status_code == 404
         assert client.get("/genre/techno/weekend").status_code in (200, 404)  # depends on today's weekday
         assert client.get("/genre/techno/someday").status_code == 404
-        assert "/city/tel-aviv" in client.get("/sitemap.xml").text
+        assert "/city/tel-aviv" in client.get("/sitemap-1.xml").text
 
 
 def test_city_names_are_canonical() -> None:
@@ -336,7 +339,7 @@ def test_blog_posts_pages_feed_and_live_embeds(tmp_path: Path, monkeypatch: pyte
         assert client.get("/posts/guide").json()["faq"] == [{"q": "שאלה?", "a": "תשובה."}]
         assert client.get("/posts/later").status_code == 404
         assert "מדריך טכנו" in client.get("/blog/rss.xml").text
-        assert "/blog/guide" in client.get("/sitemap.xml").text and "/blog/guide" in client.get("/llms.txt").text
+        assert "/blog/guide" in client.get("/sitemap-1.xml").text and "/blog/guide" in client.get("/llms.txt").text
         page = client.get("/blog/guide")
         if page.status_code != 404:  # server-rendered pages need the React build (web/dist)
             assert '"BlogPosting"' in page.text and '"FAQPage"' in page.text

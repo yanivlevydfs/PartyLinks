@@ -1,10 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useCategories, useEvents } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
-import { DEFAULT_FILTERS, useStore } from "../store";
+import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
 import { Card, EventGrid, Hero, useT, useTitle } from "../ui";
+
+/** The landing URL that shows exactly these filters (/genre/techno, /city/tel-aviv, /tonight...), else "/". */
+export function landingPath(f: FilterState): string {
+  const rest = { ...f, q: "", sort: DEFAULT_FILTERS.sort, when: "all", genres: [], region: null, areas: [], city: null };
+  if (JSON.stringify(rest) !== JSON.stringify(DEFAULT_FILTERS)) return "/";
+  const where = f.region === "tel_aviv" && !f.areas.length && !f.city ? "tel-aviv"
+    : f.city && !f.areas.length ? Object.keys(CITIES).find((k) => CITIES[k].he === f.city) : !f.region && !f.areas.length ? "" : undefined;
+  const when = f.when === "all" ? "" : f.when === "tonight" || f.when === "weekend" ? f.when : undefined;
+  if (where === undefined || when === undefined || f.genres.length > 1) return "/";
+  if (where) return f.genres.length || when ? "/" : `/city/${where}`;
+  if (f.genres.length) return `/genre/${f.genres[0]}` + (when ? `/${when}` : "");
+  return when ? `/${when}` : "/";
+}
 
 // Landing routes (/tonight, /weekend, /genre/:genre[/tonight|weekend], /city/:city) are the home page with its filters preset;
 // the server renders the same URLs with their own title, description and FAQ for crawlers.
@@ -27,7 +40,8 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
     }
     set({
       ...DEFAULT_FILTERS,
-      q: useStore.getState().filters.q,
+      q: filters.q,
+      sort: filters.sort,
       when: landing === "tonight" || landing === "weekend" ? landing : landing === "genre" && (when === "tonight" || when === "weekend") ? when : "all",
       genres: landing === "genre" && genre ? [genre] : [],
     });
@@ -37,6 +51,19 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   useEffect(() => {
     if (cityName) set({ region: cityRegion ?? null, areas: [], city: cityRegion === "tel_aviv" ? null : cityName.he });
   }, [cityName, cityRegion, set]);
+  // Filters picked here move the address to their landing URL (techno: /genre/techno), so it can be shared.
+  // Not on mount: a remount (back from an event) keeps the route it came with.
+  const navigate = useNavigate();
+  const { pathname, search } = useLocation();
+  const mounted = useRef(f);
+  useEffect(() => {
+    if (f === mounted.current) return;
+    const path = landingPath(f);
+    if (path === pathname) return;
+    useStore.getState().setPreset(false); // the target page keeps these filters instead of resetting them
+    navigate(path + search, { replace: true });
+  }, [f]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const g = genreLabel(lang, genre ?? "");
   const title =
     landing === "genre" ? (when === "tonight" ? t.landing.genreTonight(g) : when === "weekend" ? t.landing.genreWeekend(g) : t.landing.genre(g))

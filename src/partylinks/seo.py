@@ -772,7 +772,12 @@ def _strip_title(html: str, keep: str) -> str:
 
 
 # --------------------------------------------------------------------------- crawl files
-def sitemap(session: Session, cfg: Settings) -> str:
+# Google reads at most 50,000 URLs / 50 MB per sitemap file; the site has more, so /sitemap.xml is an index of parts.
+SITEMAP_PART = 10_000
+
+
+def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
+    """Every public page as a <url> entry (Hebrew and English apart, the blog once)."""
     rows = session.scalars(select(EventRow).where(upcoming_filter()).order_by(EventRow.start_at)).all()
     paths: list[tuple[str, date | None]] = [("/", None), ("/map", None), ("/abroad", None), ("/venues", None), ("/artists", None), ("/accessibility", None), ("/privacy", None), ("/terms", None)]
     today = datetime.now(ZoneInfo(cfg.timezone))  # landing pages change every day
@@ -800,10 +805,28 @@ def sitemap(session: Session, cfg: Settings) -> str:
     for path, modified in blog_paths:
         lastmod = f"<lastmod>{modified:%Y-%m-%d}</lastmod>" if modified else ""
         urls.append(f"<url><loc>{escape(_url(cfg, path))}</loc>{lastmod}</url>")
+    return urls
+
+
+def sitemap_index(urls: list[str], cfg: Settings) -> str:
+    parts = range(1, (len(urls) + SITEMAP_PART - 1) // SITEMAP_PART + 1)
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        + "\n".join(f"<sitemap><loc>{cfg.site.base_url}/sitemap-{n}.xml</loc></sitemap>" for n in parts)
+        + "\n</sitemapindex>\n"
+    )
+
+
+def sitemap_part(urls: list[str], part: int) -> str | None:
+    """Part 1, 2... of the URL list; None past the end."""
+    chunk = urls[(part - 1) * SITEMAP_PART : part * SITEMAP_PART] if part >= 1 else []
+    if not chunk:
+        return None
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
-        + "\n".join(urls)
+        + "\n".join(chunk)
         + "\n</urlset>\n"
     )
 
@@ -879,7 +902,14 @@ def register(app: FastAPI, site_dir: Path) -> None:
     @app.get("/sitemap.xml", include_in_schema=False)
     def sitemap_xml(request: Request) -> Response:
         with request.app.state.db.session() as session:
-            return Response(sitemap(session, cfg(request)), media_type="application/xml")
+            return Response(sitemap_index(sitemap_urls(session, cfg(request)), cfg(request)), media_type="application/xml")
+
+    # ponytail: each part rebuilds the whole URL list (~1 s); cache it if crawlers hammer the parts.
+    @app.get("/sitemap-{part}.xml", include_in_schema=False)
+    def sitemap_part_xml(part: int, request: Request) -> Response:
+        with request.app.state.db.session() as session:
+            xml = sitemap_part(sitemap_urls(session, cfg(request)), part)
+        return Response(xml, media_type="application/xml") if xml else Response(status_code=404)
 
     @app.get("/llms.txt", include_in_schema=False)
     def llms(request: Request) -> PlainTextResponse:
