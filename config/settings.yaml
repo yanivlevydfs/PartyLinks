@@ -1326,3 +1326,42 @@ sources:
       "1292": {venue_name: מובילנד נתניה, address: "גיבורי ישראל 17, מתחם עמי פולג", city: נתניה}
       "1294": {venue_name: מובילנד עפולה, address: "יוסף ברזילי 5, קניון בלו וואלי", city: עפולה}
       "1296": {venue_name: מובילנד בת ים, address: "יוספטל 92, קניון ביג פאשן", city: בת ים}
+
+  # ----------------------------------------------------------------- abroad (concerts and festivals)
+  kishreyteufa:
+    # Kishrey Teufa: tickets to concerts and festivals abroad. Its sport & show engine (shared
+    # with Ophir Tours and Mona Tours) embeds the whole catalogue as JSON in every engine page;
+    # one request, music rows only (~360): date, venue, city, ISO country, price and currency.
+    # robots.txt allows these paths. Events abroad live in the /abroad section.
+    enabled: true
+    cron: "7 3,15 * * *"
+    site_url: https://www.kishrey-teufa.co.il
+    show_path: /sportandshow/show.html
+    search_path: /searchEvent.do
+
+  ticketplace:
+    # Ticket Place: resale tickets to concerts and festivals abroad (WooCommerce). The WP REST
+    # products endpoint lists the shows and festivals categories (~300); each product page gives
+    # local date and time, "venue, city, country" and seat prices in euros. robots.txt is absent.
+    enabled: true
+    cron: "19 3,15 * * *"
+    site_url: https://ticketplace.co.il
+    products_path: /wp-json/wp/v2/product
+    category_ids: [19, 20]
+    festival_category_id: 20
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.2
+
+  livevents:
+    # Live Events: packages (flight + hotel + ticket) and tickets to shows in Europe. Its shows
+    # calendar loads one table per month from admin-ajax.php (24 POSTs): artist, Hebrew city,
+    # dates, and a link and "from" price when an offer exists. robots.txt is absent.
+    enabled: true
+    cron: "31 3,15 * * *"
+    site_url: https://livevents.co.il
+    ajax_path: /wp-admin/admin-ajax.php
+    ajax_action: events_table_action
+    calendar_path: /events/
+    http:
+      concurrency: 2

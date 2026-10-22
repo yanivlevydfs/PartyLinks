@@ -44,3 +44,13 @@ def test_tiktik_page_without_country_is_still_abroad() -> None:
     page = (FIXTURES / "sting.html").read_text(encoding="utf-8").replace('"addressCountry": "US"', '"x": 0')
     e = tiktik.parse_product(page, SITE + "x/", "Asia/Jerusalem")
     assert e is not None and e.city == "Las Vegas" and e.country == "ZZ"
+
+
+def test_tiktik_page_without_offers_uses_listing() -> None:
+    """About one page in six has no Product/offers block: id, price and stock come from the Store API."""
+    page = (FIXTURES / "sting.html").read_text(encoding="utf-8")
+    page = page.replace('"@type":"Product"', '"@type":"Thing"').replace('"offers": {', '"x": {')
+    listed = {"id": 116773, "is_in_stock": True, "prices": {"price": "28800", "currency_minor_unit": 2}}
+    e = tiktik.parse_product(page, SITE + "sting-las-vegas-23-10-2027/", "Asia/Jerusalem", listed)
+    assert e is not None and e.source_event_id == "116773"
+    assert (e.currency, e.min_price, e.max_price) == ("EUR", Decimal(288), Decimal(288)) and not e.is_sold_out

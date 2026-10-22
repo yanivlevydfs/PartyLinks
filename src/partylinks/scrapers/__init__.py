@@ -25,9 +25,11 @@ from partylinks.scrapers.grayclub import GrayclubScraper
 from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
+from partylinks.scrapers.kishreyteufa import KishreyTeufaScraper
 from partylinks.scrapers.kupatbravo import KupatbravoScraper
 from partylinks.scrapers.leaan import LeaanScraper
 from partylinks.scrapers.lev import LevScraper
+from partylinks.scrapers.livevents import LiveventsScraper
 from partylinks.scrapers.luma import LumaScraper
 from partylinks.scrapers.makore import MakoreScraper
 from partylinks.scrapers.meetup import MeetupScraper
@@ -44,6 +46,7 @@ from partylinks.scrapers.smarticket import SmarticketScraper
 from partylinks.scrapers.teder import TederScraper
 from partylinks.scrapers.tickchak import ArenasScraper, TickchakScraper
 from partylinks.scrapers.ticketmaster import TicketmasterScraper
+from partylinks.scrapers.ticketplace import TicketPlaceScraper
 from partylinks.scrapers.tiktik import TiktikScraper
 from partylinks.scrapers.tribe import GagarinScraper
 from partylinks.scrapers.zygo import ZygoScraper
@@ -96,6 +99,9 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         TelAvivCinemathequeScraper,
         JerusalemCinemathequeScraper,
         MovielandScraper,
+        KishreyTeufaScraper,
+        TicketPlaceScraper,
+        LiveventsScraper,
     )
 }
 
