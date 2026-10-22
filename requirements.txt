@@ -5,7 +5,7 @@ httpx>=0.28
 pycountry==26.2.16
 pydantic>=2.9
 pydantic-settings[yaml]>=2.6
-selectolax>=0.3.21,<1.0
+selectolax>=1.0
 sqlalchemy>=2.0
 tenacity>=9.0
 uvicorn>=0.32

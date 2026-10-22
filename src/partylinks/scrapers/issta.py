@@ -16,7 +16,7 @@ from decimal import Decimal
 from typing import NamedTuple
 from urllib.parse import parse_qs, urlsplit
 
-from selectolax.parser import HTMLParser, Node
+from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.enrichment import UNKNOWN_COUNTRY
 from partylinks.models import ScrapedEvent
@@ -78,7 +78,7 @@ def _on_or_after(day_month: str, after: date) -> date:
     return found if found >= after else date(after.year + 1, month, day)
 
 
-def _card(node: Node, site_url: str) -> tuple[Trip, Package] | None:
+def _card(node: LexborNode, site_url: str) -> tuple[Trip, Package] | None:
     """The trip and package of one card; None for a card that is no dated package."""
     link = node.css_first("a[itemprop=url]")
     name = node.css_first("[itemprop=name]")
@@ -114,7 +114,7 @@ def _card(node: Node, site_url: str) -> tuple[Trip, Package] | None:
 def parse_listing(page_html: str, site_url: str, timezone: str) -> list[ScrapedEvent]:
     """One event per trip (name, destination, dates); its packages give the price range."""
     trips: dict[Trip, list[Package]] = {}
-    for node in HTMLParser(page_html).css("div.deal-item-container"):
+    for node in LexborHTMLParser(page_html).css("div.deal-item-container"):
         if card := _card(node, site_url):
             trips.setdefault(card[0], []).append(card[1])
     if not trips and "deal-item-container" in page_html:
