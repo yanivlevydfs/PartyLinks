@@ -54,6 +54,8 @@ class SmarticketTenant(BaseModel):
     rooms: bool = False
     # Shows whose category contains one of these are not events (cinema screenings, zoo entry).
     skip_categories: list[str] = Field(default_factory=list)
+    # Shows titled exactly this are not events (a cinema's unnamed "קופה ראשית" slots).
+    skip_titles: list[str] = Field(default_factory=list)
     # Category of shows the tenant leaves uncategorized (a cinematheque: "קולנוע").
     category: str | None = None
 
@@ -88,6 +90,7 @@ class SmarticketScraper(BaseScraper[SmarticketSettings]):
         body = await self.get_text(f"https://{host}{s.shows_path}")
         shows = parse_shows_body(body, host) or await self._calendar_shows(host)
         shows = [sh for sh in shows if not any(w in str(sh.get("category") or "") for w in tenant.skip_categories)]
+        shows = [sh for sh in shows if clean_str(sh.get("title")) not in tenant.skip_titles]
         events: list[ScrapedEvent] = []
         now = datetime.now(ZoneInfo(self.timezone))
         for show, performance in iter_performances(shows):

@@ -901,6 +901,7 @@ sources:
       - {host: sderot-cin, venue_name: סינמטק שדרות, city: שדרות, rooms: true, category: קולנוע}
       - {host: roshpinacine, venue_name: סינמטק ראש פינה, city: ראש פינה, rooms: true, category: קולנוע}
       - {host: arava, venue_name: מרכז קהילה ערבה תיכונה}  # קולנוע ערבה + the council's events
+      - {host: cinema-eilat, venue_name: קולנוע אילת, city: אילת, rooms: true, category: קולנוע, skip_titles: ["קופה ראשית"]}
       - {host: mozkin, venue_name: היכל התרבות קריית מוצקין, city: קריית מוצקין}
       - {host: katedra, venue_name: הקתדרה - מוזיאון ארץ ישראל, city: תל אביב}
       - {host: matnaskg, venue_name: היכל התרבות קריית גת, city: קריית גת}
