@@ -12,6 +12,7 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.beershevatheatre import BeerShevaTheatreScraper
 from partylinks.scrapers.chillz import ChillzScraper
 from partylinks.scrapers.cinemacity import CinemaCityScraper
+from partylinks.scrapers.cinematheque_tlv import JerusalemCinemathequeScraper, TelAvivCinemathequeScraper
 from partylinks.scrapers.comy import ComyScraper
 from partylinks.scrapers.drop import DropScraper
 from partylinks.scrapers.epgb import EpgbScraper
@@ -91,6 +92,8 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         CinemaCityScraper,
         HotCinemaScraper,
         LevScraper,
+        TelAvivCinemathequeScraper,
+        JerusalemCinemathequeScraper,
     )
 }
 

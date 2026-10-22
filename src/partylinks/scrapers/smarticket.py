@@ -54,6 +54,8 @@ class SmarticketTenant(BaseModel):
     rooms: bool = False
     # Shows whose category contains one of these are not events (cinema screenings, zoo entry).
     skip_categories: list[str] = Field(default_factory=list)
+    # Category of shows the tenant leaves uncategorized (a cinematheque: "קולנוע").
+    category: str | None = None
 
 
 class SmarticketSettings(SourceSettings):
@@ -189,7 +191,7 @@ def parse_event(
     prices = [t.price for t in tickets if t.price is not None]
 
     host = tenant_host(tenant.host, s.tenant_domain)
-    category = clean_str(show.get("category"))
+    category = clean_str(show.get("category")) or tenant.category
     image = clean_str(show.get("image"))
     return ScrapedEvent(
         source=SmarticketScraper.name,

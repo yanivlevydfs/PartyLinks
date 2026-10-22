@@ -895,6 +895,11 @@ sources:
       - {host: tickets.friends-hist.co.il, venue_name: FRIENDS מועדוני תרבות}
       - {host: ethos, venue_name: אתוס - אודיטוריום חיפה, city: חיפה, skip_categories: ["גן החיות"]}
       - {host: t-g, venue_name: תיאטרון גבעתיים, city: גבעתיים}
+      # Cinematheques (category cinema through "סינמטק" / the tenant's category).
+      - {host: hcinema, venue_name: סינמטק הרצליה, city: הרצליה, rooms: true, category: קולנוע}
+      - {host: mediatheque-cinemaholon, venue_name: סינמטק חולון, city: חולון, rooms: true, category: קולנוע}
+      - {host: sderot-cin, venue_name: סינמטק שדרות, city: שדרות, rooms: true, category: קולנוע}
+      - {host: roshpinacine, venue_name: סינמטק ראש פינה, city: ראש פינה, rooms: true, category: קולנוע}
       - {host: mozkin, venue_name: היכל התרבות קריית מוצקין, city: קריית מוצקין}
       - {host: katedra, venue_name: הקתדרה - מוזיאון ארץ ישראל, city: תל אביב}
       - {host: matnaskg, venue_name: היכל התרבות קריית גת, city: קריית גת}
@@ -1260,3 +1265,36 @@ sources:
       even-yehuda: {name: לב אבן יהודה, venue_name: לב אבן יהודה, address: המייסדים 41, city: אבן יהודה}
       omer: {name: לב עומר, venue_name: לב עומר, address: תמר פינת הדר, city: עומר}
       ramat-hasharon: {name: לב רמת השרון, venue_name: לב רמת השרון, address: סוקולוב 95, city: רמת השרון}
+
+  cinematheque_tlv:
+    # Tel Aviv Cinematheque (cinema.co.il): its PRES box office (cintlv), the same JSON API as pres /
+    # cinemacity. /api/presentations/ (every screening, ~450 rows) + /api/features/ (synopsis, poster)
+    # + one ticketGroups request per film in the window (~80/week) for prices. One event per film and
+    # business day; lecture-course meetings are tagged הרצאה. robots.txt allows all but /wp-admin.
+    enabled: true
+    cron: "5 10,22 * * *"
+    http: {concurrency: 3}
+    api_url: https://cintlv.presglobal.store
+    presentations_path: /api/presentations/
+    features_path: /api/features/
+    ticket_groups_path: /api/presentations/{id}/ticketGroups
+    order_url: https://cintlv.presglobal.store/order/{id}
+    days_ahead: 7
+
+  cinematheque_jlm:
+    # Jerusalem Cinematheque (jer-cin.org.il, דרך חברון 11): the same PRES reader as
+    # cinematheque_tlv, on its own box office host. Its website asks for Crawl-delay 180, so the
+    # site itself is not crawled; the PRES host has no robots.txt.
+    enabled: true
+    cron: "17 10,22 * * *"
+    http: {concurrency: 3}
+    api_url: https://jer-cin.pres.global
+    presentations_path: /api/presentations/
+    features_path: /api/features/
+    ticket_groups_path: /api/presentations/{id}/ticketGroups
+    order_url: https://jer-cin.pres.global/order/{id}
+    days_ahead: 7
+    branch_id: jlm
+    venue_name: סינמטק ירושלים
+    address: דרך חברון 11
+    city: ירושלים
