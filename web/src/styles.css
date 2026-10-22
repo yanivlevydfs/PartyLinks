@@ -324,6 +324,12 @@ button, input, select { font: inherit; color: inherit; }
   background: radial-gradient(circle at 30% 30%, #ff2e9366, transparent 55%), radial-gradient(circle at 70% 70%, #19e3ff44, transparent 55%), #120a22;
   text-shadow: 0 0 30px var(--pink);
 }
+.noimg.text { padding: 56px 22px 48px; color: rgb(255 255 255 / .9); }
+.noimg.text span {
+  font: 900 clamp(20px, 2.4vw, 28px)/1.15 var(--display); text-align: center; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.e-img.noimg.text span { font-size: clamp(26px, 4vw, 44px); -webkit-line-clamp: 5; }
 .date-badge {
   position: absolute; top: 12px; inset-inline-start: 12px; z-index: 1;
   background: rgb(6 4 11 / .75); border: 1px solid var(--line-hot); border-radius: 14px; padding: 6px 12px;

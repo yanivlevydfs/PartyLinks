@@ -16,7 +16,7 @@ export default function EventPage() {
   if (isPending) return <p className="msg wrap">{t.loading}</p>;
 
   const images = e.images.map((i) => i.stored_url ?? i.url);
-  const hero = images[0] ?? e.image_url;
+  const hero = images[0] ?? e.image_url ?? e.cover_url;
   const mapQuery = e.latitude != null ? `${e.latitude},${e.longitude}` : [e.venue_name, e.address, e.city].filter(Boolean).join(", ");
   const price = priceLabel(e, t);
   const time = { hour: "2-digit", minute: "2-digit" } as const;
@@ -36,7 +36,7 @@ export default function EventPage() {
 
         <div className="e-top">
           <div className="e-poster">
-            <Img src={hero} alt={e.title} className="e-img" />
+            <Img src={hero} alt={e.title} className="e-img" text={e.title} />
           </div>
 
           <div className="e-info">

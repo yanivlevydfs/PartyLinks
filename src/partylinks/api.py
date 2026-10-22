@@ -488,11 +488,31 @@ def _group_sources(session: Session, rows: Sequence[EventRow]) -> dict[str, list
     }
 
 
+def _group_covers(session: Session, rows: Sequence[EventRow]) -> dict[str, str]:
+    """Artwork borrowed from a duplicate listing for events whose own source has none."""
+    groups = {r.group_id for r in rows if r.group_id and not r.cover_url and not r.image_url}
+    found: dict[str, str] = {}
+    if groups:
+        for group_id, image_id in session.execute(
+            select(EventRow.group_id, ImageRow.id)
+            .join(ImageRow.event)
+            .where(EventRow.group_id.in_(groups), ImageRow.downloaded_at.is_not(None))
+            .order_by(ImageRow.position, ImageRow.id)
+        ):
+            found.setdefault(group_id, f"/images/{image_id}")
+    return found
+
+
 def _summary_extras(session: Session, rows: Sequence[EventRow]) -> dict[str, dict[str, Any]]:
     deals = _best_deals(session, rows)
     sources = _group_sources(session, rows)
+    covers = _group_covers(session, rows)
     return {
-        r.id: {"best_deal": deals.get(r.best_listing_id) if r.best_listing_id else None, "sources": sources[r.id]}
+        r.id: {
+            "best_deal": deals.get(r.best_listing_id) if r.best_listing_id else None,
+            "sources": sources[r.id],
+            "cover_url": r.cover_url or covers.get(r.group_id or ""),
+        }
         for r in rows
     }
 

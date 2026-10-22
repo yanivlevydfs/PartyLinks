@@ -163,9 +163,15 @@ export function Chip({ on, onClick, children, className }: { on: boolean; onClic
   );
 }
 
-export function Img({ src, alt, className }: { src: string | null | undefined; alt: string; className: string }) {
+/** Without artwork: ``text`` (the event title) set large on the gradient, else a note. */
+export function Img({ src, alt, className, text }: { src: string | null | undefined; alt: string; className: string; text?: string }) {
   const [broken, setBroken] = useState(false);
-  if (!src || broken) return <div className={className + " noimg"} aria-hidden>♫</div>;
+  if (!src || broken)
+    return text ? (
+      <div className={className + " noimg text"} aria-hidden><span dir="auto">{text}</span></div>
+    ) : (
+      <div className={className + " noimg"} aria-hidden>♫</div>
+    );
   return <img className={className} src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />;
 }
 
@@ -198,7 +204,7 @@ export function Card({ e }: { e: EventSummary }) {
     <div className="card-wrap">
     <Link className="card" to={eventPath(e)}>
       <div className="card-img">
-        <Img src={e.cover_url ?? e.image_url} alt={e.title} className="cover" />
+        <Img src={e.cover_url ?? e.image_url} alt={e.title} className="cover" text={e.title} />
         <div className="date-badge">
           <b>{fmtDate(e.start_at, t, { day: "numeric" })}</b>
           <span>{fmtDate(e.start_at, t, { month: "short" })}</span>
