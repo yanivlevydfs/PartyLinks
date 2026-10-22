@@ -116,6 +116,7 @@ class BaseScraper[S: SourceSettings](ABC):
         # proxy fails or the site refuses its IP (403 / is_blocked). A per-source proxy wins.
         pool = [p.strip() for p in (http.source_proxy or "").split(",") if p.strip()] if settings.proxied else []
         self._spare_proxies = pool[1:] if pool and "proxy" not in overrides else []
+        self._pool_size = 1 + len(self._spare_proxies)
         if pool:
             overrides.setdefault("proxy", pool[0])
         self.http = HttpSettings.model_validate(http.model_dump() | overrides)
@@ -202,8 +203,15 @@ class BaseScraper[S: SourceSettings](ABC):
     async def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         if self._client is None:
             raise RuntimeError(f"{type(self).__name__} must be used as an async context manager")
+        try:
+            return await self._request(method, url, **kwargs)
+        except _RefusedByProxyIP as exc:
+            raise SourceBlockedError(f"{self.name}: access denied by the site on every proxy ({exc})") from exc
+
+    async def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+        # Every proxy of the pool gets its turn on top of the usual retries.
         async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(self.http.max_retries + 1),
+            stop=stop_after_attempt(self.http.max_retries + self._pool_size),
             wait=self._wait,
             retry=retry_if_exception(_is_retryable),
             reraise=True,
