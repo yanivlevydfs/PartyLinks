@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session, aliased, defer, load_only, selectinload, und
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from partylinks import clicks, seo, utm
+from partylinks import status as server_status
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.config import Settings, get_settings
@@ -225,6 +226,7 @@ class EventOut(EventSummaryOut):
     def _no_seller_link(self) -> EventOut:
         self.extra = {k: v for k, v in self.extra.items() if k != "purchase_url"}
         return self
+
     tickets: list[TicketOut]
     images: list[ImageOut]
     alternatives: list[AlternativeOut] = []
@@ -418,8 +420,17 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
         if scheduler:
             scheduler.start()
         try:
+            server_status.log_startup(settings, db, scheduler)
+        except Exception:  # the banner never blocks startup
+            log.exception("status: startup report failed")
+        if settings.logging.status_every_minutes:
+            beat = asyncio.create_task(server_status.status_loop(settings, db, scheduler))
+            app.state.tasks.add(beat)
+            beat.add_done_callback(app.state.tasks.discard)
+        try:
             yield
         finally:
+            server_status.log_shutdown(settings)
             if scheduler:
                 scheduler.shutdown(wait=False)
             for task in app.state.tasks:
@@ -482,10 +493,7 @@ def _group_sources(session: Session, rows: Sequence[EventRow]) -> dict[str, list
             select(EventRow.group_id, EventRow.source).where(EventRow.group_id.in_(groups)).distinct()
         ):
             found.setdefault(group_id, set()).add(source)
-    return {
-        r.id: [r.source, *sorted(found.get(r.group_id or "", set()) - {r.source})]
-        for r in rows
-    }
+    return {r.id: [r.source, *sorted(found.get(r.group_id or "", set()) - {r.source})] for r in rows}
 
 
 def _group_covers(session: Session, rows: Sequence[EventRow]) -> dict[str, str]:
@@ -530,6 +538,8 @@ def current_clause_for_feed() -> ColumnElement[bool]:
 
 def _utc(value: datetime) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=UTC)
+
+
 MAX_TEXT_PARAM = 100
 
 
@@ -583,7 +593,9 @@ def _register_routes(app: FastAPI) -> None:
             report["checks"]["database"] = f"error: {type(exc).__name__}"
             return report
         scheduler = state.scheduler
-        report["checks"]["scheduler"] = "disabled" if scheduler is None else ("running" if scheduler.running else "stopped")
+        report["checks"]["scheduler"] = (
+            "disabled" if scheduler is None else ("running" if scheduler.running else "stopped")
+        )
         stale_after = timedelta(hours=cfg.scheduler.stale_after_hours)
         now = datetime.now(UTC)
         stale = {
@@ -598,7 +610,11 @@ def _register_routes(app: FastAPI) -> None:
             "last_success_at": retention.last_success_at,
             "last_error": retention.last_error,
         }
-        if (scheduler is not None and not scheduler.running) or report["checks"]["config_errors"] or retention.last_error:
+        if (
+            (scheduler is not None and not scheduler.running)
+            or report["checks"]["config_errors"]
+            or retention.last_error
+        ):
             report["status"] = "degraded"
         try:  # the details (source names, error messages) are for the admin; monitors only need the status
             require_admin(request)
@@ -608,21 +624,39 @@ def _register_routes(app: FastAPI) -> None:
 
     def event_filters(
         request: Request,
-        source: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="Source name (repeatable)")] = None,
-        genre: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="Canonical genre, any-of (repeatable)")] = None,
-        artist: Annotated[str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="DJ / performer in the lineup")] = None,
-        venue: Annotated[str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="Venue name contains")] = None,
+        source: Annotated[
+            list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="Source name (repeatable)")
+        ] = None,
+        genre: Annotated[
+            list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="Canonical genre, any-of (repeatable)")
+        ] = None,
+        artist: Annotated[
+            str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="DJ / performer in the lineup")
+        ] = None,
+        venue: Annotated[
+            str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="Venue name contains")
+        ] = None,
         venue_slug: Annotated[str | None, Query(description="Exact venue slug")] = None,
         city: Annotated[str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="City contains")] = None,
         in_target_city: Annotated[bool | None, Query(description="Matched to the configured target city")] = None,
         abroad: Annotated[bool, Query(description="Events abroad instead of events in Israel")] = False,
-        entry_type: Annotated[list[EntryType] | None, Query(max_length=MAX_LIST_PARAMS, description="free / paid / free_and_paid")] = None,
+        entry_type: Annotated[
+            list[EntryType] | None, Query(max_length=MAX_LIST_PARAMS, description="free / paid / free_and_paid")
+        ] = None,
         free_entry: Annotated[bool | None, Query(description="Has at least one free ticket tier")] = None,
         sold_out: bool | None = None,
-        discount: Annotated[bool | None, Query(description="A listing of the event is discounted or offers a code")] = None,
-        day_of_week: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="e.g. thursday (repeatable)")] = None,
-        time_slot: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="e.g. night (repeatable)")] = None,
-        area: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="Area of the city, e.g. south (repeatable)")] = None,
+        discount: Annotated[
+            bool | None, Query(description="A listing of the event is discounted or offers a code")
+        ] = None,
+        day_of_week: Annotated[
+            list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="e.g. thursday (repeatable)")
+        ] = None,
+        time_slot: Annotated[
+            list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="e.g. night (repeatable)")
+        ] = None,
+        area: Annotated[
+            list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="Area of the city, e.g. south (repeatable)")
+        ] = None,
         weekend: bool | None = None,
         on_date: Annotated[date | None, Query(alias="date", description="Local start date")] = None,
         upcoming: Annotated[bool, Query(description="Hide events that already ended")] = True,
@@ -633,7 +667,10 @@ def _register_routes(app: FastAPI) -> None:
         date_to: datetime | None = None,
         min_price: Annotated[float | None, Query(ge=0)] = None,
         max_price: Annotated[float | None, Query(ge=0)] = None,
-        q: Annotated[str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="Search title/description/venue/lineup")] = None,
+        q: Annotated[
+            str | None,
+            Query(min_length=2, max_length=MAX_TEXT_PARAM, description="Search title/description/venue/lineup"),
+        ] = None,
     ) -> list[ColumnElement[bool]]:
         """WHERE clauses of the event filters, shared by the list and the map."""
         cfg: Settings = request.app.state.settings
@@ -654,7 +691,10 @@ def _register_routes(app: FastAPI) -> None:
             filters.append(EventRow.venue_slug == venue_slug)
         if city:
             filters.append(
-                or_(EventRow.city.ilike(_contains(city), escape="\\"), EventRow.address.ilike(_contains(city), escape="\\"))
+                or_(
+                    EventRow.city.ilike(_contains(city), escape="\\"),
+                    EventRow.address.ilike(_contains(city), escape="\\"),
+                )
             )
         if in_target_city is not None:
             filters.append(EventRow.in_target_city.is_(in_target_city))
@@ -814,7 +854,9 @@ def _register_routes(app: FastAPI) -> None:
     def deal_changes_feed(
         session: SessionDep,
         since: Annotated[datetime | None, Query(description="Default: last 24 hours")] = None,
-        kind: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="e.g. price_down (repeatable)")] = None,
+        kind: Annotated[
+            list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="e.g. price_down (repeatable)")
+        ] = None,
         source: Annotated[list[str] | None, Query(max_length=MAX_LIST_PARAMS)] = None,
         limit: Annotated[int, Query(ge=1, le=500)] = 100,
     ) -> list[ChangeFeedItem]:
@@ -926,10 +968,7 @@ def _register_routes(app: FastAPI) -> None:
             regions=facet(lambda r: [region(r)]),
             entry_types=facet(lambda r: [r.group_entry_type]),
             venues=[f.model_copy(update={"area": venue_area.get(f.value)}) for f in facet(lambda r: [r.venue_name])],
-            cities=[
-                f.model_copy(update={"area": city_region.get(f.value)})
-                for f in facet(lambda r: [r.city])
-            ],
+            cities=[f.model_copy(update={"area": city_region.get(f.value)}) for f in facet(lambda r: [r.city])],
             lineup=artist_facet(),
             event_types=facet(lambda r: r.event_types or []),
             sources=[FacetValue(value=s, events=n) for s, n in group_sources.most_common()],

@@ -37,7 +37,7 @@ def project_path(path: str | Path) -> Path:
 
 
 class LoggingSettings(BaseModel):
-    level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "WARNING"
+    level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     # Debug mode: DEBUG level, every HTTP request (not only failed ones) and the HTTP client's own
     # lines. Also switchable at runtime from /admin, until the next restart.
     debug: bool = False
@@ -48,6 +48,8 @@ class LoggingSettings(BaseModel):
     file: str | None = None
     file_max_mb: int = Field(10, ge=1)
     file_backups: int = Field(5, ge=0)
+    # One status line (uptime, events, runs, scheduler, clicks) every N minutes; 0 = off.
+    status_every_minutes: int = Field(30, ge=0)
 
 
 class DatabaseSettings(BaseModel):

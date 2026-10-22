@@ -12,7 +12,7 @@ database:
 
 # One format for app, uvicorn and access lines. INFO -> stdout, WARNING+ -> stderr, UTF-8, "\n".
 logging:
-  level: WARNING             # DEBUG | INFO | WARNING | ERROR: warnings and errors only by default
+  level: INFO                # DEBUG | INFO | WARNING | ERROR: server status, source runs, warnings
   # Debug mode: everything (DEBUG level, every HTTP request, the HTTP client's lines). `-v`, the
   # env var PARTYLINKS_LOGGING__DEBUG=true, or the switch in /admin (runtime, until restart).
   debug: false
@@ -21,6 +21,7 @@ logging:
   file: data/logs/partylinks.log   # rotating file; empty on hosts that collect stdout
   file_max_mb: 10
   file_backups: 5
+  status_every_minutes: 30  # status line (uptime, events, runs, scheduler, clicks); 0 = off
 
 # The public website (React app in web/). base_url is used in canonical links, the sitemap,
 # JSON-LD, llms.txt and share previews: set it to the real domain when deployed.

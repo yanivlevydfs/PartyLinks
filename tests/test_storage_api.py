@@ -374,7 +374,7 @@ def test_admin_scan_runs_all_enabled_or_the_chosen_sources(tmp_path: Path) -> No
         assert client.post("/admin/api/scan", json={"sources": ["nope"]}).status_code == 404
 
 
-def test_logging_is_quiet_by_default_and_debug_logs_everything(tmp_path: Path) -> None:
+def test_logging_is_info_by_default_and_debug_logs_everything(tmp_path: Path) -> None:
     import logging
 
     from partylinks.logs import debug_enabled, set_debug
@@ -386,9 +386,9 @@ def test_logging_is_quiet_by_default_and_debug_logs_everything(tmp_path: Path) -
     settings = settings_for(tmp_path)
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         log = logging.getLogger("uvicorn.access")
-        assert not debug_enabled() and logging.getLogger().level == logging.WARNING
+        assert not debug_enabled() and logging.getLogger().level == logging.INFO
         assert not log.filter(access(200)) and log.filter(access(404)) and log.filter(access(500))
-        assert log.isEnabledFor(logging.INFO)  # a failed request still gets through a WARNING root
+        assert log.isEnabledFor(logging.INFO)
 
         assert client.post("/admin/api/logging", json={"on": True}).json() == {"debug": True}
         assert logging.getLogger().level == logging.DEBUG and log.filter(access(200))

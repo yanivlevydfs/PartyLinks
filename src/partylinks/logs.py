@@ -23,7 +23,7 @@ from typing import IO, Any
 from partylinks.config import LOG_FORMAT, LoggingSettings, project_path
 
 # Libraries that log every request; only their problems are worth a line.
-_QUIET = ("httpx", "httpcore", "watchfiles.main")
+_QUIET = ("httpx", "httpcore", "watchfiles.main", "apscheduler")  # their INFO is per request / per job
 _UVICORN = ("uvicorn", "uvicorn.error", "uvicorn.access")
 _MARK = "_partylinks_handler"
 
@@ -67,7 +67,7 @@ class _FailedRequestsOnly(logging.Filter):
 
 
 _failed_only = _FailedRequestsOnly()
-_level = logging.WARNING  # the configured level, restored when debug is switched off
+_level = logging.INFO  # the configured level, restored when debug is switched off
 
 
 def debug_enabled() -> bool:
