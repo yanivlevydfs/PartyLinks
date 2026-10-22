@@ -1081,7 +1081,8 @@ sources:
 
   arenas:
     # Arenas, stadiums and amphitheaters have no box office of their own: each show is sold by its
-    # promoter (Eventim, Leaan, Ticketmaster...). Their Tickchak LIVE venue pages gather every
+    # promoter (Eventim, Leaan, Ticketmaster...); culture halls on other platforms are read the same
+    # way. Their Tickchak LIVE venue pages gather every
     # seller's shows there; only the venue-scoped sliders are read. Slugs from
     # static.tickchak.co.il/sitemaps/venue.xml. robots.txt allows everything.
     enabled: true
@@ -1114,3 +1115,49 @@ sources:
       - the-tel-aviv-culture-hall      # היכל התרבות תל אביב
       - pavilion-1-expo-tel-aviv       # אקספו תל אביב
       - hangar-11-tel-aviv             # האנגר 11
+      # City culture halls and theatres whose box office is not read as a Smarticket / PRES tenant
+      # (2026-10-22). Halls with no shows listed yet are kept for cities that have no other source.
+      - einan-hall-modiin               # אולם עינן מודיעין
+      - south-sharon-cultural-hall      # היכל התרבות דרום השרון
+      - raanana-music-and-arts-center   # המשכן למוסיקה ואומנויות רעננה
+      - ashkelon-cultural-hall          # היכל התרבות אשקלון
+      - rappaport-center-for-culture    # מרכז רפפורט חיפה
+      - yavne-culture-hall              # היכל התרבות יבנה
+      - diona-hall-ashdod               # אולם דיונה אשדוד
+      - golda-house-theater             # תיאטרון הבית גולדה פתח תקווה
+      - hamesila-theater-ptikva         # תיאטרון המסילה פתח תקווה
+      - ness-ziona-arts-center          # המשכן לאומנויות נס ציונה
+      - ness-ziona-cultural-hall        # היכל התרבות נס ציונה
+      - givat-brenner-auditorium        # גבעת ברנר
+      - the-diamond-theater             # תיאטרון היהלום רמת גן
+      - russell-theatre                 # תיאטרון ראסל רמת גן
+      - nesher-culture-hall             # היכל התרבות נשר
+      - kabri-hall                      # אולם מופעים מטה אשר כברי
+      - hazorea-hall                    # אולם מופעים הזורע
+      - zohar-hall-kiryat-tivon         # אולם זוהר קריית טבעון
+      - yifat-auditorium-jezreel-valley # אולם יפעת עמק יזרעאל
+      - sefi-rivlin-cultural-hall       # היכל התרבות ספי ריבלין נתניה
+      - eric-einstein-auditorium-city-of-days  # אודיטוריום אריק איינשטיין נתניה
+      - kiryat-hatarbut-ono-kiryatono   # קריית התרבות אונו
+      - yaron-yerushalmi-hall           # אולם ירון ירושלמי תל אביב
+      - enav-center-for-culture         # מרכז ענב לתרבות תל אביב
+      - bar-orein-hHall-keshet-elon     # אולם בר-אוריין תל אביב
+      - michael-sela-auditorium         # אודיטוריום סלע רחובות
+      - matnas-kadima-zoran             # מתנ"ס קדימה צורן
+      - akko-culture-hall               # היכל התרבות עכו
+      - or-yehuda-culture-hall          # היכל התרבות אור יהודה
+      - hatzor-culture-hall             # היכל התרבות חצור הגלילית
+      - symphony-hall-rosh-haayin       # אולם סימפוניה ראש העין
+      - bat-yam-auditorium              # אודיטוריום בת ים
+      - yrisrotel-theate                # תיאטרון ישרוטל אילת
+      - dimona-culture-hall             # היכל התרבות דימונה
+      - kiryat-shmona-culture-hall      # היכל התרבות קריית שמונה
+      - auditorium-kiryat-ata           # אודיטוריום קריית אתא
+      - culture-hall-katzrin            # היכל התרבות קצרין
+      - mofet-yehud-culture-hall        # היכל התרבות מופת יהוד
+      - givat-shmuel-matnas-culture-hall  # היכל התרבות גבעת שמואל
+      - harish-culture-hall-shoham-street-73  # היכל התרבות חריש
+      - gan-yavne-community-center-hall # מתנ"ס גן יבנה
+      - yad-binyamin-culture-hall       # היכל התרבות יד בנימין
+      - sdot-negev-culture-hall         # היכל התרבות שדות נגב
+      - gush-etzion-community-center-culture-hall  # היכל התרבות גוש עציון
