@@ -66,9 +66,14 @@ class SourceSettings(BaseModel):
 class SourceBlockedError(RuntimeError):
     """The site refused automated access (e.g. a bot-protection checkpoint).
 
-    Never retried or worked around: the run stops and is recorded as ``blocked``
-    until the site owner grants access (allow-rule, API key, feed).
+    Raised once the proxy pool is used up: a refusal first moves the source to the next proxy
+    of ``source_proxy`` (the site may refuse one IP, not the others). The run then stops and is
+    recorded as ``blocked``.
     """
+
+
+class _RefusedByProxyIP(httpx.TransportError):
+    """The site refused this proxy's IP; retried on the next proxy of the pool."""
 
 
 def _is_retryable(exc: BaseException) -> bool:
@@ -107,8 +112,8 @@ class BaseScraper[S: SourceSettings](ABC):
         overrides = dict(settings.http)
         # Headers merge with the global ones instead of replacing them.
         overrides["headers"] = {**http.headers, **HttpSettings.model_validate({"headers": overrides.get("headers", {})}).headers}
-        # A proxied source starts on the first URL of `source_proxy` and moves to the next only when
-        # the proxy itself fails (never because the site refused us). A per-source proxy wins.
+        # A proxied source starts on the first URL of `source_proxy` and moves to the next when the
+        # proxy fails or the site refuses its IP (403 / is_blocked). A per-source proxy wins.
         pool = [p.strip() for p in (http.source_proxy or "").split(",") if p.strip()] if settings.proxied else []
         self._spare_proxies = pool[1:] if pool and "proxy" not in overrides else []
         if pool:
@@ -162,14 +167,19 @@ class BaseScraper[S: SourceSettings](ABC):
             },
         )
 
-    def _next_proxy(self, failed: httpx.AsyncClient, exc: Exception) -> None:
-        """Move to the next proxy of the pool, once per failed client (parallel requests share it)."""
-        if failed is not self._client or not self._spare_proxies:
-            return
+    def _next_proxy(self, failed: httpx.AsyncClient, exc: Exception | None) -> bool:
+        """Move to the next proxy of the pool, once per failed client (parallel requests share it).
+        True when the request should go again: on a new proxy, or one a parallel request just switched to."""
+        if failed is not self._client:
+            return True
+        if not self._spare_proxies:
+            return False
         proxy = self._spare_proxies.pop(0)
-        self.log.warning("proxy failed (%s): switching to %s", type(exc).__name__, proxy.rpartition("@")[2])
+        why = type(exc).__name__ if exc else "refused by the site"
+        self.log.warning("proxy failed (%s): switching to %s", why, proxy.rpartition("@")[2])
         self._retired_clients.append(failed)
         self._client = self._new_client(proxy)
+        return True
 
     def is_blocked(self, response: httpx.Response) -> bool:
         """Sources override this to recognise their site's access-denied responses."""
@@ -208,6 +218,8 @@ class BaseScraper[S: SourceSettings](ABC):
                     except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as exc:
                         self._next_proxy(client, exc)  # retried on the next proxy (a TransportError)
                         raise
+                if (self.is_blocked(response) or response.status_code == 403) and self._next_proxy(client, None):
+                    raise _RefusedByProxyIP(f"{response.status_code} via this proxy")
                 if self.is_blocked(response):
                     raise SourceBlockedError(f"{self.name}: access denied by the site ({response.status_code})")
                 response.raise_for_status()

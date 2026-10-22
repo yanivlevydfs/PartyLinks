@@ -243,7 +243,7 @@ def test_source_proxy_reaches_every_source_unless_opted_out() -> None:
     assert _Probe(SourceSettings(cron="0 * * * *"), HttpSettings(), "UTC").http.proxy is None  # local: direct
 
 
-def test_proxy_pool_moves_on_only_when_the_proxy_fails() -> None:
+def test_proxy_pool_moves_on_when_the_proxy_fails() -> None:
     http = HttpSettings(source_proxy="http://u:p@a:1, http://u:p@b:2")
     scraper = _Probe(SourceSettings(cron="0 * * * *", proxied=True), http, "UTC")
     assert scraper.http.proxy == "http://u:p@a:1" and scraper._spare_proxies == ["http://u:p@b:2"]
@@ -262,3 +262,27 @@ def test_proxy_pool_moves_on_only_when_the_proxy_fails() -> None:
         assert scraper._client is None and scraper._retired_clients == []
 
     asyncio.run(run())
+
+
+def test_refused_proxy_ip_moves_to_the_next_proxy() -> None:
+    http = HttpSettings(source_proxy="http://a:1, http://b:2", backoff_seconds=0)
+    scraper = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
+    seen: list[str | None] = []
+
+    def client(proxy: str | None) -> httpx.AsyncClient:
+        seen.append(proxy)
+        return httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(403 if proxy == "http://a:1" else 200)))
+
+    scraper._new_client = client  # type: ignore[method-assign]
+
+    async def run() -> int:
+        async with scraper:
+            first = (await scraper.request("GET", "https://site.example/")).status_code
+            # Pool spent: the next refusal is the site's answer, not retried again and again.
+            scraper._client = client("http://a:1")
+            with pytest.raises(httpx.HTTPStatusError):
+                await scraper.request("GET", "https://site.example/")
+            return first
+
+    assert asyncio.run(run()) == 200
+    assert seen[:2] == ["http://a:1", "http://b:2"]
