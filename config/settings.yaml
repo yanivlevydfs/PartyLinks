@@ -188,6 +188,11 @@ enrichment:
     classical_opera: ["opera", "אופרה", "אופרות", "classical music", "chamber music", "מוזיקה קלאסית", "קלאסית",
                       "קאמרית", "מוזיקה קאמרית", "symphony", "סימפונית", "philharmonic", "פילהרמונית",
                       "recital", "רסיטל", "string quartet", "רביעיית מיתרים", "mozart", "מוצרט", "beethoven", "בטהובן"]
+    # Films and screenings. Not plain "סרט" / "film" (mentioned in passing) or "cinema" / "סינמה" (Cinema
+    # City also hosts shows).
+    cinema: ["movie night", "film screening", "film festival", "drive in", "drive-in", "קולנוע",
+             "סינמטק", "הקרנת סרט", "הקרנת הסרט", "פסטיבל סרטים", "דרייב אין",
+             "דרייב-אין", "ערב סרט", "ערב סרטים"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
     hi_tech: ["technology", "tech"]
@@ -203,7 +208,7 @@ enrichment:
     culture: ["culture highlights", "culture"]
     exhibitions: ["exhibitions", "exhibition"]
     workshops: ["workshop", "workshops"]
-    screenings: ["sceening", "screening", "screenings"]
+    cinema: ["sceening", "screening", "screenings"]
     markets: ["shopping"]
     food: ["food events", "food"]
     environment: ["environmental"]
@@ -220,8 +225,9 @@ enrichment:
     rnb: [hip_hop]
   detect_genres_from_text: true
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
-  # Tech events and conferences ("Israeli startups") are talks: their text is read only for these genres.
-  talk_genres: [hi_tech, conference]
+  # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
+  # talks: their text is read only for these genres.
+  talk_genres: [hi_tech, conference, cinema]
   talk_keywords: ["הרצאה", "הרצאות", "lecture", "סדנה", "סדנת", "workshop", "קפה דעת"]
   # A ticket tier named with one of these and priced 0 is treated as free entry.
   # DJ / performer extraction from descriptions. A line matching a header keyword
@@ -887,7 +893,7 @@ sources:
       - {host: even-yehuda, venue_name: מועצה מקומית אבן יהודה, city: אבן יהודה}
       # Found through Tickchak LIVE's venue pages (2026-10-21). Museums and kids' workshop tenants left out.
       - {host: tickets.friends-hist.co.il, venue_name: FRIENDS מועדוני תרבות}
-      - {host: ethos, venue_name: אתוס - אודיטוריום חיפה, city: חיפה, skip_categories: ["סינמטק", "גן החיות"]}
+      - {host: ethos, venue_name: אתוס - אודיטוריום חיפה, city: חיפה, skip_categories: ["גן החיות"]}
       - {host: t-g, venue_name: תיאטרון גבעתיים, city: גבעתיים}
       - {host: mozkin, venue_name: היכל התרבות קריית מוצקין, city: קריית מוצקין}
       - {host: katedra, venue_name: הקתדרה - מוזיאון ארץ ישראל, city: תל אביב}
@@ -992,7 +998,7 @@ sources:
   jerusalemtheatre:
     # Jerusalem Theatre: its own box office. One request to the site's board feed lists every
     # upcoming performance (~145) with genre, image and page link; no prices (box office only).
-    # Film screenings are left out. robots.txt allows everything but the admin paths.
+    # Film screenings included (category cinema). robots.txt allows everything but the admin paths.
     enabled: true
     cron: "33 7,19 * * *"
     site_url: https://www.jerusalem-theatre.co.il
@@ -1000,7 +1006,6 @@ sources:
     venue_name: תיאטרון ירושלים
     address: דוד מרכוס 20
     city: ירושלים
-    skip_groups: [eventGrp_cinema]
 
   drop:
     # Drop (tdrop.net): self-serve ticketing for party producers (raves, house parties, festivals).
@@ -1161,3 +1166,97 @@ sources:
       - yad-binyamin-culture-hall       # היכל התרבות יד בנימין
       - sdot-negev-culture-hall         # היכל התרבות שדות נגב
       - gush-etzion-community-center-culture-hall  # היכל התרבות גוש עציון
+
+  # ----------------------------------------------------------------- cinemas (category: cinema)
+  # One event per movie, branch and day for days_ahead days, with that day's showtimes.
+  planet:
+    # Planet (planetcinema.co.il, ex Yes Planet; Theaters Israel): Cinema City's JSON quickbook API.
+    # One request lists the 6 branches, then one per branch and day (3 days): 19 requests. One event
+    # per film, branch and day with that day's showtimes; no synopsis or prices in the API.
+    # robots.txt allows everything but /booking, /club and asset paths.
+    enabled: true
+    cron: "11 9,21 * * *"
+    http: {concurrency: 3}
+    site_url: https://www.planetcinema.co.il
+    api_path: /il/data-api-service
+    tenant_id: "10100"
+    days_ahead: 3
+
+  ravhen:
+    # Rav-Hen (rav-hen.co.il, קולנוע חן; Theaters Israel): same platform as planet, its own tenant.
+    # One request lists the 2 branches (Givatayim, Dizengoff), then one per branch and day: 7 requests.
+    # robots.txt allows everything but /booking and asset paths.
+    enabled: true
+    cron: "45 6,18 * * *"
+    http: {concurrency: 3}
+    site_url: https://www.rav-hen.co.il
+    api_path: /rh/data-api-service
+    tenant_id: "10104"
+    days_ahead: 3
+
+  cinemacity:
+    # Cinema City: the chain's 8 multiplexes. The Wix site reads showtimes from its PRES ticketing
+    # host; 2 requests: /api/presentations/ (every screening of every branch, ~4000 rows, ~6 MB) and
+    # /api/features/ (synopsis + poster). No prices in the API. Addresses from the site's /locations
+    # page. robots.txt allows all but ?lightbox=; the tickets host has none.
+    enabled: true
+    cron: "23 9,21 * * *"
+    api_url: https://tickets.cinema-city.co.il
+    presentations_path: /api/presentations/
+    features_path: /api/features/
+    movie_url: https://www.cinema-city.co.il/movie/{id}
+    days_ahead: 3
+    branches:
+      "1170": {address: "בניין הרב מכר, צומת גלילות", city: רמת השרון}
+      "1173": {address: "שדרות משה דיין 32", city: ראשון לציון}
+      "1174": {address: "שדרות יצחק רבין 10", city: ירושלים}
+      "1176": {address: "המחקר 3, מתחם רוגובין", city: נתניה}
+      "1175": {address: "וייצמן 207, מתחם G", city: כפר סבא}
+      "1350": {address: 'צה"ל 35', city: חדרה}
+      "1181": {address: "הרכבת 1", city: אשדוד}
+      "1178": {address: "החיטה 1", city: באר שבע}
+
+  hotcinema:
+    # HOT Cinema: the home page (posters, synopses) plus one all-branches TheaterEvents request per
+    # day (4 requests). The feed has no branch names or addresses, so they are listed here (from
+    # /theater/<id>). No prices or age ratings. robots.txt is absent (404).
+    enabled: true
+    cron: "35 9,21 * * *"
+    site_url: https://www.hotcinema.co.il
+    events_path: /tickets/TheaterEvents
+    days_ahead: 3
+    branches:
+      1: {name: מודיעין, address: "שדרות המלאכה 121, מרכז ישפרו", city: מודיעין, latitude: 31.889012, longitude: 34.963161}
+      2: {name: קריון, address: "דרך עכו 192", city: קרית ביאליק, latitude: 32.842737, longitude: 35.089856}
+      3: {name: פופ אפ}
+      5: {name: אשדוד, address: קניון סי-מול, city: אשדוד, latitude: 31.7928702, longitude: 34.6391482}
+      6: {name: נהריה, address: "האירית 2, קניון נהריה", city: נהריה, latitude: 32.9906518, longitude: 35.0953887}
+      8: {name: אשקלון, address: "הנמל 11", city: אשקלון, latitude: 31.681682, longitude: 34.55834}
+      9: {name: גרנד חיפה, address: גרנד קניון, city: חיפה, latitude: 32.789711, longitude: 35.0078224}
+      14: {name: פתח תקווה, address: הקניון הגדול, city: פתח תקווה, latitude: 32.0932324, longitude: 34.8654928}
+      15: {name: כרמיאל, address: קניון חוצות, city: כרמיאל}
+      16: {name: כפר סבא, address: "עתיר ידע 4, מתחם אושילנד", city: כפר סבא, latitude: 32.1654048, longitude: 34.9300218}
+      17: {name: רחובות, address: קניון רחובות, city: רחובות, latitude: 31.8933047, longitude: 34.806848}
+      22: {name: DREAM STAGE חולון, address: "הרוקמים 26", city: חולון}
+
+  lev:
+    # Lev cinemas (lev.co.il): the art-house chain's own box office, 7 branches. The theme's
+    # ajax_data.php sidebar lists one branch-day of screenings per request (7 x days_ahead = 21),
+    # then one page per distinct movie (~20, ~0.5 MB each) for poster, synopsis, runtime and rating.
+    # No prices (flat table on /prices/). `name` is sent as the site's `loc` and must match its
+    # spelling exactly. robots.txt allows everything but /wp-admin.
+    enabled: true
+    cron: "59 6,18 * * *"
+    site_url: https://www.lev.co.il
+    showtimes_path: /wp-content/themes/lev/ajax_data.php
+    days_ahead: 3
+    http:
+      concurrency: 4
+    branches:
+      telaviv: {name: לב תל אביב, venue_name: לב דיזנגוף, address: "דיזנגוף 50, דיזנגוף סנטר קומה 3", city: תל אביב}
+      smadar: {name: לב סמדר, venue_name: לב סמדר, address: "לויד ג'ורג' 4", city: ירושלים}
+      raanana: {name: לב רעננה, venue_name: לב רעננה, address: "אחוזה 267, קניון עזריאלי רעננה", city: רעננה}
+      daniel: {name: לב דניאל, venue_name: לב דניאל, address: "רמת ים 60, מלון דניאל", city: הרצליה}
+      even-yehuda: {name: לב אבן יהודה, venue_name: לב אבן יהודה, address: המייסדים 41, city: אבן יהודה}
+      omer: {name: לב עומר, venue_name: לב עומר, address: תמר פינת הדר, city: עומר}
+      ramat-hasharon: {name: לב רמת השרון, venue_name: לב רמת השרון, address: סוקולוב 95, city: רמת השרון}

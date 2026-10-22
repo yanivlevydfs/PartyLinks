@@ -1,0 +1,50 @@
+{
+ "body": {
+  "cinemas": [
+   {
+    "id": "1025",
+    "groupId": "group-1025",
+    "displayName": "פלאנט אילון",
+    "link": "https://www.planetcinema.co.il/cinemas/ayalon",
+    "imageUrl": "https://www.planetcinema.co.il/static/dam/jcr:4d089b1c-7c0a-4abc-bdef-bc38f4360962",
+    "address": "קניון אילון - אבא הלל סילבר 301, 3039ddd3-7a45-4944-ab37-a28707334e2b, רמת גן",
+    "addressInfo": {
+     "address1": "קניון אילון - אבא הלל סילבר 301",
+     "address2": null,
+     "address3": null,
+     "address4": "3039ddd3-7a45-4944-ab37-a28707334e2b",
+     "city": "רמת גן",
+     "state": null,
+     "postalCode": null
+    },
+    "bookingUrl": null,
+    "blockOnlineSales": false,
+    "blockOnlineSalesUntil": "2018-10-28",
+    "latitude": 32.100334,
+    "longitude": 34.826633
+   },
+   {
+    "id": "1074",
+    "groupId": "group-1074",
+    "displayName": "פלאנט באר שבע",
+    "link": "https://www.planetcinema.co.il/cinemas/beersheva",
+    "imageUrl": "https://www.planetcinema.co.il/static/dam/jcr:8f29cce3-8398-406a-8774-532c3577d9cc",
+    "address": "ישפרו פלאנט באר שבע - ברוך קטינקא 2, באר שבע",
+    "addressInfo": {
+     "address1": "ישפרו פלאנט באר שבע - ברוך קטינקא 2",
+     "address2": null,
+     "address3": null,
+     "address4": null,
+     "city": "באר שבע",
+     "state": null,
+     "postalCode": null
+    },
+    "bookingUrl": null,
+    "blockOnlineSales": false,
+    "blockOnlineSalesUntil": "2018-10-28",
+    "latitude": 31.22442,
+    "longitude": 34.80144
+   }
+  ]
+ }
+}

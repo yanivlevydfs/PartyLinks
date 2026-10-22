@@ -1,0 +1,148 @@
+[
+ {
+  "MovieName": "יאיר יעקבי מגיע לעשות סטנדאפ ב-HOT CINEMA",
+  "MovieId": 3849,
+  "Dates": [
+   {
+    "Date": "2026-10-22T21:00:00",
+    "Day": "יום חמישי 22.10.2026",
+    "Hour": "21:00",
+    "EventId": "146365",
+    "TheaterId": 16,
+    "FormattedDate": "2026-10-22 21:00:00",
+    "DubbedLanguage": null,
+    "SubtitledLanguage": null,
+    "Emlang": null,
+    "Is3D": null,
+    "IsAtmos2D": null,
+    "IsAtmos3D": null,
+    "IsVIP": false,
+    "IsPerformance": true
+   }
+  ]
+ },
+ {
+  "MovieName": "צעצוע של סיפור 5 מדובב לעברית",
+  "MovieId": 3462,
+  "Dates": [
+   {
+    "Date": "2026-10-22T14:10:00",
+    "Day": "יום חמישי 22.10.2026",
+    "Hour": "14:10",
+    "EventId": "97588",
+    "TheaterId": 14,
+    "FormattedDate": "2026-10-22 14:10:00",
+    "DubbedLanguage": "עברית",
+    "SubtitledLanguage": "עברית",
+    "Emlang": null,
+    "Is3D": null,
+    "IsAtmos2D": null,
+    "IsAtmos3D": null,
+    "IsVIP": false,
+    "IsPerformance": false
+   },
+   {
+    "Date": "2026-10-22T15:00:00",
+    "Day": "יום חמישי 22.10.2026",
+    "Hour": "15:00",
+    "EventId": "183745",
+    "TheaterId": 9,
+    "FormattedDate": "2026-10-22 15:00:00",
+    "DubbedLanguage": "עברית",
+    "SubtitledLanguage": "עברית",
+    "Emlang": null,
+    "Is3D": null,
+    "IsAtmos2D": null,
+    "IsAtmos3D": null,
+    "IsVIP": false,
+    "IsPerformance": false
+   },
+   {
+    "Date": "2026-10-22T17:20:00",
+    "Day": "יום חמישי 22.10.2026",
+    "Hour": "17:20",
+    "EventId": "88911",
+    "TheaterId": 17,
+    "FormattedDate": "2026-10-22 17:20:00",
+    "DubbedLanguage": "עברית",
+    "SubtitledLanguage": "עברית",
+    "Emlang": null,
+    "Is3D": null,
+    "IsAtmos2D": null,
+    "IsAtmos3D": null,
+    "IsVIP": false,
+    "IsPerformance": false
+   }
+  ]
+ },
+ {
+  "MovieName": "קלייפייס",
+  "MovieId": 3721,
+  "Dates": [
+   {
+    "Date": "2026-10-22T17:00:00",
+    "Day": "יום חמישי 22.10.2026",
+    "Hour": "17:00",
+    "EventId": "156853",
+    "TheaterId": 16,
+    "FormattedDate": "2026-10-22 17:00:00",
+    "DubbedLanguage": null,
+    "SubtitledLanguage": "עברית",
+    "Emlang": null,
+    "Is3D": null,
+    "IsAtmos2D": null,
+    "IsAtmos3D": null,
+    "IsVIP": false,
+    "IsPerformance": false
+   },
+   {
+    "Date": "2026-10-22T19:25:00",
+    "Day": "יום חמישי 22.10.2026",
+    "Hour": "19:25",
+    "EventId": "156852",
+    "TheaterId": 16,
+    "FormattedDate": "2026-10-22 19:25:00",
+    "DubbedLanguage": null,
+    "SubtitledLanguage": "עברית",
+    "Emlang": null,
+    "Is3D": null,
+    "IsAtmos2D": null,
+    "IsAtmos3D": null,
+    "IsVIP": false,
+    "IsPerformance": false
+   },
+   {
+    "Date": "2026-10-22T21:50:00",
+    "Day": "יום חמישי 22.10.2026",
+    "Hour": "21:50",
+    "EventId": "156832",
+    "TheaterId": 16,
+    "FormattedDate": "2026-10-22 21:50:00",
+    "DubbedLanguage": null,
+    "SubtitledLanguage": "עברית",
+    "Emlang": null,
+    "Is3D": null,
+    "IsAtmos2D": null,
+    "IsAtmos3D": null,
+    "IsVIP": false,
+    "IsPerformance": false
+   },
+   {
+    "Date": "2026-10-23T00:00:00",
+    "Day": "יום חמישי 22.10.2026",
+    "Hour": "00:00",
+    "EventId": "185388",
+    "TheaterId": 2,
+    "FormattedDate": "2026-10-23 00:00:00",
+    "DubbedLanguage": null,
+    "SubtitledLanguage": "עברית",
+    "Emlang": null,
+    "Is3D": null,
+    "IsAtmos2D": null,
+    "IsAtmos3D": null,
+    "IsVIP": false,
+    "IsPerformance": false
+   }
+  ]
+ }
+]

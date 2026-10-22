@@ -112,6 +112,14 @@ def test_genres_from_text_and_declared_types() -> None:
     assert {"techno", "house", "mainstream", "edm"} <= set(event.genres)
 
 
+def test_film_text_is_not_read_for_music_genres() -> None:
+    drive_in = make(title="קולנוע דרייב אין | 29.10", description="פסקול של ג'אז, יוונית ומוזיקה אלקטרונית")
+    event = ENRICHER.enrich(drive_in)
+    assert event is not None and event.genres == ["cinema"]
+    film = ENRICHER.enrich(make(title="האהבות שלנו", description="", source_genres=["קולנוע"]))
+    assert film is not None and film.genres == ["cinema"]
+
+
 def test_entry_type_free_and_paid() -> None:
     tiers = [TicketTier(name="כניסה חינם עד 23:30", price=Decimal(0)), TicketTier(name="Entry", price=Decimal(80))]
     event = ENRICHER.enrich(make(tickets=tiers))

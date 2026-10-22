@@ -11,6 +11,7 @@ from partylinks.scrapers.barby import BarbyScraper
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.beershevatheatre import BeerShevaTheatreScraper
 from partylinks.scrapers.chillz import ChillzScraper
+from partylinks.scrapers.cinemacity import CinemaCityScraper
 from partylinks.scrapers.comy import ComyScraper
 from partylinks.scrapers.drop import DropScraper
 from partylinks.scrapers.epgb import EpgbScraper
@@ -20,16 +21,19 @@ from partylinks.scrapers.eventim import EventimScraper, ZappaScraper
 from partylinks.scrapers.geektime import GeektimeScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
+from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
 from partylinks.scrapers.kupatbravo import KupatbravoScraper
 from partylinks.scrapers.leaan import LeaanScraper
+from partylinks.scrapers.lev import LevScraper
 from partylinks.scrapers.luma import LumaScraper
 from partylinks.scrapers.makore import MakoreScraper
 from partylinks.scrapers.meetup import MeetupScraper
 from partylinks.scrapers.megatickets import MegaticketsScraper
 from partylinks.scrapers.mevalim import MevalimScraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
+from partylinks.scrapers.planet import PlanetScraper, RavHenScraper
 from partylinks.scrapers.popit import PopitScraper
 from partylinks.scrapers.pres import PresScraper
 from partylinks.scrapers.secrettelaviv import SecretTelAvivScraper
@@ -82,6 +86,11 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         ZappaScraper,
         BeerShevaTheatreScraper,
         ArenasScraper,
+        PlanetScraper,
+        RavHenScraper,
+        CinemaCityScraper,
+        HotCinemaScraper,
+        LevScraper,
     )
 }
 

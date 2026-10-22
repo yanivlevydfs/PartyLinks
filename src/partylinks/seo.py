@@ -97,10 +97,11 @@ GENRES_HE = {
     "karaoke": "קריוקי", "hi_tech": "הייטק", "conference": "כנסים", "classical_opera": "קלאסית / אופרה",
     "ai": "AI ובינה מלאכותית", "cyber": "סייבר", "software_dev": "פיתוח תוכנה", "data": "דאטה", "cloud_devops": "ענן ו-DevOps",
     "startups": "סטארטאפים ויזמות", "product": "ניהול מוצר", "gaming": "גיימינג", "web3": "בלוקצ׳יין ו-Web3",
+    "cinema": "קולנוע וסרטים",
 }  # fmt: skip
 GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
                  "stand_up": "Stand-up comedy", "live_show": "Live music",
-                 "hi_tech": "Hi-tech", "classical_opera": "Classical / Opera", "ai": "AI",
+                 "hi_tech": "Hi-tech", "classical_opera": "Classical / Opera", "ai": "AI", "cinema": "Cinema & Movies",
                  "software_dev": "Software development", "cloud_devops": "Cloud & DevOps", "web3": "Web3 & Blockchain"}  # fmt: skip
 GENRE_PAGE_MIN = 3  # fewer upcoming events than this: no landing page (thin content)
 

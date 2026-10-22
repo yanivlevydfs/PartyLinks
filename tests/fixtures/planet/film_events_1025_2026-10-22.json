@@ -1,0 +1,596 @@
+{
+ "body": {
+  "films": [
+   {
+    "id": "8328s2r",
+    "name": "אין כמו אמא",
+    "length": 93,
+    "posterLink": "https://www.planetcinema.co.il/xmedia-cw/repo/feats/posters/8328S2R.jpg",
+    "videoLink": "https://www.youtube.com/watch?v=-km9q78dDmk",
+    "link": "https://www.planetcinema.co.il/films/other-mommy/8328s2r",
+    "weight": 0,
+    "releaseYear": "2026",
+    "releaseDate": "2026-10-08T00:00:00",
+    "attributeIds": [
+     "14-plus",
+     "2d",
+     "first-subbed-lang-he",
+     "horror",
+     "subbed"
+    ]
+   },
+   {
+    "id": "7141s2r",
+    "name": "גלים של תקווה",
+    "length": 131,
+    "posterLink": "https://www.planetcinema.co.il/xmedia-cw/repo/feats/posters/7141S2R.jpg",
+    "videoLink": "https://www.youtube.com/watch?v=kgd6yIKbfgs",
+    "link": "https://www.planetcinema.co.il/films/waves/7141s2r",
+    "weight": 0,
+    "releaseYear": "2024",
+    "releaseDate": "2026-10-08T00:00:00",
+    "attributeIds": [
+     "2d",
+     "all",
+     "drama",
+     "first-subbed-lang-he",
+     "subbed"
+    ]
+   },
+   {
+    "id": "8590s2r",
+    "name": "האהבות שלנו",
+    "length": 117,
+    "posterLink": "https://www.planetcinema.co.il/xmedia-cw/repo/feats/posters/8590S2R.jpg",
+    "videoLink": "https://www.youtube.com/watch?v=Oq7rPvdaxVE",
+    "link": "https://www.planetcinema.co.il/films/our-loves/8590s2r",
+    "weight": 0,
+    "releaseYear": "2026",
+    "releaseDate": "2026-10-15T00:00:00",
+    "attributeIds": [
+     "12-plus",
+     "2d",
+     "drama",
+     "first-subbed-lang-he",
+     "israeli",
+     "subbed"
+    ]
+   }
+  ],
+  "events": [
+   {
+    "id": "348337",
+    "filmId": "8590s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T14:30:00",
+    "attributeIds": [
+     "12-plus",
+     "2d",
+     "drama",
+     "first-subbed-lang-he",
+     "israeli",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "he"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/348337?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/348337",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/348337?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/348337?lang=he",
+    "presentationCode": "348337",
+    "soldOut": false,
+    "availabilityRatio": 0.9924,
+    "auditorium": "אולם 6",
+    "auditoriumTinyName": "6"
+   },
+   {
+    "id": "349107",
+    "filmId": "8328s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T15:30:00",
+    "attributeIds": [
+     "14-plus",
+     "2d",
+     "first-subbed-lang-he",
+     "horror",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "en"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/349107?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/349107",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/349107?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/349107?lang=he",
+    "presentationCode": "349107",
+    "soldOut": false,
+    "availabilityRatio": 0.9795,
+    "auditorium": "אולם 13",
+    "auditoriumTinyName": "13"
+   },
+   {
+    "id": "349187",
+    "filmId": "7141s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T16:10:00",
+    "attributeIds": [
+     "2d",
+     "all",
+     "drama",
+     "first-subbed-lang-he",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "cs"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/349187?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/349187",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/349187?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/349187?lang=he",
+    "presentationCode": "349187",
+    "soldOut": false,
+    "availabilityRatio": 0.9744,
+    "auditorium": "אולם 14",
+    "auditoriumTinyName": "14"
+   },
+   {
+    "id": "348338",
+    "filmId": "8590s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T17:00:00",
+    "attributeIds": [
+     "12-plus",
+     "2d",
+     "drama",
+     "first-subbed-lang-he",
+     "israeli",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "he"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/348338?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/348338",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/348338?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/348338?lang=he",
+    "presentationCode": "348338",
+    "soldOut": false,
+    "availabilityRatio": 0.9924,
+    "auditorium": "אולם 6",
+    "auditoriumTinyName": "6"
+   },
+   {
+    "id": "349108",
+    "filmId": "8328s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T17:30:00",
+    "attributeIds": [
+     "14-plus",
+     "2d",
+     "first-subbed-lang-he",
+     "horror",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "en"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/349108?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/349108",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/349108?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/349108?lang=he",
+    "presentationCode": "349108",
+    "soldOut": false,
+    "availabilityRatio": 0.9795,
+    "auditorium": "אולם 13",
+    "auditoriumTinyName": "13"
+   },
+   {
+    "id": "348340",
+    "filmId": "8590s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T19:30:00",
+    "attributeIds": [
+     "12-plus",
+     "2d",
+     "drama",
+     "first-subbed-lang-he",
+     "israeli",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "he"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/348340?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/348340",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/348340?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/348340?lang=he",
+    "presentationCode": "348340",
+    "soldOut": false,
+    "availabilityRatio": 0.9594,
+    "auditorium": "אולם 6",
+    "auditoriumTinyName": "6"
+   },
+   {
+    "id": "349109",
+    "filmId": "8328s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T19:30:00",
+    "attributeIds": [
+     "14-plus",
+     "2d",
+     "first-subbed-lang-he",
+     "horror",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "en"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/349109?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/349109",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/349109?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/349109?lang=he",
+    "presentationCode": "349109",
+    "soldOut": false,
+    "availabilityRatio": 0.9658,
+    "auditorium": "אולם 13",
+    "auditoriumTinyName": "13"
+   },
+   {
+    "id": "349125",
+    "filmId": "8328s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T21:30:00",
+    "attributeIds": [
+     "14-plus",
+     "2d",
+     "first-subbed-lang-he",
+     "horror",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "en"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/349125?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/349125",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/349125?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/349125?lang=he",
+    "presentationCode": "349125",
+    "soldOut": false,
+    "availabilityRatio": 0.9795,
+    "auditorium": "אולם 13",
+    "auditoriumTinyName": "13"
+   },
+   {
+    "id": "348342",
+    "filmId": "8590s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T22:05:00",
+    "attributeIds": [
+     "12-plus",
+     "2d",
+     "drama",
+     "first-subbed-lang-he",
+     "israeli",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "he"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/348342?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/348342",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/348342?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/348342?lang=he",
+    "presentationCode": "348342",
+    "soldOut": false,
+    "availabilityRatio": 0.9924,
+    "auditorium": "אולם 6",
+    "auditoriumTinyName": "6"
+   },
+   {
+    "id": "349229",
+    "filmId": "8328s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T22:20:00",
+    "attributeIds": [
+     "14-plus",
+     "2d",
+     "first-subbed-lang-he",
+     "horror",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "en"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/349229?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/349229",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/349229?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/349229?lang=he",
+    "presentationCode": "349229",
+    "soldOut": false,
+    "availabilityRatio": 0.9681,
+    "auditorium": "אולם 15",
+    "auditoriumTinyName": "15"
+   },
+   {
+    "id": "349126",
+    "filmId": "8328s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-22T23:30:00",
+    "attributeIds": [
+     "14-plus",
+     "2d",
+     "first-subbed-lang-he",
+     "horror",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "en"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/349126?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/349126",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/349126?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/349126?lang=he",
+    "presentationCode": "349126",
+    "soldOut": false,
+    "availabilityRatio": 0.9795,
+    "auditorium": "אולם 13",
+    "auditoriumTinyName": "13"
+   },
+   {
+    "id": "347830",
+    "filmId": "8590s2r",
+    "cinemaId": "1025",
+    "businessDay": "2026-10-22",
+    "eventDateTime": "2026-10-23T00:00:00",
+    "attributeIds": [
+     "12-plus",
+     "2d",
+     "drama",
+     "first-subbed-lang-he",
+     "israeli",
+     "subbed"
+    ],
+    "languages": {
+     "original": [
+      "he"
+     ],
+     "dubbed": [],
+     "voiceover": [],
+     "subtitles": [
+      "he"
+     ]
+    },
+    "bookingLink": "https://tickets5.planetcinema.co.il/api/order/347830?lang=he",
+    "compositeBookingLink": {
+     "type": "PG",
+     "bookingUrl": {
+      "url": "https://tickets5.planetcinema.co.il/api/order/347830",
+      "params": {
+       "lang": "he-IL"
+      }
+     },
+     "obsoleteBookingUrl": "https://tickets5.planetcinema.co.il/api/order/347830?lang=he",
+     "blockOnlineSales": false,
+     "blockOnlineSalesUntil": "2018-10-28",
+     "serviceUrl": "https://www.planetcinema.co.il/booking"
+    },
+    "bookingRouterLaunchLink": "https://www.planetcinema.co.il/il/booking-router/launch/1025/347830?lang=he",
+    "presentationCode": "347830",
+    "soldOut": false,
+    "availabilityRatio": 1.0,
+    "auditorium": "אולם 2",
+    "auditoriumTinyName": "2"
+   }
+  ]
+ }
+}

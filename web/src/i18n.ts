@@ -134,7 +134,7 @@ export const STRINGS = {
       ai: "AI ובינה מלאכותית", cyber: "סייבר", software_dev: "פיתוח תוכנה", data: "דאטה", cloud_devops: "ענן ו-DevOps",
       startups: "סטארטאפים ויזמות", product: "ניהול מוצר", gaming: "גיימינג", web3: "בלוקצ׳יין ו-Web3",
       festival: "פסטיבלים", meetups: "מפגשים", culture: "תרבות", exhibitions: "תערוכות", workshops: "סדנאות",
-      screenings: "הקרנות", markets: "שווקים וקניות", food: "אוכל", environment: "סביבה", religious: "דת ומסורת",
+      cinema: "קולנוע וסרטים", markets: "שווקים וקניות", food: "אוכל", environment: "סביבה", religious: "דת ומסורת",
       holidays: "חגים", sport: "ספורט",
     },
   },
@@ -266,7 +266,7 @@ export type Strings = typeof STRINGS.he;
 
 // English genre labels: "drum_and_bass" -> "Drum And Bass" (with a few fixes).
 const EN_GENRE_FIX: Record<string, string> = { rnb: "R&B", edm: "EDM", hip_hop: "Hip Hop", lgbt: "LGBTQ+", reggaeton_latin: "Reggaeton / Latin",
-  hi_tech: "Hi-tech", classical_opera: "Classical / Opera", ai: "AI",
+  hi_tech: "Hi-tech", classical_opera: "Classical / Opera", ai: "AI", cinema: "Cinema & Movies",
   software_dev: "Software development", cloud_devops: "Cloud & DevOps", web3: "Web3 & Blockchain" };
 export function genreLabel(lang: Lang, g: string): string {
   if (lang === "he") return STRINGS.he.genre[g] ?? g;
