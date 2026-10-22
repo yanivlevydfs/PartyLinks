@@ -33,6 +33,7 @@ from partylinks.scrapers.makore import MakoreScraper
 from partylinks.scrapers.meetup import MeetupScraper
 from partylinks.scrapers.megatickets import MegaticketsScraper
 from partylinks.scrapers.mevalim import MevalimScraper
+from partylinks.scrapers.movieland import MovielandScraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
 from partylinks.scrapers.planet import PlanetScraper, RavHenScraper
 from partylinks.scrapers.popit import PopitScraper
@@ -94,6 +95,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         LevScraper,
         TelAvivCinemathequeScraper,
         JerusalemCinemathequeScraper,
+        MovielandScraper,
     )
 }
 

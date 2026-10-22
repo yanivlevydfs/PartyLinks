@@ -900,6 +900,7 @@ sources:
       - {host: mediatheque-cinemaholon, venue_name: סינמטק חולון, city: חולון, rooms: true, category: קולנוע}
       - {host: sderot-cin, venue_name: סינמטק שדרות, city: שדרות, rooms: true, category: קולנוע}
       - {host: roshpinacine, venue_name: סינמטק ראש פינה, city: ראש פינה, rooms: true, category: קולנוע}
+      - {host: arava, venue_name: מרכז קהילה ערבה תיכונה}  # קולנוע ערבה + the council's events
       - {host: mozkin, venue_name: היכל התרבות קריית מוצקין, city: קריית מוצקין}
       - {host: katedra, venue_name: הקתדרה - מוזיאון ארץ ישראל, city: תל אביב}
       - {host: matnaskg, venue_name: היכל התרבות קריית גת, city: קריית גת}
@@ -1298,3 +1299,21 @@ sources:
     venue_name: סינמטק ירושלים
     address: דרך חברון 11
     city: ירושלים
+
+  movieland:
+    # Movieland (movieland.co.il): the site's own /api/Events feed lists every movie with all its
+    # screenings in all 6 branches in ONE request (datetime, branch, language group, VIP, booking
+    # link, genres, runtime, rating, poster). One event per movie, branch and business day (before
+    # 05:00 = previous day). No synopsis or prices. The feed has no addresses: branches are listed
+    # here by TheaterId. robots.txt allows everything.
+    enabled: true
+    cron: "2 8,20 * * *"
+    site_url: https://movieland.co.il
+    days_ahead: 3
+    branches:
+      "1291": {venue_name: מובילנד חיפה, address: "משה פלימן 4, קניון עזריאלי", city: חיפה}
+      "1293": {venue_name: מובילנד הצוק, address: "יוניצמן 21", city: תל אביב}
+      "1290": {venue_name: מובילנד כרמיאל, address: "החרושת 15, מתחם גן העיר", city: כרמיאל}
+      "1292": {venue_name: מובילנד נתניה, address: "גיבורי ישראל 17, מתחם עמי פולג", city: נתניה}
+      "1294": {venue_name: מובילנד עפולה, address: "יוסף ברזילי 5, קניון בלו וואלי", city: עפולה}
+      "1296": {venue_name: מובילנד בת ים, address: "יוספטל 92, קניון ביג פאשן", city: בת ים}
