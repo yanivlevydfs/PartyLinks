@@ -11,8 +11,11 @@ Hebrew translations); time zones from airportsdata (every airport's city, countr
 from __future__ import annotations
 
 import gettext
+import threading
 from collections import Counter, defaultdict
-from functools import cache
+from collections.abc import Callable
+from functools import cache, wraps
+from typing import Any
 
 import airportsdata
 import pycountry
@@ -35,13 +38,30 @@ ALIASES: dict[str, str] = {
 }  # fmt: skip
 
 
+_loading = threading.RLock()  # sources run on their own threads: the first caller builds, the rest wait
+
+
+def _shared[T](build: Callable[[], T]) -> Callable[[], T]:
+    """Build once per process and share the result between every source thread."""
+    cached = cache(build)
+
+    @wraps(build)
+    def get() -> T:
+        with _loading:
+            return cached()
+
+    get.cache_clear = cached.cache_clear  # type: ignore[attr-defined]
+    get.cache_info = cached.cache_info  # type: ignore[attr-defined]
+    return get
+
+
 def _key(value: str) -> str:
     return value.strip().strip(".").casefold()
 
 
-@cache
+@_shared
 def _countries() -> dict[str, str]:
-    """Every known name or code of every country -> alpha-2."""
+    """Every known name or code of every country -> alpha-2 (built once per process)."""
     hebrew = gettext.translation("iso3166-1", pycountry.LOCALES_DIR, languages=["he"], fallback=True)
     names: dict[str, str] = {}
     for c in pycountry.countries:
@@ -57,12 +77,18 @@ def country_code(value: str | None) -> str:
     return _countries().get(_key(value or ""), UNKNOWN_COUNTRY)
 
 
-@cache
+@_shared
+def airports() -> dict[str, Any]:
+    """Every airport by IATA code (city, country, tz...), loaded once per process and shared."""
+    return airportsdata.load("IATA")
+
+
+@_shared
 def _zones() -> tuple[dict[tuple[str, str], str], dict[str, str]]:
     """(city, country) -> zone, and country -> zone, from the airports' own zones (most common wins)."""
     by_city: defaultdict[tuple[str, str], Counter[str]] = defaultdict(Counter)
     by_country: defaultdict[str, Counter[str]] = defaultdict(Counter)
-    for airport in airportsdata.load("IATA").values():
+    for airport in airports().values():
         by_city[_key(airport["city"]), airport["country"]][airport["tz"]] += 1
         by_country[airport["country"]][airport["tz"]] += 1
     return (

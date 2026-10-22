@@ -13,15 +13,14 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from functools import cache
 from urllib.parse import parse_qs, urlsplit
 
-import airportsdata
 from selectolax.parser import HTMLParser, Node
 
 from partylinks.enrichment import UNKNOWN_COUNTRY
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, to_decimal, zone
+from partylinks.scrapers.abroad import airports
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 CURRENCY_SIGNS = {"€": "EUR", "£": "GBP", "₤": "GBP", "$": "USD", "₪": "ILS"}
@@ -49,16 +48,11 @@ class IsstaScraper(BaseScraper[IsstaSettings]):
             yield event
 
 
-@cache
-def _airports() -> dict[str, dict[str, str]]:
-    return airportsdata.load("IATA")
-
-
 def destination(code: str) -> tuple[str | None, str]:
     """(city, ISO country) of an IATA airport or city code."""
     if code in METRO_CODES:
         return METRO_CODES[code]
-    airport = _airports().get(code)
+    airport = airports().get(code)
     return (airport["city"], airport["country"]) if airport else (None, UNKNOWN_COUNTRY)
 
 
