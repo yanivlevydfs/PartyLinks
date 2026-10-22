@@ -32,7 +32,7 @@ Interactive API docs at `/docs` are off by default (`security.api_docs`).
 ```bash
 python -m pytest
 ruff check src tests
-ruff format src tests
+uvx pyrefly check src tests --python-interpreter-path "$(python -c 'import sys; print(sys.executable)')"   # type check: 0 errors expected
 ```
 
 Parser tests run against real pages saved under `tests/fixtures/<source>/`.
@@ -61,7 +61,15 @@ or localhost keeps showing the old site.
 
 ## Logs
 
-The same log format is used everywhere (app, uvicorn, access lines), configured under `logging:`:
+The same log format is used everywhere (app, uvicorn, access lines), configured under `logging:`.
+The default level is **INFO**: server status, source runs, geocoding and warnings. Debug mode (`-v`,
+`logging.debug: true` or the switch in `/admin`) adds every HTTP request and the HTTP client's lines
+on top.
+
+- **Server status:** a block at startup (version, URLs, database and its size, events, scheduler and
+  next job, sources, proxy host, admin token set or not, logging), then one status line every
+  `logging.status_every_minutes` (uptime, events, runs in the last 24 hours, scheduler, clicks), and
+  a line at shutdown (`status.py`). Secrets never appear.
 
 - **stdout:** INFO and below.
 - **stderr:** WARNING and above.
