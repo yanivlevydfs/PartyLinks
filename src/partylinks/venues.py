@@ -36,6 +36,8 @@ log = logging.getLogger(__name__)
 # Geocoders put one place on (almost) one point; neighbouring clubs are ~50 m apart.
 RADIUS_M = 25.0
 SOURCE_NAME = "venue_source_name"
+# extra flag of a listing that is a place's own offer (a bar's happy hour): exact name, exact spot.
+PLACE_LISTING = "happy_hour"
 
 # "Kibbutz Galuyot Rd 13" / "הארבעה 28": letters, then one house number, nothing else.
 _STREET_NUMBER = re.compile(r"^(?P<street>[^\d,]{2,}?)\s+(?P<number>\d{1,4}[א-תa-z]?)$", re.IGNORECASE)
@@ -156,6 +158,9 @@ def resolve_venues(session: Session) -> int:
             r.longitude,
         )
         for r in db_rows
+        # A bar's own happy hour names its bar exactly: bars 20 m apart on Dizengoff stay apart, and
+        # the bar's name never spreads to a club next door.
+        if not extras[r.id].get(PLACE_LISTING)
     ]
     sources = {v.id: v.source_name for v in inputs}
     updates = []

@@ -204,6 +204,7 @@ enrichment:
              "דרייב-אין", "ערב סרט", "ערב סרטים"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
+    happy_hour: ["happy hour", "happy-hour", "happyhour", "האפי האוור", "האפי אוור", "הפי האוור"]
     hi_tech: ["technology", "tech"]
     ai: ["ai"]
     cyber: ["security"]
@@ -1375,3 +1376,19 @@ sources:
     cron: "47 4,16 * * *"
     site_url: https://www.issta.co.il
     listing_path: /tickets
+
+  happytlv:
+    # HappyTLV: Tel Aviv night-out guide. One sitemap; upcoming party pages (the date is in the path,
+    # ~170) give a schema.org Event with the seller's link, and bars' happy-hour pages (~240) give
+    # the deal and its weekly hours, made into one event per day over `happy_hour_days`, under the
+    # happy_hour category. Hub pages are skipped. robots.txt allows all but /_api/.
+    enabled: true
+    cron: "13 5,17 * * *"
+    site_url: https://www.happytlv.com
+    sitemap_path: /sitemap.xml
+    parties_path: /tel-aviv-parties/
+    happy_hours_path: /tel-aviv-happy-hours/
+    happy_hour_days: 7
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.5

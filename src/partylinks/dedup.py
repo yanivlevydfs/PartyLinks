@@ -30,6 +30,7 @@ from sqlalchemy.orm import Session
 
 from partylinks.config import DedupSettings
 from partylinks.db import EventRow, TicketRow, bulk_update_by_id
+from partylinks.venues import PLACE_LISTING
 
 log = logging.getLogger(__name__)
 
@@ -162,10 +163,13 @@ class Deduplicator:
         by_day: dict[Any, list[_Listing]] = defaultdict(list)
         updates: list[dict[str, Any]] = []
         for r in rows:
+            extra = r.extra if isinstance(r.extra, dict) else {}
+            # Bars' happy hours share a title pattern and a street: only links can join them, never titles.
+            title = "" if extra.get(PLACE_LISTING) else title_key(r.title, self._stopwords)
             listing = _Listing(
-                id=r.id, source=r.source, title_key=title_key(r.title, self._stopwords), start=r.start_at,
+                id=r.id, source=r.source, title_key=title, start=r.start_at,
                 lat=r.latitude, lng=r.longitude, venue_slug=r.venue_slug, url_key=url_key(r.url),
-                links_to=url_key(_str((r.extra or {}).get("purchase_url") if isinstance(r.extra, dict) else None)) or None,
+                links_to=url_key(_str(extra.get("purchase_url"))) or None,
                 tiers=tier_counts.get(r.id, 0), first_seen=r.first_seen_at,
                 min_price=r.min_price, max_price=r.max_price, entry_type=r.entry_type,
                 has_free_entry=r.has_free_entry, free_entry_until=r.free_entry_until,

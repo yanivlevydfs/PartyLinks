@@ -109,3 +109,12 @@ def test_area_level_pin_merges_only_on_same_title_and_time(tmp_path: Path) -> No
     assert groups["goout:a"][0] == groups["popit:b"][0]
     assert groups["popit:c"][0] != groups["goout:a"][0]
     assert groups["popit:d"][0] != groups["goout:a"][0]  # same title, different time
+
+
+def test_happy_hours_of_neighbouring_bars_stay_apart(tmp_path: Path) -> None:
+    bar = {"extra": {"happy_hour": True}, "source_genres": ["happy hour"]}
+    _, groups = grouped(tmp_path, [
+        listing("happytlv", "hh-a", "האפי האוור באהובה", where=(32.0800, 34.7740), venue_name="אהובה", **bar),
+        listing("happytlv", "hh-b", "האפי האוור באורבנו", where=(32.0801, 34.7741), venue_name="אורבנו", **bar),
+    ])  # fmt: skip
+    assert groups["happytlv:hh-a"][0] != groups["happytlv:hh-b"][0]

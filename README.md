@@ -1,6 +1,6 @@
 # Pulse (פולס)
 
-Pulse collects events from 47 Israeli ticketing sites on a schedule and shows them on one website
+Pulse collects events from 48 Israeli ticketing sites and guides on a schedule and shows them on one website
 in Hebrew and English. It covers parties, concerts, theatre, stand-up, cinema, tech meetups and
 shows abroad.
 
