@@ -19,6 +19,7 @@ from typing import Any
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
+import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from partylinks.models import ScrapedEvent
@@ -56,6 +57,10 @@ class MovielandSettings(SourceSettings):
 class MovielandScraper(BaseScraper[MovielandSettings]):
     name = "movieland"
     settings_model = MovielandSettings
+
+    def is_blocked(self, response: httpx.Response) -> bool:
+        """A 403 is the site refusing our IP (seen behind the proxy): stop instead of asking again."""
+        return response.status_code == 403
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings

@@ -117,8 +117,10 @@ def parse_listing(page_html: str, site_url: str, timezone: str) -> list[ScrapedE
     for node in LexborHTMLParser(page_html).css("div.deal-item-container"):
         if card := _card(node, site_url):
             trips.setdefault(card[0], []).append(card[1])
-    if not trips and "deal-item-container" in page_html:
-        raise ParseError("package cards found but none parsed (layout changed?)")
+    if not trips:
+        # The page always lists packages: none at all is a refusal or a new layout, never "no events".
+        found = "found but none parsed" if "deal-item-container" in page_html else "missing from the page"
+        raise ParseError(f"package cards {found} (blocked or layout changed?)")
     tz = zone(timezone)
     events = []
     for (title, airport, out, back), packages in trips.items():

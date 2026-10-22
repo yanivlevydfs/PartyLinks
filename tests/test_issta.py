@@ -7,6 +7,9 @@ from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import pytest
+
+from partylinks.parsing import ParseError
 from partylinks.scrapers import issta
 
 PAGE = (Path(__file__).parent / "fixtures" / "issta" / "tickets.html").read_text(encoding="utf-8")
@@ -42,3 +45,9 @@ def test_destination_codes() -> None:
     assert issta.destination("PAR") == ("Paris", "FR")
     assert issta.destination("BCN") == ("Barcelona", "ES")
     assert issta.destination("???") == (None, "ZZ")
+
+
+def test_page_without_cards_is_an_error_not_zero_events() -> None:
+    # A refused or redesigned page must not pass as "no packages today".
+    with pytest.raises(ParseError, match="missing from the page"):
+        issta.parse_listing("<html><body>Access denied</body></html>", "https://www.issta.co.il", "Asia/Jerusalem")

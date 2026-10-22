@@ -17,6 +17,7 @@ import re
 from collections.abc import AsyncIterator
 from datetime import datetime
 
+import httpx
 from pydantic import Field
 
 from partylinks.enrichment import UNKNOWN_COUNTRY
@@ -98,6 +99,10 @@ class LiveventsScraper(BaseScraper[LiveventsSettings]):
     name = "livevents"
     settings_model = LiveventsSettings
     abroad_only = True
+
+    def is_blocked(self, response: httpx.Response) -> bool:
+        """A 403 is the site refusing our IP (seen behind the proxy): stop instead of asking again."""
+        return response.status_code == 403
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
