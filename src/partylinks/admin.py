@@ -15,12 +15,13 @@ from zoneinfo import ZoneInfo
 import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, status
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
+from partylinks import clicks
 from partylinks.config import Settings, config_path, get_settings, project_path
 from partylinks.db import EventRow, ImageRow, ScrapeRunRow, TicketRow, upcoming_filter
 from partylinks.logs import debug_enabled, set_debug
@@ -45,7 +46,9 @@ def require_admin(request: Request) -> None:
         # A reverse proxy makes every request look local, so forwarded requests never count.
         forwarded = any(h in request.headers for h in ("x-forwarded-for", "x-real-ip", "forwarded"))
         if forwarded or request.client is None or request.client.host not in LOOPBACK:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "admin is localhost-only until PARTYLINKS_ADMIN__TOKEN is set")
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN, "admin is localhost-only until PARTYLINKS_ADMIN__TOKEN is set"
+            )
         return
     given = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
     if not hmac.compare_digest(given.encode(), token.get_secret_value().encode()):
@@ -96,14 +99,25 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
         "storage": request.app.state.db.storage_stats(),
         "database": make_url(cfg.database.url).render_as_string(hide_password=True),
         "warnings": [
-            *([] if cfg.site.accessibility.has_contact else [
-                "Accessibility statement has no coordinator contact (site.accessibility in Config) - required by law in Israel."
-            ]),
-            *([] if cfg.site.privacy.email else [
-                "Privacy policy has no contact email (site.privacy.email in Config): visitors need a way to send privacy requests."
-            ]),
-            *(["site.base_url is still localhost: canonical links, sitemap and share previews point to it."]
-              if "localhost" in cfg.site.base_url else []),
+            *(
+                []
+                if cfg.site.accessibility.has_contact
+                else [
+                    "Accessibility statement has no coordinator contact (site.accessibility in Config) - required by law in Israel."
+                ]
+            ),
+            *(
+                []
+                if cfg.site.privacy.email
+                else [
+                    "Privacy policy has no contact email (site.privacy.email in Config): visitors need a way to send privacy requests."
+                ]
+            ),
+            *(
+                ["site.base_url is still localhost: canonical links, sitemap and share previews point to it."]
+                if "localhost" in cfg.site.base_url
+                else []
+            ),
             *([] if cfg.admin.token else ["No admin token set: admin works from this machine only."]),
         ],
         "retention": {**cfg.retention.model_dump(), "next_run_at": next_run_times(scheduler).get(RETENTION_JOB_ID)},
@@ -117,6 +131,13 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
             ],
         },
     }
+
+
+# --------------------------------------------------------------------------- clicks
+@router.get("/clicks")
+def click_stats(request: Request, session: SessionDep, days: int = Query(30, ge=1, le=365)) -> dict[str, Any]:
+    """Ticket-link clicks counted by GET /go/... (see partylinks.clicks)."""
+    return clicks.stats(session, request.app.state.settings.timezone, days)
 
 
 # --------------------------------------------------------------------------- scheduler

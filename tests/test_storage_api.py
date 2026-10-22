@@ -524,6 +524,14 @@ def test_seller_links_leave_only_through_the_rate_limited_redirect(tmp_path: Pat
         go = client.get("/go/test%3Aa?at=buy", follow_redirects=False)
         assert go.status_code == 302 and go.headers["location"].startswith("https://seller.example/a?utm_source=pulse&")
         assert "utm_content=buy" in go.headers["location"]
+        client.get("/go/test%3Aa?at=alt", follow_redirects=False)
+        client.get("/go/test%3Aa?at=nonsense", follow_redirects=False)
+        client.get("/go/missing", follow_redirects=False)  # 404: not counted
+        stats = client.get("/admin/api/clicks?days=7").json()
+        assert stats["total"] == stats["today"] == stats["per_day"][-1]["clicks"] == 3
+        assert len(stats["per_day"]) == 7
+        assert stats["per_placement"] == {"buy": 1, "alt": 1, "unknown": 1}
+        assert stats["top_events"] == [{"event_id": "test:a", "title": stats["top_events"][0]["title"], "source": "test", "clicks": 3}]
     limit = settings.security.go_rate_limit_per_minute
     with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}, client=("203.0.113.9", 1)) as client:
         codes = [client.get("/go/test%3Aa", follow_redirects=False).status_code for _ in range(limit + 1)]

@@ -230,6 +230,22 @@ class DealChangeRow(Base):
     detail: Mapped[str | None] = mapped_column(Text)
 
 
+class ClickRow(Base):
+    """One click on a ticket link (GET /go/...). No IP, cookie or user agent: just what was
+    clicked, where and when. Not tied to events by a foreign key, so clicks outlive retention."""
+
+    __tablename__ = "clicks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
+    event_id: Mapped[str] = mapped_column(String(128), index=True)
+    source: Mapped[str] = mapped_column(String(32), index=True)
+    title: Mapped[str] = mapped_column(Text)
+    city: Mapped[str | None] = mapped_column(String(128))
+    # Where on our page: buy | alt | bar | seo (utm.PLACEMENTS); None = unknown / old link.
+    placement: Mapped[str | None] = mapped_column(String(8))
+
+
 class ScrapeRunRow(Base):
     __tablename__ = "scrape_runs"
 
@@ -525,7 +541,9 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
         session.execute(delete(ImageRow).where(ImageRow.id.in_([row.id for row in stale])))
     moved = [{"id": known[key].id, "position": pos} for key, pos in wanted.items() if key in known]
     bulk_update_by_id(session, ImageRow, moved)
-    added = [{"event_id": eid, "url": url, "position": pos} for (eid, url), pos in wanted.items() if (eid, url) not in known]
+    added = [
+        {"event_id": eid, "url": url, "position": pos} for (eid, url), pos in wanted.items() if (eid, url) not in known
+    ]
     if added:
         session.execute(insert(ImageRow), added)
     return len(events), [row.local_path for row in stale if row.local_path]
@@ -542,11 +560,7 @@ def bulk_update_by_id(session: Session, model: type[Base], rows: list[dict[str, 
         return
     table = cast(Table, model.__table__)
     columns = [c for c in rows[0] if c != "id"]
-    stmt = (
-        table.update()
-        .where(table.c.id == bindparam("_id"))
-        .values({c: bindparam(f"_v_{c}") for c in columns})
-    )
+    stmt = table.update().where(table.c.id == bindparam("_id")).values({c: bindparam(f"_v_{c}") for c in columns})
     params = [{"_id": r["id"], **{f"_v_{c}": r[c] for c in columns}} for r in sorted(rows, key=lambda r: r["id"])]
     session.execute(stmt, params)
 

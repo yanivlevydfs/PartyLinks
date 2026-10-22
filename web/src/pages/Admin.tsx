@@ -55,7 +55,7 @@ const ago = (iso: string | null | undefined) => {
 const adminClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: true } } });
 
 // --------------------------------------------------------------------------- page
-const TABS = ["overview", "sources", "runs", "config", "maintenance"] as const;
+const TABS = ["overview", "clicks", "sources", "runs", "config", "maintenance"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage() {
@@ -109,6 +109,7 @@ function Admin() {
       {ov.isError && !authError && <p className="adm-err">{String(ov.error)}</p>}
       {ov.data?.warnings?.map((w: string) => <p key={w} className="adm-warn adm-banner">⚠ {w}</p>)}
       {tab === "overview" && <Overview data={ov.data} />}
+      {tab === "clicks" && <Clicks />}
       {tab === "sources" && <Sources />}
       {tab === "runs" && <Runs />}
       {tab === "config" && <Config />}
@@ -220,6 +221,64 @@ function Overview({ data }: { data: any }) {
         </table>
       </Card>
     </div>
+  );
+}
+
+/** Ticket-link clicks counted by the server (GET /go/...). */
+function Clicks() {
+  const [days, setDays] = useState(30);
+  const q = useQuery({ queryKey: ["clicks", days], queryFn: () => call(`/admin/api/clicks?days=${days}`), refetchInterval: 30_000 });
+  const d = q.data;
+  const peak = Math.max(1, ...(d?.per_day ?? []).map((x: any) => x.clicks));
+  const counts = (title: string, data: Record<string, number>) => (
+    <Card title={title}>
+      <table className="adm-table">
+        <tbody>
+          {Object.entries(data).map(([k, n]) => <tr key={k}><td>{k}</td><td>{n}</td></tr>)}
+        </tbody>
+      </table>
+    </Card>
+  );
+  return (
+    <>
+      <div className="adm-bar">
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="Period">
+          {[1, 7, 30, 90, 365].map((n) => <option key={n} value={n}>Last {n} day{n > 1 ? "s" : ""}</option>)}
+        </select>
+      </div>
+      {q.isError && <p className="adm-err">{String(q.error)}</p>}
+      {!d ? <p className="msg">Loading…</p> : (
+        <div className="adm-grid">
+          <Card title="Ticket clicks">
+            <div className="adm-stats">
+              <Stat label="Today" value={d.today} />
+              <Stat label={`Last ${d.days} days`} value={d.total} />
+              <Stat label="Per day" value={(d.total / d.days).toFixed(1)} hint="average" />
+            </div>
+          </Card>
+          <Card title="Per day" wide>
+            <div className="adm-chart" role="img" aria-label={`Clicks per day, peak ${peak}`}>
+              {d.per_day.map((x: any) => (
+                <span key={x.date} style={{ height: `${(x.clicks / peak) * 100}%` }} title={`${x.date}: ${x.clicks}`} />
+              ))}
+            </div>
+          </Card>
+          {counts("Per seller", d.per_source)}
+          {counts("Where clicked", d.per_placement)}
+          {counts("Per city", d.per_city)}
+          <Card title="Top events" wide>
+            <table className="adm-table">
+              <thead><tr><th>Event</th><th>Seller</th><th>Clicks</th></tr></thead>
+              <tbody>
+                {d.top_events.map((e: any) => (
+                  <tr key={e.event_id}><td><Link to={`/event/${encodeURIComponent(e.event_id)}`}>{e.title}</Link></td><td>{e.source}</td><td>{e.clicks}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        </div>
+      )}
+    </>
   );
 }
 

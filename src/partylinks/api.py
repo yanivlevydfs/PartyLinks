@@ -24,7 +24,7 @@ from sqlalchemy import ColumnElement, String, and_, cast, func, not_, or_, selec
 from sqlalchemy.orm import Session, aliased, defer, load_only, selectinload, undefer
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from partylinks import seo, utm
+from partylinks import clicks, seo, utm
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.config import Settings, get_settings
@@ -765,12 +765,13 @@ def _register_routes(app: FastAPI) -> None:
     @app.get("/go/{event_id:path}", include_in_schema=False)
     def go(event_id: str, request: Request, session: SessionDep, at: str | None = None) -> RedirectResponse:
         """The seller's page of one listing: the only place a ticket link leaves the server
-        (one click at a time, rate-limited by SecurityMiddleware), UTM-tagged for the seller's
-        analytics. ``at`` = where on our page it was clicked (utm.PLACEMENTS)."""
+        (one click at a time, rate-limited by SecurityMiddleware), counted, and UTM-tagged for the
+        seller's analytics. ``at`` = where on our page it was clicked (utm.PLACEMENTS)."""
         row = session.get(EventRow, event_id)
         if not row or not row.url.startswith(("https://", "http://")):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "event not found")
         headers = {"Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow"}
+        clicks.record(session, row, at)
         url = utm.tagged(row.url, request.app.state.settings.utm, row, at)
         return RedirectResponse(url, status.HTTP_302_FOUND, headers=headers)
 
