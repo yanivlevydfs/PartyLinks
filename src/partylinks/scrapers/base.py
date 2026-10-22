@@ -116,6 +116,8 @@ class BaseScraper[S: SourceSettings](ABC):
         self.http = HttpSettings.model_validate(http.model_dump() | overrides)
         self.timezone = timezone
         self.log = logging.getLogger(f"partylinks.scrapers.{self.name}")
+        # Credentials stay out of the log: only the proxy's host.
+        self.log.info("via %s", self.http.proxy.rpartition("@")[2] if self.http.proxy else "direct connection (no proxy)")
         self.failures: list[str] = []
         # Artists the site curates (photo, type, links); the service saves them to the artist book.
         self.artist_profiles: list[ArtistProfile] = []
