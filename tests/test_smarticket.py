@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from partylinks.config import HttpSettings
-from partylinks.models import TierStatus
+from partylinks.models import ScrapedEvent, TierStatus
 from partylinks.parsing import ParseError
 from partylinks.scrapers.smarticket import (
     SmarticketScraper,
@@ -45,7 +45,7 @@ def _body() -> str:
     return (FIXTURES / "tzavta_shows.json").read_text(encoding="utf-8")
 
 
-def _events() -> dict[str, object]:
+def _events() -> dict[str, ScrapedEvent]:
     pairs = iter_performances(parse_shows_body(_body(), "tzavta.smarticket.co.il"))
     return {e.source_event_id: e for show, p in pairs if (e := parse_event(show, p, TZAVTA, SETTINGS, TZ))}
 
@@ -72,7 +72,9 @@ def test_parse_event() -> None:
     assert event.source == "smarticket"
     assert str(event.url) == "https://tzavta.smarticket.co.il/event/17950"
     assert event.title == "חנוך דאום"
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-12-31T21:00:00+02:00"
+    assert event.end_at is not None
     assert event.end_at.isoformat() == "2026-12-31T22:15:00+02:00"
     assert (event.venue_name, event.city) == ("צוותא 1", "תל אביב")
     assert event.source_genres == ["בידור"]
@@ -102,6 +104,7 @@ def test_ends_after_midnight_and_fallback_venue() -> None:
         "event_place": "",
     }
     event = parse_event(show, performance, TZAVTA, SETTINGS, TZ)
+    assert event is not None and event.end_at is not None
     assert event.end_at.isoformat() == "2027-01-01T01:30:00+02:00"
     assert event.venue_name == "צוותא"
 
@@ -152,11 +155,13 @@ def test_calendar_fallback() -> None:
     events = [parse_event(show, p, ptk, SETTINGS, TZ) for show, p in iter_performances(shows)]
 
     first, sold_out = events
+    assert first is not None and first.start_at is not None
     assert str(first.url) == "https://petah-tikva.smarticket.co.il/event/10398"
     assert first.title == "מצחיקונת" and first.venue_name == "היכל התרבות פתח תקווה"
     assert first.start_at.isoformat() == "2026-10-20T20:30:00+03:00"
     # Code-only and member-only price rows are dropped.
     assert [t.price for t in first.tickets] == [Decimal(249), Decimal(299)] and not first.is_sold_out
+    assert sold_out is not None
     assert sold_out.is_sold_out  # website_left_tickets_count 0
 
     scraper = SmarticketScraper(SETTINGS.model_copy(update={"tenants": [ptk]}), HttpSettings(), TZ)

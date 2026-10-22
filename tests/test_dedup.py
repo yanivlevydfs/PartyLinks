@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 from fastapi.testclient import TestClient
 
@@ -19,8 +20,8 @@ START = datetime.now(UTC).replace(hour=19, minute=30, second=0, microsecond=0) +
 MOON = (32.1002, 34.7745)
 
 
-def listing(source: str, eid: str, title: str, start: datetime = START, where=MOON, **extra: object) -> ScrapedEvent:  # type: ignore[no-untyped-def]
-    fields: dict[str, object] = {
+def listing(source: str, eid: str, title: str, start: datetime = START, where: tuple[float, float] | None = MOON, **extra: Any) -> ScrapedEvent:
+    fields: dict[str, Any] = {
         "source": source, "source_event_id": eid, "url": f"https://{source}.example/{eid}", "title": title,
         "start_at": start, "address": "Tel Aviv-Yafo, Israel", "latitude": where[0] if where else None,
         "longitude": where[1] if where else None, "tickets": [TicketTier(name="Entry", price=Decimal(80))],
@@ -28,7 +29,7 @@ def listing(source: str, eid: str, title: str, start: datetime = START, where=MO
     return ScrapedEvent(**(fields | extra))
 
 
-def grouped(tmp_path: Path, events: list[ScrapedEvent]) -> tuple[Settings, dict[str, tuple[str, bool]]]:
+def grouped(tmp_path: Path, events: list[ScrapedEvent]) -> tuple[Settings, dict[str, tuple[str | None, bool]]]:
     settings = Settings(database={"url": f"sqlite:///{tmp_path / 'd.db'}"}, scheduler={"enabled": False})
     db = Database(settings.database.url)
     db.create_schema()

@@ -409,7 +409,7 @@ class Enricher:
                 tier.price = _amount(text)
             elif tier.price is None and says_free:
                 tier.is_free = True
-            elif tier.price == 0 and not says_free and self._coupon and self._coupon.search(text):
+            elif tier.price is not None and not tier.price and not says_free and self._coupon and self._coupon.search(text):
                 # "קוד למימוש מועדונים" at 0: redeems a club voucher, the price is not 0 for anyone else.
                 tier.price, tier.is_free = None, False
         priced = [t.price for t in event.tickets if t.price is not None and t.is_active]

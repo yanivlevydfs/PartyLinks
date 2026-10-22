@@ -242,7 +242,7 @@ class BaseScraper[S: SourceSettings](ABC):
     # ----------------------------------------------------------------- listings
     async def paginate(
         self,
-        fetch_page: Callable[[int], Awaitable[tuple[list[T], int | None]]],
+        fetch_page: Callable[[int], Awaitable[tuple[list[T], int | str | None]]],  # total as given (to_int)
         page_size: int,
         max_pages: int,
     ) -> list[T]:

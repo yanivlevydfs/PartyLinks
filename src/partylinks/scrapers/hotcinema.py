@@ -141,7 +141,7 @@ def _event(
         source_event_id=f"{movie_id}:{branch_id}:{day.isoformat()}",
         url=info.url if info else f"{s.site_url}/movie/{movie_id}",
         title=title,
-        description="\n\n".join(p for p in (info and info.synopsis, f"הקרנות: {times}") if p),
+        description="\n\n".join(p for p in (info.synopsis if info else None, f"הקרנות: {times}") if p),
         start_at=screenings[0][0],
         venue_name=f"{s.chain_name} {branch.name}" if branch else s.chain_name,
         address=branch.address if branch else None,

@@ -33,6 +33,7 @@ def test_parse_event() -> None:
     assert own.source == "epgb"
     assert own.source_event_id == "19cb5551-ccd4-4496-817a-809114fa1539"
     assert own.title == "DANCEHALL STATION"
+    assert own.start_at is not None
     assert own.start_at.isoformat() == "2026-10-20T22:30:00+03:00"
     assert own.artists == ["I-TEK", "EDDIE BOMBO"]
     assert own.source_genres == ["AFROBETS DANCEHALL"]

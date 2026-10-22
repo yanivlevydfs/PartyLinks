@@ -20,7 +20,9 @@ def test_parse_event() -> None:
     assert event.source == "megatickets"
     assert event.source_event_id == "markus-schulz-the-place-29-10"
     assert event.title == "Markus Schulz - The Place"
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-10-29T23:00:00+02:00"
+    assert event.end_at is not None
     assert event.end_at.isoformat() == "2026-10-30T05:00:00+02:00"
     assert event.venue_name == "The Place"
     assert event.address == "קיבוץ גלויות 52, תל אביב"

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -29,8 +30,8 @@ def settings_for(tmp_path: Path) -> Settings:
     )
 
 
-def event(event_id: str, start: datetime, **extra: object) -> ScrapedEvent:
-    fields: dict[str, object] = {
+def event(event_id: str, start: datetime, **extra: Any) -> ScrapedEvent:
+    fields: dict[str, Any] = {
         "source": "test",
         "source_event_id": event_id,
         "url": f"https://example.com/{event_id}",
@@ -284,15 +285,17 @@ def test_rescrape_tracks_offer_changes_and_unlists_vanished_events(tmp_path: Pat
         rows = {r.source_event_id: r for r in session.query(EventRow)}
         run = session.get(ScrapeRunRow, run_id)
         assert rows["same"].offers_changed_at == first["selector:same"]
-        assert rows["price"].offers_changed_at > first["selector:price"]
+        changed, before = rows["price"].offers_changed_at, first["selector:price"]
+        assert changed is not None and before is not None and changed > before
         assert [t.price for t in rows["price"].tickets] == [Decimal(120)]  # tiers replaced, not appended
         assert rows["gone"].is_listed is False and rows["same"].is_listed is True
-        assert (run.events_changed, run.events_unlisted) == (1, 1)
+        assert run is not None and (run.events_changed, run.events_unlisted) == (1, 1)
 
     # Listed again -> back on the site.
     with db.session() as session:
         upsert_events(session, [gone])
-        assert session.get(EventRow, "selector:gone").is_listed is True
+        relisted = session.get(EventRow, "selector:gone")
+        assert relisted is not None and relisted.is_listed is True
     service.shutdown()
 
 
@@ -353,7 +356,8 @@ def test_admin_scan_runs_all_enabled_or_the_chosen_sources(tmp_path: Path) -> No
     from partylinks.service import SourceBusyError
 
     settings = settings_for(tmp_path)
-    with TestClient(create_app(settings, start_scheduler=False)) as client:
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app) as client:
         calls: list[str] = []
 
         def fake_start(name: str, trigger: str = "manual") -> Future:
@@ -364,7 +368,7 @@ def test_admin_scan_runs_all_enabled_or_the_chosen_sources(tmp_path: Path) -> No
             done.set_result(None)
             return done
 
-        client.app.state.service.start_source = fake_start
+        app.state.service.start_source = fake_start
         everything = client.post("/admin/api/scan").json()
         enabled = [n for n, s in configured_sources(settings).items() if s.enabled]
         assert set(everything["started"]) | set(everything["busy"]) == set(enabled) and everything["busy"] == ["barby"]

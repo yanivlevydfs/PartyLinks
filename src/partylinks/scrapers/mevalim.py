@@ -175,7 +175,7 @@ def parse_artist_page(page: dict[str, Any], kind: str, photos: dict[int, str]) -
         name=name,
         source=MevalimScraper.name,
         kind=kind,
-        image_url=photos.get(page.get("featured_media")),
+        image_url=photos.get(page.get("featured_media") or 0),
         profile_url=clean_str(page.get("link")),
     )
 

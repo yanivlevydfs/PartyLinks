@@ -18,7 +18,8 @@ import logging
 import logging.handlers
 import sys
 from datetime import UTC, datetime
-from typing import IO, Any
+from io import TextIOWrapper
+from typing import IO, Any, cast
 
 from partylinks.config import LOG_FORMAT, LoggingSettings, project_path
 
@@ -51,8 +52,10 @@ class _Below(logging.Filter):
 
 
 class _RotatingFile(logging.handlers.RotatingFileHandler):
-    def _open(self) -> IO[str]:  # "\n" endings on Windows too (the stdlib opens in text mode)
-        return open(self.baseFilename, self.mode, encoding=self.encoding, errors=self.errors, newline="\n")
+    def _open(self) -> TextIOWrapper:  # "\n" endings on Windows too (the stdlib opens in text mode)
+        return cast(
+            TextIOWrapper, open(self.baseFilename, self.mode, encoding=self.encoding, errors=self.errors, newline="\n")
+        )  # the mode is a str variable, so the stubs cannot tell it is text
 
 
 class _FailedRequestsOnly(logging.Filter):
@@ -61,7 +64,7 @@ class _FailedRequestsOnly(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         args = record.args if isinstance(record.args, tuple) else ()
         try:
-            return len(args) < 5 or int(args[4]) >= 400
+            return len(args) < 5 or int(str(args[4])) >= 400
         except (TypeError, ValueError):
             return True
 
@@ -71,7 +74,9 @@ _level = logging.INFO  # the configured level, restored when debug is switched o
 
 
 def debug_enabled() -> bool:
-    return logging.getLogger().level == logging.DEBUG and _failed_only not in logging.getLogger("uvicorn.access").filters
+    return (
+        logging.getLogger().level == logging.DEBUG and _failed_only not in logging.getLogger("uvicorn.access").filters
+    )
 
 
 def set_debug(on: bool) -> None:

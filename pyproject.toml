@@ -36,7 +36,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 
 [tool.pyrefly]
-search-path = ["src"]
+search-path = ["src", "."]  # "." so tests can import each other (tests.test_storage_api)
 # Use the interpreter VS Code is configured with (.vscode/settings.json), which has the deps.
 
 [tool.ruff]

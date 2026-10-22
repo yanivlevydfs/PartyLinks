@@ -6,7 +6,7 @@ import hashlib
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -453,7 +453,7 @@ class Database:
         return count
 
     @contextmanager
-    def session(self) -> Iterator[Session]:
+    def session(self) -> Generator[Session]:
         with self._sessions() as session, session.begin():
             yield session
 

@@ -46,7 +46,7 @@ def test_parse_performance_with_tiers() -> None:
 
     assert event.source_event_id == "MIO15-002"
     assert event.title == "Celtic Throne"
-    assert event.start_at.isoformat() == "2026-11-05T20:30:00+02:00"
+    assert event.start_at is not None and event.start_at.isoformat() == "2026-11-05T20:30:00+02:00"
     assert event.venue_name == "בית האופרה - המשכן לאמנויות הבמה"
     assert event.city == "תל אביב - יפו"
     assert event.latitude and event.longitude
@@ -68,7 +68,7 @@ def test_closed_and_sold_out_performances() -> None:
 
     boy = parse_event(load("event_MMM32.json"), load("performances_MMM32.json")[0], None, SETTINGS, "Asia/Jerusalem")
     assert boy.title == "Boy George" and boy.artists == ["Boy George"]
-    assert boy.start_at.isoformat() == "2026-11-04T21:00:00+02:00"
+    assert boy.start_at is not None and boy.start_at.isoformat() == "2026-11-04T21:00:00+02:00"
     assert boy.is_sold_out and boy.tickets[0].price == Decimal(799)
 
 

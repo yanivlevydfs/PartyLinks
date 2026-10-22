@@ -100,14 +100,15 @@ def test_stream_isolated_skips_bad_items_and_stops_on_block() -> None:
 
 def test_odd_scalars_never_raise() -> None:
     assert parse_iso("20/10/2026 22:00") is None and parse_iso(1700000000) is None
-    assert parse_iso("2026-10-20T22:00:00", "Not/AZone").tzinfo is not None
+    fallback = parse_iso("2026-10-20T22:00:00", "Not/AZone")
+    assert fallback is not None and fallback.tzinfo is not None
     assert from_unix(1_794_506_430_000) == from_unix(1_794_506_430)  # milliseconds
 
 
 # ------------------------------------------------------------------ config
 def test_one_invalid_source_block_disables_only_that_source() -> None:
     settings = Settings()
-    settings.sources["goout"] = {**settings.sources["goout"], "cron": "15 */3 * *"}  # 4 fields
+    settings.sources["goout"] = {**(settings.sources["goout"] or {}), "cron": "15 */3 * *"}  # 4 fields
     settings.sources["zygo"] = None  # all keys commented out
     valid = configured_sources(settings)
     assert "goout" not in valid and "zygo" not in valid and "eventer" in valid
@@ -126,8 +127,8 @@ def db_for(tmp_path: Path) -> tuple[Settings, Database]:
     return settings, db
 
 
-def event(eid: str, **extra: object) -> ScrapedEvent:
-    fields: dict[str, object] = {
+def event(eid: str, **extra: Any) -> ScrapedEvent:
+    fields: dict[str, Any] = {
         "source": "test", "source_event_id": eid, "url": f"https://e.example/{eid}", "title": f"Party {eid}",
         "start_at": datetime.now(UTC) + timedelta(days=2), "images": ["https://img.example/flyer.jpg"],
         "tickets": [TicketTier(name="Entry", price=Decimal(50))],
@@ -253,7 +254,7 @@ def test_proxy_pool_moves_on_only_when_the_proxy_fails() -> None:
             assert first is not None
             scraper._next_proxy(first, httpx.ProxyError("CONNECT 500"))
             second = scraper._client
-            assert second is not first and scraper._spare_proxies == []
+            assert second is not None and second is not first and scraper._spare_proxies == []
             scraper._next_proxy(first, httpx.ProxyError("late failure of the old client"))
             assert scraper._client is second  # parallel failures of one client move on once
             scraper._next_proxy(second, httpx.ProxyError("pool spent"))

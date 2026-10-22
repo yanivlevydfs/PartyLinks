@@ -19,10 +19,9 @@ def test_geektime_cards_skip_online_and_spam() -> None:
     assert [e.source_event_id for e in events] == ["593649", "594130"]  # 593658 online, 586262 spam
     mongo, seed = events
     # "10:00 - 00:45" ends after midnight.
-    assert (
-        mongo.start_at.isoformat() == "2026-11-02T10:00:00+02:00"
-        and mongo.end_at.isoformat() == "2026-11-03T00:45:00+02:00"
-    )
+    assert mongo.start_at is not None and mongo.end_at is not None
+    assert mongo.start_at.isoformat() == "2026-11-02T10:00:00+02:00"
+    assert mongo.end_at.isoformat() == "2026-11-03T00:45:00+02:00"
     assert seed.title == "Cracking the Seed Round" and seed.url.unicode_string() == "https://luma.com/b3br07wf"
     assert seed.address and seed.address.startswith("תל אביב מגדלי עזריאלי")
     assert seed.event_types == ["סטארטאפ ויזמות"] and seed.source_genres == ["hi-tech"]
@@ -40,6 +39,7 @@ def test_people_and_computers_feed() -> None:
     assert len(events) == 8
     mamram = events[1]
     assert mamram.title == 'הכנס השנתי ממר"ם 2026' and mamram.source_event_id == "i-love-mamram-2026.events.co.il/home"
+    assert mamram.start_at is not None
     assert mamram.start_at.isoformat() == "2026-11-12T09:00:00+02:00"
     assert mamram.venue_name == "אקספו תל אביב" and mamram.address == "שדרות רוקח 101, תל אביב"
     assert mamram.images and mamram.description and "יזמות" in mamram.description

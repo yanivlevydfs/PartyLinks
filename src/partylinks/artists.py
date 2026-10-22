@@ -85,7 +85,12 @@ class ArtistBook:
         """Curated artists by casefolded name."""
         with self._lock, self._connect() as conn:
             rows = conn.execute(f"SELECT key, {', '.join(_PROFILE_COLUMNS)} FROM profiles").fetchall()
-        return {key: ArtistProfile(*values[:-1], json.loads(values[-1] or "[]")) for key, *values in rows}
+        return {
+            key: ArtistProfile(
+                **dict(zip(_PROFILE_COLUMNS, values, strict=True)) | {"links": json.loads(values[-1] or "[]")}
+            )
+            for key, *values in rows
+        }
 
     def save_profiles(self, profiles: Iterable[ArtistProfile]) -> int:
         now = datetime.now(UTC).isoformat(timespec="seconds")

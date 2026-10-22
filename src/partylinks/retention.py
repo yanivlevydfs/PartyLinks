@@ -40,7 +40,7 @@ def is_current(
     now = now or datetime.now(UTC)
     if start >= retention_cutoff(settings, timezone, now):
         return True
-    return bool(
+    return (
         settings.keep_in_progress
         and end is not None
         and end > now

@@ -125,7 +125,6 @@ class GrayclubScraper(BaseScraper[GrayclubSettings]):
     async def _fetch_event(self, card: dict[str, str]) -> ScrapedEvent:
         return parse_event(await self.get_text(card["url"]), card, self.settings, self.timezone)
 
-
     async def _list_artists(self) -> list[ArtistProfile]:
         s = self.settings
         sitemap = await self.get_text(s.site_url + s.artist_sitemap_path)
@@ -180,7 +179,8 @@ def parse_event(page_html: str, card: dict[str, str], s: GrayclubSettings, timez
     start = _labelled(info, labels.show_start) or _labelled(info, labels.doors_open)
     start_at = None
     if day:
-        hour, minute = (_TIME.search(start).groups() if start and _TIME.search(start) else ("0", "0"))
+        clock = _TIME.search(start) if start else None
+        hour, minute = clock.groups() if clock else ("0", "0")
         start_at = datetime(
             int(day.group(3)), int(day.group(2)), int(day.group(1)), int(hour), int(minute), tzinfo=ZoneInfo(timezone)
         )
@@ -200,14 +200,12 @@ def parse_event(page_html: str, card: dict[str, str], s: GrayclubSettings, timez
     description_node = tree.css_first(sel.description)
     show_type = _labelled(info, labels.show_type)
 
-    tickets = (
-        [TicketTier(name="כרטיס", price=price, is_free=price == 0)] if price is not None else []
-    )
+    tickets = [TicketTier(name="כרטיס", price=price, is_free=price == 0)] if price is not None else []
     return ScrapedEvent(
         source=GrayclubScraper.name,
         source_event_id=f"{match.group(1)}-{match.group(2)}",
         url=card["url"],
-        title=clean_str(title_node.text()) if title_node else "",
+        title=(clean_str(title_node.text()) if title_node else None) or "",
         description=html_to_text(description_node.html) if description_node else None,
         start_at=start_at,
         venue_name=f"Gray Club {card.get('city') or ''}".strip(),
@@ -239,4 +237,3 @@ def _labelled(lines: list[str], label: str) -> str | None:
         if line.startswith(label):
             return clean_str(line[len(label) :].lstrip(": "))
     return None
-

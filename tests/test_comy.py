@@ -30,6 +30,7 @@ def test_comy_show_performances() -> None:
 
     assert herzliya.title == "אדיר מילר" and herzliya.source_genres == ["סטנדאפ"]
     assert herzliya.start_at == datetime(2026, 11, 20, 22, 30, tzinfo=ZoneInfo(TZ))
+    assert herzliya.start_at is not None
     assert herzliya.start_at.utcoffset() is not None
     assert herzliya.venue_name == "היכל אומנויות הבמה הרצליה"
     assert str(herzliya.url) == "https://tickets.comy.co.il/booking/features/825?prsntId=55364"

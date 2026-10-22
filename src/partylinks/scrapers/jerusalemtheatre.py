@@ -68,7 +68,7 @@ def parse_performance(
         return None
     # Wall-clock time written as UTC: keep the clock reading, set the Israeli zone.
     start = datetime.fromtimestamp(stamp, UTC).replace(tzinfo=ZoneInfo(timezone))
-    genre = clean_str((groups.get(show.get("parent-group")) or {}).get("title"))
+    genre = clean_str((groups.get(show.get("parent-group") or "") or {}).get("title"))
     free = bool(show.get("free")) or performance.get("status") == "free"
     image = clean_str(show.get("img"))
     if image and "/images/default/" in image:  # the site's placeholder, not the show's artwork

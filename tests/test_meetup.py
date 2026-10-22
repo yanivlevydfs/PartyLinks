@@ -17,6 +17,7 @@ def test_free_tech_meetup() -> None:
     e = parse_event(NODES["316958546"], TZ)
     assert e is not None and e.title == "Core C++ 2026 :: Lightning talks meetup"
     assert e.url.unicode_string() == "https://www.meetup.com/corecpp/events/316958546/"
+    assert e.start_at is not None
     assert e.start_at.isoformat() == "2026-10-21T17:00:00+03:00" and e.end_at is not None
     assert e.venue_name == "Tel Aviv Cinematheque" and e.city == "Tel Aviv-Yafo" and e.latitude
     assert e.source_genres == ["hi-tech"] and e.organizer == "Core C++"
@@ -24,8 +25,10 @@ def test_free_tech_meetup() -> None:
 
 
 def test_venue_named_for_its_street_and_a_fee() -> None:
-    assert parse_event(NODES["316692733"], TZ).venue_name is None  # "Yitzhak Sadeh St 6"
+    street = parse_event(NODES["316692733"], TZ)
+    assert street is not None and street.venue_name is None  # "Yitzhak Sadeh St 6"
     paid = parse_event(NODES["316935392"], TZ)
+    assert paid is not None
     assert paid.min_price == Decimal(65) and paid.currency == "EUR" and paid.tickets[0].kind.value == "paid"
 
 

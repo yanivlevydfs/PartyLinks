@@ -254,7 +254,7 @@ def test_mevalim_artist_pages_drop_placeholder_photos() -> None:
     profiles = [p for page in pages if (p := mevalim.parse_artist_page(page, "singer", photos))]
     assert [p.name for p in profiles] == ["עופר ניסים", "שרים החלונות הגבוהים", "האחים זו-ארץ"]
     assert profiles[0].image_url is None and profiles[1].image_url == photos[695988]
-    assert profiles[0].kind == "singer" and profiles[0].profile_url.startswith("https://www.mevalim.co.il/shows/")
+    assert profiles[0].kind == "singer" and (profiles[0].profile_url or "").startswith("https://www.mevalim.co.il/shows/")
     assert mevalim.parse_artist_page({"title": {"rendered": "הופעות חיות בחיפה"}}, "singer", {}) is None
 
 

@@ -50,6 +50,7 @@ def test_page_without_json_ld_uses_page_meta_and_ticket_rows() -> None:
     assert (event.source_event_id, event.title, event.venue_name, event.city) == (
         "22285519", "לירון אופיר", "זאפה ירושלים", "ירושלים",
     )  # fmt: skip
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-12-03T21:30:00+02:00"
     assert event.source_genres == ["מופעי סטנדאפ", "מופעי בידור", "סטנדאפ"]
     assert [(t.name, t.price) for t in event.tickets] == [

@@ -13,6 +13,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+from typing import NamedTuple
 from urllib.parse import parse_qs, urlsplit
 
 from selectolax.parser import HTMLParser, Node
@@ -27,6 +28,20 @@ CURRENCY_SIGNS = {"€": "EUR", "£": "GBP", "₤": "GBP", "$": "USD", "₪": "I
 # IATA city codes that are no airport of their own (airportsdata lists airports only).
 METRO_CODES = {"LON": ("London", "GB"), "PAR": ("Paris", "FR"), "MIL": ("Milan", "IT"), "ROM": ("Rome", "IT"),
                "NYC": ("New York", "US"), "STO": ("Stockholm", "SE"), "BER": ("Berlin", "DE")}  # fmt: skip
+
+
+class Package(NamedTuple):
+    """One package card; packages of the same trip become one event."""
+
+    pid: str
+    url: str
+    description: str | None
+    image_url: str | None
+    price: Decimal | None
+    currency: str
+
+
+Trip = tuple[str, str, date, date]  # name, destination airport, departure, return
 
 
 class IsstaSettings(SourceSettings):
@@ -63,8 +78,8 @@ def _on_or_after(day_month: str, after: date) -> date:
     return found if found >= after else date(after.year + 1, month, day)
 
 
-def _card(node: Node, site_url: str) -> tuple[tuple[str, str, date, date], str, dict[str, object]] | None:
-    """(trip key, package id, fields) of one card; None for a card that is no dated package."""
+def _card(node: Node, site_url: str) -> tuple[Trip, Package] | None:
+    """The trip and package of one card; None for a card that is no dated package."""
     link = node.css_first("a[itemprop=url]")
     name = node.css_first("[itemprop=name]")
     href = link.attributes.get("href") if link else None
@@ -85,51 +100,48 @@ def _card(node: Node, site_url: str) -> tuple[tuple[str, str, date, date], str, 
     sign = node.css_first("[itemprop=priceCurrency]")
     description = node.css_first("[itemprop=description]")
     image = node.css_first("img[itemprop=image]")
-    fields: dict[str, object] = {
-        "url": site_url + href,
-        "title": title,
-        "description": clean_str(description.text()) if description else None,
-        "image_url": image.attributes.get("src") if image else None,
-        "price": to_decimal(price.attributes.get("content")) if price else None,
-        "currency": CURRENCY_SIGNS.get((sign.attributes.get("content") or "").strip(), "EUR") if sign else "EUR",
-        "airport": airport,
-    }
-    return (title, airport, out, back), pid, fields
+    package = Package(
+        pid=pid,
+        url=site_url + href,
+        description=clean_str(description.text()) if description else None,
+        image_url=image.attributes.get("src") if image else None,
+        price=to_decimal(price.attributes.get("content")) if price else None,
+        currency=CURRENCY_SIGNS.get((sign.attributes.get("content") or "").strip(), "EUR") if sign else "EUR",
+    )
+    return (title, airport, out, back), package
 
 
 def parse_listing(page_html: str, site_url: str, timezone: str) -> list[ScrapedEvent]:
     """One event per trip (name, destination, dates); its packages give the price range."""
-    trips: dict[tuple[str, str, date, date], list[tuple[str, dict[str, object]]]] = {}
+    trips: dict[Trip, list[Package]] = {}
     for node in HTMLParser(page_html).css("div.deal-item-container"):
-        card = _card(node, site_url)
-        if card:
-            key, pid, fields = card
-            trips.setdefault(key, []).append((pid, fields))
+        if card := _card(node, site_url):
+            trips.setdefault(card[0], []).append(card[1])
     if not trips and "deal-item-container" in page_html:
         raise ParseError("package cards found but none parsed (layout changed?)")
     tz = zone(timezone)
     events = []
     for (title, airport, out, back), packages in trips.items():
-        packages.sort(key=lambda p: (p[1]["price"] is None, p[1]["price"] or 0, p[0]))
-        pid, first = packages[0]
-        prices = [p for _, f in packages if isinstance(p := f["price"], Decimal)]
+        packages.sort(key=lambda p: (p.price is None, p.price or 0, p.pid))
+        first = packages[0]
+        prices = [p.price for p in packages if p.price is not None]
         city, country = destination(airport)
         events.append(
             ScrapedEvent(
                 source=IsstaScraper.name,
-                source_event_id=pid,
-                url=str(first["url"]),
+                source_event_id=first.pid,
+                url=first.url,
                 title=title,
-                description=f"חבילה: טיסה, מלון וכרטיס. {first['description'] or ''}".strip(),
+                description=f"חבילה: טיסה, מלון וכרטיס. {first.description or ''}".strip(),
                 start_at=datetime(out.year, out.month, out.day, tzinfo=tz),  # trip dates, not the show's
                 end_at=datetime(back.year, back.month, back.day, tzinfo=tz),
                 city=city,
                 country=country,
-                image_url=first["image_url"],
-                currency=str(first["currency"]),
+                image_url=first.image_url,
+                currency=first.currency,
                 min_price=min(prices, default=None),
                 max_price=max(prices, default=None),
-                extra={"package": True, "airport": airport, "packages": [p for p, _ in packages]},
+                extra={"package": True, "airport": airport, "packages": [p.pid for p in packages]},
             )
         )
     return events
