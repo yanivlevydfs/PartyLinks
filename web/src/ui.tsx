@@ -41,6 +41,7 @@ const SOURCE_NAMES: Record<string, string> = {
   ticketmaster: "Ticketmaster", pres: "PRES", smarticket: "Smarticket", secrettelaviv: "Secret Tel Aviv",
   tiktik: "TikTik", teder: "Teder", makore: "Makore", jerusalemtheatre: "Jerusalem Theatre", drop: "Drop", luma: "Luma", geektime: "Geektime",
   peoplecomputers: "People & Computers", meetup: "Meetup", zappa: "Zappa", beershevatheatre: "Be'er Sheva Theatre", arenas: "Arenas",
+  issta: "Issta", livevents: "Live Events", kishreyteufa: "Kishrey Teufa", ticketplace: "Ticket Place",
 };
 export const sourceName = (source: string) => SOURCE_NAMES[source] ?? source;
 

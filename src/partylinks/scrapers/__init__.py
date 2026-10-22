@@ -24,6 +24,7 @@ from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
 from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
+from partylinks.scrapers.issta import IsstaScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
 from partylinks.scrapers.kishreyteufa import KishreyTeufaScraper
 from partylinks.scrapers.kupatbravo import KupatbravoScraper
@@ -102,6 +103,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         KishreyTeufaScraper,
         TicketPlaceScraper,
         LiveventsScraper,
+        IsstaScraper,
     )
 }
 

@@ -1365,3 +1365,12 @@ sources:
     calendar_path: /events/
     http:
       concurrency: 2
+
+  issta:
+    # Issta: packages (flight + hotel + ticket) to concerts abroad, all on one tickets page (one
+    # GET). The show's date is on the package page, which robots.txt disallows: events span the
+    # trip (departure to return). Destination from the airport code (airportsdata).
+    enabled: true
+    cron: "47 4,16 * * *"
+    site_url: https://www.issta.co.il
+    listing_path: /tickets
