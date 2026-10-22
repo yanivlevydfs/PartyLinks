@@ -7,7 +7,7 @@ Requirements: Python 3.12+ (the system Python, no virtualenv) and Node.js for th
 ```bash
 pip install -r requirements.txt              # once, and after dependencies change
 set PYTHONPATH=src                           # PowerShell: $env:PYTHONPATH="src"; bash: export PYTHONPATH=src
-python -m partylinks serve                   # API + website on <http://localhost:8000>
+python -m partylinks serve                   # API + website on http://localhost:8000
 python -m partylinks scrape                  # every enabled source, once
 python -m partylinks scrape goout zygo       # only these sources
 python -m partylinks sources                 # list configured sources
@@ -43,7 +43,7 @@ Stack: Vite, React Router, TanStack Query, zustand, Leaflet (OpenStreetMap tiles
 
 ```bash
 cd web && npm install
-npm run dev        # <http://localhost:5173>, proxies the API on :8000, hot reload
+npm run dev        # http://localhost:5173, proxies the API on :8000, hot reload
 npm run build      # into web/dist
 ```
 

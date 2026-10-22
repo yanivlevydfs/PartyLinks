@@ -21,7 +21,7 @@ Production runs on Railway and deploys on every push to `master`.
 ```bash
 pip install -r requirements.txt
 set PYTHONPATH=src                     # PowerShell: $env:PYTHONPATH="src"
-python -m partylinks serve             # <http://localhost:8000> (the scheduler is off locally)
+python -m partylinks serve             # http://localhost:8000 (the scheduler is off locally)
 python -m partylinks scrape issta      # run one source once
 python -m pytest
 ```
