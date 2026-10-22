@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useCategories, useEvents, type Params } from "./api";
 import { genreLabel } from "./i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "./store";
@@ -61,11 +61,13 @@ export function Filters() {
   const dirty = extras > 0 || f.freeOnly || f.when !== "all";
   const clear = () => set({ ...DEFAULT_FILTERS, q: f.q, sort: f.sort });
 
-  // Today is "Tonight": the date strip starts tomorrow.
-  const dates = (cats?.dates ?? []).filter((d) => d.value > today()).slice(0, 9);
+  const [calOpen, setCalOpen] = useState(false);
+  const isDate = f.when !== "all" && f.when !== "tonight" && f.when !== "weekend";
+  const counts = new Map((cats?.dates ?? []).map((d) => [d.value, d.events]));
   const day = (v: string, o: Intl.DateTimeFormatOptions) => new Date(v + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, ...o });
   const dateLabel = (v: string) => day(v, { weekday: "short", day: "numeric", month: "numeric" });
   const whenLabel = f.when === "tonight" ? t.tonight : f.when === "weekend" ? t.weekend : dateLabel(f.when);
+  const pickWhen = (when: string) => { set({ when }); setCalOpen(false); };
 
   const toggles = (
     <>
@@ -120,17 +122,23 @@ export function Filters() {
   return (
     <div className="filters">
       <FilterRow label={t.when} scroll>
-        <Chip on={f.when === "all"} onClick={() => set({ when: "all" })}>{t.all}</Chip>
-        <Chip on={f.when === "tonight"} onClick={() => set({ when: "tonight" })}>{t.tonight}</Chip>
-        <Chip on={f.when === "weekend"} onClick={() => set({ when: "weekend" })}>{t.weekend}</Chip>
-        <span className="sep" aria-hidden />
-        {dates.map((d) => (
-          <Chip key={d.value} on={f.when === d.value} onClick={() => set({ when: d.value })}>
-            <span className="wd">{day(d.value, { weekday: lang === "he" ? "narrow" : "short" })}</span>
-            {day(d.value, { day: "numeric", month: "numeric" })}
-          </Chip>
-        ))}
+        <Chip on={f.when === "all"} onClick={() => pickWhen("all")}>{t.all}</Chip>
+        <Chip on={f.when === "tonight"} onClick={() => pickWhen("tonight")}>{t.tonight}</Chip>
+        <Chip on={f.when === "weekend"} onClick={() => pickWhen("weekend")}>{t.weekend}</Chip>
+        <button className={"chip f-drop cal-btn" + (isDate ? " on" : "") + (calOpen ? " open" : "")} aria-expanded={calOpen}
+          onClick={() => setCalOpen(!calOpen)}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+            <rect x="3.5" y="5" width="17" height="15.5" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" />
+          </svg>
+          {isDate ? dateLabel(f.when) : t.pickDate}<span className="caret" aria-hidden>▾</span>
+        </button>
       </FilterRow>
+      {calOpen && (
+        <div className="f-drawer">
+          <Calendar value={f.when === "tonight" ? today() : f.when} counts={counts}
+            onPick={(v) => pickWhen(v === today() ? "tonight" : v)} />
+        </div>
+      )}
 
       {mobile ? (
         <>
@@ -308,6 +316,50 @@ function Rows({ only }: { only?: Panel }) {
         </FilterRow>
       )}
     </>
+  );
+}
+
+/** Month grid, Sunday first. A day glows by how many events it has; past days and days with none are disabled. */
+function Calendar({ value, counts, onPick }: { value: string; counts: Map<string, number>; onPick: (v: string) => void }) {
+  const { t, lang } = useT();
+  const now = today();
+  const [month, setMonth] = useState(() => (/^\d{4}-\d\d-\d\d$/.test(value) ? value : now).slice(0, 7));
+  const [y, m] = month.split("-").map(Number);
+  const first = new Date(Date.UTC(y, m - 1, 1));
+  const length = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const lastMonth = [...counts.keys()].sort().at(-1)?.slice(0, 7) ?? now.slice(0, 7);
+  const max = Math.max(1, ...counts.values());
+  const fmt = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleDateString(t.locale, { timeZone: "UTC", ...o });
+  const shift = (n: number) => setMonth(new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7));
+  const rtl = lang === "he";
+
+  return (
+    <div className="cal">
+      <div className="cal-head">
+        <button className="cal-nav" onClick={() => shift(-1)} disabled={month <= now.slice(0, 7)} aria-label="‹">{rtl ? "›" : "‹"}</button>
+        <b>{fmt(first, { month: "long", year: "numeric" })}</b>
+        <button className="cal-nav" onClick={() => shift(1)} disabled={month >= lastMonth} aria-label="›">{rtl ? "‹" : "›"}</button>
+      </div>
+      <div className="cal-grid">
+        {/* 7 Jan 2024 was a Sunday. */}
+        {Array.from({ length: 7 }, (_, i) => (
+          <span key={i} className="cal-wd">{fmt(new Date(Date.UTC(2024, 0, 7 + i)), { weekday: "narrow" })}</span>
+        ))}
+        {Array.from({ length: first.getUTCDay() }, (_, i) => <span key={"pad" + i} />)}
+        {Array.from({ length }, (_, i) => {
+          const v = `${month}-${String(i + 1).padStart(2, "0")}`;
+          const n = counts.get(v) ?? 0;
+          return (
+            <button key={v} className={"cal-day" + (v === value ? " on" : "") + (v === now ? " today" : "")}
+              disabled={v < now || !n} aria-pressed={v === value} onClick={() => onPick(v)}
+              aria-label={`${fmt(new Date(v + "T12:00:00Z"), { weekday: "long", day: "numeric", month: "long" })} · ${n}`}
+              style={{ "--heat": n / max } as CSSProperties}>
+              <span>{i + 1}</span>{n > 0 && <small>{n}</small>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

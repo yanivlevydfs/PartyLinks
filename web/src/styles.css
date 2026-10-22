@@ -162,8 +162,34 @@ button, input, select { font: inherit; color: inherit; }
   background: rgb(255 255 255 / .07); color: var(--muted); font-variant-numeric: tabular-nums;
 }
 .chip.on small { background: rgb(0 0 0 / .22); color: #fff; }
-.chip .wd { color: var(--muted); font-size: 12px; }
-.chip.on .wd { color: rgb(255 255 255 / .85); }
+/* Date picker: a chip that opens a month calendar in the drawer below. */
+.cal-btn svg { width: 16px; height: 16px; }
+.cal-btn.on .caret { color: #fff; }
+.cal { max-width: 420px; padding: 8px 0 6px; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cal-head b { font: 700 16px/1 var(--display); }
+.cal-nav {
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: transparent;
+  font-size: 20px; line-height: 1; cursor: pointer; transition: border-color .2s;
+}
+.cal-nav:hover:not(:disabled) { border-color: var(--line-hot); }
+.cal-nav:disabled { opacity: .3; cursor: default; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-wd { text-align: center; color: var(--muted); font-size: 12px; font-weight: 600; padding-bottom: 2px; }
+.cal-wd:nth-child(n+6) { color: var(--pink); } /* Fri, Sat */
+.cal-day {
+  height: 44px; display: grid; place-content: center; gap: 1px; border-radius: 12px; cursor: pointer;
+  border: 1px solid transparent; background: rgb(255 46 147 / calc(.05 + var(--heat) * .3));
+  font-variant-numeric: tabular-nums; transition: border-color .15s, transform .15s;
+}
+.cal-day span { font-weight: 600; font-size: 15px; line-height: 1; }
+.cal-day small { font-size: 10px; color: var(--muted); line-height: 1; }
+.cal-day:hover:not(:disabled) { border-color: var(--line-hot); }
+.cal-day:active:not(:disabled) { transform: scale(.94); }
+.cal-day:disabled { background: transparent; color: rgb(179 166 212 / .35); cursor: default; }
+.cal-day.today { border-color: var(--cyan); }
+.cal-day.on { background: var(--grad); border-color: transparent; color: #fff; box-shadow: 0 4px 16px -4px rgb(255 46 147 / .55); }
+.cal-day.on small { color: rgb(255 255 255 / .85); }
 /* Desktop drop-down buttons and the one drawer they open. */
 .f-drop { font-weight: 600; }
 .f-drop b {
