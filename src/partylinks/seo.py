@@ -370,7 +370,7 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
             f"<article><h1>{escape(row.title)}</h1><p>{escape(_when(row, cfg, lang))}</p>"
             f"<p>{venue_link} {escape(where)}</p><p>{escape(_price(row, lang))}</p>{lineup}"
             f"<p>{escape(_clip(row.description, 2000))}</p>"
-            f'<p><a href="{escape(go_path(row.id))}" rel="nofollow noopener">{t["tickets"]} ({escape(row.source)})</a></p></article>'
+            f'<p><a href="{escape(go_path(row.id))}?at=seo" rel="nofollow noopener">{t["tickets"]} ({escape(row.source)})</a></p></article>'
         ),
     )
 

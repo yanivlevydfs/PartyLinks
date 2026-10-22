@@ -521,8 +521,9 @@ def test_seller_links_leave_only_through_the_rate_limited_redirect(tmp_path: Pat
         pages = [client.get(p).text for p in ("/events", "/events/test:a", "/events/map", "/changes", "/event/test:a")]
         assert not [p for p in pages if "seller.example" in p]
         assert client.get("/events/test:a").json()["url"] == "/go/test%3Aa"
-        go = client.get("/go/test%3Aa", follow_redirects=False)
-        assert go.status_code == 302 and go.headers["location"] == "https://seller.example/a"
+        go = client.get("/go/test%3Aa?at=buy", follow_redirects=False)
+        assert go.status_code == 302 and go.headers["location"].startswith("https://seller.example/a?utm_source=pulse&")
+        assert "utm_content=buy" in go.headers["location"]
     limit = settings.security.go_rate_limit_per_minute
     with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}, client=("203.0.113.9", 1)) as client:
         codes = [client.get("/go/test%3Aa", follow_redirects=False).status_code for _ in range(limit + 1)]

@@ -80,7 +80,7 @@ export default function EventPage() {
               {e.organizer && <li><i>🎤</i>{t.organizer}: {e.organizer}</li>}
             </ul>
 
-            <a className="buy" href={e.url} target="_blank" rel="noopener noreferrer">
+            <a className="buy" href={`${e.url}?at=buy`} target="_blank" rel="noopener noreferrer">
               {t.buy} ↗ <small>{sourceName(e.source)}</small>
             </a>
             <p className="buy-note">{t.buyNote} <Link to="/terms">{t.terms}</Link></p>
@@ -89,7 +89,7 @@ export default function EventPage() {
               <div className="alts">
                 <span>{t.alsoAt}</span>
                 {e.alternatives.map((a) => (
-                  <a key={a.id} className="alt" href={a.url} target="_blank" rel="noopener noreferrer">
+                  <a key={a.id} className="alt" href={`${a.url}?at=alt`} target="_blank" rel="noopener noreferrer">
                     <b>{sourceName(a.source)}</b>
                     <small>{a.is_sold_out ? t.soldOut : priceLabel({ ...a, currency: e.currency }, t) || "—"}</small> ↗
                   </a>
@@ -139,7 +139,7 @@ export default function EventPage() {
           <b>{e.is_sold_out ? t.soldOut : price}</b>
           <small>{sourceName(e.source)}</small>
         </div>
-        <a className="buy" href={e.url} target="_blank" rel="noopener noreferrer">{t.buy} ↗</a>
+        <a className="buy" href={`${e.url}?at=bar`} target="_blank" rel="noopener noreferrer">{t.buy} ↗</a>
       </div>
     </article>
   );

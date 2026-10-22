@@ -40,6 +40,14 @@ site:
     email: ""
     updated: 2026-10-20    # last review of the policy
 
+# UTM tags on ticket links (src/partylinks/utm.py), added in the /go/ redirect so sellers' analytics
+# (GA4...) attribute traffic and sales to us: utm_source / utm_medium from here, utm_campaign = the
+# event's slug, utm_content = where on our page it was clicked (buy / alt / bar / seo), utm_term = city.
+utm:
+  enabled: true
+  source: pulse
+  medium: affiliate
+
 # Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
 # https, no framing), vulnerability-scanner and data-harvester blocking, per-IP rate limits and
 # temporary bans (probes such as /.env or /wp-login.php, wrong admin tokens, rate-limit hits).

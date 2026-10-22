@@ -328,6 +328,14 @@ class SiteSettings(BaseModel):
         return value.rstrip("/")
 
 
+class UtmSettings(BaseModel):
+    """UTM tags added to ticket links in GET /go/... (see partylinks.utm)."""
+
+    enabled: bool = True
+    source: str = "pulse"
+    medium: str = "affiliate"
+
+
 class AdminSettings(BaseModel):
     # Bearer token for /admin and the mutating API routes. Keep it out of the YAML:
     # PARTYLINKS_ADMIN__TOKEN=... in the environment or in .env. Unset = localhost only.
@@ -386,6 +394,7 @@ class Settings(BaseSettings):
     site: SiteSettings = Field(default_factory=SiteSettings)
     geocoding: GeocodingSettings = Field(default_factory=GeocodingSettings)
     security: SecuritySettings = Field(default_factory=SecuritySettings)
+    utm: UtmSettings = Field(default_factory=UtmSettings)
     # Raw per-source blocks; each scraper validates its own block with its own model.
     # None = a block whose keys are all commented out (reported as invalid, not a crash).
     sources: dict[str, dict[str, Any] | None] = Field(default_factory=dict)
