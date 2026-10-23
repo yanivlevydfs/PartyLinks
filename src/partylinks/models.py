@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any
@@ -154,6 +154,15 @@ class ScrapedEvent(BaseModel):
         if value is not None and value.tzinfo is None:
             raise ValueError("event datetimes must be timezone-aware")
         return value
+
+    @model_validator(mode="after")
+    def _end_after_start(self) -> ScrapedEvent:
+        """An end at or before the start is a time on the start's calendar day (Zygo): the next day's
+        when that keeps the event within a day, else unknown."""
+        if self.start_at and self.end_at and self.end_at <= self.start_at:
+            next_day = self.end_at + timedelta(days=1)
+            self.end_at = next_day if self.start_at < next_day <= self.start_at + timedelta(days=1) else None
+        return self
 
     @model_validator(mode="after")
     def _merge_artwork(self) -> ScrapedEvent:

@@ -131,6 +131,11 @@ def event_slug(url: str, s: SecretTelAvivSettings) -> str:
     return slug
 
 
+def _without_venue(title: str | None) -> str | None:
+    """"Title @ Venue" without the venue, which is its own field."""
+    return title.rpartition(" @ ")[0] if title and " @ " in title else title
+
+
 def parse_feed(ics: str, s: SecretTelAvivSettings, timezone: str) -> list[ScrapedEvent]:
     """Events of the iCal feed, one per event page (first wins)."""
     tz = ZoneInfo(timezone)
@@ -151,6 +156,7 @@ def parse_feed(ics: str, s: SecretTelAvivSettings, timezone: str) -> list[Scrape
             continue
         title = (props.get("SUMMARY") or "").split(" -  - ")[0].strip()
         venue = title.rpartition(" @ ")[2] if " @ " in title else None
+        title = _without_venue(title) or title
         start, end = (
             _ical_time(props.get("DTSTART"), tz),
             _ical_time(props.get("DTEND"), tz),
@@ -233,7 +239,7 @@ def parse_event(page_html: str, url: str, s: SecretTelAvivSettings, timezone: st
         source=SecretTelAvivScraper.name,
         source_event_id=event_slug(url, s),
         url=url,
-        title=(clean_str(title_node.text()) if title_node else None) or "",
+        title=_without_venue(clean_str(title_node.text()) if title_node else None) or "",
         description=html_to_text("".join(description)),
         start_at=start_at,
         end_at=end_at,

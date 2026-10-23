@@ -12,6 +12,7 @@ Zygo) are read from those linked pages, so dedup can merge them and they get pri
 
 from __future__ import annotations
 
+import re
 from collections.abc import AsyncIterator
 from decimal import Decimal
 from typing import Any
@@ -146,11 +147,14 @@ def _parse_ticket(ticket: dict[str, Any], currency: str, fee_rate: Decimal | Non
     )
 
 
+_REGION = re.compile(r"district|^hasharon$|^the sharon$|מחוז|^השרון$|^מרכז", re.IGNORECASE)
+
 def _city_from_address(address: str | None) -> str | None:
     """Google-formatted addresses end with "..., <city> [<zip>], <country>"."""
     parts = [p.strip(" 0123456789") for p in (address or "").split(",")]
     parts = [p for p in parts if p]
-    return parts[-2] if len(parts) >= 2 else None
+    city = parts[-2] if len(parts) >= 2 else None
+    return None if city is None or _REGION.search(city) else city  # "Center District", "HaSharon"
 
 
 def _label(value: Any) -> str | None:

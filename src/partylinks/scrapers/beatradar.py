@@ -24,7 +24,8 @@ _CAMEL = re.compile(r"(?<=[a-z])(?=[A-Z])")
 # Beat Radar's words our genre keywords do not know, in words they do.
 _GENRE_WORDS = {"live": "live show", "festival": "music festival", "groove": "funk", "black music": "hip hop r&b"}
 # A city or venue named only for the country or a region is no place.
-_NO_PLACE = {"israel", "ישראל", "north district", "center district", "south district"}
+_NO_PLACE = {"israel", "ישראל", "north district", "northern district", "center district", "central district",
+             "central israel", "south district", "southern district", "מרכז הארץ", "צפון הארץ", "דרום הארץ"}
 _CURRENCIES = {"NIS": "ILS", "₪": "ILS"}
 
 
@@ -57,7 +58,7 @@ def parse_event(item: dict[str, Any], timezone: str) -> ScrapedEvent | None:
     if meta.get("visibility") not in (None, "all"):
         return None
     event_id, url = clean_str(item.get("_id")), _without_ref(clean_str(meta.get("url")))
-    title = _text(item.get("title"), "he", "original", "en")
+    title = _text(item.get("title"), "original", "he", "en")  # "he" is often a machine translation
     start = parse_iso(item.get("startTimestamp"), timezone)
     if not event_id or not url or not title or not start:
         raise ParseError(f"{event_id}: party without id, link, title or start")

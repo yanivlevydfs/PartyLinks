@@ -289,3 +289,11 @@ def test_grayclub_artist_page_profile() -> None:
     assert profile and profile.name == "שלומית אהרון"
     assert profile.image_url and profile.image_url.endswith(".jpg")
     assert any("instagram.com" in link for link in profile.links)
+
+
+def test_zygo_region_is_no_city() -> None:
+    from partylinks.scrapers.zygo import _city_from_address
+
+    assert _city_from_address("Unnamed Road, Center District, Israel") is None
+    assert _city_from_address("HaSharon, Israel") is None
+    assert _city_from_address("Ha-Barzel St 1, Tel Aviv-Yafo, Israel") == "Tel Aviv-Yafo"

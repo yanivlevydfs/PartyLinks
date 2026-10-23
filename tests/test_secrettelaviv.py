@@ -32,7 +32,7 @@ def test_feed_lists_every_event() -> None:
         "midburn-festival",
     }
     gagarin = events["alien-transport-frequency-gagarin-club"]
-    assert gagarin.title == "Alien Transport & Frequency @ Gagarin Club"  # same title as the event page
+    assert gagarin.title == "Alien Transport & Frequency"  # the venue is its own field, as on the event page
     assert gagarin.venue_name == "Gagarin Club"
     assert gagarin.start_at == datetime(2026, 10, 26, 23, 0, tzinfo=ZoneInfo(TZ))
     assert gagarin.end_at is None  # "11:55 pm" is the site's placeholder end
@@ -78,7 +78,7 @@ def test_event_page_fields() -> None:
     url = f"{SITE}/tickets/alien-transport-frequency-gagarin-club"
     event = secrettelaviv.parse_event(_page("event_gagarin.html"), url, CFG, TZ)
     assert event.source_event_id == "alien-transport-frequency-gagarin-club"
-    assert event.title == "Alien Transport & Frequency @ Gagarin Club"
+    assert event.title == "Alien Transport & Frequency"
     assert event.start_at == datetime(2026, 10, 26, 23, 0, tzinfo=ZoneInfo(TZ))
     assert event.end_at is None  # "11:55 pm" is the site's placeholder end
     assert event.venue_name == "Gagarin Club" and event.address is None

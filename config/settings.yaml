@@ -249,7 +249,9 @@ enrichment:
                 "כתובת דואר אלקטרוני", "תשלום אלקטרוני", "חתימה אלקטרונית", "ארנק אלקטרוני",
                 "נוצרה בבינה מלאכותית", "נוצרה באמצעות בינה מלאכותית", "נוצר בבינה מלאכותית",
                 "נוצר באמצעות בינה מלאכותית", "בעזרת בינה מלאכותית", "ועובדה באמצעות בינה מלאכותית",
-                "production house", "silent disco", "סיילנט דיסקו"]
+                "production house", "silent disco", "סיילנט דיסקו",
+                "להכנס", "להיכנס", "מכנס", "יכנס", "ייכנס", "תכנס", "נכנס",  # "כנס" (conference) inside verbs
+                "pop-up", "pop up", "popup", "פופ אפ", "פופ-אפ", "פופאפ"]
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
   # talks: their text is read only for these genres.

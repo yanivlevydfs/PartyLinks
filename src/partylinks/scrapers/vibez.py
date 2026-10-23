@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -31,6 +32,7 @@ _DIRECTIONS = re.compile(
     r"\b(?:from|min|minutes|hours?)\b|דק[׳']?(?!\w)|דקות|שעה|שעתיים|צפונית|דרומית|מזרחית|מערבית", re.IGNORECASE
 )
 _STREET = re.compile(r"\d|,")
+MAX_SPAN = timedelta(days=7)
 
 
 class VibezSettings(SourceSettings):
@@ -92,7 +94,7 @@ def parse_event(
         title=title,
         description=html_to_text(str(item.get("description") or "")),
         start_at=start,
-        end_at=parse_iso(item.get("end_time"), item.get("timezone") or timezone),
+        end_at=_end(start, parse_iso(item.get("end_time"), item.get("timezone") or timezone)),
         venue_name=None if is_address else place,
         address=place if is_address else None,
         organizer=clean_str(project.get("name")),
@@ -103,6 +105,11 @@ def parse_event(
         tickets=tickets,
         is_sold_out=bool(tickets) and all(t.status is TierStatus.SOLD_OUT for t in tickets),
     )
+
+
+def _end(start: datetime, end: datetime | None) -> datetime | None:
+    """An "end" weeks or a year away is the sale window of a recurring series, not the event's."""
+    return end if end is None or end - start <= MAX_SPAN else None
 
 
 def _tier(product: dict[str, Any]) -> TicketTier:

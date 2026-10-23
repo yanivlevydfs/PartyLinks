@@ -296,3 +296,15 @@ def test_words_in_passing_are_no_genres() -> None:
     assert "startups" in genres("Founders night", "startup founders meet", ("hi-tech",))
     assert "electronic" in genres("Skazi", "מסיבה אלקטרונית עד הבוקר")
     assert "stand_up" in genres("Comedy night", "", ("קומדיה",))  # comedy declared by the source
+
+
+def test_end_before_start_is_the_next_day_or_unknown() -> None:
+    start = datetime(2026, 10, 29, 20, 30, tzinfo=UTC)
+    assert make(start_at=start, end_at=datetime(2026, 10, 29, 1, 0, tzinfo=UTC)).end_at == datetime(2026, 10, 30, 1, 0, tzinfo=UTC)
+    assert make(start_at=start, end_at=start).end_at == start.replace(day=30)  # Zygo: same clock time
+    assert make(start_at=start, end_at=datetime(2026, 10, 20, tzinfo=UTC)).end_at is None  # days before: unknown
+
+
+def test_verbs_and_pop_ups_are_no_genres() -> None:
+    assert "conference" not in ENRICHER._detect_genres(make(title="BAMESHEK", description="אפשר להכנס עד 23:00"))
+    assert "pop" not in ENRICHER._detect_genres(make(title="Avenue Matcha Pop-Up & Party", description=""))

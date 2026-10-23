@@ -52,3 +52,9 @@ def test_directions_are_no_place() -> None:
     for place in ("50 דק צפונית מתל אביב", "55 min from tel aviv - north", "שעה וחצי דרומה מהמרכז"):
         event = vibez.parse_event({**item, "location": place}, [], SITE, TZ)
         assert event is not None and event.venue_name is None and event.address is None, place
+
+
+def test_a_sale_window_is_no_end() -> None:
+    sabaya = parse("Sabaya")  # "ends" a year later: the series' sale window
+    assert sabaya.end_at is None
+    assert parse("dopamine - Masquerade").end_at is not None
