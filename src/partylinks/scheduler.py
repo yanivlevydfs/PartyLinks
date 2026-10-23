@@ -79,4 +79,5 @@ def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOSchedu
 def next_run_times(scheduler: AsyncIOScheduler | None) -> dict[str, datetime | None]:
     if scheduler is None:
         return {}
-    return {job.id: job.next_run_time for job in scheduler.get_jobs()}
+    # A job added before the scheduler starts has no next_run_time attribute yet.
+    return {job.id: getattr(job, "next_run_time", None) for job in scheduler.get_jobs()}
