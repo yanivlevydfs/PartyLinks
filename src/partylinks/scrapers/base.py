@@ -56,6 +56,8 @@ class SourceSettings(BaseModel):
     # Send this source through `http.source_proxy`. On by default: every source goes through it on
     # Railway, where the variable is set; locally it is unset, so requests go direct.
     proxied: bool = True
+    # This source's run limit when it needs longer than scheduler.run_timeout_seconds.
+    run_timeout_seconds: float | None = Field(None, gt=0)
 
     @field_validator("cron")
     @classmethod

@@ -272,7 +272,11 @@ class ScrapeService:
         scraper = None
         failures: list[str] = []
         batch: dict[str, ScrapedEvent] = {}
-        timeout = self.settings.scheduler.run_timeout_seconds
+        try:
+            own = source_settings(source, self.settings).run_timeout_seconds
+        except Exception:  # noqa: BLE001 - an unknown or broken source fails below, with its own error
+            own = None
+        timeout = own or self.settings.scheduler.run_timeout_seconds
 
         async def flush() -> None:
             nonlocal saved

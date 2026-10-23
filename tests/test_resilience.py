@@ -320,3 +320,11 @@ def test_mostly_empty_database_file_is_compacted(tmp_path: Path) -> None:
     after = db.storage_stats()
     assert (after["file_bytes"] or 0) < (before["file_bytes"] or 0) and after["free_bytes"] == 0
     assert db.compact_if_bloated(min_free_bytes=1_000_000) == 0  # nothing left to do
+
+
+def test_a_source_can_have_a_longer_run_limit() -> None:
+    from partylinks.scrapers import source_settings
+
+    settings = Settings()
+    assert source_settings("tiktik", settings).run_timeout_seconds == 3600
+    assert source_settings("goout", settings).run_timeout_seconds is None  # the scheduler's default

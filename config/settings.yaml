@@ -847,6 +847,8 @@ sources:
     # Store API lists the music category (~2,000 products); each product page's MusicEvent
     # JSON-LD gives date, venue, city and country. Events abroad live in the /abroad section.
     enabled: true
+    # ~1,900 pages a run through the proxy: longer than the 30-min default (Oct 2026).
+    run_timeout_seconds: 3600
     cron: "27 4,16 * * *"
     site_url: https://www.tiktik-online.co.il
     products_path: /wp-json/wc/store/v1/products
@@ -1659,6 +1661,8 @@ sources:
     # is the locality its place names, else the council. `category`: for events filed under none
     # (default קהילה). Mostly no robots.txt. golan.org.il: firewall; hod-hasharon: Milgam shop.
     enabled: true
+    # Dozens of municipal sites a run: longer than the 30-min default (Oct 2026).
+    run_timeout_seconds: 3600
     cron: "3 6,18 * * *"
     sites:
       - {url: https://www.rosh-haayin.muni.il, city: ראש העין}
