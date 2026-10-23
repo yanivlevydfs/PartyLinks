@@ -45,6 +45,8 @@ _PLACE = re.compile(r'tickets_place_txt[^"]*">(.*?)</div>', re.DOTALL)
 _EID = re.compile(r"events\.aspx\?eid=(\d+)")
 _PRICE = re.compile(r'tickets_price_currency">([^<]*)</div>\s*<div>([^<]*)</div>')
 _NEXT = re.compile(r'id="hplNext"[^>]*href="([^"]+)"')
+# The top menu links popular performers of every kind from every page: not the category's own.
+_MENU_LINK = re.compile(r'<a\b[^>]*class="[^"]*navlink[^"]*"[^>]*>', re.IGNORECASE)
 
 
 class LiveTicketsSettings(SourceSettings):
@@ -74,15 +76,17 @@ class LiveTicketsScraper(BaseScraper[LiveTicketsSettings]):
             yield event
 
     async def _listings(self) -> dict[str, list[str]]:
-        """Performer, city and venue pages linked from the home page and its category pages, with the
-        categories of the category pages that link them ("concerts", "soccer"...)."""
+        """Performer, city and venue pages linked from the home page and its category pages; a performer
+        page carries the categories of the category pages that link it ("concerts", "soccer"...)."""
         home = self.settings.site_url + "/"
         found = {k: (u, []) for k, u in listing_links(await self.get_text(home), home).items()}
         categories = [u for u, _ in found.values() if "/category" in u.lower()]
         for url, page in zip(categories, await self._pages(categories), strict=True):
             category = category_name(url)
-            for key, link in listing_links(page, self.settings.site_url + "/").items():
-                found.setdefault(key, (link, []))[1].append(category)
+            for key, link in listing_links(_MENU_LINK.sub("", page), self.settings.site_url + "/").items():
+                entry = found.setdefault(key, (link, []))
+                if "performers/" in key:  # city and venue pages mix every kind: no category from them
+                    entry[1].append(category)
         return {u: cats for k, (u, cats) in found.items() if "/category" not in k}
 
     async def _pages(self, urls: list[str]) -> list[str]:

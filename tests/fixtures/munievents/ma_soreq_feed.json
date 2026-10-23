@@ -1,0 +1,50 @@
+[
+ {
+  "title": "שובי לביתך- חנה קלנר ",
+  "start": "2026-10-25T20:00:00+02:00",
+  "end": "2026-10-25T23:59:59+02:00",
+  "url": "https://ma-soreq.tickchak.co.il/111555?ref=1IRG",
+  "color": "#0f7b25",
+  "eventColor": "#0f7b25",
+  "textColor": "rgba(255,255,255,1)",
+  "category": 4,
+  "categories": null,
+  "rand": null,
+  "cancelled": null,
+  "className": "",
+  "date": "יום ראשון, 25.10.2026",
+  "pic": "./uploads/w-480/1787122562.8227.jpg"
+ },
+ {
+  "title": "כנס למיגור חרמות - למגזר החרדי",
+  "start": "2026-10-26T19:30:00+02:00",
+  "end": "2026-10-26T23:59:59+02:00",
+  "url": "./events/1074/",
+  "color": "#0f7b25",
+  "eventColor": "#0f7b25",
+  "textColor": "rgba(255,255,255,1)",
+  "category": 4,
+  "categories": null,
+  "rand": null,
+  "cancelled": null,
+  "className": "",
+  "date": "יום שני, 26.10.2026",
+  "pic": "./uploads/w-480/1791983093.8908.png"
+ },
+ {
+  "title": "סדנת כתיבה / במסגרת תחרות מילה במקום ",
+  "start": "2026-10-26T20:00:00+02:00",
+  "end": "2026-10-26T23:59:59+02:00",
+  "url": "./events/1076/",
+  "color": "#f7af4a",
+  "eventColor": "#f7af4a",
+  "textColor": "rgba(255,255,255,1)",
+  "category": 3,
+  "categories": null,
+  "rand": null,
+  "cancelled": null,
+  "className": "",
+  "date": "יום שני, 26.10.2026",
+  "pic": "./uploads/w-480/1792329078.7317.jpg"
+ }
+]

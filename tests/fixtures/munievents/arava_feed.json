@@ -1,0 +1,41 @@
+[
+ {
+  "title": "פסטיבל מחול אביב בערבה",
+  "start": "2016-03-16",
+  "end": "2016-03-19T2016-03-19+00:00",
+  "url": "./events/6/",
+  "color": "rgba(0,0,0,1)",
+  "textColor": "rgba(255,255,255,1)",
+  "category": 0,
+  "categories": null,
+  "rand": null,
+  "cancelled": "0",
+  "className": ""
+ },
+ {
+  "title": "פסטיבל הסרטים ה-15 בערבה 2026 ",
+  "start": "2026-11-04",
+  "end": "2026-11-14T2026-11-14+00:00",
+  "url": "./events/2345/",
+  "color": "#c3139d",
+  "textColor": "rgba(255,255,255,1)",
+  "category": 5,
+  "categories": null,
+  "rand": null,
+  "cancelled": "0",
+  "className": ""
+ },
+ {
+  "title": "קולנוע ערבה: קופה ראשית ",
+  "start": "2026-10-27T20:30+00:00",
+  "end": "",
+  "url": "./events/2470/",
+  "color": "#c3139d",
+  "textColor": "rgba(255,255,255,1)",
+  "category": 5,
+  "categories": null,
+  "rand": null,
+  "cancelled": "0",
+  "className": ""
+ }
+]

@@ -242,7 +242,7 @@ enrichment:
     festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль"]
     meetups: ["meetups", "community", "meeting", "קהילה", "קהילות", "קהילתי", "קהילתית", "קהילתיים", "בקהילה",
               "פעילות חברתית", "языковой клуб"]
-    culture: ["culture highlights", "culture", "תרבות ופנאי"]
+    culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי"]
     exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה"]
     workshops: ["workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест"]
     cinema: ["sceening", "screening", "screenings", "קולנוע", "סינמטק"]
@@ -250,15 +250,20 @@ enrichment:
     markets: ["shopping", "יריד", "ירידים", "שוק", "שווקים", "ярмарка"]
     food: ["food events", "food", "אוכל", "מזון"]
     environment: ["environmental", "סביבה", "איכות הסביבה", "קיימות", "טבע", "גינות"]
-    religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат"]
+    religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат", "chassidic"]
     holidays: ["holidays", "halloween", "חגים", "חג", "праздник"]
     sport: ["sport", "sports", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
             "מרוץ", "אופניים"]
     yoga_wellness: ["wellness", "בריאות", "פילאטיס"]
     classical_opera: ["classical"]
-    theatre: ["theater", "theatre", "musicals", "cast recordings", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר"]
+    # Muzi's genre slugs.
+    israeli: ["hebrew"]
+    mizrahi: ["yam_tichoni"]
+    rock_indie: ["rocknroll"]
+    world_balkan: ["world"]
+    theatre: ["theater", "theatre", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר"]
     kids: ["kids", "children", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
-           "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות"]
+           "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show"]
     lectures: ["lecture", "lectures", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה"]
     tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים"]
     dance: ["dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט"]
@@ -1632,16 +1637,120 @@ sources:
       timeout_seconds: 60       # one ~9 MB response
 
   munievents:
-    # Municipal event calendars on one shared CMS (/events/ cards + /events/<id>/ pages): mostly free
-    # community events sold nowhere else; paid ones are sold by the city itself. One listing page per
-    # city (all events, a recurring one kept once at its next date) plus each event's page for the
-    # description, image and price. Cards linking to a Smarticket hall are skipped. No robots.txt.
-    # Add a city on the same engine with one more `sites` entry.
+    # Every city / council / matnas site on the A.S. Bina CMS (binaa.co.il). Per site: the FullCalendar
+    # feed /events/json/ (one request, all upcoming events; a recurring one kept once at its next date)
+    # plus /events/ (category names, #tags), then each event's page for description, image, place and
+    # price. `feed: false` where the feed is missing (500 / HTML): the listing page is parsed instead.
+    # Events linking off the site (Smarticket, Tickchak) are skipped. `regional: true`: the event's city
+    # is the locality its place names, else the council. `category`: for events filed under none
+    # (default קהילה). Mostly no robots.txt. golan.org.il: firewall; hod-hasharon: Milgam shop.
     enabled: true
     cron: "3 6,18 * * *"
     sites:
       - {url: https://www.rosh-haayin.muni.il, city: ראש העין}
       - {url: https://www.kfar-saba.muni.il, city: כפר סבא}
+      - {url: https://www.rehovot.muni.il, city: רחובות}
+      - {url: https://www.bat-yam.muni.il/he, city: בת ים}
+      - {url: https://www.betshemesh.muni.il, city: בית שמש}
+      - {url: https://www.givatayim.muni.il, city: גבעתיים}
+      - {url: https://www.nzc.org.il, city: נס ציונה}
+      - {url: https://www.modil.org.il, city: מודיעין עילית}
+      - {url: https://www.yavne.muni.il, city: יבנה}
+      - {url: https://www.qiryat-gat.muni.il, city: קריית גת}
+      - {url: https://www.eilat.muni.il, city: אילת}
+      - {url: https://www.akko.muni.il/he, city: עכו}
+      - {url: https://www.ariel.muni.il, city: אריאל}
+      - {url: https://www.ofaqim.muni.il, city: אופקים}
+      - {url: https://www.k-m.org.il, city: קריית מלאכי}
+      - {url: https://www.kiryatono.muni.il, city: קריית אונו}
+      - {url: https://www.k-8.co.il/he, city: קריית שמונה}
+      - {url: https://www.nahariya.muni.il, city: נהריה}
+      - {url: https://www.b-y.org.il, city: באר יעקב}
+      - {url: https://www.kiryat-yam.muni.il, city: קריית ים}
+      - {url: https://www.afula.muni.il/he, city: עפולה}
+      - {url: https://www.herzliya.muni.il, city: הרצליה, feed: false}
+      - {url: https://www.lod.muni.il/he, city: לוד, feed: false}
+      - {url: https://www.maale-adummim.muni.il, city: מעלה אדומים, feed: false}
+      - {url: https://www.nof-hagalil.muni.il, city: נוף הגליל, feed: false}
+      - {url: https://www.givat-shmuel.muni.il, city: גבעת שמואל, feed: false}
+      - {url: https://www.oryehuda.muni.il, city: אור יהודה, feed: false}
+      - {url: https://www.dimona.muni.il, city: דימונה, feed: false}
+      - {url: https://www.kiryat-motzkin.muni.il, city: קריית מוצקין}
+      - {url: https://www.nesher.muni.il, city: נשר, feed: false}
+      - {url: https://www.betar-illit.muni.il, city: ביתר עילית, feed: false}
+      - {url: https://www.netivot.muni.il, city: נתיבות}
+      - {url: https://www.tamra.muni.il/he, city: טמרה, feed: false}
+      - {url: https://www.sakhnin.muni.il/he, city: "סח'נין", feed: false}
+      - {url: https://www.arraba.muni.il/he, city: עראבה, feed: false}
+      - {url: https://www.kfar-qasem.muni.il/he, city: כפר קאסם}
+      - {url: https://www.kfar-yona.muni.il, city: כפר יונה}
+      - {url: https://www.ramle.org.il, city: רמלה}
+      - {url: https://www.herzliya-matnasim.org.il, city: הרצליה, organizer: החברה למתנסים הרצליה}
+      - {url: https://www.ironit-rehovot.co.il, city: רחובות, organizer: החברה העירונית לתרבות ספורט ונופש רחובות}
+      - {url: https://www.beithaam.co.il, city: רחובות, organizer: בית העם רחובות}
+      - {url: https://www.hamatnas.co.il, city: קריית אונו, organizer: 'המתנ"ס קריית אונו'}
+      - {url: https://www.matnasyavne.co.il, city: יבנה, organizer: 'מתנ"סי יבנה'}
+      - {url: https://www.ofektivi.org.il, city: אופקים, organizer: אופק תרבות אופקים}
+      - {url: https://www.gvanim-ariel.com, city: אריאל, organizer: גוונים אריאל}
+      - {url: https://www.eshkol.info, city: מועצה אזורית אשכול, regional: true, feed: false}
+      - {url: https://www.beer-tuvia.org.il, city: מועצה אזורית באר טוביה, regional: true}
+      - {url: https://www.bns.org.il, city: מועצה אזורית בני שמעון, regional: true}
+      - {url: https://www.ganrave.org.il, city: מועצה אזורית גן רווה, regional: true}
+      - {url: https://www.dsharon.org.il, city: מועצה אזורית דרום השרון, regional: true}
+      - {url: https://www.glt.org.il, city: מועצה אזורית הגליל התחתון, regional: true}
+      - {url: https://www.arava.co.il, city: מועצה אזורית הערבה התיכונה, regional: true}
+      - {url: https://www.eilot.org.il, city: מועצה אזורית חבל אילות, regional: true}
+      - {url: https://www.hevel-yavne.org.il, city: מועצה אזורית חבל יבנה, regional: true}
+      - {url: https://www.hof-ashkelon.org.il, city: מועצה אזורית חוף אשקלון, regional: true}
+      - {url: https://www.hof-hacarmel.co.il, city: מועצה אזורית חוף הכרמל, regional: true}
+      - {url: https://www.hof-hasharon.co.il, city: מועצה אזורית חוף השרון, regional: true}
+      - {url: https://www.yoav.org.il, city: מועצה אזורית יואב, regional: true}
+      - {url: https://www.megiddo.org.il, city: מועצה אזורית מגידו, regional: true, feed: false}
+      - {url: https://www.binyamin.org.il, city: מועצה אזורית מטה בנימין, regional: true}
+      - {url: https://www.m-yehuda.org.il, city: מועצה אזורית מטה יהודה, regional: true}
+      - {url: https://www.mrg.org.il, city: מועצה אזורית מרום הגליל, regional: true}
+      - {url: https://www.misgav.org.il, city: מועצה אזורית משגב, regional: true, feed: false}
+      - {url: https://www.hefer.org.il, city: מועצה אזורית עמק חפר, regional: true, feed: false}
+      - {url: https://www.emekyizrael.org.il, city: מועצה אזורית עמק יזרעאל, regional: true}
+      - {url: https://www.sdotnegev.org.il, city: מועצה אזורית שדות נגב, regional: true}
+      - {url: https://www.shomron.org.il, city: מועצה אזורית שומרון, regional: true}
+      - {url: https://www.sng.org.il, city: מועצה אזורית שער הנגב, regional: true, feed: false}
+      - {url: https://www.brener.org.il, city: מועצה אזורית ברנר, regional: true, feed: false}
+      - {url: https://www.gderot.muni.il, city: מועצה אזורית גדרות, regional: true}
+      - {url: https://gezer-region.muni.il, city: מועצה אזורית גזר, regional: true}
+      - {url: https://www.hagilboa.org.il, city: מועצה אזורית הגלבוע, regional: true}
+      - {url: https://www.lev-hasharon.com, city: מועצה אזורית לב השרון, regional: true}
+      - {url: https://www.rng.org.il, city: מועצה אזורית רמת נגב, regional: true}
+      - {url: https://www.zvulun.org.il, city: מועצה אזורית זבולון, regional: true}
+      - {url: https://www.shaffir.org.il, city: מועצה אזורית שפיר, regional: true}
+      - {url: https://www.sdan.org.il, city: מועצה אזורית שדות דן, regional: true}
+      - {url: https://www.ma-soreq.org.il, city: מועצה אזורית נחל שורק, regional: true}
+      - {url: https://www.mvhr.org.il, city: מועצה אזורית מבואות החרמון, regional: true}
+      - {url: https://www.hrhevron.co.il, city: מועצה אזורית הר חברון, regional: true}
+      - {url: https://www.j-v.org.il, city: מועצה אזורית ערבות הירדן, regional: true}
+      - {url: https://www.merchavim.org.il, city: מועצה אזורית מרחבים, regional: true, feed: false}
+      - {url: https://www.mta.org.il/he, city: מועצה אזורית מטה אשר, regional: true, feed: false}
+      - {url: https://www.matnas-yoav.org.il, city: מועצה אזורית יואב, regional: true, organizer: 'מתנ"ס יואב', feed: false}
+      - {url: https://www.matnasbinyamin.co.il, city: מועצה אזורית מטה בנימין, regional: true, organizer: 'מתנ"ס בנימין'}
+      - {url: https://www.matnaslachish.org.il, city: מועצה אזורית לכיש, regional: true, organizer: 'מתנ"ס לכיש'}
+      - {url: https://www.azor.muni.il, city: אזור, organizer: מועצה מקומית אזור, feed: false}
+      - {url: https://www.oranit.org.il, city: אורנית, organizer: מועצה מקומית אורנית}
+      - {url: https://www.gedera.muni.il, city: גדרה, organizer: מועצה מקומית גדרה}
+      - {url: https://www.ganeytikva.org.il, city: גני תקווה, organizer: מועצה מקומית גני תקווה, feed: false}
+      - {url: https://www.emanuel.muni.il, city: עמנואל, organizer: מועצה מקומית עמנואל}
+      - {url: https://www.pardesia.muni.il, city: פרדסיה, organizer: מועצה מקומית פרדסיה, feed: false}
+      - {url: https://www.kedumim.org.il, city: קדומים, organizer: מועצה מקומית קדומים, feed: false}
+      - {url: https://www.kiryat-arba.muni.il, city: קריית ארבע, organizer: מועצה מקומית קריית ארבע, feed: false}
+      - {url: https://www.shoham.muni.il, city: שוהם}
+      - {url: https://www.har-adar.muni.il, city: הר אדר, organizer: מועצה מקומית הר אדר}
+      - {url: https://www.yavneel.muni.il, city: יבנאל, organizer: מועצה מקומית יבנאל, feed: false}
+      - {url: https://www.lehavim.muni.il, city: להבים, organizer: מועצה מקומית להבים}
+      - {url: https://www.m-zion.org.il, city: מבשרת ציון, organizer: מועצה מקומית מבשרת ציון}
+      - {url: https://www.tel-mond.muni.il, city: תל מונד, organizer: מועצה מקומית תל מונד}
+      - {url: https://www.kyair.org.il, city: כוכב יאיר צור יגאל, organizer: מועצה מקומית כוכב יאיר צור יגאל}
+      - {url: https://www.alfe-menashe.muni.il, city: אלפי מנשה, organizer: מועצה מקומית אלפי מנשה}
+      - {url: https://www.ramat-yishay.com, city: רמת ישי, organizer: מועצה מקומית רמת ישי}
+      - {url: https://www.efrat.muni.il/he, city: אפרת, organizer: מועצה מקומית אפרת, feed: false}
     http:
       concurrency: 4
       request_delay_seconds: 0.3
@@ -1705,4 +1814,45 @@ sources:
     max_events: 3000
     http:
       concurrency: 4
+      request_delay_seconds: 0.5
+
+  matnasnet:
+    # Matnasnet (מתנסנט / atarix) community-centre and council sites: page.php?type=events links,
+    # each event page's JSON-LD + theme fields (time, place, tags, seller link). Events sold by a
+    # Smarticket box office the smarticket source reads are skipped. robots: only /manager/ disallowed.
+    enabled: true
+    cron: "41 5,17 * * *"
+    sites:
+      - {url: https://www.elkana.org.il, city: אלקנה, months: 2}
+      - {url: https://www.givatzeev.org.il, city: גבעת זאב}
+      - {url: https://www.yeruham.org.il, city: ירוחם}
+      - {url: https://www.m-sdotnegev.org.il, city: שדות נגב, localities: [בית הגדי, זמרת, שובה, כפר מימון, תושיה, תקומה, שוקדה, יושיביה, שיבולים, סעד, עלומים]}
+      - {url: https://www.mka.org.il, city: אזור}
+      - {url: https://www.hof-hasharon.atarix.co.il, city: חוף השרון, localities: [שפיים, געש, יקום, רשפון, בני ציון, חרוצים, תל יצחק, אודים, כפר נטר, גליל ים, נוף ים, ארסוף, בצרה, בית יהושע]}
+      - {url: https://www.matnas-am.org.il, city: אלפי מנשה}
+      - {url: https://www.matnasganyavne.org, city: גן יבנה}
+      - {url: https://www.matnasny.org.il, city: חיפה}
+      - {url: https://www.matnasbga.org.il, city: בנימינה-גבעת עדה}
+      - {url: https://www.matnas-arad.org, city: ערד}
+      - {url: https://www.matnasky.com, city: קריית ים}
+      - {url: https://www.m-karmiel.co.il, city: כרמיאל}
+      - {url: https://www.mako.org.il, city: עכו}
+    http:
+      concurrency: 3
+      request_delay_seconds: 0.5
+
+  onecity:
+    # OneCity municipal WordPress + GeoDirectory: public REST /wp-json/geodir/v2/events (current events
+    # only) with categories/tags, place, organiser and ticket link; recurring events kept once.
+    # Events sold by a Smarticket box office the smarticket source reads are skipped.
+    enabled: true
+    cron: "17 4,16 * * *"
+    sites:
+      - {url: https://www.karmiel.muni.il, city: כרמיאל}
+      - {url: https://www.even-yehuda.muni.il, city: אבן יהודה}
+      - {url: https://www.tiberias.muni.il, city: טבריה}
+      - {url: https://www.tira.muni.il, city: טירה}
+      - {url: https://www.kiryat-ata.org.il, city: קריית אתא}
+    http:
+      concurrency: 2
       request_delay_seconds: 0.5

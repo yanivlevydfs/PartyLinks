@@ -1,0 +1,162 @@
+[
+ {
+  "id": 13137,
+  "title": {
+   "raw": "מתנת הכתיבה",
+   "rendered": "מתנת הכתיבה"
+  },
+  "link": "https://www.even-yehuda.muni.il/gd_event/%d7%9e%d7%aa%d7%a0%d7%aa-%d7%94%d7%9b%d7%aa%d7%99%d7%91%d7%94/",
+  "status": "publish",
+  "type": "gd_event",
+  "author": 289,
+  "date": "2026-09-07T09:39:58",
+  "date_gmt": "2026-09-07T06:39:58",
+  "modified": "2026-09-07T09:43:34",
+  "modified_gmt": "2026-09-07T06:43:34",
+  "content": {
+   "raw": ""
+  },
+  "default_category": "174",
+  "post_category": [
+   {
+    "id": 174,
+    "name": "גילאי 18+",
+    "slug": "%d7%92%d7%99%d7%9c%d7%90%d7%99-18"
+   }
+  ],
+  "post_tags": [],
+  "recurring": "0",
+  "schedule_id": "1932",
+  "start_date": {
+   "raw": "2026-10-06",
+   "rendered": "06/10/2026"
+  },
+  "start_time": {
+   "raw": "19:00",
+   "rendered": "19:00"
+  },
+  "end_date": {
+   "raw": "2026-12-29",
+   "rendered": "29/12/2026"
+  },
+  "end_time": {
+   "raw": "20:30",
+   "rendered": "20:30"
+  },
+  "all_day": "0",
+  "start_datetime": {
+   "raw": "2026-10-06T19:00:00",
+   "rendered": "06/10/2026, 19:00"
+  },
+  "end_datetime": {
+   "raw": "2026-12-29T20:30:00",
+   "rendered": "29/12/2026, 20:30"
+  },
+  "gd_evevnt_rishum": "",
+  "gd_event_buyticket": "https://shortlink.win/1DqVc",
+  "street": "",
+  "country": "",
+  "region": "",
+  "city": "",
+  "zip": "",
+  "latitude": "",
+  "longitude": "",
+  "mapview": "ROADMAP",
+  "mapzoom": "",
+  "cf1736694864": "",
+  "featured": false,
+  "rating": 0,
+  "rating_count": 0,
+  "featured_media": 13139,
+  "featured_image": {
+   "id": "268",
+   "title": "",
+   "src": "https://www.even-yehuda.muni.il/wp-content/uploads/2026/09/כרמית.png",
+   "thumbnail": "https://www.even-yehuda.muni.il/wp-content/uploads/2026/09/כרמית-150x150.png",
+   "width": 1080,
+   "height": 1080
+  },
+  "comment_status": "closed",
+  "ping_status": "closed"
+ },
+ {
+  "id": 13003,
+  "title": {
+   "raw": "האזנה למוזיקה קלאסית",
+   "rendered": "האזנה למוזיקה קלאסית<span class='gd-date-in-title'> - 29/10/2026</span>"
+  },
+  "link": "https://www.even-yehuda.muni.il/gd_event/music/",
+  "status": "publish",
+  "type": "gd_event",
+  "author": 298,
+  "date": "2026-08-13T16:51:17",
+  "date_gmt": "2026-08-13T13:51:17",
+  "modified": "2026-08-13T16:51:17",
+  "modified_gmt": "2026-08-13T13:51:17",
+  "content": {
+   "raw": "האזנה ליצירות קלאסיות, הסיפור שמאחורי היצירות, והכרות עם כלים ומושגים מעולם המוסיקה.\r\nעם המוסיקולוגית והפסנתרנית יעל לביא\r\n\r\nתכנית אוגוסט:\r\n6.8 - אהבה, חלק ב׳\r\n13.8 - החצוצרה, פנים רבות לה\r\n20.8 - מוצרט, קונצרט לשני פסנתרים\r\n27.8 - גללוק, אורפיאו וארודיצ׳ה\r\n\r\n(בעלות של 200 ש\"ח לחודש. לפנות לענת 050-7356664)\r\n\r\n---\r\nמועדון בצוותא הוא מועדון חברים\r\n<div class=\"meSK8 M7eMe\" role=\"heading\" aria-level=\"2\"><b>הרשמה לבית הגיל השלישי - בצוותא</b></div>\r\n<div class=\"spb5Rd OIC90c\"><b>קישור לתשלום דמי חבר שנתיים:</b>\r\n<a href=\"https://eprmuni.co.il/#/randomPayments?muni=1170\">https://eprmuni.co.il/#/ran"
+  },
+  "default_category": "163",
+  "post_category": [
+   {
+    "id": 163,
+    "name": "גיל שלישי",
+    "slug": "%d7%92%d7%99%d7%9c-%d7%a9%d7%9c%d7%99%d7%a9%d7%99"
+   }
+  ],
+  "post_tags": [],
+  "recurring": "1",
+  "schedule_id": "1871",
+  "start_date": {
+   "raw": "2026-10-29",
+   "rendered": "29/10/2026"
+  },
+  "start_time": {
+   "raw": "09:00",
+   "rendered": "09:00"
+  },
+  "end_date": {
+   "raw": "2026-10-29",
+   "rendered": "29/10/2026"
+  },
+  "end_time": {
+   "raw": "10:30",
+   "rendered": "10:30"
+  },
+  "all_day": "0",
+  "start_datetime": {
+   "raw": "2026-10-29T09:00:00",
+   "rendered": "29/10/2026, 09:00"
+  },
+  "end_datetime": {
+   "raw": "2026-10-29T10:30:00",
+   "rendered": "29/10/2026, 10:30"
+  },
+  "gd_evevnt_rishum": "https://wa.me/972507356664",
+  "gd_event_buyticket": "",
+  "street": "המתמיד 4",
+  "country": "",
+  "region": "",
+  "city": "אבן יהודה",
+  "zip": "",
+  "latitude": "",
+  "longitude": "",
+  "mapview": "ROADMAP",
+  "mapzoom": "15",
+  "cf1736694864": "האזנה ליצירות קלאסיות, הסיפור שמאחורי היצירות, והכרות עם כלים ומושגים מעולם המוסיקה. עם המוסיקולוגית והפסנתרנית יעל לביא",
+  "featured": false,
+  "rating": 0,
+  "rating_count": 0,
+  "featured_media": 13004,
+  "featured_image": {
+   "id": "263",
+   "title": "",
+   "src": "https://www.even-yehuda.muni.il/wp-content/uploads/2026/08/טמפלייט-עיצובי-אבן-יהודה.pptx-1440-x-1348-פיקסל-22.png",
+   "thumbnail": "https://www.even-yehuda.muni.il/wp-content/uploads/2026/08/טמפלייט-עיצובי-אבן-יהודה.pptx-1440-x-1348-פיקסל-22-150x150.png",
+   "width": 900,
+   "height": 900
+  },
+  "comment_status": "closed",
+  "ping_status": "closed"
+ }
+]

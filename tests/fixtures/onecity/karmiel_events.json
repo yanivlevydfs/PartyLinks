@@ -1,0 +1,336 @@
+[
+ {
+  "id": 17669,
+  "title": {
+   "raw": "פסטיבל סלסה ובצאטה קהילתי במתנ\"ס רבין",
+   "rendered": "פסטיבל סלסה ובצאטה קהילתי במתנ&quot;ס רבין"
+  },
+  "link": "https://www.karmiel.muni.il/gd_event/%d7%a4%d7%a1%d7%98%d7%99%d7%91%d7%9c-%d7%a1%d7%9c%d7%a1%d7%94-%d7%95%d7%91%d7%a6%d7%90%d7%98%d7%94-%d7%a7%d7%94%d7%99%d7%9c%d7%aa%d7%99-%d7%91%d7%9e%d7%aa%d7%a0%d7%a1-%d7%a8%d7%91%d7%99%d7%9f/",
+  "status": "publish",
+  "type": "gd_event",
+  "author": 323,
+  "date": "2026-10-13T14:06:03",
+  "date_gmt": "2026-10-13T11:06:03",
+  "modified": "2026-10-13T14:06:03",
+  "modified_gmt": "2026-10-13T11:06:03",
+  "content": {
+   "raw": "<h2><img class=\"aligncenter size-large wp-image-17670\" src=\"https://www.karmiel.muni.il/wp-content/uploads/2026/10/פסטיבל-סלסה-ובצאטה-במתנס-רבין-23.10-819x1024.jpeg\" alt=\"\" width=\"800\" height=\"1000\" /></h2>\r\n<h2 style=\"text-align: center;\">פסטיבל סלסה ובצאטה קהילתי במתנ\"ס רבין:\r\n11:00 פתיחת ארוע, כיבוד קל ומתחילים בחימום מקפיץ.\r\n11:30 הדרכת סלסה בשלוש קבוצות: רמת בסיס מהצעד הראשון, רמת ביניים, רמת מתקדמים.\r\n13:00 הדרכת בצ'אטה בשלוש קבוצות: רמת בסיס מהצעד הראשון, רמת ביניים, רמת מתקדמים.\r\n14:00 מסיבה מטריפה - סלסה ובצ'אטה\r\n16:00 שבת שלום, נתראה במסיבה הבאה</h2>"
+  },
+  "default_category": "141",
+  "post_category": [
+   {
+    "id": 141,
+    "name": "כללי",
+    "slug": "%d7%9b%d7%9c%d7%9c%d7%99"
+   }
+  ],
+  "post_tags": [
+   {
+    "id": 143,
+    "name": "חינמי",
+    "slug": "%d7%97%d7%99%d7%a0%d7%9e%d7%99"
+   }
+  ],
+  "gd_event_website": "https://www.facebook.com/share/1FdsAmqD1z/",
+  "recurring": "0",
+  "schedule_id": "1338",
+  "start_date": {
+   "raw": "2026-10-23",
+   "rendered": "23/10/2026"
+  },
+  "start_time": {
+   "raw": "11:00",
+   "rendered": "11:00"
+  },
+  "end_date": {
+   "raw": "2026-10-23",
+   "rendered": "23/10/2026"
+  },
+  "end_time": {
+   "raw": "16:00",
+   "rendered": "16:00"
+  },
+  "all_day": "0",
+  "start_datetime": {
+   "raw": "2026-10-23T11:00:00",
+   "rendered": "23/10/2026, 11:00"
+  },
+  "end_datetime": {
+   "raw": "2026-10-23T16:00:00",
+   "rendered": "23/10/2026, 16:00"
+  },
+  "gd_event_mikum": "מתנ\"ס רבין",
+  "gd_event_namemagish": "חגית דיין",
+  "gd_event_irgun": "רשת המתנסים כרמיאל",
+  "gd_event_phone": "0505753382",
+  "gd_event_mail": "karmiel@matnasim.org.il",
+  "gd_event_ishurpirsum": {
+   "raw": "1",
+   "rendered": "כן"
+  },
+  "claimed": {
+   "raw": "0",
+   "rendered": "לא"
+  },
+  "featured": false,
+  "rating": 0,
+  "rating_count": 0,
+  "featured_media": 17670,
+  "featured_image": {
+   "id": "386",
+   "title": "",
+   "src": "https://www.karmiel.muni.il/wp-content/uploads/2026/10/פסטיבל-סלסה-ובצאטה-במתנס-רבין-23.10.jpeg",
+   "thumbnail": "https://www.karmiel.muni.il/wp-content/uploads/2026/10/פסטיבל-סלסה-ובצאטה-במתנס-רבין-23.10-150x150.jpeg",
+   "width": 1280,
+   "height": 1600
+  },
+  "comment_status": "closed",
+  "ping_status": "closed"
+ },
+ {
+  "id": 17629,
+  "title": {
+   "raw": "שיח גלריה",
+   "rendered": "שיח גלריה"
+  },
+  "link": "https://www.karmiel.muni.il/gd_event/%d7%a9%d7%99%d7%97-%d7%92%d7%9c%d7%a8%d7%99%d7%94/",
+  "status": "publish",
+  "type": "gd_event",
+  "author": 287,
+  "date": "2026-10-11T11:41:31",
+  "date_gmt": "2026-10-11T08:41:31",
+  "modified": "2026-10-11T11:41:31",
+  "modified_gmt": "2026-10-11T08:41:31",
+  "content": {
+   "raw": "<img class=\"aligncenter size-large wp-image-17630\" src=\"https://www.karmiel.muni.il/wp-content/uploads/2026/10/תחל-שנה-ויצירותיה-819x1024.jpg\" alt=\"\" width=\"800\" height=\"1000\" />"
+  },
+  "default_category": "141",
+  "post_category": [
+   {
+    "id": 141,
+    "name": "כללי",
+    "slug": "%d7%9b%d7%9c%d7%9c%d7%99"
+   }
+  ],
+  "post_tags": [],
+  "gd_event_website": "",
+  "recurring": "0",
+  "schedule_id": "1325",
+  "start_date": {
+   "raw": "2026-10-25",
+   "rendered": "25/10/2026"
+  },
+  "start_time": {
+   "raw": "18:00",
+   "rendered": "18:00"
+  },
+  "end_date": {
+   "raw": "2026-10-25",
+   "rendered": "25/10/2026"
+  },
+  "end_time": {
+   "raw": "19:30",
+   "rendered": "19:30"
+  },
+  "all_day": "0",
+  "start_datetime": {
+   "raw": "2026-10-25T18:00:00",
+   "rendered": "25/10/2026, 18:00"
+  },
+  "end_datetime": {
+   "raw": "2026-10-25T19:30:00",
+   "rendered": "25/10/2026, 19:30"
+  },
+  "gd_event_mikum": "בית האומנים, רח' משעול נורית 12",
+  "gd_event_namemagish": "מעין",
+  "gd_event_irgun": "",
+  "gd_event_phone": "0545887087",
+  "gd_event_mail": "maayan_h@karmiel.muni.il",
+  "gd_event_ishurpirsum": {
+   "raw": "1",
+   "rendered": "כן"
+  },
+  "claimed": {
+   "raw": "0",
+   "rendered": "לא"
+  },
+  "featured": false,
+  "rating": 0,
+  "rating_count": 0,
+  "featured_media": 17631,
+  "featured_image": {
+   "id": "383",
+   "title": "",
+   "src": "https://www.karmiel.muni.il/wp-content/uploads/2026/10/תחל-שנה-ויצירותיה-1.jpg",
+   "thumbnail": "https://www.karmiel.muni.il/wp-content/uploads/2026/10/תחל-שנה-ויצירותיה-1-150x150.jpg",
+   "width": 1215,
+   "height": 1519
+  },
+  "comment_status": "closed",
+  "ping_status": "closed"
+ },
+ {
+  "id": 16989,
+  "title": {
+   "raw": "רגע לפני, סדנה כלכלית",
+   "rendered": "רגע לפני, סדנה כלכלית - 25/11/2026"
+  },
+  "link": "https://www.karmiel.muni.il/gd_event/%d7%a8%d7%92%d7%a2-%d7%9c%d7%a4%d7%a0%d7%99-%d7%a1%d7%93%d7%a0%d7%94-%d7%9b%d7%9c%d7%9b%d7%9c%d7%99%d7%aa/",
+  "status": "publish",
+  "type": "gd_event",
+  "author": 287,
+  "date": "2026-09-27T11:42:08",
+  "date_gmt": "2026-09-27T08:42:08",
+  "modified": "2026-09-30T07:51:41",
+  "modified_gmt": "2026-09-30T04:51:41",
+  "content": {
+   "raw": "<h1 style=\"text-align: center;\"><a href=\"https://ticks.co.il/e/a7eOGSAi0L1\" target=\"_blank\" rel=\"noopener\">הרשמה</a></h1>\r\n&nbsp;\r\n\r\n<img class=\"aligncenter size-large wp-image-16990\" src=\"https://www.karmiel.muni.il/wp-content/uploads/2026/09/WhatsApp-Image-2026-09-24-at-10.30.12-819x1024.jpeg\" alt=\"\" width=\"800\" height=\"1000\" />"
+  },
+  "default_category": "141",
+  "post_category": [
+   {
+    "id": 141,
+    "name": "כללי",
+    "slug": "%d7%9b%d7%9c%d7%9c%d7%99"
+   }
+  ],
+  "post_tags": [],
+  "gd_event_website": "",
+  "recurring": "1",
+  "schedule_id": "1301",
+  "start_date": {
+   "raw": "2026-11-25",
+   "rendered": "25/11/2026"
+  },
+  "start_time": {
+   "raw": "20:00",
+   "rendered": "20:00"
+  },
+  "end_date": {
+   "raw": "2026-11-25",
+   "rendered": "25/11/2026"
+  },
+  "end_time": {
+   "raw": "22:00",
+   "rendered": "22:00"
+  },
+  "all_day": "0",
+  "start_datetime": {
+   "raw": "2026-11-25T20:00:00",
+   "rendered": "25/11/2026, 20:00"
+  },
+  "end_datetime": {
+   "raw": "2026-11-25T22:00:00",
+   "rendered": "25/11/2026, 22:00"
+  },
+  "gd_event_mikum": "מרכז צעירים, אילנות 7, כרמיאל",
+  "gd_event_namemagish": "מעין",
+  "gd_event_irgun": "",
+  "gd_event_phone": "0545887087",
+  "gd_event_mail": "maayan_h@karmiel.muni.il",
+  "gd_event_ishurpirsum": {
+   "raw": "1",
+   "rendered": "כן"
+  },
+  "claimed": {
+   "raw": "0",
+   "rendered": "לא"
+  },
+  "featured": false,
+  "rating": 0,
+  "rating_count": 0,
+  "featured_media": 16991,
+  "featured_image": {
+   "id": "369",
+   "title": "",
+   "src": "https://www.karmiel.muni.il/wp-content/uploads/2026/09/WhatsApp-Image-2026-09-24-at-10.30.12-1.jpeg",
+   "thumbnail": "https://www.karmiel.muni.il/wp-content/uploads/2026/09/WhatsApp-Image-2026-09-24-at-10.30.12-1-150x150.jpeg",
+   "width": 1280,
+   "height": 1600
+  },
+  "comment_status": "closed",
+  "ping_status": "closed"
+ },
+ {
+  "id": 16989,
+  "title": {
+   "raw": "רגע לפני, סדנה כלכלית",
+   "rendered": "רגע לפני, סדנה כלכלית - 16/12/2026"
+  },
+  "link": "https://www.karmiel.muni.il/gd_event/%d7%a8%d7%92%d7%a2-%d7%9c%d7%a4%d7%a0%d7%99-%d7%a1%d7%93%d7%a0%d7%94-%d7%9b%d7%9c%d7%9b%d7%9c%d7%99%d7%aa/",
+  "status": "publish",
+  "type": "gd_event",
+  "author": 287,
+  "date": "2026-09-27T11:42:08",
+  "date_gmt": "2026-09-27T08:42:08",
+  "modified": "2026-09-30T07:51:41",
+  "modified_gmt": "2026-09-30T04:51:41",
+  "content": {
+   "raw": "<h1 style=\"text-align: center;\"><a href=\"https://ticks.co.il/e/a7eOGSAi0L1\" target=\"_blank\" rel=\"noopener\">הרשמה</a></h1>\r\n&nbsp;\r\n\r\n<img class=\"aligncenter size-large wp-image-16990\" src=\"https://www.karmiel.muni.il/wp-content/uploads/2026/09/WhatsApp-Image-2026-09-24-at-10.30.12-819x1024.jpeg\" alt=\"\" width=\"800\" height=\"1000\" />"
+  },
+  "default_category": "141",
+  "post_category": [
+   {
+    "id": 141,
+    "name": "כללי",
+    "slug": "%d7%9b%d7%9c%d7%9c%d7%99"
+   }
+  ],
+  "post_tags": [],
+  "gd_event_website": "",
+  "recurring": "1",
+  "schedule_id": "1302",
+  "start_date": {
+   "raw": "2026-12-16",
+   "rendered": "16/12/2026"
+  },
+  "start_time": {
+   "raw": "20:00",
+   "rendered": "20:00"
+  },
+  "end_date": {
+   "raw": "2026-12-16",
+   "rendered": "16/12/2026"
+  },
+  "end_time": {
+   "raw": "22:00",
+   "rendered": "22:00"
+  },
+  "all_day": "0",
+  "start_datetime": {
+   "raw": "2026-12-16T20:00:00",
+   "rendered": "16/12/2026, 20:00"
+  },
+  "end_datetime": {
+   "raw": "2026-12-16T22:00:00",
+   "rendered": "16/12/2026, 22:00"
+  },
+  "gd_event_mikum": "מרכז צעירים, אילנות 7, כרמיאל",
+  "gd_event_namemagish": "מעין",
+  "gd_event_irgun": "",
+  "gd_event_phone": "0545887087",
+  "gd_event_mail": "maayan_h@karmiel.muni.il",
+  "gd_event_ishurpirsum": {
+   "raw": "1",
+   "rendered": "כן"
+  },
+  "claimed": {
+   "raw": "0",
+   "rendered": "לא"
+  },
+  "featured": false,
+  "rating": 0,
+  "rating_count": 0,
+  "featured_media": 16991,
+  "featured_image": {
+   "id": "369",
+   "title": "",
+   "src": "https://www.karmiel.muni.il/wp-content/uploads/2026/09/WhatsApp-Image-2026-09-24-at-10.30.12-1.jpeg",
+   "thumbnail": "https://www.karmiel.muni.il/wp-content/uploads/2026/09/WhatsApp-Image-2026-09-24-at-10.30.12-1-150x150.jpeg",
+   "width": 1280,
+   "height": 1600
+  },
+  "comment_status": "closed",
+  "ping_status": "closed"
+ }
+]
