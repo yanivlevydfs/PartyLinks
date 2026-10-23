@@ -316,7 +316,19 @@ button, input, select { font: inherit; color: inherit; }
   padding: 6px 22px 4px; scroll-padding-inline: 22px;
 }
 .trending-row::-webkit-scrollbar { display: none; }
-.trending-row > .card-wrap { flex: 0 0 min(260px, 78vw); scroll-snap-align: start; }
+.trending-row > .card-wrap { flex: 0 0 min(200px, 62vw); scroll-snap-align: start; }
+/* Compact cards: the carousel is a teaser, not the main grid. */
+.trending .card-body { padding: 10px 12px 12px; gap: 2px; }
+.trending .card-body h3 { font-size: 15px; margin-bottom: 4px; }
+.trending .meta { font-size: 12px; }
+.trending .tag { font-size: 11px; padding: 2px 8px; }
+.trending .tags { gap: 4px; margin-top: 6px; }
+.trending .date-badge { top: 8px; inset-inline-start: 8px; padding: 4px 8px; border-radius: 10px; }
+.trending .date-badge b { font-size: 18px; }
+.trending .date-badge span { font-size: 10px; }
+.trending .flag { bottom: 8px; inset-inline-end: 8px; font-size: 11px; padding: 3px 9px; }
+.trending .sources.on-img { bottom: 8px; inset-inline-start: 8px; max-width: calc(100% - 90px); }
+.trending .sources .src { font-size: 10px; }
 @media (max-width: 760px) { .trending-nav { display: none; } }
 
 /* ------------------------------------------------------------------ cards */
