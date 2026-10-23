@@ -24,6 +24,7 @@ from partylinks.scrapers.festivalim import FestivalimScraper
 from partylinks.scrapers.geektime import GeektimeScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
+from partylinks.scrapers.habama import HabamaScraper
 from partylinks.scrapers.haifamuni import HaifaMuniScraper
 from partylinks.scrapers.hamenagen import HamenagenScraper
 from partylinks.scrapers.happytlv import HappyTlvScraper
@@ -146,6 +147,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         MuziScraper,
         MatnasnetScraper,
         OneCityScraper,
+        HabamaScraper,
     )
 }
 

@@ -255,7 +255,7 @@ enrichment:
     sport: ["sport", "sports", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
             "מרוץ", "אופניים"]
     yoga_wellness: ["wellness", "בריאות", "פילאטיס"]
-    classical_opera: ["classical"]
+    classical_opera: ["classical", "קלאסי"]
     # Muzi's genre slugs.
     israeli: ["hebrew"]
     mizrahi: ["yam_tichoni"]
@@ -1856,3 +1856,18 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 0.5
+
+  habama:
+    # Habama (habama.co.il): performing-arts portal (theatre, dance, classical, kids, comedy). Its
+    # "all events of the day" page lists every performance nationwide (hall, note, show, time, category),
+    # one GET per day over `days`. Old ASP.NET: pages take 2-90 s and 502 at times, so a long timeout,
+    # low concurrency and 21 days (30 can pass the run timeout). ~60% are also sold on sources we read;
+    # no price, image or seller link. robots.txt only disallows SEO bots.
+    enabled: true
+    cron: "11 6,18 * * *"
+    site_url: https://www.habama.co.il
+    day_path: /Pages/EventAllforDay.aspx
+    days: 21
+    http:
+      concurrency: 2
+      timeout_seconds: 120
