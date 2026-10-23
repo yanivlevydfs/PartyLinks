@@ -113,3 +113,4 @@ work is planned. The scraper stays as it is.
 | T-TLV | No live site at t-tlv.com |
 | Ticketnet | ticketnet.co.il no longer answers (last working capture 2024) |
 | GetIn | The public catalogue has no Israeli events right now. The getin.xyz sitemap and schema.org pages would work if that changes |
+| Shotgun | No Israel presence (checked 2026-10-23): none of its 240 city pages, concert cities or festival countries is in Israel, and `/en/countries/israel` is 404. Its sitemap and event pages are readable with a plain HTTP client, so a scraper is quick to add if that changes |
