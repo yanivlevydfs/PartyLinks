@@ -306,3 +306,17 @@ def test_artwork_in_the_database_moves_to_files_and_is_still_served(tmp_path: Pa
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         served = client.get(f"/images/{rows[0][0]}")
     assert served.status_code == 200 and served.content == b"\xff\xd8\xffjpeg"
+
+
+def test_mostly_empty_database_file_is_compacted(tmp_path: Path) -> None:
+    _, db = db_for(tmp_path)
+    with db.session() as session:
+        upsert_events(session, [event("a", images=["https://img.example/a.jpg"])])
+        session.execute(text("UPDATE event_images SET data = :d"), {"d": b"x" * 4_000_000})
+    with db.session() as session:
+        session.execute(text("UPDATE event_images SET data = NULL"))
+    before = db.storage_stats()
+    assert db.compact_if_bloated(min_free_bytes=1_000_000) > 0
+    after = db.storage_stats()
+    assert (after["file_bytes"] or 0) < (before["file_bytes"] or 0) and after["free_bytes"] == 0
+    assert db.compact_if_bloated(min_free_bytes=1_000_000) == 0  # nothing left to do

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import time
 from collections import defaultdict
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
@@ -413,6 +414,23 @@ class Database:
             "wal_bytes": wal.stat().st_size if wal.is_file() else 0,
             "free_bytes": page_size * free,
         }
+
+    def compact_if_bloated(self, min_free_bytes: int = 256 * 2**20, min_free_share: float = 0.25) -> int:
+        """Full VACUUM when the file is mostly empty pages (after artwork moved out, or a big purge):
+        it rewrites only the live data, so a few-GB file of free pages becomes a small, contiguous one.
+        Returns the bytes freed; retried while a reader holds the file."""
+        stats = self.storage_stats()
+        file_bytes, free = stats["file_bytes"] or 0, stats["free_bytes"] or 0
+        if free < min_free_bytes or free < file_bytes * min_free_share:
+            return 0
+        log.info("sqlite: compacting, %d of %d bytes are free pages", free, file_bytes)
+        for attempt in range(5):
+            try:
+                return self.reclaim_space(full=True)
+            except OperationalError as exc:  # "database is locked": a request was reading
+                log.warning("sqlite: compaction attempt %d failed (%s), retrying", attempt + 1, exc)
+                time.sleep(10)
+        return 0
 
     def reclaim_space(self, full: bool = False) -> int:
         """Return the pages of deleted rows to the OS. Returns the bytes freed (SQLite only).

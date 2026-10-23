@@ -413,16 +413,23 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
         scheduler = build_scheduler(settings, service) if run_scheduler else None
         app.state.settings, app.state.db, app.state.service, app.state.scheduler = settings, db, service, scheduler
         app.state.tasks = set()
-        # Map coordinates for address-only events; network lookups run in the background.
-        # Artwork kept in the database moves to files once storage is "filesystem" (a big file is a
-        # slow one: every query reads through the images).
-        jobs: list[Callable[[], object]] = [service.geocode, service.media.move_to_files]
-        for job in jobs:
-            task = asyncio.create_task(asyncio.to_thread(job))
-            app.state.tasks.add(task)
-            task.add_done_callback(app.state.tasks.discard)
-        if scheduler:
-            scheduler.start()
+        async def maintenance() -> None:
+            """Before any source writes: artwork still in the database moves to files, and a file left
+            mostly empty is compacted (a big file is a slow one: every query reads across it). Then
+            the scrapers start, and map coordinates are filled for address-only events."""
+            jobs: list[Callable[[], object]] = [service.media.move_to_files, db.compact_if_bloated]
+            for job in jobs:
+                try:
+                    await asyncio.to_thread(job)
+                except Exception:  # the site and the scrapers run regardless
+                    log.exception("startup maintenance step %s failed", getattr(job, "__name__", job))
+            if scheduler:
+                scheduler.start()
+            await asyncio.to_thread(service.geocode)
+
+        task = asyncio.create_task(maintenance())
+        app.state.tasks.add(task)
+        task.add_done_callback(app.state.tasks.discard)
         try:
             server_status.log_startup(settings, db, scheduler)
         except Exception:  # the banner never blocks startup
@@ -435,7 +442,7 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
             yield
         finally:
             server_status.log_shutdown(settings)
-            if scheduler:
+            if scheduler and scheduler.running:
                 scheduler.shutdown(wait=False)
             for task in app.state.tasks:
                 task.cancel()
