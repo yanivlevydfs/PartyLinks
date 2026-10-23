@@ -48,6 +48,7 @@ export default function MapPage() {
           </>
         )}
       </div>
+      <div className="wrap map-wrap">
       <MapContainer center={ISRAEL} zoom={8} className="map" scrollWheelZoom>
         {/* Keyless OSM tiles, darkened in CSS (.map .leaflet-tile-pane). */}
         {showTiles && (
@@ -60,6 +61,7 @@ export default function MapPage() {
         <FitTo points={[...spots.values()].map((l) => [l[0].latitude, l[0].longitude] as [number, number])} />
         <Pins spots={[...spots.values()]} />
       </MapContainer>
+      </div>
       {!showTiles && (
         <div className="map-gate" role="region" aria-label={t.mapGate.title}>
           <h2>{t.mapGate.title}</h2>

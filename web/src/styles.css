@@ -538,7 +538,13 @@ button, input, select { font: inherit; color: inherit; }
 .map-page { display: flex; flex-direction: column; min-height: calc(100dvh - 68px - env(safe-area-inset-top)); }
 .map-bar { display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; padding-block: 12px; color: var(--text); font-weight: 500; }
 .map-bar small { color: var(--muted); }
-.map, .map.leaflet-container { flex: 1; min-height: 65vh; background: #0a0612; }
+/* A flex column shrinks auto-margined .wrap blocks to their content; keep them the site's width. */
+.map-page > .wrap { width: 100%; }
+.map-wrap { flex: 1; display: flex; flex-direction: column; padding-bottom: 16px; }
+.map, .map.leaflet-container {
+  flex: 1; min-height: 65vh; background: #0a0612;
+  border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+}
 /* Night-mode map: invert the light OSM tiles and tint them violet. */
 .map .leaflet-tile-pane { filter: invert(1) hue-rotate(200deg) brightness(.9) contrast(.85) saturate(.55); }
 .map-page ~ .foot { display: none; }
