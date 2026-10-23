@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useCategories, useEvents, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { CookieConsent, useConsent } from "./consent";
+import { INFO_LINKS } from "./pages/Info";
 import { useStore } from "./store";
 import type { EventSummary } from "./types";
 
@@ -111,7 +112,9 @@ export function Layout() {
             <Link key={g.value} to={`/genre/${g.value}`}>{genreLabel(lang, g.value)}</Link>
           ))}
         </nav>
-        {lang === "he" ? "פולס · ישראל" : "Pulse · Israel"} · <Link to="/accessibility">{t.accessibility}</Link>
+        {lang === "he" ? "פולס · ישראל" : "Pulse · Israel"}
+        {INFO_LINKS.map((l) => <Fragment key={l.path}>{" · "}<Link to={l.path}>{l.label[lang]}</Link></Fragment>)}
+        {" · "}<Link to="/accessibility">{t.accessibility}</Link>
         {" · "}<Link to="/terms">{t.terms}</Link>
         {" · "}<Link to="/privacy">{t.privacy}</Link>
         {" · "}<button className="linkish" onClick={openConsent}>{t.cookieSettings}</button>

@@ -577,6 +577,7 @@ def _register_routes(app: FastAPI) -> None:
         return {
             "name": site.name,
             "base_url": site.base_url,
+            "email": site.contact_email,
             "accessibility": site.accessibility.model_dump(mode="json"),
             "privacy": site.privacy.model_dump(mode="json"),
         }

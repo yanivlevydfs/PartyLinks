@@ -9,6 +9,7 @@ import { ArtistPage, ArtistsIndex, VenuePage, VenuesIndex } from "./pages/Browse
 import NotFound from "./pages/NotFound";
 import AccessibilityPage from "./pages/Accessibility";
 import { BlogIndex, BlogPost } from "./pages/Blog";
+import { AboutPage, ContactPage, FaqPage, PartnersPage } from "./pages/Info";
 import PrivacyPage from "./pages/Privacy";
 import TermsPage from "./pages/Terms";
 import { useStore } from "./store";
@@ -64,6 +65,10 @@ const router = createBrowserRouter([
       { path: "*", element: <NotFound /> },
       { path: "/privacy", element: <PrivacyPage /> },
       { path: "/terms", element: <TermsPage /> },
+      { path: "/about", element: <AboutPage /> },
+      { path: "/faq", element: <FaqPage /> },
+      { path: "/contact", element: <ContactPage /> },
+      { path: "/partners", element: <PartnersPage /> },
     ],
   },
 ]);

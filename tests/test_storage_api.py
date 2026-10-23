@@ -148,6 +148,8 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
         assert "/privacy" in sitemap and "מדיניות פרטיות" in client.get("/privacy").text
         assert "/terms" in sitemap and "אינם אחראים" in client.get("/terms").text
         assert "email" in client.get("/site").json()["privacy"]
+        assert "/partners" in sitemap and "שיתופי פעולה" in client.get("/partners").text
+        assert "Contact us" in client.get("/contact?lang=en").text
         assert "Techno </script> night" in client.get("/llms.txt").text
 
 

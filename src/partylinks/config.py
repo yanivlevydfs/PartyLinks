@@ -325,6 +325,8 @@ class SiteSettings(BaseModel):
     # Public address of the website (no trailing slash): canonical links, sitemap, JSON-LD, share previews.
     base_url: str = "http://localhost:8000"
     name: str = "Pulse"
+    # Contact and partnerships address shown on /contact and /partners (falls back to privacy.email).
+    email: str = ""
     accessibility: AccessibilitySettings = Field(default_factory=AccessibilitySettings)
     privacy: PrivacySettings = Field(default_factory=PrivacySettings)
 
@@ -332,6 +334,10 @@ class SiteSettings(BaseModel):
     @classmethod
     def _strip_slash(cls, value: str) -> str:
         return value.rstrip("/")
+
+    @property
+    def contact_email(self) -> str:
+        return self.email or self.privacy.email
 
 
 class UtmSettings(BaseModel):

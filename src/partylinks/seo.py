@@ -548,6 +548,45 @@ def terms_page(session: Session, cfg: Settings, lang: str) -> Page:
     )
 
 
+# About, FAQ, contact and partnerships: the React app (web/src/pages/Info.tsx) has the full text;
+# crawlers that don't run JavaScript get this summary. path -> ((title he, en), (text he, en)).
+INFO_PAGES = {
+    "/about": (("אודות", "About"), (
+        "{name} אוסף את כל האירועים, המסיבות וההופעות בישראל מעשרות אתרי כרטיסים למקום אחד, כדי שיהיה קל למצוא לאן יוצאים.",
+        "{name} collects every event, party and show in Israel from dozens of ticketing sites into one place, so finding where to go out is easy.",
+    )),
+    "/faq": (("שאלות נפוצות", "FAQ"), (
+        "תשובות לשאלות נפוצות על {name}: מאיפה מגיעים האירועים, האם אנחנו מוכרים כרטיסים, כמה זה עולה ואיך מוסיפים אירוע.",
+        "Answers to common questions about {name}: where the events come from, whether we sell tickets, what it costs and how to add an event.",
+    )),
+    "/contact": (("צור קשר", "Contact us"), (
+        "שאלה, הצעה, טעות באירוע או אירוע חסר? כתבו ל-{name} ונחזור אליכם.",
+        "A question, a suggestion, a wrong detail or a missing event? Write to {name} and we'll get back to you.",
+    )),
+    "/partners": (("שיתופי פעולה", "Partnerships"), (
+        "מפיקים, מקומות, אתרי כרטיסים ומותגים: בואו נעבוד יחד כדי שהאירועים שלכם יגיעו לעוד אנשים ב-{name}.",
+        "Promoters, venues, ticketing sites and brands: let's work together to bring your events to more people on {name}.",
+    )),
+}
+
+
+def info_page(path: str) -> Any:
+    def build(session: Session, cfg: Settings, lang: str) -> Page:
+        i = 0 if lang == "he" else 1
+        title, text = INFO_PAGES[path][0][i], INFO_PAGES[path][1][i].format(name=cfg.site.name)
+        email = cfg.site.contact_email if path in ("/contact", "/partners") else ""
+        return Page(
+            title=f"{title} · {cfg.site.name}",
+            description=text,
+            path=path,
+            lang=lang,
+            jsonld=[_breadcrumbs(cfg, lang, (title, path))],
+            body=f"<h1>{escape(title)}</h1><p>{escape(text)}</p>" + (f"<p>{escape(email)}</p>" if email else ""),
+        )
+
+    return build
+
+
 # --------------------------------------------------------------------------- landing pages
 # kind: "tonight" | "weekend" | "genre" | "city", or "genre_tonight" / "genre_weekend" for one genre
 # tonight or this weekend ("טכנו הערב", "סטנדאפ בסופ״ש"). Every page needs GENRE_PAGE_MIN events.
@@ -781,6 +820,7 @@ def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
     """Every public page as a <url> entry (Hebrew and English apart, the blog once)."""
     rows = session.scalars(select(EventRow).where(upcoming_filter()).order_by(EventRow.start_at)).all()
     paths: list[tuple[str, date | None]] = [("/", None), ("/map", None), ("/abroad", None), ("/venues", None), ("/artists", None), ("/accessibility", None), ("/privacy", None), ("/terms", None)]
+    paths += [(p, None) for p in INFO_PAGES]
     today = datetime.now(ZoneInfo(cfg.timezone))  # landing pages change every day
     paths += [(p, today) for p, _, _ in _landing_paths(session, cfg)]
     paths += [(event_path(r), r.last_seen_at) for r in rows]
@@ -971,6 +1011,15 @@ def register(app: FastAPI, site_dir: Path) -> None:
     @app.get("/terms", include_in_schema=False)
     def terms(request: Request) -> HTMLResponse:
         return page(request, terms_page)
+
+    def info_route(build: Any) -> Any:
+        def route(request: Request) -> HTMLResponse:
+            return page(request, build)
+
+        return route
+
+    for path in INFO_PAGES:
+        app.get(path, include_in_schema=False)(info_route(info_page(path)))
 
     @app.get("/map", include_in_schema=False)
     def map_(request: Request) -> HTMLResponse:
