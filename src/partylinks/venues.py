@@ -55,16 +55,23 @@ class VenueInput:
     lng: float | None
     city: str | None = None  # canonical city; names only merge within one city
 
-    @property
-    def node(self) -> tuple[str, str]:
-        """The venue name in its city: "הקאמרי" in Tel Aviv and in Be'er Sheva are two places."""
-        return slugify(self.city or ""), self.source_name or ""
 
-
-def _distance_m(a: VenueInput, b: VenueInput) -> float:
-    lat1, lng1, lat2, lng2 = map(math.radians, (a.lat, a.lng, b.lat, b.lng))  # type: ignore[arg-type]
+def _distance_m(a: tuple[float, float], b: tuple[float, float]) -> float:
+    lat1, lng1, lat2, lng2 = map(math.radians, (*a, *b))
     h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lng2 - lng1) / 2) ** 2
     return 6_371_000 * 2 * math.asin(math.sqrt(h))
+
+
+# Grid cells a little larger than RADIUS_M: points within the radius are in the same or a neighbouring cell.
+_CELL_DEG = 0.0003
+
+
+def _cell(point: tuple[float, float]) -> tuple[int, int]:
+    return math.floor(point[0] / _CELL_DEG), math.floor(point[1] / _CELL_DEG)
+
+
+def _neighbours(cell: tuple[int, int]) -> list[tuple[int, int]]:
+    return [(cell[0] + dy, cell[1] + dx) for dy in (-1, 0, 1) for dx in (-1, 0, 1)]
 
 
 def street_key(address: str | None) -> str | None:
@@ -114,19 +121,35 @@ def infer_venues(rows: list[VenueInput]) -> dict[str, str | None]:
     def located(r: VenueInput) -> bool:
         return (pin := _pin(r)) is not None and pin not in bad_pins
 
+    # The venue name in its city: "הקאמרי" in Tel Aviv and in Be'er Sheva are two places.
+    Node = tuple[str, str]
+    city_of = {c: slugify(c) for c in {r.city or "" for r in rows}}
+    node = {r.id: (city_of[r.city or ""], r.source_name or "") for r in rows}
     named = [r for r in rows if r.source_name]
-    placed = [r for r in named if located(r)]
+    # Each venue once per spot, bucketed by grid cell: neighbours are looked up, not scanned.
+    grid: dict[tuple[int, int], dict[tuple[Node, tuple[float, float]], None]] = {}
+    for r in named:
+        if located(r):
+            point = (r.lat, r.lng)
+            grid.setdefault(_cell(point), {})[(node[r.id], point)] = None  # type: ignore[index]
+
+    def near(point: tuple[float, float], cities: tuple[str, ...]) -> list[Node]:
+        return [
+            other
+            for cell in _neighbours(_cell(point))
+            for other, at in grid.get(cell, {})
+            if other[0] in cities and _distance_m(point, at) <= RADIUS_M
+        ]
 
     # Union-find over names in a city: same spot or same street + number -> same venue. Never across
     # cities: a producer's name ("הקאמרי") on its touring shows is not one venue country-wide.
-    Node = tuple[str, str]
-    parent: dict[Node, Node] = {r.node: r.node for r in named}
+    parent: dict[Node, Node] = {node[r.id]: node[r.id] for r in named}
 
-    def find(node: Node) -> Node:
-        while parent[node] != node:
-            parent[node] = parent[parent[node]]
-            node = parent[node]
-        return node
+    def find(n: Node) -> Node:
+        while parent[n] != n:
+            parent[n] = parent[parent[n]]
+            n = parent[n]
+        return n
 
     def union(a: Node, b: Node) -> None:
         parent[find(a)] = find(b)
@@ -134,31 +157,27 @@ def infer_venues(rows: list[VenueInput]) -> dict[str, str | None]:
     by_street: dict[tuple[str, str], Node] = {}
     for r in named:
         if key := street_key(r.address):
-            union(r.node, by_street.setdefault((r.node[0], key), r.node))
-    # ponytail: O(n^2) over named events (~hundreds); grid-bucket the pins if this reaches thousands.
-    for i, a in enumerate(placed):
-        for b in placed[i + 1 :]:
-            if a.node != b.node and a.node[0] == b.node[0] and _distance_m(a, b) <= RADIUS_M:
-                union(a.node, b.node)
+            union(node[r.id], by_street.setdefault((node[r.id][0], key), node[r.id]))
+    for cell in grid.values():
+        for here, point in cell:
+            for other in near(point, (here[0],)):
+                if other != here:
+                    union(here, other)
 
     clusters: dict[Node, Counter[str]] = {}
     for r in named:
-        clusters.setdefault(find(r.node), Counter())[r.source_name] += 1  # type: ignore[index]
-    canonical = {node: _best(clusters[find(node)]) for node in parent}
+        clusters.setdefault(find(node[r.id]), Counter())[r.source_name] += 1  # type: ignore[index]
+    canonical = {n: _best(clusters[find(n)]) for n in parent}
 
     result: dict[str, str | None] = {}
     for row in rows:
+        here = node[row.id]
         if row.source_name:
-            name = canonical[row.node]
+            name = canonical[here]
         elif key := street_key(row.address):
             # The venue in the row's city, or one whose city no source gave.
-            cities = (row.node[0], "")
-            near = (
-                next((r for r in placed if r.node[0] in cities and _distance_m(row, r) <= RADIUS_M), None)
-                if located(row)
-                else None
-            )
-            match = near.node if near else by_street.get((row.node[0], key)) or by_street.get(("", key))
+            close = near((row.lat, row.lng), (here[0], "")) if located(row) else []  # type: ignore[arg-type]
+            match = close[0] if close else by_street.get((here[0], key)) or by_street.get(("", key))
             name = canonical[match] if match else street_name(row.address)
         else:
             name = None
