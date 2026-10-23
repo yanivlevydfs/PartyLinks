@@ -201,8 +201,6 @@ class BaseScraper[S: SourceSettings](ABC):
         return retry_after if retry_after is not None else self._backoff(state)
 
     async def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
-        if self._client is None:
-            raise RuntimeError(f"{type(self).__name__} must be used as an async context manager")
         try:
             return await self._request(method, url, **kwargs)
         except _RefusedByProxyIP as exc:
@@ -221,6 +219,8 @@ class BaseScraper[S: SourceSettings](ABC):
                     if self.http.request_delay_seconds:
                         await asyncio.sleep(self.http.request_delay_seconds)
                     client = self._client
+                    if client is None:
+                        raise RuntimeError(f"{type(self).__name__} must be used as an async context manager")
                     try:
                         response = await client.request(method, url, **kwargs)
                     except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as exc:
