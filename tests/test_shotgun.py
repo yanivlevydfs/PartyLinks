@@ -15,13 +15,15 @@ PAGE = (Path(__file__).parent / "fixtures" / "shotgun" / "event_brazil.html").re
 URL = f"{SITE}/en/events/intrance-24-10"
 
 
-def test_event_abroad_is_skipped_and_one_in_israel_is_read() -> None:
-    assert parse_event(PAGE, URL, "Asia/Jerusalem") is None  # addressCountry BR
+def test_event_abroad_has_its_country_and_one_in_israel_none() -> None:
+    abroad = parse_event(PAGE, URL, "Asia/Jerusalem")
+    assert abroad is not None and abroad.country == "BR"  # Manaus: the abroad section
+    assert abroad.source == "shotgun" and abroad.source_event_id == "intrance-24-10"
+    assert abroad.venue_name == "Nexus Lounge & Club" and abroad.latitude and abroad.tickets
     israel = PAGE.replace('"addressCountry":"BR"', '"addressCountry":"IL"')
     assert israel != PAGE
     event = parse_event(israel, URL, "Asia/Jerusalem")
-    assert event is not None and event.source == "shotgun" and event.source_event_id == "intrance-24-10"
-    assert event.venue_name == "Nexus Lounge & Club" and event.latitude and event.tickets
+    assert event is not None and event.country is None
 
 
 def test_listing_links() -> None:

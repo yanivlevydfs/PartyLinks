@@ -1135,17 +1135,18 @@ sources:
       concurrency: 4
 
   shotgun:
-    # Shotgun (shotgun.live): electronic music ticketing; Israel only. No Israeli events yet
-    # (October 2026): each run checks the Israel venue page and the city pages (404 today = empty,
-    # a few requests). Once they exist: venues -> events -> each event's schema.org JSON-LD, kept
-    # only when its address is in Israel. robots.txt allows everything.
+    # Shotgun (shotgun.live): electronic music ticketing. Every city page of its cities sitemap
+    # (240, mostly France, Brazil, the US; ~14 events each) plus the Israeli pages (none yet: 404 is
+    # an empty listing), then each event's schema.org JSON-LD: ~3,500 requests a run (~15 min).
+    # Events abroad go to the abroad section. robots.txt allows everything.
     enabled: true
     cron: "52 8,20 * * *"
     site_url: https://shotgun.live
     country_path: /en/venues/-/israel
     city_paths: ["/en/cities/tel-aviv", "/en/cities/jerusalem", "/en/cities/haifa", "/en/cities/eilat"]
+    cities_sitemap_path: /api/sitemaps/cities/sitemap/0.xml
     http:
-      concurrency: 3
+      concurrency: 4
 
   luma:
     # Luma (luma.com): RSVP pages for tech meetups, hi-tech conferences and startup events.

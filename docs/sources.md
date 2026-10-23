@@ -35,7 +35,7 @@ pagination and what the listing and the event page provide.
 | `makore` | Makore (makore.co.il, "מה קורה"): an events guide for all of Israel | 09:41, 21:41 | yes |
 | `happytlv` | HappyTLV (happytlv.com): Tel Aviv parties, and bars' happy hours (one event per day the deal runs, category **Happy Hour**) | 05:13, 17:13 | yes |
 | `beatradar` | Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties, with its own genre tags; merged with those sources by dedup | 08:26, 20:26 | yes |
-| `shotgun` | Shotgun (shotgun.live): electronic music ticketing, Israel only. No Israeli events yet: each run checks its Israel venue page and city pages, and picks events up once they appear | 08:52, 20:52 | yes |
+| `shotgun` | Shotgun (shotgun.live): electronic music ticketing. Every city page worldwide (240, mostly France, Brazil and the US; ~3,300 events, to the abroad section), plus its Israeli pages, which list nothing yet | 08:52, 20:52 | yes |
 | `vibez` | Vibez (vibez.io): ticketing for communities and party producers: raves, ecstatic dance, club nights | 08:36, 20:36 | yes |
 
 ## Concerts, theatre, stand-up and shows
