@@ -52,6 +52,7 @@ from partylinks.scrapers.ticketmaster import TicketmasterScraper
 from partylinks.scrapers.ticketplace import TicketPlaceScraper
 from partylinks.scrapers.tiktik import TiktikScraper
 from partylinks.scrapers.tribe import GagarinScraper
+from partylinks.scrapers.vibez import VibezScraper
 from partylinks.scrapers.zygo import ZygoScraper
 
 log = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         TickchakScraper,
         SelectorScraper,
         BeatRadarScraper,
+        VibezScraper,
         BarbyScraper,
         GrayclubScraper,
         ChillzScraper,

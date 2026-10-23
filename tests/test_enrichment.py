@@ -290,6 +290,7 @@ def test_words_in_passing_are_no_genres() -> None:
     assert genres("מנגינה של סתיו", "התמונה נוצרה בבינה מלאכותית.") == []
     assert genres("Cold Brew workshop", "🇮🇱 עברית\nיואב, איש דאטה ביום") == []  # language, a day job
     assert genres("Classico screening", "המשחק: דור רומנו, סול כהן רוזנברג") == []  # Sol is a name
+    assert genres("Pilots party", "כל שבוע, למעט ערבי אלכוהול חופשי") == []  # "ערבי": evenings, not Arabic
     # Tech from the title still counts; the description only for declared tech events.
     assert "ai" in genres("בינה מלאכותית | היכרות עם מודל שפה", "")
     assert "startups" in genres("Founders night", "startup founders meet", ("hi-tech",))

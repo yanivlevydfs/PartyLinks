@@ -156,7 +156,7 @@ enrichment:
     # Not "עברית": Secret Tel Aviv marks the language of every event with it.
     israeli: ["israeli", "israeli artists", "ישראלית", "ישראלי", "שירי ארץ ישראל"]
     greek: ["greek", "יוונית", "יווני", "בוזוקי"]
-    arabic: ["arabic", "arab", "ערבית", "ערבי"]
+    arabic: ["arabic", "arab", "ערבית", "מוזיקה ערבית"]  # not "ערבי": also "evenings of" ("ערבי אלכוהול חופשי")
     disco_funk: ["disco", "nu disco", "nu-disco", "funk", "boogie", "דיסקו", "פאנק"]
     drum_and_bass: ["drum and bass", "drum & bass", "drum n bass", "dnb", "d&b", "jungle", "דראם אנד בייס"]
     bass_dubstep: ["dubstep", "bass music", "riddim", "breakbeat", "breaks", "uk garage", "garage", "דאבסטפ"]
@@ -248,7 +248,8 @@ enrichment:
                 "בכרטיס האלקטרוני", "דואר אלקטרוני", "בדואר אלקטרוני", "הדואר האלקטרוני", "בדואר האלקטרוני",
                 "כתובת דואר אלקטרוני", "תשלום אלקטרוני", "חתימה אלקטרונית", "ארנק אלקטרוני",
                 "נוצרה בבינה מלאכותית", "נוצרה באמצעות בינה מלאכותית", "נוצר בבינה מלאכותית",
-                "נוצר באמצעות בינה מלאכותית", "בעזרת בינה מלאכותית", "ועובדה באמצעות בינה מלאכותית"]
+                "נוצר באמצעות בינה מלאכותית", "בעזרת בינה מלאכותית", "ועובדה באמצעות בינה מלאכותית",
+                "production house", "silent disco", "סיילנט דיסקו"]
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
   # talks: their text is read only for these genres.
@@ -1065,6 +1066,18 @@ sources:
     cron: "26 8,20 * * *"
     site_url: https://beatradar.co.il
     events_path: /api/events
+
+  vibez:
+    # Vibez (vibez.io): ticketing for communities and party producers (raves, ecstatic dance, club
+    # nights). Public JSON API: 5 pages of 20 upcoming events, then each event's description and
+    # ticket tiers (2 requests an event, ~90 events). No categories: genres come from the text.
+    # robots.txt is absent.
+    enabled: true
+    cron: "36 8,20 * * *"
+    site_url: https://web.vibez.io
+    api_url: https://api.vibez.io/api/v102/buyer
+    http:
+      concurrency: 4
 
   luma:
     # Luma (luma.com): RSVP pages for tech meetups, hi-tech conferences and startup events.
