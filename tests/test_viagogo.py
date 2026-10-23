@@ -38,11 +38,11 @@ def test_parse_concert() -> None:
     assert event.extra["time_confirmed"] is True
 
 
-def test_regions_unconfirmed_time_and_abroad() -> None:
-    soccer, abroad, jerusalem, _ = parse_all()[1:]
-    assert soccer.extra["time_confirmed"] is False and soccer.source_genres == ["Soccer"]
+def test_sports_and_abroad_are_skipped() -> None:
+    soccer, abroad, jerusalem_soccer, galkin = parse_all()[1:]
+    assert soccer is None and jerusalem_soccer is None  # Sports-Tickets: the site is parties, shows and culture
     assert abroad is None  # Wadi Musa, Jordan: inside the circle, outside Israel
-    assert jerusalem.city == "Jerusalem"
+    assert galkin.city == "Petah Tikva"
 
 
 def test_year_from_weekday() -> None:

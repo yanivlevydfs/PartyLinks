@@ -99,7 +99,7 @@ def infer_date(month_day: str, weekday: str | None, today: date) -> date | None:
 
 
 def parse_event(row: dict[str, Any], s: ViagogoSettings, timezone: str, today: date) -> ScrapedEvent | None:
-    """One feed row; None for an event outside Israel."""
+    """One feed row; None for an event outside Israel or a sports match (the site is parties, shows, culture)."""
     event_id, title = clean_str(row.get("eventId")), clean_str(row.get("name"))
     url = clean_str(row.get("url"))
     if not event_id or not title or not url:
@@ -126,6 +126,8 @@ def parse_event(row: dict[str, Any], s: ViagogoSettings, timezone: str, today: d
     path = path[1:] if s.locale_path and path and "/" + path[0] == s.locale_path else path
     category = path[0].removesuffix("-Tickets").replace("-", " ") if len(path) > 1 else None
     genre = path[1].replace("-", " ") if len(path) > 2 and not path[1].endswith("-Tickets") else None
+    if category == "Sports":
+        return None
     image = clean_str(row.get("imageUrl"))
     return ScrapedEvent(
         source=ViagogoScraper.name,

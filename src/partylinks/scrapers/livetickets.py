@@ -32,6 +32,7 @@ HEBREW_MONTHS = {
     )
 }
 CURRENCY_SIGNS = {"€": "EUR", "£": "GBP", "$": "USD", "₪": "ILS"}
+SPORTS = frozenset({"soccer", "basketball", "tennis"})  # category pages of matches
 
 _HREF = re.compile(r'href="([^"]+)"')
 # Pages that list events (performer, city, venue) or link them (category).
@@ -73,6 +74,14 @@ class LiveTicketsScraper(BaseScraper[LiveTicketsSettings]):
                 kept.source_genres = list(dict.fromkeys([*kept.source_genres, *listings[event.extra["listing"]]]))
         for event in events.values():
             event.extra.pop("listing")
+            # Matches are skipped: the site is parties, shows and culture. The concerts page also
+            # features big matches, and some concerts hang under a sport page: under a sport category,
+            # a "team - team" title or no concerts category means a match.
+            if SPORTS.intersection(event.source_genres) and (
+                " - " in event.title or "concerts" not in event.source_genres
+            ):
+                continue
+            event.source_genres = [g for g in event.source_genres if g not in SPORTS]
             yield event
 
     async def _listings(self) -> dict[str, list[str]]:
