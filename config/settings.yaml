@@ -1134,6 +1134,19 @@ sources:
     http:
       concurrency: 4
 
+  shotgun:
+    # Shotgun (shotgun.live): electronic music ticketing; Israel only. No Israeli events yet
+    # (October 2026): each run checks the Israel venue page and the city pages (404 today = empty,
+    # a few requests). Once they exist: venues -> events -> each event's schema.org JSON-LD, kept
+    # only when its address is in Israel. robots.txt allows everything.
+    enabled: true
+    cron: "52 8,20 * * *"
+    site_url: https://shotgun.live
+    country_path: /en/venues/-/israel
+    city_paths: ["/en/cities/tel-aviv", "/en/cities/jerusalem", "/en/cities/haifa", "/en/cities/eilat"]
+    http:
+      concurrency: 3
+
   luma:
     # Luma (luma.com): RSVP pages for tech meetups, hi-tech conferences and startup events.
     # Public JSON API: events near each center (cursor-paged, ~130 across Israel), then one
