@@ -1,0 +1,63 @@
+{
+ "seoData": null,
+ "breadcrumbs": [
+  {
+   "name": "לובי אירועים",
+   "url": "/event-lobby/"
+  }
+ ],
+ "content": {
+  "date": "2026-11-11T00:00:00Z",
+  "hour": "20:30",
+  "title": "בסערות תימן",
+  "description": "מסע מוזיקלי אל הלב, אל השורשים ואל הצלילים שהגיעו מתימן ונשארו בלבבות עם האומנים ציון גולן והאחים קאפח.\nערב של שירה, פיוט , מסורת ונשמה.\n\n\n",
+  "registerLink": "https://tickchak.co.il/114771?ref=13BW",
+  "eventSource": {
+   "sourceId": 1,
+   "value": "עיריית רמת גן"
+  },
+  "location": {
+   "id": "af40c235477540afad23dcdcd86b8b18",
+   "name": "תיאטרון ראסל",
+   "address": "רחוב מנדל מתיתיהו 11",
+   "objectId": 3011
+  },
+  "eventTag": null,
+  "cluster": [],
+  "eventDuration": "0 ",
+  "prices": [
+   {
+    "type": 1,
+    "price": "19"
+   },
+   {
+    "type": 2,
+    "price": "49"
+   }
+  ],
+  "media": {
+   "link": "/media/2nuiqupg/1540_803דסקטופ.jpg",
+   "linkMobile": "/media/kmyfq2zz/390_576-מובייל.jpg",
+   "alt": "",
+   "type": 1
+  },
+  "showCounter": false,
+  "type": "event"
+ },
+ "components": [
+  {
+   "content": {
+    "about": "<p>\"בסערות תימן\"</p>\n<p>ערב של שירה, פיוט, מסורת ונשמה </p>\n<p>רביעי, 11.11, א' כסלו תשפ\"ז | 20:30 | תיאטרון ראסל, מנדל מתתיהו 11</p>\n<p>מחיר כרטיס: 19 ש״ח לתושבי ר״ג | 49 ש״ח לתושבי חוץ </p>",
+    "artisans": [],
+    "artisanType": "",
+    "parking": [],
+    "accessibility": [],
+    "contactName": "המחלקה למורשת ישראל ",
+    "contactPhone": "",
+    "contactEmail": "victor-r@ramat-gan.muni.il",
+    "type": "eventInfo"
+   },
+   "components": null
+  }
+ ]
+}

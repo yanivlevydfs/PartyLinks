@@ -1235,6 +1235,10 @@ sources:
       - kiryat-shmona-culture-hall      # היכל התרבות קריית שמונה
       - auditorium-kiryat-ata           # אודיטוריום קריית אתא
       - culture-hall-katzrin            # היכל התרבות קצרין
+      - katzrin-park                    # פארק קצרין (צלילי בזלת)
+      - marom-golan                     # מרום גולן
+      - tznuvar-compound-kidmat-tzvi    # מתחם צנובר - קדמת צבי
+      - natur                           # נטור
       - mofet-yehud-culture-hall        # היכל התרבות מופת יהוד
       - givat-shmuel-matnas-culture-hall  # היכל התרבות גבעת שמואל
       - harish-culture-hall-shoham-street-73  # היכל התרבות חריש
@@ -1451,3 +1455,203 @@ sources:
     http:
       concurrency: 4
       request_delay_seconds: 0.5
+
+  megaevents:
+    # Mega Events: packages (flight + hotel + ticket) and tickets to concerts abroad (Next.js). The
+    # home page's page data lists every event (~400, most of them football, which is skipped):
+    # date, "city, country" in Hebrew, ticket prices and markups. robots.txt allows all; one request.
+    enabled: true
+    cron: "43 5,17 * * *"
+    site_url: https://www.mega-events.co.il
+    event_page_path: /order/{event_id}
+    # package_fee: 175  # USD the site adds to every package; a price-mismatch warning means it changed
+
+  viagogo:
+    # viagogo (international resale): event pages answer a captcha (403), so events come from the
+    # explore page's public JSON feed: every event within radius_m of central Israel, Israel only.
+    # The feed's total jumps between calls (127 vs 278 seen), so a short run must not unlist events.
+    enabled: true
+    cron: "44 6,18 * * *"
+    unlist_missing: false
+    site_url: https://www.viagogo.com
+    explore_path: /explore
+    locale_path: /il
+    latitude: 31.4
+    longitude: 34.9
+    radius_m: 300000
+
+  hamenagen:
+    # HaMenagen: Jewish / Hasidic music site's concert calendar. Its app API
+    # (/wp-json/hm-app/v1/events) lists every upcoming event in one call: title, date and time,
+    # "venue, city" text, artists, flyer and the seller's link (mostly Tickchak / Glatticket),
+    # kept as purchase_url for dedup. robots.txt allows everything.
+    enabled: true
+    cron: "43 4,16 * * *"
+    site_url: https://hamenagen.net
+    api_path: /wp-json/hm-app/v1/events
+    events_path: /events/
+    http:
+      concurrency: 1
+
+  hatarbut:
+    # Heichal HaTarbut Tel Aviv (hatarbut.co.il): WordPress + Event Organiser. The /calendar page's
+    # admin-ajax JSON (eventorganiser-fullcal) lists every performance; `category` keeps the
+    # shows & music category (nearly the whole calendar). Each show page gives the seller link
+    # (Eventer, Ticketmaster, Kupat...) as purchase_url, so dedup merges it with the seller's listing.
+    enabled: true
+    cron: "7 5,17 * * *"
+    site_url: https://www.hatarbut.co.il
+    category: הופעות-ומוזיקה
+    venue_name: "היכל התרבות תל אביב"
+    address: "הוברמן 1, תל אביב-יפו"
+    city: תל אביב-יפו
+
+  holon:
+    # Holon municipality's events board (SharePoint; its /_api refuses anonymous calls, so the page is read).
+    # One page lists every event (~90) with place, categories, audience, description and artwork: library
+    # lectures and story hours, youth centres, La Park, Holon Theatre (also on Smarticket `hth`; dedup merges).
+    # Recurring series show only their first date and fall out by retention. robots.txt allows the page.
+    enabled: true
+    cron: "9 4,16 * * *"
+    listing_url: https://www.holon.muni.il/Havingfun/Pages/allevents.aspx
+    city: חולון
+
+  kikarhamusica:
+    # Kikar HaMusica, Jerusalem's music square: WordPress + The Events Calendar, whose JSON API lists every
+    # upcoming live set (~90 over two months) with genre and artwork. No price or seller link (on no ticket
+    # site) and no venue in the feed, so venue and address are set here. robots.txt allows everything.
+    enabled: true
+    cron: "33 3,15 * * *"
+    site_url: https://kikar-hamusica.com/shows/he
+    venue_name: כיכר המוזיקה
+    address: "יואל משה סלומון 10, ירושלים"
+    city: ירושלים
+
+  xplorer:
+    # Xplorer: tickets to concerts and festivals abroad (USD), on a flights site's shows board. ASP.NET,
+    # no API: the board's hidden filters give the artist ids (~50), each artist page its event ids, and
+    # each event page (?ev=) the local date and time, Hebrew city/country, venue and seat categories.
+    # ~390 GETs of ~350 KB. robots.txt is absent.
+    enabled: true
+    cron: "53 3,15 * * *"
+    site_url: https://www.xplorer.co.il
+    music_path: /music
+    artist_path: /music/artist/
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.2
+
+  livetickets:
+    # LiveTickets: tickets to concerts, sports and festivals abroad (ASP.NET, no API or sitemap).
+    # The home and category pages link ~590 performer, city and venue pages; each lists its events
+    # 15 a page (followed by the "next page" link) with local date and time, venue, Hebrew city and
+    # country, and a "from" price. ~700 GETs, no detail requests. robots.txt disallows /search/ only.
+    enabled: true
+    cron: "37 5,17 * * *"
+    site_url: https://www.livetickets.co.il
+    event_path: /events/events.aspx?eid={eid}
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.2
+
+  tiuli:
+    # Tiuli (tiuli.com): Israeli trips/leisure guide, events section. No API / Event JSON-LD; the
+    # /events page holds the whole catalogue (~10 dated cards: dd/mm dates, "locality | region"),
+    # each event / article page adds the organizer's link ("... »"), the "איפה:" address and a start
+    # time. One event per date; a run is one event from today to its last day. Mostly small
+    # localities and organizers' own sites. robots.txt disallows /search, /ajax, /map, /content.
+    enabled: true
+    cron: "39 4,16 * * *"
+    site_url: https://www.tiuli.com
+    list_path: /events
+    max_events: 200
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.5
+
+  festivalim:
+    # Festivalim: an index of festivals and carnivals (WordPress). The REST API lacks the dates, so the
+    # site's search (country = Israel, from today) lists festivals not yet over, soonest first, with
+    # their days ("from - to", no times); paging stops at the first page without a date (~4 pages).
+    # Each festival page adds the full description, image and the festival's own site (purchase_url).
+    # Abroad festivals (most of the site) are not collected. robots.txt allows all but /wp-admin/.
+    enabled: true
+    cron: "26 4,16 * * *"
+    site_url: https://www.festivalim.co.il
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
+
+  telaviv:
+    # Tel Aviv-Yafo municipality (tel-aviv.gov.il/Visitors/Events): the city's own events (culture,
+    # community centres, tours, kids, sport; many free). One POST to the page's SharePoint service
+    # (GetEvBenList) returns every upcoming event (~1000, ~9 MB) with place, address, picture, free /
+    # paid and cost text; seller links in the text (Eventer, GoShow, Coing) kept as purchase_url.
+    # robots.txt allows /_vti_bin/.
+    enabled: true
+    cron: "51 5,17 * * *"
+    site_url: https://www.tel-aviv.gov.il
+    list_path: /_vti_bin/TlvSP2013PublicSite/TlvListUtils.svc/GetEvBenList
+    item_path: /Pages/MainItemPage.aspx
+    city: תל אביב-יפו
+    http:
+      timeout_seconds: 60       # one ~9 MB response
+
+  munievents:
+    # Municipal event calendars on one shared CMS (/events/ cards + /events/<id>/ pages): mostly free
+    # community events sold nowhere else; paid ones are sold by the city itself. One listing page per
+    # city (all events, a recurring one kept once at its next date) plus each event's page for the
+    # description, image and price. Cards linking to a Smarticket hall are skipped. No robots.txt.
+    # Add a city on the same engine with one more `sites` entry.
+    enabled: true
+    cron: "3 6,18 * * *"
+    sites:
+      - {url: https://www.rosh-haayin.muni.il, city: ראש העין}
+      - {url: https://www.kfar-saba.muni.il, city: כפר סבא}
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.3
+
+  haifamuni:
+    # Haifa municipality city-events (WordPress; REST API closed): one listing page (~60 events),
+    # each event page read for performances, price/free, venue, address, categories and the seller's
+    # link (purchase_url, so dedup merges with Haifa Theatre, Smarticket, Eventer...). One event per
+    # performance; a season is kept as its first day. robots.txt allows everything.
+    enabled: true
+    cron: "57 4,16 * * *"
+    site_url: https://www.haifa.muni.il
+    listing_path: /culture/city-events/
+    city: חיפה
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.3
+
+  ramatganmuni:
+    # Ramat Gan municipality (Angular app over a public JSON API): one event-lobby request lists every
+    # current event card (~60), one request per event adds time, description, prices and register link.
+    # Cards that copy Ramat Gan's Smarticket events (ramat-gan / mbe-rg hosts) are skipped; the rest
+    # (~30: free municipal events, other sellers) are kept with the link as purchase_url.
+    enabled: true
+    cron: "38 5,17 * * *"
+    site_url: https://www.ramat-gan.muni.il
+    api_url: https://api-m.ramat-gan.muni.il/api
+    media_url: https://cms-media.ramat-gan.muni.il
+    listing_path: /EventLobby/he/event-lobby
+    city: רמת גן
+
+  ogo:
+    # OGO (ogo.co.il, formerly makore.app; not makore.co.il): moderated guide to all of Israel, ~10k
+    # upcoming events linking to ~40 sellers we mostly don't read (municipal halls, matnasim...);
+    # extra.purchase_url lets dedup merge the rest. robots.txt disallows query strings and /filtered,
+    # so the sitemap lists the event pages (date in the path) and each page's JSON-LD is read in
+    # Hebrew. One request per event and 429 above ~3 req/s: days_ahead 10 (~2.6k pages, ~14 min).
+    enabled: true
+    cron: "27 6,18 * * *"
+    site_url: https://www.ogo.co.il
+    sitemap_path: /sitemap.xml
+    locale: he
+    days_ahead: 10
+    max_events: 5000
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.3

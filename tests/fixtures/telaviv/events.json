@@ -1,0 +1,2473 @@
+[
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "49787"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "חגיגה של דמוקרטיה ברחבי העיר "
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "כמפורט בכתבה"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMainPicture",
+    "Type": "String",
+    "Value": "<img alt=\"\" src=\"/digitelimages2020/6fe82ecddfd846a6b0dd2cec08cc3159.jpeg\" style=\"border-width: 0px;\" class=\"sq-img-mainPicture\">"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "17.10.26, 00:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "27.10.26, 00:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFieldsOfInterests",
+    "Type": "String",
+    "Value": "הרצאות סיורים והעשרה | הרצאות והעשרה;קהילות | אירועים קהילתיים;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "969f7de3-0ac9-4a30-88f0-2e1a7281f3d0"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSummary",
+    "Type": "String",
+    "Value": "עיריית תל אביב-יפו תקיים עשרות אירועים, מפגשים ופעילויות ברוח ערכי הדמוקרטיה, לצד קריאה לתושבות ולתושבים להשתתף בבחירות ביום חגה של הדמוקרטיה"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Comments",
+    "Type": "String",
+    "Value": "    לאירועי חוגגים דמוקרטיה במרכזים הקהילתיים לחצו>  https://bit.ly/3UopQmv  ​          ראשון-שלישי | 27.10-17.10.26 | ברחבי העיר     תל אביב-יפו היא עיר עם מחויבות עמוקה לערכים הליברליים והדמוקרטיים, לסובלנות, להכלה, לשוויון ולחופש. זו עיר שמתקיימים בה ערבות הדדית, אחריות חברתית וסולידריות, עיר של "
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "ברחבי העיר"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordX",
+    "Type": "String",
+    "Value": "0"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordY",
+    "Type": "String",
+    "Value": "0"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInstitution",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMessageNotification",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "Location",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudiences",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTOEventsInstances",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitType",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEvent",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInchargeCenterFullVal",
+    "Type": "String",
+    "Value": "דובר"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInterestsID",
+    "Type": "String",
+    "Value": "x18o28x x19o31x"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTimeOutCategories",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudienceId",
+    "Type": "String",
+    "Value": "6;5;3;18"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1Branch",
+    "Type": "String",
+    "Value": "0"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFreeEvent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "חלק בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSpecialEventId",
+    "Type": "Int64",
+    "Value": "78"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPublishDate",
+    "Type": "DateTime",
+    "Value": "08.10.26, 00:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsPremium",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefit",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvItemCategoryId",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvShowInLobby",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefit",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsRecurrence",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOrder",
+    "Type": "Int64",
+    "Value": "4"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardDescr",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCodeStickerStatusCard",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvDelivery",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBusinessCategory",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefitActive",
+    "Type": "Boolean",
+    "Value": "True"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitChildren",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "String",
+    "Value": "כמפורט בכתבה"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAccessibilitySetting",
+    "Type": "String",
+    "Value": "למידע אודות נגישות יש לפנות למזכירות המרכז"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvRelevantContent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobby",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyAddress",
+    "Type": "String",
+    "Value": "ברחבי העיר"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyLocation",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyTimePosition",
+    "Type": "String",
+    "Value": "morning;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvHideInSite",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOpenMP",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "tlvAddressNeighborhoodCode",
+    "Type": "Int64",
+    "Value": "0"
+   }
+  ]
+ },
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "48803"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "קולנוע הפסגה ביפו העתיקה"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "גן הפסגה"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMainPicture",
+    "Type": "String",
+    "Value": "<img alt=\"קולנוע הפסגה\" src=\"/digitelimages2020/a383caf2682f4fa69ddca11b903e0508.jpg\" style=\"border-width: 0px;\" class=\"sq-img-mainPicture\" title=\"קולנוע הפסגה\">"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "28.10.26, 21:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "28.10.26, 23:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFieldsOfInterests",
+    "Type": "String",
+    "Value": "תאטרון וקולנוע | קולנוע;קהילות | אירועים קהילתיים;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "969f7de3-0ac9-4a30-88f0-2e1a7281f3d0"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSummary",
+    "Type": "String",
+    "Value": "מדי יום רביעי, הקרנות סרטים תחת כיפת השמיים בספוט הכי שווה בעיר, עם הבריזה של הים וקלאסיקות בלתי נשכחות. הכניסה חופשית!"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Comments",
+    "Type": "String",
+    "Value": "          ​ פסטיבל יפו SYNC - הפסטיבל לפסקולים חיים ביפו העתיקה     14+21+28 באוקטובר           הפסטיבל לפסקולים חיים ביפו העתיקה חוזר במהדורה שנייה ונוצצת במיוחד, וחוגג את שני הדברים שאנחנו הכי אוהבים בעולם - מוזיקה וקולנוע!       והשנה: יוצאים למסע בין שלוש מהערים הגדולות, המסעירות והמשפיעות בעולם"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "מפרץ שלמה 8"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordX",
+    "Type": "String",
+    "Value": "176913.37"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordY",
+    "Type": "String",
+    "Value": "662499.2"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInstitution",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMessageNotification",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "Location",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudiences",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTOEventsInstances",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitType",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEvent",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInchargeCenterFullVal",
+    "Type": "String",
+    "Value": "החברה לפיתוח יפו העתיקה"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInterestsID",
+    "Type": "String",
+    "Value": "x15o23x x19o31x"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTimeOutCategories",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudienceId",
+    "Type": "String",
+    "Value": "3;5;2"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1Branch",
+    "Type": "String",
+    "Value": "7"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFreeEvent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "לא בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSpecialEventId",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPublishDate",
+    "Type": "DateTime",
+    "Value": "27.04.26, 00:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsPremium",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefit",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvItemCategoryId",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvShowInLobby",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefit",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsRecurrence",
+    "Type": "Boolean",
+    "Value": "True"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOrder",
+    "Type": "Int64",
+    "Value": "10"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardDescr",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCodeStickerStatusCard",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvDelivery",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBusinessCategory",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefitActive",
+    "Type": "Boolean",
+    "Value": "True"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitChildren",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAccessibilitySetting",
+    "Type": "String",
+    "Value": "למידע אודות נגישות יש לפנות למזכירות המרכז"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvRelevantContent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobby",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyAddress",
+    "Type": "String",
+    "Value": "מפרץ שלמה 8"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyLocation",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyTimePosition",
+    "Type": "String",
+    "Value": "14/10/2026;21/10/2026;28/10/2026&evening;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvHideInSite",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOpenMP",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "tlvAddressNeighborhoodCode",
+    "Type": "Int64",
+    "Value": "44"
+   }
+  ]
+ },
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "47820"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "מועדון הקריאה של אריק"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "מרכז הקהילה אריק איינשטיין"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMainPicture",
+    "Type": "String",
+    "Value": "<img alt=\"צילום: שרון דובז&#39;ינסקי\" src=\"/digitelimages2020/6172997a91fb4fd6a04f0aa4b7780263.jpg\" style=\"border-width: 0px;\" class=\"sq-img-mainPicture\" title=\"צילום: שרון דובז&#39;ינסקי\">"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "16.09.26, 11:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "16.06.27, 12:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFieldsOfInterests",
+    "Type": "String",
+    "Value": "הרצאות סיורים והעשרה | הרצאות והעשרה;קהילות | אירועים קהילתיים;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "969f7de3-0ac9-4a30-88f0-2e1a7281f3d0"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSummary",
+    "Type": "String",
+    "Value": "נקרא קטעי ספרות ונדון בהם. מדי פעם גם נקרא ונתרשם מפרי העט של חברי וחברות המועדון"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Comments",
+    "Type": "String",
+    "Value": " ​מועדון הקריאה של אריק בהנחיית יעל כהנא.   נקרא קטעי ספרות ונדון בהם ומדי פעם גם נקרא ונתרשם מפרי העט של חברי המועדון.      בכל יום רביעי השלישי בחודש.   הכניסה חופשית בהצגת כרטיס חבר \"מועדון אריק איינשטיין\" 2025/26. אורחים - ברכישת כרטיס חד פעמי בסך 20 ש''ח   מספר המקומות מוגבל!      יש להירשם מרא לרכישה: https://www.eventer.co.il/fqa2f"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "הוז דב 16"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordX",
+    "Type": "String",
+    "Value": "178685.28"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordY",
+    "Type": "String",
+    "Value": "665350.48"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInstitution",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMessageNotification",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "Location",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudiences",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTOEventsInstances",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitType",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEvent",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInchargeCenterFullVal",
+    "Type": "String",
+    "Value": "מרכז קהילתי אריק איינשטיין"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInterestsID",
+    "Type": "String",
+    "Value": "x18o28x x19o31x"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTimeOutCategories",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudienceId",
+    "Type": "String",
+    "Value": "6"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1Branch",
+    "Type": "String",
+    "Value": "6"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFreeEvent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "חלק בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSpecialEventId",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPublishDate",
+    "Type": "DateTime",
+    "Value": "05.11.25, 00:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsPremium",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefit",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvItemCategoryId",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvShowInLobby",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefit",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsRecurrence",
+    "Type": "Boolean",
+    "Value": "True"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOrder",
+    "Type": "Int64",
+    "Value": "20"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardDescr",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCodeStickerStatusCard",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvDelivery",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBusinessCategory",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefitActive",
+    "Type": "Boolean",
+    "Value": "True"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitChildren",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "String",
+    "Value": "כמפורט באירוע"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAccessibilitySetting",
+    "Type": "String",
+    "Value": "הנגשה פיזית"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvRelevantContent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobby",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyAddress",
+    "Type": "String",
+    "Value": "הוז דב 16"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyLocation",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyTimePosition",
+    "Type": "String",
+    "Value": "morning;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvHideInSite",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOpenMP",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "tlvAddressNeighborhoodCode",
+    "Type": "Int64",
+    "Value": "31"
+   }
+  ]
+ },
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "40691"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "שישי מהסרטים: מיניונים ומפלצות"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "מרכז מנדל"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMainPicture",
+    "Type": "String",
+    "Value": "<img class=\"sq-img-mainPicture\" style=\"border-width: 0px;\" alt=\"קרדיט: טוליפ\" title=\"קרדיט: טוליפ\" src=\"/UploadPic/2475d0cdf5be1af60fd9cbbb78d996e1.jpeg\">"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "23.10.26, 14:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "23.10.26, 15:45"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFieldsOfInterests",
+    "Type": "String",
+    "Value": "תאטרון וקולנוע|קולנוע"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "d7edbd99-5ed2-48be-b4cd-990641ad5f1e"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSummary",
+    "Type": "String",
+    "Value": "זהו הסיפור המשוגע, המגוחך והנכון-לחלוטין על איך המיניונים כבשו את הוליווד, הפכו לכוכבי קולנוע, איבדו הכל, שחררו מפלצות אל העולם ואז התאחדו כדי לנסות ולהציל את כדור הארץ - הסרט יוקרן במרכז תרבות מנדל"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Comments",
+    "Type": "String",
+    "Value": "  מיניונים ומפלצות - הסרט.   להוליווד יש בעיית מפלצות. \"מיניונים ומפלצות\" – הלהיט החדש מאולפני Illumination, מסדרת סרטי האנימציה המצליחה ביותר בישראל ובעולם בכל הזמנים מגיע רק לבתי הקולנוע החל מה-1 ביולי. אולפני Illumination (\"מיניונים\", \"סופר מריו\", \"לשיר\") מרחיבים את היקום הקולנועי שלהם עם פרק חדש לרכישה: https://www.goshow.co.il/show/21957/57172"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "התקומה 1"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordX",
+    "Type": "String",
+    "Value": "177476.73"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordY",
+    "Type": "String",
+    "Value": "662088.84"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInstitution",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMessageNotification",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "Location",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudiences",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitStickerDescription",
+    "Type": "String",
+    "Value": "הרשמה מראש"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTOEventsInstances",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitType",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEvent",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInchargeCenterFullVal",
+    "Type": "String",
+    "Value": "אודיטוריום אניס"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInterestsID",
+    "Type": "String",
+    "Value": "x15o23x"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTimeOutCategories",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudienceId",
+    "Type": "String",
+    "Value": "2;3;17"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1Branch",
+    "Type": "String",
+    "Value": "7"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFreeEvent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSpecialEventId",
+    "Type": "Int64",
+    "Value": "49"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPublishDate",
+    "Type": "DateTime",
+    "Value": "22.09.26, 00:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsPremium",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefit",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvItemCategoryId",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvShowInLobby",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefit",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsRecurrence",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOrder",
+    "Type": "Int64",
+    "Value": "20"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardDescr",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCodeStickerStatusCard",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardColor",
+    "Type": "String",
+    "Value": "13d56d"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvDelivery",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBusinessCategory",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefitActive",
+    "Type": "Boolean",
+    "Value": "True"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitChildren",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "String",
+    "Value": "30-15 ש\"ח"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAccessibilitySetting",
+    "Type": "String",
+    "Value": "הנגשה פיזית"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvRelevantContent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobby",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyAddress",
+    "Type": "String",
+    "Value": "התקומה 1"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyLocation",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyTimePosition",
+    "Type": "String",
+    "Value": "noon;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyStickerStatusCardColor",
+    "Type": "String",
+    "Value": "13d56d"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyBenefitStickerDescription",
+    "Type": "String",
+    "Value": "הרשמה מראש"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvHideInSite",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOpenMP",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "tlvAddressNeighborhoodCode",
+    "Type": "Int64",
+    "Value": "42"
+   }
+  ]
+ },
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "41578"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "הפנינג ילדים בוחרים 2026 - בנמל"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "מרכז פרפרים"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMainPicture",
+    "Type": "String",
+    "Value": "<img class=\"sq-img-mainPicture\" style=\"border-width: 0px;\" alt=\"\" title=\"\" src=\"/UploadPic/4164c294e263466020927d0c7c63557e.jpeg\">"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "25.10.26, 16:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "25.10.26, 18:30"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFieldsOfInterests",
+    "Type": "String",
+    "Value": "חינוך והורות|הורות וטף"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "d7edbd99-5ed2-48be-b4cd-990641ad5f1e"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSummary",
+    "Type": "String",
+    "Value": "הפנינג שכולו בחירות ילדים - כי מי אמר שרק למבוגרים מגיע להצביע!"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Comments",
+    "Type": "String",
+    "Value": " בואו להפנינג שכולו בחירות ילדים - כי מי אמר שרק למבוגרים מגיע להצביע!   מה יהיה לנו?   - מרכז שמח וחגיגי  - הצגה שנבחרה ברוב קולות על ידי הילדים: \"למה בכה הדג?\" של תיאטרון הקרון המדהים! - ההצגה תתחיל ב- 17:00 בדיוק (לגילי 6-3 שנים)  - בועות סבון בחצר  - פינת ג'ימבורי  - עמדת יצירה  - פינוקים צוננים"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "מתחם ליפקין שחק- שטח הנמל 15"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordX",
+    "Type": "String",
+    "Value": "178809.7"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordY",
+    "Type": "String",
+    "Value": "667380.3"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInstitution",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMessageNotification",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "Location",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudiences",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTOEventsInstances",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitType",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEvent",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInchargeCenterFullVal",
+    "Type": "String",
+    "Value": "מרכז פרפרים"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInterestsID",
+    "Type": "String",
+    "Value": "x22o37x"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTimeOutCategories",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudienceId",
+    "Type": "String",
+    "Value": "7;15;1"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1Branch",
+    "Type": "String",
+    "Value": "6"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFreeEvent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSpecialEventId",
+    "Type": "Int64",
+    "Value": "78"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPublishDate",
+    "Type": "DateTime",
+    "Value": "21.10.26, 00:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsPremium",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefit",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvItemCategoryId",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvShowInLobby",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefit",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsRecurrence",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOrder",
+    "Type": "Int64",
+    "Value": "20"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardDescr",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCodeStickerStatusCard",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvDelivery",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBusinessCategory",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefitActive",
+    "Type": "Boolean",
+    "Value": "True"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitChildren",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "String",
+    "Value": "אירוע בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAccessibilitySetting",
+    "Type": "String",
+    "Value": "למידע אודות נגישות יש לפנות למזכירות המרכז"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvRelevantContent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobby",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyAddress",
+    "Type": "String",
+    "Value": "מתחם ליפקין שחק- שטח הנמל 15"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyLocation",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyTimePosition",
+    "Type": "String",
+    "Value": "noon;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvHideInSite",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOpenMP",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "tlvAddressNeighborhoodCode",
+    "Type": "Int64",
+    "Value": "29"
+   }
+  ]
+ },
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "41434"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "אימון פונקציונלי לבוגרים בחוף תל ברוך"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "מרכז קהילתי חוף תל ברוך"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMainPicture",
+    "Type": "String",
+    "Value": "<img class=\"sq-img-mainPicture\" style=\"border-width: 0px;\" alt=\"שרון רויטמן\" title=\"שרון רויטמן\" src=\"/UploadPic/6016f1eda6ec244fcea830973cf0d74a.png\">"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "28.10.26, 06:30"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "28.10.26, 07:30"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFieldsOfInterests",
+    "Type": "String",
+    "Value": "ספורט ובריאות|ספורט;ספורט ובריאות|בריאות ואורח חיים;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "d7edbd99-5ed2-48be-b4cd-990641ad5f1e"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSummary",
+    "Type": "String",
+    "Value": "הצטרפו אלינו לאימונים ייחודיים המיועדים למבוגרים ומבוגרות, מגיל 50 ומעלה, על דק העץ מול הים"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Comments",
+    "Type": "String",
+    "Value": " אימון פונקציונלי -  בהדרכת המאמן אמיר לנטין, מאמן כושר מוסמך ומדריך פעילות גופנית לגיל השלישי.  אימונים קבוצתיים ייחודיים במדשאה ובחוף של מרכז קהילתי חוף תל ברוך.  האימון מתבסס על הפעלת התנגדות ועומס על העצמות והמפרקים האימון מותאם לכל הרמות ולכל היכולות.  למי מיועד? גברים ונשים בגילי 50+  מתי ואיפ"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "ארצי יצחק 12"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordX",
+    "Type": "String",
+    "Value": "179690.97"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordY",
+    "Type": "String",
+    "Value": "669589.63"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInstitution",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMessageNotification",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "Location",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudiences",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTOEventsInstances",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitType",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEvent",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInchargeCenterFullVal",
+    "Type": "String",
+    "Value": "מרכז קהילתי חוף תל ברוך"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInterestsID",
+    "Type": "String",
+    "Value": "x21o35x x21o34x"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTimeOutCategories",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudienceId",
+    "Type": "String",
+    "Value": "6"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1Branch",
+    "Type": "String",
+    "Value": "1"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFreeEvent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSpecialEventId",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPublishDate",
+    "Type": "DateTime",
+    "Value": "15.10.26, 00:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsPremium",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefit",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvItemCategoryId",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvShowInLobby",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefit",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsRecurrence",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOrder",
+    "Type": "Int64",
+    "Value": "20"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardDescr",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCodeStickerStatusCard",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvDelivery",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBusinessCategory",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefitActive",
+    "Type": "Boolean",
+    "Value": "True"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitChildren",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "String",
+    "Value": "40-30 ש\"ח"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAccessibilitySetting",
+    "Type": "String",
+    "Value": "למידע אודות נגישות יש לפנות למזכירות המרכז"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvRelevantContent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobby",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyAddress",
+    "Type": "String",
+    "Value": "ארצי יצחק 12"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyLocation",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyTimePosition",
+    "Type": "String",
+    "Value": "morning;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvHideInSite",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOpenMP",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "tlvAddressNeighborhoodCode",
+    "Type": "Int64",
+    "Value": "3"
+   }
+  ]
+ },
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "41434"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "שישי מהסרטים במרכז תרבות מנדל"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "מרכז תרבות מנדל"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMainPicture",
+    "Type": "String",
+    "Value": "<img alt=\"באדיבות רד קייפ\" src=\"/digitelimages2020/93bcf2087aca47a0b0c38b4f3a41ea10.jpeg\" style=\"border-width: 0px;\" class=\"sq-img-mainPicture\" title=\"באדיבות רד קייפ\">"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "06.11.26, 14:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "06.11.26, 15:45"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFieldsOfInterests",
+    "Type": "String",
+    "Value": "תאטרון וקולנוע | קולנוע;קהילות | אירועים קהילתיים;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "969f7de3-0ac9-4a30-88f0-2e1a7281f3d0"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSummary",
+    "Type": "String",
+    "Value": "מרכז תרבות אניס מתארח במנדל עם סרטי קולנוע מדובבים חדשים לילדים וילדות, במחיר של 30 ש\"ח לכרטיס והטבה של 50% למחזיקי ולמחזיקות דיגיתל. לגיל 3 ומעלה"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Comments",
+    "Type": "String",
+    "Value": "  שישי מהסרטים עובר למרכז תרבות מנדל - לוח ההקרנות של חודש נובמבר:         06.11 | 14:00 | סוד החיות הקסומות 3 >  https://bit.ly/3UamVxM​    13.11 | 14:00 | מרסופילמי >  https://bit.ly/4zFSqPe​    20.11 | 14:00 |  ​טרום בכורה!  דג ושמו באסה >  https://bit.ly/4z7S7wP​    27.11 | 14:00 | צעצוע של סיפו"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "התקומה 1"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordX",
+    "Type": "String",
+    "Value": "177476.73"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1CoordY",
+    "Type": "String",
+    "Value": "662088.84"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInstitution",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvMessageNotification",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "Location",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudiences",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTOEventsInstances",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitType",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEvent",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInchargeCenterFullVal",
+    "Type": "String",
+    "Value": "אודיטוריום אניס"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvInterestsID",
+    "Type": "String",
+    "Value": "x15o23x x19o31x"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvTimeOutCategories",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAudienceId",
+    "Type": "String",
+    "Value": "1"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1Branch",
+    "Type": "String",
+    "Value": "7"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvFreeEvent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSpecialEventId",
+    "Type": "Int64",
+    "Value": "1"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPublishDate",
+    "Type": "DateTime",
+    "Value": "30.06.23, 00:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsPremium",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefit",
+    "Type": "Boolean",
+    "Value": "False"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvItemCategoryId",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvShowInLobby",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefit",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsRecurrence",
+    "Type": "Boolean",
+    "Value": "True"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOrder",
+    "Type": "Int64",
+    "Value": "20"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardDescr",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCodeStickerStatusCard",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvDelivery",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBusinessCategory",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvIsBenefitActive",
+    "Type": "Boolean",
+    "Value": "True"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvBenefitChildren",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "String",
+    "Value": "30-15 ש\"ח"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAccessibilitySetting",
+    "Type": "String",
+    "Value": "הנגשה פיזית\n\nהנגשה לכבדי שמיעה וחירשים "
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvRelevantContent",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobby",
+    "Type": "String",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyAddress",
+    "Type": "String",
+    "Value": "התקומה 1"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyLocation",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyTimePosition",
+    "Type": "String",
+    "Value": "06/11/2026;13/11/2026;20/11/2026;27/11/2026&noon;"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyStickerStatusCardColor",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvSearchContentForLobbyBenefitStickerDescription",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvHideInSite",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvOpenMP",
+    "Type": "DBNull",
+    "Value": ""
+   },
+   {
+    "Caption": null,
+    "InternalName": "tlvAddressNeighborhoodCode",
+    "Type": "Int64",
+    "Value": "42"
+   }
+  ]
+ }
+]

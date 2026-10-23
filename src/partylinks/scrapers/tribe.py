@@ -92,7 +92,7 @@ def parse_event(e: dict[str, Any], s: TribeSettings, source: str, timezone: str)
         city=s.city,
         event_types=[
             name for c in e.get("categories") or []
-            if isinstance(c, dict) and (name := html.unescape(str(c.get("name") or ""))) and name not in s.skip_categories
+            if isinstance(c, dict) and (name := clean_str(html.unescape(str(c.get("name") or "")))) and name not in s.skip_categories
         ],
         images=[image["url"]] if image.get("url") else [],
         min_price=prices[0] if prices else None,

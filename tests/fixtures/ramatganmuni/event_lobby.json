@@ -1,0 +1,273 @@
+{
+ "seoData": {
+  "title": "אירועים ברמת-גן",
+  "metaDescription": "אתר עיריית רמת-גן מזמין אתכם להתעדכן בלוח האירועים העירוני העשיר, המציע פעילויות לכל \n הגילאים ובכל תחומי העניין. למידע אודות מגוון האירועים",
+  "openGraphTitle": "אירועים ברמת-גן",
+  "openGraphDescription": "אתר עיריית רמת-גן מזמין אתכם להתעדכן בלוח האירועים העירוני העשיר, המציע פעילויות לכל \n הגילאים ובכל תחומי העניין. למידע אודות מגוון האירועים",
+  "openGraphImage": null,
+  "canonicalUrl": "https://www.ramat-gan.muni.il/event-lobby/",
+  "robots": []
+ },
+ "breadcrumbs": [
+  {
+   "name": "לובי אירועים",
+   "url": "/event-lobby/"
+  }
+ ],
+ "content": {
+  "type": "eventLobby",
+  "lobbyName": "אירועים ברמת גן",
+  "shortTitle": "",
+  "sliderEvents": [],
+  "closeEvents": [
+   {
+    "eventLocation": {
+     "id": "9d1e8f99999547169736c30fdc663bef",
+     "name": "ספריית נווה יהושע",
+     "address": "רחוב עמק החולה 17",
+     "objectId": 3831
+    },
+    "benefitForCityResidents": false,
+    "audienceType": [
+     {
+      "id": "0942fdf91e7d4f9c8e2e862b2b5e31f0",
+      "name": "ילדים (4-11)"
+     }
+    ],
+    "category": {
+     "icon": {
+      "link": "/media/kzncnkui/חינוך-וספריה-1.svg",
+      "linkMobile": "/media/kzncnkui/חינוך-וספריה-1.svg",
+      "alt": null,
+      "type": 1
+     },
+     "color": "e1f9ff",
+     "id": "c3cca690df1e428d885ec068417497c1",
+     "name": "שעת סיפור"
+    },
+    "accessible": false,
+    "neighborhood": null,
+    "title": "שעות סיפור ברשת ספריות רמת-גן - אוקטובר 2026",
+    "shortTitle": "שעות סיפור בספריות",
+    "date": "2026-10-25T00:00:00",
+    "hour": "2026-10-15T16:30:00Z",
+    "location": "ספריית נווה יהושע",
+    "eventSource": {
+     "sourceId": 1,
+     "value": "עיריית רמת גן"
+    },
+    "eventTag": null,
+    "cluster": [
+     {
+      "id": "c48b83c769244cc8acbd371c319bee9a",
+      "name": "פעילויות לגיל הרך"
+     }
+    ],
+    "detailsLink": {
+     "name": null,
+     "url": "/events/rg-events/web-site-event-1246/",
+     "target": null
+    },
+    "eventBackground": {
+     "link": "/media/quodvdav/התאמה-לאתר_שעות-סיפור-בספריות-העירוניות_1540-803.jpg",
+     "linkMobile": "/media/1pepl0pp/576_390-מוביילהתאמה-לאתר2_שעות-סיפור-בספריות-העירוניות.jpg",
+     "alt": "",
+     "type": 1
+    },
+    "priceType": 1,
+    "businessUnit": "2",
+    "linkMobilePreview": null
+   },
+   {
+    "eventLocation": {
+     "id": "a83f062114b441e2a8fed04f8741f6b9",
+     "name": "רחבי העיר",
+     "address": "",
+     "objectId": 1
+    },
+    "benefitForCityResidents": true,
+    "audienceType": [
+     {
+      "id": "61e9b86def7a42c682b999efa703bd70",
+      "name": "צעירים (18-35)"
+     },
+     {
+      "id": "afbcee22447945469101681809aab76e",
+      "name": "מבוגרים (60- 35)"
+     },
+     {
+      "id": "089f06546e2943e287546ed541ba51d6",
+      "name": "הגיל השלישי (60+)"
+     }
+    ],
+    "category": {
+     "icon": {
+      "link": "/media/f33bgjxk/תרבות-תורנית-ומורשת-ישראל.svg",
+      "linkMobile": "/media/f33bgjxk/תרבות-תורנית-ומורשת-ישראל.svg",
+      "alt": null,
+      "type": 1
+     },
+     "color": "e1f9ff",
+     "id": "637674ef0beb477fb58d6a40f3d15cb0",
+     "name": "אירועי הקהל הדתי"
+    },
+    "accessible": false,
+    "neighborhood": null,
+    "title": "שבת פיוט ושירת הבקשות",
+    "shortTitle": "פרשת לך לך",
+    "date": "2026-10-23T00:00:00Z",
+    "hour": "2026-10-05T00:00:00Z",
+    "location": "רחבי העיר",
+    "eventSource": {
+     "sourceId": 1,
+     "value": "עיריית רמת גן"
+    },
+    "eventTag": null,
+    "cluster": [],
+    "detailsLink": {
+     "name": null,
+     "url": "/events/shabbat-hazanut-and-piyyut/",
+     "target": null
+    },
+    "eventBackground": {
+     "link": "/media/2o3je20y/דסקטופ-1540-על-803-01.png",
+     "linkMobile": "/media/utzl1crx/מובייל-576-על-390-03-2.png",
+     "alt": "",
+     "type": 1
+    },
+    "priceType": 3,
+    "businessUnit": "9",
+    "linkMobilePreview": "/media/qqeazset/מובייל-נוסף-342-על-220-04-2.png"
+   }
+  ],
+  "eventLobbyCategories": [
+   {
+    "title": "x",
+    "categories": [],
+    "events": [
+     {
+      "eventLocation": {
+       "id": "a83f062114b441e2a8fed04f8741f6b9",
+       "name": "רחבי העיר",
+       "address": "",
+       "objectId": 1
+      },
+      "benefitForCityResidents": true,
+      "audienceType": [
+       {
+        "id": "61e9b86def7a42c682b999efa703bd70",
+        "name": "צעירים (18-35)"
+       },
+       {
+        "id": "afbcee22447945469101681809aab76e",
+        "name": "מבוגרים (60- 35)"
+       },
+       {
+        "id": "089f06546e2943e287546ed541ba51d6",
+        "name": "הגיל השלישי (60+)"
+       }
+      ],
+      "category": {
+       "icon": {
+        "link": "/media/f33bgjxk/תרבות-תורנית-ומורשת-ישראל.svg",
+        "linkMobile": "/media/f33bgjxk/תרבות-תורנית-ומורשת-ישראל.svg",
+        "alt": null,
+        "type": 1
+       },
+       "color": "e1f9ff",
+       "id": "637674ef0beb477fb58d6a40f3d15cb0",
+       "name": "אירועי הקהל הדתי"
+      },
+      "accessible": false,
+      "neighborhood": null,
+      "title": "שבת פיוט ושירת הבקשות",
+      "shortTitle": "פרשת לך לך",
+      "date": "2026-10-23T00:00:00Z",
+      "hour": "2026-10-05T00:00:00Z",
+      "location": "רחבי העיר",
+      "eventSource": {
+       "sourceId": 1,
+       "value": "עיריית רמת גן"
+      },
+      "eventTag": null,
+      "cluster": [],
+      "detailsLink": {
+       "name": null,
+       "url": "/events/shabbat-hazanut-and-piyyut/",
+       "target": null
+      },
+      "eventBackground": {
+       "link": "/media/2o3je20y/דסקטופ-1540-על-803-01.png",
+       "linkMobile": "/media/utzl1crx/מובייל-576-על-390-03-2.png",
+       "alt": "",
+       "type": 1
+      },
+      "priceType": 3,
+      "businessUnit": "9",
+      "linkMobilePreview": "/media/qqeazset/מובייל-נוסף-342-על-220-04-2.png"
+     },
+     {
+      "eventLocation": {
+       "id": "af40c235477540afad23dcdcd86b8b18",
+       "name": "תיאטרון ראסל",
+       "address": "רחוב מנדל מתיתיהו 11",
+       "objectId": 3011
+      },
+      "benefitForCityResidents": true,
+      "audienceType": [
+       {
+        "id": "afbcee22447945469101681809aab76e",
+        "name": "מבוגרים (60- 35)"
+       },
+       {
+        "id": "089f06546e2943e287546ed541ba51d6",
+        "name": "הגיל השלישי (60+)"
+       }
+      ],
+      "category": {
+       "icon": {
+        "link": "/media/ehhdyrxl/תאטרון-4.svg",
+        "linkMobile": "/media/ehhdyrxl/תאטרון-4.svg",
+        "alt": null,
+        "type": 1
+       },
+       "color": "fff1e2",
+       "id": "0eb3144ba51d4c85895b758cb0927a56",
+       "name": "תיאטרון אמנות מוזיקה וספורט"
+      },
+      "accessible": false,
+      "neighborhood": null,
+      "title": "בסערות תימן",
+      "shortTitle": "מסע מוזיקלי",
+      "date": "2026-11-11T00:00:00Z",
+      "hour": "2026-10-14T20:30:00Z",
+      "location": "תיאטרון ראסל",
+      "eventSource": {
+       "sourceId": 1,
+       "value": "עיריית רמת גן"
+      },
+      "eventTag": null,
+      "cluster": [],
+      "detailsLink": {
+       "name": null,
+       "url": "/events/storms-of-yemen/",
+       "target": null
+      },
+      "eventBackground": {
+       "link": "/media/2nuiqupg/1540_803דסקטופ.jpg",
+       "linkMobile": "/media/kmyfq2zz/390_576-מובייל.jpg",
+       "alt": "",
+       "type": 1
+      },
+      "priceType": 1,
+      "businessUnit": "9",
+      "linkMobilePreview": "/media/ghgbbjff/220_342מובייל.jpg"
+     }
+    ]
+   }
+  ],
+  "metaData": null,
+  "cluster": null
+ },
+ "components": []
+}

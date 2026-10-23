@@ -1,0 +1,54 @@
+{
+ "seoData": null,
+ "breadcrumbs": [
+  {
+   "name": "לובי אירועים",
+   "url": "/event-lobby/"
+  }
+ ],
+ "content": {
+  "date": "2026-10-23T00:00:00Z",
+  "hour": "00:00",
+  "title": "שבת פיוט ושירת הבקשות",
+  "description": "סוף שבוע מיוחד ומרומם של מסורת, מוזיקה וניגונים עם הפייטנים משה לוק ויחיאל נהרי.\n\n\n\n",
+  "registerLink": null,
+  "eventSource": {
+   "sourceId": 1,
+   "value": "עיריית רמת גן"
+  },
+  "location": {
+   "id": "a83f062114b441e2a8fed04f8741f6b9",
+   "name": "רחבי העיר",
+   "address": "",
+   "objectId": 1
+  },
+  "eventTag": null,
+  "cluster": [],
+  "eventDuration": "0 ",
+  "prices": [],
+  "media": {
+   "link": "/media/2o3je20y/דסקטופ-1540-על-803-01.png",
+   "linkMobile": "/media/utzl1crx/מובייל-576-על-390-03-2.png",
+   "alt": "",
+   "type": 1
+  },
+  "showCounter": false,
+  "type": "event"
+ },
+ "components": [
+  {
+   "content": {
+    "about": "<p>במהלך ליל שבת ושבת יתקיימו תפילות, עונג שבת, שירת הבקשות וסעודה שלישית חגיגית בבתי הכנסת בעיר.<br /><br /><br /><strong>ליל שבת, י\"ב חשוון תשפ\"ז, 23.10<br /></strong> בית כנסת אוהל שמעון, הבילויים 44 <br />17:40 | מנחה<br />21:00 | עונג שבת ושירת הבקשות<br /><br /><strong>שבת, י\"ג חשוון תשפ\"ז, 24.10 </strong><br />בית כנסת יד הגיבורים, נגבה 16 | 07:30 | שחרית (לאחר התפילה, קידושא רבה)<br /><br />בית כנסת שבזי, אחד העם 10  | 16:40 | מנחה של שבת | לאחר התפילה, סעודה שלישית חגיגית</p>\n<p> </p>\n<p>הכניסה חופשית על בסיס מקום פנוי.</p>",
+    "artisans": [],
+    "artisanType": "",
+    "parking": [],
+    "accessibility": [],
+    "contactName": "המחלקה למורשת ישראל",
+    "contactPhone": "",
+    "contactEmail": "Victor-r@ramat-gan.muni.il",
+    "type": "eventInfo"
+   },
+   "components": null
+  }
+ ]
+}

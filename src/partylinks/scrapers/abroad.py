@@ -30,11 +30,12 @@ ALIASES: dict[str, str] = {
         "GB",
     ),
     **dict.fromkeys(["usa", "us", 'ארה"ב', "ארהב"], "US"),
-    **dict.fromkeys(["uae", "dubai", "abu dhabi", "איחוד האמירויות", "דובאי", "אבו דאבי"], "AE"),
+    **dict.fromkeys(["uae", "dubai", "abu dhabi", "איחוד האמירויות", "איחוד אמירויות ערביות", "דובאי", "אבו דאבי"], "AE"),
     **dict.fromkeys(["holland", "the netherlands"], "NL"),
     **dict.fromkeys(["czechia", "czech republic", "צכיה", "צ'כיה"], "CZ"),
     **dict.fromkeys(["turkey", "türkiye"], "TR"),
-    "שווייץ": "CH",
+    **dict.fromkeys(["שווייץ", "שוויץ"], "CH"),
+    "נורבגיה": "NO",
 }  # fmt: skip
 
 

@@ -20,39 +20,54 @@ from partylinks.scrapers.epgb import EpgbScraper
 from partylinks.scrapers.eventbuzz import EventbuzzScraper
 from partylinks.scrapers.eventer import EventerScraper
 from partylinks.scrapers.eventim import EventimScraper, ZappaScraper
+from partylinks.scrapers.festivalim import FestivalimScraper
 from partylinks.scrapers.geektime import GeektimeScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
+from partylinks.scrapers.haifamuni import HaifaMuniScraper
+from partylinks.scrapers.hamenagen import HamenagenScraper
 from partylinks.scrapers.happytlv import HappyTlvScraper
+from partylinks.scrapers.hatarbut import HatarbutScraper
+from partylinks.scrapers.holon import HolonScraper
 from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
 from partylinks.scrapers.issta import IsstaScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
+from partylinks.scrapers.kikarhamusica import KikarHamusicaScraper
 from partylinks.scrapers.kishreyteufa import KishreyTeufaScraper
 from partylinks.scrapers.kupatbravo import KupatbravoScraper
 from partylinks.scrapers.leaan import LeaanScraper
 from partylinks.scrapers.lev import LevScraper
+from partylinks.scrapers.livetickets import LiveTicketsScraper
 from partylinks.scrapers.livevents import LiveventsScraper
 from partylinks.scrapers.luma import LumaScraper
 from partylinks.scrapers.makore import MakoreScraper
 from partylinks.scrapers.meetup import MeetupScraper
+from partylinks.scrapers.megaevents import MegaeventsScraper
 from partylinks.scrapers.megatickets import MegaticketsScraper
 from partylinks.scrapers.mevalim import MevalimScraper
 from partylinks.scrapers.movieland import MovielandScraper
+from partylinks.scrapers.munievents import MuniEventsScraper
+from partylinks.scrapers.ogo import OgoScraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
 from partylinks.scrapers.planet import PlanetScraper, RavHenScraper
 from partylinks.scrapers.popit import PopitScraper
 from partylinks.scrapers.pres import PresScraper
+from partylinks.scrapers.ramatganmuni import RamatGanMuniScraper
 from partylinks.scrapers.secrettelaviv import SecretTelAvivScraper
 from partylinks.scrapers.selector import SelectorScraper
 from partylinks.scrapers.smarticket import SmarticketScraper
 from partylinks.scrapers.teder import TederScraper
+from partylinks.scrapers.telaviv import TelAvivScraper
 from partylinks.scrapers.tickchak import ArenasScraper, TickchakScraper
 from partylinks.scrapers.ticketmaster import TicketmasterScraper
 from partylinks.scrapers.ticketplace import TicketPlaceScraper
 from partylinks.scrapers.tiktik import TiktikScraper
+from partylinks.scrapers.tiuli import TiuliScraper
 from partylinks.scrapers.tribe import GagarinScraper
+from partylinks.scrapers.viagogo import ViagogoScraper
 from partylinks.scrapers.vibez import VibezScraper
+from partylinks.scrapers.xplorer import XplorerScraper
 from partylinks.scrapers.zygo import ZygoScraper
 
 log = logging.getLogger(__name__)
@@ -110,6 +125,21 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         LiveventsScraper,
         IsstaScraper,
         HappyTlvScraper,
+        MegaeventsScraper,
+        ViagogoScraper,
+        HamenagenScraper,
+        HatarbutScraper,
+        HolonScraper,
+        KikarHamusicaScraper,
+        XplorerScraper,
+        LiveTicketsScraper,
+        TiuliScraper,
+        FestivalimScraper,
+        TelAvivScraper,
+        MuniEventsScraper,
+        HaifaMuniScraper,
+        RamatGanMuniScraper,
+        OgoScraper,
     )
 }
 

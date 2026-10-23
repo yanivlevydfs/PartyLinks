@@ -1,0 +1,103 @@
+{
+ "events": [
+  {
+   "id": 9892,
+   "status": "publish",
+   "url": "https://kikar-hamusica.com/shows/he/event/%d7%99%d7%94%d7%95%d7%93%d7%94-%d7%90%d7%a9%d7%a9-13/",
+   "title": "יהודה אשש",
+   "description": "<p>יהודה אשש &#8211; מוסיקאי ירושלמי ותיק.למד מוסיקה ועיצוב סאונד בארהב.במשך שנים רבות הפיק וניגן בהרכבים שונים בארץ ובעולם בתחום הרוק ובתחום מוסיקת עולם.היום בעיקר מלחין ויוצר מוסיקה לסרטים ותכניות טלויזיה. בכיכר המוסיקה יהודה אשש מנגן ושר מבחר שירים בעברית ובאנגלית מהקלסיקות של עולם הרוק והפופ.</p>",
+   "image": {
+    "url": "https://kikar-hamusica.com/shows/he/wp-content/uploads/2024/07/yehuda-ashash-kikar-hamusica.webp"
+   },
+   "all_day": false,
+   "start_date": "2026-10-23 09:30:00",
+   "end_date": "2026-10-23 11:30:00",
+   "timezone": "Asia/Jerusalem",
+   "cost": "",
+   "cost_details": {
+    "currency_symbol": "",
+    "currency_code": "",
+    "currency_position": "prefix",
+    "values": []
+   },
+   "website": "",
+   "hide_from_listings": false,
+   "categories": [
+    {
+     "name": "מוזיקה ישראלית",
+     "slug": "%d7%9e%d7%95%d7%96%d7%99%d7%a7%d7%94-%d7%99%d7%a9%d7%a8%d7%90%d7%9c%d7%99%d7%aa"
+    }
+   ],
+   "venue": [],
+   "organizer": []
+  },
+  {
+   "id": 9904,
+   "status": "publish",
+   "url": "https://kikar-hamusica.com/shows/he/event/%d7%9e%d7%90%d7%a8%d7%a7-%d7%91%d7%a0%d7%98%d7%90%d7%a1-7/",
+   "title": "מארק בנטאס",
+   "description": "<p>מרק בנטאס, פסנתרן וזמר ענק של מוזיקת פופ, נשמה, וג׳אז. הוא חי את הביטלס את פול מקרטני את סטיבי וונדר, ג׳ורג׳ בנסון, פרינס, מייקל ג׳ונסון, ג׳יימס טיילור, מייקל מקדונלד, ועוד רבים אחרים מאותם הז׳אנרים&#8230; בואו לצלול איתנו ביחד איתו לתקופה הכי יפה ויצירתית שהתחילה בשנות ה-70 והמשיכה עד לשנות ה-90, אנחנו ניהיה בכיכר המוזיקה כל יום שלישי בין השעות 12:00-14:00.</p>",
+   "image": {
+    "url": "https://kikar-hamusica.com/shows/he/wp-content/uploads/2024/06/marc-benetasse-kikar-hamusica.webp"
+   },
+   "all_day": false,
+   "start_date": "2026-10-28 12:00:00",
+   "end_date": "2026-10-28 14:00:00",
+   "timezone": "Asia/Jerusalem",
+   "cost": "",
+   "cost_details": {
+    "currency_symbol": "",
+    "currency_code": "",
+    "currency_position": "prefix",
+    "values": []
+   },
+   "website": "",
+   "hide_from_listings": false,
+   "categories": [
+    {
+     "name": "מוזיקת ​​R&amp;B",
+     "slug": "%d7%9e%d7%95%d7%96%d7%99%d7%a7%d7%aa-rb"
+    },
+    {
+     "name": "מוסיקת פופ",
+     "slug": "%d7%9e%d7%95%d7%a1%d7%99%d7%a7%d7%aa-%d7%a4%d7%95%d7%a4"
+    }
+   ],
+   "venue": [],
+   "organizer": []
+  },
+  {
+   "id": 9896,
+   "status": "publish",
+   "url": "https://kikar-hamusica.com/shows/he/event/%d7%a4%d7%a8%d7%99%d7%93%d7%94-%d7%9c%d7%99%d7%91%d7%9e%d7%9f-6/",
+   "title": "פרידה ליבמן",
+   "description": "<p>פרידה ליבמן בעלת תואר אומן באומנות הביצוע. פסנתרנית ומוסיקאית עם ניסיון עשיר בעיבודים והופעות. את השכלתה המוסיקלית רכשה בברה&quot;מ וישראל</p>",
+   "image": {
+    "url": "https://kikar-hamusica.com/shows/he/wp-content/uploads/2025/03/frida-libman-2025-kikar-hamusica.webp"
+   },
+   "all_day": false,
+   "start_date": "2026-10-25 17:30:00",
+   "end_date": "2026-10-25 19:30:00",
+   "timezone": "Asia/Jerusalem",
+   "cost": "",
+   "cost_details": {
+    "currency_symbol": "",
+    "currency_code": "",
+    "currency_position": "prefix",
+    "values": []
+   },
+   "website": "",
+   "hide_from_listings": false,
+   "categories": [
+    {
+     "name": "מוזיקה קלאסית",
+     "slug": "%d7%9e%d7%95%d7%96%d7%99%d7%a7%d7%94-%d7%a7%d7%9c%d7%90%d7%a1%d7%99%d7%aa-he"
+    }
+   ],
+   "venue": [],
+   "organizer": []
+  }
+ ],
+ "total": 3,
+ "total_pages": 1
+}

@@ -1,0 +1,78 @@
+{
+ "items": [
+  {
+   "id": "d47ce777-fbc2-4a92-8ea4-465ce15c85a7",
+   "title": "שיר השירים אשר לשלמה #32 תשפ\"ז",
+   "date": "2026-10-24",
+   "timeLabel": "21:00",
+   "location": "בנייני האומה- אולם אוסשקין, ירושלים",
+   "ticketUrl": "https://tickchak.co.il/111977",
+   "flyer": "https://hamenagen.net/wp-content/uploads/2026/10/hofbImg_1787211513090TUuRGWIVUMj5mbBZWO2tiezckc0d0a_Zs8L4eGRUcm8tTAwD7LVW-300x200.webp",
+   "flyerFull": "https://hamenagen.net/wp-content/uploads/2026/10/hofbImg_1787211513090TUuRGWIVUMj5mbBZWO2tiezckc0d0a_Zs8L4eGRUcm8tTAwD7LVW-1024x683.webp",
+   "singerName": "הרב שלמה קרליבך",
+   "singerImage": "https://hamenagen.net/wp-content/uploads/2024/02/photo_2024-01-21_11-15-48-Small-300x300.jpg",
+   "artists": [
+    {
+     "id": 1994,
+     "name": "הרב שלמה קרליבך",
+     "slug": "%d7%94%d7%a8%d7%91-%d7%a9%d7%9c%d7%9e%d7%94-%d7%a7%d7%a8%d7%9c%d7%99%d7%91%d7%9a",
+     "image": "https://hamenagen.net/wp-content/uploads/2024/02/photo_2024-01-21_11-15-48-Small-300x300.jpg",
+     "url": "https://hamenagen.net/singers/%d7%94%d7%a8%d7%91-%d7%a9%d7%9c%d7%9e%d7%94-%d7%a7%d7%a8%d7%9c%d7%99%d7%91%d7%9a/"
+    }
+   ],
+   "isMultiArtist": false
+  },
+  {
+   "id": "e78f42a9-cdcb-4107-878c-949f309d9e9e",
+   "title": "שרים קרליבך",
+   "date": "2026-10-26",
+   "timeLabel": "21:00",
+   "location": "היכל תרבות רמות",
+   "ticketUrl": "https://glatticket.co.il/114698",
+   "flyer": "https://hamenagen.net/wp-content/uploads/2026/10/hofbImg_1791277073090TUORXaYZmWxk3YjVGMNhlW5E3KzhUR_E7gAre0Kglco_WAQHe0hb-300x200.webp",
+   "flyerFull": "https://hamenagen.net/wp-content/uploads/2026/10/hofbImg_1791277073090TUORXaYZmWxk3YjVGMNhlW5E3KzhUR_E7gAre0Kglco_WAQHe0hb-1024x682.webp",
+   "singerName": "דוד בן ארזה, יצחק בן ארזה",
+   "singerImage": "https://hamenagen.net/wp-content/uploads/2026/06/maxresdefault-30-300x169.jpg",
+   "artists": [
+    {
+     "id": 655,
+     "name": "דוד בן ארזה",
+     "slug": "%d7%93%d7%95%d7%93-%d7%91%d7%9f-%d7%90%d7%a8%d7%96%d7%94",
+     "image": "https://hamenagen.net/wp-content/uploads/2026/06/maxresdefault-30-300x169.jpg",
+     "url": "https://hamenagen.net/singers/%d7%93%d7%95%d7%93-%d7%91%d7%9f-%d7%90%d7%a8%d7%96%d7%94/"
+    },
+    {
+     "id": 1282,
+     "name": "יצחק בן ארזה",
+     "slug": "%d7%99%d7%a6%d7%97%d7%a7-%d7%91%d7%9f-%d7%90%d7%a8%d7%96%d7%94",
+     "image": "https://hamenagen.net/wp-content/uploads/2026/06/maxresdefault-8-300x169.jpg",
+     "url": "https://hamenagen.net/singers/%d7%99%d7%a6%d7%97%d7%a7-%d7%91%d7%9f-%d7%90%d7%a8%d7%96%d7%94/"
+    }
+   ],
+   "isMultiArtist": true
+  },
+  {
+   "id": "14b0dede-7095-4fdd-a6f0-51069d3e92c4",
+   "title": "אלייצור במופע להקה",
+   "date": "2026-11-08",
+   "timeLabel": "20:30",
+   "location": "FRIENDS נהריה",
+   "ticketUrl": "https://tickets.friends-hist.co.il/%D7%90%D7%9C%D7%99%D7%99%D7%A6%D7%95%D7%A8_%D7%91%D7%9E%D7%95%D7%A4%D7%A2_%D7%9C%D7%94%D7%A7%D7%94/?id=18164",
+   "flyer": "https://hamenagen.net/wp-content/uploads/2026/08/thmb6a42b661a7f7b276654716-1-300x263.jpg",
+   "flyerFull": "https://hamenagen.net/wp-content/uploads/2026/08/thmb6a42b661a7f7b276654716-1.jpg",
+   "singerName": "אלייצור",
+   "singerImage": "https://hamenagen.net/wp-content/uploads/2026/08/d790d79cd799d799d7a6d795d7a8-yt-avatar-300x300.jpg",
+   "artists": [
+    {
+     "id": 426,
+     "name": "אלייצור",
+     "slug": "%d7%90%d7%9c%d7%99%d7%99%d7%a6%d7%95%d7%a8",
+     "image": "https://hamenagen.net/wp-content/uploads/2026/08/d790d79cd799d799d7a6d795d7a8-yt-avatar-300x300.jpg",
+     "url": "https://hamenagen.net/singers/%d7%90%d7%9c%d7%99%d7%99%d7%a6%d7%95%d7%a8/"
+    }
+   ],
+   "isMultiArtist": false
+  }
+ ],
+ "total": 3
+}
