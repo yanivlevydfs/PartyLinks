@@ -12,6 +12,7 @@ from __future__ import annotations
 import gettext
 import json
 import re
+import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
 from functools import cache
@@ -31,6 +32,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from partylinks.config import CitySettings, Settings
 from partylinks.db import EventRow, upcoming_filter
+from partylinks.places import all_cities
 
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
 LIST_LIMIT = 60  # events listed on index pages
@@ -649,10 +651,28 @@ def genre_counts(session: Session, cfg: Settings | None = None, when: str | None
     return {g: n for g, n in counts.most_common() if n >= GENRE_PAGE_MIN}
 
 
+# A town that is not in the config (GeoNames, places.py) gets a city page only with this many upcoming
+# events: the busiest towns (Shoham, Ganei Tikva, Tiberias...), not every village with a show or two.
+TOWN_PAGE_MIN = 10
+
+
+def _page_cities(cfg: Settings) -> list[CitySettings]:
+    """Configured cities, then every other Israeli town (GeoNames), with a plain-ASCII URL key ("yavne", not "yavné")."""
+    configured = {c.key for c in cfg.enrichment.cities}
+    return [c if c.key in configured else c.model_copy(update={"key": _ascii_slug(c.key)})
+            for c in all_cities(cfg.enrichment.cities, cfg.enrichment.places_min_population)]  # fmt: skip
+
+
+def _ascii_slug(text: str) -> str:
+    plain = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", plain.lower()).strip("-")
+
+
 def city_pages(session: Session, cfg: Settings, when: str | None = None) -> list[CitySettings]:
-    """Configured cities with enough upcoming events (tonight / this weekend) for a page."""
+    """Cities with enough upcoming events (tonight / this weekend) for a page."""
     counts = Counter(session.scalars(select(EventRow.city).where(upcoming_filter(), *_when_where(when, cfg))))
-    return [c for c in cfg.enrichment.cities if counts[c.he] >= GENRE_PAGE_MIN]
+    configured = {c.key for c in cfg.enrichment.cities}
+    return [c for c in _page_cities(cfg) if counts[c.he] >= (GENRE_PAGE_MIN if c.key in configured else TOWN_PAGE_MIN)]
 
 
 def city_genre_counts(session: Session, cfg: Settings) -> dict[str, dict[str, int]]:
@@ -699,7 +719,7 @@ def abroad_countries(session: Session) -> dict[str, str]:
     out = {}
     for code, n in counts.most_common():
         if n >= GENRE_PAGE_MIN and pycountry.countries.get(alpha_2=code):
-            out[re.sub(r"[^a-z0-9]+", "-", country_name(code, "en").lower()).strip("-")] = code
+            out[_ascii_slug(country_name(code, "en"))] = code
     return out
 
 
@@ -876,7 +896,7 @@ def resolve_landing(session: Session, cfg: Settings, lang: str, path: str) -> La
         land = Landing(f"genre_{when}" if when else "genre", path, genre_label(rest[0], lang), genre=rest[0])
         land.where.append(_genre_filter(rest[0], cfg))
     elif head == "city" and len(rest) in (1, 2):
-        city = next((c for c in cfg.enrichment.cities if c.key == rest[0]), None)
+        city = next((c for c in _page_cities(cfg) if c.key == rest[0]), None)
         if city is None:
             return None
         sub = rest[1] if len(rest) == 2 else None
@@ -887,7 +907,7 @@ def resolve_landing(session: Session, cfg: Settings, lang: str, path: str) -> La
                 return None
             land = Landing(f"city_{when}" if when else "city", path, city.he if he else city.en, place, city=city)
         else:
-            if sub not in city_genre_counts(session, cfg).get(city.he, {}):
+            if city.key not in {c.key for c in city_pages(session, cfg)} or sub not in city_genre_counts(session, cfg).get(city.he, {}):
                 return None
             land = Landing("city_genre", path, genre_label(sub, lang), place, city=city, genre=sub)
             land.where.append(_genre_filter(sub, cfg))
@@ -964,10 +984,11 @@ def landing_info(session: Session, cfg: Settings, lang: str, path: str) -> dict[
     land = resolve_landing(session, cfg, lang, path)
     links = [{"path": p, "label": n} for p, n in _related(session, cfg, lang, path)]
     if land is None:
-        return {"title": None, "intro": None, "links": links, "country": None}
+        return {"title": None, "intro": None, "links": links, "country": None, "city": None}
     title, _, intro, _ = _landing_text(land.kind, lang, land.label, land.place)
     country = abroad_countries(session).get(path.rsplit("/", 1)[-1]) if land.abroad else None
-    return {"title": title, "intro": _intro(land, lang) or intro, "links": links, "country": country}
+    city = {"he": land.city.he, "en": land.city.en} if land.city else None
+    return {"title": title, "intro": _intro(land, lang) or intro, "links": links, "country": country, "city": city}
 
 
 def _intro(land: Landing, lang: str) -> str | None:

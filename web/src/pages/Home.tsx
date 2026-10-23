@@ -35,7 +35,9 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   const cats = useCategories().data;
   const { genre, when, city, sub, region } = useParams();
   const cityWhen = sub === "tonight" || sub === "weekend" ? sub : undefined;
-  const cityName = landing === "city" && city ? CITIES[city] : undefined;
+  // Info from the server: title, intro, related links, and the names of a town that is not in CITIES.
+  const info = useLandingInfo(useLocation().pathname, lang).data;
+  const cityName = landing === "city" && city ? CITIES[city] ?? info?.city ?? undefined : undefined;
 
   // A landing page starts from a clean filter (keeping the search text) with its own preset;
   // the plain home page drops that preset again (but keeps filters the visitor chose there).
@@ -82,7 +84,6 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
     : landing === "city" ? t.landing.city(cityName?.[lang] ?? city ?? "")
     : landing === "region" ? t.landing.city(t.areas[region?.replace("-", "_") ?? ""] ?? "")
     : landing ? t.landing[landing] : t.tagline;
-  const info = useLandingInfo(pathname, lang).data;
   const heading = (landing && info?.title) || title;
   useTitle(landing ? heading : undefined);
 

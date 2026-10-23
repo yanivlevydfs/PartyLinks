@@ -601,3 +601,19 @@ def test_region_filter_mixes_tel_aviv_with_regions_and_locate_finds_them(tmp_pat
         assert regions == {"haifa"}
         assert client.get("/locate?lat=32.08&lng=34.78").json()["region"] == "tel_aviv"
         assert client.get("/locate?lat=32.80&lng=35.00").json() == {"region": "haifa", "city": "חיפה"}
+
+
+def test_busy_towns_outside_the_config_get_city_pages(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    tz = ZoneInfo(settings.timezone)
+    start = datetime.combine(datetime.now(tz).date(), time(21, 0), tzinfo=tz) + timedelta(days=1)
+    shoham = [event(f"s{i}", start + timedelta(days=i), address="שהם, ישראל") for i in range(10)]
+    yavne = [event(f"y{i}", start + timedelta(days=i), address="יבנה, ישראל") for i in range(5)]
+    seed(settings, [*shoham, *yavne])
+
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        page = client.get("/city/shoham")  # a GeoNames town with 10 upcoming events
+        assert page.status_code == 200 and "מה עושים בשהם" in page.text
+        assert client.get("/city/yavne").status_code == 404  # 5 events: too few for a town page
+        assert "/city/shoham" in client.get("/sitemap-1.xml").text
+        assert client.get("/landing-info", params={"path": "/city/shoham"}).json()["city"]["he"] == "שהם"
