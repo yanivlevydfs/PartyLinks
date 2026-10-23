@@ -911,8 +911,6 @@ sources:
     # schema.org JSON-LD (venue, performer, prices per seating category). robots.txt disallows
     # /api/ and /search/; the homepage refuses non-browser clients, the sitemap and pages do not.
     enabled: true
-    # The proxy's IPs are refused (403 / WAF code / proxy error, Oct 2026); Railway's own IP instead.
-    proxied: false
     cron: "13 8,20 * * *"
     site_url: https://www.eventim.co.il
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
@@ -1121,8 +1119,6 @@ sources:
     # (Go-Out / Selector) is kept, so dedup merges it with those sources. robots.txt is absent.
     enabled: true
     cron: "26 8,20 * * *"
-    # The proxy's IPs get 403 (every run since it was added); Railway's own IP is tried instead.
-    proxied: false
     site_url: https://beatradar.co.il
     events_path: /api/events
 
@@ -1197,8 +1193,6 @@ sources:
     # Eventim (zappa-club.co.il is Eventim's Akamai), so this reads the Eventim sitemap's Zappa
     # pages (~180) with the Eventim parser; the eventim source skips them. Same Akamai limits.
     enabled: true
-    # The proxy's IPs are refused (403 / WAF code / proxy error, Oct 2026); Railway's own IP instead.
-    proxied: false
     cron: "47 9,21 * * *"
     site_url: https://www.eventim.co.il
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
@@ -1406,8 +1400,6 @@ sources:
     # + one ticketGroups request per film in the window (~80/week) for prices. One event per film and
     # business day; lecture-course meetings are tagged הרצאה. robots.txt allows all but /wp-admin.
     enabled: true
-    # The proxy's IPs are refused (403 / WAF code / proxy error, Oct 2026); Railway's own IP instead.
-    proxied: false
     cron: "5 10,22 * * *"
     http: {concurrency: 3}
     api_url: https://cintlv.presglobal.store
@@ -1442,8 +1434,6 @@ sources:
     # 05:00 = previous day). No synopsis or prices. The feed has no addresses: branches are listed
     # here by TheaterId. robots.txt allows everything.
     enabled: true
-    # The proxy's IPs are refused (403 / WAF code / proxy error, Oct 2026); Railway's own IP instead.
-    proxied: false
     cron: "2 8,20 * * *"
     site_url: https://movieland.co.il
     days_ahead: 3
@@ -1486,8 +1476,6 @@ sources:
     # calendar loads one table per month from admin-ajax.php (24 POSTs): artist, Hebrew city,
     # dates, and a link and "from" price when an offer exists. robots.txt is absent.
     enabled: true
-    # The proxy's IPs are refused (403 / WAF code / proxy error, Oct 2026); Railway's own IP instead.
-    proxied: false
     cron: "31 3,15 * * *"
     site_url: https://livevents.co.il
     ajax_path: /wp-admin/admin-ajax.php
@@ -1501,8 +1489,6 @@ sources:
     # GET). The show's date is on the package page, which robots.txt disallows: events span the
     # trip (departure to return). Destination from the airport code (airportsdata).
     enabled: true
-    # The proxy's IPs are refused (403 / WAF code / proxy error, Oct 2026); Railway's own IP instead.
-    proxied: false
     cron: "47 4,16 * * *"
     site_url: https://www.issta.co.il
     listing_path: /tickets
@@ -1579,8 +1565,6 @@ sources:
     # lectures and story hours, youth centres, La Park, Holon Theatre (also on Smarticket `hth`; dedup merges).
     # Recurring series show only their first date and fall out by retention. robots.txt allows the page.
     enabled: true
-    # The proxy's IPs are refused (403 / WAF code / proxy error, Oct 2026); Railway's own IP instead.
-    proxied: false
     cron: "9 4,16 * * *"
     listing_url: https://www.holon.muni.il/Havingfun/Pages/allevents.aspx
     city: חולון
@@ -1630,8 +1614,6 @@ sources:
     # time. One event per date; a run is one event from today to its last day. Mostly small
     # localities and organizers' own sites. robots.txt disallows /search, /ajax, /map, /content.
     enabled: true
-    # The proxy's IPs are refused (403 / WAF code / proxy error, Oct 2026); Railway's own IP instead.
-    proxied: false
     cron: "39 4,16 * * *"
     site_url: https://www.tiuli.com
     list_path: /events
@@ -1660,8 +1642,6 @@ sources:
     # paid and cost text; seller links in the text (Eventer, GoShow, Coing) kept as purchase_url.
     # robots.txt allows /_vti_bin/.
     enabled: true
-    # The proxy's IPs are refused (403 / WAF code / proxy error, Oct 2026); Railway's own IP instead.
-    proxied: false
     cron: "51 5,17 * * *"
     site_url: https://www.tel-aviv.gov.il
     list_path: /_vti_bin/TlvSP2013PublicSite/TlvListUtils.svc/GetEvBenList
@@ -1795,8 +1775,6 @@ sources:
     # link (purchase_url, so dedup merges with Haifa Theatre, Smarticket, Eventer...). One event per
     # performance; a season is kept as its first day. robots.txt allows everything.
     enabled: true
-    # The proxy's IPs are refused (403 / WAF code / proxy error, Oct 2026); Railway's own IP instead.
-    proxied: false
     cron: "57 4,16 * * *"
     site_url: https://www.haifa.muni.il
     listing_path: /culture/city-events/
