@@ -16,12 +16,8 @@ const ISRAEL: [number, number] = [31.9, 34.95];
 export default function MapPage() {
   const { t } = useT();
   // The home page's filter (same store): the map shows what the list shows, not every event at once.
+  // Every date by default: ~17k pins, clustered, ~1 MB gzipped.
   const f = useStore((s) => s.filters);
-  const set = useStore((s) => s.setFilters);
-  // Every date at once is thousands of pins (and a slow load): the map opens on tonight.
-  useEffect(() => {
-    if (useStore.getState().filters.when === "all") set({ when: "tonight" });
-  }, [set]);
   const { data, isError, isPending } = useMapEvents(filterParams({ ...f, sort: "start_at" }));
   useTitle(t.nav.map);
   // Tiles come from OpenStreetMap's servers (they see the visitor's IP): only with consent,
