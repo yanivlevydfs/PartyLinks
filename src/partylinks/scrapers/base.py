@@ -27,7 +27,7 @@ from typing import Any, ClassVar, Self, TypeVar
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from tenacity import AsyncRetrying, RetryCallState, retry_if_exception, stop_after_attempt, wait_exponential
+from tenacity import AsyncRetrying, RetryCallState, retry_if_exception, wait_exponential
 
 from partylinks.artists import ArtistProfile
 from partylinks.config import HttpSettings, validate_cron
@@ -209,9 +209,15 @@ class BaseScraper[S: SourceSettings](ABC):
             raise SourceBlockedError(f"{self.name}: access denied by the site on every proxy ({exc})") from exc
 
     async def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
-        # Every proxy of the pool gets its turn on top of the usual retries.
+        # The usual retries, plus one for each move to another proxy of the pool: a site that refuses
+        # one proxy IP gets the next one, but a plain timeout is not retried pool-size times over.
+        switches = [0]
+
+        def stop(state: RetryCallState) -> bool:
+            return state.attempt_number >= self.http.max_retries + 1 + switches[0]
+
         async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(self.http.max_retries + self._pool_size),
+            stop=stop,
             wait=self._wait,
             retry=retry_if_exception(_is_retryable),
             reraise=True,
@@ -226,9 +232,10 @@ class BaseScraper[S: SourceSettings](ABC):
                     try:
                         response = await client.request(method, url, **kwargs)
                     except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as exc:
-                        self._next_proxy(client, exc)  # retried on the next proxy (a TransportError)
+                        switches[0] += self._next_proxy(client, exc)  # retried on the next proxy (a TransportError)
                         raise
                 if (self.is_blocked(response) or response.status_code == 403) and self._next_proxy(client, None):
+                    switches[0] += 1
                     raise _RefusedByProxyIP(f"{response.status_code} via this proxy")
                 if self.is_blocked(response):
                     raise SourceBlockedError(f"{self.name}: access denied by the site ({response.status_code})")

@@ -328,3 +328,26 @@ def test_a_source_can_have_a_longer_run_limit() -> None:
     settings = Settings()
     assert source_settings("tiktik", settings).run_timeout_seconds == 3600
     assert source_settings("goout", settings).run_timeout_seconds is None  # the scheduler's default
+
+
+def test_a_timeout_is_retried_the_usual_times_not_pool_size_more() -> None:
+    http = HttpSettings(source_proxy="http://a:1, http://b:2, http://c:3, http://d:4", max_retries=1, backoff_seconds=0)
+    scraper = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
+    tries: list[str | None] = []
+
+    def client(proxy: str | None) -> httpx.AsyncClient:
+        def timeout(request: httpx.Request) -> httpx.Response:
+            tries.append(proxy)
+            raise httpx.ReadTimeout("slow site", request=request)
+
+        return httpx.AsyncClient(transport=httpx.MockTransport(timeout))
+
+    scraper._new_client = client  # type: ignore[method-assign]
+
+    async def run() -> None:
+        async with scraper:
+            await scraper.request("GET", "https://slow.example/")
+
+    with pytest.raises(httpx.ReadTimeout):
+        asyncio.run(run())
+    assert len(tries) == 2  # max_retries + 1, on the same proxy (a read timeout is the site, not the proxy)
