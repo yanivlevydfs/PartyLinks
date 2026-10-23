@@ -101,6 +101,12 @@ export interface EventPage {
   items: EventSummary[];
 }
 
+/** GET /events/sponsored: paid placements per physical side, in the admin's order. */
+export interface SponsoredRails {
+  right: EventSummary[];
+  left: EventSummary[];
+}
+
 /** A map pin (GET /events/map): just what its popup shows. */
 export type MapEvent = Pick<EventSummary, "id" | "slug" | "title" | "start_at" | "venue_name" | "source" | "sources"> & {
   latitude: number;

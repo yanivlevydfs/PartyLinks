@@ -4,6 +4,7 @@ import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { CookieConsent, useConsent } from "./consent";
 import { INFO_LINKS } from "./pages/Info";
+import { SponsoredFrame, SponsoredStrip } from "./Sponsored";
 import { useStore } from "./store";
 import type { EventSummary } from "./types";
 
@@ -100,7 +101,9 @@ export function Layout() {
           </button>
         </div>
       </header>
+      <SponsoredFrame>
       <Outlet />
+      <SponsoredStrip />
       <footer className="foot wrap">
         <nav className="foot-links" aria-label={t.genres}>
           <Link to="/tonight">{t.tonight}</Link>
@@ -121,6 +124,7 @@ export function Layout() {
         {" · "}<button className="linkish" onClick={openConsent}>{t.cookieSettings}</button>
         <p className="foot-disclaimer">{t.disclaimer}</p>
       </footer>
+      </SponsoredFrame>
       {/* Phones: the main sections as a thumb-reach tab bar instead of a header row that scrolls off. */}
       <nav className="tabbar" aria-label={t.nav.parties}>
         {TABS.map(([to, key, icon]) => (

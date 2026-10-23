@@ -530,7 +530,7 @@ button, input, select { font: inherit; color: inherit; }
 .map, .map.leaflet-container { flex: 1; min-height: 65vh; background: #0a0612; }
 /* Night-mode map: invert the light OSM tiles and tint them violet. */
 .map .leaflet-tile-pane { filter: invert(1) hue-rotate(200deg) brightness(.9) contrast(.85) saturate(.55); }
-.map-page + .foot { display: none; }
+.map-page ~ .foot { display: none; }
 .map .leaflet-popup-content-wrapper, .map .leaflet-popup-tip {
   background: rgb(14 9 26 / .95); color: var(--text); border: 1px solid var(--line-hot);
   box-shadow: 0 0 30px rgb(255 46 147 / .35);

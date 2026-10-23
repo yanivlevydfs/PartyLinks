@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import type { Categories, EventDetail, EventPage, MapPins, Post, PostList } from "./types";
+import type { Categories, EventDetail, EventPage, MapPins, Post, PostList, SponsoredRails } from "./types";
 
 export type Params = Record<string, string | string[] | undefined>;
 
@@ -51,6 +51,10 @@ export function useCategories(params: Params = {}) {
 
 export const usePosts = (category?: string) =>
   useQuery({ queryKey: ["posts", category], queryFn: () => getJSON<PostList>(`/posts${category ? `?category=${encodeURIComponent(category)}` : ""}`) });
+
+/** The home page's paid side rails (picked in the admin). */
+export const useSponsored = () =>
+  useQuery({ queryKey: ["sponsored"], queryFn: () => getJSON<SponsoredRails>("/events/sponsored"), staleTime: 5 * 60_000 });
 
 export const usePost = (slug: string) =>
   useQuery({ queryKey: ["post", slug], queryFn: () => getJSON<Post>(`/posts/${encodeURIComponent(slug)}`) });

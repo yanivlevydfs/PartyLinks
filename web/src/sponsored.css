@@ -1,0 +1,168 @@
+/* ------------------------------------------------------------- sponsored */
+/* Every page (ui.tsx Layout): from 1440px up a rail fixed to each screen edge, the page narrowed
+   between them; below that, one strip above the footer (Sponsored.tsx). */
+@property --sp-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+
+.sp-rail, .sp-strip { display: none; }
+
+@media (min-width: 1440px) {
+  .sp-page { --sp-w: clamp(210px, 13vw, 270px); }
+  .sp-page.on { padding-inline: calc(var(--sp-w) + 32px); }
+  .sp-rail {
+    position: fixed; z-index: 5; top: 84px; bottom: 12px; width: var(--sp-w);
+    display: flex; flex-direction: column; gap: 12px; padding-bottom: 8px;
+    overflow-y: auto; scrollbar-width: none;
+  }
+  .sp-rail::-webkit-scrollbar { display: none; }
+  .sp-rail[data-side="right"] { right: 16px; }
+  .sp-rail[data-side="left"] { left: 16px; }
+}
+@media (max-width: 1439.98px) {
+  .sp-strip { display: block; margin-block: 28px 8px; }
+}
+
+/* "Sponsored" label with a live dot */
+.sp-head {
+  display: flex; align-items: center; gap: 8px;
+  font: 800 12px/1 var(--display); letter-spacing: 2px; text-transform: uppercase;
+  background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sp-pulse { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 10px var(--pink); }
+.sp-pulse::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--pink);
+  animation: sp-ping 1.8s cubic-bezier(0, 0, .2, 1) infinite;
+}
+@keyframes sp-ping { 75%, 100% { transform: scale(2.6); opacity: 0; } }
+
+/* Spotlight: a spinning neon frame around stacked slides that cross-fade */
+.sp-frame {
+  position: relative; padding: 2px; border-radius: 20px;
+  background: conic-gradient(from var(--sp-angle), var(--pink), var(--violet), var(--cyan), var(--pink));
+  animation: sp-spin 6s linear infinite;
+}
+.sp-frame::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit;
+  background: inherit; filter: blur(16px); opacity: .45;
+}
+@keyframes sp-spin { to { --sp-angle: 360deg; } }
+.sp-stage { position: relative; aspect-ratio: 3 / 4; border-radius: 18px; overflow: hidden; background: var(--panel-solid); }
+.sp-stage .sp-spot {
+  position: absolute; inset: 0; opacity: 0; transform: scale(1.04); pointer-events: none;
+  transition: opacity .7s ease, transform .9s cubic-bezier(.2, .8, .2, 1);
+}
+.sp-stage .sp-spot.on { opacity: 1; transform: none; pointer-events: auto; }
+
+.sp-spot { display: block; overflow: hidden; color: var(--text); text-decoration: none; isolation: isolate; }
+.sp-spot::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(to top, rgb(6 4 11 / .96) 8%, rgb(6 4 11 / .55) 42%, transparent 70%);
+}
+.sp-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.sp-img.noimg.text span { font-size: 22px; }
+.sp-spot.on .sp-img { animation: sp-zoom 14s ease-out both; }
+@keyframes sp-zoom { from { transform: scale(1); } to { transform: scale(1.12); } }
+.sp-spot .date-badge { top: 10px; inset-inline-start: 10px; padding: 5px 9px; border-radius: 11px; }
+.sp-spot .date-badge b { font-size: 19px; }
+.sp-spot .date-badge span { font-size: 10px; }
+.sp-spot .flag { top: 12px; bottom: auto; inset-inline-end: 10px; font-size: 11px; padding: 3px 9px; }
+.sp-info { position: absolute; inset-inline: 0; bottom: 0; z-index: 1; padding: 14px; display: grid; gap: 3px; }
+.sp-info h3 {
+  margin: 0 0 4px; font: 800 17px/1.2 var(--display); text-shadow: 0 2px 10px #000;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.sp-info p { margin: 0; font-size: 12px; color: #e3d9ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-cta {
+  justify-self: start; margin-top: 10px; display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 999px; background: var(--grad); background-size: 160% 100%;
+  font: 700 12px/1 var(--display); color: #fff;
+  box-shadow: 0 0 18px rgb(255 46 147 / .5); transition: background-position .4s, box-shadow .3s;
+}
+.sp-cta i { font-style: normal; transition: transform .25s; }
+html[dir="rtl"] .sp-cta i { transform: scaleX(-1); }
+.sp-spot:hover .sp-cta { background-position: 100% 0; box-shadow: 0 0 28px rgb(255 46 147 / .75); }
+.sp-spot:hover .sp-cta i { transform: translateX(3px); }
+html[dir="rtl"] .sp-spot:hover .sp-cta i { transform: scaleX(-1) translateX(3px); }
+
+/* Progress: one segment per event, the current one filling up */
+.sp-progress { display: flex; gap: 4px; }
+.sp-progress span { flex: 1; height: 3px; border-radius: 3px; background: rgb(255 255 255 / .12); overflow: hidden; }
+.sp-progress span.done { background: rgb(255 46 147 / .6); }
+.sp-progress i { display: block; height: 100%; background: var(--grad); transform-origin: left; animation: sp-fill linear forwards; }
+html[dir="rtl"] .sp-progress i { transform-origin: right; }
+.sp-rail:hover .sp-progress i { animation-play-state: paused; }
+@keyframes sp-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* The side's list: hover or focus previews it in the spotlight */
+.sp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sp-list a {
+  position: relative; display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: center;
+  padding: 6px; border-radius: 12px; border: 1px solid transparent; color: var(--text); text-decoration: none;
+  background: var(--panel); transition: background .25s, border-color .25s, transform .25s;
+}
+.sp-list a:hover { transform: translateX(-2px); }
+html[dir="ltr"] .sp-list a:hover { transform: translateX(2px); }
+.sp-list a.on { background: var(--panel-2); border-color: var(--line-hot); box-shadow: 0 0 16px -6px var(--pink); }
+.sp-list a.on::before {
+  content: ""; position: absolute; inset-block: 10px; inset-inline-start: -1px; width: 3px; border-radius: 3px; background: var(--grad);
+}
+.sp-thumb { width: 46px; height: 46px; border-radius: 9px; object-fit: cover; }
+.sp-thumb.noimg { font-size: 18px; }
+.sp-list span { display: grid; gap: 2px; min-width: 0; }
+.sp-list b { font: 700 13px/1.25 var(--display); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sp-list small { font-size: 11px; color: var(--muted); }
+
+/* Narrow screens: one sideways strip */
+.sp-strip .sp-head { margin-bottom: 10px; }
+.sp-strip-row {
+  display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 4px 2px 8px;
+}
+.sp-strip-row::-webkit-scrollbar { display: none; }
+.sp-strip-row .sp-spot {
+  position: relative; flex: 0 0 min(230px, 64vw); aspect-ratio: 4 / 5; border-radius: 16px; scroll-snap-align: start;
+  border: 1px solid var(--line-hot); box-shadow: 0 0 22px -8px var(--pink);
+}
+.sp-strip-row .sp-spot.on .sp-img { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-frame, .sp-spot.on .sp-img, .sp-pulse::after { animation: none; }
+  .sp-stage .sp-spot { transition: none; }
+  .sp-progress { display: none; }
+}
+
+/* ------------------------------------------------------- admin: sponsored */
+.adm-sp-search {
+  width: 100%; padding: 11px 16px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--panel-2); color: var(--text); font: inherit;
+}
+.adm-sp-search:focus { outline: none; border-color: var(--line-hot); box-shadow: 0 0 0 3px rgb(255 46 147 / .15); }
+.adm-sp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.adm-sp-list li {
+  display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center;
+  padding: 8px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line);
+}
+.adm-sp-list li.off { opacity: .55; }
+.adm-sp-list li > div { display: grid; gap: 3px; min-width: 0; }
+.adm-sp-list b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-sp-list a { color: var(--text); }
+.adm-sp-list small { color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.adm-sp-thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; }
+.adm-sp-thumb.noimg { font-size: 20px; }
+.adm-sp-actions { display: flex; gap: 4px; }
+.adm-sp-actions .adm-btn { padding-inline: 10px; }
+.adm-sp-until { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); }
+.adm-sp-until input { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; color-scheme: dark; }
+.adm-sp-save { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.adm-sp-switch { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.adm-sp-switch > div { display: grid; gap: 3px; }
+.adm-sp-switch small { color: var(--muted); }
+.adm-sp-toggle {
+  position: relative; width: 62px; height: 34px; flex: none; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: rgb(255 255 255 / .08); transition: background .3s, box-shadow .3s;
+}
+.adm-sp-toggle span {
+  position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+}
+.adm-sp-toggle.on { background: var(--grad); border-color: transparent; box-shadow: 0 0 18px rgb(255 46 147 / .5); }
+.adm-sp-toggle.on span { transform: translateX(28px); }
+.adm-sp-toggle:disabled { opacity: .6; cursor: wait; }

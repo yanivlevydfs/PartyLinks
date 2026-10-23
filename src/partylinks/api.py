@@ -29,7 +29,7 @@ from partylinks import status as server_status
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.config import Settings, get_settings
-from partylinks.db import Database, DealChangeRow, EventRow, ImageRow, ScrapeRunRow, upcoming_filter
+from partylinks.db import Database, DealChangeRow, EventRow, ImageRow, ScrapeRunRow, SponsoredRow, flag_on, upcoming_filter
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.logs import setup_logging
 from partylinks.models import EntryType
@@ -240,6 +240,13 @@ class EventPage(BaseModel):
     page: int
     page_size: int
     items: list[EventSummaryOut]
+
+
+class SponsoredOut(BaseModel):
+    """The home page's two paid rails, each in the admin's order."""
+
+    right: list[EventSummaryOut] = []
+    left: list[EventSummaryOut] = []
 
 
 class MapEventOut(_Out):
@@ -840,6 +847,26 @@ def _register_routes(app: FastAPI) -> None:
         clicks.record(session, row, at)
         url = utm.tagged(row.url, request.app.state.settings.utm, row, at)
         return RedirectResponse(url, status.HTTP_302_FOUND, headers=headers)
+
+    # Before /events/{event_ref}, which would otherwise take "sponsored" for a slug.
+    @app.get("/events/sponsored", response_model=SponsoredOut, tags=["events"])
+    def sponsored(session: SessionDep) -> SponsoredOut:
+        """Paid placements (picked in the admin) that are still upcoming and within their campaign;
+        none at all while the admin's sponsored switch is off."""
+        if not flag_on(session, "sponsored"):
+            return SponsoredOut()
+        pairs = session.execute(
+            select(SponsoredRow.side, EventRow)
+            .join(EventRow, EventRow.id == SponsoredRow.event_id)
+            .where(upcoming_filter(), or_(SponsoredRow.until.is_(None), SponsoredRow.until > datetime.now(UTC)))
+            .order_by(SponsoredRow.position)
+            .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
+        ).all()
+        extras = _summary_extras(session, [e for _, e in pairs])
+        out = SponsoredOut()
+        for side, e in pairs:
+            getattr(out, side).append(EventSummaryOut.model_validate(e).model_copy(update=extras[e.id]))
+        return out
 
     @app.get("/events/{event_ref}", response_model=EventOut, tags=["events"])
     def get_event(event_ref: str, session: SessionDep) -> EventOut:

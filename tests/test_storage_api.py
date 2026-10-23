@@ -603,6 +603,36 @@ def test_region_filter_mixes_tel_aviv_with_regions_and_locate_finds_them(tmp_pat
         assert client.get("/locate?lat=32.80&lng=35.00").json() == {"region": "haifa", "city": "חיפה"}
 
 
+def test_sponsored_rails_show_upcoming_picks_in_admin_order(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    start = datetime.now(UTC) + timedelta(days=1)
+    seed(settings, [event(n, start) for n in ("a", "b", "c", "d")])
+    with TestClient(create_app(settings)) as client:
+        assert client.get("/events/sponsored").json() == {"right": [], "left": []}
+        picks = [
+            {"event_id": "test:b", "side": "right"},
+            {"event_id": "test:a", "side": "left"},
+            {"event_id": "test:c", "side": "right"},
+            {"event_id": "test:d", "side": "left", "until": (datetime.now(UTC) - timedelta(hours=1)).isoformat()},
+        ]
+        assert client.put("/admin/api/sponsored", json=picks).json() == {"saved": 4}
+        assert client.get("/events/sponsored").json() == {"right": [], "left": []}  # switched off by default
+        assert client.post("/admin/api/sponsored/enabled", json={"on": True}).json() == {"enabled": True}
+        rails = client.get("/events/sponsored").json()
+        assert [e["id"] for e in rails["right"]] == ["test:b", "test:c"]
+        assert [e["id"] for e in rails["left"]] == ["test:a"]  # d's campaign is over
+        listed = client.get("/admin/api/sponsored").json()
+        assert listed["enabled"] is True
+        assert [(s["event_id"], s["live"]) for s in listed["items"]] == [
+            ("test:a", True), ("test:d", False), ("test:b", True), ("test:c", True),
+        ]
+        assert client.put("/admin/api/sponsored", json=[{"event_id": "test:nope", "side": "left"}]).status_code == 404
+        assert client.put("/admin/api/sponsored", json=picks[:1] * 2).status_code == 422
+        assert client.get("/events/test:a").status_code == 200  # the slug route still works
+        client.post("/admin/api/sponsored/enabled", json={"on": False})
+        assert client.get("/events/sponsored").json() == {"right": [], "left": []}  # every ad hidden
+
+
 def test_busy_towns_outside_the_config_get_city_pages(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     tz = ZoneInfo(settings.timezone)

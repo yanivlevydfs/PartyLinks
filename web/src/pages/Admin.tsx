@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { TZ } from "../ui";
+import { Sponsored } from "./AdminSponsored";
 
 // --------------------------------------------------------------------------- api
 const TOKEN_KEY = "partylinks-admin-token";
@@ -14,7 +15,7 @@ class HttpError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-async function call<T = any>(path: string, init: RequestInit = {}): Promise<T> {
+export async function call<T = any>(path: string, init: RequestInit = {}): Promise<T> {
   const token = readToken();
   const res = await fetch(path, {
     ...init,
@@ -32,7 +33,7 @@ async function call<T = any>(path: string, init: RequestInit = {}): Promise<T> {
   }
   return body as T;
 }
-const post = <T = any,>(path: string, body?: unknown) =>
+export const post = <T = any,>(path: string, body?: unknown) =>
   call<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
 
 // --------------------------------------------------------------------------- format
@@ -55,7 +56,7 @@ const ago = (iso: string | null | undefined) => {
 const adminClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: true } } });
 
 // --------------------------------------------------------------------------- page
-const TABS = ["overview", "clicks", "sources", "runs", "config", "maintenance"] as const;
+const TABS = ["overview", "clicks", "sponsored", "sources", "runs", "config", "maintenance"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage() {
@@ -110,6 +111,7 @@ function Admin() {
       {ov.data?.warnings?.map((w: string) => <p key={w} className="adm-warn adm-banner">⚠ {w}</p>)}
       {tab === "overview" && <Overview data={ov.data} />}
       {tab === "clicks" && <Clicks />}
+      {tab === "sponsored" && <Sponsored />}
       {tab === "sources" && <Sources />}
       {tab === "runs" && <Runs />}
       {tab === "config" && <Config />}
@@ -142,7 +144,7 @@ function Login({ error, onLogin }: { error: HttpError; onLogin: () => void }) {
 }
 
 // --------------------------------------------------------------------------- bits
-function Card({ title, children, wide }: { title: string; children: ReactNode; wide?: boolean }) {
+export function Card({ title, children, wide }: { title: string; children: ReactNode; wide?: boolean }) {
   return (
     <section className={"adm-card" + (wide ? " wide" : "")}>
       <h3>{title}</h3>
