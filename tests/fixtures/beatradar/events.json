@@ -1,0 +1,1645 @@
+[
+ {
+  "_id": "6a0f2ff9762f21634c0e6d34",
+  "title": {
+   "original": "MAKE SENSE | Ticket Management",
+   "en": "MAKE SENSE | Ticket Management",
+   "he": "MAKE SENSE | Ticket Management"
+  },
+  "summary": {
+   "en": "Make Sense festival at Dugit Beach, Mar 25–26, 2027 — a festival-style ticket management event.",
+   "he": "MAKE SENSE פסטיבל בחוף דוגית, 25–26 במרץ 2027 — אירוע ניהול כרטיסים בסגנון פסטיבל."
+  },
+  "startTimestamp": "2027-03-25T23:00:00+02:00",
+  "endTimestamp": "2027-03-26T10:00:00+02:00",
+  "endTimeDescription": "End at 10:00",
+  "eventType": [
+   "festival"
+  ],
+  "minAgeLimit": 18,
+  "location": {
+   "fullAddress": "חוף דוגית, ישראל",
+   "venueName": "dugit beach",
+   "city_original": "Israel",
+   "area": "north",
+   "description": {
+    "en": "Outdoor beach venue",
+    "he": "מקום חוף פתוח"
+   },
+   "type": [
+    "beach",
+    "outdoor",
+    "openAir"
+   ],
+   "isApproved": true,
+   "venueName_original": "Dugit Beach"
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "MAKE SENSE ROSH HASHANA",
+     "en": "MAKE SENSE ROSH HASHANA",
+     "he": "MAKE SENSE ראש השנה"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-05-27T16:30:00Z",
+    "validThrough": "2027-06-27T10:00:00Z",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "MAKE SENSE NYE 31/12",
+     "en": "MAKE SENSE NYE 31/12",
+     "he": "MAKE SENSE סילבסטר 31/12"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-05-27T16:30:00Z",
+    "validThrough": "2026-09-24T10:00:00Z",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "PURIM MAKE SENSE 25.3.27",
+     "en": "PURIM MAKE SENSE 25.3.27",
+     "he": "MAKE SENSE פורים 25.3.27"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-05-27T16:30:00Z",
+    "validThrough": "2026-09-20T10:00:00Z",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "MAKE SENSE SECRET EVENT",
+     "en": "MAKE SENSE SECRET EVENT",
+     "he": "MAKE SENSE אירוע סודי"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-05-27T16:30:00Z",
+    "validThrough": "2026-06-27T10:00:00Z",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "First Round // Friends Only",
+     "en": "First Round // Friends Only",
+     "he": "הסיבוב הראשון // רק לחברים"
+    },
+    "priceBase": 189,
+    "priceCommitionPercentage": 5.529100529100529,
+    "priceFinal": 199,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-05-27T18:00:38.381Z",
+    "validThrough": "2026-05-27T10:00:38.381Z",
+    "inStock": false
+   },
+   {
+    "type": {
+     "original": "Round Two & Three",
+     "en": "Round Two & Three",
+     "he": "Round Two & Three"
+    },
+    "priceBase": 209,
+    "priceCommitionPercentage": 5.478468899521531,
+    "priceFinal": 220,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-05-27T22:00:38.381Z",
+    "validThrough": "2026-05-27T10:00:38.381Z",
+    "inStock": false
+   },
+   {
+    "type": {
+     "original": "Round 4 And 5",
+     "en": "Round 4 And 5",
+     "he": "Round 4 And 5"
+    },
+    "priceBase": 225,
+    "priceCommitionPercentage": 5.444444444444445,
+    "priceFinal": 237.25,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-05-27T22:00:38.381Z",
+    "validThrough": "2026-05-27T10:00:38.381Z",
+    "inStock": false
+   },
+   {
+    "type": {
+     "original": "Round 6 & 7",
+     "en": "Round 6 & 7",
+     "he": "Round 6 & 7"
+    },
+    "priceBase": 400,
+    "priceCommitionPercentage": 5.25,
+    "priceFinal": 421,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-05-27T02:20:38.381Z",
+    "validThrough": "2026-05-27T10:00:38.381Z",
+    "inStock": false
+   },
+   {
+    "type": {
+     "original": "MAKE SENSE ENTRY TICKET",
+     "en": "MAKE SENSE ENTRY TICKET",
+     "he": "כרטיס כניסה MAKE SENSE"
+    },
+    "priceBase": 400,
+    "priceCommitionPercentage": 5.25,
+    "priceFinal": 421,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-05-27T00:29:38.381Z",
+    "validThrough": "2026-05-27T10:00:38.381Z",
+    "inStock": false
+   }
+  ],
+  "producers": [
+   {
+    "name": "Make Sense- Kinnert26’"
+   }
+  ],
+  "artists": [
+   "Adam Ten",
+   "Draco",
+   "Yamaguchi",
+   "Bonafique",
+   "Jenia Tarsol",
+   "Broken Hill",
+   "K.O",
+   "Itayga",
+   "Dor Danino",
+   "Mishell",
+   "Special Guest",
+   "Out Of Orbit",
+   "YAMAGUCCI",
+   "DOR DANINO",
+   "MISHELL",
+   "SPECIAL GUEST",
+   "OUT OF ORBIT"
+  ],
+  "metadata": {
+   "version": 4,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1779300518384?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-05-21T16:16:49.075Z",
+   "updatedAt": "2026-06-01T17:36:18.853Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6a0df8a6c1b910c39780e2201779884303384_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/609d54ff-1bb4-465d-bcae-368f19761430_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/609d54ff-1bb4-465d-bcae-368f19761430_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/609d54ff-1bb4-465d-bcae-368f19761430_medium.webp"
+   }
+  }
+ },
+ {
+  "_id": "6a414e66a16d2cb651921677",
+  "title": {
+   "original": "Retro land",
+   "en": "Retro land",
+   "he": "רטרו לנד"
+  },
+  "summary": {
+   "en": "Music, freedom, and beautiful people in a magical natural setting.",
+   "he": "מוזיקה, חופש ואנשים יפים בסביבה טבעית קסומה."
+  },
+  "startTimestamp": "2026-11-11T14:55:00.000Z",
+  "endTimestamp": "2026-11-12T09:26:16.000Z",
+  "endTimeDescription": "האירוע מסתיים בבוקר המחרת",
+  "eventType": [
+   "danceParty",
+   "festival",
+   "liveShow"
+  ],
+  "maxParticipantsLimit": 1000,
+  "minAgeLimit": 24,
+  "location": {
+   "fullAddress": "טבע במרכז הארץ 📍",
+   "area": "center",
+   "description": {
+    "en": "Outdoor natural setting with shade and seating, in a lush area in the center.",
+    "he": "מקום בטבע פתוח עם אזורי צל וישיבה, במרכז הארץ."
+   },
+   "type": [
+    "outdoor",
+    "openAir",
+    "nature"
+   ],
+   "city_original": "מרכז הארץ",
+   "venueName_original": "טבע במרכז הארץ"
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "זריזים מרויחים‼️",
+     "en": "Speedy ones win",
+     "he": "זריזים מרויחים‼️"
+    },
+    "priceBase": 100,
+    "priceFinal": 100,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-06-01T13:45:17.000Z",
+    "validThrough": "2026-11-12T09:26:15.000Z",
+    "inStock": true,
+    "priceCommitionPercentage": 0.059
+   }
+  ],
+  "producers": [
+   {
+    "name": "איתי מתתיהו"
+   }
+  ],
+  "amenities": {
+   "en": [
+    "shade and seating areas",
+    "misting/refreshment stations",
+    "water mist cooling",
+    "food and drinks",
+    "outdoor nature venue",
+    "high-quality sound",
+    "ornate stage decor"
+   ],
+   "he": [
+    "אזורי צל וישיבה",
+    "מתחמי התרעננות עם טפטפות",
+    "התרעננות באמצעות טפטפות מים",
+    "אוכל ושתייה",
+    "מקום בטבע פתוח",
+    "סאונד איכותי",
+    "תפאורה מרהיבה על הבמה"
+   ]
+  },
+  "metadata": {
+   "version": 4,
+   "visibility": "all",
+   "source": "selector",
+   "url": "https://selector.org.il/e/RJx-YGT8KBM?ref=beatRadar",
+   "trigger": "s",
+   "affiliate": false,
+   "createdAt": "2026-06-28T16:40:04.318Z",
+   "updatedAt": "2026-07-10T17:04:56.560Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://selector.fra1.digitaloceanspaces.com/events/3165/a5dd52fd-d8db-4a86-8c8c-40f23ff0f11a.png",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/d3e3dcc3-be82-44b5-8695-ecc5a806cfbf_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/d3e3dcc3-be82-44b5-8695-ecc5a806cfbf_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/d3e3dcc3-be82-44b5-8695-ecc5a806cfbf_medium.webp"
+   }
+  }
+ },
+ {
+  "_id": "6a4fd550a16d2cb651921760",
+  "_coverImage": "https://d15q6k8l9pfut7.cloudfront.net/events/6a4f6c73f025164c7ddb5dd21783590007401_coverImage.jpg",
+  "title": {
+   "original": "חמישי בנמל תל אביב // 22.10☀️",
+   "en": "Thursday at Tel Aviv Port // 22.10",
+   "he": "חמישי בנמל תל אביב // 22.10☀️"
+  },
+  "summary": {
+   "en": "Thu at Tel Aviv Port: two stages, open-air and indoor, opens at 22:30 with Dor Hadad and guests.",
+   "he": "חמישי בנמל תל אביב: שתי רחבות, אוויר הפתוח והסגור, פתיחה ב-22:30 עם דור חדד ואורחים."
+  },
+  "startTimestamp": "2026-10-22T22:30:00+03:00",
+  "endTimestamp": "2026-10-23T04:30:00+03:00",
+  "endTimeDescription": "04:30",
+  "eventType": [
+   "danceParty",
+   "djSet"
+  ],
+  "minAgeLimit": 18,
+  "amenities": {
+   "en": [
+    "two dance floors",
+    "open-air and indoor stages",
+    "seaside location",
+    "open air venue",
+    "outdoor space",
+    "sea breeze",
+    "clean vibe"
+   ],
+   "he": [
+    "שתי רחבות",
+    "אוויר הפתוח והסגור",
+    "מיקום על הים",
+    "מקום פתוח תחת כיפת השמיים",
+    "חלל חיצוני",
+    "נשימת ים",
+    "אווירה נקייה"
+   ]
+  },
+  "location": {
+   "fullAddress": "Moonchild - מון צ'ילד, Tel-Aviv, Israël",
+   "venueName": "moonchild",
+   "city": "tel aviv",
+   "area": "center",
+   "description": {
+    "en": "Lido-like venue by the sea, two rooms, open air and indoor",
+    "he": "מקום בכינרת הים עם שתי רחבות, פתוח ואטום"
+   },
+   "type": [
+    "club",
+    "openAir",
+    "indoor",
+    "outdoor"
+   ],
+   "lat": 32.1001718,
+   "lng": 34.7744699,
+   "city_original": "Tel Aviv-Jaffa",
+   "venueName_original": "Moonchild - מון צ'ילד",
+   "isApproved": true
+  },
+  "genres": {
+   "en": [
+    "edm",
+    "electronic",
+    "dance"
+   ],
+   "he": [
+    "מוזיקה אלקטרונית",
+    "EDM",
+    "אלקטרוני-דאנס"
+   ]
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "כרטיסים🏄🏽‍♂️",
+     "en": "Tickets",
+     "he": "כרטיסים🏄🏽‍♂️"
+    },
+    "priceBase": 99.54,
+    "priceCommitionPercentage": 8.5,
+    "priceFinal": 108.0009,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-10-17T01:00:00+03:00",
+    "validThrough": "2026-10-23T08:00:00+03:00",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "הרשמה חינם בהגעה עד 23:30"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-10-16T12:30:00Z",
+    "validThrough": "2026-10-22T23:30:00Z",
+    "inStock": false
+   },
+   {
+    "type": {
+     "original": "כרטיס להגעה בכל שעה",
+     "en": "Ticket for entry at any time"
+    },
+    "priceBase": 99,
+    "priceCommitionPercentage": 11.52020202020202,
+    "priceFinal": 110.405,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-10-18T15:40:19+03:00",
+    "validThrough": "2026-10-23T06:30:00+03:00",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "כרטיסים אחרונים",
+     "en": "Last tickets",
+     "he": "כרטיסים אחרונים"
+    },
+    "priceBase": 100,
+    "priceCommitionPercentage": 9,
+    "priceFinal": 109,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-07-09T12:40:34+03:00",
+    "validThrough": "2026-10-23T03:30:00+03:00",
+    "inStock": true
+   }
+  ],
+  "producers": [
+   {
+    "name": "נמל תל אביב"
+   },
+   {
+    "name": "eventstlv management"
+   },
+   {
+    "name": "Waves"
+   }
+  ],
+  "artists": [
+   {
+    "name": "Dor Hadad"
+   },
+   {
+    "name": "Gozalino B2B Adir Ovadia"
+   },
+   {
+    "name": "Yahav Boaz"
+   },
+   {
+    "name": "Marzuk"
+   },
+   {
+    "name": "Romi Dror"
+   },
+   {
+    "name": "SHANELLE"
+   },
+   {
+    "name": "RON LEVY"
+   },
+   {
+    "name": "SEAN ALONI"
+   },
+   {
+    "name": "I"
+   }
+  ],
+  "metadata": {
+   "version": 6,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1792230130132?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-07-09T17:07:25.001Z",
+   "alternativeUrls": [
+    "https://www.go-out.co/event/1792230130132?ref=a33ggg1133",
+    "https://www.go-out.co/event/1792325925904?ref=a33ggg1133",
+    "https://www.go-out.co/event/1783590075639?ref=a33ggg1133"
+   ],
+   "updatedAt": "2026-10-19T16:20:00.499Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6ad342f2c98cb907af2df23f1792230481827_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/6a73416e-f423-4323-a74d-9af808dbb2bc_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/6a73416e-f423-4323-a74d-9af808dbb2bc_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/6a73416e-f423-4323-a74d-9af808dbb2bc_medium.webp"
+   }
+  }
+ },
+ {
+  "_id": "6a4fd5eda16d2cb651921761",
+  "title": {
+   "original": "חמישי בנמל תל אביב // 5.11☀️",
+   "en": "Thursday at Tel Aviv Port // 5.11☀️",
+   "he": "חמישי בנמל תל אביב // 5.11☀️"
+  },
+  "summary": {
+   "en": "Thursday night at Tel Aviv Port with two dance floors and top hits.",
+   "he": "חמישי בנמל תל אביב: שתי רחבות וליין מובחר."
+  },
+  "startTimestamp": "2026-11-05T22:30:00+02:00",
+  "endTimestamp": "2026-11-06T04:30:00+02:00",
+  "endTimeDescription": "04:30",
+  "eventType": [
+   "danceParty"
+  ],
+  "minAgeLimit": 18,
+  "location": {
+   "fullAddress": "Moonchild - מון צ'ילד, Tel-Aviv, Israël",
+   "venueName": "moonchild",
+   "city": "tel aviv",
+   "area": "center",
+   "description": {
+    "en": "Moonchild - Tel Aviv port area on the sea with an open-air floor under the sky.",
+    "he": "מון צ'ילד - נמל תל אביב, על הים, רחבה פתוחה תחת שמים."
+   },
+   "type": [
+    "outdoor",
+    "club",
+    "openAir",
+    "beach"
+   ],
+   "city_original": "Tel Aviv-Jaffa",
+   "venueName_original": "Moonchild - מון צ'ילד",
+   "isApproved": true
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "כרטיסים אחרונים",
+     "en": "Last tickets",
+     "he": "כרטיסים אחרונים"
+    },
+    "priceBase": 100,
+    "priceCommitionPercentage": 9,
+    "priceFinal": 109,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-06-19T10:03:00Z",
+    "validThrough": "2026-07-16T16:03:00Z",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "כרטיסים🏄🏽‍♂️",
+     "en": "Tickets",
+     "he": "כרטיסים🏄🏽‍♂️"
+    },
+    "priceBase": 99.54,
+    "priceCommitionPercentage": 8.5,
+    "priceFinal": 108.0009,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-10-15T01:00:00+03:00",
+    "validThrough": "2026-11-06T07:00:00+02:00",
+    "inStock": true
+   }
+  ],
+  "producers": [
+   {
+    "name": "Waves"
+   },
+   {
+    "name": "נמל תל אביב"
+   }
+  ],
+  "artists": [
+   "DANINO",
+   "RON LEVY",
+   "ARIVVA",
+   "MAX DAVID",
+   "Dor Hadad",
+   "Gozalino",
+   "Adir Ovadia",
+   "Yahav Boaz",
+   "Marzuk",
+   "Romi Dror"
+  ],
+  "metadata": {
+   "version": 5,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1792230573016?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-07-09T17:10:03.929Z",
+   "alternativeUrls": [
+    "https://www.go-out.co/event/1792230573016?ref=a33ggg1133",
+    "https://www.go-out.co/event/1783591437493?ref=a33ggg1133"
+   ],
+   "updatedAt": "2026-10-19T18:08:40.844Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6ad344ad7f15360932e78b331792230640299_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/57d21a86-84af-4605-baea-3913d6dee874_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/57d21a86-84af-4605-baea-3913d6dee874_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/57d21a86-84af-4605-baea-3913d6dee874_medium.webp"
+   }
+  },
+  "genres": {
+   "en": [
+    "EDM",
+    "Mainstream"
+   ],
+   "he": [
+    "EDM",
+    "מיינסטרים"
+   ]
+  },
+  "allowSecondaryDeliveryMail": false
+ },
+ {
+  "_id": "6a4fd62ca16d2cb651921762",
+  "title": {
+   "original": "חמישי בנמל תל אביב // 12.11☀️",
+   "en": "Thursday at Tel Aviv Port // 12.11",
+   "he": "חמישי בנמל תל אביב // 12.11☀️"
+  },
+  "summary": {
+   "en": "Thursday at Tel Aviv Port: two rooms, open-air and closed, mainstream vibes all night.",
+   "he": "חמישי בנמל תל אביב: שתי רחבות, פתוחה וסגורה, וייבים MAINSTREAM כל הלילה."
+  },
+  "startTimestamp": "2026-11-12T22:30:00+02:00",
+  "endTimestamp": "2026-11-13T04:30:00+02:00",
+  "endTimeDescription": "04:30",
+  "eventType": [
+   "djSet",
+   "danceParty",
+   "rave"
+  ],
+  "minAgeLimit": 18,
+  "location": {
+   "fullAddress": "Moonchild - מון צ'ילד, Tel-Aviv, Israël",
+   "venueName": "moonchild",
+   "city": "tel aviv",
+   "area": "center",
+   "description": "Sea-side venue at Tel Aviv Port with two spaces: open-air and enclosed.",
+   "type": [
+    "indoor",
+    "openAir",
+    "outdoor",
+    "beach"
+   ],
+   "isApproved": true,
+   "city_original": "Tel Aviv-Jaffa",
+   "venueName_original": "Moonchild - מון צ'ילד"
+  },
+  "genres": {
+   "en": [
+    "EDM"
+   ],
+   "he": [
+    "EDM"
+   ]
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "כרטיסים🏄🏽‍♂️",
+     "en": "Tickets🏄🏽‍♂️",
+     "he": "כרטיסים🏄🏽‍♂️"
+    },
+    "priceBase": 99.54,
+    "priceCommitionPercentage": 8.5,
+    "priceFinal": 108.0009,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-10-14T22:00:00Z",
+    "validThrough": "2026-11-13T05:00:00Z",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "כרטיסים אחרונים",
+     "en": "Last Tickets",
+     "he": "כרטיסים אחרונים"
+    },
+    "priceBase": 100,
+    "priceCommitionPercentage": 9,
+    "priceFinal": 109,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-07-09T16:25:21+03:00",
+    "validThrough": "2026-11-13T03:30:00+02:00",
+    "inStock": true
+   }
+  ],
+  "producers": [
+   {
+    "name": "נמל תל אביב"
+   },
+   {
+    "name": "Waves"
+   }
+  ],
+  "artists": [
+   {
+    "name": "Dor Hadad"
+   },
+   {
+    "name": "Gozalino"
+   },
+   {
+    "name": "Adir Ovadia"
+   },
+   {
+    "name": "Yahav Boaz"
+   },
+   {
+    "name": "Marzuk"
+   },
+   {
+    "name": "Romi Dror"
+   }
+  ],
+  "metadata": {
+   "version": 5,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1792230688919?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-07-09T17:11:04.892Z",
+   "alternativeUrls": [
+    "https://www.go-out.co/event/1792230688919?ref=a33ggg1133",
+    "https://www.go-out.co/event/1783592869648?ref=a33ggg1133"
+   ],
+   "updatedAt": "2026-10-19T18:22:14.705Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6ad345206460d409403560501792230734030_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/1af24b88-22c5-4cec-8f17-1bdba2a99eb0_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/1af24b88-22c5-4cec-8f17-1bdba2a99eb0_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/1af24b88-22c5-4cec-8f17-1bdba2a99eb0_medium.webp"
+   }
+  }
+ },
+ {
+  "_id": "6a51249ea16d2cb65192176d",
+  "title": {
+   "original": "THURSDAY MOON MAINSTREAM OPEN AIR EXPERIENCE 22.10 | FROM 22:30",
+   "en": "THURSDAY MOON MAINSTREAM OPEN AIR EXPERIENCE 22.10 | FROM 22:30",
+   "he": "THURSDAY MOON MAINSTREAM OPEN AIR EXPERIENCE 22.10 | מה-22:30"
+  },
+  "summary": {
+   "en": "Mainstream open-air night at Moonchild with top lineup and beach vibes.",
+   "he": "לילה MAINSTREAM פתוח בחוץ ב-Moonchild עם ליין מוביל ואווירת חוף."
+  },
+  "startTimestamp": "2026-10-29T22:30:00+02:00",
+  "endTimestamp": "2026-10-30T03:30:00+02:00",
+  "endTimeDescription": "3:30 AM",
+  "eventType": [
+   "danceParty"
+  ],
+  "minAgeLimit": 18,
+  "location": {
+   "fullAddress": "Moonchild - מון צ'ילד, Tel Aviv-Yafo, ישראל",
+   "venueName": "moonchild",
+   "city": "tel aviv",
+   "area": "center",
+   "description": {
+    "en": "Open-air venue by the sea in Tel Aviv's port area.",
+    "he": "מקום פתוח על הים באזור נמל תל-אביב."
+   },
+   "type": [
+    "outdoor",
+    "beach",
+    "openAir",
+    "club"
+   ],
+   "isApproved": true,
+   "city_original": "Tel Aviv-Yafo",
+   "venueName_original": "Moonchild - מון צ'ילד"
+  },
+  "genres": {
+   "en": [
+    "EDM"
+   ],
+   "he": [
+    "EDM"
+   ]
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "כרטיסים אחרונים",
+     "en": "Last tickets",
+     "he": "כרטיסים אחרונים"
+    },
+    "priceBase": 100,
+    "priceCommitionPercentage": 9,
+    "priceFinal": 109,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-02-21T22:30:00+02:00",
+    "validThrough": "2026-10-30T03:30:00+02:00",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "כרטיסים אחרונים",
+     "en": "Last tickets",
+     "he": "כרטיסים אחרונים"
+    },
+    "priceBase": 100,
+    "priceCommitionPercentage": 9,
+    "priceFinal": 109,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-02-22T00:30:00+02:00",
+    "validThrough": "2026-10-30T05:30:00+02:00",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "כרטיסים אחרונים",
+     "en": "Last tickets",
+     "he": "כרטיסים אחרונים"
+    },
+    "priceBase": 100,
+    "priceCommitionPercentage": 9,
+    "priceFinal": 109,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-02-22T00:30:00+02:00",
+    "validThrough": "2026-10-30T03:30:00+02:00",
+    "inStock": true
+   }
+  ],
+  "producers": [
+   {
+    "name": "Waves"
+   }
+  ],
+  "artists": [
+   {
+    "name": "ZALTZ"
+   },
+   {
+    "name": "DOR HADAD"
+   },
+   {
+    "name": "OFEK ASAF"
+   },
+   {
+    "name": "SEAN ALONI"
+   }
+  ],
+  "metadata": {
+   "version": 4,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1783590637808?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-07-10T16:58:04.287Z",
+   "updatedAt": "2026-07-21T16:46:45.923Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6a4f6eadf025164c7ddb7ce41783590595753_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/4313eab4-e0b5-453a-b861-a72e7828da61_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/4313eab4-e0b5-453a-b861-a72e7828da61_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/4313eab4-e0b5-453a-b861-a72e7828da61_medium.webp"
+   }
+  }
+ },
+ {
+  "_id": "6a53c2c4a16d2cb651921787",
+  "title": {
+   "original": "MAINSTREAM OPEN AIR EXPERIENCE 06.11 | FROM 23:00",
+   "en": "MAINSTREAM OPEN AIR EXPERIENCE 06.11 | FROM 23:00",
+   "he": "חוויה MAINSTREAM OPEN AIR EXPERIENCE 06.11 | מה-23:00"
+  },
+  "summary": {
+   "en": "MAINSTREAM OPEN AIR EXPERIENCE every Friday night at Moonchild, starting 23:00.",
+   "he": "חוויה MAINSTREAM OPEN AIR כל שישי בלילה ב-Moonchild, החל מהשעה 23:00."
+  },
+  "startTimestamp": "2026-11-06T22:30:00+02:00",
+  "endTimestamp": "2026-11-07T03:30:00+02:00",
+  "endTimeDescription": "end around 03:30",
+  "eventType": [
+   "danceParty",
+   "djSet"
+  ],
+  "minAgeLimit": 18,
+  "location": {
+   "fullAddress": "Moonchild - מון צ'ילד, Tel Aviv-Yafo, ישראל",
+   "venueName": "moonchild",
+   "city": "tel aviv",
+   "area": "center",
+   "description": {
+    "en": "Seaside club venue near Tel Aviv port.",
+    "he": "מקום מועדון על החוף ליד נמל תל אביב."
+   },
+   "type": [
+    "openAir",
+    "outdoor",
+    "beach",
+    "club"
+   ],
+   "isApproved": true,
+   "city_original": "Tel Aviv-Yafo",
+   "venueName_original": "Moonchild"
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "כניסה לכל הלילה",
+     "en": "Entrance for the whole night",
+     "he": "כניסה לכל הלילה"
+    },
+    "priceBase": 80,
+    "priceCommitionPercentage": 9.25,
+    "priceFinal": 87.4,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-07-12T18:46:03.432",
+    "validThrough": "2026-11-07T03:30:00.000",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "הרשמה חינם בהגעה עד 00:00",
+     "en": "Free registration on arrival until 00:00",
+     "he": "הרשמה חינם בהגעה עד 00:00"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-07-12T18:45:31.057",
+    "validThrough": "2026-11-07T03:30:00.000",
+    "inStock": true
+   }
+  ],
+  "producers": [
+   {
+    "name": "Waves"
+   }
+  ],
+  "artists": [
+   {
+    "name": "TAIR ALON"
+   },
+   {
+    "name": "OFEK ASAF"
+   },
+   {
+    "name": "AMIT ORIN"
+   },
+   {
+    "name": "MAX DAVID"
+   }
+  ],
+  "metadata": {
+   "version": 4,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1783871214826?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-07-12T16:37:21.508Z",
+   "updatedAt": "2026-07-22T16:53:49.721Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6a53b670f025164c7df53d5e1783871096204_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/c402eea7-ccb0-439d-abd3-20e58795c10d_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/c402eea7-ccb0-439d-abd3-20e58795c10d_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/c402eea7-ccb0-439d-abd3-20e58795c10d_medium.webp"
+   }
+  }
+ },
+ {
+  "_id": "6a53c30aa16d2cb651921788",
+  "title": {
+   "original": "MAINSTREAM OPEN AIR EXPERIENCE 20.11 | FROM 23:00",
+   "en": "MAINSTREAM OPEN AIR EXPERIENCE 20.11 | FROM 23:00",
+   "he": "חוויה MAINSTREAM פתוחה באוויר 20.11 | מהשעה 23:00"
+  },
+  "summary": {
+   "en": "Mainstream open-air experience every Friday by the Tel Aviv sea with a fixed lineup.",
+   "he": "חוויה MAINSTREAM פתוחה באוויר כל שישי ליד הים בתל אביב עם ליין קבוע"
+  },
+  "startTimestamp": "2026-11-20T23:00:00+02:00",
+  "endTimestamp": "2026-11-21T03:30:00+02:00",
+  "endTimeDescription": "Until 03:30",
+  "eventType": [
+   "danceParty"
+  ],
+  "minAgeLimit": 18,
+  "location": {
+   "fullAddress": "Moonchild - מון צ'ילד, Tel Aviv-Yafo, ישראל",
+   "venueName": "moonchild",
+   "city": "tel aviv",
+   "area": "center",
+   "description": {
+    "en": "Open-air venue by the sea with a dedicated Friday nightlife vibe.",
+    "he": "מקום פתוח על הים עם אווירת לילה שישי ייחודית."
+   },
+   "type": [
+    "openAir",
+    "outdoor",
+    "club"
+   ],
+   "isApproved": true,
+   "city_original": "Tel Aviv-Yafo",
+   "venueName_original": "Moonchild"
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "כניסה לכל הלילה",
+     "en": "Entrance for the whole night",
+     "he": "כניסה לכל הלילה"
+    },
+    "priceBase": 80,
+    "priceCommitionPercentage": 9.25,
+    "priceFinal": 87.4,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-06-13T18:46:00Z",
+    "validThrough": "2027-03-26T03:30:00Z",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "הרשמה חינם בהגעה עד 00:00",
+     "en": "Free registration on arrival until 00:00",
+     "he": "הרשמה חינם בהגעה עד 00:00"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-07-19T21:45:27+03:00",
+    "validThrough": "2026-12-16T03:30:00Z",
+    "inStock": true
+   }
+  ],
+  "producers": [
+   {
+    "name": "Waves"
+   }
+  ],
+  "artists": [
+   {
+    "name": "TAIR ALON",
+    "origin": "",
+    "genres": {
+     "en": [],
+     "he": []
+    }
+   },
+   {
+    "name": "OFEK ASAF",
+    "origin": "",
+    "genres": {
+     "en": [],
+     "he": []
+    }
+   },
+   {
+    "name": "AMIT ORIN",
+    "origin": "",
+    "genres": {
+     "en": [],
+     "he": []
+    }
+   },
+   {
+    "name": "MAX DAVID",
+    "origin": "",
+    "genres": {
+     "en": [],
+     "he": []
+    }
+   }
+  ],
+  "metadata": {
+   "version": 4,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1783871547850?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-07-12T16:38:32.459Z",
+   "updatedAt": "2026-07-24T16:31:24.999Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6a53b83b40655cdb12f2c3bf1783871716156_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/70e46a1f-8d75-4df6-b192-637244faedc8_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/70e46a1f-8d75-4df6-b192-637244faedc8_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/70e46a1f-8d75-4df6-b192-637244faedc8_medium.webp"
+   }
+  }
+ },
+ {
+  "_id": "6a55213ca16d2cb6519217a4",
+  "title": {
+   "original": "MAINSTREAM OPEN AIR EXPERIEN 23.10 | FROM 23:00",
+   "en": "Mainstream Open Air Experience 23.10 | From 23:00",
+   "he": "MAINSTREAM OPEN AIR EXPERIEN 23.10 | מהשעה 23:00"
+  },
+  "summary": {
+   "en": "100% MAINSTREAM open-air, fixed lineup, right crowd, and energy all night.",
+   "he": "100% MAINSTREAM באוויר הפתוח, ליין קבוע, קהל מדויק ואנרגיה לאורך כל הלילה."
+  },
+  "startTimestamp": "2026-10-23T23:00:00+03:00",
+  "endTimestamp": "2026-10-24T04:00:00+03:00",
+  "endTimeDescription": "04:00",
+  "eventType": [
+   "danceParty"
+  ],
+  "minAgeLimit": 18,
+  "location": {
+   "fullAddress": "Moonchild - מון צ'ילד, Tel Aviv-Yafo, ישראל",
+   "venueName": "moonchild",
+   "city": "tel aviv",
+   "area": "center",
+   "description": {
+    "en": "Open-air venue by the Tel Aviv port, under the open sky.",
+    "he": "מקום פתוח על חוף הים של נמל תל-אביב, תחת כיפת השמיים."
+   },
+   "type": [
+    "openAir",
+    "outdoor"
+   ],
+   "city_original": "Tel Aviv-Yafo",
+   "venueName_original": "Moonchild - מון צ'ילד",
+   "isApproved": true
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "כניסה לכל הלילה ",
+     "en": "Entrance to the whole night",
+     "he": "כניסה לכל הלילה"
+    },
+    "priceBase": 80,
+    "priceFinal": 87.4,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-06-28T20:07:00Z",
+    "validThrough": "2027-02-03T04:00:00.000Z",
+    "inStock": true,
+    "priceCommitionPercentage": 11.56
+   },
+   {
+    "type": {
+     "original": "הרשמה חינם עד 00:00",
+     "en": "Free registration until 00:00",
+     "he": "הרשמה חינם עד 00:00"
+    },
+    "priceBase": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-06-26T23:06:00+03:00",
+    "validThrough": "2027-01-13T04:00:00.000Z",
+    "inStock": true,
+    "priceCommitionPercentage": 0
+   }
+  ],
+  "producers": [
+   {
+    "name": "Waves"
+   }
+  ],
+  "artists": [
+   {
+    "name": "TAIROS"
+   },
+   {
+    "name": "OHANA"
+   },
+   {
+    "name": "DAVIDA"
+   },
+   {
+    "name": "SHAYELLA"
+   }
+  ],
+  "metadata": {
+   "version": 4,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1783877251208?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-07-13T17:32:42.722Z",
+   "updatedAt": "2026-07-22T16:50:42.506Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6a53ce83281e5320b9e5ab3b1783877374078_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/fdb20b70-3faa-4fca-a777-763f667f7ed6_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/fdb20b70-3faa-4fca-a777-763f667f7ed6_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/fdb20b70-3faa-4fca-a777-763f667f7ed6_medium.webp"
+   }
+  }
+ },
+ {
+  "_id": "6a552173a16d2cb6519217a5",
+  "title": {
+   "original": "DARWISH x HELLO VERA • FRIDAY OPEN AIR",
+   "en": "DARWISH x HELLO VERA • FRIDAY OPEN AIR"
+  },
+  "summary": {
+   "en": "DARWISH x HELLO VERA Friday Open Air at Moon Child TLV with explosive energy and immersive music.",
+   "he": "DARWISH x HELLO VERA • Friday Open Air במון צ’ילד TLV – אנרגיה מתפרצת ומוזיקה מעוררת."
+  },
+  "startTimestamp": "2026-10-23T22:00:00+03:00",
+  "endTimestamp": "2026-10-24T04:30:00+03:00",
+  "endTimeDescription": "04:30",
+  "eventType": [
+   "danceParty",
+   "djSet"
+  ],
+  "minAgeLimit": 18,
+  "genres": {
+   "en": [
+    "trance",
+    "techno",
+    "melodic techno",
+    "electronic"
+   ],
+   "he": [
+    "טרנס",
+    "טכנו",
+    "טכנו מלודי",
+    "אלקטרוני"
+   ]
+  },
+  "location": {
+   "fullAddress": "Moonchild - מון צ’ילד, Tel Aviv-Yafo, Israel",
+   "venueName": "moonchild",
+   "city": "tel aviv",
+   "area": "center",
+   "description": {
+    "en": "Moon Child venue in Tel Aviv Port, open air overlooking the sea.",
+    "he": "מקום Moon Child בנמל תל אביב, באוויר הפתוח מול הים."
+   },
+   "type": [
+    "openAir",
+    "outdoor",
+    "club"
+   ],
+   "isApproved": true,
+   "city_original": "Tel Aviv-Jaffa",
+   "venueName_original": "Moonchild"
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "הרשמה חינם בהגעה עד 23:30",
+     "en": "Free registration on arrival until 23:30",
+     "he": "הרשמה חינם בהגעה עד 23:30"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-10-06T22:00:00Z",
+    "validThrough": "2027-01-03T04:30:00Z",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "כניסה לכל הלילה",
+     "en": "Entrance for the whole night",
+     "he": "כניסה לכל הלילה"
+    },
+    "priceBase": 81,
+    "priceCommitionPercentage": 8,
+    "priceFinal": 87.48,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-10-01T22:00:00Z",
+    "validThrough": "2026-10-24T04:30:00Z",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "הרשמה חינם בהגעה עד 23:30",
+     "en": "Free entry on arrival until 23:30",
+     "he": "הרשמה חינם בהגעה עד 23:30"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-10-10T20:32:00+03:00",
+    "validThrough": "2027-01-05T06:30:00+02:00",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "כניסה לכל הלילה",
+     "en": "All-night entry",
+     "he": "כניסה לכל הלילה"
+    },
+    "priceBase": 80,
+    "priceCommitionPercentage": 9.25,
+    "priceFinal": 87.4,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-03-11T23:30:00+03:00",
+    "validThrough": "2026-11-06T04:30:00+02:00",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "הרשמה חינם עד 00:00",
+     "en": "Free registration until 00:00",
+     "he": "הרשמה חינם עד 00:00"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-05-15T17:32:00Z",
+    "validThrough": "2026-12-29T04:30:00Z",
+    "inStock": true
+   }
+  ],
+  "producers": [
+   {
+    "name": "יוצאים"
+   },
+   {
+    "name": "MOON TLV"
+   },
+   {
+    "name": "Waves"
+   }
+  ],
+  "artists": [
+   {
+    "name": "DARWISH"
+   },
+   {
+    "name": "HELLO VERA"
+   },
+   {
+    "name": "YANKA"
+   },
+   {
+    "name": "AZZA B2B FOGU"
+   },
+   {
+    "name": "MELODIC"
+   },
+   {
+    "name": "AZZA"
+   }
+  ],
+  "metadata": {
+   "version": 6,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1791994901374?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-07-13T17:33:26.024Z",
+   "alternativeUrls": [
+    "https://www.go-out.co/event/1791994901374?ref=a33ggg1133",
+    "https://www.go-out.co/event/1791709813018?ref=a33ggg1133",
+    "https://www.go-out.co/event/1783883692142?ref=a33ggg1133"
+   ],
+   "updatedAt": "2026-10-15T16:51:58.486Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6acfac15f10c7a07b9b54a1b1791997290059_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/8924dcdb-7749-4c4c-b900-4293ce68fc7e_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/8924dcdb-7749-4c4c-b900-4293ce68fc7e_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/8924dcdb-7749-4c4c-b900-4293ce68fc7e_medium.webp"
+   }
+  }
+ },
+ {
+  "_id": "6a5522f1a16d2cb6519217a6",
+  "title": {
+   "original": "FRIDAY MAINSTREAM | 13.11",
+   "en": "Friday Mainstream | 13.11",
+   "he": "FRIDAY MAINSTREAM | 13.11"
+  },
+  "summary": {
+   "en": "Mainstream open-air party by Waves at Moonchild every Friday from 23:00.",
+   "he": "מיין-סטרים פתוח בחוץ במסיבה של Waves ב-Moonchild כל שישי מהשעה 23:00."
+  },
+  "startTimestamp": "2026-11-13T23:00:00+02:00",
+  "endTimestamp": "2026-11-14T03:30:00+02:00",
+  "endTimeDescription": "late night, ends around 03:30",
+  "eventType": [
+   "danceParty"
+  ],
+  "minAgeLimit": 18,
+  "location": {
+   "fullAddress": "Moonchild - מון צ'ילד, Tel Aviv-Yafo, ישראל",
+   "venueName": "moonchild",
+   "city": "tel aviv",
+   "area": "center",
+   "description": {
+    "en": "Open-air venue by the sea in Tel Aviv Port.",
+    "he": "מקום פתוח על הים בנמל תל אביב."
+   },
+   "type": [
+    "openAir",
+    "outdoor",
+    "club"
+   ],
+   "isApproved": true,
+   "city_original": "Tel Aviv-Yafo",
+   "venueName_original": "Moonchild"
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "כניסה לכל הלילה",
+     "en": "Entrance for the whole night",
+     "he": "כניסה לכל הלילה"
+    },
+    "priceBase": 80,
+    "priceCommitionPercentage": 9.25,
+    "priceFinal": 87.4,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-07-04T18:46:00Z",
+    "validThrough": "2026-12-14T03:30:00Z",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "הרשמה חינם בהגעה עד 00:00",
+     "en": "Free registration on arrival until 00:00",
+     "he": "הרשמה חינם בהגעה עד 00:00"
+    },
+    "priceBase": 0,
+    "priceCommitionPercentage": 0,
+    "priceFinal": 0,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-06-28T18:45:00Z",
+    "validThrough": "2026-12-09T03:30:00Z",
+    "inStock": true
+   }
+  ],
+  "producers": [
+   {
+    "name": "Waves"
+   }
+  ],
+  "artists": [
+   {
+    "name": "TAIR ALON"
+   },
+   {
+    "name": "OFEK ASAF"
+   },
+   {
+    "name": "AMIT ORIN"
+   },
+   {
+    "name": "MAX DAVID"
+   }
+  ],
+  "metadata": {
+   "version": 4,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1783871450888?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-07-13T17:39:59.215Z",
+   "updatedAt": "2026-07-22T16:55:20.511Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6a53b7daf112ef20bfb72dd51783871514615_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/c18f5066-d219-4ad7-b08a-57ff9ec72a99_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/c18f5066-d219-4ad7-b08a-57ff9ec72a99_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/c18f5066-d219-4ad7-b08a-57ff9ec72a99_medium.webp"
+   }
+  }
+ },
+ {
+  "_id": "6a552327a16d2cb6519217a7",
+  "title": {
+   "original": "THURSDAY MOON | MAINSTREAM | 19.11",
+   "en": "Thursday Moon: Mainstream Open Air Experience 19.11 from 22:30",
+   "he": "THURSDAY MOON MAINSTREAM OPEN AIR EXPERIENCE 19.11 | מהשעה 22:30"
+  },
+  "summary": {
+   "en": "THURSDAY MOON: mainstream open-air EDM night at Tel Aviv Port, 22:30 start.",
+   "he": "THURSDAY MOON: מסיבת EDM פתוחה על הים בנמל תל אביב, התחלה ב-22:30"
+  },
+  "startTimestamp": "2026-11-19T22:30:00+02:00",
+  "endTimestamp": "2026-11-20T04:30:00+02:00",
+  "endTimeDescription": "04:30",
+  "eventType": [
+   "danceParty",
+   "djSet"
+  ],
+  "minAgeLimit": 18,
+  "genres": {
+   "en": [
+    "Electronic",
+    "Dance",
+    "EDM",
+    "mainstream"
+   ],
+   "he": [
+    "אלקטרוני",
+    "דאנס",
+    "EDM",
+    "מיינסטרים"
+   ]
+  },
+  "location": {
+   "fullAddress": "Tel Aviv Port, Tel Aviv, Israel",
+   "venueName": "the exhibition, tel aviv port",
+   "city": "tel aviv",
+   "area": "center",
+   "description": {
+    "en": "Open-air venue by Tel Aviv Port on the waterfront",
+    "he": "מרכז פתוח על החוף בנמל תל אביב"
+   },
+   "type": [
+    "outdoor",
+    "openAir",
+    "beach"
+   ],
+   "city_original": "Tel Aviv",
+   "venueName_original": "Tel Aviv Port"
+  },
+  "tickets": [
+   {
+    "type": {
+     "original": "כרטיסים אחרונים",
+     "en": "Last Tickets",
+     "he": "כרטיסים אחרונים"
+    },
+    "priceBase": 100,
+    "priceCommitionPercentage": 9,
+    "priceFinal": 109,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-07-12T19:50:00+03:00",
+    "validThrough": "2026-11-20T06:30:00+02:00",
+    "inStock": true
+   },
+   {
+    "type": {
+     "original": "כרטיסים אחרונים",
+     "en": "Last Tickets",
+     "he": "כרטיסים אחרונים"
+    },
+    "priceBase": 100,
+    "priceCommitionPercentage": 9,
+    "priceFinal": 109,
+    "priceCurrency": "NIS",
+    "validFrom": "2026-07-12T16:50:00.985",
+    "validThrough": "2026-11-20T04:30:00.000",
+    "inStock": true
+   }
+  ],
+  "producers": [
+   {
+    "name": "Waves"
+   }
+  ],
+  "artists": [
+   {
+    "name": "IDO YOSEF",
+    "origin": "Israel",
+    "genres": {
+     "en": [
+      "Electronic",
+      "Techno"
+     ],
+     "he": [
+      "אלקטרוני",
+      "טכנו"
+     ]
+    }
+   },
+   {
+    "name": "SEAN ALONI",
+    "origin": "Israel",
+    "genres": {
+     "en": [
+      "Electronic",
+      "House"
+     ],
+     "he": [
+      "אלקטרוני",
+      "האוס"
+     ]
+    }
+   },
+   {
+    "name": "DOR HADAD",
+    "origin": "Israel",
+    "genres": {
+     "en": [
+      "Electronic",
+      "Techno"
+     ],
+     "he": [
+      "אלקטרוני",
+      "טכנו"
+     ]
+    }
+   },
+   {
+    "name": "MAX DAVID",
+    "origin": "Israel",
+    "genres": {
+     "en": [
+      "Electronic",
+      "Dance"
+     ],
+     "he": [
+      "אלקטרוני",
+      "דאנס"
+     ]
+    }
+   }
+  ],
+  "metadata": {
+   "version": 4,
+   "visibility": "all",
+   "source": "go-out",
+   "url": "https://www.go-out.co/event/1783864245157?ref=a33ggg1133",
+   "trigger": "s",
+   "affiliate": true,
+   "createdAt": "2026-07-13T17:40:53.960Z",
+   "updatedAt": "2026-07-22T16:57:00.659Z"
+  },
+  "images": {
+   "main": {
+    "original": "https://d15q6k8l9pfut7.cloudfront.net/events/6a539b524357a291e8727cc31783864153552_coverImage.jpg",
+    "thumbnail": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/f177d258-fa13-43cb-8428-2b947f9cb9fe_thumbnail.webp",
+    "small": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/f177d258-fa13-43cb-8428-2b947f9cb9fe_small.webp",
+    "medium": "https://s3.eu-north-1.amazonaws.com/beat.radar.images/f177d258-fa13-43cb-8428-2b947f9cb9fe_medium.webp"
+   }
+  }
+ }
+]

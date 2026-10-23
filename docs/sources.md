@@ -1,6 +1,6 @@
 # Sources
 
-Pulse collects from 48 configured sources. Each one has its own module in
+Pulse collects from 49 configured sources. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -34,6 +34,7 @@ pagination and what the listing and the event page provide.
 | `secrettelaviv` | Secret Tel Aviv (secrettelaviv.com/tickets): curated city listings (parties, live music, culture...) | 07:59, 19:59 | yes |
 | `makore` | Makore (makore.co.il, "מה קורה"): an events guide for all of Israel | 09:41, 21:41 | yes |
 | `happytlv` | HappyTLV (happytlv.com): Tel Aviv parties, and bars' happy hours (one event per day the deal runs, category **Happy Hour**) | 05:13, 17:13 | yes |
+| `beatradar` | Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties, with its own genre tags; merged with those sources by dedup | 08:26, 20:26 | yes |
 
 ## Concerts, theatre, stand-up and shows
 

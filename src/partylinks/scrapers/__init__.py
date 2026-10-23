@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from partylinks.config import Settings
 from partylinks.scrapers.barby import BarbyScraper
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.beatradar import BeatRadarScraper
 from partylinks.scrapers.beershevatheatre import BeerShevaTheatreScraper
 from partylinks.scrapers.chillz import ChillzScraper
 from partylinks.scrapers.cinemacity import CinemaCityScraper
@@ -63,6 +64,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         ZygoScraper,
         TickchakScraper,
         SelectorScraper,
+        BeatRadarScraper,
         BarbyScraper,
         GrayclubScraper,
         ChillzScraper,

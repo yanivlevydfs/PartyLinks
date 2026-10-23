@@ -159,21 +159,27 @@ enrichment:
     disco_funk: ["disco", "nu disco", "nu-disco", "funk", "boogie", "דיסקו", "פאנק"]
     drum_and_bass: ["drum and bass", "drum & bass", "drum n bass", "dnb", "d&b", "jungle", "דראם אנד בייס"]
     bass_dubstep: ["dubstep", "bass music", "riddim", "breakbeat", "breaks", "uk garage", "garage", "דאבסטפ"]
-    hardstyle: ["hardstyle", "hard dance", "hardcore", "gabber", "הארדסטייל"]
+    hardstyle: ["hardstyle", "hard dance", "hardcore", "gabber", "frenchcore", "uptempo", "breakcore", "הארדסטייל",
+                "פרנצ'קור"]
     edm: ["edm", "big room", "electro house", "festival anthems"]
-    electronic: ["electronic", "electronica", "underground", "dj-set", "dj set", "rave", "אלקטרונית",
+    electronic: ["electronic", "electronica", "electro", "underground", "dj-set", "dj set", "rave", "אלקטרונית",
                  "אלקטרוני", "אנדרגראונד", "רייב"]
     downtempo_chill: ["downtempo", "chill", "chillout", "ambient", "lounge", "organic", "צ'יל", "לאונג'"]
     throwback: ["80s", "90s", "2000s", "00s", "throwback", "retro", "nostalgia", "שנות ה-90", "שנות ה90",
                 "שנות ה-80", "שנות ה80", "נוסטלגיה", "רטרו"]
-    rock_indie: ["rock", "indie", "alternative", "metal", "punk", "רוק", "אינדי", "אלטרנטיבי", "מטאל", "פאנק רוק"]
+    rock_indie: ["rock", "indie", "alternative", "metal", "metalcore", "punk", "grunge", "רוק", "אינדי", "אלטרנטיבי",
+                 "מטאל", "פאנק רוק", "גראנג'"]
+    dark_wave: ["dark wave", "darkwave", "new wave", "post punk", "post-punk", "synthwave", "synth wave", "dark synth",
+                "ebm", "dark electro", "industrial", "goth", "gothic", "דארק ווייב", "ניו ווייב", "פוסט פאנק", "גותי"]
     jazz: ["jazz", "swing", "blues", "ג'אז", "גאז", "סווינג", "בלוז"]
-    world_balkan: ["balkan", "world music", "ethnic", "gypsy", "בלקן", "אתני", "מוזיקת עולם"]
+    world_balkan: ["balkan", "world music", "ethnic", "gypsy", "folk", "בלקן", "אתני", "מוזיקת עולם", "פולק"]
     # Not "concert": Selector labels every party "Concert".
     live_show: ["live show", "liveshow", "live shows", "live band", "הופעה חיה", "מופע חי", "מופעי לייב"]
     lgbt: ["lgbt", "lgbtq", "gay", "queer", "pride", "drag", "להט\"ב", "גאווה", "דראג"]
     stand_up: ["stand up", "standup", "stand-up", "comedy", "סטנדאפ", "קומדיה"]
     karaoke: ["karaoke", "קריוקי"]
+    yoga_wellness: ["yoga", "ecstatic dance", "meditation", "breathwork", "sound healing", "cacao ceremony", "יוגה",
+                    "אקסטטיק", "מדיטציה", "נשימה מעגלית", "טקס קקאו"]
     # Hi-tech and its sub-fields (family below). Not plain "tech" ("tech house"), "ai" or "security":
     # those are only trusted as a source's declared category (declared_genres).
     hi_tech: ["hi-tech", "high-tech", "hitech", "הייטק", "היי-טק", "hackathon", "האקתון", "meetup", "מיטאפ",
@@ -205,7 +211,7 @@ enrichment:
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
     happy_hour: ["happy hour", "happy-hour", "happyhour", "האפי האוור", "האפי אוור", "הפי האוור"]
-    hi_tech: ["technology", "tech"]
+    hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
     software_dev: ["development"]  # not "פיתוח": Geektime also has "פיתוח קריירה"
@@ -1035,6 +1041,15 @@ sources:
     sitemap_path: /sitemap.xml
     http:
       concurrency: 4
+
+  beatradar:
+    # Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties. One JSON
+    # request lists every upcoming party (~120) with tiers, artists and genre tags; the ticket link
+    # (Go-Out / Selector) is kept, so dedup merges it with those sources. robots.txt is absent.
+    enabled: true
+    cron: "26 8,20 * * *"
+    site_url: https://beatradar.co.il
+    events_path: /api/events
 
   luma:
     # Luma (luma.com): RSVP pages for tech meetups, hi-tech conferences and startup events.
