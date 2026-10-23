@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import hmac
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, Literal
 from zoneinfo import ZoneInfo
 
@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 
 from partylinks import clicks
 from partylinks.config import Settings, config_path, get_settings, project_path
-from partylinks.db import EventRow, FlagRow, ImageRow, ScrapeRunRow, SponsoredRow, TicketRow, flag_on, upcoming_filter
+from partylinks.db import EventRow, FlagRow, ImageRow, ScrapeRunRow, SponsoredRow, SponsoredStatRow, TicketRow, flag_on, upcoming_filter
 from partylinks.logs import debug_enabled, set_debug
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import configured_sources
@@ -177,6 +177,31 @@ def sponsored_list(session: SessionDep) -> dict[str, Any]:
         for s, e in pairs
     ]
     return {"enabled": flag_on(session, "sponsored"), "items": items}
+
+
+@router.get("/sponsored/stats")
+def sponsored_stats(request: Request, session: SessionDep, days: int = Query(30, ge=1, le=3650)) -> dict[str, Any]:
+    """Views and clicks per sponsored event over the last ``days`` days (today included), for advertisers."""
+    today = datetime.now(ZoneInfo(request.app.state.settings.timezone)).date()
+    since = today - timedelta(days=days - 1)
+    rows = session.execute(
+        select(
+            SponsoredStatRow.event_id, func.max(SponsoredStatRow.title).label("title"),
+            func.sum(SponsoredStatRow.views).label("views"), func.sum(SponsoredStatRow.clicks).label("clicks"),
+            func.min(SponsoredStatRow.day).label("first_day"), func.max(SponsoredStatRow.day).label("last_day"),
+        )
+        .where(SponsoredStatRow.day >= since)
+        .group_by(SponsoredStatRow.event_id)
+        .order_by(func.sum(SponsoredStatRow.clicks).desc(), func.sum(SponsoredStatRow.views).desc())
+    ).all()  # fmt: skip
+    events = [dict(r._mapping) for r in rows]
+    return {
+        "since": since,
+        "until": today,
+        "views": sum(e["views"] for e in events),
+        "clicks": sum(e["clicks"] for e in events),
+        "events": events,
+    }
 
 
 class SwitchIn(BaseModel):

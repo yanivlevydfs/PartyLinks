@@ -260,6 +260,19 @@ class SponsoredRow(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
+class SponsoredStatRow(Base):
+    """One sponsored event's views and clicks on one day (site time zone), for the advertiser report.
+    Keeps the title so the report outlives retention deleting the event."""
+
+    __tablename__ = "sponsored_stats"
+
+    event_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    day: Mapped[date] = mapped_column(Date, primary_key=True)
+    title: Mapped[str] = mapped_column(Text)
+    views: Mapped[int] = mapped_column(Integer, default=0)
+    clicks: Mapped[int] = mapped_column(Integer, default=0)
+
+
 class FlagRow(Base):
     """An on/off switch flipped in the admin at runtime; kept in the database so it survives redeploys.
     A missing row means off."""

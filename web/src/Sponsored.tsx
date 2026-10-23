@@ -1,6 +1,6 @@
 // Paid placements (picked at /admin#sponsored), on every page: a rail fixed to each side of the
 // screen on wide screens, one sideways strip above the footer on narrower ones.
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSponsored } from "./api";
 import type { EventSummary } from "./types";
@@ -10,6 +10,18 @@ import "./sponsored.css";
 type Side = "right" | "left";
 // Seconds per spotlight; out of step so the two rails never flip together.
 const ROTATE_S: Record<Side, number> = { right: 6, left: 7.5 };
+
+// For the advertiser report (admin): a view is counted once per event per visit, every click counts.
+const viewed = new Set<string>();
+function hit(eventId: string, kind: "view" | "click") {
+  if (kind === "view") {
+    if (viewed.has(eventId)) return;
+    viewed.add(eventId);
+  }
+  try {
+    navigator.sendBeacon("/events/sponsored/hit", new Blob([JSON.stringify({ event_id: eventId, kind })], { type: "application/json" }));
+  } catch {}
+}
 
 /** Every page below the header: narrowed between the two rails (only when something is sponsored). */
 export function SponsoredFrame({ children }: { children: ReactNode }) {
@@ -74,7 +86,8 @@ function Rail({ side, items }: { side: Side; items: EventSummary[] }) {
           <ul className="sp-list">
             {items.map((e, n) => (
               <li key={e.id}>
-                <Link to={eventPath(e)} className={n === i ? "on" : ""} onMouseEnter={() => setActive(n)} onFocus={() => setActive(n)}>
+                <Link to={eventPath(e)} className={n === i ? "on" : ""} onMouseEnter={() => setActive(n)} onFocus={() => setActive(n)}
+                  onClick={() => hit(e.id, "click")}>
                   <Img src={e.cover_url ?? e.image_url} alt="" className="sp-thumb" />
                   <span>
                     <b dir="auto">{e.title}</b>
@@ -103,8 +116,22 @@ function Spot({ e, on }: { e: EventSummary; on: boolean }) {
     t,
   );
   const where = [e.venue_name, e.area && label(t.areas, e.area)].filter(Boolean).join(" · ");
+  // A view = the shown card at least half on screen (hidden rails and strips never intersect).
+  const ref = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    if (!on || !ref.current) return;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        hit(e.id, "view");
+        io.disconnect();
+      }
+    }, { threshold: 0.5 });
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [on, e.id]);
   return (
-    <Link className={"sp-spot" + (on ? " on" : "")} to={eventPath(e)} tabIndex={on ? 0 : -1} aria-hidden={!on}>
+    <Link ref={ref} className={"sp-spot" + (on ? " on" : "")} to={eventPath(e)} tabIndex={on ? 0 : -1} aria-hidden={!on}
+      onClick={() => hit(e.id, "click")}>
       <Img src={e.cover_url ?? e.image_url} alt={e.title} className="sp-img" text={e.title} />
       <div className="date-badge">
         <b>{fmtDate(e.start_at, t, { day: "numeric" })}</b>

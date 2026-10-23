@@ -629,8 +629,17 @@ def test_sponsored_rails_show_upcoming_picks_in_admin_order(tmp_path: Path) -> N
         assert client.put("/admin/api/sponsored", json=[{"event_id": "test:nope", "side": "left"}]).status_code == 404
         assert client.put("/admin/api/sponsored", json=picks[:1] * 2).status_code == 422
         assert client.get("/events/test:a").status_code == 200  # the slug route still works
+        hit = lambda event_id, kind: client.post("/events/sponsored/hit", json={"event_id": event_id, "kind": kind})
+        assert hit("test:b", "view").status_code == 204
+        hit("test:b", "view"), hit("test:b", "click"), hit("test:c", "view")
+        hit("test:nope", "click"), hit("test:b", "nonsense")  # unknown event / kind: not counted
+        report = client.get("/admin/api/sponsored/stats?days=7").json()
+        assert (report["views"], report["clicks"]) == (3, 1)
+        assert [(e["event_id"], e["views"], e["clicks"]) for e in report["events"]] == [("test:b", 2, 1), ("test:c", 1, 0)]
         client.post("/admin/api/sponsored/enabled", json={"on": False})
         assert client.get("/events/sponsored").json() == {"right": [], "left": []}  # every ad hidden
+        hit("test:b", "click")  # nothing on show: not counted
+        assert client.get("/admin/api/sponsored/stats").json()["clicks"] == 1
 
 
 def test_busy_towns_outside_the_config_get_city_pages(tmp_path: Path) -> None:

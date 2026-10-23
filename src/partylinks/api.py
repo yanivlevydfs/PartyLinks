@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
@@ -29,7 +29,7 @@ from partylinks import status as server_status
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.config import Settings, get_settings
-from partylinks.db import Database, DealChangeRow, EventRow, ImageRow, ScrapeRunRow, SponsoredRow, flag_on, upcoming_filter
+from partylinks.db import Database, DealChangeRow, EventRow, ImageRow, ScrapeRunRow, SponsoredRow, SponsoredStatRow, flag_on, upcoming_filter
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.logs import setup_logging
 from partylinks.models import EntryType
@@ -247,6 +247,11 @@ class SponsoredOut(BaseModel):
 
     right: list[EventSummaryOut] = []
     left: list[EventSummaryOut] = []
+
+
+class SponsoredHitIn(BaseModel):
+    event_id: str = Field(max_length=128)
+    kind: Literal["view", "click"]
 
 
 class MapEventOut(_Out):
@@ -867,6 +872,23 @@ def _register_routes(app: FastAPI) -> None:
         for side, e in pairs:
             getattr(out, side).append(EventSummaryOut.model_validate(e).model_copy(update=extras[e.id]))
         return out
+
+    @app.post("/events/sponsored/hit", status_code=status.HTTP_204_NO_CONTENT, include_in_schema=False)
+    def sponsored_hit(body: SponsoredHitIn, request: Request, session: SessionDep) -> Response:
+        """One view or click of a sponsored placement (sent by the rails). Only placements on show count."""
+        event = session.get(EventRow, body.event_id)
+        if event and session.get(SponsoredRow, body.event_id) and flag_on(session, "sponsored"):
+            day = datetime.now(ZoneInfo(request.app.state.settings.timezone)).date()
+            # ponytail: read-then-write, so two first hits of a day at the same instant can clash (one is lost).
+            stat = session.get(SponsoredStatRow, (body.event_id, day))
+            if stat is None:
+                stat = SponsoredStatRow(event_id=body.event_id, day=day, title=event.title, views=0, clicks=0)
+                session.add(stat)
+            if body.kind == "view":
+                stat.views += 1
+            else:
+                stat.clicks += 1
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     @app.get("/events/{event_ref}", response_model=EventOut, tags=["events"])
     def get_event(event_ref: str, session: SessionDep) -> EventOut:

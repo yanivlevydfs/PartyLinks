@@ -152,7 +152,7 @@ export function Card({ title, children, wide }: { title: string; children: React
     </section>
   );
 }
-function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
+export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
   return (
     <div className="adm-stat">
       <small>{label}</small>

@@ -4,7 +4,7 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { EventPage, EventSummary } from "../types";
 import { eventPath, Img, TZ } from "../ui";
-import { call, Card, post } from "./Admin";
+import { call, Card, post, Stat } from "./Admin";
 import "../sponsored.css";
 
 type Side = "right" | "left";
@@ -163,8 +163,80 @@ export function Sponsored() {
         {dirty && <span className="adm-warn">Unsaved changes</span>}
         {save.isError && <span className="adm-err">{String((save.error as Error).message)}</span>}
         {save.isSuccess && !dirty && <span className="adm-ok">Saved. The site shows it within 5 minutes per visitor.</span>}
-        <span className="adm-note">Shown on the home page from 1440px wide as two rails, below that as one strip. Past events and ended campaigns hide by themselves.</span>
+        <span className="adm-note">Shown on every page: from 1440px wide as two rails, below that as one strip. Past events and ended campaigns hide by themselves.</span>
       </div>
+
+      <Report />
     </div>
+  );
+}
+
+interface StatReport {
+  since: string;
+  until: string;
+  views: number;
+  clicks: number;
+  events: { event_id: string; title: string; views: number; clicks: number; first_day: string; last_day: string }[];
+}
+
+const ctr = (clicks: number, views: number) => (views ? `${((clicks / views) * 100).toFixed(1)}%` : "—");
+
+/** Views and clicks per sponsored event, to send to advertisers (also as CSV). */
+function Report() {
+  const [days, setDays] = useState(30);
+  const r = useQuery({
+    queryKey: ["sponsored-stats", days],
+    queryFn: () => call<StatReport>(`/admin/api/sponsored/stats?days=${days}`),
+    refetchInterval: 60_000,
+  });
+  const d = r.data;
+  const csv = () => {
+    if (!d) return;
+    const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const lines = [
+      ["Event", "Event id", "Views", "Clicks", "CTR", "First day", "Last day"],
+      ...d.events.map((e) => [e.title, e.event_id, e.views, e.clicks, ctr(e.clicks, e.views), e.first_day, e.last_day]),
+    ].map((row) => row.map(cell).join(","));
+    // BOM: Excel opens Hebrew titles correctly.
+    const url = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" }));
+    const a = Object.assign(document.createElement("a"), { href: url, download: `sponsored-${d.since}-${d.until}.csv` });
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  return (
+    <Card title="Advertiser report" wide>
+      <div className="adm-bar">
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="Period">
+          {[1, 7, 30, 90, 365].map((n) => <option key={n} value={n}>Last {n} day{n > 1 ? "s" : ""}</option>)}
+        </select>
+        <button className="adm-btn ghost" onClick={csv} disabled={!d?.events.length}>Download CSV</button>
+      </div>
+      {r.isError && <p className="adm-err">{String(r.error)}</p>}
+      {d && (
+        <>
+          <div className="adm-stats">
+            <Stat label="Views" value={d.views.toLocaleString()} hint={`${d.since} → ${d.until}`} />
+            <Stat label="Clicks" value={d.clicks.toLocaleString()} />
+            <Stat label="CTR" value={ctr(d.clicks, d.views)} hint="clicks / views" />
+          </div>
+          {d.events.length ? (
+            <table className="adm-table">
+              <thead><tr><th>Event</th><th>Views</th><th>Clicks</th><th>CTR</th><th>Days shown</th></tr></thead>
+              <tbody>
+                {d.events.map((e) => (
+                  <tr key={e.event_id}>
+                    <td><Link to={eventPath({ id: e.event_id, slug: null })} target="_blank" dir="auto">{e.title}</Link></td>
+                    <td>{e.views.toLocaleString()}</td>
+                    <td>{e.clicks.toLocaleString()}</td>
+                    <td>{ctr(e.clicks, e.views)}</td>
+                    <td>{e.first_day === e.last_day ? e.first_day : `${e.first_day} → ${e.last_day}`}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : <p className="adm-note">No views yet in this period. A view counts when a visitor sees the card on screen (once per visit); every click counts.</p>}
+        </>
+      )}
+    </Card>
   );
 }
