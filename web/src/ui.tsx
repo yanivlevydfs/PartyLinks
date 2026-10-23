@@ -87,7 +87,9 @@ export function Layout() {
       <CookieConsent />
       <header className="top">
         <div className="wrap top-row">
-          <Link className="logo" to="/">{lang === "he" ? <>פול<span>ס</span></> : <>Pul<span>se</span></>}</Link>
+          <Link className="logo" to="/">{lang === "he" ? <>פול<span>ס</span></> : <>Pul<span>se</span></>}
+            <svg viewBox="0 0 180 40" aria-hidden><path d="M0 22h55l10-18 14 34 12-26 8 10h81" /></svg>
+          </Link>
           <nav className="nav">
             <NavLink to="/" end>{t.nav.parties}</NavLink>
             <NavLink to="/map">{t.nav.map}</NavLink>
