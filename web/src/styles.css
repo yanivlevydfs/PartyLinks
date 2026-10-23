@@ -676,20 +676,21 @@ button, input, select { font: inherit; color: inherit; }
 /* Its CSS is injected at runtime with !important; "html" + !important wins. */
 html .asw-widget, html .asw-menu { --asw-primary: #9d4dff !important; }
 html .asw-menu-btn {
+  width: 40px !important; height: 40px !important; min-width: 0 !important; min-height: 0 !important; padding: 0 !important;
   background:
     radial-gradient(120% 70% at 30% 18%, rgb(255 255 255 / .55), rgb(255 255 255 / .08) 45%, transparent 60%),
     linear-gradient(145deg, #c084fc 0%, var(--violet) 45%, #6d28d9 75%, var(--pink) 130%) !important;
-  border: 2px solid rgb(255 255 255 / .75) !important;
-  outline: 3px solid rgb(157 77 255 / .55) !important;
-  outline-offset: 2px;
-  box-shadow: 0 0 22px rgb(157 77 255 / .65), 0 0 46px rgb(255 46 147 / .25), inset 0 -6px 12px rgb(40 0 80 / .45) !important;
+  border: 1.5px solid rgb(255 255 255 / .7) !important;
+  outline: 2px solid rgb(157 77 255 / .45) !important;
+  outline-offset: 1px;
+  box-shadow: 0 0 12px rgb(157 77 255 / .55), inset 0 -4px 8px rgb(40 0 80 / .45) !important;
   transition: transform .2s ease, box-shadow .3s ease !important;
 }
 html .asw-menu-btn:hover {
   transform: scale(1.07);
-  box-shadow: 0 0 30px rgb(157 77 255 / .9), 0 0 60px rgb(255 46 147 / .4), inset 0 -6px 12px rgb(40 0 80 / .45) !important;
+  box-shadow: 0 0 18px rgb(157 77 255 / .8), inset 0 -4px 8px rgb(40 0 80 / .45) !important;
 }
-html .asw-menu-btn svg { filter: drop-shadow(0 1px 2px rgb(40 0 80 / .6)); }
+html .asw-menu-btn svg { width: 22px !important; height: 22px !important; filter: drop-shadow(0 1px 2px rgb(40 0 80 / .6)); }
 
 /* ------------------------------------------------------------------ freshness */
 .fresh {
