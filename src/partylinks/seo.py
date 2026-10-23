@@ -106,12 +106,17 @@ GENRES_HE = {
     "ai": "AI ובינה מלאכותית", "cyber": "סייבר", "software_dev": "פיתוח תוכנה", "data": "דאטה", "cloud_devops": "ענן ו-DevOps",
     "startups": "סטארטאפים ויזמות", "product": "ניהול מוצר", "gaming": "גיימינג", "web3": "בלוקצ׳יין ו-Web3",
     "cinema": "קולנוע וסרטים", "happy_hour": "האפי האוור", "dark_wave": "דארק ווייב / סינת׳", "yoga_wellness": "יוגה ורוחניות",
+    "festival": "פסטיבלים", "meetups": "מפגשים", "culture": "תרבות", "exhibitions": "תערוכות", "workshops": "סדנאות",
+    "markets": "שווקים וקניות", "food": "אוכל", "environment": "סביבה", "religious": "דת ומסורת", "holidays": "חגים",
+    "sport": "ספורט", "theatre": "תיאטרון", "kids": "ילדים ומשפחה", "lectures": "הרצאות והעשרה", "tours": "סיורים וטיולים",
+    "dance": "מחול",
 }  # fmt: skip
 GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
                  "stand_up": "Stand-up comedy", "live_show": "Live music",
                  "hi_tech": "Hi-tech", "classical_opera": "Classical / Opera", "ai": "AI", "cinema": "Cinema & Movies",
                  "software_dev": "Software development", "cloud_devops": "Cloud & DevOps", "web3": "Web3 & Blockchain",
-                 "happy_hour": "Happy hour", "dark_wave": "Dark Wave / Synth", "yoga_wellness": "Yoga & Wellness"}  # fmt: skip
+                 "happy_hour": "Happy hour", "dark_wave": "Dark Wave / Synth", "yoga_wellness": "Yoga & Wellness",
+                 "kids": "Kids & Family", "lectures": "Lectures & Talks", "tours": "Tours & Trips"}  # fmt: skip
 GENRE_PAGE_MIN = 3  # fewer upcoming events than this: no landing page (thin content)
 
 

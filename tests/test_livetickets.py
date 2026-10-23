@@ -53,3 +53,9 @@ def test_livetickets_listing_links() -> None:
         SITE + "cities/Germany_Berlin_Berlin.aspx",
         SITE + "performers/AC%20Milan.aspx",
     ]
+
+
+def test_livetickets_category_names():
+    assert livetickets.category_name("https://www.livetickets.co.il/Category1/CONCERTS.aspx") == "concerts"
+    assert livetickets.category_name("https://www.livetickets.co.il/Category2/SOCCER.aspx") == "soccer"
+    assert livetickets.category_name("https://www.livetickets.co.il/Category3/English%20Premier%20League.aspx") == "soccer"

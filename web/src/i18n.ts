@@ -164,6 +164,7 @@ export const STRINGS = {
       festival: "פסטיבלים", meetups: "מפגשים", culture: "תרבות", exhibitions: "תערוכות", workshops: "סדנאות",
       cinema: "קולנוע וסרטים", markets: "שווקים וקניות", food: "אוכל", environment: "סביבה", religious: "דת ומסורת",
       holidays: "חגים", sport: "ספורט", happy_hour: "האפי האוור",
+      theatre: "תיאטרון", kids: "ילדים ומשפחה", lectures: "הרצאות והעשרה", tours: "סיורים וטיולים", dance: "מחול",
     },
   },
   en: {
@@ -323,7 +324,8 @@ export type Strings = typeof STRINGS.he;
 const EN_GENRE_FIX: Record<string, string> = { rnb: "R&B", edm: "EDM", hip_hop: "Hip Hop", lgbt: "LGBTQ+", reggaeton_latin: "Reggaeton / Latin",
   hi_tech: "Hi-tech", classical_opera: "Classical / Opera", ai: "AI", cinema: "Cinema & Movies",
   software_dev: "Software development", cloud_devops: "Cloud & DevOps", web3: "Web3 & Blockchain", happy_hour: "Happy Hour",
-  dark_wave: "Dark Wave / Synth", yoga_wellness: "Yoga & Wellness" };
+  dark_wave: "Dark Wave / Synth", yoga_wellness: "Yoga & Wellness", kids: "Kids & Family", lectures: "Lectures & Talks",
+  tours: "Tours & Trips" };
 export function genreLabel(lang: Lang, g: string): string {
   if (lang === "he") return STRINGS.he.genre[g] ?? g;
   return EN_GENRE_FIX[g] ?? g.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());

@@ -16,14 +16,14 @@ import html as htmllib
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime
-from urllib.parse import urljoin
+from urllib.parse import unquote, urljoin
 
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import clean_str, to_decimal, zone
 from partylinks.scrapers.abroad import country_code, local_zone
-from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.base import BaseScraper, SourceSettings, gather_or_cancel
 
 HEBREW_MONTHS = {
     m: i
@@ -61,30 +61,40 @@ class LiveTicketsScraper(BaseScraper[LiveTicketsSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         listings = await self._listings()
         self.log.info("crawling %d listing pages", len(listings))
-        seen: set[str] = set()  # an event is on its performer's, city's and venue's pages
-        async for events in self.stream_isolated(listings, self._listing_events, label=lambda u: u):
-            for event in events:
-                if event.source_event_id not in seen:
-                    seen.add(event.source_event_id)
-                    yield event
+        # An event is on its performer's, city's and venue's pages; only some of those hang under a
+        # category page, so categories merge across pages before the event goes out.
+        # ponytail: events are held until the crawl ends (~2 min); stream per page if runs get long.
+        events: dict[str, ScrapedEvent] = {}
+        async for page_events in self.stream_isolated(list(listings), self._listing_events, label=lambda u: u):
+            for event in page_events:
+                kept = events.setdefault(event.source_event_id, event)
+                kept.source_genres = list(dict.fromkeys([*kept.source_genres, *listings[event.extra["listing"]]]))
+        for event in events.values():
+            event.extra.pop("listing")
+            yield event
 
-    async def _listings(self) -> list[str]:
-        """Performer, city and venue pages linked from the home page and its category pages."""
+    async def _listings(self) -> dict[str, list[str]]:
+        """Performer, city and venue pages linked from the home page and its category pages, with the
+        categories of the category pages that link them ("concerts", "soccer"...)."""
         home = self.settings.site_url + "/"
-        found = listing_links(await self.get_text(home), home)
-        categories = [u for u in found.values() if "/category" in u.lower()]
-        for page in await self._pages(categories):
-            found |= listing_links(page, self.settings.site_url + "/")
-        return [u for k, u in found.items() if "/category" not in k]
+        found = {k: (u, []) for k, u in listing_links(await self.get_text(home), home).items()}
+        categories = [u for u, _ in found.values() if "/category" in u.lower()]
+        for url, page in zip(categories, await self._pages(categories), strict=True):
+            category = category_name(url)
+            for key, link in listing_links(page, self.settings.site_url + "/").items():
+                found.setdefault(key, (link, []))[1].append(category)
+        return {u: cats for k, (u, cats) in found.items() if "/category" not in k}
 
     async def _pages(self, urls: list[str]) -> list[str]:
-        return [p async for p in self.stream_isolated(urls, self.get_text, label=lambda u: u)]
+        """Each page's HTML in the order given; a page that fails reads as empty."""
+        pages = dict(zip(urls, await gather_or_cancel(self.optional(u, self.get_text(u)) for u in urls), strict=True))
+        return [pages[u] or "" for u in urls]
 
     async def _listing_events(self, url: str) -> list[ScrapedEvent]:
-        s, events = self.settings, []
+        s, events, start = self.settings, [], url
         for _ in range(s.max_pages):
             page = await self.get_text(url)
-            events += parse_rows(page, s.site_url + s.event_path, self.timezone)
+            events += parse_rows(page, s.site_url + s.event_path, self.timezone, listing=start)
             next_link = _NEXT.search(page)
             if not next_link:
                 return events
@@ -107,7 +117,14 @@ def _text(fragment: str) -> str | None:
     return clean_str(re.sub(r"\s+", " ", htmllib.unescape(re.sub(r"<[^>]+>", " ", fragment))).strip(" |"))
 
 
-def parse_rows(page_html: str, event_url: str, timezone: str) -> list[ScrapedEvent]:
+def category_name(url: str) -> str:
+    """A category page's category: Category1/2 name the kind ("CONCERTS", "SOCCER"), Category3 a soccer league."""
+    if "/category3/" in url.lower():
+        return "soccer"
+    return unquote(url.rsplit("/", 1)[-1].removesuffix(".aspx")).casefold()
+
+
+def parse_rows(page_html: str, event_url: str, timezone: str, listing: str = "") -> list[ScrapedEvent]:
     """One event per row of a listing page; rows without an id, name or date are skipped."""
     events = []
     for row in _ROW.findall(page_html):
@@ -142,7 +159,8 @@ def parse_rows(page_html: str, event_url: str, timezone: str) -> list[ScrapedEve
                 country=country,
                 currency=CURRENCY_SIGNS.get(sign, "EUR"),
                 min_price=to_decimal(price.group(2).replace(",", "").strip()) if price else None,
-                extra={"date_not_final": True} if "מועד לא סופי" in row else {},
+                extra=({"listing": listing} if listing else {})
+                | ({"date_not_final": True} if "מועד לא סופי" in row else {}),
             )
         )
     return events

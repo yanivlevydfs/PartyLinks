@@ -153,6 +153,7 @@ def parse_event(
         source_event_id=str(raw["id"]),
         url=page_url_template.format(event_id=raw["id"]),
         title=title,
+        source_genres=["concert"],  # football is skipped: every kept event is a concert
         description=clean_str(raw.get("description")),
         start_at=start_at,
         city=clean_str(city) or None,

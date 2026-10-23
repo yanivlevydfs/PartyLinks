@@ -285,7 +285,7 @@ def test_words_in_passing_are_no_genres() -> None:
 
     # Real listings (October 2026) that were tagged by a word in passing.
     smurfs = genres("הדרדסים ההצגה", "הדמויות שכבשו את מסכי הטלוויזיה והקולנוע\nיזמים ומפיקים ראשיים: דוריס", ("הצגות ילדים",))
-    assert smurfs == []  # not cinema, not startups
+    assert smurfs == ["kids", "theatre"]  # its declared category; not cinema, not startups
     assert genres("נישואים גרעיניים", "קומדיה זוגית. יש להציג את הכרטיס האלקטרוני בכניסה") == []
     assert genres("מנגינה של סתיו", "התמונה נוצרה בבינה מלאכותית.") == []
     assert genres("Cold Brew workshop", "🇮🇱 עברית\nיואב, איש דאטה ביום") == []  # language, a day job

@@ -109,6 +109,7 @@ def parse_row(row: dict[str, Any], page: str | None, s: HatarbutSettings, source
         source_event_id=hashlib.sha1(f"{url}|{start.date()}".encode()).hexdigest()[:16],
         url=url,
         title=html.unescape(clean_str(row.get("title")) or ""),
+        source_genres=["הופעות ומוזיקה"],  # the calendar category read (series slugs are not genres)
         description=description,
         start_at=start,
         end_at=end if end and end > start else None,

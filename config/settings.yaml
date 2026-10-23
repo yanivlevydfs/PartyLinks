@@ -233,21 +233,35 @@ enrichment:
     software_dev: ["development"]  # not "פיתוח": Geektime also has "פיתוח קריירה"
     data: ["data"]
     cloud_devops: ["ענן", "cloud", "תשתיות"]
-    # Secret Tel Aviv's categories (its parties are told apart by their music genres).
-    live_show: ["live music", "livemusic", "international artists"]
-    festival: ["music festivals", "music festival"]
-    meetups: ["meetups", "community"]
-    culture: ["culture highlights", "culture"]
-    exhibitions: ["exhibitions", "exhibition"]
-    workshops: ["workshop", "workshops"]
+    # Secret Tel Aviv's categories (its parties are told apart by their music genres), widened with the
+    # category names other sources declare: municipal calendars (Tel Aviv, Holon, Haifa, Bina cities),
+    # box offices, guides (OGO tags, some in Russian), viagogo / abroad sellers.
+    live_show: ["live music", "livemusic", "international artists", "concert", "concerts", "other concerts",
+                "show", "shows", "performances", "music", "הופעות", "הופעה", "הופעות מוזיקה", "מופע", "מופעים",
+                "מוזיקה", "מוסיקה"]
+    festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль"]
+    meetups: ["meetups", "community", "meeting", "קהילה", "קהילות", "קהילתי", "קהילתית", "קהילתיים", "בקהילה",
+              "פעילות חברתית", "языковой клуб"]
+    culture: ["culture highlights", "culture", "תרבות ופנאי"]
+    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה"]
+    workshops: ["workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест"]
     cinema: ["sceening", "screening", "screenings", "קולנוע", "סינמטק"]
-    stand_up: ["comedy", "קומדיה"]
-    markets: ["shopping"]
-    food: ["food events", "food"]
-    environment: ["environmental"]
-    religious: ["religious"]
-    holidays: ["holidays", "halloween"]
-    sport: ["sport"]
+    stand_up: ["comedy", "קומדיה", "בידור", "מופעי בידור"]
+    markets: ["shopping", "יריד", "ירידים", "שוק", "שווקים", "ярмарка"]
+    food: ["food events", "food", "אוכל", "מזון"]
+    environment: ["environmental", "סביבה", "איכות הסביבה", "קיימות", "טבע", "גינות"]
+    religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат"]
+    holidays: ["holidays", "halloween", "חגים", "חג", "праздник"]
+    sport: ["sport", "sports", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
+            "מרוץ", "אופניים"]
+    yoga_wellness: ["wellness", "בריאות", "פילאטיס"]
+    classical_opera: ["classical"]
+    theatre: ["theater", "theatre", "musicals", "cast recordings", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר"]
+    kids: ["kids", "children", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
+           "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות"]
+    lectures: ["lecture", "lectures", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה"]
+    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים"]
+    dance: ["dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט"]
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
@@ -1026,6 +1040,26 @@ sources:
       - {host: misgav, venue_name: מרכז קלור משגב}
       - {host: eshkol, venue_name: מועצה אזורית אשכול}
       - {host: hof-ashkelon, venue_name: מועצה אזורית חוף אשקלון}
+      # Found through the municipal / regional council surveys (2026-10-23). Matnas tenants mix shows with courses (like eshkol).
+      - {host: www.htakko.co.il, venue_name: היכל התרבות עכו, city: עכו, rooms: true, category: מופעים}
+      - {host: hamesila.com, venue_name: המסילה - הבית ליצירה מוזיקלית, city: עכו, rooms: true, category: מוזיקה}
+      - {host: www.htyavne.co.il, venue_name: היכל התרבות יבנה, city: יבנה, category: מופעים}
+      - {host: yavne-matnasim, venue_name: "מתנ\"סים יבנה", city: יבנה, category: קהילה}
+      - {host: tarbut-nz, venue_name: היכל התרבות נס ציונה, city: נס ציונה, category: מופעים}
+      - {host: kono, venue_name: קריית התרבות קריית אונו, city: קריית אונו, skip_titles: ["תשלום על  חצי שעת אולפן / חדר חזרות - הצוללת האדומה"], category: קהילה}
+      - {host: nesher-matnasim, venue_name: היכל התרבות נשר, city: נשר, skip_titles: ["כניסה חד פעמית חדר כושר"], category: מופעים}
+      - {host: matnas8, venue_name: היכל התרבות קריית שמונה, city: קריית שמונה, category: קהילה}
+      - {host: matnaskm, venue_name: "מתנ\"ס קריית מלאכי", city: קריית מלאכי, skip_titles: ["כניסה מגרש טניס"], category: מופעים}
+      - {host: mama, venue_name: "מתנ\"סים מעלה אדומים", city: מעלה אדומים, skip_titles: ["קורסי שחיה ושיעורים פרטניים", "חוגגים יום הולדת בנינג'ה"], category: קהילה}
+      - {host: harish, venue_name: אולם תרבות חריש, city: חריש, category: קהילה}
+      - {host: hechal-ds, venue_name: היכל התרבות דרום השרון, city: נווה ירק, rooms: true, category: מופעים}
+      - {host: hagilboa, venue_name: אולם בית ציזלינג, city: עין חרוד מאוחד, rooms: true, category: מופעים}
+      - {host: beertuvia, venue_name: אודיטוריום באר טוביה, city: באר טוביה, category: מופעים}
+      - {host: glt, venue_name: מרכז תרבות גלילי, city: גבעת אבני, category: קהילה}
+      - {host: sng, venue_name: אולם דורות שער הנגב, city: דורות, rooms: true, category: מופעים}
+      - {host: yoav, venue_name: מועצה אזורית יואב, city: מועצה אזורית יואב, category: קהילה}  # shows in the villages: the hall names the village
+      - {host: lev-hasharon, venue_name: מועצה אזורית לב השרון, city: מועצה אזורית לב השרון, category: קהילה}
+      - {host: rgma, venue_name: מוזיאון רמת גן לאמנות ישראלית, city: רמת גן, rooms: true, skip_categories: ["כרטיסי כניסה"], category: אמנות}
 
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
@@ -1655,3 +1689,20 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 0.3
+
+  muzi:
+    # Muzi: community guide to concerts and shows across Israel (all cities). The event post type is not in
+    # wp-json, so the Yoast event sitemaps list every published event (~1,200; past ones are removed). Each
+    # page gives a MusicEvent JSON-LD (date, venue, city, performer), time and price from its details table,
+    # and the seller's link (Eventim, To-Mix, Comy...) kept as extra.purchase_url. Muzi sells nothing.
+    # robots.txt allows all but /wp-admin/ and /tag/.
+    enabled: true
+    cron: "29 5,17 * * *"
+    site_url: https://muzi.co.il
+    sitemap_path: /sitemap_index.xml
+    event_sitemap_prefix: /event-sitemap
+    event_path: /event/
+    max_events: 3000
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.5

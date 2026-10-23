@@ -78,6 +78,7 @@ def parse_item(item: dict[str, Any], events_url: str, timezone: str) -> ScrapedE
         source_event_id=event_id,
         url=ticket_url or events_url,
         title=title,
+        source_genres=["concert", "מוזיקה יהודית"],  # a Jewish / Hasidic music concert calendar
         start_at=datetime.combine(day, start_time, tzinfo=zone(timezone)),
         venue_name=venue,
         city=city,
