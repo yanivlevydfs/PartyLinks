@@ -562,3 +562,12 @@ def test_geocoder_takes_a_venue_point_only_from_the_same_city(tmp_path: Path) ->
     with db.session() as session:
         placed = {r.source_event_id: r.latitude for r in session.query(EventRow)}
     assert placed["rishon"] is None and placed["tlv2"] == 32.0790 and placed["hall"] is None
+
+
+def test_web_city_list_mirrors_the_config() -> None:
+    import re
+
+    ts = (Path(__file__).parents[1] / "web" / "src" / "i18n.ts").read_text(encoding="utf-8")
+    block = ts.split("export const CITIES")[1].split("};")[0]
+    web = dict(re.findall(r'^\s*"?([a-z-]+)"?: \{ he: "([^"]+)"', block, re.MULTILINE))
+    assert web == {c.key: c.he for c in Settings().enrichment.cities}
