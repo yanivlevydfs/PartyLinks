@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { useCategories, useEvents, type Params } from "./api";
 import { genreLabel } from "./i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "./store";
-import { Chip, label, sourceName, today, TZ, useT } from "./ui";
+import { Chip, label, sourceName, today, tomorrow, TZ, useT } from "./ui";
 
 // The one home-page filter: its state lives in the store, the API query comes from filterParams(),
 // and every landing page (/tonight, /genre/x, /city/x) only presets that same state.
@@ -14,19 +14,22 @@ export function filterParams(f: FilterState): Params {
     q: f.q.length >= 2 ? f.q : undefined,
     genre: f.genres,
     source: f.shops,
-    time_slot: f.slot ?? undefined,
-    // Tel Aviv: the target city, optionally narrowed to neighbourhoods. Other regions: their area key + a city.
-    in_target_city: f.region === "tel_aviv" ? "true" : undefined,
-    area: f.region === "tel_aviv" ? f.areas : f.region ? [f.region] : [],
-    city: f.region !== "tel_aviv" ? f.city ?? undefined : undefined,
+    time_slot: f.slots,
+    // Any of the regions (Tel Aviv and/or regions of the country); one region alone narrows to neighbourhoods or a city.
+    region: f.regions,
+    area: f.areas,
+    city: f.city ?? undefined,
     free_entry: f.freeOnly ? "true" : undefined,
     discount: f.discountOnly ? "true" : undefined,
     sold_out: f.hideSoldOut ? "false" : undefined,
-    ...(f.when === "tonight" ? { date: today() } : f.when === "weekend" ? { weekend: "true" } : f.when !== "all" ? { date: f.when } : {}),
+    ...(f.when === "tonight" ? { date: today() } : f.when === "weekend" ? { weekend: "true", date_to: weekAhead() } : f.when !== "all" ? { date: f.when } : {}),
   };
 }
 
-const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+// "Weekend" is this weekend (as the server's /weekend page), not every weekend ahead.
+const weekAhead = () => new Date(Date.parse(today() + "T12:00:00Z") + 7 * 864e5).toISOString().slice(0, 10) + "T23:59:59";
+
+export const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
 const MOBILE = "(max-width: 760px)";
 type Panel = "area" | "genre" | "shop" | "slot";
@@ -57,16 +60,16 @@ export function Filters() {
   // Same query as the grid below: shares its cache, so the sheet's "Show N" costs no request.
   const total = useEvents(filterParams(f)).data?.pages[0]?.total;
 
-  const extras = (f.region ? 1 : 0) + f.areas.length + (f.city ? 1 : 0) + f.genres.length + f.shops.length + (f.slot ? 1 : 0) + (f.hideSoldOut ? 1 : 0) + (f.discountOnly ? 1 : 0);
+  const extras = f.regions.length + f.areas.length + (f.city ? 1 : 0) + f.genres.length + f.shops.length + f.slots.length + (f.hideSoldOut ? 1 : 0) + (f.discountOnly ? 1 : 0);
   const dirty = extras > 0 || f.freeOnly || f.when !== "all";
   const clear = () => set({ ...DEFAULT_FILTERS, q: f.q, sort: f.sort });
 
   const [calOpen, setCalOpen] = useState(false);
-  const isDate = f.when !== "all" && f.when !== "tonight" && f.when !== "weekend";
+  const isDate = f.when !== "all" && f.when !== "tonight" && f.when !== "weekend" && f.when !== tomorrow();
   const counts = new Map((cats?.dates ?? []).map((d) => [d.value, d.events]));
   const day = (v: string, o: Intl.DateTimeFormatOptions) => new Date(v + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, ...o });
   const dateLabel = (v: string) => day(v, { weekday: "short", day: "numeric", month: "numeric" });
-  const whenLabel = f.when === "tonight" ? t.tonight : f.when === "weekend" ? t.weekend : dateLabel(f.when);
+  const whenLabel = f.when === "tonight" ? t.tonight : f.when === "weekend" ? t.weekend : f.when === tomorrow() ? t.tomorrow : dateLabel(f.when);
   const pickWhen = (when: string) => { set({ when }); setCalOpen(false); };
 
   const toggles = (
@@ -100,12 +103,12 @@ export function Filters() {
   const active = dirty && (
     <div className="f-active">
       {f.when !== "all" && <Pill onClear={() => set({ when: "all" })}>{whenLabel}</Pill>}
-      {f.region && <Pill onClear={() => set({ region: null, areas: [], city: null })}>{label(t.areas, f.region)}</Pill>}
+      {f.regions.map((r) => <Pill key={r} onClear={() => set({ regions: f.regions.filter((x) => x !== r), areas: [], city: null })}>{label(t.areas, r)}</Pill>)}
       {f.areas.map((a) => <Pill key={a} onClear={() => set({ areas: f.areas.filter((x) => x !== a) })}>{label(t.areas, a)}</Pill>)}
       {f.city && <Pill onClear={() => set({ city: null })}>{f.city}</Pill>}
       {f.genres.map((g) => <Pill key={g} onClear={() => set({ genres: f.genres.filter((x) => x !== g) })}>{genreLabel(lang, g)}</Pill>)}
       {f.shops.map((s) => <Pill key={s} onClear={() => set({ shops: f.shops.filter((x) => x !== s) })}>{sourceName(s)}</Pill>)}
-      {f.slot && <Pill onClear={() => set({ slot: null })}>{label(t.slots, f.slot)}</Pill>}
+      {f.slots.map((s) => <Pill key={s} onClear={() => set({ slots: f.slots.filter((x) => x !== s) })}>{label(t.slots, s)}</Pill>)}
       {f.freeOnly && <Pill onClear={() => set({ freeOnly: false })}>{t.freeOnly}</Pill>}
       {f.discountOnly && <Pill onClear={() => set({ discountOnly: false })}>{t.discountOnly}</Pill>}
       {f.hideSoldOut && <Pill onClear={() => set({ hideSoldOut: false })}>{t.hideSoldOut}</Pill>}
@@ -113,10 +116,10 @@ export function Filters() {
     </div>
   );
   const panels: [Panel, string, number][] = [
-    ["area", t.area, (f.region ? 1 : 0) + f.areas.length + (f.city ? 1 : 0)],
+    ["area", t.area, f.regions.length + f.areas.length + (f.city ? 1 : 0)],
     ["genre", t.genres, f.genres.length],
     ["shop", t.shop, f.shops.length],
-    ["slot", t.slot, f.slot ? 1 : 0],
+    ["slot", t.slot, f.slots.length],
   ];
 
   return (
@@ -124,6 +127,7 @@ export function Filters() {
       <FilterRow label={t.when} scroll>
         <Chip on={f.when === "all"} onClick={() => pickWhen("all")}>{t.all}</Chip>
         <Chip on={f.when === "tonight"} onClick={() => pickWhen("tonight")}>{t.tonight}</Chip>
+        <Chip on={f.when === tomorrow()} onClick={() => pickWhen(tomorrow())}>{t.tomorrow}</Chip>
         <Chip on={f.when === "weekend"} onClick={() => pickWhen("weekend")}>{t.weekend}</Chip>
         <button className={"chip f-drop cal-btn" + (isDate ? " on" : "") + (calOpen ? " open" : "")} aria-expanded={calOpen}
           onClick={() => setCalOpen(!calOpen)}>
@@ -209,10 +213,10 @@ export function Relax() {
   const set = useStore((s) => s.setFilters);
   const options: [string, Partial<FilterState>][] = [
     ...(f.freeOnly ? [[t.freeOnly, { freeOnly: false }] as [string, Partial<FilterState>]] : []),
-    ...(f.when !== "all" ? [[f.when === "tonight" ? t.tonight : f.when === "weekend" ? t.weekend : f.when.split("-").reverse().slice(0, 2).join("."), { when: "all" }] as [string, Partial<FilterState>]] : []),
+    ...(f.when !== "all" ? [[f.when === "tonight" ? t.tonight : f.when === "weekend" ? t.weekend : f.when === tomorrow() ? t.tomorrow : f.when.split("-").reverse().slice(0, 2).join("."), { when: "all" }] as [string, Partial<FilterState>]] : []),
     ...f.genres.map((g) => [genreLabel(lang, g), { genres: f.genres.filter((x) => x !== g) }] as [string, Partial<FilterState>]),
-    ...(f.slot ? [[label(t.slots, f.slot), { slot: null }] as [string, Partial<FilterState>]] : []),
-    ...(f.region ? [[label(t.areas, f.region), { region: null, areas: [], city: null }] as [string, Partial<FilterState>]] : []),
+    ...f.slots.map((s) => [label(t.slots, s), { slots: f.slots.filter((x) => x !== s) }] as [string, Partial<FilterState>]),
+    ...f.regions.map((r) => [label(t.areas, r), { regions: f.regions.filter((x) => x !== r), areas: [], city: null }] as [string, Partial<FilterState>]),
     ...f.shops.map((s) => [sourceName(s), { shops: f.shops.filter((x) => x !== s) }] as [string, Partial<FilterState>]),
     ...(f.discountOnly ? [[t.discountOnly, { discountOnly: false }] as [string, Partial<FilterState>]] : []),
     ...(f.hideSoldOut ? [[t.hideSoldOut, { hideSoldOut: false }] as [string, Partial<FilterState>]] : []),
@@ -252,10 +256,11 @@ function Rows({ only }: { only?: Panel }) {
   const show = (p: Panel) => !only || only === p;
 
   const regionKeys = new Set(cats?.regions?.map((r) => r.value));
-  // Under Tel Aviv: its neighbourhoods. Under another region: its cities.
-  const subAreas = f.region === "tel_aviv"
+  // Under Tel Aviv alone: its neighbourhoods. Under another region alone: its cities.
+  const one = f.regions.length === 1 ? f.regions[0] : null;
+  const subAreas = one === "tel_aviv"
     ? (cats?.areas ?? []).filter((a) => !regionKeys.has(a.value) && a.value !== "outside" && a.value !== "abroad")
-    : (cats?.cities ?? []).filter((c) => f.region && c.area === f.region);
+    : (cats?.cities ?? []).filter((c) => one && c.area === one);
   const genres = [...(cats?.genres ?? [])].sort((a, b) => b.events - a.events); // busiest first
   const shops = cats?.sources ?? []; // busiest first
 
@@ -263,20 +268,20 @@ function Rows({ only }: { only?: Panel }) {
     <>
       {show("area") && !!cats?.regions?.length && (
         <FilterRow label={t.area}>
-          <Chip on={!f.region} onClick={() => set({ region: null, areas: [], city: null })}>{t.allAreas}</Chip>
+          <Chip on={!f.regions.length} onClick={() => set({ regions: [], areas: [], city: null })}>{t.allAreas}</Chip>
           {cats.regions.map((r) => (
-            <Chip key={r.value} on={f.region === r.value}
-              onClick={() => set({ region: f.region === r.value ? null : r.value, areas: [], city: null })}>
+            <Chip key={r.value} on={f.regions.includes(r.value)}
+              onClick={() => set({ regions: toggle(f.regions, r.value), areas: [], city: null })}>
               {label(t.areas, r.value)} <small>{r.events}</small>
             </Chip>
           ))}
         </FilterRow>
       )}
 
-      {show("area") && f.region && subAreas.length > 1 && (
-        <FilterRow label={f.region === "tel_aviv" ? t.neighborhood : t.city}>
+      {show("area") && one && subAreas.length > 1 && (
+        <FilterRow label={one === "tel_aviv" ? t.neighborhood : t.city}>
           <Chip on={!f.areas.length && !f.city} onClick={() => set({ areas: [], city: null })}>{t.all}</Chip>
-          {subAreas.map((a) => f.region === "tel_aviv" ? (
+          {subAreas.map((a) => one === "tel_aviv" ? (
             <Chip key={a.value} on={f.areas.includes(a.value)} onClick={() => set({ areas: toggle(f.areas, a.value) })}>
               {label(t.areas, a.value)} <small>{a.events}</small>
             </Chip>
@@ -311,7 +316,7 @@ function Rows({ only }: { only?: Panel }) {
       {show("slot") && (
         <FilterRow label={t.slot}>
           {Object.entries(t.slots).map(([k, name]) => (
-            <Chip key={k} on={f.slot === k} onClick={() => set({ slot: f.slot === k ? null : k })}>{name}</Chip>
+            <Chip key={k} on={f.slots.includes(k)} onClick={() => set({ slots: toggle(f.slots, k) })}>{name}</Chip>
           ))}
         </FilterRow>
       )}
@@ -320,7 +325,7 @@ function Rows({ only }: { only?: Panel }) {
 }
 
 /** Month grid, Sunday first. A day glows by how many events it has; past days and days with none are disabled. */
-function Calendar({ value, counts, onPick }: { value: string; counts: Map<string, number>; onPick: (v: string) => void }) {
+export function Calendar({ value, counts, onPick }: { value: string; counts: Map<string, number>; onPick: (v: string) => void }) {
   const { t, lang } = useT();
   const now = today();
   const [month, setMonth] = useState(() => (/^\d{4}-\d\d-\d\d$/.test(value) ? value : now).slice(0, 7));

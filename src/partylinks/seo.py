@@ -325,16 +325,42 @@ def _website(cfg: Settings, lang: str) -> list[dict[str, Any]]:
 
 
 # --------------------------------------------------------------------------- pages
+def _where_to(session: Session, cfg: Settings, lang: str) -> list[tuple[str, str]]:
+    """The home page's own question, "where to go out?", answered from tonight's and this weekend's listings."""
+    he, qa = lang == "he", []
+    for when, ask in (("tonight", ("לאן יוצאים הערב?", "Where to go out tonight?")),
+                      ("weekend", ("לאן יוצאים בסוף השבוע?", "Where to go out this weekend?"))):  # fmt: skip
+        rows = _upcoming(session, *_when_where(when, cfg), limit=500)
+        if not rows:
+            continue
+        top = ", ".join(dict.fromkeys(r.title for r in rows[:5]))
+        genres = ", ".join(genre_label(g, lang) for g, _ in Counter(g for r in rows for g in r.genres or []).most_common(3))
+        qa.append((ask[0 if he else 1], (
+            f"יש {len(rows)} אירועים ב-{cfg.site.name}, למשל: {top}." + (f" הכי הרבה: {genres}." if genres else "")
+            + " בוחרים מתי, איפה (או לידי), ז׳אנר ושעה, ומקבלים רק את מה שמתאים."
+            if he else f"{cfg.site.name} lists {len(rows)} events, such as {top}." + (f" Most popular: {genres}." if genres else "")
+            + " Pick when, where (or near me), genre and time, and get only what fits."
+        )))  # fmt: skip
+    return qa
+
+
 def home_page(session: Session, cfg: Settings, lang: str) -> Page:
     t = TEXT[lang]
     rows = _upcoming(session)
+    faq = _where_to(session, cfg, lang)
+    faq_ld = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq],
+    }
+    faq_html = "".join(f"<h2>{escape(q)}</h2><p>{escape(a)}</p>" for q, a in faq)
     return Page(
         title=t["site_title"],
         description=t["site_desc"],
         path="/",
         lang=lang,
-        jsonld=[*_website(cfg, lang), _item_list(rows, cfg, t["upcoming"])],
-        body=f"<h1>{escape(t['site_title'])}</h1><p>{escape(t['site_desc'])}</p>{_landing_links(session, cfg, lang)}"
+        jsonld=[*_website(cfg, lang), _item_list(rows, cfg, t["upcoming"]), *([faq_ld] if faq else [])],
+        body=f"<h1>{escape(t['site_title'])}</h1><p>{escape(t['site_desc'])}</p>{faq_html}{_landing_links(session, cfg, lang)}"
         f"<h2>{escape(t['upcoming'])}</h2>" + _event_list_html(rows, cfg, lang),
     )
 

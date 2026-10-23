@@ -38,8 +38,16 @@ export function useMapEvents(params: Params = {}) {
 export const useEvent = (id: string) =>
   useQuery({ queryKey: ["event", id], queryFn: () => getJSON<EventDetail>(`/events/${encodeURIComponent(id)}`) });
 
-export const useCategories = () =>
-  useQuery({ queryKey: ["categories"], queryFn: () => getJSON<Categories>("/categories"), staleTime: 5 * 60_000 });
+/** Facet counts, of every upcoming event or (params) of those matching a filter. */
+export function useCategories(params: Params = {}) {
+  const qs = toQuery(params);
+  return useQuery({
+    queryKey: ["categories", qs],
+    queryFn: () => getJSON<Categories>("/categories" + (qs ? `?${qs}` : "")),
+    staleTime: 5 * 60_000,
+    placeholderData: (prev) => prev, // the next question keeps its options while its counts refresh
+  });
+}
 
 export const usePosts = (category?: string) =>
   useQuery({ queryKey: ["posts", category], queryFn: () => getJSON<PostList>(`/posts${category ? `?category=${encodeURIComponent(category)}` : ""}`) });

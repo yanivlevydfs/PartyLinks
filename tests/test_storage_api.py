@@ -182,7 +182,8 @@ def test_city_names_are_canonical() -> None:
     assert enricher.canonical_city("השרון", "השרון 14, תל אביב-יפו") == "תל אביב"
     assert enricher.canonical_city("השרון", None, "מייז תל אביב | MAZE TLV") == "תל אביב"
     assert enricher.canonical_city("6473303", None) is None  # zip code
-    assert enricher.canonical_city("Mitzpe Ramon", None) == "Mitzpe Ramon"  # unknown city kept
+    assert enricher.canonical_city("Mitzpe Ramon", None) == "מצפה רמון"  # any Israeli town (GeoNames)
+    assert enricher.canonical_city("Kalamata", None) == "Kalamata"  # unknown place kept
     assert enricher.canonical_city("Eilat", None) == "אילת"
 
 
@@ -573,3 +574,22 @@ def test_web_city_list_mirrors_the_config() -> None:
     block = ts.split("export const CITIES")[1].split("};")[0]
     web = dict(re.findall(r'^\s*"?([a-z-]+)"?: \{ he: "([^"]+)"', block, re.MULTILINE))
     assert web == {c.key: c.he for c in Settings().enrichment.cities}
+
+
+def test_region_filter_mixes_tel_aviv_with_regions_and_locate_finds_them(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    seed(settings, [
+        event("tlv", future, venue_name="Ezra Bar", address="Ezra 5, Tel Aviv"),
+        event("haifa", future, venue_name="Haifa Port Bar", address=None),
+        event("eilat", future, venue_name="Eilat Beach Bar", address="Eilat"),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda qs: {e["id"].split(":")[1] for e in client.get(f"/events?{qs}").json()["items"]}
+        assert ids("region=tel_aviv&region=haifa") == {"tlv", "haifa"}
+        assert ids("region=eilat") == {"eilat"}
+        # The facets follow the filters: the wizard's next question only offers what is left.
+        regions = {f["value"] for f in client.get("/categories?region=haifa").json()["regions"]}
+        assert regions == {"haifa"}
+        assert client.get("/locate?lat=32.08&lng=34.78").json()["region"] == "tel_aviv"
+        assert client.get("/locate?lat=32.80&lng=35.00").json() == {"region": "haifa", "city": "חיפה"}

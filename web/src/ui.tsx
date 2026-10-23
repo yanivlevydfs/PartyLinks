@@ -9,6 +9,7 @@ import type { EventSummary } from "./types";
 
 export const TZ = "Asia/Jerusalem";
 export const today = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ });
+export const tomorrow = () => new Date(Date.parse(today() + "T12:00:00Z") + 864e5).toISOString().slice(0, 10);
 
 export function useT(): { t: Strings; lang: Lang } {
   const lang = useStore((s) => s.lang);

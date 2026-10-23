@@ -30,6 +30,7 @@ from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.config import Settings, get_settings
 from partylinks.db import Database, DealChangeRow, EventRow, ImageRow, ScrapeRunRow, upcoming_filter
+from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.logs import setup_logging
 from partylinks.models import EntryType
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
@@ -669,6 +670,10 @@ def _register_routes(app: FastAPI) -> None:
         area: Annotated[
             list[str] | None, Query(max_length=MAX_LIST_PARAMS, description="Area of the city, e.g. south (repeatable)")
         ] = None,
+        region: Annotated[
+            list[str] | None,
+            Query(max_length=MAX_LIST_PARAMS, description="Region of the country, any-of: tel_aviv or a region key"),
+        ] = None,
         weekend: bool | None = None,
         on_date: Annotated[date | None, Query(alias="date", description="Local start date")] = None,
         upcoming: Annotated[bool, Query(description="Hide events that already ended")] = True,
@@ -731,6 +736,12 @@ def _register_routes(app: FastAPI) -> None:
             filters.append(EventRow.time_slot.in_(time_slot))
         if area:
             filters.append(EventRow.area.in_(area))
+        if region:
+            # Tel Aviv is the target city (its events carry neighbourhood areas); other regions are area keys.
+            any_of = [EventRow.area.in_([r for r in region if r != "tel_aviv"])]
+            if "tel_aviv" in region:
+                any_of.append(EventRow.in_target_city.is_(True))
+            filters.append(or_(*any_of))
         if weekend is not None:
             filters.append(EventRow.is_weekend.is_(weekend))
         if on_date:
@@ -915,18 +926,44 @@ def _register_routes(app: FastAPI) -> None:
         return FileResponse(path, media_type=media_type, headers=headers)
 
     @app.get("/categories", response_model=Categories, response_model_exclude_none=True, tags=["events"])
-    def categories(request: Request, session: SessionDep, upcoming: bool = True) -> Response:
-        return _cached(request, lambda: build_categories(request, session, upcoming), exclude_none=True)
+    def categories(
+        request: Request,
+        session: SessionDep,
+        filters: list[ColumnElement[bool]] = event_filters_dep,
+        upcoming: bool = True,
+    ) -> Response:
+        """Facet counts of the events matching the list's filters (none: every upcoming event)."""
+        return _cached(request, lambda: build_categories(request, session, filters, upcoming), exclude_none=True)
 
-    def build_categories(request: Request, session: Session, upcoming: bool) -> Categories:
+    @app.get("/locate", tags=["events"])
+    def locate(
+        request: Request,
+        lat: Annotated[float, Query(ge=-90, le=90)],
+        lng: Annotated[float, Query(ge=-180, le=180)],
+    ) -> dict[str, str | None]:
+        """Region (and canonical city, when inside one) of a point: "near me" on the home page."""
+        cfg: Settings = request.app.state.settings
+        here = (lat, lng)
+        city = min(
+            (c for c in cfg.enrichment.cities if c.center and meters(here, c.center) <= c.radius_m),
+            key=lambda c: meters(here, c.center),  # type: ignore[arg-type]
+            default=None,
+        )
+        if city and city.key == "tel-aviv":
+            return {"region": "tel_aviv", "city": None}
+        region = request.app.state.service.enricher.areas.region(None, None, None, lat, lng)
+        known = region not in (ABROAD_AREA, OUTSIDE_AREA)
+        return {"region": region if known else None, "city": city.he if city else None}
+
+    def build_categories(
+        request: Request, session: Session, filters: list[ColumnElement[bool]], upcoming: bool
+    ) -> Categories:
         # Only the facet columns (not descriptions/extra JSON); each real event counted once.
         query = select(
             EventRow.genres, EventRow.local_date, EventRow.day_of_week, EventRow.time_slot, EventRow.area,
             EventRow.group_entry_type, EventRow.venue_name, EventRow.city, EventRow.lineup, EventRow.event_types,
             EventRow.source, EventRow.in_target_city,
-        ).where(EventRow.is_primary.is_(True), EventRow.country.is_(None))  # fmt: skip
-        if upcoming:
-            query = query.where(upcoming_filter())
+        ).where(*filters)  # fmt: skip
         rows = session.execute(query).all()
 
         def facet(values: Callable[[Any], list[Any]]) -> list[FacetValue]:

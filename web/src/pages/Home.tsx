@@ -5,13 +5,15 @@ import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
 import { Card, EventGrid, Hero, useT, useTitle } from "../ui";
+import { Quiz } from "./Quiz";
 
 /** The landing URL that shows exactly these filters (/genre/techno, /city/tel-aviv, /tonight...), else "/". */
 export function landingPath(f: FilterState): string {
-  const rest = { ...f, q: "", sort: DEFAULT_FILTERS.sort, when: "all", genres: [], region: null, areas: [], city: null };
+  const rest = { ...f, q: "", sort: DEFAULT_FILTERS.sort, when: "all", genres: [], regions: [], areas: [], city: null };
   if (JSON.stringify(rest) !== JSON.stringify(DEFAULT_FILTERS)) return "/";
-  const where = f.region === "tel_aviv" && !f.areas.length && !f.city ? "tel-aviv"
-    : f.city && !f.areas.length ? Object.keys(CITIES).find((k) => CITIES[k].he === f.city) : !f.region && !f.areas.length ? "" : undefined;
+  const where = f.regions.length > 1 || f.areas.length ? undefined
+    : f.regions[0] === "tel_aviv" ? "tel-aviv"
+    : f.city ? Object.keys(CITIES).find((k) => CITIES[k].he === f.city) : !f.regions.length ? "" : undefined;
   const when = f.when === "all" ? "" : f.when === "tonight" || f.when === "weekend" ? f.when : undefined;
   if (where === undefined || when === undefined || f.genres.length > 1) return "/";
   if (where) return f.genres.length || when ? "/" : `/city/${where}`;
@@ -35,7 +37,10 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
     const { preset, setPreset, filters } = useStore.getState();
     setPreset(!!landing);
     if (!landing) {
-      if (preset) set({ ...DEFAULT_FILTERS, q: filters.q });
+      if (preset) {
+        set({ ...DEFAULT_FILTERS, q: filters.q });
+        useStore.getState().setQuizDone(false); // back from a landing page: ask again
+      }
       return;
     }
     set({
@@ -49,7 +54,7 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   // /city/:city: the city's region comes with the categories.
   const cityRegion = cityName && cats?.cities.find((c) => c.value === cityName.he)?.area;
   useEffect(() => {
-    if (cityName) set({ region: cityRegion ?? null, areas: [], city: cityRegion === "tel_aviv" ? null : cityName.he });
+    if (cityName) set({ regions: cityRegion ? [cityRegion] : [], areas: [], city: cityRegion === "tel_aviv" ? null : cityName.he });
   }, [cityName, cityRegion, set]);
   // Filters picked here move the address to their landing URL (techno: /genre/techno), so it can be shared.
   // Not on mount: a remount (back from an event) keeps the route it came with.
@@ -83,15 +88,32 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
     return () => clearTimeout(id);
   }, [q, set]);
 
+  // The plain home page asks "where to?" first; a search, a landing page or an answered quiz shows the list.
+  const quizDone = useStore((s) => s.quizDone);
+  const quiz = !landing && !f.q && !quizDone;
+  const again = () => {
+    set({ ...DEFAULT_FILTERS, sort: f.sort });
+    useStore.getState().setQuizDone(false);
+  };
+
   return (
     <>
-      <Hero title={title}>
+      <Hero title={quiz ? t.quiz.title : title}>
         <input className="search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.search} aria-label={t.search} />
       </Hero>
       <main className="wrap">
-        {!landing && !f.q && <Trending />}
-        <Filters />
-        <EventGrid params={filterParams(f)} empty={<Relax />} />
+        {quiz ? (
+          <>
+            <Quiz />
+            <Trending />
+          </>
+        ) : (
+          <>
+            {!landing && !f.q && <button className="quiz-again" onClick={again}>✨ {t.quiz.again}</button>}
+            <Filters />
+            <EventGrid params={filterParams(f)} empty={<Relax />} />
+          </>
+        )}
       </main>
     </>
   );

@@ -6,10 +6,10 @@ export interface Filters {
   q: string;
   when: string; // "all" | "tonight" | "weekend" | YYYY-MM-DD
   genres: string[];
-  slot: string | null;
-  region: string | null; // "tel_aviv" or a region of the country
-  areas: string[]; // Tel Aviv neighbourhoods, when region is tel_aviv
-  city: string | null; // a city of the region, when region is another one
+  slots: string[];
+  regions: string[]; // "tel_aviv" and/or regions of the country, any-of
+  areas: string[]; // Tel Aviv neighbourhoods, when Tel Aviv is the only region
+  city: string | null; // a city of the region, when one other region is the only one
   shops: string[]; // ticket sites (API ?source=)
   freeOnly: boolean;
   discountOnly: boolean;
@@ -18,7 +18,7 @@ export interface Filters {
 }
 
 export const DEFAULT_FILTERS: Filters = {
-  q: "", when: "all", genres: [], slot: null, region: null, areas: [], city: null, shops: [], freeOnly: false, discountOnly: false, hideSoldOut: false, sort: "start_at",
+  q: "", when: "all", genres: [], slots: [], regions: [], areas: [], city: null, shops: [], freeOnly: false, discountOnly: false, hideSoldOut: false, sort: "start_at",
 };
 
 interface State {
@@ -30,6 +30,9 @@ interface State {
   // Set by a landing page (/city/x, /genre/x...): its preset is dropped when the plain home page opens.
   preset: boolean;
   setPreset: (preset: boolean) => void;
+  // The home page's "where to?" questions were answered (or skipped) in this visit: show the results.
+  quizDone: boolean;
+  setQuizDone: (quizDone: boolean) => void;
 }
 
 export const useStore = create<State>()(
@@ -41,6 +44,8 @@ export const useStore = create<State>()(
       setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch } })),
       preset: false,
       setPreset: (preset) => set({ preset }),
+      quizDone: false,
+      setQuizDone: (quizDone) => set({ quizDone }),
     }),
     { name: "partylinks", partialize: (s) => ({ lang: s.lang }) },
   ),
