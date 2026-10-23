@@ -240,10 +240,16 @@ class Enricher:
         declared = " | ".join([*event.source_genres, *event.event_types]).lower()
         talk = self._talk is not None and self._talk.search(event.title.lower())
         text = f"{event.title}\n{event.description or ''}".lower() if self.settings.detect_genres_from_text and not talk else ""
+        for phrase in self.settings.text_ignore:
+            text = text.replace(phrase.lower(), " ")
         found = {genre for genre, pattern in self._genres.items() if pattern.search(declared)}
         # "tech house" is music, not the declared category "tech".
         found |= {genre for genre, pattern in self._declared.items() if pattern.search(declared.replace("tech house", ""))}
         from_text = {genre for genre, pattern in self._genres.items() if pattern.search(text)}
+        declared_only = set(self.settings.expand_genres(self.settings.declared_text_genres))
+        if not found & declared_only:
+            title = event.title.lower()
+            from_text -= {g for g in declared_only if g not in self._genres or not self._genres[g].search(title)}
         # A tech talk or conference ("Israeli startups", "the music industry's AI") has a subject, not a
         # music genre: its text is read only for the talk genres.
         talk_genres = set(self.settings.expand_genres(self.settings.talk_genres))

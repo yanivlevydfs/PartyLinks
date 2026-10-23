@@ -277,3 +277,21 @@ def test_tech_event_text_gives_tech_genres_not_music() -> None:
     assert genres("AI night", "", ["AI"]) == ["ai"]  # "ai" trusted only when declared
     assert "ai" not in genres("Rave", "AI generated visuals all night, techno", [])
     assert genres("מסיבה ישראלית", "להיטים ישראליים", []) == ["israeli", "mainstream"]
+
+
+def test_words_in_passing_are_no_genres() -> None:
+    def genres(title: str, description: str, declared: tuple[str, ...] = ()) -> list[str]:
+        return ENRICHER._detect_genres(make(title=title, description=description, source_genres=list(declared)))
+
+    # Real listings (October 2026) that were tagged by a word in passing.
+    smurfs = genres("הדרדסים ההצגה", "הדמויות שכבשו את מסכי הטלוויזיה והקולנוע\nיזמים ומפיקים ראשיים: דוריס", ("הצגות ילדים",))
+    assert smurfs == []  # not cinema, not startups
+    assert genres("נישואים גרעיניים", "קומדיה זוגית. יש להציג את הכרטיס האלקטרוני בכניסה") == []
+    assert genres("מנגינה של סתיו", "התמונה נוצרה בבינה מלאכותית.") == []
+    assert genres("Cold Brew workshop", "🇮🇱 עברית\nיואב, איש דאטה ביום") == []  # language, a day job
+    assert genres("Classico screening", "המשחק: דור רומנו, סול כהן רוזנברג") == []  # Sol is a name
+    # Tech from the title still counts; the description only for declared tech events.
+    assert "ai" in genres("בינה מלאכותית | היכרות עם מודל שפה", "")
+    assert "startups" in genres("Founders night", "startup founders meet", ("hi-tech",))
+    assert "electronic" in genres("Skazi", "מסיבה אלקטרונית עד הבוקר")
+    assert "stand_up" in genres("Comedy night", "", ("קומדיה",))  # comedy declared by the source

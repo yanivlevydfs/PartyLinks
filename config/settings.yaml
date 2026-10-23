@@ -145,7 +145,7 @@ enrichment:
     trance: ["trance", "psytrance", "psy trance", "psy", "goa", "full on", "fullon", "progressive trance",
              "forest", "טראנס", "פסיכדלי", "פסיכדלית", "גואה"]
     hip_hop: ["hip hop", "hiphop", "hip-hop", "rap", "trap", "drill", "היפ הופ", "היפהופ", "ראפ", "טראפ"]
-    rnb: ["r&b", "rnb", "r'n'b", "soul", "neo soul", "ר&ב", "סול"]
+    rnb: ["r&b", "rnb", "r'n'b", "soul", "neo soul", "ר&ב", "מוזיקת סול"]  # not "סול": a first name
     mainstream: ["mainstream", "commercial", "top 40", "top40", "hits", "מיינסטרים", "להיטים", "קומרשיאל"]
     pop: ["pop", "k-pop", "kpop", "פופ"]
     reggaeton_latin: ["reggaeton", "latin", "latino", "salsa", "bachata", "kizomba", "cumbia", "dembow",
@@ -153,7 +153,8 @@ enrichment:
     afro: ["afrobeats", "afrobeat", "afro beats", "amapiano", "afro", "אפרו", "אמאפיאנו"]
     dancehall_reggae: ["dancehall", "reggae", "dub", "דאנסהול", "רגאיי", "רגאי"]
     mizrahi: ["mizrahi", "eastern", "מזרחית", "מזרחי", "ים תיכוני", "ים תיכונית"]
-    israeli: ["israeli", "israeli artists", "ישראלית", "ישראלי", "עברית", "שירי ארץ ישראל"]
+    # Not "עברית": Secret Tel Aviv marks the language of every event with it.
+    israeli: ["israeli", "israeli artists", "ישראלית", "ישראלי", "שירי ארץ ישראל"]
     greek: ["greek", "יוונית", "יווני", "בוזוקי"]
     arabic: ["arabic", "arab", "ערבית", "ערבי"]
     disco_funk: ["disco", "nu disco", "nu-disco", "funk", "boogie", "דיסקו", "פאנק"]
@@ -170,13 +171,14 @@ enrichment:
     rock_indie: ["rock", "indie", "alternative", "metal", "metalcore", "punk", "grunge", "רוק", "אינדי", "אלטרנטיבי",
                  "מטאל", "פאנק רוק", "גראנג'"]
     dark_wave: ["dark wave", "darkwave", "new wave", "post punk", "post-punk", "synthwave", "synth wave", "dark synth",
-                "ebm", "dark electro", "industrial", "goth", "gothic", "דארק ווייב", "ניו ווייב", "פוסט פאנק", "גותי"]
+                "ebm", "dark electro", "goth", "דארק ווייב", "ניו ווייב", "פוסט פאנק"]  # not "gothic": costumes
     jazz: ["jazz", "swing", "blues", "ג'אז", "גאז", "סווינג", "בלוז"]
     world_balkan: ["balkan", "world music", "ethnic", "gypsy", "folk", "בלקן", "אתני", "מוזיקת עולם", "פולק"]
     # Not "concert": Selector labels every party "Concert".
     live_show: ["live show", "liveshow", "live shows", "live band", "הופעה חיה", "מופע חי", "מופעי לייב"]
     lgbt: ["lgbt", "lgbtq", "gay", "queer", "pride", "drag", "להט\"ב", "גאווה", "דראג"]
-    stand_up: ["stand up", "standup", "stand-up", "comedy", "סטנדאפ", "קומדיה"]
+    # Not "comedy" / "קומדיה" in text: theatre plays are comedies too (declared below).
+    stand_up: ["stand up", "standup", "stand-up", "סטנדאפ"]
     karaoke: ["karaoke", "קריוקי"]
     yoga_wellness: ["yoga", "ecstatic dance", "meditation", "breathwork", "sound healing", "cacao ceremony", "יוגה",
                     "אקסטטיק", "מדיטציה", "נשימה מעגלית", "טקס קקאו"]
@@ -205,8 +207,8 @@ enrichment:
                       "recital", "רסיטל", "string quartet", "רביעיית מיתרים", "mozart", "מוצרט", "beethoven", "בטהובן"]
     # Films and screenings. Not plain "סרט" / "film" (mentioned in passing) or "cinema" / "סינמה" (Cinema
     # City also hosts shows).
-    cinema: ["movie night", "film screening", "film festival", "drive in", "drive-in", "קולנוע",
-             "סינמטק", "הקרנת סרט", "הקרנת הסרט", "פסטיבל סרטים", "דרייב אין",
+    # Not plain "קולנוע" in text ("מסכי הטלוויזיה והקולנוע"): cinema sources declare it (below).
+    cinema: ["movie night", "film screening", "film festival", "drive in", "drive-in", "הקרנת סרט", "הקרנת הסרט", "פסטיבל סרטים", "דרייב אין",
              "דרייב-אין", "ערב סרט", "ערב סרטים"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
@@ -224,7 +226,8 @@ enrichment:
     culture: ["culture highlights", "culture"]
     exhibitions: ["exhibitions", "exhibition"]
     workshops: ["workshop", "workshops"]
-    cinema: ["sceening", "screening", "screenings"]
+    cinema: ["sceening", "screening", "screenings", "קולנוע", "סינמטק"]
+    stand_up: ["comedy", "קומדיה"]
     markets: ["shopping"]
     food: ["food events", "food"]
     environment: ["environmental"]
@@ -240,10 +243,20 @@ enrichment:
     hip_hop: [rnb]
     rnb: [hip_hop]
   detect_genres_from_text: true
+  # Small print that names a genre word in passing, removed from the text before genres are read.
+  text_ignore: ["כרטיס אלקטרוני", "כרטיסים אלקטרוניים", "הכרטיס האלקטרוני", "הכרטיסים האלקטרוניים",
+                "בכרטיס האלקטרוני", "דואר אלקטרוני", "בדואר אלקטרוני", "הדואר האלקטרוני", "בדואר האלקטרוני",
+                "כתובת דואר אלקטרוני", "תשלום אלקטרוני", "חתימה אלקטרונית", "ארנק אלקטרוני",
+                "נוצרה בבינה מלאכותית", "נוצרה באמצעות בינה מלאכותית", "נוצר בבינה מלאכותית",
+                "נוצר באמצעות בינה מלאכותית", "בעזרת בינה מלאכותית", "ועובדה באמצעות בינה מלאכותית"]
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
   # talks: their text is read only for these genres.
   talk_genres: [hi_tech, conference, cinema]
+  # Hi-tech and its sub-fields are read from the description only for events their source declares
+  # hi-tech (elsewhere "יזמים" are a show's producers and "בינה מלאכותית" made the artwork); other
+  # events take them from the title alone ("בינה מלאכותית | היכרות עם מודל שפה").
+  declared_text_genres: [hi_tech]
   talk_keywords: ["הרצאה", "הרצאות", "lecture", "סדנה", "סדנת", "workshop", "קפה דעת"]
   # A ticket tier named with one of these and priced 0 is treated as free entry.
   # DJ / performer extraction from descriptions. A line matching a header keyword
