@@ -49,6 +49,12 @@ def sniff_image_type(data: bytes) -> str | None:
 PERSIST_CHUNK = 50
 
 
+def _relative_path(source: str, url: str, content_type: str) -> str:
+    """``<source>/<sha1(url)>.<ext>``: files are named by URL, so listings sharing a flyer share its file."""
+    extension = mimetypes.guess_extension(content_type) or Path(httpx.URL(url).path).suffix or ".img"
+    return f"{source}/{hashlib.sha1(url.encode()).hexdigest()}{extension}"
+
+
 def _chunks[X](items: list[X], size: int) -> Iterable[list[X]]:
     for start in range(0, len(items), size):
         yield items[start : start + size]
@@ -141,12 +147,46 @@ class MediaStore:
         if self.settings.storage == "database":
             row["data"] = data
         else:
-            extension = mimetypes.guess_extension(content_type) or Path(httpx.URL(url).path).suffix or ".img"
-            row["local_path"] = f"{source}/{hashlib.sha1(url.encode()).hexdigest()}{extension}"
-            target = self.path_for(row["local_path"])
-            target.parent.mkdir(parents=True, exist_ok=True)
-            await asyncio.to_thread(target.write_bytes, data)
+            row["local_path"] = _relative_path(source, url, content_type)
+            await asyncio.to_thread(self._write, row["local_path"], data)
         return row
+
+    def _write(self, relative: str, data: bytes) -> None:
+        target = self.path_for(relative)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+
+    def move_to_files(self, batch: int = 200, reclaim_every: int = 10) -> int:
+        """With ``storage: filesystem``, move artwork still kept in the database to files, a batch at
+        a time (each file is written before its BLOB is cleared, so a restart resumes where it
+        stopped), and give the freed pages back to the disk as it goes. Returns the images moved."""
+        if self.settings.storage != "filesystem":
+            return 0
+        moved = batches = 0
+        while True:
+            with self.db.session() as session:
+                rows = session.execute(
+                    select(ImageRow.id, ImageRow.url, ImageRow.content_type, ImageRow.data, EventRow.source)
+                    .join(EventRow)
+                    .where(ImageRow.data.is_not(None))
+                    .limit(batch)
+                ).all()
+                if not rows:
+                    break
+                updates = []
+                for row in rows:
+                    relative = _relative_path(row.source, row.url, row.content_type or "")
+                    self._write(relative, row.data)
+                    updates.append({"id": row.id, "local_path": relative, "data": None})
+                bulk_update_by_id(session, ImageRow, updates)
+            moved, batches = moved + len(rows), batches + 1
+            if batches % reclaim_every == 0:
+                log.info("artwork: %d images moved from the database to files", moved)
+                self.db.reclaim_space()
+        if moved:
+            self.db.reclaim_space()
+            log.info("artwork: done, %d images moved from the database to files", moved)
+        return moved
 
     async def _fetch(self, client: httpx.AsyncClient, url: str) -> tuple[bytes, str]:
         async with client.stream("GET", url) as response:

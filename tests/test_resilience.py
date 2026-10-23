@@ -286,3 +286,23 @@ def test_refused_proxy_ip_moves_to_the_next_proxy() -> None:
 
     assert asyncio.run(run()) == 200
     assert seen[:2] == ["http://a:1", "http://b:2"]
+
+
+def test_artwork_in_the_database_moves_to_files_and_is_still_served(tmp_path: Path) -> None:
+    settings, db = db_for(tmp_path)
+    with db.session() as session:
+        upsert_events(session, [event("a", images=["https://img.example/a.jpg", "https://img.example/b.png"])])
+        session.execute(
+            text("UPDATE event_images SET data = :d, content_type = 'image/jpeg', downloaded_at = CURRENT_TIMESTAMP"),
+            {"d": b"\xff\xd8\xffjpeg"},
+        )
+    settings.media.storage = "filesystem"
+    media = MediaStore(settings.media, db)
+    assert media.move_to_files(batch=1) == 2  # one per batch: resumes after a restart
+    assert media.move_to_files() == 0
+    with db.session() as session:
+        rows = session.execute(text("SELECT id, data, local_path FROM event_images")).all()
+    assert all(data is None and path and media.path_for(path).read_bytes() == b"\xff\xd8\xffjpeg" for _, data, path in rows)
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        served = client.get(f"/images/{rows[0][0]}")
+    assert served.status_code == 200 and served.content == b"\xff\xd8\xffjpeg"

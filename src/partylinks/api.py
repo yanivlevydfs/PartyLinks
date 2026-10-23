@@ -414,9 +414,13 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
         app.state.settings, app.state.db, app.state.service, app.state.scheduler = settings, db, service, scheduler
         app.state.tasks = set()
         # Map coordinates for address-only events; network lookups run in the background.
-        geocoding = asyncio.create_task(asyncio.to_thread(service.geocode))
-        app.state.tasks.add(geocoding)
-        geocoding.add_done_callback(app.state.tasks.discard)
+        # Artwork kept in the database moves to files once storage is "filesystem" (a big file is a
+        # slow one: every query reads through the images).
+        jobs: list[Callable[[], object]] = [service.geocode, service.media.move_to_files]
+        for job in jobs:
+            task = asyncio.create_task(asyncio.to_thread(job))
+            app.state.tasks.add(task)
+            task.add_done_callback(app.state.tasks.discard)
         if scheduler:
             scheduler.start()
         try:

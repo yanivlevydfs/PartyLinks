@@ -471,7 +471,9 @@ retention:
 # `download` is on and kept either inside the database (BLOB in event_images) or on disk.
 media:
   download: true
-  storage: database          # database | filesystem
+  # filesystem: files on the volume keep the database small (and fast); artwork still in the
+  # database moves to files at startup.
+  storage: filesystem        # database | filesystem
   directory: data/media      # used when storage = filesystem
   max_bytes: 15000000
   allowed_content_types: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]
