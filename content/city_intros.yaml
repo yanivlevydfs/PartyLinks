@@ -1,0 +1,83 @@
+# Intro paragraph shown at the top of each /city/<key> page, read by src/partylinks/seo.py.
+# One entry per key in config/settings.yaml enrichment.cities, Hebrew (he) and English (en), plain text.
+tel-aviv:
+  he: "תל אביב היא עיר שלא נגמרת בה התוכנית: מועדונים בדרום העיר שפתוחים עד הבוקר, ברים סביב רוטשילד ופלורנטין, ויפו והנמל לערבים רגועים יותר. לצד המסיבות יש כאן גם את רוב הבמות הגדולות בארץ, מהבארבי והשבלול ועד הקאמרי, הבימה, בית ליסין וגשר, והרבה ערבי סטנדאפ כמעט בכל לילה בשבוע."
+  en: "Tel Aviv is the city where the night has no fixed end: clubs in the south that run until morning, bars around Rothschild and Florentin, and Jaffa and the port for slower evenings. It also holds most of the country's big stages, from Barby and Shablul to the Cameri, Habima, Beit Lessin and Gesher theatres, plus stand-up comedy almost every night of the week."
+jerusalem:
+  he: "בירושלים הלילה מתחיל בשוק מחנה יהודה, שהסמטאות שלו מתמלאות בברים אחרי שהדוכנים נסגרים, וממשיך למרכז העיר. רוב ההופעות וההצגות מתקיימות בתיאטרון ירושלים ובבית אבי חי, והמופעים הגדולים בפיס ארנה. כדאי לזכור ששישי בערב שקט כאן יותר מבערים אחרות, ולכן חמישי ומוצאי שבת הם הלילות העמוסים."
+  en: "In Jerusalem the night starts at Mahane Yehuda market, whose alleys fill with bars once the stalls close, and carries on into the city centre. Most shows and plays happen at the Jerusalem Theatre and Beit Avi Chai, with the biggest concerts at Pais Arena. Friday night is quieter here than elsewhere, so Thursday and Saturday night are the busy ones."
+haifa:
+  he: "חיפה בנויה על ההר, אבל הבילוי שלה מתרכז למטה: העיר התחתית ליד הנמל, והמושבה הגרמנית עם המסעדות והברים לאורך השדרה. תיאטרון חיפה ומרכז רפפורט מארחים את רוב ההצגות וההופעות, והקהל הסטודנטיאלי של הטכניון והאוניברסיטה נותן לעיר קצב משלה."
+  en: "Haifa is built on a mountain, but its going-out happens down below: the downtown by the port, and the German Colony with restaurants and bars along the boulevard. Haifa Theatre and the Rappaport Center host most of the plays and concerts, and students from the Technion and the university give the city its own rhythm."
+kfar-saba:
+  he: "בכפר סבא רוב הערבים יוצאים מהיכל התרבות ומהאודיטוריום העירוני, שמארחים הצגות של התיאטראות הגדולים, מופעי סטנדאפ, שירה בציבור וסדרת ג׳אז קבועה. זו עיר שמתאימה לערב מתוכנן מראש, הופעה טובה וחזרה הביתה בלי נסיעה לתל אביב."
+  en: "Most nights out in Kfar Saba start at the Heichal HaTarbut and the municipal auditorium, which host productions from the big theatre companies, stand-up, sing-along evenings and a regular jazz series. It is a city for a planned evening: a good show, then home without the drive to Tel Aviv."
+herzliya:
+  he: "הרצליה מציעה שני עולמות: היכל אמנויות הבמה, עם קונצרטים, מחול, הצגות ומופעי מחווה לאורך כל העונה, וזאפה הרצליה להופעות קרובות יותר לקהל. מי שמחפש בר או מסעדה לפני או אחרי, ימצא אותם בעיקר במרינה ובהרצליה פיתוח."
+  en: "Herzliya offers two worlds: the Herzliya Performing Arts Center, with concerts, dance, theatre and tribute shows all season, and Zappa Herzliya for more intimate gigs. For a bar or dinner before or after, most people head to the marina and Herzliya Pituach."
+raanana:
+  he: "רעננה היא עיר של תרבות קהילתית עשירה: היכל התרבות יד לבנים והמשכן למוסיקה ואמנויות מארחים הופעות אקוסטיות, סטנדאפ, הרצאות מוזיקליות והקרנות טרום בכורה. רחוב אחוזה הוא הציר המרכזי לבתי קפה וברים, וחלק מהאירועים בעיר מיועדים גם למשפחות ולילדים."
+  en: "Ra'anana has a rich community culture scene: the Yad Lebanim cultural centre and the Music and Arts Center host acoustic gigs, stand-up, musical lectures and preview screenings. Ahuza Street is the main strip for cafes and bars, and a good share of the city's events are aimed at families and kids too."
+hod-hasharon:
+  he: "בהוד השרון האירועים קטנים ומקומיים: בית מקומי לתרבות ומרכז האמנויות הרב תחומי מארחים ערבי סטנדאפ, הופעות וסדנאות, ויש גם הרבה פעילות לגיל הרך. מי שמחפש ערב קליל קרוב לבית ימצא כאן את מה שצריך, ולמסיבות גדולות יותר כפר סבא ותל אביב קרובות."
+  en: "Events in Hod HaSharon are small and local: the Beit Mekomi culture house and the multidisciplinary arts centre host stand-up nights, gigs and workshops, along with plenty for young children. It suits a light evening close to home; for bigger nights, Kfar Saba and Tel Aviv are a short drive away."
+ramat-hasharon:
+  he: "רמת השרון היא עיר שקטה, והתרבות בה מתרכזת בבית יד לבנים, עם אולם גולן ואולם המחתרת, ובספריות ובגלריה העירונית. רוב הערבים כאן הם הרצאות, הופעות קטנות ומפגשים קהילתיים, ותל אביב והרצליה נמצאות במרחק נסיעה קצרה למי שרוצה להמשיך."
+  en: "Ramat HaSharon is a quiet town whose culture centres on Beit Yad Lebanim, with its Golan and HaMachteret halls, plus the libraries and the municipal gallery. Most evenings here are talks, small concerts and community gatherings, and Tel Aviv and Herzliya are close by for anyone who wants to keep going."
+netanya:
+  he: "נתניה יושבת על צוק מעל הים, והטיילת שלה היא חלק מכל ערב בעיר. היכל התרבות העירוני מארח מופעי זמר ישראלי, נוסטלגיה, מחול והצגות, ומוזיאון נתניה מציע ערבים אחרים לגמרי. העיר מושכת קהל מגוון, כולל הרבה דוברי צרפתית ואנגלית, וזה מורגש גם בהיצע."
+  en: "Netanya sits on a cliff above the sea, and its promenade is part of any evening here. The municipal Heichal HaTarbut hosts Israeli song nights, nostalgia shows, dance and theatre, while the Netanya Museum offers something quite different. The city draws a mixed crowd, including many French and English speakers, and the listings reflect it."
+petah-tikva:
+  he: "פתח תקווה היא עיר גדולה עם סצנת סטנדאפ פעילה: קומדי בר בדרינק פוינט, תיאטרון המסילה ואולם גולדה מארחים קומיקאים לאורך כל השבוע. להצגות ולהופעות הגדולות רבים נוסעים למרכז הבמה בגני תקווה הסמוכה, ובאזור התעשייה של העיר מתקיימות מדי פעם גם מסיבות."
+  en: "Petah Tikva is a big city with an active stand-up scene: the comedy bar at Drink Point, the HaMesila theatre and Golda hall host comedians all week. For big plays and concerts many head to Merkaz HaBama in neighbouring Ganei Tikva, and the odd party turns up in the city's industrial zone."
+ramat-gan:
+  he: "רמת גן צמודה לתל אביב, אבל יש לה במות משלה: תיאטרון רמת גן, תיאטרון ראסל ותיאטרון היהלום מארחים הופעות, סטנדאפ והצגות ילדים, ובבלייקר בייקרי יש ערבי סטנדאפ קבועים. הרבה מהאירועים בעיר הם קהילתיים ומשפחתיים, ולילה מאוחר יותר ממשיכים בדרך כלל לתל אביב."
+  en: "Ramat Gan borders Tel Aviv but keeps its own stages: the Ramat Gan, Russell and Diamond theatres host concerts, stand-up and kids' shows, and Blaker Bakery runs regular comedy nights. Much of what happens here is community and family oriented, and late nights usually continue into Tel Aviv."
+ashdod:
+  he: "אשדוד היא עיר חוף גדולה עם חיי תרבות שלא תמיד מקבלים את תשומת הלב שמגיעה להם: מוזיאון אשדוד לאמנות במרכז מונארט, המוזיאון לתרבות הפלשתים ואולם דיונה. הזמר הישראלי והים־תיכוני מוביל כאן, והעיר היא גם הבית של התזמורת האנדלוסית הישראלית."
+  en: "Ashdod is a large coastal city whose cultural life rarely gets the attention it deserves: the Ashdod Art Museum at the Monart centre, the Museum of Philistine Culture and the Diona hall. Israeli and Mediterranean music lead the bill, and the city is also home to the Israeli Andalusian Orchestra."
+ashkelon:
+  he: "באשקלון רוב ההופעות מתקיימות בהיכל התרבות העירוני, עם הרבה סטנדאפ, זמר ישראלי ומוזיקה מזרחית. הים והמרינה הם הרקע לערבי קיץ, ובחודשים החמים העיר מתעוררת סביב החוף."
+  en: "In Ashkelon most shows take place at the municipal Heichal HaTarbut, with plenty of stand-up, Israeli song and Mizrahi music. The sea and the marina set the scene for summer evenings, and in the warm months the city comes alive around the beach."
+eilat:
+  he: "אילת היא עיר נופש, והלילה שלה בנוי סביב המלונות, הטיילת והחוף. מופעים גדולים מגיעים לאולמות המלונות, כמו תיאטרון ישרוטל, ובעונה יש גם מסיבות וערבי מוזיקה ליד הים. כדאי לבדוק מה קורה בתאריכים של החופשה לפני שמגיעים."
+  en: "Eilat is a resort town, and its nightlife is built around the hotels, the promenade and the beach. Big shows play the hotel halls such as the Isrotel Theatre, and in season there are parties and music nights by the sea. Check what is on for your holiday dates before you arrive."
+rishon-lezion:
+  he: "ראשון לציון היא אחת הערים הגדולות בארץ, והיכל התרבות שלה הוא אחד העמוסים: קונצרטים סימפוניים, מחול, מחזות זמר ומופעי מחווה לאמנים מכל התקופות. האודיטוריום העירוני מארח הרצאות וערבי שירה עברית, ובמתחם לאגו מתקיימים כנסים ואירועים גדולים."
+  en: "Rishon LeZion is one of Israel's largest cities, and its Heichal HaTarbut is among the busiest: symphony concerts, dance, musicals and tribute shows to artists of every era. The municipal auditorium hosts talks and Hebrew song evenings, and the Lago complex holds conferences and large events."
+beer-sheva:
+  he: "באר שבע היא עיר סטודנטים, ואוניברסיטת בן גוריון קובעת לא מעט מהקצב שלה. תיאטרון באר שבע הוא הבמה המרכזית בעיר, והעיר העתיקה ומועדונים כמו הפורום הם המקום לבילוי מאוחר. גם כנסי הייטק ואירועי חדשנות מתקיימים כאן יותר ויותר."
+  en: "Be'er Sheva is a student city, and Ben-Gurion University sets much of its pace. The Be'er Sheva Theatre is the main stage, while the Old City and clubs like the Forum are where late nights happen. Tech conferences and innovation events are increasingly part of the mix too."
+holon:
+  he: "חולון ידועה בזכות התרבות שלה לילדים ולמשפחות, אבל תיאטרון חולון מארח גם הופעות למבוגרים: סטנדאפ, ערבי מוזיקה ערבית ויוונית ומופעי זמר. בפורים העיר מתמלאת בעדלאידע המפורסמת שלה, ושאר השנה היא מקום טוב להופעה במרחק קצר מתל אביב."
+  en: "Holon is known for its culture for kids and families, but Holon Theatre also hosts shows for adults: stand-up, Arabic and Greek music nights and Israeli song evenings. At Purim the city fills up for its famous Adloyada parade, and the rest of the year it is a good spot for a show a short ride from Tel Aviv."
+bat-yam:
+  he: "בבת ים רוב הערבים יוצאים מהיכל התרבות על שם יהושע שגיא, שמארח סטנדאפ, מופעי נוסטלגיה, פופ וזמר ישראלי. הטיילת שלאורך החוף היא מקום טוב לפתוח בו ערב קיץ, ותל אביב ויפו ממש מעבר לפינה."
+  en: "Most nights out in Bat Yam start at the Yehoshua Sagi Heichal HaTarbut, which hosts stand-up, nostalgia shows, pop and Israeli song. The seafront promenade is a good place to begin a summer evening, and Tel Aviv and Jaffa are right next door."
+givatayim:
+  he: "גבעתיים קטנה וצפופה, וצמודה לתל אביב עד כדי כך שקשה לדעת איפה עוברים מעיר לעיר. כורזין ואולמות העירייה מארחים סטנדאפ והופעות קטנות, ורחוב כצנלסון הוא הציר של בתי הקפה והמסעדות. לבילוי מאוחר רוב התושבים פשוט חוצים לתל אביב."
+  en: "Givatayim is small, dense and so close to Tel Aviv that it is hard to tell where one city ends. Korazin and the municipal halls host stand-up and small concerts, and Katznelson Street is the strip for cafes and restaurants. For late nights most residents simply cross into Tel Aviv."
+rehovot:
+  he: "ברחובות כמעט הכל קורה בבית העם, שמארח סטנדאפ, קונצרטים קלאסיים, זמר ישראלי ומוזיקה ערבית לאורך כל העונה. זו עיר אקדמית, בזכות מכון ויצמן והפקולטה לחקלאות, והקהל שלה מגוון בהתאם."
+  en: "In Rehovot nearly everything happens at Beit HaAm, which hosts stand-up, classical concerts, Israeli song and Arabic music throughout the season. It is an academic town, thanks to the Weizmann Institute and the Faculty of Agriculture, and its audiences are just as varied."
+ness-ziona:
+  he: "נס ציונה היא עיר קטנה, והבמה המרכזית שלה היא המשכן לאומנויות, עם ערבי סטנדאפ והופעות חיות. לבילוי גדול יותר ראשון לציון ורחובות קרובות מאוד, אבל לערב הופעה רגוע אין סיבה לצאת מהעיר."
+  en: "Ness Ziona is a small city whose main stage is the Mishkan arts centre, with stand-up nights and live music. Rishon LeZion and Rehovot are very close for bigger nights out, but for a relaxed evening at a show there is no need to leave town."
+modiin:
+  he: "מודיעין היא עיר צעירה עם קהל משפחתי, והיכל התרבות בעמק דותן הוא הלב התרבותי שלה, עם סדרת ג׳אז, סטנדאפ, קלאסי וזמר ישראלי. אולם עינן בקניון עזריאלי מוסיף הופעות והצגות, ומועדון הגריי מביא לעיר גם מסיבות."
+  en: "Modi'in is a young city with a family crowd, and the Heichal HaTarbut on Emek Dotan is its cultural heart, with a jazz series, stand-up, classical and Israeli song. The Einan hall in the Azrieli mall adds concerts and plays, and the Gray club brings parties to town as well."
+yehud:
+  he: "יהוד היא עיר קטנה ליד נתב״ג, והאירועים בה הם בעיקר קהילתיים, עם מפגשי טכנולוגיה וסדנאות במייקלאב, מרכז החדשנות העירוני. לבילוי לילי רוב התושבים נוסעים לפתח תקווה, לרמת גן או לתל אביב."
+  en: "Yehud is a small town next to Ben Gurion Airport, and its events are mostly community ones, with tech meetups and workshops at MakeLab, the municipal innovation lab. For a night out most residents head to Petah Tikva, Ramat Gan or Tel Aviv."
+lod:
+  he: "לוד היא עיר מעורבת של יהודים וערבים, עם עיר עתיקה והיסטוריה ארוכה, וזה מורגש גם בבמה: היכל התרבות לוד מארח זמר ישראלי, סטנדאפ, מוזיקה יוונית וערבית ומופעי נוסטלגיה. ההופעות כאן בדרך כלל במחירים נוחים יותר מאשר בערים הגדולות."
+  en: "Lod is a mixed Jewish and Arab city with an old town and a long history, and its stage reflects that: the Lod Heichal HaTarbut hosts Israeli song, stand-up, Greek and Arabic music and nostalgia shows. Tickets here are usually cheaper than in the big cities."
+bnei-brak:
+  he: "בני ברק היא עיר חרדית, והאירועים בה מותאמים לקהל דתי: ערבי מוזיקה חסידית, הופעות בהפרדה ואירועים קהילתיים, עם שבת שקטה לגמרי. מי שמחפש חיי לילה כלליים ימצא אותם במרחק דקות, ברמת גן ובתל אביב."
+  en: "Bnei Brak is an ultra-Orthodox city, and its events are geared to a religious audience: Hasidic music nights, gender-separated concerts and community gatherings, with a fully quiet Shabbat. General nightlife is minutes away in Ramat Gan and Tel Aviv."
+kiryat-bialik:
+  he: "קריית ביאליק היא אחת מהקריות שמצפון לחיפה, עיר שקטה ומשפחתית שקניון קריון הוא אחד ממוקדי הבילוי שלה. לערבי הופעות ובילוי לילי רוב התושבים נוסעים לחיפה, שנמצאת במרחק נסיעה קצרה."
+  en: "Kiryat Bialik is one of the Krayot north of Haifa, a quiet family town where the Kiryon mall is one of the main places to hang out. For shows and nightlife most residents make the short trip into Haifa."
+kiryat-motzkin:
+  he: "קריית מוצקין היא עיר קטנה ושקטה בקריות, צמודה לקריית ביאליק ולמפרץ חיפה. האירועים בה בעיקר קהילתיים, ולהופעות ולבילוי לילי הכתובת הקרובה היא חיפה."
+  en: "Kiryat Motzkin is a small, quiet town in the Krayot, next to Kiryat Bialik and Haifa Bay. Its events are mostly community ones, and for concerts and nightlife the nearest destination is Haifa."

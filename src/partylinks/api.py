@@ -653,6 +653,7 @@ def _register_routes(app: FastAPI) -> None:
         city: Annotated[str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="City contains")] = None,
         in_target_city: Annotated[bool | None, Query(description="Matched to the configured target city")] = None,
         abroad: Annotated[bool, Query(description="Events abroad instead of events in Israel")] = False,
+        country: Annotated[str | None, Query(min_length=2, max_length=2, description="Country code (ISO 3166 alpha-2), events abroad")] = None,
         entry_type: Annotated[
             list[EntryType] | None, Query(max_length=MAX_LIST_PARAMS, description="free / paid / free_and_paid")
         ] = None,
@@ -716,6 +717,8 @@ def _register_routes(app: FastAPI) -> None:
         if in_target_city is not None:
             filters.append(EventRow.in_target_city.is_(in_target_city))
         filters.append(EventRow.country.is_not(None) if abroad else EventRow.country.is_(None))
+        if country:
+            filters.append(EventRow.country == country.upper())
         if entry_type:
             filters.append(EventRow.group_entry_type.in_([e.value for e in entry_type]))
         if free_entry is not None:

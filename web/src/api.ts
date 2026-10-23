@@ -54,3 +54,13 @@ export const usePosts = (category?: string) =>
 
 export const usePost = (slug: string) =>
   useQuery({ queryKey: ["post", slug], queryFn: () => getJSON<Post>(`/posts/${encodeURIComponent(slug)}`) });
+
+export interface LandingInfo { title: string | null; intro: string | null; links: { path: string; label: string }[]; country: string | null }
+
+/** Title, intro and related links of a page, as the server renders them for crawlers. */
+export const useLandingInfo = (path: string, lang: string) =>
+  useQuery({
+    queryKey: ["landing-info", path, lang],
+    queryFn: () => getJSON<LandingInfo>(`/landing-info?path=${encodeURIComponent(path)}&lang=${lang}`),
+    staleTime: 5 * 60_000,
+  });

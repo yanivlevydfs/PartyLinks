@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useCategories, useEvents } from "../api";
 import type { Facet } from "../types";
-import { artistPath, Chip, EventGrid, Hero, Img, label, useT, useTitle, venuePath } from "../ui";
+import { artistPath, Chip, EventGrid, Hero, Img, label, Related, useT, useTitle, venuePath } from "../ui";
 
 function FacetIndex({ title, facets, path, byArea }: {
   title: string; facets: Facet[] | undefined; path: (v: string) => string; byArea?: boolean;
@@ -77,6 +77,7 @@ export function VenuePage() {
       <main className="wrap">
         <h4 className="section-title">{t.upcomingAt}</h4>
         <EventGrid params={{ venue: name }} />
+        <Related path={`/venue/${encodeURIComponent(name)}`} />
       </main>
     </>
   );

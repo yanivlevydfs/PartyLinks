@@ -35,7 +35,7 @@ if (urlLang === "he" || urlLang === "en") useStore.getState().setLang(urlLang);
 // the server answered 404, which it marks noindex (landing pages never are). Show the 404 page for
 // that URL instead of an empty listing.
 const serverMissing = document.querySelector('meta[name="robots"][content^="noindex"]') ? location.pathname : null;
-type LandingKind = "tonight" | "weekend" | "genre" | "city";
+type LandingKind = "tonight" | "weekend" | "genre" | "city" | "region";
 function Landing({ landing }: { landing: LandingKind }) {
   return useLocation().pathname === serverMissing ? <NotFound /> : <Home landing={landing} />;
 }
@@ -50,9 +50,12 @@ const router = createBrowserRouter([
       { path: "/genre/:genre", element: <Landing landing="genre" /> },
       { path: "/genre/:genre/:when", element: <Landing landing="genre" /> },
       { path: "/city/:city", element: <Landing landing="city" /> },
+      { path: "/city/:city/:sub", element: <Landing landing="city" /> },
+      { path: "/region/:region", element: <Landing landing="region" /> },
       { path: "/event/:id", element: <EventPage /> },
       { path: "/map", element: <Suspense><MapPage /></Suspense> },
       { path: "/abroad", element: <Abroad /> },
+      { path: "/abroad/:country", element: <Abroad /> },
       { path: "/venues", element: <VenuesIndex /> },
       { path: "/venue/:name", element: <VenuePage /> },
       { path: "/artists", element: <ArtistsIndex /> },

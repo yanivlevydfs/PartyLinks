@@ -172,6 +172,14 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
         assert client.get("/genre/techno/weekend").status_code in (200, 404)  # depends on today's weekday
         assert client.get("/genre/techno/someday").status_code == 404
         assert "/city/tel-aviv" in client.get("/sitemap-1.xml").text
+        # City x genre: its own page, linked from the city page (not the home page) and in the sitemap.
+        city_techno = client.get("/city/tel-aviv/techno")
+        assert city_techno.status_code == 200 and "טכנו בתל אביב" in city_techno.text and '"City"' in city_techno.text
+        assert 'href="/city/tel-aviv/techno"' in city.text and "/city/tel-aviv/techno" in client.get("/sitemap-1.xml").text
+        assert client.get("/city/tel-aviv/karaoke").status_code == 404 and client.get("/city/nowhere/techno").status_code == 404
+        assert client.get("/region/sharon").status_code == 404 and client.get("/abroad/greece").status_code == 404
+        info = client.get("/landing-info", params={"path": "/city/tel-aviv/techno", "lang": "en"}).json()
+        assert info["title"] == "Techno events in Tel Aviv" and {"path": "/city/tel-aviv", "label": "All events in Tel Aviv"} in info["links"]
 
 
 def test_city_names_are_canonical() -> None:

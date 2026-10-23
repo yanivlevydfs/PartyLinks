@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { useCategories, useEvents, type Params } from "./api";
+import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { CookieConsent, useConsent } from "./consent";
 import { INFO_LINKS } from "./pages/Info";
@@ -332,5 +332,18 @@ export function EventGrid({ params, empty }: { params: Params; empty?: ReactNode
         </div>
       )}
     </>
+  );
+}
+
+/** Links to the page's neighbours (a city's dates, genres, venues and nearby cities...), from the server. */
+export function Related({ path }: { path: string }) {
+  const { lang } = useT();
+  const links = useLandingInfo(path, lang).data?.links ?? [];
+  if (!links.length) return null;
+  return (
+    <nav className="related" aria-label={lang === "he" ? "עוד באזור" : "Explore more"}>
+      <h2>{lang === "he" ? "עוד באזור" : "Explore more"}</h2>
+      <div className="chips">{links.map((l) => <Link key={l.path} className="chip" to={l.path}>{l.label}</Link>)}</div>
+    </nav>
   );
 }
