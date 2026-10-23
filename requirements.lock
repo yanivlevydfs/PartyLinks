@@ -20,6 +20,8 @@ click==8.5.0
     # via uvicorn
 fastapi==0.153.0
     # via partylinks (pyproject.toml)
+geonamescache==3.0.2
+    # via partylinks (pyproject.toml)
 h11==0.16.0
     # via
     #   httpcore
@@ -61,6 +63,7 @@ typing-extensions==4.16.0
     # via
     #   anyio
     #   fastapi
+    #   geonamescache
     #   opentelemetry-api
     #   pydantic
     #   pydantic-core

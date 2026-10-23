@@ -1,0 +1,93 @@
+"""Every Israeli locality from GeoNames (``geonamescache``, offline), loaded once per process.
+
+``enrichment.cities`` in the config names the cities that get their own page and spelling; this
+fills in the rest (Yehud, Shoham, Rosh Pina, ...) with a canonical Hebrew name, a centre and a
+radius, so an address in any town gets its city and a map point outside that town is rejected.
+
+Names are found by word lookups in a dict, not one regex per town: an address costs a few dict
+probes whatever the number of towns (28k events x ~200 towns of regexes took seconds).
+"""
+
+from __future__ import annotations
+
+import math
+import re
+from functools import lru_cache
+
+import geonamescache
+
+from partylinks.config import CitySettings
+from partylinks.parsing import slugify
+
+_HEBREW = re.compile(r"[֐-׿]")
+_NIQQUD = re.compile(r"[֑-ׇ]")  # vowel and cantillation marks: "סַבְיוֹן" -> "סביון"
+_WORD = re.compile(r"[\w'׳\"״]+")
+_PREFIXES = "ובהלמשכ"
+MAX_WORDS = 4  # "קריית שמונה", "מודיעין מכבים רעות"
+
+
+def _norm(text: str) -> str:
+    return " ".join(_WORD.findall(text.lower().replace("־", " ").replace("-", " ").replace("–", " ")))
+
+
+def _radius_m(population: int) -> float:
+    """~9 km for Tel Aviv, ~3 km for Yehud, ~1.5 km for a small town."""
+    return 1000 + 12 * math.sqrt(population)
+
+
+@lru_cache(maxsize=4)
+def israeli_places(min_population: int) -> tuple[CitySettings, ...]:
+    """Localities of at least ``min_population`` (smaller ones are often words: "מגדל", "כנרת")."""
+    places = []
+    for c in geonamescache.GeonamesCache(min_city_population=500).get_cities().values():
+        if c["countrycode"] != "IL" or c["population"] < min_population:
+            continue
+        hebrew = list(dict.fromkeys(_NIQQUD.sub("", a) for a in c["alternatenames"] if _HEBREW.search(a)))
+        if not hebrew:
+            continue
+        latin = [a for a in c["alternatenames"] if a.isascii() and len(a) > 2]
+        places.append(
+            CitySettings(
+                key=slugify(c["name"]) or str(c["geonameid"]),
+                he=hebrew[0],
+                en=c["name"],
+                aliases=[*hebrew[1:], *latin],
+                center=(c["latitude"], c["longitude"]),
+                radius_m=_radius_m(c["population"]),
+            )
+        )
+    return tuple(sorted(places, key=lambda p: p.radius_m, reverse=True))  # bigger town first on a name clash
+
+
+class PlaceIndex:
+    """Phrase -> canonical city, for the configured cities and the GeoNames towns."""
+
+    def __init__(self, cities: list[CitySettings]) -> None:
+        self._names: dict[str, str] = {}
+        for city in cities:  # first one wins: configured cities come first
+            for name in (city.he, city.en, *city.aliases):
+                if key := _norm(name):
+                    self._names.setdefault(key, city.he)
+
+    def find(self, text: str | None) -> list[tuple[int, str]]:
+        """(word position, city) of every place named in ``text``; a Hebrew prefix letter is allowed
+        ("ביהוד", "מתל אביב")."""
+        words = _norm(text or "").split()
+        hits = []
+        for i in range(len(words)):
+            for n in range(min(MAX_WORDS, len(words) - i), 0, -1):
+                phrase = " ".join(words[i : i + n])
+                city = self._names.get(phrase)
+                if city is None and phrase[0] in _PREFIXES and len(phrase) > 3:
+                    city = self._names.get(phrase[1:])
+                if city is not None:
+                    hits.append((i, city))
+                    break
+        return hits
+
+
+def all_cities(configured: list[CitySettings], min_population: int) -> list[CitySettings]:
+    """The configured cities, then every GeoNames town none of them already names."""
+    known = PlaceIndex(configured)
+    extra = [p for p in israeli_places(min_population) if not any(known.find(n) for n in (p.he, p.en))]
+    return [*configured, *extra]

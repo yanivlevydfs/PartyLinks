@@ -52,6 +52,7 @@ from partylinks.enrichment import ABROAD_AREA, UNKNOWN_COUNTRY, Enricher, meters
 from partylinks.geo import Geocoder
 from partylinks.media import MediaStore
 from partylinks.models import ScrapedEvent
+from partylinks.places import all_cities
 from partylinks.retention import is_current, purge_expired
 from partylinks.scrapers import SCRAPERS, build_scraper, source_settings
 from partylinks.scrapers.base import SourceBlockedError
@@ -116,7 +117,8 @@ class ScrapeService:
         self.media = MediaStore(settings.media, db)
         self.deduplicator = Deduplicator(settings.dedup)
         self.geocoder = Geocoder(
-            settings.geocoding, self.enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+            settings.geocoding, self.enricher.areas, settings.enrichment.target_city.aliases, db,
+            all_cities(settings.enrichment.cities, settings.enrichment.places_min_population),
         )
         self._geo_lock = threading.Lock()  # one geocoding pass at a time (Nominatim rate limit)
         self._locks = {name: threading.Lock() for name in SCRAPERS}

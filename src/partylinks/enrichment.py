@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 from partylinks.config import AreaSettings, EnrichmentSettings, RegionSettings
 from partylinks.models import EntryType, ScrapedEvent, TicketKind
 from partylinks.parsing import slugify
+from partylinks.places import PlaceIndex, all_cities
 
 _EDGE_DECOR = re.compile(r"^[^\w'\"(]+|[^\w'\")]+$")
 _LEADING_WITH = re.compile(r"^(?:w/|with|feat\.?|ft\.?)\s+", re.IGNORECASE)
@@ -173,6 +174,7 @@ class Enricher:
         self._coupon = _keyword_pattern(settings.coupon_keywords)
         self._city = _place_pattern(settings.target_city.aliases)
         self._cities = [(c.he, p) for c in settings.cities if (p := _place_pattern([c.he, c.en, *c.aliases]))]
+        self._places = PlaceIndex(all_cities(settings.cities, settings.places_min_population))
         self._lineup_header = _keyword_pattern(settings.lineup.header_keywords)
         self._lineup_ignore = {w.casefold() for w in settings.lineup.ignore}
         self._genre_words = {w.casefold() for words in settings.genres.values() for w in words}
@@ -459,6 +461,11 @@ class Enricher:
                 continue
             hits = [(m.start(), name) for name, p in self._cities for m in p.finditer(text.lower())]
             if hits:
+                return max(hits)[1]
+        # Any other Israeli town (GeoNames), from the city field or the address only: a venue name
+        # ("מגדל המים") is no town.
+        for text in (city, address):
+            if hits := self._places.find(text):
                 return max(hits)[1]
         return None if city is None or city.strip().isdigit() else city.strip()
 

@@ -185,6 +185,9 @@ class RegionSettings(BaseModel):
 class EnrichmentSettings(BaseModel):
     target_city: TargetCitySettings = Field(default_factory=TargetCitySettings)
     cities: list[CitySettings] = Field(default_factory=list)
+    # Every other Israeli locality of at least this many people (GeoNames, places.py) is known too:
+    # its spelling and its area on the map. Smaller ones are often plain words ("מגדל").
+    places_min_population: int = Field(2000, ge=0)
     genres: dict[str, list[str]] = Field(default_factory=dict)
     # More words per genre matched only against what the source declares (its categories), never the
     # title or description: too short or common to trust in free text ("AI", "ענן").
