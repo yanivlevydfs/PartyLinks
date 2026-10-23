@@ -540,3 +540,25 @@ def test_seller_links_leave_only_through_the_rate_limited_redirect(tmp_path: Pat
     with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}, client=("203.0.113.9", 1)) as client:
         codes = [client.get("/go/test%3Aa", follow_redirects=False).status_code for _ in range(limit + 1)]
         assert codes[:limit] == [302] * limit and codes[-1] == 429
+
+
+def test_geocoder_takes_a_venue_point_only_from_the_same_city(tmp_path: Path) -> None:
+    from partylinks.geo import Geocoder
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [
+        # the Cameri in Tel Aviv is placed; a touring "הקאמרי" show in Rishon must not take its point
+        event("tlv", future, venue_name="תיאטרון הקאמרי", city="תל אביב", latitude=32.0790, longitude=34.7870),
+        event("rishon", future, venue_name="תיאטרון הקאמרי", city="ראשון לציון"),
+        # another Tel Aviv show of the Cameri does
+        event("tlv2", future, venue_name="הקאמרי", city="תל אביב"),
+        # a spelling in another city: no match ("סינמטק" in Tel Aviv is not "סינמטק הרצליה")
+        event("hall", future, venue_name="תיאטרון הקאמרי אולם 1", city="ראשון לציון"),
+    ])  # fmt: skip
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    geo.locate_missing(network=False)
+    with db.session() as session:
+        placed = {r.source_event_id: r.latitude for r in session.query(EventRow)}
+    assert placed["rishon"] is None and placed["tlv2"] == 32.0790 and placed["hall"] is None

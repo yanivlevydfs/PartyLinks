@@ -22,7 +22,7 @@ import logging
 import math
 import re
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from sqlalchemy import select
@@ -53,6 +53,12 @@ class VenueInput:
     address: str | None
     lat: float | None
     lng: float | None
+    city: str | None = None  # canonical city; names only merge within one city
+
+    @property
+    def node(self) -> tuple[str, str]:
+        """The venue name in its city: "הקאמרי" in Tel Aviv and in Be'er Sheva are two places."""
+        return slugify(self.city or ""), self.source_name or ""
 
 
 def _distance_m(a: VenueInput, b: VenueInput) -> float:
@@ -88,6 +94,17 @@ def _best(votes: Counter[str]) -> str | None:
 
 def infer_venues(rows: list[VenueInput]) -> dict[str, str | None]:
     """The venue name each row should have, for the rows where it differs from now."""
+    # A row without a city is in the venue's city when that name is known in one city only.
+    cities_of: dict[str, set[str]] = {}
+    for r in rows:
+        if r.source_name and r.city:
+            cities_of.setdefault(r.source_name, set()).add(r.city)
+    rows = [
+        replace(r, city=next(iter(found)))
+        if not r.city and r.source_name and len(found := cities_of.get(r.source_name, set())) == 1
+        else r
+        for r in rows
+    ]
     streets_at: dict[tuple[float, float], set[str]] = {}
     for r in rows:
         if (pin := _pin(r)) and (key := street_key(r.address)):
@@ -100,40 +117,48 @@ def infer_venues(rows: list[VenueInput]) -> dict[str, str | None]:
     named = [r for r in rows if r.source_name]
     placed = [r for r in named if located(r)]
 
-    # Union-find over names: same spot or same street + number -> same venue.
-    parent: dict[str, str] = {r.source_name: r.source_name for r in named}  # type: ignore[misc]
+    # Union-find over names in a city: same spot or same street + number -> same venue. Never across
+    # cities: a producer's name ("הקאמרי") on its touring shows is not one venue country-wide.
+    Node = tuple[str, str]
+    parent: dict[Node, Node] = {r.node: r.node for r in named}
 
-    def find(name: str) -> str:
-        while parent[name] != name:
-            parent[name] = parent[parent[name]]
-            name = parent[name]
-        return name
+    def find(node: Node) -> Node:
+        while parent[node] != node:
+            parent[node] = parent[parent[node]]
+            node = parent[node]
+        return node
 
-    def union(a: str, b: str) -> None:
+    def union(a: Node, b: Node) -> None:
         parent[find(a)] = find(b)
 
-    by_street: dict[str, str] = {}
+    by_street: dict[tuple[str, str], Node] = {}
     for r in named:
         if key := street_key(r.address):
-            union(r.source_name, by_street.setdefault(key, r.source_name))  # type: ignore[arg-type]
+            union(r.node, by_street.setdefault((r.node[0], key), r.node))
     # ponytail: O(n^2) over named events (~hundreds); grid-bucket the pins if this reaches thousands.
     for i, a in enumerate(placed):
         for b in placed[i + 1 :]:
-            if a.source_name != b.source_name and _distance_m(a, b) <= RADIUS_M:
-                union(a.source_name, b.source_name)  # type: ignore[arg-type]
+            if a.node != b.node and a.node[0] == b.node[0] and _distance_m(a, b) <= RADIUS_M:
+                union(a.node, b.node)
 
-    clusters: dict[str, Counter[str]] = {}
+    clusters: dict[Node, Counter[str]] = {}
     for r in named:
-        clusters.setdefault(find(r.source_name), Counter())[r.source_name] += 1  # type: ignore[arg-type,index]
-    canonical = {name: _best(clusters[find(name)]) for name in parent}
+        clusters.setdefault(find(r.node), Counter())[r.source_name] += 1  # type: ignore[index]
+    canonical = {node: _best(clusters[find(node)]) for node in parent}
 
     result: dict[str, str | None] = {}
     for row in rows:
         if row.source_name:
-            name = canonical[row.source_name]
+            name = canonical[row.node]
         elif key := street_key(row.address):
-            near = next((r for r in placed if _distance_m(row, r) <= RADIUS_M), None) if located(row) else None
-            match = near.source_name if near else by_street.get(key)
+            # The venue in the row's city, or one whose city no source gave.
+            cities = (row.node[0], "")
+            near = (
+                next((r for r in placed if r.node[0] in cities and _distance_m(row, r) <= RADIUS_M), None)
+                if located(row)
+                else None
+            )
+            match = near.node if near else by_street.get((row.node[0], key)) or by_street.get(("", key))
             name = canonical[match] if match else street_name(row.address)
         else:
             name = None
@@ -145,7 +170,10 @@ def infer_venues(rows: list[VenueInput]) -> dict[str, str | None]:
 def resolve_venues(session: Session) -> int:
     """Apply :func:`infer_venues` to the database; returns the number of events changed."""
     db_rows = session.execute(
-        select(EventRow.id, EventRow.venue_name, EventRow.address, EventRow.latitude, EventRow.longitude, EventRow.extra)
+        select(
+            EventRow.id, EventRow.venue_name, EventRow.address, EventRow.latitude, EventRow.longitude, EventRow.extra,
+            EventRow.city,
+        )
     ).all()
     extras: dict[str, dict[str, Any]] = {r.id: dict(r.extra or {}) for r in db_rows}
     inputs = [
@@ -156,6 +184,7 @@ def resolve_venues(session: Session) -> int:
             r.address,
             r.latitude,
             r.longitude,
+            r.city,
         )
         for r in db_rows
         # A bar's own happy hour names its bar exactly: bars 20 m apart on Dizengoff stay apart, and

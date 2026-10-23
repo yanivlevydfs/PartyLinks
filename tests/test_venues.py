@@ -48,3 +48,24 @@ def test_infer_venues() -> None:
 def test_street_key_ignores_street_words() -> None:
     assert street_key("Rothschild Blvd 24, Tel Aviv") == street_key("rothschild 24")
     assert street_key("Tel Aviv-Yafo, Israel") is None
+
+
+def test_one_name_in_two_cities_is_two_venues() -> None:
+    def at(id: str, name: str | None, address: str, city: str | None) -> VenueInput:
+        return VenueInput(id, name, name, address, None, None, city)
+
+    rows = [
+        # A producer's name on its touring shows: the Cameri in Tel Aviv, and a show in Be'er Sheva.
+        at("tlv1", "הקאמרי", "שאול המלך 19", "תל אביב"),
+        at("tlv2", "תיאטרון הקאמרי", "שאול המלך 19", "תל אביב"),
+        at("tlv3", "הקאמרי", "שאול המלך 19", "תל אביב"),
+        at("bs1", "תיאטרון באר שבע", "שדרות יצחק רגר 41", "באר שבע"),
+        at("bs2", "הקאמרי", "שדרות יצחק רגר 41", "באר שבע"),
+        at("bs3", "תיאטרון באר שבע", "שדרות יצחק רגר 41", "באר שבע"),
+        # same street + number in another town is another place
+        at("rishon", "היכל התרבות", "הרצל 10", "ראשון לציון"),
+        at("holon", "בית העם", "הרצל 10", "חולון"),
+        # no city: the venue's city when its name is known in one city only
+        at("nocity", "תיאטרון באר שבע", "", None),
+    ]
+    assert infer_venues(rows) == {"tlv2": "הקאמרי", "bs2": "תיאטרון באר שבע"}

@@ -149,14 +149,34 @@ def venue_variants(venue: str) -> list[str]:
     return list(dict.fromkeys(keep))
 
 
-def _venue_match(known: dict[str, tuple[float, float]], name: str | None) -> tuple[float, float] | None:
-    """Same venue under another spelling: equal keys, or one contains the other (5+ chars)."""
+Point = tuple[float, float]
+# Known places by key, per city ("" = no city given): "הקאמרי" in Tel Aviv and in Be'er Sheva differ.
+Known = dict[str, dict[str, Point]]
+# Partial name matches need this many letters ("קאמרי" in "תיאטרוןהקאמרי"); always within one city.
+MIN_PARTIAL = 5
+
+
+def _in_city(by_city: dict[str, Point] | None, city: str | None) -> Point | None:
+    """The place in the event's city; with no city, only a place known in one city."""
+    if not by_city:
+        return None
+    if city:
+        return by_city.get(city) or by_city.get("")
+    return next(iter(by_city.values())) if len(by_city) == 1 else None
+
+
+def _venue_match(known: Known, name: str | None, city: str | None = None) -> Point | None:
+    """Same venue under another spelling, in the same city: equal keys, or one contains the other."""
     key = venue_key(name)
     if not key:
         return None
-    if key in known:
-        return known[key]
-    return next((p for k, p in known.items() if min(len(k), len(key)) >= 5 and (k in key or key in k)), None)
+    if point := _in_city(known.get(key), city):
+        return point
+    return next(
+        (p for k, cities in known.items()
+         if min(len(k), len(key)) >= MIN_PARTIAL and (k in key or key in k) and (p := _in_city(cities, city))),
+        None,
+    )  # fmt: skip
 
 
 @dataclass
@@ -211,12 +231,15 @@ class Geocoder:
             stats.missing = len(missing)
             unplaced: Counter[str] = Counter()
             for row in missing:
-                point = (
-                    self._pin(row)
-                    or _venue_match(known_venue, row.venue_name)
-                    or known_street.get(street_key(row.address) or "")
-                    or self._from_cache(row, cache)
-                )
+                point = next(
+                    (p for p in (
+                        self._pin(row),
+                        _venue_match(known_venue, row.venue_name, row.city),
+                        _in_city(known_street.get(street_key(row.address) or ""), row.city),
+                        self._from_cache(row, cache),
+                    ) if p and self._in_its_city(row, p)),
+                    None,
+                )  # fmt: skip
                 if point:
                     row.latitude, row.longitude = point
                     row.area = self.areas.match(row.venue_name, row.address, *point, row.in_target_city, row.city)
@@ -243,8 +266,7 @@ class Geocoder:
                 venues[_point(r)].add(venue_key(r.venue_name) or street_key(r.address) or "")
             dropped = 0
             for r in rows:
-                city = self._cities.get(r.city or "")
-                far = city is not None and meters(city.center, (r.latitude, r.longitude)) > city.radius_m  # type: ignore[arg-type]
+                far = not self._in_its_city(r, (r.latitude, r.longitude))  # type: ignore[arg-type]
                 # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
                 far = far or (
                     r.in_target_city is False
@@ -257,20 +279,32 @@ class Geocoder:
             log.info("geocoding: dropped %d source coordinates that are placeholders or outside the city", dropped)
         return dropped
 
+    def _in_its_city(self, row: EventRow, point: Point) -> bool:
+        """Within the radius of the event's city, when that city is a known one."""
+        city = self._cities.get(row.city or "")
+        return city is None or meters(city.center, point) <= city.radius_m  # type: ignore[arg-type]
+
     # ------------------------------------------------------------------ sources of coordinates
     def _pin(self, row: EventRow) -> tuple[float, float] | None:
         text = f"{row.venue_name or ''} | {row.address or ''}".lower()
         return next((tuple(v) for k, v in self._pins.items() if k in text), None)  # type: ignore[return-value]
 
-    @staticmethod
-    def _known(session: object) -> tuple[dict[str, tuple[float, float]], dict[str, tuple[float, float]]]:
+    def _known(self, session: object) -> tuple[Known, Known]:
+        """Placed venues and streets per city; a point outside its own city teaches nothing."""
         rows = session.execute(  # type: ignore[attr-defined]
-            select(EventRow.venue_name, EventRow.address, EventRow.latitude, EventRow.longitude).where(
+            select(EventRow.venue_name, EventRow.address, EventRow.city, EventRow.latitude, EventRow.longitude).where(
                 EventRow.latitude.is_not(None)
             )
         ).all()
-        venues = {k: (lat, lon) for v, _, lat, lon in rows if (k := venue_key(v))}
-        streets = {k: (lat, lon) for _, a, lat, lon in rows if (k := street_key(a))}
+        venues: Known = {}
+        streets: Known = {}
+        for row in rows:
+            name, address, city, lat, lon = row
+            if self._in_its_city(row, (lat, lon)):
+                if key := venue_key(name):
+                    venues.setdefault(key, {})[city or ""] = (lat, lon)
+                if key := street_key(address):
+                    streets.setdefault(key, {})[city or ""] = (lat, lon)
         return venues, streets
 
     def _from_cache(self, row: EventRow, cache: dict[str, GeoCacheRow]) -> tuple[float, float] | None:
@@ -283,6 +317,8 @@ class Geocoder:
     def _trusted(self, row: EventRow, hit: GeoCacheRow) -> bool:
         if hit.latitude is None or hit.longitude is None or hit.kind not in PRECISE:
             return False
+        if not self._in_its_city(row, (hit.latitude, hit.longitude)):
+            return False  # "Gray Club, יהוד" answered with the Gray Club in Modiin
         if row.in_target_city and not any(k in _city_key(hit.city) for k in self._city_keys):
             return False  # e.g. "Kibbutz Galuyot 52" resolved to Bnei Brak
         if row.in_target_city is False and self.areas.contradicts(
@@ -305,7 +341,11 @@ class Geocoder:
             pending = [
                 row
                 for row in session.scalars(select(EventRow).where(upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_(None)))
-                if not (self._pin(row) or _venue_match(known_venue, row.venue_name) or street_key(row.address) in known_street)
+                if not (
+                    self._pin(row)
+                    or _venue_match(known_venue, row.venue_name, row.city)
+                    or _in_city(known_street.get(street_key(row.address) or ""), row.city)
+                )
             ]
             session.expunge_all()
         budget = self.settings.max_lookups_per_run

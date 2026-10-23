@@ -135,6 +135,19 @@ enrichment:
     - {key: ashdod, he: "אשדוד", en: Ashdod, aliases: ["ashdod"], center: [31.804, 34.655], radius_m: 7000}
     - {key: ashkelon, he: "אשקלון", en: Ashkelon, aliases: ["ashkelon"], center: [31.669, 34.571], radius_m: 7000}
     - {key: eilat, he: "אילת", en: Eilat, aliases: ["eilat", "elat"], center: [29.558, 34.952], radius_m: 8000}
+    - {key: rishon-lezion, he: "ראשון לציון", en: Rishon LeZion, aliases: ["rishon lezion", "rishon le zion", "rishon letsiyon", "ראשל\"צ", "ראשל״צ"], center: [31.964, 34.804], radius_m: 7000}
+    - {key: beer-sheva, he: "באר שבע", en: Be'er Sheva, aliases: ["beersheba", "be'er sheva", "beer sheva", "beer-sheva", "באר-שבע"], center: [31.252, 34.791], radius_m: 8000}
+    - {key: holon, he: "חולון", en: Holon, aliases: ["holon"], center: [32.016, 34.779], radius_m: 4000}
+    - {key: bat-yam, he: "בת ים", en: Bat Yam, aliases: ["bat yam", "בת-ים"], center: [32.017, 34.750], radius_m: 3000}
+    - {key: givatayim, he: "גבעתיים", en: Givatayim, aliases: ["givatayim", "giv'atayim", "givataim"], center: [32.071, 34.810], radius_m: 2500}
+    - {key: rehovot, he: "רחובות", en: Rehovot, aliases: ["rehovot"], center: [31.894, 34.811], radius_m: 5000}
+    - {key: ness-ziona, he: "נס ציונה", en: Ness Ziona, aliases: ["ness ziona", "nes ziona", "נס-ציונה"], center: [31.930, 34.798], radius_m: 3500}
+    - {key: modiin, he: "מודיעין", en: Modi'in, aliases: ["modiin", "modi'in", "מודיעין מכבים רעות", "מודיעין-מכבים-רעות"], center: [31.898, 35.010], radius_m: 6000}
+    - {key: yehud, he: "יהוד", en: Yehud, aliases: ["yehud", "yehud-monosson", "יהוד-מונוסון", "יהוד מונוסון"], center: [32.033, 34.888], radius_m: 3000}
+    - {key: lod, he: "לוד", en: Lod, aliases: ["lod"], center: [31.951, 34.895], radius_m: 4000}
+    - {key: bnei-brak, he: "בני ברק", en: Bnei Brak, aliases: ["bnei brak", "bene beraq", "בני-ברק"], center: [32.084, 34.834], radius_m: 3000}
+    - {key: kiryat-bialik, he: "קריית ביאליק", en: Kiryat Bialik, aliases: ["kiryat bialik", "קרית ביאליק"], center: [32.833, 35.085], radius_m: 3000}
+    - {key: kiryat-motzkin, he: "קריית מוצקין", en: Kiryat Motzkin, aliases: ["kiryat motzkin", "קרית מוצקין"], center: [32.837, 35.077], radius_m: 2500}
   # Canonical genre -> keywords, matched case-insensitively against the genres and
   # event types each source declares and (if detect_genres_from_text) title + description.
   genres:
