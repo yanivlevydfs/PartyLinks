@@ -71,6 +71,8 @@ def main(args: list[str]) -> None:
         for run in call("GET", query):  # type: ignore[union-attr]
             error = f"  {run['error'][:200]}" if run.get("error") else ""
             print(f"{run['started_at'][:16]}  {run['source']:<18} {run['status']:<11} found {run['events_found']}{error}")
+            for failure in (run.get("failures") or [])[:3] if len(args) > 1 else []:
+                print(f"    - {failure[:220]}")
         return
     print(json.dumps(call("POST", "/admin/api/scan", {"sources": args} if args else {}), indent=1))
 
