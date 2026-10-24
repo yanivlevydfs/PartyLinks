@@ -24,7 +24,7 @@ import httpx
 from sqlalchemy import select
 
 from partylinks.config import CitySettings, GeocodingSettings
-from partylinks.db import Database, EventRow, GeoCacheRow, upcoming_filter, utcnow
+from partylinks.db import Database, EventRow, GeoCacheRow, upcoming_filter, utcnow, with_db_retry
 from partylinks.enrichment import AreaMatcher, meters
 
 log = logging.getLogger(__name__)
@@ -363,11 +363,14 @@ class Geocoder:
                             return asked
                         hit = cache[query] = self._ask(client, query)
                         asked += 1
-                        with self.db.session() as session:
-                            session.merge(hit)
+                        with_db_retry("geo cache", lambda hit=hit: self._remember(hit))  # sources save in parallel
                     if hit.found and self._trusted(row, hit):
                         break
         return asked
+
+    def _remember(self, hit: GeoCacheRow) -> None:
+        with self.db.session() as session:
+            session.merge(hit)
 
     def _ask(self, client: httpx.Client, query: str) -> GeoCacheRow:
         global _last_request

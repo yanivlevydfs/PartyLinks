@@ -60,7 +60,7 @@ router = APIRouter(prefix="/admin/api", tags=["admin"], dependencies=[AdminDep])
 
 
 def _session(request: Request) -> Any:
-    with request.app.state.db.session() as session:
+    with request.app.state.db.session(write=False) as session:
         yield session
 
 

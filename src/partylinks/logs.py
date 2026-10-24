@@ -39,6 +39,10 @@ class JsonFormatter(logging.Formatter):
         }
         if record.exc_info:
             entry["exception"] = self.formatException(record.exc_info)
+            # Log viewers show the message and fold the traceback: the error itself belongs on the line.
+            exc = record.exc_info[1]
+            if exc is not None:
+                entry["message"] += f": {type(exc).__name__}: {str(exc).splitlines()[0] if str(exc) else ''}"[:300]
         return json.dumps(entry, ensure_ascii=False)
 
 

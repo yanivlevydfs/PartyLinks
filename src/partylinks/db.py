@@ -5,9 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import threading
 import time
 from collections import defaultdict
-from collections.abc import Generator, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -47,6 +48,22 @@ from partylinks.config import project_path
 from partylinks.models import ScrapedEvent
 
 log = logging.getLogger(__name__)
+
+DB_RETRIES = 4
+WRITE_WAIT_S = 120  # how long a writer queues for the write lock before "database is locked"
+
+
+def with_db_retry[T](what: str, fn: Callable[[], T]) -> T:
+    """Retry a blocking DB call on lock contention (SQLite 'database is locked')."""
+    for attempt in range(1, DB_RETRIES + 1):
+        try:
+            return fn()
+        except OperationalError as exc:
+            if attempt == DB_RETRIES or "locked" not in str(exc).lower() and "deadlock" not in str(exc).lower():
+                raise
+            log.warning("%s: database busy (attempt %d/%d), retrying", what, attempt, DB_RETRIES)
+            time.sleep(2**attempt)
+    raise AssertionError("unreachable")
 
 
 def utcnow() -> datetime:
@@ -327,6 +344,22 @@ def _sqlite_pragmas(dbapi_connection: Any, _record: Any) -> None:
     cursor.close()
 
 
+def _sqlite_begin(conn: Any) -> None:
+    """Writers take the write lock at BEGIN (IMMEDIATE), where the busy timeout applies. A deferred
+    transaction that reads and then writes fails at once with "database is locked" when another
+    writer committed in between (SQLITE_BUSY_SNAPSHOT), whatever the timeout. Other sessions keep
+    the driver's own handling: it begins right before the first INSERT/UPDATE/DELETE."""
+    options = conn.get_execution_options()
+    if options.get("isolation_level") == "AUTOCOMMIT":
+        return
+    raw = conn.connection.dbapi_connection
+    if options.get("sqlite_write"):
+        raw.isolation_level = None  # the driver must not begin a second transaction
+        conn.exec_driver_sql("BEGIN IMMEDIATE")
+    else:
+        raw.isolation_level = ""  # pooled connections are shared with writers
+
+
 SQLITE_INCREMENTAL_VACUUM = 2  # PRAGMA auto_vacuum value
 
 
@@ -383,17 +416,24 @@ class Database:
             echo=echo,
             pool_pre_ping=not is_sqlite,
             # Sources write from separate threads: wait for locks instead of failing.
-            connect_args={"timeout": 30, "check_same_thread": False} if is_sqlite else {},
+            connect_args={"timeout": WRITE_WAIT_S, "check_same_thread": False} if is_sqlite else {},
             # SQLite connections are cheap and WAL lets readers run beside writers: with the default cap
             # (5 + 10) a scrape's source threads held every connection and page requests timed out.
             **({"max_overflow": -1} if is_sqlite else {}),
         )
         if is_sqlite:
             sa_event.listen(self.engine, "connect", _sqlite_pragmas)
+            sa_event.listen(self.engine, "begin", _sqlite_begin)
         self._sessions = sessionmaker(self.engine, expire_on_commit=False)
-        sa_event.listen(self._sessions, "do_orm_execute", _note_write)
-        sa_event.listen(self._sessions, "after_flush", _note_flush)
-        sa_event.listen(self._sessions, "after_commit", _count_commit)
+        self._writes = sessionmaker(self.engine.execution_options(sqlite_write=True), expire_on_commit=False)
+        for maker in (self._sessions, self._writes):
+            sa_event.listen(maker, "do_orm_execute", _note_write)
+            sa_event.listen(maker, "after_flush", _note_flush)
+            sa_event.listen(maker, "after_commit", _count_commit)
+        # SQLite has one writer at a time: this process's writers queue here, in order, instead of
+        # polling the file lock. Other processes (CLI, scripts) still wait on the busy timeout.
+        self._writer = threading.Lock()
+        self._writing = threading.local()
 
     def create_schema(self) -> None:
         """Create missing tables and add columns introduced since the DB was created.
@@ -512,9 +552,23 @@ class Database:
         return count
 
     @contextmanager
-    def session(self) -> Generator[Session]:
-        with self._sessions() as session, session.begin():
-            yield session
+    def session(self, write: bool = True) -> Generator[Session]:
+        """``write=False`` for page requests: they read beside a writer and never queue behind one."""
+        if not (write and self.is_sqlite):
+            with self._sessions() as session, session.begin():
+                yield session
+            return
+        if getattr(self._writing, "active", False):
+            raise RuntimeError("nested write session: the outer one holds the SQLite write lock")
+        if not self._writer.acquire(timeout=WRITE_WAIT_S):
+            raise OperationalError("BEGIN IMMEDIATE", {}, Exception("database is locked (writer queue)"))
+        self._writing.active = True
+        try:
+            with self._writes() as session, session.begin():
+                yield session
+        finally:
+            self._writing.active = False
+            self._writer.release()
 
 
 # --------------------------------------------------------------------------- writes

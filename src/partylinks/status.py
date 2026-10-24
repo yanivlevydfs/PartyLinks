@@ -45,7 +45,7 @@ def _uptime() -> str:
 
 def _counts(db: Database) -> dict[str, Any]:
     day_ago = datetime.now(UTC) - timedelta(hours=24)
-    with db.session() as s:
+    with db.session(write=False) as s:
         per_status = select(ScrapeRunRow.status, func.count()).where(ScrapeRunRow.started_at >= day_ago)
         runs = {state: n for state, n in s.execute(per_status.group_by(ScrapeRunRow.status))}
         return {

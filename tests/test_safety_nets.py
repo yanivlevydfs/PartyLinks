@@ -17,15 +17,18 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, OperationalError
 
+from partylinks import db as db_module
 from partylinks import scheduler as scheduler_module
 from partylinks import service as service_module
 from partylinks.config import HttpSettings, Settings
-from partylinks.db import Database, EventRow, ScrapeRunRow
+from partylinks.db import Database, EventRow, GeoCacheRow, ScrapeRunRow, utcnow
+from partylinks.db import with_db_retry as _with_db_retry
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.scrapers.base import BaseScraper, SourceSettings
-from partylinks.service import ScrapeService, _with_db_retry
+from partylinks.service import ScrapeService
 
 
 def make_service(tmp_path: Path) -> tuple[ScrapeService, Database]:
@@ -118,7 +121,7 @@ def test_no_new_runs_start_after_shutdown(tmp_path: Path) -> None:
 
 # ------------------------------------------------------------------ 2. locked-database retry
 def test_locked_database_is_retried_until_it_frees(monkeypatch: Any) -> None:
-    monkeypatch.setattr(service_module.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(db_module.time, "sleep", lambda seconds: None)
     calls: list[int] = []
 
     def flaky() -> str:
@@ -131,7 +134,7 @@ def test_locked_database_is_retried_until_it_frees(monkeypatch: Any) -> None:
 
 
 def test_locked_database_gives_up_after_the_retry_budget(monkeypatch: Any) -> None:
-    monkeypatch.setattr(service_module.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(db_module.time, "sleep", lambda seconds: None)
     calls: list[int] = []
 
     def always_locked() -> None:
@@ -140,11 +143,37 @@ def test_locked_database_gives_up_after_the_retry_budget(monkeypatch: Any) -> No
 
     with pytest.raises(OperationalError):
         _with_db_retry("save", always_locked)
-    assert len(calls) == service_module.DB_RETRIES
+    assert len(calls) == db_module.DB_RETRIES
+
+
+def test_parallel_read_then_write_sessions_never_hit_a_locked_database(tmp_path: Path) -> None:
+    """The prod failure: several threads each read, then write. Deferred SQLite transactions fail
+    the upgrade at once (SQLITE_BUSY_SNAPSHOT); write sessions begin IMMEDIATE and queue instead."""
+    db = Database(f"sqlite:///{tmp_path / 'p.db'}")
+    db.create_schema()
+    errors: list[BaseException] = []
+
+    def worker(n: int) -> None:
+        try:
+            for i in range(20):
+                with db.session() as session:
+                    session.scalars(select(GeoCacheRow)).all()
+                    session.merge(GeoCacheRow(query=f"{n}-{i}", found=False, looked_up_at=utcnow()))
+        except BaseException as exc:  # noqa: BLE001  collected for the assert
+            errors.append(exc)
+
+    threads = [threading.Thread(target=worker, args=(n,)) for n in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert errors == []
+    with db.session(write=False) as session:
+        assert len(session.scalars(select(GeoCacheRow)).all()) == 160
 
 
 def test_other_database_errors_are_not_retried(monkeypatch: Any) -> None:
-    monkeypatch.setattr(service_module.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(db_module.time, "sleep", lambda seconds: None)
     calls: list[int] = []
 
     def broken() -> None:

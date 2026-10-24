@@ -353,7 +353,7 @@ def register(app: FastAPI, page: Any) -> None:
         posts = load_posts(cfg(request))
         counts = {k: sum(p.category == k for p in posts) for k in CATEGORIES}
         shown = [p for p in posts if not category or p.category == category]
-        with request.app.state.db.session() as session:
+        with request.app.state.db.session(write=False) as session:
             return {
                 "categories": [_cat(k) | {"posts": n} for k, n in counts.items() if n],
                 "items": [summary(session, p, cfg(request)) for p in shown],
@@ -365,7 +365,7 @@ def register(app: FastAPI, page: Any) -> None:
         post = next((p for p in posts if p.slug == slug), None)
         if post is None:
             raise HTTPException(404, "post not found")
-        with request.app.state.db.session() as session:
+        with request.app.state.db.session(write=False) as session:
             return summary(session, post, cfg(request)) | {
                 "blocks": blocks(post, cfg(request)),
                 "toc": toc(post),

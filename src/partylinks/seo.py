@@ -1236,19 +1236,19 @@ def register(app: FastAPI, site_dir: Path) -> None:
 
     @app.get("/sitemap.xml", include_in_schema=False)
     def sitemap_xml(request: Request) -> Response:
-        with request.app.state.db.session() as session:
+        with request.app.state.db.session(write=False) as session:
             return Response(sitemap_index(sitemap_urls(session, cfg(request)), cfg(request)), media_type="application/xml")
 
     # ponytail: each part rebuilds the whole URL list (~1 s); cache it if crawlers hammer the parts.
     @app.get("/sitemap-{part}.xml", include_in_schema=False)
     def sitemap_part_xml(part: int, request: Request) -> Response:
-        with request.app.state.db.session() as session:
+        with request.app.state.db.session(write=False) as session:
             xml = sitemap_part(sitemap_urls(session, cfg(request)), part)
         return Response(xml, media_type="application/xml") if xml else Response(status_code=404)
 
     @app.get("/llms.txt", include_in_schema=False)
     def llms(request: Request) -> PlainTextResponse:
-        with request.app.state.db.session() as session:
+        with request.app.state.db.session(write=False) as session:
             return PlainTextResponse(llms_txt(session, cfg(request)), media_type="text/markdown; charset=utf-8")
 
     from partylinks import blog
@@ -1257,7 +1257,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
 
     def page(request: Request, build: Any) -> HTMLResponse:
         lang = "en" if request.query_params.get("lang") == "en" else "he"
-        with request.app.state.db.session() as session:
+        with request.app.state.db.session(write=False) as session:
             result = build(session, cfg(request), lang)
         if result is None:
             t = TEXT[lang]
@@ -1269,7 +1269,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
     @app.get("/landing-info", tags=["meta"])
     def landing_info_(path: str, request: Request, lang: str = "he") -> dict[str, Any]:
         """Title, intro and related links of a landing page (the web app shows what the server renders)."""
-        with request.app.state.db.session() as session:
+        with request.app.state.db.session(write=False) as session:
             return landing_info(session, cfg(request), "en" if lang == "en" else "he", path)
 
     blog.register(app, page if index.is_file() else None)

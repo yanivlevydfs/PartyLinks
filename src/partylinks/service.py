@@ -23,7 +23,6 @@ import asyncio
 import logging
 import re
 import threading
-import time
 from collections import Counter
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -32,7 +31,7 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import func, select, update
-from sqlalchemy.exc import DataError, IntegrityError, OperationalError
+from sqlalchemy.exc import DataError, IntegrityError
 
 from partylinks.artists import ArtistBook
 from partylinks.config import Settings
@@ -47,6 +46,7 @@ from partylinks.db import (
     upsert_events,
     utcnow,
 )
+from partylinks.db import with_db_retry as _with_db_retry
 from partylinks.dedup import Deduplicator
 from partylinks.enrichment import ABROAD_AREA, UNKNOWN_COUNTRY, Enricher, meters
 from partylinks.geo import Geocoder
@@ -61,7 +61,6 @@ from partylinks.venues import resolve_venues
 log = logging.getLogger(__name__)
 
 SAVE_BATCH_SIZE = 200
-DB_RETRIES = 4
 
 
 class SourceBusyError(RuntimeError):
@@ -90,19 +89,6 @@ class RetentionState:
     last_removed: int | None = None
     last_error: str | None = None
     history: list[str] = field(default_factory=list)
-
-
-def _with_db_retry[T](what: str, fn: Callable[[], T]) -> T:
-    """Retry a blocking DB call on lock contention (SQLite 'database is locked')."""
-    for attempt in range(1, DB_RETRIES + 1):
-        try:
-            return fn()
-        except OperationalError as exc:
-            if attempt == DB_RETRIES or "locked" not in str(exc).lower() and "deadlock" not in str(exc).lower():
-                raise
-            log.warning("%s: database busy (attempt %d/%d), retrying", what, attempt, DB_RETRIES)
-            time.sleep(2**attempt)
-    raise AssertionError("unreachable")
 
 
 class ScrapeService:

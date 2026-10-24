@@ -487,7 +487,7 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
 
 
 def get_session(request: Request) -> Iterator[Session]:
-    with request.app.state.db.session() as session:
+    with request.app.state.db.session(write=False) as session:
         yield session
 
 
@@ -602,7 +602,7 @@ def _register_routes(app: FastAPI) -> None:
         cfg: Settings = state.settings
         report: dict[str, Any] = {"status": "ok", "checks": {}}
         try:
-            with state.db.session() as session:
+            with state.db.session(write=False) as session:
                 session.execute(select(1))
                 last_ok = dict(
                     session.execute(
