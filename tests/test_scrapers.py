@@ -297,3 +297,24 @@ def test_zygo_region_is_no_city() -> None:
     assert _city_from_address("Unnamed Road, Center District, Israel") is None
     assert _city_from_address("HaSharon, Israel") is None
     assert _city_from_address("Ha-Barzel St 1, Tel Aviv-Yafo, Israel") == "Tel Aviv-Yafo"
+
+
+def test_eventer_profile_that_opens_one_event_lists_that_event() -> None:
+    import asyncio
+
+    import httpx
+
+    from partylinks.config import HttpSettings
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/user/forumclub/getData":
+            return httpx.Response(200, json="/rc82f")  # the profile redirects to one event
+        return httpx.Response(200, json={"events": [{"linkName": "x1"}]})
+
+    settings = eventer.EventerSettings(
+        cron="0 * * * *", base_url="https://e", event_details_path="/{link_name}.js", list_path="/c/{category}", ticket_types_path="/t/{event_id}",
+        discover=False, categories=[], users=["forumclub", "tomix"],
+    )
+    scraper = eventer.EventerScraper(settings, HttpSettings(request_delay_seconds=0, backoff_seconds=0), "UTC")
+    scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    assert asyncio.run(scraper._list_link_names()) == ["rc82f", "x1"] and scraper.failures == []

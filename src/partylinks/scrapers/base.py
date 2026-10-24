@@ -242,7 +242,7 @@ class BaseScraper[S: SourceSettings](ABC):
                 response.raise_for_status()
         return response
 
-    async def get_json(self, url: str, *, expect: type | None = None, **kwargs: Any) -> Any:
+    async def get_json(self, url: str, *, expect: Any = None, **kwargs: Any) -> Any:
         return _json(await self.request("GET", url, **kwargs), expect)
 
     async def post_json(self, url: str, *, expect: type | None = None, **kwargs: Any) -> Any:
@@ -355,7 +355,7 @@ class BaseScraper[S: SourceSettings](ABC):
             await asyncio.gather(*tasks, return_exceptions=True)
 
 
-def _json(response: httpx.Response, expect: type | None) -> Any:
+def _json(response: httpx.Response, expect: Any) -> Any:
     """Decoded JSON body; a non-JSON body (HTML error page with 200) or wrong shape -> ParseError."""
     try:
         payload = response.json()
@@ -363,5 +363,6 @@ def _json(response: httpx.Response, expect: type | None) -> Any:
         content_type = response.headers.get("content-type", "?")
         raise ParseError(f"{response.request.url}: expected JSON, got {content_type}") from exc
     if expect is not None and not isinstance(payload, expect):
-        raise ParseError(f"{response.request.url}: expected {expect.__name__}, got {type(payload).__name__}")
+        wanted = getattr(expect, "__name__", str(expect))  # "dict | str" has no __name__
+        raise ParseError(f"{response.request.url}: expected {wanted}, got {type(payload).__name__}")
     return payload

@@ -84,7 +84,8 @@ class EventerScraper(BaseScraper[EventerSettings]):
                     sliders.append(str(slider["linkName"]))
         listings = [(f"category {c}", s.base_url + s.list_path.format(category=c), dict) for c in dict.fromkeys(categories)]
         listings += [(f"slider {n}", s.base_url + s.slider_path.format(link_name=n), list) for n in dict.fromkeys(sliders)]
-        listings += [(f"user {u}", s.base_url + s.user_events_path.format(user=u), dict) for u in dict.fromkeys(s.users)]
+        # A profile set to open one event answers with that event's path ("/rc82f") instead.
+        listings += [(f"user {u}", s.base_url + s.user_events_path.format(user=u), dict | str) for u in dict.fromkeys(s.users)]
 
         seen: dict[str, None] = {}
         for label, url, shape in listings:
@@ -94,6 +95,10 @@ class EventerScraper(BaseScraper[EventerSettings]):
                 raise
             except Exception as exc:  # noqa: BLE001
                 self.record_failure(label, exc)
+                continue
+            if isinstance(payload, str):
+                if link := payload.strip("/"):
+                    seen[link] = None
                 continue
             if isinstance(payload, list):  # byLink.js: [slider]
                 payload = payload[0] if payload and isinstance(payload[0], dict) else {}
