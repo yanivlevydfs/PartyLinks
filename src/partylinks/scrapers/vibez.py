@@ -13,9 +13,12 @@ import re
 from collections.abc import AsyncIterator
 from datetime import datetime, timedelta
 from decimal import Decimal
+from functools import lru_cache
+from importlib import resources
 from typing import Any
 
 import httpx
+import pycountry
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
@@ -80,6 +83,7 @@ def parse_event(
     if not event_id or not title or not start:
         raise ParseError(f"{event_id}: event without id, name or start")
     place = clean_str(item.get("location"))
+    country = _country(place, item.get("timezone"), (item.get("project") or {}).get("currency"))
     place = None if place and (place.casefold() in _NO_PLACE or _DIRECTIONS.search(place)) else place
     # "Duplex Club" is a venue; "מנשה בן ישראל 17 , תל אביב" an address.
     is_address = bool(place and _STREET.search(place))
@@ -95,6 +99,7 @@ def parse_event(
         description=html_to_text(str(item.get("description") or "")),
         start_at=start,
         end_at=_end(start, parse_iso(item.get("end_time"), item.get("timezone") or timezone)),
+        country=country,
         venue_name=None if is_address else place,
         address=place if is_address else None,
         organizer=clean_str(project.get("name")),
@@ -105,6 +110,29 @@ def parse_event(
         tickets=tickets,
         is_sold_out=bool(tickets) and all(t.status is TierStatus.SOLD_OUT for t in tickets),
     )
+
+
+@lru_cache(maxsize=1)
+def _zone_countries() -> dict[str, str]:
+    """IANA time zone -> ISO country, from tzdata's zone.tab ("Asia/Bangkok" -> "TH")."""
+    table = resources.files("tzdata.zoneinfo").joinpath("zone.tab").read_text(encoding="utf-8")
+    rows = (line.split("	") for line in table.splitlines() if line and not line.startswith("#"))
+    return {row[2]: row[0] for row in rows if len(row) >= 3}
+
+
+def _country(place: str | None, zone: Any, currency: Any) -> str | None:
+    """ISO country of an event abroad, None in Israel. Vibez gives no country. A place that names one
+    wins ("Greece", "..., Thailand"); else the time zone, but only for a price not in shekels: some
+    producers leave a wrong zone (a Tel Aviv street set to "Indian/Mahe", Greece to Moscow)."""
+    for part in reversed([p.strip() for p in (place or "").split(",") if p.strip()]):
+        try:
+            code = pycountry.countries.lookup(part).alpha_2
+            break
+        except LookupError:
+            continue
+    else:
+        code = _zone_countries().get(str(zone or "")) if str(currency or "ILS").upper() != "ILS" else None
+    return None if code in (None, "IL", "PS") else code  # Asia/Hebron (PS) is listed as Israel
 
 
 def _end(start: datetime, end: datetime | None) -> datetime | None:

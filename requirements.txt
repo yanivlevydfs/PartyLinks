@@ -1,5 +1,6 @@
 airportsdata==20260902
 geonamescache==3.0.2
+tzdata==2026.2
 apscheduler>=3.11,<4
 fastapi>=0.115
 httpx>=0.28

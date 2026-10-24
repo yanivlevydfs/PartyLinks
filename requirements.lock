@@ -76,6 +76,8 @@ typing-inspection==0.4.4
     #   fastapi
     #   pydantic
     #   pydantic-settings
+tzdata==2026.2
+    # via partylinks (pyproject.toml)
 tzlocal==5.4.4
     # via apscheduler
 uvicorn==0.54.0

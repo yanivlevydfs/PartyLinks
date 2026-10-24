@@ -58,3 +58,19 @@ def test_a_sale_window_is_no_end() -> None:
     sabaya = parse("Sabaya")  # "ends" a year later: the series' sale window
     assert sabaya.end_at is None
     assert parse("dopamine - Masquerade").end_at is not None
+
+
+def test_country_of_an_event_abroad() -> None:
+    item = {"id": "x", "name": "Full Moon", "start_time": "2026-11-05T20:00:00Z", "status": "active"}
+
+    def country(zone: str, place: str, currency: str = "ILS") -> str | None:
+        event = vibez.parse_event({**item, "timezone": zone, "location": place, "project": {"currency": currency}}, [], SITE, TZ)
+        assert event is not None
+        return event.country
+
+    # Real Vibez events, October 2026.
+    assert country("Asia/Bangkok", "LOST JUNGLE", "THB") == "TH"
+    assert country("Asia/Bangkok", "Thong Not Bay, Tycoon's Place, Nakhon Si Thammarat, Thailand", "THB") == "TH"
+    assert country("Europe/Moscow", "Greece", "EUR") == "GR"  # the place wins over a wrong zone
+    assert country("Indian/Mahe", "YEHUDA HALEVI 19") is None  # shekels: a wrong zone, in Israel
+    assert country("Asia/Hebron", "מצפה") is None and country("Asia/Jerusalem", "Duplex Club") is None
