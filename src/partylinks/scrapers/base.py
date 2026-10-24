@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import random
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine, Iterable
 from typing import Any, ClassVar, Self, TypeVar
@@ -56,6 +57,8 @@ class SourceSettings(BaseModel):
     # Send this source through `http.source_proxy`. On by default: every source goes through it on
     # Railway, where the variable is set; locally it is unset, so requests go direct.
     proxied: bool = True
+    # The site only answers Israeli IPs: try `http.israel_proxy` first (see HttpSettings).
+    israel_proxy: bool = False
     # This source's run limit when it needs longer than scheduler.run_timeout_seconds.
     run_timeout_seconds: float | None = Field(None, gt=0)
 
@@ -117,6 +120,10 @@ class BaseScraper[S: SourceSettings](ABC):
         # A proxied source starts on the first URL of `source_proxy` and moves to the next when the
         # proxy fails or the site refuses its IP (403 / is_blocked). A per-source proxy wins.
         pool = [p.strip() for p in (http.source_proxy or "").split(",") if p.strip()] if settings.proxied else []
+        if settings.israel_proxy:
+            israeli = [p.strip() for p in (http.israel_proxy or "").split(",") if p.strip()]
+            random.shuffle(israeli)  # spread the sources over the (often short-lived) free proxies
+            pool = israeli + pool
         self._spare_proxies = pool[1:] if pool and "proxy" not in overrides else []
         self._pool_size = 1 + len(self._spare_proxies)
         if pool:

@@ -351,3 +351,12 @@ def test_a_timeout_is_retried_the_usual_times_not_pool_size_more() -> None:
     with pytest.raises(httpx.ReadTimeout):
         asyncio.run(run())
     assert len(tries) == 2  # max_retries + 1, on the same proxy (a read timeout is the site, not the proxy)
+
+
+def test_israel_proxy_sources_try_israeli_ips_first_then_the_usual_pool() -> None:
+    http = HttpSettings(source_proxy="http://pool:1", israel_proxy="http://il1:1, http://il2:2")
+    scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
+    assert {scraper.http.proxy, scraper._spare_proxies[0]} == {"http://il1:1", "http://il2:2"}
+    assert scraper._spare_proxies[-1] == "http://pool:1"
+    plain = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
+    assert plain.http.proxy == "http://pool:1" and plain._spare_proxies == []

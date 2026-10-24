@@ -104,6 +104,10 @@ class HttpSettings(BaseModel):
     # sites never see the server's IP: PARTYLINKS_HTTP__SOURCE_PROXY=... A comma-separated
     # list is a failover pool: a source moves to the next URL only when the proxy itself fails.
     source_proxy: str | None = None
+    # Israeli IPs for sources that refuse everything else (`israel_proxy: true` in their block):
+    # PARTYLINKS_HTTP__ISRAEL_PROXY=http://ip:port,http://ip:port,... Each run starts at a random
+    # one and rotates on failure; `source_proxy` follows as the last resort.
+    israel_proxy: str | None = None
 
     @field_validator("headers", mode="before")
     @classmethod
