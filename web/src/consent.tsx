@@ -100,6 +100,11 @@ export const STORAGE: StorageItem[] = [
     duration: { he: "עד שתמחקו את נתוני האתר בדפדפן", en: "Until you clear the site's data in your browser" },
   },
   {
+    name: "partylinks-install-dismissed", provider: US, kind: LOCAL, category: "necessary",
+    purpose: { he: "זמן הסגירה של באנר ההתקנה למסך הבית, כדי שלא יוצג שוב במשך 14 יום.", en: "When you closed the add-to-home-screen banner, so it stays hidden for 14 days." },
+    duration: { he: "14 יום", en: "14 days" },
+  },
+  {
     name: "partylinks-admin-token", provider: US, category: "necessary",
     kind: { he: "אחסון לסשן (sessionStorage)", en: "Session storage (sessionStorage)" },
     purpose: { he: "כניסה לממשק הניהול בלבד; לא נוצר אצל גולשים רגילים.", en: "Admin console sign-in only; never set for regular visitors." },

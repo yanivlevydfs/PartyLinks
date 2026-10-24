@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { CookieConsent, useConsent } from "./consent";
+import { InstallBanner } from "./Install";
 import { INFO_LINKS } from "./pages/Info";
 import { SponsoredFrame, SponsoredStrip } from "./Sponsored";
 import { useStore } from "./store";
@@ -85,6 +86,7 @@ export function Layout() {
   return (
     <>
       <CookieConsent />
+      <InstallBanner />
       <header className="top">
         <div className="wrap top-row">
           <Link className="logo" to="/">{lang === "he" ? <>פול<span>ס</span></> : <>Pul<span>se</span></>}
