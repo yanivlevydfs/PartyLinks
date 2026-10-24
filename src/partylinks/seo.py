@@ -12,6 +12,7 @@ from __future__ import annotations
 import gettext
 import json
 import re
+import time
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
@@ -36,6 +37,8 @@ from partylinks.places import all_cities
 
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
 LIST_LIMIT = 60  # events listed on index pages
+HTML_TTL_S = 300  # a rendered page is reused this long
+HTML_CACHE_PAGES = 3000
 LLMS_LIMIT = 400
 DESC_LIMIT = 300
 AI_CRAWLERS = [
@@ -1255,7 +1258,16 @@ def register(app: FastAPI, site_dir: Path) -> None:
 
     index = site_dir / "index.html"
 
+    # Rendered pages are the same for every visitor; building one runs several whole-table queries
+    # (~1.5 s for the home page at prod size). ponytail: per-process, wiped when full; a visitor
+    # may see a listing up to HTML_TTL_S old.
+    rendered: dict[str, tuple[float, str, int]] = {}
+
     def page(request: Request, build: Any) -> HTMLResponse:
+        key = str(request.url.path) + "?" + str(request.url.query)
+        hit = rendered.get(key)
+        if hit and time.monotonic() - hit[0] < HTML_TTL_S:
+            return HTMLResponse(hit[1], status_code=hit[2])
         lang = "en" if request.query_params.get("lang") == "en" else "he"
         with request.app.state.db.session(write=False) as session:
             result = build(session, cfg(request), lang)
@@ -1264,6 +1276,9 @@ def register(app: FastAPI, site_dir: Path) -> None:
             result = Page(t["not_found"], t["site_desc"], request.url.path, lang, noindex=True, status=404,
                           body=f"<h1>{t['not_found']}</h1>")  # fmt: skip
         html = render(index.read_text(encoding="utf-8"), result, cfg(request))
+        if len(rendered) >= HTML_CACHE_PAGES:
+            rendered.clear()
+        rendered[key] = (time.monotonic(), html, result.status)
         return HTMLResponse(html, status_code=result.status)
 
     @app.get("/landing-info", tags=["meta"])
