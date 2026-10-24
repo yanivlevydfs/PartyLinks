@@ -19,7 +19,9 @@ import html
 import re
 from collections.abc import AsyncIterator
 from datetime import date, datetime, time, timedelta
+from urllib.parse import urljoin
 
+import httpx
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent
@@ -28,6 +30,7 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.chillz import EVENT_TYPES, parse_page
 
 _LOC = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>")
+_NEXT_REDIRECT = re.compile(r'NEXT_REDIRECT;\w+;(/[^;"\\]+);30[178]')
 # https://www.ogo.co.il/ru/event/il/tel-aviv/2026/11/16/yonat-barak-...-xnGgs5FWzgbbqgweE227fm
 _EVENT_URL = re.compile(
     r"^(https?://[^/]+)/[a-z]{2}(/event/il/([^/]+)/(\d{4})/(\d{2})/(\d{2})/[^/?#]*-([A-Za-z0-9]+))/?$"
@@ -90,7 +93,17 @@ class OgoScraper(BaseScraper[OgoSettings]):
             yield event
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
-        return parse_event(await self.get_text(url), url, self.timezone)
+        try:
+            page = await self.get_text(url)
+        except httpx.HTTPStatusError as exc:
+            # A re-listed event's old URL answers 308 with no Location header: Next.js puts the new
+            # path in the body instead ("NEXT_REDIRECT;replace;/he/event/...;308").
+            moved = _NEXT_REDIRECT.search(exc.response.text) if exc.response.is_redirect else None
+            if not moved:
+                raise
+            url = urljoin(url, moved.group(1))
+            page = await self.get_text(url)
+        return parse_event(page, url, self.timezone)
 
 
 def _locs(xml: str) -> list[str]:

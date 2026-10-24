@@ -1889,3 +1889,6 @@ sources:
     http:
       concurrency: 2
       timeout_seconds: 120
+      # It drops connections under load ("Server disconnected", Oct 2026): more and slower retries.
+      max_retries: 5
+      backoff_seconds: 10

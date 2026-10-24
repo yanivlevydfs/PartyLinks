@@ -63,6 +63,7 @@ def report(hours: int) -> None:
 
 
 def main(args: list[str]) -> None:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]  # Hebrew/Cyrillic on a cp1252 console
     if args[:1] == ["--report"]:
         report(int(args[1]) if len(args) > 1 else 24)
         return

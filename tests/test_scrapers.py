@@ -318,3 +318,30 @@ def test_eventer_profile_that_opens_one_event_lists_that_event() -> None:
     scraper = eventer.EventerScraper(settings, HttpSettings(request_delay_seconds=0, backoff_seconds=0), "UTC")
     scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     assert asyncio.run(scraper._list_link_names()) == ["rc82f", "x1"] and scraper.failures == []
+
+
+def test_ogo_follows_a_next_redirect_in_the_body() -> None:
+    import asyncio
+
+    import httpx
+
+    from partylinks.config import HttpSettings
+    from partylinks.parsing import ParseError
+    from partylinks.scrapers import ogo
+
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.path)
+        if request.url.path == "/he/event/old":  # 308 without Location, the new path in the body
+            return httpx.Response(308, text='x"NEXT_REDIRECT;replace;/he/event/new;308;"')
+        return httpx.Response(200, text="<html></html>")
+
+    settings = ogo.OgoSettings(cron="0 * * * *", site_url="https://o", sitemap_path="/s.xml")
+    scraper = ogo.OgoScraper(settings, HttpSettings(request_delay_seconds=0, backoff_seconds=0), "UTC")
+    scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    try:
+        asyncio.run(scraper._fetch_event("https://o/he/event/old"))
+    except ParseError:
+        pass  # the empty page has no event; what matters is that the new URL was fetched
+    assert seen == ["/he/event/old", "/he/event/new"]
