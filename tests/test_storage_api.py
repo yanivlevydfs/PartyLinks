@@ -755,3 +755,21 @@ def test_abroad_filters_come_from_the_stored_events(tmp_path: Path) -> None:
         until = (future + timedelta(days=1)).date().isoformat()
         page = client.get(f"/events?abroad=true&city=פריז&date_to={until}T23:59:59").json()
         assert [e["title"] for e in page["items"]] == ["Paris night"]
+
+
+def test_geocoder_never_asks_for_just_the_town_or_a_generic_hall_name() -> None:
+    from types import SimpleNamespace
+
+    from partylinks.geo import candidates
+
+    def queries(venue: str, city: str | None) -> list[str]:
+        return candidates(SimpleNamespace(venue_name=venue, city=city, address=None, in_target_city=None))
+
+    # "רעננה, רעננה" answered with a park: every Ra'anana hall landed there, then was cleared, every run.
+    assert queries("רעננה", "רעננה") == []
+    # Unknown city: "היכל התרבות" + the Tel Aviv default put other cities' halls on Tel Aviv's.
+    assert queries("היכל התרבות", None) == []
+    assert "היכל התרבות, תל אביב" not in queries("היכל התרבות מעלה אדומים", None)
+    # With its city, or a name that carries one, a hall is specific.
+    assert queries("היכל התרבות", "רעננה") == ["היכל התרבות, רעננה"]
+    assert "מרכז המוסיקה רעננה, רעננה" in queries("מרכז המוסיקה רעננה", "רעננה")

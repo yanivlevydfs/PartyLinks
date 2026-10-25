@@ -122,7 +122,12 @@ def candidates(row: Place) -> list[str]:
         # "מועדון גגרין" -> "גגרין, תל אביב" (OSM names the place without "club" / "מועדון").
         if (bare := re.sub(r"\s+", " ", _GENERIC_VENUE_WORDS.sub(" ", venue)).strip(" -,")) and len(bare) >= 3:
             out.append(f"{bare}, {town}".rstrip(", "))
+        # A name that is only the town ("רעננה, רעננה" -> a park there) or only generic words ("היכל התרבות"
+        # -> Tel Aviv's) puts every hall of the city on one wrong point; drop_bad_points then clears it and
+        # the next pass puts it back, every run (thousands of rewrites, Oct 2026).
+        out = [q for q in out if not _vague(q.rsplit(", ", 1)[0], city, town)]
     return list(dict.fromkeys(q for q in out if len(q) >= 4))
+
 
 
 # A name made only of one of these would match any hall / theatre / bar in town.
@@ -130,6 +135,22 @@ _GENERIC_NAMES = {
     "אולם", "תיאטרון", "מוזיאון", "מרכז", "מועדון", "בר", "היכל", "סטודיו", "אודיטוריום", "קלאב", "גלריה",
     "פאב", "חדר", "במה", "club", "bar", "hall", "center", "centre", "studio", "theater", "theatre", "the",
 }  # fmt: skip
+
+
+# Words that name a kind of place, not a place: a query made only of these (and the town) is not a venue.
+_GENERIC_WORDS = {w.lower() for w in _GENERIC_NAMES} | {
+    "התרבות", "תרבות", "המוסיקה", "המוזיקה", "מוסיקה", "מוזיקה", "לאמנויות", "ואומנויות", "אמנויות", "האמנויות",
+    "לתרבות", "הקהילתי", "קהילתי", "העירוני", "עירוני", "הבמה", "הספורט", "ספורט", "האירועים", "אירועים",
+    "המופעים", "מופעים", "ההופעות", "culture", "music", "arts", "art", "cultural", "events",
+}  # fmt: skip
+
+
+def _vague(name: str, city: str | None, town: str) -> bool:
+    words = [w.strip("-,.()'\"") for w in name.lower().split()]
+    places = {_city_key(c) for c in (city, town) if c}
+    # Only the town; or only kind-of-place words with the city unknown ("היכל התרבות" + the Tel Aviv default
+    # lands every city's hall on Tel Aviv's). "היכל התרבות, רעננה" and "היכל התרבות רעננה" name one hall.
+    return _city_key(name) in places or (not city and all(w in _GENERIC_WORDS for w in words if w))
 
 
 _TRAILING_CITY = re.compile(r"[\s,\-]*(?:תל[\s\-]*אביב(?:[\s\-]*יפו)?|ת\"א(?:[\s\-]*יפו)?|ת״א|tel[\s\-]*aviv(?:[\s\-]*yafo)?)$", re.IGNORECASE)
