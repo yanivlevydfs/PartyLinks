@@ -8,6 +8,7 @@ import threading
 import time
 from collections import Counter
 from collections.abc import AsyncGenerator, Callable, Iterator, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
@@ -382,44 +383,80 @@ class _SiteFiles(StaticFiles):
 
 
 class ResponseCache:
-    """JSON bodies of public reads, reused until a write commits (``Database.changes``) or ``ttl``
-    passes ("upcoming" and "free until" move with the clock).
+    """Bodies of public reads (JSON, rendered pages). An entry goes stale when a write commits
+    (``Database.changes``, unless ``follow_writes`` is off) or ``ttl`` passes ("upcoming" and "free until" move with the clock); a
+    stale entry younger than ``max_stale`` is still served at once while a background thread
+    rebuilds it, so only the first visit to a page (or one after a long quiet spell) waits for a build.
 
-    ponytail: per-process dict, wiped when the data changes or it outgrows ``max_bytes``; fine for
-    the single uvicorn worker. Writes from another process are only seen after ``ttl``.
+    ponytail: per-process dict, cleared when it outgrows ``max_bytes``; fine for the single uvicorn
+    worker. Two rebuild threads: a burst of stale pages refreshes in turn, not all at once.
     """
 
-    def __init__(self, ttl: float = 60, max_bytes: int = 64 << 20) -> None:
-        self.ttl, self.max_bytes = ttl, max_bytes
-        self._items: dict[tuple[str, str], tuple[float, bytes]] = {}
+    def __init__(
+        self, ttl: float = 60, max_bytes: int = 64 << 20, max_stale: float = 3600, follow_writes: bool = True
+    ) -> None:
+        self.ttl, self.max_bytes, self.max_stale, self.follow_writes = ttl, max_bytes, max_stale, follow_writes
+        self._items: dict[tuple[str, str], tuple[float, int, bytes, int]] = {}  # built at, changes, body, status
         self._bytes = 0
-        self._changes = Database.changes
         self._lock = threading.Lock()
+        self._refreshing: set[tuple[str, str]] = set()
+        self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="cache-refresh")
 
-    def get(self, key: tuple[str, str], build: Callable[[], bytes]) -> bytes:
+    def get(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> tuple[bytes, int]:
+        """(body, status) of ``key``; ``build`` returns the body, or (body, status)."""
+        if hit := self._items.get(key):
+            built_at, changes, body, code = hit
+            age = time.monotonic() - built_at
+            if (changes == Database.changes or not self.follow_writes) and age < self.ttl:
+                return body, code
+            if age < self.max_stale:
+                self._refresh(key, build)
+                return body, code
+        return self._build(key, build)
+
+    def _build(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> tuple[bytes, int]:
         changes, now = Database.changes, time.monotonic()  # read before building: a write during it wins
-        hit = self._items.get(key)
-        if hit and changes == self._changes and now - hit[0] < self.ttl:
-            return hit[1]
-        body = build()
+        out = build()
+        body, code = out if isinstance(out, tuple) else (out, 200)
         with self._lock:
-            if changes > self._changes or self._bytes + len(body) > self.max_bytes:
+            if old := self._items.pop(key, None):
+                self._bytes -= len(old[2])
+            if self._bytes + len(body) > self.max_bytes:
                 self._items.clear()
                 self._bytes = 0
-                self._changes = max(changes, self._changes)
-            if changes == self._changes:  # not built from data older than the cache's
-                old = self._items.pop(key, None)
-                self._bytes += len(body) - (len(old[1]) if old else 0)
-                self._items[key] = (now, body)
-        return body
+            self._items[key] = (now, changes, body, code)
+            self._bytes += len(body)
+        return body, code
+
+    def _refresh(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> None:
+        with self._lock:
+            if key in self._refreshing:
+                return
+            self._refreshing.add(key)
+
+        def run() -> None:
+            try:
+                self._build(key, build)
+            except Exception:
+                log.exception("cache refresh of %s failed", key[0])
+            finally:
+                with self._lock:
+                    self._refreshing.discard(key)
+
+        self._pool.submit(run)
 
 
-def _cached(request: Request, build: Callable[[], BaseModel], *, exclude_none: bool = False) -> Response:
-    """The endpoint's JSON from the response cache (built and stored on a miss)."""
+def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_none: bool = False) -> Response:
+    """The endpoint's JSON from the response cache. ``build`` gets its own session: it may run
+    after the request, refreshing a stale entry in the background."""
     cache: ResponseCache = request.app.state.response_cache
-    key = (request.url.path, request.url.query)
-    body = cache.get(key, lambda: build().model_dump_json(by_alias=True, exclude_none=exclude_none).encode())
-    return Response(body, media_type="application/json")
+    db: Database = request.app.state.db
+
+    def body() -> bytes:
+        with db.session(write=False) as session:
+            return build(session).model_dump_json(by_alias=True, exclude_none=exclude_none).encode()
+
+    return Response(cache.get((request.url.path, request.url.query), body)[0], media_type="application/json")
 
 
 def create_app(settings: Settings | None = None, start_scheduler: bool | None = None) -> FastAPI:
@@ -801,7 +838,6 @@ def _register_routes(app: FastAPI) -> None:
     @app.get("/events", response_model=EventPage, tags=["events"])
     def list_events(
         request: Request,
-        session: SessionDep,
         filters: list[ColumnElement[bool]] = event_filters_dep,
         sort: EventSort = EventSort.start_asc,
         page: Annotated[int, Query(ge=1)] = 1,
@@ -810,7 +846,7 @@ def _register_routes(app: FastAPI) -> None:
         cfg: Settings = request.app.state.settings
         size = min(page_size or cfg.api.default_page_size, cfg.api.max_page_size)
 
-        def build() -> EventPage:
+        def build(session: Session) -> EventPage:
             total = session.scalar(select(func.count()).select_from(EventRow).where(*filters)) or 0
             rows = session.scalars(
                 select(EventRow)
@@ -828,12 +864,10 @@ def _register_routes(app: FastAPI) -> None:
         return _cached(request, build)
 
     @app.get("/events/map", response_model=MapOut, tags=["events"])
-    def map_events(
-        request: Request, session: SessionDep, filters: list[ColumnElement[bool]] = event_filters_dep
-    ) -> Response:
+    def map_events(request: Request, filters: list[ColumnElement[bool]] = event_filters_dep) -> Response:
         """All matching events with coordinates at once (the list's filters, no paging)."""
 
-        def build() -> MapOut:
+        def build(session: Session) -> MapOut:
             located = and_(EventRow.latitude.is_not(None), EventRow.longitude.is_not(None))
             rows = session.execute(
                 select(
@@ -990,18 +1024,17 @@ def _register_routes(app: FastAPI) -> None:
     @app.get("/categories", response_model=Categories, response_model_exclude_none=True, tags=["events"])
     def categories(
         request: Request,
-        session: SessionDep,
         filters: list[ColumnElement[bool]] = event_filters_dep,
         upcoming: bool = True,
     ) -> Response:
         """Facet counts of the events matching the list's filters (none: every upcoming event)."""
-        return _cached(request, lambda: build_categories(request, session, filters, upcoming), exclude_none=True)
+        return _cached(request, lambda session: build_categories(request, session, filters, upcoming), exclude_none=True)
 
     @app.get("/ticket-sites", response_model=Stores, tags=["events"])
-    def stores(request: Request, session: SessionDep) -> Response:
+    def stores(request: Request) -> Response:
         """The ticket sites events come from, with how many upcoming events each sells (the stores page)."""
 
-        def build() -> Stores:
+        def build(session: Session) -> Stores:
             listings = select(EventRow.group_id, EventRow.source).where(upcoming_filter()).distinct()
             counts = Counter(source for _, source in session.execute(listings))
             last_runs = (

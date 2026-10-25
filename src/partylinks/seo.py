@@ -12,7 +12,6 @@ from __future__ import annotations
 import gettext
 import json
 import re
-import time
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
@@ -38,7 +37,7 @@ from partylinks.places import all_cities
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
 LIST_LIMIT = 60  # events listed on index pages
 HTML_TTL_S = 300  # a rendered page is reused this long
-HTML_CACHE_PAGES = 3000
+HTML_CACHE_BYTES = 64 << 20
 LLMS_LIMIT = 400
 DESC_LIMIT = 300
 AI_CRAWLERS = [
@@ -1263,27 +1262,27 @@ def register(app: FastAPI, site_dir: Path) -> None:
     index = site_dir / "index.html"
 
     # Rendered pages are the same for every visitor; building one runs several whole-table queries
-    # (~1.5 s for the home page at prod size). ponytail: per-process, wiped when full; a visitor
-    # may see a listing up to HTML_TTL_S old.
-    rendered: dict[str, tuple[float, str, int]] = {}
+    # (~1.5 s for the home page at prod size, ~12 s for /artists). Served from the same kind of cache
+    # as the API (stale entries are rebuilt in the background), so a visitor waits only on a first visit.
+    from partylinks.api import ResponseCache  # local: api imports this module
+
+    rendered = ResponseCache(ttl=HTML_TTL_S, max_bytes=HTML_CACHE_BYTES, follow_writes=False)  # scrapes write all day
 
     def page(request: Request, build: Any) -> HTMLResponse:
-        key = str(request.url.path) + "?" + str(request.url.query)
-        hit = rendered.get(key)
-        if hit and time.monotonic() - hit[0] < HTML_TTL_S:
-            return HTMLResponse(hit[1], status_code=hit[2])
         lang = "en" if request.query_params.get("lang") == "en" else "he"
-        with request.app.state.db.session(write=False) as session:
-            result = build(session, cfg(request), lang)
-        if result is None:
-            t = TEXT[lang]
-            result = Page(t["not_found"], t["site_desc"], request.url.path, lang, noindex=True, status=404,
-                          body=f"<h1>{t['not_found']}</h1>")  # fmt: skip
-        html = render(index.read_text(encoding="utf-8"), result, cfg(request))
-        if len(rendered) >= HTML_CACHE_PAGES:
-            rendered.clear()
-        rendered[key] = (time.monotonic(), html, result.status)
-        return HTMLResponse(html, status_code=result.status)
+        settings, db = cfg(request), request.app.state.db
+
+        def make() -> tuple[bytes, int]:
+            with db.session(write=False) as session:
+                result = build(session, settings, lang)
+            if result is None:
+                t = TEXT[lang]
+                result = Page(t["not_found"], t["site_desc"], request.url.path, lang, noindex=True, status=404,
+                              body=f"<h1>{t['not_found']}</h1>")  # fmt: skip
+            return render(index.read_text(encoding="utf-8"), result, settings).encode(), result.status
+
+        body, code = rendered.get((request.url.path, request.url.query), make)
+        return HTMLResponse(body, status_code=code)
 
     @app.get("/landing-info", tags=["meta"])
     def landing_info_(path: str, request: Request, lang: str = "he") -> dict[str, Any]:
