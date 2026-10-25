@@ -199,18 +199,20 @@ enrichment:
     yoga_wellness: ["yoga", "ecstatic dance", "meditation", "breathwork", "sound healing", "cacao ceremony", "יוגה",
                     "אקסטטיק", "מדיטציה", "נשימה מעגלית", "טקס קקאו"]
     # Adult nightlife (18+). Only strong phrases: "פטיש" alone is also a hammer, "munch" Edvard Munch,
+    # "פוליאמוריה" a stand-up topic, "ליברליות" opinions ("דעותיו הליברליות"), "ארוטית" a dance review,
     # "ליברלית" politics ("הציונות הליברלית") and "חושני" / "לטקס" turn up in concert blurbs.
-    liberal: ["swingers", "swinger", "swingers party", "lifestyle party", "libertine", "sex positive", "sex-positive",
-              "polyamory", "polyamorous", "חילופי זוגות", "סווינגרס", "סווינגרים", "ליברליות", "הקהילה הליברלית",
-              "קהילה ליברלית", "מסיבה ליברלית", "מסיבת ליברלים", "ליין ליברלי", "אירוע ליברלי", "ערב ליברלי",
-              "סקס פוזיטיב", "פוליאמוריה", "פוליאמורי", "פוליאמורית", "lifestyle swingers", "סווינגר",
-              "מסיבות ליברליות", "אהבה ליברלית", "זוגות ליברליים"]
+    liberal: ["swingers", "swinger", "swingers party", "lifestyle party", "lifestyle swingers", "libertine",
+              "sex positive", "sex-positive", "polyamory party", "חילופי זוגות", "סווינגר", "סווינגרס", "סווינגרים",
+              "הקהילה הליברלית", "קהילה ליברלית", "מסיבה ליברלית", "מסיבות ליברליות", "מסיבת ליברלים",
+              "מסיבת נוסטלגיה ליברלית", "ליין ליברלי", "אירוע ליברלי", "ערב ליברלי", "אהבה ליברלית", "אהבה ליברליות",
+              "זוגות ליברליים", "סקס פוזיטיב", "מסיבת פוליאמורים"]
     kink: ["bdsm", "kink", "kinky", "fetish", "fetish party", "play party", "munch play", "shibari", "dominatrix", "בדסמ",
            "בדס\"מ", "בד\"סמ", "קינק", "קינקי", "קינקית", "מסיבת פטיש", "פטישיסטי", "פטישיסטית", "פליי פארטי",
            "מאנץ'-פליי", "מאנצ'-פליי", "מאנץ' פליי", "מאנץ׳ פליי", "מאנץ' בדסמ", "שיבארי", "דומינה",
            "פטיש פארטי"]
-    sensual: ["tantra", "tantric", "burlesque", "erotic", "cuddle party", "טנטרה", "טנטרית", "טנטרי", "בורלסק",
-              "ארוטי", "ארוטית", "ערב חושני", "מסיבה חושנית", "קאדל"]
+    sensual: ["tantra", "tantric", "burlesque", "cuddle party", "erotic party", "erotic night", "טנטרה", "טנטרית",
+              "טנטרי", "בורלסק", "ערב ארוטי", "מסיבה ארוטית", "אינטליגנציה ארוטית", "ערב חושני", "מסיבה חושנית",
+              "קאדל"]
     gender_balance: ["gender balance", "gender balanced", "gender-balanced", "couples only", "couples & single women",
                      "couples and single women", "איזון מגדרי", "זוגות בלבד", "זוגות ורווקות", "זוגות ונשים בלבד",
                      "זוגות ובחורות"]

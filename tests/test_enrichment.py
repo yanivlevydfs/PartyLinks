@@ -264,6 +264,11 @@ def test_adult_nightlife_genres_from_strong_phrases_only() -> None:
     assert found("The Scream: Edvard Munch", "") == set()
     assert found("הרצאה", "הציונות הליברלית ועתידה") == set()
     assert found("לילות הוואנה", "מופע חושני של סלסה, תלבושות לטקס") == set()
+    # Seen on prod: a stand-up topic, a play's politics and a dance review.
+    assert found("אלה קנבסקי | סטנדאפ", "הורים גרושים, פוליאמוריה, לגדול בבית רוסי") == set()
+    assert found("בית ברנרדה אלבה", "נחשב לדמות מסוכנת בשל דעותיו הליברליות") == set()
+    assert found("להקת PHILDANCO", "טכניקה איתנה כסלע ואקרובטיקה ארוטית") == set()
+    assert found("INSANE 🪩 מסיבת נוסטלגיה ליברלית!", "") == {"liberal"}
 
 
 def test_talk_takes_no_genres_from_its_description() -> None:
