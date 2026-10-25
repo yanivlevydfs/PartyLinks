@@ -1,10 +1,11 @@
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCategories, useEvents } from "../api";
 import { Calendar, filterParams, toggle } from "../Filters";
 import { genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters } from "../store";
 import { eventPath, label, today, tomorrow, TZ, useT } from "../ui";
+import { Weather } from "../Weather";
 
 const SLOT_ICONS: Record<string, string> = { morning: "☀️", afternoon: "🌤️", evening: "🌆", night: "🌙" };
 const GENRES_SHOWN = 12;
@@ -110,9 +111,9 @@ export function Quiz() {
         {step === 0 && (
           <>
             <div className="quiz-tiles">
-              <Tile icon="⚡" title={q.today} sub={day(today())} n={dateCount.get(today())} on={d.when === "tonight"} onClick={() => pickWhen("tonight")} />
-              <Tile icon="🌙" title={t.tomorrow} sub={day(tomorrow())} n={dateCount.get(tomorrow())} on={d.when === tomorrow()} onClick={() => pickWhen(tomorrow())} />
-              <Tile icon="🎉" title={t.weekend} n={weekendTotal} on={d.when === "weekend"} onClick={() => pickWhen("weekend")} />
+              <Tile icon="⚡" title={q.today} sub={day(today())} n={dateCount.get(today())} on={d.when === "tonight"} onClick={() => pickWhen("tonight")} wx={tileWeather(evening(today()))} />
+              <Tile icon="🌙" title={t.tomorrow} sub={day(tomorrow())} n={dateCount.get(tomorrow())} on={d.when === tomorrow()} onClick={() => pickWhen(tomorrow())} wx={tileWeather(evening(tomorrow()))} />
+              <Tile icon="🎉" title={t.weekend} n={weekendTotal} on={d.when === "weekend"} onClick={() => pickWhen("weekend")} wx={tileWeather(evening(friday(), 21))} />
               <Tile icon="📅" title={q.calendar} sub={isPicked ? day(d.when) : undefined} on={isPicked || calOpen} onClick={() => setCalOpen(!calOpen)} />
             </div>
             {calOpen && (
@@ -186,15 +187,29 @@ export function Quiz() {
   );
 }
 
+// The tiles' forecast: Tel Aviv in the evening (now, once the evening has begun); the weekend's is Friday night.
+const TLV = { lat: 32.08, lng: 34.78 };
+function evening(date: string, hour = 20): string {
+  const at = new Date(`${date}T${String(hour).padStart(2, "0")}:00:00`);
+  return new Date(Math.max(at.getTime(), Date.now())).toISOString();
+}
+function friday(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7));
+  return d.toLocaleDateString("en-CA", { timeZone: TZ });
+}
+const tileWeather = (start: string) => <Weather lat={TLV.lat} lng={TLV.lng} start={start} />;
+
 const picked = (step: number, d: Filters) => (step === 1 ? d.regions.length : step === 2 ? d.genres.length : d.slots.length) > 0;
 
-function Tile({ icon, title, sub, n, on, onClick }: { icon: string; title: string; sub?: string; n?: number; on: boolean; onClick: () => void }) {
+function Tile({ icon, title, sub, n, on, onClick, wx }: { icon: string; title: string; sub?: string; n?: number; on: boolean; onClick: () => void; wx?: ReactNode }) {
   return (
     <button className={"quiz-tile" + (on ? " on" : "")} aria-pressed={on} onClick={onClick} disabled={n === 0 && !on}>
       <span className="quiz-icon" aria-hidden>{icon}</span>
       <b>{title}</b>
       {sub && <small>{sub}</small>}
       {n != null && <em>{n}</em>}
+      {wx}
     </button>
   );
 }
