@@ -8,6 +8,7 @@ Order per event, first hit wins:
 Nominatim answers are only trusted at street / building precision, inside the event's city and,
 when the address names a known area of the city, near that area. A city or region centroid
 would put a vague "somewhere in the center" party on a fake spot, so those stay off the map.
+Events abroad (not on the map) take their city's point instead, for the weather forecast.
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ from sqlalchemy import select
 
 from partylinks.config import CitySettings, GeocodingSettings
 from partylinks.db import Database, EventRow, GeoCacheRow, upcoming_filter, utcnow, with_db_retry
-from partylinks.enrichment import AreaMatcher, meters
+from partylinks.enrichment import UNKNOWN_COUNTRY, AreaMatcher, meters
 
 log = logging.getLogger(__name__)
 
@@ -224,6 +225,7 @@ class Geocoder:
         self.drop_bad_points()
         if network:
             stats.lookups = self._lookup_new(stop)
+        stats.located += self._locate_abroad(network, stop)
         with self.db.session() as session:
             known_venue, known_street = self._known(session)
             cache = {c.query: c for c in session.scalars(select(GeoCacheRow).where(GeoCacheRow.found.is_(True)))}
@@ -260,7 +262,8 @@ class Geocoder:
         from their venue or address like any other. ponytail: runs after every scrape, so a source
         that re-sends a bad point shows it on the map until that source's geocode step."""
         with self.db.session() as session:
-            rows = session.scalars(select(EventRow).where(EventRow.latitude.is_not(None))).all()
+            # Abroad points are city centres shared by every venue there (_locate_abroad): not placeholders.
+            rows = session.scalars(select(EventRow).where(EventRow.latitude.is_not(None), EventRow.country.is_(None))).all()
             venues: defaultdict[tuple[float, float], set[str]] = defaultdict(set)
             for r in rows:
                 venues[_point(r)].add(venue_key(r.venue_name) or street_key(r.address) or "")
@@ -368,25 +371,66 @@ class Geocoder:
                         break
         return asked
 
+    def _locate_abroad(self, network: bool, stop: threading.Event | None) -> int:
+        """Events abroad: their city's point, enough for the weather (abroad is not on the map).
+        One lookup per city, in the same cache, rate limit and budget as the lookups in Israel."""
+        unplaced = (upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_not(None), EventRow.city.is_not(None))
+
+        def key(city: str, country: str) -> str:
+            return f"{clean(city)} @{country}"
+
+        with self.db.session(write=False) as session:
+            places = session.execute(select(EventRow.city, EventRow.country).where(*unplaced).distinct()).all()
+            cache = {c.query: c for c in session.scalars(select(GeoCacheRow).where(GeoCacheRow.query.like("% @__")))}
+        if network:
+            retry_before = utcnow() - timedelta(days=self.settings.retry_failed_days)
+            todo = list(dict.fromkeys(
+                (city, country) for city, country in places
+                if clean(city) and ((hit := cache.get(key(city, country))) is None or (not hit.found and hit.looked_up_at < retry_before))
+            ))[: self.settings.max_lookups_per_run]  # fmt: skip
+            if todo:
+                with httpx.Client(
+                    headers={"User-Agent": self.settings.user_agent, "Accept-Language": "he,en"}, timeout=20
+                ) as client:
+                    for city, country in todo:
+                        if stop is not None and stop.is_set():
+                            break
+                        hit = self._ask(client, clean(city), country)
+                        hit.query = key(city, country)
+                        cache[hit.query] = hit
+                        with_db_retry("geo cache", lambda hit=hit: self._remember(hit))
+        placed = 0
+        with self.db.session() as session:
+            for row in session.scalars(select(EventRow).where(*unplaced)):
+                hit = cache.get(key(row.city or "", row.country or ""))
+                if hit and hit.found:
+                    row.latitude, row.longitude = hit.latitude, hit.longitude
+                    placed += 1
+        return placed
+
     def _remember(self, hit: GeoCacheRow) -> None:
         with self.db.session() as session:
             session.merge(hit)
 
-    def _ask(self, client: httpx.Client, query: str) -> GeoCacheRow:
+    def _ask(self, client: httpx.Client, query: str, country: str | None = None) -> GeoCacheRow:
+        """With ``country`` (abroad): a city anywhere in that country, any precision."""
         global _last_request
         with _rate_lock:
             wait = _last_request + self.settings.min_interval_seconds - time.monotonic()
             if wait > 0:
                 time.sleep(wait)
             try:
-                response = client.get(
-                    self.settings.url,
-                    params={
-                        "q": query, "format": "jsonv2", "limit": self.settings.results_per_query,
-                        "addressdetails": 1, "countrycodes": self.settings.country_codes,
-                        "viewbox": self.settings.viewbox,
-                    },
-                )
+                params = {
+                    "q": query, "format": "jsonv2", "limit": self.settings.results_per_query,
+                    "addressdetails": 1, "countrycodes": self.settings.country_codes, "viewbox": self.settings.viewbox,
+                }  # fmt: skip
+                if country:
+                    params.pop("viewbox")
+                    if country == UNKNOWN_COUNTRY:
+                        params.pop("countrycodes")
+                    else:
+                        params["countrycodes"] = country.lower()
+                response = client.get(self.settings.url, params=params)
                 response.raise_for_status()
                 results = response.json()
             except (httpx.HTTPError, ValueError) as exc:
@@ -402,7 +446,7 @@ class Geocoder:
                 kind=r.get("addresstype"), city=city, label=r.get("display_name"), looked_up_at=utcnow(),
             )  # fmt: skip
             # Same street names exist all over the country / city: take the first hit that fits the query.
-            if self._fits(query, hit):
+            if country or self._fits(query, hit):
                 return hit
         return GeoCacheRow(query=query, found=False, looked_up_at=utcnow())
 

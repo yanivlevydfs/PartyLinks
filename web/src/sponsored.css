@@ -70,6 +70,8 @@
 .sp-spot .date-badge { top: 10px; inset-inline-start: 10px; padding: 5px 9px; border-radius: 11px; }
 .sp-spot .date-badge b { font-size: 16px; }
 .sp-spot .date-badge span { font-size: 10px; }
+.sp-spot .date-badge span.wx { font-size: 10.5px; }
+.sp-spot .date-badge .wx img { width: 16px; height: 16px; }
 .sp-spot .flag { top: 12px; bottom: auto; inset-inline-end: 10px; font-size: 10px; padding: 2px 8px; }
 .sp-info { position: absolute; inset-inline: 0; bottom: 0; z-index: 1; padding: 10px 11px; display: grid; gap: 2px; }
 .sp-info h3 {

@@ -586,6 +586,24 @@ def test_geocoder_takes_a_venue_point_only_from_the_same_city(tmp_path: Path) ->
     assert placed["rishon"] is None and placed["tlv2"] == 32.0790 and placed["hall"] is None
 
 
+def test_geocoder_places_events_abroad_at_their_city(tmp_path: Path) -> None:
+    from partylinks.db import GeoCacheRow, utcnow
+    from partylinks.geo import Geocoder
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    # Four venues in Berlin share the city point: not mistaken for a placeholder and dropped.
+    db = seed(settings, [event(f"b{i}", future, venue_name=f"Club {i}", address=None, city="ברלין", country="DE") for i in range(4)])
+    with db.session() as session:
+        session.add(GeoCacheRow(query="ברלין @DE", found=True, latitude=52.52, longitude=13.4, kind="city", looked_up_at=utcnow()))
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    geo.locate_missing(network=False)
+    geo.locate_missing(network=False)
+    with db.session() as session:
+        assert {r.latitude for r in session.query(EventRow)} == {52.52}
+
+
 def test_web_city_list_mirrors_the_config() -> None:
     import re
 
