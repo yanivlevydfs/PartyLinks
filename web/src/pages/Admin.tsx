@@ -56,7 +56,7 @@ const ago = (iso: string | null | undefined) => {
 const adminClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: true } } });
 
 // --------------------------------------------------------------------------- page
-const TABS = ["overview", "clicks", "sponsored", "sources", "runs", "config", "maintenance"] as const;
+const TABS = ["overview", "health", "clicks", "sponsored", "sources", "runs", "config", "maintenance"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage() {
@@ -110,6 +110,7 @@ function Admin() {
       {ov.isError && !authError && <p className="adm-err">{String(ov.error)}</p>}
       {ov.data?.warnings?.map((w: string) => <p key={w} className="adm-warn adm-banner">⚠ {w}</p>)}
       {tab === "overview" && <Overview data={ov.data} />}
+      {tab === "health" && <Health />}
       {tab === "clicks" && <Clicks />}
       {tab === "sponsored" && <Sponsored />}
       {tab === "sources" && <Sources />}
@@ -284,6 +285,60 @@ function Clicks() {
   );
 }
 
+const STATE_CLASS: Record<string, string> = { ok: "success", flaky: "partial", down: "failed", running: "running", "no runs": "" };
+
+/** Per source over the last 24 h (what `run_sources.py --report` prints): runs by status, events of
+ * the last good run, average time, latest error. Problems first. */
+function Health() {
+  const runs = useQuery({ queryKey: ["runs", "health"], queryFn: () => call<any[]>("/runs?limit=500"), refetchInterval: 15_000 });
+  const sources = useQuery({ queryKey: ["sources"], queryFn: () => call<any[]>("/sources"), refetchInterval: 15_000 });
+  if (runs.isError || sources.isError) return <p className="adm-err">{String(runs.error ?? sources.error)}</p>;
+  const since = Date.now() - 24 * 3600_000;
+  // ponytail: last 500 runs (~40 h at today's ~290 runs/day); a server-side summary if that stops covering 24 h
+  const recent = (runs.data ?? []).filter((r) => new Date(r.started_at).getTime() >= since);
+  const rows = (sources.data ?? []).filter((s) => s.enabled).map((s) => {
+    const items = recent.filter((r) => r.source === s.name); // newest first
+    const n = (st: string) => items.filter((r) => r.status === st).length;
+    const good = items.find((r) => r.status === "success" || r.status === "partial");
+    const done = items.filter((r) => r.finished_at);
+    const secs = done.reduce((t, r) => t + (new Date(r.finished_at).getTime() - new Date(r.started_at).getTime()) / 1000, 0) / (done.length || 1);
+    const bad = n("failed") + n("blocked");
+    const state = s.running ? "running" : !items.length ? "no runs" : good ? (bad ? "flaky" : "ok") : "down";
+    return { s, n, good, secs, bad, state, error: items.find((r) => r.error)?.error as string | undefined };
+  });
+  const order: Record<string, number> = { down: 0, flaky: 1, "no runs": 2, running: 3, ok: 4 };
+  rows.sort((a, b) => order[a.state] - order[b.state] || b.bad - a.bad || a.s.name.localeCompare(b.s.name));
+  const count = (st: string) => rows.filter((r) => r.state === st).length;
+  return (
+    <>
+      <div className="adm-stats">
+        <Stat label="OK" value={count("ok")} hint="last 24 h: every run succeeded" />
+        <Stat label="Flaky" value={count("flaky")} hint="some runs failed or were blocked" />
+        <Stat label="Down" value={count("down")} hint="no good run in 24 h" />
+        <Stat label="Running / no runs" value={`${count("running")} / ${count("no runs")}`} />
+      </div>
+      <div className="adm-scroll">
+        <table className="adm-table">
+          <thead><tr><th>Source</th><th>State</th><th>OK</th><th>Partial</th><th>Failed</th><th>Blocked</th><th title="Events found by the latest good run">Events</th><th>Last good run</th><th>Avg time</th><th>Latest error</th></tr></thead>
+          <tbody>
+            {rows.map(({ s, n, good, secs, state, error }) => (
+              <tr key={s.name}>
+                <td><b>{s.name}</b></td>
+                <td><span className={`adm-status ${STATE_CLASS[state]}`}>{state}</span></td>
+                <td>{n("success")}</td><td>{n("partial")}</td><td>{n("failed")}</td><td>{n("blocked")}</td>
+                <td>{good ? good.events_found : "—"}</td>
+                <td>{good ? ago(good.finished_at ?? good.started_at) : "—"}</td>
+                <td>{secs ? (secs < 120 ? `${Math.round(secs)}s` : `${Math.round(secs / 60)}m`) : "—"}</td>
+                <td>{error && <div className="adm-err small">{error.split("\n")[0].slice(0, 160)}</div>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 function Sources() {
   const sources = useQuery({ queryKey: ["sources"], queryFn: () => call<any[]>("/sources"), refetchInterval: 5000 });
   const jobs = useQuery({ queryKey: ["overview"], queryFn: () => call("/admin/api/overview") });
@@ -382,7 +437,7 @@ function Runs() {
         </select>
         <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
           <option value="">Any status</option>
-          {["running", "success", "partial", "failed"].map((s) => <option key={s}>{s}</option>)}
+          {["running", "success", "partial", "failed", "blocked", "interrupted"].map((s) => <option key={s}>{s}</option>)}
         </select>
       </div>
       {runs.isError && <p className="adm-err">{String(runs.error)}</p>}
