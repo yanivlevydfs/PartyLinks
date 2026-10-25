@@ -1924,7 +1924,9 @@ sources:
     uploads_path: /uploads/
     venue_name: FRIENDS מועדוני תרבות
     http:
-      concurrency: 3
+      # admin-ajax answers 403 from page ~13 when pages come 3 at a time (Railway, Oct 2026).
+      concurrency: 1
+      request_delay_seconds: 2.0
 
   poalimatarim:
     # Bank Hapoalim "פועלים ישראלי": free entry (registration) to ~50 museums, parks and heritage sites on
