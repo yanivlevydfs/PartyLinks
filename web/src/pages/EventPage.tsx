@@ -71,7 +71,7 @@ export default function EventPage() {
                   {e.time_slot && ` · ${label(t.slots, e.time_slot)}`}
                 </span>
               </li>
-              <Weather lat={e.latitude} lng={e.longitude} start={e.start_at} full />
+              <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={e.start_at} full />
               {(e.venue_name || e.address) && (
                 <li>
                   <i>📍</i>

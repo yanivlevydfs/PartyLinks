@@ -55,20 +55,21 @@ export function slotAt(slots: Slot[], start: number): Slot | undefined {
   });
 }
 
-export function Weather({ lat, lng, start, full = false }: {
+export function Weather({ lat, lng, city, start, full = false }: {
   lat: number | null;
   lng: number | null;
+  city?: string | null; // no exact point: the city centre's forecast
   start: string | null;
   full?: boolean;
 }) {
   const { lang } = useT();
   const when = start ? Date.parse(start) : NaN;
   const near = Number.isFinite(when) && when > Date.now() - 6 * 3600e3 && when < Date.now() + 11 * 864e5;
-  const cell = lat != null && lng != null ? [lat.toFixed(1), lng.toFixed(1)] : null;
+  const cell = lat != null && lng != null ? `lat=${lat.toFixed(1)}&lng=${lng.toFixed(1)}` : city ? `city=${encodeURIComponent(city)}` : null;
   const { data } = useQuery({
-    queryKey: ["weather", cell?.[0], cell?.[1]],
+    queryKey: ["weather", cell],
     queryFn: async () => {
-      const res = await fetch(`/weather?lat=${cell![0]}&lng=${cell![1]}`);
+      const res = await fetch(`/weather?${cell}`);
       if (!res.ok) throw new Error(`${res.status} /weather`);
       return ((await res.json()) as { slots: Slot[] }).slots;
     },

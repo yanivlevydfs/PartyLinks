@@ -134,10 +134,17 @@ def _ttl(expires: str | None) -> float:
 async def weather(
     request: Request,
     response: Response,
-    lat: Annotated[float, Query(ge=-90, le=90)],
-    lng: Annotated[float, Query(ge=-180, le=180)],
+    lat: Annotated[float | None, Query(ge=-90, le=90)] = None,
+    lng: Annotated[float | None, Query(ge=-180, le=180)] = None,
+    city: Annotated[str | None, Query(max_length=60, description="A configured city's Hebrew name: its centre")] = None,
 ) -> dict[str, list[list[Any]]]:
     settings: Settings = request.app.state.settings
+    # An event placed only by its city (no exact point) takes the city centre's forecast.
+    if lat is None or lng is None:
+        center = next((c.center for c in settings.enrichment.cities if city and c.he == city and c.center), None)
+        if center is None:
+            raise HTTPException(status_code=404, detail="no place")
+        lat, lng = center
     slots = await forecast(lat, lng, f"Pulse/1.0 (+{settings.site.base_url})", cache_file(settings))
     if not slots:
         raise HTTPException(status_code=503, detail="forecast unavailable")
