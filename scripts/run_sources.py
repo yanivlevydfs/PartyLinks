@@ -29,7 +29,7 @@ def call(method: str, path: str, body: dict | None = None) -> object:
         base + path,
         method=method,
         data=json.dumps(body).encode() if body is not None else None,
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json", "User-Agent": "partylinks-run-sources"},
     )
     with urllib.request.urlopen(request, timeout=60) as response:
         return json.load(response)
