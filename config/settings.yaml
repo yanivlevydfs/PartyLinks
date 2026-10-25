@@ -965,7 +965,7 @@ sources:
       - {host: ramat-gan, venue_name: עיריית רמת גן, city: רמת גן}
       - {host: even-yehuda, venue_name: מועצה מקומית אבן יהודה, city: אבן יהודה}
       # Found through Tickchak LIVE's venue pages (2026-10-21). Museums and kids' workshop tenants left out.
-      - {host: tickets.friends-hist.co.il, venue_name: FRIENDS מועדוני תרבות}
+      # tickets.friends-hist.co.il is read by the `friendshist` source (same shows, plus city and address).
       - {host: ethos, venue_name: אתוס - אודיטוריום חיפה, city: חיפה, skip_categories: ["גן החיות"]}
       - {host: t-g, venue_name: תיאטרון גבעתיים, city: גבעתיים}
       # Cinematheques (category cinema through "סינמטק" / the tenant's category).
@@ -1906,3 +1906,34 @@ sources:
       # It drops connections under load ("Server disconnected", Oct 2026): more and slower retries.
       max_retries: 5
       backoff_seconds: 10
+
+  friendshist:
+    # FRIENDS (friends-hist.co.il), the Histadrut's culture club: plays, stand-up, music and kids'
+    # shows in halls nationwide. Performances, halls and prices come from its Smarticket /api/shows;
+    # city and address from the WP "all shows" page plus its admin-ajax "load more" pages (~45).
+    # robots.txt allows all. Replaces the tickets.friends-hist.co.il tenant under `smarticket`.
+    enabled: true
+    cron: "34 7,19 * * *"
+    site_url: https://friends-hist.co.il
+    listing_path: /%d7%9b%d7%9c-%d7%94%d7%9e%d7%95%d7%a4%d7%a2%d7%99%d7%9d/
+    ajax_path: /wp-admin/admin-ajax.php
+    ajax_action: load_more_shows_all
+    tickets_host: tickets.friends-hist.co.il
+    shows_path: /api/shows
+    event_page_path: /event/{id}
+    uploads_path: /uploads/
+    venue_name: FRIENDS מועדוני תרבות
+    http:
+      concurrency: 3
+
+  poalimatarim:
+    # Bank Hapoalim "פועלים ישראלי": free entry (registration) to ~50 museums, parks and heritage sites on
+    # holiday weekends; a Tickchak hub, dates read from each site's Tickchak page. Seasonal: empty between campaigns.
+    enabled: true
+    cron: "54 9,21 * * *"
+    site_url: https://poalimatarim.com/
+    event_url_template: https://tickchak.co.il/{eid}
+    details_selector: .details2-textbox
+    hours_heading: "ימי ושעות הפעילות"
+    directions_heading: "דרכי הגעה"
+    organizer: "בנק הפועלים"

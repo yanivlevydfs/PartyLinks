@@ -21,6 +21,7 @@ from partylinks.scrapers.eventbuzz import EventbuzzScraper
 from partylinks.scrapers.eventer import EventerScraper
 from partylinks.scrapers.eventim import EventimScraper, ZappaScraper
 from partylinks.scrapers.festivalim import FestivalimScraper
+from partylinks.scrapers.friendshist import FriendsHistScraper
 from partylinks.scrapers.geektime import GeektimeScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
@@ -55,6 +56,7 @@ from partylinks.scrapers.ogo import OgoScraper
 from partylinks.scrapers.onecity import OneCityScraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
 from partylinks.scrapers.planet import PlanetScraper, RavHenScraper
+from partylinks.scrapers.poalimatarim import PoalimAtarimScraper
 from partylinks.scrapers.popit import PopitScraper
 from partylinks.scrapers.pres import PresScraper
 from partylinks.scrapers.ramatganmuni import RamatGanMuniScraper
@@ -150,6 +152,8 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         MatnasnetScraper,
         OneCityScraper,
         HabamaScraper,
+        FriendsHistScraper,
+        PoalimAtarimScraper,
     )
 }
 

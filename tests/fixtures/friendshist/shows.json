@@ -1,0 +1,237 @@
+[
+ {
+  "id": 3574,
+  "category": "תיאטרון FRIENDS",
+  "title": "אף מילה לאמא - בית ליסין",
+  "image": "upld692fe510a4c27198843684.JPG",
+  "content": "<p>\"אף מילה לאמא\" קומדיה ישראלית חדשה מאת נועם גיל | בימוי: אודי גוטשלק | שחקנים: לימור גולדשטיין, מולי שולמן, חי מאור, קרן מור מישורי, עדי צמח, שכנאי דאלי | קומדיה אנטי-רומנטית מצחיקה עד דמעות. כשנורית מגלה שבעלה בוגד בה, היא מזמינה את בעלה של המאהבת ודורשת ממנו לצאת איתה למלחמה על כבודם האבוד. אלא",
+  "brief": null,
+  "url": "אף_מילה_לאמא_-_בית_ליסין",
+  "tags": null,
+  "video": null,
+  "permalink": "/show/3574",
+  "gallery": [],
+  "events": [
+   {
+    "show": 3574,
+    "id": 19003,
+    "sale_exists": false,
+    "tickets_available": false,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "22:10",
+    "duration": 100,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-10-25",
+    "show_time": "20:30",
+    "unavailability_msg": null,
+    "title": null,
+    "content": "",
+    "event_place": "בית ליסין אולם 2",
+    "permalink": "/event/19003",
+    "time_label": "20:30",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 3,
+      "name": "חבר הסתדרות-עד 2 כרטיסים לחבר הסתדרות",
+      "price": 59,
+      "color": "#86b2ec"
+     },
+     {
+      "id": 113,
+      "name": "עובדים בריא",
+      "price": 59,
+      "color": "#80d4ba"
+     },
+     {
+      "id": 125,
+      "name": "רגיל",
+      "price": 280,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "59 - 280"
+   },
+   {
+    "show": 3574,
+    "id": 19004,
+    "sale_exists": false,
+    "tickets_available": false,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "22:10",
+    "duration": 100,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-10-26",
+    "show_time": "20:30",
+    "unavailability_msg": null,
+    "title": null,
+    "content": "",
+    "event_place": "בית ליסין אולם 2",
+    "permalink": "/event/19004",
+    "time_label": "20:30",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 3,
+      "name": "חבר הסתדרות-עד 2 כרטיסים לחבר הסתדרות",
+      "price": 59,
+      "color": "#86b2ec"
+     },
+     {
+      "id": 113,
+      "name": "עובדים בריא",
+      "price": 59,
+      "color": "#80d4ba"
+     },
+     {
+      "id": 125,
+      "name": "רגיל",
+      "price": 280,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "59 - 280"
+   },
+   {
+    "show": 3574,
+    "id": 19413,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "22:10",
+    "duration": 100,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-10-31",
+    "show_time": "20:30",
+    "unavailability_msg": null,
+    "title": null,
+    "content": "",
+    "event_place": "היכל התרבות מאיר ניצן ראשון לציון",
+    "permalink": "/event/19413",
+    "time_label": "20:30",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 3,
+      "name": "חבר הסתדרות-עד 2 כרטיסים לחבר הסתדרות",
+      "price": 59,
+      "color": "#86b2ec"
+     },
+     {
+      "id": 113,
+      "name": "עובדים בריא",
+      "price": 59,
+      "color": "#80d4ba"
+     },
+     {
+      "id": 125,
+      "name": "רגיל",
+      "price": 160,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "59 - 160"
+   },
+   {
+    "show": 3574,
+    "id": 20043,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "22:10",
+    "duration": 100,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-17",
+    "show_time": "20:30",
+    "unavailability_msg": null,
+    "title": null,
+    "content": "",
+    "event_place": "היכל תרבות תיאטרון יקנעם",
+    "permalink": "/event/20043",
+    "time_label": "20:30",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 3,
+      "name": "חבר הסתדרות-עד 2 כרטיסים לחבר הסתדרות",
+      "price": 59,
+      "color": "#86b2ec"
+     },
+     {
+      "id": 113,
+      "name": "עובדים בריא",
+      "price": 59,
+      "color": "#80d4ba"
+     },
+     {
+      "id": 125,
+      "name": "רגיל",
+      "price": 220,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "59 - 220"
+   },
+   {
+    "show": 3574,
+    "id": 20045,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "22:40",
+    "duration": 100,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-19",
+    "show_time": "21:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": "",
+    "event_place": "היכל תרבות תיאטרון יקנעם",
+    "permalink": "/event/20045",
+    "time_label": "21:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 3,
+      "name": "חבר הסתדרות-עד 2 כרטיסים לחבר הסתדרות",
+      "price": 59,
+      "color": "#86b2ec"
+     },
+     {
+      "id": 113,
+      "name": "עובדים בריא",
+      "price": 59,
+      "color": "#80d4ba"
+     },
+     {
+      "id": 125,
+      "name": "רגיל",
+      "price": 220,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "59 - 220"
+   }
+  ]
+ }
+]
