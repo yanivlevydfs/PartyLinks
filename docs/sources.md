@@ -24,6 +24,7 @@ pagination and what the listing and the event page provide.
 | `tickchak` | Tickchak LIVE (live.tickchak.co.il): an aggregator across ticketing providers | 07:45, 19:45 | yes |
 | `selector` | Selector (selector.org.il) | 08:06, 20:06 | yes |
 | `drop` | Drop (tdrop.net): self-serve ticketing for party producers: raves, house parties, festivals | 08:17, 20:17 | yes |
+| `airdrop` | Airdrop (airdrop.co.il): party guide for clubs, festivals and party trips abroad | 06:25, 18:25 | yes |
 | `popit` | Popit (popit.events): party board that aggregates events from ticketing sites | 07:03, 19:03 | yes |
 | `chillz` | Chillz (chillz.com) | 07:31, 19:31 | yes |
 | `barby` | Barby (barby.co.il): Tel Aviv live-music club | 06:07, 18:07 | yes |

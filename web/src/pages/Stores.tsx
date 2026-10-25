@@ -55,6 +55,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   secrettelaviv: ["https://www.secrettelaviv.com", "guide"], beatradar: ["https://beatradar.co.il", "guide"],
   happytlv: ["https://www.happytlv.com", "guide"], tiuli: ["https://www.tiuli.com", "guide"],
   festivalim: ["https://www.festivalim.co.il", "guide"], ogo: ["https://www.ogo.co.il", "guide"], muzi: ["https://muzi.co.il", "guide"],
+  airdrop: ["https://airdrop.co.il", "guide"],
   telaviv: ["https://www.tel-aviv.gov.il", "city"], haifamuni: ["https://www.haifa.muni.il", "city"],
   ramatganmuni: ["https://www.ramat-gan.muni.il", "city"], holon: ["https://www.holon.muni.il", "city"],
   munievents: [null, "city"], matnasnet: [null, "city"], onecity: [null, "city"],

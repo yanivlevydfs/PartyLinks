@@ -1121,6 +1121,18 @@ sources:
     http:
       concurrency: 4
 
+  airdrop:
+    # Airdrop (airdrop.co.il): party guide for Israeli clubs and festivals and party trips abroad.
+    # /events?when=upcoming lists every upcoming event as a card (~50); each page's MusicEvent
+    # JSON-LD gives the details and the seller's link (Go-Out, Eventer...), kept as purchase_url.
+    # robots.txt allows all but /admin/.
+    enabled: true
+    cron: "25 6,18 * * *"
+    site_url: https://airdrop.co.il
+    listing_path: /events?when=upcoming
+    http:
+      concurrency: 4
+
   beatradar:
     # Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties. One JSON
     # request lists every upcoming party (~120) with tiers, artists and genre tags; the ticket link

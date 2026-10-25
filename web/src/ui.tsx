@@ -43,7 +43,7 @@ const SOURCE_NAMES: Record<string, string> = {
   mevalim: "Mevalim", hulyo: "Hulyo", gagarin: "Gagarin", megatickets: "Megatickets", eventbuzz: "Eventbuzz",
   popit: "Popit", epgb: "Radio EPGB", leaan: "Leaan", kupatbravo: "Kupat Bravo", comy: "Comy", eventim: "Eventim",
   ticketmaster: "Ticketmaster", pres: "PRES", smarticket: "Smarticket", secrettelaviv: "Secret Tel Aviv",
-  tiktik: "TikTik", teder: "Teder", makore: "Makore", jerusalemtheatre: "Jerusalem Theatre", drop: "Drop", luma: "Luma", geektime: "Geektime",
+  tiktik: "TikTik", teder: "Teder", makore: "Makore", jerusalemtheatre: "Jerusalem Theatre", drop: "Drop", airdrop: "Airdrop", luma: "Luma", geektime: "Geektime",
   peoplecomputers: "People & Computers", meetup: "Meetup", zappa: "Zappa", beershevatheatre: "Be'er Sheva Theatre", arenas: "Arenas",
   happytlv: "HappyTLV", issta: "Issta", livevents: "Live Events", kishreyteufa: "Kishrey Teufa", ticketplace: "Ticket Place",
   beatradar: "Beat Radar", vibez: "Vibez", shotgun: "Shotgun", planet: "Planet", ravhen: "Rav-Hen", cinemacity: "Cinema City",
