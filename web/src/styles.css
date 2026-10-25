@@ -388,11 +388,11 @@ button, input, select { font: inherit; color: inherit; }
 .date-badge b { display: block; font: 900 24px/1 var(--display); }
 .date-badge span { font-size: 11px; color: var(--pink); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 /* Forecast at the start time (Weather.tsx): a glass pill under the date badge, a line on the event page. */
-.wx { display: inline-flex; align-items: center; gap: 2px; font: 800 14px/1 var(--display); color: var(--text); }
-.wx img { width: 34px; height: 34px; margin: -6px -2px -6px -4px; filter: drop-shadow(0 0 6px rgb(25 227 255 / .35)); }
+.wx { display: inline-flex; align-items: center; gap: 1px; font: 800 12px/1 var(--display); color: var(--text); }
+.wx img { width: 24px; height: 24px; margin: -4px -1px -4px -3px; filter: drop-shadow(0 0 5px rgb(25 227 255 / .35)); }
 .card-img .wx {
-  position: absolute; top: 76px; inset-inline-start: 12px; z-index: 1;
-  background: rgb(6 4 11 / .7); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 6px;
+  position: absolute; top: 72px; inset-inline-start: 12px; z-index: 1;
+  background: rgb(6 4 11 / .7); border: 1px solid var(--line); border-radius: 999px; padding: 2px 7px 2px 4px;
   backdrop-filter: blur(8px);
 }
 .facts .wx-full { align-items: center; gap: 8px; font-size: 16px; }
