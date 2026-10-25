@@ -360,3 +360,17 @@ def test_israel_proxy_sources_try_israeli_ips_first_then_the_usual_pool() -> Non
     assert scraper._spare_proxies[-1] == "http://pool:1"
     plain = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
     assert plain.http.proxy == "http://pool:1" and plain._spare_proxies == []
+
+
+def test_israel_proxy_feed_goes_first_and_is_cached(monkeypatch) -> None:
+    from partylinks.scrapers import base
+
+    calls = []
+    rows = {"data": [{"ip": "1.2.3.4", "port": "80", "protocols": ["https"]}, {"ip": "5.6.7.8", "port": "1080", "protocols": ["socks5"]}]}
+    monkeypatch.setattr(base.httpx, "get", lambda url, timeout: calls.append(url) or httpx.Response(200, json=rows, request=httpx.Request("GET", url)))
+    base._feed_cache.clear()
+    http = HttpSettings(israel_proxy_feed="http://feed", israel_proxy="http://il1:1")
+    for _ in range(2):
+        scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
+    assert {scraper.http.proxy, *scraper._spare_proxies} == {"http://1.2.3.4:80", "http://il1:1"}  # socks skipped
+    assert calls == ["http://feed"]

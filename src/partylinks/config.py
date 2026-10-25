@@ -108,6 +108,9 @@ class HttpSettings(BaseModel):
     # PARTYLINKS_HTTP__ISRAEL_PROXY=http://ip:port,http://ip:port,... Each run starts at a random
     # one and rotates on failure; `source_proxy` follows as the last resort.
     israel_proxy: str | None = None
+    # Live list of free Israeli proxies (geonode JSON), fetched at most every 30 minutes and put
+    # before `israel_proxy`, so the pool follows the free proxies as they come and go.
+    israel_proxy_feed: str | None = None
 
     @field_validator("headers", mode="before")
     @classmethod

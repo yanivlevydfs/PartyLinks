@@ -97,6 +97,8 @@ http:
   timeout_seconds: 30
   max_retries: 3
   backoff_seconds: 2
+  # Free Israeli proxies for `israel_proxy: true` sources, refreshed every 30 minutes.
+  israel_proxy_feed: "https://proxylist.geonode.com/api/proxy-list?limit=100&page=1&country=IL&protocols=http%2Chttps&sort_by=lastChecked&sort_type=desc"
   request_delay_seconds: 0.5
   # Parallel requests per source (listing pages, event details, artwork).
   concurrency: 8

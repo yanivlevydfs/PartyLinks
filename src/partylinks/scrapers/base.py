@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine, Iterable
 from typing import Any, ClassVar, Self, TypeVar
@@ -109,6 +110,29 @@ async def gather_or_cancel[X](coros: Iterable[Coroutine[Any, Any, X]]) -> list[X
         raise
 
 
+_feed_cache: dict[str, tuple[float, list[str]]] = {}
+FEED_TTL_SECONDS = 1800
+
+
+def _israeli_feed(url: str | None) -> list[str]:
+    """Proxy URLs from a geonode-style JSON list (``data: [{ip, port, protocols}]``), cached per URL.
+    A failed fetch yields nothing: the configured list and `source_proxy` still follow."""
+    if not url:
+        return []
+    cached = _feed_cache.get(url)
+    if cached and time.monotonic() - cached[0] < FEED_TTL_SECONDS:
+        return cached[1]
+    # ponytail: sync fetch in a sync constructor blocks the loop up to 10 s every 30 min; prefetch async if that bites
+    try:
+        rows = httpx.get(url, timeout=10).raise_for_status().json()["data"]
+        proxies = [f"http://{r['ip']}:{r['port']}" for r in rows if {"http", "https"} & set(r.get("protocols", []))]
+    except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+        logging.getLogger(__name__).warning("israel_proxy_feed failed: %s", exc)
+        proxies = []
+    _feed_cache[url] = (time.monotonic(), proxies)
+    return proxies
+
+
 class BaseScraper[S: SourceSettings](ABC):
     name: ClassVar[str]
     settings_model: ClassVar[type[SourceSettings]]
@@ -125,6 +149,7 @@ class BaseScraper[S: SourceSettings](ABC):
         pool = [p.strip() for p in (http.source_proxy or "").split(",") if p.strip()] if settings.proxied else []
         if settings.israel_proxy:
             israeli = [p.strip() for p in (http.israel_proxy or "").split(",") if p.strip()]
+            israeli = list(dict.fromkeys(_israeli_feed(http.israel_proxy_feed) + israeli))
             random.shuffle(israeli)  # spread the sources over the (often short-lived) free proxies
             pool = israeli + pool
         self._spare_proxies = pool[1:] if pool and "proxy" not in overrides else []
