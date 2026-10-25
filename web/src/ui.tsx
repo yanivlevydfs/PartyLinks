@@ -53,7 +53,7 @@ const SOURCE_NAMES: Record<string, string> = {
   holon: "Holon", kikarhamusica: "Kikar HaMusica", xplorer: "Xplorer", livetickets: "LiveTickets", tiuli: "Tiuli",
   festivalim: "Festivalim", telaviv: "Tel Aviv-Yafo", munievents: "Municipal calendars", haifamuni: "Haifa", ramatganmuni: "Ramat Gan",
   ogo: "OGO", muzi: "Muzi", matnasnet: "Community centres", onecity: "OneCity", habama: "Habama", friendshist: "FRIENDS",
-  poalimatarim: "Poalim Atarim", tickethouse: "Ticket House", barak: "Barak Tickets",
+  poalimatarim: "Poalim Atarim", tickethouse: "Ticket House", barak: "Barak Tickets", bargiyora: "Bar Giyora",
 };
 export const sourceName = (source: string) => SOURCE_NAMES[source] ?? source;
 

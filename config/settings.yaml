@@ -2013,3 +2013,20 @@ sources:
       user_agent: "Mozilla/5.0 (compatible; PartyLinks/1.0)"
       concurrency: 1
       request_delay_seconds: 1.5
+
+  bargiyora:
+    # Bar Giyora: live-show bar on Ibn Gabirol (music, stand-up, lectures), a WooCommerce shop.
+    # Listing pages /tickets/page/N/ give date, door time and show type; the Store API adds price,
+    # stock and description for those products in one call.
+    enabled: true
+    cron: "26 6,18 * * *"
+    site_url: https://bar-giyora.co.il
+    listing_path: /tickets/
+    products_path: /wp-json/wc/store/v1/products
+    venue_name: בר גיורא
+    address: אבן גבירול 30, בניין לונדון מיניסטור קומה 1
+    city: תל אביב-יפו
+    latitude: 32.0750
+    longitude: 34.7820
+    http:
+      concurrency: 1
