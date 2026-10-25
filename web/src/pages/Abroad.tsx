@@ -1,7 +1,7 @@
 // Concerts and festivals abroad: their own feed, kept out of the Israeli one (API ?abroad=true).
 // /abroad/<country>: one country (its code and title come from the server, like the page crawlers get).
 import { useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { useCategories, useLandingInfo } from "../api";
 import { EventGrid, Hero, Related, useT, useTitle } from "../ui";
 
@@ -15,10 +15,14 @@ export default function Abroad() {
   const [text, setText] = useState("");
   const [q, setQ] = useState("");
   // Filters: every option comes from the stored events (the categories facets), never a fixed list.
-  const [pick, setPick] = useState("");
-  const [city, setCity] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  // Kept in the URL (?country=&city=&from=&to=): a filtered view is a shareable link and survives a reload.
+  const [params, setParams] = useSearchParams();
+  const [pick, city, from, to] = ["country", "city", "from", "to"].map((k) => params.get(k) ?? "");
+  const set = (patch: Record<string, string>) => {
+    const next = new URLSearchParams(params);
+    for (const [k, v] of Object.entries(patch)) if (v) next.set(k, v); else next.delete(k);
+    setParams(next, { replace: true });
+  };
   const code = country ? info?.country ?? undefined : pick || undefined;
   const countries = useCategories({ abroad: "true" }).data?.countries ?? [];
   const cities = useCategories({ abroad: "true", country: code }).data?.cities ?? [];
@@ -38,7 +42,7 @@ export default function Abroad() {
         {!country && (
           <label className="sort">
             <span className="sort-label">{t.abroad.country}</span>
-            <select value={pick} onChange={(e) => { setPick(e.target.value); setCity(""); }} aria-label={t.abroad.country}>
+            <select value={pick} onChange={(e) => set({ country: e.target.value, city: "" })} aria-label={t.abroad.country}>
               <option value="">{t.abroad.allCountries}</option>
               {countries.map((c) => <option key={c.value} value={c.value}>{name(c.value)} ({c.events})</option>)}
             </select>
@@ -46,21 +50,21 @@ export default function Abroad() {
         )}
         <label className="sort">
           <span className="sort-label">{t.abroad.city}</span>
-          <select value={city} onChange={(e) => setCity(e.target.value)} aria-label={t.abroad.city}>
+          <select value={city} onChange={(e) => set({ city: e.target.value })} aria-label={t.abroad.city}>
             <option value="">{t.abroad.allCities}</option>
             {cities.map((c) => <option key={c.value} value={c.value}>{c.value} ({c.events})</option>)}
           </select>
         </label>
         <label className="sort">
           <span className="sort-label">{t.abroad.from}</span>
-          <input type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} aria-label={t.abroad.from} />
+          <input type="date" value={from} max={to || undefined} onChange={(e) => set({ from: e.target.value })} aria-label={t.abroad.from} />
         </label>
         <label className="sort">
           <span className="sort-label">{t.abroad.to}</span>
-          <input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} aria-label={t.abroad.to} />
+          <input type="date" value={to} min={from || undefined} onChange={(e) => set({ to: e.target.value })} aria-label={t.abroad.to} />
         </label>
         {(pick || city || from || to) && (
-          <button className="f-clear" onClick={() => { setPick(""); setCity(""); setFrom(""); setTo(""); }}>{t.abroad.clear}</button>
+          <button className="f-clear" onClick={() => set({ country: "", city: "", from: "", to: "" })}>{t.abroad.clear}</button>
         )}
       </div>
       <main className="wrap">
