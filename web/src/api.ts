@@ -56,6 +56,12 @@ export const usePosts = (category?: string) =>
 export const useSponsored = () =>
   useQuery({ queryKey: ["sponsored"], queryFn: () => getJSON<SponsoredRails>("/events/sponsored"), staleTime: 5 * 60_000 });
 
+export interface TicketSite { name: string; events: number; updated_at: string | null }
+
+/** The stores page: upcoming events per ticket site, with its last scrape. */
+export const useTicketSites = () =>
+  useQuery({ queryKey: ["ticket-sites"], queryFn: () => getJSON<{ stores: TicketSite[] }>("/ticket-sites"), staleTime: 5 * 60_000 });
+
 export const usePost = (slug: string) =>
   useQuery({ queryKey: ["post", slug], queryFn: () => getJSON<Post>(`/posts/${encodeURIComponent(slug)}`) });
 

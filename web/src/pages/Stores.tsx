@@ -1,14 +1,11 @@
 // Every ticket site / box office the events come from, with how many upcoming events each sells (GET /ticket-sites).
 // Crawlers without JavaScript get a summary from seo.py (INFO_PAGES).
-import { useQuery } from "@tanstack/react-query";
 import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCategories } from "../api";
+import { type TicketSite, useCategories, useTicketSites } from "../api";
 import type { Lang } from "../i18n";
 import { DEFAULT_FILTERS, useStore } from "../store";
 import { Hero, sourceName, useT, useTitle } from "../ui";
-
-interface Store { name: string; events: number; updated_at: string | null }
 
 type Kind = "tickets" | "venue" | "culture" | "cinema" | "abroad" | "guide" | "city";
 const KINDS: Record<Kind, Record<Lang, string>> = {
@@ -98,9 +95,14 @@ export default function StoresPage() {
   const { t: strings, lang } = useT();
   const t = TEXT[lang];
   useTitle(t.title);
-  const stores = useQuery({ queryKey: ["stores"], queryFn: () => fetch("/ticket-sites").then((r) => r.json() as Promise<{ stores: Store[] }>) }).data?.stores;
+  const sites = useTicketSites();
+  const cats = useCategories();
   // Stores with events in Israel can be browsed on the home page (its ?source= filter).
-  const browsable = new Set(useCategories().data?.sources.map((s) => s.value));
+  const browsable = new Set(cats.data?.sources.map((s) => s.value));
+  // /ticket-sites down (a server without it, a restart): the home filter's counts, Israel only.
+  const fallback: TicketSite[] | undefined = sites.isError ? cats.data?.sources.map((s) => ({ name: s.value, events: s.events, updated_at: null })) : undefined;
+  const stores = sites.data?.stores ?? fallback;
+  const failed = sites.isError && cats.isError;
   const setFilters = useStore((s) => s.setFilters);
   const setQuizDone = useStore((s) => s.setQuizDone);
   const navigate = useNavigate();
@@ -119,7 +121,7 @@ export default function StoresPage() {
         {stores && <p className="stores-total">{t.total(total.toLocaleString(strings.locale), stores.length)}</p>}
       </Hero>
       <main className="wrap">
-        {!stores && <p className="msg">{strings.loading}</p>}
+        {!stores && <p className="msg">{failed ? strings.error : strings.loading}</p>}
         <ol className="stores">
           {stores?.map((s, i) => {
             const [url, kind] = STORES[s.name] ?? [null, "tickets"];
