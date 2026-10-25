@@ -684,3 +684,17 @@ def test_stored_events_take_genres_added_to_the_config(tmp_path: Path) -> None:
         assert service.recompute_genres() == 0  # same config: nothing re-read
     finally:
         service.shutdown()
+
+
+def test_artist_page_lists_their_shows_abroad_too(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [event("rome", future, address="Roma, Italy", latitude=41.9, longitude=12.5), event("tlv", future)])
+    with db.session() as session:  # lineups come from curated artists only: set it as stored
+        for row in session.query(EventRow):
+            row.lineup = ["flashcookie"] if row.source_event_id == "rome" else []
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda q: [e["source_event_id"] for e in client.get(f"/events?{q}").json()["items"]]  # noqa: E731
+        assert ids("artist=flashcookie") == ["rome"]
+        assert ids("artist=flashcookie&abroad=false") == []
+        assert "rome" not in ids("")  # the main feed stays in Israel
