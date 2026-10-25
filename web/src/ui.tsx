@@ -322,6 +322,14 @@ export function Share({ path, title }: { path: string; title: string }) {
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>{SHARE_ICONS[key]}</svg>
         </a>
       ))}
+      {/* Everything else (Telegram, Instagram, copy link…) through the device's own share sheet. */}
+      {typeof navigator.share === "function" && (
+        <button className="share-btn" onClick={() => navigator.share({ title, url: window.location.origin + path }).catch(() => {})} aria-label={t.share} title={t.share}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <circle cx="18" cy="5" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="18" cy="19" r="2.5" /><path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

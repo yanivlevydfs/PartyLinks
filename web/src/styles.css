@@ -437,7 +437,20 @@ button, input, select { font: inherit; color: inherit; }
 .more button:disabled { opacity: .6; cursor: wait; }
 .buy { animation: pulse 2.6s ease-in-out infinite; }
 .share { display: flex; gap: 8px; }
-.e-info > .share { margin-top: 14px; }
+.e-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 14px; }
+.cal { position: relative; }
+.cal summary {
+  list-style: none; cursor: pointer; padding: 7px 14px; border-radius: 999px; font-size: 14px;
+  background: rgb(255 255 255 / .06); border: 1px solid var(--line); transition: border-color .2s, background .2s;
+}
+.cal summary::-webkit-details-marker { display: none; }
+.cal summary:hover, .cal[open] summary { border-color: var(--line-hot); background: rgb(255 46 147 / .14); }
+.cal-menu {
+  position: absolute; top: calc(100% + 6px); inset-inline-start: 0; z-index: 5; display: grid; min-width: 220px; padding: 6px;
+  background: var(--panel-solid); border: 1px solid var(--line-hot); border-radius: 14px; box-shadow: 0 12px 30px -8px rgb(0 0 0 / .7);
+}
+.cal-menu a { padding: 9px 12px; border-radius: 9px; color: var(--text); }
+.cal-menu a:hover, .cal-menu a:focus-visible { background: rgb(255 46 147 / .14); }
 .share-btn {
   display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
   color: var(--text); background: rgb(255 255 255 / .06); border: 1px solid var(--line);
