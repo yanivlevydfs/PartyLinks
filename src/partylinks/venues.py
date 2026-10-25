@@ -188,10 +188,18 @@ def infer_venues(rows: list[VenueInput]) -> dict[str, str | None]:
 
 def resolve_venues(session: Session) -> int:
     """Apply :func:`infer_venues` to the database; returns the number of events changed."""
+    updates = venue_updates(session)
+    bulk_update_by_id(session, EventRow, updates)
+    log.info("venues: renamed %d events", len(updates))
+    return len(updates)
+
+
+def venue_updates(session: Session) -> list[dict[str, Any]]:
+    """The rows :func:`infer_venues` changes (read only: the caller writes them)."""
     db_rows = session.execute(
         select(
             EventRow.id, EventRow.venue_name, EventRow.address, EventRow.latitude, EventRow.longitude, EventRow.extra,
-            EventRow.city,
+            EventRow.city, EventRow.venue_slug,
         )
     ).all()
     extras: dict[str, dict[str, Any]] = {r.id: dict(r.extra or {}) for r in db_rows}
@@ -211,15 +219,16 @@ def resolve_venues(session: Session) -> int:
         if not extras[r.id].get(PLACE_LISTING)
     ]
     sources = {v.id: v.source_name for v in inputs}
+    current = {r.id: (r.venue_name, r.venue_slug, r.extra or {}) for r in db_rows}
     updates = []
     for event_id, name in infer_venues(inputs).items():
-        extra = extras[event_id]
+        extra = dict(extras[event_id])
         extra.pop("venue_inferred", None)  # marker of the previous version
         if name == sources[event_id]:
             extra.pop(SOURCE_NAME, None)
         else:
             extra[SOURCE_NAME] = sources[event_id]
-        updates.append({"id": event_id, "venue_name": name, "venue_slug": slugify(name) or None, "extra": extra})
-    bulk_update_by_id(session, EventRow, updates)
-    log.info("venues: renamed %d events", len(updates))
-    return len(updates)
+        row = {"id": event_id, "venue_name": name, "venue_slug": slugify(name) or None, "extra": extra}
+        if (name, row["venue_slug"], extra) != current[event_id]:  # unchanged rows are not rewritten
+            updates.append(row)
+    return updates

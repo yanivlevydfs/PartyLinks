@@ -131,3 +131,20 @@ def test_happy_hours_of_neighbouring_bars_stay_apart(tmp_path: Path) -> None:
         listing("happytlv", "hh-b", "האפי האוור באורבנו", where=(32.0801, 34.7741), venue_name="אורבנו", **bar),
     ])  # fmt: skip
     assert groups["happytlv:hh-a"][0] != groups["happytlv:hh-b"][0]
+
+
+def test_second_venue_and_group_pass_rewrites_nothing(tmp_path: Path) -> None:
+    from partylinks.venues import resolve_venues, venue_updates
+
+    settings, _ = grouped(tmp_path, [
+        listing("a", "1", "Techno Night", venue_name="Moon Child"),
+        listing("b", "2", "TECHNO NIGHT", venue_name="Moonchild TLV"),
+        listing("c", "3", "Jazz", venue_name="Moon Child", where=None),
+    ])  # fmt: skip
+    db = Database(settings.database.url)
+    with db.session() as session:
+        resolve_venues(session)
+        Deduplicator(settings.dedup).regroup(session)
+    with db.session(write=False) as session:  # nothing left to change: no rows held under the write lock
+        assert venue_updates(session) == []
+        assert Deduplicator(settings.dedup).plan(session)[1] == []

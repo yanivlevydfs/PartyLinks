@@ -43,6 +43,7 @@ from partylinks.db import (
     FlagRow,
     ImageRow,
     ScrapeRunRow,
+    bulk_update_by_id,
     flag_on,
     record_delisted,
     start_run,
@@ -60,7 +61,7 @@ from partylinks.places import all_cities
 from partylinks.retention import is_current, purge_expired
 from partylinks.scrapers import SCRAPERS, build_scraper, source_settings
 from partylinks.scrapers.base import SourceBlockedError
-from partylinks.venues import resolve_venues
+from partylinks.venues import venue_updates
 
 log = logging.getLogger(__name__)
 
@@ -276,9 +277,21 @@ class ScrapeService:
             return _with_db_retry("regroup", self._regroup_once)
 
     def _regroup_once(self) -> int:
-        with self.db.session() as session:
-            resolve_venues(session)  # before grouping: a shared venue helps match duplicates
-            return self.deduplicator.regroup(session)
+        # Whole-table passes over ~40k rows: computed in read sessions, the write lock only for the
+        # changed rows (it was held for minutes and starved every save, Oct 2026). ponytail: a row
+        # saved between a read and its write is regrouped on the next pass.
+        with self.db.session(write=False) as session:
+            renames = venue_updates(session)  # before grouping: a shared venue helps match duplicates
+        if renames:
+            with self.db.session() as session:
+                bulk_update_by_id(session, EventRow, renames)
+        log.info("venues: renamed %d events", len(renames))
+        with self.db.session(write=False) as session:
+            merged, changed = self.deduplicator.plan(session)
+        if changed:
+            with self.db.session() as session:
+                bulk_update_by_id(session, EventRow, changed)
+        return merged
 
     async def purge_expired(self) -> int:
         """Retention on the dedicated maintenance thread; records its outcome for /health."""

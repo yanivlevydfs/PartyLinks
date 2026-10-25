@@ -151,6 +151,12 @@ class Deduplicator:
 
     def regroup(self, session: Session) -> int:
         """Recompute group_id / is_primary for all events. Returns the number of merged groups."""
+        merged, changed = self.plan(session)
+        bulk_update_by_id(session, EventRow, changed)
+        return merged
+
+    def plan(self, session: Session) -> tuple[int, list[dict[str, Any]]]:
+        """(merged groups, rows whose grouping changed): reads only, so it can run outside the write lock."""
         rows = session.execute(
             select(
                 EventRow.id, EventRow.source, EventRow.title, EventRow.local_date, EventRow.start_at,
@@ -205,9 +211,8 @@ class Deduplicator:
         changed = [
             u for u in updates if u["id"] in current and any(getattr(current[u["id"]], c) != u[c] for c in _GROUP_FIELDS)
         ]
-        bulk_update_by_id(session, EventRow, changed)
-        log.info("dedup: %d listings, %d merged groups", len(rows), merged)
-        return merged
+        log.info("dedup: %d listings, %d merged groups, %d rows changed", len(rows), merged, len(changed))
+        return merged, changed
 
 
 def _tier_counts(session: Session) -> dict[str, int]:

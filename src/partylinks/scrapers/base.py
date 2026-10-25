@@ -302,6 +302,10 @@ class BaseScraper[S: SourceSettings](ABC):
                     except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as exc:
                         switches[0] += self._next_proxy(client, exc)  # retried on the next proxy (a TransportError)
                         raise
+                    except httpx.RemoteProtocolError as exc:  # hung up without an answer: a free proxy, mostly
+                        if self._proxy is not None:
+                            switches[0] += self._next_proxy(client, exc)
+                        raise
                     except SOCKSError as exc:  # a broken SOCKS proxy ("Malformed reply"): httpx lets it through raw
                         switches[0] += self._next_proxy(client, exc)
                         raise httpx.ProxyError(f"SOCKS: {exc}") from exc
