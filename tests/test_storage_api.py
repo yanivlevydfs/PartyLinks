@@ -381,7 +381,7 @@ def test_admin_scan_runs_all_enabled_or_the_chosen_sources(tmp_path: Path) -> No
 
         app.state.service.start_source = fake_start
         everything = client.post("/admin/api/scan").json()
-        enabled = [n for n, s in configured_sources(settings).items() if s.enabled]
+        enabled = [n for n, s in configured_sources(settings).items() if s.enabled and not s.home]  # home: the PC's runner
         assert set(everything["started"]) | set(everything["busy"]) == set(enabled) and everything["busy"] == ["barby"]
         calls.clear()
         assert client.post("/admin/api/scan", json={"sources": ["goout", "eventer"]}).json()["started"] == ["goout", "eventer"]
@@ -656,3 +656,26 @@ def test_busy_towns_outside_the_config_get_city_pages(tmp_path: Path) -> None:
         assert client.get("/city/yavne").status_code == 404  # 5 events: too few for a town page
         assert "/city/shoham" in client.get("/sitemap-1.xml").text
         assert client.get("/landing-info", params={"path": "/city/shoham"}).json()["city"]["he"] == "שהם"
+
+
+def test_a_home_run_upload_is_saved_like_a_server_run(tmp_path: Path) -> None:
+    """scripts/home_runner.py scrapes sites that refuse server IPs and posts the run here."""
+    import time
+
+    settings = settings_for(tmp_path)
+    app = create_app(settings, start_scheduler=False)
+    start = datetime.now(UTC) + timedelta(days=2)
+    upload = event("home1", start, source="tiuli").model_dump(mode="json")
+    with TestClient(app) as client:
+        wrong = client.post("/admin/api/ingest/tiuli", json={"events": [{**upload, "source": "other"}]})
+        assert wrong.status_code == 422
+        answer = client.post("/admin/api/ingest/tiuli", json={"events": [upload], "failures": ["page 2: 403"]})
+        assert answer.json() == {"started": "tiuli", "events": 1}
+        for _ in range(200):
+            runs = client.get("/runs?source=tiuli").json()
+            if runs and runs[0]["status"] != "running":
+                break
+            time.sleep(0.05)
+        assert runs[0]["trigger"] == "home" and runs[0]["status"] == "partial" and runs[0]["events_found"] == 1
+        titles = [e["title"] for e in client.get("/events?page_size=50").json()["items"]]
+        assert upload["title"] in titles

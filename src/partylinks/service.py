@@ -24,7 +24,7 @@ import logging
 import re
 import threading
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -69,6 +69,22 @@ class SourceBusyError(RuntimeError):
 
 class _StopRequested(Exception):
     """Raised inside a run when the service is shutting down."""
+
+
+@dataclass
+class Relayed:
+    """A run scraped on another machine (scripts/home_runner.py, from an Israeli home IP) and
+    uploaded: the server saves it like one of its own runs."""
+
+    events: list[ScrapedEvent]
+    failures: list[str] = field(default_factory=list)
+    status: str = "success"  # success | blocked | failed, as the home run ended
+    error: str | None = None
+
+
+async def _replay(events: list[ScrapedEvent]) -> AsyncIterator[ScrapedEvent]:
+    for event in events:
+        yield event
 
 
 @dataclass(frozen=True)
@@ -131,7 +147,7 @@ class ScrapeService:
         self._maintenance.shutdown(wait=False, cancel_futures=True)
 
     # ------------------------------------------------------------------ starting runs
-    def start_source(self, source: str, trigger: str = "manual") -> Future[RunResult]:
+    def start_source(self, source: str, trigger: str = "manual", relayed: Relayed | None = None) -> Future[RunResult]:
         """Claim the source and submit its run. Raises SourceBusyError synchronously."""
         if self._stopping.is_set():
             raise SourceBusyError("service is shutting down")
@@ -139,7 +155,7 @@ class ScrapeService:
         if not lock.acquire(blocking=False):
             raise SourceBusyError(f"{source} is already running")
         try:
-            future = self._executor.submit(self._run_in_thread, source, trigger, lock)
+            future = self._executor.submit(self._run_in_thread, source, trigger, lock, relayed)
         except BaseException:
             lock.release()
             raise
@@ -223,9 +239,9 @@ class ScrapeService:
             return fn(*args)
         return await asyncio.to_thread(fn, *args)
 
-    def _run_in_thread(self, source: str, trigger: str, lock: threading.Lock) -> RunResult:
+    def _run_in_thread(self, source: str, trigger: str, lock: threading.Lock, relayed: Relayed | None = None) -> RunResult:
         try:
-            return asyncio.run(self._run(source, trigger))
+            return asyncio.run(self._run(source, trigger, relayed))
         finally:
             lock.release()
 
@@ -248,7 +264,7 @@ class ScrapeService:
             state.last_success_at, state.last_removed, state.last_error = utcnow(), removed, None
             return removed
 
-    async def _run(self, source: str, trigger: str) -> RunResult:
+    async def _run(self, source: str, trigger: str, relayed: Relayed | None = None) -> RunResult:
         run_id = await asyncio.to_thread(_with_db_retry, "start run", lambda: self._create_run(source, trigger))
         known, blocked = await asyncio.to_thread(self.artists.load)
         profiles = await asyncio.to_thread(self.artists.profiles)
@@ -281,9 +297,11 @@ class ScrapeService:
                 scraper.known_artists = {key: p for key, p in profiles.items() if p.source == source}
                 scraper.wanted = lambda event: not self.enricher.is_dropped(event)
                 failures = scraper.failures
+                if relayed is not None:
+                    failures += relayed.failures
                 async with scraper:
                     try:
-                        async for event in scraper.scrape():
+                        async for event in _replay(relayed.events) if relayed is not None else scraper.scrape():
                             if self._stopping.is_set():
                                 raise _StopRequested
                             found += 1
@@ -304,6 +322,8 @@ class ScrapeService:
                     except SourceBlockedError as exc:
                         status, error = "blocked", str(exc)  # keep what was collected before the refusal
                         log.warning("source %s blocked: %s", source, exc)
+                if relayed is not None and relayed.status != "success":
+                    status, error = relayed.status, relayed.error
         except TimeoutError:
             if deadline.expired():
                 status, error = "failed", f"timed out after {timeout}s"

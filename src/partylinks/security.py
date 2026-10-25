@@ -184,7 +184,8 @@ class SecurityMiddleware:
             length = int(headers.get("content-length") or 0)
         except ValueError:
             return await reject(400, "bad content-length")
-        if length > cfg.max_body_bytes:
+        # A home run upload (/admin/api/ingest, token-checked) carries a whole source: up to 50x.
+        if length > cfg.max_body_bytes * (50 if path.startswith("/admin/api/ingest/") else 1):
             return await reject(413, "request too large")
 
         docs = path.startswith(DOCS_PATHS)  # Swagger UI needs inline scripts and a CDN

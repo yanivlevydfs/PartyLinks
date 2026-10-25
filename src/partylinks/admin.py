@@ -23,11 +23,22 @@ from sqlalchemy.orm import Session
 
 from partylinks import clicks
 from partylinks.config import Settings, config_path, get_settings, project_path
-from partylinks.db import EventRow, FlagRow, ImageRow, ScrapeRunRow, SponsoredRow, SponsoredStatRow, TicketRow, flag_on, upcoming_filter
+from partylinks.db import (
+    EventRow,
+    FlagRow,
+    ImageRow,
+    ScrapeRunRow,
+    SponsoredRow,
+    SponsoredStatRow,
+    TicketRow,
+    flag_on,
+    upcoming_filter,
+)
 from partylinks.logs import debug_enabled, set_debug
+from partylinks.models import ScrapedEvent
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import configured_sources
-from partylinks.service import ScrapeService, SourceBusyError
+from partylinks.service import Relayed, ScrapeService, SourceBusyError
 
 log = logging.getLogger(__name__)
 
@@ -267,7 +278,7 @@ async def scan(request: Request, body: ScanIn | None = None) -> dict[str, list[s
     Sources already running are skipped and reported as busy."""
     service: ScrapeService = request.app.state.service
     configured = configured_sources(request.app.state.settings)
-    chosen = body.sources if body and body.sources else [n for n, s in configured.items() if s.enabled]
+    chosen = body.sources if body and body.sources else [n for n, s in configured.items() if s.enabled and not s.home]
     if unknown := [n for n in chosen if n not in configured]:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"unknown sources: {', '.join(unknown)}")
     started, busy = [], []
@@ -282,6 +293,32 @@ async def scan(request: Request, body: ScanIn | None = None) -> dict[str, list[s
         request.app.state.tasks.add(task)
         task.add_done_callback(request.app.state.tasks.discard)
     return {"started": started, "busy": busy}
+
+
+class IngestIn(BaseModel):
+    events: list[ScrapedEvent]
+    failures: list[str] = []
+    status: Literal["success", "blocked", "failed"] = "success"
+    error: str | None = None
+
+
+@router.post("/ingest/{source}")
+async def ingest(source: str, body: IngestIn, request: Request) -> dict[str, Any]:
+    """Save a run scraped elsewhere (scripts/home_runner.py on a home PC, for sites that refuse
+    every server IP) like one of the server's own runs: enrichment, dedup, geocoding, history."""
+    service: ScrapeService = request.app.state.service
+    if source not in configured_sources(request.app.state.settings):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"unknown source: {source}")
+    if any(e.source != source for e in body.events):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "every event must belong to the source")
+    try:
+        future = service.start_source(source, "home", Relayed(body.events, body.failures, body.status, body.error))
+    except SourceBusyError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    task = asyncio.create_task(_watch(source, asyncio.wrap_future(future)))
+    request.app.state.tasks.add(task)
+    task.add_done_callback(request.app.state.tasks.discard)
+    return {"started": source, "events": len(body.events)}
 
 
 async def _watch(name: str, run: Any) -> None:
