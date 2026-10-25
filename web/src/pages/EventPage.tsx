@@ -2,7 +2,18 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { EventDetail, Ticket } from "../types";
+import { Weather } from "../Weather";
 import { artistPath, eventPath, fmtDate, freshness, Img, label, money, priceLabel, Share, sourceName, Sources, useT, useTitle, venuePath } from "../ui";
+
+// URLs in scraped description text become links; trailing punctuation stays text.
+function linkify(text: string) {
+  return text.split(/((?:https?:\/\/|www\.)[^\s<>"]+)/g).flatMap((part, i) => {
+    if (i % 2 === 0) return part;
+    const url = part.replace(/[.,;:!?)\]}'"…]+$/, "");
+    const href = url.startsWith("www.") ? `https://${url}` : url;
+    return [<a key={i} href={href} target="_blank" rel="noopener noreferrer nofollow">{url}</a>, part.slice(url.length)];
+  });
+}
 
 export default function EventPage() {
   const { id = "" } = useParams();
@@ -60,6 +71,7 @@ export default function EventPage() {
                   {e.time_slot && ` · ${label(t.slots, e.time_slot)}`}
                 </span>
               </li>
+              <Weather lat={e.latitude} lng={e.longitude} start={e.start_at} full />
               {(e.venue_name || e.address) && (
                 <li>
                   <i>📍</i>
@@ -123,7 +135,7 @@ export default function EventPage() {
         {e.description && (
           <section>
             <h4>{t.about}</h4>
-            <p className="desc" dir="auto">{e.description}</p>
+            <p className="desc" dir="auto">{linkify(e.description)}</p>
           </section>
         )}
 

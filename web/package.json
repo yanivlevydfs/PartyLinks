@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@bybas/weather-icons": "^2.0.0",
     "@fontsource/heebo": "^5.3.0",
     "@fontsource/rubik": "^5.3.0",
     "@tanstack/react-query": "^5.62.0",

@@ -6,6 +6,7 @@ import { CookieConsent, useConsent } from "./consent";
 import { InstallBanner } from "./Install";
 import { INFO_LINKS } from "./pages/Info";
 import { SponsoredFrame, SponsoredStrip } from "./Sponsored";
+import { Weather } from "./Weather";
 import { useStore } from "./store";
 import type { EventSummary } from "./types";
 
@@ -230,6 +231,7 @@ export function Card({ e }: { e: EventSummary }) {
           <b>{fmtDate(e.start_at, t, { day: "numeric" })}</b>
           <span>{fmtDate(e.start_at, t, { month: "short" })}</span>
         </div>
+        <Weather lat={e.latitude} lng={e.longitude} start={e.start_at} />
         {fresh && <span className={`fresh ${fresh}`}>{fresh === "new" ? t.isNew : t.updatedBadge}</span>}
         {e.is_sold_out ? (
           <span className="flag sold">{t.soldOut}</span>

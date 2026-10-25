@@ -387,6 +387,18 @@ button, input, select { font: inherit; color: inherit; }
 }
 .date-badge b { display: block; font: 900 24px/1 var(--display); }
 .date-badge span { font-size: 11px; color: var(--pink); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+/* Forecast at the start time (Weather.tsx): a glass pill under the date badge, a line on the event page. */
+.wx { display: inline-flex; align-items: center; gap: 2px; font: 800 14px/1 var(--display); color: var(--text); }
+.wx img { width: 34px; height: 34px; margin: -6px -2px -6px -4px; filter: drop-shadow(0 0 6px rgb(25 227 255 / .35)); }
+.card-img .wx {
+  position: absolute; top: 76px; inset-inline-start: 12px; z-index: 1;
+  background: rgb(6 4 11 / .7); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 6px;
+  backdrop-filter: blur(8px);
+}
+.facts .wx-full { align-items: center; gap: 8px; font-size: 16px; }
+.wx-full i { display: inline-flex; }
+.wx-full img { width: 40px; height: 40px; margin: -10px -8px; }
+.wx-full span { font-weight: 500; color: var(--muted); }
 .flag {
   position: absolute; bottom: 12px; inset-inline-end: 12px; z-index: 1;
   background: #fff; color: #0a0612; font-weight: 800; font-size: 13px;
@@ -522,7 +534,8 @@ button, input, select { font: inherit; color: inherit; }
 .ticket small { color: var(--muted); font-size: 13px; }
 .t-price { text-align: end; flex: none; }
 .t-price b { font: 900 20px/1.1 var(--display); }
-.desc { white-space: pre-line; color: #ddd3f5; margin: 0; max-width: 75ch; font-size: 16px; }
+.desc { white-space: pre-line; color: #ddd3f5; margin: 0; max-width: 75ch; font-size: 16px; overflow-wrap: anywhere; }
+.desc a { color: var(--cyan); text-decoration: underline; }
 .gallery { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr)); }
 .g-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); }
 
