@@ -4,7 +4,8 @@
 Posts are files in ``content/blog/<slug>.html``: a YAML header between ``---`` lines, then an HTML
 body. A ``<!--events genre=techno when=weekend city=tel-aviv limit=6-->`` comment in the body is a
 live list of matching upcoming events (venue=, artist=, free=true also work). Posts dated in the
-future or marked ``draft: true`` stay hidden until their date.
+future or marked ``draft: true`` stay hidden until their date; one with ``expires: <date>`` (a holiday,
+a month's roundup) disappears on that date, like a past event.
 
 Served three ways: server-rendered pages for crawlers (``/blog``, ``/blog/category/<key>``,
 ``/blog/<slug>``), JSON for the React site (``/posts``, ``/posts/<slug>``) and an RSS feed.
@@ -59,6 +60,7 @@ class Post(BaseModel):
     description: str
     date: date
     updated: date | None = None
+    expires: date | None = None
     category: str = "guides"
     image: str | None = None
     author: str | None = None
@@ -96,7 +98,10 @@ def load_posts(cfg: Settings, content: Path | None = None) -> list[Post]:
     """Published posts, newest first. ponytail: re-read from disk per request; cache by mtime if
     the blog grows past a few hundred posts."""
     today = datetime.now(ZoneInfo(cfg.timezone)).date()
-    posts = [p for p in map(_parse, sorted((content or CONTENT_DIR).glob("*.html"))) if p and not p.draft and p.date <= today]
+    posts = [
+        p for p in map(_parse, sorted((content or CONTENT_DIR).glob("*.html")))
+        if p and not p.draft and p.date <= today and not (p.expires and p.expires <= today)
+    ]  # fmt: skip
     return sorted(posts, key=lambda p: (p.date, p.slug), reverse=True)
 
 
