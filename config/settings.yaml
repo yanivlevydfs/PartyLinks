@@ -1937,3 +1937,14 @@ sources:
     hours_heading: "ימי ושעות הפעילות"
     directions_heading: "דרכי הגעה"
     organizer: "בנק הפועלים"
+
+  tickethouse:
+    # Ticket House (ticket-house.com; ticketim.co.il redirects here): tickets and packages to concerts
+    # and sports abroad. A Wix site: its Wix Events catalogue comes from the site's Wix Data API
+    # (anonymous token from /_api/v1/access-tokens, then POST /_api/cloud-data/v2/items/query on
+    # Events/Events, 100 a page): local start, venue, address with Hebrew country, from/to price.
+    # ~190 upcoming, 3 requests, no detail requests. Sports matches are skipped. robots.txt allows all.
+    enabled: true
+    cron: "48 5,17 * * *"
+    site_url: https://www.ticket-house.com
+    event_path: /event-details/{slug}

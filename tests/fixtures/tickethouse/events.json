@@ -1,0 +1,137 @@
+{
+ "dataItems": [
+  {
+   "id": "53ec242b-3451-4a65-a135-348dfa4d2685",
+   "dataCollectionId": "Events/Events",
+   "data": {
+    "latitude": "52.5054525",
+    "description": "",
+    "_id": "53ec242b-3451-4a65-a135-348dfa4d2685",
+    "registrationStatus": "OPEN_TICKETS",
+    "slug": "yl-wwlww-bbrlyn-11-7-2027",
+    "longitude": "13.3674705",
+    "locationAddress": "Potsdamer Str. 58, 10785 Berlin, גרמניה",
+    "timeZoneId": "Europe/Berlin",
+    "status": "SCHEDULED",
+    "end": {
+     "$date": "2027-07-11T21:00:00.000Z"
+    },
+    "title": "איל וולוו בברלין 11.7.2027",
+    "start": {
+     "$date": "2027-07-11T17:00:00.000Z"
+    },
+    "lowestPriceFormatted": "₪379",
+    "highestPriceFormatted": "₪511",
+    "locationName": "Classic Open Air",
+    "mainImage": "image://v1/a54fc8_215b6c9b84c94936a734512470fdbba3~mv2.png/1772_1620/a54fc8_215b6c9b84c94936a734512470fdbba3~mv2.png"
+   }
+  },
+  {
+   "id": "73f31fc4-5b67-4875-9192-4fb5e73f6ab7",
+   "dataCollectionId": "Events/Events",
+   "data": {
+    "latitude": "-75.250973",
+    "description": "",
+    "_id": "73f31fc4-5b67-4875-9192-4fb5e73f6ab7",
+    "registrationStatus": "CLOSED",
+    "slug": "contact",
+    "longitude": "-0.071389",
+    "locationAddress": "אנטרטיקה",
+    "timeZoneId": "Europe/Vienna",
+    "status": "SCHEDULED",
+    "end": {
+     "$date": "2039-04-01T21:00:00.000Z"
+    },
+    "title": "Contact",
+    "start": {
+     "$date": "2039-04-01T17:00:00.000Z"
+    },
+    "locationName": null
+   }
+  },
+  {
+   "id": "f7fb0151-9f1d-44bf-836e-ce5763291a27",
+   "dataCollectionId": "Events/Events",
+   "data": {
+    "latitude": "37.9448271",
+    "description": "מועדון הבוזוקי האייקוני בסלוניקי - פילי אקסיו\nPILI AKSIOU",
+    "_id": "f7fb0151-9f1d-44bf-836e-ce5763291a27",
+    "registrationStatus": "OPEN_TICKETS",
+    "slug": "nyqws-wrtys-bslwnyqy-24-10-2026-1",
+    "longitude": "23.6683123",
+    "locationAddress": "Andreou Georgiou 9,Slaughterhouses Thessaloniki",
+    "timeZoneId": "Europe/Athens",
+    "status": "SCHEDULED",
+    "end": {
+     "$date": "2026-10-30T21:05:00.999Z"
+    },
+    "title": "ניקוס ורטיס בסלוניקי 30.10.2026",
+    "start": {
+     "$date": "2026-10-30T21:00:00.000Z"
+    },
+    "lowestPriceFormatted": "₪310",
+    "highestPriceFormatted": "₪430",
+    "locationName": "מועדון בסלוניקי - פילי אקסיו",
+    "mainImage": "image://v1/6d810d_81299bb3311f42daa45e67211650c6a9~mv2.png/272_186/6d810d_81299bb3311f42daa45e67211650c6a9~mv2.png"
+   }
+  },
+  {
+   "id": "69aa8aed-aee0-4cfd-b09f-394f470af4cd",
+   "dataCollectionId": "Events/Events",
+   "data": {
+    "latitude": "38.6991259",
+    "description": "",
+    "_id": "69aa8aed-aee0-4cfd-b09f-394f470af4cd",
+    "registrationStatus": "OPEN_TICKETS",
+    "slug": "tyym-ymplh-bbmsgrt-pstybl-nos-alive-lysbwn-6-6-2027",
+    "longitude": "-9.242822199999999",
+    "locationAddress": "Passeio Marítimo de Algés, 1495-701 Cruz Quebrada, פורטוגל",
+    "timeZoneId": "Europe/Lisbon",
+    "status": "SCHEDULED",
+    "end": {
+     "$date": "2027-07-10T22:00:00.000Z"
+    },
+    "title": "טיים אימפלה בבמסגרת פסטיבל NOS Alive! (ליסבון) 6.6.2027",
+    "start": {
+     "$date": "2027-07-10T18:00:00.000Z"
+    },
+    "lowestPriceFormatted": "₪630",
+    "highestPriceFormatted": "₪630",
+    "locationName": "nos alive",
+    "mainImage": "image://v1/9a7282_7c65d7892545420988b8e533799943c8~mv2.jpg/2894_2658/9a7282_7c65d7892545420988b8e533799943c8~mv2.jpg"
+   }
+  },
+  {
+   "id": "1c7c82b1-3f23-458b-8deb-c79db5233ce7",
+   "dataCollectionId": "Events/Events",
+   "data": {
+    "latitude": "45.1095522",
+    "description": "",
+    "_id": "1c7c82b1-3f23-458b-8deb-c79db5233ce7",
+    "registrationStatus": "CLOSED",
+    "slug": "ywbntws-pywrntynh-1",
+    "longitude": "7.6412777",
+    "locationAddress": "Corso Gaetano Scirea, 50, 10151 Torino TO, איטליה",
+    "timeZoneId": "Europe/Paris",
+    "status": "ENDED",
+    "end": {
+     "$date": "2026-05-17T21:00:00.000Z"
+    },
+    "title": "יובנטוס - פיורנטינה",
+    "start": {
+     "$date": "2026-05-17T17:00:00.000Z"
+    },
+    "lowestPriceFormatted": "₪590",
+    "highestPriceFormatted": "₪1,474",
+    "locationName": "Allianz Stadium",
+    "mainImage": "image://v1/09ab99_5a3e4e0e650c401a9762b55d8747e76f~mv2.jpg/1447_1329/09ab99_5a3e4e0e650c401a9762b55d8747e76f~mv2.jpg"
+   }
+  }
+ ],
+ "pagingMetadata": {
+  "count": 5,
+  "offset": 0,
+  "total": 5,
+  "hasNext": false
+ }
+}
