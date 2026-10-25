@@ -15,8 +15,8 @@ import re
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
-from functools import cache
 from datetime import date, datetime, timedelta
+from functools import cache
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -694,7 +694,8 @@ def city_genre_counts(session: Session, cfg: Settings) -> dict[str, dict[str, in
     counts: dict[str, Counter[str]] = {}
     rows = session.execute(select(EventRow.city, EventRow.genres).where(upcoming_filter(), EventRow.country.is_(None), EventRow.city.is_not(None)))
     for city, genres in rows:
-        counts.setdefault(city, Counter()).update(cfg.enrichment.with_parents(genres or []))
+        if city:
+            counts.setdefault(city, Counter()).update(cfg.enrichment.with_parents(genres or []))
     return {c: {g: n for g, n in cnt.most_common() if n >= GENRE_PAGE_MIN} for c, cnt in counts.items()}
 
 
@@ -730,9 +731,9 @@ def country_name(code: str, lang: str) -> str:
 def abroad_countries(session: Session) -> dict[str, str]:
     """URL slug (English name) -> country code, for countries with enough upcoming events for /abroad/<slug>."""
     counts = Counter(session.scalars(select(EventRow.country).where(upcoming_filter(), EventRow.country.is_not(None))))
-    out = {}
+    out: dict[str, str] = {}
     for code, n in counts.most_common():
-        if n >= GENRE_PAGE_MIN and pycountry.countries.get(alpha_2=code):
+        if code and n >= GENRE_PAGE_MIN and pycountry.countries.get(alpha_2=code):
             out[_ascii_slug(country_name(code, "en"))] = code
     return out
 
@@ -965,7 +966,7 @@ def _related(session: Session, cfg: Settings, lang: str, path: str) -> list[tupl
             in_c = f"ב{c.he}" if he else f"in {c.en}"
             out += [(f"/city/{c.key}/{g}", f"{genre_label(g, lang)} {in_c}") for g in list(city_genre_counts(session, cfg).get(c.he, {}))[:12]]
             venues = Counter(session.scalars(select(EventRow.venue_name).where(upcoming_filter(), EventRow.city == c.he, EventRow.venue_name.is_not(None))))
-            out += [(f"/venue/{quote(v, safe='')}", v) for v, _ in venues.most_common(8)]
+            out += [(f"/venue/{quote(v, safe='')}", v) for v, _ in venues.most_common(8) if v]
             out += [(f"/city/{n.key}", n.he if he else n.en) for n in _nearby(c, cities)]
     elif head == "region" and rest:
         region = rest[0].replace("-", "_")
