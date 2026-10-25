@@ -145,12 +145,23 @@ function Spot({ list }: { list: MapEvent[] }) {
   );
 }
 
-/** Zoom to the pins whenever the filter changes what is shown. */
+const near = ([la, ln]: [number, number], [cla, cln]: [number, number], deg: number) =>
+  Math.abs(la - cla) < deg && Math.abs(ln - cln) < deg;
+const TEL_AVIV: [number, number] = [32.08, 34.78];
+
+/** Zoom to the pins whenever the filter changes what is shown. A phone fits the
+ *  Tel Aviv pins first (else Israel's), so a few abroad don't zoom it out to Europe. */
 function FitTo({ points }: { points: [number, number][] }) {
   const map = useMap();
   const key = points.map((p) => p.join()).sort().join("|");
   useEffect(() => {
-    if (points.length) map.fitBounds(points, { padding: [30, 30], maxZoom: 15 });
+    let fit = points;
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      const tlv = points.filter((p) => near(p, TEL_AVIV, 0.2));
+      const il = points.filter((p) => near(p, [31.4, 35], 2));
+      fit = tlv.length ? tlv : il.length ? il : points;
+    }
+    if (fit.length) map.fitBounds(fit, { padding: [30, 30], maxZoom: 15 });
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
