@@ -156,7 +156,7 @@ class Deduplicator:
                 EventRow.id, EventRow.source, EventRow.title, EventRow.local_date, EventRow.start_at,
                 EventRow.latitude, EventRow.longitude, EventRow.venue_slug, EventRow.url, EventRow.extra,
                 EventRow.first_seen_at, EventRow.min_price, EventRow.max_price, EventRow.entry_type,
-                EventRow.has_free_entry, EventRow.free_entry_until,
+                EventRow.has_free_entry, EventRow.free_entry_until, EventRow.is_listed,
             )
         ).all()  # fmt: skip
         tier_counts = _tier_counts(session)
@@ -174,7 +174,8 @@ class Deduplicator:
                 min_price=r.min_price, max_price=r.max_price, entry_type=r.entry_type,
                 has_free_entry=r.has_free_entry, free_entry_until=r.free_entry_until,
             )  # fmt: skip
-            if r.local_date is None:
+            # An unlisted row stands alone: as a group's primary it would hide its listed copies.
+            if r.local_date is None or r.is_listed is False:
                 updates += self._group_rows([listing])
             else:
                 by_day[r.local_date].append(listing)

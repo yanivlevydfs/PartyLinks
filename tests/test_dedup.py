@@ -77,6 +77,19 @@ def test_api_returns_one_event_with_alternatives(tmp_path: Path) -> None:
         assert client.get("/events", params={"include_duplicates": True}).json()["total"] == 2
 
 
+def test_unlisted_copy_never_hides_the_listed_one(tmp_path: Path) -> None:
+    # goout outranks selector as primary; once goout stops listing it, selector's copy must still show.
+    settings, _ = grouped(tmp_path, [listing("goout", "a", "WHITE THURSDAY"), listing("selector", "b", "WHITE THURSDAY")])
+    db = Database(settings.database.url)
+    with db.session() as session:
+        session.query(EventRow).filter(EventRow.id == "goout:a").update({"is_listed": False})
+    with db.session() as session:
+        Deduplicator(settings.dedup).regroup(session)
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        page = client.get("/events").json()
+        assert page["total"] == 1 and page["items"][0]["source"] == "selector"
+
+
 def test_free_or_cheaper_listing_on_another_source_is_never_hidden(tmp_path: Path) -> None:
     settings, groups = grouped(tmp_path, [
         listing("goout", "a", "WHITE THURSDAY - MAOR BUZAGLO", tickets=[TicketTier(name="Entry", price=Decimal(90))]),
