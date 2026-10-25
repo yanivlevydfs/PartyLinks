@@ -253,6 +253,12 @@ button, input, select { font: inherit; color: inherit; }
   background: var(--panel-solid); color: var(--text); border: 1px solid var(--line); border-radius: 999px;
   min-height: 34px; padding: 4px 12px; font: inherit; cursor: pointer;
 }
+.abroad-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-top: 16px; }
+.abroad-filters .sort { margin-inline-start: 0; }
+.abroad-filters input[type="date"] {
+  background: var(--panel-solid); color: var(--text); border: 1px solid var(--line); border-radius: 999px;
+  min-height: 34px; padding: 4px 12px; font: inherit; color-scheme: dark;
+}
 .sort select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .f-clear {
   flex: none; background: none; border: 0; padding: 6px 8px; cursor: pointer;

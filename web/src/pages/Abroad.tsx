@@ -2,7 +2,7 @@
 // /abroad/<country>: one country (its code and title come from the server, like the page crawlers get).
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { useLandingInfo } from "../api";
+import { useCategories, useLandingInfo } from "../api";
 import { EventGrid, Hero, Related, useT, useTitle } from "../ui";
 
 export default function Abroad() {
@@ -14,6 +14,16 @@ export default function Abroad() {
   useTitle(title);
   const [text, setText] = useState("");
   const [q, setQ] = useState("");
+  // Filters: every option comes from the stored events (the categories facets), never a fixed list.
+  const [pick, setPick] = useState("");
+  const [city, setCity] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const code = country ? info?.country ?? undefined : pick || undefined;
+  const countries = useCategories({ abroad: "true" }).data?.countries ?? [];
+  const cities = useCategories({ abroad: "true", country: code }).data?.cities ?? [];
+  const names = new Intl.DisplayNames([lang], { type: "region" });
+  const name = (c: string) => { try { return names.of(c) ?? c; } catch { return c; } };
   useEffect(() => {
     const id = setTimeout(() => setQ(text.trim()), 300);
     return () => clearTimeout(id);
@@ -24,9 +34,41 @@ export default function Abroad() {
         <p className="sub">{(country && info?.intro) || t.abroad.intro}</p>
         <input className="search" type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder={t.search} aria-label={t.search} />
       </Hero>
+      <div className="wrap abroad-filters">
+        {!country && (
+          <label className="sort">
+            <span className="sort-label">{t.abroad.country}</span>
+            <select value={pick} onChange={(e) => { setPick(e.target.value); setCity(""); }} aria-label={t.abroad.country}>
+              <option value="">{t.abroad.allCountries}</option>
+              {countries.map((c) => <option key={c.value} value={c.value}>{name(c.value)} ({c.events})</option>)}
+            </select>
+          </label>
+        )}
+        <label className="sort">
+          <span className="sort-label">{t.abroad.city}</span>
+          <select value={city} onChange={(e) => setCity(e.target.value)} aria-label={t.abroad.city}>
+            <option value="">{t.abroad.allCities}</option>
+            {cities.map((c) => <option key={c.value} value={c.value}>{c.value} ({c.events})</option>)}
+          </select>
+        </label>
+        <label className="sort">
+          <span className="sort-label">{t.abroad.from}</span>
+          <input type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} aria-label={t.abroad.from} />
+        </label>
+        <label className="sort">
+          <span className="sort-label">{t.abroad.to}</span>
+          <input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} aria-label={t.abroad.to} />
+        </label>
+        {(pick || city || from || to) && (
+          <button className="f-clear" onClick={() => { setPick(""); setCity(""); setFrom(""); setTo(""); }}>{t.abroad.clear}</button>
+        )}
+      </div>
       <main className="wrap">
         {(!country || info?.country) && (
-          <EventGrid params={{ abroad: "true", country: info?.country ?? undefined, q: q.length >= 2 ? q : undefined }} />
+          <EventGrid params={{
+            abroad: "true", country: code, city: city || undefined, q: q.length >= 2 ? q : undefined,
+            date_from: from ? `${from}T00:00:00` : undefined, date_to: to ? `${to}T23:59:59` : undefined,
+          }} />
         )}
         <Related path={pathname} />
       </main>

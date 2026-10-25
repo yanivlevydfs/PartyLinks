@@ -5,7 +5,7 @@ export const STRINGS = {
   he: {
     dir: "rtl",
     nav: { parties: "אירועים", map: "מפה", abroad: "חו״ל", venues: "מקומות", artists: "אמנים", stores: "חנויות", blog: "מגזין" },
-    abroad: { title: "אירועים בחו״ל: הופעות ופסטיבלים", intro: "כרטיסים וחבילות להופעות ולפסטיבלים בעולם." },
+    abroad: { title: "אירועים בחו״ל: הופעות ופסטיבלים", intro: "כרטיסים וחבילות להופעות ולפסטיבלים בעולם.", country: "מדינה", city: "עיר", allCountries: "כל המדינות", allCities: "כל הערים", from: "מתאריך", to: "עד תאריך", clear: "ניקוי" },
     blog: {
       title: "המגזין",
       intro: "מדריכים, טיפים והמלצות לחיי הלילה בישראל, עם אירועים שמתעדכנים כל הזמן.",
@@ -176,7 +176,7 @@ export const STRINGS = {
   en: {
     dir: "ltr",
     nav: { parties: "Events", map: "Map", abroad: "Abroad", venues: "Venues", artists: "Artists", stores: "Stores", blog: "Magazine" },
-    abroad: { title: "Events abroad: concerts and festivals", intro: "Tickets and packages for concerts and festivals around the world." },
+    abroad: { title: "Events abroad: concerts and festivals", intro: "Tickets and packages for concerts and festivals around the world.", country: "Country", city: "City", allCountries: "All countries", allCities: "All cities", from: "From", to: "To", clear: "Clear" },
     blog: {
       title: "Magazine",
       intro: "Guides and tips for nightlife in Israel, with live event lists. Articles are in Hebrew.",

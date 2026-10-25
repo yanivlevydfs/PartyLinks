@@ -736,3 +736,22 @@ def test_smart_search_reads_places_genres_prices_and_covers_abroad(tmp_path: Pat
         assert ids("עד 100") == ["haifa"]
         assert ids("abroad") == ["rome"]
         assert ids("nothing like this") == []
+
+
+def test_abroad_filters_come_from_the_stored_events(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    seed(settings, [
+        event("berlin", future, title="Berlin night", city="ברלין", country="DE", address=None),
+        event("paris", future, title="Paris night", city="פריז", country="FR", address=None),
+        event("later", future + timedelta(days=10), title="Paris later", city="פריז", country="FR", address=None),
+        event("home", future, title="Tel Aviv night"),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        facets = client.get("/categories?abroad=true").json()
+        assert {f["value"]: f["events"] for f in facets["countries"]} == {"FR": 2, "DE": 1}
+        cities = client.get("/categories?abroad=true&country=FR").json()["cities"]
+        assert [c["value"] for c in cities] == ["פריז"]
+        until = (future + timedelta(days=1)).date().isoformat()
+        page = client.get(f"/events?abroad=true&city=פריז&date_to={until}T23:59:59").json()
+        assert [e["title"] for e in page["items"]] == ["Paris night"]

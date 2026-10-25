@@ -142,6 +142,7 @@ export interface Categories {
   entry_types: Facet[];
   venues: Facet[];
   cities: Facet[];
+  countries?: Facet[]; // ISO codes, events abroad
   lineup: Facet[];
   event_types: Facet[];
   sources: Facet[];

@@ -342,6 +342,7 @@ class Categories(BaseModel):
     entry_types: list[FacetValue]
     venues: list[FacetValue]
     cities: list[FacetValue]
+    countries: list[FacetValue]  # ISO codes of events abroad (the abroad page's filter)
     lineup: list[FacetValue]
     event_types: list[FacetValue]
     sources: list[FacetValue]
@@ -1099,7 +1100,7 @@ def _register_routes(app: FastAPI) -> None:
         query = select(
             EventRow.genres, EventRow.local_date, EventRow.day_of_week, EventRow.time_slot, EventRow.area,
             EventRow.group_entry_type, EventRow.venue_name, EventRow.city, EventRow.lineup, EventRow.event_types,
-            EventRow.source, EventRow.in_target_city,
+            EventRow.source, EventRow.in_target_city, EventRow.country,
         ).where(*filters)  # fmt: skip
         rows = session.execute(query).all()
 
@@ -1155,6 +1156,7 @@ def _register_routes(app: FastAPI) -> None:
             entry_types=facet(lambda r: [r.group_entry_type]),
             venues=[f.model_copy(update={"area": venue_area.get(f.value)}) for f in facet(lambda r: [r.venue_name])],
             cities=[f.model_copy(update={"area": city_region.get(f.value)}) for f in facet(lambda r: [r.city])],
+            countries=facet(lambda r: [r.country]),
             lineup=artist_facet(),
             event_types=facet(lambda r: r.event_types or []),
             sources=[FacetValue(value=s, events=n) for s, n in group_sources.most_common()],
