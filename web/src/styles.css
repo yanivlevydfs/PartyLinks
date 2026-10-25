@@ -204,6 +204,7 @@ button, input, select { font: inherit; color: inherit; }
 .cal-day.today { border-color: var(--cyan); }
 .cal-day.on { background: var(--grad); border-color: transparent; color: #fff; box-shadow: 0 4px 16px -4px rgb(255 46 147 / .55); }
 .cal-day.on small { color: rgb(255 255 255 / .85); }
+.cal-note { margin: 8px 0 0; text-align: center; font-size: 12px; color: var(--muted); }
 /* Desktop drop-down buttons and the one drawer they open. */
 .f-drop { font-weight: 600; }
 .f-drop b {

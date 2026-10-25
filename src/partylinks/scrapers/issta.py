@@ -16,6 +16,7 @@ from decimal import Decimal
 from typing import NamedTuple
 from urllib.parse import parse_qs, urlsplit
 
+import httpx
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.enrichment import UNKNOWN_COUNTRY
@@ -53,6 +54,11 @@ class IsstaScraper(BaseScraper[IsstaSettings]):
     name = "issta"
     settings_model = IsstaSettings
     abroad_only = True
+
+    def is_blocked(self, response: httpx.Response) -> bool:
+        """The listing always has package cards: a page without them is a refusal or a proxy's own page
+        (a non-Israeli exit gets another page, Oct 2026), so the next proxy is tried."""
+        return "deal-item-container" not in response.text  # its one request is the listing
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings

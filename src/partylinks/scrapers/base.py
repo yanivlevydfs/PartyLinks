@@ -31,6 +31,7 @@ from typing import Any, ClassVar, Self, TypeVar, cast
 import httpx
 from curl_cffi import requests as curl_requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from socksio.exceptions import SOCKSError
 from tenacity import AsyncRetrying, RetryCallState, retry_if_exception, wait_exponential
 
 from partylinks.artists import ArtistProfile
@@ -42,6 +43,7 @@ T = TypeVar("T")
 R = TypeVar("R")
 
 RETRYABLE_STATUS = frozenset({408, 425, 429, 500, 502, 503, 504})
+THROTTLED = (429, 503)  # a proxied source moves to the next proxy on these
 MAX_RETRY_AFTER_SECONDS = 120
 
 
@@ -115,6 +117,9 @@ _feed_cache: dict[str, tuple[float, list[str]]] = {}
 # that works becomes the shared one. ponytail: in memory, a restart walks the pool again.
 _israel_good: str | None = None
 _israel_lock = threading.Lock()  # check-and-set across source threads
+# Israeli proxies a source just found dead (monotonic time): the others try them last, not first.
+_israel_dead: dict[str, float] = {}
+DEAD_FOR_SECONDS = 1800
 FEED_TTL_SECONDS = 1800
 
 
@@ -157,9 +162,9 @@ class BaseScraper[S: SourceSettings](ABC):
             israeli = [p.strip() for p in (http.israel_proxy or "").split(",") if p.strip()]
             israeli = list(dict.fromkeys(_israeli_feed(http.israel_proxy_feed) + israeli))
             random.shuffle(israeli)  # no known good one yet: walk the free proxies in random order
-            if _israel_good in israeli:
-                israeli.remove(_israel_good)
-                israeli.insert(0, _israel_good)
+            now = time.monotonic()
+            # The shared working one first, recently dead ones last (stable: the shuffle stays among equals).
+            israeli.sort(key=lambda p: (p != _israel_good, now - _israel_dead.get(p, -DEAD_FOR_SECONDS) < DEAD_FOR_SECONDS))
             pool = israeli + pool
             self._israeli = set(israeli)
         else:
@@ -229,14 +234,16 @@ class BaseScraper[S: SourceSettings](ABC):
             return True
         global _israel_good
         with _israel_lock:
-            if exc is not None and self._proxy == _israel_good:
-                _israel_good = None  # dead: the next Israeli proxy that works takes over
-            good = _israel_good
+            if exc is not None and self._proxy is not None and self._proxy in self._israeli:
+                _israel_dead[self._proxy] = time.monotonic()  # fails to connect: the others skip it
+                if self._proxy == _israel_good:
+                    _israel_good = None  # dead: the next Israeli proxy that works takes over
+            good, now, dead = _israel_good, time.monotonic(), dict(_israel_dead)
         if not self._spare_proxies:
             return False
-        # Another source already found a working one: go straight to it.
-        good = good if good in self._spare_proxies else None
-        proxy = good or self._spare_proxies[0]
+        # Another source already found a working one: go straight to it; else the first not found dead lately.
+        alive = [p for p in self._spare_proxies if now - dead.get(p, -DEAD_FOR_SECONDS) >= DEAD_FOR_SECONDS]
+        proxy = good if good in self._spare_proxies else (alive or self._spare_proxies)[0]
         self._spare_proxies.remove(proxy)
         why = f"{type(exc).__name__}: {str(exc)[:160]}" if exc else "refused by the site"
         self.log.warning("proxy failed (%s): switching to %s", why, proxy.rpartition("@")[2])
@@ -295,15 +302,21 @@ class BaseScraper[S: SourceSettings](ABC):
                     except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as exc:
                         switches[0] += self._next_proxy(client, exc)  # retried on the next proxy (a TransportError)
                         raise
-                if (self.is_blocked(response) or response.status_code == 403) and self._next_proxy(client, None):
+                    except SOCKSError as exc:  # a broken SOCKS proxy ("Malformed reply"): httpx lets it through raw
+                        switches[0] += self._next_proxy(client, exc)
+                        raise httpx.ProxyError(f"SOCKS: {exc}") from exc
+                # Refused (403) or throttled (429 / 503: the site rations this IP): the next proxy, while
+                # the pool lasts; then the usual backoff retries on the last one.
+                if (self.is_blocked(response) or response.status_code in (403, *THROTTLED)) and self._next_proxy(client, None):
                     switches[0] += 1
                     raise _RefusedByProxyIP(f"{response.status_code} via this proxy")
                 if self.is_blocked(response):
                     raise SourceBlockedError(f"{self.name}: access denied by the site ({response.status_code})")
                 response.raise_for_status()
-                if self._proxy in self._israeli and _israel_good != self._proxy:
+                if self._proxy is not None and self._proxy in self._israeli and _israel_good != self._proxy:
                     with _israel_lock:
                         _israel_good = self._proxy  # works: every Israeli-proxy source uses it from now on
+                        _israel_dead.pop(self._proxy, None)
                 return response
         raise AssertionError("unreachable: the last attempt returns or raises (reraise=True)")
 

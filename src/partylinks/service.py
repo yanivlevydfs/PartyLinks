@@ -67,6 +67,28 @@ log = logging.getLogger(__name__)
 SAVE_BATCH_SIZE = 200
 
 
+class Coalesced:
+    """A whole-table pass that many finishing sources ask for at once (regroup, geocode). One runs;
+    the requests that arrive meanwhile share a single re-run instead of each queueing a full pass on
+    the SQLite write lock (74 sources x 3 passes starved the writers past WRITE_WAIT_S, Oct 2026)."""
+
+    def __init__(self, fn: Callable[[], Any]) -> None:
+        self._fn = fn
+        self._running = threading.Lock()
+        self._state = threading.Lock()
+        self._queued = False
+
+    def __call__(self) -> None:
+        with self._state:
+            if self._queued:
+                return  # a re-run is already waiting; it starts after this request, so it covers it
+            self._queued = True
+        with self._running:
+            with self._state:
+                self._queued = False
+            self._fn()
+
+
 class SourceBusyError(RuntimeError):
     pass
 
@@ -114,6 +136,8 @@ class ScrapeService:
         self._locks = {name: threading.Lock() for name in SCRAPERS}
         self._retention_lock = threading.Lock()
         self._dedup_lock = threading.Lock()  # regrouping spans all sources
+        # After a run: shared by all sources finishing together (see Coalesced).
+        self._regroup_soon, self._geocode_soon = Coalesced(self.regroup), Coalesced(self.geocode)
         self._stopping = threading.Event()
         # One thread per source so all sources can run at the same time; retention has its own.
         self._executor = ThreadPoolExecutor(max_workers=len(SCRAPERS), thread_name_prefix="partylinks-src")
@@ -210,31 +234,39 @@ class ScrapeService:
         target = next(
             (c for c in self.settings.enrichment.cities if c.en == self.settings.enrichment.target_city.name), None
         )
-        changed = 0
-        with self.db.session() as session:
-            rows = session.scalars(select(EventRow)).all()
-            cities = [enricher.canonical_city(r.city, r.address, r.venue_name) for r in rows]
-            inside = [enricher.in_target_city(c, r.address, r.venue_name) for r, c in zip(rows, cities, strict=True)]
-            # Venues whose events give a city or address: the most common answer per venue name.
-            votes = Counter(
-                (r.venue_name.casefold(), i) for r, i in zip(rows, inside, strict=True)
-                if r.venue_name and i is not None and (r.city or r.address)
-            )
-            venue_inside: dict[str, bool] = {}
-            for (venue, i), _ in votes.most_common():
-                venue_inside.setdefault(venue, i)
-            for row, city, here in zip(rows, cities, inside, strict=True):
-                if here is None and row.venue_name:
-                    here = venue_inside.get(row.venue_name.casefold())
-                if here is None and row.latitude is not None and row.longitude is not None and target and target.center:
-                    here = meters(target.center, (row.latitude, row.longitude)) <= target.radius_m
-                area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, here, city)
-                scraper = SCRAPERS.get(row.source)
-                abroad = area == ABROAD_AREA or (scraper is not None and scraper.abroad_only)
-                country = row.country or (UNKNOWN_COUNTRY if abroad else None)
-                if (area, city, here, country) != (row.area, row.city, row.in_target_city, row.country):
-                    row.area, row.city, row.in_target_city, row.country = area, city, here, country
-                    changed += 1
+        # Read and compute outside the write lock (a whole-table pass); write only the changed rows.
+        with self.db.session(write=False) as session:
+            rows = session.execute(select(
+                EventRow.id, EventRow.source, EventRow.venue_name, EventRow.address, EventRow.city,
+                EventRow.latitude, EventRow.longitude, EventRow.area, EventRow.in_target_city, EventRow.country,
+            )).all()  # fmt: skip
+        cities = [enricher.canonical_city(r.city, r.address, r.venue_name) for r in rows]
+        inside = [enricher.in_target_city(c, r.address, r.venue_name) for r, c in zip(rows, cities, strict=True)]
+        # Venues whose events give a city or address: the most common answer per venue name.
+        votes = Counter(
+            (r.venue_name.casefold(), i) for r, i in zip(rows, inside, strict=True)
+            if r.venue_name and i is not None and (r.city or r.address)
+        )
+        venue_inside: dict[str, bool] = {}
+        for (venue, i), _ in votes.most_common():
+            venue_inside.setdefault(venue, i)
+        updates = []
+        for row, city, here in zip(rows, cities, inside, strict=True):
+            if here is None and row.venue_name:
+                here = venue_inside.get(row.venue_name.casefold())
+            if here is None and row.latitude is not None and row.longitude is not None and target and target.center:
+                here = meters(target.center, (row.latitude, row.longitude)) <= target.radius_m
+            area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, here, city)
+            scraper = SCRAPERS.get(row.source)
+            abroad = area == ABROAD_AREA or (scraper is not None and scraper.abroad_only)
+            country = row.country or (UNKNOWN_COUNTRY if abroad else None)
+            if (area, city, here, country) != (row.area, row.city, row.in_target_city, row.country):
+                updates.append({"id": row.id, "area": area, "city": city, "in_target_city": here, "country": country})
+        if updates:
+            # ponytail: a row saved between the read and this write keeps its fresh values until the next pass.
+            with self.db.session() as session:
+                session.execute(update(EventRow), updates)
+        changed = len(updates)
         log.info("areas/cities: updated %d events", changed)
         return changed
 
@@ -367,9 +399,9 @@ class ScrapeService:
             if self.settings.media.download:
                 await self._post_step(source, "artwork", failures, self.media.download_pending(source, scraper.http))
             if self.settings.dedup.enabled:
-                await self._post_step(source, "regroup", failures, asyncio.to_thread(self.regroup))
+                await self._post_step(source, "regroup", failures, asyncio.to_thread(self._regroup_soon))
             # Saving overwrote coordinates with what the source sent; restore / look up the rest.
-            await self._post_step(source, "geocode", failures, asyncio.to_thread(self.geocode))
+            await self._post_step(source, "geocode", failures, asyncio.to_thread(self._geocode_soon))
         if scraper is not None and scraper.artist_profiles and not self._stopping.is_set():  # lineups, next run on
             await self._post_step(
                 source, "artist profiles", failures, asyncio.to_thread(self.artists.save_profiles, scraper.artist_profiles)
@@ -421,7 +453,7 @@ class ScrapeService:
     def _known_images(self, source: str) -> dict[str, list[str]]:
         """Stored artwork URLs per event of ``source``, in display order."""
         known: dict[str, list[str]] = {}
-        with self.db.session() as session:
+        with self.db.session(write=False) as session:
             rows = session.execute(
                 select(EventRow.source_event_id, ImageRow.url)
                 .join(ImageRow, ImageRow.event_id == EventRow.id)
@@ -435,14 +467,14 @@ class ScrapeService:
     def _linked_urls(self, source: str) -> list[str]:
         """Ticket links of other sources' upcoming events (aggregators such as Popit link out)."""
         url = EventRow.extra["purchase_url"].as_string()
-        with self.db.session() as session:
+        with self.db.session(write=False) as session:
             rows = session.scalars(select(url).where(EventRow.source != source, url.is_not(None), upcoming_filter()))
             return list(dict.fromkeys(rows))
 
     def _artwork_by_title(self, source: str) -> dict[str, str]:
         """Stored primary artwork per title key; ``source``'s own listings win over other sources'."""
         found: dict[str, str] = {}
-        with self.db.session() as session:
+        with self.db.session(write=False) as session:
             rows = session.execute(
                 select(EventRow.source, EventRow.title, ImageRow.url)
                 .join(ImageRow, ImageRow.event_id == EventRow.id)

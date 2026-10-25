@@ -18,6 +18,7 @@ from collections.abc import AsyncIterator
 from datetime import date, datetime, time
 from decimal import Decimal
 
+import httpx
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.models import ScrapedEvent, TicketTier
@@ -38,6 +39,10 @@ class HaifaMuniSettings(SourceSettings):
 class HaifaMuniScraper(BaseScraper[HaifaMuniSettings]):
     name = "haifamuni"
     settings_model = HaifaMuniSettings
+
+    def is_blocked(self, response: httpx.Response) -> bool:
+        """The site's firewall answers a refused IP with its own 482 (seen via free proxies, Oct 2026)."""
+        return response.status_code == 482
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings

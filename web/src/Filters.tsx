@@ -357,13 +357,15 @@ export function Calendar({ value, counts, onPick }: { value: string; counts: Map
           return (
             <button key={v} className={"cal-day" + (v === value ? " on" : "") + (v === now ? " today" : "")}
               disabled={v < now || !n} aria-pressed={v === value} onClick={() => onPick(v)}
-              aria-label={`${fmt(new Date(v + "T12:00:00Z"), { weekday: "long", day: "numeric", month: "long" })} · ${n}`}
+              aria-label={`${fmt(new Date(v + "T12:00:00Z"), { weekday: "long", day: "numeric", month: "long" })} · ${n} ${t.calEvents}`}
+              title={n ? `${n} ${t.calEvents}` : undefined}
               style={{ "--heat": n / max } as CSSProperties}>
               <span>{i + 1}</span>{n > 0 && <small>{n}</small>}
             </button>
           );
         })}
       </div>
+      <p className="cal-note">{t.calNote}</p>
     </div>
   );
 }

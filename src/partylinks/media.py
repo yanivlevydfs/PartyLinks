@@ -21,7 +21,7 @@ import httpx
 from sqlalchemy import or_, select
 
 from partylinks.config import HttpSettings, MediaSettings, project_path
-from partylinks.db import Database, EventRow, ImageRow, bulk_update_by_id, utcnow
+from partylinks.db import Database, EventRow, ImageRow, bulk_update_by_id, utcnow, with_db_retry
 
 log = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class MediaStore:
         candidates = sorted({p for p in relative_paths if p})
         if not candidates:
             return 0
-        with self.db.session() as session:
+        with self.db.session(write=False) as session:
             still_used = {
                 p
                 for chunk in _chunks(candidates, 500)
@@ -113,13 +113,13 @@ class MediaStore:
                 # Success rows carry error=None (to clear an earlier failure), so test the value.
                 stored = [r for r in results if r.get("error") is None]
                 failed = [r for r in results if r.get("error") is not None]
-                await asyncio.to_thread(self._persist, stored, failed)
+                await asyncio.to_thread(with_db_retry, f"{source} artwork", lambda s=stored, f=failed: self._persist(s, f))
                 stored_count, failed_count = stored_count + len(stored), failed_count + len(failed)
         log.info("%s artwork: %d stored, %d failed", source, stored_count, failed_count)
         return stored_count, failed_count
 
     def _pending(self, source: str) -> list[tuple[int, str]]:
-        with self.db.session() as session:
+        with self.db.session(write=False) as session:  # a read: never queue behind the writers
             rows = session.execute(
                 select(ImageRow.id, ImageRow.url)
                 .join(EventRow)

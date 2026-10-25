@@ -410,3 +410,70 @@ def test_a_working_israeli_proxy_is_shared_until_it_dies() -> None:
     second = asyncio.run(fetch(probe()))
     assert second not in dead and base._israel_good == second
     base._israel_good = None
+
+
+def test_many_sources_finishing_together_share_one_rerun_of_a_whole_table_pass() -> None:
+    import threading
+    import time
+
+    from partylinks.service import Coalesced
+
+    runs: list[int] = []
+    gate = threading.Event()
+
+    def slow_pass() -> None:
+        runs.append(1)
+        gate.wait(2)
+
+    shared = Coalesced(slow_pass)
+    first = threading.Thread(target=shared)
+    first.start()
+    time.sleep(0.05)  # the first pass is running
+    others = [threading.Thread(target=shared) for _ in range(20)]
+    for t in others:
+        t.start()
+    time.sleep(0.05)
+    gate.set()
+    for t in [first, *others]:
+        t.join(5)
+    assert len(runs) == 2  # the running pass + one re-run for all 20 that asked meanwhile
+
+
+def test_broken_socks_proxy_and_a_foreign_exit_page_move_to_the_next_proxy() -> None:
+    from socksio.exceptions import ProtocolError
+
+    from partylinks.scrapers.issta import IsstaScraper, IsstaSettings
+
+    http = HttpSettings(source_proxy="socks5://bad:1, http://foreign:2, http://good:3", backoff_seconds=0)
+    scraper = IsstaScraper(IsstaSettings(cron="0 * * * *", site_url="https://www.issta.co.il", listing_path="/tickets"), http, "UTC")
+
+    def client(proxy: str | None) -> httpx.AsyncClient:
+        def answer(request: httpx.Request) -> httpx.Response:
+            if proxy == "socks5://bad:1":
+                raise ProtocolError("Malformed reply")  # httpx lets socksio's errors through raw
+            body = '<div class="deal-item-container"></div>' if proxy == "http://good:3" else "<html>other country</html>"
+            return httpx.Response(200, text=body)
+
+        return httpx.AsyncClient(transport=httpx.MockTransport(answer))
+
+    scraper._new_client = client  # type: ignore[method-assign]
+
+    async def run() -> str:
+        async with scraper:
+            return (await scraper.request("GET", "https://www.issta.co.il/tickets")).text
+
+    assert "deal-item-container" in asyncio.run(run()) and scraper._proxy == "http://good:3"
+
+
+def test_throttled_proxy_ip_moves_to_the_next_proxy() -> None:
+    http = HttpSettings(source_proxy="http://a:1, http://b:2", backoff_seconds=0)
+    scraper = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
+    scraper._new_client = lambda proxy: httpx.AsyncClient(  # type: ignore[method-assign]
+        transport=httpx.MockTransport(lambda r: httpx.Response(503 if proxy == "http://a:1" else 200))
+    )
+
+    async def run() -> int:
+        async with scraper:
+            return (await scraper.request("GET", "https://site.example/")).status_code
+
+    assert asyncio.run(run()) == 200 and scraper._proxy == "http://b:2"
