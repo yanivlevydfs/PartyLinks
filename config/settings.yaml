@@ -1910,22 +1910,18 @@ sources:
   friendshist:
     # FRIENDS (friends-hist.co.il), the Histadrut's culture club: plays, stand-up, music and kids'
     # shows in halls nationwide. Performances, halls and prices come from its Smarticket /api/shows;
-    # city and address from the WP "all shows" page plus its admin-ajax "load more" pages (~45).
+    # city and address from each hall page's EventVenue JSON-LD (hall sitemap, ~180 GETs).
+    # The admin-ajax "load more" listing answers 403 to server and proxy IPs (Oct 2026), so not used.
     # robots.txt allows all. Replaces the tickets.friends-hist.co.il tenant under `smarticket`.
     enabled: true
     cron: "34 7,19 * * *"
     site_url: https://friends-hist.co.il
-    listing_path: /%d7%9b%d7%9c-%d7%94%d7%9e%d7%95%d7%a4%d7%a2%d7%99%d7%9d/
-    ajax_path: /wp-admin/admin-ajax.php
-    ajax_action: load_more_shows_all
+    hall_sitemap_path: /hall-sitemap.xml
     tickets_host: tickets.friends-hist.co.il
     shows_path: /api/shows
     event_page_path: /event/{id}
     uploads_path: /uploads/
     venue_name: FRIENDS מועדוני תרבות
-    # admin-ajax refuses the proxy IPs after a few pages (403 from page 6-13, slow or fast), so
-    # half the cities went missing; a direct connection reads all ~45 (Oct 2026).
-    proxied: false
     http:
       concurrency: 3
 
