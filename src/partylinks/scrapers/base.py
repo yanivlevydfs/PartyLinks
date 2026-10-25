@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import threading
 import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine, Iterable
@@ -113,6 +114,7 @@ _feed_cache: dict[str, tuple[float, list[str]]] = {}
 # of one process): each starts on it and keeps it until it fails to connect, then the next one
 # that works becomes the shared one. ponytail: in memory, a restart walks the pool again.
 _israel_good: str | None = None
+_israel_lock = threading.Lock()  # check-and-set across source threads
 FEED_TTL_SECONDS = 1800
 
 
@@ -226,12 +228,14 @@ class BaseScraper[S: SourceSettings](ABC):
         if failed is not self._client:
             return True
         global _israel_good
-        if exc is not None and self._proxy == _israel_good:
-            _israel_good = None  # dead: the next Israeli proxy that works takes over
+        with _israel_lock:
+            if exc is not None and self._proxy == _israel_good:
+                _israel_good = None  # dead: the next Israeli proxy that works takes over
+            good = _israel_good
         if not self._spare_proxies:
             return False
         # Another source already found a working one: go straight to it.
-        good = _israel_good if _israel_good in self._spare_proxies else None
+        good = good if good in self._spare_proxies else None
         proxy = good or self._spare_proxies[0]
         self._spare_proxies.remove(proxy)
         why = f"{type(exc).__name__}: {str(exc)[:160]}" if exc else "refused by the site"
@@ -297,8 +301,9 @@ class BaseScraper[S: SourceSettings](ABC):
                 if self.is_blocked(response):
                     raise SourceBlockedError(f"{self.name}: access denied by the site ({response.status_code})")
                 response.raise_for_status()
-                if self._proxy in self._israeli:
-                    _israel_good = self._proxy  # works: every Israeli-proxy source uses it from now on
+                if self._proxy in self._israeli and _israel_good != self._proxy:
+                    with _israel_lock:
+                        _israel_good = self._proxy  # works: every Israeli-proxy source uses it from now on
                 return response
         raise AssertionError("unreachable: the last attempt returns or raises (reraise=True)")
 
