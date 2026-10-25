@@ -160,6 +160,7 @@ export const STRINGS = {
       hardstyle: "הארדסטייל", edm: "EDM", electronic: "אלקטרונית", downtempo_chill: "צ׳יל",
       throwback: "נוסטלגיה", rock_indie: "רוק / אינדי", jazz: "ג׳אז", world_balkan: "בלקן / וורלד",
       dark_wave: "דארק ווייב / סינת׳", yoga_wellness: "יוגה ורוחניות",
+      liberal: "ליברלי / חילופי זוגות", kink: "בדסמ / פטיש", sensual: "טנטרה וחושניות", gender_balance: "איזון מגדרי",
       live_show: "הופעה חיה", lgbt: "גאווה", stand_up: "סטנדאפ", karaoke: "קריוקי",
       hi_tech: "הייטק", conference: "כנסים", classical_opera: "קלאסית / אופרה",
       ai: "AI ובינה מלאכותית", cyber: "סייבר", software_dev: "פיתוח תוכנה", data: "דאטה", cloud_devops: "ענן ו-DevOps",
@@ -330,7 +331,8 @@ export type Strings = typeof STRINGS.he;
 const EN_GENRE_FIX: Record<string, string> = { rnb: "R&B", edm: "EDM", hip_hop: "Hip Hop", lgbt: "LGBTQ+", reggaeton_latin: "Reggaeton / Latin",
   hi_tech: "Hi-tech", classical_opera: "Classical / Opera", ai: "AI", cinema: "Cinema & Movies",
   software_dev: "Software development", cloud_devops: "Cloud & DevOps", web3: "Web3 & Blockchain", happy_hour: "Happy Hour",
-  dark_wave: "Dark Wave / Synth", yoga_wellness: "Yoga & Wellness", kids: "Kids & Family", lectures: "Lectures & Talks",
+  dark_wave: "Dark Wave / Synth", yoga_wellness: "Yoga & Wellness", liberal: "Liberal / Swingers", kink: "BDSM / Fetish",
+  sensual: "Tantra & Sensual", gender_balance: "Gender balanced", kids: "Kids & Family", lectures: "Lectures & Talks",
   tours: "Tours & Trips" };
 export function genreLabel(lang: Lang, g: string): string {
   if (lang === "he") return STRINGS.he.genre[g] ?? g;

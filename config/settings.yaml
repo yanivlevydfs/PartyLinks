@@ -198,6 +198,22 @@ enrichment:
     karaoke: ["karaoke", "קריוקי"]
     yoga_wellness: ["yoga", "ecstatic dance", "meditation", "breathwork", "sound healing", "cacao ceremony", "יוגה",
                     "אקסטטיק", "מדיטציה", "נשימה מעגלית", "טקס קקאו"]
+    # Adult nightlife (18+). Only strong phrases: "פטיש" alone is also a hammer, "munch" Edvard Munch,
+    # "ליברלית" politics ("הציונות הליברלית") and "חושני" / "לטקס" turn up in concert blurbs.
+    liberal: ["swingers", "swinger", "swingers party", "lifestyle party", "libertine", "sex positive", "sex-positive",
+              "polyamory", "polyamorous", "חילופי זוגות", "סווינגרס", "סווינגרים", "ליברליות", "הקהילה הליברלית",
+              "קהילה ליברלית", "מסיבה ליברלית", "מסיבת ליברלים", "ליין ליברלי", "אירוע ליברלי", "ערב ליברלי",
+              "סקס פוזיטיב", "פוליאמוריה", "פוליאמורי", "פוליאמורית", "lifestyle swingers", "סווינגר",
+              "מסיבות ליברליות", "אהבה ליברלית", "זוגות ליברליים"]
+    kink: ["bdsm", "kink", "kinky", "fetish", "fetish party", "play party", "munch play", "shibari", "dominatrix", "בדסמ",
+           "בדס\"מ", "בד\"סמ", "קינק", "קינקי", "קינקית", "מסיבת פטיש", "פטישיסטי", "פטישיסטית", "פליי פארטי",
+           "מאנץ'-פליי", "מאנצ'-פליי", "מאנץ' פליי", "מאנץ׳ פליי", "מאנץ' בדסמ", "שיבארי", "דומינה",
+           "פטיש פארטי"]
+    sensual: ["tantra", "tantric", "burlesque", "erotic", "cuddle party", "טנטרה", "טנטרית", "טנטרי", "בורלסק",
+              "ארוטי", "ארוטית", "ערב חושני", "מסיבה חושנית", "קאדל"]
+    gender_balance: ["gender balance", "gender balanced", "gender-balanced", "couples only", "couples & single women",
+                     "couples and single women", "איזון מגדרי", "זוגות בלבד", "זוגות ורווקות", "זוגות ונשים בלבד",
+                     "זוגות ובחורות"]
     # Hi-tech and its sub-fields (family below). Not plain "tech" ("tech house"), "ai" or "security":
     # those are only trusted as a source's declared category (declared_genres).
     hi_tech: ["hi-tech", "high-tech", "hitech", "הייטק", "היי-טק", "hackathon", "האקתון", "meetup", "מיטאפ",

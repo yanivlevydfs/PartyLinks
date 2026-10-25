@@ -248,6 +248,24 @@ def test_hebrew_genre_words_match_whole_words_only() -> None:
     assert "techno" in ENRICHER._detect_genres(party)  # attached prefixes still count
 
 
+def test_adult_nightlife_genres_from_strong_phrases_only() -> None:
+    adult = {"liberal", "kink", "sensual", "gender_balance"}
+
+    def found(title: str, description: str) -> set[str]:
+        return adult & set(ENRICHER._detect_genres(make(title=title, description=description)))
+
+    line = "אהבה ליברליות 👑\nבעלי ליין הבדסמ המאנצ'-פליי\nמקדמים את הקהילה הליברלית בישראל\nחילופי זוגות, בדסמ"
+    assert found("מסיבה בחמישי", line) == {"liberal", "kink"}
+    assert found("SINNERS & SAINTS FETISH PLAY PARTY", "קוד לבוש לטקס ועור") == {"kink"}
+    assert found("ערב טנטרה לזוגות", "") == {"sensual"}
+    assert found("Friday Night", "הכניסה באיזון מגדרי, זוגות ורווקות") == {"gender_balance"}
+    # A hammer, Edvard Munch, liberal politics and a "sensual" salsa show are none of them.
+    assert found("נגרות לילדים", "מביאים פטיש ומסמרים") == set()
+    assert found("The Scream: Edvard Munch", "") == set()
+    assert found("הרצאה", "הציונות הליברלית ועתידה") == set()
+    assert found("לילות הוואנה", "מופע חושני של סלסה, תלבושות לטקס") == set()
+
+
 def test_talk_takes_no_genres_from_its_description() -> None:
     talk = make(title="הרצאה - ריקוד המכונה", description="כך נולדו ההיפ הופ, ההאוס והטכנו")
     assert ENRICHER._detect_genres(talk) == []
