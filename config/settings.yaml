@@ -1923,10 +1923,11 @@ sources:
     event_page_path: /event/{id}
     uploads_path: /uploads/
     venue_name: FRIENDS מועדוני תרבות
+    # admin-ajax refuses the proxy IPs after a few pages (403 from page 6-13, slow or fast), so
+    # half the cities went missing; a direct connection reads all ~45 (Oct 2026).
+    proxied: false
     http:
-      # admin-ajax answers 403 from page ~13 when pages come 3 at a time (Railway, Oct 2026).
-      concurrency: 1
-      request_delay_seconds: 2.0
+      concurrency: 3
 
   poalimatarim:
     # Bank Hapoalim "פועלים ישראלי": free entry (registration) to ~50 museums, parks and heritage sites on
