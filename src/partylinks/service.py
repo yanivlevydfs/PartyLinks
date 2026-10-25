@@ -426,8 +426,11 @@ class ScrapeService:
         except _StopRequested:
             status, error = "interrupted", "service shutting down"
         except Exception as exc:
-            log.exception("source %s failed", source)
-            status, error = "failed", f"{type(exc).__name__}: {exc}"[:500]
+            if self._stopping.is_set():  # a deploy closed the thread pools mid-run: not the source's fault
+                status, error = "interrupted", "service shutting down"
+            else:
+                log.exception("source %s failed", source)
+                status, error = "failed", f"{type(exc).__name__}: {exc}"[:500]
         finally:
             try:
                 await flush()  # whatever was collected is always saved
@@ -469,6 +472,9 @@ class ScrapeService:
         try:
             await step
         except Exception as exc:
+            if isinstance(exc, RuntimeError) and "after shutdown" in str(exc):  # a deploy closed the thread pool
+                log.info("source %s: %s skipped, service shutting down", source, what)
+                return
             log.exception("source %s: %s failed", source, what)
             failures.append(f"{what}: {type(exc).__name__}: {exc}"[:500])
 

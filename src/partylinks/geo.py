@@ -301,26 +301,36 @@ class Geocoder:
         that re-sends a bad point shows it on the map until that source's geocode step."""
         with self.db.session(write=False) as session:  # read and judge outside the write lock
             # Abroad points are city centres shared by every venue there (_locate_abroad): not placeholders.
-            rows = session.execute(select(*_PLACE_COLUMNS).where(EventRow.latitude.is_not(None), EventRow.country.is_(None))).all()
+            rows = session.execute(select(*_PLACE_COLUMNS, EventRow.source).where(EventRow.latitude.is_not(None), EventRow.country.is_(None))).all()
         venues: defaultdict[tuple[float, float], set[str]] = defaultdict(set)
         for r in rows:
             venues[_point(r)].add(venue_key(r.venue_name) or street_key(r.address) or "")
         bad = []
+        why: Counter[str] = Counter()  # "source: reason", for the log
+        shared: Counter[tuple[float, float]] = Counter()
         for r in rows:
-            far = not self._in_its_city(r, (r.latitude, r.longitude))  # type: ignore[arg-type]
+            outside = not self._in_its_city(r, (r.latitude, r.longitude))  # type: ignore[arg-type]
             # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
-            far = far or (
+            contradicts = not outside and (
                 r.in_target_city is False
                 and self.areas.contradicts(r.city, r.venue_name, r.address, r.latitude, r.longitude)  # type: ignore[arg-type]
             )
-            if far or len(venues[_point(r)]) >= PLACEHOLDER_VENUES:
+            placeholder = len(venues[_point(r)]) >= PLACEHOLDER_VENUES
+            if outside or contradicts or placeholder:
                 bad.append({"id": r.id, "latitude": None, "longitude": None})
+                why[f"{r.source}: {'outside its city' if outside else 'region' if contradicts else 'shared'}"] += 1
+                if placeholder:
+                    shared[_point(r)] += 1
         if bad:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, bad)
         dropped = len(bad)
         if dropped:
             log.info("geocoding: dropped %d source coordinates that are placeholders or outside the city", dropped)
+            # Which source sends them and why, and the busiest shared points with a few of their venues.
+            log.info("geocoding: dropped by source: %s", ", ".join(f"{k} {n}" for k, n in why.most_common(12)))
+            for point, n in shared.most_common(5):
+                log.info("geocoding: shared point %s x%d: %s", point, n, " | ".join(sorted(venues[point])[:6]))
         return dropped
 
     def _in_its_city(self, row: Place, point: Point) -> bool:
