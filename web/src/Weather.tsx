@@ -66,7 +66,7 @@ export function Weather({ lat, lng, city, start, full = false }: {
   const when = start ? Date.parse(start) : NaN;
   const near = Number.isFinite(when) && when > Date.now() - 6 * 3600e3 && when < Date.now() + 11 * 864e5;
   const cell = lat != null && lng != null ? `lat=${lat.toFixed(1)}&lng=${lng.toFixed(1)}` : city ? `city=${encodeURIComponent(city)}` : null;
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["weather", cell],
     queryFn: async () => {
       const res = await fetch(`/weather?${cell}`);
@@ -77,6 +77,7 @@ export function Weather({ lat, lng, city, start, full = false }: {
     staleTime: 15 * 60e3,
     retry: false,
   });
+  if (isLoading && !full) return <span className="wx-loading" aria-hidden />;
   const slot = data && slotAt(data, when);
   if (!slot) return null;
   const [, symbol, temp, rain] = slot;

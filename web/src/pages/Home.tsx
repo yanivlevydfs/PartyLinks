@@ -4,7 +4,7 @@ import { useCategories, useEvents, useLandingInfo } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
-import { Card, EventGrid, Hero, Related, useT, useTitle } from "../ui";
+import { Card, CardSkeletons, EventGrid, Hero, Related, useT, useTitle } from "../ui";
 import { Quiz } from "./Quiz";
 
 // Regions with a /region/<key> page (seo.py REGION_NAMES); Tel Aviv and Eilat are city pages.
@@ -140,10 +140,9 @@ function Trending() {
   const row = useRef<HTMLDivElement>(null);
   // Day-granular, so the query key stays stable within a visit.
   const until = new Date(Date.now() + TRENDING_DAYS * 24 * 3600 * 1000).toISOString().slice(0, 10);
-  const items = (useEvents({ sort: "-group_size", date_to: until, page_size: "12" }).data?.pages[0]?.items ?? []).filter(
-    (e) => (e.listings ?? 1) > 1,
-  );
-  if (items.length < 3) return null;
+  const q = useEvents({ sort: "-group_size", date_to: until, page_size: "12" });
+  const items = (q.data?.pages[0]?.items ?? []).filter((e) => (e.listings ?? 1) > 1);
+  if (!q.isPending && items.length < 3) return null;
   const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.8, behavior: "smooth" });
   return (
     <section className="trending">
@@ -158,7 +157,7 @@ function Trending() {
         </div>
       </div>
       <div className="trending-row" ref={row}>
-        {items.map((e) => <Card key={e.id} e={e} />)}
+        {q.isPending ? <CardSkeletons n={4} /> : items.map((e) => <Card key={e.id} e={e} />)}
       </div>
     </section>
   );

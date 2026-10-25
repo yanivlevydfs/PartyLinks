@@ -20,12 +20,13 @@ import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import timedelta
+from typing import Any
 
 import httpx
 from sqlalchemy import select
 
 from partylinks.config import CitySettings, GeocodingSettings
-from partylinks.db import Database, EventRow, GeoCacheRow, upcoming_filter, utcnow, with_db_retry
+from partylinks.db import Database, EventRow, GeoCacheRow, bulk_update_by_id, upcoming_filter, utcnow, with_db_retry
 from partylinks.enrichment import UNKNOWN_COUNTRY, AreaMatcher, meters
 
 log = logging.getLogger(__name__)
@@ -74,7 +75,7 @@ _GENERIC_VENUE_WORDS = re.compile(
 )
 
 
-def _point(row: EventRow) -> tuple[float, float]:
+def _point(row: Place) -> tuple[float, float]:
     return round(row.latitude or 0, 5), round(row.longitude or 0, 5)
 
 
@@ -100,7 +101,7 @@ def _city_key(text: str | None) -> str:
     return _DASHES.sub("", (text or "").lower())
 
 
-def candidates(row: EventRow) -> list[str]:
+def candidates(row: Place) -> list[str]:
     """Queries to try, most specific first."""
     address, venue, city = clean(row.address), clean(row.venue_name), clean(row.city)
     out: list[str] = []
@@ -151,6 +152,16 @@ def venue_variants(venue: str) -> list[str]:
 
 
 Point = tuple[float, float]
+
+
+# What placing an event reads: plain rows, not ORM objects held in a write session.
+_PLACE_COLUMNS = (
+    EventRow.id, EventRow.venue_name, EventRow.address, EventRow.city, EventRow.in_target_city,
+    EventRow.latitude, EventRow.longitude,
+)  # fmt: skip
+# An EventRow or a plain row of _PLACE_COLUMNS: same attribute names; the type checkers model a
+# SQLAlchemy Row as a bare tuple, so this stays untyped.
+Place = Any
 # Known places by key, per city ("" = no city given): "הקאמרי" in Tel Aviv and in Be'er Sheva differ.
 Known = dict[str, dict[str, Point]]
 # Partial name matches need this many letters ("קאמרי" in "תיאטרוןהקאמרי"); always within one city.
@@ -226,31 +237,37 @@ class Geocoder:
         if network:
             stats.lookups = self._lookup_new(stop)
         stats.located += self._locate_abroad(network, stop)
-        with self.db.session() as session:
+        # Matched outside the write lock (after a full scrape ~18k rows, minutes); written in one short session.
+        with self.db.session(write=False) as session:
             known_venue, known_street = self._known(session)
             cache = {c.query: c for c in session.scalars(select(GeoCacheRow).where(GeoCacheRow.found.is_(True)))}
-            missing = session.scalars(select(EventRow).where(upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_(None))).all()
-            stats.missing = len(missing)
-            unplaced: Counter[str] = Counter()
-            for row in missing:
-                point = next(
-                    (p for p in (
-                        self._pin(row),
-                        _venue_match(known_venue, row.venue_name, row.city),
-                        _in_city(known_street.get(street_key(row.address) or ""), row.city),
-                        self._from_cache(row, cache),
-                    ) if p and self._in_its_city(row, p)),
-                    None,
-                )  # fmt: skip
-                if point:
-                    row.latitude, row.longitude = point
-                    row.area = self.areas.match(row.venue_name, row.address, *point, row.in_target_city, row.city)
-                    stats.located += 1
-                elif candidates(row):
-                    stats.not_found += 1
-                    unplaced[row.venue_name or row.address or ""] += 1
-                else:
-                    stats.no_place += 1
+            missing = session.execute(select(*_PLACE_COLUMNS).where(upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_(None))).all()
+        stats.missing = len(missing)
+        unplaced: Counter[str] = Counter()
+        updates = []
+        for row in missing:
+            point = next(
+                (p for p in (
+                    self._pin(row),
+                    _venue_match(known_venue, row.venue_name, row.city),
+                    _in_city(known_street.get(street_key(row.address) or ""), row.city),
+                    self._from_cache(row, cache),
+                ) if p and self._in_its_city(row, p)),
+                None,
+            )  # fmt: skip
+            if point:
+                area = self.areas.match(row.venue_name, row.address, *point, row.in_target_city, row.city)
+                updates.append({"id": row.id, "latitude": point[0], "longitude": point[1], "area": area})
+            elif candidates(row):
+                stats.not_found += 1
+                unplaced[row.venue_name or row.address or ""] += 1
+            else:
+                stats.no_place += 1
+        if updates:
+            # ponytail: an event a scrape re-saved meanwhile gets this point back; the next pass re-checks it.
+            with self.db.session() as session:
+                bulk_update_by_id(session, EventRow, updates)
+        stats.located += len(updates)
         stats.unplaced_venues = [v for v, _ in unplaced.most_common(5) if v]
         log.info("geocoding: %s", stats.summary())
         return stats
@@ -261,34 +278,37 @@ class Geocoder:
         city and points shared by several different venues; the pass then places those events
         from their venue or address like any other. ponytail: runs after every scrape, so a source
         that re-sends a bad point shows it on the map until that source's geocode step."""
-        with self.db.session() as session:
+        with self.db.session(write=False) as session:  # read and judge outside the write lock
             # Abroad points are city centres shared by every venue there (_locate_abroad): not placeholders.
-            rows = session.scalars(select(EventRow).where(EventRow.latitude.is_not(None), EventRow.country.is_(None))).all()
-            venues: defaultdict[tuple[float, float], set[str]] = defaultdict(set)
-            for r in rows:
-                venues[_point(r)].add(venue_key(r.venue_name) or street_key(r.address) or "")
-            dropped = 0
-            for r in rows:
-                far = not self._in_its_city(r, (r.latitude, r.longitude))  # type: ignore[arg-type]
-                # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
-                far = far or (
-                    r.in_target_city is False
-                    and self.areas.contradicts(r.city, r.venue_name, r.address, r.latitude, r.longitude)  # type: ignore[arg-type]
-                )
-                if far or len(venues[_point(r)]) >= PLACEHOLDER_VENUES:
-                    r.latitude = r.longitude = None
-                    dropped += 1
+            rows = session.execute(select(*_PLACE_COLUMNS).where(EventRow.latitude.is_not(None), EventRow.country.is_(None))).all()
+        venues: defaultdict[tuple[float, float], set[str]] = defaultdict(set)
+        for r in rows:
+            venues[_point(r)].add(venue_key(r.venue_name) or street_key(r.address) or "")
+        bad = []
+        for r in rows:
+            far = not self._in_its_city(r, (r.latitude, r.longitude))  # type: ignore[arg-type]
+            # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
+            far = far or (
+                r.in_target_city is False
+                and self.areas.contradicts(r.city, r.venue_name, r.address, r.latitude, r.longitude)  # type: ignore[arg-type]
+            )
+            if far or len(venues[_point(r)]) >= PLACEHOLDER_VENUES:
+                bad.append({"id": r.id, "latitude": None, "longitude": None})
+        if bad:
+            with self.db.session() as session:
+                bulk_update_by_id(session, EventRow, bad)
+        dropped = len(bad)
         if dropped:
             log.info("geocoding: dropped %d source coordinates that are placeholders or outside the city", dropped)
         return dropped
 
-    def _in_its_city(self, row: EventRow, point: Point) -> bool:
+    def _in_its_city(self, row: Place, point: Point) -> bool:
         """Within the radius of the event's city, when that city is a known one."""
         city = self._cities.get(row.city or "")
         return city is None or meters(city.center, point) <= city.radius_m  # type: ignore[arg-type]
 
     # ------------------------------------------------------------------ sources of coordinates
-    def _pin(self, row: EventRow) -> tuple[float, float] | None:
+    def _pin(self, row: Place) -> tuple[float, float] | None:
         text = f"{row.venue_name or ''} | {row.address or ''}".lower()
         return next((tuple(v) for k, v in self._pins.items() if k in text), None)  # type: ignore[return-value]
 
@@ -310,14 +330,14 @@ class Geocoder:
                     streets.setdefault(key, {})[city or ""] = (lat, lon)
         return venues, streets
 
-    def _from_cache(self, row: EventRow, cache: dict[str, GeoCacheRow]) -> tuple[float, float] | None:
+    def _from_cache(self, row: Place, cache: dict[str, GeoCacheRow]) -> tuple[float, float] | None:
         for query in candidates(row):
             hit = cache.get(query)
             if hit and self._trusted(row, hit):
                 return hit.latitude, hit.longitude  # type: ignore[return-value]
         return None
 
-    def _trusted(self, row: EventRow, hit: GeoCacheRow) -> bool:
+    def _trusted(self, row: Place, hit: GeoCacheRow) -> bool:
         if hit.latitude is None or hit.longitude is None or hit.kind not in PRECISE:
             return False
         if not self._in_its_city(row, (hit.latitude, hit.longitude)):
@@ -399,14 +419,16 @@ class Geocoder:
                         hit.query = key(city, country)
                         cache[hit.query] = hit
                         with_db_retry("geo cache", lambda hit=hit: self._remember(hit))
-        placed = 0
-        with self.db.session() as session:
-            for row in session.scalars(select(EventRow).where(*unplaced)):
-                hit = cache.get(key(row.city or "", row.country or ""))
-                if hit and hit.found:
-                    row.latitude, row.longitude = hit.latitude, hit.longitude
-                    placed += 1
-        return placed
+        with self.db.session(write=False) as session:
+            rows = session.execute(select(EventRow.id, EventRow.city, EventRow.country).where(*unplaced)).all()
+        updates = [
+            {"id": r.id, "latitude": hit.latitude, "longitude": hit.longitude}
+            for r in rows if (hit := cache.get(key(r.city or "", r.country or ""))) and hit.found
+        ]  # fmt: skip
+        if updates:
+            with self.db.session() as session:
+                bulk_update_by_id(session, EventRow, updates)
+        return len(updates)
 
     def _remember(self, hit: GeoCacheRow) -> None:
         with self.db.session() as session:

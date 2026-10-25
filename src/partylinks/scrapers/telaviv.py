@@ -22,7 +22,6 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
-import httpx
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent, TicketTier
@@ -54,9 +53,6 @@ class TelAvivScraper(BaseScraper[TelAvivSettings]):
     name = "telaviv"
     settings_model = TelAvivSettings
 
-    def is_blocked(self, response: httpx.Response) -> bool:
-        """The site's firewall answers a refused IP with its own 571 (seen via free proxies, Oct 2026)."""
-        return response.status_code == 571
 
     def default_headers(self) -> dict[str, str]:
         return {"Accept": "application/json", "Referer": self.settings.site_url + "/Visitors/Events/Pages/Events.aspx"}

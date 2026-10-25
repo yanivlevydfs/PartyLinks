@@ -3,7 +3,7 @@ import { useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { EventDetail, Ticket } from "../types";
 import { Weather } from "../Weather";
-import { artistPath, eventPath, fmtDate, freshness, Img, label, money, priceLabel, Share, sourceName, Sources, useT, useTitle, venuePath } from "../ui";
+import { artistPath, eventPath, fmtDate, freshness, Img, label, Loader, money, priceLabel, Share, sourceName, Sources, useT, useTitle, venuePath } from "../ui";
 
 // URLs in scraped description text become links; trailing punctuation stays text.
 function linkify(text: string) {
@@ -24,7 +24,7 @@ export default function EventPage() {
   const back = () => (history.state?.idx > 0 ? navigate(-1) : navigate("/"));
 
   if (isError) return <p className="msg wrap">{t.error}</p>;
-  if (isPending) return <p className="msg wrap">{t.loading}</p>;
+  if (isPending) return <Loader />;
 
   const images = e.images.map((i) => i.stored_url ?? i.url);
   const hero = images[0] ?? e.image_url ?? e.cover_url;

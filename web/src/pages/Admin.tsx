@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { TZ } from "../ui";
+import { Loader, TZ } from "../ui";
 import { Sponsored } from "./AdminSponsored";
 
 // --------------------------------------------------------------------------- api
@@ -186,7 +186,7 @@ function Action({ label, run, confirm, kind = "", render }: {
 
 // --------------------------------------------------------------------------- tabs
 function Overview({ data }: { data: any }) {
-  if (!data) return <p className="msg">Loading…</p>;
+  if (!data) return <Loader />;
   const st = data.storage;
   return (
     <div className="adm-grid">
@@ -250,7 +250,7 @@ function Clicks() {
         </select>
       </div>
       {q.isError && <p className="adm-err">{String(q.error)}</p>}
-      {!d ? <p className="msg">Loading…</p> : (
+      {!d ? <Loader /> : (
         <div className="adm-grid">
           <Card title="Ticket clicks">
             <div className="adm-stats">
@@ -511,7 +511,7 @@ function Config() {
   });
 
   if (cfg.isError) return <p className="adm-err">{String(cfg.error)}</p>;
-  if (!cfg.data) return <p className="msg">Loading…</p>;
+  if (!cfg.data) return <Loader />;
   return (
     <div className="adm-config">
       <div className="adm-bar">
@@ -550,7 +550,7 @@ function Config() {
 }
 
 function Maintenance({ data }: { data: any }) {
-  if (!data) return <p className="msg">Loading…</p>;
+  if (!data) return <Loader />;
   const r = data.retention;
   return (
     <div className="adm-grid">

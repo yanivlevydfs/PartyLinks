@@ -87,6 +87,17 @@ button, input, select { font: inherit; color: inherit; }
   animation: logo-beat 2.2s ease-in-out infinite;
 }
 .logo:hover path { animation-duration: 1s; }
+/* The brand loader (ui.tsx Loader): the same heartbeat, full size for a page, small inside a button. */
+.loader { display: grid; place-items: center; padding: 60px 0; }
+.loader svg { width: 180px; height: 40px; overflow: visible; }
+.loader path {
+  fill: none; stroke: var(--pink); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 260; stroke-dashoffset: 260; filter: drop-shadow(0 0 6px var(--pink));
+  animation: logo-beat 1.4s ease-in-out infinite;
+}
+.loader.small { display: inline-grid; padding: 0; vertical-align: middle; }
+.loader.small svg { width: 72px; height: 16px; }
+@media (prefers-reduced-motion: reduce) { .loader path { animation: none; stroke-dashoffset: 0; } }
 @keyframes logo-beat { 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -260; } }
 @media (prefers-reduced-motion: reduce) { .logo path { animation: none; stroke-dashoffset: 0; } }
 @keyframes flicker {
@@ -375,6 +386,20 @@ button, input, select { font: inherit; color: inherit; }
 }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 .card-img { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: #0d0818; }
+/* Loaders: a shimmer behind images until they arrive, skeleton cards while a list loads, a pill while
+   the forecast loads. */
+.card-img, .sk, .wx-loading {
+  background-image: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / .06) 50%, transparent 70%);
+  background-size: 200% 100%; animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+.sk { background-color: rgb(255 255 255 / .05); border-radius: 8px; }
+.sk-card { pointer-events: none; }
+.sk-card .card-body { display: grid; gap: 10px; }
+.sk-line { height: 14px; }
+.sk-line.short { width: 60%; }
+.date-badge .wx-loading { display: block; height: 14px; margin: 5px -2px 0; border-radius: 6px; background-color: rgb(255 255 255 / .08); }
+@media (prefers-reduced-motion: reduce) { .card-img, .sk, .wx-loading { animation: none; } }
 .card-img::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(to top, rgb(6 4 11 / .85), transparent 45%);

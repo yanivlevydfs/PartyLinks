@@ -493,7 +493,8 @@ geocoding:
   user_agent: "Pulse/0.1 (Israel event listings)"
   min_interval_seconds: 1.1
   max_lookups_per_run: 120
-  country_codes: il
+  # Israeli localities OSM files under "ps" (Ma'ale Adumim, Ariel, Oranit...) need it too, or never geocode.
+  country_codes: il,ps
   retry_failed_days: 14
   max_area_distance_m: 2500
   viewbox: "34.739,32.030,34.852,32.147"   # Tel Aviv-Yafo: preferred, not exclusive
@@ -603,11 +604,25 @@ sources:
     max_passes: 4
 
   tickchak:
+    # Tickchak LIVE gathers the box offices of all of Israel. Every category page except football
+    # (matches are not events here), each tagged so its events land in the site's category.
     enabled: true
     cron: "45 7,19 * * *"
+    run_timeout_seconds: 3600  # ~1,800 events over 11 categories, plus artwork from the sellers' pages
     site_url: https://live.tickchak.co.il
     api_url: https://api-live.tickchak.co.il
-    category_slug: parties
+    categories:  # slug -> label the declared_genres map to a site category ("" = genres from the music)
+      parties: ""
+      shows: shows
+      concerts: concerts
+      standup: stand-up
+      theater: theater
+      musical: מחזמר
+      childrens-shows: kids
+      toursandattractions: tours
+      Lectures: lectures
+      cantorial-music: מוזיקה יהודית
+      performances-for-women: shows
     # Empty = the category page for all of Israel; a slug such as tel-aviv narrows it.
     city_slug: ""
     section_data_path: /sectionData/{section_id}
@@ -925,6 +940,19 @@ sources:
     ticket_hosts: [go-out.co, eventbuzz.co.il, eventer.co.il, zygo.co.il, tickchak.co.il, selector.org.il,
                    smarticket.co.il, popit.events, leaan.co.il]
     skip_categories: ["בקרוב", "כרטיסים זמינים לרכישה"]
+
+  babebar:
+    # BaBe Bar (הבאBE בר), Hod HaSharon: music and stand-up club on WordPress + The Events Calendar.
+    # The API names the venue but has no point; stand-up nights link to standupist.co.il.
+    enabled: true
+    cron: "6 9,21 * * *"
+    site_url: https://babebar.co.il
+    venue_name: "הבאBE בר"
+    address: "הנגר 8, הוד השרון"
+    city: הוד השרון
+    latitude: 32.1302   # Nominatim: HaNagar St. (no house number in OSM)
+    longitude: 34.8934
+    ticket_hosts: [standupist.co.il, go-out.co, eventbuzz.co.il, eventer.co.il, smarticket.co.il, tickchak.co.il]
 
   comy:
     # Comy stand-up box office (WordPress). Tickets are sold on PRES (tickets.comy.co.il), whose
@@ -1301,6 +1329,10 @@ sources:
       # (2026-10-22). Halls with no shows listed yet are kept for cities that have no other source.
       - einan-hall-modiin               # אולם עינן מודיעין
       - south-sharon-cultural-hall      # היכל התרבות דרום השרון
+      # Clubs and halls that sell only through Tickchak (2026-10-26).
+      - wunderbarhaifa                  # וונדרבר חיפה
+      - vAjDAWrnV                       # אולם הקיוב, מרכז לאמנויות אלמא, זכרון יעקב
+      - oditorium-kfarsaba              # אודיטוריום כפר סבא
       - raanana-music-and-arts-center   # המשכן למוסיקה ואומנויות רעננה
       - ashkelon-cultural-hall          # היכל התרבות אשקלון
       - rappaport-center-for-culture    # מרכז רפפורט חיפה
@@ -1714,6 +1746,7 @@ sources:
     # is the locality its place names, else the council. `category`: for events filed under none
     # (default קהילה). Mostly no robots.txt. golan.org.il: firewall; hod-hasharon: Milgam shop.
     enabled: true
+    israel_proxy: true  # the municipal sites answer 403 to the evomi IPs (b-y.org.il, Oct 2026)
     # Dozens of municipal sites a run: longer than the 30-min default (Oct 2026).
     run_timeout_seconds: 3600
     cron: "3 6,18 * * *"
@@ -1861,6 +1894,8 @@ sources:
     # so the sitemap lists the event pages (date in the path) and each page's JSON-LD is read in
     # Hebrew. One request per event and 429 above ~3 req/s: days_ahead 10 (~2.6k pages, ~14 min).
     enabled: true
+    # ~2,450 events with a page each: past the 30-min default (saved them all, then "timed out", Oct 2026).
+    run_timeout_seconds: 3600
     cron: "27 6,18 * * *"
     site_url: https://www.ogo.co.il
     sitemap_path: /sitemap.xml
@@ -1918,6 +1953,7 @@ sources:
     # only) with categories/tags, place, organiser and ticket link; recurring events kept once.
     # Events sold by a Smarticket box office the smarticket source reads are skipped.
     enabled: true
+    israel_proxy: true  # the municipal sites answer 403 to the evomi IPs (karmiel, even-yehuda, Oct 2026)
     cron: "17 4,16 * * *"
     sites:
       - {url: https://www.karmiel.muni.il, city: כרמיאל}
@@ -2030,3 +2066,70 @@ sources:
     longitude: 34.7820
     http:
       concurrency: 1
+
+  haezor:
+    # HaEzor / The Zone: live-music club on HaRechev, Tel Aviv. The gig calendar page lists every show
+    # (date without a year, door time, prices); each show's page adds artwork, genre, text and the
+    # Cardcom ticket link.
+    enabled: true
+    cron: "36 6,18 * * *"
+    site_url: https://haezor.com
+    listing_path: /%d7%9c%d7%95%d7%97-%d7%94%d7%95%d7%a4%d7%a2%d7%95%d7%aa/  # /לוח-הופעות/
+    venue_name: האזור
+    address: הרכב 13
+    city: תל אביב-יפו
+    latitude: 32.0628   # Nominatim, house number
+    longitude: 34.7869
+    http:
+      concurrency: 1
+
+  levontin7:
+    # Levontin 7: live-music club, Tel Aviv. WordPress + FAT Event: the home page carries every upcoming
+    # show (start / end, artwork); each show's page adds full title, text, prices and the Eventer link.
+    enabled: true
+    cron: "46 6,18 * * *"
+    site_url: https://levontin7.com
+    listing_path: /
+    venue_name: לבונטין 7
+    address: לבונטין 7
+    city: תל אביב-יפו
+    latitude: 32.0617   # Nominatim: the venue itself
+    longitude: 34.7748
+    http:
+      concurrency: 2
+
+  yellowsubmarine:
+    # Yellow Submarine: live-music club, Jerusalem. WordPress: /event/ lists every upcoming show (date
+    # without a year, door / show times); each show's page adds the year, prices, text and the Eventer link.
+    enabled: true
+    cron: "58 6,18 * * *"
+    site_url: https://yellowsubmarine.org.il
+    listing_path: /event/
+    venue_name: הצוללת הצהובה
+    address: הרכבים 13
+    city: ירושלים
+    latitude: 31.7540   # Nominatim: הרכבים 13
+    longitude: 35.2129
+    http:
+      concurrency: 2
+
+  halutz:
+    # HaHalutz 33: culture bar, Be'er Sheva Old City (+ a Sderot stage). WordPress REST lists every
+    # upcoming show (posts); each post's page has the date and show time.
+    enabled: true
+    cron: "16 7,19 * * *"
+    site_url: https://www.halutz.co.il
+    venue_name: החלוץ 33
+    address: החלוץ 33
+    city: באר שבע
+    latitude: 31.2381   # Nominatim: the bar itself
+    longitude: 34.7882
+    branches:
+      174:   # loc "p32": HaHalutz 32, Sderot (address from its Eventer events)
+        venue_name: החלוץ 32 שדרות
+        address: הרצל 3
+        city: שדרות
+        latitude: 31.5233
+        longitude: 34.5934
+    http:
+      concurrency: 2

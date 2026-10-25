@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { type TicketSite, useCategories, useTicketSites } from "../api";
 import type { Lang } from "../i18n";
 import { DEFAULT_FILTERS, useStore } from "../store";
-import { Hero, sourceName, useT, useTitle } from "../ui";
+import { Hero, Loader, sourceName, useT, useTitle } from "../ui";
 
 type Kind = "tickets" | "venue" | "culture" | "cinema" | "abroad" | "guide" | "city";
 const KINDS: Record<Kind, Record<Lang, string>> = {
@@ -35,6 +35,9 @@ const STORES: Record<string, [string | null, Kind]> = {
   barby: ["https://barby.co.il", "venue"], grayclub: ["https://grayclub.co.il", "venue"], epgb: ["https://epgb.co.il", "venue"],
   teder: ["https://www.teder.fm", "venue"], gagarin: ["https://gagarin.co.il", "venue"], zappa: ["https://www.zappa-club.co.il", "venue"],
   kikarhamusica: ["https://kikar-hamusica.com/shows/he", "venue"],
+  yellowsubmarine: ["https://yellowsubmarine.org.il", "venue"], halutz: ["https://www.halutz.co.il", "venue"],
+  haezor: ["https://haezor.com", "venue"], levontin7: ["https://levontin7.com", "venue"], babebar: ["https://babebar.co.il", "venue"],
+  bargiyora: ["https://bar-giyora.co.il", "venue"],
   makore: ["https://www.makore.co.il", "culture"], jerusalemtheatre: ["https://www.jerusalem-theatre.co.il", "culture"],
   beershevatheatre: ["https://b7t.co.il", "culture"], hatarbut: ["https://www.hatarbut.co.il", "culture"],
   habama: ["https://www.habama.co.il", "culture"], friendshist: ["https://friends-hist.co.il", "culture"],
@@ -121,7 +124,7 @@ export default function StoresPage() {
         {stores && <p className="stores-total">{t.total(total.toLocaleString(strings.locale), stores.length)}</p>}
       </Hero>
       <main className="wrap">
-        {!stores && <p className="msg">{failed ? strings.error : strings.loading}</p>}
+        {!stores && (failed ? <p className="msg">{strings.error}</p> : <Loader />)}
         <ol className="stores">
           {stores?.map((s, i) => {
             const [url, kind] = STORES[s.name] ?? [null, "tickets"];

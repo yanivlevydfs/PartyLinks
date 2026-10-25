@@ -35,6 +35,9 @@ class TribeSettings(SourceSettings):
     venue_name: str
     address: str | None = None
     city: str | None = None
+    # The venue's point, when the address geocodes only to its street (events go on the map).
+    latitude: float | None = None
+    longitude: float | None = None
     # Hosts of ticket sellers: the first description link to one of them is the purchase link.
     ticket_hosts: list[str] = Field(default_factory=list)
     # Site categories that are status labels ("coming soon"), not event types.
@@ -90,6 +93,8 @@ def parse_event(e: dict[str, Any], s: TribeSettings, source: str, timezone: str)
         venue_name=s.venue_name,
         address=s.address,
         city=s.city,
+        latitude=s.latitude,
+        longitude=s.longitude,
         event_types=[
             name for c in e.get("categories") or []
             if isinstance(c, dict) and (name := clean_str(html.unescape(str(c.get("name") or "")))) and name not in s.skip_categories
@@ -112,3 +117,7 @@ def _ticket_link(description: str, hosts: list[str]) -> str | None:
 
 class GagarinScraper(TribeScraper):
     name = "gagarin"
+
+
+class BabeBarScraper(TribeScraper):
+    name = "babebar"

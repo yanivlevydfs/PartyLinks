@@ -9,7 +9,7 @@ import { useAllowed, useConsent } from "../consent";
 import { Filters, filterParams } from "../Filters";
 import { useStore } from "../store";
 import type { MapEvent } from "../types";
-import { eventPath, fmtDate, Sources, useT, useTitle, venuePath } from "../ui";
+import { eventPath, fmtDate, Loader, Sources, useT, useTitle, venuePath } from "../ui";
 
 const ISRAEL: [number, number] = [31.9, 34.95];
 
@@ -41,7 +41,7 @@ export default function MapPage() {
       <div className="wrap"><Filters /></div>
       <div className="map-bar wrap">
         <h1 className="sr-only">{t.nav.map}</h1>
-        {isError ? t.error : isPending ? t.loading : (
+        {isError ? t.error : isPending ? <Loader small /> : (
           <>
             <span>{t.onMap(placed)}</span>
             {unplaced > 0 && <small>{t.noLocation(unplaced)}</small>}

@@ -53,7 +53,7 @@ const SOURCE_NAMES: Record<string, string> = {
   holon: "Holon", kikarhamusica: "Kikar HaMusica", xplorer: "Xplorer", livetickets: "LiveTickets", tiuli: "Tiuli",
   festivalim: "Festivalim", telaviv: "Tel Aviv-Yafo", munievents: "Municipal calendars", haifamuni: "Haifa", ramatganmuni: "Ramat Gan",
   ogo: "OGO", muzi: "Muzi", matnasnet: "Community centres", onecity: "OneCity", habama: "Habama", friendshist: "FRIENDS",
-  poalimatarim: "Poalim Atarim", tickethouse: "Ticket House", barak: "Barak Tickets", bargiyora: "Bar Giyora",
+  poalimatarim: "Poalim Atarim", tickethouse: "Ticket House", barak: "Barak Tickets", bargiyora: "Bar Giyora", haezor: "HaEzor", levontin7: "Levontin 7", babebar: "BaBe Bar", yellowsubmarine: "Yellow Submarine", halutz: "HaHalutz 33",
 };
 export const sourceName = (source: string) => SOURCE_NAMES[source] ?? source;
 
@@ -336,6 +336,34 @@ export function Share({ path, title }: { path: string; title: string }) {
   );
 }
 
+/** Card-shaped placeholders while a list loads. */
+export function CardSkeletons({ n }: { n: number }) {
+  return (
+    <>
+      {Array.from({ length: n }, (_, i) => (
+        <div key={i} className="card sk-card" aria-hidden>
+          <div className="card-img" />
+          <div className="card-body">
+            <span className="sk sk-line" />
+            <span className="sk sk-line short" />
+            <span className="sk sk-line short" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** The brand loader: the boot screen's heartbeat line. `small` sits inline in a button or bar. */
+export function Loader({ small }: { small?: boolean }) {
+  const { t } = useT();
+  return (
+    <span className={small ? "loader small" : "loader"} role="status" aria-label={t.loading}>
+      <svg viewBox="0 0 180 40" aria-hidden="true"><path d="M0 22h55l10-18 14 34 12-26 8 10h81" /></svg>
+    </span>
+  );
+}
+
 /** Paged event grid for any /events filter set. */
 export function EventGrid({ params, empty }: { params: Params; empty?: ReactNode }) {
   const { t } = useT();
@@ -344,7 +372,7 @@ export function EventGrid({ params, empty }: { params: Params; empty?: ReactNode
   const total = q.data?.pages[0]?.total ?? 0;
 
   if (q.isError) return <p className="msg">{t.error}</p>;
-  if (q.isPending) return <p className="msg">{t.loading}</p>;
+  if (q.isPending) return <div className="grid" aria-busy="true" aria-label={t.loading}><CardSkeletons n={8} /></div>;
   return (
     <>
       <p className="count">{t.results(total)}</p>
@@ -353,7 +381,7 @@ export function EventGrid({ params, empty }: { params: Params; empty?: ReactNode
       {q.hasNextPage && (
         <div className="more">
           <button onClick={() => q.fetchNextPage()} disabled={q.isFetchingNextPage}>
-            {q.isFetchingNextPage ? t.loading : t.loadMore}
+            {q.isFetchingNextPage ? <Loader small /> : t.loadMore}
           </button>
         </div>
       )}

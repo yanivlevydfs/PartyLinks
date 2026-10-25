@@ -4,7 +4,7 @@ import type { MouseEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEvents, usePost, usePosts } from "../api";
 import type { PostBlock, PostSummary } from "../types";
-import { Card, Hero, Img, useT, useTitle } from "../ui";
+import { Card, Hero, Img, Loader, useT, useTitle } from "../ui";
 import NotFound from "./NotFound";
 
 function PostCard({ p, featured }: { p: PostSummary; featured?: boolean }) {
@@ -44,7 +44,7 @@ export function BlogIndex() {
             </Link>
           ))}
         </nav>
-        {q.isPending && <p className="msg">{t.loading}</p>}
+        {q.isPending && <Loader />}
         {q.isError && <p className="msg">{t.error}</p>}
         {q.data?.items.length === 0 && <p className="msg">{t.blog.empty}</p>}
         {first && <PostCard p={first} featured />}
@@ -85,7 +85,7 @@ export function BlogPost() {
   };
 
   if (q.isError) return <NotFound />;
-  if (!p) return <p className="msg">{t.loading}</p>;
+  if (!p) return <Loader />;
   return (
     <>
       <Hero title={p.title}>

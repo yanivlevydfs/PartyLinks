@@ -14,7 +14,7 @@ import PrivacyPage from "./pages/Privacy";
 import StoresPage from "./pages/Stores";
 import TermsPage from "./pages/Terms";
 import { useStore } from "./store";
-import { Layout } from "./ui";
+import { Layout, Loader } from "./ui";
 import "./styles.css";
 // Self-hosted fonts: no request (and no visitor IP) goes to Google Fonts.
 import "@fontsource/heebo/400.css";
@@ -54,7 +54,7 @@ const router = createBrowserRouter([
       { path: "/city/:city/:sub", element: <Landing landing="city" /> },
       { path: "/region/:region", element: <Landing landing="region" /> },
       { path: "/event/:id", element: <EventPage /> },
-      { path: "/map", element: <Suspense><MapPage /></Suspense> },
+      { path: "/map", element: <Suspense fallback={<Loader />}><MapPage /></Suspense> },
       { path: "/abroad", element: <Abroad /> },
       { path: "/abroad/:country", element: <Abroad /> },
       { path: "/venues", element: <VenuesIndex /> },
@@ -65,7 +65,7 @@ const router = createBrowserRouter([
       { path: "/blog/category/:category", element: <BlogIndex /> },
       { path: "/blog/:slug", element: <BlogPost /> },
       { path: "/accessibility", element: <AccessibilityPage /> },
-      { path: "/admin", element: <Suspense><AdminPage /></Suspense> },
+      { path: "/admin", element: <Suspense fallback={<Loader />}><AdminPage /></Suspense> },
       { path: "*", element: <NotFound /> },
       { path: "/privacy", element: <PrivacyPage /> },
       { path: "/terms", element: <TermsPage /> },

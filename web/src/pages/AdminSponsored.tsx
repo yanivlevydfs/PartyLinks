@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { EventPage, EventSummary } from "../types";
-import { eventPath, Img, TZ } from "../ui";
+import { eventPath, Img, Loader, TZ } from "../ui";
 import { call, Card, post, Stat } from "./Admin";
 import "../sponsored.css";
 
@@ -120,7 +120,7 @@ export function Sponsored() {
         const list = picks.filter((p) => p.side === side);
         return (
           <Card key={side} title={`${side === "right" ? "Right" : "Left"} rail (${list.length})`}>
-            {saved.isLoading && <p className="adm-note">Loading…</p>}
+            {saved.isLoading && <Loader />}
             {!saved.isLoading && !list.length && <p className="adm-note">Nothing here yet. Add events from the search above.</p>}
             <ol className="adm-sp-list">
               {list.map((p, n) => (

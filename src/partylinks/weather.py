@@ -23,6 +23,7 @@ from fastapi import APIRouter, HTTPException, Query, Request, Response
 from sqlalchemy.engine import make_url
 
 from partylinks.config import Settings, project_path
+from partylinks.places import PlaceIndex, all_cities
 
 log = logging.getLogger(__name__)
 
@@ -130,6 +131,58 @@ def _ttl(expires: str | None) -> float:
         return MIN_TTL
 
 
+_places: tuple[PlaceIndex, dict[str, tuple[float, float]]] | None = None
+
+
+def _city_center(settings: Settings, name: str) -> tuple[float, float] | None:
+    """A city name, in Hebrew or English, with or without its suffix ("תל אביב-יפו") -> its centre."""
+    global _places
+    if _places is None:
+        cities = all_cities(settings.enrichment.cities, settings.enrichment.places_min_population)
+        _places = PlaceIndex(cities), {c.he: c.center for c in cities if c.center}
+    index, centers = _places
+    return next((centers[he] for _, he in index.find(name) if he in centers), None)
+
+
+# Places no list has (regional councils "חוף השרון", small towns): one Nominatim lookup per name ever,
+# kept beside the forecast cache (misses too, so a typo is not asked again).
+_found: dict[str, list[float] | None] = {}
+_found_from: Path | None = None
+_nominatim_lock = asyncio.Lock()
+# A settlement or a council's region, never a street or a building of the same name.
+_PLACE_TYPES = {"city", "town", "village", "hamlet", "suburb", "municipality", "region", "county", "state_district"}
+
+
+async def _looked_up(settings: Settings, name: str, path: Path) -> tuple[float, float] | None:
+    global _found_from
+    if _found_from != path:
+        _found_from = path
+        try:
+            _found.update(json.loads(path.read_text("utf-8")))
+        except (OSError, ValueError):
+            pass
+    key = name.strip()
+    if key not in _found:
+        async with _nominatim_lock:  # Nominatim allows 1 request a second
+            if key not in _found and _may_fetch():
+                geo = settings.geocoding
+                try:
+                    async with httpx.AsyncClient(timeout=15, headers={"User-Agent": geo.user_agent}) as client:
+                        # Same country codes as the geocoder: with "il" alone, Israeli localities that OSM files
+                        # under "ps" (Oranit, Ma'ale Adumim...) were missed and a same-named street won.
+                        hits = (await client.get(geo.url, params={"q": key, "format": "jsonv2", "limit": 5, "countrycodes": geo.country_codes})).json()
+                    place = next((h for h in hits if h.get("addresstype") in _PLACE_TYPES), None)
+                    _found[key] = [float(place["lat"]), float(place["lon"])] if place else None
+                    tmp = path.with_suffix(".tmp")
+                    tmp.write_text(json.dumps(_found, ensure_ascii=False), "utf-8")
+                    tmp.replace(path)
+                except (httpx.HTTPError, ValueError, KeyError, OSError) as exc:
+                    log.warning("weather place %r not looked up: %s", key, exc)
+                await asyncio.sleep(1)
+    point = _found.get(key)
+    return (point[0], point[1]) if point else None
+
+
 @router.get("/weather", summary="Forecast slots for a place (events pick their start time's slot)")
 async def weather(
     request: Request,
@@ -139,9 +192,12 @@ async def weather(
     city: Annotated[str | None, Query(max_length=60, description="A configured city's Hebrew name: its centre")] = None,
 ) -> dict[str, list[list[Any]]]:
     settings: Settings = request.app.state.settings
-    # An event placed only by its city (no exact point) takes the city centre's forecast.
+    # An event placed only by its city (no exact point) takes the city centre's forecast: the configured
+    # cities, then every GeoNames town (ערד, כפר ויתקין, מעלה אדומים... were 404s with the first alone).
     if lat is None or lng is None:
-        center = next((c.center for c in settings.enrichment.cities if city and c.he == city and c.center), None)
+        center = _city_center(settings, city or "")
+        if center is None and city:
+            center = await _looked_up(settings, city, cache_file(settings).with_name("weather_places.json"))
         if center is None:
             raise HTTPException(status_code=404, detail="no place")
         lat, lng = center

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { useCategories, useEvents, type Params } from "./api";
 import { genreLabel } from "./i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "./store";
-import { Chip, label, sourceName, today, tomorrow, TZ, useT } from "./ui";
+import { Chip, label, Loader, sourceName, today, tomorrow, TZ, useT } from "./ui";
 
 // The one home-page filter: its state lives in the store, the API query comes from filterParams(),
 // and every landing page (/tonight, /genre/x, /city/x) only presets that same state.
@@ -180,7 +180,7 @@ export function Filters() {
             <div className="f-sheet-foot">
               <button className="f-clear" onClick={clear} disabled={!dirty}>{t.clearFilters}</button>
               <button className="f-apply" onClick={() => sheet.current?.close()}>
-                {total != null ? t.showN(total) : t.loading}
+                {total != null ? t.showN(total) : <Loader small />}
               </button>
             </div>
           </dialog>

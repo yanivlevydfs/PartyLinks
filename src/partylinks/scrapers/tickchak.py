@@ -31,7 +31,10 @@ LOOP_SECTION = "loopSections"
 class TickchakSettings(SourceSettings):
     site_url: str
     api_url: str
-    category_slug: str
+    category_slug: str = ""
+    # Several category pages instead of one: slug -> the label tagged on its events, which the
+    # enrichment's declared_genres turn into the site's category ("standup" -> "stand-up" -> stand_up).
+    categories: dict[str, str] = Field(default_factory=dict)
     city_slug: str = ""  # empty = the category page for all of Israel
     section_data_path: str
     custom_events_path: str
@@ -53,14 +56,20 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
 
     def page_paths(self) -> list[str]:
         s = self.settings
-        return [f"{s.category_slug}/{s.city_slug}".rstrip("/")]
+        return [f"{slug}/{s.city_slug}".rstrip("/") for slug in (s.categories or [s.category_slug])]
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         items: dict[Any, dict[str, Any]] = {}
+        labels: dict[Any, set[str]] = {}
         for path in self.page_paths():
-            for entity_id, item in (await self._page_items(path)).items():
+            label = s.categories.get(path.split("/", 1)[0])
+            # One category failing (a renamed slug) never costs the others; the first one must load.
+            found = await (self._page_items(path) if not items else self.optional(f"category {path}", self._page_items(path)))
+            for entity_id, item in (found or {}).items():
                 items.setdefault(entity_id, item)
+                if label:
+                    labels.setdefault(entity_id, set()).add(label)
         self.log.info("listed %d events", len(items))
         for entity_id, item in items.items():
             try:
@@ -68,6 +77,7 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
             except Exception as exc:  # noqa: BLE001 - isolate per-item failures
                 self.record_failure(str(entity_id), exc)
                 continue
+            event.event_types = sorted({*event.event_types, *labels.get(entity_id, ())})
             if not event.images and (link := clean_str(item.get("link"))):
                 await self._provider_artwork(event, link)
             yield event

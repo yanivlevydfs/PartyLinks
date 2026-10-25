@@ -68,6 +68,18 @@ log = logging.getLogger(__name__)
 SAVE_BATCH_SIZE = 200
 
 
+PROXY_RETRY, PROXY_RETRY_AFTER_S = "proxy-retry", 600
+# Errors of a dead or refused proxy (not of the site's content).
+_PROXY_ERRORS = ("ProxyError", "ConnectError", "ConnectTimeout", "RemoteProtocolError", "ReadError", "SOCKS", "on every proxy",
+                 "timed out after")  # the run limit spent walking dead proxies (tiuli, barak, issta, movieland)
+
+
+def _proxy_failure(result: RunResult) -> bool:
+    if result.status == "partial" and not result.events_saved and result.events_failed:
+        return True  # every page failed (livevents: each month on a dead proxy) and nothing was saved
+    return result.status in ("failed", "blocked") and any(m in (result.error or "") for m in _PROXY_ERRORS)
+
+
 class Coalesced:
     """A whole-table pass that many finishing sources ask for at once (regroup, geocode). One runs;
     the requests that arrive meanwhile share a single re-run instead of each queueing a full pass on
@@ -310,9 +322,24 @@ class ScrapeService:
 
     def _run_in_thread(self, source: str, trigger: str, lock: threading.Lock) -> RunResult:
         try:
-            return asyncio.run(self._run(source, trigger))
+            result = asyncio.run(self._run(source, trigger))
         finally:
             lock.release()
+        if trigger != PROXY_RETRY and _proxy_failure(result) and not self._stopping.is_set():
+            # Its proxies died mid-run: once more later, on others (the dead ones go last, see base.py).
+            log.info("source %s failed on its proxies: running it again in %d min", source, PROXY_RETRY_AFTER_S // 60)
+            timer = threading.Timer(PROXY_RETRY_AFTER_S, self._retry_source, (source,))
+            timer.daemon = True
+            timer.start()
+        return result
+
+    def _retry_source(self, source: str) -> None:
+        if self._stopping.is_set():
+            return
+        try:
+            self.start_source(source, PROXY_RETRY)
+        except SourceBusyError:
+            pass  # already running again (schedule or admin): that run is the retry
 
     def _purge_in_thread(self) -> int:
         state = self.retention_state

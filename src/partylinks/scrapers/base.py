@@ -26,6 +26,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine, Iterable
+from http import HTTPStatus
 from typing import Any, ClassVar, Self, TypeVar, cast
 
 import httpx
@@ -44,6 +45,15 @@ R = TypeVar("R")
 
 RETRYABLE_STATUS = frozenset({408, 425, 429, 500, 502, 503, 504})
 THROTTLED = (429, 503)  # a proxied source moves to the next proxy on these
+
+
+def _firewall_code(status: int) -> bool:
+    """A status no HTTP spec defines (haifa.muni.il 482, tel-aviv.gov.il 472 / 571): a firewall refusing the IP."""
+    try:
+        HTTPStatus(status)
+    except ValueError:
+        return status >= 400
+    return False
 MAX_RETRY_AFTER_SECONDS = 120
 
 
@@ -302,7 +312,7 @@ class BaseScraper[S: SourceSettings](ABC):
                     except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as exc:
                         switches[0] += self._next_proxy(client, exc)  # retried on the next proxy (a TransportError)
                         raise
-                    except httpx.RemoteProtocolError as exc:  # hung up without an answer: a free proxy, mostly
+                    except (httpx.RemoteProtocolError, httpx.ReadError) as exc:  # cut off mid-answer: a free proxy, mostly
                         if self._proxy is not None:
                             switches[0] += self._next_proxy(client, exc)
                         raise
@@ -311,7 +321,8 @@ class BaseScraper[S: SourceSettings](ABC):
                         raise httpx.ProxyError(f"SOCKS: {exc}") from exc
                 # Refused (403) or throttled (429 / 503: the site rations this IP): the next proxy, while
                 # the pool lasts; then the usual backoff retries on the last one.
-                if (self.is_blocked(response) or response.status_code in (403, *THROTTLED)) and self._next_proxy(client, None):
+                refused = response.status_code in (403, *THROTTLED) or _firewall_code(response.status_code)
+                if (self.is_blocked(response) or refused) and self._next_proxy(client, None):
                     switches[0] += 1
                     raise _RefusedByProxyIP(f"{response.status_code} via this proxy")
                 if self.is_blocked(response):

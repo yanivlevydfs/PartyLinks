@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useCategories, useEvents } from "../api";
 import type { Facet } from "../types";
-import { artistPath, Chip, EventGrid, Hero, Img, label, Related, useT, useTitle, venuePath } from "../ui";
+import { artistPath, Chip, EventGrid, Hero, Img, label, Loader, Related, useT, useTitle, venuePath } from "../ui";
 
 function FacetIndex({ title, facets, path, byArea }: {
   title: string; facets: Facet[] | undefined; path: (v: string) => string; byArea?: boolean;
@@ -30,7 +30,7 @@ function FacetIndex({ title, facets, path, byArea }: {
             ))}
           </div>
         )}
-        {!facets && <p className="msg">{t.loading}</p>}
+        {!facets && <Loader />}
         {shown?.length === 0 && <p className="msg">{t.empty}</p>}
         <div className="facet-grid">
           {shown?.map((f) => (
