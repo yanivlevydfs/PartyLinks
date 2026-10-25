@@ -41,6 +41,8 @@ export function Quiz() {
   // Same query as the result grid: the list is already loaded when the last answer opens it.
   const results = useEvents(filterParams(d)).data?.pages[0];
   const total = step > 0 ? results?.total : undefined;
+  // Unfiltered count, the home grid's own query: shows the answers narrowed the list, nothing went missing.
+  const all = useEvents(filterParams({ ...DEFAULT_FILTERS, sort: d.sort })).data?.pages[0]?.total;
 
   const finish = (f: Filters = d) => {
     useStore.getState().setFilters(f);
@@ -99,6 +101,7 @@ export function Quiz() {
           <div className={"quiz-count" + (total ? "" : " zero")} aria-live="polite">
             <b key={total}>{total}</b>
             <span>{total ? q.waiting : q.none}</span>
+            {all != null && all > total && <small>{q.outOf(all)}</small>}
           </div>
         )}
       </div>

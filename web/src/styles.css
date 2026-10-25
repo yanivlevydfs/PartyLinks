@@ -1084,6 +1084,7 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   filter: drop-shadow(0 0 18px rgb(25 227 255 / .35)); animation: pop .4s cubic-bezier(.3, 1.6, .5, 1);
 }
 .quiz-count span { font-size: 12.5px; color: var(--muted); max-width: 150px; }
+.quiz-count small { font-size: 11.5px; color: var(--muted); opacity: .75; }
 .quiz-count.zero b { background: none; color: var(--red); filter: none; }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.92); } }
 .quiz-body { margin-top: 22px; animation: slide .35s ease-out; }
