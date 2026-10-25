@@ -2102,6 +2102,7 @@ sources:
     # Yellow Submarine: live-music club, Jerusalem. WordPress: /event/ lists every upcoming show (date
     # without a year, door / show times); each show's page adds the year, prices, text and the Eventer link.
     enabled: true
+    israel_proxy: true  # 403 to all five evomi IPs from Railway; answers Israeli IPs (Oct 2026)
     cron: "58 6,18 * * *"
     site_url: https://yellowsubmarine.org.il
     listing_path: /event/

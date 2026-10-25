@@ -71,7 +71,8 @@ SAVE_BATCH_SIZE = 200
 PROXY_RETRY, PROXY_RETRY_AFTER_S = "proxy-retry", 600
 # Errors of a dead or refused proxy (not of the site's content).
 _PROXY_ERRORS = ("ProxyError", "ConnectError", "ConnectTimeout", "RemoteProtocolError", "ReadError", "SOCKS", "on every proxy",
-                 "timed out after")  # the run limit spent walking dead proxies (tiuli, barak, issta, movieland)
+                 "timed out after",
+                 "403 Forbidden")  # refused on every proxy of the pool: other IPs later  # the run limit spent walking dead proxies (tiuli, barak, issta, movieland)
 
 
 def _proxy_failure(result: RunResult) -> bool:

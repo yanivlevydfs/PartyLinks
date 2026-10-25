@@ -105,7 +105,9 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
             async for event in self._fetch_all(urls):
                 yield event
         finally:
-            await asyncio.to_thread(_save_past, self._past)
+            # Direct, not to_thread: on shutdown the thread pool is already closed (a run cut short
+            # still keeps what it learned). ~2k URLs, a few ms.
+            _save_past(self._past)
 
     async def _fetch_all(self, urls: list[str]) -> AsyncIterator[ScrapedEvent]:
         # Probe one page first: a checkpoint stops the run here (SourceBlockedError);
