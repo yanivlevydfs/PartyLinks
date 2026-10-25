@@ -773,3 +773,17 @@ def test_geocoder_never_asks_for_just_the_town_or_a_generic_hall_name() -> None:
     # With its city, or a name that carries one, a hall is specific.
     assert queries("היכל התרבות", "רעננה") == ["היכל התרבות, רעננה"]
     assert "מרכז המוסיקה רעננה, רעננה" in queries("מרכז המוסיקה רעננה", "רעננה")
+
+
+def test_one_complex_under_many_names_is_not_a_placeholder_point() -> None:
+    from partylinks.geo import distinct_venues, venue_key
+
+    # Real production points (Oct 2026): halls and spellings of one place, cleared every pass before.
+    for names in (
+        ["תיאטרון ירושלים", "תאטרון ירושלים אולם שרובר", "אולם שרובר", "אולם שרובר תיאטרון ירושלים"],
+        ["המשכן לאמנויות הבמה באר שבע", "אולם 1 המשכן לאמנויות הבמה באר שבע", "בית האופרה המשכן לאמנויות הבמה"],
+        ["קאמרי", "תיאטרון הקאמרי", "תיאטרון הקאמרי אולם 1", "תיאטרון הקאמרי אולם 3"],
+    ):
+        assert distinct_venues({venue_key(n) or "" for n in names}) == 1, names
+    # A real placeholder (one point sent for unrelated clubs) still counts each.
+    assert distinct_venues({venue_key(n) or "" for n in ("בארבי", "גגרין", "הבלוק", "לבונטין 7")}) == 4

@@ -53,6 +53,31 @@ _rate_lock = threading.Lock()
 _last_request = 0.0
 
 
+RELATED_LETTERS = 6  # two venue keys sharing this many letters in a row name one place
+
+
+def distinct_venues(keys: set[str]) -> int:
+    """Unrelated venues among the names at one point. One complex has many names - its halls and the
+    sellers' spellings ("תיאטרון ירושלים" / "תאטרון ירושלים אולם שרובר", "משכן לאמנויות הבמה אולם 1") -
+    and must not look like a placeholder (thousands of real points were cleared every pass, Oct 2026).
+    Names that share RELATED_LETTERS in a row, or one inside the other, are one venue."""
+    names = sorted(k for k in keys if k)
+    grams = [{k[i : i + RELATED_LETTERS] for i in range(len(k) - RELATED_LETTERS + 1)} for k in names]
+    parent = list(range(len(names)))
+
+    def root(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i in range(len(names)):
+        for j in range(i):
+            if root(i) != root(j) and (names[i] in names[j] or names[j] in names[i] or grams[i] & grams[j]):
+                parent[root(i)] = root(j)
+    return len({root(i) for i in range(len(names))}) + ("" in keys)
+
+
 def clean(text: str | None) -> str:
     text = _FLOOR.sub(" ", text or "")
     text = _NOT_TEXT.sub(" ", text)
@@ -306,6 +331,7 @@ class Geocoder:
         for r in rows:
             venues[_point(r)].add(venue_key(r.venue_name) or street_key(r.address) or "")
         bad = []
+        distinct: dict[tuple[float, float], int] = {}
         why: Counter[str] = Counter()  # "source: reason", for the log
         shared: Counter[tuple[float, float]] = Counter()
         for r in rows:
@@ -315,7 +341,7 @@ class Geocoder:
                 r.in_target_city is False
                 and self.areas.contradicts(r.city, r.venue_name, r.address, r.latitude, r.longitude)  # type: ignore[arg-type]
             )
-            placeholder = len(venues[_point(r)]) >= PLACEHOLDER_VENUES
+            placeholder = distinct.setdefault(_point(r), distinct_venues(venues[_point(r)])) >= PLACEHOLDER_VENUES
             if outside or contradicts or placeholder:
                 bad.append({"id": r.id, "latitude": None, "longitude": None})
                 why[f"{r.source}: {'outside its city' if outside else 'region' if contradicts else 'shared'}"] += 1
