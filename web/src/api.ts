@@ -25,7 +25,7 @@ export function useEvents(params: Params) {
     queryKey: ["events", qs],
     queryFn: ({ pageParam }) => getJSON<EventPage>(`/events?${qs}&page=${pageParam}`),
     initialPageParam: 1,
-    getNextPageParam: (last) => (last.page * last.page_size < last.total ? last.page + 1 : undefined),
+    getNextPageParam: (last) => (last.page < 40 && last.page * last.page_size < last.total ? last.page + 1 : undefined), // 40: the API's max_page
   });
 }
 

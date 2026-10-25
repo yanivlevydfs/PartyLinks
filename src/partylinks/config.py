@@ -62,6 +62,8 @@ class ApiSettings(BaseModel):
     port: int = 8000
     default_page_size: int = Field(50, ge=1)
     max_page_size: int = Field(200, ge=1)
+    # Deepest page of a list: a person stops scrolling long before, a dump of every event needs all of them.
+    max_page: int = Field(40, ge=1)
 
 
 class SchedulerSettings(BaseModel):
@@ -381,6 +383,10 @@ class SecuritySettings(BaseModel):
     rate_limit_per_minute: int = Field(300, ge=1)
     admin_rate_limit_per_minute: int = Field(30, ge=1)
     go_rate_limit_per_minute: int = Field(20, ge=1)
+    # The listing data (/events, /categories...): a browsing person needs a few requests a minute,
+    # a scraper thousands. Over it = 429, no strike (many phones share one carrier IP).
+    data_rate_limit_per_minute: int = Field(60, ge=1)
+    data_rate_limit_per_hour: int = Field(1200, ge=1)
     # Vulnerability probes (/.env, /wp-login.php...), failed admin logins and rate-limit hits are
     # strikes; this many within ban_minutes bans the IP for ban_minutes.
     ban_after_strikes: int = Field(5, ge=1)

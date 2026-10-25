@@ -35,6 +35,8 @@ SCANNER_AGENTS = re.compile(
     re.IGNORECASE,
 )
 DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
+# The listings as JSON: what a scraper wants, limited per IP beyond the general rate limit.
+DATA_PATHS = ("/events", "/categories", "/posts", "/ticket-sites", "/locate")
 
 CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "default-src 'self'",
@@ -117,13 +119,13 @@ class Guard:
             for key in [k for k, until in self.banned.items() if until <= now]:
                 del self.banned[key]
 
-    def over_limit(self, ip: str, bucket: str, limit: int, now: float) -> bool:
+    def over_limit(self, ip: str, bucket: str, limit: int, now: float, seconds: float = 60) -> bool:
         window = self.hits[(ip, bucket)]
-        if self._count(window, now, 60) >= limit:
+        if self._count(window, now, seconds) >= limit:
             return True
         window.append(now)
         if len(self.hits) > MAX_TRACKED:  # drop idle clients so memory stays bounded
-            for key in [k for k, w in self.hits.items() if not w or w[-1] <= now - 60]:
+            for key in [k for k, w in self.hits.items() if not w or w[-1] <= now - 3600]:
                 del self.hits[key]
         return False
 
@@ -169,7 +171,9 @@ class SecurityMiddleware:
             return await reject(404, "not found")
         if not agent and path != "/health":
             return await reject(403, "forbidden")
-        if any(bot.lower() in agent.lower() for bot in cfg.blocked_bots) and path != "/robots.txt":
+        # Local calls (the startup cache warm-up runs through httpx) and health probes pass.
+        blocked = any(bot.lower() in agent.lower() for bot in cfg.blocked_bots)
+        if blocked and not local and path not in ("/robots.txt", "/health"):
             return await reject(403, "forbidden")
         if not local:
             limit = cfg.admin_rate_limit_per_minute if admin else cfg.rate_limit_per_minute
@@ -179,6 +183,11 @@ class SecurityMiddleware:
             # Ticket links (/go/...) are what a harvester wants: a person clicks a handful a minute.
             if path.startswith("/go/") and self.guard.over_limit(ip, "go", cfg.go_rate_limit_per_minute, now):
                 self.guard.strike(ip, cfg, "ticket link rate limit", now)
+                return await reject(429, "too many requests", [(b"retry-after", b"60")])
+            if path.startswith(DATA_PATHS) and (
+                self.guard.over_limit(ip, "data", cfg.data_rate_limit_per_minute, now)
+                or self.guard.over_limit(ip, "data-hour", cfg.data_rate_limit_per_hour, now, 3600)
+            ):
                 return await reject(429, "too many requests", [(b"retry-after", b"60")])
         try:
             length = int(headers.get("content-length") or 0)

@@ -864,6 +864,8 @@ def _register_routes(app: FastAPI) -> None:
     ) -> Response:
         cfg: Settings = request.app.state.settings
         size = min(page_size or cfg.api.default_page_size, cfg.api.max_page_size)
+        if page > cfg.api.max_page:  # no paging through every event: narrow the filters instead
+            raise HTTPException(400, f"page is at most {cfg.api.max_page}")
 
         def build(session: Session) -> EventPage:
             total = session.scalar(select(func.count()).select_from(EventRow).where(*filters)) or 0

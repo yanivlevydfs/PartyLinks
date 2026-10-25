@@ -83,3 +83,16 @@ def test_internals_are_admin_only(tmp_path: Path) -> None:
             assert outsider.get(path, headers=admin).status_code == 200, path
         assert outsider.get("/health").json().keys() == {"status"}
         assert "checks" in outsider.get("/health", headers=admin).json()
+
+
+def test_scrapers_are_slowed_and_scripts_refused(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    settings.security.data_rate_limit_per_minute = 2
+    settings.security.blocked_bots = ["python-requests"]
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app, client=("198.51.100.3", 1)) as c:
+        assert c.get("/events?page=41").status_code == 400  # no paging through every event
+        assert [c.get("/events").status_code for _ in range(2)] == [200, 429]  # the listing data has its own, lower limit
+        assert c.get("/health").status_code == 200  # the rest of the site doesn't
+        assert c.get("/health", headers={"user-agent": "python-requests/2.32"}).status_code == 200  # health probes pass
+        assert c.get("/", headers={"user-agent": "python-requests/2.32"}).status_code == 403

@@ -71,8 +71,15 @@ security:
   max_body_bytes: 1000000
   # /docs, /redoc, /openapi.json
   api_docs: false
+  # SEO tools, AI-training and dataset crawlers, and scripts / headless browsers (not people). Search
+  # engines and AI search assistants (Googlebot, Bingbot, OAI-SearchBot, Claude-SearchBot...) stay welcome.
   blocked_bots: [AhrefsBot, SemrushBot, MJ12bot, DotBot, Bytespider, PetalBot, DataForSeoBot, BLEXBot,
-                 serpstatbot, MegaIndex, Barkrowler, ZoominfoBot, Scrapy]
+                 serpstatbot, MegaIndex, Barkrowler, ZoominfoBot, Scrapy,
+                 GPTBot, ClaudeBot, anthropic-ai, CCBot, Google-Extended, Applebot-Extended, cohere-ai, Diffbot,
+                 ImagesiftBot, Omgilibot, Amazonbot, meta-externalagent, img2dataset, Timpibot, AI2Bot,
+                 python-requests, python-urllib, aiohttp, python-httpx, Go-http-client, curl/, Wget, libwww-perl,
+                 okhttp, Java/, node-fetch, axios/, undici, Apache-HttpClient, HeadlessChrome, PhantomJS,
+                 Puppeteer, Playwright, Selenium, colly]
 
 api:
   host: 0.0.0.0
