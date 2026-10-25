@@ -665,3 +665,20 @@ def test_busy_towns_outside_the_config_get_city_pages(tmp_path: Path) -> None:
         assert client.get("/city/yavne").status_code == 404  # 5 events: too few for a town page
         assert "/city/shoham" in client.get("/sitemap-1.xml").text
         assert client.get("/landing-info", params={"path": "/city/shoham"}).json()["city"]["he"] == "שהם"
+
+
+def test_stored_events_take_genres_added_to_the_config(tmp_path: Path) -> None:
+    from partylinks.service import ScrapeService
+
+    settings = settings_for(tmp_path)
+    db = seed(settings, [event("a", datetime.now(UTC) + timedelta(days=1), title="SINNERS FETISH PLAY PARTY")])
+    with db.session() as session:  # scraped before the genre existed
+        session.execute(update(EventRow).values(genres=[]))
+    service = ScrapeService(settings, db)
+    try:
+        assert service.recompute_genres() == 1
+        with db.session(write=False) as session:
+            assert "kink" in session.scalars(select(EventRow.genres)).one()
+        assert service.recompute_genres() == 0  # same config: nothing re-read
+    finally:
+        service.shutdown()

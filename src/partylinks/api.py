@@ -39,6 +39,7 @@ from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_tim
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
+from partylinks.weather import router as weather_router
 
 
 # --------------------------------------------------------------------------- schemas
@@ -541,6 +542,7 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
     app.add_middleware(SecurityMiddleware)  # outermost: rejects before any work is done
     _register_routes(app)
     app.include_router(admin_router)
+    app.include_router(weather_router)
     # The React site (web/), once built with `npm run build`. Mounted last so API routes win.
     site = Path(__file__).resolve().parents[2] / "web" / "dist"
     seo.register(app, site)  # server-rendered pages + sitemap/robots/llms.txt, before the static catch-all

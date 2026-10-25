@@ -20,6 +20,8 @@ Resilience:
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import logging
 import re
 import threading
@@ -30,7 +32,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import DataError, IntegrityError
 
 from partylinks.artists import ArtistBook
@@ -38,8 +40,10 @@ from partylinks.config import Settings
 from partylinks.db import (
     Database,
     EventRow,
+    FlagRow,
     ImageRow,
     ScrapeRunRow,
+    flag_on,
     record_delisted,
     start_run,
     upcoming_filter,
@@ -161,6 +165,42 @@ class ScrapeService:
             stats = self.geocoder.locate_missing(network, stop=self._stopping).as_dict()
         self.recompute_areas()  # new events and new coordinates: place them in a city / region
         return stats
+
+    def recompute_genres(self, force: bool = False) -> int:
+        """Re-read the genres of every stored event when the genre config changed, so a genre added
+        to settings.yaml (or a keyword changed) reaches events scraped before it. The config's
+        fingerprint is kept in the flags table; an unchanged config costs one lookup. Returns rows changed.
+
+        ponytail: ~9 ms an event (~4 min at 28k), read outside the write lock; a scrape that saves an
+        event meanwhile may be overwritten with its older text's genres until its next run.
+        """
+        fields = {"genres", "declared_genres", "genre_families", "detect_genres_from_text", "text_ignore",
+                  "talk_keywords", "talk_genres", "declared_text_genres"}  # fmt: skip
+        config = json.dumps(self.settings.enrichment.model_dump(include=fields), sort_keys=True, ensure_ascii=False)
+        key = "genres:" + hashlib.sha256(config.encode()).hexdigest()[:16]
+        with self.db.session(write=False) as session:
+            if not force and flag_on(session, key):
+                return 0
+            rows = session.execute(
+                select(EventRow.id, EventRow.source, EventRow.title, EventRow.description, EventRow.source_genres,
+                       EventRow.event_types, EventRow.genres)
+            ).all()  # fmt: skip
+        updates = []
+        for r in rows:
+            probe = ScrapedEvent.model_construct(
+                source=r.source, title=r.title, description=r.description,
+                source_genres=r.source_genres or [], event_types=r.event_types or [],
+            )  # fmt: skip
+            genres = self.enricher._detect_genres(probe)
+            if genres != (r.genres or []):
+                updates.append({"id": r.id, "genres": genres})
+        with self.db.session() as session:
+            if updates:
+                session.execute(update(EventRow), updates)
+            session.execute(delete(FlagRow).where(FlagRow.key.like("genres:%")))
+            session.add(FlagRow(key=key, on=True))
+        log.info("genres: config changed, updated %d of %d events", len(updates), len(rows))
+        return len(updates)
 
     def recompute_areas(self) -> int:
         """Re-derive the canonical ``city``, ``in_target_city`` and ``area`` of every stored event from
