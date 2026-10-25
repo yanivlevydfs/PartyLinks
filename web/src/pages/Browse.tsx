@@ -48,12 +48,12 @@ function FacetIndex({ title, facets, path, byArea }: {
 
 export function VenuesIndex() {
   const { t } = useT();
-  return <FacetIndex title={t.venuesTitle} facets={useCategories().data?.venues} path={venuePath} byArea />;
+  return <FacetIndex title={t.venuesTitle} facets={useCategories({ anywhere: "true" }).data?.venues} path={venuePath} byArea />;
 }
 
 export function ArtistsIndex() {
   const { t } = useT();
-  return <FacetIndex title={t.artistsTitle} facets={useCategories().data?.lineup} path={artistPath} />;
+  return <FacetIndex title={t.artistsTitle} facets={useCategories({ anywhere: "true" }).data?.lineup} path={artistPath} />;
 }
 
 export function VenuePage() {
@@ -93,7 +93,7 @@ export function ArtistPage() {
   const { t } = useT();
   useTitle(name);
   // Same query cache as the artists index: no extra request.
-  const profile = useCategories().data?.lineup.find((f) => f.verified && f.value.toLowerCase() === name.toLowerCase());
+  const profile = useCategories({ anywhere: "true" }).data?.lineup.find((f) => f.verified && f.value.toLowerCase() === name.toLowerCase());
   return (
     <>
       <Hero title={profile?.value ?? name}>

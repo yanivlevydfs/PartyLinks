@@ -37,6 +37,7 @@ from partylinks.logs import setup_logging
 from partylinks.models import EntryType
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
+from partylinks.search import smart_filters
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
 from partylinks.weather import router as weather_router
@@ -462,7 +463,7 @@ def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_
 
 
 # Built in the background on startup (an empty cache made the first visits after a deploy take 3-12 s).
-WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/categories", "/ticket-sites")
+WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/categories", "/categories?anywhere=true", "/ticket-sites")
 
 
 def create_app(settings: Settings | None = None, start_scheduler: bool | None = None) -> FastAPI:
@@ -582,7 +583,8 @@ def _group_sources(session: Session, rows: Sequence[EventRow]) -> dict[str, list
         for group_id, source in session.execute(
             select(EventRow.group_id, EventRow.source).where(EventRow.group_id.in_(groups)).distinct()
         ):
-            found.setdefault(group_id, set()).add(source)
+            if group_id:
+                found.setdefault(group_id, set()).add(source)
     return {r.id: [r.source, *sorted(found.get(r.group_id or "", set()) - {r.source})] for r in rows}
 
 
@@ -597,7 +599,8 @@ def _group_covers(session: Session, rows: Sequence[EventRow]) -> dict[str, str]:
             .where(EventRow.group_id.in_(groups), ImageRow.downloaded_at.is_not(None))
             .order_by(ImageRow.position, ImageRow.id)
         ):
-            found.setdefault(group_id, f"/images/{image_id}")
+            if group_id:
+                found.setdefault(group_id, f"/images/{image_id}")
     return found
 
 
@@ -734,6 +737,7 @@ def _register_routes(app: FastAPI) -> None:
             bool | None, Query(description="Events abroad instead of events in Israel (default: Israel, both for an artist or venue)")
         ] = None,
         country: Annotated[str | None, Query(min_length=2, max_length=2, description="Country code (ISO 3166 alpha-2), events abroad")] = None,
+        anywhere: Annotated[bool, Query(description="Events in Israel and abroad")] = False,
         entry_type: Annotated[
             list[EntryType] | None, Query(max_length=MAX_LIST_PARAMS, description="free / paid / free_and_paid")
         ] = None,
@@ -796,8 +800,8 @@ def _register_routes(app: FastAPI) -> None:
             )
         if in_target_city is not None:
             filters.append(EventRow.in_target_city.is_(in_target_city))
-        # An artist's or a venue's page shows their shows abroad too.
-        if abroad is not None or not (artist or venue or venue_slug):
+        # Search, an artist's or a venue's page and the artist / venue indexes cover every event, abroad too.
+        if abroad is not None or not (q or artist or venue or venue_slug or anywhere):
             filters.append(EventRow.country.is_not(None) if abroad else EventRow.country.is_(None))
         if country:
             filters.append(EventRow.country == country.upper())
@@ -844,15 +848,7 @@ def _register_routes(app: FastAPI) -> None:
         if max_price is not None:
             filters.append(EventRow.group_min_price <= max_price)
         if q:
-            pattern = _contains(q)
-            filters.append(
-                or_(
-                    EventRow.title.ilike(pattern, escape="\\"),
-                    EventRow.description.ilike(pattern, escape="\\"),
-                    EventRow.venue_name.ilike(pattern, escape="\\"),
-                    cast(EventRow.lineup, String).ilike(pattern, escape="\\"),
-                )
-            )
+            filters += smart_filters(q, cfg)
         return filters
 
     # A default, not Annotated: string annotations (``from __future__``) cannot see this local function.

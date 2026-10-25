@@ -698,3 +698,23 @@ def test_artist_page_lists_their_shows_abroad_too(tmp_path: Path) -> None:
         assert ids("artist=flashcookie") == ["rome"]
         assert ids("artist=flashcookie&abroad=false") == []
         assert "rome" not in ids("")  # the main feed stays in Israel
+
+
+def test_smart_search_reads_places_genres_prices_and_covers_abroad(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    pricey = [TicketTier(name="Entry", price=Decimal(120))]
+    seed(settings, [
+        event("rome", future, address="Roma, Italy", latitude=41.9, longitude=12.5, tickets=pricey),
+        event("tlv", future, tickets=pricey),
+        event("haifa", future, title="Jazz club", address="Haifa, Israel", tickets=[TicketTier(name="Entry", price=Decimal(50))]),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda q: sorted(e["source_event_id"] for e in client.get("/events", params={"q": q}).json()["items"])  # noqa: E731
+        assert ids("techno") == ["rome", "tlv"]  # search covers abroad too
+        assert ids("טכנו roma") == ["rome"]
+        assert ids("ג׳אז בחיפה") == ids("jazz haifa") == ["haifa"]
+        assert ids("night עד 100") == []
+        assert ids("עד 100") == ["haifa"]
+        assert ids("abroad") == ["rome"]
+        assert ids("nothing like this") == []
