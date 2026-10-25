@@ -43,7 +43,7 @@ async def _scheduled_retention(service: ScrapeService) -> None:
 def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOScheduler:
     scheduler = AsyncIOScheduler(timezone=settings.timezone)
     now = datetime.now(ZoneInfo(settings.timezone))
-    enabled = [(n, s) for n, s in configured_sources(settings).items() if s.enabled and not s.home]
+    enabled = [(n, s) for n, s in configured_sources(settings).items() if s.enabled]
     for index, (name, source) in enumerate(enabled):
         # Startup runs are spread out so a deploy never fires every source at once.
         # APScheduler treats an explicit next_run_time=None as "paused", so only pass it when set.

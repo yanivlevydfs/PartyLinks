@@ -60,9 +60,6 @@ class SourceSettings(BaseModel):
     proxied: bool = True
     # The site only answers Israeli IPs: try `http.israel_proxy` first (see HttpSettings).
     israel_proxy: bool = False
-    # The site refuses every server IP: it is scraped on a home PC (scripts/home_runner.py) and
-    # uploaded to /admin/api/ingest; the server's scheduler and full scans skip it.
-    home: bool = False
     # This source's run limit when it needs longer than scheduler.run_timeout_seconds.
     run_timeout_seconds: float | None = Field(None, gt=0)
 
