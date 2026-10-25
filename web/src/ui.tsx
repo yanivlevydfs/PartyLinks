@@ -105,6 +105,7 @@ export function Layout() {
             <NavLink to="/abroad">{t.nav.abroad}</NavLink>
             <NavLink to="/venues">{t.nav.venues}</NavLink>
             <NavLink to="/artists">{t.nav.artists}</NavLink>
+            <NavLink to="/stores">{t.nav.stores}</NavLink>
             <NavLink to="/blog">{t.nav.blog}</NavLink>
           </nav>
           <button className="lang" onClick={() => setLang(lang === "he" ? "en" : "he")} aria-label="Language">

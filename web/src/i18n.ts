@@ -4,7 +4,7 @@ export type Lang = "he" | "en";
 export const STRINGS = {
   he: {
     dir: "rtl",
-    nav: { parties: "אירועים", map: "מפה", abroad: "חו״ל", venues: "מקומות", artists: "אמנים", blog: "מגזין" },
+    nav: { parties: "אירועים", map: "מפה", abroad: "חו״ל", venues: "מקומות", artists: "אמנים", stores: "חנויות", blog: "מגזין" },
     abroad: { title: "אירועים בחו״ל: הופעות ופסטיבלים", intro: "כרטיסים וחבילות להופעות ולפסטיבלים בעולם." },
     blog: {
       title: "המגזין",
@@ -170,7 +170,7 @@ export const STRINGS = {
   },
   en: {
     dir: "ltr",
-    nav: { parties: "Events", map: "Map", abroad: "Abroad", venues: "Venues", artists: "Artists", blog: "Magazine" },
+    nav: { parties: "Events", map: "Map", abroad: "Abroad", venues: "Venues", artists: "Artists", stores: "Stores", blog: "Magazine" },
     abroad: { title: "Events abroad: concerts and festivals", intro: "Tickets and packages for concerts and festivals around the world." },
     blog: {
       title: "Magazine",
