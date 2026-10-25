@@ -701,14 +701,15 @@ sources:
   chillz:
     enabled: true
     # Its 429s came from the Vercel checkpoint, not the IP: speaking as Chrome passes it, so the
-    # usual proxy (the free Israeli list mostly fails to connect, Oct 2026).
+    # usual proxy. Every sitemap page (~3,350, the oldest from April), ~770 KB each.
     cron: "31 7,19 * * *"
+    run_timeout_seconds: 3600
     site_url: https://chillz.com
     sitemap_path: /sitemap.xml
     include_path_prefix: /en/
     exclude_path_prefixes: ["/en/explore/"]
-    recent_days: 120
-    max_pages: 3000
+    recent_days: 3650
+    max_pages: 20000
     checkpoint_markers: ["Vercel Security Checkpoint"]
     # Event pages you open in your browser and save (Ctrl+S) here are imported every run.
     inbox_dir: data/chillz_inbox
@@ -716,8 +717,8 @@ sources:
     http:
       # The Vercel checkpoint refuses Python's TLS handshake; Chrome's passes (Oct 2026).
       impersonate: chrome
-      concurrency: 4
-      request_delay_seconds: 1.0
+      concurrency: 6
+      request_delay_seconds: 0.5
 
   megatickets:
     enabled: true
