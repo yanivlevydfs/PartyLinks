@@ -1948,3 +1948,29 @@ sources:
     cron: "48 5,17 * * *"
     site_url: https://www.ticket-house.com
     event_path: /event-details/{slug}
+
+  barak:
+    # Barak Tickets: Haifa-based box office (concerts, theatre, stand-up, kids) on the Eventim Israel
+    # platform. No sitemap and the category pages need the disallowed /api/, so events come from the
+    # city pages' schema.org ItemList (?page=N) and each event page is read with the Eventim parser.
+    # Shares Eventim's event ids: most events are also stored by `eventim`. Not yet seen live (Oct 2026).
+    enabled: true
+    israel_proxy: true  # Eventim's Akamai: unreachable from abroad; refused a free IL proxy (Oct 2026)
+    cron: "4 7,19 * * *"
+    site_url: https://www.barak-tickets.co.il
+    city_paths:   # the site's nav regions (Jan 2026)
+      - /city/באר-שבע-308/
+      - /city/בנימינה-1957/
+      - /city/הרצליה-314/
+      - /city/זכרון-יעקב-1948/
+      - /city/חיפה-והצפון-307/
+      - /city/ירושלים-306/
+      - /city/לטרון-1953/
+      - /city/קיסריה-1573/
+      - /city/ראשון-לציון-1951/
+      - /city/תל-אביב-249/
+    http:
+      # Same Akamai as eventim: honest UA, one request at a time.
+      user_agent: "Mozilla/5.0 (compatible; PartyLinks/1.0)"
+      concurrency: 1
+      request_delay_seconds: 1.5

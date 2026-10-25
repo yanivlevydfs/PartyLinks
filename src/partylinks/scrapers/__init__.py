@@ -7,6 +7,7 @@ import logging
 from pydantic import ValidationError
 
 from partylinks.config import Settings
+from partylinks.scrapers.barak import BarakScraper
 from partylinks.scrapers.barby import BarbyScraper
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.beatradar import BeatRadarScraper
@@ -156,6 +157,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         FriendsHistScraper,
         PoalimAtarimScraper,
         TicketHouseScraper,
+        BarakScraper,
     )
 }
 
