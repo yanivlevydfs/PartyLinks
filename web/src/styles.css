@@ -21,6 +21,9 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+/* No selecting the listings (main.tsx blocks copy too); text fields and the admin page stay selectable. */
+body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea, [contenteditable], .admin { -webkit-user-select: text; user-select: text; }
 body {
   background: var(--bg);
   color: var(--text);

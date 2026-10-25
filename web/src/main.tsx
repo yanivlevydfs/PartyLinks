@@ -82,6 +82,15 @@ const router = createBrowserRouter([
 // Its own chunk, loaded after the app; it follows <html lang> so עב/EN switches its language too.
 import("sienna-accessibility");
 
+// No copying the listings: copy, cut and the context menu are blocked, except in text fields (search)
+// and on the admin page. Links and buttons stay clickable.
+const editable = (t: EventTarget | null) => t instanceof Element && !!t.closest("input, textarea, [contenteditable]");
+for (const type of ["copy", "cut", "contextmenu", "dragstart"]) {
+  document.addEventListener(type, (e) => {
+    if (!editable(e.target) && !location.pathname.startsWith("/admin")) e.preventDefault();
+  });
+}
+
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, retry: 1 } } });
 
 createRoot(document.getElementById("root")!).render(
