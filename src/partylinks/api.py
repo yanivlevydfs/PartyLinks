@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 from zoneinfo import ZoneInfo
 
+import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
@@ -459,6 +460,10 @@ def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_
     return Response(cache.get((request.url.path, request.url.query), body)[0], media_type="application/json")
 
 
+# Built in the background on startup (an empty cache made the first visits after a deploy take 3-12 s).
+WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/categories", "/ticket-sites")
+
+
 def create_app(settings: Settings | None = None, start_scheduler: bool | None = None) -> FastAPI:
     settings = settings or get_settings()
     setup_logging(settings.logging)  # also for `serve --reload` workers, which never run cli.main()
@@ -487,9 +492,20 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
                 scheduler.start()
             await asyncio.to_thread(service.geocode)
 
-        task = asyncio.create_task(maintenance())
-        app.state.tasks.add(task)
-        task.add_done_callback(app.state.tasks.discard)
+        async def warm() -> None:
+            """The busiest pages built once right after a deploy, so the first visitors don't wait for them."""
+            await asyncio.sleep(1)  # let startup finish first
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost") as client:
+                for path in WARM_PATHS:
+                    try:
+                        await client.get(path)
+                    except Exception:  # a cold page is only slower
+                        log.exception("cache warm-up of %s failed", path)
+
+        for job in (maintenance(), *([warm()] if run_scheduler else [])):  # the server that serves visitors
+            task = asyncio.create_task(job)
+            app.state.tasks.add(task)
+            task.add_done_callback(app.state.tasks.discard)
         try:
             server_status.log_startup(settings, db, scheduler)
         except Exception:  # the banner never blocks startup
