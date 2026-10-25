@@ -230,8 +230,8 @@ export function Card({ e }: { e: EventSummary }) {
         <div className="date-badge">
           <b>{fmtDate(e.start_at, t, { day: "numeric" })}</b>
           <span>{fmtDate(e.start_at, t, { month: "short" })}</span>
+          <Weather lat={e.latitude} lng={e.longitude} start={e.start_at} />
         </div>
-        <Weather lat={e.latitude} lng={e.longitude} start={e.start_at} />
         {fresh && <span className={`fresh ${fresh}`}>{fresh === "new" ? t.isNew : t.updatedBadge}</span>}
         {e.is_sold_out ? (
           <span className="flag sold">{t.soldOut}</span>
