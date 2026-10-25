@@ -340,7 +340,14 @@ button, input, select { font: inherit; color: inherit; }
 .trending .flag { bottom: 8px; inset-inline-end: 8px; font-size: 11px; padding: 3px 9px; }
 .trending .sources.on-img { bottom: 8px; inset-inline-start: 8px; max-width: calc(100% - 90px); }
 .trending .sources .src { font-size: 10px; }
-@media (max-width: 760px) { .trending-nav { display: none; } }
+/* Phone: full-bleed strip, no boxed panel; one card plus a peek of the next, cut by the screen edge. */
+@media (max-width: 760px) {
+  .trending-nav { display: none; }
+  .trending { margin-inline: -16px; padding: 18px 0 14px; border-inline: 0; border-radius: 0; }
+  .trending-head { padding: 0 16px 12px; }
+  .trending-row { gap: 12px; padding: 6px 16px 4px; scroll-padding-inline: 16px; }
+  .trending-row > .card-wrap { flex-basis: 72vw; }
+}
 
 /* ------------------------------------------------------------------ cards */
 .grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr)); }
