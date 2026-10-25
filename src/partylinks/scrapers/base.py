@@ -193,7 +193,9 @@ class BaseScraper[S: SourceSettings](ABC):
 
     def _new_client(self, proxy: str | None) -> httpx.AsyncClient:
         return httpx.AsyncClient(
-            timeout=self.http.timeout_seconds,
+            # A dead proxy fails on connect: give up on it in 10 s instead of the full timeout, so a
+            # pool of free proxies is walked in minutes. Reads keep the full timeout.
+            timeout=httpx.Timeout(self.http.timeout_seconds, connect=min(10.0, self.http.timeout_seconds)),
             follow_redirects=True,
             proxy=proxy,
             headers={
