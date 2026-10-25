@@ -46,6 +46,13 @@ const SOURCE_NAMES: Record<string, string> = {
   tiktik: "TikTik", teder: "Teder", makore: "Makore", jerusalemtheatre: "Jerusalem Theatre", drop: "Drop", luma: "Luma", geektime: "Geektime",
   peoplecomputers: "People & Computers", meetup: "Meetup", zappa: "Zappa", beershevatheatre: "Be'er Sheva Theatre", arenas: "Arenas",
   happytlv: "HappyTLV", issta: "Issta", livevents: "Live Events", kishreyteufa: "Kishrey Teufa", ticketplace: "Ticket Place",
+  beatradar: "Beat Radar", vibez: "Vibez", shotgun: "Shotgun", planet: "Planet", ravhen: "Rav-Hen", cinemacity: "Cinema City",
+  hotcinema: "Hot Cinema", lev: "Lev Cinema", cinematheque_tlv: "Tel Aviv Cinematheque", cinematheque_jlm: "Jerusalem Cinematheque",
+  movieland: "Movieland", megaevents: "Mega Events", viagogo: "viagogo", hamenagen: "HaMenagen", hatarbut: "Heichal HaTarbut",
+  holon: "Holon", kikarhamusica: "Kikar HaMusica", xplorer: "Xplorer", livetickets: "LiveTickets", tiuli: "Tiuli",
+  festivalim: "Festivalim", telaviv: "Tel Aviv-Yafo", munievents: "Municipal calendars", haifamuni: "Haifa", ramatganmuni: "Ramat Gan",
+  ogo: "OGO", muzi: "Muzi", matnasnet: "Community centres", onecity: "OneCity", habama: "Habama", friendshist: "FRIENDS",
+  poalimatarim: "Poalim Atarim", tickethouse: "Ticket House", barak: "Barak Tickets",
 };
 export const sourceName = (source: string) => SOURCE_NAMES[source] ?? source;
 

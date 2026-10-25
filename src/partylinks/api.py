@@ -300,6 +300,16 @@ class SourceOut(BaseModel):
     last_run: RunOut | None
 
 
+class StoreOut(BaseModel):
+    name: str
+    events: int  # upcoming events it sells, in Israel and abroad (every listing of a group counts, once per group)
+    updated_at: datetime | None  # end of its last scrape that saved events (success or partial)
+
+
+class Stores(BaseModel):
+    stores: list[StoreOut]
+
+
 class FacetValue(BaseModel):
     value: str
     events: int
@@ -986,6 +996,23 @@ def _register_routes(app: FastAPI) -> None:
     ) -> Response:
         """Facet counts of the events matching the list's filters (none: every upcoming event)."""
         return _cached(request, lambda: build_categories(request, session, filters, upcoming), exclude_none=True)
+
+    @app.get("/ticket-sites", response_model=Stores, tags=["events"])
+    def stores(request: Request, session: SessionDep) -> Response:
+        """The ticket sites events come from, with how many upcoming events each sells (the stores page)."""
+
+        def build() -> Stores:
+            listings = select(EventRow.group_id, EventRow.source).where(upcoming_filter()).distinct()
+            counts = Counter(source for _, source in session.execute(listings))
+            last_runs = (
+                select(ScrapeRunRow.source, func.max(ScrapeRunRow.finished_at))
+                .where(ScrapeRunRow.status.in_(("success", "partial")))
+                .group_by(ScrapeRunRow.source)
+            )
+            done = {source: finished for source, finished in session.execute(last_runs)}
+            return Stores(stores=[StoreOut(name=s, events=n, updated_at=done.get(s)) for s, n in counts.most_common()])
+
+        return _cached(request, build)
 
     @app.get("/locate", tags=["events"])
     def locate(

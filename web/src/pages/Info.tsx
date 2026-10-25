@@ -11,6 +11,7 @@ export const INFO_LINKS: { path: string; label: Record<Lang, string> }[] = [
   { path: "/faq", label: { he: "שאלות נפוצות", en: "FAQ" } },
   { path: "/contact", label: { he: "צור קשר", en: "Contact us" } },
   { path: "/partners", label: { he: "שיתופי פעולה", en: "Partnerships" } },
+  { path: "/stores", label: { he: "חנויות הכרטיסים", en: "Ticket stores" } },
 ];
 
 const title = (path: string, lang: Lang) => INFO_LINKS.find((l) => l.path === path)!.label[lang];

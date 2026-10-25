@@ -59,7 +59,7 @@ HEADERS = [
 ]
 # Public listings may be reused briefly by browsers and a CDN in front (Cloudflare), so a burst of
 # visitors hits the database once per window. Vite asset names carry a content hash: cache forever.
-PUBLIC_API = ("/events", "/categories", "/changes", "/site", "/posts")
+PUBLIC_API = ("/events", "/categories", "/changes", "/site", "/posts", "/ticket-sites")
 MAX_TRACKED = 50_000  # client addresses kept in each in-memory table before idle ones are dropped
 
 

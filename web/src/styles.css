@@ -1157,3 +1157,54 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 .related h2 { font: 700 20px/1.3 var(--display); margin: 0 0 12px; }
 .related .chip { text-decoration: none; }
 .landing-intro { max-width: 760px; margin: 0 0 18px; color: var(--muted); font-size: 16px; line-height: 1.7; }
+
+/* ------------------------------------------------------------------ ticket stores (/stores) */
+.stores-total {
+  display: inline-block; margin: 0; padding: 8px 18px; border-radius: 999px; font: 700 16px/1.3 var(--display);
+  background: rgb(255 46 147 / .1); border: 1px solid var(--line-hot); box-shadow: 0 0 24px rgb(255 46 147 / .2);
+}
+.stores {
+  list-style: none; margin: 0 0 32px; padding: 0;
+  display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+}
+.store {
+  --c: hsl(var(--hue) 100% 62%);
+  position: relative; overflow: hidden; display: grid; grid-template-columns: 52px 1fr auto; align-items: center;
+  gap: 4px 14px; padding: 18px 20px 14px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); backdrop-filter: blur(8px);
+  transition: transform .25s, border-color .25s, box-shadow .25s; animation: rise .4s both;
+}
+.store::before {
+  content: ""; position: absolute; inset: -40% auto auto -20%; width: 70%; aspect-ratio: 1; z-index: -1; pointer-events: none;
+  background: radial-gradient(closest-side, hsl(var(--hue) 100% 60% / .18), transparent); transition: opacity .25s; opacity: .7;
+}
+.store:hover { transform: translateY(-3px); border-color: var(--c); box-shadow: 0 0 30px hsl(var(--hue) 100% 60% / .3); }
+.store:hover::before { opacity: 1; }
+.store-rank {
+  position: absolute; top: 8px; inset-inline-end: 12px; color: var(--muted); opacity: .5;
+  font: 900 12px/1 var(--display); font-variant-numeric: tabular-nums;
+}
+.store-rank::before { content: "#"; }
+.store-mono {
+  grid-row: span 2; width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center;
+  font: 900 24px/1 var(--display); color: #fff;
+  background: linear-gradient(135deg, var(--c), hsl(calc(var(--hue) + 50) 90% 45%));
+  box-shadow: 0 6px 20px -6px var(--c), inset 0 0 0 1px rgb(255 255 255 / .2);
+}
+.store-head { display: grid; min-width: 0; }
+.store-head b { font: 700 18px/1.2 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[dir="rtl"] .store-head b { text-align: right; }
+.store-head small { color: var(--muted); font-size: 13px; }
+.store-count { grid-row: span 2; display: grid; justify-items: end; text-align: end; }
+.store-count b {
+  font: 900 30px/1 var(--display); font-variant-numeric: tabular-nums;
+  background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.store-count small { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.store-bar { grid-column: 1 / -1; height: 4px; margin-top: 10px; border-radius: 4px; background: rgb(255 255 255 / .06); overflow: hidden; }
+.store-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--c), var(--pink)); box-shadow: 0 0 10px var(--c); }
+.store-foot { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 13px; }
+.store-foot small { color: var(--muted); margin-inline-end: auto; }
+.store-foot .linkish { color: var(--pink); text-decoration: none; font-weight: 600; }
+.store-foot .linkish:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) { .store { animation: none; } }

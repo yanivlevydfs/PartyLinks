@@ -11,6 +11,7 @@ import AccessibilityPage from "./pages/Accessibility";
 import { BlogIndex, BlogPost } from "./pages/Blog";
 import { AboutPage, ContactPage, FaqPage, PartnersPage } from "./pages/Info";
 import PrivacyPage from "./pages/Privacy";
+import StoresPage from "./pages/Stores";
 import TermsPage from "./pages/Terms";
 import { useStore } from "./store";
 import { Layout } from "./ui";
@@ -72,6 +73,7 @@ const router = createBrowserRouter([
       { path: "/faq", element: <FaqPage /> },
       { path: "/contact", element: <ContactPage /> },
       { path: "/partners", element: <PartnersPage /> },
+      { path: "/stores", element: <StoresPage /> },
     ],
   },
 ]);

@@ -116,6 +116,9 @@ def test_api_filters_categories_and_stored_image(tmp_path: Path) -> None:
         categories = client.get("/categories").json()
         assert {"value": "free_and_paid", "events": 2} in categories["entry_types"]
         assert client.get("/sources").status_code == 200
+        stores = client.get("/ticket-sites").json()["stores"]
+        assert stores and all(s["events"] > 0 for s in stores)
+        assert "חנויות הכרטיסים" in client.get("/stores").text
 
 
 def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:

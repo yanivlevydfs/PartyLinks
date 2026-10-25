@@ -606,6 +606,10 @@ INFO_PAGES = {
         "שאלה, הצעה, טעות באירוע או אירוע חסר? כתבו ל-{name} ונחזור אליכם.",
         "A question, a suggestion, a wrong detail or a missing event? Write to {name} and we'll get back to you.",
     )),
+    "/stores": (("חנויות הכרטיסים", "Ticket stores"), (
+        "כל אתרי הכרטיסים, המועדונים והיכלי התרבות ש-{name} אוסף מהם אירועים, וכמה אירועים קרובים יש לכל אחד.",
+        "Every ticketing site, club and culture hall {name} collects events from, and how many upcoming events each one has.",
+    )),
     "/partners": (("שיתופי פעולה", "Partnerships"), (
         "מפיקים, מקומות, אתרי כרטיסים ומותגים: בואו נעבוד יחד כדי שהאירועים שלכם יגיעו לעוד אנשים ב-{name}.",
         "Promoters, venues, ticketing sites and brands: let's work together to bring your events to more people on {name}.",
