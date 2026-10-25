@@ -700,7 +700,8 @@ sources:
   #   PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS='{"x-partylinks-key": "<secret>"}'
   chillz:
     enabled: true
-    israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    # Its 429s came from the Vercel checkpoint, not the IP: speaking as Chrome passes it, so the
+    # usual proxy (the free Israeli list mostly fails to connect, Oct 2026).
     cron: "31 7,19 * * *"
     site_url: https://chillz.com
     sitemap_path: /sitemap.xml

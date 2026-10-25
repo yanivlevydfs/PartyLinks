@@ -217,7 +217,7 @@ class BaseScraper[S: SourceSettings](ABC):
         if not self._spare_proxies:
             return False
         proxy = self._spare_proxies.pop(0)
-        why = type(exc).__name__ if exc else "refused by the site"
+        why = f"{type(exc).__name__}: {str(exc)[:160]}" if exc else "refused by the site"
         self.log.warning("proxy failed (%s): switching to %s", why, proxy.rpartition("@")[2])
         self._retired_clients.append(failed)
         self._client = self._new_client(proxy)
