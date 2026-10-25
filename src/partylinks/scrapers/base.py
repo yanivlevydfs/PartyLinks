@@ -25,7 +25,7 @@ import random
 import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine, Iterable
-from typing import Any, ClassVar, Self, TypeVar
+from typing import Any, ClassVar, Self, TypeVar, cast
 
 import httpx
 from curl_cffi import requests as curl_requests
@@ -109,6 +109,10 @@ async def gather_or_cancel[X](coros: Iterable[Coroutine[Any, Any, X]]) -> list[X
 
 
 _feed_cache: dict[str, tuple[float, list[str]]] = {}
+# The Israeli proxy that last worked, shared by every `israel_proxy` source (sources run on threads
+# of one process): each starts on it and keeps it until it fails to connect, then the next one
+# that works becomes the shared one. ponytail: in memory, a restart walks the pool again.
+_israel_good: str | None = None
 FEED_TTL_SECONDS = 1800
 
 
@@ -150,9 +154,16 @@ class BaseScraper[S: SourceSettings](ABC):
         if settings.israel_proxy:
             israeli = [p.strip() for p in (http.israel_proxy or "").split(",") if p.strip()]
             israeli = list(dict.fromkeys(_israeli_feed(http.israel_proxy_feed) + israeli))
-            random.shuffle(israeli)  # spread the sources over the (often short-lived) free proxies
+            random.shuffle(israeli)  # no known good one yet: walk the free proxies in random order
+            if _israel_good in israeli:
+                israeli.remove(_israel_good)
+                israeli.insert(0, _israel_good)
             pool = israeli + pool
+            self._israeli = set(israeli)
+        else:
+            self._israeli = set()
         self._spare_proxies = pool[1:] if pool and "proxy" not in overrides else []
+        self._proxy = overrides.get("proxy") or (pool[0] if pool else None)  # the client's current proxy
         self._pool_size = 1 + len(self._spare_proxies)
         if pool:
             overrides.setdefault("proxy", pool[0])
@@ -214,13 +225,19 @@ class BaseScraper[S: SourceSettings](ABC):
         True when the request should go again: on a new proxy, or one a parallel request just switched to."""
         if failed is not self._client:
             return True
+        global _israel_good
+        if exc is not None and self._proxy == _israel_good:
+            _israel_good = None  # dead: the next Israeli proxy that works takes over
         if not self._spare_proxies:
             return False
-        proxy = self._spare_proxies.pop(0)
+        # Another source already found a working one: go straight to it.
+        good = _israel_good if _israel_good in self._spare_proxies else None
+        proxy = good or self._spare_proxies[0]
+        self._spare_proxies.remove(proxy)
         why = f"{type(exc).__name__}: {str(exc)[:160]}" if exc else "refused by the site"
         self.log.warning("proxy failed (%s): switching to %s", why, proxy.rpartition("@")[2])
         self._retired_clients.append(failed)
-        self._client = self._new_client(proxy)
+        self._client, self._proxy = self._new_client(proxy), proxy
         return True
 
     def is_blocked(self, response: httpx.Response) -> bool:
@@ -248,6 +265,7 @@ class BaseScraper[S: SourceSettings](ABC):
             raise SourceBlockedError(f"{self.name}: access denied by the site on every proxy ({exc})") from exc
 
     async def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+        global _israel_good
         # The usual retries, plus one for each move to another proxy of the pool: a site that refuses
         # one proxy IP gets the next one, but a plain timeout is not retried pool-size times over.
         switches = [0]
@@ -279,7 +297,10 @@ class BaseScraper[S: SourceSettings](ABC):
                 if self.is_blocked(response):
                     raise SourceBlockedError(f"{self.name}: access denied by the site ({response.status_code})")
                 response.raise_for_status()
-        return response
+                if self._proxy in self._israeli:
+                    _israel_good = self._proxy  # works: every Israeli-proxy source uses it from now on
+                return response
+        raise AssertionError("unreachable: the last attempt returns or raises (reraise=True)")
 
     async def get_json(self, url: str, *, expect: Any = None, **kwargs: Any) -> Any:
         return _json(await self.request("GET", url, **kwargs), expect)
@@ -403,13 +424,16 @@ class _ImpersonatingTransport(httpx.AsyncBaseTransport):
     _DROP_RESPONSE = frozenset({"content-encoding", "content-length", "transfer-encoding"})
 
     def __init__(self, impersonate: str, proxy: str | None, timeout: tuple[float, float]) -> None:
-        self._session = curl_requests.AsyncSession(impersonate=impersonate, proxy=proxy, timeout=timeout)
+        self._session = curl_requests.AsyncSession(
+            impersonate=cast(curl_requests.BrowserTypeLiteral, impersonate), proxy=proxy, timeout=timeout
+        )
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         headers = {k: v for k, v in request.headers.items() if k.lower() not in self._DROP_REQUEST}
         try:
             r = await self._session.request(
-                request.method, str(request.url), headers=headers, data=await request.aread() or None, allow_redirects=False
+                cast(curl_requests.session.HttpMethod, request.method), str(request.url),
+                headers=headers, data=await request.aread() or None, allow_redirects=False,
             )
         except curl_requests.RequestsError as exc:
             # Connect/timeout/proxy failures alike: a ConnectError is retried and moves to the next proxy.

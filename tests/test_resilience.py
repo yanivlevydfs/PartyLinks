@@ -374,3 +374,39 @@ def test_israel_proxy_feed_goes_first_and_is_cached(monkeypatch) -> None:
         scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
     assert {scraper.http.proxy, *scraper._spare_proxies} == {"http://1.2.3.4:80", "socks5://5.6.7.8:1080", "http://il1:1"}  # socks4 skipped
     assert calls == ["http://feed"]
+
+
+def test_a_working_israeli_proxy_is_shared_until_it_dies() -> None:
+    from partylinks.scrapers import base
+
+    base._israel_good = None
+    http = HttpSettings(israel_proxy="http://il1:1, http://il2:2, http://il3:3", backoff_seconds=0)
+    dead = {"http://il1:1"}
+
+    def probe() -> _Probe:
+        scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
+
+        def client(proxy: str | None) -> httpx.AsyncClient:
+            def answer(request: httpx.Request) -> httpx.Response:
+                if proxy in dead:
+                    raise httpx.ConnectError("proxy down", request=request)
+                return httpx.Response(200)
+
+            return httpx.AsyncClient(transport=httpx.MockTransport(answer))
+
+        scraper._new_client = client  # type: ignore[method-assign]
+        return scraper
+
+    async def fetch(scraper: _Probe) -> str | None:
+        async with scraper:
+            await scraper.request("GET", "https://site.example/")
+        return scraper._proxy
+
+    first = asyncio.run(fetch(probe()))
+    assert first in {"http://il2:2", "http://il3:3"} and base._israel_good == first
+    for _ in range(5):  # every later source starts on it, whatever the shuffle
+        assert probe()._proxy == first
+    dead.add(first)  # it dies: the next one that works takes over
+    second = asyncio.run(fetch(probe()))
+    assert second not in dead and base._israel_good == second
+    base._israel_good = None
