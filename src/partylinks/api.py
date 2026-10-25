@@ -482,8 +482,9 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
         async def maintenance() -> None:
             """Before any source writes: artwork still in the database moves to files, and a file left
             mostly empty is compacted (a big file is a slow one: every query reads across it). Then
-            the scrapers start, and map coordinates are filled for address-only events."""
-            jobs: list[Callable[[], object]] = [service.media.move_to_files, db.compact_if_bloated]
+            genres are re-read if their config changed, the scrapers start, and map coordinates are
+            filled for address-only events."""
+            jobs: list[Callable[[], object]] = [service.media.move_to_files, db.compact_if_bloated, service.recompute_genres]
             for job in jobs:
                 try:
                     await asyncio.to_thread(job)
@@ -1061,6 +1062,10 @@ def _register_routes(app: FastAPI) -> None:
                 .group_by(ScrapeRunRow.source)
             )
             done = {source: finished for source, finished in session.execute(last_runs)}
+            # Every enabled source shows, even with no upcoming events saved yet (a new one, a local copy).
+            for name, cfg in configured_sources(request.app.state.settings).items():
+                if cfg.enabled:
+                    counts.setdefault(name, 0)
             return Stores(stores=[StoreOut(name=s, events=n, updated_at=done.get(s)) for s, n in counts.most_common()])
 
         return _cached(request, build)
