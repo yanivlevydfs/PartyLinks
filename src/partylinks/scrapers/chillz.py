@@ -11,13 +11,11 @@ Inbox: event pages a person opened in a browser and saved (Ctrl+S) into
 their original URL (canonical link / og:url / "saved from" comment), so they get
 the same ids as live-scraped pages and never duplicate.
 
-Access: chillz.com sits behind a Vercel Security Checkpoint. This scraper never
-tries to pass it. A checkpoint response raises ``SourceBlockedError`` on the
-first page probed, so a blocked run costs two requests and is recorded as
-``blocked`` (inbox events of that run are still saved). Once the site owner
-allows Pulse (e.g. a Firewall bypass rule on a secret header supplied via
-``PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS``), live collection starts with no
-code changes.
+Access: chillz.com sits behind a Vercel Security Checkpoint that refuses Python's TLS
+handshake; the source speaks as Chrome (``http.impersonate``, curl_cffi), which passes.
+If the checkpoint still answers, ``SourceBlockedError`` is raised on the first page
+probed, so a blocked run costs two requests and is recorded as ``blocked`` (inbox
+events of that run are still saved).
 """
 
 from __future__ import annotations

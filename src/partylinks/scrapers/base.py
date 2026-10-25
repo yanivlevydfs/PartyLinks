@@ -28,6 +28,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine, Itera
 from typing import Any, ClassVar, Self, TypeVar
 
 import httpx
+from curl_cffi import requests as curl_requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from tenacity import AsyncRetrying, RetryCallState, retry_if_exception, wait_exponential
 
@@ -192,14 +193,16 @@ class BaseScraper[S: SourceSettings](ABC):
         self._client, self._retired_clients = None, []
 
     def _new_client(self, proxy: str | None) -> httpx.AsyncClient:
+        impersonate, connect = self.http.impersonate, min(10.0, self.http.timeout_seconds)
         return httpx.AsyncClient(
             # A dead proxy fails on connect: give up on it in 10 s instead of the full timeout, so a
             # pool of free proxies is walked in minutes. Reads keep the full timeout.
-            timeout=httpx.Timeout(self.http.timeout_seconds, connect=min(10.0, self.http.timeout_seconds)),
+            timeout=httpx.Timeout(self.http.timeout_seconds, connect=connect),
             follow_redirects=True,
-            proxy=proxy,
+            proxy=None if impersonate else proxy,
+            transport=_ImpersonatingTransport(impersonate, proxy, (connect, self.http.timeout_seconds)) if impersonate else None,
             headers={
-                "User-Agent": self.http.user_agent,
+                **({} if impersonate else {"User-Agent": self.http.user_agent}),
                 "Accept-Language": self.http.accept_language,
                 **self.default_headers(),
                 **self.http.headers,
@@ -389,6 +392,33 @@ class BaseScraper[S: SourceSettings](ABC):
             for task in tasks:
                 task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
+
+
+class _ImpersonatingTransport(httpx.AsyncBaseTransport):
+    """httpx transport that sends through curl_cffi as a real browser (TLS fingerprint, HTTP/2,
+    header order), so retries, proxy failover and parsing stay the same for every source."""
+
+    # curl_cffi sets the browser's own; the body arrives already decompressed.
+    _DROP_REQUEST = frozenset({"user-agent", "accept-encoding", "connection", "host", "content-length"})
+    _DROP_RESPONSE = frozenset({"content-encoding", "content-length", "transfer-encoding"})
+
+    def __init__(self, impersonate: str, proxy: str | None, timeout: tuple[float, float]) -> None:
+        self._session = curl_requests.AsyncSession(impersonate=impersonate, proxy=proxy, timeout=timeout)
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        headers = {k: v for k, v in request.headers.items() if k.lower() not in self._DROP_REQUEST}
+        try:
+            r = await self._session.request(
+                request.method, str(request.url), headers=headers, data=await request.aread() or None, allow_redirects=False
+            )
+        except curl_requests.RequestsError as exc:
+            # Connect/timeout/proxy failures alike: a ConnectError is retried and moves to the next proxy.
+            raise httpx.ConnectError(str(exc), request=request) from exc
+        kept = [(k, v) for k, v in r.headers.multi_items() if k.lower() not in self._DROP_RESPONSE]
+        return httpx.Response(r.status_code, headers=kept, content=r.content, request=request)
+
+    async def aclose(self) -> None:
+        await self._session.close()
 
 
 def _json(response: httpx.Response, expect: Any) -> Any:
