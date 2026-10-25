@@ -125,7 +125,9 @@ def _israeli_feed(url: str | None) -> list[str]:
     # ponytail: sync fetch in a sync constructor blocks the loop up to 10 s every 30 min; prefetch async if that bites
     try:
         rows = httpx.get(url, timeout=10).raise_for_status().json()["data"]
-        proxies = [f"http://{r['ip']}:{r['port']}" for r in rows if {"http", "https"} & set(r.get("protocols", []))]
+        # httpx speaks to HTTP(S) and SOCKS5 proxies (socksio); SOCKS4 is skipped.
+        scheme = lambda protocols: "http" if {"http", "https"} & set(protocols) else "socks5" if "socks5" in protocols else None  # noqa: E731
+        proxies = [f"{scheme(r.get('protocols', []))}://{r['ip']}:{r['port']}" for r in rows if scheme(r.get("protocols", []))]
     except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
         logging.getLogger(__name__).warning("israel_proxy_feed failed: %s", exc)
         proxies = []

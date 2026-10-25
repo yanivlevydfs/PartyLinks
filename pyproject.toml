@@ -10,7 +10,7 @@ dependencies = [
     "tzdata==2026.2",
     "apscheduler>=3.11,<4",
     "fastapi>=0.115",
-    "httpx>=0.28",
+    "httpx[socks]>=0.28",
     "pycountry==26.2.16",
     "pydantic>=2.9",
     "pydantic-settings[yaml]>=2.6",

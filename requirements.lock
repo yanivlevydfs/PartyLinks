@@ -53,6 +53,8 @@ pyyaml==6.0.3
     # via pydantic-settings
 selectolax==1.0.1
     # via partylinks (pyproject.toml)
+socksio==1.0.0
+    # via httpx
 sqlalchemy==2.1.5
     # via partylinks (pyproject.toml)
 starlette==1.9.0

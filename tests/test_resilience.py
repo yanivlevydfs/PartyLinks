@@ -366,11 +366,11 @@ def test_israel_proxy_feed_goes_first_and_is_cached(monkeypatch) -> None:
     from partylinks.scrapers import base
 
     calls = []
-    rows = {"data": [{"ip": "1.2.3.4", "port": "80", "protocols": ["https"]}, {"ip": "5.6.7.8", "port": "1080", "protocols": ["socks5"]}]}
+    rows = {"data": [{"ip": "1.2.3.4", "port": "80", "protocols": ["https"]}, {"ip": "5.6.7.8", "port": "1080", "protocols": ["socks5"]}, {"ip": "9.9.9.9", "port": "4145", "protocols": ["socks4"]}]}
     monkeypatch.setattr(base.httpx, "get", lambda url, timeout: calls.append(url) or httpx.Response(200, json=rows, request=httpx.Request("GET", url)))
     base._feed_cache.clear()
     http = HttpSettings(israel_proxy_feed="http://feed", israel_proxy="http://il1:1")
     for _ in range(2):
         scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
-    assert {scraper.http.proxy, *scraper._spare_proxies} == {"http://1.2.3.4:80", "http://il1:1"}  # socks skipped
+    assert {scraper.http.proxy, *scraper._spare_proxies} == {"http://1.2.3.4:80", "socks5://5.6.7.8:1080", "http://il1:1"}  # socks4 skipped
     assert calls == ["http://feed"]
