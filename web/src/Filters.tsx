@@ -42,7 +42,7 @@ const ahead = (days: number) => new Date(Date.parse(today() + "T12:00:00Z") + da
 const PRESETS = ["all", "tonight", "weekend", "week", "month"];
 
 /** Short name of a `when` value: a preset, a day, or a range of days. */
-function whenText(t: ReturnType<typeof useT>["t"], when: string) {
+export function whenText(t: ReturnType<typeof useT>["t"], when: string) {
   if (when === "tonight" || when === "weekend" || when === "week" || when === "month") return t[when];
   if (when === tomorrow()) return t.tomorrow;
   const day = (v: string) => new Date(v + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, weekday: "short", day: "numeric", month: "numeric" });

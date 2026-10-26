@@ -1,7 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCategories, useEvents } from "../api";
-import { Calendar, filterParams, toggle } from "../Filters";
+import { Calendar, filterParams, toggle, whenText } from "../Filters";
 import { genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters } from "../store";
 import { eventPath, label, today, tomorrow, TZ, useT } from "../ui";
@@ -52,6 +52,9 @@ export function Quiz() {
   };
   const next = () => (step < STEPS - 1 ? setStep(step + 1) : finish());
   const pickWhen = (when: string) => { patch({ when }); setCalOpen(false); setStep(1); };
+  // As the home filter's calendar: a first day waits for "next" or a later second day, which makes a range.
+  const start = d.when === "tonight" ? today() : /^\d{4}-\d\d-\d\d$/.test(d.when) ? d.when : null;
+  const pickDay = (v: string) => (start && v > start ? pickWhen(`${start}~${v}`) : patch({ when: v === today() ? "tonight" : v }));
   const surprise = () => {
     const items = results?.items ?? [];
     if (items.length) navigate(eventPath(items[Math.floor(Math.random() * items.length)]));
@@ -114,11 +117,11 @@ export function Quiz() {
               <Tile icon="⚡" title={q.today} sub={day(today())} n={dateCount.get(today())} on={d.when === "tonight"} onClick={() => pickWhen("tonight")} wx={tileWeather(evening(today()))} />
               <Tile icon="🌙" title={t.tomorrow} sub={day(tomorrow())} n={dateCount.get(tomorrow())} on={d.when === tomorrow()} onClick={() => pickWhen(tomorrow())} wx={tileWeather(evening(tomorrow()))} />
               <Tile icon="🎉" title={t.weekend} n={weekendTotal} on={d.when === "weekend"} onClick={() => pickWhen("weekend")} wx={tileWeather(evening(friday(), 21))} />
-              <Tile icon="📅" title={q.calendar} sub={isPicked ? day(d.when) : undefined} on={isPicked || calOpen} onClick={() => setCalOpen(!calOpen)} />
+              <Tile icon="📅" title={q.calendar} sub={isPicked ? (d.when.includes("~") ? whenText(t, d.when) : day(d.when)) : undefined} on={isPicked || calOpen} onClick={() => setCalOpen(!calOpen)} />
             </div>
             {calOpen && (
               <div className="quiz-cal">
-                <Calendar value={d.when} counts={dateCount} onPick={(v) => pickWhen(v === today() ? "tonight" : v)} />
+                <Calendar value={d.when === "tonight" ? today() : d.when} counts={dateCount} onPick={pickDay} />
               </div>
             )}
           </>
@@ -172,11 +175,11 @@ export function Quiz() {
       <div className="quiz-foot">
         {step > 0 && <button className="quiz-back" onClick={() => setStep(step - 1)}>{lang === "he" ? "→" : "←"} {q.back}</button>}
         <button className="quiz-skipall" onClick={() => finish({ ...DEFAULT_FILTERS, sort: d.sort })}>{q.skipAll}</button>
-        {step > 0 && (
+        {(step > 0 || (calOpen && d.when !== "all")) && (
           <>
             {step === STEPS - 1 && !!total && <button className="quiz-skip" onClick={surprise}>{q.surprise}</button>}
             <button className="quiz-go" onClick={next} disabled={total === 0}>
-              {step === STEPS - 1 ? q.go(total ?? 0) : picked(step, d) ? q.next : q.skip}
+              {step === STEPS - 1 ? q.go(total ?? 0) : step === 0 || picked(step, d) ? q.next : q.skip}
               <span aria-hidden>{lang === "he" ? "←" : "→"}</span>
             </button>
           </>
