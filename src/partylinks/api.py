@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import logging
 import threading
 import time
@@ -31,7 +32,17 @@ from partylinks import status as server_status
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.config import Settings, get_settings
-from partylinks.db import Database, DealChangeRow, EventRow, ImageRow, ScrapeRunRow, SponsoredRow, SponsoredStatRow, flag_on, upcoming_filter
+from partylinks.db import (
+    Database,
+    DealChangeRow,
+    EventRow,
+    ImageRow,
+    ScrapeRunRow,
+    SponsoredRow,
+    SponsoredStatRow,
+    flag_on,
+    upcoming_filter,
+)
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.logs import setup_logging
 from partylinks.models import EntryType
@@ -647,6 +658,11 @@ def _aware_utc(value: datetime) -> datetime:
     return value if value.tzinfo else value.replace(tzinfo=UTC)
 
 
+def hide_email(address: str) -> str:
+    """'a@b.c' -> base64 of 'c.b@a': no address pattern for a harvester to match."""
+    return base64.b64encode(address[::-1].encode()).decode() if address else ""
+
+
 def _json_contains(column: Any, values: list[str]) -> ColumnElement[bool]:
     """Any-of match on a JSON string array (portable: SQLite and PostgreSQL)."""
     return or_(*(cast(column, String).ilike(f'%"{v}"%') for v in values))
@@ -657,12 +673,14 @@ def _register_routes(app: FastAPI) -> None:
     def site_info(request: Request) -> dict[str, Any]:
         """Public site details the website shows (name, accessibility and privacy contacts)."""
         site = request.app.state.settings.site
+        # Addresses never travel as text (harvesters read JSON too): reversed and base64-encoded, decoded
+        # in the browser only when a person asks to see one (web/src/ui.tsx HiddenEmail).
         return {
             "name": site.name,
             "base_url": site.base_url,
-            "email": site.contact_email,
-            "accessibility": site.accessibility.model_dump(mode="json"),
-            "privacy": site.privacy.model_dump(mode="json"),
+            "email": hide_email(site.contact_email),
+            "accessibility": site.accessibility.model_dump(mode="json") | {"email": hide_email(site.accessibility.email)},
+            "privacy": site.privacy.model_dump(mode="json") | {"email": hide_email(site.privacy.email)},
         }
 
     @app.get("/health", tags=["meta"])

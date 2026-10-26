@@ -4,7 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { StorageTable, useConsent } from "../consent";
-import { Hero, useT, useTitle } from "../ui";
+import { Hero, HiddenEmail, useT, useTitle } from "../ui";
 
 interface SiteInfo {
   name: string;
@@ -211,7 +211,7 @@ export default function PrivacyPage() {
         <p>{t.contact}</p>
         {p?.email ? (
           <ul className="contact">
-            <li>{t.email}: <a href={`mailto:${p.email}`} dir="ltr">{p.email}</a></li>
+            <li>{t.email}: <HiddenEmail code={p.email} /></li>
           </ul>
         ) : (
           site && <p className="muted">{t.contactMissing}</p>

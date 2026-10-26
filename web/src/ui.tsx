@@ -356,6 +356,21 @@ export function CardSkeletons({ n }: { n: number }) {
 }
 
 /** The brand loader: the boot screen's mark (a line to an X). `small` sits inline in a button or bar. */
+/** An email address that is never in the page as text: GET /site sends it reversed and base64-encoded,
+ * and only a person's click decodes it and links it (harvesters read the HTML, the JSON and mailto links). */
+export function HiddenEmail({ code, subject }: { code: string | undefined; subject?: string }) {
+  const { lang } = useT();
+  const [email, setEmail] = useState<string | null>(null);
+  if (!code) return null;
+  if (!email)
+    return (
+      <button type="button" className="link-btn" onClick={() => setEmail([...atob(code)].reverse().join(""))}>
+        {lang === "he" ? "הצגת כתובת הדוא\"ל" : "Show email address"}
+      </button>
+    );
+  return <a href={`mailto:${email}${subject ? `?subject=${encodeURIComponent(subject)}` : ""}`} dir="ltr">{email}</a>;
+}
+
 export function Loader({ small }: { small?: boolean }) {
   const { t } = useT();
   return (

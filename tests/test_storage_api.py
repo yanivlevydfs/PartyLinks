@@ -855,3 +855,19 @@ def test_old_addresses_move_to_the_domain_only_once_base_url_is_the_domain(tmp_p
         r = client.get("/events?q=techno", headers={"host": "tlv.up.railway.app"}, follow_redirects=False)
         assert r.status_code == 301 and r.headers["location"] == "https://spotx.fun/events?q=techno"
         assert client.get("/health", headers={"host": "tlv.up.railway.app"}).status_code == 200  # Railway's probe
+
+
+def test_contact_addresses_never_appear_as_text(tmp_path: Path) -> None:
+    import base64
+
+    settings = settings_for(tmp_path)
+    address = "someone@example.com"
+    settings.site.email = settings.site.privacy.email = settings.site.accessibility.email = address
+    settings.site.accessibility.coordinator = "Coordinator"
+    with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}) as client:
+        site = client.get("/site")
+        assert "@" not in site.text and "example" not in site.text  # nothing for a harvester to match
+        assert base64.b64decode(site.json()["email"]).decode()[::-1] == address  # the page decodes it on a click
+        for path in ("/contact", "/partners", "/privacy", "/accessibility"):
+            page = client.get(path, headers={"user-agent": "Googlebot"})
+            assert address not in page.text, path

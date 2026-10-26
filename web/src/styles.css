@@ -1288,3 +1288,7 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 .store-foot .linkish { color: var(--pink); text-decoration: none; font-weight: 600; }
 .store-foot .linkish:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) { .store { animation: none; } }
+
+/* HiddenEmail (ui.tsx): reads as a link until clicked. */
+.link-btn { background: none; border: 0; padding: 0; font: inherit; color: var(--cyan); text-decoration: underline; cursor: pointer; }
+.link-btn:hover { color: var(--pink); }

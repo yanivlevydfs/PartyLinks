@@ -2,7 +2,7 @@
 // Contact details come from config (site.accessibility) via GET /site.
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Hero, useT, useTitle } from "../ui";
+import { Hero, HiddenEmail, useT, useTitle } from "../ui";
 
 interface SiteInfo {
   name: string;
@@ -109,7 +109,7 @@ export default function AccessibilityPage() {
         {hasContact ? (
           <ul className="contact">
             <li>{t.coordinator}: <b>{a!.coordinator}</b></li>
-            {a!.email && <li>{t.email}: <a href={`mailto:${a!.email}`} dir="ltr">{a!.email}</a></li>}
+            {a!.email && <li>{t.email}: <HiddenEmail code={a!.email} /></li>}
             {a!.phone && <li>{t.phone}: <a href={`tel:${a!.phone.replace(/[^\d+]/g, "")}`} dir="ltr">{a!.phone}</a></li>}
           </ul>
         ) : (

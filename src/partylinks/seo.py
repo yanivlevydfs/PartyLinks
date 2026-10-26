@@ -537,7 +537,7 @@ def accessibility_page(session: Session, cfg: Settings, lang: str) -> Page:
     )
     contact = ""
     if a.has_contact:
-        items = [a.coordinator, a.email, a.phone]
+        items = [a.coordinator, a.phone]  # never the email: the page reveals it on a click (harvesters)
         contact = "<ul>" + "".join(f"<li>{escape(i)}</li>" for i in items if i) + "</ul>"
     return Page(
         title=f"{title} · {cfg.site.name}",
@@ -560,7 +560,7 @@ def privacy_page(session: Session, cfg: Settings, lang: str) -> Page:
         "sign-up and no advertising, tracking or analytics cookies; only necessary items are stored in the browser, "
         "and third-party content (the map) loads only with consent."
     )
-    contact = f"<p>{escape(cfg.site.privacy.email)}</p>" if cfg.site.privacy.email else ""
+    contact = ""  # the address is revealed on the page by a click, never in the HTML (harvesters)
     return Page(
         title=f"{title} · {cfg.site.name}",
         description=text,
@@ -622,14 +622,13 @@ def info_page(path: str) -> Any:
     def build(session: Session, cfg: Settings, lang: str) -> Page:
         i = 0 if lang == "he" else 1
         title, text = INFO_PAGES[path][0][i], INFO_PAGES[path][1][i].format(name=cfg.site.name)
-        email = cfg.site.contact_email if path in ("/contact", "/partners") else ""
         return Page(
             title=f"{title} · {cfg.site.name}",
             description=text,
             path=path,
             lang=lang,
             jsonld=[_breadcrumbs(cfg, lang, (title, path))],
-            body=f"<h1>{escape(title)}</h1><p>{escape(text)}</p>" + (f"<p>{escape(email)}</p>" if email else ""),
+            body=f"<h1>{escape(title)}</h1><p>{escape(text)}</p>",  # no email: revealed on the page by a click
         )
 
     return build

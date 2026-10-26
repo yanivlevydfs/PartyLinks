@@ -3,7 +3,7 @@
 // The contact address is the privacy one (site.privacy in config) via GET /site.
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Hero, useT, useTitle } from "../ui";
+import { Hero, HiddenEmail, useT, useTitle } from "../ui";
 
 const UPDATED = "2026-10-26";
 
@@ -176,7 +176,7 @@ export default function TermsPage() {
             <h2>{t.contactTitle}</h2>
             <p>{t.contact}</p>
             <ul className="contact">
-              <li>{t.email}: <a href={`mailto:${email}`} dir="ltr">{email}</a></li>
+              <li>{t.email}: <HiddenEmail code={email} /></li>
             </ul>
           </>
         )}

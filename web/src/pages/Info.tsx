@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import type { Lang } from "../i18n";
-import { Hero, useT, useTitle } from "../ui";
+import { Hero, HiddenEmail, useT, useTitle } from "../ui";
 
 // Footer links, in this order.
 export const INFO_LINKS: { path: string; label: Record<Lang, string> }[] = [
@@ -24,10 +24,9 @@ function Mail({ subject }: { subject?: string }) {
   const { lang } = useT();
   const email = useEmail();
   if (!email) return <p className="muted">{lang === "he" ? "כתובת הדוא\"ל תפורסם בקרוב." : "Our email address will be published soon."}</p>;
-  const href = `mailto:${email}${subject ? `?subject=${encodeURIComponent(subject)}` : ""}`;
   return (
     <ul className="contact">
-      <li>{lang === "he" ? "דוא\"ל" : "Email"}: <a href={href} dir="ltr">{email}</a></li>
+      <li>{lang === "he" ? "דוא\"ל" : "Email"}: <HiddenEmail code={email} subject={subject} /></li>
     </ul>
   );
 }
