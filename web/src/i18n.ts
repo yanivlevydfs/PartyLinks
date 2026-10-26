@@ -170,6 +170,7 @@ export const STRINGS = {
       festival: "פסטיבלים", meetups: "מפגשים", culture: "תרבות", exhibitions: "תערוכות", workshops: "סדנאות",
       cinema: "קולנוע וסרטים", markets: "שווקים וקניות", food: "אוכל", environment: "סביבה", religious: "דת ומסורת",
       holidays: "חגים", sport: "ספורט", happy_hour: "האפי האוור",
+      escape_rooms: "חדרי בריחה", attractions: "אטרקציות", coffee_carts: "עגלות קפה", fine_dining: "מסעדות שף", work_spaces: "חללי עבודה", volunteering: "התנדבות",
       theatre: "תיאטרון", kids: "ילדים ומשפחה", lectures: "הרצאות והעשרה", tours: "סיורים וטיולים", dance: "מחול", ballroom: "ריקודים סלוניים", folk_dance: "ריקודי עם", latin_dance: "ריקודים לטיניים", salsa: "סלסה",
     },
   },

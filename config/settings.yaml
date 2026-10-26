@@ -276,6 +276,13 @@ enrichment:
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
     happy_hour: ["happy hour", "happy-hour", "happyhour", "האפי האוור", "האפי אוור", "הפי האוור"]
+    # HappyTLV's place sections (see happytlv.places): one word each, declared by the scraper.
+    escape_rooms: ["escape rooms"]
+    attractions: ["attractions"]
+    coffee_carts: ["coffee carts"]
+    fine_dining: ["fine dining"]
+    work_spaces: ["work spaces"]
+    volunteering: ["volunteering"]
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
@@ -1631,6 +1638,21 @@ sources:
     parties_path: /tel-aviv-parties/
     happy_hours_path: /tel-aviv-happy-hours/
     happy_hour_days: 7
+    # Place sections (path -> category word, see enrichment.declared_genres). Each place is one event
+    # per day it is open over `place_days`, all day when its page has no hours. /p-ylvyvt/ is
+    # "activities" (gardens, parks, studios). Not read: /post/ (articles), /tel-aviv-party/ (the same
+    # parties again), /tel-aviv-clubs/ (clubs come with their parties; a club is no all-day event) and
+    # /officehappyhour/ (team activities with no address, so not on the map). City and theme hubs
+    # inside a section are skipped by the parser.
+    place_days: 7
+    places:
+      /escape-rooms/: escape rooms
+      /attractions/: attractions
+      /p-ylvyvt/: attractions
+      /happycoffee/: coffee carts
+      /fine-dining/: fine dining
+      /work-spaces/: work spaces
+      /volunteer/: volunteering
     http:
       concurrency: 4
       request_delay_seconds: 0.5

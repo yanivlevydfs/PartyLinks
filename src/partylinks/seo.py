@@ -113,6 +113,8 @@ GENRES_HE = {
     "markets": "שווקים וקניות", "food": "אוכל", "environment": "סביבה", "religious": "דת ומסורת", "holidays": "חגים",
     "sport": "ספורט", "theatre": "תיאטרון", "kids": "ילדים ומשפחה", "lectures": "הרצאות והעשרה", "tours": "סיורים וטיולים",
     "dance": "מחול", "ballroom": "ריקודים סלוניים", "folk_dance": "ריקודי עם", "latin_dance": "ריקודים לטיניים", "salsa": "סלסה",
+    "escape_rooms": "חדרי בריחה", "attractions": "אטרקציות", "coffee_carts": "עגלות קפה", "fine_dining": "מסעדות שף",
+    "work_spaces": "חללי עבודה", "volunteering": "התנדבות",
 }  # fmt: skip
 GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
                  "stand_up": "Stand-up comedy", "live_show": "Live music",

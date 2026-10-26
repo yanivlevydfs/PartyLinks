@@ -34,7 +34,7 @@ pagination and what the listing and the event page provide.
 | `gagarin` | Gagarin (gagarin.co.il): club site on WordPress + The Events Calendar (`tribe.py`) | 08:46, 20:46 | yes |
 | `secrettelaviv` | Secret Tel Aviv (secrettelaviv.com/tickets): curated city listings (parties, live music, culture...) | 07:59, 19:59 | yes |
 | `makore` | Makore (makore.co.il, "מה קורה"): an events guide for all of Israel | 09:41, 21:41 | yes |
-| `happytlv` | HappyTLV (happytlv.com): Tel Aviv parties, and bars' happy hours (one event per day the deal runs, category **Happy Hour**) | 05:13, 17:13 | yes |
+| `happytlv` | HappyTLV (happytlv.com): Tel Aviv parties, and bars' happy hours (one event per day the deal runs, category **Happy Hour**), plus places across Israel, one event per day each is open (all day when its page gives no hours): escape rooms, attractions, coffee carts, chef restaurants, work spaces, volunteering, each its own category | 05:13, 17:13 | yes |
 | `beatradar` | Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties, with its own genre tags; merged with those sources by dedup | 08:26, 20:26 | yes |
 | `shotgun` | Shotgun (shotgun.live): electronic music ticketing. Every city page worldwide (240, mostly France, Brazil and the US; ~3,300 events, to the abroad section), plus its Israeli pages, which list nothing yet | 08:52, 20:52 | yes |
 | `vibez` | Vibez (vibez.io): ticketing for communities and party producers: raves, ecstatic dance, club nights | 08:36, 20:36 | yes |

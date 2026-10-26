@@ -83,6 +83,7 @@ const ICON: Record<string, string> = {
   jazz: "🎷", live_show: "🎙️", lgbt: "🏳️‍🌈", stand_up: "😂", karaoke: "🎤", hi_tech: "💻", conference: "🧑‍💼", ai: "🤖",
   festival: "🎪", meetups: "🤝", culture: "🎭", exhibitions: "🖼️", workshops: "🛠️", cinema: "🎬", markets: "🛍️", food: "🍽️",
   sport: "⚽", happy_hour: "🥂", theatre: "🎭", kids: "🧸", lectures: "📚", tours: "🗺️", dance: "🩰", yoga_wellness: "🧘",
+  escape_rooms: "🔐", attractions: "🎡", coffee_carts: "☕", fine_dining: "🍷", work_spaces: "💼", volunteering: "🤲",
 };
 const CATS_SHOWN = 11;
 
