@@ -19,7 +19,13 @@ function FacetIndex({ title, facets, path, byArea }: {
   useTitle(title);
   // Case-insensitive, ignores spaces/punctuation, so "gray club" finds "Gray Club תל אביב-יפו".
   const norm = (s: string) => s.toLocaleLowerCase().replace(/[\s\-_.·'"׳״]/g, "");
-  const shown = facets?.filter((f) => norm(f.value).includes(norm(q)) && (!area || f.area === area));
+  const inArea = facets?.filter((f) => !area || f.area === area);
+  const match = (s: string) => inArea?.filter((f) => norm(f.value).includes(s)) ?? [];
+  const exact = match(norm(q));
+  // A typo at the end ("יניבדד") finds nothing: drop letters from the end until names match (3 letters at least).
+  let shown = exact;
+  for (let s = norm(q); facets && !shown.length && s.length > 3; ) shown = match((s = s.slice(0, -1)));
+  const fuzzy = exact.length === 0 && shown.length > 0;
   return (
     <>
       <Hero title={title}>
@@ -35,9 +41,10 @@ function FacetIndex({ title, facets, path, byArea }: {
           </div>
         )}
         {!facets && <Loader />}
-        {shown?.length === 0 && <p className="msg">{t.empty}</p>}
+        {facets && !shown.length && <p className="msg">{q ? t.noMatch(q) : t.empty}</p>}
+        {fuzzy && <p className="msg">{t.closest(q)}</p>}
         <div className="facet-grid">
-          {shown?.slice(0, limit).map((f) => (
+          {shown.slice(0, limit).map((f) => (
             <Link key={f.value} className={"facet" + (f.image_url ? " with-photo" : "")} to={path(f.value)}>
               {f.image_url && <Img src={f.image_url} alt="" className="facet-photo" />}
               <b dir="auto">{f.value}{f.verified && <Verified />}</b>
@@ -45,7 +52,7 @@ function FacetIndex({ title, facets, path, byArea }: {
             </Link>
           ))}
         </div>
-        {shown && shown.length > limit && (
+        {shown.length > limit && (
           <div className="more">
             <button onClick={() => setLimit(limit + PAGE)}>{t.loadMore}</button>
           </div>
