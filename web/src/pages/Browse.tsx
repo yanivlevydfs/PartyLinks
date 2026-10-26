@@ -5,12 +5,16 @@ import { useCategories, useEvents } from "../api";
 import type { Facet } from "../types";
 import { artistPath, Chip, EventGrid, Hero, Img, label, Loader, Related, useT, useTitle, venuePath } from "../ui";
 
+const PAGE = 60;
+
 function FacetIndex({ title, facets, path, byArea }: {
   title: string; facets: Facet[] | undefined; path: (v: string) => string; byArea?: boolean;
 }) {
   const { t } = useT();
   const [q, setQ] = useState("");
   const [area, setArea] = useState<string | null>(null);
+  // Thousands of cards at once froze the page: render a page at a time; search still covers the whole list.
+  const [limit, setLimit] = useState(PAGE);
   const areas = byArea ? [...new Set((facets ?? []).map((f) => f.area).filter((a): a is string => !!a))] : [];
   useTitle(title);
   // Case-insensitive, ignores spaces/punctuation, so "gray club" finds "Gray Club תל אביב-יפו".
@@ -19,21 +23,21 @@ function FacetIndex({ title, facets, path, byArea }: {
   return (
     <>
       <Hero title={title}>
-        <input className="search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.searchList} aria-label={t.searchList} />
+        <input className="search" type="search" value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} placeholder={t.searchList} aria-label={t.searchList} />
       </Hero>
       <main className="wrap">
         {areas.length > 0 && (
           <div className="chips filters" role="group" aria-label={t.area}>
-            <Chip on={!area} onClick={() => setArea(null)}>📍 {t.allAreas}</Chip>
+            <Chip on={!area} onClick={() => { setArea(null); setLimit(PAGE); }}>📍 {t.allAreas}</Chip>
             {areas.map((a) => (
-              <Chip key={a} on={area === a} onClick={() => setArea(area === a ? null : a)}>{label(t.areas, a)}</Chip>
+              <Chip key={a} on={area === a} onClick={() => { setArea(area === a ? null : a); setLimit(PAGE); }}>{label(t.areas, a)}</Chip>
             ))}
           </div>
         )}
         {!facets && <Loader />}
         {shown?.length === 0 && <p className="msg">{t.empty}</p>}
         <div className="facet-grid">
-          {shown?.map((f) => (
+          {shown?.slice(0, limit).map((f) => (
             <Link key={f.value} className={"facet" + (f.image_url ? " with-photo" : "")} to={path(f.value)}>
               {f.image_url && <Img src={f.image_url} alt="" className="facet-photo" />}
               <b dir="auto">{f.value}{f.verified && <Verified />}</b>
@@ -41,6 +45,11 @@ function FacetIndex({ title, facets, path, byArea }: {
             </Link>
           ))}
         </div>
+        {shown && shown.length > limit && (
+          <div className="more">
+            <button onClick={() => setLimit(limit + PAGE)}>{t.loadMore}</button>
+          </div>
+        )}
       </main>
     </>
   );
