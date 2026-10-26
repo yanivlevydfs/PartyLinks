@@ -141,9 +141,10 @@ class Deduplicator:
                 return True
             s = self.settings
             gap = abs((a.start - b.start).total_seconds()) if a.start and b.start else None
+            window = s.party_max_start_gap_minutes if self._party(a, b, matcher.ratio()) else s.strong_max_start_gap_minutes
             return (
                 gap is not None
-                and gap <= s.strong_max_start_gap_minutes * 60
+                and gap <= window * 60
                 and matcher.ratio() >= s.strong_title_similarity
                 and distance <= s.strong_max_distance_meters
             )
@@ -171,11 +172,11 @@ class Deduplicator:
         if self._sessions(a, b):
             return True
         if a.start and b.start and abs((a.start - b.start).total_seconds()) > s.max_start_gap_minutes * 60:
-            # A promoter site's pages of one party carry its entry times (20:00, 21:30); a show's pages
-            # hours apart are its sessions.
-            promoter_party = a.source == b.source and a.source in self._promoter_pages and "music" in a.kinds | b.kinds
+            # A party's listings carry its doors / entry times (20:00 on one site, 21:30 on another); a
+            # show's listings hours apart are its sessions.
             gap = abs((a.start - b.start).total_seconds())
-            if not (promoter_party and gap <= s.promoter_max_start_gap_minutes * 60):
+            promoter_pages = a.source == b.source and a.source in self._promoter_pages and "music" in a.kinds | b.kinds
+            if gap > s.party_max_start_gap_minutes * 60 or not (promoter_pages or self._party(a, b)):
                 return True
         if a.numbers and b.numbers and not a.numbers & b.numbers:
             return True
@@ -184,6 +185,14 @@ class Deduplicator:
             if distance is None or distance > s.max_distance_meters:
                 return True
         return kinds and self._other_kind(a, b)
+
+    def _party(self, a: _Listing, b: _Listing, ratio: float | None = None) -> bool:
+        """Music on two sites under a near-identical title: one party whose sites give other entry times."""
+        if a.source == b.source or "music" not in a.kinds | b.kinds or self._other_kind(a, b, 0.0):
+            return False
+        if ratio is None:
+            ratio = SequenceMatcher(None, a.title_key, b.title_key).ratio()
+        return ratio >= self.settings.strong_title_similarity
 
     def _other_kind(self, a: _Listing, b: _Listing, ratio: float | None = None) -> bool:
         """A kids' show and a lecture: genre tags are noisy, so a near-identical title still wins."""
@@ -194,11 +203,12 @@ class Deduplicator:
         return ratio < self.settings.strong_title_similarity
 
     def _sessions(self, a: _Listing, b: _Listing) -> bool:
-        """One site's own pages at different hours: separate sessions of a workshop / show."""
-        return (
-            a.source == b.source and a.source not in self._promoter_pages
-            and a.start is not None and b.start is not None and a.start != b.start
-        )  # fmt: skip
+        """One site's own pages at different hours (sessions of a workshop / show) or under other titles at
+        the same hour ("לידה עד גיל שנה" / "גילאי שנה עד שלוש"): separate events. A promoter site has a page per
+        promoter, so only its hours count, and only with the party window (see _contradict)."""
+        if a.source != b.source or a.source in self._promoter_pages:
+            return False
+        return a.title_key != b.title_key or (a.start is not None and b.start is not None and a.start != b.start)
 
     def _primary_rank(self, item: _Listing) -> tuple[Any, ...]:
         # A sold-out copy never fronts the event while another site still sells it.
@@ -290,12 +300,18 @@ class Deduplicator:
                     x = parent[x]
                 return x
 
-            for i, a in enumerate(listings):
-                for b in listings[i + 1 :]:
-                    ra, rb = find(a.id), find(b.id)
-                    if ra != rb and self.same_event(a, b, shared) and self._compatible(members_of[ra], members_of[rb]):
-                        parent[ra] = rb
-                        members_of[rb] += members_of.pop(ra)
+            # Closest matches first (hour, then distance): a site's 20:00 copy joins the other site's 20:00
+            # session, not its 21:30 one.
+            pairs = sorted(
+                (_closeness(a, b), i, j)
+                for i, a in enumerate(listings) for j, b in enumerate(listings[i + 1 :], i + 1)
+                if self.same_event(a, b, shared)
+            )  # fmt: skip
+            for _, i, j in pairs:
+                ra, rb = find(listings[i].id), find(listings[j].id)
+                if ra != rb and self._compatible(members_of[ra], members_of[rb]):
+                    parent[ra] = rb
+                    members_of[rb] += members_of.pop(ra)
             groups: dict[str, list[_Listing]] = defaultdict(list)
             for item in listings:
                 groups[find(item.id)].append(item)
@@ -309,6 +325,12 @@ class Deduplicator:
         ]
         log.info("dedup: %d listings, %d merged groups, %d rows changed", len(rows), merged, len(changed))
         return merged, changed
+
+
+def _closeness(a: _Listing, b: _Listing) -> tuple[float, float]:
+    gap = abs((a.start - b.start).total_seconds()) if a.start and b.start else 0.0
+    distance = _distance_m(a, b)
+    return gap, distance if distance is not None else 0.0
 
 
 def _tier_counts(session: Session) -> dict[str, int]:

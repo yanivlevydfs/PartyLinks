@@ -163,6 +163,39 @@ def test_sold_out_copy_still_prices_the_event_when_no_other_copy_has_a_price(tmp
     assert rows["ogo:b"].group_min_price == 40 and rows["ogo:b"].group_entry_type == "paid"
 
 
+def test_one_party_on_many_sites_with_other_entry_times_is_one_event(tmp_path: Path) -> None:
+    moonchild, port = (32.1001, 34.7745), (32.0962, 34.7732)  # ~440 m: the club and the port's pin
+    title = "PETTRA x HELLO VERA • FRIDAY OPEN AIR"
+    _, groups = grouped(tmp_path, [
+        listing("beatradar", "a", title, where=moonchild, source_genres=["techno"]),
+        listing("zygo", "b", title, start=START + timedelta(minutes=30), where=port, source_genres=["techno"]),
+        listing("popit", "c", title, start=START + timedelta(minutes=60), where=port, source_genres=["techno"]),
+        listing("happytlv", "d", title, start=START + timedelta(minutes=90), where=moonchild, source_genres=["techno"]),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 1
+
+
+def test_closest_session_wins(tmp_path: Path) -> None:
+    title = "ARTIST LIVE CONCERT TOUR"
+    _, groups = grouped(tmp_path, [
+        listing("barby", "1", title, source_genres=["rock_indie"]),
+        listing("barby", "2", title, start=START + timedelta(minutes=80), source_genres=["rock_indie"]),
+        listing("tickchak", "x", title, start=START + timedelta(minutes=75), source_genres=["rock_indie"]),
+    ])  # fmt: skip
+    assert groups["tickchak:x"][0] == groups["barby:2"][0] != groups["barby:1"][0]
+
+
+def test_one_sites_pages_under_other_titles_at_one_hour_stay_apart(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("smarticket", "1", 'גילאי שנה עד שלוש - ר"געים משחקים'),
+        listing("smarticket", "2", 'לידה עד גיל שנה - ר"געים משחקים'),
+        listing("secrettelaviv", "3", "Idan Raichel and the Israel Philharmonic"),
+        listing("secrettelaviv", "4", "Idan Raichel and the Israel Philharmonic"),  # the site's own copy
+    ])  # fmt: skip
+    assert groups["smarticket:1"][0] != groups["smarticket:2"][0]
+    assert groups["secrettelaviv:3"][0] == groups["secrettelaviv:4"][0]
+
+
 def test_numbered_variants_stay_apart(tmp_path: Path) -> None:
     _, groups = grouped(tmp_path, [
         listing("telaviv", "1", "חוג ציור לגילאי 4-6"),
