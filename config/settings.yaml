@@ -1746,7 +1746,8 @@ sources:
     # is the locality its place names, else the council. `category`: for events filed under none
     # (default קהילה). Mostly no robots.txt. golan.org.il: firewall; hod-hasharon: Milgam shop.
     enabled: true
-    israel_proxy: true  # the municipal sites answer 403 to the evomi IPs (b-y.org.il, Oct 2026)
+    # Not israel_proxy: some municipal sites refuse the evomi IPs, but the free Israeli proxies are
+    # mostly dead - the run spent its hour on them and saved 0 (102 on evomi), Oct 2026.
     # Dozens of municipal sites a run: longer than the 30-min default (Oct 2026).
     run_timeout_seconds: 3600
     cron: "3 6,18 * * *"
@@ -1953,7 +1954,6 @@ sources:
     # only) with categories/tags, place, organiser and ticket link; recurring events kept once.
     # Events sold by a Smarticket box office the smarticket source reads are skipped.
     enabled: true
-    israel_proxy: true  # the municipal sites answer 403 to the evomi IPs (karmiel, even-yehuda, Oct 2026)
     cron: "17 4,16 * * *"
     sites:
       - {url: https://www.karmiel.muni.il, city: כרמיאל}
