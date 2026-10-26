@@ -4,7 +4,7 @@ import type { Lang } from "./i18n";
 
 export interface Filters {
   q: string;
-  when: string; // "all" | "tonight" | "weekend" | YYYY-MM-DD
+  when: string; // "all" | "tonight" | "weekend" | "week" | "month" | YYYY-MM-DD | YYYY-MM-DD~YYYY-MM-DD
   genres: string[];
   slots: string[];
   regions: string[]; // "tel_aviv" and/or regions of the country, any-of

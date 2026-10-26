@@ -22,12 +22,32 @@ export function filterParams(f: FilterState): Params {
     free_entry: f.freeOnly ? "true" : undefined,
     discount: f.discountOnly ? "true" : undefined,
     sold_out: f.hideSoldOut ? "false" : undefined,
-    ...(f.when === "tonight" ? { date: today() } : f.when === "weekend" ? { weekend: "true", date_to: weekAhead() } : f.when !== "all" ? { date: f.when } : {}),
+    ...whenParams(f.when),
   };
 }
 
-// "Weekend" is this weekend (as the server's /weekend page), not every weekend ahead.
-const weekAhead = () => new Date(Date.parse(today() + "T12:00:00Z") + 7 * 864e5).toISOString().slice(0, 10) + "T23:59:59";
+function whenParams(when: string): Params {
+  if (when === "tonight") return { date: today() };
+  // "Weekend" is this weekend (as the server's /weekend page), not every weekend ahead.
+  if (when === "weekend") return { weekend: "true", date_to: ahead(7) };
+  if (when === "week") return { date_to: ahead(6) };
+  if (when === "month") return { date_to: ahead(29) };
+  const [from, to] = when.split("~");
+  if (to) return { date_from: from + "T00:00:00", date_to: to + "T23:59:59" };
+  return when !== "all" ? { date: when } : {};
+}
+
+/** The end of the day `days` after today (local dates, read in the server's timezone). */
+const ahead = (days: number) => new Date(Date.parse(today() + "T12:00:00Z") + days * 864e5).toISOString().slice(0, 10) + "T23:59:59";
+const PRESETS = ["all", "tonight", "weekend", "week", "month"];
+
+/** Short name of a `when` value: a preset, a day, or a range of days. */
+function whenText(t: ReturnType<typeof useT>["t"], when: string) {
+  if (when === "tonight" || when === "weekend" || when === "week" || when === "month") return t[when];
+  if (when === tomorrow()) return t.tomorrow;
+  const day = (v: string) => new Date(v + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, weekday: "short", day: "numeric", month: "numeric" });
+  return when.split("~").map(day).join(" – ");
+}
 
 export const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
@@ -65,12 +85,16 @@ export function Filters() {
   const clear = () => set({ ...DEFAULT_FILTERS, q: f.q, sort: f.sort });
 
   const [calOpen, setCalOpen] = useState(false);
-  const isDate = f.when !== "all" && f.when !== "tonight" && f.when !== "weekend" && f.when !== tomorrow();
+  const isDate = !PRESETS.includes(f.when) && f.when !== tomorrow();
   const counts = new Map((cats?.dates ?? []).map((d) => [d.value, d.events]));
-  const day = (v: string, o: Intl.DateTimeFormatOptions) => new Date(v + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, ...o });
-  const dateLabel = (v: string) => day(v, { weekday: "short", day: "numeric", month: "numeric" });
-  const whenLabel = f.when === "tonight" ? t.tonight : f.when === "weekend" ? t.weekend : f.when === tomorrow() ? t.tomorrow : dateLabel(f.when);
+  const whenLabel = whenText(t, f.when);
   const pickWhen = (when: string) => { set({ when }); setCalOpen(false); };
+  // A first day filters at once and keeps the calendar open; a later second day makes it a range.
+  const start = f.when === "tonight" ? today() : /^\d{4}-\d\d-\d\d$/.test(f.when) ? f.when : null;
+  const pickDay = (v: string) => {
+    if (start && v > start) return pickWhen(`${start}~${v}`);
+    set({ when: v === today() ? "tonight" : v });
+  };
 
   const toggles = (
     <>
@@ -129,18 +153,19 @@ export function Filters() {
         <Chip on={f.when === "tonight"} onClick={() => pickWhen("tonight")}>{t.tonight}</Chip>
         <Chip on={f.when === tomorrow()} onClick={() => pickWhen(tomorrow())}>{t.tomorrow}</Chip>
         <Chip on={f.when === "weekend"} onClick={() => pickWhen("weekend")}>{t.weekend}</Chip>
+        <Chip on={f.when === "week"} onClick={() => pickWhen("week")}>{t.week}</Chip>
+        <Chip on={f.when === "month"} onClick={() => pickWhen("month")}>{t.month}</Chip>
         <button className={"chip f-drop cal-btn" + (isDate ? " on" : "") + (calOpen ? " open" : "")} aria-expanded={calOpen}
           onClick={() => setCalOpen(!calOpen)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
             <rect x="3.5" y="5" width="17" height="15.5" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" />
           </svg>
-          {isDate ? dateLabel(f.when) : t.pickDate}<span className="caret" aria-hidden>▾</span>
+          {isDate ? whenLabel : t.pickDate}<span className="caret" aria-hidden>▾</span>
         </button>
       </FilterRow>
       {calOpen && (
         <div className="f-drawer">
-          <Calendar value={f.when === "tonight" ? today() : f.when} counts={counts}
-            onPick={(v) => pickWhen(v === today() ? "tonight" : v)} />
+          <Calendar value={f.when === "tonight" ? today() : f.when} counts={counts} onPick={pickDay} />
         </div>
       )}
 
@@ -213,7 +238,7 @@ export function Relax() {
   const set = useStore((s) => s.setFilters);
   const options: [string, Partial<FilterState>][] = [
     ...(f.freeOnly ? [[t.freeOnly, { freeOnly: false }] as [string, Partial<FilterState>]] : []),
-    ...(f.when !== "all" ? [[f.when === "tonight" ? t.tonight : f.when === "weekend" ? t.weekend : f.when === tomorrow() ? t.tomorrow : f.when.split("-").reverse().slice(0, 2).join("."), { when: "all" }] as [string, Partial<FilterState>]] : []),
+    ...(f.when !== "all" ? [[whenText(t, f.when), { when: "all" }] as [string, Partial<FilterState>]] : []),
     ...f.genres.map((g) => [genreLabel(lang, g), { genres: f.genres.filter((x) => x !== g) }] as [string, Partial<FilterState>]),
     ...f.slots.map((s) => [label(t.slots, s), { slots: f.slots.filter((x) => x !== s) }] as [string, Partial<FilterState>]),
     ...f.regions.map((r) => [label(t.areas, r), { regions: f.regions.filter((x) => x !== r), areas: [], city: null }] as [string, Partial<FilterState>]),
@@ -324,10 +349,12 @@ function Rows({ only }: { only?: Panel }) {
   );
 }
 
-/** Month grid, Sunday first. A day glows by how many events it has; past days and days with none are disabled. */
+/** Month grid, Sunday first. A day glows by how many events it has; past days and days with none are disabled.
+ *  `value` is one day or a range "from~to". */
 export function Calendar({ value, counts, onPick }: { value: string; counts: Map<string, number>; onPick: (v: string) => void }) {
   const { t, lang } = useT();
   const now = today();
+  const [from, to = from] = value.split("~");
   const [month, setMonth] = useState(() => (/^\d{4}-\d\d-\d\d$/.test(value) ? value : now).slice(0, 7));
   const [y, m] = month.split("-").map(Number);
   const first = new Date(Date.UTC(y, m - 1, 1));
@@ -354,9 +381,10 @@ export function Calendar({ value, counts, onPick }: { value: string; counts: Map
         {Array.from({ length }, (_, i) => {
           const v = `${month}-${String(i + 1).padStart(2, "0")}`;
           const n = counts.get(v) ?? 0;
+          const on = v >= from && v <= to;
           return (
-            <button key={v} className={"cal-day" + (v === value ? " on" : "") + (v === now ? " today" : "")}
-              disabled={v < now || !n} aria-pressed={v === value} onClick={() => onPick(v)}
+            <button key={v} className={"cal-day" + (on ? " on" : "") + (on && from !== to ? " range" : "") + (v === now ? " today" : "")}
+              disabled={v < now || !n} aria-pressed={on} onClick={() => onPick(v)}
               aria-label={`${fmt(new Date(v + "T12:00:00Z"), { weekday: "long", day: "numeric", month: "long" })} · ${n} ${t.calEvents}`}
               title={n ? `${n} ${t.calEvents}` : undefined}
               style={{ "--heat": n / max } as CSSProperties}>
