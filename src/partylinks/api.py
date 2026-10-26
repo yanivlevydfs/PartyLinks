@@ -47,6 +47,7 @@ from partylinks.db import (
 )
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.logs import setup_logging
+from partylinks.media import VARIANT_WIDTHS, variant_path
 from partylinks.models import EntryType
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
@@ -583,6 +584,11 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
                     await asyncio.to_thread(job)
                 except Exception:  # the site and the scrapers run regardless
                     log.exception("startup maintenance step %s failed", getattr(job, "__name__", job))
+            # WebP copies older files still lack: in the background (an hour or so after the first
+            # deploy), so the scrapers start now; new downloads make their own copies.
+            copies = asyncio.create_task(asyncio.to_thread(service.media.build_missing_variants))
+            app.state.tasks.add(copies)
+            copies.add_done_callback(app.state.tasks.discard)
             if scheduler:
                 scheduler.start()
             await asyncio.to_thread(service.geocode)
@@ -1157,13 +1163,34 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.get("/images/{image_id}", tags=["events"], response_class=Response)
     def get_image(image_id: int, request: Request, session: SessionDep) -> Response:
+        return _image_response(image_id, request, session)
+
+    @app.get("/images/{image_id}/{width}.webp", tags=["events"], response_class=Response)
+    def get_image_copy(image_id: int, width: int, request: Request, session: SessionDep) -> Response:
+        """The artwork resized to ``width`` (640 cards, 1280 event page) as WebP. A copy not made
+        yet (or never: animations, unreadable files) serves the original, cached for an hour only,
+        so the edge picks up the copy once it exists. Never converts on request."""
+        if width not in VARIANT_WIDTHS:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "no such size")
+        return _image_response(image_id, request, session, width)
+
+    def _image_response(image_id: int, request: Request, session: Session, width: int | None = None) -> Response:
         meta = session.execute(
-            select(ImageRow.downloaded_at, ImageRow.content_type).where(ImageRow.id == image_id)
+            select(ImageRow.downloaded_at, ImageRow.content_type, ImageRow.local_path).where(ImageRow.id == image_id)
         ).first()
         if meta is None or meta.downloaded_at is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "image not stored")
         etag = f'"{image_id}-{int(meta.downloaded_at.timestamp())}"'
         headers = {"Cache-Control": "public, max-age=86400", "ETag": etag}
+        if width is not None:
+            copy = request.app.state.service.media.path_for(variant_path(meta.local_path, width)) if meta.local_path else None
+            if copy is not None and copy.is_file():
+                # An id's picture never changes (a new URL is a new row), so its copy is immutable.
+                headers = {"Cache-Control": "public, max-age=31536000, immutable", "ETag": f'"{image_id}-{width}"'}
+                if request.headers.get("if-none-match") == headers["ETag"]:
+                    return Response(status_code=status.HTTP_304_NOT_MODIFIED, headers=headers)
+                return FileResponse(copy, media_type="image/webp", headers=headers)
+            headers["Cache-Control"] = "public, max-age=3600"  # the original, until the copy exists
         if request.headers.get("if-none-match") == etag:  # client already has it: no blob read
             return Response(status_code=status.HTTP_304_NOT_MODIFIED, headers=headers)
         image = session.scalar(select(ImageRow).where(ImageRow.id == image_id).options(undefer(ImageRow.data)))

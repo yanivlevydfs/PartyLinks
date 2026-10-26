@@ -3,7 +3,7 @@ import { useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { Ticket } from "../types";
 import { Weather } from "../Weather";
-import { AddToCalendar, artistPath, eventPath, fmtDate, freshness, Img, label, Loader, money, priceLabel, Share, sourceName, Sources, useT, useTitle, venuePath } from "../ui";
+import { AddToCalendar, artistPath, eventPath, fmtDate, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath } from "../ui";
 
 // URLs in scraped description text become links; trailing punctuation stays text.
 function linkify(text: string) {
@@ -34,7 +34,7 @@ export default function EventPage() {
 
   return (
     <article className="event">
-      <div className="e-backdrop" style={hero ? { backgroundImage: `url("${hero}")` } : undefined} aria-hidden />
+      <div className="e-backdrop" style={hero ? { backgroundImage: `url("${sized(hero, 640)}")` } : undefined} aria-hidden />
       <div className="wrap e-wrap">
         <button className="back" onClick={back}>{lang === "he" ? "→" : "←"} {t.back}</button>
 
@@ -47,7 +47,7 @@ export default function EventPage() {
 
         <div className="e-top">
           <div className="e-poster">
-            <Img src={hero} alt={e.title} className="e-img" text={e.title} />
+            <Img src={sized(hero, 1280)} alt={e.title} className="e-img" text={e.title} />
           </div>
 
           <div className="e-info">
@@ -143,7 +143,7 @@ export default function EventPage() {
           <section>
             <h4>{t.gallery}</h4>
             <div className="gallery">
-              {images.slice(1).map((src) => <Img key={src} src={src} alt="" className="g-img" />)}
+              {images.slice(1).map((src) => <Img key={src} src={sized(src, 640)} alt="" className="g-img" />)}
             </div>
           </section>
         )}

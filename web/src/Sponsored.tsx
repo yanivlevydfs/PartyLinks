@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSponsored } from "./api";
 import type { EventSummary } from "./types";
-import { eventPath, fmtDate, Img, label, priceLabel, useT } from "./ui";
+import { eventPath, fmtDate, Img, label, priceLabel, sized, useT } from "./ui";
 import { Weather } from "./Weather";
 import "./sponsored.css";
 
@@ -89,7 +89,7 @@ function Rail({ side, items }: { side: Side; items: EventSummary[] }) {
               <li key={e.id}>
                 <Link to={eventPath(e)} className={n === i ? "on" : ""} onMouseEnter={() => setActive(n)} onFocus={() => setActive(n)}
                   onClick={() => hit(e.id, "click")}>
-                  <Img src={e.cover_url ?? e.image_url} alt="" className="sp-thumb" />
+                  <Img src={sized(e.cover_url ?? e.image_url, 640)} alt="" className="sp-thumb" />
                   <span>
                     <b dir="auto">{e.title}</b>
                     <small>{fmtDate(e.start_at, t, { weekday: "short", day: "numeric", month: "numeric" })}</small>
@@ -133,7 +133,7 @@ function Spot({ e, on }: { e: EventSummary; on: boolean }) {
   return (
     <Link ref={ref} className={"sp-spot" + (on ? " on" : "")} to={eventPath(e)} tabIndex={on ? 0 : -1} aria-hidden={!on}
       onClick={() => hit(e.id, "click")}>
-      <Img src={e.cover_url ?? e.image_url} alt={e.title} className="sp-img" text={e.title} />
+      <Img src={sized(e.cover_url ?? e.image_url, 640)} alt={e.title} className="sp-img" text={e.title} />
       <div className="date-badge">
         <b>{fmtDate(e.start_at, t, { day: "numeric" })}</b>
         <span>{fmtDate(e.start_at, t, { month: "short" })}</span>

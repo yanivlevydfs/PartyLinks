@@ -169,6 +169,7 @@ class ScrapeService:
     def shutdown(self) -> None:
         """Ask running sources to stop at the next event and stop accepting work."""
         self._stopping.set()
+        self.media.stop()
         self._executor.shutdown(wait=False, cancel_futures=True)
         self._maintenance.shutdown(wait=False, cancel_futures=True)
 

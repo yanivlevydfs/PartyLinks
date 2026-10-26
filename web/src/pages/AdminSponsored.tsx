@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { EventPage, EventSummary } from "../types";
-import { eventPath, Img, Loader, TZ } from "../ui";
+import { eventPath, Img, Loader, sized, TZ } from "../ui";
 import { call, Card, post, Stat } from "./Admin";
 import "../sponsored.css";
 
@@ -98,7 +98,7 @@ export function Sponsored() {
             <ul className="adm-sp-list">
               {found.data.items.map((e) => (
                 <li key={e.id}>
-                  <Img src={e.cover_url ?? e.image_url} alt="" className="adm-sp-thumb" />
+                  <Img src={sized(e.cover_url ?? e.image_url, 640)} alt="" className="adm-sp-thumb" />
                   <div>
                     <b dir="auto">{e.title}</b>
                     <small>{dateTime(e.start_at)}{e.venue_name && <> · <span dir="auto">{e.venue_name}</span></>} · {e.source}</small>
@@ -125,7 +125,7 @@ export function Sponsored() {
             <ol className="adm-sp-list">
               {list.map((p, n) => (
                 <li key={p.event_id} className={p.live === false ? "off" : ""}>
-                  <Img src={p.cover_url} alt="" className="adm-sp-thumb" />
+                  <Img src={sized(p.cover_url, 640)} alt="" className="adm-sp-thumb" />
                   <div>
                     {p.title
                       ? <Link to={eventPath({ id: p.event_id, slug: p.slug })} target="_blank" dir="auto"><b>{p.title}</b></Link>

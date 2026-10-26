@@ -187,6 +187,12 @@ export function Chip({ on, onClick, children, className }: { on: boolean; onClic
   );
 }
 
+/** Our stored artwork (``/images/123``) resized to ``width`` as WebP (640 cards, 1280 event page);
+ *  the sellers' own image URLs pass through. og:image keeps the original (server side). */
+export function sized<T extends string | null | undefined>(src: T, width: 640 | 1280): T | string {
+  return src && /^\/images\/\d+$/.test(src) ? `${src}/${width}.webp` : src;
+}
+
 /** Without artwork: ``text`` (the event title) set large on the gradient, else a note. */
 export function Img({ src, alt, className, text }: { src: string | null | undefined; alt: string; className: string; text?: string }) {
   const [broken, setBroken] = useState(false);
@@ -228,7 +234,7 @@ export function Card({ e }: { e: EventSummary }) {
     <div className="card-wrap">
     <Link className="card" to={eventPath(e)}>
       <div className="card-img">
-        <Img src={e.cover_url ?? e.image_url} alt={e.title} className="cover" text={e.title} />
+        <Img src={sized(e.cover_url ?? e.image_url, 640)} alt={e.title} className="cover" text={e.title} />
         <div className="date-badge">
           <b>{fmtDate(e.start_at, t, { day: "numeric" })}</b>
           <span>{fmtDate(e.start_at, t, { month: "short" })}</span>

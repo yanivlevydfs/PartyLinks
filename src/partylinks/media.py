@@ -4,6 +4,11 @@ Storage is configurable: image bytes in the ``event_images.data`` column, or fil
 under ``<media.directory>/<source>/<sha1(url)>.<ext>``. Either way the API serves
 them at ``/images/{id}``. Each source downloads with its own client after its own
 run, so artwork fetching stays isolated per source like scraping.
+
+Next to every stored file go two resized WebP copies, ``<file>.640.webp`` (cards) and
+``<file>.1280.webp`` (the event page), served at ``/images/{id}/{width}.webp``. They are made
+when the file is stored (every source goes through ``_store``), and ``build_missing_variants``
+makes the ones still missing (files stored before copies existed) in the background.
 """
 
 from __future__ import annotations
@@ -12,12 +17,17 @@ import asyncio
 import hashlib
 import logging
 import mimetypes
+import os
+import threading
+import time
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
 import httpx
+from PIL import Image, ImageOps
 from sqlalchemy import or_, select
 
 from partylinks.config import HttpSettings, MediaSettings, project_path
@@ -47,6 +57,43 @@ def sniff_image_type(data: bytes) -> str | None:
 
 
 PERSIST_CHUNK = 50
+VARIANT_WIDTHS = (640, 1280)  # cards (296px wide on desktop, 166px at 3x on phones) / event page (420px, 2x-3x)
+MAX_PIXELS = 50_000_000  # bigger pictures are not resized (the decode alone is ~200MB): the original is served
+_ALPHA_MODES = ("RGBA", "LA", "PA")
+
+
+def variant_path(relative: str, width: int) -> str:
+    """``goout/ab12.jpg`` -> ``goout/ab12.jpg.640.webp``: named after the file, so shared files share copies."""
+    return f"{relative}.{width}.webp"
+
+
+def has_variants(path: Path) -> bool:
+    return all(path.with_name(variant_path(path.name, w)).is_file() for w in VARIANT_WIDTHS)
+
+
+def make_variants(path: Path, quality: int) -> bool:
+    """Write the resized WebP copies of ``path`` beside it. Returns False (the original stays the
+    only version) for animations, oversized or unreadable pictures; never raises."""
+    try:
+        with Image.open(path) as im:
+            if getattr(im, "is_animated", False) or im.width * im.height > MAX_PIXELS:
+                return False
+            # A CMYK profile would be wrong once converted to RGB.
+            icc = im.info.get("icc_profile") if im.mode in ("RGB", "RGBA") else None
+            im.draft(im.mode, (VARIANT_WIDTHS[-1], VARIANT_WIDTHS[-1]))  # JPEG: decode at 1/2-1/8 scale, still >= 1280
+            alpha = im.mode in _ALPHA_MODES or (im.mode == "P" and "transparency" in im.info)
+            picture = ImageOps.exif_transpose(im).convert("RGBA" if alpha else "RGB")
+        for width in VARIANT_WIDTHS:
+            copy = picture.copy()
+            copy.thumbnail((width, width * 4), Image.Resampling.LANCZOS)  # never upscales; tall posters stay whole
+            target = path.with_name(variant_path(path.name, width))
+            tmp = target.with_name(f"{target.name}.{os.getpid()}-{threading.get_ident()}.tmp")
+            copy.save(tmp, "WEBP", quality=quality, method=4, icc_profile=icc)
+            os.replace(tmp, target)  # atomic: a request never reads a half-written copy
+        return True
+    except Exception as exc:  # noqa: BLE001 - a broken picture keeps its original only
+        log.warning("artwork copies of %s failed: %s: %s", path, type(exc).__name__, exc)
+        return False
 
 
 def _relative_path(source: str, url: str, content_type: str) -> str:
@@ -66,6 +113,13 @@ class MediaStore:
         self.db = db
         self.root = project_path(settings.directory)
         self.retry_after = timedelta(hours=settings.retry_failed_after_hours)
+        self._stop = threading.Event()
+        # Resizing a big PNG takes ~200MB: at most this many at once across scrapes and the backfill.
+        self._converting = threading.Semaphore(max(1, settings.variant_threads))
+
+    def stop(self) -> None:
+        """Make a running ``build_missing_variants`` return after its current files (shutdown)."""
+        self._stop.set()
 
     def path_for(self, relative: str) -> Path:
         return self.root / relative
@@ -89,6 +143,8 @@ class MediaStore:
         for relative in (p for p in candidates if p not in still_used):
             try:
                 self.path_for(relative).unlink(missing_ok=True)
+                for width in VARIANT_WIDTHS:
+                    self.path_for(variant_path(relative, width)).unlink(missing_ok=True)
                 removed += 1
             except OSError as exc:
                 log.warning("could not delete %s: %s", relative, exc)
@@ -148,13 +204,58 @@ class MediaStore:
             row["data"] = data
         else:
             row["local_path"] = _relative_path(source, url, content_type)
-            await asyncio.to_thread(self._write, row["local_path"], data)
+            await asyncio.to_thread(self._store, row["local_path"], data)  # off the event loop: resizing is CPU
         return row
 
-    def _write(self, relative: str, data: bytes) -> None:
+    def _store(self, relative: str, data: bytes) -> None:
+        """Every downloaded artwork file is stored here: the file, then its WebP copies."""
+        target = self._write(relative, data)
+        if not has_variants(target):  # files are named by URL: the same flyer again already has them
+            with self._converting:
+                make_variants(target, self.settings.webp_quality)
+
+    def _write(self, relative: str, data: bytes) -> Path:
         target = self.path_for(relative)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
+        return target
+
+    def build_missing_variants(self, threads: int | None = None) -> tuple[int, int]:
+        """Make the WebP copies every stored file still lacks (files from before copies existed),
+        ``threads`` at a time. Resumable: files that have them are skipped, so a restart carries
+        on. Returns (made, failed). ponytail: animations and broken files are retried at each
+        start (cheap, they fail on open); keep a skip list if that ever shows in the logs."""
+        threads = self.settings.variant_threads if threads is None else threads
+        if self.settings.storage != "filesystem" or threads < 1:
+            return 0, 0
+        with self.db.session(write=False) as session:
+            relatives = list(
+                session.scalars(select(ImageRow.local_path).where(ImageRow.local_path.is_not(None)).distinct())
+            )
+        todo = [p for p in (self.path_for(r) for r in relatives) if p.is_file() and not has_variants(p)]
+        if not todo:
+            return 0, 0
+        log.info("artwork copies: %d of %d files need WebP copies, %d threads", len(todo), len(relatives), threads)
+        made = failed = 0
+        started = time.monotonic()
+
+        def one(path: Path) -> bool | None:
+            if self._stop.is_set():
+                return None
+            with self._converting:
+                return make_variants(path, self.settings.webp_quality)
+
+        with ThreadPoolExecutor(threads, thread_name_prefix="artwork-copies") as pool:
+            for done, ok in enumerate(pool.map(one, todo), 1):
+                if ok is not None:
+                    made, failed = made + ok, failed + (not ok)
+                if done % 500 == 0:
+                    log.info("artwork copies: %d/%d (%d kept the original only), %.0fs", done, len(todo), failed, time.monotonic() - started)
+        log.info(
+            "artwork copies: %s, %d made, %d kept the original only (animated, huge or unreadable), %.0fs",
+            "stopped" if self._stop.is_set() else "done", made, failed, time.monotonic() - started,
+        )
+        return made, failed
 
     def move_to_files(self, batch: int = 200, reclaim_every: int = 10) -> int:
         """With ``storage: filesystem``, move artwork still kept in the database to files, a batch at
@@ -179,6 +280,9 @@ class MediaStore:
                     self._write(relative, row.data)
                     updates.append({"id": row.id, "local_path": relative, "data": None})
                 bulk_update_by_id(session, ImageRow, updates)
+            for relative in {u["local_path"] for u in updates}:  # after the commit: no write lock held while resizing
+                if not has_variants(self.path_for(relative)):
+                    make_variants(self.path_for(relative), self.settings.webp_quality)
             moved, batches = moved + len(rows), batches + 1
             if batches % reclaim_every == 0:
                 log.info("artwork: %d images moved from the database to files", moved)

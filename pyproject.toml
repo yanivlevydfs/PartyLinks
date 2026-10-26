@@ -13,6 +13,7 @@ dependencies = [
     "curl_cffi>=0.15",
     "httpx[socks]>=0.28",
     "pycountry==26.2.16",
+    "pillow>=12",
     "pydantic>=2.9",
     "pydantic-settings[yaml]>=2.6",
     "selectolax>=1.0",

@@ -41,6 +41,8 @@ idna==3.20
     #   httpx
 opentelemetry-api==1.45.1
     # via fastapi
+pillow==13.0.0
+    # via partylinks (pyproject.toml)
 pycountry==26.2.16
     # via partylinks (pyproject.toml)
 pycparser==3.12

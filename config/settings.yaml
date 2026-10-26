@@ -592,6 +592,10 @@ media:
   directory: data/media      # used when storage = filesystem
   max_bytes: 15000000
   allowed_content_types: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]
+  # Resized WebP copies beside each file (640 wide for cards, 1280 for the event page): encoder
+  # quality, and the threads that make the copies older files still lack (0 = none).
+  webp_quality: 78
+  variant_threads: 2
 
 sources:
   goout:

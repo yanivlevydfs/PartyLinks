@@ -291,6 +291,10 @@ class MediaSettings(BaseModel):
     max_bytes: int = Field(15_000_000, ge=1)
     # A failed download (timeout, 503...) is retried on runs after this many hours.
     retry_failed_after_hours: float = Field(6, gt=0)
+    # Resized WebP copies (640 / 1280 wide) stored beside each file: their encoder quality, and how
+    # many threads make the copies files from before still lack (0 = none; startup, in the background).
+    webp_quality: int = Field(78, ge=1, le=100)
+    variant_threads: int = Field(2, ge=0)
     # Never SVG / HTML: they would run as pages on this site's origin.
     allowed_content_types: list[str] = Field(
         default_factory=lambda: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]

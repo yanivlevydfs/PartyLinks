@@ -34,7 +34,7 @@ Secrets (admin token, proxy credentials, access headers) belong in variables onl
 | `dedup` | Rules for grouping duplicate listings |
 | `geocoding` | Nominatim settings and manual venue pins |
 | `retention` | Purge schedule, in-progress window, run-history age, space reclaim |
-| `media` | Download artwork or not, store in the DB or on disk, size and type limits |
+| `media` | Download artwork or not, store in the DB or on disk, size and type limits, WebP copies (`webp_quality`, default 78; `variant_threads`, default 2, 0 = no backfill of older files) |
 | `sources` | One block per source (see below) |
 
 ## A source block
