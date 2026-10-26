@@ -71,6 +71,12 @@ def _forwarded_client(scope: dict[str, Any], cfg: SecuritySettings) -> None:
     visitor writes. The LAST one is the address our own proxy saw: use it, for every layer below."""
     if cfg.trusted_proxies != ["*"]:
         return  # an explicit list: uvicorn already picks the first untrusted address from the right
+    # Railway's edge puts the visitor in X-Real-IP (overwriting any sent); its own hop (152.233.x)
+    # is last in X-Forwarded-For, so without this every visitor shares a few addresses and bans.
+    real = next((v.decode("latin-1").strip() for k, v in scope["headers"] if k == b"x-real-ip"), "")
+    if real:
+        scope["client"] = (real, 0)
+        return
     values = [v.decode("latin-1") for k, v in scope["headers"] if k == b"x-forwarded-for"]
     last = ",".join(values).rsplit(",", 1)[-1].strip()
     if last:
