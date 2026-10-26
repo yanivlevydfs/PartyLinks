@@ -1210,7 +1210,10 @@ def _register_routes(app: FastAPI) -> None:
         media_type = meta.content_type or "application/octet-stream"
         if image.data is not None:
             return Response(content=image.data, media_type=media_type, headers=headers)
-        path = request.app.state.service.media.path_for(image.local_path or "")
+        media = request.app.state.service.media
+        path = media.path_for(image.local_path or "")
+        if image.local_path and not path.is_file():  # converted: the original is gone, its 1280 copy stands in
+            path, media_type = media.path_for(variant_path(image.local_path, VARIANT_WIDTHS[-1])), "image/webp"
         if not image.local_path or not path.is_file():
             raise HTTPException(status.HTTP_404_NOT_FOUND, "image file missing")
         return FileResponse(path, media_type=media_type, headers=headers)

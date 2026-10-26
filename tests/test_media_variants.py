@@ -114,6 +114,7 @@ def test_a_scraped_events_artwork_has_both_copies_right_after_the_run(tmp_path: 
         relative = session.query(ImageRow.local_path).scalar()
     original = service.media.path_for(relative)
     assert [width_of(original.with_name(variant_path(original.name, w))) for w in (640, 1280)] == [640, 1280]
+    assert not original.exists()  # converted at import: only the WebP copies are kept
 
 
 def test_copies_keep_alpha_never_upscale_and_follow_exif(tmp_path: Path) -> None:
@@ -149,8 +150,18 @@ def test_animations_and_broken_files_keep_only_the_original(tmp_path: Path) -> N
 def test_backfill_makes_missing_copies_once(tmp_path: Path) -> None:
     _, _, media, _ = stored(tmp_path, picture((1600, 900)))
     assert media.build_missing_variants() == (1, 0)
-    assert has_variants(media.path_for("test/flyer.jpg"))
-    assert media.build_missing_variants() == (0, 0)  # resumable: done files are skipped
+    assert has_variants(media.path_for("test/flyer.jpg")) and not media.path_for("test/flyer.jpg").exists()
+    assert media.build_missing_variants() == (0, 0)  # resumable: converted originals are gone
+
+
+def test_the_original_url_serves_the_1280_copy_once_converted(tmp_path: Path) -> None:
+    settings, _, media, image_id = stored(tmp_path, picture((1600, 900)))
+    media.build_missing_variants()
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        response = client.get(f"/images/{image_id}")
+    assert response.status_code == 200 and response.headers["content-type"] == "image/webp"
+    with Image.open(io.BytesIO(response.content)) as im:
+        assert im.width == 1280
 
 
 def test_copy_route_serves_webp_immutable_and_falls_back_to_the_original(tmp_path: Path) -> None:
@@ -236,7 +247,7 @@ def test_orphan_sweep_removes_only_what_no_row_claims(tmp_path: Path) -> None:
         upsert_events(session, [event("b")])
         session.execute(text("UPDATE event_images SET local_path = 'test/flyer.jpg', downloaded_at = CURRENT_TIMESTAMP"))
     media.build_missing_variants()
-    for name in ("test/flyer.jpg", "test/flyer.jpg.640.webp", "test/flyer.jpg.1280.webp"):
+    for name in ("test/flyer.jpg.640.webp", "test/flyer.jpg.1280.webp"):
         aged(media.path_for(name))
     orphan = media.path_for("test/gone.jpg")
     orphan.write_bytes(b"x" * 1000)
@@ -277,7 +288,7 @@ def test_orphan_sweep_admin_endpoint_defaults_to_a_dry_run(tmp_path: Path) -> No
         assert client.post("/admin/api/maintenance/orphans", headers=auth).json()["files"] == 1
         assert stray.exists()
         assert client.post("/admin/api/maintenance/orphans?dry_run=false", headers=auth).json()["files"] == 1
-    assert not stray.exists() and media.path_for("test/flyer.jpg").exists()
+    assert not stray.exists() and has_variants(media.path_for("test/flyer.jpg"))
 
 
 

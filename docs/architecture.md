@@ -73,26 +73,28 @@ gives the freed space back to the OS.
 Image URLs are always stored. The images themselves are downloaded into the database (default) or
 onto disk, and served at `/images/{id}`.
 
-With disk storage (production), each file gets two resized WebP copies beside it:
-`<file>.640.webp` for cards and `<file>.1280.webp` for the event page (quality `webp_quality`,
-no upscaling, EXIF rotation applied, transparency kept). Every source stores artwork through
-`MediaStore._store`, which writes the file and then its copies, on a worker thread after the run's
-scrape. Copies are named after the file, so a flyer shared by several listings shares its copies,
-and `delete_files` removes them along with the file.
+With disk storage (production), artwork is kept as WebP only: each file becomes two resized
+copies, `<file>.640.webp` for cards and `<file>.1280.webp` for the event page (quality
+`webp_quality`, no upscaling, EXIF rotation applied, transparency kept), and the original is
+deleted. Only animations, pictures over 50M pixels and unreadable files keep their original.
+Every source stores artwork through `MediaStore._store`, which writes the download, converts it
+and deletes it (`webp_only`), on a worker thread after the run's scrape, so every scraper's images
+are WebP right at import. Copies are named after the file (`local_path` keeps the original name),
+so a flyer shared by several listings shares its copies, and `delete_files` removes them.
 
-Files stored before copies existed get theirs from `build_missing_variants`. It starts in the
-background after the startup maintenance (it never delays the scrapers), runs `variant_threads`
-threads, skips files that already have both copies (so a restart resumes), and logs progress
-every 500 files. Animations, pictures over 50M pixels and unreadable files keep the original only.
+Originals stored before WebP-only storage are converted by `build_missing_variants`. It starts in
+the background after the startup maintenance (it never delays the scrapers), runs
+`variant_threads` threads, makes any missing copies and deletes each original (so a restart
+resumes), and logs progress every 500 files.
 
 The site requests `/images/{id}/640.webp` or `/images/{id}/1280.webp` (`sized()` in `web/src/ui.tsx`).
 That route never converts on request. A copy is served with a one-year `immutable` cache, because
 an id's picture never changes: a new URL is a new row. The `.webp` extension lets Cloudflare cache
 it, while the bare `/images/{id}` is not cached at the edge. Until the copy exists, the route serves
-the original with a one-hour cache. `og:image`, JSON-LD and `cover_url` keep the original
-`/images/{id}` (JPEG/PNG) for social previews.
+the original with a one-hour cache. `/images/{id}` (used by `og:image`, JSON-LD and `cover_url`)
+serves the original while it exists and the 1280 copy (`image/webp`) once it is converted.
 
-Every way artwork rows go away removes the files too, original and both copies, unless another row
+Every way artwork rows go away removes the files too, both copies and any original left, unless another row
 still uses the same file: retention (`retention.py`, scheduled and `POST /maintenance/retention`)
 and an image URL a source replaced (`upsert_events` returns the stale files, and `service._save_batch`
 deletes them). After each retention pass, `sweep_orphans` deletes any file under the media

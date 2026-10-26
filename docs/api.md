@@ -16,7 +16,7 @@ FastAPI, served by the same process as the website.
 | GET | `/go/{id}` | Redirect (302) to the seller's page, UTM-tagged and counted. `?at=` is where on our page it was clicked. Rate-limited per IP (see [ticket links](ticket-links.md)) |
 | GET | `/changes` | Deal-change feed, newest first: `since` (default last 24 hours), `kind` (e.g. `price_down`), `source`, `limit` |
 | GET | `/categories` | Counts per genre, date, weekday, time slot, entry type, venue, city, lineup, event type, source |
-| GET | `/images/{id}` | Stored artwork bytes (the original, as downloaded) |
+| GET | `/images/{id}` | Stored artwork: the 1280px WebP copy (originals are deleted once converted); the original only for pictures that can't be converted |
 | GET | `/images/{id}/{640\|1280}.webp` | The artwork resized to that width as WebP, cached a year (`immutable`). Until the copy exists: the original, cached an hour |
 | GET | `/posts`, `/posts/{slug}` | Blog posts as JSON |
 | GET | `/site` | Site name, base URL, accessibility and privacy contacts |
