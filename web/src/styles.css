@@ -763,6 +763,7 @@ button, input, select { font: inherit; color: inherit; }
 .statement .muted { color: var(--muted); }
 .foot a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .foot-disclaimer { max-width: 680px; margin: 20px auto 0; padding: 10px 16px; border-radius: 12px; background: var(--pink); color: #fff; font: 600 13px/1.6 "Heebo", system-ui, sans-serif; letter-spacing: 0; box-shadow: 0 0 24px rgb(255 46 147 / .35); }
+.foot-copy { margin: 14px 0 0; font-size: 12px; letter-spacing: 0; opacity: .6; }
 .foot-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; margin-bottom: 18px; letter-spacing: 0; font-size: 14px; }
 .adm-banner { background: rgb(255 209 102 / .08); border: 1px solid rgb(255 209 102 / .35); border-radius: 12px; padding: 10px 14px; margin-bottom: 10px; }
 

@@ -7,6 +7,7 @@ WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY web/ ./
+ARG RAILWAY_GIT_COMMIT_SHA
 RUN npm run build
 
 # ---------------------------------------------------------------- app

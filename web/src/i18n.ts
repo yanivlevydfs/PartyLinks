@@ -26,6 +26,7 @@ export const STRINGS = {
     privacy: "מדיניות פרטיות",
     cookieSettings: "הגדרות עוגיות",
     terms: "תנאי שימוש",
+    rights: "כל הזכויות שמורות",
     buyNote: "המכירה, המחיר וקיום האירוע באחריות אתר הכרטיסים והמארגן. SPOTX רק מציג את האירוע.",
     disclaimer: "SPOTX רק אוסף ומציג אירועים שנמכרים באתרים אחרים. האתר ובעליו אינם אחראים לאירועים, לתוכנם, למחירים או לשינויי מחיר. הרכישה וכל פרטי האירוע הם באחריות המארגן ואתר הכרטיסים.",
     mapGate: {
@@ -216,6 +217,7 @@ export const STRINGS = {
     privacy: "Privacy policy",
     cookieSettings: "Cookie settings",
     terms: "Terms of use",
+    rights: "All rights reserved",
     buyNote: "The sale, price and the event itself are the ticketing site's and organizer's responsibility. SPOTX only lists the event.",
     disclaimer: "SPOTX only collects and shows events sold on other sites. The site and its owners are not responsible for the events, their content, prices or price changes. Purchases and all event details are the responsibility of the organizer and the ticket site.",
     mapGate: {
