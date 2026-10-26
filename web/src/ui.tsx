@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
@@ -98,7 +98,7 @@ export function Layout() {
       <header className="top">
         <div className="wrap top-row">
           <Link className="logo" to="/" aria-label="SPOTX">
-            <svg className="mark" viewBox="11 5 42 54" aria-hidden="true"><defs><linearGradient id="logo-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ff2e93" /><stop offset=".55" stopColor="#9d4dff" /><stop offset="1" stopColor="#19e3ff" /></linearGradient></defs><path className="pin" d="M32 55C32 55 14.5 38.5 14.5 25.5a17.5 17.5 0 0 1 35 0C49.5 38.5 32 55 32 55Z" stroke="url(#logo-grad)" /><path className="x" d="M25.5 19l13 13M38.5 19l-13 13" /></svg>
+            <Mark />
             <span className="word">SPOT<span>X</span></span>
           </Link>
           <nav className="nav">
@@ -355,7 +355,6 @@ export function CardSkeletons({ n }: { n: number }) {
   );
 }
 
-/** The brand loader: the boot screen's mark (a line to an X). `small` sits inline in a button or bar. */
 /** An email address that is never in the page as text: GET /site sends it reversed and base64-encoded,
  * and only a person's click decodes it and links it (harvesters read the HTML, the JSON and mailto links). */
 export function HiddenEmail({ code, subject }: { code: string | undefined; subject?: string }) {
@@ -371,11 +370,35 @@ export function HiddenEmail({ code, subject }: { code: string | undefined; subje
   return <a href={`mailto:${email}${subject ? `?subject=${encodeURIComponent(subject)}` : ""}`} dir="ltr">{email}</a>;
 }
 
+/** The brand mark: a gradient map pin with a glowing spot, standing on a ring. Same drawing as favicon.svg
+ * and the boot screen in index.html. Gradient ids are per instance (several marks share a page). */
+export function Mark() {
+  const id = useId();
+  return (
+    <svg className="mark" viewBox="12 5 40 56" aria-hidden="true">
+      <defs>
+        <linearGradient id={`${id}g`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ff2e93" /><stop offset=".55" stopColor="#9d4dff" /><stop offset="1" stopColor="#19e3ff" /></linearGradient>
+        <linearGradient id={`${id}s`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".45" /><stop offset=".5" stopColor="#fff" stopOpacity="0" /></linearGradient>
+        <radialGradient id={`${id}d`} cx=".4" cy=".35" r=".7"><stop offset="0" stopColor="#fff" /><stop offset=".6" stopColor="#ffd0e8" /><stop offset="1" stopColor="#ff2e93" /></radialGradient>
+      </defs>
+      <ellipse className="ring" cx="32" cy="56" rx="12" ry="3.4" stroke={`url(#${id}g)`} />
+      <g className="pin">
+        <path d="M32 56C32 56 14 39 14 25.5a18 18 0 0 1 36 0C50 39 32 56 32 56Z" fill={`url(#${id}g)`} />
+        <path d="M32 56C32 56 14 39 14 25.5a18 18 0 0 1 36 0C50 39 32 56 32 56Z" fill={`url(#${id}s)`} />
+        <circle cx="32" cy="25.5" r="9" fill="#0b0616" />
+        <circle className="dot" cx="32" cy="25.5" r="4.6" fill={`url(#${id}d)`} />
+      </g>
+    </svg>
+  );
+}
+
+/** The brand loader: the mark bouncing on its ring over the SPOTX wordmark. `small` (mark only) sits inline in a button or bar. */
 export function Loader({ small }: { small?: boolean }) {
   const { t } = useT();
   return (
     <span className={small ? "loader small" : "loader"} role="status" aria-label={t.loading}>
-      <svg className="mark" viewBox="11 5 42 54" aria-hidden="true"><defs><linearGradient id="loader-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ff2e93" /><stop offset=".55" stopColor="#9d4dff" /><stop offset="1" stopColor="#19e3ff" /></linearGradient></defs><path className="pin" d="M32 55C32 55 14.5 38.5 14.5 25.5a17.5 17.5 0 0 1 35 0C49.5 38.5 32 55 32 55Z" stroke="url(#loader-grad)" /><path className="x" d="M25.5 19l13 13M38.5 19l-13 13" /></svg>
+      <Mark />
+      {!small && <b className="word">SPOT<span>X</span></b>}
     </span>
   );
 }
