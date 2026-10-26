@@ -22,7 +22,8 @@ from datetime import UTC, datetime, timedelta
 
 
 def call(method: str, path: str, body: dict | None = None) -> object:
-    domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+    # www.spotx.fun 301s to spotx.fun, and urllib follows a 301 on a POST as a GET (a 404 at /sources/x/run).
+    domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN", "").removeprefix("www.")
     base = os.environ.get("PARTYLINKS_URL") or (f"https://{domain}" if domain else "http://localhost:8000")
     token = os.environ.get("PARTYLINKS_ADMIN__TOKEN", "")
     request = urllib.request.Request(
