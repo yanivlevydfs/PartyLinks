@@ -320,10 +320,12 @@ button, input, select { font: inherit; color: inherit; }
   .filters > .frow { grid-template-columns: 1fr; padding: 4px 0; }
   .filters > .frow .frow-label { display: none; }
   .filters > .frow .chips.scroll { margin-inline: -12px; padding-inline: 12px 24px; }
-  /* One line that scrolls sideways on the narrowest phones instead of widening the page. */
-  .filters > .filter-bar { flex-wrap: nowrap; padding: 8px 0; overflow-x: auto; scrollbar-width: none; }
-  .filters > .filter-bar::-webkit-scrollbar { display: none; }
+  /* One line that fits the narrowest phones: compact buttons, the sort box takes what is left. */
+  .filters > .filter-bar { flex-wrap: nowrap; gap: 6px; padding: 8px 0; }
   .filters > .filter-bar .sort-label { display: none; }
+  .filter-bar .f-open, .filter-bar .chip.toggle { min-height: 36px; padding: 4px 10px; font-size: 13px; gap: 6px; }
+  .filter-bar .sort { flex: 1 1 0; min-width: 0; justify-content: flex-end; }
+  .filter-bar .sort select { min-width: 0; max-width: 100%; min-height: 36px; padding: 4px 8px; font-size: 13px; }
   .chip { min-height: 36px; }
 }
 

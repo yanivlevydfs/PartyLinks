@@ -99,7 +99,7 @@ export function Filters() {
   const toggles = (
     <>
       <Chip className="toggle free" on={f.freeOnly} onClick={() => set({ freeOnly: !f.freeOnly })}>
-        <span className="tick" aria-hidden /> {t.freeOnly}
+        <span className="tick" aria-hidden /> {mobile ? t.free : t.freeOnly}
       </Chip>
       {!mobile && (
         <Chip className="toggle" on={f.discountOnly} onClick={() => set({ discountOnly: !f.discountOnly })}>
