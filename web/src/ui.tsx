@@ -265,6 +265,24 @@ export function Card({ e }: { e: EventSummary }) {
   );
 }
 
+/** Ref for a popover: a press outside it or Escape calls ``close`` while it is open. */
+function useDismiss<T extends HTMLElement>(open: boolean, close: () => void) {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    if (!open) return;
+    const handler = (ev: Event) => {
+      if (ev instanceof KeyboardEvent ? ev.key === "Escape" : !ref.current?.contains(ev.target as Node)) close();
+    };
+    document.addEventListener("pointerdown", handler);
+    document.addEventListener("keydown", handler);
+    return () => {
+      document.removeEventListener("pointerdown", handler);
+      document.removeEventListener("keydown", handler);
+    };
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  return ref;
+}
+
 /** Google and Outlook take the event in a link; Apple and every other calendar import an .ics file. */
 export function AddToCalendar({ e, start, compact }: { e: EventSummary; start: string; compact?: boolean }) {
   const { t } = useT();
@@ -284,10 +302,13 @@ export function AddToCalendar({ e, start, compact }: { e: EventSummary; start: s
     `SUMMARY:${esc(e.title)}`, where && `LOCATION:${esc(where)}`, `URL:${url}`, `DESCRIPTION:${esc(url)}`,
     "END:VEVENT", "END:VCALENDAR",
   ].filter(Boolean).join("\r\n");
+  const [open, setOpen] = useState(false);
+  const ref = useDismiss<HTMLDetailsElement>(open, () => setOpen(false));
   return (
-    <details className={"cal" + (compact ? " on-card" : "")}>
+    // Closes on a press outside, Escape, or once a calendar is picked.
+    <details ref={ref} open={open} onToggle={(ev) => setOpen(ev.currentTarget.open)} className={"cal" + (compact ? " on-card" : "")}>
       <summary aria-label={t.addToCal} title={t.addToCal}>📅{!compact && " " + t.addToCal}</summary>
-      <div className="cal-menu">
+      <div className="cal-menu" onClick={() => setOpen(false)}>
         <a href={google} target="_blank" rel="noopener noreferrer">Google ↗</a>
         <a href={outlook} target="_blank" rel="noopener noreferrer">Outlook ↗</a>
         <a href={"data:text/calendar;charset=utf-8," + encodeURIComponent(ics)} download={`${e.slug || e.id}.ics`}>{t.calOther}</a>
@@ -300,19 +321,7 @@ export function AddToCalendar({ e, start, compact }: { e: EventSummary; start: s
 export function ShareButton({ path, title }: { path: string; title: string }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (ev: Event) => {
-      if (ev instanceof KeyboardEvent ? ev.key === "Escape" : !ref.current?.contains(ev.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", close);
-    document.addEventListener("keydown", close);
-    return () => {
-      document.removeEventListener("pointerdown", close);
-      document.removeEventListener("keydown", close);
-    };
-  }, [open]);
+  const ref = useDismiss<HTMLDivElement>(open, () => setOpen(false));
   const click = () => {
     const url = window.location.origin + path;
     if (navigator.share && matchMedia("(pointer: coarse)").matches) navigator.share({ title, url }).catch(() => {});
