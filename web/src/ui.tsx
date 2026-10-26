@@ -165,6 +165,7 @@ const TABS: [string, keyof Strings["nav"], ReactNode][] = [
 export function Hero({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <section className="hero">
+      <div className="hero-fx" aria-hidden />
       <div className="wrap">
         <h1 dir="auto">{title}</h1>
         {children}

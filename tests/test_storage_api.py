@@ -775,6 +775,20 @@ def test_smart_search_reads_places_genres_prices_and_covers_abroad(tmp_path: Pat
         assert ids("nothing like this") == []
 
 
+def test_search_lists_title_matches_first_then_lineup_and_venue(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    soon = datetime.now(UTC) + timedelta(days=1)
+    seed(settings, [
+        event("talk", soon, title="A lecture", description="about moonlight raves"),  # soonest, text only
+        event("club", soon + timedelta(days=1), title="Friday", venue_name="Moon Club"),
+        event("party", soon + timedelta(days=2), title="Moon party"),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda qs: [e["source_event_id"] for e in client.get(f"/events?{qs}").json()["items"]]  # noqa: E731
+        assert ids("q=moon") == ["party", "club", "talk"]
+        assert ids("q=lecture") == ["talk"]
+
+
 def test_abroad_filters_come_from_the_stored_events(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     future = datetime.now(UTC) + timedelta(days=2)

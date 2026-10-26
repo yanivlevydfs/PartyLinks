@@ -51,7 +51,7 @@ from partylinks.media import VARIANT_WIDTHS, variant_path
 from partylinks.models import EntryType
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
-from partylinks.search import smart_filters
+from partylinks.search import relevance, smart_filters
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
 from partylinks.weather import router as weather_router
@@ -976,17 +976,28 @@ def _register_routes(app: FastAPI) -> None:
         if page > cfg.api.max_page:  # no paging through every event: narrow the filters instead
             raise HTTPException(400, f"page is at most {cfg.api.max_page}")
 
+        # A search in the default date order puts title matches first, then lineup / venue, then the rest.
+        q = request.query_params.get("q")
+        rank = relevance(q) if q and sort is EventSort.start_asc else None
+
         def build(session: Session) -> EventPage:
-            total = session.scalar(select(func.count()).select_from(EventRow).where(*filters)) or 0
-            rows = session.scalars(
-                select(EventRow)
-                .where(*filters)
-                .order_by(_SORT_COLUMNS[sort], EventRow.start_at, EventRow.id)
-                .offset((page - 1) * size)
-                .limit(size)
-                # Cards never show the long text columns.
-                .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
-            ).all()
+            # Cards never show the long text columns.
+            card = select(EventRow).options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
+            if rank is None:
+                total = session.scalar(select(func.count()).select_from(EventRow).where(*filters)) or 0
+                rows = session.scalars(
+                    card.where(*filters)
+                    .order_by(_SORT_COLUMNS[sort], EventRow.start_at, EventRow.id)
+                    .offset((page - 1) * size)
+                    .limit(size)
+                ).all()
+            else:
+                # Ranking reads every match anyway, so one pass gives both the order and the total
+                # (measured at 35k events: as fast as the count + page it replaces).
+                ids = session.scalars(select(EventRow.id).where(*filters).order_by(rank, EventRow.start_at, EventRow.id)).all()
+                total, wanted = len(ids), ids[(page - 1) * size : page * size]
+                found = {r.id: r for r in session.scalars(card.where(EventRow.id.in_(wanted)))}
+                rows = [found[i] for i in wanted if i in found]
             extras = _summary_extras(session, rows)
             items = [EventSummaryOut.model_validate(r).model_copy(update=extras[r.id]) for r in rows]
             return EventPage(total=total, page=page, page_size=size, items=items)

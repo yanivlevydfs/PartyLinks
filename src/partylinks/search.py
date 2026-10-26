@@ -12,7 +12,7 @@ from functools import cache
 from zoneinfo import ZoneInfo
 
 import pycountry
-from sqlalchemy import ColumnElement, String, and_, cast, or_
+from sqlalchemy import ColumnElement, String, and_, case, cast, or_
 
 from partylinks import seo
 from partylinks.config import Settings
@@ -42,11 +42,30 @@ WEEKEND = {
 }
 
 
+def _pattern(word: str) -> str:
+    return "%" + word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+
+
 def text_match(word: str) -> Cond:
-    pattern = "%" + word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+    pattern = _pattern(word)
     return or_(lineup_contains(word), *(c.ilike(pattern, escape="\\") for c in (
         EventRow.title, EventRow.description, EventRow.venue_name, EventRow.city, EventRow.address,
     )))  # fmt: skip
+
+
+def relevance(q: str) -> ColumnElement[int] | None:
+    """0: a searched word is in the title, 1: in the lineup or venue, 2: only elsewhere (description, city).
+    Sorts search results before the date, so "טכנו" lists techno parties before a talk that mentions it."""
+    words = [w for w in re.findall(r"\w{2,}", q.casefold()) if not w.isdigit()]
+    if not words:
+        return None
+
+    forms = [f for w in words for f in ((w, w[1:]) if len(w) > 3 and w[0] in "בלמהו" else (w,))]
+    return case(
+        (or_(*(EventRow.title.ilike(_pattern(f), escape="\\") for f in forms)), 0),
+        (or_(*(lineup_contains(f) | EventRow.venue_name.ilike(_pattern(f), escape="\\") for f in forms)), 1),
+        else_=2,
+    )
 
 
 def _genre(cfg: Settings, genre: str) -> Cond:

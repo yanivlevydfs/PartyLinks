@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useCategories, useLandingInfo, useRails } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
-import { Card, CardSkeletons, EventGrid, Hero, Related, useT, useTitle } from "../ui";
+import { artistPath, Card, CardSkeletons, EventGrid, Hero, Related, useT, useTitle, venuePath } from "../ui";
 import type { EventSummary } from "../types";
 import { Quiz } from "./Quiz";
 
@@ -91,6 +91,7 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   // Debounce the search box; the store keeps what was typed. A new search starts from a clean
   // filter, so leftover filters (date, area, genre...) never hide what was searched for.
   const [q, setQ] = useState(f.q);
+  const [suggest, setSuggest] = useState(false);
   useEffect(() => {
     const id = setTimeout(() => {
       const text = q.trim();
@@ -112,7 +113,12 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   return (
     <>
       <Hero title={quiz ? t.quiz.title : heading}>
-        <input className="search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.search} aria-label={t.search} />
+        {/* Suggestions stay open while focus is anywhere in the box (Tab into them), close on leaving or Escape. */}
+        <div className="search-box" onFocus={() => setSuggest(true)} onKeyDown={(e) => e.key === "Escape" && setSuggest(false)}
+          onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setSuggest(false)}>
+          <input className="search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.search} aria-label={t.search} />
+          {suggest && <Suggestions q={q} />}
+        </div>
       </Hero>
       <main className="wrap">
         {quiz ? (
@@ -179,5 +185,38 @@ function Rail({ title, sub, pool }: { title: string; sub: string; pool: EventSum
         {loaded ? items.map((e) => <Card key={e.id} e={e} />) : <CardSkeletons n={4} />}
       </div>
     </section>
+  );
+}
+
+/** Artists, venues and cities matching the search text, under the box while typing. The full name index
+ *  (/categories?anywhere=true, ~190KB, cached) loads on the first focus, not with the page.
+ *  ponytail: filtered in the browser; a /search/suggest endpoint if the index outgrows a phone. */
+function Suggestions({ q }: { q: string }) {
+  const { t, lang } = useT();
+  const cats = useCategories({ anywhere: "true" }).data;
+  const text = q.trim().toLocaleLowerCase();
+  const items = useMemo(() => {
+    if (!cats || text.length < 2) return [];
+    const pick = <T extends { value: string; events: number }>(list: T[], n: number) => list
+      .filter((x) => x.value.toLocaleLowerCase().includes(text))
+      .sort((a, b) => +b.value.toLocaleLowerCase().startsWith(text) - +a.value.toLocaleLowerCase().startsWith(text) || b.events - a.events)
+      .slice(0, n);
+    const cities = Object.entries(CITIES).filter(([, c]) => c.he.includes(q.trim()) || c.en.toLowerCase().includes(text)).slice(0, 2)
+      .map(([slug, c]) => ({ key: "c" + slug, icon: "📍", label: c[lang], to: `/city/${slug}`, n: cats.cities.find((x) => x.value === c.he)?.events }));
+    return [
+      ...cities,
+      ...pick(cats.lineup, 4).map((a) => ({ key: "a" + a.value, icon: "🎧", label: a.value, to: artistPath(a.value), n: a.events })),
+      ...pick(cats.venues, 3).map((v) => ({ key: "v" + v.value, icon: "🏛", label: v.value, to: venuePath(v.value), n: v.events })),
+    ];
+  }, [cats, text, q, lang]);
+  if (!items.length) return null;
+  return (
+    <ul className="suggest" aria-label={t.search}>
+      {items.map((i) => (
+        <li key={i.key}><Link to={i.to}>
+          <span aria-hidden>{i.icon}</span><b dir="auto">{i.label}</b>{i.n != null && <small>{t.results(i.n)}</small>}
+        </Link></li>
+      ))}
+    </ul>
   );
 }

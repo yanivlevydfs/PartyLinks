@@ -122,9 +122,11 @@ button, input, select { font: inherit; color: inherit; }
 .lang:hover { border-color: var(--cyan); box-shadow: 0 0 16px rgb(25 227 255 / .35); }
 
 /* ------------------------------------------------------------------ hero */
-.hero { position: relative; padding: 48px 0 26px; overflow: hidden; isolation: isolate; }
-/* Sweeping laser beams. */
-.hero::before {
+/* Above the page below it, unclipped, so the search suggestions can hang over the list. */
+.hero { position: relative; z-index: 2; padding: 48px 0 26px; isolation: isolate; }
+/* Sweeping laser beams, clipped to the hero by their own layer. */
+.hero-fx { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.hero-fx::before {
   content: ""; position: absolute; z-index: -1; width: 140vmax; height: 140vmax; left: 50%; top: -100%;
   translate: -50% 0;
   background: repeating-conic-gradient(from 0deg at 50% 50%,
@@ -153,6 +155,17 @@ button, input, select { font: inherit; color: inherit; }
   box-shadow: 0 0 0 0 transparent; transition: border-color .2s, box-shadow .3s;
 }
 .search::placeholder { color: #7d70a3; }
+.search-box { position: relative; width: min(640px, 100%); }
+.search-box .search { width: 100%; }
+.suggest {
+  position: absolute; z-index: 50; inset: calc(100% + 6px) 0 auto; margin: 0; padding: 6px; list-style: none;
+  background: var(--panel-solid); border: 1px solid var(--line-hot); border-radius: 18px;
+  box-shadow: 0 20px 50px -10px rgb(0 0 0 / .8); animation: rise .15s both;
+}
+.suggest a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; color: var(--text); }
+.suggest a:hover, .suggest a:focus-visible { background: rgb(255 46 147 / .12); text-shadow: none; outline: none; }
+.suggest b { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggest small { flex: none; color: var(--muted); font-size: 12px; }
 .search:focus { border-color: var(--pink); box-shadow: 0 0 0 4px rgb(255 46 147 / .15), 0 0 40px rgb(255 46 147 / .3); }
 
 /* ------------------------------------------------------------------ filters */
