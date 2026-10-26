@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import os
+import warnings
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -15,6 +16,7 @@ from fastapi.testclient import TestClient
 from PIL import Image
 from sqlalchemy import text, update
 
+from partylinks import media as media_module
 from partylinks import service as service_module
 from partylinks.api import create_app
 from partylinks.config import HttpSettings, Settings
@@ -276,3 +278,14 @@ def test_orphan_sweep_admin_endpoint_defaults_to_a_dry_run(tmp_path: Path) -> No
         assert stray.exists()
         assert client.post("/admin/api/maintenance/orphans?dry_run=false", headers=auth).json()["files"] == 1
     assert not stray.exists() and media.path_for("test/flyer.jpg").exists()
+
+
+
+def test_an_oversized_picture_keeps_its_original_quietly(tmp_path: Path, monkeypatch: Any, caplog: Any) -> None:
+    path = tmp_path / "big.jpg"
+    path.write_bytes(picture((300, 200)))
+    monkeypatch.setattr(media_module, "MAX_PIXELS", 50_000)  # stands in for a 100M+ pixel poster
+    with warnings.catch_warnings(record=True) as seen:
+        assert make_variants(path, 80) is False
+    assert not seen and not caplog.text
+    assert not has_variants(path)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 
 import pytest
@@ -27,6 +28,7 @@ def test_startup_block_and_status_line_hide_secrets(tmp_path: Path, caplog: pyte
     assert "SPOTX 0.1.0 starting" in text and "scheduler  OFF" in text
     assert "proxy      proxy.example:8080" in text and "token set" in text
     assert "secret" not in text.replace("token set", "")
-    assert "status: up 0h 0m | events 0 upcoming / 0 | runs 24h: none | scheduler off | clicks 24h: 0" in text
+    # Uptime counts from process start: the whole test run, not this test.
+    assert re.search(r"status: up \d+h \d+m \| events 0 upcoming / 0 \| runs 24h: none \| scheduler off \| clicks 24h: 0", text)
     assert "SPOTX stopping after" in text
     db.engine.dispose()

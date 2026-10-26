@@ -59,6 +59,9 @@ def sniff_image_type(data: bytes) -> str | None:
 PERSIST_CHUNK = 50
 VARIANT_WIDTHS = (640, 1280)  # cards (296px wide on desktop, 166px at 3x on phones) / event page (420px, 2x-3x)
 MAX_PIXELS = 50_000_000  # bigger pictures are not resized (the decode alone is ~200MB): the original is served
+# MAX_PIXELS replaces PIL's own guard (warn past ~89M pixels, raise past ~179M): that one fires on open and
+# filled the log, while make_variants reads only the header before the check below. PIL is used nowhere else.
+Image.MAX_IMAGE_PIXELS = None
 _ALPHA_MODES = ("RGBA", "LA", "PA")
 
 
