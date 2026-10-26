@@ -46,6 +46,10 @@ Each post is a file `content/blog/<slug>.html`: a YAML header between `---` line
   matching upcoming events. `venue=`, `artist=` and `free=true` also work.
 - **Scheduled posts.** A post dated in the future, or marked `draft: true`, stays hidden until its
   date.
+- **English version.** Every post also gets `content/blog/en/<slug>.html`: the same shape, with
+  only `title`, `description` and `faq` in the header (date, category and the rest come from the
+  Hebrew file) and the same `<!--events-->` comments. `?lang=en` serves it, with hreflang and
+  sitemap alternates. A post without one is shown in Hebrew to English readers too.
 
 Posts are served three ways:
 
