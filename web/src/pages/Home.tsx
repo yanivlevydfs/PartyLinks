@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
@@ -140,8 +140,16 @@ function Trending() {
   const row = useRef<HTMLDivElement>(null);
   // Day-granular, so the query key stays stable within a visit.
   const until = new Date(Date.now() + TRENDING_DAYS * 24 * 3600 * 1000).toISOString().slice(0, 10);
-  const q = useEvents({ sort: "-group_size", date_to: until, page_size: "12" });
-  const items = (q.data?.pages[0]?.items ?? []).filter((e) => (e.listings ?? 1) > 1);
+  const q = useEvents({ sort: "-group_size", date_to: until, page_size: "48" });
+  // A random 12 of the top 48, reshuffled each visit, so the row doesn't show the same events every time.
+  const items = useMemo(() => {
+    const pool = (q.data?.pages[0]?.items ?? []).filter((e) => (e.listings ?? 1) > 1);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, 12);
+  }, [q.data]);
   if (!q.isPending && items.length < 3) return null;
   const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.8, behavior: "smooth" });
   return (
