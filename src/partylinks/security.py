@@ -42,7 +42,7 @@ DATA_PATHS = ("/events", "/categories", "/posts", "/ticket-sites", "/locate")
 
 CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "default-src 'self'",
-    "script-src 'self' https://www.googletagmanager.com",  # Google Analytics (web/public/gtag.js)
+    "script-src 'self' https://www.googletagmanager.com",  # Google Analytics, after consent (consent.tsx)
     # Leaflet positions tiles with inline styles. Fonts are self-hosted (no Google Fonts: privacy).
     "style-src 'self' 'unsafe-inline'",
     # The accessibility widget fetches its language packs and dyslexia font from jsDelivr (URLs hardcoded).

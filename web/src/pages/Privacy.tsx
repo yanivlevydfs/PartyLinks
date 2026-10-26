@@ -34,7 +34,7 @@ const TEXT = {
         title: "מה אנחנו לא עושים",
         body: [],
         list: [
-          "לא משתמשים בעוגיות פרסום, מעקב, פרופיילינג או סטטיסטיקה (כמו Google Analytics או פיקסלים של רשתות חברתיות).",
+          "לא משתמשים בעוגיות פרסום או פרופיילינג, ולא בפיקסלים של רשתות חברתיות. סטטיסטיקת גלישה (Google Analytics) נטענת רק בהסכמתכם.",
           "לא מוכרים, לא משכירים ולא מעבירים מידע לצדדים שלישיים לשיווק.",
           "לא מצליבים מידע כדי לזהות אתכם, ולא מקבלים החלטות אוטומטיות שנוגעות אליכם.",
         ],
@@ -42,7 +42,7 @@ const TEXT = {
       {
         title: "עוגיות ואחסון מקומי",
         body: [
-          "עוגיות (Cookies) ואחסון מקומי (Local Storage) הם קבצים קטנים שאתר שומר בדפדפן. האתר שומר רק פריטים הכרחיים להפעלתו, שאינם דורשים הסכמה ואינם משמשים למעקב. תוכן מצד שלישי שאינו הכרחי (מפת OpenStreetMap) נטען רק לאחר שנתתם לכך הסכמה מפורשת, שאותה אפשר לשנות או לבטל בכל עת דרך \"הגדרות עוגיות\" בתחתית כל עמוד או בכפתור שלמטה.",
+          "עוגיות (Cookies) ואחסון מקומי (Local Storage) הם קבצים קטנים שאתר שומר בדפדפן. בלי הסכמה, האתר שומר רק פריטים הכרחיים להפעלתו, שאינם משמשים למעקב. סטטיסטיקת גלישה (Google Analytics, ששומרת עוגייה) ותוכן מצד שלישי שאינו הכרחי (מפת OpenStreetMap) נטענים רק לאחר שנתתם לכך הסכמה מפורשת, שאותה אפשר לשנות או לבטל בכל עת דרך \"הגדרות עוגיות\" בתחתית כל עמוד או בכפתור שלמטה.",
           "הטבלה הבאה מפרטת כל מה שנשמר במכשיר שלכם וכל צד שלישי שהדפדפן פונה אליו:",
         ],
       },
@@ -51,7 +51,7 @@ const TEXT = {
       {
         title: "צדדים שלישיים והעברת מידע לחו\"ל",
         body: [
-          "האתר מתארח אצל ספק תשתית ענן (Railway, ארה\"ב), שמעבד עבורנו את התעבורה ואת יומני השרת. ספקי התשתית, ו-jsDelivr ו-OpenStreetMap המפורטים בטבלה, נמצאים מחוץ לישראל; ההעברה נעשית בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה), התשס\"א-2001, ולמדיניות הפרטיות של כל ספק.",
+          "האתר מתארח אצל ספק תשתית ענן (Railway, ארה\"ב), שמעבד עבורנו את התעבורה ואת יומני השרת. ספקי התשתית, ו-jsDelivr, Google ו-OpenStreetMap המפורטים בטבלה, נמצאים מחוץ לישראל; ההעברה נעשית בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה), התשס\"א-2001, ולמדיניות הפרטיות של כל ספק.",
           "הגופנים באתר מאוחסנים בשרת שלנו, כך שלא נשלחת בקשה ל-Google Fonts. כרזות האירועים נשמרות ברובן בשרת שלנו; כשכרזה טרם נשמרה, היא נטענת ישירות מאתר הכרטיסים שפרסם אותה, בלי לשלוח לו את כתובת העמוד שממנו הגעתם.",
           "לחיצה על קישור לרכישת כרטיסים מעבירה אתכם לאתר חיצוני (כמו Go-Out, Eventer וכו'). אתרים אלה אינם בשליטתנו, וחלה עליהם מדיניות הפרטיות שלהם.",
         ],
@@ -115,7 +115,7 @@ const TEXT = {
         title: "What we don't do",
         body: [],
         list: [
-          "No advertising, tracking, profiling or analytics cookies (such as Google Analytics or social media pixels).",
+          "No advertising or profiling cookies, and no social media pixels. Usage statistics (Google Analytics) load only with your consent.",
           "We don't sell, rent or share data with third parties for marketing.",
           "We don't combine data to identify you, and make no automated decisions about you.",
         ],
@@ -123,7 +123,7 @@ const TEXT = {
       {
         title: "Cookies and local storage",
         body: [
-          "Cookies and local storage are small files a website keeps in your browser. This site stores only items it needs to work; they require no consent and are never used for tracking. Non-essential third-party content (the OpenStreetMap map) loads only after your explicit consent, which you can change or withdraw at any time from \"Cookie settings\" at the bottom of every page or with the button below.",
+          "Cookies and local storage are small files a website keeps in your browser. Without consent, this site stores only items it needs to work, never used for tracking. Usage statistics (Google Analytics, which sets a cookie) and non-essential third-party content (the OpenStreetMap map) load only after your explicit consent, which you can change or withdraw at any time from \"Cookie settings\" at the bottom of every page or with the button below.",
           "This table lists everything stored on your device and every third party your browser contacts:",
         ],
       },
@@ -132,7 +132,7 @@ const TEXT = {
       {
         title: "Third parties and transfers abroad",
         body: [
-          "The site is hosted by a cloud infrastructure provider (Railway, USA), which processes traffic and server logs on our behalf. The hosting provider, and jsDelivr and OpenStreetMap listed above, are outside Israel; transfers follow the Privacy Protection (Transfer of Data to Databases Abroad) Regulations, 2001, and each provider's privacy policy.",
+          "The site is hosted by a cloud infrastructure provider (Railway, USA), which processes traffic and server logs on our behalf. The hosting provider, and jsDelivr, Google and OpenStreetMap listed above, are outside Israel; transfers follow the Privacy Protection (Transfer of Data to Databases Abroad) Regulations, 2001, and each provider's privacy policy.",
           "Our fonts are served from our own server, so nothing is sent to Google Fonts. Event posters are mostly stored on our server; a poster not yet stored loads directly from the ticketing site that published it, without telling it which page you came from.",
           "Ticket links take you to external sites (Go-Out, Eventer, etc.). They are not under our control and their own privacy policies apply.",
         ],

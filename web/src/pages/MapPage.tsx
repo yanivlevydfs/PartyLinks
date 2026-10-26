@@ -68,7 +68,7 @@ export default function MapPage() {
           <p>{t.mapGate.text} <Link to="/privacy">{t.privacy}</Link></p>
           <div className="consent-btns">
             <button className="c-btn" onClick={() => setOnce(true)}>{t.mapGate.once}</button>
-            <button className="c-btn ghost" onClick={() => save({ ...consent?.choices, external: true })}>{t.mapGate.always}</button>
+            <button className="c-btn ghost" onClick={() => save({ analytics: false, ...consent?.choices, external: true })}>{t.mapGate.always}</button>
           </div>
         </div>
       )}

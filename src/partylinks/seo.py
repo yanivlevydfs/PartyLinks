@@ -554,12 +554,13 @@ def privacy_page(session: Session, cfg: Settings, lang: str) -> Page:
     he = lang == "he"
     title = "מדיניות פרטיות ועוגיות" if he else "Privacy and cookie policy"
     text = (
-        f"{cfg.site.name} פועל לפי חוק הגנת הפרטיות, התשמ\"א-1981 (כולל תיקון 13). אין באתר הרשמה, "
-        "עוגיות פרסום, מעקב או סטטיסטיקה; נשמרים בדפדפן רק פריטים הכרחיים, ותוכן מצד שלישי (מפה) נטען רק בהסכמה."
+        f"{cfg.site.name} פועל לפי חוק הגנת הפרטיות, התשמ\"א-1981 (כולל תיקון 13). אין באתר הרשמה "
+        "ועוגיות פרסום; נשמרים בדפדפן רק פריטים הכרחיים, וסטטיסטיקת גלישה (Google Analytics) ותוכן מצד שלישי "
+        "(מפה) נטענים רק בהסכמה."
         if he
         else f"{cfg.site.name} follows the Israeli Privacy Protection Law, 1981 (including Amendment 13). There is no "
-        "sign-up and no advertising, tracking or analytics cookies; only necessary items are stored in the browser, "
-        "and third-party content (the map) loads only with consent."
+        "sign-up and no advertising cookies; only necessary items are stored in the browser, and usage statistics "
+        "(Google Analytics) and third-party content (the map) load only with consent."
     )
     contact = ""  # the address is revealed on the page by a click, never in the HTML (harvesters)
     return Page(

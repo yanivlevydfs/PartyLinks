@@ -3,22 +3,54 @@
 // parties receive their data, and load optional third-party content only after an informed, freely
 // given, opt-in choice that is as easy to refuse or withdraw as to give.
 //
-// The site sets no advertising or analytics cookies. Strictly necessary storage needs no consent but
-// is disclosed; the only optional category is external content (OpenStreetMap map tiles).
+// The site sets no advertising cookies. Strictly necessary storage needs no consent but is disclosed;
+// the optional categories are usage statistics (Google Analytics, not even loaded until allowed) and
+// external content (OpenStreetMap map tiles).
 // STORAGE below is also the table on the privacy page (/privacy): keep it in sync with the code.
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { create } from "zustand";
 import { useT } from "./ui";
 
-export type Category = "external";
-const OPTIONAL: Category[] = ["external"];
+export type Category = "analytics" | "external";
+const OPTIONAL: Category[] = ["analytics", "external"];
+
+const GA_ID = "G-40YENQPX7X";
+
+/** Loads Google Analytics on consent; on withdrawal stops it and deletes its cookies. */
+function analytics(on: boolean) {
+  const w = window as unknown as Record<string, unknown> & { dataLayer?: unknown[]; gtag?: (...a: unknown[]) => void };
+  w[`ga-disable-${GA_ID}`] = !on; // gtag's own off switch: no more hits from this page
+  if (!on) {
+    for (const c of document.cookie.split("; ")) {
+      const name = c.split("=")[0];
+      if (!name.startsWith("_ga")) continue;
+      // GA sets them on the widest domain it can; clear every level of the hostname.
+      const parts = location.hostname.split(".");
+      for (let i = 0; i < parts.length; i++) {
+        document.cookie = `${name}=; Max-Age=0; path=/; domain=.${parts.slice(i).join(".")}`;
+      }
+      document.cookie = `${name}=; Max-Age=0; path=/`;
+    }
+    return;
+  }
+  if (w.gtag) return;
+  w.dataLayer = w.dataLayer || [];
+  // gtag needs the arguments object itself, not an array
+  w.gtag = function () { w.dataLayer!.push(arguments); }; // eslint-disable-line prefer-rest-params
+  w.gtag("js", new Date());
+  w.gtag("config", GA_ID); // page views on client-side navigation come from GA's history tracking
+  const s = document.createElement("script");
+  s.async = true;
+  s.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+  document.head.append(s);
+}
 
 // Never written to the device: the choice lives in memory for this tab only, so the banner
 // comes back on every visit. The key earlier versions stored is deleted on load.
 try { localStorage.removeItem("partylinks-consent"); } catch {}
 // Bump when a category is added or the use of data changes: everyone is asked again.
-export const CONSENT_VERSION = 1;
+export const CONSENT_VERSION = 2;
 
 type Choices = Record<Category, boolean>;
 export interface Consent {
@@ -42,6 +74,7 @@ export const useConsent = create<ConsentState>()((set, get) => ({
   save: (choices) => {
     const consent: Consent = { v: CONSENT_VERSION, id: get().consent?.id ?? crypto.randomUUID(), at: new Date().toISOString(), choices };
     set({ consent, panel: null });
+    analytics(choices.analytics);
   },
   openSettings: () => set({ panel: "settings" }),
   // Closing without a choice is only possible once one was made; until then the banner stays.
@@ -98,6 +131,17 @@ export const STORAGE: StorageItem[] = [
     duration: NONE,
   },
   {
+    name: "_ga, _ga_40YENQPX7X", provider: { he: "Google (ארה\"ב)", en: "Google (USA)" }, category: "analytics",
+    kind: { he: "עוגייה", en: "Cookie" },
+    purpose: { he: "Google Analytics: מזהה אקראי שמבחין בין מבקרים, כדי לספור ביקורים ועמודים שנצפו.", en: "Google Analytics: a random ID that tells visitors apart, to count visits and pages viewed." },
+    duration: { he: "שנתיים", en: "2 years" },
+  },
+  {
+    name: "googletagmanager.com, google-analytics.com", provider: { he: "Google (ארה\"ב)", en: "Google (USA)" }, kind: REQUEST, category: "analytics",
+    purpose: { he: "טעינת Google Analytics ושליחת נתוני הגלישה: העמודים שנצפו, פרטי הדפדפן והמכשיר, ומיקום משוער לפי כתובת ה-IP.", en: "Loads Google Analytics and sends usage data: pages viewed, browser and device details, and an approximate location from your IP address." },
+    duration: NONE,
+  },
+  {
     name: "tile.openstreetmap.org", provider: { he: "קרן OpenStreetMap (בריטניה)", en: "OpenStreetMap Foundation (UK)" }, kind: REQUEST, category: "external",
     purpose: { he: "אריחי המפה בעמוד המפה. השרת מקבל את כתובת ה-IP, פרטי הדפדפן ואזור המפה שמוצג.", en: "Map tiles on the map page. The server receives your IP address, browser details and the map area shown." },
     duration: NONE,
@@ -109,7 +153,7 @@ const TEXT = {
   he: {
     region: "הסכמה לעוגיות ולתוכן חיצוני",
     title: "הפרטיות שלך חשובה לנו",
-    body: "אנחנו שומרים בדפדפן רק את מה שנחוץ להפעלת האתר: השפה והגדרות הנגישות. הבחירה שלך כאן לא נשמרת במכשיר. אין באתר עוגיות פרסום, מעקב או סטטיסטיקה. בהסכמתך נטען גם תוכן מצד שלישי: מפת OpenStreetMap, שמקבלת את כתובת ה-IP שלך. אפשר לשנות את הבחירה בכל עת דרך \"הגדרות עוגיות\" בתחתית העמוד.",
+    body: "אנחנו שומרים בדפדפן רק את מה שנחוץ להפעלת האתר: השפה והגדרות הנגישות. הבחירה שלך כאן לא נשמרת במכשיר. אין באתר עוגיות פרסום. בהסכמתך נטענים גם Google Analytics, לסטטיסטיקת גלישה, ומפת OpenStreetMap; שניהם מקבלים את כתובת ה-IP שלך. אפשר לשנות את הבחירה בכל עת דרך \"הגדרות עוגיות\" בתחתית העמוד.",
     policy: "מדיניות הפרטיות והעוגיות",
     acceptAll: "אישור הכל",
     rejectAll: "דחיית הכל",
@@ -122,6 +166,7 @@ const TEXT = {
     close: "סגירה",
     categories: {
       necessary: { title: "הכרחי", text: "נדרש כדי שהאתר יעבוד ויזכור את השפה והגדרות הנגישות. אינו משמש למעקב ולא ניתן לכבות אותו." },
+      analytics: { title: "סטטיסטיקה (Google Analytics)", text: "ספירת ביקורים ועמודים שנצפו, כדי לדעת מה מעניין ולשפר את האתר. Google מקבלת את נתוני הגלישה ושומרת עוגייה עם מזהה אקראי." },
       external: { title: "תוכן חיצוני (מפה)", text: "טעינת אריחי המפה מ-OpenStreetMap בעמוד המפה. בלי הסכמה, המפה לא תיטען עד שתאשרו זאת שם." },
     },
     col: { name: "שם", provider: "ספק", purpose: "מטרה", duration: "משך" },
@@ -129,7 +174,7 @@ const TEXT = {
   en: {
     region: "Cookie and external content consent",
     title: "Your privacy matters to us",
-    body: "We only store what the site needs to work in your browser: your language and accessibility settings. The choice you make here is not saved on your device. There are no advertising, tracking or analytics cookies. With your consent we also load third-party content: the OpenStreetMap map, which receives your IP address. You can change your choice at any time from \"Cookie settings\" at the bottom of the page.",
+    body: "We only store what the site needs to work in your browser: your language and accessibility settings. The choice you make here is not saved on your device. There are no advertising cookies. With your consent we also load Google Analytics, for usage statistics, and the OpenStreetMap map; both receive your IP address. You can change your choice at any time from \"Cookie settings\" at the bottom of the page.",
     policy: "Privacy and cookie policy",
     acceptAll: "Accept all",
     rejectAll: "Reject all",
@@ -142,6 +187,7 @@ const TEXT = {
     close: "Close",
     categories: {
       necessary: { title: "Strictly necessary", text: "Needed for the site to work and remember your language and accessibility settings. Never used for tracking; can't be switched off." },
+      analytics: { title: "Statistics (Google Analytics)", text: "Counts visits and pages viewed, so we know what interests people and can improve the site. Google receives the usage data and sets a cookie with a random ID." },
       external: { title: "External content (map)", text: "Loads map tiles from OpenStreetMap on the map page. Without consent, the map won't load until you allow it there." },
     },
     col: { name: "Name", provider: "Provider", purpose: "Purpose", duration: "Duration" },
