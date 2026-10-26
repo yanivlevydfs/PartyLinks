@@ -59,9 +59,11 @@ Set in `security`. Over the limit the API returns `429`:
 
 | Limit | Value | Setting |
 | --- | --- | --- |
-| Per IP, whole site | 300 requests per minute | `rate_limit_per_minute` |
+| Per IP, whole site (not `/images/`, `/assets/`, `/icons/`, `/favicon*`) | 300 requests per minute | `rate_limit_per_minute` |
 | Admin API | 30 requests per minute | `admin_rate_limit_per_minute` |
 | `/go/` | 20 requests per minute | `go_rate_limit_per_minute` |
 
 Repeated strikes (vulnerability probes, wrong admin tokens, rate-limit hits) ban the IP for
-`ban_minutes`.
+`ban_minutes`. Card artwork and the site's own files stay out of the per-minute count: one home
+page draws well over a hundred images, and counted there a few reloads banned a visitor's home IP.
+Bans live in memory, so a restart (any deploy) lifts them.

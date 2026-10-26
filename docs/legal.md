@@ -11,8 +11,8 @@
 - **No cookies for ads or analytics.** The site sets none.
 - **Necessary browser storage** (settings, consent choice) needs no consent, but it is listed on
   the privacy page.
-- **The only optional category is external content:** OpenStreetMap map tiles, which load only
-  after consent.
+- **The only optional category is external content:** OpenFreeMap map tiles
+  (`tiles.openfreemap.org`, OpenStreetMap data), which load only after consent.
 - **Fonts are self-hosted.**
 
 The cookie banner and the list of everything stored on the device live in `web/src/consent.tsx`.

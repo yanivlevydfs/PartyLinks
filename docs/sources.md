@@ -91,6 +91,15 @@ pagination and what the listing and the event page provide.
 | `livevents` | Live Events (livevents.co.il): packages (flight + hotel + ticket) and tickets to shows in Europe | 03:31, 15:31 | yes |
 | `issta` | Issta (issta.co.il): packages (flight + hotel + ticket) to concerts abroad | 04:47, 16:47 | yes |
 
+## Prices and availability: source quirks
+
+- **Tickchak / arenas:** a `minPrice` / `maxPrice` of 0 / 0 means Tickchak has no price (phone-only,
+  sold out, priced on the seller's page), not free entry. It is stored as no price.
+- **Smarticket:** a performance with `availability: false`, `tickets_available: false` and no
+  `unavailability_msg` reads "רכישה טלפונית בלבד" on the seller's page and is sold out on
+  Tickchak, so it is stored as sold out. With a message (often an external link) it is sold
+  elsewhere and stays closed, not sold out.
+
 ## Packages abroad (flight + hotel + ticket)
 
 Issta and Live Events sell packages to shows abroad. Only the show is stored as an event; the

@@ -32,7 +32,10 @@ Unknown pages return a real `404`. Filters on the site move the URL to their lan
 | `/llms.txt` | A site summary, the API, and the next 400 events |
 
 Set `site.base_url` to the public domain: canonical links, the sitemap, JSON-LD and share
-previews use it. Favicons and the web manifest are in `web/public/`.
+previews use it. Favicons and the web manifest are in `web/public/`. Their URLs carry a version
+(`?v=spotx2`, in `index.html`, the manifest, `sw.js`, `offline.html`): after changing an icon, bump
+it everywhere, or phones keep the old one (Android re-fetches a home-screen icon only when the
+manifest's icon URLs change; iOS never updates one already added, it must be re-added).
 
 ## Blog (`blog.py`)
 

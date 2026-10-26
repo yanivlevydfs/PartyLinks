@@ -39,7 +39,14 @@ Parser tests run against real pages saved under `tests/fixtures/<source>/`.
 
 ## Website (React + TypeScript, Hebrew / English)
 
-Stack: Vite, React Router, TanStack Query, zustand, Leaflet (OpenStreetMap tiles).
+Stack: Vite, React Router, TanStack Query, zustand, Leaflet. The map draws OpenFreeMap vector
+tiles through MapLibre (`@maplibre/maplibre-gl-leaflet`), so labels follow the site language
+(`name:he` / `name:en`, then the English or Latin name); raster OSM tiles write each place in its
+local script (Lebanon and Syria in Arabic). The RTL text plugin shapes Hebrew labels. The CSP
+allows `tiles.openfreemap.org` and `blob:` workers for it.
+
+The footer shows `© <year> SPOTX · All rights reserved · v<short sha> · <build date>`. The SHA is
+`RAILWAY_GIT_COMMIT_SHA` (a Docker build arg) on Railway, `git rev-parse HEAD` locally.
 
 ```bash
 cd web && npm install
