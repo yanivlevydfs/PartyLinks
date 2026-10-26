@@ -45,7 +45,8 @@ STATIC_PATHS = ("/images/", "/assets/", "/icons/", "/favicon")
 
 CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "default-src 'self'",
-    "script-src 'self' https://www.googletagmanager.com",  # Google Analytics, after consent (consent.tsx)
+    # Google Analytics, after consent (consent.tsx); Cloudflare injects its cookieless Web Analytics beacon.
+    "script-src 'self' https://www.googletagmanager.com https://static.cloudflareinsights.com",
     # Leaflet positions tiles with inline styles. Fonts are self-hosted (no Google Fonts: privacy).
     "style-src 'self' 'unsafe-inline'",
     # The accessibility widget fetches its language packs and dyslexia font from jsDelivr (URLs hardcoded).
@@ -53,7 +54,7 @@ CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "img-src 'self' data: blob: https:",  # map tiles and event artwork hosted by the sources
     "worker-src 'self' blob:",  # the map's vector-tile workers
     "connect-src 'self' https://tiles.openfreemap.org https://cdn.jsdelivr.net/npm/sienna-accessibility/ https://*.google-analytics.com "
-    "https://*.analytics.google.com https://*.googletagmanager.com",
+    "https://*.analytics.google.com https://*.googletagmanager.com https://cloudflareinsights.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
