@@ -1215,6 +1215,11 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 .quiz-go span { transition: transform .2s; }
 .quiz-go:hover span { transform: translateX(-4px); }
 [dir="ltr"] .quiz-go:hover span { transform: translateX(4px); }
+.quiz-skipall {
+  margin-inline-start: auto; background: rgb(255 46 147 / .1); border: 1.5px solid var(--line-hot); color: var(--text);
+  border-radius: 999px; padding: 12px 22px; cursor: pointer; font: 700 16px/1 var(--display); transition: background .2s, transform .15s;
+}
+.quiz-skipall:hover { background: rgb(255 46 147 / .2); transform: translateY(-2px); }
 .quiz-again {
   margin: 4px 0 6px; background: rgb(255 46 147 / .08); border: 1px solid var(--line-hot); color: var(--text);
   border-radius: 999px; padding: 8px 16px; cursor: pointer; font-size: 14px;
@@ -1226,7 +1231,7 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .quiz-tile { padding: 14px; }
   .quiz-count { flex-direction: row; gap: 8px; min-width: 0; width: 100%; justify-content: flex-start; }
   .quiz-count b { font-size: 30px; }
-  .quiz-go { flex: 1; justify-content: center; }
+  .quiz-go, .quiz-skipall { flex: 1; justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) {
   .quiz::before, .quiz-eq span.now, .quiz-q h2, .quiz-count b, .quiz-body { animation: none; }
