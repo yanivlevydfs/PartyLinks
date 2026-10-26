@@ -111,7 +111,7 @@ GENRES_HE = {
     "festival": "פסטיבלים", "meetups": "מפגשים", "culture": "תרבות", "exhibitions": "תערוכות", "workshops": "סדנאות",
     "markets": "שווקים וקניות", "food": "אוכל", "environment": "סביבה", "religious": "דת ומסורת", "holidays": "חגים",
     "sport": "ספורט", "theatre": "תיאטרון", "kids": "ילדים ומשפחה", "lectures": "הרצאות והעשרה", "tours": "סיורים וטיולים",
-    "dance": "מחול",
+    "dance": "מחול", "ballroom": "ריקודים סלוניים",
 }  # fmt: skip
 GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
                  "stand_up": "Stand-up comedy", "live_show": "Live music",
@@ -120,7 +120,8 @@ GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBT
                  "happy_hour": "Happy hour", "dark_wave": "Dark Wave / Synth", "yoga_wellness": "Yoga & Wellness",
                  "liberal": "Liberal / Swingers", "kink": "BDSM / Fetish", "sensual": "Tantra & Sensual",
                  "gender_balance": "Gender balanced",
-                 "kids": "Kids & Family", "lectures": "Lectures & Talks", "tours": "Tours & Trips"}  # fmt: skip
+                 "kids": "Kids & Family", "lectures": "Lectures & Talks", "tours": "Tours & Trips",
+                 "ballroom": "Ballroom Dancing"}  # fmt: skip
 GENRE_PAGE_MIN = 3  # fewer upcoming events than this: no landing page (thin content)
 
 

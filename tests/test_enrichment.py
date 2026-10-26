@@ -248,6 +248,17 @@ def test_hebrew_genre_words_match_whole_words_only() -> None:
     assert "techno" in ENRICHER._detect_genres(party)  # attached prefixes still count
 
 
+def test_ballroom_dancing_from_its_own_words_only() -> None:
+    def ballroom(title: str, description: str = "") -> bool:
+        return "ballroom" in ENRICHER._detect_genres(make(title=title, description=description))
+
+    assert ballroom("ערב ריקודים סלוניים בדיזנגוף")
+    assert ballroom("מסיבת ריקודי סלון", "וואלס, טנגו ופוקסטרוט")
+    assert ballroom("Milonga del Sur", "Argentine tango night")
+    # A Strauss waltz and a Piazzolla tango in a concert are not a dance night.
+    assert not ballroom("הפילהרמונית: שטראוס", "וואלסים מווינה וטנגו של פיאצולה")
+
+
 def test_adult_nightlife_genres_from_strong_phrases_only() -> None:
     adult = {"liberal", "kink", "sensual", "gender_balance"}
 
