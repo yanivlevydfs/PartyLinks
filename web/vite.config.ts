@@ -7,7 +7,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: Object.fromEntries(
-      ["/events", "/images", "/categories", "/sources", "/runs", "/maintenance", "/admin/api", "/site"].map((p) => [p, api]),
+      [
+        "/events", "/images", "/categories", "/sources", "/runs", "/maintenance", "/admin/api", "/site",
+        "/weather", "/locate", "/posts", "/ticket-sites", "/landing-info", "/go", "/health",
+      ].map((p) => [p, api]),
     ),
   },
 });

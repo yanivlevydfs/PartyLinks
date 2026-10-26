@@ -1,9 +1,9 @@
 // Privacy and cookie policy (מדיניות פרטיות ועוגיות), per the Israeli Privacy Protection Law, 1981
 // (Amendment 13) and the Privacy Protection (Data Security) Regulations, 2017.
-// Contact details come from config (site.privacy) via GET /site; the storage table from storage.tsx.
+// Contact details come from config (site.privacy) via GET /site; the storage table from consent.tsx.
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { StorageTable } from "../storage";
+import { StorageTable, useConsent } from "../consent";
 import { Hero, HiddenEmail, useT, useTitle } from "../ui";
 
 interface SiteInfo {
@@ -42,7 +42,7 @@ const TEXT = {
       {
         title: "עוגיות ואחסון מקומי",
         body: [
-          "עוגיות (Cookies) ואחסון מקומי (Local Storage) הם קבצים קטנים שאתר שומר בדפדפן. האתר שומר רק פריטים הכרחיים להפעלתו ואינם משמשים למעקב, ולכן אין באתר חלון הסכמה לעוגיות. בעמוד המפה הדפדפן טוען את אריחי המפה משרתי OpenStreetMap.",
+          "עוגיות (Cookies) ואחסון מקומי (Local Storage) הם קבצים קטנים שאתר שומר בדפדפן. האתר שומר רק פריטים הכרחיים להפעלתו, שאינם דורשים הסכמה ואינם משמשים למעקב. תוכן מצד שלישי שאינו הכרחי (מפת OpenStreetMap) נטען רק לאחר שנתתם לכך הסכמה מפורשת, שאותה אפשר לשנות או לבטל בכל עת דרך \"הגדרות עוגיות\" בתחתית כל עמוד או בכפתור שלמטה.",
           "הטבלה הבאה מפרטת כל מה שנשמר במכשיר שלכם וכל צד שלישי שהדפדפן פונה אליו:",
         ],
       },
@@ -68,6 +68,7 @@ const TEXT = {
         list: [
           "לעיין במידע עליכם המוחזק אצלנו (סעיף 13 לחוק).",
           "לבקש לתקן או למחוק מידע שאינו נכון, שלם, ברור או מעודכן (סעיף 14 לחוק).",
+          "לבטל בכל עת הסכמה שנתתם, באותה קלות שבה נתתם אותה, דרך \"הגדרות עוגיות\". הביטול חל מכאן והלאה.",
           "למחוק בעצמכם את כל מה שנשמר במכשיר, דרך הגדרות הדפדפן (מחיקת נתוני אתרים).",
           "להגיש תלונה לרשות להגנת הפרטיות במשרד המשפטים (gov.il/he/departments/the_privacy_protection_authority).",
         ],
@@ -81,14 +82,16 @@ const TEXT = {
       {
         title: "שינויים במדיניות",
         body: [
-          "אם נשנה את המידע שנשמר או את השימוש בו, נעדכן את המסמך ואת תאריך העדכון. אם נוסיף אי פעם עוגיות שאינן הכרחיות, נבקש לכך את הסכמתכם מראש.",
+          "אם נשנה את המידע שנשמר או את השימוש בו, נעדכן את המסמך ואת תאריך העדכון. שינוי שמחייב הסכמה יוביל להצגת חלון ההסכמה מחדש, וההסכמה הקודמת לא תחול עליו. הבחירה שלכם אינה נשמרת במכשיר, ולכן נשאל אתכם מחדש בכל ביקור.",
         ],
       },
     ] as Section[],
+    manage: "שינוי הגדרות עוגיות",
     contactTitle: "יצירת קשר",
     contact: "לשאלות, לבקשות עיון, תיקון או מחיקה, או לכל פנייה בנושא פרטיות:",
     email: "דוא\"ל",
     contactMissing: "כתובת הפנייה בנושא פרטיות תפורסם בקרוב.",
+    consentId: "מזהה ההסכמה שלך (לציון בפנייה):",
     updated: "המדיניות עודכנה לאחרונה בתאריך",
     back: "לכל האירועים",
   },
@@ -120,7 +123,7 @@ const TEXT = {
       {
         title: "Cookies and local storage",
         body: [
-          "Cookies and local storage are small files a website keeps in your browser. This site stores only items it needs to work and never uses them for tracking, so there is no cookie consent window. On the map page your browser loads map tiles from OpenStreetMap's servers.",
+          "Cookies and local storage are small files a website keeps in your browser. This site stores only items it needs to work; they require no consent and are never used for tracking. Non-essential third-party content (the OpenStreetMap map) loads only after your explicit consent, which you can change or withdraw at any time from \"Cookie settings\" at the bottom of every page or with the button below.",
           "This table lists everything stored on your device and every third party your browser contacts:",
         ],
       },
@@ -146,6 +149,7 @@ const TEXT = {
         list: [
           "Review the data we hold about you (section 13 of the law).",
           "Ask us to correct or delete data that is wrong, incomplete, unclear or outdated (section 14).",
+          "Withdraw consent at any time, as easily as you gave it, from \"Cookie settings\". Withdrawal applies from then on.",
           "Delete everything stored on your device yourself, in your browser settings (clear site data).",
           "Complain to the Privacy Protection Authority at the Ministry of Justice (gov.il/en/departments/the_privacy_protection_authority).",
         ],
@@ -159,14 +163,16 @@ const TEXT = {
       {
         title: "Changes to this policy",
         body: [
-          "If we change what is stored or how it is used, we will update this page and its date. If we ever add non-essential cookies, we will ask for your consent first.",
+          "If we change what is stored or how it is used, we will update this page and its date. A change that needs consent brings the consent window back, and earlier consent will not cover it. Your choice is not saved on your device, so we ask again on every visit.",
         ],
       },
     ] as Section[],
+    manage: "Change cookie settings",
     contactTitle: "Contact",
     contact: "For questions, requests to review, correct or delete data, or any privacy matter:",
     email: "Email",
     contactMissing: "The privacy contact address will be published soon.",
+    consentId: "Your consent ID (quote it when contacting us):",
     updated: "This policy was last updated on",
     back: "All events",
   },
@@ -186,6 +192,7 @@ export default function PrivacyPage() {
   const { t: ui, lang } = useT();
   const t = TEXT[lang];
   useTitle(t.title);
+  const { consent, openSettings } = useConsent();
   const site = useQuery({ queryKey: ["site"], queryFn: () => fetch("/site").then((r) => r.json() as Promise<SiteInfo>) }).data;
   const p = site?.privacy;
   const updated = p?.updated && new Date(p.updated + "T12:00:00Z").toLocaleDateString(ui.locale, { dateStyle: "long", timeZone: "UTC" });
@@ -197,6 +204,7 @@ export default function PrivacyPage() {
         <p>{t.intro(site?.name ?? "SPOTX")}</p>
         <Sections list={t.sections} />
         <StorageTable />
+        <p><button className="c-btn" onClick={openSettings}>{t.manage}</button></p>
         <Sections list={t.sections2} />
 
         <h2>{t.contactTitle}</h2>
@@ -208,6 +216,7 @@ export default function PrivacyPage() {
         ) : (
           site && <p className="muted">{t.contactMissing}</p>
         )}
+        {consent && <p className="muted">{t.consentId} <code dir="ltr">{consent.id}</code></p>}
 
         {updated && <p className="muted">{t.updated} {updated}.</p>}
         <p><Link to="/">{t.back}</Link></p>
