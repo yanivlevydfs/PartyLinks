@@ -1,6 +1,10 @@
 import "leaflet/dist/leaflet.css";
-import { divIcon } from "leaflet";
-import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap, useMapEvent } from "react-leaflet";
+import "maplibre-gl/dist/maplibre-gl.css";
+import L, { divIcon } from "leaflet";
+import "@maplibre/maplibre-gl-leaflet";
+import maplibregl from "maplibre-gl";
+import rtlText from "@mapbox/mapbox-gl-rtl-text/mapbox-gl-rtl-text.min.js?url";
+import { CircleMarker, MapContainer, Marker, Popup, useMap, useMapEvent } from "react-leaflet";
 import { useEffect, useMemo, useState } from "react";
 import Supercluster from "supercluster";
 import { Link } from "react-router-dom";
@@ -11,11 +15,33 @@ import { Filters, filterParams } from "../Filters";
 import { useStore } from "../store";
 import type { MapEvent } from "../types";
 import { eventPath, fmtDate, Loader, Sources, useT, useTitle, venuePath } from "../ui";
+import type { Lang } from "../i18n";
 
 const ISRAEL: [number, number] = [31.9, 34.95];
 
+// Hebrew needs the RTL shaping plugin, or its letters come out reversed. Once per page.
+if (maplibregl.getRTLTextPluginStatus() === "unavailable") maplibregl.setRTLTextPlugin(rtlText, true);
+
+/** Keyless OpenFreeMap vector tiles, darkened in CSS (.map .leaflet-tile-pane). Vector, not raster, so
+ *  every label is in the site's language (raster OSM writes Lebanon and Syria in Arabic). */
+function Tiles({ lang }: { lang: Lang }) {
+  const map = useMap();
+  useEffect(() => {
+    const layer = L.maplibreGL({ style: "https://tiles.openfreemap.org/styles/liberty" }).addTo(map);
+    const gl = layer.getMaplibreMap();
+    const name = ["coalesce", ["get", `name:${lang}`], ["get", "name_en"], ["get", "name:latin"], ["get", "name"]];
+    gl.on("load", () => {
+      for (const l of gl.getStyle().layers) {
+        if (l.type === "symbol" && gl.getLayoutProperty(l.id, "text-field")) gl.setLayoutProperty(l.id, "text-field", name);
+      }
+    });
+    return () => { layer.remove(); };
+  }, [map, lang]);
+  return null;
+}
+
 export default function MapPage() {
-  const { t } = useT();
+  const { t, lang } = useT();
   // The home page's filter (same store): the map shows what the list shows, not every event at once.
   // Every date by default: ~17k pins, clustered, ~1 MB gzipped.
   const f = useStore((s) => s.filters);
@@ -51,14 +77,7 @@ export default function MapPage() {
       </div>
       <div className="wrap map-wrap">
       <MapContainer center={ISRAEL} zoom={8} className="map" scrollWheelZoom>
-        {/* Keyless OSM tiles, darkened in CSS (.map .leaflet-tile-pane). */}
-        {showTiles && (
-          <TileLayer
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-        )}
+        {showTiles && <Tiles lang={lang} />}
         <FitTo points={[...spots.values()].map((l) => [l[0].latitude, l[0].longitude] as [number, number])} />
         <Pins spots={[...spots.values()]} />
       </MapContainer>

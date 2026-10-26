@@ -5,7 +5,7 @@
 //
 // The site sets no advertising cookies. Strictly necessary storage needs no consent but is disclosed;
 // the optional categories are usage statistics (Google Analytics, not even loaded until allowed) and
-// external content (OpenStreetMap map tiles).
+// external content (OpenFreeMap map tiles).
 // STORAGE below is also the table on the privacy page (/privacy): keep it in sync with the code.
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -142,7 +142,7 @@ export const STORAGE: StorageItem[] = [
     duration: NONE,
   },
   {
-    name: "tile.openstreetmap.org", provider: { he: "קרן OpenStreetMap (בריטניה)", en: "OpenStreetMap Foundation (UK)" }, kind: REQUEST, category: "external",
+    name: "tiles.openfreemap.org", provider: { he: "OpenFreeMap", en: "OpenFreeMap" }, kind: REQUEST, category: "external",
     purpose: { he: "אריחי המפה בעמוד המפה. השרת מקבל את כתובת ה-IP, פרטי הדפדפן ואזור המפה שמוצג.", en: "Map tiles on the map page. The server receives your IP address, browser details and the map area shown." },
     duration: NONE,
   },
@@ -153,7 +153,7 @@ const TEXT = {
   he: {
     region: "הסכמה לעוגיות ולתוכן חיצוני",
     title: "הפרטיות שלך חשובה לנו",
-    body: "אנחנו שומרים בדפדפן רק את מה שנחוץ להפעלת האתר: השפה והגדרות הנגישות. הבחירה שלך כאן לא נשמרת במכשיר. אין באתר עוגיות פרסום. בהסכמתך נטענים גם Google Analytics, לסטטיסטיקת גלישה, ומפת OpenStreetMap; שניהם מקבלים את כתובת ה-IP שלך. אפשר לשנות את הבחירה בכל עת דרך \"הגדרות עוגיות\" בתחתית העמוד.",
+    body: "אנחנו שומרים בדפדפן רק את מה שנחוץ להפעלת האתר: השפה והגדרות הנגישות. הבחירה שלך כאן לא נשמרת במכשיר. אין באתר עוגיות פרסום. בהסכמתך נטענים גם Google Analytics, לסטטיסטיקת גלישה, ומפת OpenFreeMap; שניהם מקבלים את כתובת ה-IP שלך. אפשר לשנות את הבחירה בכל עת דרך \"הגדרות עוגיות\" בתחתית העמוד.",
     policy: "מדיניות הפרטיות והעוגיות",
     acceptAll: "אישור הכל",
     rejectAll: "דחיית הכל",
@@ -167,14 +167,14 @@ const TEXT = {
     categories: {
       necessary: { title: "הכרחי", text: "נדרש כדי שהאתר יעבוד ויזכור את השפה והגדרות הנגישות. אינו משמש למעקב ולא ניתן לכבות אותו." },
       analytics: { title: "סטטיסטיקה (Google Analytics)", text: "ספירת ביקורים ועמודים שנצפו, כדי לדעת מה מעניין ולשפר את האתר. Google מקבלת את נתוני הגלישה ושומרת עוגייה עם מזהה אקראי." },
-      external: { title: "תוכן חיצוני (מפה)", text: "טעינת אריחי המפה מ-OpenStreetMap בעמוד המפה. בלי הסכמה, המפה לא תיטען עד שתאשרו זאת שם." },
+      external: { title: "תוכן חיצוני (מפה)", text: "טעינת אריחי המפה מ-OpenFreeMap בעמוד המפה. בלי הסכמה, המפה לא תיטען עד שתאשרו זאת שם." },
     },
     col: { name: "שם", provider: "ספק", purpose: "מטרה", duration: "משך" },
   },
   en: {
     region: "Cookie and external content consent",
     title: "Your privacy matters to us",
-    body: "We only store what the site needs to work in your browser: your language and accessibility settings. The choice you make here is not saved on your device. There are no advertising cookies. With your consent we also load Google Analytics, for usage statistics, and the OpenStreetMap map; both receive your IP address. You can change your choice at any time from \"Cookie settings\" at the bottom of the page.",
+    body: "We only store what the site needs to work in your browser: your language and accessibility settings. The choice you make here is not saved on your device. There are no advertising cookies. With your consent we also load Google Analytics, for usage statistics, and the OpenFreeMap map; both receive your IP address. You can change your choice at any time from \"Cookie settings\" at the bottom of the page.",
     policy: "Privacy and cookie policy",
     acceptAll: "Accept all",
     rejectAll: "Reject all",
@@ -188,7 +188,7 @@ const TEXT = {
     categories: {
       necessary: { title: "Strictly necessary", text: "Needed for the site to work and remember your language and accessibility settings. Never used for tracking; can't be switched off." },
       analytics: { title: "Statistics (Google Analytics)", text: "Counts visits and pages viewed, so we know what interests people and can improve the site. Google receives the usage data and sets a cookie with a random ID." },
-      external: { title: "External content (map)", text: "Loads map tiles from OpenStreetMap on the map page. Without consent, the map won't load until you allow it there." },
+      external: { title: "External content (map)", text: "Loads map tiles from OpenFreeMap on the map page. Without consent, the map won't load until you allow it there." },
     },
     col: { name: "Name", provider: "Provider", purpose: "Purpose", duration: "Duration" },
   },
