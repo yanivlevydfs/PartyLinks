@@ -296,7 +296,7 @@ class GeocodingSettings(BaseModel):
     enabled: bool = True
     url: str = "https://nominatim.openstreetmap.org/search"
     # Nominatim's policy: identify the app, at most one request per second, cache results.
-    user_agent: str = "Pulse/0.1 (Israel event listings)"
+    user_agent: str = "SPOTX/0.1 (Israel event listings)"
     min_interval_seconds: float = Field(1.1, ge=1)
     max_lookups_per_run: int = Field(120, ge=0)
     country_codes: str = "il"
@@ -339,7 +339,7 @@ class PrivacySettings(BaseModel):
 class SiteSettings(BaseModel):
     # Public address of the website (no trailing slash): canonical links, sitemap, JSON-LD, share previews.
     base_url: str = "http://localhost:8000"
-    name: str = "Pulse"
+    name: str = "SPOTX"
     # Contact and partnerships address shown on /contact and /partners (falls back to privacy.email).
     email: str = ""
     accessibility: AccessibilitySettings = Field(default_factory=AccessibilitySettings)
@@ -359,7 +359,7 @@ class UtmSettings(BaseModel):
     """UTM tags added to ticket links in GET /go/... (see partylinks.utm)."""
 
     enabled: bool = True
-    source: str = "pulse"
+    source: str = "spotx"
     medium: str = "affiliate"
 
 
@@ -379,6 +379,10 @@ class SecuritySettings(BaseModel):
     # Host names the site answers to (e.g. ["partylinks.co.il", "www.partylinks.co.il"]).
     # Empty = any host. localhost always works.
     allowed_hosts: list[str] = Field(default_factory=list)
+    # Old addresses of the site: a request to one is sent (301) to site.base_url, keeping the path, so
+    # links and search rankings move to the domain. Only when base_url is on another host, so while the
+    # domain is not live (base_url still the Railway address) nothing moves. /health never redirects.
+    redirect_hosts: list[str] = Field(default_factory=list)
     # Requests per client IP per minute; over it = 429. Admin API has its own, lower limit.
     rate_limit_per_minute: int = Field(300, ge=1)
     admin_rate_limit_per_minute: int = Field(30, ge=1)

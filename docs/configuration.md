@@ -24,7 +24,7 @@ Secrets (admin token, proxy credentials, access headers) belong in variables onl
 | `timezone` | App time zone (`Asia/Jerusalem`): local dates, cron times, display |
 | `database` | Database URL (SQLite by default, in `data/`) |
 | `logging` | Level, text or JSON, access log, rotating file |
-| `site` | `base_url`, brand name (`Pulse`), accessibility and privacy contacts |
+| `site` | `base_url`, brand name (`SPOTX`), accessibility and privacy contacts |
 | `utm` | UTM tags on ticket links: `enabled`, `source`, `medium` (see [ticket links](ticket-links.md)) |
 | `security` | Trusted proxies, allowed hosts, rate limits (site, admin, `/go/`), bans, blocked bots, API docs |
 | `api` | Host, port, page sizes |

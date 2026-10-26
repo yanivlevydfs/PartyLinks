@@ -24,9 +24,9 @@ def test_startup_block_and_status_line_hide_secrets(tmp_path: Path, caplog: pyte
         status.log_status(cfg, db, None)
         status.log_shutdown(cfg)
     text = caplog.text
-    assert "Pulse 0.1.0 starting" in text and "scheduler  OFF" in text
+    assert "SPOTX 0.1.0 starting" in text and "scheduler  OFF" in text
     assert "proxy      proxy.example:8080" in text and "token set" in text
     assert "secret" not in text.replace("token set", "")
     assert "status: up 0h 0m | events 0 upcoming / 0 | runs 24h: none | scheduler off | clicks 24h: 0" in text
-    assert "Pulse stopping after" in text
+    assert "SPOTX stopping after" in text
     db.engine.dispose()

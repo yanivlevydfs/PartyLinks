@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | `/accessibility` | Accessibility statement, Israeli standard IS 5568 | `site.accessibility` in settings |
 | `/privacy` | Privacy and cookie policy, Privacy Protection Law (Amendment 13) | `site.privacy` in settings, and the storage table in `web/src/consent.tsx` |
-| `/terms` | Terms of use: Pulse only aggregates listings sold on other sites | `web/src/pages/Terms.tsx` |
+| `/terms` | Terms of use: SPOTX only aggregates listings sold on other sites | `web/src/pages/Terms.tsx` |
 
 ## Cookies and tracking
 

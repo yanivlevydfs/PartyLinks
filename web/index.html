@@ -6,8 +6,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Pulse" />
-    <title>Pulse פולס · אירועים בכל הארץ</title>
+    <meta name="apple-mobile-web-app-title" content="SPOTX" />
+    <title>SPOTX · אירועים בכל הארץ</title>
     <!--seo-->
     <meta name="theme-color" content="#06040b" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -23,26 +23,29 @@
         color: #f7f2ff; font: 900 44px/1 "Rubik", "Heebo", Arial, system-ui, sans-serif; letter-spacing: -1px;
         transition: opacity .35s ease, visibility .35s; animation: boot-out .3s 12s forwards; }
       #boot.done { opacity: 0; visibility: hidden; }
-      #boot b { text-shadow: 0 0 22px rgb(255 46 147 / .6); direction: ltr; }
-      #boot b span span { color: #ff2e93; text-shadow: 0 0 10px #ff2e93, 0 0 30px #ff2e93; }
-      #boot .en, html[lang="en"] #boot .he { display: none; }
-      html[lang="en"] #boot .en { display: inline; }
-      #boot svg { width: 180px; height: 40px; overflow: visible; }
-      #boot path { fill: none; stroke: #ff2e93; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
-        stroke-dasharray: 260; stroke-dashoffset: 260; filter: drop-shadow(0 0 6px #ff2e93); animation: beat 1.4s ease-in-out infinite; }
-      @keyframes beat { 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -260; } }
+      #boot b { text-shadow: 0 0 22px rgb(255 46 147 / .6); direction: ltr; letter-spacing: 1px; }
+      #boot b span { color: #ff2e93; text-shadow: 0 0 10px #ff2e93, 0 0 30px #ff2e93; }
+      /* The brand mark: the pin draws itself, then the X; it loops while the app loads (as ui.tsx Loader). */
+      #boot .mark { width: 72px; height: 92px; overflow: visible; }
+      #boot .mark path { fill: none; stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; }
+      #boot .pin { stroke-dasharray: 150; stroke-dashoffset: 150; filter: drop-shadow(0 0 6px rgb(157 77 255 / .7));
+        animation: pin-loop 2.4s cubic-bezier(.65, 0, .35, 1) infinite; }
+      #boot .x { stroke: #ff2e93; stroke-dasharray: 40; stroke-dashoffset: 40; filter: drop-shadow(0 0 6px #ff2e93);
+        animation: x-loop 2.4s ease-in-out infinite; }
+      @keyframes pin-loop { 45%, 70% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -150; } }
+      @keyframes x-loop { 0%, 35% { stroke-dashoffset: 40; } 55%, 75% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -40; } }
       @keyframes boot-out { to { opacity: 0; visibility: hidden; } }
       /* If the app never loads (script blocked or failed), the prerendered page shows after 12s. */
       .ssr { opacity: 0; animation: ssr-in 0s 12s forwards; }
       @keyframes ssr-in { to { opacity: 1; } }
-      @media (prefers-reduced-motion: reduce) { #boot path { animation: none; stroke-dashoffset: 0; } }
+      @media (prefers-reduced-motion: reduce) { #boot .mark path { animation: none; stroke-dashoffset: 0; } }
     </style>
     <noscript><style>#boot { display: none; } .ssr { opacity: 1; animation: none; }</style></noscript>
   </head>
   <body>
     <div id="boot" role="status" aria-label="Loading">
-      <b><span class="he">פול<span>ס</span></span><span class="en">Pul<span>se</span></span></b>
-      <svg viewBox="0 0 180 40" aria-hidden="true"><path d="M0 22h55l10-18 14 34 12-26 8 10h81" /></svg>
+      <svg class="mark" viewBox="11 5 42 54" aria-hidden="true"><defs><linearGradient id="boot-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2e93"/><stop offset=".55" stop-color="#9d4dff"/><stop offset="1" stop-color="#19e3ff"/></linearGradient></defs><path class="pin" d="M32 55C32 55 14.5 38.5 14.5 25.5a17.5 17.5 0 0 1 35 0C49.5 38.5 32 55 32 55Z" stroke="url(#boot-grad)"/><path class="x" d="M25.5 19l13 13M38.5 19l-13 13"/></svg>
+      <b>SPOT<span>X</span></b>
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

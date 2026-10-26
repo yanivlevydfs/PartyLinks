@@ -28,7 +28,7 @@ Keep **one replica**: SQLite and the scheduler are single-instance.
 | `PARTYLINKS_ADMIN__TOKEN` | A long random string for the admin console and the mutating API |
 | `PARTYLINKS_HTTP__SOURCE_PROXY` | Proxy every source goes through, so sites never see the server's IP. A comma-separated list is a failover pool: a source moves to the next URL only when the proxy itself fails. A source can opt out with `proxied: false` |
 | `PARTYLINKS_SITE__BASE_URL` | Only for a custom domain; otherwise `https://$RAILWAY_PUBLIC_DOMAIN` is used |
-| `PARTYLINKS_SECURITY__ALLOWED_HOSTS` | Host names the site answers to, e.g. `["pulse.co.il","www.pulse.co.il"]` |
+| `PARTYLINKS_SECURITY__ALLOWED_HOSTS` | Host names the site answers to, e.g. `["spotx.fun","www.spotx.fun"]` |
 | `PARTYLINKS_SOURCES__<NAME>__HTTP__HEADERS` | Secret headers for one source (e.g. an access key a site gave us) |
 
 Keep secrets in Railway variables or `.env`, never in `settings.yaml`.

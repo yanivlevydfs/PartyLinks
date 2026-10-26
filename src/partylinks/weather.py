@@ -201,7 +201,7 @@ async def weather(
         if center is None:
             raise HTTPException(status_code=404, detail="no place")
         lat, lng = center
-    slots = await forecast(lat, lng, f"Pulse/1.0 (+{settings.site.base_url})", cache_file(settings))
+    slots = await forecast(lat, lng, f"SPOTX/1.0 (+{settings.site.base_url})", cache_file(settings))
     if not slots:
         raise HTTPException(status_code=503, detail="forecast unavailable")
     response.headers["Cache-Control"] = "public, max-age=900"

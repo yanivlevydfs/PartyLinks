@@ -75,7 +75,7 @@ export const eventPath = (e: { id: string; slug: string | null }) => `/event/${e
 /** Browser tab title for the current page. */
 export function useTitle(title: string | undefined) {
   useEffect(() => {
-    if (title) document.title = `${title} · Pulse`;
+    if (title) document.title = `${title} · SPOTX`;
   }, [title]);
 }
 
@@ -97,8 +97,9 @@ export function Layout() {
       <InstallBanner />
       <header className="top">
         <div className="wrap top-row">
-          <Link className="logo" to="/">{lang === "he" ? <>פול<span>ס</span></> : <>Pul<span>se</span></>}
-            <svg viewBox="0 0 180 40" aria-hidden><path d="M0 22h55l10-18 14 34 12-26 8 10h81" /></svg>
+          <Link className="logo" to="/" aria-label="SPOTX">
+            <svg className="mark" viewBox="11 5 42 54" aria-hidden="true"><defs><linearGradient id="logo-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ff2e93" /><stop offset=".55" stopColor="#9d4dff" /><stop offset="1" stopColor="#19e3ff" /></linearGradient></defs><path className="pin" d="M32 55C32 55 14.5 38.5 14.5 25.5a17.5 17.5 0 0 1 35 0C49.5 38.5 32 55 32 55Z" stroke="url(#logo-grad)" /><path className="x" d="M25.5 19l13 13M38.5 19l-13 13" /></svg>
+            <span className="word">SPOT<span>X</span></span>
           </Link>
           <nav className="nav">
             <NavLink to="/" end>{t.nav.parties}</NavLink>
@@ -129,7 +130,7 @@ export function Layout() {
             <Link key={g.value} to={`/genre/${g.value}`}>{genreLabel(lang, g.value)}</Link>
           ))}
         </nav>
-        {lang === "he" ? "פולס · ישראל" : "Pulse · Israel"}
+        {lang === "he" ? "SPOTX · ישראל" : "SPOTX · Israel"}
         {INFO_LINKS.map((l) => <Fragment key={l.path}>{" · "}<Link to={l.path}>{l.label[lang]}</Link></Fragment>)}
         {" · "}<Link to="/accessibility">{t.accessibility}</Link>
         {" · "}<Link to="/terms">{t.terms}</Link>
@@ -354,12 +355,12 @@ export function CardSkeletons({ n }: { n: number }) {
   );
 }
 
-/** The brand loader: the boot screen's heartbeat line. `small` sits inline in a button or bar. */
+/** The brand loader: the boot screen's mark (a line to an X). `small` sits inline in a button or bar. */
 export function Loader({ small }: { small?: boolean }) {
   const { t } = useT();
   return (
     <span className={small ? "loader small" : "loader"} role="status" aria-label={t.loading}>
-      <svg viewBox="0 0 180 40" aria-hidden="true"><path d="M0 22h55l10-18 14 34 12-26 8 10h81" /></svg>
+      <svg className="mark" viewBox="11 5 42 54" aria-hidden="true"><defs><linearGradient id="loader-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ff2e93" /><stop offset=".55" stopColor="#9d4dff" /><stop offset="1" stopColor="#19e3ff" /></linearGradient></defs><path className="pin" d="M32 55C32 55 14.5 38.5 14.5 25.5a17.5 17.5 0 0 1 35 0C49.5 38.5 32 55 32 55Z" stroke="url(#loader-grad)" /><path className="x" d="M25.5 19l13 13M38.5 19l-13 13" /></svg>
     </span>
   );
 }

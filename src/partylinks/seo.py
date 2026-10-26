@@ -52,7 +52,7 @@ CURRENCY_SYMBOLS = {"ILS": "₪", "EUR": "€", "USD": "$", "GBP": "£"}
 
 TEXT: dict[str, dict[str, str]] = {
     "he": {
-        "site_title": "Pulse פולס · כל האירועים בישראל",
+        "site_title": "SPOTX · כל האירועים בישראל",
         "site_desc": "כל האירועים, המסיבות וההופעות בכל הארץ במקום אחד: תאריכים, ליינאפ, מחירי כרטיסים, כניסה חופשית, מקומות ומפה. מתעדכן כל הזמן.",
         "upcoming": "אירועים קרובים בכל הארץ",
         "venues": "מקומות אירועים בכל הארץ",
@@ -70,7 +70,7 @@ TEXT: dict[str, dict[str, str]] = {
         "locale": "he_IL",
     },
     "en": {
-        "site_title": "Pulse · Every event in Israel",
+        "site_title": "SPOTX · Every event in Israel",
         "site_desc": "Every event, party and show in Israel in one place: dates, lineups, ticket prices, free entry, venues and a map. Always up to date.",
         "upcoming": "Upcoming events in Israel",
         "venues": "Event venues in Israel",
@@ -1068,7 +1068,7 @@ def _jsonld_tag(data: dict[str, Any]) -> str:
 
 def render(template: str, page: Page, cfg: Settings) -> str:
     canonical = _url(cfg, page.path, page.lang if page.lang in page.langs else page.langs[0])
-    image = page.image or f"{cfg.site.base_url}/og-default.png?v=pulse"
+    image = page.image or f"{cfg.site.base_url}/og-default.png?v=spotx"
     t = TEXT[page.lang]
     other = "en" if page.lang == "he" else "he"
     head = [

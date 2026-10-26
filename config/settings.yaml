@@ -1,4 +1,4 @@
-# Pulse configuration.
+# SPOTX configuration.
 # Every value can be overridden by an environment variable using the
 # PARTYLINKS_ prefix and "__" as the nesting delimiter, e.g.
 #   PARTYLINKS_DATABASE__URL=postgresql+psycopg://user:pass@host/db
@@ -27,7 +27,7 @@ logging:
 # JSON-LD, llms.txt and share previews: set it to the real domain when deployed.
 site:
   base_url: http://localhost:8000
-  name: Pulse
+  name: SPOTX
   email: ""                # contact + partnerships address on /contact and /partners (empty: privacy.email)
   # Accessibility statement at /accessibility (Israeli standard IS 5568). The law requires a real
   # accessibility coordinator who can be reached: fill these in before going public.
@@ -35,19 +35,19 @@ site:
     coordinator: ""        # full name
     email: ""
     phone: ""
-    updated: 2026-10-20    # last review of the statement
+    updated: 2026-10-26    # last review of the statement (renamed SPOTX)
   # Privacy and cookie policy at /privacy (Israeli Privacy Protection Law, Amendment 13): a contact
   # for access / correction / deletion requests. The cookie banner itself is in web/src/consent.tsx.
   privacy:
     email: ""
-    updated: 2026-10-20    # last review of the policy
+    updated: 2026-10-26    # last review of the policy (renamed SPOTX)
 
 # UTM tags on ticket links (src/partylinks/utm.py), added in the /go/ redirect so sellers' analytics
 # (GA4...) attribute traffic and sales to us: utm_source / utm_medium from here, utm_campaign = the
 # event's slug, utm_content = where on our page it was clicked (buy / alt / bar / seo), utm_term = city.
 utm:
   enabled: true
-  source: pulse
+  source: spotx
   medium: affiliate
 
 # Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
@@ -61,7 +61,10 @@ security:
   # The site's real host names once deployed, e.g. ["partylinks.co.il", "www.partylinks.co.il"].
   # Empty = any Host header accepted. localhost always works; healthcheck.railway.app is Railway's
   # deploy health probe (without it no deploy goes live).
-  allowed_hosts: ["tlv.up.railway.app", "web-production-c14b4.up.railway.app", "healthcheck.railway.app"]
+  allowed_hosts: ["spotx.fun", "www.spotx.fun", "tlv.up.railway.app", "web-production-c14b4.up.railway.app",
+                  "healthcheck.railway.app"]
+  # Old addresses: 301 to site.base_url once it is the domain (see SecuritySettings.redirect_hosts).
+  redirect_hosts: ["www.spotx.fun", "tlv.up.railway.app", "web-production-c14b4.up.railway.app"]
   rate_limit_per_minute: 300
   admin_rate_limit_per_minute: 30
   # Ticket links (/go/...): the sellers' URLs are handed out one click at a time.
@@ -490,7 +493,7 @@ dedup:
 geocoding:
   enabled: true
   url: https://nominatim.openstreetmap.org/search
-  user_agent: "Pulse/0.1 (Israel event listings)"
+  user_agent: "SPOTX/0.1 (Israel event listings)"
   min_interval_seconds: 1.1
   max_lookups_per_run: 120
   # Israeli localities OSM files under "ps" (Ma'ale Adumim, Ariel, Oranit...) need it too, or never geocode.
@@ -735,7 +738,7 @@ sources:
     areas: []
 
   # chillz.com is behind a Vercel Security Checkpoint. Runs are recorded as
-  # "blocked" until the owner allows Pulse; then collection starts with no
+  # "blocked" until the owner allows SPOTX; then collection starts with no
   # code change. Supply the agreed access header via the environment only:
   #   PARTYLINKS_SOURCES__CHILLZ__HTTP__HEADERS='{"x-partylinks-key": "<secret>"}'
   chillz:
@@ -999,7 +1002,7 @@ sources:
     calendar_windows: 2
     http:
       concurrency: 2
-      user_agent: "Pulse/1.0 (event aggregator; contact via site owner)"
+      user_agent: "SPOTX/1.0 (event aggregator; contact via site owner)"
     tenants:
       - {host: tzavta, venue_name: צוותא, city: תל אביב}
       - {host: tmuna, venue_name: תמונע, city: תל אביב}

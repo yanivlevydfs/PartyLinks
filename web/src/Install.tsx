@@ -1,4 +1,4 @@
-// "Add Pulse to your home screen" banner, mobile only, 10 seconds after the page opens.
+// "Add SPOTX to your home screen" banner, mobile only, 10 seconds after the page opens.
 // Android (Chrome, Edge, Samsung): the browser's own install dialog via beforeinstallprompt.
 // iOS has no such event: the banner shows the Share > Add to Home Screen steps instead.
 import { useEffect, useState } from "react";
@@ -38,14 +38,14 @@ function snoozed(): boolean {
 
 const TEXT = {
   he: {
-    title: "התקינו את פולס",
+    title: "התקינו את SPOTX",
     body: "כל האירועים במסך הבית, בלחיצה אחת ובמסך מלא.",
     ios: "לחצו על שיתוף ואז על \"הוספה למסך הבית\".",
     install: "התקנה",
     later: "לא עכשיו",
   },
   en: {
-    title: "Install Pulse",
+    title: "Install SPOTX",
     body: "Every event on your home screen, one tap away, full screen.",
     ios: "Tap Share, then \"Add to Home Screen\".",
     install: "Install",

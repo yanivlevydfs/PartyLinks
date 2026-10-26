@@ -1,6 +1,6 @@
-# Pulse documentation
+# SPOTX documentation
 
-Pulse (פולס) collects events from Israeli ticketing sites on a schedule and shows them on one
+SPOTX collects events from Israeli ticketing sites on a schedule and shows them on one
 website. It covers parties, concerts, theatre, stand-up, cinema, tech meetups and shows abroad.
 Every ticket link points back to the seller.
 

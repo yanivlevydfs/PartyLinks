@@ -93,7 +93,7 @@ export default function AccessibilityPage() {
     <>
       <Hero title={t.title} />
       <main className="wrap statement">
-        <p>{t.intro(site?.name ?? "Pulse")}</p>
+        <p>{t.intro(site?.name ?? "SPOTX")}</p>
 
         <h2>{t.standardTitle}</h2>
         <p>{t.standard}</p>

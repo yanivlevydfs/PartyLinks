@@ -64,7 +64,7 @@ const STORES: Record<string, [string | null, Kind]> = {
 const TEXT = {
   he: {
     title: "חנויות הכרטיסים",
-    intro: "פולס לא מוכר כרטיסים. כל אירוע באתר מגיע מאחד האתרים האלה, ולחיצה על \"כרטיסים\" מעבירה ישר אליהם. תודה לכולם.",
+    intro: "SPOTX לא מוכר כרטיסים. כל אירוע באתר מגיע מאחד האתרים האלה, ולחיצה על \"כרטיסים\" מעבירה ישר אליהם. תודה לכולם.",
     total: (events: string, stores: number) => `${events} אירועים קרובים מ-${stores} מקורות`,
     events: "אירועים קרובים",
     site: "לאתר",
@@ -73,7 +73,7 @@ const TEXT = {
   },
   en: {
     title: "Ticket stores",
-    intro: "Pulse doesn't sell tickets. Every event here comes from one of these sites, and \"Tickets\" takes you straight to them. Thank you all.",
+    intro: "SPOTX doesn't sell tickets. Every event here comes from one of these sites, and \"Tickets\" takes you straight to them. Thank you all.",
     total: (events: string, stores: number) => `${events} upcoming events from ${stores} sources`,
     events: "upcoming events",
     site: "Website",

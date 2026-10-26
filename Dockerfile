@@ -1,4 +1,4 @@
-# Pulse: API + scheduler + built website in one container (Railway, or any Docker host).
+# SPOTX: API + scheduler + built website in one container (Railway, or any Docker host).
 #   docker build -t partylinks . && docker run -p 8000:8000 -v partylinks-data:/app/data partylinks
 
 # ---------------------------------------------------------------- website (React -> web/dist)

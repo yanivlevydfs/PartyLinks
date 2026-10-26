@@ -531,7 +531,7 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
 
     docs = settings.security.api_docs
     app = FastAPI(
-        title="Pulse API",
+        title="SPOTX API",
         version="0.1.0",
         description="Party events across Israel scraped from Israeli ticketing sites.",
         lifespan=lifespan,

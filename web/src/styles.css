@@ -73,33 +73,36 @@ button, input, select { font: inherit; color: inherit; }
   background: var(--grad); opacity: .6;
 }
 .top-row { display: flex; align-items: center; gap: 20px; height: 68px; }
-.logo {
-  font: 900 24px/1 var(--display); color: var(--text); letter-spacing: -.5px; direction: ltr; flex: none;
-  text-shadow: 0 0 18px rgb(255 46 147 / .55);
-}
-.logo span { color: var(--pink); animation: flicker 6s infinite; }
-/* Same heartbeat line as the boot loader in index.html, drawn under the wordmark. */
-.logo { display: inline-block; }
-.logo svg { display: block; width: 100%; height: 12px; margin-top: 1px; overflow: visible; }
-.logo path {
-  fill: none; stroke: var(--pink); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 260; stroke-dashoffset: 260; filter: drop-shadow(0 0 4px var(--pink));
-  animation: logo-beat 2.2s ease-in-out infinite;
-}
-.logo:hover path { animation-duration: 1s; }
-/* The brand loader (ui.tsx Loader): the same heartbeat, full size for a page, small inside a button. */
+/* The brand: a map pin that draws itself, then its X (X marks the spot), beside the SPOTX wordmark.
+   Drawn once on load; the X glows; hovering drops the pin in again. Same mark as the boot screen and Loader. */
+.logo { display: inline-flex; align-items: center; gap: 8px; flex: none; direction: ltr; color: var(--text); }
+.logo .word { font: 900 24px/1 var(--display); letter-spacing: .5px; text-shadow: 0 0 18px rgb(255 46 147 / .45); }
+.logo .word span { color: var(--pink); text-shadow: 0 0 10px var(--pink), 0 0 26px rgb(255 46 147 / .6); animation: flicker 6s infinite; }
+.mark { overflow: visible; }
+.mark path { fill: none; stroke-width: 4.5; stroke-linecap: round; stroke-linejoin: round; }
+.mark .x { stroke: var(--pink); }
+.logo .mark { width: 26px; height: 33px; transform-origin: 50% 100%; }
+.logo .pin { stroke-dasharray: 150; stroke-dashoffset: 150; filter: drop-shadow(0 0 4px rgb(157 77 255 / .7));
+  animation: mark-draw 1.1s cubic-bezier(.65, 0, .35, 1) .15s forwards; }
+.logo .x { stroke-dasharray: 40; stroke-dashoffset: 40;
+  animation: mark-draw .45s ease-out 1.1s forwards, x-glow 3.6s ease-in-out 1.8s infinite; }
+.logo:hover .mark { animation: pin-drop .7s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes mark-draw { to { stroke-dashoffset: 0; } }
+@keyframes x-glow { 50% { filter: drop-shadow(0 0 5px var(--pink)) drop-shadow(0 0 12px var(--pink)); } }
+@keyframes pin-drop { 0% { transform: translateY(-7px) scaleY(1.06); } 60% { transform: translateY(0) scaleY(.92); } 100% { transform: none; } }
+/* The brand loader (ui.tsx Loader): the mark drawing in a loop, full size for a page, small inside a button. */
 .loader { display: grid; place-items: center; padding: 60px 0; }
-.loader svg { width: 180px; height: 40px; overflow: visible; }
-.loader path {
-  fill: none; stroke: var(--pink); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 260; stroke-dashoffset: 260; filter: drop-shadow(0 0 6px var(--pink));
-  animation: logo-beat 1.4s ease-in-out infinite;
-}
+.loader .mark { width: 54px; height: 70px; }
+.loader .pin { stroke-dasharray: 150; stroke-dashoffset: 150; filter: drop-shadow(0 0 6px rgb(157 77 255 / .7));
+  animation: pin-loop 2.4s cubic-bezier(.65, 0, .35, 1) infinite; }
+.loader .x { stroke-dasharray: 40; stroke-dashoffset: 40; filter: drop-shadow(0 0 6px var(--pink)); animation: x-loop 2.4s ease-in-out infinite; }
 .loader.small { display: inline-grid; padding: 0; vertical-align: middle; }
-.loader.small svg { width: 72px; height: 16px; }
-@media (prefers-reduced-motion: reduce) { .loader path { animation: none; stroke-dashoffset: 0; } }
-@keyframes logo-beat { 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -260; } }
-@media (prefers-reduced-motion: reduce) { .logo path { animation: none; stroke-dashoffset: 0; } }
+.loader.small .mark { width: 16px; height: 21px; }
+@keyframes pin-loop { 45%, 70% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -150; } }
+@keyframes x-loop { 0%, 35% { stroke-dashoffset: 40; } 55%, 75% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -40; } }
+@media (prefers-reduced-motion: reduce) {
+  .mark path, .logo:hover .mark { animation: none; stroke-dashoffset: 0; }
+}
 @keyframes flicker {
   0%, 92%, 96%, 100% { opacity: 1; text-shadow: 0 0 8px var(--pink), 0 0 24px var(--pink); }
   93%, 95% { opacity: .45; text-shadow: none; }

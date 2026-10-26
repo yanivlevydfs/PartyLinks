@@ -1,11 +1,11 @@
-// Terms of use (תנאי שימוש): Pulse only aggregates listings sold on other sites, so the terms make
+// Terms of use (תנאי שימוש): SPOTX only aggregates listings sold on other sites, so the terms make
 // clear it is not a party to any purchase and is not responsible for events, content or prices.
 // The contact address is the privacy one (site.privacy in config) via GET /site.
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Hero, useT, useTitle } from "../ui";
 
-const UPDATED = "2026-10-20";
+const UPDATED = "2026-10-26";
 
 type Section = { title: string; body: string[]; list?: string[] };
 
@@ -163,7 +163,7 @@ export default function TermsPage() {
     <>
       <Hero title={t.title} />
       <main className="wrap statement">
-        <p>{t.intro(site?.name ?? "Pulse")}</p>
+        <p>{t.intro(site?.name ?? "SPOTX")}</p>
         {t.sections.map((s) => (
           <section key={s.title}>
             <h2>{s.title}</h2>

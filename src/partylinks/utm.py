@@ -4,7 +4,7 @@ visits, clicks and sales to us, per event and per spot on our page.
 Tags are added server-side in GET /go/... (the only way a ticket link leaves the server), so no
 analytics cookies or scripts are needed on our side. Example result:
 
-    https://seller.example/e/123?ref=x&utm_source=pulse&utm_medium=affiliate
+    https://seller.example/e/123?ref=x&utm_source=spotx&utm_medium=affiliate
         &utm_campaign=techno-night-2026-11-02&utm_content=buy&utm_term=<city>
 """
 

@@ -548,7 +548,7 @@ def test_seller_links_leave_only_through_the_rate_limited_redirect(tmp_path: Pat
         assert not [p for p in pages if "seller.example" in p]
         assert client.get("/events/test:a").json()["url"] == "/go/test%3Aa"
         go = client.get("/go/test%3Aa?at=buy", follow_redirects=False)
-        assert go.status_code == 302 and go.headers["location"].startswith("https://seller.example/a?utm_source=pulse&")
+        assert go.status_code == 302 and go.headers["location"].startswith("https://seller.example/a?utm_source=spotx&")
         assert "utm_content=buy" in go.headers["location"]
         client.get("/go/test%3Aa?at=alt", follow_redirects=False)
         client.get("/go/test%3Aa?at=nonsense", follow_redirects=False)
@@ -841,3 +841,17 @@ def test_an_event_in_israel_placed_abroad_loses_the_point() -> None:
     areas = Enricher(Settings().enrichment, "Asia/Jerusalem").areas
     assert not areas.in_israel(41.706, -7.642)  # beatradar's "North", in Portugal
     assert areas.in_israel(29.532, 34.94) and areas.in_israel(32.08, 34.78)  # Eilat, Tel Aviv
+
+
+def test_old_addresses_move_to_the_domain_only_once_base_url_is_the_domain(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    settings.security.redirect_hosts = ["tlv.up.railway.app"]
+    settings.site.base_url = "https://tlv.up.railway.app"  # domain not live yet: nothing moves
+    with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}) as client:
+        assert client.get("/health", headers={"host": "tlv.up.railway.app"}).status_code == 200
+        assert client.get("/robots.txt", headers={"host": "tlv.up.railway.app"}, follow_redirects=False).status_code == 200
+    settings.site.base_url = "https://spotx.fun"
+    with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}) as client:
+        r = client.get("/events?q=techno", headers={"host": "tlv.up.railway.app"}, follow_redirects=False)
+        assert r.status_code == 301 and r.headers["location"] == "https://spotx.fun/events?q=techno"
+        assert client.get("/health", headers={"host": "tlv.up.railway.app"}).status_code == 200  # Railway's probe

@@ -14,16 +14,16 @@ redirect is the only place a seller's URL leaves the server. On each click it:
 ## UTM tags
 
 These let sellers see, in their own analytics (GA4 or similar), the visits, clicks and sales that
-came from Pulse, per event.
+came from SPOTX, per event.
 
 ```
-https://seller.example/e/123?ref=x&utm_source=pulse&utm_medium=affiliate
+https://seller.example/e/123?ref=x&utm_source=spotx&utm_medium=affiliate
     &utm_campaign=<event slug>&utm_content=buy&utm_term=<city>
 ```
 
 | Tag | Value |
 | --- | --- |
-| `utm_source` | `utm.source` in settings (`pulse`) |
+| `utm_source` | `utm.source` in settings (`spotx`) |
 | `utm_medium` | `utm.medium` in settings (`affiliate`) |
 | `utm_campaign` | The event's slug (or id): one campaign per event |
 | `utm_content` | Where on our page it was clicked (see below) |

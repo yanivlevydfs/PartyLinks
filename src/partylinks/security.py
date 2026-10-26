@@ -14,6 +14,7 @@ import re
 import time
 from collections import defaultdict, deque
 from typing import Any
+from urllib.parse import urlsplit
 
 from partylinks.admin import LOOPBACK
 from partylinks.config import SecuritySettings
@@ -165,6 +166,15 @@ class SecurityMiddleware:
         host = headers.get("host", "").rsplit(":", 1)[0].strip("[]").lower()
         if cfg.allowed_hosts and host not in LOOPBACK | {"testserver"} | {h.lower() for h in cfg.allowed_hosts}:
             return await reject(400, "unknown host")
+        if host in {h.lower() for h in cfg.redirect_hosts} and path != "/health":
+            base = scope["app"].state.settings.site.base_url.rstrip("/")
+            if urlsplit(base).hostname not in (None, host):
+                query = scope.get("query_string", b"").decode("latin-1")
+                location = base + scope.get("raw_path", b"").decode("latin-1") + (f"?{query}" if query else "")
+                await send({"type": "http.response.start", "status": 301, "headers": [
+                    (b"location", location.encode("latin-1")), (b"content-length", b"0"), *HEADERS,
+                ]})  # fmt: skip
+                return await send({"type": "http.response.body", "body": b""})
         if PROBE.search(raw) or SCANNER_AGENTS.search(agent):
             if not local:
                 self.guard.strike(ip, cfg, f"probe {path[:80]}", now)

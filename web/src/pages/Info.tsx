@@ -39,8 +39,8 @@ function Back() {
 
 const ABOUT = {
   he: {
-    intro: "פולס הוא המקום אחד לכל מה שקורה בערב: מסיבות, הופעות, סטנדאפ, תיאטרון, הרצאות ומה שביניהם, בכל הארץ.",
-    whyTitle: "למה פולס",
+    intro: "SPOTX הוא המקום אחד לכל מה שקורה בערב: מסיבות, הופעות, סטנדאפ, תיאטרון, הרצאות ומה שביניהם, בכל הארץ.",
+    whyTitle: "למה SPOTX",
     why: "האירועים בישראל מפוזרים בין עשרות אתרי כרטיסים, עמודי מפיקים ורשתות חברתיות. כדי לדעת מה יש הערב צריך לפתוח עשר לשוניות. ריכזנו הכול במקום אחד, עם חיפוש וסינון לפי תאריך, עיר, ז׳אנר, מחיר ומרחק.",
     howTitle: "איך זה עובד",
     how: [
@@ -52,8 +52,8 @@ const ABOUT = {
     free: "אין חשבונות, אין הרשמה ואין פרסומות מעקב. נכנסים, מוצאים, יוצאים לבלות.",
   },
   en: {
-    intro: "Pulse is one place for everything happening tonight: parties, concerts, stand-up, theatre, talks and everything in between, all over Israel.",
-    whyTitle: "Why Pulse",
+    intro: "SPOTX is one place for everything happening tonight: parties, concerts, stand-up, theatre, talks and everything in between, all over Israel.",
+    whyTitle: "Why SPOTX",
     why: "Events in Israel are spread across dozens of ticketing sites, promoter pages and social networks; finding out what's on tonight takes ten tabs. We put it all in one place, searchable and filterable by date, city, genre, price and distance.",
     howTitle: "How it works",
     how: [
@@ -93,7 +93,7 @@ export function AboutPage() {
 
 const FAQ: Record<Lang, [string, string][]> = {
   he: [
-    ["מה זה פולס?", "אתר שמרכז את כל האירועים, המסיבות וההופעות בישראל מעשרות אתרי כרטיסים, עם חיפוש לפי תאריך, עיר, ז׳אנר, מחיר ומרחק ממך."],
+    ["מה זה SPOTX?", "אתר שמרכז את כל האירועים, המסיבות וההופעות בישראל מעשרות אתרי כרטיסים, עם חיפוש לפי תאריך, עיר, ז׳אנר, מחיר ומרחק ממך."],
     ["אתם מוכרים כרטיסים?", "לא. הכפתור \"כרטיסים\" מעביר לאתר שמוכר את הכרטיס, והרכישה נעשית שם. אנחנו לא צד לעסקה."],
     ["כמה זה עולה?", "השימוש באתר חינם לגמרי, בלי הרשמה ובלי חשבון."],
     ["המחירים מדויקים?", "המחירים נלקחים מאתרי הכרטיסים ומתעדכנים כל הזמן, אבל הם יכולים להשתנות. המחיר הקובע הוא זה שבאתר המוכר."],
@@ -105,7 +105,7 @@ const FAQ: Record<Lang, [string, string][]> = {
     ["יש אירועים בחו״ל?", "כן, בעמוד \"חו״ל\" יש כרטיסים וחבילות להופעות ולפסטיבלים בעולם."],
   ],
   en: [
-    ["What is Pulse?", "A site that brings together every event, party and show in Israel from dozens of ticketing sites, searchable by date, city, genre, price and distance from you."],
+    ["What is SPOTX?", "A site that brings together every event, party and show in Israel from dozens of ticketing sites, searchable by date, city, genre, price and distance from you."],
     ["Do you sell tickets?", "No. The \"Tickets\" button takes you to the site that sells them, and you buy there. We are not a party to the purchase."],
     ["What does it cost?", "Using the site is completely free, with no sign-up and no account."],
     ["Are the prices accurate?", "Prices come from the ticketing sites and are refreshed constantly, but they can change. The seller's price is the one that counts."],
@@ -175,7 +175,7 @@ export function ContactPage() {
 
 const PARTNERS = {
   he: {
-    intro: "פולס מגיע לאנשים שמחפשים בדיוק עכשיו לאן לצאת. אם אתם מייצרים אירועים, מארחים אותם או מוכרים להם כרטיסים, בואו נדבר.",
+    intro: "SPOTX מגיע לאנשים שמחפשים בדיוק עכשיו לאן לצאת. אם אתם מייצרים אירועים, מארחים אותם או מוכרים להם כרטיסים, בואו נדבר.",
     who: [
       ["מפיקים ואמנים", "ודאו שהאירועים שלכם מופיעים עם כל הפרטים: ליינאפ, תמונות, מחירים וקישור ישיר לקנייה."],
       ["מקומות ומועדונים", "עמוד מקום מסודר עם כל האירועים הקרובים שלכם, על המפה ובחיפוש לפי עיר."],
@@ -183,10 +183,10 @@ const PARTNERS = {
       ["מותגים ומדיה", "תוכן משותף, כתבות בבלוג ומדריכי בילוי לקהל שיוצא לבלות."],
     ],
     how: "כתבו לנו כמה מילים על עצמכם ועל מה שמעניין אתכם, ונחזור אליכם.",
-    subject: "שיתוף פעולה עם פולס",
+    subject: "שיתוף פעולה עם SPOTX",
   },
   en: {
-    intro: "Pulse reaches people who are looking for somewhere to go right now. If you create events, host them or sell their tickets, let's talk.",
+    intro: "SPOTX reaches people who are looking for somewhere to go right now. If you create events, host them or sell their tickets, let's talk.",
     who: [
       ["Promoters and artists", "Make sure your events appear with every detail: lineup, images, prices and a direct link to buy."],
       ["Venues and clubs", "A proper venue page with all your upcoming events, on the map and in city search."],
@@ -194,7 +194,7 @@ const PARTNERS = {
       ["Brands and media", "Joint content, blog features and going-out guides for people heading out."],
     ],
     how: "Write us a few words about yourself and what interests you, and we'll get back to you.",
-    subject: "Partnership with Pulse",
+    subject: "Partnership with SPOTX",
   },
 };
 

@@ -201,7 +201,7 @@ export default function PrivacyPage() {
     <>
       <Hero title={t.title} />
       <main className="wrap statement">
-        <p>{t.intro(site?.name ?? "Pulse")}</p>
+        <p>{t.intro(site?.name ?? "SPOTX")}</p>
         <Sections list={t.sections} />
         <StorageTable />
         <p><button className="c-btn" onClick={openSettings}>{t.manage}</button></p>

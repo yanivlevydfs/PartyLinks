@@ -1,6 +1,6 @@
 # Architecture
 
-Pulse is one Python process (FastAPI) that does three things:
+SPOTX is one Python process (FastAPI) that does three things:
 
 1. **Collects:** a scheduler runs each source on its own cron.
 2. **Stores:** events go into SQLite.
