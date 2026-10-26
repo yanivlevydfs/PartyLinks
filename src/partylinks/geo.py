@@ -166,8 +166,12 @@ _GENERIC_NAMES = {
 _GENERIC_WORDS = {w.lower() for w in _GENERIC_NAMES} | {
     "התרבות", "תרבות", "המוסיקה", "המוזיקה", "מוסיקה", "מוזיקה", "לאמנויות", "ואומנויות", "אמנויות", "האמנויות",
     "לתרבות", "הקהילתי", "קהילתי", "העירוני", "עירוני", "הבמה", "הספורט", "ספורט", "האירועים", "אירועים",
-    "המופעים", "מופעים", "ההופעות", "culture", "music", "arts", "art", "cultural", "events",
+    "המופעים", "מופעים", "ההופעות", "בית", "העם", "מתנ\"ס", "מתנס", "culture", "music", "arts", "art", "cultural", "events",
 }  # fmt: skip
+
+
+# The generic words as they appear inside venue keys (spaces gone, a leading "ה" sometimes dropped).
+_GENERIC_PIECES = sorted({v for w in _GENERIC_WORDS for v in (w, w.removeprefix("ה")) if len(v) >= 2}, key=len, reverse=True)
 
 
 def _vague(name: str, city: str | None, town: str) -> bool:
@@ -232,9 +236,19 @@ def _venue_match(known: Known, name: str | None, city: str | None = None) -> Poi
         return point
     return next(
         (p for k, cities in known.items()
-         if min(len(k), len(key)) >= MIN_PARTIAL and (k in key or key in k) and (p := _in_city(cities, city))),
+         if min(len(k), len(key)) >= MIN_PARTIAL and (k in key or key in k) and not _generic_key(min(k, key, key=len))
+         and (p := _in_city(cities, city))),
         None,
     )  # fmt: skip
+
+
+def _generic_key(key: str) -> bool:
+    """A key made only of kind-of-place words ("יכלהתרבות" = "היכל התרבות"): inside a longer name it
+    says nothing about which hall - "היכל התרבות מנשה בגן שמואל" took Tel Aviv's culture hall point."""
+    ok = [True] + [False] * len(key)
+    for end in range(1, len(key) + 1):
+        ok[end] = any(ok[end - len(w)] and key.endswith(w, 0, end) for w in _GENERIC_PIECES if len(w) <= end)
+    return ok[-1]
 
 
 @dataclass

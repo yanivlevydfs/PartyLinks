@@ -787,3 +787,11 @@ def test_one_complex_under_many_names_is_not_a_placeholder_point() -> None:
         assert distinct_venues({venue_key(n) or "" for n in names}) == 1, names
     # A real placeholder (one point sent for unrelated clubs) still counts each.
     assert distinct_venues({venue_key(n) or "" for n in ("בארבי", "גגרין", "הבלוק", "לבונטין 7")}) == 4
+
+
+def test_a_generic_hall_name_never_lends_its_point_to_another_city_s_hall() -> None:
+    from partylinks.geo import _venue_match, venue_key
+
+    known = {venue_key("היכל התרבות"): {"תל אביב": (32.073, 34.78)}, venue_key("הקאמרי"): {"תל אביב": (32.077, 34.784)}}
+    assert _venue_match(known, "היכל התרבות מנשה בגן שמואל", None) is None  # took Tel Aviv's hall before
+    assert _venue_match(known, "תיאטרון הקאמרי אולם 1", "תל אביב") == (32.077, 34.784)  # a real name still matches
