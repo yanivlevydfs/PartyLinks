@@ -17,6 +17,7 @@ import json
 import random
 from collections.abc import AsyncIterator
 from typing import Any
+from urllib.parse import urlsplit
 
 from pydantic import Field
 
@@ -24,6 +25,7 @@ from partylinks.artists import ArtistProfile
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, from_unix, next_data, og_image, to_decimal
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.matnasnet import covered_smarticket_hosts
 
 SLIDER_SECTION = "eventSlider"
 LOOP_SECTION = "loopSections"
@@ -76,7 +78,12 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         self.log.info("listed %d events", len(items))
         events: list[ScrapedEvent] = []
         missing: list[tuple[ScrapedEvent, str]] = []  # no artwork here: the seller's page may have it
+        # Smarticket box offices the smarticket source reads are left to it: it has the artwork, and
+        # Tickchak's copies can be stale (a removed show's link redirects to /404).
+        skip = covered_smarticket_hosts()
         for entity_id, item in items.items():
+            if urlsplit(clean_str(item.get("link")) or "").hostname in skip:
+                continue
             try:
                 event = parse_event(item, s.site_url, self.name)
             except Exception as exc:  # noqa: BLE001 - isolate per-item failures
