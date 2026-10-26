@@ -79,7 +79,7 @@ def test_hourly_sessions_never_chain_into_one_event(tmp_path: Path) -> None:
         listing("smarticket", str(n), "סדנת חוסן באמצעות בעלי חיים", start=START + timedelta(hours=n)) for n in range(3)
     ] + [listing("goout", "a", "סדנת חוסן באמצעות בעלי חיים", start=START + timedelta(minutes=30))])  # fmt: skip
     assert len({g for g, _ in groups.values()}) >= 3
-    assert groups["smarticket:0"][0] != groups["smarticket:2"][0] != groups["smarticket:1"][0]
+    assert len({groups[f"smarticket:{n}"][0] for n in range(3)}) == 3
 
 
 def test_link_to_a_page_many_listings_share_merges_nothing(tmp_path: Path) -> None:
@@ -90,6 +90,89 @@ def test_link_to_a_page_many_listings_share_merges_nothing(tmp_path: Path) -> No
         listing("ogo", "x", "Something else", extra={"purchase_url": central}),
     ])  # fmt: skip
     assert len({g for g, _ in groups.values()}) == 3
+
+
+def test_same_title_and_hour_in_another_city_stays_apart(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("telaviv", "1", "שעת סיפור", where=None, city="תל אביב", address=None),
+        listing("haifamuni", "2", "שעת סיפור", where=None, city="חיפה", address=None),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 2
+
+
+def test_kids_show_and_lecture_of_a_similar_name_stay_apart(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("smarticket", "1", "מהפכה הביטלס עשו", source_genres=["kids"]),  # 0.89 alike
+        listing("arenas", "2", "מהפכה הביטלס עשו לנו", source_genres=["lectures"]),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 2
+
+
+def test_no_place_at_all_never_merges_across_sites(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("telaviv", "1", "יוגה", where=None, address=None),
+        listing("haifamuni", "2", "יוגה", where=None, address=None),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 2
+
+
+def test_matches_never_chain_past_the_start_gap(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("eventer", "a", "THURSDAY MOON MAINSTREAM"),
+        listing("tickchak", "b", "THURSDAY MOON MAINSTREAM", start=START + timedelta(minutes=50)),
+        listing("barby", "c", "THURSDAY MOON MAINSTREAM", start=START + timedelta(minutes=100)),
+    ])  # fmt: skip
+    assert groups["eventer:a"][0] != groups["barby:c"][0]
+
+
+def test_same_city_alone_does_not_merge_a_generic_title(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("telaviv", "1", "שעת סיפור", where=None, city="תל אביב", address=None),
+        listing("ogo", "2", "שעת סיפור", city="תל אביב", where=(32.08, 34.78), address=None),
+        listing("ogo", "3", "סדנת מנגה קומיקס יפני", city="תל אביב", where=(32.08, 34.78), address=None),
+        listing("telaviv", "4", "סדנת מנגה - קומיקס יפני", where=None, city="תל אביב", address=None),
+    ])  # fmt: skip
+    assert groups["telaviv:1"][0] != groups["ogo:2"][0]  # generic: could be any library
+    assert groups["telaviv:4"][0] == groups["ogo:3"][0]
+
+
+def test_promoter_pages_hours_apart_never_chain(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("goout", str(h), "STAND UP X", start=START + timedelta(hours=h)) for h in range(3)
+    ])  # fmt: skip
+    assert groups["goout:0"][0] != groups["goout:2"][0]
+
+
+def test_numbered_variants_stay_apart(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("telaviv", "1", "חוג ציור לגילאי 4-6"),
+        listing("ogo", "2", "חוג ציור לגילאי 7-9"),
+        listing("ogo", "3", "חוג ציור לגילאי 4-6 | 22.10"),
+    ])  # fmt: skip
+    assert groups["telaviv:1"][0] != groups["ogo:2"][0]
+    assert groups["telaviv:1"][0] == groups["ogo:3"][0]
+
+
+def test_one_sites_listings_linking_one_page_do_not_merge_through_it(tmp_path: Path) -> None:
+    venue = "https://venue.example/tickets"
+    _, groups = grouped(tmp_path, [
+        listing("venue", "z", "Jazz in the park", url=venue),
+        listing("ogo", "x", "Jazz in the park", extra={"purchase_url": venue}),
+        listing("ogo", "y", "Kids theatre", extra={"purchase_url": venue}),
+    ])  # fmt: skip
+    assert groups["ogo:x"][0] != groups["ogo:y"][0]
+
+
+def test_sold_out_copy_never_fronts_or_prices_the_event(tmp_path: Path) -> None:
+    settings, _ = grouped(tmp_path, [
+        listing("goout", "a", "THURSDAY MOON", is_sold_out=True, min_price=Decimal(80),
+                tickets=[TicketTier(name="Entry", price=Decimal(80), is_sold_out=True)]),
+        listing("eventer", "b", "THURSDAY MOON", tickets=[TicketTier(name="Entry", price=Decimal(120))]),
+    ])  # fmt: skip
+    with Database(settings.database.url).session() as session:
+        rows = {r.id: r for r in session.query(EventRow)}
+    assert rows["eventer:b"].is_primary and not rows["goout:a"].is_primary
+    assert rows["goout:a"].group_min_price == 120
 
 
 def test_api_returns_one_event_with_alternatives(tmp_path: Path) -> None:

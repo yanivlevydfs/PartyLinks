@@ -507,6 +507,23 @@ dedup:
   # Direct sellers before aggregators; first listed wins as the primary listing.
   source_priority: [goout, eventer, zygo, selector, barby, grayclub, chillz, tickchak]
   promoter_page_sources: [goout, zygo, popit, drop]
+  # Broad kinds of event: two listings whose genres share no kind (a kids' show and a lecture) are
+  # different events unless their titles are near-identical (strong_title_similarity; genre tags are
+  # noisy). Ambiguous tags (israeli, lgbt, culture...) belong to no kind.
+  kinds:
+    music: [techno, house, trance, hip_hop, rnb, mainstream, pop, reggaeton_latin, afro, dancehall_reggae,
+            mizrahi, greek, arabic, disco_funk, drum_and_bass, bass_dubstep, hardstyle, edm, electronic,
+            downtempo_chill, throwback, rock_indie, dark_wave, jazz, live_show, karaoke, classical_opera,
+            festival, happy_hour, dance, ballroom, folk_dance, latin_dance, salsa]
+    kids: [kids]
+    talk: [hi_tech, ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, conference,
+           lectures, workshops, meetups]
+    stage: [theatre, stand_up]
+    cinema: [cinema]
+    sport: [sport, yoga_wellness]
+    tour: [tours]
+    art: [exhibitions]
+    food: [markets, food]
 
 # Coordinates for events whose source gives only an address, so they show on the map.
 # Order: manual pins below -> another event at the same venue / street address -> cached or new

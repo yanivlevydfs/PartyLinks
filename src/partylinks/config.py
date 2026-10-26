@@ -256,6 +256,7 @@ class DedupSettings(BaseModel):
     # Sites with a page per promoter / entry time of one party (20:00 and 21:00 pages). Any other site's
     # pages at different hours are separate sessions (a workshop at 14:00 and 15:00) and never merge.
     promoter_page_sources: list[str] = Field(default_factory=list)
+    kinds: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class RetentionSettings(BaseModel):

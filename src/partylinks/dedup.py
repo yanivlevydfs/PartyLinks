@@ -47,6 +47,8 @@ def _str(value: Any) -> str | None:
 _KINDS = {"free": ("free",), "paid": ("paid",), "free_and_paid": ("free", "paid")}
 _DATE_TOKEN = re.compile(r"\b\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?\b")
 _NON_WORD = re.compile(r"[\W_]+", re.UNICODE)
+_TIME_TOKEN = re.compile(r"\b\d{1,2}:\d{2}\b")
+_YEAR = re.compile(r"^(?:19|20)\d\d$")
 
 
 @dataclass
@@ -58,6 +60,9 @@ class _Listing:
     lat: float | None
     lng: float | None
     venue_slug: str | None
+    city: str | None
+    kinds: frozenset[str]
+    numbers: frozenset[str]
     url_key: str
     links_to: str | None
     tiers: int
@@ -67,6 +72,7 @@ class _Listing:
     entry_type: str
     has_free_entry: bool
     free_entry_until: datetime | None = None
+    sold_out: bool = False
 
 
 def title_key(title: str | None, stopwords: set[str]) -> str:
@@ -74,6 +80,12 @@ def title_key(title: str | None, stopwords: set[str]) -> str:
     text = _DATE_TOKEN.sub(" ", (title or "").lower())
     words = [w for w in _NON_WORD.sub(" ", text).split() if w not in stopwords and not w.isdigit()]
     return " ".join(sorted(set(words)))
+
+
+def title_numbers(title: str | None) -> frozenset[str]:
+    """Numbers that tell variants apart ("גילאי 4-6" / "7-9", "Part 1" / "Part 2"); not dates, hours or years."""
+    text = _TIME_TOKEN.sub(" ", _DATE_TOKEN.sub(" ", (title or "").lower()))
+    return frozenset(w for w in _NON_WORD.sub(" ", text).split() if w.isdigit() and not _YEAR.match(w))
 
 
 def url_key(url: str | None) -> str:
@@ -104,20 +116,24 @@ class Deduplicator:
         self._stopwords = {w.lower() for w in settings.title_stopwords}
         self._priority = {name: rank for rank, name in enumerate(settings.source_priority)}
         self._promoter_pages = set(settings.promoter_page_sources)
+        self._kind = {g: kind for kind, genres in settings.kinds.items() for g in genres}
 
     def same_event(self, a: _Listing, b: _Listing, shared_urls: frozenset[str] = frozenset()) -> bool:
-        # A page several listings share (a site's generic "central" page) is not one event's page.
-        if a.links_to and a.links_to == b.url_key or b.links_to and b.links_to == a.url_key:
-            return b.url_key not in shared_urls if a.links_to == b.url_key else a.url_key not in shared_urls
-        if self._sessions(a, b):
+        """Name, date, hour, place and kind must all agree; in doubt two listings stay apart."""
+        if self._contradict(a, b, kinds=False):
             return False
+        # A page several listings share (a site's generic "central" page) is not one event's page.
+        if a.links_to and a.links_to == b.url_key and b.url_key not in shared_urls:
+            return True
+        if b.links_to and b.links_to == a.url_key and a.url_key not in shared_urls:
+            return True
         if not a.title_key or not b.title_key:
             return False
         matcher = SequenceMatcher(None, a.title_key, b.title_key)
         threshold = self.settings.title_similarity
         if matcher.real_quick_ratio() < threshold or matcher.quick_ratio() < threshold or matcher.ratio() < threshold:
             return False
-        if a.start and b.start and abs((a.start - b.start).total_seconds()) > self.settings.max_start_gap_minutes * 60:
+        if self._other_kind(a, b, matcher.ratio()):
             return False
         distance = _distance_m(a, b)
         if distance is not None:
@@ -133,33 +149,67 @@ class Deduplicator:
             )
         if a.venue_slug and b.venue_slug:
             return a.venue_slug == b.venue_slug
-        return True  # one side has no location: title + time decide
+        # No coordinates or venue on one side: a city is too coarse for "שעת סיפור" at two libraries, so
+        # only a near-identical title of 3+ words at the same hour in the same city.
+        s = self.settings
+        return (
+            bool(a.city and a.city == b.city)
+            and matcher.ratio() >= s.strong_title_similarity and len(a.title_key.split()) >= 3
+            and a.start is not None and b.start is not None
+            and abs((a.start - b.start).total_seconds()) <= s.strong_max_start_gap_minutes * 60
+        )  # fmt: skip
 
     def _compatible(self, a: list[_Listing], b: list[_Listing]) -> bool:
-        """Matches chain (14:00 ~ 15:00 ~ 16:00): two groups join only if no site lists any pair across them
-        as separate sessions."""
-        return not any(self._sessions(x, y) for x in a for y in b)
+        """Matches chain (20:00 ~ 20:50 ~ 21:40): two groups join only if no pair across them contradicts."""
+        return not any(self._contradict(x, y) for x in a for y in b)
+
+    def _contradict(self, a: _Listing, b: _Listing, kinds: bool = True) -> bool:
+        """Two listings that cannot be one event whatever links or titles say: separate sessions, hours
+        apart, other numbers in the title, another city, or another kind of event."""
+        s = self.settings
+        if self._sessions(a, b):
+            return True
+        if a.start and b.start and abs((a.start - b.start).total_seconds()) > s.max_start_gap_minutes * 60:
+            return True
+        if a.numbers and b.numbers and not a.numbers & b.numbers:
+            return True
+        if a.city and b.city and a.city != b.city:
+            distance = _distance_m(a, b)
+            if distance is None or distance > s.max_distance_meters:
+                return True
+        return kinds and self._other_kind(a, b)
+
+    def _other_kind(self, a: _Listing, b: _Listing, ratio: float | None = None) -> bool:
+        """A kids' show and a lecture: genre tags are noisy, so a near-identical title still wins."""
+        if not (a.kinds and b.kinds) or a.kinds & b.kinds:
+            return False
+        if ratio is None:
+            ratio = SequenceMatcher(None, a.title_key, b.title_key).ratio()
+        return ratio < self.settings.strong_title_similarity
 
     def _sessions(self, a: _Listing, b: _Listing) -> bool:
         """One site's own pages at different hours: separate sessions of a workshop / show."""
         return (
-            a.source == b.source and a.source not in self._promoter_pages and a.url_key != b.url_key
+            a.source == b.source and a.source not in self._promoter_pages
             and a.start is not None and b.start is not None and a.start != b.start
         )  # fmt: skip
 
     def _primary_rank(self, item: _Listing) -> tuple[Any, ...]:
-        return (self._priority.get(item.source, len(self._priority)), -item.tiers, item.first_seen, item.id)
+        # A sold-out copy never fronts the event while another site still sells it.
+        return (item.sold_out, self._priority.get(item.source, len(self._priority)), -item.tiers, item.first_seen, item.id)
 
     def _group_rows(self, members: list[_Listing]) -> list[dict[str, Any]]:
         """Group id, primary flag and the best deal across all members, written to every member."""
         primary = min(members, key=self._primary_rank)
-        priced = [m for m in members if m.min_price is not None]
+        # Prices and entry type of what can still be bought; a fully sold-out event keeps its own.
+        selling = [m for m in members if not m.sold_out] or members
+        priced = [m for m in selling if m.min_price is not None]
         best = min(priced, key=lambda m: (m.min_price, self._primary_rank(m))) if priced else primary
-        kinds = {k for m in members for k in _KINDS.get(m.entry_type, ())}
+        kinds = {k for m in selling for k in _KINDS.get(m.entry_type, ())}
         entry_type = (
             "free_and_paid" if kinds == {"free", "paid"} else next(iter(kinds)) if kinds else "unknown"
         )
-        maxima = [m.max_price for m in members if m.max_price is not None]
+        maxima = [m.max_price for m in selling if m.max_price is not None]
         shared = {
             "group_id": primary.id,
             "group_size": len(members),
@@ -183,10 +233,10 @@ class Deduplicator:
         rows = session.execute(
             select(
                 EventRow.id, EventRow.source, EventRow.title, EventRow.local_date, EventRow.start_at,
-                EventRow.latitude, EventRow.longitude, EventRow.venue_slug, EventRow.url, EventRow.extra,
-                EventRow.first_seen_at, EventRow.min_price, EventRow.max_price, EventRow.entry_type,
-                EventRow.has_free_entry, EventRow.free_entry_until, EventRow.is_listed,
-            )
+                EventRow.latitude, EventRow.longitude, EventRow.venue_slug, EventRow.city, EventRow.url, EventRow.extra,
+                EventRow.genres, EventRow.first_seen_at, EventRow.min_price, EventRow.max_price, EventRow.entry_type,
+                EventRow.has_free_entry, EventRow.free_entry_until, EventRow.is_listed, EventRow.is_sold_out,
+            ).order_by(EventRow.id)  # same input order, same groups on every pass
         ).all()  # fmt: skip
         tier_counts = _tier_counts(session)
         by_day: dict[Any, list[_Listing]] = defaultdict(list)
@@ -197,11 +247,13 @@ class Deduplicator:
             title = "" if extra.get(PLACE_LISTING) else title_key(r.title, self._stopwords)
             listing = _Listing(
                 id=r.id, source=r.source, title_key=title, start=r.start_at,
-                lat=r.latitude, lng=r.longitude, venue_slug=r.venue_slug, url_key=url_key(r.url),
+                lat=r.latitude, lng=r.longitude, venue_slug=r.venue_slug, city=r.city, url_key=url_key(r.url),
+                kinds=frozenset(self._kind[g] for g in r.genres or [] if g in self._kind),
+                numbers=frozenset() if extra.get(PLACE_LISTING) else title_numbers(r.title),
                 links_to=url_key(_str(extra.get("purchase_url"))) or None,
                 tiers=tier_counts.get(r.id, 0), first_seen=r.first_seen_at,
                 min_price=r.min_price, max_price=r.max_price, entry_type=r.entry_type,
-                has_free_entry=r.has_free_entry, free_entry_until=r.free_entry_until,
+                has_free_entry=r.has_free_entry, free_entry_until=r.free_entry_until, sold_out=bool(r.is_sold_out),
             )  # fmt: skip
             # An unlisted row stands alone: as a group's primary it would hide its listed copies.
             if r.local_date is None or r.is_listed is False:
@@ -209,8 +261,14 @@ class Deduplicator:
             else:
                 by_day[r.local_date].append(listing)
 
-        keys = Counter(item.url_key for day in by_day.values() for item in day if item.url_key)
-        shared = frozenset(k for k, n in keys.items() if n > 1)
+        # A page is no one event's page when several listings are that page (a site's generic "central"
+        # page), or several listings of one site link to it (a venue's tickets page).
+        everyone = [item for day in by_day.values() for item in day]
+        keys = Counter(item.url_key for item in everyone if item.url_key)
+        linkers = Counter(
+            (item.links_to, item.source) for item in everyone if item.links_to and item.source not in self._promoter_pages
+        )
+        shared = frozenset(k for k, n in keys.items() if n > 1) | frozenset(k for (k, _), n in linkers.items() if n > 1)
         merged = 0
         for listings in by_day.values():
             parent = {item.id: item.id for item in listings}
