@@ -795,3 +795,14 @@ def test_a_generic_hall_name_never_lends_its_point_to_another_city_s_hall() -> N
     known = {venue_key("היכל התרבות"): {"תל אביב": (32.073, 34.78)}, venue_key("הקאמרי"): {"תל אביב": (32.077, 34.784)}}
     assert _venue_match(known, "היכל התרבות מנשה בגן שמואל", None) is None  # took Tel Aviv's hall before
     assert _venue_match(known, "תיאטרון הקאמרי אולם 1", "תל אביב") == (32.077, 34.784)  # a real name still matches
+
+
+def test_tel_aviv_is_assumed_only_for_events_known_to_be_there() -> None:
+    from types import SimpleNamespace
+
+    from partylinks.geo import candidates
+
+    unknown = candidates(SimpleNamespace(venue_name="היכל התרבות מנשה בגן שמואל", city=None, address=None, in_target_city=None))
+    assert not any("תל אביב" in q for q in unknown)  # was answered with Tel Aviv's culture hall
+    known = candidates(SimpleNamespace(venue_name="בארבי", city=None, address=None, in_target_city=True))
+    assert known == ["בארבי, תל אביב"]

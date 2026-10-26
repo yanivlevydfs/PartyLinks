@@ -141,8 +141,9 @@ def candidates(row: Place) -> list[str]:
         for key in street_variants(address):
             out.append(f"{key}, {town}".rstrip(", "))
     if venue:
-        # Unknown city: assume Tel Aviv unless the event is known to be elsewhere.
-        town = city or ("" if row.in_target_city is False else "תל אביב")
+        # Tel Aviv only when the event is known to be there: with the city unknown, "היכל התרבות מנשה בגן
+        # שמואל, תל אביב" was answered with Tel Aviv's culture hall (~210 smarticket events a pass, Oct 2026).
+        town = city or ("תל אביב" if row.in_target_city else "")
         out += [f"{v}, {town}".rstrip(", ") for v in venue_variants(venue)]
         # "מועדון גגרין" -> "גגרין, תל אביב" (OSM names the place without "club" / "מועדון").
         if (bare := re.sub(r"\s+", " ", _GENERIC_VENUE_WORDS.sub(" ", venue)).strip(" -,")) and len(bare) >= 3:
