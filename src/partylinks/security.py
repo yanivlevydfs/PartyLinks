@@ -39,6 +39,9 @@ SCANNER_AGENTS = re.compile(
 DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
 # The listings as JSON: what a scraper wants, limited per IP beyond the general rate limit.
 DATA_PATHS = ("/events", "/categories", "/posts", "/ticket-sites", "/locate")
+# Card artwork and the site's own files: one home page draws well over a hundred, so they don't
+# count toward the general rate limit (a few reloads banned a visitor).
+STATIC_PATHS = ("/images/", "/assets/", "/icons/", "/favicon")
 
 CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "default-src 'self'",
@@ -216,7 +219,7 @@ class SecurityMiddleware:
         blocked = any(bot.lower() in agent.lower() for bot in cfg.blocked_bots)
         if blocked and not local and path not in ("/robots.txt", "/health"):
             return await reject(403, "forbidden")
-        if not local:
+        if not local and not path.startswith(STATIC_PATHS):
             limit = cfg.admin_rate_limit_per_minute if admin else cfg.rate_limit_per_minute
             if self.guard.over_limit(ip, "admin" if admin else "all", limit, now):
                 self.guard.strike(ip, cfg, "rate limit", now)
