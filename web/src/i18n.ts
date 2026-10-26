@@ -81,7 +81,7 @@ export const STRINGS = {
       outOf: (n: number) => `מתוך ${n.toLocaleString("he-IL")}`,
       none: "אין כלום עם הבחירה הזו, נסו לוותר על משהו",
       surprise: "🎲 תפתיעו אותי",
-      skipAll: "⏭ דלגו על השאלון, הראו הכל",
+      skipAll: "⏮ דלגו על השאלון, הראו הכל",
       again: "שאלון חדש",
       summary: "מה בחרתם",
     },
