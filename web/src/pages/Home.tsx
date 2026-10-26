@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { useCategories, useEvents, useLandingInfo } from "../api";
+import { useCategories, useEvents, useLandingInfo, type Params } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
@@ -132,32 +132,51 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   );
 }
 
-const TRENDING_DAYS = 14;
+// Day-granular, so the query key stays stable within a visit.
+const daysAhead = (n: number) => new Date(Date.now() + n * 24 * 3600 * 1000).toISOString().slice(0, 10);
 
-/** A sideways row of the events sold on the most ticket sites in the next two weeks. */
+// More rows under "Trending", one per audience: genre keys as in the API's genre filter (any of them).
+const RAILS: [string, string[]][] = [
+  ["electronic", ["techno", "house", "trance", "electronic", "edm", "drum_and_bass", "bass_dubstep", "hardstyle"]],
+  ["live", ["live_show"]],
+  ["standup", ["stand_up"]],
+  ["hitech", ["hi_tech", "ai", "cyber", "software_dev", "startups", "conference"]],
+];
+
+/** "Trending" (sold on the most ticket sites in two weeks), then a row per audience for the month ahead. */
 function Trending() {
   const { t } = useT();
+  return (
+    <>
+      <Rail title={t.trending} sub={t.trendingSub} multi params={{ sort: "-group_size", date_to: daysAhead(14) }} />
+      {RAILS.map(([key, genre]) => (
+        <Rail key={key} title={t.rails[key][0]} sub={t.rails[key][1]} params={{ sort: "-group_size", genre, date_to: daysAhead(30) }} />
+      ))}
+    </>
+  );
+}
+
+/** A sideways row of cards; `multi`: only events on more than one ticket site. */
+function Rail({ title, sub, params, multi }: { title: string; sub: string; params: Params; multi?: boolean }) {
   const row = useRef<HTMLDivElement>(null);
-  // Day-granular, so the query key stays stable within a visit.
-  const until = new Date(Date.now() + TRENDING_DAYS * 24 * 3600 * 1000).toISOString().slice(0, 10);
-  const q = useEvents({ sort: "-group_size", date_to: until, page_size: "48" });
+  const q = useEvents({ ...params, page_size: "48" });
   // A random 12 of the top 48, reshuffled each visit, so the row doesn't show the same events every time.
   const items = useMemo(() => {
-    const pool = (q.data?.pages[0]?.items ?? []).filter((e) => (e.listings ?? 1) > 1);
+    const pool = (q.data?.pages[0]?.items ?? []).filter((e) => !multi || (e.listings ?? 1) > 1);
     for (let i = pool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
     return pool.slice(0, 12);
-  }, [q.data]);
+  }, [q.data, multi]);
   if (!q.isPending && items.length < 3) return null;
   const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.8, behavior: "smooth" });
   return (
     <section className="trending">
       <div className="trending-head">
         <div>
-          <h2>{t.trending} <span aria-hidden>↗</span></h2>
-          <p>{t.trendingSub}</p>
+          <h2>{title} <span aria-hidden>↗</span></h2>
+          <p>{sub}</p>
         </div>
         <div className="trending-nav">
           <button onClick={() => scroll(-1)} aria-label="‹">‹</button>
