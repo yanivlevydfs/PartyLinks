@@ -92,6 +92,15 @@ it, while the bare `/images/{id}` is not cached at the edge. Until the copy exis
 the original with a one-hour cache. `og:image`, JSON-LD and `cover_url` keep the original
 `/images/{id}` (JPEG/PNG) for social previews.
 
+Every way artwork rows go away removes the files too, original and both copies, unless another row
+still uses the same file: retention (`retention.py`, scheduled and `POST /maintenance/retention`)
+and an image URL a source replaced (`upsert_events` returns the stale files, and `service._save_batch`
+deletes them). After each retention pass, `sweep_orphans` deletes any file under the media
+directory that no row claims, such as leftovers of crashes or earlier bugs. It keeps files changed
+in the last hour, because a download writes its file before its row is saved. It deletes nothing
+when the image table holds no stored file. It also runs on demand through
+`POST /admin/api/maintenance/orphans`.
+
 ## Events abroad
 
 Sources that sell shows abroad set `abroad_only`. Their events carry an ISO country code, which

@@ -53,6 +53,7 @@ from the same machine are accepted, and proxied requests never count as local.
 | POST | `/admin/api/config/validate`, `/admin/api/config/apply` | Validate, then apply without a restart |
 | GET | `/admin/api/config/backups/{name}` | One config backup |
 | POST | `/admin/api/maintenance/vacuum`, `/geocode`, `/areas`, `/regroup` | Reclaim space, geocode missing places, recompute areas, regroup duplicates |
+| POST | `/admin/api/maintenance/orphans` | Artwork files no image row claims: counted (`dry_run=true`, the default) or deleted (`dry_run=false`). Returns `files`, `bytes` |
 
 ## Rate limits
 

@@ -150,6 +150,47 @@ class MediaStore:
                 log.warning("could not delete %s: %s", relative, exc)
         return removed
 
+    def sweep_orphans(self, dry_run: bool = False, min_age_seconds: float = 3600) -> dict[str, Any]:
+        """Delete every file under the media directory that no image row claims (its ``local_path``
+        or one of that path's WebP copies): leftovers of crashes, earlier bugs or temp files.
+
+        Guards: files modified in the last ``min_age_seconds`` are kept (a download writes its file
+        before its row is saved; copies and temp files are being written), and nothing is deleted
+        when the image table returns no stored file at all, so a DB problem can't wipe the folder.
+        A failing query raises before anything is touched."""
+        result: dict[str, Any] = {"dry_run": dry_run, "files": 0, "bytes": 0, "skipped": None}
+        if not self.root.is_dir():
+            return result
+        with self.db.session(write=False) as session:
+            claimed_paths = set(session.scalars(select(ImageRow.local_path).where(ImageRow.local_path.is_not(None))))
+        if not claimed_paths:
+            result["skipped"] = "no stored image rows: refusing to sweep"
+            log.warning("artwork sweep: %s", result["skipped"])
+            return result
+        claimed = claimed_paths | {variant_path(p, w) for p in claimed_paths for w in VARIANT_WIDTHS}
+        cutoff = time.time() - min_age_seconds
+        for directory, _, names in os.walk(self.root):
+            for name in names:
+                path = Path(directory) / name
+                if path.relative_to(self.root).as_posix() in claimed:
+                    continue
+                try:
+                    stat = path.stat()
+                    if stat.st_mtime > cutoff:  # being written, or its row not saved yet
+                        continue
+                    if not dry_run:
+                        path.unlink()
+                except OSError as exc:
+                    log.warning("artwork sweep: could not remove %s: %s", path, exc)
+                    continue
+                result["files"] += 1
+                result["bytes"] += stat.st_size
+        log.info(
+            "artwork sweep%s: %d orphan files, %.1f MB %s",
+            " (dry run)" if dry_run else "", result["files"], result["bytes"] / 1e6, "found" if dry_run else "removed",
+        )
+        return result
+
     async def download_pending(self, source: str, http: HttpSettings) -> tuple[int, int]:
         """Download every not-yet-stored image of ``source`` in parallel, then persist
         all results with bulk updates. Returns (stored, failed)."""

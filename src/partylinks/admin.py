@@ -464,6 +464,13 @@ async def vacuum(request: Request, full: bool = False) -> dict[str, Any]:
     return {"freed_bytes": freed, "storage": db.storage_stats()}
 
 
+@router.post("/maintenance/orphans")
+async def sweep_orphans(request: Request, dry_run: bool = True) -> dict[str, Any]:
+    """Artwork files no image row claims (originals or WebP copies). ``dry_run`` (default) only
+    counts them; ``dry_run=false`` deletes them. Retention runs the same sweep after each pass."""
+    return await asyncio.to_thread(request.app.state.service.media.sweep_orphans, dry_run)
+
+
 @router.post("/maintenance/geocode")
 async def geocode(request: Request) -> dict[str, int]:
     """Find map coordinates for upcoming events that only have an address."""

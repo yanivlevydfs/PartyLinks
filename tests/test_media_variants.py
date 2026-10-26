@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import os
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -20,6 +21,7 @@ from partylinks.config import HttpSettings, Settings
 from partylinks.db import Database, ImageRow, upsert_events
 from partylinks.media import MediaStore, has_variants, make_variants, variant_path
 from partylinks.models import ScrapedEvent, TicketTier
+from partylinks.retention import purge_expired
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.service import ScrapeService
 
@@ -206,3 +208,71 @@ def test_social_previews_keep_the_original_jpeg(tmp_path: Path) -> None:
         html = client.get("/event/test:a").text
     assert f'<meta property="og:image" content="{settings.site.base_url}/images/{image_id}" />' in html
     assert ".webp" not in html
+
+
+def aged(path: Path, hours: float = 2) -> Path:
+    old = datetime.now().timestamp() - hours * 3600
+    os.utime(path, (old, old))
+    return path
+
+
+def test_retention_deletes_a_past_events_original_and_both_copies(tmp_path: Path) -> None:
+    settings, db, media, _ = stored(tmp_path, picture((1600, 900)))
+    media.build_missing_variants()
+    original = media.path_for("test/flyer.jpg")
+    assert has_variants(original)
+    with db.session() as session:  # the party is over
+        past = datetime.now(UTC) - timedelta(days=3)
+        session.execute(text("UPDATE events SET start_at = :t, end_at = :t"), {"t": past})
+    assert purge_expired(db, media, settings.retention, settings.timezone) == 1
+    assert not list(original.parent.iterdir())  # original and both copies gone
+
+
+def test_orphan_sweep_removes_only_what_no_row_claims(tmp_path: Path) -> None:
+    _, db, media, _ = stored(tmp_path, picture((900, 600)))
+    with db.session() as session:  # a second event shares the same flyer file
+        upsert_events(session, [event("b")])
+        session.execute(text("UPDATE event_images SET local_path = 'test/flyer.jpg', downloaded_at = CURRENT_TIMESTAMP"))
+    media.build_missing_variants()
+    for name in ("test/flyer.jpg", "test/flyer.jpg.640.webp", "test/flyer.jpg.1280.webp"):
+        aged(media.path_for(name))
+    orphan = media.path_for("test/gone.jpg")
+    orphan.write_bytes(b"x" * 1000)
+    orphan_copy = media.path_for("other/deleted.png.640.webp")  # its original is long gone
+    orphan_copy.parent.mkdir()
+    orphan_copy.write_bytes(b"y" * 500)
+    aged(orphan), aged(orphan_copy)
+    fresh = media.path_for("test/downloading.jpg")  # just written, its row not saved yet
+    fresh.write_bytes(b"z")
+
+    assert media.sweep_orphans(dry_run=True) == {"dry_run": True, "files": 2, "bytes": 1500, "skipped": None}
+    assert orphan.exists() and orphan_copy.exists()  # a dry run deletes nothing
+    assert media.sweep_orphans()["files"] == 2
+    assert not orphan.exists() and not orphan_copy.exists()
+    assert fresh.exists() and has_variants(media.path_for("test/flyer.jpg"))  # shared by two events: kept
+    assert media.sweep_orphans()["files"] == 0
+
+
+def test_orphan_sweep_refuses_an_empty_image_table(tmp_path: Path) -> None:
+    _, db, media, _ = stored(tmp_path, picture((900, 600)))
+    with db.session() as session:
+        session.execute(text("DELETE FROM event_images"))
+    aged(media.path_for("test/flyer.jpg"))
+    assert media.sweep_orphans()["skipped"] and media.path_for("test/flyer.jpg").exists()
+
+
+def test_orphan_sweep_admin_endpoint_defaults_to_a_dry_run(tmp_path: Path) -> None:
+    from pydantic import SecretStr
+
+    settings, _, media, _ = stored(tmp_path, picture((900, 600)))
+    settings.admin.token = SecretStr("s3cret")
+    aged(media.path_for("test/flyer.jpg"))
+    stray = media.path_for("test/stray.jpg")
+    stray.write_bytes(b"s")
+    aged(stray)
+    auth = {"authorization": "Bearer s3cret"}
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        assert client.post("/admin/api/maintenance/orphans", headers=auth).json()["files"] == 1
+        assert stray.exists()
+        assert client.post("/admin/api/maintenance/orphans?dry_run=false", headers=auth).json()["files"] == 1
+    assert not stray.exists() and media.path_for("test/flyer.jpg").exists()

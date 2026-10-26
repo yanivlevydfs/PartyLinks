@@ -92,7 +92,12 @@ def purge_expired(
                 ScrapeRunRow.status != "running",
             )
         ).rowcount
-    removed_files = media.delete_files(files)
+    removed_files = media.delete_files(files)  # originals and their WebP copies, unless still shared
+    if media.settings.storage == "filesystem":
+        try:
+            media.sweep_orphans()  # anything else no row claims (crashes, earlier bugs)
+        except Exception:  # the purge itself already succeeded
+            log.exception("retention: artwork sweep failed")
     log.info(
         "retention: removed %d events, %d artwork files and %d runs older than %s",
         len(expired), removed_files, runs, cutoff,
