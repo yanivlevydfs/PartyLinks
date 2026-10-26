@@ -821,3 +821,15 @@ def test_a_point_its_own_text_contradicts_teaches_no_other_event(tmp_path: Path)
     with db.session(write=False) as session:
         known, _ = geo._known(session)
     assert _venue_match(known, "היכל התרבות מנשה בגן שמואל", None) is None
+
+
+def test_region_words_that_are_also_names_or_streets_do_not_contradict_a_point() -> None:
+    from partylinks.config import Settings
+
+    areas = Enricher(Settings().enrichment, "Asia/Jerusalem").areas
+    # Real production points (Oct 2026), all correct, cleared every pass before.
+    for venue, lat, lng in (("אולם גולן, בית יד לבנים", 32.1465, 34.8406), ("תיאטרון הצפון", 32.8217, 35.0744),
+                            ("האנגר גשר- אילת 11 תא-יפו", 32.0984, 34.7745), ("גלרית הפוסט, שדרות ויצמן 27", 32.1389, 34.8183)):
+        assert not areas.contradicts(None, venue, None, lat, lng), venue
+    assert areas.contradicts("שדרות", "מועדון", None, 32.08, 34.78)  # the city field still counts
+    assert areas.contradicts(None, "קיבוץ הגושרים", None, 31.25, 34.79)  # an unambiguous place still does

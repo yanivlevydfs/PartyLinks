@@ -75,6 +75,12 @@ class AreaMatcher:
     def __init__(self, areas: list[AreaSettings], regions: list[RegionSettings] | None = None) -> None:
         self._areas = [(area, _keyword_pattern(area.keywords)) for area in areas]
         self._regions = [(r, _place_pattern(r.places)) for r in regions or []]
+        # In a venue name or a street address these are rarely the place: "תיאטרון הצפון" (Haifa),
+        # "אולם גולן", "אילת 11 תל אביב", "שדרות ויצמן", "אשכול פיס בת ים" - correct points were
+        # cleared as contradicting their region every pass (Oct 2026). The city field still counts.
+        self._regions_in_names = [
+            (r, _place_pattern([p for p in r.places if p not in NOT_A_PLACE_IN_NAMES])) for r in regions or []
+        ]
         self.region_keys = {r.key for r in regions or []} | {ABROAD_AREA, OUTSIDE_AREA}
 
     def match(
@@ -125,7 +131,11 @@ class AreaMatcher:
         self, city: str | None, venue_name: str | None, address: str | None, latitude: float, longitude: float
     ) -> bool:
         """True when the text names a region whose boxes miss the point ("קיבוץ הגושרים" placed in the Negev)."""
-        named = self.named_region(city, venue_name, address)
+        named = self.named_region(city, None, None) or next(
+            (r for text in (address, venue_name) for r, pattern in self._regions_in_names
+             if text and pattern and pattern.search(text.lower())),
+            None,
+        )  # fmt: skip
         return named is not None and bool(named.boxes) and not _in_boxes(named, latitude, longitude)
 
     def keyword_area(self, venue_name: str | None, address: str | None) -> str | None:
@@ -487,6 +497,10 @@ class Enricher:
 
 def _in_boxes(region: RegionSettings, latitude: float, longitude: float) -> bool:
     return any(a <= latitude <= b and c <= longitude <= d for a, b, c, d in region.boxes)
+
+
+# Region place words that, inside a venue name or an address, are usually a street, a name or a direction.
+NOT_A_PLACE_IN_NAMES = frozenset({"צפון", "הצפון", "גולן", "אילת", "שדרות", "אשכול", "גלילות"})
 
 
 def _place_pattern(names: list[str], prefixes: int = 1) -> re.Pattern[str] | None:
