@@ -13,8 +13,9 @@ robots.txt allows everything but ``/_api/``. One sitemap lists every page; three
   ואוכל") and its weekly hours. A happy hour is a weekly deal, not an event, so it becomes one
   event per day it runs over the next ``happy_hour_days`` days, under the "happy_hour" category.
   Hub pages (areas, themes: ``/dizengoff``, ``/date``...) are ``ItemList`` pages and are skipped.
-* Places: escape rooms, attractions, coffee carts, chef restaurants, work spaces and volunteering
-  (``places``: section path -> category word). A place's page is a schema.org
+* Places: escape rooms, attractions, coffee carts, chef restaurants, work spaces, volunteering, clubs
+  and team activities (``places``: section path -> category word). Team activities come to the office:
+  their pages have a phone but no address, so they are listed without a map pin. A place's page is a schema.org
   business (``EntertainmentBusiness``, ``CafeOrCoffeeShop``, ``NGO``...) with address, coordinates and,
   for most, ``openingHoursSpecification``. Like a happy hour it becomes one event per day it is open
   over the next ``place_days`` days; a place without hours is an all-day event (midnight, no end).
@@ -236,7 +237,9 @@ def parse_place(page_html: str, url: str, timezone: str, today: date, days: int,
         (
             n
             for n in jsonld_nodes(page_html)
-            if not schema_types(n) & _NOT_A_PLACE and clean_str(n.get("name")) and (n.get("address") or n.get("geo"))
+            if not schema_types(n) & _NOT_A_PLACE
+            and clean_str(n.get("name"))
+            and (n.get("address") or n.get("geo") or n.get("telephone"))
         ),
         None,
     )

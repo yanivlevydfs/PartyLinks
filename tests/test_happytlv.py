@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -91,7 +92,9 @@ def test_place_with_hours_is_one_event_per_open_day() -> None:
 
 def test_place_without_hours_is_all_day() -> None:
     url = f"{SITE}/escape-rooms/x"
-    events = happytlv.parse_place(page("escape_room.html"), url, "Asia/Jerusalem", date(2026, 10, 22), 3, "escape rooms")
+    events = happytlv.parse_place(
+        page("escape_room.html"), url, "Asia/Jerusalem", date(2026, 10, 22), 3, "escape rooms"
+    )
     assert [(e.start_at, e.end_at) for e in events] == [(datetime(2026, 10, d, tzinfo=TZ), None) for d in (22, 23, 24)]
     assert events[0].title == "ססוגב חדרי בריחה ניידים" and events[0].latitude == 32.0663736
     rated = page("escape_room.html").replace("אחד העם 51, תל אביב-יפו, 6520604", "4.6 (10230 ביקורות)")
@@ -100,6 +103,16 @@ def test_place_without_hours_is_all_day() -> None:
     assert enriched is not None and "escape_rooms" in enriched.genres
 
 
+def test_team_activity_without_address_is_listed() -> None:
+    url = f"{SITE}/officehappyhour/85-questions"
+    node = json.dumps({"@type": "LocalBusiness", "name": "קלפים לשיחה", "url": url, "telephone": "054-5809734"})
+    html = f'<script type="application/ld+json">{node}</script>'
+    events = happytlv.parse_place(html, url, "Asia/Jerusalem", date(2026, 10, 22), 2, "team activities")
+    assert [(e.title, e.latitude, e.extra["phone"]) for e in events] == [("קלפים לשיחה", None, "054-5809734")] * 2
+
+
 def test_place_hubs_are_skipped() -> None:
     hub = f"{SITE}/escape-rooms/haifa"
-    assert happytlv.parse_place(page("place_hub.html"), hub, "Asia/Jerusalem", date(2026, 10, 22), 7, "escape rooms") == []
+    assert (
+        happytlv.parse_place(page("place_hub.html"), hub, "Asia/Jerusalem", date(2026, 10, 22), 7, "escape rooms") == []
+    )

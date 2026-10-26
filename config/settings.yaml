@@ -283,6 +283,8 @@ enrichment:
     fine_dining: ["fine dining"]
     work_spaces: ["work spaces"]
     volunteering: ["volunteering"]
+    team_activities: ["team activities"]
+    nightclubs: ["nightclubs"]
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
@@ -1640,10 +1642,9 @@ sources:
     happy_hour_days: 7
     # Place sections (path -> category word, see enrichment.declared_genres). Each place is one event
     # per day it is open over `place_days`, all day when its page has no hours. /p-ylvyvt/ is
-    # "activities" (gardens, parks, studios). Not read: /post/ (articles), /tel-aviv-party/ (the same
-    # parties again), /tel-aviv-clubs/ (clubs come with their parties; a club is no all-day event) and
-    # /officehappyhour/ (team activities with no address, so not on the map). City and theme hubs
-    # inside a section are skipped by the parser.
+    # "activities" (gardens, parks, studios). /officehappyhour/ (team activities) come to the office:
+    # no address, so no map pin. Not read: /post/ (articles) and /tel-aviv-party/ (the same parties
+    # again). City and theme hubs inside a section are skipped by the parser.
     place_days: 7
     places:
       /escape-rooms/: escape rooms
@@ -1653,6 +1654,8 @@ sources:
       /fine-dining/: fine dining
       /work-spaces/: work spaces
       /volunteer/: volunteering
+      /officehappyhour/: team activities
+      /tel-aviv-clubs/: nightclubs
     http:
       concurrency: 4
       request_delay_seconds: 0.5
