@@ -361,24 +361,32 @@ def test_blog_posts_pages_feed_and_live_embeds(tmp_path: Path, monkeypatch: pyte
     (content / "later.html").write_text("---\ntitle: t\ndescription: d\ndate: 2999-01-01\n---\n<p>x</p>", encoding="utf-8")
     (content / "gone.html").write_text("---\ntitle: t\ndescription: d\ndate: 2026-01-01\nexpires: 2026-01-02\n---\n<p>x</p>", encoding="utf-8")
     (content / "broken.html").write_text("---\ntitle: [\n---\n", encoding="utf-8")
+    (content / "en").mkdir()
+    (content / "en" / "guide.html").write_text(
+        '---\ntitle: "Techno guide"\ndescription: "About"\n---\n<h2>The best</h2>\n<!--events genre=techno limit=2-->', encoding="utf-8"
+    )
 
     posts = blog.load_posts(settings, content)
     assert [p.slug for p in posts] == ["guide"]  # future-dated, expired and broken posts are hidden
     assert blog.toc(posts[0]) == [{"id": "הכי-טוב", "title": "הכי טוב"}]
     assert [list(b) for b in blog.blocks(posts[0], settings)] == [["html"], ["events"], ["html"]]
     assert blog.blocks(posts[0], settings)[1]["events"] == {"page_size": "2", "genre": "techno"}
+    english = blog.load_posts(settings, content, lang="en")[0]
+    assert (english.lang, english.title, english.category, english.faq) == ("en", "Techno guide", "music", posts[0].faq)
 
     monkeypatch.setattr(blog, "CONTENT_DIR", content)
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         assert client.get("/posts").json()["items"][0]["category"]["key"] == "music"
         assert client.get("/posts/guide").json()["faq"] == [{"q": "שאלה?", "a": "תשובה."}]
         assert client.get("/posts/later").status_code == 404
+        assert client.get("/posts/guide?lang=en").json()["toc"] == [{"id": "the-best", "title": "The best"}]
         assert "מדריך טכנו" in client.get("/blog/rss.xml").text
         assert "/blog/guide" in client.get("/sitemap-1.xml").text and "/blog/guide" in client.get("/llms.txt").text
         page = client.get("/blog/guide")
         if page.status_code != 404:  # server-rendered pages need the React build (web/dist)
             assert '"BlogPosting"' in page.text and '"FAQPage"' in page.text
-            assert "Techno night 0" in page.text and 'hreflang="en"' not in page.text
+            assert "Techno night 0" in page.text and 'hreflang="en"' in page.text
+            assert "Techno guide" in client.get("/blog/guide?lang=en").text
 
 
 def test_admin_scan_runs_all_enabled_or_the_chosen_sources(tmp_path: Path) -> None:

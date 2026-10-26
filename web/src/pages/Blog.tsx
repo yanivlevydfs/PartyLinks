@@ -12,7 +12,7 @@ function PostCard({ p, featured }: { p: PostSummary; featured?: boolean }) {
   return (
     <Link className={"post-card" + (featured ? " featured" : "")} to={`/blog/${p.slug}`}>
       <Img src={p.image} alt="" className="post-img" />
-      <div className="post-card-body" lang="he" dir="rtl">
+      <div className="post-card-body" lang={p.lang} dir={p.lang === "he" ? "rtl" : "ltr"}>
         <span className="post-cat">{p.category[lang]}</span>
         <h3>{p.title}</h3>
         <p>{p.description}</p>
@@ -25,8 +25,8 @@ function PostCard({ p, featured }: { p: PostSummary; featured?: boolean }) {
 export function BlogIndex() {
   const { category } = useParams();
   const { t, lang } = useT();
-  const all = usePosts().data; // categories (with counts) come from the unfiltered list
-  const q = usePosts(category);
+  const all = usePosts(lang).data; // categories (with counts) come from the unfiltered list
+  const q = usePosts(lang, category);
   const name = all?.categories.find((c) => c.key === category)?.[lang];
   useTitle(name ? `${name} · ${t.blog.title}` : t.blog.title);
   const [first, ...rest] = q.data?.items ?? [];
@@ -69,8 +69,9 @@ export function BlogPost() {
   const { slug = "" } = useParams();
   const { t, lang } = useT();
   const navigate = useNavigate();
-  const q = usePost(slug);
+  const q = usePost(slug, lang);
   const p = q.data;
+  const dir = p?.lang === "he" ? "rtl" : "ltr";
   useTitle(p?.title);
 
   // Links inside the article HTML are plain <a>: keep internal ones in the app.
@@ -98,10 +99,10 @@ export function BlogPost() {
         {p.toc.length > 1 && (
           <nav className="post-toc" aria-label={t.blog.toc}>
             <b>{t.blog.toc}</b>
-            <ol lang="he" dir="rtl">{p.toc.map((h) => <li key={h.id}><a href={`#${h.id}`}>{h.title}</a></li>)}</ol>
+            <ol lang={p.lang} dir={dir}>{p.toc.map((h) => <li key={h.id}><a href={`#${h.id}`}>{h.title}</a></li>)}</ol>
           </nav>
         )}
-        <article className="post" lang="he" dir="rtl" onClick={onClick}>
+        <article className="post" lang={p.lang} dir={dir} onClick={onClick}>
           <p className="post-lead">{p.description}</p>
           {p.blocks.map((b, i) => <Block key={i} b={b} />)}
           {p.faq.length > 0 && (

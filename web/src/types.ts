@@ -164,6 +164,7 @@ export interface PostSummary {
   category: PostCategory;
   image: string | null;
   read_minutes: number;
+  lang: "he" | "en"; // Hebrew when the post has no English version yet
 }
 
 export interface PostList {

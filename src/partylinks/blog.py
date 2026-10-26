@@ -7,6 +7,10 @@ live list of matching upcoming events (venue=, artist=, free=true also work). Po
 future or marked ``draft: true`` stay hidden until their date; one with ``expires: <date>`` (a holiday,
 a month's roundup) disappears on that date, like a past event.
 
+The English version of a post is ``content/blog/en/<slug>.html``: the same shape, with only ``title``,
+``description`` and ``faq`` in its header (date, category and the rest come from the Hebrew file).
+English readers get it with ``?lang=en``; a post without one stays in Hebrew.
+
 Served three ways: server-rendered pages for crawlers (``/blog``, ``/blog/category/<key>``,
 ``/blog/<slug>``), JSON for the React site (``/posts``, ``/posts/<slug>``) and an RSS feed.
 """
@@ -18,6 +22,7 @@ import logging
 import re
 from datetime import date, datetime
 from email.utils import format_datetime
+from functools import lru_cache
 from html import escape, unescape
 from pathlib import Path
 from typing import Any
@@ -69,6 +74,7 @@ class Post(BaseModel):
     draft: bool = False
     faq: list[Faq] = []
     body: str = ""
+    lang: str = "he"  # "en" when the English version was loaded
 
     @property
     def modified(self) -> date:
@@ -81,27 +87,44 @@ class Post(BaseModel):
 
 
 # --------------------------------------------------------------------------- loading
-def _parse(path: Path) -> Post | None:
+def _split(path: Path) -> tuple[dict[str, Any], str]:
     text = path.read_text(encoding="utf-8")
     _, header, body = text.split("---", 2) if text.startswith("---") else ("", "", text)
+    return yaml.safe_load(header) or {}, body.strip()
+
+
+def _parse(path: Path, lang: str = "he") -> Post | None:
     try:
-        post = Post(slug=path.stem, body=body.strip(), **(yaml.safe_load(header) or {}))
+        header, body = _split(path)
+        post = Post(slug=path.stem, body=body, **header)
     except (yaml.YAMLError, ValidationError, TypeError) as exc:
         log.warning("blog post %s skipped: %s", path.name, exc)
         return None
     if post.category not in CATEGORIES:
         log.warning("blog post %s: unknown category %r", path.name, post.category)
         post.category = "guides"
+    english = path.parent / "en" / path.name
+    if lang == "en" and english.is_file():
+        try:
+            header, body = _split(english)
+            post = Post(**(post.model_dump() | header | {"body": body, "lang": "en"}))
+        except (yaml.YAMLError, ValidationError, TypeError) as exc:
+            log.warning("blog post en/%s skipped, Hebrew shown: %s", path.name, exc)
     post.body = _anchor_headings(post.body)
     return post
 
 
-def load_posts(cfg: Settings, content: Path | None = None) -> list[Post]:
-    """Published posts, newest first. ponytail: re-read from disk per request; cache by mtime if
-    the blog grows past a few hundred posts."""
+@lru_cache(maxsize=4096)
+def _parse_at(path: Path, mtime: float, lang: str) -> Post | None:
+    # Parsing every post on each request took ~1 s for 51 posts; an edited file has a new mtime.
+    return _parse(path, lang)
+
+
+def load_posts(cfg: Settings, content: Path | None = None, lang: str = "he") -> list[Post]:
+    """Published posts, newest first, in English where translated when ``lang`` is "en"."""
     today = datetime.now(ZoneInfo(cfg.timezone)).date()
     posts = [
-        p for p in map(_parse, sorted((content or CONTENT_DIR).glob("*.html")))
+        p for p in (_parse_at(f, f.stat().st_mtime, lang) for f in sorted((content or CONTENT_DIR).glob("*.html")))
         if p and not p.draft and p.date <= today and not (p.expires and p.expires <= today)
     ]  # fmt: skip
     return sorted(posts, key=lambda p: (p.date, p.slug), reverse=True)
@@ -194,7 +217,7 @@ def summary(session: Any, post: Post, cfg: Settings) -> dict[str, Any]:
     return {
         "slug": post.slug, "title": post.title, "description": post.description, "date": post.date,
         "updated": post.modified, "category": _cat(post.category), "image": _image(session, post, cfg),
-        "read_minutes": post.read_minutes,
+        "read_minutes": post.read_minutes, "lang": post.lang,
     }  # fmt: skip
 
 
@@ -209,22 +232,26 @@ def _path(post: Post) -> str:
     return f"/blog/{post.slug}"
 
 
+def _href(path: str, lang: str) -> str:
+    return path + ("?lang=en" if lang == "en" else "")
+
+
 def _posts_html(posts: list[Post]) -> str:
     return "<ul>" + "".join(
-        f'<li><a href="{_path(p)}">{escape(p.title)}</a> · {p.date:%d/%m/%Y} · {escape(p.description)}</li>' for p in posts
+        f'<li><a href="{_href(_path(p), p.lang)}">{escape(p.title)}</a> · {p.date:%d/%m/%Y} · {escape(p.description)}</li>' for p in posts
     ) + "</ul>"
 
 
-def _blog_ld(cfg: Settings, posts: list[Post], name: str, path: str) -> dict[str, Any]:
+def _blog_ld(cfg: Settings, posts: list[Post], name: str, path: str, lang: str) -> dict[str, Any]:
     return {
         "@context": "https://schema.org",
         "@type": "Blog",
         "name": name,
-        "url": seo._url(cfg, path),
-        "inLanguage": "he",
+        "url": seo._url(cfg, path, lang),
+        "inLanguage": lang,
         "publisher": {"@id": cfg.site.base_url + "/#org"},
         "blogPost": [
-            {"@type": "BlogPosting", "headline": p.title, "url": seo._url(cfg, _path(p)), "datePublished": p.date.isoformat()}
+            {"@type": "BlogPosting", "headline": p.title, "url": seo._url(cfg, _path(p), p.lang), "datePublished": p.date.isoformat()}
             for p in posts
         ],
     }
@@ -243,7 +270,7 @@ def _desc(lang: str) -> str:
 
 
 def index_page(session: Any, cfg: Settings, lang: str, category: str | None = None) -> seo.Page | None:
-    posts = load_posts(cfg)
+    posts = load_posts(cfg, lang=lang)
     title, path = _title(lang), "/blog"
     crumbs = [(title, path)]
     if category:
@@ -253,33 +280,35 @@ def index_page(session: Any, cfg: Settings, lang: str, category: str | None = No
         name = CATEGORIES[category][0 if lang == "he" else 1]
         title, path = f"{name} · {title}", f"/blog/category/{category}"
         crumbs.append((name, path))
-    cats = "".join(f'<li><a href="/blog/category/{k}">{escape(v[0 if lang == "he" else 1])}</a></li>' for k, v in CATEGORIES.items())
+    cats = "".join(
+        f'<li><a href="{_href(f"/blog/category/{k}", lang)}">{escape(v[0 if lang == "he" else 1])}</a></li>' for k, v in CATEGORIES.items()
+    )
     return seo.Page(
         title=f"{title} · {cfg.site.name}",
         description=_desc(lang),
         path=path,
         lang=lang,
-        langs=("he",),
-        jsonld=[_blog_ld(cfg, posts, title, path), seo._breadcrumbs(cfg, "he", *crumbs)],
+        jsonld=[_blog_ld(cfg, posts, title, path, lang), seo._breadcrumbs(cfg, lang, *crumbs)],
         body=f"<h1>{escape(title)}</h1><p>{escape(_desc(lang))}</p><nav><ul>{cats}</ul></nav>" + _posts_html(posts),
         noindex=not posts,
     )
 
 
 def post_page(session: Any, cfg: Settings, lang: str, slug: str) -> seo.Page | None:
-    posts = load_posts(cfg)
+    posts = load_posts(cfg, lang=lang)
     post = next((p for p in posts if p.slug == slug), None)
     if post is None:
         return None
-    path, url = _path(post), seo._url(cfg, _path(post))
+    he = post.lang == "he"
+    path, url = _path(post), seo._url(cfg, _path(post), post.lang)
     image = _image(session, post, cfg)
-    category = CATEGORIES[post.category][0]
+    category = CATEGORIES[post.category][0 if he else 1]
     body = post.body
     embedded: list[EventRow] = []
     for m in reversed(list(EMBED.finditer(body))):
         rows = _embed_rows(session, embed_params(m[1], cfg), cfg)
         embedded = rows + embedded
-        body = body[: m.start()] + seo._event_list_html(rows, cfg, "he") + body[m.end() :]
+        body = body[: m.start()] + seo._event_list_html(rows, cfg, post.lang) + body[m.end() :]
     article = {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
@@ -290,7 +319,7 @@ def post_page(session: Any, cfg: Settings, lang: str, slug: str) -> seo.Page | N
         "mainEntityOfPage": url,
         "datePublished": post.date.isoformat(),
         "dateModified": post.modified.isoformat(),
-        "inLanguage": "he",
+        "inLanguage": post.lang,
         "articleSection": category,
         "wordCount": post.read_minutes * WORDS_PER_MINUTE,
         "image": [image] if image else None,
@@ -299,7 +328,7 @@ def post_page(session: Any, cfg: Settings, lang: str, slug: str) -> seo.Page | N
     }
     jsonld: list[dict[str, Any]] = [
         {k: v for k, v in article.items() if v is not None},
-        seo._breadcrumbs(cfg, "he", (_title("he"), "/blog"), (category, f"/blog/category/{post.category}"), (post.title, path)),
+        seo._breadcrumbs(cfg, post.lang, (_title(post.lang), "/blog"), (category, f"/blog/category/{post.category}"), (post.title, path)),
     ]
     if embedded:
         jsonld.append(seo._item_list(embedded[: seo.LIST_LIMIT], cfg, post.title))
@@ -310,23 +339,24 @@ def post_page(session: Any, cfg: Settings, lang: str, slug: str) -> seo.Page | N
             "@type": "FAQPage",
             "mainEntity": [{"@type": "Question", "name": f.q, "acceptedAnswer": {"@type": "Answer", "text": f.a}} for f in post.faq],
         })  # fmt: skip
-        faq_html = "<section><h2>שאלות נפוצות</h2>" + "".join(f"<h3>{escape(f.q)}</h3><p>{escape(f.a)}</p>" for f in post.faq) + "</section>"
+        faq_html = f"<section><h2>{'שאלות נפוצות' if he else 'FAQ'}</h2>" + "".join(f"<h3>{escape(f.q)}</h3><p>{escape(f.a)}</p>" for f in post.faq) + "</section>"
     more = related(posts, post)
     return seo.Page(
         title=f"{post.title} · {cfg.site.name}",
         description=post.description,
         path=path,
         lang=lang,
-        langs=("he",),
+        langs=("he", "en") if (CONTENT_DIR / "en" / f"{slug}.html").is_file() else ("he",),
         image=image,
         og_type="article",
         jsonld=jsonld,
         body=(
-            f'<article lang="he" dir="rtl"><h1>{escape(post.title)}</h1>'
-            f'<p><a href="/blog/category/{post.category}">{escape(category)}</a> · '
-            f'<time datetime="{post.date.isoformat()}">{post.date:%d/%m/%Y}</time> · {post.read_minutes} דקות קריאה</p>'
+            f'<article lang="{post.lang}" dir="{"rtl" if he else "ltr"}"><h1>{escape(post.title)}</h1>'
+            f'<p><a href="{_href(f"/blog/category/{post.category}", post.lang)}">{escape(category)}</a> · '
+            f'<time datetime="{post.date.isoformat()}">{post.date:%d/%m/%Y}</time> · '
+            f"{post.read_minutes} {'דקות קריאה' if he else 'min read'}</p>"
             f"{body}{faq_html}</article>"
-            + (f"<aside><h2>עוד במגזין</h2>{_posts_html(more)}</aside>" if more else "")
+            + (f"<aside><h2>{'עוד במגזין' if he else 'More from the magazine'}</h2>{_posts_html(more)}</aside>" if more else "")
         ),
     )
 
@@ -366,8 +396,8 @@ def register(app: FastAPI, page: Any) -> None:
         return Response(cache.get((request.url.path, request.url.query), body)[0], media_type="application/json")
 
     @app.get("/posts", tags=["blog"])
-    def list_posts(request: Request, category: str | None = None) -> Response:
-        posts = load_posts(cfg(request))
+    def list_posts(request: Request, category: str | None = None, lang: str = "he") -> Response:
+        posts = load_posts(cfg(request), lang=lang)
         counts = {k: sum(p.category == k for p in posts) for k in CATEGORIES}
         shown = [p for p in posts if not category or p.category == category]
         return cached(request, lambda session: {
@@ -376,8 +406,8 @@ def register(app: FastAPI, page: Any) -> None:
         })  # fmt: skip
 
     @app.get("/posts/{slug}", tags=["blog"])
-    def get_post(slug: str, request: Request) -> Response:
-        posts = load_posts(cfg(request))
+    def get_post(slug: str, request: Request, lang: str = "he") -> Response:
+        posts = load_posts(cfg(request), lang=lang)
         post = next((p for p in posts if p.slug == slug), None)
         if post is None:
             raise HTTPException(404, "post not found")

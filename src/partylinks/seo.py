@@ -142,7 +142,7 @@ class Page:
     noindex: bool = False
     status: int = 200
     og_type: str = "website"
-    langs: tuple[str, ...] = ("he", "en")  # languages the content exists in (blog posts: Hebrew only)
+    langs: tuple[str, ...] = ("he", "en")  # languages the content exists in (untranslated blog posts: Hebrew only)
 
 
 # --------------------------------------------------------------------------- helpers
@@ -1141,16 +1141,26 @@ def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
             f'<xhtml:link rel="alternate" hreflang="x-default" href="{he}"/>'
         )
         urls += [f"<url><loc>{u}</loc>{lastmod}{alternates}</url>" for u in (he, en)]
-    # The blog is Hebrew only: one URL each, no alternates.
+    # Blog: posts with an English version get both URLs, untranslated ones the Hebrew URL alone.
     from partylinks import blog
 
     posts = blog.load_posts(cfg)
-    blog_paths = [("/blog", posts[0].modified if posts else None)]
-    blog_paths += [(f"/blog/category/{k}", None) for k in sorted({p.category for p in posts})]
-    blog_paths += [(f"/blog/{p.slug}", p.modified) for p in posts]
-    for path, modified in blog_paths:
+    english = {p.slug for p in blog.load_posts(cfg, lang="en") if p.lang == "en"}
+    blog_paths = [("/blog", posts[0].modified if posts else None, True)]
+    blog_paths += [(f"/blog/category/{k}", None, True) for k in sorted({p.category for p in posts})]
+    blog_paths += [(f"/blog/{p.slug}", p.modified, p.slug in english) for p in posts]
+    for path, modified, both in blog_paths:
+        he, en = escape(_url(cfg, path, "he")), escape(_url(cfg, path, "en"))
         lastmod = f"<lastmod>{modified:%Y-%m-%d}</lastmod>" if modified else ""
-        urls.append(f"<url><loc>{escape(_url(cfg, path))}</loc>{lastmod}</url>")
+        if not both:
+            urls.append(f"<url><loc>{he}</loc>{lastmod}</url>")
+            continue
+        alternates = (
+            f'<xhtml:link rel="alternate" hreflang="he" href="{he}"/>'
+            f'<xhtml:link rel="alternate" hreflang="en" href="{en}"/>'
+            f'<xhtml:link rel="alternate" hreflang="x-default" href="{he}"/>'
+        )
+        urls += [f"<url><loc>{u}</loc>{lastmod}{alternates}</url>" for u in (he, en)]
     return urls
 
 
@@ -1214,8 +1224,9 @@ def llms_txt(session: Session, cfg: Settings) -> str:
         *(f"- [{en}]({base}{p}?lang=en): upcoming events, with an FAQ (free events, cheapest ticket)"
           for p, _, en in _landing_paths(session, cfg)),
         "",
-        "## Magazine (Hebrew guides, with live event lists)",
-        *(f"- [{p.title}]({base}/blog/{p.slug}): {p.description}" for p in blog.load_posts(cfg)),
+        "## Magazine (guides with live event lists; Hebrew, English with `?lang=en`)",
+        *(f"- [{p.title}]({base}/blog/{p.slug}{'?lang=en' if p.lang == 'en' else ''}): {p.description}"
+          for p in blog.load_posts(cfg, lang="en")),
         "",
         "## Data (JSON API, no key needed)",
         (f"- [Events]({base}/events): filters `date=YYYY-MM-DD`, `weekend=true`, `genre`, `artist`, `venue`, "

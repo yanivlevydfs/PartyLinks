@@ -179,7 +179,7 @@ export const STRINGS = {
     abroad: { title: "Events abroad: concerts and festivals", intro: "Tickets and packages for concerts and festivals around the world.", country: "Country", city: "City", allCountries: "All countries", allCities: "All cities", from: "From", to: "To", clear: "Clear" },
     blog: {
       title: "Magazine",
-      intro: "Guides and tips for nightlife in Israel, with live event lists. Articles are in Hebrew.",
+      intro: "Guides and tips for nightlife in Israel, with live event lists.",
       all: "All",
       minutes: (n: number) => `${n} min read`,
       readMore: "Read",

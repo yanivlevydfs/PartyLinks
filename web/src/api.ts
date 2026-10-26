@@ -49,8 +49,11 @@ export function useCategories(params: Params = {}) {
   });
 }
 
-export const usePosts = (category?: string) =>
-  useQuery({ queryKey: ["posts", category], queryFn: () => getJSON<PostList>(`/posts${category ? `?category=${encodeURIComponent(category)}` : ""}`) });
+export const usePosts = (lang: string, category?: string) =>
+  useQuery({
+    queryKey: ["posts", lang, category],
+    queryFn: () => getJSON<PostList>(`/posts?lang=${lang}${category ? `&category=${encodeURIComponent(category)}` : ""}`),
+  });
 
 /** The home page's paid side rails (picked in the admin). */
 export const useSponsored = () =>
@@ -62,8 +65,8 @@ export interface TicketSite { name: string; events: number; updated_at: string |
 export const useTicketSites = () =>
   useQuery({ queryKey: ["ticket-sites"], queryFn: () => getJSON<{ stores: TicketSite[] }>("/ticket-sites"), staleTime: 5 * 60_000 });
 
-export const usePost = (slug: string) =>
-  useQuery({ queryKey: ["post", slug], queryFn: () => getJSON<Post>(`/posts/${encodeURIComponent(slug)}`) });
+export const usePost = (slug: string, lang: string) =>
+  useQuery({ queryKey: ["post", slug, lang], queryFn: () => getJSON<Post>(`/posts/${encodeURIComponent(slug)}?lang=${lang}`) });
 
 export interface LandingInfo { title: string | null; intro: string | null; links: { path: string; label: string }[]; country: string | null; city: { he: string; en: string } | null }
 
