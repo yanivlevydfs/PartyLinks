@@ -49,6 +49,7 @@ def test_rate_limit_and_admin_brute_force(tmp_path: Path) -> None:
     app = create_app(settings, start_scheduler=False)
     with TestClient(app, client=("198.51.100.1", 1)) as a, TestClient(app, client=("198.51.100.2", 1)) as b:
         assert [a.get("/health").status_code for _ in range(4)] == [200, 200, 200, 429]
+        assert {b.get(f"/images/{i}").status_code for i in range(5)} == {404}  # artwork: not limited
         assert b.get("/admin/api/overview", headers={"authorization": "Bearer nope"}).status_code == 401
         assert b.get("/admin/api/overview", headers={"authorization": "Bearer nope"}).status_code == 401
         assert b.get("/admin/api/overview", headers={"authorization": "Bearer s3cret"}).status_code == 403  # banned
