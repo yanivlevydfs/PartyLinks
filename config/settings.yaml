@@ -48,7 +48,7 @@ site:
     cron: "40 * * * *"
   # Search console ownership tokens (meta-tag method): paste the content="..." value.
   verification:
-    google: ""
+    google: Jl3vX0swjuZcEa6MzZ5JiOqyms4LGzIo8QMOToCpK8A
     bing: ""
     yandex: ""
 
