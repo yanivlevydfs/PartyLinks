@@ -216,6 +216,7 @@ def parse_event(item: dict[str, Any], site_url: str, source: str = "tickchak") -
         for c in (a.get("categories") or {}).get("all") or []
         if c.get("titleEn") or c.get("title")
     }
+    priced = bool(to_decimal(item.get("maxPrice")))
     return ScrapedEvent(
         source=source,
         source_event_id=str(item["entityId"]),
@@ -230,8 +231,9 @@ def parse_event(item: dict[str, Any], site_url: str, source: str = "tickchak") -
         artists=[name for a in artists if (name := clean_str(a.get("titleEn") or a.get("title")))],
         artist_profiles=[p for a in artists if (p := _profile(a, site_url))],
         images=_artwork(item),
-        min_price=to_decimal(item.get("minPrice")),
-        max_price=to_decimal(item.get("maxPrice")),
+        # 0 / 0 is Tickchak's "no price known" (phone-only, sold out, the seller's own page), not free.
+        min_price=to_decimal(item.get("minPrice")) if priced else None,
+        max_price=to_decimal(item.get("maxPrice")) if priced else None,
         is_sold_out=bool(item.get("soldOut")),
         extra={
             "provider": item.get("provider"),

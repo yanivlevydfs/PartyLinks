@@ -77,6 +77,9 @@ def test_tickchak_section_items() -> None:
 
     assert events and all(e.url.host == "live.tickchak.co.il" for e in events)
     assert all(e.min_price is not None and e.extra["provider"] for e in events)
+    # 0 / 0 is "no price known" (a phone-only, sold-out lecture), never free entry.
+    unpriced = tickchak.parse_event({**items[0], "minPrice": 0, "maxPrice": 0}, "https://live.tickchak.co.il")
+    assert (unpriced.min_price, unpriced.max_price) == (None, None)
 
 
 def test_tickchak_artist_profiles_merge_into_artist_book(tmp_path: Path) -> None:

@@ -225,9 +225,11 @@ def parse_event(
 def _status(performance: dict[str, Any], message: str | None) -> TierStatus:
     """``tickets_available: false`` means sold out only while the performance is bookable here;
     unbookable ones (``availability: false``, often with an external link as the message) are
-    sold elsewhere or at the door."""
+    sold elsewhere or at the door. Unbookable with no tickets left and no message is "phone purchase
+    only" on the seller's page, which Tickchak reads as sold out: no ticket can be bought here."""
     available = performance.get("availability") is not False
-    if (message and _SOLD_OUT.search(message)) or (available and performance.get("tickets_available") is False):
+    no_tickets = performance.get("tickets_available") is False
+    if (message and _SOLD_OUT.search(message)) or (no_tickets and (available or not message)):
         return TierStatus.SOLD_OUT
     if not available:
         return TierStatus.COMING_SOON if message and _SOON.search(message) else TierStatus.CLOSED

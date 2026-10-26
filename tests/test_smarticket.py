@@ -58,6 +58,17 @@ def test_rooms_tenant_keeps_its_own_venue_name() -> None:
     assert event is not None and event.venue_name == "צוותא" and event.extra["hall"] == "צוותא 1"
 
 
+def test_unbookable_without_tickets_or_message_is_sold_out() -> None:
+    """Seller page: "רכישה טלפונית בלבד"; Tickchak: sold out. A message (an external link) still means
+    sold elsewhere."""
+    show, performance = iter_performances(parse_shows_body(_body(), "tzavta"))[0]
+    phone_only = {**performance, "availability": False, "tickets_available": False, "unavailability_msg": None, "pricelist": []}
+    event = parse_event(show, phone_only, TZAVTA, SETTINGS, TZ)
+    assert event is not None and event.is_sold_out and event.min_price is None
+    elsewhere = parse_event(show, {**phone_only, "unavailability_msg": "לרכישה באתר המופע"}, TZAVTA, SETTINGS, TZ)
+    assert elsewhere is not None and not elsewhere.is_sold_out
+
+
 def test_tenant_host() -> None:
     assert tenant_host("tzavta", "smarticket.co.il") == "tzavta.smarticket.co.il"
     assert tenant_host("tickets.raanana.muni.il", "smarticket.co.il") == "tickets.raanana.muni.il"
