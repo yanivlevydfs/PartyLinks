@@ -1269,6 +1269,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
     from partylinks.api import ResponseCache  # local: api imports this module
 
     rendered = ResponseCache(ttl=HTML_TTL_S, max_bytes=HTML_CACHE_BYTES, follow_writes=False)  # scrapes write all day
+    app.state.html_cache = rendered  # api.CachedPages serves hits before routing
 
     def page(request: Request, build: Any) -> HTMLResponse:
         lang = "en" if request.query_params.get("lang") == "en" else "he"

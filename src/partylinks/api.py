@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -412,34 +413,49 @@ class ResponseCache:
     ) -> None:
         self.ttl, self.max_bytes, self.max_stale, self.follow_writes = ttl, max_bytes, max_stale, follow_writes
         self._items: dict[tuple[str, str], tuple[float, int, bytes, int]] = {}  # built at, changes, body, status
+        self._builders: dict[tuple[str, str], Callable[[], bytes | tuple[bytes, int]]] = {}  # to refresh a peeked entry
         self._bytes = 0
         self._lock = threading.Lock()
         self._refreshing: set[tuple[str, str]] = set()
         self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="cache-refresh")
+        # A crawler opening dozens of cold pages at once builds them a few at a time, so the GIL is
+        # left for the event loop serving cached pages (a link preview gives up after a few seconds).
+        self._builds = threading.BoundedSemaphore(4)
 
-    def get(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> tuple[bytes, int]:
-        """(body, status) of ``key``; ``build`` returns the body, or (body, status)."""
+    def peek(
+        self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]] | None = None
+    ) -> tuple[bytes, int] | None:
+        """(body, status) of ``key`` if cached, fresh or stale (a stale one is rebuilt in the
+        background); None when it has to be built first. Never builds in the caller's thread."""
         if hit := self._items.get(key):
             built_at, changes, body, code = hit
             age = time.monotonic() - built_at
             if (changes == Database.changes or not self.follow_writes) and age < self.ttl:
                 return body, code
-            if age < self.max_stale:
+            build = build or self._builders.get(key)
+            if age < self.max_stale and build:
                 self._refresh(key, build)
                 return body, code
-        return self._build(key, build)
+        return None
+
+    def get(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> tuple[bytes, int]:
+        """(body, status) of ``key``; ``build`` returns the body, or (body, status)."""
+        return self.peek(key, build) or self._build(key, build)
 
     def _build(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> tuple[bytes, int]:
-        changes, now = Database.changes, time.monotonic()  # read before building: a write during it wins
-        out = build()
+        with self._builds:
+            changes, now = Database.changes, time.monotonic()  # read before building: a write during it wins
+            out = build()
         body, code = out if isinstance(out, tuple) else (out, 200)
         with self._lock:
             if old := self._items.pop(key, None):
                 self._bytes -= len(old[2])
             if self._bytes + len(body) > self.max_bytes:
                 self._items.clear()
+                self._builders.clear()
                 self._bytes = 0
             self._items[key] = (now, changes, body, code)
+            self._builders[key] = build
             self._bytes += len(body)
         return body, code
 
@@ -459,6 +475,29 @@ class ResponseCache:
                     self._refreshing.discard(key)
 
         self._pool.submit(run)
+
+
+class CachedPages:
+    """Serves a cached page or listing straight from the event loop, before routing. The routes are
+    sync and run on the threadpool: when a crawler fills it with cold pages, even a cached home page
+    waited there, and WhatsApp's preview of spotx.fun timed out with no title or image."""
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
+        if scope["type"] == "http" and scope["method"] == "GET":
+            state = scope["app"].state
+            key = (scope.get("root_path", "") + scope["path"], scope.get("query_string", b"").decode("latin-1"))
+            for cache, media in ((getattr(state, "html_cache", None), b"text/html; charset=utf-8"),
+                                 (state.response_cache, b"application/json")):  # fmt: skip
+                if cache and (hit := cache.peek(key)):
+                    body, code = hit
+                    await send({"type": "http.response.start", "status": code, "headers": [
+                        (b"content-type", media), (b"content-length", str(len(body)).encode()),
+                    ]})  # fmt: skip
+                    return await send({"type": "http.response.body", "body": body})
+        await self.app(scope, receive, send)
 
 
 def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_none: bool = False) -> Response:
@@ -552,7 +591,11 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
     )
     app.state.settings = settings  # read by SecurityMiddleware before the lifespan finishes too
     app.state.response_cache = ResponseCache()
+    app.add_middleware(CachedPages)  # inside gzip and security: a cached page is still compressed and guarded
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+    # CORS: only the site itself may read the API from a browser (the app is same-origin anyway);
+    # other sites' pages get no Access-Control-Allow-Origin, so their reads are blocked.
+    app.add_middleware(CORSMiddleware, allow_origins=[settings.site.base_url.rstrip("/")], allow_methods=["GET"])
     app.add_middleware(SecurityMiddleware)  # outermost: rejects before any work is done
     _register_routes(app)
     app.include_router(admin_router)

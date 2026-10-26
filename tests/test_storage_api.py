@@ -164,7 +164,8 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
     tonight = datetime.combine(datetime.now(tz).date(), time(23, 30), tzinfo=tz)
     seed(settings, [event(str(i), tonight + timedelta(days=i)) for i in range(3)])
 
-    with TestClient(create_app(settings, start_scheduler=False)) as client:
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app) as client:
         techno = client.get("/genre/techno")
         assert techno.status_code == 200 and '"FAQPage"' in techno.text
         assert "כרגע יש 3 אירועים" in techno.text and "כן, 3 אירועים בכניסה חופשית" in techno.text  # answers come from the listings
@@ -185,6 +186,18 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
         assert client.get("/region/sharon").status_code == 404 and client.get("/abroad/greece").status_code == 404
         info = client.get("/landing-info", params={"path": "/city/tel-aviv/techno", "lang": "en"}).json()
         assert info["title"] == "Techno events in Tel Aviv" and {"path": "/city/tel-aviv", "label": "All events in Tel Aviv"} in info["links"]
+        # Cached pages (Hebrew paths, queries, 404s too) are answered before routing, so a threadpool
+        # full of cold builds never delays them: with the database gone the cached copies still come back.
+        paths = ["/", "/tonight?lang=en", "/city/tel-aviv", "/genre/karaoke", "/venue/בארבי", "/categories"]
+        before = {p: client.get(p) for p in paths}
+        db, app.state.db = app.state.db, None
+        try:
+            for p in paths:
+                again = client.get(p)
+                assert (again.status_code, again.content) == (before[p].status_code, before[p].content), p
+                assert again.headers["content-type"] == before[p].headers["content-type"], p
+        finally:
+            app.state.db = db
 
 
 def test_city_names_are_canonical() -> None:
