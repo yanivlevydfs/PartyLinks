@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import random
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -90,7 +91,9 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
                     missing.append((event, link))
         # In parallel (the client's concurrency bounds it), at most max_artwork_lookups new pages a run:
         # one by one, ~1,500 sellers' pages outlasted the 60-min run (Oct 2026). Found artwork is kept,
-        # so the rest is read over the next runs.
+        # so the rest is read over the next runs. Shuffled: dead seller links (redirect to /404) are
+        # never stored, so in listing order they would take the same slots every run.
+        random.shuffle(missing)
         await asyncio.gather(*(self._provider_artwork(e, link) for e, link in missing[: s.max_artwork_lookups]))
         for event in events:
             yield event
