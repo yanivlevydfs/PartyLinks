@@ -107,7 +107,9 @@ function Pins({ spots }: { spots: MapEvent[][] }) {
         key={`c${id}`}
         position={[lat, lng]}
         icon={divIcon({ className: "cluster", html: `<span>${n}</span>`, iconSize: [size, size] })}
-        eventHandlers={{ click: () => map.setView([lat, lng], index.getClusterExpansionZoom(id)) }}
+        // At least two levels deeper per click: the split zoom alone was sometimes the current one (the
+        // map's zoom is fractional), so a click did nothing and Tel Aviv took ~14 clicks to reach a pin.
+        eventHandlers={{ click: () => map.setView([lat, lng], Math.min(18, Math.max(index.getClusterExpansionZoom(id), Math.floor(map.getZoom()) + 2))) }}
       />
     );
   });
