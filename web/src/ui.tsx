@@ -464,7 +464,7 @@ export function EventGrid({ params, empty }: { params: Params; empty?: ReactNode
     <>
       <p className="count">{t.results(total)}</p>
       {items.length === 0 && (empty ?? <p className="msg">{t.empty}</p>)}
-      <div className="grid">{items.map((e) => <Card key={e.id} e={e} />)}</div>
+      <div className={"grid" + (q.isPlaceholderData ? " stale" : "")} aria-busy={q.isPlaceholderData}>{items.map((e) => <Card key={e.id} e={e} />)}</div>
       {q.hasNextPage && (
         <div className="more">
           <button onClick={() => q.fetchNextPage()} disabled={q.isFetchingNextPage}>

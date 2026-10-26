@@ -403,6 +403,7 @@ select option { background: var(--panel-solid); color: var(--text); }
 }
 
 /* ------------------------------------------------------------------ cards */
+.grid.stale { opacity: .5; transition: opacity .2s .15s; } /* new results on the way (search as you type) */
 .grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr)); }
 .card {
   position: relative; display: flex; flex-direction: column;

@@ -5,8 +5,8 @@ export type Params = Record<string, string | string[] | undefined>;
 
 const PAGE_SIZE = 24;
 
-async function getJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+async function getJSON<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   return res.json();
 }
@@ -23,7 +23,9 @@ export function useEvents(params: Params) {
   const qs = toQuery({ page_size: String(PAGE_SIZE), ...params });
   return useInfiniteQuery({
     queryKey: ["events", qs],
-    queryFn: ({ pageParam }) => getJSON<EventPage>(`/events?${qs}&page=${pageParam}`),
+    // signal: a request overtaken by the next keystroke or filter is cancelled, not left to load the server.
+    queryFn: ({ pageParam, signal }) => getJSON<EventPage>(`/events?${qs}&page=${pageParam}`, signal),
+    placeholderData: (prev) => prev, // the old results stay (dimmed) while the new ones load: no flash of skeletons
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < 40 && last.page * last.page_size < last.total ? last.page + 1 : undefined), // 40: the API's max_page
   });

@@ -94,9 +94,10 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   useEffect(() => {
     const id = setTimeout(() => {
       const text = q.trim();
-      if (text === useStore.getState().filters.q) return;
+      // One letter matches nearly everything (and the API wants 2+): the list waits for the second.
+      if (text.length === 1 || text === useStore.getState().filters.q) return;
       set(text ? { ...DEFAULT_FILTERS, q: text } : { q: text });
-    }, 300);
+    }, 250);
     return () => clearTimeout(id);
   }, [q, set]);
 
