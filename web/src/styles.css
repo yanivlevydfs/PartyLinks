@@ -623,6 +623,25 @@ button, input, select { font: inherit; color: inherit; }
 /* Night-mode map: invert the light OSM tiles and tint them violet. */
 .map .leaflet-tile-pane { filter: invert(1) hue-rotate(200deg) brightness(.9) contrast(.85) saturate(.55); }
 .map-page ~ .foot { display: none; }
+/* Category cards over the map: a grid on desktop, one swipeable row on phones. */
+.map-cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; padding-block: 14px 4px; }
+.map-cat {
+  display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 92px; padding: 10px 6px; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); font: inherit; text-align: center;
+  transition: border-color .15s, background .15s, transform .15s;
+}
+.map-cat > span { font-size: 26px; line-height: 1; }
+.map-cat b { font-size: 14px; line-height: 1.2; }
+.map-cat small { color: var(--muted); font-weight: 600; }
+.map-cat:hover { border-color: var(--line-hot); transform: translateY(-2px); }
+.map-cat.on { background: var(--pink); border-color: var(--pink); color: #fff; box-shadow: 0 6px 20px -6px rgb(255 46 147 / .7); }
+.map-cat.on small { color: #fff; }
+.map-cat:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+@media (max-width: 760px) {
+  .map-cats { display: flex; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+  .map-cat { flex: 0 0 96px; min-height: 84px; }
+}
+@media (prefers-reduced-motion: reduce) { .map-cat { transition: none; } .map-cat:hover { transform: none; } }
 .map .leaflet-popup-content-wrapper, .map .leaflet-popup-tip {
   background: rgb(14 9 26 / .95); color: var(--text); border: 1px solid var(--line-hot);
   box-shadow: 0 0 30px rgb(255 46 147 / .35);

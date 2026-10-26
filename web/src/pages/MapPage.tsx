@@ -4,7 +4,8 @@ import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap, useMapEve
 import { useEffect, useMemo, useState } from "react";
 import Supercluster from "supercluster";
 import { Link } from "react-router-dom";
-import { useMapEvents } from "../api";
+import { useCategories, useMapEvents } from "../api";
+import { genreLabel } from "../i18n";
 import { useAllowed, useConsent } from "../consent";
 import { Filters, filterParams } from "../Filters";
 import { useStore } from "../store";
@@ -38,7 +39,7 @@ export default function MapPage() {
 
   return (
     <main className="map-page">
-      <div className="wrap"><Filters /></div>
+      <div className="wrap"><Cats /><Filters /></div>
       <div className="map-bar wrap">
         <h1 className="sr-only">{t.nav.map}</h1>
         {isError ? t.error : isPending ? <Loader small /> : (
@@ -73,6 +74,40 @@ export default function MapPage() {
         </div>
       )}
     </main>
+  );
+}
+
+const ICON: Record<string, string> = {
+  techno: "🎛️", house: "🏠", trance: "🌀", hip_hop: "🎤", rnb: "🎶", mainstream: "🪩", pop: "🎵", reggaeton_latin: "💃",
+  afro: "🥁", mizrahi: "🪕", israeli: "🇮🇱", greek: "🏛️", electronic: "⚡", edm: "🔊", throwback: "📼", rock_indie: "🎸",
+  jazz: "🎷", live_show: "🎙️", lgbt: "🏳️‍🌈", stand_up: "😂", karaoke: "🎤", hi_tech: "💻", conference: "🧑‍💼", ai: "🤖",
+  festival: "🎪", meetups: "🤝", culture: "🎭", exhibitions: "🖼️", workshops: "🛠️", cinema: "🎬", markets: "🛍️", food: "🍽️",
+  sport: "⚽", happy_hour: "🥂", theatre: "🎭", kids: "🧸", lectures: "📚", tours: "🗺️", dance: "🩰", yoga_wellness: "🧘",
+};
+const CATS_SHOWN = 11;
+
+/** Big category buttons over the map: one genre at a time (the full filter below still takes several). */
+function Cats() {
+  const { t, lang } = useT();
+  const f = useStore((s) => s.filters);
+  const set = useStore((s) => s.setFilters);
+  const genres = [...(useCategories().data?.genres ?? [])].sort((a, b) => b.events - a.events);
+  if (!genres.length) return null;
+  // The busiest ones, plus whatever is picked even if it is not among them.
+  const shown = genres.filter((g, i) => i < CATS_SHOWN || f.genres.includes(g.value));
+  const one = (g: string) => f.genres.length === 1 && f.genres[0] === g;
+  return (
+    <div className="map-cats" role="group" aria-label={t.genres}>
+      <button className={"map-cat" + (f.genres.length ? "" : " on")} aria-pressed={!f.genres.length} onClick={() => set({ genres: [] })}>
+        <span aria-hidden>✨</span><b>{t.all}</b>
+      </button>
+      {shown.map((g) => (
+        <button key={g.value} className={"map-cat" + (f.genres.includes(g.value) ? " on" : "")} aria-pressed={f.genres.includes(g.value)}
+          onClick={() => set({ genres: one(g.value) ? [] : [g.value] })}>
+          <span aria-hidden>{ICON[g.value] ?? "🎉"}</span><b>{genreLabel(lang, g.value)}</b><small>{g.events}</small>
+        </button>
+      ))}
+    </div>
   );
 }
 
