@@ -13,12 +13,12 @@ from typing import Any
 import PIL.features
 from fastapi.testclient import TestClient
 from PIL import Image
-from sqlalchemy import text
+from sqlalchemy import text, update
 
 from partylinks import service as service_module
 from partylinks.api import create_app
 from partylinks.config import HttpSettings, Settings
-from partylinks.db import Database, ImageRow, upsert_events
+from partylinks.db import Database, EventRow, ImageRow, upsert_events
 from partylinks.media import MediaStore, has_variants, make_variants, variant_path
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.retention import purge_expired
@@ -223,7 +223,7 @@ def test_retention_deletes_a_past_events_original_and_both_copies(tmp_path: Path
     assert has_variants(original)
     with db.session() as session:  # the party is over
         past = datetime.now(UTC) - timedelta(days=3)
-        session.execute(text("UPDATE events SET start_at = :t, end_at = :t"), {"t": past})
+        session.execute(update(EventRow).values(start_at=past, end_at=past))
     assert purge_expired(db, media, settings.retention, settings.timezone) == 1
     assert not list(original.parent.iterdir())  # original and both copies gone
 
