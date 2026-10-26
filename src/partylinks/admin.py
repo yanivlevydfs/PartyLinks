@@ -10,6 +10,7 @@ import hmac
 import logging
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, Literal
+from urllib.parse import urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
 import yaml
@@ -328,14 +329,32 @@ class ConfigIn(BaseModel):
     yaml: str
 
 
+PROXY_KEYS = ("proxy", "source_proxy", "israel_proxy", "israel_proxy_feed")
+
+
+def _hide_url(value: str) -> str:
+    """Proxy URLs (comma-separated pools too) keep their host; credentials and query (keys) are hidden."""
+    parts = [urlsplit(u.strip()) for u in value.split(",")]
+    return ",".join(
+        urlunsplit(p._replace(netloc="••••@" + p.netloc.rsplit("@", 1)[1] if "@" in p.netloc else p.netloc,
+                              query="••••" if p.query else ""))  # fmt: skip
+        for p in parts
+    )
+
+
 def _mask(settings: Settings) -> dict[str, Any]:
     """Effective settings (YAML + environment) with secrets hidden."""
     data = settings.model_dump(mode="json", exclude={"admin"})
     data["database"]["url"] = make_url(settings.database.url).render_as_string(hide_password=True)
     blocks = [data["http"], *(s.get("http", {}) for s in data["sources"].values() if isinstance(s, dict))]
     for http in blocks:
-        if isinstance(http, dict) and http.get("headers"):
+        if not isinstance(http, dict):
+            continue
+        if http.get("headers"):
             http["headers"] = {k: "••••" for k in http["headers"]}
+        for key in PROXY_KEYS:
+            if http.get(key):
+                http[key] = _hide_url(http[key])
     data["admin"] = {"token_set": settings.admin.token is not None}
     return data
 

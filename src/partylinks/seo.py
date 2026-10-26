@@ -1060,8 +1060,8 @@ def _landing_links(session: Session, cfg: Settings, lang: str) -> str:
 
 # --------------------------------------------------------------------------- render
 def _jsonld_tag(data: dict[str, Any]) -> str:
-    # "</" inside a string would close the script element early.
-    text = json.dumps(data, ensure_ascii=False, default=str).replace("</", "<\\/")
+    # No "<" at all inside the element: "</script" would close it early, "<!--<script" would keep it open.
+    text = json.dumps(data, ensure_ascii=False, default=str).replace("<", "\\u003c")
     return f'<script type="application/ld+json">{text}</script>'
 
 

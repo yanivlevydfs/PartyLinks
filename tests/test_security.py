@@ -1,12 +1,22 @@
 from __future__ import annotations
 
+import json
+import re
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
+import pytest
+from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
+from partylinks import seo
+from partylinks.admin import _mask
 from partylinks.api import create_app
-from tests.test_storage_api import settings_for
+from partylinks.config import Settings
+from partylinks.db import EventRow
+from tests.test_storage_api import event, seed, settings_for
 
 
 def test_headers_probes_bots_and_bans(tmp_path: Path) -> None:
@@ -96,3 +106,154 @@ def test_scrapers_are_slowed_and_scripts_refused(tmp_path: Path) -> None:
         assert c.get("/health").status_code == 200  # the rest of the site doesn't
         assert c.get("/health", headers={"user-agent": "python-requests/2.32"}).status_code == 200  # health probes pass
         assert c.get("/", headers={"user-agent": "python-requests/2.32"}).status_code == 403
+
+
+ADMIN = {"authorization": "Bearer s3cret"}
+PUBLIC_WRITES = {"/events/sponsored/hit"}  # the only write a visitor may send
+
+
+def _open_app(tmp_path: Path) -> Any:
+    """Token set, no rate limits or bans in the way of a test that sends many requests."""
+    settings = settings_for(tmp_path)
+    settings.admin.token = SecretStr("s3cret")
+    settings.security.rate_limit_per_minute = settings.security.data_rate_limit_per_minute = 100_000
+    settings.security.ban_after_strikes = 100_000
+    return create_app(settings, start_scheduler=False)
+
+
+def test_every_write_and_admin_route_needs_the_token(tmp_path: Path) -> None:
+    """A route that changes state, or one under /admin/api, is refused without the token:
+    enumerated from the app, so a route added later without AdminDep fails here."""
+    app = _open_app(tmp_path)
+    with TestClient(app, client=("198.51.100.20", 1)) as outsider:
+        checked = 0
+        # An included router is one entry in app.routes; its own routes carry the full path.
+        routes = [r for top in app.routes for r in getattr(getattr(top, "original_router", None), "routes", [top])]
+        for route in routes:
+            if not isinstance(route, APIRoute) or route.path in PUBLIC_WRITES:
+                continue
+            path = re.sub(r"\{[^}]+\}", "x", route.path)
+            for method in route.methods - {"HEAD"}:
+                if method == "GET" and not route.path.startswith("/admin/api"):
+                    continue
+                got = outsider.request(method, path, json={})
+                assert got.status_code == 401, f"{method} {route.path} answered {got.status_code} without a token"
+                checked += 1
+        assert checked > 20  # the enumeration really found the admin routes
+
+
+def test_admin_without_token_is_this_machine_only(tmp_path: Path) -> None:
+    app = create_app(settings_for(tmp_path), start_scheduler=False)  # no admin.token
+    with TestClient(app) as local, TestClient(app, client=("198.51.100.21", 1)) as outsider:
+        assert local.get("/admin/api/logging").status_code == 200
+        # Behind a reverse proxy every request comes from loopback: a forwarded one is never local.
+        assert local.get("/admin/api/logging", headers={"x-forwarded-for": "198.51.100.21"}).status_code == 403
+        assert local.get("/admin/api/logging", headers={"x-real-ip": "1.2.3.4"}).status_code == 403
+        assert outsider.get("/admin/api/logging").status_code == 403
+
+
+def test_admin_config_never_shows_secrets() -> None:
+    secrets = ["hunter2", "evomi-pass", "il-pass", "feed-key", "partner-key", "s3cret"]
+    settings = Settings(
+        database={"url": "postgresql://app:hunter2@db.internal:5432/spotx"},
+        http={
+            "headers": {"x-key": "partner-key"},
+            "proxy": "http://user:evomi-pass@core.evomi.com:1000",
+            "source_proxy": "http://a:evomi-pass@p1:1,http://b:evomi-pass@p2:2",
+            "israel_proxy": "http://il:il-pass@1.2.3.4:8080",
+            "israel_proxy_feed": "https://proxylist.example/api?key=feed-key",
+        },
+        admin={"token": "s3cret"},
+    )
+    shown = json.dumps(_mask(settings))
+    assert not [s for s in secrets if s in shown], shown
+    assert "core.evomi.com" in shown  # the host stays, to see which proxy is set
+
+
+def test_backup_names_cannot_leave_the_backup_folder(tmp_path: Path) -> None:
+    app = _open_app(tmp_path)
+    with TestClient(app, client=("198.51.100.22", 1)) as c:
+        for name in ("..%2Fsettings.yaml", "..%5Csettings.yaml", "%2e%2e%2f%2e%2e%2fpyproject.toml"):
+            got = c.get(f"/admin/api/config/backups/{name}", headers=ADMIN)
+            assert got.status_code == 404, (name, got.status_code)
+
+
+def test_ticket_redirect_only_goes_to_web_pages(tmp_path: Path) -> None:
+    """/go/ is the one redirect the site makes: never to a script URL or an unknown id."""
+    settings = settings_for(tmp_path)
+    soon = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [event("ok", soon), event("bad", soon)])
+    with db.session() as session:
+        session.get(EventRow, "test:bad").url = "javascript:alert(document.cookie)"
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app, follow_redirects=False) as c:
+        ok = c.get("/go/test:ok")
+        assert ok.status_code == 302 and ok.headers["location"].startswith("https://example.com/ok")
+        assert "no-store" in ok.headers["cache-control"]
+        assert c.get("/go/test:bad").status_code == 404
+        assert c.get("/go/https://evil.example/").status_code == 404  # an id, never a URL to follow
+
+
+def test_cors_lets_only_the_site_read_and_never_write(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    app = create_app(settings, start_scheduler=False)
+    own = settings.site.base_url.rstrip("/")
+    with TestClient(app) as c:
+        assert "access-control-allow-origin" not in c.get("/events", headers={"origin": "https://evil.example"}).headers
+        assert c.get("/events", headers={"origin": own}).headers["access-control-allow-origin"] == own
+        preflight = c.options("/events/sponsored/hit", headers={"origin": own, "access-control-request-method": "POST"})
+        assert preflight.status_code == 400  # GET only, even from the site itself
+
+
+def test_hostile_input_is_refused_not_crashed_on(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    seed(settings, [event("a", datetime.now(UTC) + timedelta(days=2))])
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app, raise_server_exceptions=False) as c:
+        assert c.get("/events/' OR '1'='1").status_code == 404
+        assert c.get("/events", params={"q": "'; DROP TABLE events;--"}).status_code == 200
+        assert c.get("/events/test:a").status_code == 200  # the table is still there
+        assert c.get("/events", params={"sort": "id; DELETE"}).status_code == 422
+        assert len(c.get("/events", params={"size": 10_000}).json()["items"]) <= settings.api.max_page_size
+        assert c.get("/locate", params={"lat": 999, "lng": 0}).status_code == 422
+        assert c.get("/images/..%2F..%2Fetc%2Fpasswd").status_code in (404, 422)
+        assert c.get("/changes", params={"kind": ["x"] * 500}).status_code == 422
+        assert c.post("/events/sponsored/hit", json={"event_id": "x" * 10_000, "kind": "view"}).status_code == 422
+        assert c.post("/events/sponsored/hit", json={"event_id": "test:a", "kind": "steal"}).status_code == 422
+        assert c.delete("/events/test:a").status_code == 405
+
+
+def test_event_page_escapes_scraped_text(tmp_path: Path) -> None:
+    """Titles and descriptions come from other sites: never markup in our page."""
+    settings = settings_for(tmp_path)
+    xss = '"><script>alert(1)</script><img src=x onerror=alert(2)>'
+    soon = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [event("x", soon, title=f"Party {xss}", description=xss, venue_name=xss)])
+    template = '<html lang="he" dir="rtl"><head><!--seo--></head><body><div id="root"></div></body></html>'
+    with db.session(write=False) as session:
+        page = seo.event_page(session, settings, "he", "test:x")
+    assert page is not None
+    html = seo.render(template, page, settings)
+    assert "<script>alert" not in html and "<img src=x" not in html
+    # Only JSON-LD scripts, each closed where it should be (no "<" inside them at all).
+    assert all(json.loads(s) for s in re.findall(r"<script[^>]*>(.*?)</script>", html, re.S))
+
+
+def test_banned_visitor_gets_no_cached_page(tmp_path: Path) -> None:
+    """Cached pages answer before routing, but still inside the security middleware."""
+    settings = settings_for(tmp_path)
+    settings.security.ban_after_strikes = 1
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app) as local, TestClient(app, client=("198.51.100.23", 1)) as outsider:
+        assert local.get("/events").status_code == 200  # now cached
+        outsider.get("/.git/config")  # a probe: banned
+        assert outsider.get("/events").status_code == 403
+
+
+@pytest.mark.skipif(not (Path(__file__).parents[1] / "web/dist/index.html").is_file(), reason="needs the web build")
+def test_host_header_does_not_poison_cached_pages(tmp_path: Path) -> None:
+    app = create_app(settings_for(tmp_path), start_scheduler=False)
+    with TestClient(app) as c:
+        poisoned = c.get("/privacy", headers={"host": "evil.example", "x-forwarded-host": "evil.example"})
+        assert "evil.example" not in poisoned.text
+        assert "evil.example" not in c.get("/privacy").text
