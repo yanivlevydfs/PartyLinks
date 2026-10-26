@@ -372,7 +372,10 @@ button, input, select { font: inherit; color: inherit; }
   .trending { margin-inline: -16px; padding: 18px 0 14px; border-inline: 0; border-radius: 0; }
   .trending-head { padding: 0 16px 12px; }
   .trending-row { gap: 12px; padding: 6px 16px 4px; scroll-padding-inline: 16px; }
-  .trending-row > .card-wrap { flex-basis: 72vw; }
+  .trending-row { gap: 10px; }
+  .trending-row > .card-wrap { flex-basis: 43vw; }
+  .trending h2 { font-size: 17px; }
+  .trending-head p { font-size: 13px; }
 }
 
 /* ------------------------------------------------------------------ cards */
@@ -583,8 +586,9 @@ button, input, select { font: inherit; color: inherit; }
 .ticket small { color: var(--muted); font-size: 13px; }
 .t-price { text-align: end; flex: none; }
 .t-price b { font: 900 20px/1.1 var(--display); }
-.desc { white-space: pre-line; color: #ddd3f5; margin: 0; max-width: 75ch; font-size: 16px; overflow-wrap: anywhere; }
+.desc { unicode-bidi: plaintext; text-align: start; white-space: pre-line; color: #ddd3f5; margin: 0; max-width: 75ch; font-size: 16px; overflow-wrap: anywhere; }
 .desc a { color: var(--cyan); text-decoration: underline; }
+.desc-more { display: none; }
 .gallery { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr)); }
 .g-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); }
 
@@ -1105,10 +1109,27 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .event { padding-bottom: 90px; }
   .e-info > .buy { display: none; }
   .e-poster { max-width: none; }
-  .e-poster .e-img { max-height: 58vh; object-fit: contain; background: rgb(0 0 0 / .35); }
+  .e-poster .e-img { max-height: 44vh; object-fit: contain; background: rgb(0 0 0 / .35); }
   .e-wrap { padding-top: 14px; }
   .back { padding: 6px 14px; font-size: 14px; }
-  .e-info h1 { margin: 8px 0 12px; }
+  .e-info h1 { margin: 8px 0 12px; font-size: clamp(24px, 7vw, 32px); }
+  .e-top { grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 14px; }
+  .facts { gap: 8px; font-size: 15px; margin-bottom: 18px; }
+  .alts { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; font-size: 13px; }
+  .alts::-webkit-scrollbar { display: none; }
+  .alts > span { flex: none; }
+  .alt { flex: none; padding: 5px 12px; gap: 6px; }
+  .event section h4 { margin: 26px 0 10px; }
+  .lineup-list { gap: 6px; }
+  .lineup-list a { padding: 8px 12px; font-size: 14px; }
+  .ticket { padding: 10px 14px; }
+  .t-price b { font-size: 17px; }
+  .desc { font-size: 15px; line-height: 1.6; }
+  .desc.clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 8; overflow: hidden; }
+  .desc-more {
+    display: inline-block; margin-top: 8px; padding: 0; background: none; border: 0; cursor: pointer;
+    color: var(--cyan); font: 700 14px/1.4 var(--display); text-decoration: underline; text-underline-offset: 3px;
+  }
 
   /* The accessibility button floats above the tab bar (and the buy bar on event pages). */
   html .asw-menu-btn { bottom: calc(76px + env(safe-area-inset-bottom)) !important; left: 12px !important; right: auto !important; top: auto !important; }
@@ -1119,11 +1140,23 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .search { margin-top: 14px; padding: 12px 18px; font-size: 16px; }
   .foot { margin-top: 24px; padding-block: 28px; }
 
-  .consent { inset: auto 8px calc(70px + env(safe-area-inset-bottom)); max-height: calc(100dvh - 90px); }
-  .consent-in { padding: 16px; font-size: 14px; line-height: 1.5; }
-  .consent h2 { font-size: 17px; }
-  .c-btn { flex: 1 1 0; min-height: 44px; padding: 8px 12px; font-size: 14px; }
-  .c-btn.ghost { flex: 1 1 100%; }
+  /* Popups sit above the tab bar, buttons on one row; the accessibility button steps aside meanwhile. */
+  .consent, .install { inset: auto 8px calc(70px + env(safe-area-inset-bottom)); }
+  .consent { max-height: calc(100dvh - 140px); }
+  .consent-in { padding: 14px 14px 12px; font-size: 13px; line-height: 1.45; }
+  .consent h2 { font-size: 16px; margin-bottom: 6px; }
+  .consent p { margin-bottom: 10px; }
+  .consent-btns { flex-wrap: nowrap; gap: 6px; }
+  .consent.open .consent-btns { flex-wrap: wrap; }
+  .c-btn, .c-btn.ghost { flex: 1 1 0; min-height: 40px; padding: 6px 8px; font-size: 13px; }
+  .install { padding: 12px; gap: 10px; }
+  .install img { width: 40px; height: 40px; }
+  .install-txt { flex-basis: 0; font-size: 13px; }
+  .install-txt b { font-size: 15px; }
+  .install-btns { gap: 6px; }
+  .install-btns .c-btn { flex: 1 1 0; }
+  .install-btns .c-btn:only-child { flex: 0 0 auto; margin-inline-start: auto; padding-inline: 20px; }
+  html:has(.consent, .install) .asw-menu-btn { display: none !important; }
 }
 
 /* ------------------------------------------------------------------ phone grid: two posters per row */

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
@@ -22,6 +23,7 @@ export default function EventPage() {
   const { data: e, isError, isPending } = useEvent(id);
   useTitle(e?.title);
   const back = () => (history.state?.idx > 0 ? navigate(-1) : navigate("/"));
+  const [more, setMore] = useState(false);
 
   if (isError) return <p className="msg wrap">{t.error}</p>;
   if (isPending) return <Loader />;
@@ -31,6 +33,7 @@ export default function EventPage() {
   const mapQuery = e.latitude != null ? `${e.latitude},${e.longitude}` : [e.venue_name, e.address, e.city].filter(Boolean).join(", ");
   const price = priceLabel(e, t);
   const time = { hour: "2-digit", minute: "2-digit" } as const;
+  const long = (e.description?.length ?? 0) > 400;
 
   return (
     <article className="event">
@@ -135,7 +138,9 @@ export default function EventPage() {
         {e.description && (
           <section>
             <h4>{t.about}</h4>
-            <p className="desc" dir="auto">{linkify(e.description)}</p>
+            {/* Phones show the opening lines; the rest opens on request. */}
+            <p className={"desc" + (long && !more ? " clamp" : "")}>{linkify(e.description)}</p>
+            {long && !more && <button className="desc-more" onClick={() => setMore(true)}>{t.readMore}</button>}
           </section>
         )}
 
