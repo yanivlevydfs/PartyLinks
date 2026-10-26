@@ -171,9 +171,8 @@ export function Quiz() {
 
       <div className="quiz-foot">
         {step > 0 && <button className="quiz-back" onClick={() => setStep(step - 1)}>{lang === "he" ? "→" : "←"} {q.back}</button>}
-        {step === 0 ? (
-          <button className="quiz-skipall" onClick={() => finish({ ...DEFAULT_FILTERS, sort: d.sort })}>{q.skipAll}</button>
-        ) : (
+        <button className="quiz-skipall" onClick={() => finish({ ...DEFAULT_FILTERS, sort: d.sort })}>{q.skipAll}</button>
+        {step > 0 && (
           <>
             {step === STEPS - 1 && !!total && <button className="quiz-skip" onClick={surprise}>{q.surprise}</button>}
             <button className="quiz-go" onClick={next} disabled={total === 0}>
