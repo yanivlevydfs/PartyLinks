@@ -4,7 +4,7 @@ import { useCategories, useEvents, useLandingInfo, type Params } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
-import { Card, CardSkeletons, EventGrid, Hero, Related, useT, useTitle } from "../ui";
+import { Card, CardSkeletons, EventGrid, Hero, Related, today, useT, useTitle } from "../ui";
 import { Quiz } from "./Quiz";
 
 // Regions with a /region/<key> page (seo.py REGION_NAMES); Tel Aviv and Eilat are city pages.
@@ -135,12 +135,21 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
 // Day-granular, so the query key stays stable within a visit.
 const daysAhead = (n: number) => new Date(Date.now() + n * 24 * 3600 * 1000).toISOString().slice(0, 10);
 
-// More rows under "Trending", one per audience: genre keys as in the API's genre filter (any of them).
-const RAILS: [string, string[]][] = [
-  ["electronic", ["techno", "house", "trance", "electronic", "edm", "drum_and_bass", "bass_dubstep", "hardstyle"]],
-  ["live", ["live_show"]],
-  ["standup", ["stand_up"]],
-  ["hitech", ["hi_tech", "ai", "cyber", "software_dev", "startups", "conference"]],
+// More rows under "Trending", one per audience: /events params (genre: any of them).
+const RAILS: [string, Params][] = [
+  ["tonight", { date: today() }], // ponytail: today at page load; a tab left open past midnight keeps yesterday
+  ["electronic", { genre: ["techno", "house", "trance", "electronic", "edm", "drum_and_bass", "bass_dubstep", "hardstyle"] }],
+  ["free", { free_entry: "true" }],
+  ["live", { genre: ["live_show"] }],
+  ["israeli", { genre: ["israeli", "mizrahi", "greek"] }],
+  ["mainstream", { genre: ["mainstream", "hip_hop", "rnb", "reggaeton_latin", "throwback", "pop"] }],
+  ["standup", { genre: ["stand_up"] }],
+  ["festival", { genre: ["festival"] }],
+  ["theatre", { genre: ["theatre", "dance"] }],
+  ["jazz", { genre: ["jazz", "classical_opera"] }],
+  ["kids", { genre: ["kids"] }],
+  ["lectures", { genre: ["lectures", "workshops", "culture", "exhibitions"] }],
+  ["hitech", { genre: ["hi_tech", "ai", "cyber", "software_dev", "startups", "conference"] }],
 ];
 
 /** "Trending" (sold on the most ticket sites in two weeks), then a row per audience for the month ahead. */
@@ -149,8 +158,8 @@ function Trending() {
   return (
     <>
       <Rail title={t.trending} sub={t.trendingSub} multi params={{ sort: "-group_size", date_to: daysAhead(14) }} />
-      {RAILS.map(([key, genre]) => (
-        <Rail key={key} title={t.rails[key][0]} sub={t.rails[key][1]} params={{ sort: "-group_size", genre, date_to: daysAhead(30) }} />
+      {RAILS.map(([key, params]) => (
+        <Rail key={key} title={t.rails[key][0]} sub={t.rails[key][1]} params={{ sort: "-group_size", date_to: daysAhead(30), ...params }} />
       ))}
     </>
   );
