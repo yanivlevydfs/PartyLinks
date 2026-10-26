@@ -2,7 +2,6 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
-import { CookieConsent, useConsent } from "./consent";
 import { InstallBanner } from "./Install";
 import { INFO_LINKS } from "./pages/Info";
 import { SponsoredFrame, SponsoredStrip } from "./Sponsored";
@@ -84,7 +83,6 @@ export function Layout() {
   const { t, lang } = useT();
   const setLang = useStore((s) => s.setLang);
   const cats = useCategories().data;
-  const openConsent = useConsent((s) => s.openSettings);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -93,7 +91,6 @@ export function Layout() {
 
   return (
     <>
-      <CookieConsent />
       <InstallBanner />
       <header className="top">
         <div className="wrap top-row">
@@ -135,7 +132,6 @@ export function Layout() {
         {" · "}<Link to="/accessibility">{t.accessibility}</Link>
         {" · "}<Link to="/terms">{t.terms}</Link>
         {" · "}<Link to="/privacy">{t.privacy}</Link>
-        {" · "}<button className="linkish" onClick={openConsent}>{t.cookieSettings}</button>
         <p className="foot-disclaimer">{t.disclaimer}</p>
       </footer>
       </SponsoredFrame>

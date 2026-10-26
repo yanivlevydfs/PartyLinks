@@ -2,7 +2,6 @@
 // Android (Chrome, Edge, Samsung): the browser's own install dialog via beforeinstallprompt.
 // iOS has no such event: the banner shows the Share > Add to Home Screen steps instead.
 import { useEffect, useState } from "react";
-import { useConsent } from "./consent";
 import { useT } from "./ui";
 
 export const INSTALL_KEY = "partylinks-install-dismissed";
@@ -56,7 +55,6 @@ const TEXT = {
 export function InstallBanner() {
   const { lang } = useT();
   const t = TEXT[lang];
-  const consentOpen = useConsent((s) => s.panel !== null);
   const [due, setDue] = useState(false);
   const [closed, setClosed] = useState(false);
 
@@ -68,8 +66,8 @@ export function InstallBanner() {
     return () => { clearTimeout(timer); window.removeEventListener("appinstalled", installed); };
   }, []);
 
-  // Never on top of the consent banner; Android only once the browser says the app is installable.
-  if (!due || closed || consentOpen || (!isIos && !deferred)) return null;
+  // Android only once the browser says the app is installable.
+  if (!due || closed || (!isIos && !deferred)) return null;
 
   const dismiss = () => {
     try { localStorage.setItem(INSTALL_KEY, String(Date.now())); } catch {}

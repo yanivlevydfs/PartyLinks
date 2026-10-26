@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import Supercluster from "supercluster";
 import { Link } from "react-router-dom";
 import { useMapEvents } from "../api";
-import { useAllowed, useConsent } from "../consent";
 import { Filters, filterParams } from "../Filters";
 import { useStore } from "../store";
 import type { MapEvent } from "../types";
@@ -20,12 +19,6 @@ export default function MapPage() {
   const f = useStore((s) => s.filters);
   const { data, isError, isPending } = useMapEvents(filterParams({ ...f, sort: "start_at" }));
   useTitle(t.nav.map);
-  // Tiles come from OpenStreetMap's servers (they see the visitor's IP): only with consent,
-  // given in the cookie settings or here, for this visit or for good.
-  const allowed = useAllowed("external");
-  const [once, setOnce] = useState(false);
-  const { consent, save } = useConsent();
-  const showTiles = allowed || once;
 
   // One pin per location; a venue usually hosts many events.
   const spots = new Map<string, MapEvent[]>();
@@ -51,27 +44,15 @@ export default function MapPage() {
       <div className="wrap map-wrap">
       <MapContainer center={ISRAEL} zoom={8} className="map" scrollWheelZoom>
         {/* Keyless OSM tiles, darkened in CSS (.map .leaflet-tile-pane). */}
-        {showTiles && (
-          <TileLayer
-            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-            maxZoom={19}
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-        )}
+        <TileLayer
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        />
         <FitTo points={[...spots.values()].map((l) => [l[0].latitude, l[0].longitude] as [number, number])} />
         <Pins spots={[...spots.values()]} />
       </MapContainer>
       </div>
-      {!showTiles && (
-        <div className="map-gate" role="region" aria-label={t.mapGate.title}>
-          <h2>{t.mapGate.title}</h2>
-          <p>{t.mapGate.text} <Link to="/privacy">{t.privacy}</Link></p>
-          <div className="consent-btns">
-            <button className="c-btn" onClick={() => setOnce(true)}>{t.mapGate.once}</button>
-            <button className="c-btn ghost" onClick={() => save({ ...consent?.choices, external: true })}>{t.mapGate.always}</button>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

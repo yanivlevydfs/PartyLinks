@@ -24,6 +24,9 @@ import "@fontsource/heebo/900.css";
 import "@fontsource/rubik/700.css";
 import "@fontsource/rubik/900.css";
 
+// The cookie consent banner is gone; drop the record it left in returning visitors' browsers.
+try { localStorage.removeItem("partylinks-consent"); } catch {}
+
 // Leaflet is only loaded when the map is opened.
 const MapPage = lazy(() => import("./pages/MapPage"));
 const AdminPage = lazy(() => import("./pages/Admin"));
