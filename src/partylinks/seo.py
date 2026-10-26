@@ -329,7 +329,7 @@ def _website(cfg: Settings, lang: str) -> list[dict[str, Any]]:
         "@id": cfg.site.base_url + "/#org",
         "name": cfg.site.name,
         "url": cfg.site.base_url + "/",
-        "logo": cfg.site.base_url + "/icon-512.png",
+        "logo": cfg.site.base_url + "/icon-512.png?v=spotx2",
         "areaServed": {"@type": "Country", "name": "Israel"},
     }
     site = {

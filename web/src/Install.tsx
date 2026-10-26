@@ -86,7 +86,7 @@ export function InstallBanner() {
 
   return (
     <aside className="install" role="dialog" aria-modal="false" aria-labelledby="install-title">
-      <img src="/icon-192.png" alt="" width="48" height="48" />
+      <img src="/icon-192.png?v=spotx2" alt="" width="48" height="48" />
       <div className="install-txt">
         <b id="install-title">{t.title}</b>
         <span>{isIos ? <>{t.ios} <ShareIcon /></> : t.body}</span>

@@ -1,10 +1,10 @@
 // Offline page only: a page load that fails (no connection) gets /offline.html. Nothing else is
 // cached, so the site is always fresh online. Bump VERSION when offline.html changes.
-const VERSION = "offline-v2";
+const VERSION = "offline-v3";
 const OFFLINE = "/offline.html";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll([OFFLINE, "/favicon.svg"])));
+  event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll([OFFLINE, "/favicon.svg?v=spotx2"])));
   self.skipWaiting();
 });
 
