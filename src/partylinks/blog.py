@@ -13,6 +13,7 @@ Served three ways: server-rendered pages for crawlers (``/blog``, ``/blog/catego
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 from datetime import date, datetime
@@ -24,6 +25,7 @@ from zoneinfo import ZoneInfo
 
 import yaml
 from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import ColumnElement
 
@@ -353,30 +355,38 @@ def register(app: FastAPI, page: Any) -> None:
     def cfg(request: Request) -> Settings:
         return request.app.state.settings
 
+    def cached(request: Request, build: Any) -> Response:
+        # Same response cache as the event endpoints (api._cached): each post's summary queries its
+        # events, so /posts built fresh took ~4 s; now built once and refreshed in the background.
+        def body() -> bytes:
+            with request.app.state.db.session(write=False) as session:
+                return json.dumps(jsonable_encoder(build(session)), ensure_ascii=False).encode()
+
+        cache = request.app.state.response_cache
+        return Response(cache.get((request.url.path, request.url.query), body)[0], media_type="application/json")
+
     @app.get("/posts", tags=["blog"])
-    def list_posts(request: Request, category: str | None = None) -> dict[str, Any]:
+    def list_posts(request: Request, category: str | None = None) -> Response:
         posts = load_posts(cfg(request))
         counts = {k: sum(p.category == k for p in posts) for k in CATEGORIES}
         shown = [p for p in posts if not category or p.category == category]
-        with request.app.state.db.session(write=False) as session:
-            return {
-                "categories": [_cat(k) | {"posts": n} for k, n in counts.items() if n],
-                "items": [summary(session, p, cfg(request)) for p in shown],
-            }
+        return cached(request, lambda session: {
+            "categories": [_cat(k) | {"posts": n} for k, n in counts.items() if n],
+            "items": [summary(session, p, cfg(request)) for p in shown],
+        })  # fmt: skip
 
     @app.get("/posts/{slug}", tags=["blog"])
-    def get_post(slug: str, request: Request) -> dict[str, Any]:
+    def get_post(slug: str, request: Request) -> Response:
         posts = load_posts(cfg(request))
         post = next((p for p in posts if p.slug == slug), None)
         if post is None:
             raise HTTPException(404, "post not found")
-        with request.app.state.db.session(write=False) as session:
-            return summary(session, post, cfg(request)) | {
-                "blocks": blocks(post, cfg(request)),
-                "toc": toc(post),
-                "faq": [f.model_dump() for f in post.faq],
-                "related": [summary(session, p, cfg(request)) for p in related(posts, post)],
-            }
+        return cached(request, lambda session: summary(session, post, cfg(request)) | {
+            "blocks": blocks(post, cfg(request)),
+            "toc": toc(post),
+            "faq": [f.model_dump() for f in post.faq],
+            "related": [summary(session, p, cfg(request)) for p in related(posts, post)],
+        })  # fmt: skip
 
     @app.get("/blog/rss.xml", include_in_schema=False)
     def feed(request: Request) -> Response:
