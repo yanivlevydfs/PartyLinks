@@ -8,6 +8,7 @@ trusted proxy (``security.trusted_proxies``) that is the real visitor, not the p
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import logging
 import re
@@ -66,6 +67,26 @@ PUBLIC_API = ("/events", "/categories", "/changes", "/site", "/posts", "/ticket-
 MAX_TRACKED = 50_000  # client addresses kept in each in-memory table before idle ones are dropped
 
 
+# Cloudflare's edge (https://www.cloudflare.com/ips/). Behind its proxy, Railway's X-Real-IP is one
+# of these; only then is CF-Connecting-IP the visitor (anyone can send that header straight to Railway).
+# ponytail: fixed list, re-check cloudflare.com/ips if Cloudflare announces new ranges.
+CLOUDFLARE = [ipaddress.ip_network(n) for n in (
+    "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "141.101.64.0/18",
+    "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20", "197.234.240.0/22", "198.41.128.0/17",
+    "162.158.0.0/15", "104.16.0.0/13", "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
+    "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32", "2405:8100::/32",
+    "2a06:98c0::/29", "2c0f:f248::/32",
+)]  # fmt: skip
+
+
+def _from_cloudflare(ip: str) -> bool:
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return any(addr in net for net in CLOUDFLARE)
+
+
 def _forwarded_client(scope: dict[str, Any], cfg: SecuritySettings) -> None:
     """With ``trusted_proxies: ["*"]`` uvicorn takes the FIRST X-Forwarded-For entry, which the
     visitor writes. The LAST one is the address our own proxy saw: use it, for every layer below."""
@@ -73,7 +94,10 @@ def _forwarded_client(scope: dict[str, Any], cfg: SecuritySettings) -> None:
         return  # an explicit list: uvicorn already picks the first untrusted address from the right
     # Railway's edge puts the visitor in X-Real-IP (overwriting any sent); its own hop (152.233.x)
     # is last in X-Forwarded-For, so without this every visitor shares a few addresses and bans.
-    real = next((v.decode("latin-1").strip() for k, v in scope["headers"] if k == b"x-real-ip"), "")
+    headers = dict(scope["headers"])
+    real = headers.get(b"x-real-ip", b"").decode("latin-1").strip()
+    if real and _from_cloudflare(real):
+        real = headers.get(b"cf-connecting-ip", b"").decode("latin-1").strip() or real
     if real:
         scope["client"] = (real, 0)
         return

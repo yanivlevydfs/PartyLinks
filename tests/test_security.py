@@ -82,6 +82,24 @@ def test_spoofed_forwarded_for_is_ignored(tmp_path: Path) -> None:
         assert proxy.get("/admin/api/overview", headers=spoof).status_code == 403  # no token: not local
 
 
+def test_cloudflare_visitors_are_told_apart(tmp_path: Path) -> None:
+    """Behind Cloudflare, Railway's X-Real-IP is Cloudflare's edge: limits go by CF-Connecting-IP,
+    which counts only when the request really came through Cloudflare."""
+    settings = settings_for(tmp_path)
+    settings.security.trusted_proxies = ["*"]
+    settings.security.rate_limit_per_minute = 1
+    app = create_app(settings, start_scheduler=False)
+    edge = {"x-real-ip": "172.70.1.1"}  # one Cloudflare edge address for everyone
+    with TestClient(app, client=("10.0.0.2", 1)) as railway:
+        assert railway.get("/health", headers=edge | {"cf-connecting-ip": "198.51.100.30"}).status_code == 200
+        assert railway.get("/health", headers=edge | {"cf-connecting-ip": "198.51.100.31"}).status_code == 200
+        assert railway.get("/health", headers=edge | {"cf-connecting-ip": "198.51.100.31"}).status_code == 429
+        # Straight to Railway, a made-up CF-Connecting-IP changes nothing: still the sender's address.
+        direct = {"x-real-ip": "203.0.113.50"}
+        assert railway.get("/health", headers=direct | {"cf-connecting-ip": "198.51.100.32"}).status_code == 200
+        assert railway.get("/health", headers=direct | {"cf-connecting-ip": "198.51.100.33"}).status_code == 429
+
+
 def test_internals_are_admin_only(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     settings.admin.token = SecretStr("s3cret")
