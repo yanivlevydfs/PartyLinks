@@ -507,6 +507,7 @@ dedup:
                     "מסיבת", "מסיבה", "ב", "עם", "את"]
   # Direct sellers before aggregators; first listed wins as the primary listing.
   source_priority: [goout, eventer, zygo, selector, barby, grayclub, chillz, tickchak]
+  promoter_page_sources: [goout, zygo, popit, drop]
 
 # Coordinates for events whose source gives only an address, so they show on the map.
 # Order: manual pins below -> another event at the same venue / street address -> cached or new

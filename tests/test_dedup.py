@@ -74,6 +74,24 @@ def test_link_to_one_query_routed_page_merges_only_that_page(tmp_path: Path) -> 
     assert groups["telaviv:2"][0] == groups["ogo:x"][0] != groups["telaviv:1"][0]
 
 
+def test_hourly_sessions_never_chain_into_one_event(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("smarticket", str(n), "סדנת חוסן באמצעות בעלי חיים", start=START + timedelta(hours=n)) for n in range(3)
+    ] + [listing("goout", "a", "סדנת חוסן באמצעות בעלי חיים", start=START + timedelta(minutes=30))])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) >= 3
+    assert groups["smarticket:0"][0] != groups["smarticket:2"][0] != groups["smarticket:1"][0]
+
+
+def test_link_to_a_page_many_listings_share_merges_nothing(tmp_path: Path) -> None:
+    central = "https://www.mevalim.co.il/central/"
+    _, groups = grouped(tmp_path, [
+        listing("mevalim", "1", "הברווז", url=central),
+        listing("mevalim", "2", "קומדיה אחרת", url=central, start=START + timedelta(hours=2)),
+        listing("ogo", "x", "Something else", extra={"purchase_url": central}),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 3
+
+
 def test_api_returns_one_event_with_alternatives(tmp_path: Path) -> None:
     settings, _ = grouped(tmp_path, [
         listing("goout", "a", "WHITE THURSDAY - MAOR BUZAGLO", tickets=[TicketTier(name="Entry", price=Decimal(90))]),

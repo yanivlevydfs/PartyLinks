@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 import math
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -103,10 +103,14 @@ class Deduplicator:
         self.settings = settings
         self._stopwords = {w.lower() for w in settings.title_stopwords}
         self._priority = {name: rank for rank, name in enumerate(settings.source_priority)}
+        self._promoter_pages = set(settings.promoter_page_sources)
 
-    def same_event(self, a: _Listing, b: _Listing) -> bool:
+    def same_event(self, a: _Listing, b: _Listing, shared_urls: frozenset[str] = frozenset()) -> bool:
+        # A page several listings share (a site's generic "central" page) is not one event's page.
         if a.links_to and a.links_to == b.url_key or b.links_to and b.links_to == a.url_key:
-            return True
+            return b.url_key not in shared_urls if a.links_to == b.url_key else a.url_key not in shared_urls
+        if self._sessions(a, b):
+            return False
         if not a.title_key or not b.title_key:
             return False
         matcher = SequenceMatcher(None, a.title_key, b.title_key)
@@ -130,6 +134,18 @@ class Deduplicator:
         if a.venue_slug and b.venue_slug:
             return a.venue_slug == b.venue_slug
         return True  # one side has no location: title + time decide
+
+    def _compatible(self, a: list[_Listing], b: list[_Listing]) -> bool:
+        """Matches chain (14:00 ~ 15:00 ~ 16:00): two groups join only if no site lists any pair across them
+        as separate sessions."""
+        return not any(self._sessions(x, y) for x in a for y in b)
+
+    def _sessions(self, a: _Listing, b: _Listing) -> bool:
+        """One site's own pages at different hours: separate sessions of a workshop / show."""
+        return (
+            a.source == b.source and a.source not in self._promoter_pages and a.url_key != b.url_key
+            and a.start is not None and b.start is not None and a.start != b.start
+        )  # fmt: skip
 
     def _primary_rank(self, item: _Listing) -> tuple[Any, ...]:
         return (self._priority.get(item.source, len(self._priority)), -item.tiers, item.first_seen, item.id)
@@ -193,9 +209,12 @@ class Deduplicator:
             else:
                 by_day[r.local_date].append(listing)
 
+        keys = Counter(item.url_key for day in by_day.values() for item in day if item.url_key)
+        shared = frozenset(k for k, n in keys.items() if n > 1)
         merged = 0
         for listings in by_day.values():
             parent = {item.id: item.id for item in listings}
+            members_of = {item.id: [item] for item in listings}
 
             def find(x: str, parent: dict[str, str] = parent) -> str:
                 while parent[x] != x:
@@ -205,8 +224,10 @@ class Deduplicator:
 
             for i, a in enumerate(listings):
                 for b in listings[i + 1 :]:
-                    if find(a.id) != find(b.id) and self.same_event(a, b):
-                        parent[find(a.id)] = find(b.id)
+                    ra, rb = find(a.id), find(b.id)
+                    if ra != rb and self.same_event(a, b, shared) and self._compatible(members_of[ra], members_of[rb]):
+                        parent[ra] = rb
+                        members_of[rb] += members_of.pop(ra)
             groups: dict[str, list[_Listing]] = defaultdict(list)
             for item in listings:
                 groups[find(item.id)].append(item)
