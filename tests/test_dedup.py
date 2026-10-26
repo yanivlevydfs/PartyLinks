@@ -64,6 +64,16 @@ def test_different_events_stay_separate(tmp_path: Path) -> None:
     assert len({g for g, _ in groups.values()}) == 5 and all(primary for _, primary in groups.values())
 
 
+def test_link_to_one_query_routed_page_merges_only_that_page(tmp_path: Path) -> None:
+    page = "https://www.tel-aviv.gov.il/Pages/MainItemPage.aspx?WebID=w&ListID=l&ItemID={}"
+    _, groups = grouped(tmp_path, [
+        listing("telaviv", "1", "קורס ביומימקרי", url=page.format(1)),
+        listing("telaviv", "2", "סדנת מנגה", url=page.format(2)),
+        listing("ogo", "x", "Manga workshop", extra={"purchase_url": page.format(2) + "&utm_source=ogo"}),
+    ])  # fmt: skip
+    assert groups["telaviv:2"][0] == groups["ogo:x"][0] != groups["telaviv:1"][0]
+
+
 def test_api_returns_one_event_with_alternatives(tmp_path: Path) -> None:
     settings, _ = grouped(tmp_path, [
         listing("goout", "a", "WHITE THURSDAY - MAOR BUZAGLO", tickets=[TicketTier(name="Entry", price=Decimal(90))]),

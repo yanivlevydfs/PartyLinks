@@ -23,7 +23,7 @@ from datetime import datetime
 from decimal import Decimal
 from difflib import SequenceMatcher
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlparse
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -80,7 +80,14 @@ def url_key(url: str | None) -> str:
     if not url:
         return ""
     parsed = urlparse(url)
-    return f"{parsed.netloc.lower().removeprefix('www.')}{parsed.path.rstrip('/').lower()}"
+    # Id params name the page on query-routed sites (MainItemPage.aspx?ItemID=...): without them every
+    # tel-aviv.gov.il item shares one key and a link to one of them merges the whole day. Tracking params go.
+    ids = sorted(
+        f"{k.lower()}={v}" for k, v in parse_qsl(parsed.query)
+        if k.lower().endswith("id") and not k.lower().endswith(("clid", "clkid")) and not k.lower().startswith("utm_")
+    )  # fmt: skip
+    query = "?" + "&".join(ids) if ids else ""
+    return f"{parsed.netloc.lower().removeprefix('www.')}{parsed.path.rstrip('/').lower()}{query}"
 
 
 def _distance_m(a: _Listing, b: _Listing) -> float | None:
