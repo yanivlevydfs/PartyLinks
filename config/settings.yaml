@@ -264,8 +264,9 @@ enrichment:
     # Not plain "קולנוע" in text ("מסכי הטלוויזיה והקולנוע"): cinema sources declare it (below).
     cinema: ["movie night", "film screening", "film festival", "drive in", "drive-in", "הקרנת סרט", "הקרנת הסרט", "פסטיבל סרטים", "דרייב אין",
              "דרייב-אין", "ערב סרט", "ערב סרטים"]
-    # Not plain "waltz" / "tango" / "וואלס" / "טנגו": classical concerts play them (Strauss, Piazzolla).
-    ballroom: ["ballroom", "ballroom dance", "ballroom dancing", "dancesport", "argentine tango", "milonga",
+    # Not plain "waltz" / "tango" / "וואלס" / "טנגו": classical concerts play them (Strauss, Piazzolla);
+    # not plain "ballroom" (venues abroad: "Clarendon Ballroom") or "milonga" (a song style).
+    ballroom: ["ballroom dance", "ballroom dancing", "ballroom dances", "dancesport", "argentine tango",
                "foxtrot", "quickstep", "ריקודים סלוניים", "ריקודי סלון", "ריקוד סלוני", "ריקודים סלונים",
                "סלוניים", "טנגו ארגנטינאי", "מילונגה", "פוקסטרוט", "קוויקסטפ", "ריקודי זוגות"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).

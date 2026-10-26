@@ -254,7 +254,8 @@ def test_ballroom_dancing_from_its_own_words_only() -> None:
 
     assert ballroom("ערב ריקודים סלוניים בדיזנגוף")
     assert ballroom("מסיבת ריקודי סלון", "וואלס, טנגו ופוקסטרוט")
-    assert ballroom("Milonga del Sur", "Argentine tango night")
+    assert ballroom("Tango del Sur", "Argentine tango night")
+    assert not ballroom("James Kennedy At Clarendon Ballroom")  # a venue
     # A Strauss waltz and a Piazzolla tango in a concert are not a dance night.
     assert not ballroom("הפילהרמונית: שטראוס", "וואלסים מווינה וטנגו של פיאצולה")
 
