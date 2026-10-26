@@ -397,7 +397,7 @@ class SecuritySettings(BaseModel):
     # Reverse proxies (nginx, Caddy, a tunnel) whose X-Forwarded-For / -Proto are trusted for the
     # real client address. Anyone else sending those headers is ignored. Restart to apply.
     trusted_proxies: list[str] = Field(default_factory=lambda: ["127.0.0.1", "::1"])
-    # Host names the site answers to (e.g. ["partylinks.co.il", "www.partylinks.co.il"]).
+    # Host names the site answers to (e.g. ["spotx.fun", "www.spotx.fun"]).
     # Empty = any host. localhost always works.
     allowed_hosts: list[str] = Field(default_factory=list)
     # Old addresses of the site: a request to one is sent (301) to site.base_url, keeping the path, so

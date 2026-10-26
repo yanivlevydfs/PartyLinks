@@ -882,16 +882,16 @@ def test_an_event_in_israel_placed_abroad_loses_the_point() -> None:
 
 def test_old_addresses_move_to_the_domain_only_once_base_url_is_the_domain(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
-    settings.security.redirect_hosts = ["tlv.up.railway.app"]
-    settings.site.base_url = "https://tlv.up.railway.app"  # domain not live yet: nothing moves
+    settings.security.redirect_hosts = ["www.spotx.fun"]
+    settings.site.base_url = "https://www.spotx.fun"  # base_url is that host: nothing moves
     with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}) as client:
-        assert client.get("/health", headers={"host": "tlv.up.railway.app"}).status_code == 200
-        assert client.get("/robots.txt", headers={"host": "tlv.up.railway.app"}, follow_redirects=False).status_code == 200
+        assert client.get("/health", headers={"host": "www.spotx.fun"}).status_code == 200
+        assert client.get("/robots.txt", headers={"host": "www.spotx.fun"}, follow_redirects=False).status_code == 200
     settings.site.base_url = "https://spotx.fun"
     with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}) as client:
-        r = client.get("/events?q=techno", headers={"host": "tlv.up.railway.app"}, follow_redirects=False)
+        r = client.get("/events?q=techno", headers={"host": "www.spotx.fun"}, follow_redirects=False)
         assert r.status_code == 301 and r.headers["location"] == "https://spotx.fun/events?q=techno"
-        assert client.get("/health", headers={"host": "tlv.up.railway.app"}).status_code == 200  # Railway's probe
+        assert client.get("/health", headers={"host": "www.spotx.fun"}).status_code == 200  # Railway's probe
 
 
 def test_contact_addresses_never_appear_as_text(tmp_path: Path) -> None:
