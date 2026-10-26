@@ -388,7 +388,7 @@ button, input, select { font: inherit; color: inherit; }
 .card-wrap { position: relative; display: flex; transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
 .card-wrap:hover { transform: translateY(-6px); }
 .card-wrap > .card { flex: 1; }
-.card-wrap .tags { padding-inline-end: 44px; min-height: 34px; align-items: center; }
+.card-wrap .tags { padding-inline-end: 88px; min-height: 34px; align-items: center; }
 .card:hover {
   text-shadow: none; border-color: var(--line-hot);
   box-shadow: 0 18px 50px -10px rgb(255 46 147 / .45), 0 0 0 1px rgb(157 77 255 / .3);
@@ -1057,6 +1057,13 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 .share-one .share-btn { width: 34px; height: 34px; cursor: pointer; }
 .share-one .share-btn svg { width: 17px; height: 17px; }
 .share-one .share-btn:hover, .share-one .share-btn[aria-expanded="true"] { border-color: var(--line-hot); background: rgb(255 46 147 / .14); }
+/* Calendar button beside it; the menu spans the card above the buttons. */
+.card-wrap > .cal.on-card { position: static; }
+.cal.on-card summary {
+  position: absolute; inset-inline-end: 56px; bottom: 14px; z-index: 2; display: grid; place-items: center;
+  width: 34px; height: 34px; padding: 0; border-radius: 50%; font-size: 15px;
+}
+.cal.on-card .cal-menu { top: auto; bottom: 56px; inset-inline: 10px; min-width: 0; z-index: 3; animation: rise .2s both; }
 .share-pop {
   position: absolute; bottom: calc(100% + 8px); inset-inline-end: 0; padding: 8px;
   background: var(--panel-solid); border: 1px solid var(--line-hot); border-radius: 999px;
@@ -1130,7 +1137,10 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .card .tags { margin-top: 6px; gap: 4px; }
   .card .tag { font-size: 11px; padding: 2px 8px; }
   .card .tag:nth-child(n + 3) { display: none; }
-  .card-wrap .tags { padding-inline-end: 36px; min-height: 28px; }
+  .card-wrap .tags { padding-inline-end: 72px; min-height: 28px; }
+  .cal.on-card summary { inset-inline-end: 44px; bottom: 9px; width: 30px; height: 30px; font-size: 13px; }
+  .cal.on-card .cal-menu { bottom: 46px; inset-inline: 6px; font-size: 13px; }
+  .cal.on-card .cal-menu a { padding: 8px; }
   .share-one { inset-inline-end: 8px; bottom: 9px; }
   .share-one .share-btn { width: 30px; height: 30px; }
   .share-one .share-btn svg { width: 15px; height: 15px; }

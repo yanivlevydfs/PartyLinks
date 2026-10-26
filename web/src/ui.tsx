@@ -259,8 +259,40 @@ export function Card({ e }: { e: EventSummary }) {
         </div>
       </div>
     </Link>
+    {e.start_at && <AddToCalendar e={e} start={e.start_at} compact />}
     <ShareButton path={eventPath(e)} title={e.title} />
     </div>
+  );
+}
+
+/** Google and Outlook take the event in a link; Apple and every other calendar import an .ics file. */
+export function AddToCalendar({ e, start, compact }: { e: EventSummary; start: string; compact?: boolean }) {
+  const { t } = useT();
+  const from = new Date(start);
+  // ponytail: no end time listed = 3 hours, a guess the user can edit in their calendar.
+  const to = e.end_at ? new Date(e.end_at) : new Date(from.getTime() + 3 * 3600000);
+  const utc = (d: Date) => d.toISOString().replace(/[-:]|\.\d{3}/g, "");
+  const url = window.location.origin + eventPath(e);
+  const where = [e.venue_name, e.address, e.city].filter(Boolean).join(", ");
+  const q = (o: Record<string, string>) => new URLSearchParams(o).toString();
+  const google = "https://calendar.google.com/calendar/render?" + q({ action: "TEMPLATE", text: e.title, dates: `${utc(from)}/${utc(to)}`, location: where, details: url });
+  const outlook = "https://outlook.live.com/calendar/0/action/compose?" + q({ path: "/calendar/action/compose", rru: "addevent", subject: e.title, startdt: from.toISOString(), enddt: to.toISOString(), location: where, body: url });
+  const esc = (s: string) => s.replace(/[\\;,]/g, "\\$&").replace(/\r?\n/g, "\\n");
+  const ics = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PartyLinks//EN", "BEGIN:VEVENT",
+    `UID:${e.id}@partylinks`, `DTSTAMP:${utc(new Date())}`, `DTSTART:${utc(from)}`, `DTEND:${utc(to)}`,
+    `SUMMARY:${esc(e.title)}`, where && `LOCATION:${esc(where)}`, `URL:${url}`, `DESCRIPTION:${esc(url)}`,
+    "END:VEVENT", "END:VCALENDAR",
+  ].filter(Boolean).join("\r\n");
+  return (
+    <details className={"cal" + (compact ? " on-card" : "")}>
+      <summary aria-label={t.addToCal} title={t.addToCal}>📅{!compact && " " + t.addToCal}</summary>
+      <div className="cal-menu">
+        <a href={google} target="_blank" rel="noopener noreferrer">Google ↗</a>
+        <a href={outlook} target="_blank" rel="noopener noreferrer">Outlook ↗</a>
+        <a href={"data:text/calendar;charset=utf-8," + encodeURIComponent(ics)} download={`${e.slug || e.id}.ics`}>{t.calOther}</a>
+      </div>
+    </details>
   );
 }
 
