@@ -184,6 +184,8 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
         assert 'href="/city/tel-aviv/techno"' in city.text and "/city/tel-aviv/techno" in client.get("/sitemap-1.xml").text
         assert client.get("/city/tel-aviv/karaoke").status_code == 404 and client.get("/city/nowhere/techno").status_code == 404
         assert client.get("/region/sharon").status_code == 404 and client.get("/abroad/greece").status_code == 404
+        key = settings.site.indexnow.key
+        assert key and client.get(f"/{key}.txt").text == key and client.get("/llms.txt").status_code == 200
         info = client.get("/landing-info", params={"path": "/city/tel-aviv/techno", "lang": "en"}).json()
         assert info["title"] == "Techno events in Tel Aviv" and {"path": "/city/tel-aviv", "label": "All events in Tel Aviv"} in info["links"]
         # Cached pages (Hebrew paths, queries, 404s too) are answered before routing, so a threadpool

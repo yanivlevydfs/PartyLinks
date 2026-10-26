@@ -1091,6 +1091,9 @@ def render(template: str, page: Page, cfg: Settings) -> str:
         f'<meta name="twitter:title" content="{escape(page.title)}" />',
         f'<meta name="twitter:description" content="{escape(page.description)}" />',
         f'<meta name="twitter:image" content="{escape(image)}" />',
+        *(f'<meta name="{name}" content="{escape(token)}" />' for name, token in (
+            ("google-site-verification", cfg.site.verification.google), ("msvalidate.01", cfg.site.verification.bing),
+            ("yandex-verification", cfg.site.verification.yandex)) if token),  # fmt: skip
         # Local signals: the whole site is about Israel.
         '<meta name="geo.region" content="IL" />',
         '<meta name="geo.placename" content="Israel" />',
@@ -1253,6 +1256,9 @@ def register(app: FastAPI, site_dir: Path) -> None:
         with request.app.state.db.session(write=False) as session:
             xml = sitemap_part(sitemap_urls(session, cfg(request)), part)
         return Response(xml, media_type="application/xml") if xml else Response(status_code=404)
+
+    if key := app.state.settings.site.indexnow.key:  # IndexNow ownership proof (partylinks.indexnow)
+        app.get(f"/{key}.txt", include_in_schema=False)(lambda: PlainTextResponse(key))
 
     @app.get("/llms.txt", include_in_schema=False)
     def llms(request: Request) -> PlainTextResponse:

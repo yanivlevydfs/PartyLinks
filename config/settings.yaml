@@ -41,6 +41,16 @@ site:
   privacy:
     email: ""
     updated: 2026-10-26    # last review of the policy (renamed SPOTX)
+  # New pages pushed to Bing / Yandex (src/partylinks/indexnow.py). The key is public (served at
+  # /<key>.txt); runs only when base_url is https, so never from localhost.
+  indexnow:
+    key: 84a262445a5dbffe3c3826572ee3b098
+    cron: "40 * * * *"
+  # Search console ownership tokens (meta-tag method): paste the content="..." value.
+  verification:
+    google: ""
+    bing: ""
+    yandex: ""
 
 # UTM tags on ticket links (src/partylinks/utm.py), added in the /go/ redirect so sellers' analytics
 # (GA4...) attribute traffic and sales to us: utm_source / utm_medium from here, utm_campaign = the

@@ -336,6 +336,22 @@ class PrivacySettings(BaseModel):
     updated: date | None = None
 
 
+class IndexNowSettings(BaseModel):
+    """partylinks.indexnow: new pages pushed to Bing / Yandex as they appear."""
+
+    key: str = ""  # public; served at /<key>.txt. Empty: off
+    cron: str = "40 * * * *"
+    state_file: str = "data/indexnow-sent.txt"
+
+
+class VerificationSettings(BaseModel):
+    """Ownership tokens from the search consoles, rendered as <meta> tags in every page's head."""
+
+    google: str = ""  # Search Console: HTML tag method, the content="..." value
+    bing: str = ""  # Bing Webmaster Tools (msvalidate.01)
+    yandex: str = ""  # Yandex Webmaster
+
+
 class SiteSettings(BaseModel):
     # Public address of the website (no trailing slash): canonical links, sitemap, JSON-LD, share previews.
     base_url: str = "http://localhost:8000"
@@ -344,6 +360,8 @@ class SiteSettings(BaseModel):
     email: str = ""
     accessibility: AccessibilitySettings = Field(default_factory=AccessibilitySettings)
     privacy: PrivacySettings = Field(default_factory=PrivacySettings)
+    indexnow: IndexNowSettings = Field(default_factory=IndexNowSettings)
+    verification: VerificationSettings = Field(default_factory=VerificationSettings)
 
     @field_validator("base_url")
     @classmethod

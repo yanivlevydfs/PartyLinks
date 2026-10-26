@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
+from partylinks import indexnow
 from partylinks.config import Settings
 from partylinks.scrapers import configured_sources
 from partylinks.service import ScrapeService, SourceBusyError
@@ -38,6 +39,13 @@ async def _scheduled_retention(service: ScrapeService) -> None:
         log.info("skipping scheduled retention: already running")
     except Exception:
         log.exception("scheduled retention failed")
+
+
+async def _scheduled_indexnow(service: ScrapeService) -> None:
+    try:
+        await asyncio.to_thread(indexnow.submit, service.settings, service.db)
+    except Exception:
+        log.exception("indexnow submit failed")
 
 
 def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOScheduler:
@@ -69,6 +77,17 @@ def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOSchedu
             args=(service,),
             id=RETENTION_JOB_ID,
             name="retention:purge-expired",
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=settings.scheduler.misfire_grace_seconds,
+        )
+    if settings.site.indexnow.key:
+        scheduler.add_job(
+            _scheduled_indexnow,
+            CronTrigger.from_crontab(settings.site.indexnow.cron, timezone=settings.timezone),
+            args=(service,),
+            id="indexnow",
+            name="indexnow:submit",
             max_instances=1,
             coalesce=True,
             misfire_grace_time=settings.scheduler.misfire_grace_seconds,
