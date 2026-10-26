@@ -115,16 +115,21 @@ def _parse(path: Path, lang: str = "he") -> Post | None:
 
 
 @lru_cache(maxsize=4096)
-def _parse_at(path: Path, mtime: float, lang: str) -> Post | None:
-    # Parsing every post on each request took ~1 s for 51 posts; an edited file has a new mtime.
+def _parse_at(path: Path, mtimes: tuple[float, ...], lang: str) -> Post | None:
+    # Parsing every post on each request took ~1 s for 51 posts; an edited file (or its English
+    # translation) has a new mtime, so it is parsed again.
     return _parse(path, lang)
+
+
+def _mtimes(path: Path) -> tuple[float, ...]:
+    return tuple(f.stat().st_mtime for f in (path, path.parent / "en" / path.name) if f.is_file())
 
 
 def load_posts(cfg: Settings, content: Path | None = None, lang: str = "he") -> list[Post]:
     """Published posts, newest first, in English where translated when ``lang`` is "en"."""
     today = datetime.now(ZoneInfo(cfg.timezone)).date()
     posts = [
-        p for p in (_parse_at(f, f.stat().st_mtime, lang) for f in sorted((content or CONTENT_DIR).glob("*.html")))
+        p for p in (_parse_at(f, _mtimes(f), lang) for f in sorted((content or CONTENT_DIR).glob("*.html")))
         if p and not p.draft and p.date <= today and not (p.expires and p.expires <= today)
     ]  # fmt: skip
     return sorted(posts, key=lambda p: (p.date, p.slug), reverse=True)
