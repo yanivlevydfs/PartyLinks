@@ -524,10 +524,22 @@ def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_
 WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/posts", "/categories", "/categories?anywhere=true", "/ticket-sites", "/events/rails", "/sitemap.xml")
 
 # The home page's rows (/events/rails), in order: event filters, plus "days" ahead (default 30) and
-# "multi" (only events on more than one ticket site). One cached response for all of them.
+# "multi" (only events on more than one ticket site) and "exclude" (none of these genres).
+# One cached response for all of them.
 HOME_RAILS: dict[str, dict[str, Any]] = {
     "trending": {"days": 14, "multi": True},
-    "tonight": {"today": True},
+    # A night out: evening and night, music, parties and shows only, nothing for kids.
+    "tonight": {
+        "today": True,
+        "time_slot": ["evening", "night"],
+        "genre": [
+            "techno", "house", "trance", "hip_hop", "rnb", "mainstream", "pop", "reggaeton_latin", "afro",
+            "dancehall_reggae", "mizrahi", "israeli", "greek", "arabic", "disco_funk", "drum_and_bass", "bass_dubstep",
+            "hardstyle", "edm", "electronic", "throwback", "rock_indie", "jazz", "world_balkan", "dark_wave",
+            "live_show", "lgbt", "stand_up", "karaoke", "festival", "happy_hour", "theatre", "classical_opera",
+        ],
+        "exclude": ["kids", "lectures", "workshops", "conference"],
+    },
     "electronic": {
         "genre": ["techno", "house", "trance", "electronic", "edm", "drum_and_bass", "bass_dubstep", "hardstyle"]
     },
@@ -1040,12 +1052,14 @@ def _register_routes(app: FastAPI) -> None:
             now = datetime.now(ZoneInfo(cfg.timezone))
             out = RailsOut()
             for key, spec in HOME_RAILS.items():
-                kw = {k: v for k, v in spec.items() if k not in ("days", "multi", "today")}
+                kw = {k: v for k, v in spec.items() if k not in ("days", "multi", "today", "exclude")}
                 if spec.get("today"):
                     kw["on_date"] = now.date()
                 filters = event_filters(request, date_to=now + timedelta(days=spec.get("days", 30)), **kw)
                 if spec.get("multi"):
                     filters.append(EventRow.group_size > 1)
+                if spec.get("exclude"):
+                    filters.append(not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec["exclude"]))))
                 rows = session.scalars(
                     select(EventRow)
                     .where(*filters)
