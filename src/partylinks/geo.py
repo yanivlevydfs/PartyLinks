@@ -350,7 +350,8 @@ class Geocoder:
         why: Counter[str] = Counter()  # "source: reason", for the log
         shared: Counter[tuple[float, float]] = Counter()
         for r in rows:
-            outside = not self._in_its_city(r, (r.latitude, r.longitude))  # type: ignore[arg-type]
+            # An event in Israel (no country) placed abroad: beatradar's "North" sat in Portugal (Oct 2026).
+            outside = not self._in_its_city(r, (r.latitude, r.longitude)) or not self.areas.in_israel(r.latitude, r.longitude)  # type: ignore[arg-type]
             # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
             contradicts = not outside and self._contradicts(r)
             placeholder = distinct.setdefault(_point(r), distinct_venues(venues[_point(r)])) >= PLACEHOLDER_VENUES

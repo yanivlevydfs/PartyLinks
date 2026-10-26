@@ -119,6 +119,11 @@ class AreaMatcher:
                 return region.key
         return ABROAD_AREA
 
+    def in_israel(self, latitude: float, longitude: float) -> bool:
+        """Inside one of the regions' boxes (no boxes configured: anywhere counts)."""
+        boxed = [r for r, _ in self._regions if r.boxes]
+        return not boxed or any(_in_boxes(r, latitude, longitude) for r in boxed)
+
     def named_region(self, city: str | None, venue_name: str | None, address: str | None) -> RegionSettings | None:
         """Region of the first place named in the city, address or venue name (in that order)."""
         for text in (city, address, venue_name):

@@ -833,3 +833,11 @@ def test_region_words_that_are_also_names_or_streets_do_not_contradict_a_point()
         assert not areas.contradicts(None, venue, None, lat, lng), venue
     assert areas.contradicts("שדרות", "מועדון", None, 32.08, 34.78)  # the city field still counts
     assert areas.contradicts(None, "קיבוץ הגושרים", None, 31.25, 34.79)  # an unambiguous place still does
+
+
+def test_an_event_in_israel_placed_abroad_loses_the_point() -> None:
+    from partylinks.config import Settings
+
+    areas = Enricher(Settings().enrichment, "Asia/Jerusalem").areas
+    assert not areas.in_israel(41.706, -7.642)  # beatradar's "North", in Portugal
+    assert areas.in_israel(29.532, 34.94) and areas.in_israel(32.08, 34.78)  # Eilat, Tel Aviv
