@@ -22,7 +22,7 @@ from pydantic import Field
 from partylinks.artists import ArtistProfile
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, from_unix, next_data, og_image, to_decimal
-from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
+from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 SLIDER_SECTION = "eventSlider"
 LOOP_SECTION = "loopSections"
@@ -35,6 +35,8 @@ class TickchakSettings(SourceSettings):
     # Several category pages instead of one: slug -> the label tagged on its events, which the
     # enrichment's declared_genres turn into the site's category ("standup" -> "stand-up" -> stand_up).
     categories: dict[str, str] = Field(default_factory=dict)
+    # New sellers' pages read for artwork per run (the rest on later runs; found artwork is kept).
+    max_artwork_lookups: int = Field(300, ge=0)
     city_slug: str = ""  # empty = the category page for all of Israel
     section_data_path: str
     custom_events_path: str
@@ -71,6 +73,8 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
                 if label:
                     labels.setdefault(entity_id, set()).add(label)
         self.log.info("listed %d events", len(items))
+        events: list[ScrapedEvent] = []
+        missing: list[tuple[ScrapedEvent, str]] = []  # no artwork here: the seller's page may have it
         for entity_id, item in items.items():
             try:
                 event = parse_event(item, s.site_url, self.name)
@@ -78,8 +82,17 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
                 self.record_failure(str(entity_id), exc)
                 continue
             event.event_types = sorted({*event.event_types, *labels.get(entity_id, ())})
+            events.append(event)
             if not event.images and (link := clean_str(item.get("link"))):
-                await self._provider_artwork(event, link)
+                if known := (self.known_images.get(event.source_event_id) or [None])[0]:
+                    event.images, event.image_url = [known], known  # read on an earlier run
+                else:
+                    missing.append((event, link))
+        # In parallel (the client's concurrency bounds it), at most max_artwork_lookups new pages a run:
+        # one by one, ~1,500 sellers' pages outlasted the 60-min run (Oct 2026). Found artwork is kept,
+        # so the rest is read over the next runs.
+        await asyncio.gather(*(self._provider_artwork(e, link) for e, link in missing[: s.max_artwork_lookups]))
+        for event in events:
             yield event
 
     async def _page_items(self, path: str) -> dict[Any, dict[str, Any]]:
@@ -116,9 +129,7 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         if image is None:
             try:
                 image = og_image(await self.get_text(link))
-            except SourceBlockedError:
-                raise
-            except Exception as exc:  # noqa: BLE001 - optional artwork; some providers refuse bots
+            except Exception as exc:  # noqa: BLE001 - optional artwork: a seller refusing bots never ends the run
                 self.log.info("no provider artwork for %s: %s", event.source_event_id, exc)
         if image:
             event.images, event.image_url = [image], image
