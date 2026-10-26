@@ -352,10 +352,7 @@ class Geocoder:
         for r in rows:
             outside = not self._in_its_city(r, (r.latitude, r.longitude))  # type: ignore[arg-type]
             # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
-            contradicts = not outside and (
-                r.in_target_city is False
-                and self.areas.contradicts(r.city, r.venue_name, r.address, r.latitude, r.longitude)  # type: ignore[arg-type]
-            )
+            contradicts = not outside and self._contradicts(r)
             placeholder = distinct.setdefault(_point(r), distinct_venues(venues[_point(r)])) >= PLACEHOLDER_VENUES
             if outside or contradicts or placeholder:
                 bad.append({"id": r.id, "latitude": None, "longitude": None})
@@ -374,6 +371,13 @@ class Geocoder:
                 log.info("geocoding: shared point %s x%d: %s", point, n, " | ".join(sorted(venues[point])[:6]))
         return dropped
 
+    def _contradicts(self, row: Place) -> bool:
+        """The text names a region the point is outside of ("...בגן שמואל" placed in Tel Aviv). Outside the
+        target city the place in the text wins; rows known to be in it are judged by the city check alone."""
+        return row.in_target_city is not True and self.areas.contradicts(
+            row.city, row.venue_name, row.address, row.latitude, row.longitude
+        )
+
     def _in_its_city(self, row: Place, point: Point) -> bool:
         """Within the radius of the event's city, when that city is a known one."""
         city = self._cities.get(row.city or "")
@@ -387,15 +391,15 @@ class Geocoder:
     def _known(self, session: object) -> tuple[Known, Known]:
         """Placed venues and streets per city; a point outside its own city teaches nothing."""
         rows = session.execute(  # type: ignore[attr-defined]
-            select(EventRow.venue_name, EventRow.address, EventRow.city, EventRow.latitude, EventRow.longitude).where(
-                EventRow.latitude.is_not(None)
-            )
+            select(*_PLACE_COLUMNS).where(EventRow.latitude.is_not(None))
         ).all()
         venues: Known = {}
         streets: Known = {}
         for row in rows:
-            name, address, city, lat, lon = row
-            if self._in_its_city(row, (lat, lon)):
+            name, address, city, lat, lon = row.venue_name, row.address, row.city, row.latitude, row.longitude
+            # A point its own text contradicts teaches nothing either: a wrong Tel Aviv point on rows not
+            # marked outside Tel Aviv taught "היכל התרבות מנשה בגן שמואל = Tel Aviv's hall" (Oct 2026).
+            if self._in_its_city(row, (lat, lon)) and not self._contradicts(row):
                 if key := venue_key(name):
                     venues.setdefault(key, {})[city or ""] = (lat, lon)
                 if key := street_key(address):

@@ -806,3 +806,18 @@ def test_tel_aviv_is_assumed_only_for_events_known_to_be_there() -> None:
     assert not any("תל אביב" in q for q in unknown)  # was answered with Tel Aviv's culture hall
     known = candidates(SimpleNamespace(venue_name="בארבי", city=None, address=None, in_target_city=True))
     assert known == ["בארבי, תל אביב"]
+
+
+def test_a_point_its_own_text_contradicts_teaches_no_other_event(tmp_path: Path) -> None:
+    from partylinks.geo import Geocoder, _venue_match
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    # A wrong Tel Aviv point on a hall the name places in the Sharon ("מנשה בגן שמואל").
+    db = seed(settings, [event("wrong", future, venue_name="היכל התרבות מנשה בגן שמואל", address=None,
+                               latitude=32.0734714, longitude=34.7800344)])  # fmt: skip
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    with db.session(write=False) as session:
+        known, _ = geo._known(session)
+    assert _venue_match(known, "היכל התרבות מנשה בגן שמואל", None) is None
