@@ -269,6 +269,11 @@ enrichment:
     ballroom: ["ballroom dance", "ballroom dancing", "ballroom dances", "dancesport", "argentine tango",
                "foxtrot", "quickstep", "ריקודים סלוניים", "ריקודי סלון", "ריקוד סלוני", "ריקודים סלונים",
                "סלוניים", "טנגו ארגנטינאי", "מילונגה", "פוקסטרוט", "קוויקסטפ", "ריקודי זוגות"]
+    folk_dance: ["folk dance", "folk dances", "folk dancing", "israeli folk dance", "ריקודי עם", "ריקודי-עם", "ריקודי העם",
+                 "הרקדה", "הרקדות", "הרקדת"]
+    latin_dance: ["latin dance", "latin dances", "latin dancing", "salsa", "bachata", "kizomba", "merengue",
+                  "ריקודים לטיניים", "ריקודי לטינו", "ריקוד לטיני", "סלסה", "בצ'אטה", "בצאטה", "בצ׳אטה", "קיזומבה", "מרנגה"]
+    salsa: ["salsa", "סלסה"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
     happy_hour: ["happy hour", "happy-hour", "happyhour", "האפי האוור", "האפי אוור", "הפי האוור"]
@@ -286,19 +291,19 @@ enrichment:
                 "מוזיקה", "מוסיקה"]
     festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль"]
     meetups: ["meetups", "community", "meeting", "קהילה", "קהילות", "קהילתי", "קהילתית", "קהילתיים", "בקהילה",
-              "קהילתיות", "פעילות חברתית", "языковой клуб"]
+              "קהילתיות", "פעילות חברתית", "языковой клуб", "משחקי קופסא", "ברים פאבים"]
     culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית"]
     exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה"]
     workshops: ["workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест"]
     cinema: ["sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים"]
-    stand_up: ["comedy", "קומדיה", "בידור", "מופעי בידור"]
+    stand_up: ["comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ"]
     markets: ["shopping", "יריד", "ירידים", "שוק", "שווקים", "ярмарка"]
-    food: ["food events", "food", "אוכל", "מזון"]
+    food: ["food events", "food", "אוכל", "מזון", "מפגשים קולינריים", "טעימות יין", "טעימות בירה"]
     environment: ["environmental", "סביבה", "איכות הסביבה", "קיימות", "טבע", "גינות"]
     religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат", "chassidic"]
     holidays: ["holidays", "halloween", "חגים", "חג", "праздник"]
     sport: ["sport", "sports", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
-            "מרוץ", "אופניים"]
+            "מרוץ", "אופניים", "אימוני כושר", "קבוצת הליכה", "פוצ'יוולי", "footvolley"]
     yoga_wellness: ["wellness", "בריאות", "פילאטיס"]
     classical_opera: ["classical", "קלאסי"]
     # Muzi's genre slugs.
@@ -317,7 +322,8 @@ enrichment:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
     electronic: [techno, house, trance, afro, drum_and_bass, bass_dubstep, hardstyle, edm, downtempo_chill]
     israeli: [mizrahi]
-    dance: [ballroom]
+    dance: [ballroom, folk_dance, latin_dance]
+    latin_dance: [salsa]
     # Linked both ways: either one shows both.
     hip_hop: [rnb]
     rnb: [hip_hop]
@@ -2153,3 +2159,12 @@ sources:
         longitude: 34.5934
     http:
       concurrency: 2
+
+  meety:
+    # Meety (meety.co.il): social meetups all over Israel - salsa / bachata, folk dancing, running groups,
+    # karaoke. /events lists the coming week; each /events?i=<category> listing tags its events' genres.
+    enabled: true
+    cron: "47 6,18 * * *"
+    site_url: https://meety.co.il
+    http:
+      concurrency: 3
