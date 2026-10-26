@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { useCategories, useEvents, useLandingInfo, type Params } from "../api";
+import { useCategories, useLandingInfo, useRails } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
-import { Card, CardSkeletons, EventGrid, Hero, Related, today, useT, useTitle } from "../ui";
+import { Card, CardSkeletons, EventGrid, Hero, Related, useT, useTitle } from "../ui";
+import type { EventSummary } from "../types";
 import { Quiz } from "./Quiz";
 
 // Regions with a /region/<key> page (seo.py REGION_NAMES); Tel Aviv and Eilat are city pages.
@@ -132,53 +133,34 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   );
 }
 
-// Day-granular, so the query key stays stable within a visit.
-const daysAhead = (n: number) => new Date(Date.now() + n * 24 * 3600 * 1000).toISOString().slice(0, 10);
-
-// More rows under "Trending", one per audience: /events params (genre: any of them).
-const RAILS: [string, Params][] = [
-  ["tonight", { date: today() }], // ponytail: today at page load; a tab left open past midnight keeps yesterday
-  ["electronic", { genre: ["techno", "house", "trance", "electronic", "edm", "drum_and_bass", "bass_dubstep", "hardstyle"] }],
-  ["free", { free_entry: "true" }],
-  ["live", { genre: ["live_show"] }],
-  ["israeli", { genre: ["israeli", "mizrahi", "greek"] }],
-  ["mainstream", { genre: ["mainstream", "hip_hop", "rnb", "reggaeton_latin", "throwback", "pop"] }],
-  ["standup", { genre: ["stand_up"] }],
-  ["festival", { genre: ["festival"] }],
-  ["theatre", { genre: ["theatre", "dance"] }],
-  ["jazz", { genre: ["jazz", "classical_opera"] }],
-  ["kids", { genre: ["kids"] }],
-  ["lectures", { genre: ["lectures", "workshops", "culture", "exhibitions"] }],
-  ["hitech", { genre: ["hi_tech", "ai", "cyber", "software_dev", "startups", "conference"] }],
-];
-
-/** "Trending" (sold on the most ticket sites in two weeks), then a row per audience for the month ahead. */
+/** "Trending" (sold on the most ticket sites in two weeks), then a row per audience for the month ahead:
+ *  all from one cached request (/events/rails), drawn from the visitor's last copy until it arrives. */
 function Trending() {
   const { t } = useT();
-  return (
-    <>
-      <Rail title={t.trending} sub={t.trendingSub} multi params={{ sort: "-group_size", date_to: daysAhead(14) }} />
-      {RAILS.map(([key, params]) => (
-        <Rail key={key} title={t.rails[key][0]} sub={t.rails[key][1]} params={{ sort: "-group_size", date_to: daysAhead(30), ...params }} />
-      ))}
-    </>
-  );
+  const q = useRails();
+  const rails = Object.entries(q.data?.rails ?? {});
+  if (q.isPending) return <Rail title={t.trending} sub={t.trendingSub} pool={undefined} />;
+  return <>{rails.map(([key, pool]) => key === "trending"
+    ? <Rail key={key} title={t.trending} sub={t.trendingSub} pool={pool} />
+    : t.rails[key] && <Rail key={key} title={t.rails[key][0]} sub={t.rails[key][1]} pool={pool} />)}</>;
 }
 
-/** A sideways row of cards; `multi`: only events on more than one ticket site. */
-function Rail({ title, sub, params, multi }: { title: string; sub: string; params: Params; multi?: boolean }) {
+/** A sideways row of cards: a random 12 of the row's pool (undefined: still loading). */
+function Rail({ title, sub, pool }: { title: string; sub: string; pool: EventSummary[] | undefined }) {
   const row = useRef<HTMLDivElement>(null);
-  const q = useEvents({ ...params, page_size: "48" });
-  // A random 12 of the top 48, reshuffled each visit, so the row doesn't show the same events every time.
+  // Shuffled once per visit: a fresh copy replacing the stored one doesn't reshuffle the row under the visitor.
+  // A stored copy may be days old, so events already over are dropped.
+  const loaded = !!pool;
   const items = useMemo(() => {
-    const pool = (q.data?.pages[0]?.items ?? []).filter((e) => !multi || (e.listings ?? 1) > 1);
-    for (let i = pool.length - 1; i > 0; i--) {
+    const now = Date.now();
+    const list = (pool ?? []).filter((e) => !e.start_at || Date.parse(e.end_at ?? e.start_at) > now);
+    for (let i = list.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
+      [list[i], list[j]] = [list[j], list[i]];
     }
-    return pool.slice(0, 12);
-  }, [q.data, multi]);
-  if (!q.isPending && items.length < 3) return null;
+    return list.slice(0, 12);
+  }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (loaded && items.length < 3) return null;
   const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.8, behavior: "smooth" });
   return (
     <section className="trending">
@@ -193,7 +175,7 @@ function Rail({ title, sub, params, multi }: { title: string; sub: string; param
         </div>
       </div>
       <div className="trending-row" ref={row}>
-        {q.isPending ? <CardSkeletons n={4} /> : items.map((e) => <Card key={e.id} e={e} />)}
+        {loaded ? items.map((e) => <Card key={e.id} e={e} />) : <CardSkeletons n={4} />}
       </div>
     </section>
   );

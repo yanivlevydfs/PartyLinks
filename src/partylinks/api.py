@@ -259,6 +259,12 @@ class EventPage(BaseModel):
     items: list[EventSummaryOut]
 
 
+class RailsOut(BaseModel):
+    """The home page's rows under "Trending": a pool per row (the page shows a random dozen)."""
+
+    rails: dict[str, list[EventSummaryOut]] = {}
+
+
 class SponsoredOut(BaseModel):
     """The home page's two paid rails, each in the admin's order."""
 
@@ -515,7 +521,29 @@ def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_
 
 
 # Built in the background on startup (an empty cache made the first visits after a deploy take 3-12 s).
-WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/posts", "/categories", "/categories?anywhere=true", "/ticket-sites", "/sitemap.xml")
+WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/posts", "/categories", "/categories?anywhere=true", "/ticket-sites", "/events/rails", "/sitemap.xml")
+
+# The home page's rows (/events/rails), in order: event filters, plus "days" ahead (default 30) and
+# "multi" (only events on more than one ticket site). One cached response for all of them.
+HOME_RAILS: dict[str, dict[str, Any]] = {
+    "trending": {"days": 14, "multi": True},
+    "tonight": {"today": True},
+    "electronic": {
+        "genre": ["techno", "house", "trance", "electronic", "edm", "drum_and_bass", "bass_dubstep", "hardstyle"]
+    },
+    "free": {"free_entry": True},
+    "live": {"genre": ["live_show"]},
+    "israeli": {"genre": ["israeli", "mizrahi", "greek"]},
+    "mainstream": {"genre": ["mainstream", "hip_hop", "rnb", "reggaeton_latin", "throwback", "pop"]},
+    "standup": {"genre": ["stand_up"]},
+    "festival": {"genre": ["festival"]},
+    "theatre": {"genre": ["theatre", "dance"]},
+    "jazz": {"genre": ["jazz", "classical_opera"]},
+    "kids": {"genre": ["kids"]},
+    "lectures": {"genre": ["lectures", "workshops", "culture", "exhibitions"]},
+    "hitech": {"genre": ["hi_tech", "ai", "cyber", "software_dev", "startups", "conference"]},
+}
+RAIL_POOL = 30
 
 
 def create_app(settings: Settings | None = None, start_scheduler: bool | None = None) -> FastAPI:
@@ -985,7 +1013,8 @@ def _register_routes(app: FastAPI) -> None:
     @app.get("/events/sponsored", response_model=SponsoredOut, tags=["events"])
     def sponsored(session: SessionDep) -> SponsoredOut:
         """Paid placements (picked in the admin) that are still upcoming and within their campaign;
-        none at all while the admin's sponsored switch is off."""
+        none at all while the admin's sponsored switch is off. Not in the response cache: an admin
+        change shows on the next request (the browser keeps its own copy)."""
         if not flag_on(session, "sponsored"):
             return SponsoredOut()
         pairs = session.execute(
@@ -1000,6 +1029,35 @@ def _register_routes(app: FastAPI) -> None:
         for side, e in pairs:
             getattr(out, side).append(EventSummaryOut.model_validate(e).model_copy(update=extras[e.id]))
         return out
+
+    @app.get("/events/rails", response_model=RailsOut, tags=["events"])
+    def rails(request: Request) -> Response:
+        """Every home-page row (HOME_RAILS) in one cached response, warmed on startup: the busiest
+        events of each, from tonight to the row's horizon."""
+        cfg: Settings = request.app.state.settings
+
+        def build(session: Session) -> RailsOut:
+            now = datetime.now(ZoneInfo(cfg.timezone))
+            out = RailsOut()
+            for key, spec in HOME_RAILS.items():
+                kw = {k: v for k, v in spec.items() if k not in ("days", "multi", "today")}
+                if spec.get("today"):
+                    kw["on_date"] = now.date()
+                filters = event_filters(request, date_to=now + timedelta(days=spec.get("days", 30)), **kw)
+                if spec.get("multi"):
+                    filters.append(EventRow.group_size > 1)
+                rows = session.scalars(
+                    select(EventRow)
+                    .where(*filters)
+                    .order_by(_SORT_COLUMNS[EventSort.trending], EventRow.start_at, EventRow.id)
+                    .limit(RAIL_POOL)
+                    .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
+                ).all()
+                extras = _summary_extras(session, rows)
+                out.rails[key] = [EventSummaryOut.model_validate(r).model_copy(update=extras[r.id]) for r in rows]
+            return out
+
+        return _cached(request, build)
 
     @app.post("/events/sponsored/hit", status_code=status.HTTP_204_NO_CONTENT, include_in_schema=False)
     def sponsored_hit(body: SponsoredHitIn, request: Request, session: SessionDep) -> Response:

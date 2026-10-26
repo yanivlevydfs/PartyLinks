@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import type { Categories, EventDetail, EventPage, MapPins, Post, PostList, SponsoredRails } from "./types";
+import type { Categories, EventDetail, EventPage, EventSummary, MapPins, Post, PostList, SponsoredRails } from "./types";
 
 export type Params = Record<string, string | string[] | undefined>;
 
@@ -55,9 +55,31 @@ export const usePosts = (lang: string, category?: string) =>
     queryFn: () => getJSON<PostList>(`/posts?lang=${lang}${category ? `&category=${encodeURIComponent(category)}` : ""}`),
   });
 
+/** A query kept in localStorage too: a return visit draws the last copy at once while a fresh one loads. */
+function useKept<T>(key: string, url: string) {
+  const store = `q:${key}`;
+  return useQuery({
+    queryKey: [key],
+    queryFn: async () => {
+      const data = await getJSON<T>(url);
+      try { localStorage.setItem(store, JSON.stringify({ at: Date.now(), data })); } catch { /* full or blocked: only slower */ }
+      return data;
+    },
+    initialData: () => {
+      try { return (JSON.parse(localStorage.getItem(store) ?? "null") as { data: T } | null)?.data; } catch { return undefined; }
+    },
+    initialDataUpdatedAt: () => {
+      try { return (JSON.parse(localStorage.getItem(store) ?? "null") as { at: number } | null)?.at; } catch { return undefined; }
+    },
+    staleTime: 5 * 60_000,
+  });
+}
+
 /** The home page's paid side rails (picked in the admin). */
-export const useSponsored = () =>
-  useQuery({ queryKey: ["sponsored"], queryFn: () => getJSON<SponsoredRails>("/events/sponsored"), staleTime: 5 * 60_000 });
+export const useSponsored = () => useKept<SponsoredRails>("sponsored", "/events/sponsored");
+
+/** The home page's rows under "Trending": a pool of the busiest events per row (server-side HOME_RAILS). */
+export const useRails = () => useKept<{ rails: Record<string, EventSummary[]> }>("rails", "/events/rails");
 
 export interface TicketSite { name: string; events: number; updated_at: string | null }
 

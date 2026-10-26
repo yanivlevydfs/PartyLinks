@@ -107,7 +107,7 @@ export const STRINGS = {
     rails: {
       tonight: ["יוצאים הערב", "מה קורה היום, ממש עכשיו"],
       electronic: ["מוזיקה אלקטרונית", "טכנו, האוס, טראנס ודראם אנד בייס בחודש הקרוב"],
-      free: ["בחינם", "כניסה חופשית, בלי כרטיס"],
+      free: ["בחינם", "כניסה חופשית"],
       live: ["הופעות", "הופעות חיות בחודש הקרוב"],
       israeli: ["ישראלי ומזרחית", "הזמרים שכולם שרים איתם"],
       mainstream: ["מיינסטרים והיפ הופ", "פופ, היפ הופ, רגאטון ונוסטלגיה"],
@@ -297,7 +297,7 @@ export const STRINGS = {
     rails: {
       tonight: ["Out tonight", "What's on today"],
       electronic: ["Electronic music", "Techno, house, trance and drum & bass this month"],
-      free: ["Free", "Free entry, no ticket needed"],
+      free: ["Free", "Free entry"],
       live: ["Live shows", "Concerts and live shows this month"],
       israeli: ["Israeli & Mizrahi", "The singers everyone sings along with"],
       mainstream: ["Mainstream & hip hop", "Pop, hip hop, reggaeton and throwback"],
