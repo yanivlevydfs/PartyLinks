@@ -30,6 +30,9 @@ export default function EventPage() {
 
   const images = e.images.map((i) => i.stored_url ?? i.url);
   const hero = images[0] ?? e.image_url ?? e.cover_url;
+  // Sites often add a tiny share-preview copy of the poster (a WhatsApp thumbnail); it isn't gallery material.
+  // ponytail: size heuristic, not a content match; perceptual-hash dedup at download if real extras get dropped.
+  const gallery = e.images.slice(1).filter((i) => !i.size_bytes || i.size_bytes > 40_000).map((i) => i.stored_url ?? i.url);
   const mapQuery = e.latitude != null ? `${e.latitude},${e.longitude}` : [e.venue_name, e.address, e.city].filter(Boolean).join(", ");
   const price = priceLabel(e, t);
   const time = { hour: "2-digit", minute: "2-digit" } as const;
@@ -144,11 +147,11 @@ export default function EventPage() {
           </section>
         )}
 
-        {images.length > 1 && (
+        {gallery.length > 0 && (
           <section>
             <h4>{t.gallery}</h4>
             <div className="gallery">
-              {images.slice(1).map((src) => <Img key={src} src={sized(src, 640)} alt="" className="g-img" />)}
+              {gallery.map((src) => <Img key={src} src={sized(src, 640)} alt="" className="g-img" />)}
             </div>
           </section>
         )}

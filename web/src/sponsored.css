@@ -126,7 +126,7 @@ html[dir="ltr"] .sp-list a:hover { transform: translateX(2px); }
 }
 .sp-strip-row::-webkit-scrollbar { display: none; }
 .sp-strip-row .sp-spot {
-  position: relative; flex: 0 0 min(230px, 64vw); aspect-ratio: 4 / 5; border-radius: 16px; scroll-snap-align: start;
+  position: relative; flex: 0 0 min(200px, 42vw); aspect-ratio: 4 / 5; border-radius: 16px; scroll-snap-align: start;
   border: 1px solid var(--line-hot); box-shadow: 0 0 22px -8px var(--pink);
 }
 .sp-strip-row .sp-spot.on .sp-img { animation: none; }

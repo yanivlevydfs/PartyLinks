@@ -71,6 +71,7 @@ export interface EventImage {
   id: number;
   url: string;
   stored_url: string | null;
+  size_bytes: number | null;
 }
 
 export interface EventDetail extends EventSummary {

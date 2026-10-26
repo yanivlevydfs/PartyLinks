@@ -373,7 +373,14 @@ button, input, select { font: inherit; color: inherit; }
   .trending-head { padding: 0 16px 12px; }
   .trending-row { gap: 12px; padding: 6px 16px 4px; scroll-padding-inline: 16px; }
   .trending-row { gap: 10px; }
-  .trending-row > .card-wrap { flex-basis: 43vw; }
+  .trending-row > .card-wrap { flex-basis: 40vw; }
+  /* Row cards: square art, title, date and venue; the full card is one tap away. */
+  .trending .card-img { aspect-ratio: 1; }
+  .trending .card-body { padding: 8px 9px 10px; }
+  .trending .card-body h3 { font-size: 13.5px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  .trending .meta { font-size: 11.5px; }
+  .trending .meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trending .meta:nth-of-type(n + 3), .trending .tags .tag { display: none; }
   .trending h2 { font-size: 17px; }
   .trending-head p { font-size: 13px; }
 }
@@ -1131,9 +1138,12 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
     color: var(--cyan); font: 700 14px/1.4 var(--display); text-decoration: underline; text-underline-offset: 3px;
   }
 
-  /* The accessibility button floats above the tab bar (and the buy bar on event pages). */
-  html .asw-menu-btn { bottom: calc(76px + env(safe-area-inset-bottom)) !important; left: 12px !important; right: auto !important; top: auto !important; }
-  html:has(.buy-bar) .asw-menu-btn { bottom: calc(136px + env(safe-area-inset-bottom)) !important; }
+  /* The accessibility button sits in the header beside the language button, so it never covers content. */
+  html .asw-menu-btn {
+    top: calc(8px + env(safe-area-inset-top)) !important; bottom: auto !important;
+    left: 72px !important; right: auto !important; width: 38px !important; height: 38px !important; z-index: 1001 !important;
+  }
+  html[dir="ltr"] .asw-menu-btn { left: auto !important; right: 72px !important; }
 
   .hero { padding: 22px 0 14px; }
   .hero h1 { font-size: clamp(28px, 8.5vw, 40px); letter-spacing: -1px; }
@@ -1156,7 +1166,6 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .install-btns { gap: 6px; }
   .install-btns .c-btn { flex: 1 1 0; }
   .install-btns .c-btn:only-child { flex: 0 0 auto; margin-inline-start: auto; padding-inline: 20px; }
-  html:has(.consent, .install) .asw-menu-btn { display: none !important; }
 }
 
 /* ------------------------------------------------------------------ phone grid: two posters per row */
