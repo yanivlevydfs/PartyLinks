@@ -150,10 +150,11 @@ class Deduplicator:
         if a.venue_slug and b.venue_slug:
             return a.venue_slug == b.venue_slug
         # No coordinates or venue on one side: a city is too coarse for "שעת סיפור" at two libraries, so
-        # only a near-identical title of 3+ words at the same hour in the same city.
+        # only a near-identical title of 3+ words at the same hour, in the same city or as a promoter
+        # site's own copies (GO-OUT's page per promoter often has no place at all).
         s = self.settings
         return (
-            bool(a.city and a.city == b.city)
+            (bool(a.city and a.city == b.city) or a.source == b.source and a.source in self._promoter_pages)
             and matcher.ratio() >= s.strong_title_similarity and len(a.title_key.split()) >= 3
             and a.start is not None and b.start is not None
             and abs((a.start - b.start).total_seconds()) <= s.strong_max_start_gap_minutes * 60
@@ -170,7 +171,12 @@ class Deduplicator:
         if self._sessions(a, b):
             return True
         if a.start and b.start and abs((a.start - b.start).total_seconds()) > s.max_start_gap_minutes * 60:
-            return True
+            # A promoter site's pages of one party carry its entry times (20:00, 21:30); a show's pages
+            # hours apart are its sessions.
+            promoter_party = a.source == b.source and a.source in self._promoter_pages and "music" in a.kinds | b.kinds
+            gap = abs((a.start - b.start).total_seconds())
+            if not (promoter_party and gap <= s.promoter_max_start_gap_minutes * 60):
+                return True
         if a.numbers and b.numbers and not a.numbers & b.numbers:
             return True
         if a.city and b.city and a.city != b.city:
@@ -203,13 +209,17 @@ class Deduplicator:
         primary = min(members, key=self._primary_rank)
         # Prices and entry type of what can still be bought; a fully sold-out event keeps its own.
         selling = [m for m in members if not m.sold_out] or members
-        priced = [m for m in selling if m.min_price is not None]
+        priced = [m for m in selling if m.min_price is not None] or [m for m in members if m.min_price is not None]
         best = min(priced, key=lambda m: (m.min_price, self._primary_rank(m))) if priced else primary
-        kinds = {k for m in selling for k in _KINDS.get(m.entry_type, ())}
+        kinds = {k for m in selling for k in _KINDS.get(m.entry_type, ())} or {
+            k for m in members for k in _KINDS.get(m.entry_type, ())
+        }
         entry_type = (
             "free_and_paid" if kinds == {"free", "paid"} else next(iter(kinds)) if kinds else "unknown"
         )
-        maxima = [m.max_price for m in selling if m.max_price is not None]
+        maxima = [m.max_price for m in selling if m.max_price is not None] or [
+            m.max_price for m in members if m.max_price is not None
+        ]
         shared = {
             "group_id": primary.id,
             "group_size": len(members),

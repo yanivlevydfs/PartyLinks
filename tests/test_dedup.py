@@ -143,6 +143,26 @@ def test_promoter_pages_hours_apart_never_chain(tmp_path: Path) -> None:
     assert groups["goout:0"][0] != groups["goout:2"][0]
 
 
+def test_promoter_pages_of_one_party_keep_their_entry_times_together(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("goout", str(m), "PETTRA x HELLO VERA FRIDAY OPEN AIR", start=START + timedelta(minutes=m),
+                source_genres=["techno"]) for m in (0, 30, 60, 90)
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 1
+
+
+def test_sold_out_copy_still_prices_the_event_when_no_other_copy_has_a_price(tmp_path: Path) -> None:
+    settings, _ = grouped(tmp_path, [
+        listing("smarticket", "a", "סדנת חוסן באמצעות בעלי חיים", is_sold_out=True, min_price=Decimal(40),
+                tickets=[TicketTier(name="Entry", price=Decimal(40), is_sold_out=True)]),
+        listing("ogo", "b", "סדנת חוסן באמצעות בעלי חיים", tickets=[]),
+    ])  # fmt: skip
+    with Database(settings.database.url).session() as session:
+        rows = {r.id: r for r in session.query(EventRow)}
+    assert rows["ogo:b"].group_id == rows["smarticket:a"].group_id
+    assert rows["ogo:b"].group_min_price == 40 and rows["ogo:b"].group_entry_type == "paid"
+
+
 def test_numbered_variants_stay_apart(tmp_path: Path) -> None:
     _, groups = grouped(tmp_path, [
         listing("telaviv", "1", "חוג ציור לגילאי 4-6"),
