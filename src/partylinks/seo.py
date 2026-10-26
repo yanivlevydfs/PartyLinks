@@ -31,7 +31,7 @@ from sqlalchemy import ColumnElement, String, cast, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from partylinks.config import CitySettings, Settings
-from partylinks.db import EventRow, upcoming_filter
+from partylinks.db import EventRow, lineup_contains, upcoming_filter
 from partylinks.places import all_cities
 
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
@@ -443,7 +443,7 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
 
 def artist_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     t = TEXT[lang]
-    rows = _upcoming(session, cast(EventRow.lineup, String).ilike(f"%{name}%"))
+    rows = _upcoming(session, lineup_contains(name))
     path = f"/artist/{quote(name, safe='')}"
     person = {
         "@context": "https://schema.org",

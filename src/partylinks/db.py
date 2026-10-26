@@ -363,6 +363,20 @@ def _sqlite_begin(conn: Any) -> None:
 SQLITE_INCREMENTAL_VACUUM = 2  # PRAGMA auto_vacuum value
 
 
+def lineup_contains(name: str) -> ColumnElement[bool]:
+    """Events whose lineup has `name` in it (case-insensitive substring).
+
+    The lineup is stored as JSON text with non-ASCII escaped ("\\u05e9..."), so a Hebrew name only
+    matches in that escaped form; both forms are tried.
+    """
+    column = EventRow.lineup.cast(String)
+    clauses = [
+        column.ilike("%" + p.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%", escape="\\")
+        for p in {name, json.dumps(name)[1:-1]}
+    ]
+    return clauses[0] if len(clauses) == 1 else clauses[0] | clauses[1]
+
+
 def upcoming_filter() -> ColumnElement[bool]:
     """Current events only: today onwards, plus last night's parties still in progress."""
     from partylinks.config import get_settings  # local: config is loaded lazily

@@ -16,7 +16,7 @@ from sqlalchemy import ColumnElement, String, and_, cast, or_
 
 from partylinks import seo
 from partylinks.config import Settings
-from partylinks.db import EventRow
+from partylinks.db import EventRow, lineup_contains
 
 Cond = ColumnElement[bool]
 HE_PREFIXES = ("", "ב", "ל", "מ", "ה", "ו", "וב")  # "בתל אביב", "לחיפה", "מברלין"
@@ -44,8 +44,8 @@ WEEKEND = {
 
 def text_match(word: str) -> Cond:
     pattern = "%" + word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
-    return or_(*(c.ilike(pattern, escape="\\") for c in (
-        EventRow.title, EventRow.description, EventRow.venue_name, cast(EventRow.lineup, String), EventRow.city, EventRow.address,
+    return or_(lineup_contains(word), *(c.ilike(pattern, escape="\\") for c in (
+        EventRow.title, EventRow.description, EventRow.venue_name, EventRow.city, EventRow.address,
     )))  # fmt: skip
 
 

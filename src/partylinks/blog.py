@@ -25,11 +25,11 @@ from zoneinfo import ZoneInfo
 import yaml
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, ValidationError
-from sqlalchemy import ColumnElement, String, cast
+from sqlalchemy import ColumnElement
 
 from partylinks import seo
 from partylinks.config import Settings
-from partylinks.db import EventRow
+from partylinks.db import EventRow, lineup_contains
 
 log = logging.getLogger(__name__)
 
@@ -155,7 +155,7 @@ def _embed_rows(session: Any, params: dict[str, str], cfg: Settings) -> list[Eve
     if "venue" in params:
         where.append(EventRow.venue_name.ilike(f"%{params['venue']}%"))
     if "artist" in params:
-        where.append(cast(EventRow.lineup, String).ilike(f"%{params['artist']}%"))
+        where.append(lineup_contains(params["artist"]))
     if "free_entry" in params:
         where.append(EventRow.has_free_entry.is_(True))
     return seo._upcoming(session, *where, limit=int(params["page_size"]))

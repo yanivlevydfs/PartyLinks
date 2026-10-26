@@ -42,6 +42,7 @@ from partylinks.db import (
     SponsoredRow,
     SponsoredStatRow,
     flag_on,
+    lineup_contains,
     upcoming_filter,
 )
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
@@ -848,7 +849,7 @@ def _register_routes(app: FastAPI) -> None:
         if genre:
             filters.append(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(genre)))
         if artist:
-            filters.append(cast(EventRow.lineup, String).ilike(_contains(artist), escape="\\"))
+            filters.append(lineup_contains(artist))
         if venue:
             filters.append(EventRow.venue_name.ilike(_contains(venue), escape="\\"))
         if venue_slug:

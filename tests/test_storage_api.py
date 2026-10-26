@@ -733,6 +733,20 @@ def test_artist_page_lists_their_shows_abroad_too(tmp_path: Path) -> None:
         assert "rome" not in ids("")  # the main feed stays in Israel
 
 
+def test_artist_page_finds_a_hebrew_name(tmp_path: Path) -> None:
+    # The lineup JSON stores Hebrew escaped ("\u05e9..."): a plain LIKE on the text never matched.
+    settings = settings_for(tmp_path)
+    db = seed(settings, [event("show", datetime.now(UTC) + timedelta(days=2))])
+    with db.session() as session:
+        session.query(EventRow).one().lineup = ["שלומי שבן", "Balkan Beat Box"]
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda q: [e["source_event_id"] for e in client.get(f"/events?{q}").json()["items"]]
+        assert ids("artist=שלומי שבן") == ["show"]
+        assert ids("artist=balkan") == ["show"]
+        assert ids("artist=שלומי כהן") == []
+        assert "שלומי שבן" in client.get("/artist/שלומי שבן").text
+
+
 def test_smart_search_reads_places_genres_prices_and_covers_abroad(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     future = datetime.now(UTC) + timedelta(days=2)
