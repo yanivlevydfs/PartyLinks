@@ -180,6 +180,8 @@ class MediaStore:
                         continue
                     if not dry_run:
                         path.unlink()
+                except FileNotFoundError:  # a temp copy renamed into place meanwhile
+                    continue
                 except OSError as exc:
                     log.warning("artwork sweep: could not remove %s: %s", path, exc)
                     continue
