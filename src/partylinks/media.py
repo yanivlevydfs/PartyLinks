@@ -130,7 +130,7 @@ class MediaStore:
         Files are named by URL, so recurring flyers and per-promoter listings share one
         file; deleting it for one purged event must not break the others.
         """
-        candidates = sorted({p for p in relative_paths if p})
+        candidates: list[str] = sorted({p for p in relative_paths if p is not None and p})
         if not candidates:
             return 0
         with self.db.session(write=False) as session:
@@ -162,7 +162,7 @@ class MediaStore:
         if not self.root.is_dir():
             return result
         with self.db.session(write=False) as session:
-            claimed_paths = set(session.scalars(select(ImageRow.local_path).where(ImageRow.local_path.is_not(None))))
+            claimed_paths = {p for p in session.scalars(select(ImageRow.local_path).where(ImageRow.local_path.is_not(None))) if p is not None}
         if not claimed_paths:
             result["skipped"] = "no stored image rows: refusing to sweep"
             log.warning("artwork sweep: %s", result["skipped"])
@@ -272,9 +272,10 @@ class MediaStore:
         if self.settings.storage != "filesystem" or threads < 1:
             return 0, 0
         with self.db.session(write=False) as session:
-            relatives = list(
-                session.scalars(select(ImageRow.local_path).where(ImageRow.local_path.is_not(None)).distinct())
-            )
+            relatives = [
+                r for r in session.scalars(select(ImageRow.local_path).where(ImageRow.local_path.is_not(None)).distinct())
+                if r is not None
+            ]
         todo = [p for p in (self.path_for(r) for r in relatives) if p.is_file() and not has_variants(p)]
         if not todo:
             return 0, 0
@@ -317,13 +318,15 @@ class MediaStore:
                 ).all()
                 if not rows:
                     break
-                updates = []
+                updates: list[dict[str, Any]] = []
+                written: set[str] = set()
                 for row in rows:
                     relative = _relative_path(row.source, row.url, row.content_type or "")
                     self._write(relative, row.data)
                     updates.append({"id": row.id, "local_path": relative, "data": None})
+                    written.add(relative)
                 bulk_update_by_id(session, ImageRow, updates)
-            for relative in {u["local_path"] for u in updates}:  # after the commit: no write lock held while resizing
+            for relative in written:  # after the commit: no write lock held while resizing
                 if not has_variants(self.path_for(relative)):
                     make_variants(self.path_for(relative), self.settings.webp_quality)
             moved, batches = moved + len(rows), batches + 1
