@@ -922,3 +922,11 @@ def test_contact_addresses_never_appear_as_text(tmp_path: Path) -> None:
         for path in ("/contact", "/partners", "/privacy", "/accessibility"):
             page = client.get(path, headers={"user-agent": "Googlebot"})
             assert address not in page.text, path
+
+
+def test_search_knows_kinds_regions_and_ticket_sites_by_everyday_names(tmp_path: Path) -> None:
+    from partylinks.search import _vocabulary
+
+    vocab = _vocabulary(settings_for(tmp_path))
+    for name in ("מסיבה", "מסיבת טבע", "הופעה", "ג'אז", "ג׳אז", "ראפ", "גוש דן", "בצפון", "zygo", "גו אאוט", "תיאטרון"):
+        assert name in vocab, name

@@ -978,7 +978,7 @@ def _register_routes(app: FastAPI) -> None:
 
         # A search in the default date order puts title matches first, then lineup / venue, then the rest.
         q = request.query_params.get("q")
-        rank = relevance(q) if q and sort is EventSort.start_asc else None
+        rank = relevance(q, cfg) if q and sort is EventSort.start_asc else None
 
         def build(session: Session) -> EventPage:
             # Cards never show the long text columns.
