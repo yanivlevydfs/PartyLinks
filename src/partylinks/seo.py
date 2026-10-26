@@ -12,6 +12,7 @@ from __future__ import annotations
 import gettext
 import json
 import re
+import threading
 import unicodedata
 from collections import Counter
 from dataclasses import dataclass, field
@@ -1258,16 +1259,29 @@ def register(app: FastAPI, site_dir: Path) -> None:
     def robots_txt(request: Request) -> PlainTextResponse:
         return PlainTextResponse(robots(cfg(request)))
 
+    # The URL list takes ~30 s at prod size, and a crawler opens the index and every part at once:
+    # built from scratch per request, all of them timed out (Search Console: "Couldn't fetch").
+    # Built once, reused for an hour, then rebuilt in the background while the old list is served.
+    from partylinks.api import ResponseCache  # local: api imports this module
+
+    sitemap_cache = ResponseCache(ttl=3600, max_stale=86400, follow_writes=False)
+    sitemap_lock = threading.Lock()  # concurrent first requests wait for one build instead of starting their own
+
+    def cached_urls(request: Request) -> list[str]:
+        def build() -> bytes:
+            with request.app.state.db.session(write=False) as session:
+                return "\n".join(sitemap_urls(session, cfg(request))).encode()
+
+        with sitemap_lock:
+            return sitemap_cache.get(("sitemap", ""), build)[0].decode().split("\n")
+
     @app.get("/sitemap.xml", include_in_schema=False)
     def sitemap_xml(request: Request) -> Response:
-        with request.app.state.db.session(write=False) as session:
-            return Response(sitemap_index(sitemap_urls(session, cfg(request)), cfg(request)), media_type="application/xml")
+        return Response(sitemap_index(cached_urls(request), cfg(request)), media_type="application/xml")
 
-    # ponytail: each part rebuilds the whole URL list (~1 s); cache it if crawlers hammer the parts.
     @app.get("/sitemap-{part}.xml", include_in_schema=False)
     def sitemap_part_xml(part: int, request: Request) -> Response:
-        with request.app.state.db.session(write=False) as session:
-            xml = sitemap_part(sitemap_urls(session, cfg(request)), part)
+        xml = sitemap_part(cached_urls(request), part)
         return Response(xml, media_type="application/xml") if xml else Response(status_code=404)
 
     if key := app.state.settings.site.indexnow.key:  # IndexNow ownership proof (partylinks.indexnow)

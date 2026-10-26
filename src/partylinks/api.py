@@ -515,7 +515,7 @@ def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_
 
 
 # Built in the background on startup (an empty cache made the first visits after a deploy take 3-12 s).
-WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/posts", "/categories", "/categories?anywhere=true", "/ticket-sites")
+WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/posts", "/categories", "/categories?anywhere=true", "/ticket-sites", "/sitemap.xml")
 
 
 def create_app(settings: Settings | None = None, start_scheduler: bool | None = None) -> FastAPI:
