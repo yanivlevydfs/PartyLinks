@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time as clock
 from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
@@ -787,6 +788,15 @@ def test_search_lists_title_matches_first_then_lineup_and_venue(tmp_path: Path) 
         ids = lambda qs: [e["source_event_id"] for e in client.get(f"/events?{qs}").json()["items"]]  # noqa: E731
         assert ids("q=moon") == ["party", "club", "talk"]
         assert ids("q=lecture") == ["talk"]
+
+
+def test_a_search_that_finds_nothing_is_logged(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    settings = settings_for(tmp_path)
+    seed(settings, [event("party", datetime.now(UTC) + timedelta(days=1), title="Moon party")])
+    with TestClient(create_app(settings, start_scheduler=False)) as client, caplog.at_level(logging.INFO, "partylinks.api"):
+        client.get("/events?q=moon")
+        client.get("/events?q=zzzqqq")
+    assert [r.getMessage() for r in caplog.records if "search miss" in r.getMessage()] == ["search miss: 'zzzqqq'"]
 
 
 def test_abroad_filters_come_from_the_stored_events(tmp_path: Path) -> None:

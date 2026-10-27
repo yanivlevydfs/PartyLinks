@@ -998,6 +998,8 @@ def _register_routes(app: FastAPI) -> None:
                 total, wanted = len(ids), ids[(page - 1) * size : page * size]
                 found = {r.id: r for r in session.scalars(card.where(EventRow.id.in_(wanted)))}
                 rows = [found[i] for i in wanted if i in found]
+            if q and not total:  # what people look for and we lack; once per cached answer
+                log.info("search miss: %r", q[:100])
             extras = _summary_extras(session, rows)
             items = [EventSummaryOut.model_validate(r).model_copy(update=extras[r.id]) for r in rows]
             return EventPage(total=total, page=page, page_size=size, items=items)
