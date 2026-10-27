@@ -172,7 +172,7 @@ export function Sponsored() {
         {dirty && <button className="adm-btn ghost" onClick={() => saved.data && setPicks(saved.data.items)}>Discard changes</button>}
         {dirty && <span className="adm-warn">Unsaved changes</span>}
         {save.isError && <span className="adm-err">{String((save.error as Error).message)}</span>}
-        {save.isSuccess && !dirty && <span className="adm-ok">Saved. The site shows it within 5 minutes per visitor.</span>}
+        {save.isSuccess && !dirty && <span className="adm-ok">Saved. Visitors see it on their next page load (within a minute).</span>}
         <span className="adm-note">Side rails: on every page, from 1440px wide as two rails, below that as one strip. Top of results: first in the event list (home, search, city / genre / venue pages) only when it matches the visitor's search and filters, at most 3, marked "Sponsored". Past events and ended campaigns hide by themselves.</span>
       </div>
 

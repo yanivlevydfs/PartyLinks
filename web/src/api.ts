@@ -74,6 +74,9 @@ function useKept<T>(key: string, url: string) {
       try { return (JSON.parse(localStorage.getItem(store) ?? "null") as { at: number } | null)?.at; } catch { return undefined; }
     },
     staleTime: 5 * 60_000,
+    // The kept copy draws at once; every page load still fetches a fresh one, or an admin change
+    // (sponsored picks) would wait up to staleTime behind a copy that Ctrl+F5 doesn't clear.
+    refetchOnMount: "always",
   });
 }
 
