@@ -1,4 +1,4 @@
-"""Our own count of searches on the site (GET /events?q=..., first page): how many, per day, what
+"""Our own count of searches on the site (GET /events?q=...&sponsored=true, first page: the results grid): how many, per day, what
 people look for and what finds nothing. No IP, cookie or user agent: the words, the result count, when.
 """
 

@@ -288,7 +288,7 @@ function Clicks() {
   );
 }
 
-/** What visitors searched for (GET /events?q=..., first page; partial words while typing left out). */
+/** What visitors searched for (GET /events?q=...&sponsored=true, first page; partial words while typing left out). */
 function Searches() {
   const [days, setDays] = useState(30);
   const q = useQuery({ queryKey: ["searches", days], queryFn: () => call(`/admin/api/searches?days=${days}`), refetchInterval: 30_000 });

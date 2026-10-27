@@ -267,7 +267,7 @@ class ClickRow(Base):
 
 
 class SearchRow(Base):
-    """One search on the site (GET /events?q=..., first page). No IP, cookie or user agent: the
+    """One search on the site (GET /events?q=...&sponsored=true, first page: the results grid). No IP, cookie or user agent: the
     words (normalised), how many events they found, when."""
 
     __tablename__ = "searches"

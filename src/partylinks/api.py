@@ -1041,8 +1041,9 @@ def _register_routes(app: FastAPI) -> None:
             return EventPage(total=total, page=page, page_size=size, items=items, did_you_mean=suggestion)
 
         response = _cached(request, build)
-        # A visitor's search, counted once (later pages are the same search; the admin's own are not).
-        if q and page == 1 and "authorization" not in request.headers:
+        # A visitor's search, counted once: the site's results grid (sponsored=true), not the side counts
+        # ("without this filter: N") that ask with the same words; later pages and the admin's own neither.
+        if q and page == 1 and sponsored and "authorization" not in request.headers:
             total = json.loads(response.body)["total"]
             background.add_task(searches.record, request.app.state.db, q, total)
         return response

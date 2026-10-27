@@ -78,7 +78,7 @@ export function Filters() {
   const sheet = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState<Panel | null>(null);
   // Same query as the grid below: shares its cache, so the sheet's "Show N" costs no request.
-  const total = useEvents(filterParams(f)).data?.pages[0]?.total;
+  const total = useEvents({ ...filterParams(f), sponsored: "true" }).data?.pages[0]?.total;
 
   const extras = f.regions.length + f.areas.length + (f.city ? 1 : 0) + f.genres.length + f.shops.length + f.slots.length + (f.hideSoldOut ? 1 : 0) + (f.discountOnly ? 1 : 0);
   const dirty = extras > 0 || f.freeOnly || f.when !== "all";

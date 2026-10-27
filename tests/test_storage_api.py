@@ -592,11 +592,12 @@ def test_searches_are_counted_for_the_admin(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     seed(settings, [event("a", datetime.now(UTC) + timedelta(days=1))])
     with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}) as client:
-        client.get("/events?q=tech")  # still typing
-        client.get("/events?q=Techno")
-        client.get("/events?q=techno&page=2")  # same search, next page: not counted
-        client.get("/events?q=zzzz")
-        client.get("/events?q=techno", headers={"authorization": "Bearer x"})  # the admin's own: not counted
+        client.get("/events?q=tech&sponsored=true")  # still typing
+        client.get("/events?q=Techno&sponsored=true")
+        client.get("/events?q=techno&sponsored=true&page=2")  # same search, next page: not counted
+        client.get("/events?q=techno&free_entry=true")  # a side count with the same words: not counted
+        client.get("/events?q=zzzz&sponsored=true")
+        client.get("/events?q=techno&sponsored=true", headers={"authorization": "Bearer x"})  # the admin's own: not counted
         stats = client.get("/admin/api/searches?days=7").json()
         assert (stats["total"], stats["today"], stats["distinct"], stats["no_results"]) == (2, 2, 2, 1)
         assert stats["top"] == [{"q": "techno", "searches": 1, "results": 1}, {"q": "zzzz", "searches": 1, "results": 0}]
