@@ -1564,7 +1564,7 @@ sources:
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
     cron: "5 10,22 * * *"
-    http: {concurrency: 3}
+    http: {concurrency: 3, impersonate: chrome}  # Chrome (curl_cffi), as Chillz does
     api_url: https://cintlv.presglobal.store
     presentations_path: /api/presentations/
     features_path: /api/features/
