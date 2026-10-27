@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
@@ -175,6 +175,43 @@ export function Hero({ title, children }: { title: string; children?: ReactNode 
 }
 
 // --------------------------------------------------------------------------- bits
+/** A drop-down in the site's own look (a native select opens the phone's system picker). */
+export function Select({ value, options, onChange, label }: { value: string; options: [string, ReactNode][]; onChange: (v: string) => void; label: string }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    box.current?.querySelector<HTMLElement>("[aria-selected=true]")?.focus();
+    const away = (e: PointerEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    addEventListener("pointerdown", away);
+    return () => removeEventListener("pointerdown", away);
+  }, [open]);
+  const pick = (v: string) => { onChange(v); setOpen(false); box.current?.querySelector<HTMLElement>(".dd-btn")?.focus(); };
+  const keys = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && open) { e.stopPropagation(); setOpen(false); box.current?.querySelector<HTMLElement>(".dd-btn")?.focus(); }
+    if (open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+      e.preventDefault();
+      const items = [...box.current!.querySelectorAll<HTMLElement>("[role=option]")];
+      const i = items.indexOf(document.activeElement as HTMLElement);
+      items[(i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
+    }
+  };
+  return (
+    <div className={"dd" + (open ? " open" : "")} ref={box} onKeyDown={keys}>
+      <button type="button" className="dd-btn" aria-haspopup="listbox" aria-expanded={open} aria-label={label} onClick={() => setOpen(!open)}>
+        <span>{options.find(([v]) => v === value)?.[1] ?? options[0]?.[1]}</span><span className="caret" aria-hidden>▾</span>
+      </button>
+      {open && (
+        <div className="dd-list" role="listbox" aria-label={label}>
+          {options.map(([v, name]) => (
+            <button type="button" key={v} role="option" aria-selected={v === value} onClick={() => pick(v)}>{name}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Chip({ on, onClick, children, className }: { on: boolean; onClick: () => void; children: ReactNode; className?: string }) {
   const ref = useRef<HTMLButtonElement>(null);
   // In a scrolling chip row (mobile), bring a preselected chip (/genre/hip_hop) into view.

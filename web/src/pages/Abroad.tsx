@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { useCategories, useLandingInfo } from "../api";
-import { EventGrid, Hero, Related, useT, useTitle } from "../ui";
+import { EventGrid, Hero, Related, Select, useT, useTitle } from "../ui";
 
 export default function Abroad() {
   const { t, lang } = useT();
@@ -40,21 +40,17 @@ export default function Abroad() {
       </Hero>
       <div className="wrap abroad-filters">
         {!country && (
-          <label className="sort">
+          <div className="sort">
             <span className="sort-label">{t.abroad.country}</span>
-            <select value={pick} onChange={(e) => set({ country: e.target.value, city: "" })} aria-label={t.abroad.country}>
-              <option value="">{t.abroad.allCountries}</option>
-              {countries.map((c) => <option key={c.value} value={c.value}>{name(c.value)} ({c.events})</option>)}
-            </select>
-          </label>
+            <Select value={pick} onChange={(v) => set({ country: v, city: "" })} label={t.abroad.country}
+              options={[["", t.abroad.allCountries], ...countries.map((c): [string, string] => [c.value, `${name(c.value)} (${c.events})`])]} />
+          </div>
         )}
-        <label className="sort">
+        <div className="sort">
           <span className="sort-label">{t.abroad.city}</span>
-          <select value={city} onChange={(e) => set({ city: e.target.value })} aria-label={t.abroad.city}>
-            <option value="">{t.abroad.allCities}</option>
-            {cities.map((c) => <option key={c.value} value={c.value}>{c.value} ({c.events})</option>)}
-          </select>
-        </label>
+          <Select value={city} onChange={(v) => set({ city: v })} label={t.abroad.city}
+            options={[["", t.abroad.allCities], ...cities.map((c): [string, string] => [c.value, `${c.value} (${c.events})`])]} />
+        </div>
         <label className="sort">
           <span className="sort-label">{t.abroad.from}</span>
           <input type="date" value={from} max={to || undefined} onChange={(e) => set({ from: e.target.value })} aria-label={t.abroad.from} />

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { useCategories, useEvents, type Params } from "./api";
 import { genreLabel } from "./i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "./store";
-import { Chip, label, Loader, sourceName, today, tomorrow, TZ, useT } from "./ui";
+import { Chip, label, Loader, Select, sourceName, today, tomorrow, TZ, useT } from "./ui";
 
 // The one home-page filter: its state lives in the store, the API query comes from filterParams(),
 // and every landing page (/tonight, /genre/x, /city/x) only presets that same state.
@@ -114,14 +114,11 @@ export function Filters() {
     </>
   );
   const sort = (
-    <label className="sort">
+    <div className="sort">
       <span className="sort-label">{t.sort}</span>
-      <select value={f.sort} onChange={(e) => set({ sort: e.target.value })} aria-label={t.sort}>
-        <option value="start_at">{t.sortDate}</option>
-        <option value="min_price">{t.sortPrice}</option>
-        <option value="-last_seen_at">{t.sortNew}</option>
-      </select>
-    </label>
+      <Select value={f.sort} onChange={(sort) => set({ sort })} label={t.sort}
+        options={[["start_at", t.sortDate], ["min_price", t.sortPrice], ["-last_seen_at", t.sortNew]]} />
+    </div>
   );
 
   const active = dirty && (
