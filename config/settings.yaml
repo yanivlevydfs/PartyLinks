@@ -1750,6 +1750,10 @@ sources:
     cron: "9 4,16 * * *"
     listing_url: https://www.holon.muni.il/Havingfun/Pages/allevents.aspx
     city: חולון
+    # One ~800 KB page through a free Israeli proxy: 30 s ran out on every run (ReadTimeout), Oct 2026.
+    run_timeout_seconds: 3600
+    http:
+      timeout_seconds: 120
 
   kikarhamusica:
     # Kikar HaMusica, Jerusalem's music square: WordPress + The Events Calendar, whose JSON API lists every
@@ -2051,6 +2055,7 @@ sources:
     # only) with categories/tags, place, organiser and ticket link; recurring events kept once.
     # Events sold by a Smarticket box office the smarticket source reads are skipped.
     enabled: true
+    israel_proxy: true  # 403 to every site from the evomi IPs (0 events, Oct 2026); answers Israeli IPs
     cron: "17 4,16 * * *"
     sites:
       - {url: https://www.karmiel.muni.il, city: כרמיאל}
