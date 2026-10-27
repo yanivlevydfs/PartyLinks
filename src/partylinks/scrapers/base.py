@@ -9,6 +9,7 @@ Resilience rules implemented here (so every source gets them):
 * transient HTTP errors are retried with backoff, honouring ``Retry-After``;
   a concurrency slot is held only while a request is in flight, not while waiting;
 * a body that is not the JSON shape a caller expects raises ``ParseError``;
+* a listing page or detail item that came back without its data (``ParseError``) is tried once more;
 * a failing listing page or detail item is recorded in ``failures`` and skipped -
   it never discards what other pages/items already returned;
 * details stream out as they complete, so the service saves progressively and a
@@ -33,7 +34,7 @@ import httpx
 from curl_cffi import requests as curl_requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from socksio.exceptions import SOCKSError
-from tenacity import AsyncRetrying, RetryCallState, retry_if_exception, wait_exponential
+from tenacity import AsyncRetrying, RetryCallState, retry_if_exception, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from partylinks.artists import ArtistProfile
 from partylinks.config import HttpSettings, validate_cron
@@ -344,6 +345,17 @@ class BaseScraper[S: SourceSettings](ABC):
     async def get_text(self, url: str, **kwargs: Any) -> str:
         return (await self.request("GET", url, **kwargs)).text
 
+    async def again_on_parse_error(self, call: Callable[[], Awaitable[T]]) -> T:
+        """``call()``, and once more after the backoff when its page came back without the data
+        (ParseError): a site answering 200 with a half-built page mid-publish or mid-deploy.
+        HTTP errors are already retried by ``request``."""
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(2), wait=self._backoff, retry=retry_if_exception_type(ParseError), reraise=True
+        ):
+            with attempt:
+                return await call()
+        raise AssertionError("unreachable: the last attempt returns or raises (reraise=True)")
+
     # ----------------------------------------------------------------- failure log
     def record_failure(self, what: str, exc: BaseException) -> None:
         message = f"{what}: {type(exc).__name__}: {exc}"[:500]
@@ -378,7 +390,7 @@ class BaseScraper[S: SourceSettings](ABC):
 
         async def page(index: int) -> tuple[list[T], int | None, bool]:
             try:
-                batch, total = await fetch_page(index)
+                batch, total = await self.again_on_parse_error(lambda: fetch_page(index))
                 return list(batch or []), to_int(total), True
             except SourceBlockedError:
                 raise
@@ -419,13 +431,13 @@ class BaseScraper[S: SourceSettings](ABC):
     ) -> AsyncIterator[R]:
         """Run ``fn`` over ``items`` concurrently and yield results as they complete.
 
-        One failing item is recorded and skipped; results are yielded immediately so
-        they are saved progressively. ``SourceBlockedError`` cancels the rest.
+        An item whose page lacked its data is tried once more; one still failing is recorded and
+        skipped. Results are yielded immediately so they are saved progressively. ``SourceBlockedError`` cancels the rest.
         """
 
         async def guarded(item: T) -> R | None:
             try:
-                return await fn(item)
+                return await self.again_on_parse_error(lambda: fn(item))
             except SourceBlockedError:
                 raise
             except Exception as exc:  # noqa: BLE001 - isolate per-item failures

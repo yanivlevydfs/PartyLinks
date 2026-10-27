@@ -98,6 +98,25 @@ def test_stream_isolated_skips_bad_items_and_stops_on_block() -> None:
         asyncio.run(collect([1, 2], blocked))
 
 
+def test_a_page_without_its_data_is_tried_once_more() -> None:
+    scraper = probe(lambda r: httpx.Response(200))
+    tries: dict[int, int] = {}
+
+    async def fn(item: int) -> int:
+        tries[item] = tries.get(item, 0) + 1
+        if item == 1 and tries[item] == 1:
+            raise ParseError("event missing from pageProps")  # half-built page: fine the second time
+        if item == 2:
+            raise ParseError("never there")
+        return item
+
+    async def collect() -> list[int]:
+        return [x async for x in scraper.stream_isolated([1, 2], fn, label=str)]
+
+    assert asyncio.run(collect()) == [1]
+    assert tries == {1: 2, 2: 2} and len(scraper.failures) == 1  # once more, never more
+
+
 def test_odd_scalars_never_raise() -> None:
     assert parse_iso("20/10/2026 22:00") is None and parse_iso(1700000000) is None
     fallback = parse_iso("2026-10-20T22:00:00", "Not/AZone")
