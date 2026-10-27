@@ -59,6 +59,15 @@ def test_string_total_from_api_is_accepted() -> None:
     assert len(asyncio.run(probe(lambda r: httpx.Response(200)).paginate(fetch, 10, 10))) == 30
 
 
+def test_short_pages_with_a_larger_total_are_all_read() -> None:
+    sizes = [19, 18, 17, 19, 20, 13]  # viagogo: every page of 20 hides a few, 114 in all
+
+    async def fetch(index: int) -> tuple[list[int], int]:
+        return list(range(sizes[index])) if index < len(sizes) else [], 114
+
+    assert len(asyncio.run(probe(lambda r: httpx.Response(200)).paginate(fetch, 20, 50))) == sum(sizes)
+
+
 def test_html_page_instead_of_json_is_a_parse_error() -> None:
     scraper = probe(lambda r: httpx.Response(200, text="<html>maintenance</html>", headers={"content-type": "text/html"}))
     with pytest.raises(ParseError, match="expected JSON"):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import os
 import warnings
@@ -300,3 +301,29 @@ def test_an_oversized_picture_keeps_its_original_quietly(tmp_path: Path, monkeyp
         assert make_variants(path, 80) is False
     assert not seen and not caplog.text
     assert not has_variants(path)
+
+
+def test_cut_off_artwork_is_not_stored_and_is_fetched_again(tmp_path: Path, monkeypatch: Any) -> None:
+    whole = picture((900, 600), fmt="WEBP")
+    cut = whole[: len(whole) // 2]  # passes the header sniff, fails to decode
+    # Downloaded cut off: recorded as a failure (retried after the cooldown), no file kept.
+    settings = settings_for(tmp_path)
+    db = Database(settings.database.url)
+    db.create_schema()
+    media = MediaStore(settings.media, db)
+    with db.session() as session:
+        upsert_events(session, [event("a")])
+
+    async def fetch(client: Any, url: str) -> tuple[bytes, str]:
+        return cut, "image/webp"
+
+    monkeypatch.setattr(media, "_fetch", fetch)
+    assert asyncio.run(media.download_pending("test", HttpSettings())) == (0, 1)
+    assert not any((tmp_path / "media").rglob("*.webp"))
+    # Stored cut off by an older version: the next pass drops the file and queues it again.
+    settings2, db2, media2, image_id = stored(tmp_path / "old", cut, "test/flyer.webp")
+    media2.build_missing_variants(threads=1)
+    with db2.session() as session:
+        row = session.get(ImageRow, image_id)
+        assert row is not None and row.downloaded_at is None and row.local_path is None
+    assert not media2.path_for("test/flyer.webp").exists()

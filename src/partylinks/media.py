@@ -29,7 +29,7 @@ from typing import Any
 
 import httpx
 from PIL import Image, ImageOps
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
 
 from partylinks.config import HttpSettings, MediaSettings, project_path
 from partylinks.db import Database, EventRow, ImageRow, bulk_update_by_id, utcnow, with_db_retry
@@ -97,6 +97,17 @@ def make_variants(path: Path, quality: int) -> bool:
         return True
     except Exception as exc:  # noqa: BLE001 - a broken picture keeps its original only
         log.warning("artwork copies of %s failed: %s: %s", path, type(exc).__name__, exc)
+        return False
+
+
+def readable(path: Path) -> bool:
+    """Whether the picture decodes: a cut-off download passes the header sniff but not this."""
+    try:
+        with Image.open(path) as im:
+            if not getattr(im, "is_animated", False) and im.width * im.height <= MAX_PIXELS:
+                im.load()
+        return True
+    except Exception:  # noqa: BLE001 - any decode error means unreadable
         return False
 
 
@@ -250,17 +261,17 @@ class MediaStore:
         async with semaphore:
             try:
                 data, content_type = await self._fetch(client, url)
+                row: dict[str, Any] = {
+                    "id": image_id, "content_type": content_type, "size_bytes": len(data), "downloaded_at": utcnow(),
+                    "data": None, "local_path": None, "error": None, "error_at": None,
+                }  # fmt: skip
+                if self.settings.storage == "database":
+                    row["data"] = data
+                else:
+                    row["local_path"] = _relative_path(source, url, content_type)
+                    await asyncio.to_thread(self._store, row["local_path"], data)  # off the event loop: resizing is CPU
             except Exception as exc:  # noqa: BLE001 - record and continue with other images
                 return {"id": image_id, "error": f"{type(exc).__name__}: {exc}"[:500], "error_at": utcnow()}
-        row: dict[str, Any] = {
-            "id": image_id, "content_type": content_type, "size_bytes": len(data), "downloaded_at": utcnow(),
-            "data": None, "local_path": None, "error": None, "error_at": None,
-        }  # fmt: skip
-        if self.settings.storage == "database":
-            row["data"] = data
-        else:
-            row["local_path"] = _relative_path(source, url, content_type)
-            await asyncio.to_thread(self._store, row["local_path"], data)  # off the event loop: resizing is CPU
         return row
 
     def _store(self, relative: str, data: bytes) -> None:
@@ -271,7 +282,10 @@ class MediaStore:
             target.unlink(missing_ok=True)
             return
         with self._converting:
-            webp_only(target, self.settings.webp_quality)
+            if not webp_only(target, self.settings.webp_quality) and not readable(target):
+                # A cut-off download: not stored, so it is fetched again after the cooldown.
+                target.unlink(missing_ok=True)
+                raise ValueError("unreadable image (cut off?)")
 
     def _write(self, relative: str, data: bytes) -> Path:
         target = self.path_for(relative)
@@ -299,13 +313,18 @@ class MediaStore:
         made = failed = 0
         started = time.monotonic()
 
+        broken: list[Path] = []
+
         def one(path: Path) -> bool | None:
             if self._stop.is_set():
                 return None
             if has_variants(path):  # converted earlier, original not deleted yet: no decode needed
                 return webp_only(path, self.settings.webp_quality)
             with self._converting:
-                return webp_only(path, self.settings.webp_quality)
+                ok = webp_only(path, self.settings.webp_quality)
+            if not ok and not readable(path):
+                broken.append(path)
+            return ok
 
         with ThreadPoolExecutor(threads, thread_name_prefix="artwork-copies") as pool:
             for done, ok in enumerate(pool.map(one, todo), 1):
@@ -317,7 +336,20 @@ class MediaStore:
             "artwork copies: %s, %d converted (original deleted), %d kept the original only (animated, huge or unreadable), %.0fs",
             "stopped" if self._stop.is_set() else "done", made, failed, time.monotonic() - started,
         )
+        if broken:  # cut-off downloads stored before they were checked: fetch them again
+            self._refetch([p.relative_to(self.root).as_posix() for p in broken])
         return made, failed
+
+    def _refetch(self, relatives: list[str]) -> None:
+        with self.db.session() as session:
+            session.execute(
+                update(ImageRow)
+                .where(ImageRow.local_path.in_(relatives))
+                .values(downloaded_at=None, local_path=None, error=None, error_at=None)
+            )
+        for relative in relatives:
+            self.path_for(relative).unlink(missing_ok=True)
+        log.info("artwork: %d unreadable files queued to download again", len(relatives))
 
     def move_to_files(self, batch: int = 200, reclaim_every: int = 10) -> int:
         """With ``storage: filesystem``, move artwork still kept in the database to files, a batch at

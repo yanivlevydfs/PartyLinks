@@ -401,9 +401,9 @@ class BaseScraper[S: SourceSettings](ABC):
         first, total = await fetch_page(0)
         items = list(first or [])
         total = to_int(total)
-        if len(items) < page_size:
-            if total is not None and total > len(items):
-                self.log.warning("first page has %d of %d items: page size capped below %d?", len(items), total, page_size)
+        # A short first page ends the listing, unless the source says there are more: viagogo hides
+        # some events from each page of 20 (19, 18, 17...) and still has 114 over six pages.
+        if len(items) < page_size and (total is None or total <= len(items)):
             return items
 
         if total is not None:
