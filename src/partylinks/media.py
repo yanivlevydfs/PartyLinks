@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from PIL import Image, ImageOps
+from PIL import Image, ImageFile, ImageOps
 from sqlalchemy import or_, select, update
 
 from partylinks.config import HttpSettings, MediaSettings, project_path
@@ -63,6 +63,9 @@ MAX_PIXELS = 50_000_000  # bigger pictures are not resized (the decode alone is 
 # MAX_PIXELS replaces PIL's own guard (warn past ~89M pixels, raise past ~179M): that one fires on open and
 # filled the log, while make_variants reads only the header before the check below. PIL is used nowhere else.
 Image.MAX_IMAGE_PIXELS = None
+# A JPEG missing its last few bytes (movieland's end 1-93 bytes short) shows fine in a browser: decode it
+# the same way. Only a file that isn't a picture at all is refused (see readable()).
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 _ALPHA_MODES = ("RGBA", "LA", "PA")
 
 
