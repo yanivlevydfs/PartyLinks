@@ -276,6 +276,7 @@ enrichment:
     # Title only (declared_text_genres): descriptions mention a hotel's pool or a nature reserve's pond.
     pools: ["בריכה", "בריכות", "בריכת", "בריכת שחייה", "בריכת שחיה", "פארק מים", "פארקי מים", "פארק המים", "פארקי המים", "אקוופארק",
             "מגלשות מים", "water park", "waterpark", "aquapark", "swimming pool"]
+    tours: ["סיור מודרך", "סיורים מודרכים", "סיור רגלי", "guided tour", "walking tour"]
     pool_party: ["מסיבת בריכה", "מסיבות בריכה", "pool party", "pool parties", "poolparty"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
@@ -365,7 +366,8 @@ enrichment:
                 "production house", "silent disco", "סיילנט דיסקו",
                 "להכנס", "להיכנס", "מכנס", "יכנס", "ייכנס", "תכנס", "נכנס",  # "כנס" (conference) inside verbs
                 "pop-up", "pop up", "popup", "פופ אפ", "פופ-אפ", "פופאפ",
-                "בריכת הסולטן", "sultan's pool"]  # a concert venue, not a pool
+                "בריכת הסולטן", "sultan's pool",  # a concert venue, not a pool
+                "החברה הישראלית", "בחברה הישראלית", "לחברה הישראלית", "והחברה הישראלית"]  # society, not music
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
   # talks: their text is read only for these genres.

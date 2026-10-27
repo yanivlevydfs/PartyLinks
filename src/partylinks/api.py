@@ -53,6 +53,7 @@ from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
 from partylinks.search import by_skeleton, did_you_mean, relevance, smart_filters, sounds_like
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
+from partylinks.venues import PLACE_LISTING
 from partylinks.weather import router as weather_router
 
 
@@ -377,6 +378,8 @@ class EventSort(StrEnum):
     seen_desc = "-last_seen_at"
     trending = "-group_size"  # listed on the most ticket sites first
 
+
+_IS_PLACE = func.coalesce(EventRow.extra[PLACE_LISTING].as_boolean(), False)
 
 _SORT_COLUMNS = {
     EventSort.start_asc: EventRow.start_at.asc(),
@@ -1013,9 +1016,16 @@ def _register_routes(app: FastAPI) -> None:
             start, stop = max((page - 1) * size - len(drop), 0), page * size - len(drop)
             if rank is None:
                 total = session.scalar(select(func.count()).select_from(EventRow).where(*where)) or 0
+                # By date: a day's events first, then its place listings (a club or café "open today",
+                # thousands of them at 00:00, which would otherwise bury every real event).
+                order = (
+                    (EventRow.local_date, _IS_PLACE, EventRow.start_at)
+                    if sort is EventSort.start_asc
+                    else (_SORT_COLUMNS[sort], EventRow.start_at)
+                )
                 rows = session.scalars(
                     card.where(*where)
-                    .order_by(_SORT_COLUMNS[sort], EventRow.start_at, EventRow.id)
+                    .order_by(*order, EventRow.id)
                     .offset(start)
                     .limit(stop - start)
                 ).all()

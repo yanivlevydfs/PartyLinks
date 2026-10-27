@@ -373,7 +373,10 @@ export function GenrePicker({ cats, value, onChange, quiz }: { cats?: Categories
   const mobile = useMedia(MOBILE);
   const f = { genres: value };
   const set = ({ genres }: { genres: string[] }) => onChange(genres);
-  const groups = cats?.genre_groups ?? [];
+  const name = (v: string) => genreLabel(lang, v);
+  const abc = (a: string, b: string) => name(a).localeCompare(name(b), lang);
+  // Families and categories in alphabetical order (א-ת / A-Z), each with its count.
+  const groups = [...(cats?.genre_groups ?? [])].sort((a, b) => abc(a.value, b.value));
   const fams = cats?.genre_families ?? {};
   const counts = new Map(cats?.genres.map((g) => [g.value, g.events]));
   // Sub-genres all the way down (dance -> latin_dance -> salsa); hip hop <-> R&B point at each other.
@@ -392,8 +395,7 @@ export function GenrePicker({ cats, value, onChange, quiz }: { cats?: Categories
   const [q, setQ] = useState("");
   // Desktop always shows one family: the chosen one, else the first with a pick, else the first.
   const group = groups.find((g) => g.value === openKey) ?? (mobile ? undefined : groups.find(picked) ?? groups[0]);
-  const name = (v: string) => genreLabel(lang, v);
-  const busiest = (vs: string[]) => vs.filter((v) => counts.get(v)).sort((a, b) => counts.get(b)! - counts.get(a)!);
+  const sorted = (vs: string[]) => vs.filter((v) => counts.get(v)).sort(abc);
 
   // A whole family or umbrella replaces the genres picked inside it; a genre inside replaces the whole.
   const pickAll = (v: string, within: string[]) =>
@@ -408,10 +410,10 @@ export function GenrePicker({ cats, value, onChange, quiz }: { cats?: Categories
     <input className="g-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.findGenre} aria-label={t.findGenre} />
   );
   const needle = q.trim().toLowerCase();
-  const found = needle && busiest([...counts.keys()].filter((v) => !v.startsWith("g_") && name(v).toLowerCase().includes(needle)));
+  const found = needle && sorted([...counts.keys()].filter((v) => !v.startsWith("g_") && name(v).toLowerCase().includes(needle)));
 
   const body = (g: Facet) => {
-    const members = busiest(g.members ?? []);
+    const members = sorted(g.members ?? []);
     // An umbrella opens as its own section, unless its sub-genres are all in the family (hip hop <-> R&B).
     const umbrella = (m: string) => (fams[m] ?? []).some((s) => !members.includes(s));
     return (
@@ -429,7 +431,7 @@ export function GenrePicker({ cats, value, onChange, quiz }: { cats?: Categories
               <Chip on={f.genres.includes(m)} onClick={() => pickAll(m, [g.value, ...subsOf(m)])}>
                 {t.allOf(name(m))} <small>{counts.get(m)}</small>
               </Chip>
-              {busiest([...new Set(subsOf(m))]).map((s) => chip(s, [g.value, m, ...subsOf(m).filter((x) => subsOf(x).includes(s))]))}
+              {sorted([...new Set(subsOf(m))]).map((s) => chip(s, [g.value, m, ...subsOf(m).filter((x) => subsOf(x).includes(s))]))}
             </div>
           </div>
         ))}

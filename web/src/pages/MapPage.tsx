@@ -112,7 +112,7 @@ function Cats() {
   const f = useStore((s) => s.filters);
   const set = useStore((s) => s.setFilters);
   const cats = useCategories().data;
-  const groups = cats?.genre_groups ?? [];
+  const groups = [...(cats?.genre_groups ?? [])].sort((a, b) => genreLabel(lang, a.value).localeCompare(genreLabel(lang, b.value), lang));
   if (!groups.length) return null;
   // The families, plus a single category picked below (it shows as one more button).
   const shown = [...groups, ...(cats?.genres ?? []).filter((g) => f.genres.includes(g.value) && !groups.some((x) => x.value === g.value))];

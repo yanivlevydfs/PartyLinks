@@ -53,6 +53,9 @@ def _keyword_pattern(keywords: list[str]) -> re.Pattern[str] | None:
     return re.compile("|".join(parts)) if parts else None
 
 
+# Addresses in a description: their words are not genres (an email at bg-house.org, a link to techno-tlv.com).
+_LINKS = re.compile(r"\S+@\S+|https?://\S+|www\.\S+|\b[\w-]+(?:\.[\w-]+)*\.(?:com|org|net|co|io|il|info|me|app)\b\S*")
+
 OUTSIDE_AREA = "outside"
 ABROAD_AREA = "abroad"
 # ISO 3166 "unknown": an event abroad whose country the source does not give. Any country code
@@ -258,6 +261,7 @@ class Enricher:
         talk = self._talk is not None and self._talk.search(event.title.lower())
         read_text = self.settings.detect_genres_from_text and not talk and event.source not in self.settings.declared_genres_only
         text = f"{event.title}\n{event.description or ''}".lower() if read_text else ""
+        text = _LINKS.sub(" ", text)  # "info@bg-house.org" is not house music
         for phrase in self.settings.text_ignore:
             text = text.replace(phrase.lower(), " ")
         found = {genre for genre, pattern in self._genres.items() if pattern.search(declared)}

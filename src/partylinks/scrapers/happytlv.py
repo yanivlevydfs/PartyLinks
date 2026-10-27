@@ -30,7 +30,7 @@ import re
 from collections.abc import AsyncIterator
 from datetime import date, datetime, time, timedelta, tzinfo
 from typing import Any
-from urllib.parse import unquote, urlsplit, urlunsplit
+from urllib.parse import unquote, urljoin, urlsplit, urlunsplit
 
 from pydantic import Field
 
@@ -57,6 +57,8 @@ _PLACES = {"barorpub", "restaurant", "foodestablishment", "cafeorcoffeeshop", "l
 # Some attractions carry their Google rating as the street: "4.6 (10230 ביקורות)".
 _RATING = re.compile(r"^\s*\d(?:\.\d)?\s*\(")
 _NOT_A_PLACE = {"itemlist", "breadcrumblist", "faqpage", "question", "webpage", "website", "collectionpage", "event"}
+# Party posters on a place page (/img/parties/1783590637808.webp).
+_POSTERS = re.compile(r'<img[^>]+src="(/img/(?:parties|venues)/[^"]+)"')
 HAPPY_HOUR = "happy hour"
 
 
@@ -256,6 +258,10 @@ def parse_place(page_html: str, url: str, timezone: str, today: date, days: int,
         else [(datetime.combine(today + timedelta(days=n), time(), tz), None) for n in range(days)]
     )
     key = hashlib.sha1(url.encode()).hexdigest()[:10]
+    # A club's page has no image of its own, only its parties' posters: the first one stands for it.
+    images = [i for i in _list(place.get("image")) if isinstance(i, str)] or [
+        urljoin(url, src) for src in _POSTERS.findall(page_html)[:1]
+    ]
     website = next((u for u in _list(place.get("sameAs")) if isinstance(u, str) and u.startswith("http")), None)
     return [
         ScrapedEvent(
@@ -271,7 +277,7 @@ def parse_place(page_html: str, url: str, timezone: str, today: date, days: int,
             city=clean_str(address.get("addressLocality")),
             latitude=to_float(geo.get("latitude")),
             longitude=to_float(geo.get("longitude")),
-            images=[i for i in _list(place.get("image")) if isinstance(i, str)],
+            images=images,
             source_genres=[category],
             event_types=[category],
             extra={

@@ -540,3 +540,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Q-LEN:** `q` מוגבל ל-100 תווים כבר בקוד (`searches.normalize`), ולכן `String(100)` ב-PG תקין.
 - ב-`copy-db` הטבלה נכנסת כמו `clicks`. אובדן של דקות בין snapshot ל-flip מקובל (Q6).
 - **הפניות שזזו:** ב-§9.1 עודכנו ה-PKs של `flags` (`db.py:287`) ו-`scrape_runs` (`db.py:299`). הפניות אחרות ל-`db.py` מתחת לשורה 269 זזו ב-12 שורות.
+
+### 2026-10-27 (סדר רשימת האירועים)
+- **query שהשתנה:** `GET /events` במיון לפי תאריך (`sort=start_at`, ברירת המחדל) ממיין עכשיו `ORDER BY local_date, <is_place>, start_at, id`, כש-`<is_place>` הוא `coalesce(extra['happy_hour'] as boolean, false)` (`api.py`, `_IS_PLACE`). כך רשימות מקומות (מועדון או בית קפה "פתוח היום" של HappyTLV, אלפים ב-00:00) באות אחרי האירועים של אותו יום.
+- **ב-PG:** `EventRow.extra[...].as_boolean()` של SQLAlchemy מתורגם ל-`(extra ->> 'happy_hour')::boolean` (ב-SQLite: `JSON_EXTRACT`). `extra` צריך להיות `JSONB` כדי שזה יעבוד, וזה כבר בתכנון (§6). אין אינדקס על הביטוי: המיון רץ על השורות שעברו את הסינון, ונמדד ב-SQLite באותו זמן כמו המיון הקודם. אם ב-PG זה יאט בעמוד 1 בלי פילטרים, אפשר להוסיף אינדקס על `(local_date, ((extra ->> 'happy_hour')::boolean), start_at)`.
+- **בלי שינוי schema.** קטגוריות: `genre_groups` (משפחות הפילטר) הן config בלבד, וה-API מחשב את הספירות שלהן ב-Python.
