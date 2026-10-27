@@ -4,8 +4,8 @@ import { useDeferredValue, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { EventPage, EventSummary } from "../types";
 import { eventPath, Img, Loader, sized, TZ } from "../ui";
-import { call, Card, post, Stat } from "./Admin";
-import "../sponsored.css";
+import { call, Card, post, Stat } from "../pages/Admin";
+import "./sponsored.css";
 
 type Side = "right" | "left";
 interface Pick {

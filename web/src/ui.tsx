@@ -5,7 +5,7 @@ import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { CookieConsent, useConsent } from "./consent";
 import { InstallBanner } from "./Install";
 import { INFO_LINKS } from "./pages/Info";
-import { SponsoredFrame, SponsoredStrip } from "./Sponsored";
+import { SponsoredFrame, SponsoredStrip } from "./ads/Sponsored";
 import { Weather } from "./Weather";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";

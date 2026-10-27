@@ -140,9 +140,12 @@ src/partylinks/
   seo.py                      server-rendered pages, sitemap, robots.txt, llms.txt
   blog.py                     blog / magazine
   utm.py, clicks.py           ticket-link UTM tags and click counting
+  ads/                        advertising, apart from the rest: models.py (sponsored,
+                              sponsored_stats tables), routes.py (rails, hits, admin picks)
   logs.py                     one logging setup for every process
   cli.py                      command line
 web/                          React + TypeScript website (Vite)
+web/src/ads/                  the paid side rails, their CSS and the admin's sponsored tab
 tests/                        pytest, with real-page fixtures under tests/fixtures/
 ```
 

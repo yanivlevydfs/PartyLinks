@@ -2,10 +2,10 @@
 // screen on wide screens, one sideways strip above the footer on narrower ones.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useSponsored } from "./api";
-import type { EventSummary } from "./types";
-import { eventPath, fmtDate, Img, label, priceLabel, sized, useT } from "./ui";
-import { Weather } from "./Weather";
+import { useSponsored } from "../api";
+import type { EventSummary } from "../types";
+import { eventPath, fmtDate, Img, label, priceLabel, sized, useT } from "../ui";
+import { Weather } from "../Weather";
 import "./sponsored.css";
 
 type Side = "right" | "left";

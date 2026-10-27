@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -39,9 +39,6 @@ from partylinks.db import (
     EventRow,
     ImageRow,
     ScrapeRunRow,
-    SponsoredRow,
-    SponsoredStatRow,
-    flag_on,
     lineup_contains,
     upcoming_filter,
 )
@@ -266,18 +263,6 @@ class RailsOut(BaseModel):
     """The home page's rows under "Trending": a pool per row (the page shows a random dozen)."""
 
     rails: dict[str, list[EventSummaryOut]] = {}
-
-
-class SponsoredOut(BaseModel):
-    """The home page's two paid rails, each in the admin's order."""
-
-    right: list[EventSummaryOut] = []
-    left: list[EventSummaryOut] = []
-
-
-class SponsoredHitIn(BaseModel):
-    event_id: str = Field(max_length=128)
-    kind: Literal["view", "click"]
 
 
 class MapEventOut(_Out):
@@ -813,7 +798,7 @@ def _register_routes(app: FastAPI) -> None:
                     ).all()
                 )
             report["checks"]["database"] = "ok"
-        except Exception as exc:  # noqa: BLE001 - health must answer, not raise
+        except Exception as exc:
             response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
             report["status"] = "down"
             report["checks"]["database"] = f"error: {type(exc).__name__}"
@@ -1071,25 +1056,11 @@ def _register_routes(app: FastAPI) -> None:
         return RedirectResponse(url, status.HTTP_302_FOUND, headers=headers)
 
     # Before /events/{event_ref}, which would otherwise take "sponsored" for a slug.
-    @app.get("/events/sponsored", response_model=SponsoredOut, tags=["events"])
-    def sponsored(session: SessionDep) -> SponsoredOut:
-        """Paid placements (picked in the admin) that are still upcoming and within their campaign;
-        none at all while the admin's sponsored switch is off. Not in the response cache: an admin
-        change shows on the next request (the browser keeps its own copy)."""
-        if not flag_on(session, "sponsored"):
-            return SponsoredOut()
-        pairs = session.execute(
-            select(SponsoredRow.side, EventRow)
-            .join(EventRow, EventRow.id == SponsoredRow.event_id)
-            .where(upcoming_filter(), or_(SponsoredRow.until.is_(None), SponsoredRow.until > datetime.now(UTC)))
-            .order_by(SponsoredRow.position)
-            .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
-        ).all()
-        extras = _summary_extras(session, [e for _, e in pairs])
-        out = SponsoredOut()
-        for side, e in pairs:
-            getattr(out, side).append(EventSummaryOut.model_validate(e).model_copy(update=extras[e.id]))
-        return out
+    from partylinks.ads.routes import admin_router as ads_admin_router
+    from partylinks.ads.routes import router as ads_router
+
+    app.include_router(ads_router)
+    app.include_router(ads_admin_router)
 
     @app.get("/events/rails", response_model=RailsOut, tags=["events"])
     def rails(request: Request) -> Response:
@@ -1121,23 +1092,6 @@ def _register_routes(app: FastAPI) -> None:
             return out
 
         return _cached(request, build)
-
-    @app.post("/events/sponsored/hit", status_code=status.HTTP_204_NO_CONTENT, include_in_schema=False)
-    def sponsored_hit(body: SponsoredHitIn, request: Request, session: SessionDep) -> Response:
-        """One view or click of a sponsored placement (sent by the rails). Only placements on show count."""
-        event = session.get(EventRow, body.event_id)
-        if event and session.get(SponsoredRow, body.event_id) and flag_on(session, "sponsored"):
-            day = datetime.now(ZoneInfo(request.app.state.settings.timezone)).date()
-            # ponytail: read-then-write, so two first hits of a day at the same instant can clash (one is lost).
-            stat = session.get(SponsoredStatRow, (body.event_id, day))
-            if stat is None:
-                stat = SponsoredStatRow(event_id=body.event_id, day=day, title=event.title, views=0, clicks=0)
-                session.add(stat)
-            if body.kind == "view":
-                stat.views += 1
-            else:
-                stat.clicks += 1
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     @app.get("/events/{event_ref}", response_model=EventOut, tags=["events"])
     def get_event(event_ref: str, session: SessionDep) -> EventOut:

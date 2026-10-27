@@ -8,8 +8,8 @@ from __future__ import annotations
 import asyncio
 import hmac
 import logging
-from datetime import UTC, datetime, timedelta
-from typing import Annotated, Any, Literal
+from datetime import datetime
+from typing import Annotated, Any
 from urllib.parse import urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
@@ -18,13 +18,13 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, status
 from pydantic import BaseModel, ValidationError
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from partylinks import clicks
 from partylinks.config import Settings, config_path, get_settings, project_path
-from partylinks.db import EventRow, FlagRow, ImageRow, ScrapeRunRow, SponsoredRow, SponsoredStatRow, TicketRow, flag_on, upcoming_filter
+from partylinks.db import EventRow, ImageRow, ScrapeRunRow, TicketRow, upcoming_filter
 from partylinks.logs import debug_enabled, set_debug
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import configured_sources
@@ -139,102 +139,6 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
 def click_stats(request: Request, session: SessionDep, days: int = Query(30, ge=1, le=365)) -> dict[str, Any]:
     """Ticket-link clicks counted by GET /go/... (see partylinks.clicks)."""
     return clicks.stats(session, request.app.state.settings.timezone, days)
-
-
-# --------------------------------------------------------------------------- sponsored
-MAX_SPONSORED = 40
-
-
-class SponsoredIn(BaseModel):
-    event_id: str
-    side: Literal["right", "left"]
-    until: datetime | None = None  # campaign end; None = while the event is on
-
-
-@router.get("/sponsored")
-def sponsored_list(session: SessionDep) -> dict[str, Any]:
-    """The site-wide switch, and every placement in rail order with enough of its event to recognise it
-    and whether it is showing (the switch aside)."""
-    pairs = session.execute(
-        select(SponsoredRow, EventRow)
-        .outerjoin(EventRow, EventRow.id == SponsoredRow.event_id)
-        .order_by(SponsoredRow.side, SponsoredRow.position)
-    ).all()
-    ids = [s.event_id for s, _ in pairs]
-    upcoming = set(session.scalars(select(EventRow.id).where(EventRow.id.in_(ids), upcoming_filter())))
-    now = datetime.now(UTC)
-    items = [
-        {
-            "event_id": s.event_id,
-            "side": s.side,
-            "until": s.until,
-            "title": e.title if e else None,
-            "slug": e.slug if e else None,
-            "start_at": e.start_at if e else None,
-            "venue_name": e.venue_name if e else None,
-            "cover_url": (e.cover_url or e.image_url) if e else None,
-            "live": s.event_id in upcoming and (s.until is None or s.until > now),
-        }
-        for s, e in pairs
-    ]
-    return {"enabled": flag_on(session, "sponsored"), "items": items}
-
-
-@router.get("/sponsored/stats")
-def sponsored_stats(request: Request, session: SessionDep, days: int = Query(30, ge=1, le=3650)) -> dict[str, Any]:
-    """Views and clicks per sponsored event over the last ``days`` days (today included), for advertisers."""
-    today = datetime.now(ZoneInfo(request.app.state.settings.timezone)).date()
-    since = today - timedelta(days=days - 1)
-    rows = session.execute(
-        select(
-            SponsoredStatRow.event_id, func.max(SponsoredStatRow.title).label("title"),
-            func.sum(SponsoredStatRow.views).label("views"), func.sum(SponsoredStatRow.clicks).label("clicks"),
-            func.min(SponsoredStatRow.day).label("first_day"), func.max(SponsoredStatRow.day).label("last_day"),
-        )
-        .where(SponsoredStatRow.day >= since)
-        .group_by(SponsoredStatRow.event_id)
-        .order_by(func.sum(SponsoredStatRow.clicks).desc(), func.sum(SponsoredStatRow.views).desc())
-    ).all()  # fmt: skip
-    events = [dict(r._mapping) for r in rows]
-    return {
-        "since": since,
-        "until": today,
-        "views": sum(e["views"] for e in events),
-        "clicks": sum(e["clicks"] for e in events),
-        "events": events,
-    }
-
-
-class SwitchIn(BaseModel):
-    on: bool
-
-
-@router.post("/sponsored/enabled")
-def sponsored_switch(body: SwitchIn, session: SessionDep) -> dict[str, bool]:
-    """Show or hide every sponsored placement on the site at once (the picks are kept)."""
-    session.merge(FlagRow(key="sponsored", on=body.on))
-    return {"enabled": body.on}
-
-
-@router.put("/sponsored")
-def sponsored_save(items: list[SponsoredIn], session: SessionDep) -> dict[str, int]:
-    """Replace every placement; list order is the order within each side."""
-    if len(items) > MAX_SPONSORED:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"at most {MAX_SPONSORED} sponsored events")
-    ids = [i.event_id for i in items]
-    if len(set(ids)) != len(ids):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "an event can be sponsored once")
-    known = set(session.scalars(select(EventRow.id).where(EventRow.id.in_(ids))))
-    # Placements whose event retention already deleted may stay; new ones must exist.
-    kept = set(session.scalars(select(SponsoredRow.event_id)))
-    if missing := [i for i in ids if i not in known and i not in kept]:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"unknown events: {', '.join(missing)}")
-    session.execute(delete(SponsoredRow))
-    positions = {"right": 0, "left": 0}
-    for i in items:
-        session.add(SponsoredRow(event_id=i.event_id, side=i.side, position=positions[i.side], until=i.until))
-        positions[i.side] += 1
-    return {"saved": len(items)}
 
 
 # --------------------------------------------------------------------------- scheduler
@@ -375,7 +279,7 @@ def validate_config(text: str) -> tuple[Settings | None, list[str]]:
     errors: list[str] = []
     try:
         ZoneInfo(settings.timezone)
-    except Exception:  # noqa: BLE001 - any lookup failure means a bad name
+    except Exception:
         errors.append(f"timezone: unknown zone {settings.timezone!r}")
     crons = {"retention.cron": settings.retention.cron} | {
         f"sources.{n}.cron": s.cron for n, s in configured_sources(settings).items()

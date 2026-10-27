@@ -266,32 +266,6 @@ class ClickRow(Base):
     placement: Mapped[str | None] = mapped_column(String(8))
 
 
-class SponsoredRow(Base):
-    """A paid placement in the home page's side rails, picked in the admin. No foreign key:
-    retention may delete the event, and the API then simply stops showing it."""
-
-    __tablename__ = "sponsored"
-
-    event_id: Mapped[str] = mapped_column(String(128), primary_key=True)
-    side: Mapped[str] = mapped_column(String(8))  # right | left (physical, not RTL start/end)
-    position: Mapped[int] = mapped_column(Integer, default=0)  # order within its side
-    until: Mapped[datetime | None] = mapped_column(UTCDateTime)  # campaign end; None = while the event is on
-    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
-
-
-class SponsoredStatRow(Base):
-    """One sponsored event's views and clicks on one day (site time zone), for the advertiser report.
-    Keeps the title so the report outlives retention deleting the event."""
-
-    __tablename__ = "sponsored_stats"
-
-    event_id: Mapped[str] = mapped_column(String(128), primary_key=True)
-    day: Mapped[date] = mapped_column(Date, primary_key=True)
-    title: Mapped[str] = mapped_column(Text)
-    views: Mapped[int] = mapped_column(Integer, default=0)
-    clicks: Mapped[int] = mapped_column(Integer, default=0)
-
-
 class FlagRow(Base):
     """An on/off switch flipped in the admin at runtime; kept in the database so it survives redeploys.
     A missing row means off."""
@@ -824,3 +798,7 @@ def start_run(session: Session, source: str, trigger: str) -> ScrapeRunRow:
     session.add(run)
     session.flush()
     return run
+
+
+# The ad tables live in partylinks.ads; imported here so they are on Base before create_schema runs.
+import partylinks.ads.models  # noqa: F401

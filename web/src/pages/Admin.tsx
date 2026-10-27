@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Loader, TZ } from "../ui";
-import { Sponsored } from "./AdminSponsored";
+import { Sponsored } from "../ads/AdminSponsored";
 
 // --------------------------------------------------------------------------- api
 const TOKEN_KEY = "partylinks-admin-token";
