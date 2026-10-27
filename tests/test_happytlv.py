@@ -116,3 +116,13 @@ def test_place_hubs_are_skipped() -> None:
     assert (
         happytlv.parse_place(page("place_hub.html"), hub, "Asia/Jerusalem", date(2026, 10, 22), 7, "escape rooms") == []
     )
+
+
+def test_place_without_its_own_image_takes_its_first_party_poster() -> None:
+    url = f"{SITE}/tel-aviv-clubs/x"
+    place = '<script type="application/ld+json">{"@type": "NightClub", "name": "X", "telephone": "03"}</script>'
+    others = '<img src="/img/venues/other-place.webp">'  # another place's photo: never this one's
+    poster = '<img src="/img/parties/1783590637808.webp">'
+    club = happytlv.parse_place(place + others + poster, url, "Asia/Jerusalem", date(2026, 10, 22), 1, "nightclubs")
+    assert club[0].images == [f"{SITE}/img/parties/1783590637808.webp"]
+    assert happytlv.parse_place(place + others, url, "Asia/Jerusalem", date(2026, 10, 22), 1, "nightclubs")[0].images == []

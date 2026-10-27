@@ -57,8 +57,9 @@ _PLACES = {"barorpub", "restaurant", "foodestablishment", "cafeorcoffeeshop", "l
 # Some attractions carry their Google rating as the street: "4.6 (10230 ביקורות)".
 _RATING = re.compile(r"^\s*\d(?:\.\d)?\s*\(")
 _NOT_A_PLACE = {"itemlist", "breadcrumblist", "faqpage", "question", "webpage", "website", "collectionpage", "event"}
-# Party posters on a place page (/img/parties/1783590637808.webp).
-_POSTERS = re.compile(r'<img[^>]+src="(/img/(?:parties|venues)/[^"]+)"')
+# Party posters on a place page (/img/parties/1783590637808.webp): a club's own parties. Not /img/venues/:
+# on a place page those are other places ("more like this").
+_POSTERS = re.compile(r'<img[^>]+src="(/img/parties/[^"]+)"')
 HAPPY_HOUR = "happy hour"
 
 
