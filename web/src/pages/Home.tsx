@@ -87,6 +87,10 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
     : landing ? t.landing[landing] : t.tagline;
   const heading = (landing && info?.title) || title;
   useTitle(landing ? heading : undefined);
+  // Back on "/" from a landing address (a filter dropped): the site's own title again, as the server sends it.
+  useEffect(() => {
+    if (!landing) document.title = lang === "he" ? "SPOTX · כל האירועים בישראל" : "SPOTX · Every event in Israel";
+  }, [landing, lang]);
 
   // Debounce the search box; the store keeps what was typed. A new search starts from a clean
   // filter, so leftover filters (date, area, genre...) never hide what was searched for.

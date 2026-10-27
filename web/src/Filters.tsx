@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { create } from "zustand";
 import { useCategories, useEvents, type Params } from "./api";
 import type { Categories, Facet } from "./types";
 import { genreLabel } from "./i18n";
@@ -53,6 +54,16 @@ export function whenText(t: ReturnType<typeof useT>["t"], when: string) {
 export const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
 const MOBILE = "(max-width: 760px)";
+
+// Which drawer and family are open. Outside the components: a picked filter moves the address
+// (/genre/g_parties) and the router remounts the page, which must not close what the visitor is using.
+const useDrawer = create<{
+  panel: Panel | null; family: string | null; sheet: boolean;
+  setPanel: (p: Panel | null) => void; setFamily: (f: string | null) => void; setSheet: (open: boolean) => void;
+}>()((set) => ({
+  panel: null, family: null, sheet: false,
+  setPanel: (panel) => set({ panel }), setFamily: (family) => set({ family }), setSheet: (sheet) => set({ sheet }),
+}));
 type Panel = "area" | "genre" | "shop" | "slot";
 
 function useMedia(query: string) {
@@ -77,7 +88,11 @@ export function Filters() {
   const cats = useCategories().data;
   const mobile = useMedia(MOBILE);
   const sheet = useRef<HTMLDialogElement>(null);
-  const [open, setOpen] = useState<Panel | null>(null);
+  // The phone sheet reopens after a remount (see useDrawer).
+  useEffect(() => {
+    if (mobile && useDrawer.getState().sheet && sheet.current && !sheet.current.open) sheet.current.showModal();
+  }, [mobile]);
+  const { panel: open, setPanel: setOpen } = useDrawer();
   // Same query as the grid below: shares its cache, so the sheet's "Show N" costs no request.
   const total = useEvents({ ...filterParams(f), sponsored: "true" }).data?.pages[0]?.total;
 
@@ -170,7 +185,7 @@ export function Filters() {
       {mobile ? (
         <>
           <div className="filter-bar">
-            <button className="f-open" onClick={() => sheet.current?.showModal()} aria-haspopup="dialog">
+            <button className="f-open" onClick={() => { sheet.current?.showModal(); useDrawer.getState().setSheet(true); }} aria-haspopup="dialog">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
                 <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" />
               </svg>
@@ -180,7 +195,7 @@ export function Filters() {
             {sort}
           </div>
           {active}
-          <dialog className="f-sheet" ref={sheet} aria-label={t.filtersBtn}
+          <dialog className="f-sheet" ref={sheet} aria-label={t.filtersBtn} onClose={() => useDrawer.getState().setSheet(false)}
             onClick={(e) => e.target === e.currentTarget && sheet.current?.close()}>
             <div className="f-sheet-head">
               <b>{t.filtersBtn}</b>
@@ -353,7 +368,7 @@ export const GROUP_ICON: Record<string, string> = {
 /** Genres by family: the families, then the open one's genres (an umbrella genre with its sub-genres).
  *  Desktop: a row of families over the open one. Phone sheet: a list of families; one opens in place, with a way back.
  *  Typing in the search box lists every matching genre instead. */
-export function GenrePicker({ cats, value, onChange }: { cats?: Categories; value: string[]; onChange: (genres: string[]) => void }) {
+export function GenrePicker({ cats, value, onChange, quiz }: { cats?: Categories; value: string[]; onChange: (genres: string[]) => void; quiz?: boolean }) {
   const { t, lang } = useT();
   const mobile = useMedia(MOBILE);
   const f = { genres: value };
@@ -369,7 +384,11 @@ export function GenrePicker({ cats, value, onChange }: { cats?: Categories; valu
   };
   const inside = (g: Facet) => [g.value, ...(g.members ?? []).flatMap((m) => [m, ...subsOf(m)])];
   const picked = (g: Facet) => inside(g).some((v) => f.genres.includes(v));
-  const [openKey, setOpen] = useState<string | null>(null);
+  // Quiz and filter each keep their own open family; the filter's survives the remount a picked filter's new address brings.
+  const [quizKey, setQuizKey] = useState<string | null>(null);
+  const drawer = useDrawer();
+  const openKey = quiz ? quizKey : drawer.family;
+  const setOpen = quiz ? setQuizKey : drawer.setFamily;
   const [q, setQ] = useState("");
   // Desktop always shows one family: the chosen one, else the first with a pick, else the first.
   const group = groups.find((g) => g.value === openKey) ?? (mobile ? undefined : groups.find(picked) ?? groups[0]);
@@ -379,7 +398,8 @@ export function GenrePicker({ cats, value, onChange }: { cats?: Categories; valu
   // A whole family or umbrella replaces the genres picked inside it; a genre inside replaces the whole.
   const pickAll = (v: string, within: string[]) =>
     set({ genres: f.genres.includes(v) ? f.genres.filter((x) => x !== v) : [...f.genres.filter((x) => !within.includes(x)), v] });
-  const pick = (v: string, parents: string[]) => set({ genres: toggle(f.genres.filter((x) => !parents.includes(x)), v) });
+  const pick = (v: string, parents: string[]) =>
+    set({ genres: toggle(f.genres.filter((x) => x === v || !parents.includes(x)), v) });
   const chip = (v: string, parents: string[]) => (
     <Chip key={v} on={f.genres.includes(v)} onClick={() => pick(v, parents)}>{name(v)} <small>{counts.get(v)}</small></Chip>
   );
@@ -409,7 +429,7 @@ export function GenrePicker({ cats, value, onChange }: { cats?: Categories; valu
               <Chip on={f.genres.includes(m)} onClick={() => pickAll(m, [g.value, ...subsOf(m)])}>
                 {t.allOf(name(m))} <small>{counts.get(m)}</small>
               </Chip>
-              {busiest([...new Set(subsOf(m))]).map((s) => chip(s, [g.value, m, ...(fams[m] ?? [])]))}
+              {busiest([...new Set(subsOf(m))]).map((s) => chip(s, [g.value, m, ...subsOf(m).filter((x) => subsOf(x).includes(s))]))}
             </div>
           </div>
         ))}
@@ -456,8 +476,15 @@ export function GenrePicker({ cats, value, onChange }: { cats?: Categories; valu
         {search}
         <div className="chips">
           {groups.map((g) => (
-            <button key={g.value} className={"chip g-fam" + (g === group && !needle ? " open" : "") + (picked(g) ? " on" : "")}
-              aria-expanded={g === group} onClick={() => { setQ(""); setOpen(g.value); }}>
+            <button key={g.value} aria-expanded={g === group} aria-pressed={f.genres.includes(g.value)}
+              className={"chip g-fam" + (g === group && !needle ? " open" : "") + (f.genres.includes(g.value) ? " on" : picked(g) ? " some" : "")}
+              onClick={() => {
+                // A click picks the family (and opens it); a click on the open, picked one drops it.
+                // A family with only some of its categories picked just opens.
+                setQ("");
+                setOpen(g.value);
+                if (g === group || !picked(g)) pickAll(g.value, inside(g));
+              }}>
               <span aria-hidden>{GROUP_ICON[g.value]}</span> {name(g.value)} <small>{g.events}</small>
             </button>
           ))}

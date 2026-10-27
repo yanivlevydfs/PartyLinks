@@ -144,7 +144,7 @@ export function Quiz() {
           </>
         )}
 
-        {step === 2 && <GenrePicker cats={cats} value={d.genres} onChange={(genres) => patch({ genres })} />}
+        {step === 2 && <GenrePicker quiz cats={cats} value={d.genres} onChange={(genres) => patch({ genres })} />}
 
         {step === 3 && (
           <div className="quiz-tiles">

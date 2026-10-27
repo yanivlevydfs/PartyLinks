@@ -47,7 +47,9 @@ if (urlLang === "he" || urlLang === "en") useStore.getState().setLang(urlLang);
 // that URL instead of an empty listing.
 const serverMissing = document.querySelector('meta[name="robots"][content^="noindex"]') ? location.pathname : null;
 type LandingKind = "tonight" | "weekend" | "genre" | "city" | "region";
-function Landing({ landing }: { landing: LandingKind }) {
+// The home page is a Landing too: picking a filter moves "/" to "/genre/x" (and back) without remounting
+// the page, so an open filter drawer stays open.
+function Landing({ landing }: { landing?: LandingKind }) {
   return useLocation().pathname === serverMissing ? <NotFound /> : <Home landing={landing} />;
 }
 
@@ -55,7 +57,7 @@ const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
-      { path: "/", element: <Home /> },
+      { path: "/", element: <Landing /> },
       { path: "/tonight", element: <Landing landing="tonight" /> },
       { path: "/weekend", element: <Landing landing="weekend" /> },
       { path: "/genre/:genre", element: <Landing landing="genre" /> },
