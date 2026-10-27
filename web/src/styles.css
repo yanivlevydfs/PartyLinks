@@ -456,14 +456,17 @@ select option { background: var(--panel-solid); color: var(--text); }
   .trending-head { padding: 0 16px 12px; }
   .trending-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; overflow: visible; scroll-snap-type: none; padding: 6px 16px 4px; }
   .trending-row > .card-wrap { min-width: 0; }
-  .trending-row > :nth-child(n + 7) { display: none; } /* three lines a row: a teaser, the full list follows */
-  /* Row cards: square art, title, date and venue; the full card is one tap away. */
-  .trending .card-img { aspect-ratio: 1; }
+  .trending-row > :nth-child(n + 5) { display: none; } /* two lines a row: a teaser, the full list follows */
+  /* Compact: no share / calendar buttons on these teaser cards (the event page has them). */
+  .trending .share-one, .trending .card-wrap > .cal { display: none; }
+  .trending .card-wrap .tags { padding-inline-end: 0; min-height: 0; }
+  /* Row cards: 4:3 art, title and date; the full card is one tap away. */
+  .trending .card-img { aspect-ratio: 4 / 3; }
   .trending .card-body { padding: 8px 9px 10px; }
   .trending .card-body h3 { font-size: 13.5px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
   .trending .meta { font-size: 11.5px; }
   .trending .meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .trending .meta:nth-of-type(n + 3), .trending .tags .tag { display: none; }
+  .trending .meta:nth-of-type(n + 2), .trending .tags .tag { display: none; }
   .trending h2 { font-size: 17px; }
   .trending-head p { font-size: 13px; }
 }
