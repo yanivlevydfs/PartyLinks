@@ -1057,8 +1057,9 @@ sources:
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
     skip_url_words: ["זאפה", "אמפי-שוני"]   # read by the zappa source
     http:
-      # A browser user agent from a non-browser client gets the connection dropped; an honest one does not.
-      user_agent: "Mozilla/5.0 (compatible; PartyLinks/1.0)"
+      # Akamai drops a browser user agent from a non-browser handshake: speak as Chrome (curl_cffi,
+      # as Chillz does), whose handshake matches its user agent. (Before: an honest non-browser UA.)
+      impersonate: chrome
       # Akamai answers 403 after ~100 quick requests (the run then stops as blocked): one at a time.
       concurrency: 1
       request_delay_seconds: 1.5
@@ -1355,7 +1356,7 @@ sources:
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
     url_words: ["זאפה", "אמפי-שוני"]
     http:
-      user_agent: "Mozilla/5.0 (compatible; PartyLinks/1.0)"
+      impersonate: chrome
       concurrency: 1
       request_delay_seconds: 1.5
 
@@ -2147,8 +2148,8 @@ sources:
       - /city/ראשון-לציון-1951/
       - /city/תל-אביב-249/
     http:
-      # Same Akamai as eventim: honest UA, one request at a time.
-      user_agent: "Mozilla/5.0 (compatible; PartyLinks/1.0)"
+      # Same Akamai as eventim: Chrome, one request at a time.
+      impersonate: chrome
       concurrency: 1
       request_delay_seconds: 1.5
 
