@@ -1,7 +1,7 @@
 # תוכנית מעבר: SPOTX / PartyLinks מ-SQLite ל-PostgreSQL
 
 > מסמך תכנון בלבד. לא שונה שום קובץ בריפו, לא הורצה שום migration ולא נגעו ב-Railway.
-> כל הפניה `file:line` נבדקה מול `master` ב-411ce2a.
+> כל הפניה `file:line` נבדקה מול `master` ב-411ce2a. טבלאות הפרסום (`sponsored`, `sponsored_stats`) ו-`flags`, וכן `_literal_default` ו-`create_schema`, עודכנו מול `master` ב-4a1a6a7 (ראו "עדכונים" בסוף).
 > נכתב לפי שיטת brainstorming: המשתמש לא זמין לשאלות, אז כל שאלה מופיעה ב"שאלות פתוחות" עם ברירת מחדל מומלצת, והתכנון ממשיך לפיה.
 
 ---
@@ -116,8 +116,8 @@
 ### 6.3 DDL ו-schema (כאן PG מחמיר)
 | מיקום | בעיה | פעולה |
 |---|---|---|
-| `db.py:327-336` `_literal_default` + `db.py:469-471` | ל-Boolean מייצר `DEFAULT 1` / `SET "x" = 1`. **ב-PG זה נכשל** ("column is of type boolean but default expression is of type integer"). כל עמודת bool חדשה שתתווסף אחרי המעבר תפיל את העלייה. | שלב A: לרנדר `true`/`false` לפי dialect (`sa.true()` מקומפל עם `self.engine.dialect`), ולבדוק ב-test על PG |
-| `db.py:469` `ALTER TABLE ... ADD COLUMN` בלי NOT NULL | ב-SQLite הקיים עמודות כמו `is_listed`, `has_discount`, `free_sold_out`, `pay_at_door` נוספו כ-nullable. ייתכנו בהן NULL-ים, בעוד שב-PG ה-schema החדש נבנה מה-ORM עם NOT NULL. | בדיקת נתונים §10.1 (Q-NULL). ב-copy להמיר NULL ל-default של המודל. |
+| `db.py:303` `_literal_default` + `db.py:455-457` | ל-Boolean מייצר `DEFAULT 1` / `SET "x" = 1`. **ב-PG זה נכשל** ("column is of type boolean but default expression is of type integer"). כל עמודת bool חדשה שתתווסף אחרי המעבר תפיל את העלייה. | שלב A: לרנדר `true`/`false` לפי dialect (`sa.true()` מקומפל עם `self.engine.dialect`), ולבדוק ב-test על PG |
+| `db.py:457` `ALTER TABLE ... ADD COLUMN` בלי NOT NULL | ב-SQLite הקיים עמודות כמו `is_listed`, `has_discount`, `free_sold_out`, `pay_at_door`, ומאז גם `sponsored.placement`, `sponsored_stats.results_views` ו-`results_clicks`, נוספו כ-nullable. ייתכנו בהן NULL-ים, בעוד שב-PG ה-schema החדש נבנה מה-ORM עם NOT NULL. | בדיקת נתונים §10.1 (Q-NULL). ב-copy להמיר NULL ל-default של המודל. |
 | כל `String(n)` במודלים (`db.py:93-324`) | SQLite מתעלם מאורך. **ב-PG זה `StringDataRightTruncation`.** בזמן ה-copy זה נכשל, ובזמן scrape זה מפיל אירוע (fallback שורה-שורה, `service.py:487-495`), שקט ומסוכן. | §10.1 (Q-LEN) על snapshot. לכל עמודה שחורגת או קרובה לגבול: להחליף ל-`Text` (עדיף, כי ב-PG ל-`text` ול-`varchar` אותו ביצוע), או לקצר בקוד. ממליץ: `source_event_id`, `city`, `venue_slug`, `content_type` ו-`geo_cache.query` ל-`Text`. |
 | תו `\x00` | PG `text` דוחה NUL. `parsing.py:20` מנקה NUL רק בפונקציות שמשתמשות ב-`_INVISIBLE` (`parsing.py:80`, `parsing.py:163`), לא בכל שדה. | §10.1 (Q-NUL). שלב A: ניקוי NUL ב-`ScrapedEvent` validator (מקום אחד ב-`models.py`) |
 | `Integer` PK autoincrement | ב-PG זה `SERIAL` (int4), ואחרי copy חובה `setval` | ב-copy: `setval(pg_get_serial_sequence(t,'id'), max(id))`. ‏`ticket_tiers.id` רץ מהר (delete+insert בכל upsert, `db.py:652-659`), בערך 84k ביום, כלומר כ-70 שנה עד 2^31. אין צורך ב-BigInteger. Q-INT מאמת. |
@@ -191,7 +191,7 @@
 | `JSON` | TEXT | `JSON` (שלב C), אופציה ל-`JSONB` (§9.4) | |
 | `LargeBinary` | BLOB | `BYTEA` | `event_images.data`, כמעט ריק |
 
-ה-schema ב-PG נוצר מ-`Base.metadata.create_all` דרך `create_schema()` (`db.py:452-476`). זה אותו קוד שרץ בעלייה (`api.py:568`), כך שאין schema ידני.
+ה-schema ב-PG נוצר מ-`Base.metadata.create_all` דרך `create_schema()` (`db.py:440`). טבלאות הפרסום מוגדרות ב-`partylinks/ads/models.py` על אותו `Base`, ונרשמות בו כי `db.py:804` מייבא את המודול. לכן כל מי שמייבא את `db` (כולל `copy-db`) רואה את כל הטבלאות. זה אותו קוד שרץ בעלייה (`api.py:568`), כך שאין schema ידני.
 
 ---
 
@@ -226,9 +226,9 @@
 | `geo_cache` | `query` String(300) (`db.py:223`) | טקסט טבעי | Q-LEN. לשקול `Text`. ב-PG יש מגבלת btree של כ-2700 bytes לערך, ו-300 תווים עבריים הם כ-600 bytes, אז תקין. |
 | `deal_changes` | `id` int (`db.py:239`) | | |
 | `clicks` | `id` int (`db.py:257`) | | |
-| `sponsored` | `event_id` (`db.py:273`) | טבעי | |
-| `sponsored_stats` | `(event_id, day)` composite (`db.py:286-287`) | composite | תקין |
-| `flags` | `key` (`db.py:299`) | טבעי | |
+| `sponsored` | `event_id` (`ads/models.py:21`) | טבעי | |
+| `sponsored_stats` | `(event_id, day)` composite (`ads/models.py:36-37`) | composite | תקין |
+| `flags` | `key` (`db.py:275`) | טבעי | |
 | `scrape_runs` | `id` int (`db.py:311`) | | |
 
 **אין טבלה בלי PK.**
@@ -246,7 +246,7 @@ CASCADE מתאים לכלל "never past events": ‏retention מוחק אירו�
 |---|---|
 | `events.group_id` / `events.best_listing_id` → `events.id` (self) (`db.py:144`, `db.py:153`) | retention מוחק לפעמים את ה-primary לפני שה-regroup הבא מעדכן את החברים. FK היה מפיל את retention, או מחייב `SET NULL`/`DEFERRABLE`, ו-`regroup` מעדכן אלפי שורות ב-executemany (`dedup.py:245-249`). הערך הזה מחושב מחדש בכל pass, כך שהוא cache ולא קשר. |
 | `events.source`, `scrape_runs.source`, `deal_changes.source` → "sources" | אין טבלת sources. המקורות הם config (`settings.yaml`, `SOURCE_NAMES`). |
-| `clicks.event_id`, `sponsored.event_id`, `sponsored_stats.event_id` → `events.id` | **בכוונה בלי FK.** הם צריכים לשרוד את retention (`db.py:252-253`, `db.py:268-269`, `db.py:281-282`). |
+| `clicks.event_id`, `sponsored.event_id`, `sponsored_stats.event_id` → `events.id` | **בכוונה בלי FK.** הם צריכים לשרוד את retention (`db.py:253-255`, `ads/models.py:15-17`, `ads/models.py:31-32`). |
 | `events.venue_slug` → venues | אין טבלת venues. השמות מחושבים ב-`venues.py`. |
 | artists | DB נפרד (`artists.py`), ולא אפשרי בין DBs. |
 | `geo_cache` | מפתח שאילתה, ולא קשור לאירוע. |
@@ -346,7 +346,7 @@ CASCADE מתאים לכלל "never past events": ‏retention מוחק אירו�
 Snapshot: בתוך הקונטיינר, `VACUUM INTO '/app/data/snapshot-YYYYMMDD.db'`. זה עקבי ולא חוסם קוראים. אחר כך מורידים את הקובץ, או מריצים את הבדיקות בתוך הקונטיינר על ה-snapshot.
 - **Q-LEN:** לכל `String(n)`: `SELECT max(length(col)), sum(length(col) > n) FROM t;`. ‏`length()` של SQLite סופר תווים, בדיוק כמו `varchar(n)` ב-PG.
 - **Q-NUL:** לכל עמודת טקסט/JSON: `SELECT count(*) FROM t WHERE instr(col, char(0)) > 0;`
-- **Q-NULL:** לכל עמודה שבמודל היא NOT NULL: `SELECT count(*) FROM t WHERE col IS NULL;`. חשוד במיוחד: עמודות שנוספו ב-ALTER (`is_listed`, `has_discount`, `free_sold_out`, `pay_at_door`, `admits`, `group_*`).
+- **Q-NULL:** לכל עמודה שבמודל היא NOT NULL: `SELECT count(*) FROM t WHERE col IS NULL;`. חשוד במיוחד: עמודות שנוספו ב-ALTER (`is_listed`, `has_discount`, `free_sold_out`, `pay_at_door`, `admits`, `group_*`, `sponsored.placement`, `sponsored_stats.results_views`, `sponsored_stats.results_clicks`).
 - **Q-JSON:** `SELECT count(*) FROM events WHERE json_valid(genres) = 0;` (לכל עמודת JSON, כולל `ticket_tiers.price_rounds` ו-`scrape_runs.failures`).
 - **Q-ORPHAN:** `SELECT count(*) FROM ticket_tiers t LEFT JOIN events e ON e.id = t.event_id WHERE e.id IS NULL;`, וכנ"ל ל-`event_images` ול-`deal_changes`.
 - **Q-DUP:** השאילתות מ-§9.3.
@@ -517,3 +517,16 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - הנחות וסיכונים: §2, §16.
 - Decision Log: §17.
 - Hand-off: זה שינוי בסיכון גבוה, ולכן לפי ה-skill לשקול `multi-agent-brainstorming` על §9 ו-§11 לפני מימוש.
+
+---
+
+## עדכונים
+
+### 2026-10-27 (מול 4a1a6a7)
+- **טבלאות הפרסום עברו קובץ:** `SponsoredRow` ו-`SponsoredStatRow` הועברו מ-`db.py` ל-`partylinks/ads/models.py` (commit 4426d5f). שמות הטבלאות, ה-PKs וה-`Base` לא השתנו, ולכן אין השפעה על ה-schema ב-PG ועל `copy-db`. ההפניות ב-§6.3, §7, §9.1, §9.2 ו-§10.1 עודכנו.
+- **עמודות חדשות:**
+  - `sponsored.placement`: `String(8)`, default `"rails"` (`ads/models.py:27`). ערכים: `rails` / `results` / `both`. בגבול של 8 תווים, ונכנס לבדיקת Q-LEN.
+  - `sponsored_stats.results_views` ו-`sponsored_stats.results_clicks`: `Integer`, default 0 (`ads/models.py:42-43`).
+  - שלושתן נוספו ב-SQLite ב-`ALTER TABLE ... ADD COLUMN` (`db.py:457`), כלומר nullable, ונכנסות לבדיקת Q-NULL (§10.1). ה-query בדו"ח הפרסום כבר עוטף אותן ב-`coalesce(..., 0)`.
+- **בלי שינוי schema:** מקור חדש (`funzing`) ותיקון טבלת "Events per source" באדמין (מציגה כל מקור מוגדר, גם עם 0 אירועים). השינוי ב-admin הוא ב-Python בלבד: אותו `GROUP BY source` על `events` כמו קודם, ואין לו אינדקס חדש או השפעה על PG.
+- **הגדרה חדשה:** `enrichment.declared_genres_only` (רשימת מקורות שז'אנרים שלהם נקראים רק מהקטגוריות שהם מצהירים). זה config בלבד, בלי השפעה על ה-DB.
