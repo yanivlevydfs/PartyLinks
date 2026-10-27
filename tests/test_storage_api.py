@@ -529,6 +529,7 @@ def test_umbrella_genre_includes_its_sub_genres(tmp_path: Path) -> None:
         assert ids("g_parties") == {"test:techno", "test:house", "test:hiphop"}
         groups = {g["value"]: g["events"] for g in client.get("/categories").json()["genre_groups"]}
         assert groups == {"g_parties": 3, "g_live": 1}
+        assert client.get("/genre/g_parties").status_code == 200  # picking a family lands on its own page
 
 
 def test_every_genre_sits_in_a_filter_family() -> None:

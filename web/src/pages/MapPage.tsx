@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { useCategories, useMapEvents } from "../api";
 import { genreLabel } from "../i18n";
 import { useAllowed, useConsent } from "../consent";
-import { Filters, filterParams } from "../Filters";
+import { Filters, filterParams, GROUP_ICON } from "../Filters";
 import { useStore } from "../store";
 import type { MapEvent } from "../types";
 import { eventPath, fmtDate, Loader, Sources, useT, useTitle, venuePath } from "../ui";
@@ -105,17 +105,17 @@ const ICON: Record<string, string> = {
   escape_rooms: "🔐", attractions: "🎡", coffee_carts: "☕", fine_dining: "🍷", work_spaces: "💼", volunteering: "🤲",
   team_activities: "🧩", nightclubs: "🪩", pools: "🏊", pool_party: "🏖️",
 };
-const CATS_SHOWN = 11;
 
-/** Big category buttons over the map: one genre at a time (the full filter below still takes several). */
+/** Big category buttons over the map: one family at a time (the full filter below opens each one and takes several). */
 function Cats() {
   const { t, lang } = useT();
   const f = useStore((s) => s.filters);
   const set = useStore((s) => s.setFilters);
-  const genres = [...(useCategories().data?.genres ?? [])].sort((a, b) => b.events - a.events);
-  if (!genres.length) return null;
-  // The busiest ones, plus whatever is picked even if it is not among them.
-  const shown = genres.filter((g, i) => i < CATS_SHOWN || f.genres.includes(g.value));
+  const cats = useCategories().data;
+  const groups = cats?.genre_groups ?? [];
+  if (!groups.length) return null;
+  // The families, plus a single category picked below (it shows as one more button).
+  const shown = [...groups, ...(cats?.genres ?? []).filter((g) => f.genres.includes(g.value) && !groups.some((x) => x.value === g.value))];
   const one = (g: string) => f.genres.length === 1 && f.genres[0] === g;
   return (
     <div className="map-cats" role="group" aria-label={t.genres}>
@@ -125,7 +125,7 @@ function Cats() {
       {shown.map((g) => (
         <button key={g.value} className={"map-cat" + (f.genres.includes(g.value) ? " on" : "")} aria-pressed={f.genres.includes(g.value)}
           onClick={() => set({ genres: one(g.value) ? [] : [g.value] })}>
-          <span aria-hidden>{ICON[g.value] ?? "🎉"}</span><b>{genreLabel(lang, g.value)}</b><small>{g.events}</small>
+          <span aria-hidden>{GROUP_ICON[g.value] ?? ICON[g.value] ?? "🎉"}</span><b>{genreLabel(lang, g.value)}</b><small>{g.events}</small>
         </button>
       ))}
     </div>

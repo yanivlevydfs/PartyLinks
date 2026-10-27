@@ -24,6 +24,16 @@ import "@fontsource/heebo/900.css";
 import "@fontsource/rubik/700.css";
 import "@fontsource/rubik/900.css";
 
+// A deploy renames the chunks: a page opened before it fails to load the map. Reload once to get the new ones.
+window.addEventListener("vite:preloadError", (e) => {
+  try {
+    if (Date.now() - Number(sessionStorage.getItem("chunk-reload")) < 10_000) return; // just reloaded: no loop
+    sessionStorage.setItem("chunk-reload", String(Date.now()));
+  } catch { /* storage blocked: still reload */ }
+  e.preventDefault();
+  location.reload();
+});
+
 // Leaflet is only loaded when the map is opened.
 const MapPage = lazy(() => import("./pages/MapPage"));
 const AdminPage = lazy(() => import("./pages/Admin"));

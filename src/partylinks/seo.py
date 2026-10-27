@@ -116,6 +116,9 @@ GENRES_HE = {
     "escape_rooms": "חדרי בריחה", "attractions": "אטרקציות", "coffee_carts": "עגלות קפה", "fine_dining": "מסעדות שף",
     "work_spaces": "חללי עבודה", "volunteering": "התנדבות", "team_activities": "פעילויות לצוות", "nightclubs": "מועדונים",
     "pools": "בריכות ופארקי מים", "pool_party": "מסיבות בריכה",
+    "g_parties": "מסיבות ומועדונים", "g_live": "הופעות ומוזיקה חיה", "g_stage": "במה ומסך", "g_culture": "תרבות והעשרה",
+    "g_kids": "ילדים ומשפחה", "g_food": "אוכל ושתייה", "g_leisure": "פנאי וספורט", "g_tech": "הייטק ועסקים",
+    "g_community": "קהילה ו-LGBTQ+",
 }  # fmt: skip
 GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
                  "stand_up": "Stand-up comedy", "live_show": "Live music",
@@ -127,7 +130,10 @@ GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBT
                  "kids": "Kids & Family", "lectures": "Lectures & Talks", "tours": "Tours & Trips",
                  "ballroom": "Ballroom Dancing", "folk_dance": "Folk Dancing", "latin_dance": "Latin Dancing",
                  "team_activities": "Team activities", "nightclubs": "Clubs",
-                 "pools": "Pools & Water parks", "pool_party": "Pool parties"}  # fmt: skip
+                 "pools": "Pools & Water parks", "pool_party": "Pool parties",
+                 "g_parties": "Parties & Clubs", "g_live": "Live Music", "g_stage": "Stage & Screen",
+                 "g_culture": "Culture & Learning", "g_kids": "Kids & Family", "g_food": "Food & Drinks",
+                 "g_leisure": "Leisure & Sport", "g_tech": "Tech & Business", "g_community": "Community & LGBTQ+"}  # fmt: skip
 GENRE_PAGE_MIN = 3  # fewer upcoming events than this: no landing page (thin content)
 
 
@@ -361,7 +367,7 @@ def _where_to(session: Session, cfg: Settings, lang: str) -> list[tuple[str, str
         genres = ", ".join(genre_label(g, lang) for g, _ in Counter(g for r in rows for g in r.genres or []).most_common(3))
         qa.append((ask[0 if he else 1], (
             f"יש {len(rows)} אירועים ב-{cfg.site.name}, למשל: {top}." + (f" הכי הרבה: {genres}." if genres else "")
-            + " בוחרים מתי, איפה (או לידי), ז׳אנר ושעה, ומקבלים רק את מה שמתאים."
+            + " בוחרים מתי, איפה (או לידי), קטגוריה ושעה, ומקבלים רק את מה שמתאים."
             if he else f"{cfg.site.name} lists {len(rows)} events, such as {top}." + (f" Most popular: {genres}." if genres else "")
             + " Pick when, where (or near me), genre and time, and get only what fits."
         )))  # fmt: skip
@@ -790,13 +796,13 @@ def _landing_text(kind: str, lang: str, label: str, place: str = "") -> tuple[st
                         "כל האירועים של סוף השבוע הקרוב, מחמישי ועד מוצאי שבת.", "בסוף השבוע"),
             "genre": (f"{g}: אירועים ומסיבות קרובים בישראל",
                       f"כל אירועי ה{g} הקרובים בישראל: תאריכים, ליינאפ, מקומות, מחירי כרטיסים וכניסה חופשית.",
-                      f"כל אירועי ה{g} הקרובים, מכל אתרי הכרטיסים במקום אחד.", f"בז׳אנר {g}"),
+                      f"כל אירועי ה{g} הקרובים, מכל אתרי הכרטיסים במקום אחד.", f"בקטגוריית {g}"),
             "genre_tonight": (f"{g} הערב: כל אירועי ה{g} של הערב",
                               f"{g} הערב בישראל: כל אירועי ה{g} שמתקיימים הערב, עם שעות, מקומות, מחירים וכרטיסים.",
-                              f"כל אירועי ה{g} של הערב, מעודכן כמה פעמים ביום.", f"בז׳אנר {g} הערב"),
+                              f"כל אירועי ה{g} של הערב, מעודכן כמה פעמים ביום.", f"בקטגוריית {g} הערב"),
             "genre_weekend": (f"{g} בסופ״ש: אירועי {g} בסוף השבוע הקרוב",
                               f"{g} בסוף השבוע: כל אירועי ה{g} של חמישי, שישי ושבת הקרובים בישראל, עם מחירים וכרטיסים.",
-                              f"כל אירועי ה{g} של סוף השבוע הקרוב, מחמישי ועד מוצאי שבת.", f"בז׳אנר {g} בסוף השבוע"),
+                              f"כל אירועי ה{g} של סוף השבוע הקרוב, מחמישי ועד מוצאי שבת.", f"בקטגוריית {g} בסוף השבוע"),
             "city": (f"מה עושים {p}? אירועים ומסיבות {p}",
                      f"כל האירועים, המסיבות וההופעות הקרובים {p}: תאריכים, ליינאפ, מקומות, מחירי כרטיסים וכניסה חופשית.",
                      f"כל האירועים הקרובים {p}, מכל אתרי הכרטיסים במקום אחד.", p),
@@ -808,7 +814,7 @@ def _landing_text(kind: str, lang: str, label: str, place: str = "") -> tuple[st
                              f"כל האירועים של סוף השבוע הקרוב {p}, מחמישי ועד מוצאי שבת.", f"בסוף השבוע {p}"),
             "city_genre": (f"{g} {p}: כל האירועים הקרובים",
                            f"כל אירועי ה{g} הקרובים {p}: תאריכים, ליינאפ, מקומות, מחירי כרטיסים וכניסה חופשית.",
-                           f"כל אירועי ה{g} {p}, מכל אתרי הכרטיסים במקום אחד.", f"בז׳אנר {g} {p}"),
+                           f"כל אירועי ה{g} {p}, מכל אתרי הכרטיסים במקום אחד.", f"בקטגוריית {g} {p}"),
             "region": (f"אירועים {p}: מה עושים {p}",
                        f"כל האירועים, המסיבות וההופעות הקרובים {p}: תאריכים, מקומות, מחירי כרטיסים וכניסה חופשית.",
                        f"כל האירועים הקרובים {p}, מכל אתרי הכרטיסים במקום אחד.", p),

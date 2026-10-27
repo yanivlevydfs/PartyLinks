@@ -1340,13 +1340,13 @@ def _register_routes(app: FastAPI) -> None:
         for (city, reg), _ in city_regions.most_common():
             city_region.setdefault(city, reg)  # a city's most common region
         enrichment = request.app.state.settings.enrichment
-        groups = {g: set(enrichment.expand_genres([g])) for g in enrichment.genre_groups}
-        in_group = Counter(g for r in rows for g, members in groups.items() if members.intersection(r.genres or ()))
+        genres = facet(lambda r: enrichment.with_parents(r.genres or []))
+        counts = {g.value: g.events for g in genres}
         return Categories(
-            genres=facet(lambda r: enrichment.with_parents(r.genres or [])),
+            genres=genres,
             genre_groups=[
-                FacetValue(value=g, events=in_group[g], members=members)
-                for g, members in enrichment.genre_groups.items() if in_group[g]
+                FacetValue(value=g, events=counts[g], members=members)
+                for g, members in enrichment.genre_groups.items() if g in counts
             ],
             genre_families=enrichment.genre_families,
             dates=sorted(facet(lambda r: [r.local_date]), key=lambda f: f.value),

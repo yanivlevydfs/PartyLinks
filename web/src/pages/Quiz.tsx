@@ -1,14 +1,12 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCategories, useEvents } from "../api";
-import { Calendar, filterParams, toggle, whenText } from "../Filters";
-import { genreLabel } from "../i18n";
+import { Calendar, filterParams, GenrePicker, toggle, whenText } from "../Filters";
 import { DEFAULT_FILTERS, useStore, type Filters } from "../store";
 import { eventPath, label, today, tomorrow, TZ, useT } from "../ui";
 import { Weather } from "../Weather";
 
 const SLOT_ICONS: Record<string, string> = { morning: "☀️", afternoon: "🌤️", evening: "🌆", night: "🌙" };
-const GENRES_SHOWN = 12;
 const STEPS = 4;
 
 /** The query of a draft, without the sort (facets don't care, so their cache stays shared). */
@@ -30,7 +28,6 @@ export function Quiz() {
   const [d, setD] = useState<Filters>(() => ({ ...DEFAULT_FILTERS, sort: useStore.getState().filters.sort }));
   const patch = (p: Partial<Filters>) => setD((cur) => ({ ...cur, ...p }));
   const [calOpen, setCalOpen] = useState(false);
-  const [allGenres, setAllGenres] = useState(false);
   const [geo, setGeo] = useState<"idle" | "busy" | "fail" | { place: string }>("idle");
 
   // The answers before this step: its options never shrink because of its own picks.
@@ -83,8 +80,6 @@ export function Quiz() {
   const day = (v: string) => new Date(v + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, weekday: "long" });
   const isPicked = d.when !== "all" && ![today(), tomorrow(), "tonight", "weekend"].includes(d.when);
   const regions = cats?.regions ?? [];
-  const genres = [...(cats?.genres ?? [])].sort((a, b) => b.events - a.events);
-  const shownGenres = allGenres ? genres : genres.slice(0, GENRES_SHOWN);
   // Picked options stay visible even if the facets no longer list them.
   const slots = Object.keys(t.slots).filter((k) => d.slots.includes(k) || cats?.time_slots.some((s) => s.value === k));
   const slotCount = new Map((cats?.time_slots ?? []).map((s) => [s.value, s.events]));
@@ -149,18 +144,7 @@ export function Quiz() {
           </>
         )}
 
-        {step === 2 && (
-          <div className="quiz-chips">
-            {shownGenres.map((g) => (
-              <Opt key={g.value} n={g.events} on={d.genres.includes(g.value)} onClick={() => patch({ genres: toggle(d.genres, g.value) })}>
-                {genreLabel(lang, g.value)}
-              </Opt>
-            ))}
-            {!allGenres && genres.length > GENRES_SHOWN && (
-              <button className="quiz-more" onClick={() => setAllGenres(true)}>{q.more(genres.length - GENRES_SHOWN)} ▾</button>
-            )}
-          </div>
-        )}
+        {step === 2 && <GenrePicker cats={cats} value={d.genres} onChange={(genres) => patch({ genres })} />}
 
         {step === 3 && (
           <div className="quiz-tiles">

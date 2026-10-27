@@ -237,14 +237,19 @@ class EnrichmentSettings(BaseModel):
     coupon_keywords: list[str] = Field(default_factory=list)
 
     def expand_genres(self, genres: list[str]) -> list[str]:
-        """The genres plus every sub-genre of the umbrella ones among them (for filters)."""
-        genres = [x for g in genres for x in (g, *self.genre_groups.get(g, []))]
-        return list(dict.fromkeys(x for g in genres for x in (g, *self.genre_families.get(g, []))))
+        """The genres plus every sub-genre of the umbrella ones and families among them, all the way down
+        (dance -> latin_dance -> salsa), for filters."""
+        out = list(dict.fromkeys(genres))
+        for g in out:  # grows while walking: each sub-genre is expanded in turn
+            out += [x for x in (*self.genre_groups.get(g, []), *self.genre_families.get(g, [])) if x not in out]
+        return out
 
     def with_parents(self, genres: list[str]) -> list[str]:
-        """An event's genres plus the umbrella genres they fall under (for counts)."""
+        """An event's genres plus the umbrella genres and filter families they fall under (for counts)."""
         parents = [p for p, subs in self.genre_families.items() if p not in genres and any(g in subs for g in genres)]
-        return [*genres, *parents]
+        known = {*genres, *parents}
+        groups = [k for k, members in self.genre_groups.items() if k not in known and not known.isdisjoint(members)]
+        return [*genres, *parents, *groups]
 
 
 class DedupSettings(BaseModel):

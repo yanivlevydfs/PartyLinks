@@ -345,7 +345,7 @@ enrichment:
     g_parties: [electronic, mainstream, pop, hip_hop, rnb, reggaeton_latin, dancehall_reggae, disco_funk, dark_wave,
                 throwback, nightclubs, pool_party, karaoke, festival]
     g_live: [live_show, israeli, rock_indie, jazz, classical_opera, world_balkan, greek, arabic]
-    g_stage: [theatre, stand_up, cinema, dance, latin_dance]
+    g_stage: [theatre, stand_up, cinema, dance]
     g_culture: [culture, exhibitions, lectures, workshops, tours, religious, holidays, markets]
     g_kids: [kids, attractions, pools, escape_rooms]
     g_food: [food, happy_hour, fine_dining, coffee_carts]

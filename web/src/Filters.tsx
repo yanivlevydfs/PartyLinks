@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useCategories, useEvents, type Params } from "./api";
-import type { Facet } from "./types";
+import type { Categories, Facet } from "./types";
 import { genreLabel } from "./i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "./store";
 import { Chip, label, Loader, Select, sourceName, today, tomorrow, TZ, useT } from "./ui";
@@ -323,7 +323,7 @@ function Rows({ only }: { only?: Panel }) {
         </FilterRow>
       )}
 
-      {show("genre") && !!cats?.genres.length && <GenrePicker />}
+      {show("genre") && !!cats?.genres.length && <GenrePicker cats={cats} value={f.genres} onChange={(genres) => set({ genres })} />}
 
       {show("shop") && shops.length > 1 && (
         <FilterRow label={t.shop}>
@@ -346,27 +346,33 @@ function Rows({ only }: { only?: Panel }) {
   );
 }
 
-const GROUP_ICON: Record<string, string> = {
+export const GROUP_ICON: Record<string, string> = {
   g_parties: "🎧", g_live: "🎤", g_stage: "🎭", g_culture: "🖼️", g_kids: "🧸", g_food: "🍽️", g_leisure: "🎡", g_tech: "💻", g_community: "🌈",
 };
 
 /** Genres by family: the families, then the open one's genres (an umbrella genre with its sub-genres).
  *  Desktop: a row of families over the open one. Phone sheet: a list of families; one opens in place, with a way back.
  *  Typing in the search box lists every matching genre instead. */
-function GenrePicker() {
+export function GenrePicker({ cats, value, onChange }: { cats?: Categories; value: string[]; onChange: (genres: string[]) => void }) {
   const { t, lang } = useT();
   const mobile = useMedia(MOBILE);
-  const f = useStore((s) => s.filters);
-  const set = useStore((s) => s.setFilters);
-  const cats = useCategories().data;
+  const f = { genres: value };
+  const set = ({ genres }: { genres: string[] }) => onChange(genres);
   const groups = cats?.genre_groups ?? [];
   const fams = cats?.genre_families ?? {};
   const counts = new Map(cats?.genres.map((g) => [g.value, g.events]));
-  const inside = (g: Facet) => [g.value, ...(g.members ?? []).flatMap((m) => [m, ...(fams[m] ?? [])])];
+  // Sub-genres all the way down (dance -> latin_dance -> salsa); hip hop <-> R&B point at each other.
+  const subsOf = (v: string) => {
+    const out: string[] = [];
+    for (let i = -1; i < out.length; i++) for (const x of fams[i < 0 ? v : out[i]] ?? []) if (x !== v && !out.includes(x)) out.push(x);
+    return out;
+  };
+  const inside = (g: Facet) => [g.value, ...(g.members ?? []).flatMap((m) => [m, ...subsOf(m)])];
   const picked = (g: Facet) => inside(g).some((v) => f.genres.includes(v));
-  const [openKey, setOpen] = useState<string | null>(() => mobile ? null : (groups.find(picked) ?? groups[0])?.value ?? null);
+  const [openKey, setOpen] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const group = groups.find((g) => g.value === openKey);
+  // Desktop always shows one family: the chosen one, else the first with a pick, else the first.
+  const group = groups.find((g) => g.value === openKey) ?? (mobile ? undefined : groups.find(picked) ?? groups[0]);
   const name = (v: string) => genreLabel(lang, v);
   const busiest = (vs: string[]) => vs.filter((v) => counts.get(v)).sort((a, b) => counts.get(b)! - counts.get(a)!);
 
@@ -386,22 +392,24 @@ function GenrePicker() {
 
   const body = (g: Facet) => {
     const members = busiest(g.members ?? []);
+    // An umbrella opens as its own section, unless its sub-genres are all in the family (hip hop <-> R&B).
+    const umbrella = (m: string) => (fams[m] ?? []).some((s) => !members.includes(s));
     return (
       <div className="g-body">
         <div className="chips">
           <Chip on={f.genres.includes(g.value)} onClick={() => pickAll(g.value, inside(g))}>
-            {t.allOf(name(g.value))} <small>{g.events}</small>
+            {t.all} <small>{g.events}</small>
           </Chip>
-          {members.filter((m) => !fams[m]).map((m) => chip(m, [g.value]))}
+          {members.filter((m) => !umbrella(m)).map((m) => chip(m, [g.value]))}
         </div>
-        {members.filter((m) => fams[m]).map((m) => (
+        {members.filter(umbrella).map((m) => (
           <div key={m} className="g-sub">
             <span className="g-sub-name">{name(m)}</span>
             <div className="chips">
-              <Chip on={f.genres.includes(m)} onClick={() => pickAll(m, [g.value, ...fams[m]])}>
+              <Chip on={f.genres.includes(m)} onClick={() => pickAll(m, [g.value, ...subsOf(m)])}>
                 {t.allOf(name(m))} <small>{counts.get(m)}</small>
               </Chip>
-              {busiest(fams[m]).map((s) => chip(s, [g.value, m]))}
+              {busiest([...new Set(subsOf(m))]).map((s) => chip(s, [g.value, m, ...(fams[m] ?? [])]))}
             </div>
           </div>
         ))}
@@ -448,8 +456,8 @@ function GenrePicker() {
         {search}
         <div className="chips">
           {groups.map((g) => (
-            <button key={g.value} className={"chip g-fam" + (g.value === openKey && !needle ? " open" : "") + (picked(g) ? " on" : "")}
-              aria-expanded={g.value === openKey} onClick={() => { setQ(""); setOpen(g.value); }}>
+            <button key={g.value} className={"chip g-fam" + (g === group && !needle ? " open" : "") + (picked(g) ? " on" : "")}
+              aria-expanded={g === group} onClick={() => { setQ(""); setOpen(g.value); }}>
               <span aria-hidden>{GROUP_ICON[g.value]}</span> {name(g.value)} <small>{g.events}</small>
             </button>
           ))}
