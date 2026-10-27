@@ -22,7 +22,7 @@ from sqlalchemy import func, select
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
-from partylinks import clicks
+from partylinks import clicks, searches
 from partylinks.config import Settings, config_path, get_settings, project_path
 from partylinks.db import EventRow, ImageRow, ScrapeRunRow, TicketRow, upcoming_filter
 from partylinks.logs import debug_enabled, set_debug
@@ -140,6 +140,13 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
 def click_stats(request: Request, session: SessionDep, days: int = Query(30, ge=1, le=365)) -> dict[str, Any]:
     """Ticket-link clicks counted by GET /go/... (see partylinks.clicks)."""
     return clicks.stats(session, request.app.state.settings.timezone, days)
+
+
+# --------------------------------------------------------------------------- searches
+@router.get("/searches")
+def search_stats(request: Request, session: SessionDep, days: int = Query(30, ge=1, le=365)) -> dict[str, Any]:
+    """Searches on the site counted by GET /events?q=... (see partylinks.searches)."""
+    return searches.stats(session, request.app.state.settings.timezone, days)
 
 
 # --------------------------------------------------------------------------- scheduler

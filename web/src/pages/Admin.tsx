@@ -56,7 +56,7 @@ const ago = (iso: string | null | undefined) => {
 const adminClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: true } } });
 
 // --------------------------------------------------------------------------- page
-const TABS = ["overview", "health", "clicks", "sponsored", "sources", "runs", "config", "maintenance"] as const;
+const TABS = ["overview", "health", "clicks", "searches", "sponsored", "sources", "runs", "config", "maintenance"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage() {
@@ -112,6 +112,7 @@ function Admin() {
       {tab === "overview" && <Overview data={ov.data} />}
       {tab === "health" && <Health />}
       {tab === "clicks" && <Clicks />}
+      {tab === "searches" && <Searches />}
       {tab === "sponsored" && <Sponsored />}
       {tab === "sources" && <Sources />}
       {tab === "runs" && <Runs />}
@@ -277,6 +278,67 @@ function Clicks() {
               <tbody>
                 {d.top_events.map((e: any) => (
                   <tr key={e.event_id}><td><Link to={`/event/${encodeURIComponent(e.event_id)}`}>{e.title}</Link></td><td>{e.source}</td><td>{e.clicks}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** What visitors searched for (GET /events?q=..., first page; partial words while typing left out). */
+function Searches() {
+  const [days, setDays] = useState(30);
+  const q = useQuery({ queryKey: ["searches", days], queryFn: () => call(`/admin/api/searches?days=${days}`), refetchInterval: 30_000 });
+  const d = q.data;
+  const peak = Math.max(1, ...(d?.per_day ?? []).map((x: any) => x.searches));
+  const terms = (title: string, rows: any[], results: boolean) => (
+    <Card title={title}>
+      <table className="adm-table">
+        <thead><tr><th>Search</th><th>Times</th>{results && <th>Results</th>}</tr></thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.q}><td>{r.q}</td><td>{r.searches}</td>{results && <td>{r.results}</td>}</tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
+  );
+  return (
+    <>
+      <div className="adm-bar">
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="Period">
+          {[1, 7, 30, 90, 365].map((n) => <option key={n} value={n}>Last {n} day{n > 1 ? "s" : ""}</option>)}
+        </select>
+      </div>
+      {q.isError && <p className="adm-err">{String(q.error)}</p>}
+      {!d ? <Loader /> : (
+        <div className="adm-grid">
+          <Card title="Searches">
+            <div className="adm-stats">
+              <Stat label="Today" value={d.today} />
+              <Stat label={`Last ${d.days} days`} value={d.total} />
+              <Stat label="Different" value={d.distinct} hint="distinct searches" />
+              <Stat label="No results" value={d.no_results} hint={d.total ? `${Math.round((d.no_results / d.total) * 100)}%` : undefined} />
+            </div>
+          </Card>
+          <Card title="Per day" wide>
+            <div className="adm-chart" role="img" aria-label={`Searches per day, peak ${peak}`}>
+              {d.per_day.map((x: any) => (
+                <span key={x.date} style={{ height: `${(x.searches / peak) * 100}%` }} title={`${x.date}: ${x.searches}`} />
+              ))}
+            </div>
+          </Card>
+          {terms("Top searches", d.top, true)}
+          {terms("Found nothing", d.top_misses, false)}
+          <Card title="Latest" wide>
+            <table className="adm-table">
+              <thead><tr><th>When</th><th>Search</th><th>Results</th></tr></thead>
+              <tbody>
+                {d.recent.map((r: any, i: number) => (
+                  <tr key={i}><td>{new Date(r.at).toLocaleString("he-IL")}</td><td>{r.q}</td><td>{r.results}</td></tr>
                 ))}
               </tbody>
             </table>

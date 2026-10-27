@@ -226,10 +226,11 @@
 | `geo_cache` | `query` String(300) (`db.py:223`) | טקסט טבעי | Q-LEN. לשקול `Text`. ב-PG יש מגבלת btree של כ-2700 bytes לערך, ו-300 תווים עבריים הם כ-600 bytes, אז תקין. |
 | `deal_changes` | `id` int (`db.py:239`) | | |
 | `clicks` | `id` int (`db.py:257`) | | |
+| `searches` | `id` int (`db.py:275`) | | |
 | `sponsored` | `event_id` (`ads/models.py:21`) | טבעי | |
 | `sponsored_stats` | `(event_id, day)` composite (`ads/models.py:36-37`) | composite | תקין |
-| `flags` | `key` (`db.py:275`) | טבעי | |
-| `scrape_runs` | `id` int (`db.py:311`) | | |
+| `flags` | `key` (`db.py:287`) | טבעי | |
+| `scrape_runs` | `id` int (`db.py:299`) | | |
 
 **אין טבלה בלי PK.**
 
@@ -310,6 +311,7 @@ CASCADE מתאים לכלל "never past events": ‏retention מוחק אירו�
 | `deal_changes` | להשאיר `at`, `kind`, `source` | `api.py:1142-1150` | insert-only, זול |
 | `scrape_runs` | אופציונלי: `(source, id)` | `api.py:1306`, `api.py:1350` | טבלה קטנה (30 יום), לא נחוץ. YAGNI. |
 | `clicks` | להשאיר `at` (`clicks.py:40`). `event_id`/`source` לא בשימוש ב-WHERE. | | insert-only, זניח. אפשר להשאיר. |
+| `searches` | רק `at` (`searches.py:56`). בכוונה בלי אינדקס על `q`: הספירה לפי מילה נעשית ב-Python. | | insert-only, שורה לכל חיפוש (עמוד ראשון). זניח. |
 | `geo_cache` | בלי שינוי. `geo.py:481` (`LIKE '% @__'`) הוא seq scan על טבלה קטנה. | | |
 
 #### PG-only, נדחה עד שמדידה מצדיקה
@@ -530,3 +532,11 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
   - שלושתן נוספו ב-SQLite ב-`ALTER TABLE ... ADD COLUMN` (`db.py:457`), כלומר nullable, ונכנסות לבדיקת Q-NULL (§10.1). ה-query בדו"ח הפרסום כבר עוטף אותן ב-`coalesce(..., 0)`.
 - **בלי שינוי schema:** מקור חדש (`funzing`) ותיקון טבלת "Events per source" באדמין (מציגה כל מקור מוגדר, גם עם 0 אירועים). השינוי ב-admin הוא ב-Python בלבד: אותו `GROUP BY source` על `events` כמו קודם, ואין לו אינדקס חדש או השפעה על PG.
 - **הגדרה חדשה:** `enrichment.declared_genres_only` (רשימת מקורות שז'אנרים שלהם נקראים רק מהקטגוריות שהם מצהירים). זה config בלבד, בלי השפעה על ה-DB.
+
+### 2026-10-27 (טבלת חיפושים)
+- **טבלה חדשה `searches`** (`SearchRow`, `db.py:269-278`): `id` Integer PK, `at` UTCDateTime עם אינדקס, `q` String(100) (טקסט מנורמל: רווחים מכווצים ו-casefold, חתוך ל-100 תווים), `results` Integer. אין FK, אין IP ואין user agent.
+- **כתיבה:** `GET /events?q=...` בעמוד 1 בלבד, בלי header `authorization`, כותב שורה אחת ב-background task (`api.py:1047`, `searches.record`) עם session כתיבה משלו, אחרי שהתשובה נשלחה. ב-PG זה insert רגיל, בלי נעילת ה-writer של SQLite.
+- **קריאה:** `GET /admin/api/searches` (`searches.stats`): `WHERE at >= since ORDER BY at`, והספירה נעשית ב-Python כמו ב-`clicks`.
+- **Q-LEN:** `q` מוגבל ל-100 תווים כבר בקוד (`searches.normalize`), ולכן `String(100)` ב-PG תקין.
+- ב-`copy-db` הטבלה נכנסת כמו `clicks`. אובדן של דקות בין snapshot ל-flip מקובל (Q6).
+- **הפניות שזזו:** ב-§9.1 עודכנו ה-PKs של `flags` (`db.py:287`) ו-`scrape_runs` (`db.py:299`). הפניות אחרות ל-`db.py` מתחת לשורה 269 זזו ב-12 שורות.

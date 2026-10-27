@@ -266,6 +266,18 @@ class ClickRow(Base):
     placement: Mapped[str | None] = mapped_column(String(8))
 
 
+class SearchRow(Base):
+    """One search on the site (GET /events?q=..., first page). No IP, cookie or user agent: the
+    words (normalised), how many events they found, when."""
+
+    __tablename__ = "searches"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
+    q: Mapped[str] = mapped_column(String(100))
+    results: Mapped[int] = mapped_column(Integer)
+
+
 class FlagRow(Base):
     """An on/off switch flipped in the admin at runtime; kept in the database so it survives redeploys.
     A missing row means off."""

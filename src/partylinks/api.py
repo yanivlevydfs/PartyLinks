@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import json
 import logging
 import threading
 import time
@@ -18,7 +19,7 @@ from typing import Annotated, Any
 from zoneinfo import ZoneInfo
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
@@ -28,7 +29,7 @@ from sqlalchemy import ColumnElement, String, and_, cast, func, not_, or_, selec
 from sqlalchemy.orm import Session, aliased, defer, load_only, selectinload, undefer
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from partylinks import clicks, seo, utm
+from partylinks import clicks, searches, seo, utm
 from partylinks import status as server_status
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
@@ -985,6 +986,7 @@ def _register_routes(app: FastAPI) -> None:
         sponsored: Annotated[
             bool, Query(description="Paid placements matching these filters first, marked (the site's own lists)")
         ] = False,
+        background: BackgroundTasks = BackgroundTasks(),
     ) -> Response:
         cfg: Settings = request.app.state.settings
         size = min(page_size or cfg.api.default_page_size, cfg.api.max_page_size)
@@ -1038,7 +1040,12 @@ def _register_routes(app: FastAPI) -> None:
             ]
             return EventPage(total=total, page=page, page_size=size, items=items, did_you_mean=suggestion)
 
-        return _cached(request, build)
+        response = _cached(request, build)
+        # A visitor's search, counted once (later pages are the same search; the admin's own are not).
+        if q and page == 1 and "authorization" not in request.headers:
+            total = json.loads(response.body)["total"]
+            background.add_task(searches.record, request.app.state.db, q, total)
+        return response
 
     @app.get("/events/map", response_model=MapOut, tags=["events"])
     def map_events(request: Request, filters: list[ColumnElement[bool]] = event_filters_dep) -> Response:
