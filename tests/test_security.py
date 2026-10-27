@@ -51,9 +51,12 @@ def test_rate_limit_and_admin_brute_force(tmp_path: Path) -> None:
         assert [a.get("/health").status_code for _ in range(4)] == [200, 200, 200, 429]
         assert {b.get(f"/images/{i}").status_code for i in range(5)} == {404}  # artwork: not limited
         assert {b.get(f"/images/{i}/640.webp").status_code for i in range(5)} == {404}  # nor its WebP copies
-        assert b.get("/admin/api/overview", headers={"authorization": "Bearer nope"}).status_code == 401
-        assert b.get("/admin/api/overview", headers={"authorization": "Bearer nope"}).status_code == 401
+        # The admin page sends one token on several requests at once: a repeated typo is one strike.
+        assert [b.get("/admin/api/overview", headers={"authorization": "Bearer nope"}).status_code for _ in range(5)] == [401] * 5
+        assert b.get("/admin/api/overview", headers={"authorization": "Bearer nope2"}).status_code == 401
         assert b.get("/admin/api/overview", headers={"authorization": "Bearer s3cret"}).status_code == 403  # banned
+        page = b.get("/", headers={"accept": "text/html,*/*"})  # a person sees words, not JSON
+        assert page.status_code == 403 and "text/html" in page.headers["content-type"] and "נחסמה" in page.text
 
 
 def test_cache_and_compression(tmp_path: Path) -> None:

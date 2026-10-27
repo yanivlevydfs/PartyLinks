@@ -132,7 +132,9 @@ function Login({ error, onLogin }: { error: HttpError; onLogin: () => void }) {
     <main className="admin wrap" dir="ltr" lang="en">
       <form className="adm-login" onSubmit={submit}>
         <h1>Admin <span>console</span></h1>
-        {error.status === 403 ? (
+        {error.status === 403 && error.message === "forbidden" ? (
+          <p className="adm-note">This address is blocked for an hour after repeated failed attempts. Wait, or restart the server, then sign in.</p>
+        ) : error.status === 403 ? (
           <p className="adm-note">{error.message}. Add <code>PARTYLINKS_ADMIN__TOKEN=…</code> to <code>.env</code> and restart, then sign in with it here.</p>
         ) : (
           <p className="adm-note">{readToken() ? "Wrong token." : "Enter the admin token."}</p>

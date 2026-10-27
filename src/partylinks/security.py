@@ -8,6 +8,7 @@ trusted proxy (``security.trusted_proxies``) that is the real visitor, not the p
 
 from __future__ import annotations
 
+import hashlib
 import ipaddress
 import json
 import logging
@@ -121,6 +122,20 @@ def _cache_policy(path: str) -> bytes | None:
     return None
 
 
+# What a person opening a page sees instead of bare JSON when blocked (403) or rate limited (429).
+_BLOCKED_PAGE = """<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>SPOTX</title>
+<style>body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#06040b;color:#eee;
+font:16px/1.6 system-ui,sans-serif;text-align:center;padding:24px}}h1{{font-size:22px;margin:0 0 8px}}
+p{{margin:4px 0;color:#bbb}}</style></head><body><main><h1>{he_title}</h1><p>{he_text}</p>
+<p dir="ltr" lang="en">{en_text}</p></main></body></html>"""
+_BLOCKED_TEXT = {
+    403: ("הגישה לאתר נחסמה זמנית", "מהכתובת שלך הגיעו יותר מדי ניסיונות שנכשלו. הגישה תחזור אוטומטית תוך שעה.",
+          "Access from your address is blocked for up to an hour after repeated failed attempts."),
+    429: ("יותר מדי בקשות", "נסו שוב בעוד דקה.", "Too many requests. Try again in a minute."),
+}
+
+
 class Guard:
     """In-memory counters (one process). ponytail: per-process state, move to Redis if the API
     ever runs as several workers."""
@@ -129,6 +144,19 @@ class Guard:
         self.hits: dict[tuple[str, str], deque[float]] = defaultdict(deque)
         self.strikes: dict[str, deque[float]] = defaultdict(deque)
         self.banned: dict[str, float] = {}  # ip -> ban end (monotonic)
+        # ip -> wrong admin tokens already counted (hashed): the admin page sends several requests
+        # with one token, so a single typo must be one strike, not five (it banned the owner).
+        self.bad_tokens: dict[str, set[str]] = defaultdict(set)
+
+    def bad_token(self, ip: str, token: str, cfg: SecuritySettings, now: float) -> None:
+        """A wrong admin token: a strike the first time this IP sends it."""
+        digest = hashlib.sha256(token.encode()).hexdigest()[:16]
+        if digest in self.bad_tokens[ip]:
+            return
+        if len(self.bad_tokens) > MAX_TRACKED:
+            self.bad_tokens.clear()
+        self.bad_tokens[ip].add(digest)
+        self.strike(ip, cfg, "bad admin token", now)
 
     @staticmethod
     def _count(window: deque[float], now: float, seconds: float) -> int:
@@ -149,6 +177,7 @@ class Guard:
         if self._count(window, now, cfg.ban_minutes * 60) >= cfg.ban_after_strikes:
             self.banned[ip] = now + cfg.ban_minutes * 60
             self.strikes.pop(ip, None)
+            self.bad_tokens.pop(ip, None)
             log.warning("banned %s for %g min (last strike: %s)", ip, cfg.ban_minutes, reason)
         if len(self.strikes) > MAX_TRACKED or len(self.banned) > MAX_TRACKED:  # many addresses: drop expired
             for key in [k for k, w in self.strikes.items() if not w or w[-1] <= now - cfg.ban_minutes * 60]:
@@ -190,9 +219,12 @@ class SecurityMiddleware:
         now = time.monotonic()
 
         async def reject(code: int, detail: str, extra: list[tuple[bytes, bytes]] | None = None) -> None:
-            body = json.dumps({"detail": detail}).encode()
+            body, kind = json.dumps({"detail": detail}).encode(), b"application/json"
+            if code in _BLOCKED_TEXT and "text/html" in headers.get("accept", ""):  # a browser page: words, not JSON
+                he_title, he_text, en_text = _BLOCKED_TEXT[code]
+                body, kind = _BLOCKED_PAGE.format(he_title=he_title, he_text=he_text, en_text=en_text).encode(), b"text/html; charset=utf-8"
             await send({"type": "http.response.start", "status": code, "headers": [
-                (b"content-type", b"application/json"), (b"content-length", str(len(body)).encode()),
+                (b"content-type", kind), (b"content-length", str(len(body)).encode()),
                 *HEADERS, *(extra or []),
             ]})  # fmt: skip
             await send({"type": "http.response.body", "body": body})
@@ -259,7 +291,7 @@ class SecurityMiddleware:
                 elif cache and message["status"] == 200 and not any(k.lower() == b"cache-control" for k, _ in out):
                     out.append((b"cache-control", cache))
                 if message["status"] == 401 and not local:  # wrong admin token on any route: brute-force guard
-                    self.guard.strike(ip, cfg, "bad admin token", time.monotonic())
+                    self.guard.bad_token(ip, headers.get("authorization", ""), cfg, time.monotonic())
                 message = {**message, "headers": out}
             await send(message)
 
