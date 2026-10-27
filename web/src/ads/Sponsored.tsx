@@ -12,16 +12,40 @@ type Side = "right" | "left";
 // Seconds per spotlight; out of step so the two rails never flip together.
 const ROTATE_S: Record<Side, number> = { right: 6, left: 7.5 };
 
-// For the advertiser report (admin): a view is counted once per event per visit, every click counts.
+// For the advertiser report (admin): a view is counted once per event and placement per visit, every click counts.
+type Where = "rails" | "results";
 const viewed = new Set<string>();
-function hit(eventId: string, kind: "view" | "click") {
+export function hit(eventId: string, kind: "view" | "click", where: Where = "rails") {
   if (kind === "view") {
-    if (viewed.has(eventId)) return;
-    viewed.add(eventId);
+    if (viewed.has(where + eventId)) return;
+    viewed.add(where + eventId);
   }
   try {
-    navigator.sendBeacon("/events/sponsored/hit", new Blob([JSON.stringify({ event_id: eventId, kind })], { type: "application/json" }));
+    navigator.sendBeacon("/events/sponsored/hit", new Blob([JSON.stringify({ event_id: eventId, kind, where })], { type: "application/json" }));
   } catch {}
+}
+
+/** Counts a view of a paid card once it is at least half on screen (hidden rails and strips never intersect). */
+export function useAdView<T extends Element>(eventId: string | null | undefined, on = true, where: Where = "rails") {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    if (!on || !eventId || !ref.current) return;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        hit(eventId, "view", where);
+        io.disconnect();
+      }
+    }, { threshold: 0.5 });
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [on, eventId, where]);
+  return ref;
+}
+
+/** The "ממומן" / "Sponsored" label of a paid card in the results (Israeli consumer law: an ad must be marked). */
+export function AdLabel() {
+  const { t } = useT();
+  return <span className="fresh ad">{t.sponsored}</span>;
 }
 
 /** Every page below the header: narrowed between the two rails (only when something is sponsored). */
@@ -117,19 +141,7 @@ function Spot({ e, on }: { e: EventSummary; on: boolean }) {
     t,
   );
   const where = [e.venue_name, e.area && label(t.areas, e.area)].filter(Boolean).join(" · ");
-  // A view = the shown card at least half on screen (hidden rails and strips never intersect).
-  const ref = useRef<HTMLAnchorElement>(null);
-  useEffect(() => {
-    if (!on || !ref.current) return;
-    const io = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        hit(e.id, "view");
-        io.disconnect();
-      }
-    }, { threshold: 0.5 });
-    io.observe(ref.current);
-    return () => io.disconnect();
-  }, [on, e.id]);
+  const ref = useAdView<HTMLAnchorElement>(e.id, on);
   return (
     <Link ref={ref} className={"sp-spot" + (on ? " on" : "")} to={eventPath(e)} tabIndex={on ? 0 : -1} aria-hidden={!on}
       onClick={() => hit(e.id, "click")}>

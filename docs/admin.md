@@ -11,6 +11,7 @@ a token configured, the console works only from the same machine.
 | --- | --- |
 | **overview** | Events (upcoming, total, not on the map), ticket tiers, storage, artwork, scheduler state, events per source, and warnings such as missing legal contacts or a localhost `base_url` |
 | **clicks** | Ticket-link clicks for the last 1, 7, 30, 90 or 365 days: today, total, daily average, a per-day chart, per seller, per spot on the page, per city, and the top 50 events |
+| **sponsored** | Paid placements: the site-wide switch, search and add events, per pick where it shows (side rails, top of results, or both), rail side and order, campaign end; and the advertiser report (views, clicks, CTR, the part from results) with CSV download |
 | **sources** | Each source's schedule and last run; run now, pause or resume a schedule, debug logging |
 | **runs** | Run history, filtered by source and status, with counts (found, saved, failed, changed, removed) and errors |
 | **config** | Edit `settings.yaml` with validation, automatic backups in `config/backups/`, and apply without a restart |

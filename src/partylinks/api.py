@@ -32,6 +32,7 @@ from partylinks import clicks, seo, utm
 from partylinks import status as server_status
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
+from partylinks.ads import service as ads
 from partylinks.config import Settings, get_settings
 from partylinks.db import (
     Database,
@@ -168,6 +169,9 @@ class EventSummaryOut(_Out):
     is_sold_out: bool
     free_sold_out: bool
     has_discount: bool = False
+    # Set only on a paid card at the top of the results (GET /events?sponsored=true, see partylinks.ads):
+    # the placement's event id, for /events/sponsored/hit. Such a card must say "Sponsored" (by law).
+    sponsored: str | None = None
     last_seen_at: datetime
     first_seen_at: datetime
     # False when the source stopped listing it (cancelled / pulled); hidden from upcoming lists.
@@ -978,6 +982,9 @@ def _register_routes(app: FastAPI) -> None:
         sort: EventSort = EventSort.start_asc,
         page: Annotated[int, Query(ge=1)] = 1,
         page_size: Annotated[int | None, Query(ge=1)] = None,
+        sponsored: Annotated[
+            bool, Query(description="Paid placements matching these filters first, marked (the site's own lists)")
+        ] = False,
     ) -> Response:
         cfg: Settings = request.app.state.settings
         size = min(page_size or cfg.api.default_page_size, cfg.api.max_page_size)
@@ -991,21 +998,30 @@ def _register_routes(app: FastAPI) -> None:
         def build(session: Session) -> EventPage:
             # Cards never show the long text columns.
             card = select(EventRow).options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
+            # Paid matches lead page 1 and are left out of the rest, so every later page starts that
+            # many places earlier: the total and the paging stay those of the plain list.
+            paid = ads.promoted_for(session, card, filters, page, min(cfg.api.sponsored_results, size)) if sponsored else None
+            first, drop = paid if paid else ([], [])
+            where = [*filters, EventRow.id.not_in(drop)] if drop else filters
+            start, stop = max((page - 1) * size - len(drop), 0), page * size - len(drop)
             if rank is None:
-                total = session.scalar(select(func.count()).select_from(EventRow).where(*filters)) or 0
+                total = session.scalar(select(func.count()).select_from(EventRow).where(*where)) or 0
                 rows = session.scalars(
-                    card.where(*filters)
+                    card.where(*where)
                     .order_by(_SORT_COLUMNS[sort], EventRow.start_at, EventRow.id)
-                    .offset((page - 1) * size)
-                    .limit(size)
+                    .offset(start)
+                    .limit(stop - start)
                 ).all()
             else:
                 # Ranking reads every match anyway, so one pass gives both the order and the total
                 # (measured at 35k events: as fast as the count + page it replaces).
-                ids = session.scalars(select(EventRow.id).where(*filters).order_by(rank, EventRow.start_at, EventRow.id)).all()
-                total, wanted = len(ids), ids[(page - 1) * size : page * size]
+                ids = session.scalars(select(EventRow.id).where(*where).order_by(rank, EventRow.start_at, EventRow.id)).all()
+                total, wanted = len(ids), ids[start:stop]
                 found = {r.id: r for r in session.scalars(card.where(EventRow.id.in_(wanted)))}
                 rows = [found[i] for i in wanted if i in found]
+            total += len(drop)
+            promoted = {r.id: pick for r, pick in first}
+            rows = [r for r, _ in first] + list(rows)
             suggestion = None
             if q and not total:  # what people look for and we lack; once per cached answer
                 log.info("search miss: %r", q[:100])
@@ -1016,7 +1032,10 @@ def _register_routes(app: FastAPI) -> None:
                 ):
                     suggestion = near
             extras = _summary_extras(session, rows)
-            items = [EventSummaryOut.model_validate(r).model_copy(update=extras[r.id]) for r in rows]
+            items = [
+                EventSummaryOut.model_validate(r).model_copy(update=extras[r.id] | {"sponsored": promoted.get(r.id)})
+                for r in rows
+            ]
             return EventPage(total=total, page=page, page_size=size, items=items, did_you_mean=suggestion)
 
         return _cached(request, build)

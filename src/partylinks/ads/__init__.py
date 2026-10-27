@@ -4,6 +4,9 @@
   app's one ``Base`` (``partylinks.db`` imports them, so ``create_schema`` sees them).
 - ``routes``: ``/events/sponsored`` (the side rails), ``/events/sponsored/hit`` and the admin's
   ``/admin/api/sponsored...`` endpoints.
+- ``service``: ``promoted_for``, the picks that lead a list's results when they match its filters.
 
-Hooks into the rest of the app: ``partylinks.api`` includes the two routers.
+Hooks into the rest of the app: ``partylinks.api`` includes the two routers, and its ``/events``
+list calls ``promoted_for`` with its own filter clauses (``sponsored=true``) and marks those cards
+(``EventSummaryOut.sponsored``).
 """

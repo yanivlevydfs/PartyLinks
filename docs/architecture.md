@@ -113,6 +113,24 @@ keeps them out of the Israeli feed and puts them in the `/abroad` section.
 - **Country names to ISO codes**, in Hebrew or English, via `pycountry`.
 - **Local time zones**, looked up by city and then by country, via `airportsdata`.
 
+## Sponsored placements (`ads/`)
+
+All advertising code lives in `src/partylinks/ads/` and `web/src/ads/`. The rest of the app touches
+it through two hooks: `api.py` includes its routers, and the `/events` list calls
+`ads.service.promoted_for`. The admin picks paid events (`sponsored` table, by event id: scrapes
+rewrite event rows, so a flag there would be lost). Each pick has a `placement`: `rails` (the side rails on every page,
+`/events/sponsored`), `results` (first in the event results it matches) or `both`. Picks made
+before results existed are `rails`.
+
+For results, `GET /events?sponsored=true` evaluates the list's own filter clauses on the picks'
+duplicate groups only (primary card, upcoming, campaign not over): three small queries per list
+build, nothing per row. The clauses are a selected column there, not the `WHERE`, because SQLite's
+planner would otherwise scan a filter column's index over the whole table (measured: 100 ms vs 2 ms
+at 28k events). The matches lead page 1 and are excluded from
+the rest of the list. The answer sits in the response cache like any list; an admin save or switch
+is a write, which makes every cached entry stale, so the change shows within the browser's 30 s.
+Views and clicks go to `sponsored_stats`, with the part from results counted separately.
+
 ## Code layout
 
 ```
@@ -141,11 +159,12 @@ src/partylinks/
   blog.py                     blog / magazine
   utm.py, clicks.py           ticket-link UTM tags and click counting
   ads/                        advertising, apart from the rest: models.py (sponsored,
-                              sponsored_stats tables), routes.py (rails, hits, admin picks)
+                              sponsored_stats tables), routes.py (rails, hits, admin picks),
+                              service.py (sponsored first in matching results)
   logs.py                     one logging setup for every process
   cli.py                      command line
 web/                          React + TypeScript website (Vite)
-web/src/ads/                  the paid side rails, their CSS and the admin's sponsored tab
+web/src/ads/                  the paid side rails, the results' Sponsored label, their CSS and the admin's sponsored tab
 tests/                        pytest, with real-page fixtures under tests/fixtures/
 ```
 

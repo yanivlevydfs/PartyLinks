@@ -32,6 +32,7 @@ class SponsoredOut(BaseModel):
 class SponsoredHitIn(BaseModel):
     event_id: str = Field(max_length=128)
     kind: Literal["view", "click"]
+    where: Literal["rails", "results"] = "rails"
 
 
 @router.get("/events/sponsored", response_model=SponsoredOut, tags=["events"])
@@ -45,6 +46,7 @@ def sponsored(session: SessionDep) -> SponsoredOut:
         select(SponsoredRow.side, EventRow)
         .join(EventRow, EventRow.id == SponsoredRow.event_id)
         .where(upcoming_filter(), or_(SponsoredRow.until.is_(None), SponsoredRow.until > datetime.now(UTC)))
+        .where(SponsoredRow.placement.in_(("rails", "both")))
         .order_by(SponsoredRow.position)
         .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
     ).all()
@@ -57,7 +59,8 @@ def sponsored(session: SessionDep) -> SponsoredOut:
 
 @router.post("/events/sponsored/hit", status_code=status.HTTP_204_NO_CONTENT, include_in_schema=False)
 def sponsored_hit(body: SponsoredHitIn, request: Request, session: SessionDep) -> Response:
-    """One view or click of a sponsored placement (sent by the rails). Only placements on show count."""
+    """One view or click of a sponsored placement (sent by the rails and the results' paid cards).
+    Only placements on show count."""
     event = session.get(EventRow, body.event_id)
     if event and session.get(SponsoredRow, body.event_id) and flag_on(session, "sponsored"):
         day = datetime.now(ZoneInfo(request.app.state.settings.timezone)).date()
@@ -70,6 +73,9 @@ def sponsored_hit(body: SponsoredHitIn, request: Request, session: SessionDep) -
             stat.views += 1
         else:
             stat.clicks += 1
+        if body.where == "results":
+            stat.results_views = (stat.results_views or 0) + (body.kind == "view")
+            stat.results_clicks = (stat.results_clicks or 0) + (body.kind == "click")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -80,6 +86,7 @@ class SponsoredIn(BaseModel):
     event_id: str
     side: Literal["right", "left"]
     until: datetime | None = None  # campaign end; None = while the event is on
+    placement: Literal["rails", "results", "both"] = "rails"  # side rails, first in matching results, or both
 
 
 @admin_router.get("/sponsored")
@@ -99,6 +106,7 @@ def sponsored_list(session: SessionDep) -> dict[str, Any]:
             "event_id": s.event_id,
             "side": s.side,
             "until": s.until,
+            "placement": s.placement,
             "title": e.title if e else None,
             "slug": e.slug if e else None,
             "start_at": e.start_at if e else None,
@@ -121,6 +129,8 @@ def sponsored_stats(request: Request, session: SessionDep, days: int = Query(30,
             SponsoredStatRow.event_id, func.max(SponsoredStatRow.title).label("title"),
             func.sum(SponsoredStatRow.views).label("views"), func.sum(SponsoredStatRow.clicks).label("clicks"),
             func.min(SponsoredStatRow.day).label("first_day"), func.max(SponsoredStatRow.day).label("last_day"),
+            func.coalesce(func.sum(SponsoredStatRow.results_views), 0).label("results_views"),
+            func.coalesce(func.sum(SponsoredStatRow.results_clicks), 0).label("results_clicks"),
         )
         .where(SponsoredStatRow.day >= since)
         .group_by(SponsoredStatRow.event_id)
@@ -132,6 +142,8 @@ def sponsored_stats(request: Request, session: SessionDep, days: int = Query(30,
         "until": today,
         "views": sum(e["views"] for e in events),
         "clicks": sum(e["clicks"] for e in events),
+        "results_views": sum(e["results_views"] for e in events),
+        "results_clicks": sum(e["results_clicks"] for e in events),
         "events": events,
     }
 
@@ -163,6 +175,10 @@ def sponsored_save(items: list[SponsoredIn], session: SessionDep) -> dict[str, i
     session.execute(delete(SponsoredRow))
     positions = {"right": 0, "left": 0}
     for i in items:
-        session.add(SponsoredRow(event_id=i.event_id, side=i.side, position=positions[i.side], until=i.until))
+        session.add(
+            SponsoredRow(
+                event_id=i.event_id, side=i.side, position=positions[i.side], until=i.until, placement=i.placement
+            )
+        )
         positions[i.side] += 1
     return {"saved": len(items)}

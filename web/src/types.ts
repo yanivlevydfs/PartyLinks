@@ -35,6 +35,8 @@ export interface EventSummary {
   is_sold_out: boolean;
   free_sold_out: boolean;
   has_discount?: boolean;
+  /** Set on a paid card at the top of the results (GET /events?sponsored=true): the placement's event id. */
+  sponsored?: string | null;
   last_seen_at: string;
   first_seen_at: string;
   is_listed: boolean;

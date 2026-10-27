@@ -5,7 +5,7 @@ import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { CookieConsent, useConsent } from "./consent";
 import { InstallBanner } from "./Install";
 import { INFO_LINKS } from "./pages/Info";
-import { SponsoredFrame, SponsoredStrip } from "./ads/Sponsored";
+import { AdLabel, hit, SponsoredFrame, SponsoredStrip, useAdView } from "./ads/Sponsored";
 import { Weather } from "./Weather";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";
@@ -220,6 +220,7 @@ export function freshness(e: EventSummary): "new" | "updated" | null {
 export function Card({ e }: { e: EventSummary }) {
   const { t, lang } = useT();
   const fresh = freshness(e);
+  const ad = useAdView<HTMLAnchorElement>(e.sponsored, true, "results");
   // Cards show the best offer across duplicate listings, matching the free-entry filter.
   const price = priceLabel(
     {
@@ -232,8 +233,8 @@ export function Card({ e }: { e: EventSummary }) {
   );
   return (
     // The share links sit beside the card's link (links cannot nest), drawn inside its frame.
-    <div className="card-wrap">
-    <Link className="card" to={eventPath(e)}>
+    <div className={"card-wrap" + (e.sponsored ? " ad" : "")}>
+    <Link className="card" to={eventPath(e)} ref={ad} onClick={() => e.sponsored && hit(e.sponsored, "click", "results")}>
       <div className="card-img">
         <Img src={sized(e.cover_url ?? e.image_url, 640)} alt={e.title} className="cover" text={e.title} />
         <div className="date-badge">
@@ -241,7 +242,9 @@ export function Card({ e }: { e: EventSummary }) {
           <span>{fmtDate(e.start_at, t, { month: "short" })}</span>
           <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={e.start_at} />
         </div>
-        {fresh && <span className={`fresh ${fresh}`}>{fresh === "new" ? t.isNew : t.updatedBadge}</span>}
+        {/* A paid card says so; that outranks new / updated. */}
+        {e.sponsored ? <AdLabel />
+          : fresh && <span className={`fresh ${fresh}`}>{fresh === "new" ? t.isNew : t.updatedBadge}</span>}
         {e.is_sold_out ? (
           <span className="flag sold">{t.soldOut}</span>
         ) : (
@@ -452,10 +455,10 @@ export function Loader({ small }: { small?: boolean }) {
   );
 }
 
-/** Paged event grid for any /events filter set. */
+/** Paged event grid for any /events filter set; matching paid placements first, marked. */
 export function EventGrid({ params, empty }: { params: Params; empty?: (page?: EventPage) => ReactNode }) {
   const { t } = useT();
-  const q = useEvents(params);
+  const q = useEvents({ ...params, sponsored: "true" });
   const items = q.data?.pages.flatMap((p) => p.items) ?? [];
   const total = q.data?.pages[0]?.total ?? 0;
 

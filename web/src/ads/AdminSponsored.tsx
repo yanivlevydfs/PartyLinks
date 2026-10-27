@@ -1,4 +1,5 @@
-// Admin tab: which events are paid placements in the home page's side rails, on which side and in what order.
+// Admin tab: which events are paid placements: in the side rails (which side, what order), first in the
+// event results they match, or both.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -8,10 +9,13 @@ import { call, Card, post, Stat } from "../pages/Admin";
 import "./sponsored.css";
 
 type Side = "right" | "left";
+type Placement = "rails" | "results" | "both";
+const PLACEMENTS: Record<Placement, string> = { rails: "Side rails", results: "Top of results", both: "Rails + results" };
 interface Pick {
   event_id: string;
   side: Side;
   until: string | null;
+  placement: Placement;
   title: string | null;
   slug: string | null;
   start_at: string | null;
@@ -23,7 +27,7 @@ interface Pick {
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: TZ }) : "");
 const dateTime = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("en-GB", { timeZone: TZ, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
-const strip = (picks: Pick[]) => picks.map(({ event_id, side, until }) => ({ event_id, side, until }));
+const strip = (picks: Pick[]) => picks.map(({ event_id, side, until, placement }) => ({ event_id, side, until, placement }));
 const other = (s: Side): Side => (s === "right" ? "left" : "right");
 
 export function Sponsored() {
@@ -55,7 +59,7 @@ export function Sponsored() {
 
   const add = (e: EventSummary, side: Side) =>
     setPicks((p) => [...p, {
-      event_id: e.id, side, until: null, title: e.title, slug: e.slug, start_at: e.start_at,
+      event_id: e.id, side, until: null, placement: "rails", title: e.title, slug: e.slug, start_at: e.start_at,
       venue_name: e.venue_name, cover_url: e.cover_url ?? e.image_url,
     }]);
   const update = (id: string, change: Partial<Pick>) => setPicks((p) => p.map((x) => (x.event_id === id ? { ...x, ...change } : x)));
@@ -136,6 +140,12 @@ export function Sponsored() {
                       {p.live === false && <span className="adm-status paused">not showing</span>}
                     </small>
                     <label className="adm-sp-until">
+                      Shown in
+                      <select value={p.placement} onChange={(e) => update(p.event_id, { placement: e.target.value as Placement })}>
+                        {(Object.keys(PLACEMENTS) as Placement[]).map((k) => <option key={k} value={k}>{PLACEMENTS[k]}</option>)}
+                      </select>
+                    </label>
+                    <label className="adm-sp-until">
                       Campaign ends
                       <input type="date" value={day(p.until)}
                         onChange={(e) => update(p.event_id, { until: e.target.value ? new Date(`${e.target.value}T23:59`).toISOString() : null })} />
@@ -163,7 +173,7 @@ export function Sponsored() {
         {dirty && <span className="adm-warn">Unsaved changes</span>}
         {save.isError && <span className="adm-err">{String((save.error as Error).message)}</span>}
         {save.isSuccess && !dirty && <span className="adm-ok">Saved. The site shows it within 5 minutes per visitor.</span>}
-        <span className="adm-note">Shown on every page: from 1440px wide as two rails, below that as one strip. Past events and ended campaigns hide by themselves.</span>
+        <span className="adm-note">Side rails: on every page, from 1440px wide as two rails, below that as one strip. Top of results: first in the event list (home, search, city / genre / venue pages) only when it matches the visitor's search and filters, at most 3, marked "Sponsored". Past events and ended campaigns hide by themselves.</span>
       </div>
 
       <Report />
@@ -176,7 +186,9 @@ interface StatReport {
   until: string;
   views: number;
   clicks: number;
-  events: { event_id: string; title: string; views: number; clicks: number; first_day: string; last_day: string }[];
+  results_views: number;
+  results_clicks: number;
+  events: { event_id: string; title: string; views: number; clicks: number; results_views: number; results_clicks: number; first_day: string; last_day: string }[];
 }
 
 const ctr = (clicks: number, views: number) => (views ? `${((clicks / views) * 100).toFixed(1)}%` : "—");
@@ -194,8 +206,8 @@ function Report() {
     if (!d) return;
     const cell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
     const lines = [
-      ["Event", "Event id", "Views", "Clicks", "CTR", "First day", "Last day"],
-      ...d.events.map((e) => [e.title, e.event_id, e.views, e.clicks, ctr(e.clicks, e.views), e.first_day, e.last_day]),
+      ["Event", "Event id", "Views", "Clicks", "CTR", "Views in results", "Clicks in results", "First day", "Last day"],
+      ...d.events.map((e) => [e.title, e.event_id, e.views, e.clicks, ctr(e.clicks, e.views), e.results_views, e.results_clicks, e.first_day, e.last_day]),
     ].map((row) => row.map(cell).join(","));
     // BOM: Excel opens Hebrew titles correctly.
     const url = URL.createObjectURL(new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" }));
@@ -218,10 +230,11 @@ function Report() {
             <Stat label="Views" value={d.views.toLocaleString()} hint={`${d.since} → ${d.until}`} />
             <Stat label="Clicks" value={d.clicks.toLocaleString()} />
             <Stat label="CTR" value={ctr(d.clicks, d.views)} hint="clicks / views" />
+            <Stat label="Of them in results" value={`${d.results_views.toLocaleString()} / ${d.results_clicks.toLocaleString()}`} hint="views / clicks at the top of the results" />
           </div>
           {d.events.length ? (
             <table className="adm-table">
-              <thead><tr><th>Event</th><th>Views</th><th>Clicks</th><th>CTR</th><th>Days shown</th></tr></thead>
+              <thead><tr><th>Event</th><th>Views</th><th>Clicks</th><th>CTR</th><th>In results</th><th>Days shown</th></tr></thead>
               <tbody>
                 {d.events.map((e) => (
                   <tr key={e.event_id}>
@@ -229,6 +242,7 @@ function Report() {
                     <td>{e.views.toLocaleString()}</td>
                     <td>{e.clicks.toLocaleString()}</td>
                     <td>{ctr(e.clicks, e.views)}</td>
+                    <td>{e.results_views.toLocaleString()} / {e.results_clicks.toLocaleString()}</td>
                     <td>{e.first_day === e.last_day ? e.first_day : `${e.first_day} → ${e.last_day}`}</td>
                   </tr>
                 ))}

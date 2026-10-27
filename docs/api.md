@@ -11,6 +11,8 @@ FastAPI, served by the same process as the website.
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/events` | Events, one per duplicate group. Filters below; `sort`, `page`, `page_size` (max 50) |
+| GET | `/events/sponsored` | The paid side rails (placement `rails` or `both`): `right` and `left`, each in the admin's order. Empty while the admin's sponsored switch is off |
+| POST | `/events/sponsored/hit` | One `view` or `click` of a paid placement, `where` = `rails` (default) or `results`, for the advertiser report. Only placements on show count |
 | GET | `/events/map` | Every matching event with coordinates at once (same filters, no paging), plus a count of events without a place |
 | GET | `/events/{id}` | One event by id (`<source>:<source_event_id>`) or slug: tickets with live status, images, other listings (`alternatives`), the latest deal changes |
 | GET | `/go/{id}` | Redirect (302) to the seller's page, UTM-tagged and counted. `?at=` is where on our page it was clicked. Rate-limited per IP (see [ticket links](ticket-links.md)) |
@@ -30,6 +32,14 @@ right now, honouring "free until" times), `sold_out`, `discount`, `day_of_week`,
 `area`, `weekend`, `on_date`, `date_from`, `date_to`, `min_price`, `max_price`, `q` (text search),
 `upcoming` (default true), `include_duplicates` (every listing instead of one per event).
 
+`sponsored=true` (the site's own event lists send it) puts up to `api.sponsored_results` (3) paid
+placements first on page 1: those with placement `results` or `both`, campaign not over, sponsored
+switch on, that pass the very same filters (same `WHERE`). They are ordered by start time, shown as
+their duplicate group's primary card and left out of the rest of the list. Later pages start that
+many places earlier, so `total` and the paging are those of the plain list. Each paid card carries
+`sponsored` = the placement's event id (null on every other card) and must be labelled "Sponsored"
+("ממומן"). Without the parameter, or with nothing sponsored for results, the list is unchanged.
+
 The API never returns a seller's raw URL. Every event's `url` is its `/go/` link.
 
 ## Admin (token required)
@@ -44,6 +54,9 @@ from the same machine are accepted, and proxied requests never count as local.
 | GET | `/runs` | Run history; filter by `source`, `status` |
 | GET/POST | `/maintenance/retention` | Retention settings and next run / purge now |
 | GET | `/admin/api/overview` | Events, storage, scheduler, warnings |
+| GET/PUT | `/admin/api/sponsored` | Paid placements: event, `side`, `until` (campaign end), `placement` (`rails` / `results` / `both`) |
+| POST | `/admin/api/sponsored/enabled` | The site-wide sponsored switch (`{"on": true}`) |
+| GET | `/admin/api/sponsored/stats?days=N` | Views and clicks per sponsored event; `results_views` / `results_clicks` are the part from the top of the results |
 | GET | `/admin/api/clicks?days=N` | Ticket-link clicks: total, today, per day, per seller, per placement, per city, top events |
 | POST | `/admin/api/scheduler/{action}` | Pause or resume the scheduler |
 | POST | `/admin/api/jobs/{job_id}/{action}` | Pause, resume or run one scheduled job |

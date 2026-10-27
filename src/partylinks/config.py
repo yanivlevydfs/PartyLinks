@@ -64,6 +64,8 @@ class ApiSettings(BaseModel):
     max_page_size: int = Field(200, ge=1)
     # Deepest page of a list: a person stops scrolling long before, a dump of every event needs all of them.
     max_page: int = Field(40, ge=1)
+    # Paid placements (admin, placement results | both) matching a list's filters, shown first on its page 1.
+    sponsored_results: int = Field(3, ge=0)
 
 
 class SchedulerSettings(BaseModel):

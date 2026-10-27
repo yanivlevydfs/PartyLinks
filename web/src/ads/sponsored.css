@@ -174,3 +174,7 @@ html[dir="ltr"] .sp-list a:hover { transform: translateX(2px); }
 .adm-sp-toggle.on { background: var(--grad); border-color: transparent; box-shadow: 0 0 18px rgb(255 46 147 / .5); }
 .adm-sp-toggle.on span { transform: translateX(28px); }
 .adm-sp-toggle:disabled { opacity: .6; cursor: wait; }
+
+/* A paid card at the top of the results (ui.tsx Card): its "Sponsored" label, in the new / updated badge's place. */
+.fresh.ad { background: #ffd23f; box-shadow: 0 0 18px rgb(255 210 63 / .55); }
+.card-wrap.ad .card { border-color: rgb(255 210 63 / .55); }
