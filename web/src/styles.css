@@ -243,6 +243,40 @@ button, input, select { font: inherit; color: inherit; }
 .f-drop.open .caret { transform: rotate(180deg); }
 .f-drawer { border-top: 1px solid rgb(160 120 255 / .08); padding: 4px 0; animation: drawer-in .2s ease-out; }
 @keyframes drawer-in { from { opacity: 0; transform: translateY(-4px); } }
+
+/* Genres by family (GenrePicker): families on top, the open one's genres below. */
+.g-picker { padding: 8px 0 4px; }
+.g-head { display: flex; flex-direction: column; gap: 10px; }
+.g-search {
+  width: min(100%, 280px); min-height: 38px; padding: 6px 14px; border-radius: 999px; font: inherit; font-size: 14px;
+  color: var(--text); background: rgb(255 255 255 / .04); border: 1px solid var(--line);
+}
+.g-search:focus { outline: none; border-color: var(--line-hot); }
+.chip.g-fam { min-height: 40px; padding-inline: 14px; font-weight: 600; }
+.chip.g-fam.on { background: rgb(255 46 147 / .12); border-color: var(--line-hot); box-shadow: none; }
+.chip.g-fam.open { background: var(--grad); border-color: transparent; color: #fff; box-shadow: 0 4px 16px -4px rgb(255 46 147 / .55); }
+.chip.g-fam.open small { background: rgb(0 0 0 / .22); color: #fff; }
+.g-body { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgb(160 120 255 / .08); animation: drawer-in .2s ease-out; }
+.g-sub { display: grid; gap: 8px; margin-top: 14px; }
+.g-sub-name { color: var(--muted); font-size: 13px; font-weight: 600; }
+.g-mobile { display: flex; flex-direction: column; align-items: stretch; }
+.g-mobile .g-search { width: 100%; }
+.g-list { display: flex; flex-direction: column; }
+.g-row {
+  display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 4px; background: none; border: 0;
+  border-bottom: 1px solid rgb(160 120 255 / .08); color: var(--text); font: inherit; font-size: 16px; text-align: start; cursor: pointer;
+}
+.g-row:last-child { border-bottom: 0; }
+.g-row b { flex: 1; font-weight: 600; }
+.g-row small { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.g-row .g-go { color: var(--muted); font-size: 20px; }
+.g-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 8px var(--pink); }
+.g-back {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 4px;
+  background: none; border: 0; color: var(--text); font: 700 16px/1 var(--display); cursor: pointer;
+}
+.g-mobile .g-body { margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .g-body { animation: none; } }
 .filters > .f-active { padding-top: 8px; }
 
 .filter-bar {

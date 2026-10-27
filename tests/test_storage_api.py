@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select, update
 
 from partylinks.api import create_app
-from partylinks.config import Settings
+from partylinks.config import Settings, get_settings
 from partylinks.db import Database, EventRow, ImageRow, upsert_events
 from partylinks.enrichment import Enricher
 from partylinks.media import MediaStore
@@ -509,6 +509,7 @@ def test_stored_events_abroad_get_a_country(tmp_path: Path) -> None:
 def test_umbrella_genre_includes_its_sub_genres(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     settings.enrichment.genre_families = {"electronic": ["techno", "house"], "israeli": ["mizrahi"]}
+    settings.enrichment.genre_groups = {"g_parties": ["electronic", "hip_hop"], "g_live": ["israeli"]}
     future = datetime.now(UTC) + timedelta(days=2)
     seed(settings, [
         event("techno", future),
@@ -524,6 +525,17 @@ def test_umbrella_genre_includes_its_sub_genres(tmp_path: Path) -> None:
         assert ids("israeli") == {"test:mizrahi"}
         counts = {g["value"]: g["events"] for g in client.get("/categories").json()["genres"]}
         assert counts["electronic"] == 2 and counts["israeli"] == 1
+        # A family: its members and a member umbrella's sub-genres, each event counted once.
+        assert ids("g_parties") == {"test:techno", "test:house", "test:hiphop"}
+        groups = {g["value"]: g["events"] for g in client.get("/categories").json()["genre_groups"]}
+        assert groups == {"g_parties": 3, "g_live": 1}
+
+
+def test_every_genre_sits_in_a_filter_family() -> None:
+    enrichment = get_settings().enrichment
+    grouped = set(enrichment.expand_genres(list(enrichment.genre_groups)))
+    genres = {*enrichment.genres, *enrichment.declared_genres, *enrichment.genre_families}
+    assert genres - grouped == set()
 
 
 def test_only_committed_writes_count_as_data_changes(tmp_path: Path) -> None:

@@ -339,6 +339,19 @@ enrichment:
     # Linked both ways: either one shows both.
     hip_hop: [rnb]
     rnb: [hip_hop]
+  # The genre filter's families, in screen order: picking one ("g_parties") shows every member's events
+  # (and a member family's sub-genres). A genre may sit in more than one; every genre needs one.
+  genre_groups:
+    g_parties: [electronic, mainstream, pop, hip_hop, rnb, reggaeton_latin, dancehall_reggae, disco_funk, dark_wave,
+                throwback, nightclubs, pool_party, karaoke, festival]
+    g_live: [live_show, israeli, rock_indie, jazz, classical_opera, world_balkan, greek, arabic]
+    g_stage: [theatre, stand_up, cinema, dance, latin_dance]
+    g_culture: [culture, exhibitions, lectures, workshops, tours, religious, holidays, markets]
+    g_kids: [kids, attractions, pools, escape_rooms]
+    g_food: [food, happy_hour, fine_dining, coffee_carts]
+    g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, environment, volunteering, team_activities]
+    g_tech: [hi_tech, conference, work_spaces, meetups]
+    g_community: [lgbt, liberal, kink, sensual, gender_balance, meetups]
   detect_genres_from_text: true
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.

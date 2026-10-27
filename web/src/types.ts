@@ -135,6 +135,7 @@ export interface Facet {
   spotify_url?: string;
   profile_url?: string;
   links?: string[]; // Instagram, YouTube, SoundCloud, website...
+  members?: string[]; // genre families (the filter's groups): their genres, in order
 }
 
 export interface Categories {
@@ -151,6 +152,8 @@ export interface Categories {
   lineup: Facet[];
   event_types: Facet[];
   sources: Facet[];
+  genre_groups?: Facet[]; // the genre filter's families, in screen order
+  genre_families?: Record<string, string[]>; // umbrella genre -> its sub-genres
 }
 
 export interface PostCategory {

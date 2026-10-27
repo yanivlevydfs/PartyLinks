@@ -339,6 +339,7 @@ class FacetValue(BaseModel):
     spotify_url: str | None = None
     profile_url: str | None = None
     links: list[str] | None = None
+    members: list[str] | None = None  # genre families (the filter's groups): their genres, in order
 
 
 class Categories(BaseModel):
@@ -358,6 +359,10 @@ class Categories(BaseModel):
     lineup: list[FacetValue]
     event_types: list[FacetValue]
     sources: list[FacetValue]
+    # The genre filter's families, in screen order (counted once per event), and the umbrella genres'
+    # sub-genres.
+    genre_groups: list[FacetValue] = []
+    genre_families: dict[str, list[str]] = {}
 
 
 class RetentionOut(BaseModel):
@@ -524,7 +529,7 @@ def _sound_index(request: Request) -> dict[str, list[str]]:
         db: Database = state.db
         with db.session(write=False) as session:
             lineups = session.scalars(select(EventRow.lineup).where(EventRow.lineup.is_not(None))).all()
-        index = by_skeleton(str(n) for lineup in lineups for n in lineup or [])
+        index = by_skeleton(n for lineup in lineups for n in lineup or [])
         state.sound_index = (time.monotonic(), index)
     return index
 
@@ -1044,7 +1049,7 @@ def _register_routes(app: FastAPI) -> None:
         # A visitor's search, counted once: the site's results grid (sponsored=true), not the side counts
         # ("without this filter: N") that ask with the same words; later pages and the admin's own neither.
         if q and page == 1 and sponsored and "authorization" not in request.headers:
-            total = json.loads(response.body)["total"]
+            total = json.loads(bytes(response.body))["total"]
             background.add_task(searches.record, request.app.state.db, q, total)
         return response
 
@@ -1334,8 +1339,16 @@ def _register_routes(app: FastAPI) -> None:
         city_region: dict[str, str] = {}
         for (city, reg), _ in city_regions.most_common():
             city_region.setdefault(city, reg)  # a city's most common region
+        enrichment = request.app.state.settings.enrichment
+        groups = {g: set(enrichment.expand_genres([g])) for g in enrichment.genre_groups}
+        in_group = Counter(g for r in rows for g, members in groups.items() if members.intersection(r.genres or ()))
         return Categories(
-            genres=facet(lambda r: request.app.state.settings.enrichment.with_parents(r.genres or [])),
+            genres=facet(lambda r: enrichment.with_parents(r.genres or [])),
+            genre_groups=[
+                FacetValue(value=g, events=in_group[g], members=members)
+                for g, members in enrichment.genre_groups.items() if in_group[g]
+            ],
+            genre_families=enrichment.genre_families,
             dates=sorted(facet(lambda r: [r.local_date]), key=lambda f: f.value),
             days_of_week=facet(lambda r: [r.day_of_week]),
             time_slots=facet(lambda r: [r.time_slot]),

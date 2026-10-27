@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useCategories, useEvents, type Params } from "./api";
+import type { Facet } from "./types";
 import { genreLabel } from "./i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "./store";
 import { Chip, label, Loader, Select, sourceName, today, tomorrow, TZ, useT } from "./ui";
@@ -279,7 +280,7 @@ function Pill({ children, onClear }: { children: ReactNode; onClear: () => void 
 
 /** One drawer's rows (desktop), or all of them (the phone sheet). */
 function Rows({ only }: { only?: Panel }) {
-  const { t, lang } = useT();
+  const { t } = useT();
   const f = useStore((s) => s.filters);
   const set = useStore((s) => s.setFilters);
   const cats = useCategories().data;
@@ -291,7 +292,6 @@ function Rows({ only }: { only?: Panel }) {
   const subAreas = one === "tel_aviv"
     ? (cats?.areas ?? []).filter((a) => !regionKeys.has(a.value) && a.value !== "outside" && a.value !== "abroad")
     : (cats?.cities ?? []).filter((c) => one && c.area === one);
-  const genres = [...(cats?.genres ?? [])].sort((a, b) => b.events - a.events); // busiest first
   const shops = cats?.sources ?? []; // busiest first
 
   return (
@@ -323,15 +323,7 @@ function Rows({ only }: { only?: Panel }) {
         </FilterRow>
       )}
 
-      {show("genre") && genres.length > 0 && (
-        <FilterRow label={t.genres}>
-          {genres.map((g) => (
-            <Chip key={g.value} on={f.genres.includes(g.value)} onClick={() => set({ genres: toggle(f.genres, g.value) })}>
-              {genreLabel(lang, g.value)} <small>{g.events}</small>
-            </Chip>
-          ))}
-        </FilterRow>
-      )}
+      {show("genre") && !!cats?.genres.length && <GenrePicker />}
 
       {show("shop") && shops.length > 1 && (
         <FilterRow label={t.shop}>
@@ -351,6 +343,120 @@ function Rows({ only }: { only?: Panel }) {
         </FilterRow>
       )}
     </>
+  );
+}
+
+const GROUP_ICON: Record<string, string> = {
+  g_parties: "🎧", g_live: "🎤", g_stage: "🎭", g_culture: "🖼️", g_kids: "🧸", g_food: "🍽️", g_leisure: "🎡", g_tech: "💻", g_community: "🌈",
+};
+
+/** Genres by family: the families, then the open one's genres (an umbrella genre with its sub-genres).
+ *  Desktop: a row of families over the open one. Phone sheet: a list of families; one opens in place, with a way back.
+ *  Typing in the search box lists every matching genre instead. */
+function GenrePicker() {
+  const { t, lang } = useT();
+  const mobile = useMedia(MOBILE);
+  const f = useStore((s) => s.filters);
+  const set = useStore((s) => s.setFilters);
+  const cats = useCategories().data;
+  const groups = cats?.genre_groups ?? [];
+  const fams = cats?.genre_families ?? {};
+  const counts = new Map(cats?.genres.map((g) => [g.value, g.events]));
+  const inside = (g: Facet) => [g.value, ...(g.members ?? []).flatMap((m) => [m, ...(fams[m] ?? [])])];
+  const picked = (g: Facet) => inside(g).some((v) => f.genres.includes(v));
+  const [openKey, setOpen] = useState<string | null>(() => mobile ? null : (groups.find(picked) ?? groups[0])?.value ?? null);
+  const [q, setQ] = useState("");
+  const group = groups.find((g) => g.value === openKey);
+  const name = (v: string) => genreLabel(lang, v);
+  const busiest = (vs: string[]) => vs.filter((v) => counts.get(v)).sort((a, b) => counts.get(b)! - counts.get(a)!);
+
+  // A whole family or umbrella replaces the genres picked inside it; a genre inside replaces the whole.
+  const pickAll = (v: string, within: string[]) =>
+    set({ genres: f.genres.includes(v) ? f.genres.filter((x) => x !== v) : [...f.genres.filter((x) => !within.includes(x)), v] });
+  const pick = (v: string, parents: string[]) => set({ genres: toggle(f.genres.filter((x) => !parents.includes(x)), v) });
+  const chip = (v: string, parents: string[]) => (
+    <Chip key={v} on={f.genres.includes(v)} onClick={() => pick(v, parents)}>{name(v)} <small>{counts.get(v)}</small></Chip>
+  );
+
+  const search = (
+    <input className="g-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t.findGenre} aria-label={t.findGenre} />
+  );
+  const needle = q.trim().toLowerCase();
+  const found = needle && busiest([...counts.keys()].filter((v) => !v.startsWith("g_") && name(v).toLowerCase().includes(needle)));
+
+  const body = (g: Facet) => {
+    const members = busiest(g.members ?? []);
+    return (
+      <div className="g-body">
+        <div className="chips">
+          <Chip on={f.genres.includes(g.value)} onClick={() => pickAll(g.value, inside(g))}>
+            {t.allOf(name(g.value))} <small>{g.events}</small>
+          </Chip>
+          {members.filter((m) => !fams[m]).map((m) => chip(m, [g.value]))}
+        </div>
+        {members.filter((m) => fams[m]).map((m) => (
+          <div key={m} className="g-sub">
+            <span className="g-sub-name">{name(m)}</span>
+            <div className="chips">
+              <Chip on={f.genres.includes(m)} onClick={() => pickAll(m, [g.value, ...fams[m]])}>
+                {t.allOf(name(m))} <small>{counts.get(m)}</small>
+              </Chip>
+              {busiest(fams[m]).map((s) => chip(s, [g.value, m]))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  if (mobile) {
+    return (
+      <div className="frow g-mobile" role="group" aria-label={t.genres}>
+        {group && !needle ? (
+          <>
+            <button className="g-back" onClick={() => setOpen(null)}>
+              <span aria-hidden>{lang === "he" ? "›" : "‹"}</span> {GROUP_ICON[group.value]} {name(group.value)}
+            </button>
+            {body(group)}
+          </>
+        ) : (
+          <>
+            <span className="frow-label">{t.genres}</span>
+            {search}
+            {found ? <div className="chips">{found.map((v) => chip(v, []))}</div> : (
+              <div className="g-list">
+                {groups.map((g) => (
+                  <button key={g.value} className="g-row" onClick={() => setOpen(g.value)}>
+                    <span aria-hidden>{GROUP_ICON[g.value]}</span>
+                    <b>{name(g.value)}</b>
+                    {picked(g) && <i className="g-dot" aria-label="✓" />}
+                    <small>{g.events}</small>
+                    <span className="g-go" aria-hidden>{lang === "he" ? "‹" : "›"}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="g-picker" role="group" aria-label={t.genres}>
+      <div className="g-head">
+        {search}
+        <div className="chips">
+          {groups.map((g) => (
+            <button key={g.value} className={"chip g-fam" + (g.value === openKey && !needle ? " open" : "") + (picked(g) ? " on" : "")}
+              aria-expanded={g.value === openKey} onClick={() => { setQ(""); setOpen(g.value); }}>
+              <span aria-hidden>{GROUP_ICON[g.value]}</span> {name(g.value)} <small>{g.events}</small>
+            </button>
+          ))}
+        </div>
+      </div>
+      {found ? <div className="chips g-body">{found.map((v) => chip(v, []))}</div> : group && body(group)}
+    </div>
   );
 }
 

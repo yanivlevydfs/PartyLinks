@@ -69,7 +69,7 @@ export const STRINGS = {
     quiz: {
       title: "לאן יוצאים?",
       steps: ["מתי?", "איפה?", "מה בא לכם?", "באיזו שעה?"],
-      hints: ["נתחיל מהתאריך", "אפשר כמה אזורים", "אפשר כמה ז׳אנרים", "לא חובה"],
+      hints: ["נתחיל מהתאריך", "אפשר כמה אזורים", "אפשר כמה קטגוריות", "לא חובה"],
       today: "היום",
       calendar: "תאריך אחר",
       near: "לידי",
@@ -94,7 +94,7 @@ export const STRINGS = {
     freeOnly: "כניסה חופשית",
     discountOnly: "🎟️ הנחה",
     hideSoldOut: "בלי סולד אאוט",
-    genres: "ז׳אנרים",
+    genres: "קטגוריות",
     shop: "אתר כרטיסים",
     when: "מתי",
     slot: "שעה",
@@ -144,6 +144,8 @@ export const STRINGS = {
     addToCal: "הוספה ליומן",
     calOther: "Apple / יומן אחר (.ics)",
     filtersBtn: "סינון",
+    findGenre: "חיפוש קטגוריה…",
+    allOf: (name: string) => `כל ה${name}`,
     clearFilters: "ניקוי",
     showN: (n: number) => `הצגת ${n} אירועים`,
     alsoAt: "מופיע גם ב־",
@@ -192,6 +194,8 @@ export const STRINGS = {
       cinema: "קולנוע וסרטים", markets: "שווקים וקניות", food: "אוכל", environment: "סביבה", religious: "דת ומסורת",
       holidays: "חגים", sport: "ספורט", happy_hour: "האפי האוור",
       escape_rooms: "חדרי בריחה", attractions: "אטרקציות", coffee_carts: "עגלות קפה", fine_dining: "מסעדות שף", work_spaces: "חללי עבודה", volunteering: "התנדבות", team_activities: "פעילויות לצוות", nightclubs: "מועדונים", pools: "בריכות ופארקי מים", pool_party: "מסיבות בריכה",
+      g_parties: "מסיבות ומועדונים", g_live: "הופעות ומוזיקה חיה", g_stage: "במה ומסך", g_culture: "תרבות והעשרה",
+      g_kids: "ילדים ומשפחה", g_food: "אוכל ושתייה", g_leisure: "פנאי וספורט", g_tech: "הייטק ועסקים", g_community: "קהילה ו-LGBTQ+",
       theatre: "תיאטרון", kids: "ילדים ומשפחה", lectures: "הרצאות והעשרה", tours: "סיורים וטיולים", dance: "מחול", ballroom: "ריקודים סלוניים", folk_dance: "ריקודי עם", latin_dance: "ריקודים לטיניים", salsa: "סלסה",
     },
   },
@@ -287,7 +291,7 @@ export const STRINGS = {
     freeOnly: "Free entry",
     discountOnly: "🎟️ Discount",
     hideSoldOut: "Hide sold out",
-    genres: "Genres",
+    genres: "Categories",
     shop: "Ticket site",
     when: "When",
     slot: "Time",
@@ -337,6 +341,8 @@ export const STRINGS = {
     addToCal: "Add to calendar",
     calOther: "Apple / other calendar (.ics)",
     filtersBtn: "Filters",
+    findGenre: "Find a category…",
+    allOf: (name: string) => `All ${name}`,
     clearFilters: "Clear",
     showN: (n: number) => `Show ${n} events`,
     alsoAt: "Also listed on",
@@ -381,7 +387,10 @@ const EN_GENRE_FIX: Record<string, string> = { rnb: "R&B", edm: "EDM", hip_hop: 
   dark_wave: "Dark Wave / Synth", yoga_wellness: "Yoga & Wellness", liberal: "Liberal / Swingers", kink: "BDSM / Fetish",
   sensual: "Tantra & Sensual", gender_balance: "Gender balanced", kids: "Kids & Family", lectures: "Lectures & Talks",
   tours: "Tours & Trips", ballroom: "Ballroom Dancing", folk_dance: "Folk Dancing", latin_dance: "Latin Dancing",
-  team_activities: "Team Activities", nightclubs: "Clubs", pools: "Pools & Water Parks", pool_party: "Pool Parties" };
+  team_activities: "Team Activities", nightclubs: "Clubs", pools: "Pools & Water Parks", pool_party: "Pool Parties",
+  g_parties: "Parties & Clubs", g_live: "Live Music", g_stage: "Stage & Screen", g_culture: "Culture & Learning",
+  g_kids: "Kids & Family", g_food: "Food & Drinks", g_leisure: "Leisure & Sport", g_tech: "Tech & Business",
+  g_community: "Community & LGBTQ+" };
 export function genreLabel(lang: Lang, g: string): string {
   if (lang === "he") return STRINGS.he.genre[g] ?? g;
   return EN_GENRE_FIX[g] ?? g.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
