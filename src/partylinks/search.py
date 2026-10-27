@@ -7,14 +7,16 @@ from __future__ import annotations
 
 import json
 import re
+import warnings
 from collections.abc import Callable, Iterable
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from difflib import get_close_matches
-from functools import cache
+from functools import cache, lru_cache
 from typing import Any
 from zoneinfo import ZoneInfo
 
 import pycountry
+from convertdate import hebrew, holidays
 from sqlalchemy import ColumnElement, String, and_, case, cast, func, or_, select
 from sqlalchemy.orm import aliased
 
@@ -45,6 +47,109 @@ WEEKEND = {
     "בסוף השבוע",
     "סוף השבוע",
 }
+
+HOLIDAY_NAMES = {
+    "hanukkah": ("חנוכה", "hanukkah", "chanukah", "hanukah"), "purim": ("פורים", "purim"),
+    "passover": ("פסח", "passover", "pesach"), "shavuot": ("שבועות", "shavuot"),
+    "rosh_hashanah": ("ראש השנה", "rosh hashanah"), "sukkot": ("סוכות", "sukkot"),
+    "tu_bishvat": ("ט״ו בשבט", 'ט"ו בשבט', "טו בשבט", "tu bishvat"),
+    "lag_baomer": ("ל״ג בעומר", 'ל"ג בעומר', "לג בעומר", "lag baomer"),
+    "tu_bav": ("ט״ו באב", 'ט"ו באב', "טו באב", "tu bav"), "independence_day": ("יום העצמאות", "עצמאות", "independence day"),
+    "halloween": ("הלואין", "האלווין", "הלווין", "halloween"), "new_year": ("סילבסטר", "new year", "new years eve"),
+    "valentines": ("ולנטיין", "יום האהבה", "valentine", "valentines"),
+}  # fmt: skip
+# Same dates every year: (month, day) from, to; parties run in the days before.
+YEARLY_DATES = {"halloween": ((10, 25), (10, 31)), "new_year": ((12, 28), (1, 1)), "valentines": ((2, 10), (2, 14))}
+# Bare "מאי", "יוני", "יולי" are names too: only "במאי", "ביוני", "חודש יולי".
+MONTHS = {
+    "ינואר": 1, "פברואר": 2, "מרץ": 3, "מרס": 3, "אפריל": 4, "מאי": 5, "יוני": 6, "יולי": 7, "אוגוסט": 8,
+    "ספטמבר": 9, "אוקטובר": 10, "נובמבר": 11, "דצמבר": 12,
+}  # fmt: skip
+BARE_MONTHS = {"מאי", "יוני", "יולי"}
+# "march" and "may" are words: only "in march", "in may".
+EN_MONTHS = {
+    "january": 1, "february": 2, "april": 4, "june": 6, "july": 7, "august": 8, "september": 9,
+    "october": 10, "november": 11, "december": 12, "in march": 3, "in may": 5,
+}  # fmt: skip
+# Python's weekday() (Monday 0). A bare "ראשון" is also ראשון לציון: only "יום ראשון" / "ביום ראשון".
+WEEKDAYS = {"ראשון": 6, "שני": 0, "שלישי": 1, "רביעי": 2, "חמישי": 3, "שישי": 4, "שבת": 5}
+EN_WEEKDAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6}
+
+
+def _month_end(d: date) -> date:
+    return (d.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+
+
+def _next_month(today: date, month: int) -> tuple[date, date]:
+    start = date(today.year + (month < today.month), month, 1)
+    return max(start, today), _month_end(start)
+
+
+def _next_weekday(today: date, weekday: int) -> tuple[date, date]:
+    d = today + timedelta(days=(weekday - today.weekday()) % 7)
+    return d, d
+
+
+def _holiday(year: int, key: str) -> tuple[date, date]:
+    """A holiday in Israel in a Gregorian year, eve to last day."""
+    if key in YEARLY_DATES:
+        (m1, d1), (m2, d2) = YEARLY_DATES[key]
+        return date(year, m1, d1), date(year + ((m2, d2) < (m1, d1)), m2, d2)
+    day = timedelta(days=1)
+    if key == "tu_bav":
+        d = date(*hebrew.to_gregorian(year + 3760, hebrew.AV, 15))
+        return d - day, d
+    if key == "independence_day":  # 5 Iyar, moved off Friday / Saturday / Monday
+        d = date(*hebrew.to_gregorian(year + 3760, hebrew.IYYAR, 5))
+        d += {4: -day, 5: -2 * day, 0: day}.get(d.weekday(), 0 * day)
+        return d - day, d
+    d = date(*getattr(holidays, {"tu_bishvat": "tu_beshvat"}.get(key, key))(year))
+    last = {"hanukkah": 7, "passover": 6, "sukkot": 7, "rosh_hashanah": 1, "purim": 1}.get(key, 0)
+    first = 4 if key == "purim" else 0 if key == "tu_bishvat" else 1  # Purim parties run the days before
+    return d - first * day, d + last * day
+
+
+def _next_holiday(today: date, key: str) -> tuple[date, date]:
+    for year in (today.year - 1, today.year, today.year + 1):
+        start, end = _holiday(year, key)
+        if end >= today:
+            return max(start, today), end
+    raise AssertionError(key)
+
+
+@lru_cache(maxsize=4)
+def date_ranges(today: date) -> dict[str, tuple[date, date]]:
+    """Search phrase -> the dates it means from ``today``: "השבוע", "בדצמבר", "ביום שישי", "חנוכה"."""
+    week = (today, today + timedelta(days=6))
+    sunday = today + timedelta(days=(6 - today.weekday()) % 7 or 7)
+    next_week = (sunday, sunday + timedelta(days=6))
+    month = (today, _month_end(today))
+    after = _month_end(today) + timedelta(days=1)
+    next_month = (after, _month_end(after))
+    out = {
+        "מחרתיים": (today + timedelta(days=2), today + timedelta(days=2)),
+        "השבוע": week, "this week": week, "שבוע הבא": next_week, "בשבוע הבא": next_week, "next week": next_week,
+        "החודש": month, "this month": month, "חודש הבא": next_month, "בחודש הבא": next_month, "next month": next_month,
+    }  # fmt: skip
+    for name, m in MONTHS.items():
+        for phrase in ("ב" + name, "חודש " + name, *(() if name in BARE_MONTHS else (name,))):
+            out[phrase] = _next_month(today, m)
+    for name, m in EN_MONTHS.items():
+        out[name] = _next_month(today, m)
+    for name, weekday in WEEKDAYS.items():
+        for phrase in ("יום " + name, "ביום " + name, *(("ב" + name,) if weekday in (3, 4, 5) else ())):
+            out[phrase] = _next_weekday(today, weekday)
+    for name, weekday in EN_WEEKDAYS.items():
+        out[name] = _next_weekday(today, weekday)
+    for key, names in HOLIDAY_NAMES.items():
+        with warnings.catch_warnings():  # convertdate 2.5.1 calls its own deprecated month_days()
+            warnings.filterwarnings("ignore", "month_days is deprecated", DeprecationWarning)
+            span = _next_holiday(today, key)
+        for name in names:
+            out[name] = span
+            if re.match(r"[֐-׿]", name):
+                out["ב" + name] = span
+    return out
 
 
 # Words people search by that name a kind of event rather than a genre label.
@@ -265,6 +370,9 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
         filters += [EventRow.is_weekend.is_(True), EventRow.local_date <= today + timedelta(days=7)]
     for word in take(DAYS):
         filters.append(EventRow.local_date == today + timedelta(days=DAYS[word]))
+    ranges = date_ranges(today)
+    for phrase in take(ranges):
+        filters.append(EventRow.local_date.between(*ranges[phrase]))
     vocab = _vocabulary(cfg)
     for name in take(vocab):
         filters.append(or_(vocab[name](), text_match(name)))  # the name in the text counts too: "Jordan" the DJ

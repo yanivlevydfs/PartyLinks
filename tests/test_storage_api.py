@@ -820,6 +820,24 @@ def test_a_typo_of_a_known_name_still_finds_it(tmp_path: Path) -> None:
         assert ids("quiet") == ["other"]
 
 
+def test_search_knows_weeks_months_weekdays_and_holidays() -> None:
+    from datetime import date
+
+    from partylinks.search import date_ranges
+
+    r = date_ranges(date(2026, 10, 27))  # a Tuesday
+    assert r["השבוע"] == (date(2026, 10, 27), date(2026, 11, 2))
+    assert r["החודש"] == (date(2026, 10, 27), date(2026, 10, 31))
+    assert r["בדצמבר"] == (date(2026, 12, 1), date(2026, 12, 31))
+    assert r["ינואר"] == (date(2027, 1, 1), date(2027, 1, 31))  # next year's
+    assert "יוני" not in r and "ראשון" not in r  # a name, and ראשון לציון
+    assert r["ביום שישי"] == r["friday"] == (date(2026, 10, 30), date(2026, 10, 30))
+    assert r["חנוכה"] == (date(2026, 12, 4), date(2026, 12, 12))
+    assert r["פורים"] == (date(2027, 3, 19), date(2027, 3, 24))
+    assert r["סילבסטר"] == (date(2026, 12, 28), date(2027, 1, 1))
+    assert r["יום העצמאות"] == (date(2027, 5, 11), date(2027, 5, 12))
+
+
 def test_a_search_that_finds_nothing_is_logged(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     settings = settings_for(tmp_path)
     seed(settings, [event("party", datetime.now(UTC) + timedelta(days=1), title="Moon party")])

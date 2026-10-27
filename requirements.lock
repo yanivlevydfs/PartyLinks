@@ -21,6 +21,8 @@ cffi==2.1.1
     # via curl-cffi
 click==8.5.0
     # via uvicorn
+convertdate==2.5.1
+    # via partylinks (pyproject.toml)
 curl-cffi==0.16.3
     # via partylinks (pyproject.toml)
 fastapi==0.153.0
@@ -56,6 +58,8 @@ pydantic-core==2.50.1
     # via pydantic
 pydantic-settings==2.16.1
     # via partylinks (pyproject.toml)
+pymeeus==0.5.12
+    # via convertdate
 python-dotenv==1.2.4
     # via pydantic-settings
 pyyaml==6.0.3
