@@ -9,6 +9,7 @@ import json
 import re
 from collections.abc import Callable, Iterable
 from datetime import datetime, timedelta
+from difflib import get_close_matches
 from functools import cache
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -89,6 +90,7 @@ def _json_has(column: ColumnElement[Any], word: str) -> Cond:
     return or_(*(text.ilike(_pattern(f), escape="\\") for f in {word, json.dumps(word)[1:-1]}))
 
 
+TYPO_CUTOFF = 0.85  # difflib ratio: one letter off in a 5-6 letter word
 SHORT_WORD = 3  # up to this long, a word must stand alone in the text: "ראפ" is not in "תראפיה"
 
 
@@ -266,9 +268,14 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
     vocab = _vocabulary(cfg)
     for name in take(vocab):
         filters.append(or_(vocab[name](), text_match(name)))  # the name in the text counts too: "Jordan" the DJ
+    long_names = [n for n in vocab if len(n) >= 4 and " " not in n]
     for w in (w for w in text.split() if len(w) >= 2):
         # "ברומא" is "רומא" with "in": a Hebrew one-letter prefix may be dropped.
-        filters.append(or_(text_match(w), text_match(w[1:])) if len(w) > 3 and w[0] in "בלמהו" else text_match(w))
+        match = or_(text_match(w), text_match(w[1:])) if len(w) > 3 and w[0] in "בלמהו" else text_match(w)
+        # A typo of a known name ("טכנוו", "פסטבל") also finds what the name finds.
+        if len(w) >= 4 and (near := get_close_matches(w, long_names, n=1, cutoff=TYPO_CUTOFF)):
+            match = or_(match, vocab[near[0]](), text_match(near[0]))
+        filters.append(match)
     if not filters:
         return []
     return [or_(and_(*filters), *(lineup_contains(a) for a in artists))]

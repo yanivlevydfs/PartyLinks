@@ -808,6 +808,18 @@ def test_an_artist_is_found_by_its_name_in_the_other_alphabet(tmp_path: Path) ->
         assert ids("infected mushroom") == ["im"]
 
 
+def test_a_typo_of_a_known_name_still_finds_it(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    seed(settings, [
+        event("fest", datetime.now(UTC) + timedelta(days=1), title="Summer festival"),
+        event("other", datetime.now(UTC) + timedelta(days=1), title="Quiet evening"),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda q: [e["source_event_id"] for e in client.get("/events", params={"q": q}).json()["items"]]  # noqa: E731
+        assert ids("festivl") == ["fest"]
+        assert ids("quiet") == ["other"]
+
+
 def test_a_search_that_finds_nothing_is_logged(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     settings = settings_for(tmp_path)
     seed(settings, [event("party", datetime.now(UTC) + timedelta(days=1), title="Moon party")])
