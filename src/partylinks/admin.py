@@ -91,7 +91,8 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
                 select(func.count()).select_from(EventRow).where(upcoming, EventRow.latitude.is_(None))
             )
             or 0,
-            "per_source": {s: n for s, n in per_source},
+            # Every configured source, at 0 until it saves an event (a new, failing or disabled one still shows).
+            "per_source": {**dict.fromkeys(configured_sources(cfg), 0), **{s: n for s, n in per_source}},
             "upcoming_per_source": {s: n for s, n in upcoming_per_source},
         },
         "tickets": session.scalar(select(func.count()).select_from(TicketRow)) or 0,
