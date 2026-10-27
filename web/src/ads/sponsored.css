@@ -125,6 +125,11 @@ html[dir="ltr"] .sp-list a:hover { transform: translateX(2px); }
   display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 4px 2px 8px;
 }
 .sp-strip-row::-webkit-scrollbar { display: none; }
+/* Phone: two a line, top to bottom like the home rows (no sideways swipe). */
+@media (max-width: 760px) {
+  .sp-strip-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; scroll-snap-type: none; }
+  .sp-strip-row .sp-spot { flex: none; min-width: 0; }
+}
 .sp-strip-row .sp-spot {
   position: relative; flex: 0 0 min(200px, 42vw); aspect-ratio: 4 / 5; border-radius: 16px; scroll-snap-align: start;
   border: 1px solid var(--line-hot); box-shadow: 0 0 22px -8px var(--pink);

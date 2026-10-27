@@ -449,14 +449,14 @@ select option { background: var(--panel-solid); color: var(--text); }
 .trending .flag { bottom: 8px; inset-inline-end: 8px; font-size: 11px; padding: 3px 9px; }
 .trending .sources.on-img { bottom: 8px; inset-inline-start: 8px; max-width: calc(100% - 90px); }
 .trending .sources .src { font-size: 10px; }
-/* Phone: full-bleed strip, no boxed panel; one card plus a peek of the next, cut by the screen edge. */
+/* Phone: full-bleed, no boxed panel; two cards a line, read top to bottom with the page (no sideways swipe). */
 @media (max-width: 760px) {
   .trending-nav { display: none; }
   .trending { margin-inline: -16px; padding: 18px 0 14px; border-inline: 0; border-radius: 0; }
   .trending-head { padding: 0 16px 12px; }
-  .trending-row { gap: 12px; padding: 6px 16px 4px; scroll-padding-inline: 16px; }
-  .trending-row { gap: 10px; }
-  .trending-row > .card-wrap { flex-basis: 40vw; }
+  .trending-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; overflow: visible; scroll-snap-type: none; padding: 6px 16px 4px; }
+  .trending-row > .card-wrap { min-width: 0; }
+  .trending-row > :nth-child(n + 7) { display: none; } /* three lines a row: a teaser, the full list follows */
   /* Row cards: square art, title, date and venue; the full card is one tap away. */
   .trending .card-img { aspect-ratio: 1; }
   .trending .card-body { padding: 8px 9px 10px; }
