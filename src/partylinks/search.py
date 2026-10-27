@@ -165,6 +165,8 @@ SYNONYMS: dict[str, tuple[str, ...]] = {
     "פסטיבל": ("festival",), "פסטיבלים": ("festival",), "קומדיה": ("stand_up",), "stand up": ("stand_up",), "סטנד אפ": ("stand_up",),
     "ג'אז": ("jazz",), "היפהופ": ("hip_hop",), "hiphop": ("hip_hop",), "ראפ": ("hip_hop",), "rap": ("hip_hop",),
     "גאה": ("lgbt",), "להטב": ("lgbt",), "להט״ב": ("lgbt",), "חדר בריחה": ("escape_rooms",), "חדרי בריחה": ("escape_rooms",),
+    "בריכה": ("pools",), "בריכות": ("pools",), "פארק מים": ("pools",), "פארקי מים": ("pools",),
+    "מסיבת בריכה": ("pool_party",), "מסיבות בריכה": ("pool_party",), "pool party": ("pool_party",),
     "הפי אוור": ("happy_hour",), "יוגה": ("yoga_wellness",), "אופרה": ("classical_opera",), "קלאסית": ("classical_opera",),
     "רוק": ("rock_indie",), "אינדי": ("rock_indie",), "דיסקו": ("disco_funk",), "רגאטון": ("reggaeton_latin",), "לטיני": ("reggaeton_latin",),
 }  # fmt: skip

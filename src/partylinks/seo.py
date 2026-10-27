@@ -115,6 +115,7 @@ GENRES_HE = {
     "dance": "מחול", "ballroom": "ריקודים סלוניים", "folk_dance": "ריקודי עם", "latin_dance": "ריקודים לטיניים", "salsa": "סלסה",
     "escape_rooms": "חדרי בריחה", "attractions": "אטרקציות", "coffee_carts": "עגלות קפה", "fine_dining": "מסעדות שף",
     "work_spaces": "חללי עבודה", "volunteering": "התנדבות", "team_activities": "פעילויות לצוות", "nightclubs": "מועדונים",
+    "pools": "בריכות ופארקי מים", "pool_party": "מסיבות בריכה",
 }  # fmt: skip
 GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
                  "stand_up": "Stand-up comedy", "live_show": "Live music",
@@ -125,7 +126,8 @@ GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBT
                  "gender_balance": "Gender balanced",
                  "kids": "Kids & Family", "lectures": "Lectures & Talks", "tours": "Tours & Trips",
                  "ballroom": "Ballroom Dancing", "folk_dance": "Folk Dancing", "latin_dance": "Latin Dancing",
-                 "team_activities": "Team activities", "nightclubs": "Clubs"}  # fmt: skip
+                 "team_activities": "Team activities", "nightclubs": "Clubs",
+                 "pools": "Pools & Water parks", "pool_party": "Pool parties"}  # fmt: skip
 GENRE_PAGE_MIN = 3  # fewer upcoming events than this: no landing page (thin content)
 
 

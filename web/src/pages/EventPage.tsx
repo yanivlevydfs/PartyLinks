@@ -60,7 +60,7 @@ export default function EventPage() {
             <div className="tags">
               {e.genres.map((g) => <span key={g} className="tag">{genreLabel(lang, g)}</span>)}
               {!!e.min_age && <span className="tag age">{t.age(e.min_age)}</span>}
-              <span className={"tag entry " + e.entry_type}>{label(t.entry, e.entry_type)}</span>
+              {e.entry_type !== "unknown" && <span className={"tag entry " + e.entry_type}>{label(t.entry, e.entry_type)}</span>}
               {e.is_sold_out && <span className="tag sold">{t.soldOut}</span>}
             </div>
             <h1 dir="auto">{e.title}</h1>

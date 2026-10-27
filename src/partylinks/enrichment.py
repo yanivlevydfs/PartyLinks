@@ -267,6 +267,8 @@ class Enricher:
         declared_only = set(self.settings.expand_genres(self.settings.declared_text_genres))
         if not found & declared_only:
             title = event.title.lower()
+            for phrase in self.settings.text_ignore:
+                title = title.replace(phrase.lower(), " ")
             from_text -= {g for g in declared_only if g not in self._genres or not self._genres[g].search(title)}
         # A tech talk or conference ("Israeli startups", "the music industry's AI") has a subject, not a
         # music genre: its text is read only for the talk genres.

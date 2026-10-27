@@ -191,7 +191,7 @@ export const STRINGS = {
       festival: "פסטיבלים", meetups: "מפגשים", culture: "תרבות", exhibitions: "תערוכות", workshops: "סדנאות",
       cinema: "קולנוע וסרטים", markets: "שווקים וקניות", food: "אוכל", environment: "סביבה", religious: "דת ומסורת",
       holidays: "חגים", sport: "ספורט", happy_hour: "האפי האוור",
-      escape_rooms: "חדרי בריחה", attractions: "אטרקציות", coffee_carts: "עגלות קפה", fine_dining: "מסעדות שף", work_spaces: "חללי עבודה", volunteering: "התנדבות", team_activities: "פעילויות לצוות", nightclubs: "מועדונים",
+      escape_rooms: "חדרי בריחה", attractions: "אטרקציות", coffee_carts: "עגלות קפה", fine_dining: "מסעדות שף", work_spaces: "חללי עבודה", volunteering: "התנדבות", team_activities: "פעילויות לצוות", nightclubs: "מועדונים", pools: "בריכות ופארקי מים", pool_party: "מסיבות בריכה",
       theatre: "תיאטרון", kids: "ילדים ומשפחה", lectures: "הרצאות והעשרה", tours: "סיורים וטיולים", dance: "מחול", ballroom: "ריקודים סלוניים", folk_dance: "ריקודי עם", latin_dance: "ריקודים לטיניים", salsa: "סלסה",
     },
   },
@@ -381,7 +381,7 @@ const EN_GENRE_FIX: Record<string, string> = { rnb: "R&B", edm: "EDM", hip_hop: 
   dark_wave: "Dark Wave / Synth", yoga_wellness: "Yoga & Wellness", liberal: "Liberal / Swingers", kink: "BDSM / Fetish",
   sensual: "Tantra & Sensual", gender_balance: "Gender balanced", kids: "Kids & Family", lectures: "Lectures & Talks",
   tours: "Tours & Trips", ballroom: "Ballroom Dancing", folk_dance: "Folk Dancing", latin_dance: "Latin Dancing",
-  team_activities: "Team Activities", nightclubs: "Clubs" };
+  team_activities: "Team Activities", nightclubs: "Clubs", pools: "Pools & Water Parks", pool_party: "Pool Parties" };
 export function genreLabel(lang: Lang, g: string): string {
   if (lang === "he") return STRINGS.he.genre[g] ?? g;
   return EN_GENRE_FIX[g] ?? g.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
