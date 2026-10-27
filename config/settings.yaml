@@ -336,6 +336,8 @@ enrichment:
     hip_hop: [rnb]
     rnb: [hip_hop]
   detect_genres_from_text: true
+  # Sources whose own categories are precise: their text is not read for genres.
+  declared_genres_only: [funzing]
   # Small print that names a genre word in passing, removed from the text before genres are read.
   text_ignore: ["כרטיס אלקטרוני", "כרטיסים אלקטרוניים", "הכרטיס האלקטרוני", "הכרטיסים האלקטרוניים",
                 "בכרטיס האלקטרוני", "דואר אלקטרוני", "בדואר אלקטרוני", "הדואר האלקטרוני", "בדואר האלקטרוני",
@@ -2214,3 +2216,11 @@ sources:
     site_url: https://meety.co.il
     http:
       concurrency: 3
+
+  funzing:
+    # Funzing (il.funzing.com): workshops, tours, lectures, culinary evenings, shows and family days all
+    # over Israel, from the JSON API its own pages read (api-il.funzing.com/api/v2).
+    enabled: true
+    cron: "19 7,19 * * *"
+    http:
+      concurrency: 4

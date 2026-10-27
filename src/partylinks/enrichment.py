@@ -256,7 +256,8 @@ class Enricher:
     def _detect_genres(self, event: ScrapedEvent) -> list[str]:
         declared = " | ".join([*event.source_genres, *event.event_types]).lower()
         talk = self._talk is not None and self._talk.search(event.title.lower())
-        text = f"{event.title}\n{event.description or ''}".lower() if self.settings.detect_genres_from_text and not talk else ""
+        read_text = self.settings.detect_genres_from_text and not talk and event.source not in self.settings.declared_genres_only
+        text = f"{event.title}\n{event.description or ''}".lower() if read_text else ""
         for phrase in self.settings.text_ignore:
             text = text.replace(phrase.lower(), " ")
         found = {genre for genre, pattern in self._genres.items() if pattern.search(declared)}

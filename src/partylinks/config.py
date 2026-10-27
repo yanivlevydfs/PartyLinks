@@ -209,6 +209,9 @@ class EnrichmentSettings(BaseModel):
     # Umbrella genres: filtering or counting the parent ("electronic") includes every listed sub-genre.
     genre_families: dict[str, list[str]] = Field(default_factory=dict)
     detect_genres_from_text: bool = True
+    # Sources whose own categories are precise: their text is not read for genres (a Funzing tour of
+    # "the Greek market" is not Greek music).
+    declared_genres_only: list[str] = Field(default_factory=list)
     # Phrases removed from title + description before genres are read ("הכרטיס האלקטרוני").
     text_ignore: list[str] = Field(default_factory=list)
     # A title with one of these is a talk, not a party: genres it describes ("the birth of house and
