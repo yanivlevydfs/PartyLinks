@@ -41,6 +41,8 @@ idna==3.20
     # via
     #   anyio
     #   httpx
+json-repair==0.61.7
+    # via partylinks (pyproject.toml)
 opentelemetry-api==1.45.1
     # via fastapi
 pillow==13.0.0

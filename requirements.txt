@@ -6,6 +6,7 @@ convertdate==2.5.1
 fastapi>=0.115
 curl_cffi>=0.15
 httpx[socks]>=0.28
+json-repair==0.61.7
 pycountry==26.2.16
 pydantic>=2.9
 pydantic-settings[yaml]>=2.6

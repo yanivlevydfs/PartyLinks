@@ -25,6 +25,7 @@ from decimal import Decimal
 from typing import Any
 from urllib.parse import unquote, urlsplit
 
+import json_repair
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent, TicketTier
@@ -112,7 +113,8 @@ def _jsonld_objects(page_html: str) -> list[dict[str, Any]]:
         try:
             found.append(json.loads(block))
         except ValueError:
-            continue
+            # Quotes elsewhere too: a place named "ויצ"ו חיפה" dropped a real show (Oct 2026). Repaired.
+            found.append(json_repair.loads(block))
     return [n for n in found if isinstance(n, dict)]
 
 

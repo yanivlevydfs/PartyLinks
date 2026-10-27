@@ -13,6 +13,7 @@ from typing import Any
 from urllib.parse import quote
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import json_repair
 from selectolax.lexbor import LexborHTMLParser
 
 _WS = re.compile(r"[ \t\r\f\v]+")
@@ -54,10 +55,12 @@ def jsonld_nodes(page_html: str) -> list[dict[str, Any]]:
                 walk(item)
 
     for script in LexborHTMLParser(page_html).css('script[type="application/ld+json"]'):
+        text = script.text()
         try:
-            walk(json.loads(script.text()))
+            walk(json.loads(text))
         except (json.JSONDecodeError, TypeError):
-            continue
+            # Hebrew abbreviations break hand-written JSON: "ויצ"ו חיפה" (muzi, Oct 2026). Repaired, not dropped.
+            walk(json_repair.loads(text) if text.strip() else None)
     return found
 
 

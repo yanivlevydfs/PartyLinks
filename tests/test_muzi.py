@@ -75,3 +75,11 @@ def test_unescaped_backslash_and_quotes_in_description() -> None:
     page = _page("event_raw_newlines.html").replace('"description": "Genish |', r'"description": "Genish \ "Orkey" |')
     event = parse_event(page, URL, TZ)
     assert event is not None and event.description and event.description.startswith(r'Genish \ "Orkey"')
+
+
+def test_unescaped_quotes_outside_the_description() -> None:
+    """A place written with a plain ASCII gershayim ("ויצ"ו חיפה") broke the whole block: the show was lost."""
+    page = _page("event_raw_newlines.html").replace('"@type": "Place",', '"@type": "Place", "alternateName": "ויצ"ו חיפה",')
+    assert '"ויצ"ו' in page
+    event = parse_event(page, URL, TZ)
+    assert event is not None and event.title == "Bayz Rooftop The Last Dance"
