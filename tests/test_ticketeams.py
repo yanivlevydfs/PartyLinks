@@ -35,7 +35,11 @@ def test_product_page() -> None:
     assert event.start_at is not None and event.start_at.isoformat() == "2027-01-07T20:00:00+00:00"  # London time
     assert (event.venue_name, event.city, event.country) == ("אולד טראפורד", "מנצ'סטר", "GB")
     assert (event.currency, event.min_price, event.max_price, event.is_sold_out) == ("GBP", 145, 394, True)
-    assert event.images == []  # the site logo is not the event's picture
+    assert event.images == []  # no picture of its own: og:image is the site's background, not the event's
+    own = PAGE.replace('{"@type":"Product","name":"x",', '{"@type":"Product","name":"x","image":[{"@type":"ImageObject",'
+                       '"url":"https://ticketeams.co.il/wp-content/uploads/2026/10/old-trafford-map.jpg"}],')
+    pictured = parse_product(own, PRODUCT, TERMS, "Asia/Jerusalem")
+    assert pictured is not None and pictured.images == ["https://ticketeams.co.il/wp-content/uploads/2026/10/old-trafford-map.jpg"]
     assert event.source_genres == ["ליגה אנגלית", "כדורגל", "ספורט"]
     assert "sport" in Enricher(Settings().enrichment, "Asia/Jerusalem")._detect_genres(event)
     assert parse_product("<div></div>", PRODUCT, TERMS, "UTC") is None  # no date: not an event

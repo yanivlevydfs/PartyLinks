@@ -30,7 +30,6 @@ from partylinks.parsing import (
     clean_str,
     html_to_text,
     jsonld_nodes,
-    og_image,
     schema_types,
     to_decimal,
     to_int,
@@ -144,12 +143,15 @@ def parse_product(page_html: str, product: dict[str, Any], terms: Terms, timezon
     start_at = datetime(int(date[3]), _MONTHS[date[1]], int(date[2]), hour, minute, tzinfo=tz)
 
     offers: dict[str, Any] = {}
-    logo = None
+    image = None
     for node in jsonld_nodes(page_html):
-        if "product" in schema_types(node) and isinstance(node.get("offers"), dict):
-            offers = node["offers"]
-        elif "organization" in schema_types(node) and isinstance(node.get("logo"), dict):
-            logo = unquote(str(node["logo"].get("url")))
+        if "product" in schema_types(node):
+            if isinstance(node.get("offers"), dict):
+                offers = node["offers"]
+            # The product's own picture. og:image is no use: most products have none, and theirs is then
+            # the site's background (רקע.png, 936 of 990 products, Oct 2026) or its logo.
+            pictures = node.get("image") if isinstance(node.get("image"), list) else [node.get("image")]
+            image = next((u for p in pictures if (u := p.get("url") if isinstance(p, dict) else p) and isinstance(u, str)), None)
     low, high = to_decimal(offers.get("lowPrice") or offers.get("price")), to_decimal(offers.get("highPrice"))
     venue = terms.first("stadiums", product.get("stadiums")) or terms.first("halls", product.get("halls"))
     categories = terms.categories(product.get("product_cat"))
@@ -157,9 +159,6 @@ def parse_product(page_html: str, product: dict[str, Any], terms: Terms, timezon
     title = html_to_text((product.get("title") or {}).get("rendered")) or ""
     if not title:
         raise ParseError(f"{url}: product without a title")
-    image = og_image(page_html)
-    if image and unquote(image) == logo:  # most products have no picture: og:image is then the site logo
-        image = None
     return ScrapedEvent(
         source=TicketeamsScraper.name,
         source_event_id=str(product["id"]),
