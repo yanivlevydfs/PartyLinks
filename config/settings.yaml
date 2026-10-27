@@ -1189,12 +1189,14 @@ sources:
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
     # event in one request; each event page adds the full description and the original-event link.
-    # Cloudflare may challenge automated clients: the run then stops as "blocked" (never worked around),
-    # after saving the events new to us as the feed gives them.
+    # Cloudflare may challenge automated clients: the source speaks as Chrome (curl_cffi, as Chillz does),
+    # which passes. If a challenge still comes the run stops as "blocked", after saving the events new
+    # to us as the feed gives them.
     enabled: true
     cron: "59 7,19 * * *"
     site_url: https://www.secrettelaviv.com
     http:
+      impersonate: chrome
       concurrency: 2            # small site: ~380 event pages a run
       request_delay_seconds: 1.0
 
