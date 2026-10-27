@@ -232,10 +232,18 @@ export function Filters() {
 }
 
 /** Empty result: one button per active filter, showing how many events dropping it would bring back. */
-export function Relax() {
+export function Relax({ didYouMean }: { didYouMean?: string | null }) {
   const { t, lang } = useT();
   const f = useStore((s) => s.filters);
   const set = useStore((s) => s.setFilters);
+  if (f.q) {
+    return (
+      <div className="msg">
+        <p>{didYouMean ? t.closest(f.q) : t.noMatch(f.q)}</p>
+        {didYouMean && <button className="f-pill" onClick={() => set({ ...DEFAULT_FILTERS, q: didYouMean })}>{didYouMean}</button>}
+      </div>
+    );
+  }
   const options: [string, Partial<FilterState>][] = [
     ...(f.freeOnly ? [[t.freeOnly, { freeOnly: false }] as [string, Partial<FilterState>]] : []),
     ...(f.when !== "all" ? [[whenText(t, f.when), { when: "all" }] as [string, Partial<FilterState>]] : []),

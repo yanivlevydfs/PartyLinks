@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 import pycountry
 from convertdate import hebrew, holidays
-from sqlalchemy import ColumnElement, String, and_, case, cast, func, or_, select
+from sqlalchemy import ColumnElement, SQLColumnExpression, String, and_, case, cast, func, or_, select
 from sqlalchemy.orm import aliased
 
 from partylinks import seo
@@ -189,12 +189,13 @@ def _pattern(word: str) -> str:
     return "%" + _escape(word) + "%"
 
 
-def _json_has(column: ColumnElement[Any], word: str) -> Cond:
+def _json_has(column: SQLColumnExpression[Any], word: str) -> Cond:
     """A JSON list column (event types) holding ``word``: stored with non-ASCII escaped, so both forms."""
     text = cast(column, String)
     return or_(*(text.ilike(_pattern(f), escape="\\") for f in {word, json.dumps(word)[1:-1]}))
 
 
+DID_YOU_MEAN_CUTOFF = 0.75  # looser than TYPO_CUTOFF: a suggestion to click, not extra results
 TYPO_CUTOFF = 0.85  # difflib ratio: one letter off in a 5-6 letter word
 SHORT_WORD = 3  # up to this long, a word must stand alone in the text: "ראפ" is not in "תראפיה"
 
@@ -202,7 +203,7 @@ SHORT_WORD = 3  # up to this long, a word must stand alone in the text: "ראפ"
 def text_match(word: str) -> Cond:
     pattern = _pattern(word)
 
-    def found(c: ColumnElement[Any]) -> Cond:
+    def found(c: SQLColumnExpression[Any]) -> Cond:
         inside = c.ilike(pattern, escape="\\")
         return and_(inside, func.has_word(c, word)) if len(word) <= SHORT_WORD else inside
 
@@ -211,7 +212,7 @@ def text_match(word: str) -> Cond:
     )))  # fmt: skip
 
 
-def _whole_word(column: ColumnElement[Any], word: str) -> Cond:
+def _whole_word(column: SQLColumnExpression[Any], word: str) -> Cond:
     w = _escape(word)
     return or_(*(column.ilike(p, escape="\\") for p in (w, f"{w} %", f"% {w}", f"% {w} %", f"%-{w}%", f"%{w}-%")))
 
@@ -247,6 +248,15 @@ def sounds_like(q: str, by_skeleton: dict[str, list[str]]) -> list[str]:
     if len(key) == 3 and len(names) > 1:
         return []
     return [n for n in names if n.casefold() != q.strip().casefold()]
+
+
+def did_you_mean(q: str, cfg: Settings, names: Iterable[str]) -> str | None:
+    """The known name (genre, kind, city, region, ticket site, artist) closest to a search that
+    found nothing: "אינפקטד מושרום" -> "Infected Mushroom"."""
+    text = " ".join(q.casefold().split())
+    choices = {n.casefold(): n for n in (*_vocabulary(cfg), *names) if len(n) >= 3}
+    near = get_close_matches(text, list(choices), n=1, cutoff=DID_YOU_MEAN_CUTOFF)
+    return choices[near[0]] if near and near[0] != text else None
 
 
 def by_skeleton(names: Iterable[str]) -> dict[str, list[str]]:

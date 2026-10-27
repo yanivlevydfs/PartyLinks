@@ -8,7 +8,7 @@ import { INFO_LINKS } from "./pages/Info";
 import { SponsoredFrame, SponsoredStrip } from "./Sponsored";
 import { Weather } from "./Weather";
 import { useStore } from "./store";
-import type { EventSummary } from "./types";
+import type { EventPage, EventSummary } from "./types";
 
 export const TZ = "Asia/Jerusalem";
 export const today = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ });
@@ -453,7 +453,7 @@ export function Loader({ small }: { small?: boolean }) {
 }
 
 /** Paged event grid for any /events filter set. */
-export function EventGrid({ params, empty }: { params: Params; empty?: ReactNode }) {
+export function EventGrid({ params, empty }: { params: Params; empty?: (page?: EventPage) => ReactNode }) {
   const { t } = useT();
   const q = useEvents(params);
   const items = q.data?.pages.flatMap((p) => p.items) ?? [];
@@ -464,7 +464,7 @@ export function EventGrid({ params, empty }: { params: Params; empty?: ReactNode
   return (
     <>
       <p className="count">{t.results(total)}</p>
-      {items.length === 0 && (empty ?? <p className="msg">{t.empty}</p>)}
+      {items.length === 0 && (empty?.(q.data?.pages[0]) ?? <p className="msg">{t.empty}</p>)}
       <div className={"grid" + (q.isPlaceholderData ? " stale" : "")} aria-busy={q.isPlaceholderData}>{items.map((e) => <Card key={e.id} e={e} />)}</div>
       {q.hasNextPage && (
         <div className="more">

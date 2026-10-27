@@ -51,7 +51,7 @@ from partylinks.media import VARIANT_WIDTHS, variant_path
 from partylinks.models import EntryType
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
-from partylinks.search import by_skeleton, relevance, smart_filters, sounds_like
+from partylinks.search import by_skeleton, did_you_mean, relevance, smart_filters, sounds_like
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
 from partylinks.weather import router as weather_router
@@ -258,6 +258,8 @@ class EventPage(BaseModel):
     page: int
     page_size: int
     items: list[EventSummaryOut]
+    # A search that found nothing: the closest known name that finds something ("did you mean").
+    did_you_mean: str | None = None
 
 
 class RailsOut(BaseModel):
@@ -524,9 +526,8 @@ def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_
 SOUND_INDEX_TTL_S = 600
 
 
-def _sounds_like(request: Request, q: str) -> list[str]:
-    """Lineup names that sound like ``q`` in another spelling: "אינפקטד מאשרום" finds Infected Mushroom.
-    The index of every lineup name is rebuilt at most every 10 minutes."""
+def _sound_index(request: Request) -> dict[str, list[str]]:
+    """Every lineup name by its skeleton, rebuilt at most every 10 minutes."""
     state = request.app.state
     built, index = getattr(state, "sound_index", (0.0, {}))
     if time.monotonic() - built > SOUND_INDEX_TTL_S:
@@ -535,7 +536,12 @@ def _sounds_like(request: Request, q: str) -> list[str]:
             lineups = session.scalars(select(EventRow.lineup).where(EventRow.lineup.is_not(None))).all()
         index = by_skeleton(str(n) for lineup in lineups for n in lineup or [])
         state.sound_index = (time.monotonic(), index)
-    return sounds_like(q, index)
+    return index
+
+
+def _sounds_like(request: Request, q: str) -> list[str]:
+    """Lineup names that sound like ``q`` in another spelling: "אינפקטד מאשרום" finds Infected Mushroom."""
+    return sounds_like(q, _sound_index(request))
 
 
 # Built in the background on startup (an empty cache made the first visits after a deploy take 3-12 s).
@@ -1015,11 +1021,18 @@ def _register_routes(app: FastAPI) -> None:
                 total, wanted = len(ids), ids[(page - 1) * size : page * size]
                 found = {r.id: r for r in session.scalars(card.where(EventRow.id.in_(wanted)))}
                 rows = [found[i] for i in wanted if i in found]
+            suggestion = None
             if q and not total:  # what people look for and we lack; once per cached answer
                 log.info("search miss: %r", q[:100])
+                names = (n for names in _sound_index(request).values() for n in names)
+                if (near := did_you_mean(q, cfg, names)) and session.scalar(
+                    # the search is the last filter: the other filters stay
+                    select(EventRow.id).where(*filters[:-1], *smart_filters(near, cfg)).limit(1)
+                ):
+                    suggestion = near
             extras = _summary_extras(session, rows)
             items = [EventSummaryOut.model_validate(r).model_copy(update=extras[r.id]) for r in rows]
-            return EventPage(total=total, page=page, page_size=size, items=items)
+            return EventPage(total=total, page=page, page_size=size, items=items, did_you_mean=suggestion)
 
         return _cached(request, build)
 

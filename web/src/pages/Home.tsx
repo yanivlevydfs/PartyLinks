@@ -92,15 +92,23 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   // filter, so leftover filters (date, area, genre...) never hide what was searched for.
   const [q, setQ] = useState(f.q);
   const [suggest, setSuggest] = useState(false);
+  const sent = useRef(f.q); // the last search this box sent: any other change (a "did you mean") is shown in it
   useEffect(() => {
     const id = setTimeout(() => {
       const text = q.trim();
       // One letter matches nearly everything (and the API wants 2+): the list waits for the second.
       if (text.length === 1 || text === useStore.getState().filters.q) return;
+      sent.current = text;
       set(text ? { ...DEFAULT_FILTERS, q: text } : { q: text });
     }, 250);
     return () => clearTimeout(id);
   }, [q, set]);
+  useEffect(() => {
+    if (f.q !== sent.current) {
+      sent.current = f.q;
+      setQ(f.q);
+    }
+  }, [f.q]);
 
   // The plain home page asks "where to?" first; a search, a landing page or an answered quiz shows the list.
   const quizDone = useStore((s) => s.quizDone);
@@ -131,7 +139,8 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
             {!landing && !f.q && <button className="quiz-again" onClick={again}>✨ {t.quiz.again}</button>}
             {landing && info?.intro && <p className="landing-intro">{info.intro}</p>}
             <Filters />
-            <EventGrid params={filterParams(f)} empty={<Relax />} />
+            {/* Nothing found: a close name to try, and what is hot meanwhile instead of an empty page. */}
+            <EventGrid params={filterParams(f)} empty={(page) => <><Relax didYouMean={page?.did_you_mean} />{f.q && <Trending />}</>} />
             {landing && <Related path={pathname} />}
           </>
         )}

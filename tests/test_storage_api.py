@@ -838,6 +838,19 @@ def test_search_knows_weeks_months_weekdays_and_holidays() -> None:
     assert r["יום העצמאות"] == (date(2027, 5, 11), date(2027, 5, 12))
 
 
+def test_a_search_that_finds_nothing_suggests_a_close_name(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    db = seed(settings, [event("im", datetime.now(UTC) + timedelta(days=1), title="Psy night")])
+    with db.session() as session:  # lineups come from curated artists only: set it as stored
+        session.execute(update(EventRow).where(EventRow.source_event_id == "im").values(lineup=["Infected Mushroom"]))
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        page = lambda q: client.get("/events", params={"q": q}).json()  # noqa: E731
+        missed = page("infected mushrron")  # a consonant off: not even a sound-alike
+        assert missed["total"] == 0 and missed["did_you_mean"] == "Infected Mushroom"
+        assert page("psy")["did_you_mean"] is None  # found: nothing to suggest
+        assert page("zzzqqq")["did_you_mean"] is None  # nothing close
+
+
 def test_a_search_that_finds_nothing_is_logged(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     settings = settings_for(tmp_path)
     seed(settings, [event("party", datetime.now(UTC) + timedelta(days=1), title="Moon party")])

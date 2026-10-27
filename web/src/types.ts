@@ -100,6 +100,8 @@ export interface EventPage {
   page: number;
   page_size: number;
   items: EventSummary[];
+  /** A search that found nothing: the closest known name that finds something. */
+  did_you_mean?: string | null;
 }
 
 /** GET /events/sponsored: paid placements per physical side, in the admin's order. */
