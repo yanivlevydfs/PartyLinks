@@ -939,3 +939,12 @@ def test_search_by_area_does_not_rank_titles_holding_its_words(tmp_path: Path) -
     assert relevance("גוש דן", cfg) is None
     assert relevance("zygo", cfg) is None
     assert relevance("טכנו בגוש דן", cfg) is not None
+
+
+def test_a_short_search_word_is_matched_as_a_whole_word() -> None:
+    from partylinks.db import has_word
+
+    assert has_word("ערב ראפ בבארבי", "ראפ")
+    assert has_word("מסיבת היפהופ, בראפ ובטראפ", "ראפ")  # a one-letter prefix still counts
+    assert not has_word("סאונד תראפיה", "ראפ")
+    assert has_word("Rap night", "rap") and not has_word("Trap night", "rap")

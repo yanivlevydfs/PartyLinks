@@ -14,7 +14,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import pycountry
-from sqlalchemy import ColumnElement, String, and_, case, cast, or_, select
+from sqlalchemy import ColumnElement, String, and_, case, cast, func, or_, select
 from sqlalchemy.orm import aliased
 
 from partylinks import seo
@@ -89,9 +89,17 @@ def _json_has(column: ColumnElement[Any], word: str) -> Cond:
     return or_(*(text.ilike(_pattern(f), escape="\\") for f in {word, json.dumps(word)[1:-1]}))
 
 
+SHORT_WORD = 3  # up to this long, a word must stand alone in the text: "ראפ" is not in "תראפיה"
+
+
 def text_match(word: str) -> Cond:
     pattern = _pattern(word)
-    return or_(lineup_contains(word), _json_has(EventRow.event_types, word), *(c.ilike(pattern, escape="\\") for c in (
+
+    def found(c: ColumnElement[Any]) -> Cond:
+        inside = c.ilike(pattern, escape="\\")
+        return and_(inside, func.has_word(c, word)) if len(word) <= SHORT_WORD else inside
+
+    return or_(lineup_contains(word), _json_has(EventRow.event_types, word), *(found(c) for c in (
         EventRow.title, EventRow.description, EventRow.venue_name, EventRow.city, EventRow.address, EventRow.organizer,
     )))  # fmt: skip
 

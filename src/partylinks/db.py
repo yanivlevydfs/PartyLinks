@@ -5,11 +5,13 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 import threading
 import time
 from collections import defaultdict
 from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import contextmanager
+from functools import lru_cache
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -342,6 +344,18 @@ def _sqlite_pragmas(dbapi_connection: Any, _record: Any) -> None:
     cursor.execute("PRAGMA synchronous=NORMAL")
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
+    dbapi_connection.create_function("has_word", 2, has_word, deterministic=True)
+
+
+@lru_cache(maxsize=512)
+def _word_re(word: str) -> re.Pattern[str]:
+    return re.compile(r"(?<!\w)[בלמהוכש]?" + re.escape(word.casefold()) + r"(?!\w)")
+
+
+def has_word(text: str | None, word: str | None) -> bool:
+    """``word`` as a whole word of ``text``, maybe behind a one-letter Hebrew prefix ("בראפ").
+    SQLite's ``has_word()``: a short search word ("ראפ") is not found inside "תראפיה"."""
+    return bool(text and word and _word_re(word).search(text.casefold()))
 
 
 def _sqlite_begin(conn: Any) -> None:
