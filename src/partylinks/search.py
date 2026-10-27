@@ -109,7 +109,47 @@ def _whole_word(column: ColumnElement[Any], word: str) -> Cond:
     return or_(*(column.ilike(p, escape="\\") for p in (w, f"{w} %", f"% {w}", f"% {w} %", f"%-{w}%", f"%{w}-%")))
 
 
-def relevance(q: str, cfg: Settings) -> ColumnElement[int] | None:
+_HE_SOUNDS = {
+    "ג'": "j", "ג׳": "j", "ז'": "z", "ז׳": "z", "צ'": "ts", "צ׳": "ts", "וו": "b",
+    "ב": "b", "ג": "g", "ד": "d", "ז": "z", "ח": "k", "ט": "t", "כ": "k", "ך": "k", "ל": "l", "מ": "m", "ם": "m",
+    "נ": "n", "ן": "n", "ס": "s", "פ": "p", "ף": "p", "צ": "ts", "ץ": "ts", "ק": "k", "ר": "r", "ש": "s", "ת": "t",
+}  # fmt: skip
+_LATIN_SOUNDS = [
+    (r"tion", "sn"), (r"sh|sch", "s"), (r"ch|kh|ck|qu?|c(?![eiy])", "k"), (r"c", "s"), (r"ph|f", "p"), (r"th", "t"), (r"tz", "ts"),
+    (r"x", "ks"), (r"w|v", "b"), (r"[aeiouyh]", ""),
+]  # fmt: skip
+
+
+def skeleton(name: str) -> str:
+    """The consonants of a name in one alphabet, so a Hebrew and a Latin spelling meet:
+    "אינפקטד מאשרום" and "Infected Mushroom" are both "npktdmsrm". Vowels (and א ה ו י ע) drop out."""
+    text = re.sub(r"(?<![א-ת])ו", "b", name.casefold())  # a leading ו is a V ("ויני ויצ'י")
+    for he, sound in _HE_SOUNDS.items():
+        text = text.replace(he, sound)
+    for pattern, sound in _LATIN_SOUNDS:
+        text = re.sub(pattern, sound, text)
+    return re.sub(r"(.)\1+", r"\1", re.sub(r"[^a-z]", "", text))
+
+
+def sounds_like(q: str, by_skeleton: dict[str, list[str]]) -> list[str]:
+    """Lineup names spelled differently from ``q`` that sound the same ("אינפקטד מאשרום": Infected Mushroom).
+    ponytail: a short skeleton (three consonants) counts only when one name has it; fuzzier matching
+    (one consonant off) when the misses log shows a need."""
+    key = skeleton(q)
+    names = by_skeleton.get(key, []) if len(key) >= 3 else []
+    if len(key) == 3 and len(names) > 1:
+        return []
+    return [n for n in names if n.casefold() != q.strip().casefold()]
+
+
+def by_skeleton(names: Iterable[str]) -> dict[str, list[str]]:
+    out: dict[str, list[str]] = {}
+    for name in {n.strip() for n in names if n and n.strip()}:
+        out.setdefault(skeleton(name), []).append(name)
+    return out
+
+
+def relevance(q: str, cfg: Settings, artists: Iterable[str] = ()) -> ColumnElement[int] | None:
     """0: the event is of a searched genre / kind ("טכנו", "מסיבה") or a searched word is a whole word of
     its title; 1: a word is inside the title, lineup or venue; 2: only elsewhere (description, city...).
     Sorts search results before the date, so "טכנו" lists techno parties before "טכנודע"."""
@@ -117,11 +157,13 @@ def relevance(q: str, cfg: Settings) -> ColumnElement[int] | None:
     for name in sorted(_area_and_site_names(cfg), key=len, reverse=True):  # "גוש דן" is a place, not title words
         text = text.replace(f" {name} ", " ")
     words = [w for w in re.findall(r"\w{2,}", text) if not w.isdigit()]
-    if not words:
+    artists = list(artists)
+    if not words and not artists:
         return None
     genres = {g for name, gs in _genre_names(cfg).items() if f" {name} " in text for g in gs}
     forms = [f for w in words for f in ((w, w[1:]) if len(w) > 3 and w[0] in "בלמהו" else (w,))]
     top = [_whole_word(EventRow.title, f) for f in forms] + [_genre(cfg, g) for g in genres]
+    top += [lineup_contains(a) for a in artists]
     inside = [
         EventRow.title.ilike(_pattern(f), escape="\\") | lineup_contains(f) | EventRow.venue_name.ilike(_pattern(f), escape="\\")
         for f in forms
@@ -195,7 +237,8 @@ def _vocabulary(cfg: Settings) -> dict[str, Callable[[], Cond]]:
     return names
 
 
-def smart_filters(q: str, cfg: Settings) -> list[Cond]:
+def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Cond]:
+    """``artists``: lineup names that sound like ``q`` (``sounds_like``); their events match too."""
     text = " " + re.sub(r"\s+", " ", q.casefold()) + " "
     filters: list[Cond] = []
 
@@ -226,4 +269,6 @@ def smart_filters(q: str, cfg: Settings) -> list[Cond]:
     for w in (w for w in text.split() if len(w) >= 2):
         # "ברומא" is "רומא" with "in": a Hebrew one-letter prefix may be dropped.
         filters.append(or_(text_match(w), text_match(w[1:])) if len(w) > 3 and w[0] in "בלמהו" else text_match(w))
-    return [and_(*filters)] if filters else []
+    if not filters:
+        return []
+    return [or_(and_(*filters), *(lineup_contains(a) for a in artists))]

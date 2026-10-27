@@ -790,6 +790,24 @@ def test_search_lists_title_matches_first_then_lineup_and_venue(tmp_path: Path) 
         assert ids("q=lecture") == ["talk"]
 
 
+def test_an_artist_is_found_by_its_name_in_the_other_alphabet(tmp_path: Path) -> None:
+    from partylinks.search import skeleton
+
+    assert skeleton("אינפקטד מאשרום") == skeleton("Infected Mushroom")
+    assert skeleton("אסטרל פרוג'קשן") == skeleton("Astral Projection")
+    settings = settings_for(tmp_path)
+    db = seed(settings, [
+        event("im", datetime.now(UTC) + timedelta(days=1), title="Psy night"),
+        event("other", datetime.now(UTC) + timedelta(days=1), title="Something else"),
+    ])  # fmt: skip
+    with db.session() as session:  # lineups come from curated artists only: set it as stored
+        session.execute(update(EventRow).where(EventRow.source_event_id == "im").values(lineup=["Infected Mushroom"]))
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda q: [e["source_event_id"] for e in client.get("/events", params={"q": q}).json()["items"]]  # noqa: E731
+        assert ids("אינפקטד מאשרום") == ["im"]
+        assert ids("infected mushroom") == ["im"]
+
+
 def test_a_search_that_finds_nothing_is_logged(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     settings = settings_for(tmp_path)
     seed(settings, [event("party", datetime.now(UTC) + timedelta(days=1), title="Moon party")])

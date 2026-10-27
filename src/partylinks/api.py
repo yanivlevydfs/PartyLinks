@@ -51,7 +51,7 @@ from partylinks.media import VARIANT_WIDTHS, variant_path
 from partylinks.models import EntryType
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
-from partylinks.search import relevance, smart_filters
+from partylinks.search import by_skeleton, relevance, smart_filters, sounds_like
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
 from partylinks.weather import router as weather_router
@@ -521,6 +521,23 @@ def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_
     return Response(cache.get((request.url.path, request.url.query), body)[0], media_type="application/json")
 
 
+SOUND_INDEX_TTL_S = 600
+
+
+def _sounds_like(request: Request, q: str) -> list[str]:
+    """Lineup names that sound like ``q`` in another spelling: "אינפקטד מאשרום" finds Infected Mushroom.
+    The index of every lineup name is rebuilt at most every 10 minutes."""
+    state = request.app.state
+    built, index = getattr(state, "sound_index", (0.0, {}))
+    if time.monotonic() - built > SOUND_INDEX_TTL_S:
+        db: Database = state.db
+        with db.session(write=False) as session:
+            lineups = session.scalars(select(EventRow.lineup).where(EventRow.lineup.is_not(None))).all()
+        index = by_skeleton(str(n) for lineup in lineups for n in lineup or [])
+        state.sound_index = (time.monotonic(), index)
+    return sounds_like(q, index)
+
+
 # Built in the background on startup (an empty cache made the first visits after a deploy take 3-12 s).
 WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/posts", "/categories", "/categories?anywhere=true", "/ticket-sites", "/events/rails", "/sitemap.xml")
 
@@ -957,7 +974,7 @@ def _register_routes(app: FastAPI) -> None:
         if max_price is not None:
             filters.append(EventRow.group_min_price <= max_price)
         if q:
-            filters += smart_filters(q, cfg)
+            filters += smart_filters(q, cfg, _sounds_like(request, q))
         return filters
 
     # A default, not Annotated: string annotations (``from __future__``) cannot see this local function.
@@ -978,7 +995,7 @@ def _register_routes(app: FastAPI) -> None:
 
         # A search in the default date order puts title matches first, then lineup / venue, then the rest.
         q = request.query_params.get("q")
-        rank = relevance(q, cfg) if q and sort is EventSort.start_asc else None
+        rank = relevance(q, cfg, _sounds_like(request, q)) if q and sort is EventSort.start_asc else None
 
         def build(session: Session) -> EventPage:
             # Cards never show the long text columns.
