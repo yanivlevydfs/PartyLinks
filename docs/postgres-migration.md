@@ -545,3 +545,10 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **query שהשתנה:** `GET /events` במיון לפי תאריך (`sort=start_at`, ברירת המחדל) ממיין עכשיו `ORDER BY local_date, <is_place>, start_at, id`, כש-`<is_place>` הוא `coalesce(extra['happy_hour'] as boolean, false)` (`api.py`, `_IS_PLACE`). כך רשימות מקומות (מועדון או בית קפה "פתוח היום" של HappyTLV, אלפים ב-00:00) באות אחרי האירועים של אותו יום.
 - **ב-PG:** `EventRow.extra[...].as_boolean()` של SQLAlchemy מתורגם ל-`(extra ->> 'happy_hour')::boolean` (ב-SQLite: `JSON_EXTRACT`). `extra` צריך להיות `JSONB` כדי שזה יעבוד, וזה כבר בתכנון (§6). אין אינדקס על הביטוי: המיון רץ על השורות שעברו את הסינון, ונמדד ב-SQLite באותו זמן כמו המיון הקודם. אם ב-PG זה יאט בעמוד 1 בלי פילטרים, אפשר להוסיף אינדקס על `(local_date, ((extra ->> 'happy_hour')::boolean), start_at)`.
 - **בלי שינוי schema.** קטגוריות: `genre_groups` (משפחות הפילטר) הן config בלבד, וה-API מחשב את הספירות שלהן ב-Python.
+
+### 2026-10-28 (חיפוש ואירועים בחו"ל)
+- **פילטר `city`:** במקום `ILIKE` אחד על `city` / `address`, עכשיו `OR` של `ILIKE` לכל שם של העיר (עברית + אנגלית מ-GeoNames, `places.city_abroad`), למשל "פריז" גם `%Paris%`. ב-PG זה אותו `ILIKE` (אין אינדקס עליו גם היום).
+- **חיפוש (`search.text_match`):** נוסף `_json_has(source_genres, word)`, כלומר `CAST(source_genres AS TEXT) ILIKE` (כמו `event_types`). ב-PG `source_genres` הוא `JSONB` (§6), ו-`::text ILIKE` עובד אותו דבר.
+- **עיר בחו"ל בחיפוש:** `smart_filters` מזהה עיר בחו"ל (100k+ תושבים) ומוסיף `OR` של `text_match` לכל שמותיה. אין שינוי מבני.
+- **מיון:** `sort=start_at` עם `abroad=true` חזר ל-`ORDER BY start_at, id`, בלי `local_date` ובלי `<is_place>`.
+- **בלי שינוי schema.**
