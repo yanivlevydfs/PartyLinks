@@ -930,3 +930,12 @@ def test_search_knows_kinds_regions_and_ticket_sites_by_everyday_names(tmp_path:
     vocab = _vocabulary(settings_for(tmp_path))
     for name in ("מסיבה", "מסיבת טבע", "הופעה", "ג'אז", "ג׳אז", "ראפ", "גוש דן", "בצפון", "zygo", "גו אאוט", "תיאטרון"):
         assert name in vocab, name
+
+
+def test_search_by_area_does_not_rank_titles_holding_its_words(tmp_path: Path) -> None:
+    from partylinks.search import relevance
+
+    cfg = settings_for(tmp_path)
+    assert relevance("גוש דן", cfg) is None
+    assert relevance("zygo", cfg) is None
+    assert relevance("טכנו בגוש דן", cfg) is not None

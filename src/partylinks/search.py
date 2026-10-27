@@ -105,10 +105,12 @@ def relevance(q: str, cfg: Settings) -> ColumnElement[int] | None:
     """0: the event is of a searched genre / kind ("טכנו", "מסיבה") or a searched word is a whole word of
     its title; 1: a word is inside the title, lineup or venue; 2: only elsewhere (description, city...).
     Sorts search results before the date, so "טכנו" lists techno parties before "טכנודע"."""
-    words = [w for w in re.findall(r"\w{2,}", q.casefold()) if not w.isdigit()]
+    text = " " + " ".join(q.casefold().split()) + " "
+    for name in sorted(_area_and_site_names(cfg), key=len, reverse=True):  # "גוש דן" is a place, not title words
+        text = text.replace(f" {name} ", " ")
+    words = [w for w in re.findall(r"\w{2,}", text) if not w.isdigit()]
     if not words:
         return None
-    text = " " + " ".join(q.casefold().split()) + " "
     genres = {g for name, gs in _genre_names(cfg).items() if f" {name} " in text for g in gs}
     forms = [f for w in words for f in ((w, w[1:]) if len(w) > 3 and w[0] in "בלמהו" else (w,))]
     top = [_whole_word(EventRow.title, f) for f in forms] + [_genre(cfg, g) for g in genres]
@@ -117,6 +119,12 @@ def relevance(q: str, cfg: Settings) -> ColumnElement[int] | None:
         for f in forms
     ]
     return case((or_(*top), 0), (or_(*inside), 1), else_=2)
+
+
+def _area_and_site_names(cfg: Settings) -> set[str]:
+    names = {n for key, (he, _, en) in seo.REGION_NAMES.items() for n in (he, en, *REGION_ALIASES.get(key, ()))}
+    names |= {n for key in cfg.sources for n in (key, *SOURCE_ALIASES.get(key, ()))}
+    return {n.casefold() for n in names}
 
 
 def _genre(cfg: Settings, genre: str) -> Cond:
