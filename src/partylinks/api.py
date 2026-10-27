@@ -9,7 +9,7 @@ import logging
 import threading
 import time
 from collections import Counter
-from collections.abc import AsyncGenerator, Callable, Iterator, Sequence
+from collections.abc import AsyncGenerator, Callable, Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime, timedelta
@@ -48,6 +48,7 @@ from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.logs import setup_logging
 from partylinks.media import VARIANT_WIDTHS, variant_path
 from partylinks.models import EntryType
+from partylinks.places import city_abroad
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
 from partylinks.search import by_skeleton, did_you_mean, relevance, smart_filters, sounds_like
@@ -380,6 +381,24 @@ class EventSort(StrEnum):
 
 
 _IS_PLACE = func.coalesce(EventRow.extra[PLACE_LISTING].as_boolean(), False)
+
+
+def _merged_cities(rows: Iterable[Any]) -> list[tuple[str, int]]:
+    """Cities with their event counts, busiest first. A city abroad named in two languages by different
+    sellers ("Paris" / "פריז") is one entry, shown in its most used spelling."""
+    counts = Counter((r.city, r.country) for r in rows if r.city)
+    spellings: dict[Any, Counter[str]] = {}
+    for (city, country), n in counts.items():
+        found = city_abroad(city, country) if country else None
+        spellings.setdefault(found[0] if found else city.casefold(), Counter())[city] += n
+    merged = [(names.most_common(1)[0][0], sum(names.values())) for names in spellings.values()]
+    return sorted(merged, key=lambda c: -c[1])
+
+
+def _city_names(city: str, country: str | None) -> list[str]:
+    """``city`` and, for a city abroad, its other names ("פריז" -> "Paris")."""
+    found = city_abroad(city, country.upper() if country else None)
+    return list(dict.fromkeys([city, *(found[1] if found else ())]))
 
 _SORT_COLUMNS = {
     EventSort.start_asc: EventRow.start_at.asc(),
@@ -922,12 +941,10 @@ def _register_routes(app: FastAPI) -> None:
         if venue_slug:
             filters.append(EventRow.venue_slug == venue_slug)
         if city:
-            filters.append(
-                or_(
-                    EventRow.city.ilike(_contains(city), escape="\\"),
-                    EventRow.address.ilike(_contains(city), escape="\\"),
-                )
-            )
+            filters.append(or_(*(
+                cond for name in _city_names(city, country)
+                for cond in (EventRow.city.ilike(_contains(name), escape="\\"), EventRow.address.ilike(_contains(name), escape="\\"))
+            )))  # fmt: skip
         if in_target_city is not None:
             filters.append(EventRow.in_target_city.is_(in_target_city))
         # Search, an artist's or a venue's page and the artist / venue indexes cover every event, abroad too.
@@ -1018,9 +1035,11 @@ def _register_routes(app: FastAPI) -> None:
                 total = session.scalar(select(func.count()).select_from(EventRow).where(*where)) or 0
                 # By date: a day's events first, then its place listings (a club or café "open today",
                 # thousands of them at 00:00, which would otherwise bury every real event).
+                # Not abroad: there local_date is the venue's own day, while cards show Israel time.
+                abroad = request.query_params.get("abroad") == "true"
                 order = (
                     (EventRow.local_date, _IS_PLACE, EventRow.start_at)
-                    if sort is EventSort.start_asc
+                    if sort is EventSort.start_asc and not abroad
                     else (_SORT_COLUMNS[sort], EventRow.start_at)
                 )
                 rows = session.scalars(
@@ -1366,7 +1385,7 @@ def _register_routes(app: FastAPI) -> None:
             regions=facet(lambda r: [region(r)]),
             entry_types=facet(lambda r: [r.group_entry_type]),
             venues=[f.model_copy(update={"area": venue_area.get(f.value)}) for f in facet(lambda r: [r.venue_name])],
-            cities=[f.model_copy(update={"area": city_region.get(f.value)}) for f in facet(lambda r: [r.city])],
+            cities=[FacetValue(value=c, events=n, area=city_region.get(c)) for c, n in _merged_cities(rows)],
             countries=facet(lambda r: [r.country]),
             lineup=artist_facet(),
             event_types=facet(lambda r: r.event_types or []),

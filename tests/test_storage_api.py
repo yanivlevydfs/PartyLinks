@@ -805,6 +805,25 @@ def test_smart_search_reads_places_genres_prices_and_covers_abroad(tmp_path: Pat
         assert ids("nothing like this") == []
 
 
+def test_a_city_abroad_is_one_city_in_hebrew_and_english(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    seed(settings, [
+        event("he", future, title="ג'ונגל", address="ברצלונה, ספרד", city="ברצלונה", country="ES", latitude=41.39, longitude=2.17),
+        event("en", future, title="Deep house", address="Barcelona, Spain", city="Barcelona", country="ES", latitude=41.39, longitude=2.17),
+        event("en2", future, title="Rave", address="Barcelona, Spain", city="Barcelona", country="ES", latitude=41.39, longitude=2.17),
+        event("tennis", future, title="רולאן גארוס", address="Paris, France", city="Paris", country="FR", source_genres=["טניס"],
+              latitude=48.85, longitude=2.35),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda **p: sorted(e["source_event_id"] for e in client.get("/events", params={"abroad": "true", **p}).json()["items"])  # noqa: E731
+        assert ids(q="ברצלונה") == ids(q="barcelona") == ["en", "en2", "he"]  # either language finds both
+        assert ids(city="ברצלונה") == ids(city="Barcelona") == ["en", "en2", "he"]
+        assert ids(q="טניס") == ["tennis"]  # the site's own category
+        cities = {c["value"]: c["events"] for c in client.get("/categories", params={"abroad": "true"}).json()["cities"]}
+        assert cities == {"Barcelona": 3, "Paris": 1}  # one entry, in its most used spelling
+
+
 def test_search_lists_title_matches_first_then_lineup_and_venue(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     soon = datetime.now(UTC) + timedelta(days=1)

@@ -91,3 +91,28 @@ def all_cities(configured: list[CitySettings], min_population: int) -> list[City
     known = PlaceIndex(configured)
     extra = [p for p in israeli_places(min_population) if not any(known.find(n) for n in (p.he, p.en))]
     return [*configured, *extra]
+
+
+@lru_cache(maxsize=1)
+def _world_cities() -> dict[str, list[tuple[int, str, int, tuple[str, ...]]]]:
+    """Every city abroad of 15,000+ people by each of its names (English, Hebrew), normalised:
+    [(GeoNames id, country, population, its names)]. Loaded once per process."""
+    index: dict[str, list[tuple[int, str, int, tuple[str, ...]]]] = {}
+    for c in geonamescache.GeonamesCache(min_city_population=15000).get_cities().values():
+        if c["countrycode"] == "IL":
+            continue
+        hebrew = [_NIQQUD.sub("", a) for a in c["alternatenames"] if _HEBREW.search(a)]
+        names = tuple(dict.fromkeys([c["name"], *hebrew]))
+        for name in names:
+            index.setdefault(_norm(name), []).append((int(c["geonameid"]), c["countrycode"], c["population"], names))
+    return index
+
+
+def city_abroad(name: str, country: str | None = None, min_population: int = 0) -> tuple[int, tuple[str, ...]] | None:
+    """The city abroad called ``name`` in English or Hebrew ("Paris" / "פריז"): its GeoNames id and every
+    name it goes by. The one in ``country`` when given, else the largest of that name; None if unknown."""
+    found = [c for c in _world_cities().get(_norm(name), ()) if c[2] >= min_population]
+    if not found:
+        return None
+    best = max(found, key=lambda c: (c[1] == country, c[2]))
+    return best[0], best[3]

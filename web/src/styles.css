@@ -162,8 +162,11 @@ button, input, select { font: inherit; color: inherit; }
   background: var(--panel-solid); border: 1px solid var(--line-hot); border-radius: 18px;
   box-shadow: 0 20px 50px -10px rgb(0 0 0 / .8); animation: rise .15s both;
 }
-.suggest a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; color: var(--text); }
-.suggest a:hover, .suggest a:focus-visible { background: rgb(255 46 147 / .12); text-shadow: none; outline: none; }
+.suggest a, .suggest button {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; color: var(--text);
+  width: 100%; background: none; border: 0; font: inherit; text-align: start; cursor: pointer;
+}
+.suggest a:hover, .suggest a:focus-visible, .suggest button:hover, .suggest button:focus-visible { background: rgb(255 46 147 / .12); text-shadow: none; outline: none; }
 .suggest b { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .suggest small { flex: none; color: var(--muted); font-size: 12px; }
 .search:focus { border-color: var(--pink); box-shadow: 0 0 0 4px rgb(255 46 147 / .15), 0 0 40px rgb(255 46 147 / .3); }

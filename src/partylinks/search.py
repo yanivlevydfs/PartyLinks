@@ -23,6 +23,7 @@ from sqlalchemy.orm import aliased
 from partylinks import seo
 from partylinks.config import Settings
 from partylinks.db import EventRow, lineup_contains
+from partylinks.places import city_abroad
 
 Cond = ColumnElement[bool]
 _listing = aliased(EventRow)  # another listing of the same event (its group), for ticket-site names
@@ -199,6 +200,7 @@ def _json_has(column: SQLColumnExpression[Any], word: str) -> Cond:
 
 DID_YOU_MEAN_CUTOFF = 0.75  # looser than TYPO_CUTOFF: a suggestion to click, not extra results
 TYPO_CUTOFF = 0.85  # difflib ratio: one letter off in a 5-6 letter word
+CITY_SEARCH_POPULATION = 100_000  # smaller towns abroad share names with plain words
 SHORT_WORD = 3  # up to this long, a word must stand alone in the text: "ראפ" is not in "תראפיה"
 
 
@@ -209,7 +211,8 @@ def text_match(word: str) -> Cond:
         inside = c.ilike(pattern, escape="\\")
         return and_(inside, func.has_word(c, word)) if len(word) <= SHORT_WORD else inside
 
-    return or_(lineup_contains(word), _json_has(EventRow.event_types, word), *(found(c) for c in (
+    # The site's own categories too: a ticket site files tennis under "טניס" without the word in the title.
+    return or_(lineup_contains(word), _json_has(EventRow.event_types, word), _json_has(EventRow.source_genres, word), *(found(c) for c in (
         EventRow.title, EventRow.description, EventRow.venue_name, EventRow.city, EventRow.address, EventRow.organizer,
     )))  # fmt: skip
 
@@ -388,6 +391,18 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
     vocab = _vocabulary(cfg)
     for name in take(vocab):
         filters.append(or_(vocab[name](), text_match(name)))  # the name in the text counts too: "Jordan" the DJ
+    # A city abroad in either language finds it in both: "ברצלונה" also finds "Barcelona" (GeoNames names).
+    words = text.split()
+    for size in (3, 2, 1):
+        for i in range(len(words) - size + 1):
+            phrase = " ".join(words[i : i + size])
+            if f" {phrase} " not in text:
+                continue  # part of a longer city already taken
+            for name in (phrase, phrase[1:]) if phrase[0] in "בלמהו" else (phrase,):
+                if len(name) >= 3 and (city := city_abroad(name, min_population=CITY_SEARCH_POPULATION)):
+                    text = text.replace(f" {phrase} ", " ")
+                    filters.append(or_(*(text_match(n.casefold()) for n in city[1])))
+                    break
     long_names = [n for n in vocab if len(n) >= 4 and " " not in n]
     for w in (w for w in text.split() if len(w) >= 2):
         # "ברומא" is "רומא" with "in": a Hebrew one-letter prefix may be dropped.
