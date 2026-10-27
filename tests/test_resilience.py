@@ -326,7 +326,7 @@ def test_a_source_can_have_a_longer_run_limit() -> None:
     from partylinks.scrapers import source_settings
 
     settings = Settings()
-    assert source_settings("tiktik", settings).run_timeout_seconds == 3600
+    assert source_settings("tiktik", settings).run_timeout_seconds == 5400
     assert source_settings("goout", settings).run_timeout_seconds is None  # the scheduler's default
 
 

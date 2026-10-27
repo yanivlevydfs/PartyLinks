@@ -54,3 +54,14 @@ def test_tiktik_page_without_offers_uses_listing() -> None:
     e = tiktik.parse_product(page, SITE + "sting-las-vegas-23-10-2027/", "Asia/Jerusalem", listed)
     assert e is not None and e.source_event_id == "116773"
     assert (e.currency, e.min_price, e.max_price) == ("EUR", Decimal(288), Decimal(288)) and not e.is_sold_out
+
+
+def test_tiktik_match_is_sport() -> None:
+    """Sport products carry a SportsEvent: tagged sport, the teams are not artists."""
+    page = (FIXTURES / "sting.html").read_text(encoding="utf-8").replace('"MusicEvent"', '"SportsEvent"')
+    e = tiktik.parse_product(page, SITE + "x/", "Asia/Jerusalem")
+    assert e is not None and e.source_genres == ["ספורט"] and e.artists == []
+    from partylinks.config import Settings
+    from partylinks.enrichment import Enricher
+
+    assert "sport" in Enricher(Settings().enrichment, "Asia/Jerusalem")._detect_genres(e)

@@ -946,18 +946,18 @@ sources:
       concurrency: 4
 
   tiktik:
-    # TikTik Online: tickets and packages for concerts and festivals abroad (WooCommerce). The
-    # Store API lists the music category (~2,000 products); each product page's MusicEvent
-    # JSON-LD gives date, venue, city and country. Events abroad live in the /abroad section.
+    # TikTik Online: tickets and packages for concerts, festivals and sport abroad (WooCommerce). The
+    # Store API lists the music (~2,000) and sport (~1,400) categories; each product page's MusicEvent /
+    # SportsEvent JSON-LD gives date, venue, city and country. Events abroad live in the /abroad section.
     enabled: true
-    # ~1,900 pages a run through the proxy: longer than the 30-min default (Oct 2026).
-    run_timeout_seconds: 3600
+    # ~3,400 pages a run through the proxy: longer than the 30-min default (Oct 2026).
+    run_timeout_seconds: 5400
     cron: "27 4,16 * * *"
     site_url: https://www.tiktik-online.co.il
     products_path: /wp-json/wc/store/v1/products
-    category_id: 8
+    category_ids: [8, 7]  # music, sport
     http:
-      concurrency: 8  # 4 took longer than the 30-min run limit
+      concurrency: 10  # 4 took longer than the 30-min run limit
       request_delay_seconds: 0.2
 
   teder:
