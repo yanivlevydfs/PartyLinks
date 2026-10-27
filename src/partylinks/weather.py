@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import time
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -195,11 +196,15 @@ async def weather(
     # An event placed only by its city (no exact point) takes the city centre's forecast: the configured
     # cities, then every GeoNames town (ערד, כפר ויתקין, מעלה אדומים... were 404s with the first alone).
     if lat is None or lng is None:
-        center = _city_center(settings, city or "")
-        if center is None and city:
-            center = await _looked_up(settings, city, cache_file(settings).with_name("weather_places.json"))
+        # "קיבוץ יגור" / "מושב בית יצחק": the lists and Nominatim know the bare name.
+        name = re.sub(r"^(קיבוץ|מושב|מושבה)\s+", "",(city or "").strip()) if city else ""
+        center = _city_center(settings, city or "") or (name != city and _city_center(settings, name) or None)
+        if center is None and name:
+            center = await _looked_up(settings, name, cache_file(settings).with_name("weather_places.json"))
         if center is None:
-            raise HTTPException(status_code=404, detail="no place")
+            # Empty, not 404: an unknown place just shows no forecast, without a red line in every console.
+            response.headers["Cache-Control"] = "public, max-age=86400"
+            return {"slots": []}
         lat, lng = center
     slots = await forecast(lat, lng, f"SPOTX/1.0 (+{settings.site.base_url})", cache_file(settings))
     if not slots:
