@@ -54,7 +54,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   livetickets: ["https://www.livetickets.co.il", "abroad"], tickethouse: ["https://www.ticket-house.com", "abroad"],
   secrettelaviv: ["https://www.secrettelaviv.com", "guide"], beatradar: ["https://beatradar.co.il", "guide"],
   happytlv: ["https://www.happytlv.com", "guide"], tiuli: ["https://www.tiuli.com", "guide"], meety: ["https://meety.co.il", "guide"],
-  funzing: ["https://il.funzing.com", "tickets"],
+  funzing: ["https://il.funzing.com", "tickets"], ticketeams: ["https://ticketeams.co.il", "abroad"],
   festivalim: ["https://www.festivalim.co.il", "guide"], ogo: ["https://www.ogo.co.il", "guide"], muzi: ["https://muzi.co.il", "guide"],
   airdrop: ["https://airdrop.co.il", "guide"],
   telaviv: ["https://www.tel-aviv.gov.il", "city"], haifamuni: ["https://www.haifa.muni.il", "city"],

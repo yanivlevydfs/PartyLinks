@@ -337,7 +337,8 @@ enrichment:
     rnb: [hip_hop]
   detect_genres_from_text: true
   # Sources whose own categories are precise: their text is not read for genres.
-  declared_genres_only: [funzing]
+  # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
+  declared_genres_only: [funzing, ticketeams]
   # Small print that names a genre word in passing, removed from the text before genres are read.
   text_ignore: ["כרטיס אלקטרוני", "כרטיסים אלקטרוניים", "הכרטיס האלקטרוני", "הכרטיסים האלקטרוניים",
                 "בכרטיס האלקטרוני", "דואר אלקטרוני", "בדואר אלקטרוני", "הדואר האלקטרוני", "בדואר האלקטרוני",
@@ -2224,3 +2225,12 @@ sources:
     cron: "19 7,19 * * *"
     http:
       concurrency: 4
+
+  ticketeams:
+    # Ticketeams: tickets to football, basketball (NBA, Euroleague), tennis, F1 and concerts abroad
+    # (WooCommerce + JetEngine). WP REST lists products with their venue/city/country terms; each
+    # product page gives the date, local kick-off time and the Product JSON-LD price (EUR/GBP/USD).
+    enabled: true
+    cron: "49 5,17 * * *"
+    http:
+      concurrency: 8

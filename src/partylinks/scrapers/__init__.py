@@ -17,6 +17,7 @@ from partylinks.scrapers.yellowsubmarine import YellowSubmarineScraper
 from partylinks.scrapers.halutz import HalutzScraper
 from partylinks.scrapers.meety import MeetyScraper
 from partylinks.scrapers.funzing import FunzingScraper
+from partylinks.scrapers.ticketeams import TicketeamsScraper
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.beatradar import BeatRadarScraper
 from partylinks.scrapers.beershevatheatre import BeerShevaTheatreScraper
@@ -174,6 +175,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         HalutzScraper,
         MeetyScraper,
         FunzingScraper,
+        TicketeamsScraper,
         BabeBarScraper,
     )
 }

@@ -26,7 +26,7 @@ from partylinks.enrichment import UNKNOWN_COUNTRY
 ALIASES: dict[str, str] = {
     **dict.fromkeys(
         ["uk", "england", "scotland", "wales", "northern ireland", "great britain", "britain",
-         "אנגליה", "בריטניה", "סקוטלנד", "ויילס", "וויילס", "אירלנד הצפונית"],
+         "אנגליה", "בריטניה", "סקוטלנד", "ויילס", "וויילס", "ווילס", "אירלנד הצפונית"],
         "GB",
     ),
     **dict.fromkeys(["usa", "us", 'ארה"ב', "ארהב"], "US"),
