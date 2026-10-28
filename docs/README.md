@@ -18,3 +18,4 @@ Every ticket link points back to the seller.
 | [Legal and privacy](legal.md) | Accessibility, privacy, cookies, open items |
 | [Adding a source](adding-a-source.md) | Step-by-step guide for a new site |
 | [Postgres migration](postgres-migration.md) | How production moved to PostgreSQL (done 2026-10-28), and the planned search index (pg_trgm). In Hebrew |
+| [Postgres performance](postgres-performance.md) | Performance plan for the production database: baseline, steps, measurements, rollback. In Hebrew |
