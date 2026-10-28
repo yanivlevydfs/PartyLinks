@@ -9,7 +9,6 @@ copy of the content inside ``#root`` that React replaces on load. Also serves ``
 
 from __future__ import annotations
 
-import gettext
 import json
 import re
 import threading
@@ -24,7 +23,6 @@ from typing import Any
 from urllib.parse import quote, unquote
 from zoneinfo import ZoneInfo
 
-import pycountry
 import yaml
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse
@@ -32,6 +30,7 @@ from sqlalchemy import ColumnElement, String, cast, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from partylinks.config import CitySettings, Settings
+from partylinks.countries import country_name, is_country
 from partylinks.db import EventRow, lineup_contains, upcoming_filter
 from partylinks.places import all_cities
 
@@ -756,24 +755,12 @@ def region_pages(session: Session) -> list[str]:
     return [k for k in REGION_NAMES if counts[k] >= GENRE_PAGE_MIN]
 
 
-@cache
-def _hebrew_countries() -> gettext.NullTranslations:
-    return gettext.translation("iso3166-1", pycountry.LOCALES_DIR, languages=["he"], fallback=True)
-
-
-def country_name(code: str, lang: str) -> str:
-    c = pycountry.countries.get(alpha_2=code)
-    if c is None:
-        return code
-    return _hebrew_countries().gettext(c.name) if lang == "he" else getattr(c, "common_name", None) or c.name
-
-
 def abroad_countries(session: Session) -> dict[str, str]:
     """URL slug (English name) -> country code, for countries with enough upcoming events for /abroad/<slug>."""
     counts = Counter(session.scalars(select(EventRow.country).where(upcoming_filter(), EventRow.country.is_not(None))))
     out: dict[str, str] = {}
     for code, n in counts.most_common():
-        if code and n >= GENRE_PAGE_MIN and pycountry.countries.get(alpha_2=code):
+        if code and n >= GENRE_PAGE_MIN and is_country(code):
             out[_ascii_slug(country_name(code, "en"))] = code
     return out
 

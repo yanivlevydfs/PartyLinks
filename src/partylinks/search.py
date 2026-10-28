@@ -11,16 +11,15 @@ import warnings
 from collections.abc import Callable, Iterable
 from datetime import date, datetime, timedelta
 from difflib import get_close_matches
-from functools import cache, lru_cache
+from functools import lru_cache
 from typing import Any
 from zoneinfo import ZoneInfo
 
-import pycountry
 from convertdate import hebrew, holidays
 from sqlalchemy import ColumnElement, SQLColumnExpression, String, and_, case, cast, func, or_, select
 from sqlalchemy.orm import aliased
 
-from partylinks import seo
+from partylinks import countries, seo
 from partylinks.config import Settings
 from partylinks.db import EventRow, lineup_contains
 from partylinks.places import city_abroad
@@ -319,14 +318,9 @@ def _genre_names(cfg: Settings) -> dict[str, tuple[str, ...]]:
     return names
 
 
-@cache
 def _countries() -> list[tuple[str, str]]:
-    """(name, code) in Hebrew and English."""
-    out = []
-    for c in pycountry.countries:
-        for name in {seo.country_name(c.alpha_2, "he"), seo.country_name(c.alpha_2, "en"), c.name}:
-            out.append((name, c.alpha_2))
-    return out
+    """(name, code) in Hebrew and English: the app's one country index (partylinks.countries)."""
+    return countries.names()
 
 
 def _vocabulary(cfg: Settings) -> dict[str, Callable[[], Cond]]:

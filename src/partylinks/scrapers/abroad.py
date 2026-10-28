@@ -4,13 +4,11 @@ Israeli sellers of shows abroad give the country as a Hebrew or English name (or
 start as the venue's local time without an offset; these turn both into what ``ScrapedEvent``
 needs (ISO country, tz-aware start).
 
-Country names come from pycountry (ISO 3166 names, official names, alpha-3 codes and their
-Hebrew translations); time zones from airportsdata (every airport's city, country and zone).
+Country names come from ``partylinks.countries`` (one index for the whole app); time zones from airportsdata (every airport's city, country and zone).
 """
 
 from __future__ import annotations
 
-import gettext
 import threading
 from collections import Counter, defaultdict
 from collections.abc import Callable
@@ -18,27 +16,9 @@ from functools import cache, wraps
 from typing import Any
 
 import airportsdata
-import pycountry
 
-from partylinks.enrichment import UNKNOWN_COUNTRY
+from partylinks.countries import ALIASES, country_code  # noqa: F401 (the sources import them from here)
 from partylinks.places import city_zone
-
-# Names the sites use that ISO 3166 doesn't: parts of a country, cities standing for it, short forms.
-ALIASES: dict[str, str] = {
-    **dict.fromkeys(
-        ["uk", "england", "scotland", "wales", "northern ireland", "great britain", "britain",
-         "אנגליה", "בריטניה", "סקוטלנד", "ויילס", "וויילס", "ווילס", "אירלנד הצפונית"],
-        "GB",
-    ),
-    **dict.fromkeys(["usa", "us", 'ארה"ב', "ארהב"], "US"),
-    **dict.fromkeys(["uae", "dubai", "abu dhabi", "איחוד האמירויות", "איחוד אמירויות ערביות", "דובאי", "אבו דאבי"], "AE"),
-    **dict.fromkeys(["holland", "the netherlands"], "NL"),
-    **dict.fromkeys(["czechia", "czech republic", "צכיה", "צ'כיה"], "CZ"),
-    **dict.fromkeys(["turkey", "türkiye"], "TR"),
-    **dict.fromkeys(["שווייץ", "שוויץ"], "CH"),
-    "נורבגיה": "NO",
-}  # fmt: skip
-
 
 _loading = threading.RLock()  # sources run on their own threads: the first caller builds, the rest wait
 
@@ -59,24 +39,6 @@ def _shared[T](build: Callable[[], T]) -> Callable[[], T]:
 
 def _key(value: str) -> str:
     return value.strip().strip(".").casefold()
-
-
-@_shared
-def _countries() -> dict[str, str]:
-    """Every known name or code of every country -> alpha-2 (built once per process)."""
-    hebrew = gettext.translation("iso3166-1", pycountry.LOCALES_DIR, languages=["he"], fallback=True)
-    names: dict[str, str] = {}
-    for c in pycountry.countries:
-        for name in (c.alpha_2, c.alpha_3, c.name, getattr(c, "common_name", None), getattr(c, "official_name", None)):
-            if name:
-                names[_key(name)] = c.alpha_2
-                names.setdefault(_key(hebrew.gettext(name)), c.alpha_2)
-    return names | {_key(k): v for k, v in ALIASES.items()}
-
-
-def country_code(value: str | None) -> str:
-    """ISO alpha-2 code for a country name (Hebrew or English) or code; ``UNKNOWN_COUNTRY`` if unknown."""
-    return _countries().get(_key(value or ""), UNKNOWN_COUNTRY)
 
 
 @_shared

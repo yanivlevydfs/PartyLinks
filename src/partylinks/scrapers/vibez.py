@@ -18,9 +18,10 @@ from importlib import resources
 from typing import Any
 
 import httpx
-import pycountry
 from pydantic import Field
 
+from partylinks.countries import country_code
+from partylinks.enrichment import UNKNOWN_COUNTRY
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, html_to_text, parse_iso, to_decimal
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -125,11 +126,8 @@ def _country(place: str | None, zone: Any, currency: Any) -> str | None:
     wins ("Greece", "..., Thailand"); else the time zone, but only for a price not in shekels: some
     producers leave a wrong zone (a Tel Aviv street set to "Indian/Mahe", Greece to Moscow)."""
     for part in reversed([p.strip() for p in (place or "").split(",") if p.strip()]):
-        try:
-            code = pycountry.countries.lookup(part).alpha_2
+        if (code := country_code(part)) != UNKNOWN_COUNTRY:
             break
-        except LookupError:
-            continue
     else:
         code = _zone_countries().get(str(zone or "")) if str(currency or "ILS").upper() != "ILS" else None
     return None if code in (None, "IL", "PS") else code  # Asia/Hebron (PS) is listed as Israel
