@@ -1,4 +1,4 @@
-"""Every Israeli locality from GeoNames (``geonamescache``, offline), loaded once per process.
+"""Every Israeli locality from GeoNames (``partylinks.geonames``: geonamescache, read once, cached small).
 
 ``enrichment.cities`` in the config names the cities that get their own page and spelling; this
 fills in the rest (Yehud, Shoham, Rosh Pina, ...) with a canonical Hebrew name, a centre and a
@@ -14,8 +14,7 @@ import math
 import re
 from functools import lru_cache
 
-import geonamescache
-
+from partylinks import geonames
 from partylinks.config import CitySettings
 from partylinks.parsing import slugify
 
@@ -39,8 +38,8 @@ def _radius_m(population: int) -> float:
 def israeli_places(min_population: int) -> tuple[CitySettings, ...]:
     """Localities of at least ``min_population`` (smaller ones are often words: "מגדל", "כנרת")."""
     places = []
-    for c in geonamescache.GeonamesCache(min_city_population=500).get_cities().values():
-        if c["countrycode"] != "IL" or c["population"] < min_population:
+    for c in geonames.israel():  # loaded once per process, from a small cache file (partylinks.geonames)
+        if c["population"] < min_population:
             continue
         hebrew = list(dict.fromkeys(_NIQQUD.sub("", a) for a in c["alternatenames"] if _HEBREW.search(a)))
         if not hebrew:
@@ -98,9 +97,7 @@ def _world_cities() -> dict[str, list[tuple[int, str, int, tuple[str, ...], str]
     """Every city abroad of 15,000+ people by each of its names (English, Hebrew), normalised:
     [(GeoNames id, country, population, its names, its time zone)]. Loaded once per process."""
     index: dict[str, list[tuple[int, str, int, tuple[str, ...], str]]] = {}
-    for c in geonamescache.GeonamesCache(min_city_population=15000).get_cities().values():
-        if c["countrycode"] == "IL":
-            continue
+    for c in geonames.world():  # loaded once per process, from a small cache file (partylinks.geonames)
         hebrew = [_NIQQUD.sub("", a) for a in c["alternatenames"] if _HEBREW.search(a)]
         names = tuple(dict.fromkeys([c["name"], *hebrew]))
         for name in names:

@@ -141,7 +141,12 @@ src/partylinks/
   models.py                   ScrapedEvent / TicketTier: what every scraper produces
   scrapers/base.py            per-source transport: retries, proxy, parallel pagination
   scrapers/<source>.py        one module per site
-  scrapers/abroad.py          country codes and time zones for sources abroad
+  scrapers/abroad.py          time zones for sources abroad (country codes: countries.py)
+  countries.py                every country (pycountry), one index built once per process: codes,
+                              English and Hebrew names; the only module importing pycountry
+  geonames.py                 GeoNames cities (geonamescache) read once and cached small in data/
+                              (geonames-<version>.json); the only module importing geonamescache
+  places.py                   Israeli localities and cities abroad, from geonames.py
   parsing.py                  generic parsing helpers
   enrichment.py               genres, lineup, time categories, free/paid, city
   artists.py                  artist dictionary (its own SQLite file)
@@ -158,15 +163,22 @@ src/partylinks/
   seo.py                      server-rendered pages, sitemap, robots.txt, llms.txt
   blog.py                     blog / magazine
   utm.py, clicks.py           ticket-link UTM tags and click counting
+  plans/                      "who's coming with me?" plans: models.py (plans, plan_votes,
+                              plan_events), routes.py (API, link preview, clean-up with the event)
   ads/                        advertising, apart from the rest: models.py (sponsored,
                               sponsored_stats tables), routes.py (rails, hits, admin picks),
                               service.py (sponsored first in matching results)
   logs.py                     one logging setup for every process
   cli.py                      command line
 web/                          React + TypeScript website (Vite)
+web/src/plans/                the plan page, the 👥 button, which-party, rides, free-entry reminder
 web/src/ads/                  the paid side rails, the results' Sponsored label, their CSS and the admin's sponsored tab
 tests/                        pytest, with real-page fixtures under tests/fixtures/
 ```
+
+Heavy libraries load once per process, each behind one module: pycountry (`countries.py`),
+geonamescache (`geonames.py`, plus a small disk cache, so later starts skip the 96 MB of city files),
+airportsdata (`scrapers/abroad.py`, `airports()`).
 
 ## Database
 
