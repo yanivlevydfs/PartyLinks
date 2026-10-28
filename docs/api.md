@@ -21,8 +21,9 @@ FastAPI, served by the same process as the website.
 | GET | `/images/{id}` | Stored artwork: the 1280px WebP copy (originals are deleted once converted); the original only for pictures that can't be converted |
 | GET | `/images/{id}/{640\|1280}.webp` | The artwork resized to that width as WebP, cached a year (`immutable`). Until the copy exists: the original, cached an hour |
 | POST | `/plans` | "Who's coming with me?": a new plan for an event (`{"event_id": id or slug}`). Returns its `id`; the link to send is `/plan/{id}` (server-rendered for WhatsApp's preview, never indexed) |
-| GET | `/plans/{id}` | The plan's event and every answer (`name`, `answer` = `yes` / `maybe` / `no`). `?me=<voter key>` marks this browser's own answer (`mine`); keys are never returned |
-| POST | `/plans/{id}/votes` | Answer or change an answer: `{"voter": key, "name": ..., "answer": ...}`. One answer per voter key, at most 60 per plan (409). A plan is deleted with its event. Code: `partylinks/plans/`, `web/src/plans/` |
+| GET | `/plans/{id}` | The plan's events (`event` = option one, `options` = all of them) and every answer (`name`, `answer` = `yes` / `maybe` / `no`, `picks`, `ride`, `seats`). `?me=<voter key>` marks this browser's own answer (`mine`); keys are never returned |
+| POST | `/plans/{id}/events` | "Which party?": another event to compare (`{"event_id": id or slug}`), up to 4 per plan (409); anyone with the link |
+| POST | `/plans/{id}/votes` | Answer or change an answer: `{"voter": key, "name", "answer", "picks"?: [event ids of the plan], "ride"?: "drive" \| "need", "seats"?: 1–8}`. One answer per voter key, at most 60 per plan (409). Not coming: no picks, no ride. A plan is deleted with its own event; a compared event that is over just leaves the options. Code: `partylinks/plans/`, `web/src/plans/` |
 | GET | `/posts`, `/posts/{slug}` | Blog posts as JSON |
 | GET | `/site` | Site name, base URL, accessibility and privacy contacts |
 | GET | `/health` | Liveness and readiness: database, scheduler, per-source freshness, config errors |

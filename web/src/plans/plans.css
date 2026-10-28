@@ -50,3 +50,64 @@
   .plan-event h1 { font-size: 20px; }
   .plan-a { padding: 12px 4px; font-size: 14px; }
 }
+
+/* "Which party?": the events side by side, the leader marked. */
+.plan-which h1 { font-family: var(--display); font-size: 24px; margin: 0 0 4px; }
+.plan-which h1 span { display: block; font-size: 16px; color: var(--muted); font-weight: 500; }
+.plan-sub { color: var(--muted); margin: 0 0 12px; }
+.plan-options { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.plan-option {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px;
+  padding: 10px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line);
+}
+.plan-option.lead { border-color: var(--green); box-shadow: inset 0 0 0 1px var(--green); }
+.plan-option-link { display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: center; color: inherit; text-decoration: none; min-width: 0; }
+.plan-option-link b, .plan-pick-list b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-option-link small, .plan-pick-list small { color: var(--muted); }
+.plan-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; }
+.plan-votes { font-size: 14px; white-space: nowrap; }
+.plan-votes em { font-style: normal; color: var(--green); font-weight: 700; }
+
+.plan-add { justify-self: start; }
+.plan-addhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.plan-addbox .search { width: 100%; }
+.plan-pick-list { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; }
+.plan-pick-list li { display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: center; min-width: 0; }
+.plan-pick-list li > div { min-width: 0; }
+
+/* Where to, and getting there. */
+.plan-where { border: 0; padding: 0; margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.plan-where legend { font-size: 14px; color: var(--muted); margin-bottom: 6px; padding: 0; }
+.plan-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  background: var(--panel-2); border: 1px solid var(--line); font-size: 14px; max-width: 100%;
+}
+.plan-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-chip input { accent-color: var(--pink); margin: 0; }
+.plan-chip.on { border-color: var(--pink); }
+.plan-seats { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.plan-seats select { font: inherit; color: var(--text); background: var(--panel-solid); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+.plan-group.rides p { margin: 4px 0; }
+.plan-group.rides .ok { color: var(--green); }
+.plan-group.rides .short { color: var(--red); }
+
+@media (max-width: 560px) {
+  .plan-option { grid-template-columns: 1fr auto; }
+  .plan-option > .f-pill { grid-column: 1 / -1; justify-self: start; }
+  .plan-thumb { width: 52px; height: 52px; }
+  .plan-option-link, .plan-pick-list li { grid-template-columns: 52px 1fr; }
+  .plan-pick-list li > .f-pill { grid-column: 2; justify-self: start; }
+}
+/* A thumbnail without artwork: the site's ♫ placeholder, kept to the thumbnail's square. */
+.plan-thumb.noimg { height: 64px; display: grid; place-items: center; overflow: hidden; font-size: 22px; }
+@media (max-width: 560px) { .plan-thumb.noimg { height: 52px; } }
+/* Long event names: the text column may shrink below its content, so names end in "…" inside the card. */
+.plan-option { grid-template-columns: minmax(0, 1fr) auto auto; }
+.plan-option-link { grid-template-columns: 64px minmax(0, 1fr); }
+.plan-pick-list li { grid-template-columns: 64px minmax(0, 1fr) auto; }
+.plan-chip { min-width: 0; }
+.plan-chip span { min-width: 0; }
+@media (max-width: 560px) {
+  .plan-option { grid-template-columns: minmax(0, 1fr) auto; }
+  .plan-option-link, .plan-pick-list li { grid-template-columns: 52px minmax(0, 1fr); }
+}
