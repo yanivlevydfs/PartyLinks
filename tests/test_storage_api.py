@@ -140,6 +140,11 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
     assert data["startDate"].endswith(("+02:00", "+03:00"))  # Israel time
     assert {o["price"] for o in data["offers"]} == {0.0, 80.0}
     assert data["location"]["address"]["addressCountry"] == "IL"
+    # Google's recommended fields, from what we know: sale start or first seen, organizer (else the
+    # venue), performer (the lineup, else the organizer), an end (else the event's day).
+    assert all(o["validFrom"] for o in data["offers"]) and data["endDate"]
+    assert data["organizer"]["name"] and data["organizer"]["url"].startswith("http")
+    assert data["performer"] and all(p["name"] for p in data["performer"])
     json.dumps(data, ensure_ascii=False, default=str)
 
     with TestClient(create_app(settings, start_scheduler=False)) as client:

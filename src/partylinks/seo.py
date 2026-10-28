@@ -21,7 +21,7 @@ from functools import cache
 from html import escape
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, urlsplit
 from zoneinfo import ZoneInfo
 
 import pycountry
@@ -245,7 +245,8 @@ def _place(row: EventRow) -> dict[str, Any]:
             "@type": "PostalAddress",
             "streetAddress": row.address or None,
             "addressLocality": row.city or None,
-            "addressCountry": "IL",
+            # An event abroad is in its own country (ZZ: unknown, left out), not Israel.
+            "addressCountry": "IL" if not row.country else None if row.country == "ZZ" else row.country,
         },
     }
     if row.latitude is not None and row.longitude is not None:
@@ -268,7 +269,8 @@ def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, An
             "priceCurrency": t.currency,
             "availability": availability.get(t.status, "https://schema.org/InStock"),
             "url": _url(cfg, go_path(row.id)),
-            "validFrom": _iso(t.sale_start, cfg, row),
+            # On sale since: the seller's own sale start, else when we first saw it on sale.
+            "validFrom": _iso(t.sale_start or row.first_seen_at, cfg, row),
         }
         for t in row.tickets
         if t.price is not None or t.is_free
@@ -283,8 +285,26 @@ def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, An
             "priceCurrency": row.currency,
             "url": _url(cfg, go_path(row.id)),
             "availability": "https://schema.org/SoldOut" if row.is_sold_out else "https://schema.org/InStock",
+            "validFrom": _iso(row.first_seen_at, cfg, row),
         }
     return None
+
+
+def _organizer(row: EventRow, cfg: Settings) -> dict[str, Any] | None:
+    """Who puts the event on: the organizer the seller names, with its ticket page as the link (we keep
+    no organizer sites); without one, the venue (a club runs its own nights), with its page here."""
+    if row.organizer:
+        return {"@type": "Organization", "name": row.organizer, "url": _url(cfg, go_path(row.id))}
+    if row.venue_name:
+        return {"@type": "Organization", "name": row.venue_name, "url": _url(cfg, f"/venue/{quote(row.venue_name, safe='')}")}
+    # Neither (16 of 6,680, all Geektime's own conferences): the site that runs and sells it.
+    host = (urlsplit(row.url).hostname or "").removeprefix("www.")
+    return {"@type": "Organization", "name": host, "url": f"https://{host}"} if host else None
+
+
+def _end(row: EventRow, cfg: Settings) -> str | None:
+    """The end the seller gives; without one, the event's own day (a date: no made-up hour)."""
+    return _iso(row.end_at, cfg, row) or (row.local_date.isoformat() if row.local_date else None)
 
 
 def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
@@ -295,7 +315,7 @@ def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
         "name": row.title,
         "url": _url(cfg, event_path(row)),
         "startDate": _iso(row.start_at, cfg, row),
-        "endDate": _iso(row.end_at, cfg, row),
+        "endDate": _end(row, cfg),
         "eventStatus": "https://schema.org/EventScheduled",
         "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
         "location": _place(row),
@@ -305,8 +325,11 @@ def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
         "isAccessibleForFree": row.entry_type == "free" or None,
         "typicalAgeRange": f"{row.min_age}-" if row.min_age else None,
         "keywords": ", ".join(row.genres) or None,
-        "performer": [{"@type": "Person", "name": n, "url": _url(cfg, f"/artist/{quote(n, safe='')}")} for n in row.lineup] or None,
-        "organizer": {"@type": "Organization", "name": row.organizer} if row.organizer else None,
+        # The lineup; without one, whoever puts the event on (a theatre's own show, a club night).
+        "performer": [{"@type": "Person", "name": n, "url": _url(cfg, f"/artist/{quote(n, safe='')}")} for n in row.lineup]
+        or [o for o in [_organizer(row, cfg)] if o]
+        or None,
+        "organizer": _organizer(row, cfg),
         "offers": _offers(row, cfg),
     }
     return {k: v for k, v in data.items() if v not in (None, [], "")}
