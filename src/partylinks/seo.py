@@ -21,7 +21,7 @@ from functools import cache
 from html import escape
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote, unquote, urlsplit
+from urllib.parse import quote, unquote
 from zoneinfo import ZoneInfo
 
 import pycountry
@@ -297,9 +297,9 @@ def _organizer(row: EventRow, cfg: Settings) -> dict[str, Any] | None:
         return {"@type": "Organization", "name": row.organizer, "url": _url(cfg, go_path(row.id))}
     if row.venue_name:
         return {"@type": "Organization", "name": row.venue_name, "url": _url(cfg, f"/venue/{quote(row.venue_name, safe='')}")}
-    # Neither (16 of 6,680, all Geektime's own conferences): the site that runs and sells it.
-    host = (urlsplit(row.url).hostname or "").removeprefix("www.")
-    return {"@type": "Organization", "name": host, "url": f"https://{host}"} if host else None
+    # Neither (16 of 6,680, all Geektime's own conferences): the site that runs and sells it, by its
+    # source name (as the tickets link shows it); no seller address in the page, only our /go/ redirect.
+    return {"@type": "Organization", "name": row.source, "url": _url(cfg, go_path(row.id))}
 
 
 def _end(row: EventRow, cfg: Settings) -> str | None:
