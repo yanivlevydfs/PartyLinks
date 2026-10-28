@@ -488,7 +488,8 @@ select option { background: var(--panel-solid); color: var(--text); }
 .card-wrap { position: relative; display: flex; transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
 .card-wrap:hover { transform: translateY(-6px); }
 .card-wrap > .card { flex: 1; }
-.card-wrap .tags { padding-inline-end: 88px; min-height: 34px; align-items: center; }
+/* Room under the tags for the round card buttons (calendar, share, plan), so chips keep the full width. */
+.card-wrap .tags { padding-bottom: 48px; align-items: center; }
 .card:hover {
   text-shadow: none; border-color: var(--line-hot);
   box-shadow: 0 18px 50px -10px rgb(255 46 147 / .45), 0 0 0 1px rgb(157 77 255 / .3);
@@ -576,7 +577,7 @@ select option { background: var(--panel-solid); color: var(--text); }
 .meta { margin: 0; color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .tag {
-  font-size: 12px; padding: 3px 11px; border-radius: 999px; font-weight: 500;
+  font-size: 12px; padding: 3px 11px; border-radius: 999px; font-weight: 500; white-space: nowrap;
   background: rgb(157 77 255 / .14); border: 1px solid rgb(157 77 255 / .35); color: #d8c6ff;
 }
 .tag.age { color: var(--cyan); border-color: rgb(25 227 255 / .4); background: rgb(25 227 255 / .1); }
@@ -1269,7 +1270,7 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .card .tags { margin-top: 6px; gap: 4px; }
   .card .tag { font-size: 11px; padding: 2px 8px; }
   .card .tag:nth-child(n + 3) { display: none; }
-  .card-wrap .tags { padding-inline-end: 72px; min-height: 28px; }
+  .card-wrap .tags { padding-bottom: 38px; }
   .cal.on-card summary { inset-inline-end: 44px; bottom: 9px; width: 30px; height: 30px; font-size: 13px; }
   .cal.on-card .cal-menu { bottom: 46px; inset-inline: 6px; font-size: 13px; }
   .cal.on-card .cal-menu a { padding: 8px; }

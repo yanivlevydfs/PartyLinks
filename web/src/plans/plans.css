@@ -118,12 +118,9 @@
   justify-content: center; border-radius: 50%; font-size: 15px; border-color: var(--line);
 }
 .card-wrap > .plan-btn.on-card.err { border-color: var(--red); }
-.card-wrap:has(> .plan-btn.on-card) .tags { padding-inline-end: 132px; }
 .trending .card-wrap > .plan-btn.on-card { display: none; } /* compact home rows: no card buttons */
 @media (max-width: 560px) {
-  .card-wrap > .plan-btn.on-card { inset-inline-end: 80px; bottom: 9px; width: 30px; height: 30px; font-size: 13px; }
-  .card-wrap:has(> .plan-btn.on-card) .tags { padding-inline-end: 110px; }
-}
+  .card-wrap > .plan-btn.on-card { inset-inline-end: 80px; bottom: 9px; width: 30px; height: 30px; font-size: 13px; }}
 
 /* Free entry closing: the reminder on a plan. */
 .plan-free { border-color: rgb(43 245 160 / .45) !important; }
