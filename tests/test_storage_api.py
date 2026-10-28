@@ -659,7 +659,35 @@ def test_geocoder_places_events_abroad_at_their_city(tmp_path: Path) -> None:
     geo.locate_missing(network=False)
     geo.locate_missing(network=False)
     with db.session() as session:
-        assert {r.latitude for r in session.query(EventRow)} == {52.52}
+        assert {round(r.latitude, 1) for r in session.query(EventRow)} == {52.5}  # one city point (GeoNames' Berlin)
+
+
+def test_city_abroad_is_the_geonames_city_not_a_village_of_that_name(tmp_path: Path) -> None:
+    """Nominatim's first "Freiburg" in Germany was Freiburg on the Elbe (53.8, 9.3), 600 km from
+    Freiburg im Breisgau: Tiktik's Freiburg shows got its weather. GeoNames' city wins and fixes them;
+    a venue's own point from the seller stays."""
+    from partylinks.db import GeoCacheRow, utcnow
+    from partylinks.geo import Geocoder
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [
+        event("old", future, venue_name="Europa-Park Stadion", address=None, city="Freiburg", country="DE"),
+        event("new", future, venue_name="Europa-Park Stadion", address=None, city="Freiburg", country="DE"),
+        event("venue", future, venue_name="Jazzhaus", address=None, city="Freiburg", country="DE"),
+    ])  # fmt: skip
+    with db.session() as session:
+        session.add(GeoCacheRow(query="Freiburg @DE", found=True, latitude=53.825248, longitude=9.28872, kind="town", looked_up_at=utcnow()))
+        session.get(EventRow, "test:old").latitude, session.get(EventRow, "test:old").longitude = 53.825248, 9.28872
+        session.get(EventRow, "test:venue").latitude, session.get(EventRow, "test:venue").longitude = 47.9947988, 7.8404909
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    geo.locate_missing(network=False)
+    with db.session() as session:
+        point = lambda i: (round(session.get(EventRow, i).latitude, 2), round(session.get(EventRow, i).longitude, 2))
+        assert point("test:old") == point("test:new") == (48.0, 7.85)  # moved / placed at Freiburg im Breisgau
+        assert point("test:venue") == (47.99, 7.84)  # the seller's venue point: untouched
+        assert round(session.get(GeoCacheRow, "Freiburg @DE").latitude, 1) == 48.0  # the cache says so too
 
 
 def test_web_city_list_mirrors_the_config() -> None:

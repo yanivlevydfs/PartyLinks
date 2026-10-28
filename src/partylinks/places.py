@@ -92,17 +92,21 @@ def all_cities(configured: list[CitySettings], min_population: int) -> list[City
     return [*configured, *extra]
 
 
+# (GeoNames id, country, population, its names, its time zone, its centre)
+_World = tuple[int, str, int, tuple[str, ...], str, tuple[float, float]]
+
+
 @lru_cache(maxsize=1)
-def _world_cities() -> dict[str, list[tuple[int, str, int, tuple[str, ...], str]]]:
+def _world_cities() -> dict[str, list[_World]]:
     """Every city abroad of 15,000+ people by each of its names (English, Hebrew), normalised:
-    [(GeoNames id, country, population, its names, its time zone)]. Loaded once per process."""
-    index: dict[str, list[tuple[int, str, int, tuple[str, ...], str]]] = {}
+    [(GeoNames id, country, population, its names, its time zone, its centre)]. Loaded once per process."""
+    index: dict[str, list[_World]] = {}
     for c in geonames.world():  # loaded once per process, from a small cache file (partylinks.geonames)
         hebrew = [_NIQQUD.sub("", a) for a in c["alternatenames"] if _HEBREW.search(a)]
         names = tuple(dict.fromkeys([c["name"], *hebrew]))
         for name in names:
             index.setdefault(_norm(name), []).append(
-                (int(c["geonameid"]), c["countrycode"], c["population"], names, c["timezone"])
+                (int(c["geonameid"]), c["countrycode"], c["population"], names, c["timezone"], (c["latitude"], c["longitude"]))
             )
     return index
 
@@ -110,7 +114,7 @@ def _world_cities() -> dict[str, list[tuple[int, str, int, tuple[str, ...], str]
 _PARTS = re.compile(r"[,()/|]")
 
 
-def _city(name: str, country: str | None, min_population: int) -> tuple[int, str, int, tuple[str, ...], str] | None:
+def _city(name: str, country: str | None, min_population: int) -> _World | None:
     """The city called ``name``: the one in ``country`` when given, else the largest of that name. A name
     with extras ("לונדון, אנגליה", "Saint-Denis (Paris)") is the largest city it names."""
     cities = _world_cities()
@@ -148,3 +152,10 @@ def city_zone(name: str, country: str) -> str | None:
     """Time zone of the city abroad called ``name`` (English or Hebrew) in ``country``; None if unknown."""
     city = _city(name, country, 0)
     return city[4] if city and city[1] == country else None
+
+
+def city_point(name: str, country: str) -> tuple[float, float] | None:
+    """Centre of the city abroad called ``name`` (English or Hebrew) in ``country``: the largest of that
+    name there ("Freiburg", DE: Freiburg im Breisgau, not the small Freiburg on the Elbe); None if unknown."""
+    city = _city(name, country, 0)
+    return city[5] if city and city[1] == country else None
