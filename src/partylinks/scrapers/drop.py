@@ -19,7 +19,7 @@ from typing import Any
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
-from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, parse_iso, schema_types
+from partylinks.parsing import ParseError, clean_str, has_time, html_to_text, jsonld_nodes, parse_iso, schema_types
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _URL = re.compile(r"<url>\s*<loc>\s*(https://[^<\s]+/events/([0-9a-f]{8,}))\s*</loc>\s*(?:<lastmod>\s*([^<\s]+))?")
@@ -88,6 +88,7 @@ def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
         title=title,
         description=html_to_text(_PREFIX.sub("", str(event.get("description") or ""))),
         start_at=start,
+        time_known=has_time(event.get("startDate")),
         end_at=parse_iso(event.get("endDate"), timezone),
         venue_name=venue,
         address=street if street != venue else None,

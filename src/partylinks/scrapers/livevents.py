@@ -149,6 +149,7 @@ def parse_table(table_html: str, calendar_url: str, timezone: str) -> list[Scrap
                     url=link.group(1) if link else calendar_url,
                     title=artist,
                     start_at=datetime(int(year), int(month), int(day), tzinfo=zone(timezone)),  # date only
+                    time_known=False,
                     city=city,
                     country=CITY_COUNTRY.get(city or "", UNKNOWN_COUNTRY),
                     artists=[artist],

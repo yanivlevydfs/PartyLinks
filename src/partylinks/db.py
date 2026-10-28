@@ -101,6 +101,8 @@ class EventRow(Base):
     description: Mapped[str | None] = mapped_column(Text)
     start_at: Mapped[datetime | None] = mapped_column(UTCDateTime, index=True)
     end_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    time_known: Mapped[bool] = mapped_column(Boolean, default=True)
+    time_zone: Mapped[str | None] = mapped_column(String(48))
     venue_name: Mapped[str | None] = mapped_column(Text)
     venue_slug: Mapped[str | None] = mapped_column(String(120), index=True)
     address: Mapped[str | None] = mapped_column(Text)
@@ -587,7 +589,7 @@ class Database:
 
 # --------------------------------------------------------------------------- writes
 _EVENT_FIELDS = (
-    "source", "source_event_id", "slug", "venue_slug", "title", "description", "start_at", "end_at", "venue_name", "address",
+    "source", "source_event_id", "slug", "venue_slug", "title", "description", "start_at", "end_at", "time_known", "time_zone", "venue_name", "address",
     "city", "latitude", "longitude", "country", "in_target_city", "genres", "source_genres", "event_types", "artists",
     "lineup", "local_date", "day_of_week", "time_slot", "is_weekend", "area", "min_age", "organizer", "image_url",
     "currency", "min_price", "max_price", "has_free_entry", "entry_type", "is_sold_out", "free_sold_out", "extra",

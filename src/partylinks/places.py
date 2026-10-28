@@ -94,25 +94,46 @@ def all_cities(configured: list[CitySettings], min_population: int) -> list[City
 
 
 @lru_cache(maxsize=1)
-def _world_cities() -> dict[str, list[tuple[int, str, int, tuple[str, ...]]]]:
+def _world_cities() -> dict[str, list[tuple[int, str, int, tuple[str, ...], str]]]:
     """Every city abroad of 15,000+ people by each of its names (English, Hebrew), normalised:
-    [(GeoNames id, country, population, its names)]. Loaded once per process."""
-    index: dict[str, list[tuple[int, str, int, tuple[str, ...]]]] = {}
+    [(GeoNames id, country, population, its names, its time zone)]. Loaded once per process."""
+    index: dict[str, list[tuple[int, str, int, tuple[str, ...], str]]] = {}
     for c in geonamescache.GeonamesCache(min_city_population=15000).get_cities().values():
         if c["countrycode"] == "IL":
             continue
         hebrew = [_NIQQUD.sub("", a) for a in c["alternatenames"] if _HEBREW.search(a)]
         names = tuple(dict.fromkeys([c["name"], *hebrew]))
         for name in names:
-            index.setdefault(_norm(name), []).append((int(c["geonameid"]), c["countrycode"], c["population"], names))
+            index.setdefault(_norm(name), []).append(
+                (int(c["geonameid"]), c["countrycode"], c["population"], names, c["timezone"])
+            )
     return index
+
+
+_PARTS = re.compile(r"[,()/|]")
+
+
+def _city(name: str, country: str | None, min_population: int) -> tuple[int, str, int, tuple[str, ...], str] | None:
+    """The city called ``name``: the one in ``country`` when given, else the largest of that name. A name
+    with extras ("לונדון, אנגליה", "Saint-Denis (Paris)") is the largest city it names."""
+    cities = _world_cities()
+    found = [c for c in cities.get(_norm(name), ()) if c[2] >= min_population]
+    if not found:
+        parts = _PARTS.split(name)
+        found = [c for p in parts for c in cities.get(_norm(p), ()) if len(parts) > 1 and c[2] >= min_population]
+        if country:
+            found = [c for c in found if c[1] == country]
+    return max(found, key=lambda c: (c[1] == country, c[2])) if found else None
 
 
 def city_abroad(name: str, country: str | None = None, min_population: int = 0) -> tuple[int, tuple[str, ...]] | None:
     """The city abroad called ``name`` in English or Hebrew ("Paris" / "פריז"): its GeoNames id and every
     name it goes by. The one in ``country`` when given, else the largest of that name; None if unknown."""
-    found = [c for c in _world_cities().get(_norm(name), ()) if c[2] >= min_population]
-    if not found:
-        return None
-    best = max(found, key=lambda c: (c[1] == country, c[2]))
-    return best[0], best[3]
+    city = _city(name, country, min_population)
+    return (city[0], city[3]) if city else None
+
+
+def city_zone(name: str, country: str) -> str | None:
+    """Time zone of the city abroad called ``name`` (English or Hebrew) in ``country``; None if unknown."""
+    city = _city(name, country, 0)
+    return city[4] if city and city[1] == country else None

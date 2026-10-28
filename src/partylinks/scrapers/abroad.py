@@ -21,6 +21,7 @@ import airportsdata
 import pycountry
 
 from partylinks.enrichment import UNKNOWN_COUNTRY
+from partylinks.places import city_zone
 
 # Names the sites use that ISO 3166 doesn't: parts of a country, cities standing for it, short forms.
 ALIASES: dict[str, str] = {
@@ -99,9 +100,13 @@ def _zones() -> tuple[dict[tuple[str, str], str], dict[str, str]]:
 
 
 def local_zone(country: str | None, default: str, city: str | None = None) -> str:
-    """Time zone name of a venue in ``city`` (English name) of ``country`` (ISO), else the country's
-    main zone, else ``default``."""
+    """Time zone name of a venue in ``city`` (English or Hebrew name) of ``country`` (ISO), else the
+    country's main zone, else ``default``."""
     # ponytail: a country's main zone = its airports' most common one; in multi-zone countries
-    # (US, CA, AU, RU) only a matched English city name is exact. Hebrew city names need a map.
+    # (US, CA, AU, RU) only a known city (GeoNames, 15,000+ people, or an airport's city) is exact.
     by_city, by_country = _zones()
-    return by_city.get((_key(city or ""), country or "")) or by_country.get(country or "", default)
+    return (
+        (city and country and city_zone(city, country))
+        or by_city.get((_key(city or ""), country or ""))
+        or by_country.get(country or "", default)
+    )

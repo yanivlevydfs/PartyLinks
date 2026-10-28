@@ -552,3 +552,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **עיר בחו"ל בחיפוש:** `smart_filters` מזהה עיר בחו"ל (100k+ תושבים) ומוסיף `OR` של `text_match` לכל שמותיה. אין שינוי מבני.
 - **מיון:** `sort=start_at` עם `abroad=true` חזר ל-`ORDER BY start_at, id`, בלי `local_date` ובלי `<is_place>`.
 - **בלי שינוי schema.**
+
+### 2026-10-28 (שעה מקומית בחו"ל, תאריך בלי שעה)
+- **שתי עמודות חדשות ב-`events`:** `time_known BOOLEAN NOT NULL DEFAULT TRUE` (False כשהאתר נותן רק תאריך) ו-`time_zone VARCHAR(48)` (אזור הזמן של מקום אירוע בחו"ל, IANA, ‏NULL בישראל). ב-SQLite הן נוספו ב-`create_schema` (ADD COLUMN, שורות קיימות קיבלו `TRUE` / NULL). ב-PG הן חלק מה-DDL של §5, בלי אינדקס: לא מסננים ולא ממיינים לפיהן.
+- **`local_date` / `time_slot` של אירוע בחו"ל** מחושבים עכשיו באזור הזמן של המקום, לא של ישראל. אירוע בלי שעה מקבל `time_slot` NULL. אין שינוי ב-queries.
+- **`GET /events/map`** בוחר גם `time_known`, `time_zone`, `local_date`. אותו `SELECT`, שלוש עמודות נוספות.

@@ -24,7 +24,7 @@ from zoneinfo import ZoneInfo
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str
+from partylinks.parsing import ParseError, clean_str, read_clock
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 PAGE_SIZE = 20
@@ -109,18 +109,16 @@ def parse_event(row: dict[str, Any], s: ViagogoSettings, timezone: str, today: d
         return None
     if s.locale_path and url.startswith(s.site_url + "/") and not url.startswith(s.site_url + s.locale_path + "/"):
         url = s.site_url + s.locale_path + url[len(s.site_url) :]
-    start = None
+    start, known = None, False
     day = (
         None
         if row.get("isTbd")
         else infer_date(str(row.get("formattedDateWithoutYear") or ""), row.get("dayOfWeek"), today)
     )
     if day:
-        try:
-            clock = datetime.strptime(str(row.get("formattedTime") or ""), "%I:%M %p").time()
-        except ValueError:
-            clock = datetime.min.time()
-        start = datetime.combine(day, clock, ZoneInfo(timezone))
+        clock = read_clock(row.get("formattedTime"))  # "8:50 PM"; none: a date alone
+        known = clock is not None
+        start = datetime.combine(day, clock or datetime.min.time(), ZoneInfo(timezone))
     # /<Category>-Tickets/<Genre>/.../E-<id>: e.g. Concert-Tickets / Dance-and-Electronic.
     path = url.split("://", 1)[-1].split("/")[1:]
     path = path[1:] if s.locale_path and path and "/" + path[0] == s.locale_path else path
@@ -135,6 +133,7 @@ def parse_event(row: dict[str, Any], s: ViagogoSettings, timezone: str, today: d
         url=url,
         title=title,
         start_at=start,
+        time_known=known,
         venue_name=clean_str(row.get("venueName")),
         city=location[0] if len(location) > 1 else None,
         source_genres=[genre] if genre else [],

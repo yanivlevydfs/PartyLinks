@@ -17,7 +17,7 @@ from typing import Any
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
-from partylinks.parsing import ParseError, clean_str, html_to_text, parse_iso, to_decimal, to_int
+from partylinks.parsing import ParseError, clean_str, has_time, html_to_text, parse_iso, to_decimal, to_int
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 CENTS = Decimal("0.01")
@@ -97,6 +97,7 @@ def parse_event(event: dict[str, Any], page_url_template: str) -> ScrapedEvent:
         title=clean_str(event.get("name")) or "",
         description=html_to_text(event.get("description")),
         start_at=parse_iso(event.get("startDate")),
+        time_known=has_time(event.get("startDate")),
         end_at=parse_iso(event.get("endDate")),
         address=clean_str(event.get("address")),
         event_types=[t for t in event.get("type") or [] if t],

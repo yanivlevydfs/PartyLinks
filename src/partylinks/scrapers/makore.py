@@ -24,6 +24,7 @@ from partylinks.models import ScrapedEvent
 from partylinks.parsing import (
     ParseError,
     clean_str,
+    has_time,
     html_to_text,
     jsonld_nodes,
     parse_iso,
@@ -123,6 +124,7 @@ def parse_item(item: dict[str, Any], category: str, timezone: str) -> ScrapedEve
         title=title,
         description=html_to_text(item.get("description")),
         start_at=start,
+        time_known=has_time(item.get("startDate")),
         end_at=parse_iso(item.get("endDate"), timezone),
         venue_name=venue,
         address=clean_str((address or {}).get("streetAddress")),

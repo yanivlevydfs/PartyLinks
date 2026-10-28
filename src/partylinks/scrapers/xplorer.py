@@ -164,6 +164,7 @@ def parse_event(
         title=festival or " / ".join(performers),
         source_genres=["festival" if festival else "concert"],  # the board sells music only
         start_at=start_at,
+        time_known=time is not None,
         venue_name=clean_str(place.group(2)) if place and place.group(2) else None,
         city=clean_str(city),
         country=country,

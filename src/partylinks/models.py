@@ -17,6 +17,7 @@ from pydantic import (
 )
 
 from partylinks.artists import ArtistProfile
+from partylinks.parsing import TidyText
 
 
 class TierStatus(StrEnum):
@@ -42,7 +43,7 @@ class EntryType(StrEnum):
 class TicketTier(BaseModel):
     source_ticket_id: str | None = None
     name: str
-    description: str | None = None
+    description: TidyText = None
     # Face value of the current round.
     price: Decimal | None = None
     original_price: Decimal | None = None
@@ -98,9 +99,11 @@ class ScrapedEvent(BaseModel):
     source_event_id: str
     url: HttpUrl
     title: str
-    description: str | None = None
+    description: TidyText = None
     start_at: datetime | None = None
     end_at: datetime | None = None
+    # False when the source gives a date without a time (start_at is then that day's midnight).
+    time_known: bool = True
     venue_name: str | None = None
     address: str | None = None
     city: str | None = None
@@ -142,6 +145,8 @@ class ScrapedEvent(BaseModel):
     has_discount: bool = False
     entry_type: EntryType = EntryType.UNKNOWN
     in_target_city: bool | None = None
+    # IANA zone of a venue abroad (None = Israel's): its times are shown in the venue's local time.
+    time_zone: str | None = None
     local_date: date | None = None
     day_of_week: str | None = None
     time_slot: str | None = None

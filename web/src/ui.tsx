@@ -31,6 +31,19 @@ export function fmtDate(iso: string | null, t: Strings, opts: Intl.DateTimeForma
   return iso ? new Date(iso).toLocaleString(t.locale, { timeZone: TZ, ...opts }) : "";
 }
 
+/** An event's start (or ``iso``) in the venue's own zone: abroad, its local time, not Israel's. A date
+ *  alone (the seller gave no time) shows the day only, never a made-up 00:00. */
+export function when(e: Pick<EventSummary, "start_at" | "time_known" | "time_zone" | "local_date">, t: Strings,
+  opts: Intl.DateTimeFormatOptions, iso = e.start_at) {
+  if (!iso) return "";
+  if (e.time_known === false) {
+    const { hour: _h, minute: _m, ...day } = opts;
+    if (iso !== e.start_at || !e.local_date || !Object.keys(day).length) return "";
+    return new Date(e.local_date + "T12:00:00Z").toLocaleString(t.locale, { ...day, timeZone: "UTC" });
+  }
+  return new Date(iso).toLocaleString(t.locale, { timeZone: e.time_zone ?? TZ, ...opts });
+}
+
 export function priceLabel(e: Pick<EventSummary, "entry_type" | "min_price" | "has_free_entry" | "currency">, t: Strings) {
   if (e.entry_type === "free" || e.min_price === 0) return t.free;
   if (e.min_price == null) return e.has_free_entry ? t.free : "";
@@ -275,8 +288,8 @@ export function Card({ e }: { e: EventSummary }) {
       <div className="card-img">
         <Img src={sized(e.cover_url ?? e.image_url, 640)} alt={e.title} className="cover" text={e.title} />
         <div className="date-badge">
-          <b>{fmtDate(e.start_at, t, { day: "numeric" })}</b>
-          <span>{fmtDate(e.start_at, t, { month: "short" })}</span>
+          <b>{when(e, t, { day: "numeric" })}</b>
+          <span>{when(e, t, { month: "short" })}</span>
           <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={e.start_at} />
         </div>
         {/* A paid card says so; that outranks new / updated. */}
@@ -291,7 +304,7 @@ export function Card({ e }: { e: EventSummary }) {
       </div>
       <div className="card-body">
         <h3 dir="auto">{e.title}</h3>
-        <p className="meta">{fmtDate(e.start_at, t, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+        <p className="meta">{when(e, t, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
         {(e.venue_name || e.area) && (
           <p className="meta">📍 {[e.venue_name, e.area && label(t.areas, e.area)].filter(Boolean).join(" · ")}</p>
         )}
@@ -337,15 +350,20 @@ export function AddToCalendar({ e, start, compact }: { e: EventSummary; start: s
   // ponytail: no end time listed = 3 hours, a guess the user can edit in their calendar.
   const to = e.end_at ? new Date(e.end_at) : new Date(from.getTime() + 3 * 3600000);
   const utc = (d: Date) => d.toISOString().replace(/[-:]|\.\d{3}/g, "");
+  // A date alone (no time from the seller): an all-day entry on that day.
+  const day = e.time_known === false && e.local_date;
+  const next = day && new Date(Date.parse(day + "T12:00:00Z") + 864e5).toISOString().slice(0, 10);
   const url = window.location.origin + eventPath(e);
   const where = [e.venue_name, e.address, e.city].filter(Boolean).join(", ");
   const q = (o: Record<string, string>) => new URLSearchParams(o).toString();
-  const google = "https://calendar.google.com/calendar/render?" + q({ action: "TEMPLATE", text: e.title, dates: `${utc(from)}/${utc(to)}`, location: where, details: url });
-  const outlook = "https://outlook.live.com/calendar/0/action/compose?" + q({ path: "/calendar/action/compose", rru: "addevent", subject: e.title, startdt: from.toISOString(), enddt: to.toISOString(), location: where, body: url });
+  const google = "https://calendar.google.com/calendar/render?" + q({ action: "TEMPLATE", text: e.title, location: where, details: url,
+    dates: day && next ? `${day.replace(/-/g, "")}/${next.replace(/-/g, "")}` : `${utc(from)}/${utc(to)}` });
+  const outlook = "https://outlook.live.com/calendar/0/action/compose?" + q({ path: "/calendar/action/compose", rru: "addevent", subject: e.title, location: where, body: url,
+    ...(day && next ? { startdt: day, enddt: next, allday: "true" } : { startdt: from.toISOString(), enddt: to.toISOString() }) });
   const esc = (s: string) => s.replace(/[\\;,]/g, "\\$&").replace(/\r?\n/g, "\\n");
   const ics = [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PartyLinks//EN", "BEGIN:VEVENT",
-    `UID:${e.id}@partylinks`, `DTSTAMP:${utc(new Date())}`, `DTSTART:${utc(from)}`, `DTEND:${utc(to)}`,
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PartyLinks//EN", "BEGIN:VEVENT", `UID:${e.id}@partylinks`, `DTSTAMP:${utc(new Date())}`,
+    ...(day && next ? [`DTSTART;VALUE=DATE:${day.replace(/-/g, "")}`, `DTEND;VALUE=DATE:${next.replace(/-/g, "")}`] : [`DTSTART:${utc(from)}`, `DTEND:${utc(to)}`]),
     `SUMMARY:${esc(e.title)}`, where && `LOCATION:${esc(where)}`, `URL:${url}`, `DESCRIPTION:${esc(url)}`,
     "END:VEVENT", "END:VCALENDAR",
   ].filter(Boolean).join("\r\n");

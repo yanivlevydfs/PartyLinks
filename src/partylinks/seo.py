@@ -182,7 +182,9 @@ def _cover(cfg: Settings, row: EventRow) -> str | None:
 def _when(row: EventRow, cfg: Settings, lang: str) -> str:
     if row.start_at is None:
         return ""
-    local = row.start_at.astimezone(ZoneInfo(cfg.timezone))
+    if not row.time_known and row.local_date:  # a date alone: no made-up midnight
+        return f"{DAYS[lang][row.local_date.weekday()]} {row.local_date:%d/%m/%Y}"
+    local = row.start_at.astimezone(ZoneInfo(row.time_zone or cfg.timezone))  # abroad: the venue's own time
     return f"{DAYS[lang][local.weekday()]} {local:%d/%m/%Y %H:%M}"
 
 
@@ -207,8 +209,11 @@ def _clip(text: str | None, limit: int = DESC_LIMIT) -> str:
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
-def _iso(dt: datetime | None, cfg: Settings) -> str | None:
-    return dt.astimezone(ZoneInfo(cfg.timezone)).isoformat() if dt else None
+def _iso(dt: datetime | None, cfg: Settings, row: EventRow) -> str | None:
+    """A time in the venue's zone; a date alone (time unknown) as the date only."""
+    if not row.time_known and row.local_date and dt is row.start_at:
+        return row.local_date.isoformat()
+    return dt.astimezone(ZoneInfo(row.time_zone or cfg.timezone)).isoformat() if dt else None
 
 
 def _upcoming(session: Session, *where: Any, limit: int = LIST_LIMIT, abroad: bool = False) -> list[EventRow]:
@@ -263,7 +268,7 @@ def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, An
             "priceCurrency": t.currency,
             "availability": availability.get(t.status, "https://schema.org/InStock"),
             "url": _url(cfg, go_path(row.id)),
-            "validFrom": _iso(t.sale_start, cfg),
+            "validFrom": _iso(t.sale_start, cfg, row),
         }
         for t in row.tickets
         if t.price is not None or t.is_free
@@ -289,8 +294,8 @@ def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
         "@id": _url(cfg, event_path(row)) + "#event",
         "name": row.title,
         "url": _url(cfg, event_path(row)),
-        "startDate": _iso(row.start_at, cfg),
-        "endDate": _iso(row.end_at, cfg),
+        "startDate": _iso(row.start_at, cfg, row),
+        "endDate": _iso(row.end_at, cfg, row),
         "eventStatus": "https://schema.org/EventScheduled",
         "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
         "location": _place(row),
@@ -440,7 +445,7 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     place["@type"] = "MusicVenue"
     place["url"] = _url(cfg, path)
     if rows:
-        place["event"] = [{"@id": _url(cfg, event_path(r)) + "#event", "name": r.title, "startDate": _iso(r.start_at, cfg)} for r in rows]
+        place["event"] = [{"@id": _url(cfg, event_path(r)) + "#event", "name": r.title, "startDate": _iso(r.start_at, cfg, r)} for r in rows]
     return Page(
         title=f"{name} · {t['upcoming']} · {cfg.site.name}",
         description=t["venue_desc"].format(name=name),
@@ -463,7 +468,7 @@ def artist_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
         "@type": "Person",
         "name": name,
         "url": _url(cfg, path),
-        "performerIn": [{"@id": _url(cfg, event_path(r)) + "#event", "name": r.title, "startDate": _iso(r.start_at, cfg)} for r in rows],
+        "performerIn": [{"@id": _url(cfg, event_path(r)) + "#event", "name": r.title, "startDate": _iso(r.start_at, cfg, r)} for r in rows],
     }
     return Page(
         title=f"{name} · {t['artists']} · {cfg.site.name}",

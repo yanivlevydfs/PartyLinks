@@ -573,7 +573,7 @@ def test_cached_responses_follow_writes_and_map_returns_located_events(tmp_path:
             clock.sleep(0.05)
         pins = client.get("/events/map").json()
         assert "test:a" in [p["id"] for p in pins["items"]] and len(pins["items"]) + pins["unplaced"] == 2
-        assert set(pins["items"][0]) == {"id", "slug", "title", "start_at", "venue_name", "latitude", "longitude", "source", "sources"}
+        assert set(pins["items"][0]) == {"id", "slug", "title", "start_at", "time_known", "time_zone", "local_date", "venue_name", "latitude", "longitude", "source", "sources"}
 
 
 def test_seller_links_leave_only_through_the_rate_limited_redirect(tmp_path: Path) -> None:

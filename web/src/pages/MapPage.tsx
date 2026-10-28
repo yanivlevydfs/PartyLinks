@@ -14,7 +14,7 @@ import { useAllowed, useConsent } from "../consent";
 import { Filters, filterParams, GROUP_ICON } from "../Filters";
 import { useStore } from "../store";
 import type { MapEvent } from "../types";
-import { eventPath, fmtDate, Loader, Sources, useT, useTitle, venuePath } from "../ui";
+import { eventPath, Loader, Sources, useT, useTitle, venuePath, when } from "../ui";
 import type { Lang } from "../i18n";
 
 const ISRAEL: [number, number] = [31.9, 34.95];
@@ -189,7 +189,7 @@ function Spot({ list }: { list: MapEvent[] }) {
             {list.slice(0, 8).map((e) => (
               <li key={e.id}>
                 <Link to={eventPath(e)}>
-                  <small>{fmtDate(e.start_at, t, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</small>
+                  <small>{when(e, t, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</small>
                   <span dir="auto">{e.title}</span>
                   <Sources e={e} />
                 </Link>

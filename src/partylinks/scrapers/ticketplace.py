@@ -128,6 +128,7 @@ def parse_product(page_html: str, url: str, timezone: str, *, festival: bool = F
         url=url,
         title=title,
         start_at=start_at,
+        time_known=time is not None,
         venue_name=venue,
         city=city,
         country=country,

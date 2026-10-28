@@ -48,6 +48,7 @@ from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.logs import setup_logging
 from partylinks.media import VARIANT_WIDTHS, variant_path
 from partylinks.models import EntryType
+from partylinks.parsing import TidyText
 from partylinks.places import city_abroad
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
@@ -69,7 +70,7 @@ class TicketOut(_Out):
 
     source_ticket_id: str | None
     name: str
-    description: str | None
+    description: TidyText
     kind: str
     status: str
     price: float | None
@@ -145,6 +146,8 @@ class EventSummaryOut(_Out):
     title: str
     start_at: datetime | None
     end_at: datetime | None
+    time_known: bool = True
+    time_zone: str | None = None
     local_date: date | None
     day_of_week: str | None
     time_slot: str | None
@@ -239,7 +242,7 @@ class AlternativeOut(_Out):
 
 
 class EventOut(EventSummaryOut):
-    description: str | None
+    description: TidyText  # rows stored before tidying came in
     source_genres: list[str]
     artists: list[str]
     organizer: str | None
@@ -279,6 +282,9 @@ class MapEventOut(_Out):
     slug: str | None
     title: str
     start_at: datetime | None
+    time_known: bool = True
+    time_zone: str | None = None
+    local_date: date | None = None
     venue_name: str | None
     latitude: float
     longitude: float
@@ -1090,7 +1096,8 @@ def _register_routes(app: FastAPI) -> None:
             located = and_(EventRow.latitude.is_not(None), EventRow.longitude.is_not(None))
             rows = session.execute(
                 select(
-                    EventRow.id, EventRow.slug, EventRow.title, EventRow.start_at, EventRow.venue_name,
+                    EventRow.id, EventRow.slug, EventRow.title, EventRow.start_at, EventRow.time_known, EventRow.time_zone,
+                    EventRow.local_date, EventRow.venue_name,
                     EventRow.latitude, EventRow.longitude, EventRow.source, EventRow.group_id,
                 )
                 .where(*filters, located)

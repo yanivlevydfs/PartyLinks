@@ -8,6 +8,8 @@ export interface EventSummary {
   title: string;
   start_at: string | null;
   end_at: string | null;
+  time_known: boolean; // false: the seller gave a date only
+  time_zone: string | null; // venue abroad: its own zone (null = Israel's)
   local_date: string | null;
   day_of_week: string | null;
   time_slot: string | null;
@@ -113,7 +115,7 @@ export interface SponsoredRails {
 }
 
 /** A map pin (GET /events/map): just what its popup shows. */
-export type MapEvent = Pick<EventSummary, "id" | "slug" | "title" | "start_at" | "venue_name" | "source" | "sources"> & {
+export type MapEvent = Pick<EventSummary, "id" | "slug" | "title" | "start_at" | "time_known" | "time_zone" | "local_date" | "venue_name" | "source" | "sources"> & {
   latitude: number;
   longitude: number;
 };

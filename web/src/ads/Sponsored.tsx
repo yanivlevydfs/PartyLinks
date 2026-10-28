@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useSponsored } from "../api";
 import type { EventSummary } from "../types";
-import { eventPath, fmtDate, Img, label, priceLabel, sized, useT } from "../ui";
+import { eventPath, Img, label, priceLabel, sized, useT, when } from "../ui";
 import { Weather } from "../Weather";
 import "./sponsored.css";
 
@@ -116,7 +116,7 @@ function Rail({ side, items }: { side: Side; items: EventSummary[] }) {
                   <Img src={sized(e.cover_url ?? e.image_url, 640)} alt="" className="sp-thumb" />
                   <span>
                     <b dir="auto">{e.title}</b>
-                    <small>{fmtDate(e.start_at, t, { weekday: "short", day: "numeric", month: "numeric" })}</small>
+                    <small>{when(e, t, { weekday: "short", day: "numeric", month: "numeric" })}</small>
                   </span>
                 </Link>
               </li>
@@ -147,8 +147,8 @@ function Spot({ e, on }: { e: EventSummary; on: boolean }) {
       onClick={() => hit(e.id, "click")}>
       <Img src={sized(e.cover_url ?? e.image_url, 640)} alt={e.title} className="sp-img" text={e.title} />
       <div className="date-badge">
-        <b>{fmtDate(e.start_at, t, { day: "numeric" })}</b>
-        <span>{fmtDate(e.start_at, t, { month: "short" })}</span>
+        <b>{when(e, t, { day: "numeric" })}</b>
+        <span>{when(e, t, { month: "short" })}</span>
         <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={e.start_at} />
       </div>
       {e.is_sold_out ? (
@@ -158,7 +158,7 @@ function Spot({ e, on }: { e: EventSummary; on: boolean }) {
       )}
       <div className="sp-info">
         <h3 dir="auto">{e.title}</h3>
-        <p>{fmtDate(e.start_at, t, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+        <p>{when(e, t, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
         {where && <p>📍 {where}</p>}
         <span className="sp-cta">{t.sponsoredCta} <i aria-hidden>→</i></span>
       </div>

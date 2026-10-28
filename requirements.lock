@@ -27,6 +27,8 @@ curl-cffi==0.16.3
     # via partylinks (pyproject.toml)
 fastapi==0.153.0
     # via partylinks (pyproject.toml)
+ftfy==6.3.1
+    # via partylinks (pyproject.toml)
 geonamescache==3.0.2
     # via partylinks (pyproject.toml)
 h11==0.16.0
@@ -99,3 +101,5 @@ tzlocal==5.4.4
     # via apscheduler
 uvicorn==0.54.0
     # via partylinks (pyproject.toml)
+wcwidth==0.9.4
+    # via ftfy

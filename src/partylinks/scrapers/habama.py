@@ -95,6 +95,7 @@ def parse_day(page_html: str, day: date, timezone: str) -> list[ScrapedEvent]:
             title=title,
             description=clean_str(note.text()) if note else None,
             start_at=datetime.combine(day, start, tzinfo=zone(timezone)),
+            time_known=clock is not None,
             venue_name=venue,
             city=city,
             source_genres=[category] if category else [],

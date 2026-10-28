@@ -11,7 +11,7 @@ import hashlib
 import math
 import re
 from collections.abc import Iterable
-from datetime import datetime
+from datetime import datetime, time
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -467,10 +467,20 @@ class Enricher:
     def _categorize_time(self, event: ScrapedEvent) -> None:
         if event.start_at is None:
             return
-        local = event.start_at.astimezone(self.tz)
+        if event.country and event.country != UNKNOWN_COUNTRY:
+            from partylinks.scrapers.abroad import local_zone  # abroad imports this module
+
+            event.time_zone = local_zone(event.country, self.tz.key, event.city)
+        # A date alone is midnight in the zone the source meant: that day, and no time of day. Not
+        # midnight there = the source did give an hour: a timed event, never an all-day one.
+        if not event.time_known and event.start_at.timetz().replace(tzinfo=None) != time():
+            event.time_known = True
+        zone = ZoneInfo(event.time_zone) if event.time_zone else self.tz
+        local = event.start_at.astimezone(zone) if event.time_known else event.start_at
         event.local_date = local.date()
         event.day_of_week = local.strftime("%A").lower()
-        event.time_slot = next((s.name for s in self.settings.time_slots if s.contains(local.hour)), None)
+        slots = self.settings.time_slots if event.time_known else ()
+        event.time_slot = next((s.name for s in slots if s.contains(local.hour)), None)
         event.is_weekend = event.day_of_week in self._weekend
 
     # ------------------------------------------------------------------ city

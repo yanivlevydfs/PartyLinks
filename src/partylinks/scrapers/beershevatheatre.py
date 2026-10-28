@@ -15,7 +15,16 @@ from collections.abc import AsyncIterator
 from urllib.parse import quote
 
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
-from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, parse_iso, schema_types, to_decimal
+from partylinks.parsing import (
+    ParseError,
+    clean_str,
+    has_time,
+    html_to_text,
+    jsonld_nodes,
+    parse_iso,
+    schema_types,
+    to_decimal,
+)
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _EVENT_ID = re.compile(r"smarticket\.co\.il/+(?:iframe/)?event/(\d+)")
@@ -76,6 +85,7 @@ def parse_performance(page_html: str, performance_id: str, base: str, timezone: 
         title=title,
         description=html_to_text(event.get("description")),
         start_at=start,
+        time_known=has_time(event.get("startDate")),
         end_at=parse_iso(event.get("endDate"), timezone),
         venue_name=VENUE,
         address=clean_str(place.get("streetAddress")),

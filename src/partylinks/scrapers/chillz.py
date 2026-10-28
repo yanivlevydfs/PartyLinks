@@ -42,6 +42,7 @@ from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import (
     ParseError,
     clean_str,
+    has_time,
     html_to_text,
     jsonld_nodes,
     parse_iso,
@@ -253,6 +254,7 @@ def parse_page(page_html: str, url: str, default_tz: str) -> ScrapedEvent | None
         title=clean_str(event.get("name")) or "",
         description=html_to_text(event.get("description")),
         start_at=parse_iso(event.get("startDate"), default_tz),
+        time_known=has_time(event.get("startDate")),
         end_at=parse_iso(event.get("endDate"), default_tz),
         venue_name=clean_str(location.get("name")) if isinstance(location, dict) else clean_str(location),
         address=_address_text(address),

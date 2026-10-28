@@ -4,7 +4,7 @@ import { useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { Ticket } from "../types";
 import { Weather } from "../Weather";
-import { AddToCalendar, artistPath, eventPath, fmtDate, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath } from "../ui";
+import { AddToCalendar, artistPath, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
 
 // URLs in scraped description text become links; trailing punctuation stays text.
 function linkify(text: string) {
@@ -67,16 +67,16 @@ export default function EventPage() {
             <Sources e={e} />
 
             <ul className="facts">
-              <li><i>📅</i>{fmtDate(e.start_at, t, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</li>
-              <li>
+              <li><i>📅</i>{when(e, t, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</li>
+              {e.time_known !== false && <li>
                 <i>🕘</i>
                 {/* Each time isolated, the range in the page's direction: in Hebrew the start sits on the right. */}
                 <span dir={lang === "he" ? "rtl" : "ltr"}>
-                  <bdi>{fmtDate(e.start_at, t, time)}</bdi>
-                  {e.end_at && <> – <bdi>{fmtDate(e.end_at, t, time)}</bdi></>}
+                  <bdi>{when(e, t, time)}</bdi>
+                  {e.end_at && <> – <bdi>{when(e, t, time, e.end_at)}</bdi></>}
                   {e.time_slot && ` · ${label(t.slots, e.time_slot)}`}
                 </span>
-              </li>
+              </li>}
               <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={e.start_at} full />
               {(e.venue_name || e.address) && (
                 <li>

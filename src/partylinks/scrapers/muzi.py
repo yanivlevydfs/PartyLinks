@@ -173,6 +173,7 @@ def parse_event(page_html: str, url: str, timezone: str, today: date | None = No
         title=title,
         description=html_to_text(node.get("description")),
         start_at=start,
+        time_known=clock is not None,
         venue_name=venue,
         address=street if street != venue else None,
         city=clean_str(address.get("addressLocality")),

@@ -20,7 +20,17 @@ from typing import Any
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent, TicketTier
-from partylinks.parsing import ParseError, clean_str, html_to_text, next_data, parse_iso, to_decimal, to_float, to_int
+from partylinks.parsing import (
+    ParseError,
+    clean_str,
+    has_time,
+    html_to_text,
+    next_data,
+    parse_iso,
+    to_decimal,
+    to_float,
+    to_int,
+)
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 CENTS = Decimal("0.01")
@@ -99,6 +109,7 @@ def parse_event(data: dict[str, Any], page_url: str) -> ScrapedEvent:
         title=clean_str(event.get("title")) or "",
         description=html_to_text(event.get("description")) or clean_str(props.get("shortDescription")),
         start_at=parse_iso(event.get("startDate")),
+        time_known=has_time(event.get("startDate")),
         end_at=parse_iso(event.get("endDate")),
         address=address,
         city=_city_from_address(address),

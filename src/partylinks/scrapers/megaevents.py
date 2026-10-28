@@ -24,7 +24,7 @@ from functools import cache
 from typing import Any
 
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, jsonld_nodes, parse_iso, to_decimal, to_float
+from partylinks.parsing import ParseError, clean_str, has_time, jsonld_nodes, parse_iso, to_decimal, to_float
 from partylinks.scrapers.abroad import airports, country_code, local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.popit import flight_payload
@@ -156,6 +156,7 @@ def parse_event(
         source_genres=["concert"],  # football is skipped: every kept event is a concert
         description=clean_str(raw.get("description")),
         start_at=start_at,
+        time_known=has_time(raw.get("date")),
         city=clean_str(city) or None,
         latitude=to_float(location.get("latitude")),  # the city's centre, not the venue
         longitude=to_float(location.get("longitude")),

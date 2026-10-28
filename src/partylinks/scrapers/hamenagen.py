@@ -17,7 +17,7 @@ from typing import Any
 
 from partylinks.artists import ArtistProfile
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, zone
+from partylinks.parsing import ParseError, clean_str, read_clock, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 
@@ -63,10 +63,8 @@ def parse_item(item: dict[str, Any], events_url: str, timezone: str) -> ScrapedE
         return None
     if not event_id or not title:
         return None
-    try:
-        start_time = time.fromisoformat(str(item.get("timeLabel")))
-    except ValueError:
-        start_time = time()  # date only
+    clock = read_clock(item.get("timeLabel"))
+    start_time, known = clock or time(), clock is not None  # no time in the label: date only
     venue, city = _split_location(clean_str(item.get("location")))
     ticket_url = clean_str(item.get("ticketUrl"))
     artists = [a for a in item.get("artists") or [] if isinstance(a, dict) and clean_str(a.get("name"))]
@@ -80,6 +78,7 @@ def parse_item(item: dict[str, Any], events_url: str, timezone: str) -> ScrapedE
         title=title,
         source_genres=["concert", "מוזיקה יהודית"],  # a Jewish / Hasidic music concert calendar
         start_at=datetime.combine(day, start_time, tzinfo=zone(timezone)),
+        time_known=known,
         venue_name=venue,
         city=city,
         artists=names,

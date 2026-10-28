@@ -207,6 +207,7 @@ def build_event(
         title=title,
         description=description,
         start_at=start,
+        time_known=start_clock is not None,
         end_at=end,
         venue_name=venue,
         address=address,

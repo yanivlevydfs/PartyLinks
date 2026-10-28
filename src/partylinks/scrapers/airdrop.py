@@ -20,7 +20,16 @@ from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from partylinks.artists import ArtistProfile
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
-from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, parse_iso, schema_types, to_decimal
+from partylinks.parsing import (
+    ParseError,
+    clean_str,
+    has_time,
+    html_to_text,
+    jsonld_nodes,
+    parse_iso,
+    schema_types,
+    to_decimal,
+)
 from partylinks.parsing import zone as _zone
 from partylinks.scrapers.abroad import country_code, local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -82,6 +91,7 @@ def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
         title=title,
         description=html_to_text(str(event.get("description") or "")),
         start_at=start,
+        time_known=has_time(event.get("startDate")),
         end_at=_local(event.get("endDate"), zone, country),
         venue_name=clean_str(location.get("name")),
         city=clean_str(address.get("addressLocality")),

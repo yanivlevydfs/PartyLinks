@@ -75,11 +75,12 @@ def parse_event(page_html: str, post_id: str, url: str, city: str, timezone: str
     if top is None or not title:
         raise ParseError(f"{url}: no event block")
     tz = zone(timezone)
-    shows = []
+    shows, known = [], []
     for line in top.css(".dates-wrapper .date-description"):
         for d, m, y, hh, mm in _SHOW.findall(_text(line))[:1]:  # a season line: its first day
             clock = time(int(hh) % 24, int(mm)) if hh else time()
             shows.append(datetime.combine(date(int(y), int(m), int(d)), clock, tz))
+            known.append(bool(hh))
     if not shows:  # undated (date-wrapper left empty)
         return []
     price_text = _text(top.css_first(".price-description"))
@@ -104,6 +105,7 @@ def parse_event(page_html: str, post_id: str, url: str, city: str, timezone: str
         title=title,
         description=html_to_text(description.html) if description else None,
         start_at=shows[0],
+        time_known=known[0],
         venue_name=clean_str(places[0]) if places else None,
         address=clean_str(address),
         city=city,

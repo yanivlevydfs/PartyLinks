@@ -7,19 +7,25 @@ import json
 import math
 import re
 import unicodedata
-from datetime import UTC, datetime, tzinfo
+from datetime import UTC, datetime, time, tzinfo
 from decimal import Decimal, InvalidOperation
-from typing import Any
+from typing import Annotated, Any
 from urllib.parse import quote
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import ftfy
 import json_repair
+from pydantic import AfterValidator
 from selectolax.lexbor import LexborHTMLParser
 
 _WS = re.compile(r"[ \t\r\f\v]+")
 # Bidi marks / zero-width characters that sources leave around Hebrew text.
 _INVISIBLE = re.compile("[\x00\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]")
 _BLANK_LINES = re.compile(r"\n{3,}")
+_SPACES = re.compile(r"[^\S\n]+")  # any space but a line break: tab, NBSP, thin, ideographic...
+_TAG = re.compile(r"</?(?:br|p|div|span|li|ul|ol|strong|b|i|em|u|h[1-6]|font|a)\b[^<>]*>", re.IGNORECASE)
+_BEFORE_CLOSE = re.compile(r" +([,.;:!?)\]}])(?= |$)")  # "שלום ," -> "שלום,"; ":)" untouched
+_AFTER_OPEN = re.compile(r"(^|\s)([(\[{]) +")
 
 
 class ParseError(ValueError):
@@ -79,10 +85,31 @@ def html_to_text(value: str | None) -> str | None:
         br.replace_with("\n")
     for block in tree.css("p, div, h1, h2, h3, h4, h5, h6, li"):
         block.insert_after("\n")
-    text = tree.body.text(separator="") if tree.body else markup
-    lines = (_WS.sub(" ", line).strip() for line in _INVISIBLE.sub("", text).splitlines())
-    cleaned = _BLANK_LINES.sub("\n\n", "\n".join(lines)).strip()
-    return cleaned or None
+    return tidy_text(tree.body.text(separator="") if tree.body else markup, markup=False)
+
+
+def tidy_text(value: str | None, markup: bool = True) -> str | None:
+    """Text as a reader should see it, whatever the source sent. ftfy repairs the characters: broken
+    encodings (mojibake), HTML entities, control characters, every kind of line break, Unicode
+    normalisation. Then the layout: markup left in the text read as HTML, every kind of space (tab,
+    non-breaking, thin...) one plain space, each line trimmed, no space before a comma / period or
+    inside brackets, a line repeated right after itself once, at most one blank line in a row, no
+    invisible marks; None when nothing is left."""
+    if not value:
+        return None
+    text = ftfy.fix_text(value, unescape_html=True, uncurl_quotes=False, fix_character_width=False)
+    if markup and _TAG.search(text):  # "<br>", "<p>" kept as text by a source: read it as HTML
+        return html_to_text(text)
+    lines: list[str] = []
+    for raw in _INVISIBLE.sub("", text).splitlines():
+        line = _AFTER_OPEN.sub(r"\1\2", _BEFORE_CLOSE.sub(r"\1", _SPACES.sub(" ", raw))).strip()
+        if not (line and lines and line == lines[-1]):  # the same line twice in a row: a paste slip
+            lines.append(line)
+    return _BLANK_LINES.sub("\n\n", "\n".join(lines)).strip() or None
+
+
+# A text field shown as is (descriptions): tidied whatever the source sent.
+TidyText = Annotated[str | None, AfterValidator(tidy_text)]
 
 
 def to_decimal(value: Any) -> Decimal | None:
@@ -126,6 +153,26 @@ def parse_iso(value: Any, default_tz: str | None = None) -> datetime | None:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=zone(default_tz))
     return dt
+
+
+_CLOCK = re.compile(r"(?<!\d)([01]?\d|2[0-3]):([0-5]\d)(?!\d)(?:\s*([AaPp])\.?[Mm]\.?)?")
+
+
+def read_clock(value: Any) -> time | None:
+    """The time of day written anywhere in ``value``: "21:00", "20:30 ", "8:50 PM", "בשעה 19:30";
+    None only when it names none (then the source gave a date alone)."""
+    found = _CLOCK.search(str(value or ""))
+    if not found:
+        return None
+    hour, minute, half = int(found[1]), int(found[2]), (found[3] or "").lower()
+    if half and 1 <= hour <= 12:
+        hour = hour % 12 + (12 if half == "p" else 0)
+    return time(hour, minute)
+
+
+def has_time(value: Any) -> bool:
+    """False for a date alone ("2026-10-30"): the source gives no time of day."""
+    return not (isinstance(value, str) and len(value.strip()) == 10)
 
 
 def from_unix(value: Any) -> datetime | None:
