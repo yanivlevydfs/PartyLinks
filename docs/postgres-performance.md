@@ -36,7 +36,7 @@ FROM pg_stat_user_tables WHERE relname IN ('events', 'ticket_tiers', 'event_imag
 - **אופציונלי:** כרטיס "שאילתות איטיות" במסך הניהול (קריאה מה-view). רק אם יידרש.
 - **Rollback:** `DROP EXTENSION pg_stat_statements`. אין השפעה על נתונים.
 
-## שלב 3: כוונון הגדרות Postgres
+## שלב 3: כוונון הגדרות Postgres (בוצע 2026-10-28 21:34)
 
 - **לפני:** לבדוק ב-Railway (Metrics של שירות `Postgres`) כמה RAM השירות מקבל ומשתמש בפועל. `shared_buffers` נגזר מזה.
 - **הפקודות** (משתמש `postgres`, נשמר ב-`postgresql.auto.conf` על ה-volume של Postgres):
@@ -73,6 +73,13 @@ FROM pg_stat_user_tables WHERE relname IN ('events', 'ticket_tiers', 'event_imag
 - השאילתות היקרות משלב 2: ‏`EXPLAIN (ANALYZE, BUFFERS)` לכל אחת, ואינדקס או שינוי שאילתה רק כשיש מדידה.
 - **אינדקסים בלי שימוש:** לבדוק שוב בעוד שבוע (2026-11-04). היום עם 0 סריקות: `ix_events_group_min_price`, ‏`ix_events_venue_slug`, ‏`ix_events_group_entry_type`, ‏`ix_deal_changes_source`, ‏`ix_deal_changes_kind`, ‏`ix_clicks_event_id`. מה שעדיין 0 יוסר מהמודל ו-`DROP INDEX CONCURRENTLY` (‏`create_schema` לא מוחק).
 - **החיפוש:** אינדקס `pg_trgm` לחיפוש טקסט, לפי `postgres-migration.md`, אם שאילתות החיפוש יופיעו ב-top.
+
+## תוצאות (2026-10-28 ערב)
+
+- **שלב 3 בוצע:** שירות ה-Postgres מוגבל ל-24GB ומשתמש ב-0.26-0.65GB, וה-DB ‏204MB. לכן `shared_buffers=1GB` (מחזיק את כל ה-DB עם מקום לגדול; Railway מחייב לפי שימוש) ולא 25%, ‏`effective_cache_size=8GB`, ‏`random_page_cost=1.1`, ‏`jit=off`, ‏`work_mem=16MB`. ב-`postgresql.auto.conf`, ‏restart ל-Postgres ב-19:34 UTC, האתר ענה 200 כל הזמן.
+- **מבחן עומס** (‏50 בקשות, 30 במקביל, אחרי שהמטמון התחמם): חציון 0.31 ש', ‏p95 ‏0.47 ש', הכול ב-0.6 ש'. בבוקר: חציון 0.77 ש', ‏p95 ‏3.96 ש'.
+- **`pg_stat_statements` מצא את מקור הסריקות המלאות:** ‏`city_pages`, ‏`city_genre_counts`, ‏`region_pages` ו-`abroad_countries` ב-`seo.py`: ‏`SELECT events.city / genres / area` על כל האירועים הקרובים, כ-19,700 קריאות מ-11:24 UTC, ‏44-106ms כל אחת. כל דף SEO שאל אותן כמה פעמים, ולפעמים בלולאה.
+- **שלב 6 (בוצע):** התשובות שלהן נשמרות ל-`api.cache_ttl_seconds` (‏60 ש') ב-`cachetools.TTLCache` (`seo._facet`). הגיל הזה ממילא מותר לדף במטמון.
 
 ## סדר ביצוע
 

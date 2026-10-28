@@ -2,6 +2,7 @@ airportsdata==20260902
 geonamescache==3.0.2
 tzdata==2026.2
 apscheduler>=3.11,<4
+cachetools>=5.5
 convertdate==2.5.1
 fastapi>=0.115
 curl_cffi>=0.15

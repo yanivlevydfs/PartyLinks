@@ -29,6 +29,9 @@ def _empty_database(_test_database: str, monkeypatch: pytest.MonkeyPatch) -> Non
     engine = create_engine(postgres_url(make_url(_test_database)))
     Base.metadata.drop_all(engine)
     engine.dispose()
+    from partylinks.seo import _facets
+
+    _facets().clear()  # page lists of the previous test's events
 
 
 @pytest.fixture(autouse=True)

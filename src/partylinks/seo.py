@@ -14,6 +14,7 @@ import re
 import threading
 import unicodedata
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from functools import cache
@@ -24,12 +25,13 @@ from urllib.parse import quote, unquote
 from zoneinfo import ZoneInfo
 
 import yaml
+from cachetools import TTLCache
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlalchemy import ColumnElement, String, cast, or_, select
 from sqlalchemy.orm import Session, selectinload
 
-from partylinks.config import CitySettings, Settings
+from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
 from partylinks.db import EventRow, lineup_contains, upcoming_filter
 from partylinks.places import all_cities
@@ -721,21 +723,50 @@ def _ascii_slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", plain.lower()).strip("-")
 
 
+_FACETS_LOCK = threading.Lock()
+
+
+@cache
+def _facets() -> TTLCache[tuple[Any, ...], Any]:
+    return TTLCache(maxsize=256, ttl=get_settings().api.cache_ttl_seconds)
+
+
+def _facet[T](key: tuple[Any, ...], build: Callable[[], T]) -> T:
+    """Which cities, genres, regions and countries have pages: every SEO page asks, several times,
+    and each answer scans all upcoming events (thousands of scans an hour). Reused for
+    ``api.cache_ttl_seconds``, the age a cached page may reach anyway. Callers never mutate it."""
+    with _FACETS_LOCK:
+        if key in _facets():
+            return _facets()[key]
+    value = build()
+    with _FACETS_LOCK:
+        _facets()[key] = value
+    return value
+
+
 def city_pages(session: Session, cfg: Settings, when: str | None = None) -> list[CitySettings]:
     """Cities with enough upcoming events (tonight / this weekend) for a page."""
-    counts = Counter(session.scalars(select(EventRow.city).where(upcoming_filter(), *_when_where(when, cfg))))
-    configured = {c.key for c in cfg.enrichment.cities}
-    return [c for c in _page_cities(cfg) if counts[c.he] >= (GENRE_PAGE_MIN if c.key in configured else TOWN_PAGE_MIN)]
+
+    def build() -> list[CitySettings]:
+        counts = Counter(session.scalars(select(EventRow.city).where(upcoming_filter(), *_when_where(when, cfg))))
+        configured = {c.key for c in cfg.enrichment.cities}
+        return [c for c in _page_cities(cfg) if counts[c.he] >= (GENRE_PAGE_MIN if c.key in configured else TOWN_PAGE_MIN)]
+
+    return _facet(("city_pages", id(cfg), when), build)
 
 
 def city_genre_counts(session: Session, cfg: Settings) -> dict[str, dict[str, int]]:
     """City (Hebrew name) -> genres with enough upcoming events there for a /city/<key>/<genre> page."""
-    counts: dict[str, Counter[str]] = {}
-    rows = session.execute(select(EventRow.city, EventRow.genres).where(upcoming_filter(), EventRow.country.is_(None), EventRow.city.is_not(None)))
-    for city, genres in rows:
-        if city:
-            counts.setdefault(city, Counter()).update(cfg.enrichment.with_parents(genres or []))
-    return {c: {g: n for g, n in cnt.most_common() if n >= GENRE_PAGE_MIN} for c, cnt in counts.items()}
+
+    def build() -> dict[str, dict[str, int]]:
+        counts: dict[str, Counter[str]] = {}
+        rows = session.execute(select(EventRow.city, EventRow.genres).where(upcoming_filter(), EventRow.country.is_(None), EventRow.city.is_not(None)))
+        for city, genres in rows:
+            if city:
+                counts.setdefault(city, Counter()).update(cfg.enrichment.with_parents(genres or []))
+        return {c: {g: n for g, n in cnt.most_common() if n >= GENRE_PAGE_MIN} for c, cnt in counts.items()}
+
+    return _facet(("city_genre_counts", id(cfg)), build)
 
 
 # Regions of the country with a /region/<key> page: (name, "in <name>" in Hebrew, English name).
@@ -751,18 +782,25 @@ REGION_NAMES = {
 
 
 def region_pages(session: Session) -> list[str]:
-    counts = Counter(session.scalars(select(EventRow.area).where(upcoming_filter(), EventRow.country.is_(None))))
-    return [k for k in REGION_NAMES if counts[k] >= GENRE_PAGE_MIN]
+    def build() -> list[str]:
+        counts = Counter(session.scalars(select(EventRow.area).where(upcoming_filter(), EventRow.country.is_(None))))
+        return [k for k in REGION_NAMES if counts[k] >= GENRE_PAGE_MIN]
+
+    return _facet(("region_pages",), build)
 
 
 def abroad_countries(session: Session) -> dict[str, str]:
     """URL slug (English name) -> country code, for countries with enough upcoming events for /abroad/<slug>."""
-    counts = Counter(session.scalars(select(EventRow.country).where(upcoming_filter(), EventRow.country.is_not(None))))
-    out: dict[str, str] = {}
-    for code, n in counts.most_common():
-        if code and n >= GENRE_PAGE_MIN and is_country(code):
-            out[_ascii_slug(country_name(code, "en"))] = code
-    return out
+
+    def build() -> dict[str, str]:
+        counts = Counter(session.scalars(select(EventRow.country).where(upcoming_filter(), EventRow.country.is_not(None))))
+        out: dict[str, str] = {}
+        for code, n in counts.most_common():
+            if code and n >= GENRE_PAGE_MIN and is_country(code):
+                out[_ascii_slug(country_name(code, "en"))] = code
+        return out
+
+    return _facet(("abroad_countries",), build)
 
 
 def _nearby(city: CitySettings, cities: list[CitySettings], n: int = 4) -> list[CitySettings]:

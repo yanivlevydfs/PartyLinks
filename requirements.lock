@@ -12,6 +12,8 @@ anyio==4.15.1
     #   starlette
 apscheduler==3.11.3
     # via partylinks (pyproject.toml)
+cachetools==7.2.6
+    # via partylinks (pyproject.toml)
 certifi==2026.10.19
     # via
     #   curl-cffi

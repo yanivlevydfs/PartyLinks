@@ -656,3 +656,7 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Extensions:** ‏`database.extensions` (‏`[pg_stat_statements]`) נוצרים ב-`create_schema` כשחסרים; כישלון נרשם כ-warning ולא מפיל עלייה (ב-`pgserver` המקומי יש רק `plpgsql` ו-`vector`).
 - **מטמון דפים:** ‏`api.cache_min_fresh_seconds` (‏30): כתיבה לא מבטלת דף צעיר מזה. ראו `postgres-performance.md`.
 - **Tests:** ‏`test_a_rescan_writes_only_the_ticket_tiers_that_changed`. ‏481/481.
+
+### 2026-10-28 (הגדרות שרת ורשימות דפים)
+- **שרת:** ‏`ALTER SYSTEM`: ‏`shared_buffers=1GB`, ‏`effective_cache_size=8GB`, ‏`random_page_cost=1.1`, ‏`jit=off`, ‏`work_mem=16MB`, ו-restart. החזרה: `ALTER SYSTEM RESET <name>` ו-restart.
+- **Queries:** ‏`seo.city_pages`, ‏`city_genre_counts`, ‏`region_pages`, ‏`abroad_countries` נשמרות 60 ש' (`seo._facet`, ‏`cachetools`). השאילתות עצמן לא השתנו; הן רצות פעם בדקה במקום אלפי פעמים בשעה.
