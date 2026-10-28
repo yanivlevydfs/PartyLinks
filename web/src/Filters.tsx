@@ -105,11 +105,10 @@ export function Filters() {
   const counts = new Map((cats?.dates ?? []).map((d) => [d.value, d.events]));
   const whenLabel = whenText(t, f.when);
   const pickWhen = (when: string) => { set({ when }); setCalOpen(false); };
-  // A first day filters at once and keeps the calendar open; a later second day makes it a range.
-  const start = f.when === "tonight" ? today() : /^\d{4}-\d\d-\d\d$/.test(f.when) ? f.when : null;
-  const pickDay = (v: string) => {
-    if (start && v > start) return pickWhen(`${start}~${v}`);
-    set({ when: v === today() ? "tonight" : v });
+  // A first day filters at once and keeps the calendar open; a second click closes it (same day: that day only).
+  const pickDay = (v: string, done: boolean) => {
+    const when = v === today() ? "tonight" : v;
+    if (done) pickWhen(when); else set({ when });
   };
 
   const toggles = (
@@ -498,10 +497,16 @@ export function GenrePicker({ cats, value, onChange, quiz }: { cats?: Categories
 }
 
 /** Month grid, Sunday first. A day glows by how many events it has; past days and days with none are disabled.
- *  `value` is one day or a range "from~to". */
-export function Calendar({ value, counts, onPick }: { value: string; counts: Map<string, number>; onPick: (v: string) => void }) {
+ *  `value` is one day or a range "from~to". The first click picks one day (done=false); a second click on the
+ *  same day keeps just it, on a later day makes the range (done=true); an earlier day starts over. */
+export function Calendar({ value, counts, onPick }: { value: string; counts: Map<string, number>; onPick: (v: string, done: boolean) => void }) {
   const { t, lang } = useT();
   const now = today();
+  const [anchor, setAnchor] = useState<string | null>(null); // first click of this opening, not the saved filter
+  const click = (v: string) => {
+    if (anchor && v >= anchor) { setAnchor(null); onPick(v === anchor ? v : `${anchor}~${v}`, true); }
+    else { setAnchor(v); onPick(v, false); }
+  };
   const [from, to = from] = value.split("~");
   const [month, setMonth] = useState(() => (/^\d{4}-\d\d-\d\d$/.test(value) ? value : now).slice(0, 7));
   const [y, m] = month.split("-").map(Number);
@@ -532,7 +537,7 @@ export function Calendar({ value, counts, onPick }: { value: string; counts: Map
           const on = v >= from && v <= to;
           return (
             <button key={v} className={"cal-day" + (on ? " on" : "") + (on && from !== to ? " range" : "") + (v === now ? " today" : "")}
-              disabled={v < now || !n} aria-pressed={on} onClick={() => onPick(v)}
+              disabled={v < now || !n} aria-pressed={on} onClick={() => click(v)}
               aria-label={`${fmt(new Date(v + "T12:00:00Z"), { weekday: "long", day: "numeric", month: "long" })} · ${n} ${t.calEvents}`}
               title={n ? `${n} ${t.calEvents}` : undefined}
               style={{ "--heat": n / max } as CSSProperties}>

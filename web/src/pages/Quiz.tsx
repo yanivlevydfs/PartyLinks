@@ -49,9 +49,11 @@ export function Quiz() {
   };
   const next = () => (step < STEPS - 1 ? setStep(step + 1) : finish());
   const pickWhen = (when: string) => { patch({ when }); setCalOpen(false); setStep(1); };
-  // As the home filter's calendar: a first day waits for "next" or a later second day, which makes a range.
-  const start = d.when === "tonight" ? today() : /^\d{4}-\d\d-\d\d$/.test(d.when) ? d.when : null;
-  const pickDay = (v: string) => (start && v > start ? pickWhen(`${start}~${v}`) : patch({ when: v === today() ? "tonight" : v }));
+  // As the home filter's calendar: a first day waits for "next" or a second click (same day or a later one).
+  const pickDay = (v: string, done: boolean) => {
+    const when = v === today() ? "tonight" : v;
+    if (done) pickWhen(when); else patch({ when });
+  };
   const surprise = () => {
     const items = results?.items ?? [];
     if (items.length) navigate(eventPath(items[Math.floor(Math.random() * items.length)]));
