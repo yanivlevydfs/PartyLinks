@@ -181,7 +181,7 @@ function Rail({ title, sub, pool }: { title: string; sub: string; pool: EventSum
     return list.slice(0, 12);
   }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
   if (loaded && items.length < 3) return null;
-  const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.8, behavior: "smooth" });
+  const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth, behavior: "smooth" });
   return (
     <section className="trending">
       <div className="trending-head">

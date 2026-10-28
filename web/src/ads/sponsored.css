@@ -131,7 +131,7 @@ html[dir="ltr"] .sp-list a:hover { transform: translateX(2px); }
   .sp-strip-row .sp-spot { flex: none; min-width: 0; }
 }
 .sp-strip-row .sp-spot {
-  position: relative; flex: 0 0 min(200px, 42vw); aspect-ratio: 4 / 5; border-radius: 16px; scroll-snap-align: start;
+  position: relative; flex: 0 0 calc((100% - 4 * 12px) / 5); min-width: 0; aspect-ratio: 4 / 5; border-radius: 16px; scroll-snap-align: start;
   border: 1px solid var(--line-hot); box-shadow: 0 0 22px -8px var(--pink);
 }
 .sp-strip-row .sp-spot.on .sp-img { animation: none; }

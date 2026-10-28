@@ -434,10 +434,12 @@ select option { background: var(--panel-solid); color: var(--text); }
 .trending-nav button:hover { border-color: var(--line-hot); }
 .trending-row {
   display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
-  padding: 6px 22px 4px; scroll-padding-inline: 22px;
+  padding: 6px 0 4px; margin-inline: 22px; /* margin, not padding: no next card peeking in the gutter */
 }
 .trending-row::-webkit-scrollbar { display: none; }
-.trending-row > .card-wrap { flex: 0 0 min(200px, 62vw); scroll-snap-align: start; }
+/* Exactly five whole cards in view (four on narrow desktops), never a cut one at the edge. */
+.trending-row > .card-wrap { flex: 0 0 calc((100% - 4 * 16px) / 5); min-width: 0; scroll-snap-align: start; }
+@media (max-width: 1100px) { .trending-row > .card-wrap { flex-basis: calc((100% - 3 * 16px) / 4); } }
 /* Compact cards: the carousel is a teaser, not the main grid. */
 .trending .card-body { padding: 10px 12px 12px; gap: 2px; }
 .trending .card-body h3 { font-size: 15px; margin-bottom: 4px; }
@@ -457,12 +459,12 @@ select option { background: var(--panel-solid); color: var(--text); }
   .trending-nav { display: none; }
   .trending { margin-inline: -16px; padding: 18px 0 14px; border-inline: 0; border-radius: 0; }
   .trending-head { padding: 0 16px 12px; }
-  .trending-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; overflow: visible; scroll-snap-type: none; padding: 6px 16px 4px; }
+  .trending-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; overflow: visible; scroll-snap-type: none; padding: 6px 16px 4px; margin-inline: 0; }
   .trending-row > .card-wrap { min-width: 0; }
   .trending-row > :nth-child(n + 5) { display: none; } /* two lines a row: a teaser, the full list follows */
   /* Compact: no share / calendar buttons on these teaser cards (the event page has them). */
   .trending .share-one, .trending .card-wrap > .cal { display: none; }
-  .trending .card-wrap .tags { padding-inline-end: 0; min-height: 0; }
+  .trending .card-wrap .tags { padding-bottom: 0; }
   /* Row cards: 4:3 art, title and date; the full card is one tap away. */
   .trending .card-img { aspect-ratio: 4 / 3; }
   .trending .card-body { padding: 8px 9px 10px; }
