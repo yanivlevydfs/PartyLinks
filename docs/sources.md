@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 51 configured sources. Each one has its own module in
+SPOTX collects from 84 configured sources (83 on). Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -38,6 +38,7 @@ pagination and what the listing and the event page provide.
 | `beatradar` | Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties, with its own genre tags; merged with those sources by dedup | 08:26, 20:26 | yes |
 | `shotgun` | Shotgun (shotgun.live): electronic music ticketing. Every city page worldwide (240, mostly France, Brazil and the US; ~3,300 events, to the abroad section), plus its Israeli pages, which list nothing yet | 08:52, 20:52 | yes |
 | `vibez` | Vibez (vibez.io): ticketing for communities and party producers: raves, ecstatic dance, club nights | 08:36, 20:36 | yes |
+| `babebar` | Babe Bar (babebar.co.il): club site on WordPress + The Events Calendar (`tribe.py`) | 09:06, 21:06 | yes |
 
 ## Concerts, theatre, stand-up and shows
 
@@ -58,6 +59,18 @@ pagination and what the listing and the event page provide.
 | `jerusalemtheatre` | Jerusalem Theatre (jerusalem-theatre.co.il): theatre, music, dance, festivals and children's shows | 07:33, 19:33 | yes |
 | `beershevatheatre` | Be'er Sheva Theatre (b7t.co.il): repertoire, guest shows and children's theatre | 06:53, 18:53 | yes |
 | `arenas` | Arenas, stadiums and amphitheaters, from Tickchak LIVE (`tickchak.py`) | 07:57, 19:57 | yes |
+| `hamenagen` | HaMenagen (hamenagen.net): Jewish and Hasidic music concert calendar | 04:43, 16:43 | yes |
+| `hatarbut` | Heichal HaTarbut Tel Aviv (hatarbut.co.il): the Charles Bronfman Auditorium's show calendar | 05:07, 17:07 | yes |
+| `habama` | Habama (habama.co.il): performing-arts portal: theatre, dance, classical, kids, comedy | 06:11, 18:11 | yes |
+| `friendshist` | FRIENDS (friends-hist.co.il): the Histadrut's culture club, shows and plays in halls nationwide | 07:34, 19:34 | yes |
+| `barak` | Barak Tickets (barak-tickets.co.il): Haifa box office: concerts, theatre, stand-up, kids | 07:04, 19:04 | yes |
+| `kikarhamusica` | Kikar HaMusica (kikar-hamusica.com): Jerusalem's music square, daily live sets | 03:33, 15:33 | yes |
+| `bargiyora` | Bar Giyora (bar-giyora.co.il): live-show bar in Tel Aviv: music, stand-up, lectures | 06:26, 18:26 | yes |
+| `haezor` | HaEzor / The Zone (haezor.com): live-music club in Tel Aviv | 06:36, 18:36 | yes |
+| `levontin7` | Levontin 7 (levontin7.com): live-music club in Tel Aviv | 06:46, 18:46 | yes |
+| `yellowsubmarine` | Yellow Submarine (yellowsubmarine.org.il): live-music club in Jerusalem | 06:58, 18:58 | yes |
+| `halutz` | HaHalutz 33 (halutz.co.il): culture bar in Be'er Sheva's Old City, second stage in Sderot | 07:16, 19:16 | yes |
+| `viagogo` | viagogo (viagogo.com/il): international ticket resale, events in Israel | 06:44, 18:44 | yes |
 
 ## Cinema
 
@@ -71,6 +84,28 @@ pagination and what the listing and the event page provide.
 | `movieland` | Movieland (movieland.co.il): cinema screenings of the chain's six branches | 08:02, 20:02 | yes |
 | `cinematheque_tlv` | Tel Aviv Cinematheque (cinema.co.il, "סינמטק תל אביב"): its PRES box office | 10:05, 22:05 | yes |
 | `cinematheque_jlm` | Jerusalem Cinematheque (jer-cin.org.il), its PRES box office (`cinematheque_tlv.py`) | 10:17, 22:17 | yes |
+
+## Cities, community and guides
+
+Municipal calendars, community centres and event guides: mostly culture, kids and community events,
+many of them free.
+
+| Source | Site | Runs daily at | On |
+| --- | --- | --- | --- |
+| `telaviv` | Tel Aviv-Yafo municipality (tel-aviv.gov.il): the city's own events listing | 05:51, 17:51 | yes |
+| `haifamuni` | Haifa municipality (haifa.muni.il): culture, sport, community | 04:57, 16:57 | yes |
+| `ramatganmuni` | Ramat Gan municipality (ramat-gan.muni.il): culture, community, seniors | 05:38, 17:38 | yes |
+| `holon` | Holon municipality (holon.muni.il): free and paid events across the city | 04:09, 16:09 | yes |
+| `munievents` | Municipal and council calendars on the A.S. Bina CMS: ~90 cities, councils, community centres | 06:03, 18:03 | yes |
+| `matnasnet` | Matnasnet (also `*.atarix.co.il`): the CMS of most community centres and some councils | 05:41, 17:41 | yes |
+| `onecity` | OneCity municipal sites (WordPress + GeoDirectory: Karmiel, Even Yehuda, ...) | 04:17, 16:17 | yes |
+| `ogo` | OGO (ogo.co.il): a human-moderated guide to cultural events across Israel | 06:27, 18:27 | yes |
+| `muzi` | Muzi (muzi.co.il): community-run guide to concerts and shows across Israel | 05:29, 17:29 | yes |
+| `tiuli` | Tiuli (tiuli.com): trips and leisure guide, its events section | 04:39, 16:39 | yes |
+| `festivalim` | Festivalim (festivalim.co.il): festivals, carnivals and street celebrations | 04:26, 16:26 | yes |
+| `poalimatarim` | Poalim Atarim (poalimatarim.com): Bank Hapoalim's free entry to ~50 museums, parks, heritage sites (seasonal) | 09:54, 21:54 | yes |
+| `meety` | Meety (meety.co.il): social meetups: salsa and bachata nights, folk dancing, running groups, board games | 06:47, 18:47 | yes |
+| `funzing` | Funzing (il.funzing.com): experiences: workshops, tours, lectures, culinary evenings, family days | 07:19, 19:19 | yes |
 
 ## Tech and community
 
@@ -90,6 +125,11 @@ pagination and what the listing and the event page provide.
 | `ticketplace` | Ticket Place (ticketplace.co.il): resale tickets to concerts and festivals abroad | 03:19, 15:19 | yes |
 | `livevents` | Live Events (livevents.co.il): packages (flight + hotel + ticket) and tickets to shows in Europe | 03:31, 15:31 | yes |
 | `issta` | Issta (issta.co.il): packages (flight + hotel + ticket) to concerts abroad | 04:47, 16:47 | yes |
+| `livetickets` | LiveTickets (livetickets.co.il): tickets to concerts, sports and festivals abroad | 05:37, 17:37 | yes |
+| `tickethouse` | Ticket House (ticket-house.com): tickets and packages to concerts and sports abroad | 05:48, 17:48 | yes |
+| `ticketeams` | Ticketeams (ticketeams.co.il): football, basketball, tennis, Formula 1 and concerts abroad | 05:49, 17:49 | yes |
+| `xplorer` | Xplorer (xplorer.co.il): a flights site's board of concerts and festivals abroad | 03:53, 15:53 | yes |
+| `megaevents` | Mega Events (mega-events.co.il): packages (flight + hotel + ticket) to concerts and matches abroad | 05:43, 17:43 | yes |
 
 ## Prices and availability: source quirks
 

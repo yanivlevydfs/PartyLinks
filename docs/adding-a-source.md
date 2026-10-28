@@ -45,7 +45,11 @@ without the network.
 Reuse what exists:
 
 - **Text and numbers:** `parsing.py` (`clean_str`, `to_decimal`, `parse_iso`, `zone`, `slugify`).
-- **Events abroad:** `scrapers/abroad.py` (`country_code`, `local_zone`).
+- **Events abroad:** `scrapers/abroad.py` (`country_code` from `partylinks.countries`, `local_zone`).
+- **A date without a time:** set `time_known=False` (`parsing.has_time(value)` for an ISO string,
+  `parsing.read_clock(text)` for "21:00", "8:50 PM", "בשעה 19:30"). Never mark it because a parser
+  missed the hour: a start that is not midnight is always kept as a timed event.
+- **Descriptions:** pass the text as it comes; `ScrapedEvent` cleans it (`parsing.tidy_text`).
 - **Platforms already covered:** many box offices run on a platform we already read (PRES,
   Smarticket, Tickchak, The Events Calendar). Add a host to that source's settings instead of
   writing a new scraper.

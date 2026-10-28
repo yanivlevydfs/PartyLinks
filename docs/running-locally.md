@@ -16,6 +16,9 @@ python -m partylinks chillz-links            # a page of Chillz links to open an
 python -m partylinks artists --help          # curate the artist dictionary
 ```
 
+The first start builds `data/geonames-<version>.json` (the GeoNames cities the app uses, read once from
+geonamescache's 96 MB of city files, a few seconds); every later start reads only that file.
+
 The scheduler is **off locally** (`scheduler.enabled: false`), so `serve` never scrapes on its own.
 Only Railway scrapes on a schedule. Use `scrape` to run a source by hand.
 

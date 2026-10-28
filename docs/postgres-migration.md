@@ -23,7 +23,7 @@
 - **למה:** כל המקורות (74 ומעלה) כותבים דרך נעילת כתיבה אחת. כבר הייתה הרעבה של writers (`service.py:84-88`, אוקטובר 2026). יש גם retries על "database is locked" (`db.py:56-66`), חלונות VACUUM, ותפעול מוגבל: אי אפשר לשאול את ה-DB בלי להיכנס לקונטיינר.
 - **למי:** האתר spotx.fun, ה-admin וה-scheduler. תהליך אחד, replica אחת.
 - **אילוצים:** כ-28k אירועים. יש passes על כל הטבלה אחרי כל scrape (regroup, geocode, areas, retention). פעם O(n²) הפיל את prod, אז ביצועים בגודל prod הם תנאי. ה-Docker מתקין את `requirements.lock` (`Dockerfile:31`). sessions אחרים דוחפים ל-master במקביל, ו-Railway עושה auto-deploy. אסור לשמור אירועי עבר. גודל DB ורוחב פס לא מגבילים. ב-localhost ה-scheduler תמיד כבוי.
-- **Non-goals:** לא multi-replica (ה-scheduler, ה-`ResponseCache` (`api.py:410-454`), ה-bans (`security.py:130`) וה-`Database.changes` (`db.py:415-418`) כולם בזיכרון של התהליך). לא Alembic. לא PostGIS. לא async. לא להזיז את `artists.db` (קובץ SQLite נפרד, `artists.py:1,16,70-74`), את `weather_cache.json` או את `chillz_past.json`. כולם נשארים על ה-volume.
+- **Non-goals:** לא multi-replica (ה-scheduler, ה-`ResponseCache` (`api.py:410-454`), ה-bans (`security.py:130`) וה-`Database.changes` (`db.py:415-418`) כולם בזיכרון של התהליך). לא Alembic. לא PostGIS. לא async. לא להזיז את `artists.db` (קובץ SQLite נפרד, `artists.py:1,16,70-74`), את `weather_cache.json`, את `chillz_past.json` או את `geonames-<version>.json` (מטמון הערים, 2026-10-28). כולם נשארים על ה-volume.
 
 ### Non-functional (הנחות)
 | נושא | הנחה |
@@ -166,6 +166,7 @@
 - `Database.changes` (`db.py:409-418`) הוא מונה בתוך התהליך. כתיבה חיצונית (psql, copy-db) לא תבטל את ה-cache, וה-TTL מטפל בזה. כך גם היום.
 
 ### 6.9 מצב מקומי שנקשר ל-path של SQLite
+- `geonames.py` `cache_file()` (נוסף 2026-10-28): ‏`project_path("data")/geonames-<version>.json`, קובץ JSON ולא DB. לא תלוי ב-URL של ה-DB, ולא משתנה במעבר.
 - `weather.py:53-61` `cache_file`: עם URL של PG נופל ל-`project_path("data")`, שזה `/app/data`, אותו מקום כמו היום. תקין.
 - `scrapers/chillz.py:199-200`: `data/chillz_past.json` קבוע ועצמאי. תקין.
 - `artists.py`: קובץ SQLite משלו ומחוץ לתחום. נשאר על ה-volume.
@@ -327,7 +328,7 @@ CASCADE מתאים לכלל "never past events": ‏retention מוחק אירו�
 | `scrape_runs` | אופציונלי: `(source, id)` | `api.py:1306`, `api.py:1350` | טבלה קטנה (30 יום), לא נחוץ. YAGNI. |
 | `clicks` | להשאיר `at` (`clicks.py:40`). `event_id`/`source` לא בשימוש ב-WHERE. | | insert-only, זניח. אפשר להשאיר. |
 | `searches` | רק `at` (`searches.py:56`). בכוונה בלי אינדקס על `q`: הספירה לפי מילה נעשית ב-Python. | | insert-only, שורה לכל חיפוש (עמוד ראשון). זניח. |
-| `geo_cache` | בלי שינוי. `geo.py:481` (`LIKE '% @__'`) הוא seq scan על טבלה קטנה. | | |
+| `geo_cache` | בלי שינוי. `geo.py:481` (`LIKE '% @__'`) הוא seq scan על טבלה קטנה. מ-2026-10-28 גם `UPDATE` ו-`DELETE ... WHERE query = ?` (תיקון מרכז עיר בחו"ל), לפי ה-PK. | | |
 | `plans` (2026-10-28) | PK `id`, אינדקס `event_id` | `GET /plans/{id}` (PK), `delete_plans` (`event_id IN (...)`) | insert אחד לכל לחיצה על "מי בא איתי?". זניח. |
 | `plan_events` (2026-10-28) | PK `(plan_id, event_id)`, אינדקס `event_id` | `plan_id = ? ORDER BY position` (ה-PK משרת), ‏`event_id IN (...)` במחיקה (האינדקס) | עד 3 שורות לתוכנית. זניח. |
 | `plan_votes` (2026-10-28) | אינדקס `plan_id`, ה-UNIQUE `(plan_id, voter)` | `plan_id = ?` (רשימת התשובות, `count(*)` מול `MAX_VOTES = 60`), `plan_id = ? AND voter = ?` (ה-UNIQUE משרת), `plan_id IN (subquery)` במחיקה | עד 60 שורות לתוכנית. ה-UNIQUE מתחיל ב-`plan_id`, אז אפשר לוותר על `ix_plan_votes_plan_id` ב-PG (אינדקס כפול). לא חשוב בגודל הזה. |
@@ -600,3 +601,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **PK / FK / אינדקסים / JSON / בדיקות:** §6.5, §9.1, §9.2, §9.3, §9.4, §10.1 עודכנו.
 - **queries חדשים:** `POST /plans/{id}/events` (select של האפשרויות לפי `plan_id ORDER BY position`, ואז insert). ‏`GET /plans/{id}` ו-`_plan_out` טוענים את האירועים ב-`events.id IN (...)`. ‏`delete_plans` מוחק עכשיו גם `plan_events WHERE plan_id IN (תוכניות של האירועים) OR event_id IN (...)`, לפני `plans`. הכול SQL סטנדרטי.
 - **copy-db (§10.2):** סדר FK: `plans`, ואז `plan_events` ו-`plan_votes`.
+
+### 2026-10-28 (מרכזי ערים בחו"ל, מדינות ו-GeoNames פעם אחת)
+- **`geo_cache` (בלי שינוי schema):** ערך חדש ב-`kind`: ‏`'geonames'`, מרכז עיר בחו"ל שנלקח מ-GeoNames (עיר של 50,000+ תושבים) במקום Nominatim. ‏`Geocoder._repoint_abroad` מעדכן שורות קיימות (`session.merge`, ‏UPDATE לפי ה-PK `query`) ומוחק שורה שכבר לא עומדת בכלל (`DELETE FROM geo_cache WHERE query = ?`). ‏`kind` הוא `String(32)`, ‏`'geonames'` נכנס. Q-LEN בלי שינוי.
+- **`events.latitude` / `longitude`:** אירועים בחו"ל שהמרכז שלהם היה שגוי עוברים (או מתאפסים ל-NULL לחיפוש מחדש) ב-`bulk_update_by_id`. אותו executemany כמו היום (§6.4).
+- **`countries.py`, `geonames.py`:** pycountry ו-geonamescache נטענים פעם אחת לתהליך. ‏GeoNames נשמר כקובץ JSON על ה-volume (§6.9). שום טבלה לא השתנתה, ושום query לא השתנה.
+- **שדות JSON-LD** (`validFrom`, ‏`organizer`, ‏`performer`, ‏`endDate`, ‏`addressCountry`): נבנים ב-Python מעמודות קיימות (`first_seen_at`, ‏`organizer`, ‏`venue_name`, ‏`source`, ‏`local_date`, ‏`country`). אין query חדש.

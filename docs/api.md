@@ -44,6 +44,14 @@ many places earlier, so `total` and the paging are those of the plain list. Each
 `sponsored` = the placement's event id (null on every other card) and must be labelled "Sponsored"
 ("ממומן"). Without the parameter, or with nothing sponsored for results, the list is unchanged.
 
+`city` abroad matches every name of the city (Hebrew and English, from GeoNames): `city=פריז` and
+`city=Paris` return the same events. `q` also reads the seller's own categories and finds cities abroad
+by either name.
+
+Times: `start_at` is UTC. `time_zone` is the venue's IANA zone for an event abroad (null in Israel: show it
+in Asia/Jerusalem); `local_date`, `day_of_week` and `time_slot` are in that zone. `time_known = false` means
+the seller gave a date only: show the day, not a time (`time_slot` is null).
+
 The API never returns a seller's raw URL. Every event's `url` is its `/go/` link.
 
 ## Admin (token required)
@@ -69,7 +77,9 @@ from the same machine are accepted, and proxied requests never count as local.
 | GET/PUT | `/admin/api/config` | Read or save `settings.yaml` (with backup) |
 | POST | `/admin/api/config/validate`, `/admin/api/config/apply` | Validate, then apply without a restart |
 | GET | `/admin/api/config/backups/{name}` | One config backup |
-| POST | `/admin/api/maintenance/vacuum`, `/geocode`, `/areas`, `/regroup` | Reclaim space, geocode missing places, recompute areas, regroup duplicates |
+| POST | `/admin/api/maintenance/vacuum`, `/geocode`, `/areas`, `/regroup` | Reclaim space, geocode missing places (and correct city centres abroad), recompute areas, regroup duplicates |
+| GET | `/admin/api/bans` | Banned IPs and the minutes left on each |
+| POST | `/admin/api/bans/lift?ip=` | Lift one ban (every ban without `ip`); see rate limits below |
 | POST | `/admin/api/maintenance/orphans` | Artwork files no image row claims: counted (`dry_run=true`, the default) or deleted (`dry_run=false`). Returns `files`, `bytes` |
 
 ## Rate limits

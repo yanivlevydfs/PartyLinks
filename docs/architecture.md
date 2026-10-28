@@ -30,7 +30,13 @@ It runs after scraping and never affects how a site is fetched. It adds:
 
 - canonical genres and event types (party, concert, theatre, cinema, tech...)
 - the lineup (DJs and performers), using the artist dictionary in `artists.py`
-- local date, weekday, time slot and weekend flag (Asia/Jerusalem)
+- local date, weekday, time slot and weekend flag (Asia/Jerusalem; an event abroad in its venue's own
+  time zone, `time_zone`). A source that gives a date without a time sets `time_known = false`: the day
+  is kept, there is no time slot, and the site, the calendar entry (all day) and the JSON-LD show the
+  date only, never a made-up 00:00
+- descriptions cleaned on the way in (`parsing.tidy_text`, on `ScrapedEvent` and again on output):
+  ftfy repairs broken encodings, entities and line breaks; then stray markup, every kind of space,
+  trimmed lines, one blank line at most, a line repeated right after itself once
 - entry type: `free`, `paid` or `free_and_paid`
 - city, target-city match and area
 
@@ -39,6 +45,10 @@ It runs after scraping and never affects how a site is fetched. It adds:
 - **Coordinates for the map.** These come from, in order: a manual pin in `geocoding.venues`,
   another event at the same venue or address, then OpenStreetMap Nominatim (cached in
   `geo_cache`). Only street-level answers inside the right city are trusted.
+- **Events abroad** are not on the map, but get their city's centre for the weather: the GeoNames city
+  of that name in that country when it has 50,000+ people (`places.city_point`, no network), else
+  Nominatim. A centre found wrong later (Nominatim's village of the same name) is corrected on the
+  next geocoding pass; a venue's own point from the seller is never touched.
 - **Venue names.** Spellings of the same place are merged by location (same spot or same street
   and number), not by alias lists.
 
@@ -110,8 +120,14 @@ keeps them out of the Israeli feed and puts them in the `/abroad` section.
 
 `scrapers/abroad.py` handles the location data for these sources:
 
-- **Country names to ISO codes**, in Hebrew or English, via `pycountry`.
-- **Local time zones**, looked up by city and then by country, via `airportsdata`.
+- **Country names to ISO codes**, in Hebrew or English: `countries.py` (pycountry, one index per process).
+- **Local time zones**: the GeoNames city (Hebrew names too), then an airport's city, then the country's
+  main zone (`airportsdata`).
+- **City names** without the seller's extras ("ברלין, גרמניה" is stored as "ברלין", `places.city_name`).
+  The city list shows a city once in either language, and the city filter and the search match both
+  names ("פריז" also finds "Paris").
+- **Weather** for every event abroad with a city, at its venue's time; a date-only event takes that day's
+  noon forecast.
 
 ## Sponsored placements (`ads/`)
 
@@ -130,6 +146,20 @@ at 28k events). The matches lead page 1 and are excluded from
 the rest of the list. The answer sits in the response cache like any list; an admin save or switch
 is a write, which makes every cached entry stale, so the change shows within the browser's 30 s.
 Views and clicks go to `sponsored_stats`, with the part from results counted separately.
+
+## Plans: "who's coming with me?" (`plans/`)
+
+WhatsApp gives a web page no way to open a group or a poll, so the poll is ours. The 👥 button on an
+event card or page creates a plan (`/plan/<id>`, a random 8-character id); the creator sends it with a
+ready WhatsApp message (the link preview is server-rendered, never indexed). Friends answer with a name
+only, no sign-up: in / maybe / not this time, which of the plan's events (up to four of the same day,
+"which party?"), and a car with free seats or the need of a ride. A plan whose event has free entry with
+a known end shows when it closes, with a ready reminder for the group and a calendar alarm.
+
+Each browser keeps a random voter key (localStorage) to change its own answer; keys are never sent back.
+Up to 60 answers per plan. A plan is deleted with its own event (`db.delete_events` calls
+`plans.routes.delete_plans`); a compared event that is over just leaves the options. All code lives in
+`src/partylinks/plans/` and `web/src/plans/`; the rest of the app has one-line hooks only.
 
 ## Code layout
 

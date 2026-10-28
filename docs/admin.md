@@ -15,7 +15,15 @@ a token configured, the console works only from the same machine.
 | **sources** | Each source's schedule and last run; run now, pause or resume a schedule, debug logging |
 | **runs** | Run history, filtered by source and status, with counts (found, saved, failed, changed, removed) and errors |
 | **config** | Edit `settings.yaml` with validation, automatic backups in `config/backups/`, and apply without a restart |
-| **maintenance** | Purge now, reclaim space, full vacuum, geocode missing places, recompute areas, regroup duplicates |
+| **maintenance** | Purge now, reclaim space, full vacuum, geocode missing places (and correct city centres abroad), recompute areas, regroup duplicates |
+
+## Bans
+
+Repeated failed attempts (probes, wrong admin tokens, rate-limit hits) ban an IP for an hour, in memory
+(a deploy lifts every ban). Requests with the valid admin token are not rate limited, but a banned IP
+is refused even with the token. To lift a ban:
+`railway run --service web -- python scripts/run_sources.py --unban [ip]` from another network, or
+`--bans` to list them.
 
 ## Checking a source
 

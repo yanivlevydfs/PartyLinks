@@ -7,6 +7,7 @@ plain-HTML copy of the content inside `#root`. React replaces that copy on load.
 ## Server-rendered pages
 
 `/`, `/event/<slug>`, `/venue/<name>`, `/venues`, `/artist/<name>`, `/artists`, `/map`, `/abroad`,
+`/abroad/<country>`, `/plan/<id>` (a "who's coming?" link's WhatsApp preview, `noindex`),
 `/tonight`, `/weekend`, `/genre/<genre>`, `/genre/<genre>/<when>`, `/city/<city>`,
 `/accessibility`, `/privacy`, `/terms`, and the blog pages.
 
@@ -17,8 +18,15 @@ Each page has:
 - **Social previews:** Open Graph and Twitter card tags (the event artwork, or `og-default.png`)
   and local geo tags.
 - **Structured data:** schema.org JSON-LD: `MusicEvent` / `Event` with offers, place, performers
-  and Israel-time dates, plus `BreadcrumbList`, `ItemList`, `WebSite`, `Organization`,
-  `MusicVenue` and `Person`.
+  and dates, plus `BreadcrumbList`, `ItemList`, `WebSite`, `Organization`, `MusicVenue` and `Person`.
+  Every field Google recommends is filled from what we know, nothing made up:
+  - dates in the venue's own zone (Israel, or the venue abroad); a date-only event gets a date-only
+    `startDate`; `endDate` is the seller's end, else the event's day
+  - `offers.validFrom`: the seller's sale start, else when we first saw the event on sale
+  - `organizer` (with `url`): the organizer the seller names, else the venue (its page here), else
+    the selling site, always linked through `/go/` (no seller address in the page)
+  - `performer`: the lineup, else the organizer
+  - `location.address.addressCountry`: the event's own country (abroad), not always Israel
 
 Unknown pages return a real `404`. Filters on the site move the URL to their landing page
 (`/genre/...`, `/city/...`), so filtered views are indexable.
