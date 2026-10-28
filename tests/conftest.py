@@ -32,7 +32,7 @@ def _on_postgres(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture(autouse=True)
 def _private_artists_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Keep tests from writing into the real artist dictionary (data/artists.db)."""
+    """Keep tests from importing the real old artist file (data/artists.db) into their databases."""
     monkeypatch.setenv("PARTYLINKS_ENRICHMENT__LINEUP__ARTISTS_DB", str(tmp_path / "artists.db"))
 
 

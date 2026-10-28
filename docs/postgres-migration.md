@@ -623,3 +623,10 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **copy-db (§10.2):** `partylinks copy-db --to URL [--from URL] [--force]` ב-`dbcopy.py`. סירוב כשביעד יש שורות, העתקה דרך ה-models ב-batches, תיקון NUL / NULL / אורך עם ספירה, `setval` ו-`ANALYZE` ב-PG, ואימות: מספר שורות ו-sha256 על digests ממוינים (לא תלוי בסדר או ב-collation).
 - **Tests (§12):** `tests/conftest.py`: ‏`PARTYLINKS_TEST_PG_URL` מריץ כל test על PG. `tests/test_postgres_ready.py`: עמודות שנוספו ב-ALTER, id ארוך ו-NUL, whole word, סדר NULL, ‏copy-db round trip. נבדק מקומית על PostgreSQL 16.2 (`pgserver`).
 - **לא בוצע:** שלבים B–D (שירות Postgres ב-Railway, rehearsal, cutover). שום דבר לא נשלח ל-git או ל-Railway.
+
+### 2026-10-28 (מילון האמנים עבר ל-DB הראשי)
+- **בוצע:** `artists.db` (קובץ SQLite נפרד) הוחלף בשתי טבלאות ב-DB הראשי, `artists` ו-`artist_profiles` (`artistdb.py`, על אותו `Base`, נוצרות ב-`create_schema`). D15 בוטל לגבי המילון.
+- **Schema:** `artists`: ‏`key TEXT` PK (שם casefold), `name TEXT`, `seen INTEGER`, `blocked BOOLEAN`, `first_seen` / `last_seen` (`UTCDateTime`). `artist_profiles`: ‏`key TEXT` PK, `name`, `source`, `kind`, `genre`, `image_url`, `spotify_url`, `profile_url` (`TEXT`), `links` (`JSONB` ב-PG), `updated_at`. בלי FK: שמות שורדים את retention בכוונה. בלי אינדקסים נוספים: נקראים במלואם (`load`, `profiles`).
+- **Queries:** `record`: ‏`INSERT ... ON CONFLICT (key) DO UPDATE SET seen = artists.seen + excluded.seen` (שורות ממוינות לפי key, סדר נעילה קבוע), **בתוך אותה טרנזקציה** של `upsert_events` ב-`service._save_batch`. `save_profiles`: ‏upsert עם `COALESCE(excluded.x, x)`. `set`: ‏upsert של `blocked`. כתיבות עצמאיות עוברות `with_db_retry`.
+- **מיגרציה:** בעלייה, `ArtistBook(db, enrichment.lineup.artists_db)` מייבא את הקובץ הישן פעם אחת, רק כשהטבלאות ריקות (`ON CONFLICT DO NOTHING`, בטוח גם לשני תהליכים). הקובץ נשאר על ה-volume כגיבוי.
+- **Tests:** `test_the_old_artist_file_is_imported_once`; ‏`test_artist_book_learns_and_blocks` ו-`test_tickchak_artist_profiles_merge_into_artist_book` רצים על ה-DB.

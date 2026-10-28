@@ -5,8 +5,9 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from partylinks.artists import ArtistBook
+from partylinks.artistdb import ArtistBook
 from partylinks.config import Settings
+from partylinks.db import Database
 from partylinks.enrichment import Enricher
 from partylinks.models import EntryType, ScrapedEvent, TicketTier
 
@@ -79,7 +80,9 @@ def test_glued_names_split_on_known_artists() -> None:
 
 
 def test_artist_book_learns_and_blocks(tmp_path: Path) -> None:
-    book = ArtistBook(tmp_path / "artists.db")
+    db = Database(f"sqlite:///{tmp_path / 'a.db'}")
+    db.create_schema()
+    book = ArtistBook(db)
     book.record(["MILLERO", "MILLERO", "Shalos"])
     book.set("OPEN AIR", blocked=True)
     known, blocked = book.load()

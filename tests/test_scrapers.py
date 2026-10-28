@@ -7,7 +7,9 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from partylinks.artists import ArtistBook, ArtistProfile
+from partylinks.artistdb import ArtistBook
+from partylinks.artists import ArtistProfile
+from partylinks.db import Database
 from partylinks.models import TicketKind, TierStatus
 from partylinks.scrapers import barby, eventer, goout, grayclub, hulyo, mevalim, selector, tickchak, zygo
 
@@ -89,7 +91,9 @@ def test_tickchak_artist_profiles_merge_into_artist_book(tmp_path: Path) -> None
     assert balishag.profile_url == "https://live.tickchak.co.il/balishag"
     assert balishag.spotify_url and "spotify.com" in balishag.spotify_url
 
-    book = ArtistBook(tmp_path / "artists.db")
+    db = Database(f"sqlite:///{tmp_path / 'a.db'}")
+    db.create_schema()
+    book = ArtistBook(db)
     book.save_profiles([ArtistProfile("Balishag", "goout", image_url="https://img/b.jpg")])
     book.save_profiles([balishag])  # a sparser profile from another source keeps the photo
     stored = book.profiles()["balishag"]

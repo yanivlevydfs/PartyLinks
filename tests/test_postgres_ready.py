@@ -92,3 +92,32 @@ def test_copy_db_round_trip_is_verified(tmp_path: Path) -> None:
     assert all(r.ok for r in reports.values()) and reports["events"].rows == 5
     with Database(second).session() as session:  # the id sequences moved past the copied ids
         upsert_events(session, [event("new", start)])
+
+
+def test_the_old_artist_file_is_imported_once(tmp_path: Path) -> None:
+    import sqlite3
+
+    from partylinks.artistdb import ArtistBook
+    from partylinks.artists import ArtistProfile
+
+    old = tmp_path / "artists.db"
+    with sqlite3.connect(old) as conn:  # the file as the old ArtistBook wrote it
+        conn.executescript("""
+            CREATE TABLE artists (key TEXT PRIMARY KEY, name TEXT NOT NULL, seen INTEGER NOT NULL DEFAULT 0,
+                blocked INTEGER NOT NULL DEFAULT 0, first_seen TEXT NOT NULL, last_seen TEXT NOT NULL);
+            CREATE TABLE profiles (key TEXT PRIMARY KEY, name TEXT NOT NULL, source TEXT NOT NULL, kind TEXT, genre TEXT,
+                image_url TEXT, spotify_url TEXT, profile_url TEXT, links TEXT, updated_at TEXT NOT NULL);
+            INSERT INTO artists VALUES ('millero', 'MILLERO', 3, 0, '2026-01-01T00:00:00+00:00', '2026-02-01T00:00:00+00:00');
+            INSERT INTO artists VALUES ('open air', 'OPEN AIR', 0, 1, '2026-01-01T00:00:00+00:00', '2026-01-01T00:00:00+00:00');
+            INSERT INTO profiles VALUES ('dali', 'Dali', 'goout', 'dj', NULL, 'https://img/d.jpg', NULL, NULL,
+                '["https://instagram.com/dali"]', '2026-01-01T00:00:00+00:00');
+        """)
+    db = Database(f"sqlite:///{tmp_path / 'main.db'}")
+    db.create_schema()
+    book = ArtistBook(db, old)
+    assert book.load() == ({"millero", "dali"}, {"open air"})
+    assert book.profiles()["dali"] == ArtistProfile("Dali", "goout", kind="dj", image_url="https://img/d.jpg",
+                                                    links=["https://instagram.com/dali"])  # fmt: skip
+    book.record(["Millero", "MILLERO", "Shalos"])
+    ArtistBook(db, old)  # a later start: the tables are no longer empty, nothing is imported again
+    assert dict((n, s) for n, s, _ in book.rows())["MILLERO"] == 5

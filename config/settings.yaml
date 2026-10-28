@@ -418,7 +418,9 @@ enrichment:
     set_words: ["set", "show", "event", "performance"]
     set_qualifiers: ["birthday", "b-day", "retro", "extended", "special", "closing", "opening", "live", "main",
                      "vinyl", "all night long"]
-    # Artist dictionary: every saved lineup name, kept after events expire; set blocked=1 on a row to reject a name.
+    # Artist dictionary: every saved lineup name, kept after events expire, in the main database (tables
+    # artists, artist_profiles; `partylinks artists block NAME` rejects a name). artists_db is the old
+    # SQLite file, imported once into empty tables and then kept as a backup.
     artists_db: data/artists.db
     min_known_length: 4
     min_glued_length: 9

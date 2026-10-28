@@ -35,7 +35,7 @@ from typing import Any
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import DataError, IntegrityError
 
-from partylinks.artists import ArtistBook
+from partylinks.artistdb import ArtistBook
 from partylinks.config import Settings
 from partylinks.db import (
     Database,
@@ -136,10 +136,11 @@ class ScrapeService:
         self.settings = settings
         self.db = db
         self.enricher = Enricher(settings.enrichment, settings.timezone)
-        self.artists = ArtistBook(settings.enrichment.lineup.artists_db)
+        self.artists = ArtistBook(db, settings.enrichment.lineup.artists_db)  # the old file: imported once
         if not self.artists.load()[0]:  # first start: seed the dictionary from the lineups already stored
             with db.session() as session:
-                self.artists.record(n for lineup in session.scalars(select(EventRow.lineup)) for n in lineup or [])
+                lineups = list(session.scalars(select(EventRow.lineup)))
+                self.artists.record((n for lineup in lineups for n in lineup or []), session)
         self.media = MediaStore(settings.media, db)
         self.deduplicator = Deduplicator(settings.dedup)
         self.geocoder = Geocoder(
@@ -537,8 +538,8 @@ class ScrapeService:
     def _save_batch(self, events: list[ScrapedEvent]) -> int:
         with self.db.session() as session:
             saved, orphaned_files = upsert_events(session, events)
+            self.artists.record((name for e in events for name in e.lineup), session)  # one transaction
         self.media.delete_files(orphaned_files)
-        self.artists.record(name for e in events for name in e.lineup)
         return saved
 
     def _track_changes(self, source: str, run_id: int, status: str) -> None:

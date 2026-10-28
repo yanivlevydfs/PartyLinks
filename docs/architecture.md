@@ -29,7 +29,8 @@ scrape -> enrich -> save -> artwork -> regroup duplicates -> record the run
 It runs after scraping and never affects how a site is fetched. It adds:
 
 - canonical genres and event types (party, concert, theatre, cinema, tech...)
-- the lineup (DJs and performers), using the artist dictionary in `artists.py`
+- the lineup (DJs and performers), using the artist dictionary in `artistdb.py` (tables `artists`,
+  `artist_profiles` in the main database)
 - local date, weekday, time slot and weekend flag (Asia/Jerusalem; an event abroad in its venue's own
   time zone, `time_zone`). A source that gives a date without a time sets `time_known = false`: the day
   is kept, there is no time slot, and the site, the calendar entry (all day) and the JSON-LD show the
@@ -179,7 +180,8 @@ src/partylinks/
   places.py                   Israeli localities and cities abroad, from geonames.py
   parsing.py                  generic parsing helpers
   enrichment.py               genres, lineup, time categories, free/paid, city
-  artists.py                  artist dictionary (its own SQLite file)
+  artistdb.py                 artist dictionary (main database; imports the old artists.db once)
+  artists.py                  ArtistProfile, what a ticket site tells about an artist
   geo.py, venues.py           coordinates and venue names
   dedup.py                    duplicate grouping
   media.py                    artwork download and storage

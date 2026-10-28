@@ -952,16 +952,21 @@ def _text(value: Any) -> str | None:
     return str(value)
 
 
-def _upsert(session: Session, model: type[Base], rows: list[dict[str, Any]], key: str, keep: set[str]) -> Any:
-    """Dialect-specific multi-row upsert (SQLite and PostgreSQL share the syntax)."""
+def dialect_insert(session: Session, model: type[Base]) -> Any:
+    """``INSERT`` with ``ON CONFLICT`` support for the session's database (SQLite and PostgreSQL share it)."""
     dialect = session.get_bind().dialect.name
     if dialect == "sqlite":
-        from sqlalchemy.dialects.sqlite import insert as dialect_insert
+        from sqlalchemy.dialects.sqlite import insert
     elif dialect == "postgresql":
-        from sqlalchemy.dialects.postgresql import insert as dialect_insert
+        from sqlalchemy.dialects.postgresql import insert
     else:
-        raise NotImplementedError(f"bulk upsert not implemented for {dialect}")
-    stmt = dialect_insert(model).values(rows)
+        raise NotImplementedError(f"upsert not implemented for {dialect}")
+    return insert(model)
+
+
+def _upsert(session: Session, model: type[Base], rows: list[dict[str, Any]], key: str, keep: set[str]) -> Any:
+    """Multi-row upsert: every column of ``rows`` but ``keep`` is overwritten on a key conflict."""
+    stmt = dialect_insert(session, model).values(rows)
     columns = [c for c in rows[0] if c not in keep]
     return stmt.on_conflict_do_update(index_elements=[key], set_={c: stmt.excluded[c] for c in columns})
 
@@ -994,4 +999,5 @@ def start_run(session: Session, source: str, trigger: str) -> ScrapeRunRow:
 # The ad tables live in partylinks.ads; imported here so they are on Base before create_schema runs.
 import partylinks.ads.models  # noqa: F401
 import partylinks.plans.models  # noqa: F401, E402  (same, for the plan tables)
+import partylinks.artistdb  # noqa: F401, E402  (same, for the artist dictionary)
 from partylinks.plans.routes import delete_plans  # noqa: E402

@@ -186,7 +186,8 @@ class LineupSettings(BaseModel):
     # Set descriptions cut from a name: "<qualifier> <word>" ("AZVELOS - Birthday Set", "NARDO WICK — MAIN EVENT").
     set_words: list[str] = Field(default_factory=list)
     set_qualifiers: list[str] = Field(default_factory=list)
-    # Artist dictionary (its own SQLite file) used to split names a source glued together.
+    # The artist dictionary (used to split names a source glued together) lives in the main database
+    # (artistdb.py). This is its old SQLite file: imported once into empty tables, then left as a backup.
     artists_db: str = "data/artists.db"
     min_known_length: int = Field(4, ge=2)  # shorter known names are never used as split points
     min_glued_length: int = Field(9, ge=4)  # shorter words are never split

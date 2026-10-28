@@ -32,7 +32,7 @@ The repo ships two files Railway uses:
 4. Generate a domain (Settings → Networking). The app listens on Railway's `$PORT`.
 
 Keep **one replica**: the scheduler, the response cache and the bans live in the process (and SQLite
-is a file). With PostgreSQL the volume still holds the images, the artist dictionary and the caches.
+is a file). With PostgreSQL the volume still holds the images and the caches (and the old SQLite files as a backup).
 
 ## Variables
 

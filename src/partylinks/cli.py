@@ -17,7 +17,7 @@ import logging
 from pydantic import ValidationError
 from sqlalchemy import select
 
-from partylinks.artists import ArtistBook
+from partylinks.artistdb import ArtistBook
 from partylinks.config import get_settings
 from partylinks.db import Database
 from partylinks.logs import setup_logging
@@ -117,7 +117,10 @@ def _cleanup() -> int:
 
 
 def _artists(action: str, names: list[str]) -> int:
-    book = ArtistBook(get_settings().enrichment.lineup.artists_db)
+    settings = get_settings()
+    db = Database(settings.database.url, settings.database.echo, settings.database)
+    db.create_schema()
+    book = ArtistBook(db, settings.enrichment.lineup.artists_db)
     if action == "list":
         for name, seen, blocked in book.rows():
             log.info("%4d  %s%s", seen, "BLOCKED " if blocked else "", name)
