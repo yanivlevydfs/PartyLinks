@@ -630,3 +630,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Queries:** `record`: ‏`INSERT ... ON CONFLICT (key) DO UPDATE SET seen = artists.seen + excluded.seen` (שורות ממוינות לפי key, סדר נעילה קבוע), **בתוך אותה טרנזקציה** של `upsert_events` ב-`service._save_batch`. `save_profiles`: ‏upsert עם `COALESCE(excluded.x, x)`. `set`: ‏upsert של `blocked`. כתיבות עצמאיות עוברות `with_db_retry`.
 - **מיגרציה:** בעלייה, `ArtistBook(db, enrichment.lineup.artists_db)` מייבא את הקובץ הישן פעם אחת, רק כשהטבלאות ריקות (`ON CONFLICT DO NOTHING`, בטוח גם לשני תהליכים). הקובץ נשאר על ה-volume כגיבוי.
 - **Tests:** `test_the_old_artist_file_is_imported_once`; ‏`test_artist_book_learns_and_blocks` ו-`test_tickchak_artist_profiles_merge_into_artist_book` רצים על ה-DB.
+
+### 2026-10-28 (Cutover הושלם, SQLite הוסר מ-Railway)
+- **Production על PostgreSQL:** ‏`web` עם `PARTYLINKS_DATABASE__URL=${{Postgres.DATABASE_URL}}` (ה-DB ‏`railway`, ‏PostgreSQL 18.6) ו-`PARTYLINKS_DATABASE__SERIALIZE_WRITES=true` לשבוע הראשון. המיגרציה: `copy-db --force` מ-snapshot (`VACUUM INTO`) של ה-SQLite החי, 14 טבלאות, 255,456 שורות, מאומת ב-checksum לכל שורה. מילון האמנים יובא אוטומטית בעלייה (7,594 שמות, 5,020 פרופילים).
+- **SQLite הוסר מהשרת:** עותק עקבי אחרון של `partylinks.db` (כולל ה-WAL) ושל `artists.db` הורד מקומית ואומת (sha256 זהה, `integrity_check` תקין), ואז נמחקו מה-volume `partylinks.db`, `-wal`, `-shm`, `artists.db` וכל העותקים ב-`/tmp`. **Rollback ל-SQLite על השרת כבר לא אפשרי** (הסרת המשתנה תעלה DB ריק); החזרה = `copy-db` מ-PostgreSQL ל-SQLite (§11.2 "מאוחר").
+- **DB נוסף:** ‏`partylinks` (collation C) נוצר בשרת ה-Postgres בזמן ה-rehearsal ולא בשימוש.
