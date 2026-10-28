@@ -97,6 +97,11 @@ class ApiSettings(BaseModel):
     max_page: int = Field(40, ge=1)
     # Paid placements (admin, placement results | both) matching a list's filters, shown first on its page 1.
     sponsored_results: int = Field(3, ge=0)
+    # Cached pages and listings: rebuilt after cache_ttl_seconds, or after a write, but never younger than
+    # cache_min_fresh_seconds. The worker commits every few seconds; without that floor every visit rebuilt its
+    # page and scanned the events table (27k full scans in a few hours).
+    cache_ttl_seconds: float = Field(60, gt=0)
+    cache_min_fresh_seconds: float = Field(30, ge=0)
 
 
 class SchedulerSettings(BaseModel):

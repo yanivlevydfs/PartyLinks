@@ -437,7 +437,8 @@ class _SiteFiles(StaticFiles):
 
 class ResponseCache:
     """Bodies of public reads (JSON, rendered pages). An entry goes stale when a write commits
-    (``Database.changes``, unless ``follow_writes`` is off) or ``ttl`` passes ("upcoming" and "free until" move with the clock); a
+    (``Database.changes``, unless ``follow_writes`` is off; never before ``min_fresh``, so a scrape committing
+    every few seconds does not rebuild every page on every visit) or ``ttl`` passes ("upcoming" and "free until" move with the clock); a
     stale entry younger than ``max_stale`` is still served at once while a background thread
     rebuilds it, so only the first visit to a page (or one after a long quiet spell) waits for a build.
 
@@ -446,9 +447,15 @@ class ResponseCache:
     """
 
     def __init__(
-        self, ttl: float = 60, max_bytes: int = 64 << 20, max_stale: float = 3600, follow_writes: bool = True
+        self,
+        ttl: float = 60,
+        max_bytes: int = 64 << 20,
+        max_stale: float = 3600,
+        follow_writes: bool = True,
+        min_fresh: float = 0,
     ) -> None:
         self.ttl, self.max_bytes, self.max_stale, self.follow_writes = ttl, max_bytes, max_stale, follow_writes
+        self.min_fresh = min_fresh
         self._items: dict[tuple[str, str], tuple[float, int, bytes, int]] = {}  # built at, changes, body, status
         self._builders: dict[tuple[str, str], Callable[[], bytes | tuple[bytes, int]]] = {}  # to refresh a peeked entry
         self._bytes = 0
@@ -467,7 +474,7 @@ class ResponseCache:
         if hit := self._items.get(key):
             built_at, changes, body, code = hit
             age = time.monotonic() - built_at
-            if (changes == Database.changes or not self.follow_writes) and age < self.ttl:
+            if age < self.ttl and (age < self.min_fresh or changes == Database.changes or not self.follow_writes):
                 return body, code
             build = build or self._builders.get(key)
             if age < self.max_stale and build:
@@ -696,7 +703,9 @@ def create_app(
         openapi_url="/openapi.json" if docs else None,
     )
     app.state.settings = settings  # read by SecurityMiddleware before the lifespan finishes too
-    app.state.response_cache = ResponseCache()
+    app.state.response_cache = ResponseCache(
+        ttl=settings.api.cache_ttl_seconds, min_fresh=settings.api.cache_min_fresh_seconds
+    )
     app.add_middleware(CachedPages)  # inside gzip and security: a cached page is still compressed and guarded
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     # CORS: only the site itself may read the API from a browser (the app is same-origin anyway);

@@ -27,7 +27,7 @@ Secrets (admin token, proxy credentials, access headers) belong in variables onl
 | `site` | `base_url`, brand name (`SPOTX`), accessibility and privacy contacts |
 | `utm` | UTM tags on ticket links: `enabled`, `source`, `medium` (see [ticket links](ticket-links.md)) |
 | `security` | Trusted proxies, allowed hosts, rate limits (site, admin, `/go/`), bans, blocked bots, API docs |
-| `api` | Host, port, page sizes |
+| `api` | Host, port, page sizes, page cache freshness |
 | `scheduler` | On or off (off locally), run on startup, run timeout, the worker process (`separate_process`, heartbeat, stale / command timeouts, restart backoff) |
 | `http` | Default transport for every source: timeout, retries, delay, concurrency, user agent, proxy |
 | `enrichment` | Genre keywords, lineup parsing, time slots, weekend days, free-entry words, cities, areas |

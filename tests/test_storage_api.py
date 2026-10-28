@@ -556,6 +556,12 @@ def test_cached_responses_follow_writes_and_map_returns_located_events(tmp_path:
         enricher = Enricher(settings.enrichment, settings.timezone)
         with db.session() as session:
             upsert_events(session, [e for e in [enricher.enrich(event("b", start, address=None))] if e])
+        # Younger than min_fresh: a write does not send the page back to the database.
+        cache = client.app.state.response_cache  # type: ignore[attr-defined]
+        refresh, rebuilds = cache._refresh, []
+        cache._refresh = lambda key, build: rebuilds.append(key)
+        assert client.get("/events").json()["total"] == 1 and not rebuilds
+        cache._refresh, cache.min_fresh = refresh, 0
         # The page cached before the write is served at once while it is rebuilt in the background.
         assert client.get("/events").json()["total"] == 1
         deadline = clock.monotonic() + 10

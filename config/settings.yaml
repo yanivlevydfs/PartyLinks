@@ -122,6 +122,10 @@ api:
   default_page_size: 50
   # Small pages: dumping every event takes many requests (the site asks for 24, the map uses /events/map).
   max_page_size: 50
+  # Cached pages and listings are rebuilt after cache_ttl_seconds, or after a write, but never sooner than
+  # cache_min_fresh_seconds: the worker commits every few seconds while it scrapes.
+  cache_ttl_seconds: 60
+  cache_min_fresh_seconds: 30
 
 scheduler:
   # Always off here, so a local run (localhost) never scrapes. Production turns it on with
