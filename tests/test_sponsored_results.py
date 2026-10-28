@@ -6,11 +6,10 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, text, update
+from sqlalchemy import update
 
-from partylinks.ads.models import SponsoredRow
 from partylinks.api import create_app
-from partylinks.db import Database, EventRow
+from partylinks.db import EventRow
 from tests.test_storage_api import event, seed, settings_for
 
 
@@ -87,17 +86,3 @@ def test_paid_matches_lead_page_one_only_when_they_match(tmp_path: Path) -> None
         assert (report["views"], report["clicks"], report["results_views"], report["results_clicks"]) == (2, 1, 1, 1)
         assert [s["placement"] for s in client.get("/admin/api/sponsored").json()["items"]][:1] == ["both"]
 
-
-def test_placements_saved_before_results_existed_stay_in_the_rails(tmp_path: Path) -> None:
-    url = f"sqlite:///{tmp_path / 'old.db'}"
-    with create_engine(url).begin() as conn:  # the table as it was
-        conn.execute(
-            text(
-                "CREATE TABLE sponsored (event_id VARCHAR(128) PRIMARY KEY, side VARCHAR(8), position INTEGER, until DATETIME, created_at DATETIME)"
-            )
-        )
-        conn.execute(text("INSERT INTO sponsored VALUES ('test:a', 'right', 0, NULL, '2026-01-01 00:00:00')"))
-    db = Database(url)
-    db.create_schema()
-    with db.session() as session:
-        assert session.get(SponsoredRow, "test:a").placement == "rails"  # type: ignore[union-attr]

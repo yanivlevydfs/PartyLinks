@@ -7,11 +7,17 @@
 timezone: Asia/Jerusalem
 
 database:
-  url: sqlite:///data/partylinks.db   # production: PARTYLINKS_DATABASE__URL=postgresql://... (Railway)
+  # PostgreSQL. Production: PARTYLINKS_DATABASE__URL=postgresql://... (Railway). Empty: an embedded local
+  # server (pgserver, a dev dependency) in local_dir, database local_database: localhost and tests.
+  url: ""
+  local_dir: data/pgdata
+  local_database: partylinks
   echo: false
-  # PostgreSQL only: connection pool and server-side timeouts (see docs/postgres-migration.md).
-  pool_size: 10
-  max_overflow: 20
+  # Connection pool and server-side timeouts.
+  # 84 source threads and the site's requests share one pool: up to pool_size + max_overflow = 60
+  # connections, inside Railway Postgres' max_connections (100) with room for admin / psql / a deploy.
+  pool_size: 20
+  max_overflow: 40
   pool_timeout: 30
   pool_recycle: 1800
   connect_timeout: 10
@@ -23,9 +29,9 @@ database:
   keepalive_count: 3
   application_name: partylinks
   events_fillfactor: 85
-  copy_batch: 2000            # copy-db rows per round trip
-  serialize_writes: null      # null = SQLite only; true = one writer at a time on PostgreSQL too
+  serialize_writes: false     # true = this process's writers one at a time (row locks otherwise)
   retries: 4
+  startup_wait_s: 90          # at startup, wait this long for the database (under the 120 s health check)
 
 # One format for app, uvicorn and access lines. INFO -> stdout, WARNING+ -> stderr, UTF-8, "\n".
 logging:
@@ -418,10 +424,8 @@ enrichment:
     set_words: ["set", "show", "event", "performance"]
     set_qualifiers: ["birthday", "b-day", "retro", "extended", "special", "closing", "opening", "live", "main",
                      "vinyl", "all night long"]
-    # Artist dictionary: every saved lineup name, kept after events expire, in the main database (tables
-    # artists, artist_profiles; `partylinks artists block NAME` rejects a name). artists_db is the old
-    # SQLite file, imported once into empty tables and then kept as a backup.
-    artists_db: data/artists.db
+    # The artist dictionary (tables artists, artist_profiles) keeps every saved lineup name after its
+    # events expire; `partylinks artists block NAME` rejects a name.
     min_known_length: 4
     min_glued_length: 9
   # Local-time categorization of event start.
@@ -622,8 +626,6 @@ retention:
   in_progress_max_hours: 16
   # Scrape run history (scrape_runs) older than this many days is deleted as well.
   keep_runs_days: 30
-  # SQLite: after a purge, return the freed pages to the OS so the DB file shrinks.
-  reclaim_space: true
 
 # Event artwork. Source URLs are always stored; image files are fetched only if
 # `download` is on and kept either inside the database (BLOB in event_images) or on disk.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -80,7 +81,7 @@ def test_glued_names_split_on_known_artists() -> None:
 
 
 def test_artist_book_learns_and_blocks(tmp_path: Path) -> None:
-    db = Database(f"sqlite:///{tmp_path / 'a.db'}")
+    db = Database(os.environ["PARTYLINKS_DATABASE__URL"])
     db.create_schema()
     book = ArtistBook(db)
     book.record(["MILLERO", "MILLERO", "Shalos"])

@@ -36,7 +36,7 @@ COPY config/ config/
 COPY content/ content/
 COPY --from=web /web/dist web/dist
 
-# SQLite DB, artist dictionary, images, inboxes: mount a volume at /app/data or everything resets on
+# Images, caches, inboxes: mount a volume at /app/data or everything resets on
 # deploy (Railway: a service volume; it refuses a VOLUME instruction here).
 EXPOSE 8000
 

@@ -15,7 +15,7 @@ For every event it keeps:
 Each ticket link sends the visitor to the seller through a UTM-tagged, counted redirect. Friends plan
 together with "who's coming with me?": a poll per event (or between up to four), shared in WhatsApp.
 
-The backend is Python (FastAPI, SQLAlchemy, SQLite) and the website is React + TypeScript (Vite).
+The backend is Python (FastAPI, SQLAlchemy, PostgreSQL) and the website is React + TypeScript (Vite).
 Production runs on Railway and deploys on every push to `master`.
 
 ## Quick start

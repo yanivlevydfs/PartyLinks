@@ -83,8 +83,8 @@ def _proxy_failure(result: RunResult) -> bool:
 
 class Coalesced:
     """A whole-table pass that many finishing sources ask for at once (regroup, geocode). One runs;
-    the requests that arrive meanwhile share a single re-run instead of each queueing a full pass on
-    the SQLite write lock (74 sources x 3 passes starved the writers past WRITE_WAIT_S, Oct 2026)."""
+    the requests that arrive meanwhile share a single re-run instead of each running a full pass
+    (74 sources x 3 passes once starved the writers, Oct 2026)."""
 
     def __init__(self, fn: Callable[[], Any]) -> None:
         self._fn = fn
@@ -136,7 +136,7 @@ class ScrapeService:
         self.settings = settings
         self.db = db
         self.enricher = Enricher(settings.enrichment, settings.timezone)
-        self.artists = ArtistBook(db, settings.enrichment.lineup.artists_db)  # the old file: imported once
+        self.artists = ArtistBook(db)
         if not self.artists.load()[0]:  # first start: seed the dictionary from the lineups already stored
             with db.session() as session:
                 lineups = list(session.scalars(select(EventRow.lineup)))

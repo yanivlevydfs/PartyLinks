@@ -79,7 +79,7 @@ def log_startup(cfg: Settings, db: Database, scheduler: AsyncIOScheduler | None)
         f"===== {cfg.site.name} {VERSION}{f' ({commit})' if commit else ''} starting =====",
         f"server     http://{cfg.api.host}:{cfg.api.port}  public {cfg.site.base_url}  [{where}]",
         f"runtime    Python {platform.python_version()} on {platform.system()}  pid {os.getpid()}  tz {cfg.timezone}",
-        f"database   {make_url(cfg.database.url).render_as_string(hide_password=True)}  {_mb(storage['file_bytes'])}",
+        f"database   {make_url(cfg.database.url).render_as_string(hide_password=True)}  {_mb(storage['database_bytes'])}",
         f"events     {counts['upcoming']} upcoming / {counts['events']} stored",
         f"scheduler  {'on: ' + str(len(scheduler.get_jobs())) + ' jobs, next ' + _next_job(scheduler, cfg.timezone) if scheduler else 'OFF (no scraping here)'}",
         f"sources    {enabled} enabled / {len(sources)}  config errors: {len(source_errors(cfg))}",

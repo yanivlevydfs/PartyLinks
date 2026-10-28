@@ -21,7 +21,7 @@ NOW = datetime.now(UTC)
 
 
 def make(tmp_path: Path) -> tuple[Settings, Database, Enricher]:
-    settings = Settings(database={"url": f"sqlite:///{tmp_path / 'f.db'}"}, scheduler={"enabled": False},
+    settings = Settings(scheduler={"enabled": False},
                         media={"download": False})  # fmt: skip
     db = Database(settings.database.url)
     db.create_schema()

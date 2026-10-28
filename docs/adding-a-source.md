@@ -69,10 +69,10 @@ Reuse what exists:
 3. **Run the source once** against a throwaway database:
 
    ```bash
-   PARTYLINKS_DATABASE__URL=sqlite:///C:/temp/test.db python -m partylinks scrape <name>
+   PARTYLINKS_DATABASE__LOCAL_DATABASE=scratch python -m partylinks scrape <name>
    ```
 
-4. **Run the checks:** `python -m pytest` and `ruff check src tests`.
+4. **Run the checks:** `python -m pytest` (on an embedded PostgreSQL it starts itself) and `ruff check src tests`.
 
 ## 5. Ship
 

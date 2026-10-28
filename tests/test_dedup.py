@@ -30,7 +30,7 @@ def listing(source: str, eid: str, title: str, start: datetime = START, where: t
 
 
 def grouped(tmp_path: Path, events: list[ScrapedEvent]) -> tuple[Settings, dict[str, tuple[str | None, bool]]]:
-    settings = Settings(database={"url": f"sqlite:///{tmp_path / 'd.db'}"}, scheduler={"enabled": False})
+    settings = Settings(scheduler={"enabled": False})
     db = Database(settings.database.url)
     db.create_schema()
     enricher = Enricher(settings.enrichment, settings.timezone)

@@ -39,7 +39,6 @@ def picture(size: tuple[int, int], mode: str = "RGB", fmt: str = "JPEG", **save:
 
 def settings_for(tmp_path: Path, **media: Any) -> Settings:
     return Settings(
-        database={"url": f"sqlite:///{tmp_path / 'v.db'}"},
         scheduler={"enabled": False},
         media={"download": False, "storage": "filesystem", "directory": str(tmp_path / "media")} | media,
         dedup={"enabled": False},
@@ -289,7 +288,8 @@ def test_orphan_sweep_admin_endpoint_defaults_to_a_dry_run(tmp_path: Path) -> No
         assert client.post("/admin/api/maintenance/orphans", headers=auth).json()["files"] == 1
         assert stray.exists()
         assert client.post("/admin/api/maintenance/orphans?dry_run=false", headers=auth).json()["files"] == 1
-    assert not stray.exists() and has_variants(media.path_for("test/flyer.jpg"))
+    flyer = media.path_for("test/flyer.jpg")  # an event's artwork: kept, as the original or its WebP copies
+    assert not stray.exists() and (flyer.exists() or has_variants(flyer))
 
 
 
@@ -321,7 +321,7 @@ def test_cut_off_artwork_is_not_stored_and_is_fetched_again(tmp_path: Path, monk
     assert asyncio.run(media.download_pending("test", HttpSettings())) == (0, 1)
     assert not any((tmp_path / "media").rglob("*.webp"))
     # Stored cut off by an older version: the next pass drops the file and queues it again.
-    settings2, db2, media2, image_id = stored(tmp_path / "old", cut, "test/flyer.webp")
+    _, db2, media2, image_id = stored(tmp_path / "old", cut, "test/flyer.webp")
     media2.build_missing_variants(threads=1)
     with db2.session() as session:
         row = session.get(ImageRow, image_id)

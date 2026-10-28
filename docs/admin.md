@@ -15,7 +15,7 @@ a token configured, the console works only from the same machine.
 | **sources** | Each source's schedule and last run; run now, pause or resume a schedule, debug logging |
 | **runs** | Run history, filtered by source and status, with counts (found, saved, failed, changed, removed) and errors |
 | **config** | Edit `settings.yaml` with validation, automatic backups in `config/backups/`, and apply without a restart |
-| **maintenance** | Purge now, reclaim space, full vacuum, geocode missing places (and correct city centres abroad), recompute areas, regroup duplicates |
+| **maintenance** | Purge now, database size, geocode missing places (and correct city centres abroad), recompute areas, regroup duplicates |
 
 ## Bans
 

@@ -3,7 +3,7 @@
 SPOTX is one Python process (FastAPI) that does three things:
 
 1. **Collects:** a scheduler runs each source on its own cron.
-2. **Stores:** events go into SQLite.
+2. **Stores:** events go into PostgreSQL.
 3. **Serves:** the REST API, the React website and server-rendered pages for crawlers.
 
 ## One source run
@@ -76,8 +76,8 @@ change is stored in `deal_changes`: `new`, `price_down`, `price_up`, `free_entry
 
 Only current events are kept. An hourly job purges events that are over, with their tickets,
 artwork and change history. A party that started last night and is still running stays until it
-ends (`in_progress_max_hours`). Run history older than `keep_runs_days` is deleted too, and SQLite
-gives the freed space back to the OS.
+ends (`in_progress_max_hours`). Run history older than `keep_runs_days` is deleted too; PostgreSQL's
+autovacuum reuses the freed space.
 
 ## Artwork (`media.py`)
 
@@ -141,9 +141,9 @@ before results existed are `rails`.
 
 For results, `GET /events?sponsored=true` evaluates the list's own filter clauses on the picks'
 duplicate groups only (primary card, upcoming, campaign not over): three small queries per list
-build, nothing per row. The clauses are a selected column there, not the `WHERE`, because SQLite's
-planner would otherwise scan a filter column's index over the whole table (measured: 100 ms vs 2 ms
-at 28k events). The matches lead page 1 and are excluded from
+build, nothing per row. The clauses are a selected column there, not the `WHERE`, so they are judged
+on the groups' few rows only, never through a filter column's index over the whole table. The matches
+lead page 1 and are excluded from
 the rest of the list. The answer sits in the response cache like any list; an admin save or switch
 is a write, which makes every cached entry stale, so the change shows within the browser's 30 s.
 Views and clicks go to `sponsored_stats`, with the part from results counted separately.
@@ -180,7 +180,8 @@ src/partylinks/
   places.py                   Israeli localities and cities abroad, from geonames.py
   parsing.py                  generic parsing helpers
   enrichment.py               genres, lineup, time categories, free/paid, city
-  artistdb.py                 artist dictionary (main database; imports the old artists.db once)
+  artistdb.py                 artist dictionary (tables artists, artist_profiles)
+  localpg.py                  the embedded PostgreSQL of localhost and tests (pgserver)
   artists.py                  ArtistProfile, what a ticket site tells about an artist
   geo.py, venues.py           coordinates and venue names
   dedup.py                    duplicate grouping
@@ -214,31 +215,29 @@ airportsdata (`scrapers/abroad.py`, `airports()`).
 
 ## Database
 
-One code base, two databases: SQLite (localhost, tests, and production until the switch) and
-PostgreSQL (production, `PARTYLINKS_DATABASE__URL=postgresql://...`; plan and status in
-[postgres-migration.md](postgres-migration.md)). Writes are batched: one multi-row upsert per batch of
-events, and bulk insert or delete for tickets and images.
+PostgreSQL: production on Railway (`PARTYLINKS_DATABASE__URL`), localhost and tests on an embedded
+server that starts itself (`localpg.py`). Writes are batched: one multi-row upsert per batch of events,
+and bulk insert or delete for tickets and images.
 
-- **SQLite:** WAL mode, one writer at a time (this process's writers queue on a lock).
-- **PostgreSQL:** psycopg 3, a connection pool (`database.pool_size` / `max_overflow` / `pool_timeout`,
-  pre-ping, recycle), TCP keepalives and server-side `statement_timeout`, `lock_timeout` and
-  `idle_in_transaction_session_timeout`. Writers run concurrently on row locks (rows are always
-  written in id order, so they never deadlock); `database.serialize_writes: true` queues them as on SQLite.
-- **Transient errors are retried** (`db.with_db_retry`, `database.retries`): a locked SQLite file,
-  deadlock, serialization failure, lock timeout, a dropped connection or a full pool.
-- **Same results on both:** NULLs sort as the smallest value everywhere (`nulls_first` / `nulls_last`),
-  the short-word search rule is `db.whole_word` (a Python function on SQLite, a regex on PostgreSQL),
-  JSON is JSONB on PostgreSQL, scraped text is stripped of NUL characters (`models.without_nul`),
-  ids and scraped text are `TEXT` (PostgreSQL enforces `VARCHAR(n)`), and duplicate grouping sorts
-  in Python, never by the database's collation.
+- **Connections:** psycopg 3 and a pool (`database.pool_size` + `max_overflow`, `pool_timeout`, pre-ping,
+  recycle), TCP keepalives, and server-side `statement_timeout`, `lock_timeout` and
+  `idle_in_transaction_session_timeout`, so nothing stuck holds locks for long.
+- **Concurrency:** readers never wait for writers, and writers run concurrently on row locks; rows are
+  always written in key order, so they never deadlock. `database.serialize_writes: true` queues this
+  process's writers one at a time instead.
+- **Transient errors are retried** (`db.with_db_retry`, `database.retries`): deadlock, serialization
+  failure, lock timeout, a server restarting, a dropped connection, a full pool.
+- **Startup:** `create_schema` first waits for the database to answer (`database.startup_wait_s`, with
+  backoff), so a deploy that starts while PostgreSQL restarts waits instead of crashing. `/health`
+  queries the database; Railway only switches to a deploy whose `/health` answers.
+- **Data:** JSON columns are JSONB; scraped text is stripped of NUL characters (`models.without_nul`);
+  missing dates and prices sort as the smallest value; the short-word search rule is `db.whole_word`
+  (a regex); duplicate grouping sorts in Python, never by the database's collation.
 - **Keys:** every table has a primary key; foreign keys with `ON DELETE CASCADE` from tickets, images
   and deal changes to events, and from plan answers and options to plans. Clicks, sponsored picks and
   plans point at events without a foreign key on purpose: they outlive retention or go with it in code.
 
 `Database.create_schema()` creates missing tables, adds new columns (with their default, `NOT NULL`
-where the model says so) and builds missing indexes, at every start. On PostgreSQL it runs under an
-advisory lock (one process at a time); an index that cannot be built is logged and the site still
-starts. A rename or type change needs a real migration.
-
-`partylinks copy-db --to URL [--from URL] [--force]` (`dbcopy.py`) copies every table to another
-database through the same models, then verifies each table: row count and a checksum of every row.
+where the model says so) and builds missing indexes, at every start, under an advisory lock (one
+process at a time); an index that cannot be built is logged and the site still starts. A rename or
+type change needs a real migration.

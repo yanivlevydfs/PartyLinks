@@ -22,7 +22,7 @@ Secrets (admin token, proxy credentials, access headers) belong in variables onl
 | Section | What it controls |
 | --- | --- |
 | `timezone` | App time zone (`Asia/Jerusalem`): local dates, cron times, display |
-| `database` | Database URL (SQLite by default, in `data/`; `postgresql://` for PostgreSQL), and for PostgreSQL the pool, timeouts, keepalives, write mode, retries and `copy-db` batch size |
+| `database` | PostgreSQL URL (empty: the embedded local server in `local_dir`), pool, timeouts, keepalives, write mode, retries, startup wait |
 | `logging` | Level, text or JSON, access log, rotating file |
 | `site` | `base_url`, brand name (`SPOTX`), accessibility and privacy contacts |
 | `utm` | UTM tags on ticket links: `enabled`, `source`, `medium` (see [ticket links](ticket-links.md)) |
@@ -33,7 +33,7 @@ Secrets (admin token, proxy credentials, access headers) belong in variables onl
 | `enrichment` | Genre keywords, lineup parsing, time slots, weekend days, free-entry words, cities, areas |
 | `dedup` | Rules for grouping duplicate listings |
 | `geocoding` | Nominatim settings and manual venue pins |
-| `retention` | Purge schedule, in-progress window, run-history age, space reclaim |
+| `retention` | Purge schedule, in-progress window, run-history age |
 | `media` | Download artwork or not, store in the DB or on disk, size and type limits, WebP copies (`webp_quality`, default 78; `variant_threads`, default 2, 0 = no backfill of older files) |
 | `sources` | One block per source (see below) |
 

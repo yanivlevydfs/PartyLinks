@@ -388,14 +388,6 @@ async def apply_config(request: Request) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------- maintenance
-@router.post("/maintenance/vacuum")
-async def vacuum(request: Request, full: bool = False) -> dict[str, Any]:
-    """Give deleted space back to the OS. ``full`` rewrites the whole file (slow, needs a quiet DB)."""
-    db = request.app.state.db
-    freed = await asyncio.to_thread(db.reclaim_space, full)
-    return {"freed_bytes": freed, "storage": db.storage_stats()}
-
-
 @router.post("/maintenance/orphans")
 async def sweep_orphans(request: Request, dry_run: bool = True) -> dict[str, Any]:
     """Artwork files no image row claims (originals or WebP copies). ``dry_run`` (default) only

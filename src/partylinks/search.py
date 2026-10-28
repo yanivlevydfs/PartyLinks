@@ -5,7 +5,6 @@ Searches every event, in Israel and abroad."""
 
 from __future__ import annotations
 
-import json
 import re
 import warnings
 from collections.abc import Callable, Iterable
@@ -192,9 +191,8 @@ def _pattern(word: str) -> str:
 
 
 def _json_has(column: SQLColumnExpression[Any], word: str) -> Cond:
-    """A JSON list column (event types) holding ``word``: stored with non-ASCII escaped, so both forms."""
-    text = cast(column, String)
-    return or_(*(text.ilike(_pattern(f), escape="\\") for f in {word, json.dumps(word)[1:-1]}))
+    """A JSON list column (event types) holding ``word`` (its JSONB text, case-insensitive)."""
+    return cast(column, String).ilike(_pattern(word), escape="\\")
 
 
 DID_YOU_MEAN_CUTOFF = 0.75  # looser than TYPO_CUTOFF: a suggestion to click, not extra results

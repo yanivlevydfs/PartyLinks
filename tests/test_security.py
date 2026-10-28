@@ -279,7 +279,7 @@ def test_event_page_escapes_scraped_text(tmp_path: Path) -> None:
     html = seo.render(template, page, settings)
     assert "<script>alert" not in html and "<img src=x" not in html
     # Only JSON-LD scripts, each closed where it should be (no "<" inside them at all).
-    assert all(json.loads(s) for s in re.findall(r"<script[^>]*>(.*?)</script>", html, re.S))
+    assert all(json.loads(s) for s in re.findall(r"<script[^>]*>(.*?)</script>", html, re.DOTALL))
 
 
 def test_banned_visitor_gets_no_cached_page(tmp_path: Path) -> None:

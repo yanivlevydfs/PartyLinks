@@ -13,7 +13,6 @@ from partylinks.db import Database
 
 def test_startup_block_and_status_line_hide_secrets(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     cfg = Settings(
-        database={"url": f"sqlite:///{tmp_path / 'test.db'}"},
         scheduler={"enabled": False},
         http={"source_proxy": "http://user:secret@proxy.example:8080"},
         admin={"token": "s3cret-token"},

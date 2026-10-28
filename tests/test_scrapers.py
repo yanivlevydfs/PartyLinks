@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -91,7 +92,7 @@ def test_tickchak_artist_profiles_merge_into_artist_book(tmp_path: Path) -> None
     assert balishag.profile_url == "https://live.tickchak.co.il/balishag"
     assert balishag.spotify_url and "spotify.com" in balishag.spotify_url
 
-    db = Database(f"sqlite:///{tmp_path / 'a.db'}")
+    db = Database(os.environ["PARTYLINKS_DATABASE__URL"])
     db.create_schema()
     book = ArtistBook(db)
     book.save_profiles([ArtistProfile("Balishag", "goout", image_url="https://img/b.jpg")])

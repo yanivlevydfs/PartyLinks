@@ -53,12 +53,16 @@ class LoggingSettings(BaseModel):
 
 
 class DatabaseSettings(BaseModel):
-    url: str = "sqlite:///data/partylinks.db"
+    # PostgreSQL URL (production: PARTYLINKS_DATABASE__URL). Empty = the local server (localpg.py): an
+    # embedded PostgreSQL in local_dir, database local_database, for localhost and tests.
+    url: str = ""
+    local_dir: str = "data/pgdata"
+    local_database: str = "partylinks"
     echo: bool = False
-    # PostgreSQL connection pool (ignored on SQLite). Source threads and page requests share it:
+    # Connection pool. Source threads and page requests share it:
     # pool_size stays open, max_overflow more on bursts, pool_timeout seconds to wait for a free one.
-    pool_size: int = Field(10, ge=1)
-    max_overflow: int = Field(20, ge=0)
+    pool_size: int = Field(20, ge=1)
+    max_overflow: int = Field(40, ge=0)
     pool_timeout: float = Field(30, gt=0)
     pool_recycle: int = Field(1800, ge=-1)  # seconds; reopen older connections (-1 = never)
     connect_timeout: int = Field(10, ge=1)  # seconds to open a connection
@@ -73,13 +77,13 @@ class DatabaseSettings(BaseModel):
     keepalive_interval: int = Field(10, ge=1)
     keepalive_count: int = Field(3, ge=1)
     application_name: str = "partylinks"  # shown in pg_stat_activity
-    # Share of each events page filled on insert (PostgreSQL): the rest is room for in-place (HOT) updates.
+    # Share of each events page filled on insert: the rest is room for in-place (HOT) updates.
     events_fillfactor: int = Field(85, ge=10, le=100)
-    # copy-db: rows read and inserted per round trip.
-    copy_batch: int = Field(2000, ge=1)
-    # One writer at a time in this process. None = SQLite only (its file has one writer anyway);
-    # true on PostgreSQL queues writers like SQLite did, false lets them write concurrently (row locks).
-    serialize_writes: bool | None = None
+    # Writers run concurrently on row locks; true queues this process's writers one at a time.
+    serialize_writes: bool = False
+    # At startup, how long to wait for the database to answer (it may be restarting) before giving up;
+    # keep it under the deploy's health-check timeout (railway.json: 120 s).
+    startup_wait_s: float = Field(90, gt=0)
     # Retries of a write that hit a lock, deadlock, serialization failure or a dropped connection.
     retries: int = Field(4, ge=1)
 
@@ -186,9 +190,6 @@ class LineupSettings(BaseModel):
     # Set descriptions cut from a name: "<qualifier> <word>" ("AZVELOS - Birthday Set", "NARDO WICK — MAIN EVENT").
     set_words: list[str] = Field(default_factory=list)
     set_qualifiers: list[str] = Field(default_factory=list)
-    # The artist dictionary (used to split names a source glued together) lives in the main database
-    # (artistdb.py). This is its old SQLite file: imported once into empty tables, then left as a backup.
-    artists_db: str = "data/artists.db"
     min_known_length: int = Field(4, ge=2)  # shorter known names are never used as split points
     min_glued_length: int = Field(9, ge=4)  # shorter words are never split
 
@@ -320,8 +321,6 @@ class RetentionSettings(BaseModel):
 
     # Scrape run history older than this is deleted too.
     keep_runs_days: int = Field(30, ge=1)
-    # SQLite only: give the space of deleted rows back to the OS after a purge (PostgreSQL: autovacuum).
-    reclaim_space: bool = True
 
 
 class MediaSettings(BaseModel):

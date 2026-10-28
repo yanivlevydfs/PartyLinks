@@ -354,10 +354,10 @@ class MediaStore:
             self.path_for(relative).unlink(missing_ok=True)
         log.info("artwork: %d unreadable files queued to download again", len(relatives))
 
-    def move_to_files(self, batch: int = 200, reclaim_every: int = 10) -> int:
+    def move_to_files(self, batch: int = 200, log_every: int = 10) -> int:
         """With ``storage: filesystem``, move artwork still kept in the database to files, a batch at
         a time (each file is written before its BLOB is cleared, so a restart resumes where it
-        stopped), and give the freed pages back to the disk as it goes. Returns the images moved."""
+        stopped). Returns the images moved."""
         if self.settings.storage != "filesystem":
             return 0
         moved = batches = 0
@@ -382,11 +382,9 @@ class MediaStore:
             for relative in written:  # after the commit: no write lock held while resizing
                 webp_only(self.path_for(relative), self.settings.webp_quality)
             moved, batches = moved + len(rows), batches + 1
-            if batches % reclaim_every == 0:
+            if batches % log_every == 0:
                 log.info("artwork: %d images moved from the database to files", moved)
-                self.db.reclaim_space()
         if moved:
-            self.db.reclaim_space()
             log.info("artwork: done, %d images moved from the database to files", moved)
         return moved
 

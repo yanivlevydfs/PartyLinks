@@ -77,7 +77,7 @@ from the same machine are accepted, and proxied requests never count as local.
 | GET/PUT | `/admin/api/config` | Read or save `settings.yaml` (with backup) |
 | POST | `/admin/api/config/validate`, `/admin/api/config/apply` | Validate, then apply without a restart |
 | GET | `/admin/api/config/backups/{name}` | One config backup |
-| POST | `/admin/api/maintenance/vacuum`, `/geocode`, `/areas`, `/regroup` | Reclaim space, geocode missing places (and correct city centres abroad), recompute areas, regroup duplicates |
+| POST | `/admin/api/maintenance/geocode`, `/areas`, `/regroup` | Geocode missing places (and correct city centres abroad), recompute areas, regroup duplicates |
 | GET | `/admin/api/bans` | Banned IPs and the minutes left on each |
 | POST | `/admin/api/bans/lift?ip=` | Lift one ban (every ban without `ip`); see rate limits below |
 | POST | `/admin/api/maintenance/orphans` | Artwork files no image row claims: counted (`dry_run=true`, the default) or deleted (`dry_run=false`). Returns `files`, `bytes` |

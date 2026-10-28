@@ -1,5 +1,5 @@
-"""Retention: purge events that are over (with tickets and artwork), old run history, and
-give the freed space back to the OS."""
+"""Retention: purge events that are over (with tickets and artwork) and old run history
+(PostgreSQL's autovacuum reuses the freed space)."""
 
 from __future__ import annotations
 
@@ -102,6 +102,4 @@ def purge_expired(
         "retention: removed %d events, %d artwork files and %d runs older than %s",
         len(expired), removed_files, runs, cutoff,
     )  # fmt: skip
-    if settings.reclaim_space and (expired or runs):
-        db.reclaim_space()
     return len(expired)

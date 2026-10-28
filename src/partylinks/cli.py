@@ -5,7 +5,6 @@
     partylinks sources               # list configured sources
     partylinks cleanup               # purge events that are over (retention)
     partylinks chillz-links          # page of Chillz links to open and save into the inbox
-    partylinks copy-db --to URL      # copy the database to another one and verify it (dbcopy.py)
 """
 
 from __future__ import annotations
@@ -120,7 +119,7 @@ def _artists(action: str, names: list[str]) -> int:
     settings = get_settings()
     db = Database(settings.database.url, settings.database.echo, settings.database)
     db.create_schema()
-    book = ArtistBook(db, settings.enrichment.lineup.artists_db)
+    book = ArtistBook(db)
     if action == "list":
         for name, seen, blocked in book.rows():
             log.info("%4d  %s%s", seen, "BLOCKED " if blocked else "", name)
@@ -129,21 +128,6 @@ def _artists(action: str, names: list[str]) -> int:
         book.set(name, blocked=action == "block")
     log.info("%s: %d name(s); applied on the next scrape", action, len(names))
     return 0
-
-
-def _copy_db(source: str | None, target: str, force: bool) -> int:
-    from partylinks.dbcopy import CopyRefused, copy_database
-
-    settings = get_settings()
-    try:
-        reports = copy_database(source or settings.database.url, target, settings.database, force=force)
-    except CopyRefused as exc:
-        log.error("copy-db refused: %s", exc)
-        return 2
-    bad = [name for name, r in reports.items() if not r.ok]
-    log.log(logging.ERROR if bad else logging.INFO, "copy-db: %d tables, %d rows, %s", len(reports),
-            sum(r.rows for r in reports.values()), f"MISMATCH in {', '.join(bad)}" if bad else "verified")  # fmt: skip
-    return 1 if bad else 0
 
 
 def _sources() -> int:
@@ -166,10 +150,6 @@ def main(argv: list[str] | None = None) -> int:
     artists = sub.add_parser("artists", help="curate the artist dictionary (used to split glued names)")
     artists.add_argument("action", choices=["list", "add", "block", "unblock"])
     artists.add_argument("names", nargs="*", metavar="NAME")
-    copy = sub.add_parser("copy-db", help="copy every table to another database and verify it")
-    copy.add_argument("--from", dest="source", metavar="URL", help="source database (default: the configured one)")
-    copy.add_argument("--to", dest="target", metavar="URL", required=True, help="target database URL")
-    copy.add_argument("--force", action="store_true", help="drop the target's tables first")
     args = parser.parse_args(argv)
     try:
         setup_logging(get_settings().logging, args.verbose)
@@ -190,8 +170,6 @@ def _dispatch(args: argparse.Namespace) -> int:
         return _cleanup()
     if args.command == "chillz-links":
         return _chillz_links()
-    if args.command == "copy-db":
-        return _copy_db(args.source, args.target, args.force)
     if args.command == "artists":
         return _artists(args.action, args.names)
     return _sources()

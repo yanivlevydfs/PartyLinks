@@ -17,4 +17,4 @@ Every ticket link points back to the seller.
 | [SEO and blog](seo-and-blog.md) | Server-rendered pages, sitemaps, `llms.txt`, the blog |
 | [Legal and privacy](legal.md) | Accessibility, privacy, cookies, open items |
 | [Adding a source](adding-a-source.md) | Step-by-step guide for a new site |
-| [Postgres migration plan](postgres-migration.md) | Moving from SQLite to Postgres (on hold), including the search index (pg_trgm). In Hebrew |
+| [Postgres migration](postgres-migration.md) | How production moved to PostgreSQL (done 2026-10-28), and the planned search index (pg_trgm). In Hebrew |

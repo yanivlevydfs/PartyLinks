@@ -197,7 +197,7 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
         return event
 
 
-# ponytail: beside the SQLite file (data/, the Railway volume); a JSON set, ~2k URLs.
+# ponytail: on the data volume (data/, Railway's /app/data); a JSON set, ~2k URLs.
 PAST_FILE = "data/chillz_past.json"
 
 

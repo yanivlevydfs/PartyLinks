@@ -1,39 +1,34 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
-from typing import Any
 
 import pytest
 
-# PARTYLINKS_TEST_PG_URL=postgresql://user:pass@host/db pytest  runs every test's database on PostgreSQL:
-# each sqlite:/// URL a test opens is swapped for that database, emptied at the test's first open
-# (sqlite+pysqlite:/// stays SQLite, for tests that need both).
-PG_URL = os.environ.get("PARTYLINKS_TEST_PG_URL")
+# Every test runs on PostgreSQL: PARTYLINKS_TEST_PG_URL when set, else an embedded server (pgserver)
+# started once per run in a temporary directory. Each test starts from an empty database, and gets it
+# through PARTYLINKS_DATABASE__URL (Settings() reads it; Database(os.environ[...]) for a bare one).
+
+
+@pytest.fixture(scope="session")
+def _test_database(tmp_path_factory: pytest.TempPathFactory) -> str:
+    from partylinks.config import DatabaseSettings
+    from partylinks.localpg import local_url
+
+    url = os.environ.get("PARTYLINKS_TEST_PG_URL")
+    return url or local_url(DatabaseSettings(local_dir=str(tmp_path_factory.mktemp("pg")), local_database="partylinks_test"))
 
 
 @pytest.fixture(autouse=True)
-def _on_postgres(monkeypatch: pytest.MonkeyPatch) -> None:
-    if not PG_URL:
-        return
-    from partylinks.db import Base, Database
+def _empty_database(_test_database: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    from sqlalchemy import create_engine
+    from sqlalchemy.engine import make_url
 
-    original = Database.__init__
-    emptied: list[bool] = []
+    from partylinks.db import Base, postgres_url
 
-    def init(self: Database, url: str, *args: Any, **kwargs: Any) -> None:
-        original(self, PG_URL if url.startswith("sqlite:///") else url, *args, **kwargs)
-        if not emptied:
-            Base.metadata.drop_all(self.engine)
-            emptied.append(True)
-
-    monkeypatch.setattr(Database, "__init__", init)
-
-
-@pytest.fixture(autouse=True)
-def _private_artists_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Keep tests from importing the real old artist file (data/artists.db) into their databases."""
-    monkeypatch.setenv("PARTYLINKS_ENRICHMENT__LINEUP__ARTISTS_DB", str(tmp_path / "artists.db"))
+    monkeypatch.setenv("PARTYLINKS_DATABASE__URL", _test_database)
+    engine = create_engine(postgres_url(make_url(_test_database)))
+    Base.metadata.drop_all(engine)
+    engine.dispose()
 
 
 @pytest.fixture(autouse=True)

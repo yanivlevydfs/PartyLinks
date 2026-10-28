@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import re
 import threading
 import time
 from collections import defaultdict
@@ -13,12 +12,9 @@ from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal
-from functools import lru_cache
-from pathlib import Path
 from typing import Any, ClassVar, cast
 
 from sqlalchemy import (
-    JSON,
     Boolean,
     ColumnElement,
     Date,
@@ -47,19 +43,18 @@ from sqlalchemy import (
 )
 from sqlalchemy import event as sa_event
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine import URL, Engine, make_url
-from sqlalchemy.exc import DBAPIError, OperationalError
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.exc import TimeoutError as PoolTimeout
-from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import DeclarativeBase, Mapped, ORMExecuteState, Session, mapped_column, relationship, sessionmaker
-from sqlalchemy.sql.functions import FunctionElement
 
-from partylinks.config import DatabaseSettings, get_settings, project_path
+from partylinks.config import DatabaseSettings, get_settings
 from partylinks.models import ScrapedEvent
 
 log = logging.getLogger(__name__)
 
-WRITE_WAIT_S = 120  # how long a writer queues for the write lock before "database is locked"
+WRITE_WAIT_S = 120  # serialize_writes: how long a writer waits for its turn before giving up (then retried)
 
 # PostgreSQL errors that a second try can get past: serialization failure, deadlock, lock timeout,
 # server shutting down / restarting, connection lost. Never a statement timeout (57014): it would
@@ -68,15 +63,14 @@ RETRYABLE_SQLSTATES = frozenset({"40001", "40P01", "55P03", "57P01", "57P02", "5
 
 
 def retryable(exc: BaseException) -> bool:
-    """A transient DB error: lock contention (both dialects), a dropped connection or a full pool."""
+    """A transient DB error: lock contention, a dropped connection or a full pool (or writer queue)."""
     if isinstance(exc, PoolTimeout):
         return True
     if not isinstance(exc, DBAPIError):
         return False
     if exc.connection_invalidated or getattr(exc.orig, "sqlstate", None) in RETRYABLE_SQLSTATES:
         return True
-    message = str(exc.orig).lower()
-    return "locked" in message or "deadlock" in message  # SQLite 'database is locked'
+    return "deadlock" in str(exc.orig).lower()
 
 
 def with_db_retry[T](what: str, fn: Callable[[], T]) -> T:
@@ -99,7 +93,7 @@ def utcnow() -> datetime:
 
 
 class UTCDateTime(TypeDecorator[datetime]):
-    """Stores UTC, always returns timezone-aware datetimes (SQLite drops tzinfo)."""
+    """Stores UTC (``timestamp without time zone``), always returns timezone-aware datetimes."""
 
     impl = DateTime
     cache_ok = True
@@ -111,8 +105,10 @@ class UTCDateTime(TypeDecorator[datetime]):
         return value.replace(tzinfo=UTC) if value is not None else None
 
 
-# JSON lists / dicts: JSONB on PostgreSQL (binary, indexable with GIN), JSON text on SQLite.
-JSONType = JSON().with_variant(JSONB(), "postgresql")
+# JSON lists / dicts: binary, indexable with GIN, compared as values (not as text).
+JSONType = JSONB
+# A JSON column that may be empty: Python None is SQL NULL (not JSON 'null'), so COALESCE and IS NULL see it.
+NullableJSON = JSONB(none_as_null=True)
 
 
 class Base(DeclarativeBase):
@@ -199,16 +195,16 @@ class EventRow(Base):
         return next((f"/images/{i.id}" for i in self.images if i.downloaded_at), None)
 
 
-# The default list (/events by date): primary cards in (local_date, start_at, id) order, NULLs first as
-# on SQLite, read in order and stopped at the page's LIMIT instead of sorting every row. Its columns
-# barely change on an upsert, so it keeps updates HOT. PostgreSQL only (partial, ordered NULLS FIRST).
+# The default list (/events by date): primary cards in (local_date, start_at, id) order, undated first,
+# read in order and stopped at the page's LIMIT instead of sorting every row. Its columns barely change
+# on an upsert, so it keeps updates HOT.
 Index(
     "ix_events_feed",
     EventRow.local_date.asc().nulls_first(),
     EventRow.start_at.asc().nulls_first(),
     EventRow.id,
     postgresql_where=EventRow.is_primary.is_(True) & EventRow.is_listed.is_not(False),
-).ddl_if(dialect="postgresql")
+)
 
 
 class TicketRow(Base):
@@ -362,101 +358,32 @@ class ScrapeRunRow(Base):
 
 
 def _literal_default(column: Any, dialect: Any) -> str | None:
-    """SQL literal of a column's scalar Python default (bool/int/float/str) in ``dialect``, else None:
-    ``true`` on PostgreSQL, ``1`` on SQLite (PostgreSQL refuses an integer default on a boolean)."""
+    """SQL literal of a column's scalar Python default (bool/int/float/str), else None."""
     value = getattr(column.default, "arg", None)
     if not isinstance(value, bool | int | float | str):
         return None
     return str(literal(value, column.type).compile(dialect=dialect, compile_kwargs={"literal_binds": True}))
 
 
-def _sqlite_pragmas(dbapi_connection: Any, _record: Any) -> None:
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA journal_mode=WAL")  # concurrent readers while a source writes
-    cursor.execute("PRAGMA synchronous=NORMAL")
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
-    dbapi_connection.create_function("has_word", 2, has_word, deterministic=True)
+# A word character, spelled out so the rule never depends on the database's collation / ctype (in a
+# "C" database \w is ASCII only, and Hebrew letters would count as spaces).
+_WORD_CHARS = "0-9A-Za-z_\u00c0-\u024f\u0370-\u04ff\u0590-\u06ff"  # digits, Latin, Greek, Cyrillic, Hebrew, Arabic
+_REGEX_META = str.maketrans({c: "\\" + c for c in "\\.^$*+?()[]{}|-"})
+_HEBREW_PREFIXES = "\u05d1\u05dc\u05de\u05d4\u05d5\u05db\u05e9"  # one-letter prefixes: bet, lamed, mem, he, vav, kaf, shin
 
 
-@lru_cache(maxsize=512)
-def _word_re(word: str) -> re.Pattern[str]:
-    return re.compile(r"(?<!\w)[בלמהוכש]?" + re.escape(word.casefold()) + r"(?!\w)")
-
-
-def has_word(text: str | None, word: str | None) -> bool:
-    """``word`` as a whole word of ``text``, maybe behind a one-letter Hebrew prefix ("בראפ").
-    SQLite's ``has_word()``: a short search word ("ראפ") is not found inside "תראפיה"."""
-    return bool(text and word and _word_re(word).search(text.casefold()))
-
-
-# A word character for PostgreSQL's regex: spelled out, so it never depends on the database's
-# collation / ctype (in a "C" database \w is ASCII only, and Hebrew letters would count as spaces).
-_PG_WORD = "0-9A-Za-z_À-ɏͰ-ӿ֐-ۿ"  # digits, Latin, Greek, Cyrillic, Hebrew, Arabic
-_PG_REGEX_META = re.compile(r"[\\.^$*+?()\[\]{}|-]")
-
-
-class whole_word(FunctionElement[bool]):
-    """``column`` has ``word`` as a whole word (see :func:`has_word`), in SQL on either database:
-    SQLite calls the Python function, PostgreSQL runs the same rule as a case-insensitive regex.
-
-    Both the word and the regex are bound parameters built here, so a cached statement never
-    reuses another search's pattern."""
-
-    inherit_cache = True
-    type = Boolean()
-    name = "has_word"
-
-    def __init__(self, column: Any, word: str) -> None:
-        # The word is data, not a pattern: every regex metacharacter in it is escaped.
-        escaped = _PG_REGEX_META.sub(lambda m: "\\" + m.group(), word.casefold())
-        pattern = f"(^|[^{_PG_WORD}])[בלמהוכש]?{escaped}($|[^{_PG_WORD}])"
-        super().__init__(column, literal(word, String), literal(pattern, String))
-
-
-@compiles(whole_word, "sqlite")
-def _whole_word_sqlite(element: whole_word, compiler: Any, **kw: Any) -> str:
-    column, word, _ = list(element.clauses)
-    return f"has_word({compiler.process(column, **kw)}, {compiler.process(word, **kw)})"
-
-
-@compiles(whole_word, "postgresql")
-def _whole_word_postgresql(element: whole_word, compiler: Any, **kw: Any) -> str:
-    column, _, pattern = list(element.clauses)
-    return f"({compiler.process(column, **kw)} ~* {compiler.process(pattern, **kw)})"
-
-
-def _sqlite_begin(conn: Any) -> None:
-    """Writers take the write lock at BEGIN (IMMEDIATE), where the busy timeout applies. A deferred
-    transaction that reads and then writes fails at once with "database is locked" when another
-    writer committed in between (SQLITE_BUSY_SNAPSHOT), whatever the timeout. Other sessions keep
-    the driver's own handling: it begins right before the first INSERT/UPDATE/DELETE."""
-    options = conn.get_execution_options()
-    if options.get("isolation_level") == "AUTOCOMMIT":
-        return
-    raw = conn.connection.dbapi_connection
-    if options.get("sqlite_write"):
-        raw.isolation_level = None  # the driver must not begin a second transaction
-        conn.exec_driver_sql("BEGIN IMMEDIATE")
-    else:
-        raw.isolation_level = ""  # pooled connections are shared with writers
-
-
-SQLITE_INCREMENTAL_VACUUM = 2  # PRAGMA auto_vacuum value
+def whole_word(column: Any, word: str) -> ColumnElement[bool]:
+    """``column`` has ``word`` as a whole word, maybe behind a one-letter Hebrew prefix ("\u05d1\u05e8\u05d0\u05e4"): a
+    short search word ("\u05e8\u05d0\u05e4") is not found inside "\u05ea\u05e8\u05d0\u05e4\u05d9\u05d4". A case-insensitive regex (``~*``); the
+    word is data, not a pattern (every metacharacter escaped), and the pattern is a bound parameter."""
+    escaped = word.casefold().translate(_REGEX_META)
+    return column.regexp_match(f"(^|[^{_WORD_CHARS}])[{_HEBREW_PREFIXES}]?{escaped}($|[^{_WORD_CHARS}])", flags="i")
 
 
 def lineup_contains(name: str) -> ColumnElement[bool]:
-    """Events whose lineup has `name` in it (case-insensitive substring).
-
-    The lineup is stored as JSON text with non-ASCII escaped ("\\u05e9..."), so a Hebrew name only
-    matches in that escaped form; both forms are tried.
-    """
-    column = EventRow.lineup.cast(String)
-    clauses = [
-        column.ilike("%" + p.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%", escape="\\")
-        for p in {name, json.dumps(name)[1:-1]}
-    ]
-    return clauses[0] if len(clauses) == 1 else clauses[0] | clauses[1]
+    """Events whose lineup has `name` in it (case-insensitive substring of the JSONB list's text)."""
+    escaped = name.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return EventRow.lineup.cast(String).ilike(f"%{escaped}%", escape="\\")
 
 
 def upcoming_filter() -> ColumnElement[bool]:
@@ -524,75 +451,49 @@ def _postgres_connect_args(options: DatabaseSettings) -> dict[str, Any]:
     }
 
 
-def _ddl_applies(index: Index, dialect: str) -> bool:
-    """False for an index limited to other databases with ``Index(...).ddl_if(dialect=...)``."""
-    wanted = getattr(getattr(index, "_ddl_if", None), "dialect", None)
-    if wanted is None:
-        return True
-    return dialect == wanted if isinstance(wanted, str) else dialect in wanted
-
-
 class Database:
     # Committed writing transactions in this process (any Database): cached API responses
     # keyed by it go stale the moment data changes.
     changes: ClassVar[int] = 0
 
     def __init__(self, url: str, echo: bool = False, options: DatabaseSettings | None = None) -> None:
-        """``options``: pool, timeouts and write mode (``database`` settings; default: the loaded ones)."""
+        """``url``: a PostgreSQL URL; empty = the local server (``localpg.py``, localhost and tests).
+        ``options``: pool, timeouts and write mode (``database`` settings; default: the loaded ones)."""
         self.options = options = options or get_settings().database
-        parsed = postgres_url(make_url(url))
-        if parsed.get_backend_name() == "sqlite" and parsed.database not in (None, "", ":memory:"):
-            database = project_path(parsed.database)
-            database.parent.mkdir(parents=True, exist_ok=True)
-            parsed = parsed.set(database=str(database))
-        is_sqlite = parsed.get_backend_name() == "sqlite"
-        if is_sqlite:
-            self.engine: Engine = create_engine(
-                parsed,
-                echo=echo,
-                # Sources write from separate threads: wait for locks instead of failing.
-                connect_args={"timeout": WRITE_WAIT_S, "check_same_thread": False},
-                # SQLite connections are cheap and WAL lets readers run beside writers: with the default cap
-                # (5 + 10) a scrape's source threads held every connection and page requests timed out.
-                max_overflow=-1,
-            )
-            sa_event.listen(self.engine, "connect", _sqlite_pragmas)
-            sa_event.listen(self.engine, "begin", _sqlite_begin)
-        else:
-            self.engine = create_engine(
-                parsed,
-                echo=echo,
-                pool_size=options.pool_size,
-                max_overflow=options.max_overflow,
-                pool_timeout=options.pool_timeout,
-                pool_recycle=options.pool_recycle,
-                pool_pre_ping=True,  # a connection the server or the network dropped is replaced, not used
-                pool_use_lifo=True,  # reuse the warmest connections; surplus ones idle out and get recycled
-                connect_args=_postgres_connect_args(options),
-            )
+        if not url:
+            from partylinks.localpg import local_url  # local: localhost only (pgserver is a dev dependency)
+
+            url = local_url(options)
+        self.engine: Engine = create_engine(
+            postgres_url(make_url(url)),
+            echo=echo,
+            pool_size=options.pool_size,
+            max_overflow=options.max_overflow,
+            pool_timeout=options.pool_timeout,
+            pool_recycle=options.pool_recycle,
+            pool_pre_ping=True,  # a connection the server or the network dropped is replaced, not used
+            pool_use_lifo=True,  # reuse the warmest connections; surplus ones idle out and get recycled
+            connect_args=_postgres_connect_args(options),
+        )
         self._sessions = sessionmaker(self.engine, expire_on_commit=False)
-        self._writes = sessionmaker(self.engine.execution_options(sqlite_write=True), expire_on_commit=False)
-        for maker in (self._sessions, self._writes):
-            sa_event.listen(maker, "do_orm_execute", _note_write)
-            sa_event.listen(maker, "after_flush", _note_flush)
-            sa_event.listen(maker, "after_commit", _count_commit)
-        # SQLite has one writer at a time: this process's writers queue here, in order, instead of
-        # polling the file lock. Other processes (CLI, scripts) still wait on the busy timeout.
-        # PostgreSQL locks rows, so writers run concurrently unless serialize_writes says otherwise.
-        self.serialize_writes = is_sqlite if options.serialize_writes is None else options.serialize_writes
+        sa_event.listen(self._sessions, "do_orm_execute", _note_write)
+        sa_event.listen(self._sessions, "after_flush", _note_flush)
+        sa_event.listen(self._sessions, "after_commit", _count_commit)
+        # Writers run concurrently on row locks; serialize_writes queues this process's writers instead.
+        self.serialize_writes = options.serialize_writes
         self._writer = threading.Lock()
         self._writing = threading.local()
 
     def create_schema(self) -> None:
         """Create missing tables, add columns introduced since the DB was created, then any missing index.
 
-        Safe to run from several processes at once (PostgreSQL: one at a time, under an advisory lock),
-        and an index that cannot be built (say, duplicates under a new unique one) is logged, never
+        Safe to run from several processes at once (one at a time, under an advisory lock), and an index that cannot be built (say, duplicates under a new unique one) is logged, never
         fatal: the site still starts.
 
         ponytail: additive-only auto-migration (new columns, new indexes); switch to Alembic once a change
         needs renames, type changes or data backfills.
         """
+        self.wait_until_ready()
         with self._schema_lock():
             Base.metadata.create_all(self.engine)
             existing = inspect(self.engine)
@@ -613,17 +514,31 @@ class Database:
             for table in Base.metadata.sorted_tables:
                 for index in table.indexes:  # new indexes, and those of columns added above
                     self._create_index(index)
-            if not self.is_sqlite:
-                self._tune_postgres()
-        if self.is_sqlite:
-            self._enable_incremental_vacuum()
+            self._tune_storage()
+
+    def wait_until_ready(self) -> None:
+        """At startup, wait (with backoff, up to ``database.startup_wait_s``) until PostgreSQL answers:
+        a deploy that starts while the database restarts waits for it instead of crashing. Raises the
+        last error once the time is up (the deploy's health check then fails and the old one stays)."""
+        deadline = time.monotonic() + self.options.startup_wait_s
+        delay = 1.0
+        while True:
+            try:
+                with self.engine.connect() as conn:
+                    version = conn.scalar(text("SHOW server_version"))
+                log.info("database: PostgreSQL %s ready", version)
+                return
+            except DBAPIError as exc:
+                if time.monotonic() + delay > deadline:
+                    log.error("database: not ready after %ss: %s", self.options.startup_wait_s, exc.orig)
+                    raise
+                log.warning("database: not ready (%s), retrying in %.0fs", type(exc.orig).__name__, delay)
+                time.sleep(delay)
+                delay = min(delay * 2, 10)
 
     @contextmanager
-    def _schema_lock(self) -> Iterator[None]:
-        """PostgreSQL: one process changes the schema at a time (a deploy, a CLI command, a copy)."""
-        if self.is_sqlite:
-            yield
-            return
+    def _schema_lock(self) -> Generator[None]:
+        """One process changes the schema at a time (a deploy, a CLI command)."""
         with self.engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
             conn.execute(select(func.pg_advisory_lock(SCHEMA_LOCK_KEY)))
             try:
@@ -632,99 +547,25 @@ class Database:
                 conn.execute(select(func.pg_advisory_unlock(SCHEMA_LOCK_KEY)))
 
     def _create_index(self, index: Index) -> None:
-        if not _ddl_applies(index, self.engine.dialect.name):
-            return
         try:
             with self.engine.begin() as conn:
                 index.create(conn, checkfirst=True)
         except DBAPIError as exc:  # e.g. duplicates under a new unique index: fix the data, retried each start
             log.error("schema: could not create index %s: %s", index.name, exc.orig)
 
-    def _tune_postgres(self) -> None:
+    def _tune_storage(self) -> None:
         """Table storage options the ORM cannot declare: room for HOT updates on events (see ix_events_feed)."""
-        fillfactor = int(self.options.events_fillfactor)
+        fillfactor = self.options.events_fillfactor
         with self.engine.begin() as conn:
             current = conn.scalar(text("SELECT reloptions FROM pg_class WHERE oid = 'events'::regclass")) or []
             if f"fillfactor={fillfactor}" not in current:
                 conn.execute(text(f"ALTER TABLE events SET (fillfactor = {fillfactor})"))
                 log.info("schema: events fillfactor set to %d", fillfactor)
 
-    # ------------------------------------------------------------------ SQLite disk space
-    @property
-    def is_sqlite(self) -> bool:
-        return self.engine.dialect.name == "sqlite"
-
-    def _autocommit(self) -> Any:
-        return self.engine.connect().execution_options(isolation_level="AUTOCOMMIT")
-
-    def _enable_incremental_vacuum(self) -> None:
-        """One-time switch to ``auto_vacuum=INCREMENTAL`` so purges can shrink the file cheaply."""
-        with self._autocommit() as conn:
-            if conn.exec_driver_sql("PRAGMA auto_vacuum").scalar() == SQLITE_INCREMENTAL_VACUUM:
-                return
-            log.info("sqlite: enabling incremental auto-vacuum (one-time full VACUUM)")
-            try:
-                conn.exec_driver_sql("PRAGMA auto_vacuum=INCREMENTAL")
-                conn.exec_driver_sql("VACUUM")  # the mode only takes effect after a rebuild
-            except OperationalError as exc:  # e.g. another process holds the DB; retried next start
-                log.warning("sqlite: could not enable incremental auto-vacuum: %s", exc)
-
-    def storage_stats(self) -> dict[str, int | None]:
-        """DB file size and reusable (free) space, in bytes. SQLite only; None elsewhere."""
-        if not self.is_sqlite:
-            return {"file_bytes": None, "wal_bytes": None, "free_bytes": None}
-        with self._autocommit() as conn:
-            page_size = conn.exec_driver_sql("PRAGMA page_size").scalar() or 0
-            pages = conn.exec_driver_sql("PRAGMA page_count").scalar() or 0
-            free = conn.exec_driver_sql("PRAGMA freelist_count").scalar() or 0
-        wal = Path(f"{self.engine.url.database}-wal")
-        return {
-            "file_bytes": page_size * pages,
-            "wal_bytes": wal.stat().st_size if wal.is_file() else 0,
-            "free_bytes": page_size * free,
-        }
-
-    def compact_if_bloated(self, min_free_bytes: int = 256 * 2**20, min_free_share: float = 0.25) -> int:
-        """Full VACUUM when the file is mostly empty pages (after artwork moved out, or a big purge):
-        it rewrites only the live data, so a few-GB file of free pages becomes a small, contiguous one.
-        Returns the bytes freed; retried while a reader holds the file."""
-        stats = self.storage_stats()
-        file_bytes, free = stats["file_bytes"] or 0, stats["free_bytes"] or 0
-        if free < min_free_bytes or free < file_bytes * min_free_share:
-            return 0
-        log.info("sqlite: compacting, %d of %d bytes are free pages", free, file_bytes)
-        for attempt in range(5):
-            try:
-                return self.reclaim_space(full=True)
-            except OperationalError as exc:  # "database is locked": a request was reading
-                log.warning("sqlite: compaction attempt %d failed (%s), retrying", attempt + 1, exc)
-                time.sleep(10)
-        return 0
-
-    def reclaim_space(self, full: bool = False) -> int:
-        """Return the pages of deleted rows to the OS. Returns the bytes freed (SQLite only).
-
-        Incremental vacuum is quick and runs alongside scrapers; ``full`` rewrites the whole
-        file (also defragments) and needs the DB to be idle for a moment.
-        PostgreSQL reuses deleted space through its own autovacuum, so this is a no-op there.
-        """
-        if not self.is_sqlite:
-            return 0
-        before = self.storage_stats()
-        with self._autocommit() as conn:
-            incremental = conn.exec_driver_sql("PRAGMA auto_vacuum").scalar() == SQLITE_INCREMENTAL_VACUUM
-            if incremental and not full:
-                # Each step frees one page; drain the statement on the raw cursor (SQLAlchemy would stop early).
-                conn.connection.driver_connection.execute("PRAGMA incremental_vacuum").fetchall()
-            else:
-                conn.exec_driver_sql("VACUUM")
-            conn.exec_driver_sql("PRAGMA wal_checkpoint(TRUNCATE)").fetchall()
-        after = self.storage_stats()
-        freed = sum(before[k] or 0 for k in ("file_bytes", "wal_bytes")) - sum(
-            after[k] or 0 for k in ("file_bytes", "wal_bytes")
-        )
-        log.info("sqlite: reclaimed %d bytes (%s vacuum)", freed, "full" if full or not incremental else "incremental")
-        return max(freed, 0)
+    def storage_stats(self) -> dict[str, int]:
+        """Size of the database on disk, in bytes (tables, indexes, TOAST; autovacuum reuses free space)."""
+        with self.engine.connect() as conn:
+            return {"database_bytes": conn.scalar(select(func.pg_database_size(func.current_database()))) or 0}
 
     def mark_interrupted_runs(self) -> int:
         """Runs still 'running' when the process starts were killed mid-way: record that."""
@@ -742,21 +583,17 @@ class Database:
     @contextmanager
     def session(self, write: bool = True) -> Generator[Session]:
         """``write=False`` for page requests: they read beside a writer and never queue behind one."""
-        if not write:
+        if not (write and self.serialize_writes):
             with self._sessions() as session, session.begin():
-                yield session
-            return
-        if not self.serialize_writes:
-            with self._writes() as session, session.begin():
                 yield session
             return
         if getattr(self._writing, "active", False):
             raise RuntimeError("nested write session: the outer one holds the write lock")
         if not self._writer.acquire(timeout=WRITE_WAIT_S):
-            raise OperationalError("BEGIN IMMEDIATE", {}, Exception("database is locked (writer queue)"))
+            raise PoolTimeout(f"no turn in the writer queue within {WRITE_WAIT_S}s")  # transient: retried
         self._writing.active = True
         try:
-            with self._writes() as session, session.begin():
+            with self._sessions() as session, session.begin():
                 yield session
         finally:
             self._writing.active = False
@@ -859,7 +696,7 @@ def bulk_update_by_id(session: Session, model: type[Base], rows: list[dict[str, 
 
     Unlike ORM bulk update it does not fail when a row was deleted meanwhile (e.g. by
     retention); that row is simply skipped. Rows are sorted by id so concurrent writers
-    lock rows in the same order (no deadlocks on PostgreSQL).
+    lock rows in the same order (no deadlocks).
     """
     if not rows:
         return
@@ -953,15 +790,8 @@ def _text(value: Any) -> str | None:
 
 
 def dialect_insert(session: Session, model: type[Base]) -> Any:
-    """``INSERT`` with ``ON CONFLICT`` support for the session's database (SQLite and PostgreSQL share it)."""
-    dialect = session.get_bind().dialect.name
-    if dialect == "sqlite":
-        from sqlalchemy.dialects.sqlite import insert
-    elif dialect == "postgresql":
-        from sqlalchemy.dialects.postgresql import insert
-    else:
-        raise NotImplementedError(f"upsert not implemented for {dialect}")
-    return insert(model)
+    """``INSERT`` with ``ON CONFLICT`` (upserts)."""
+    return pg_insert(model)
 
 
 def _upsert(session: Session, model: type[Base], rows: list[dict[str, Any]], key: str, keep: set[str]) -> Any:
@@ -996,8 +826,8 @@ def start_run(session: Session, source: str, trigger: str) -> ScrapeRunRow:
     return run
 
 
-# The ad tables live in partylinks.ads; imported here so they are on Base before create_schema runs.
-import partylinks.ads.models  # noqa: F401
-import partylinks.plans.models  # noqa: F401, E402  (same, for the plan tables)
-import partylinks.artistdb  # noqa: F401, E402  (same, for the artist dictionary)
-from partylinks.plans.routes import delete_plans  # noqa: E402
+# Tables kept in their own packages, imported here so they are on Base before create_schema runs.
+import partylinks.ads.models
+import partylinks.artistdb
+import partylinks.plans.models  # noqa: F401
+from partylinks.plans.routes import delete_plans

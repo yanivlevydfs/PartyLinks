@@ -25,23 +25,21 @@ The repo ships two files Railway uses:
 ## Setup
 
 1. Create a project from this repo (Railway picks up `railway.json`).
-2. **Add a volume mounted at `/app/data`.** It holds the SQLite database, the artist dictionary, the
-   images, and the caches (weather, `geonames-<version>.json`: the GeoNames cities, built once per
+2. **Add a PostgreSQL service** and set `PARTYLINKS_DATABASE__URL` (below).
+3. **Add a volume mounted at `/app/data`.** It holds the images and the caches (weather, `geonames-<version>.json`: the GeoNames cities, built once per
    library version). Without it every deploy starts empty.
-3. Set the variables below.
-4. Generate a domain (Settings → Networking). The app listens on Railway's `$PORT`.
+4. Set the variables below.
+5. Generate a domain (Settings → Networking). The app listens on Railway's `$PORT`.
 
-Keep **one replica**: the scheduler, the response cache and the bans live in the process (and SQLite
-is a file). Production runs on PostgreSQL (the `Postgres` service, database `railway`); the volume holds only the
-images and the caches. No SQLite file is left on Railway: the last SQLite copies (`partylinks.db`,
-`artists.db`, 2026-10-28) were downloaded, verified and deleted from the server.
+Keep **one replica**: the scheduler, the response cache and the bans live in the process. The data
+is in PostgreSQL (the `Postgres` service, database `railway`; daily backups on that service).
 
 ## Variables
 
 | Variable | Purpose |
 | --- | --- |
-| `PARTYLINKS_DATABASE__URL` | PostgreSQL: `postgresql://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/partylinks` (the driver is set in code). Unset = SQLite on the volume |
-| `PARTYLINKS_DATABASE__SERIALIZE_WRITES` | `true` queues writers one at a time on PostgreSQL too (the first week after the switch) |
+| `PARTYLINKS_DATABASE__URL` | `${{Postgres.DATABASE_URL}}` (private network; the driver is set in code). Required: without it the app looks for the local dev server and stops |
+| `PARTYLINKS_DATABASE__SERIALIZE_WRITES` | `true` queues writers one at a time (default `false`: concurrent writers) |
 | `PARTYLINKS_SCHEDULER__ENABLED=true` | Turns scraping on (it is off in `settings.yaml`, so localhost never scrapes) |
 | `PARTYLINKS_SCHEDULER__RUN_ON_STARTUP=true` | Runs every source once when the process starts |
 | `PARTYLINKS_ADMIN__TOKEN` | A long random string for the admin console and the mutating API |

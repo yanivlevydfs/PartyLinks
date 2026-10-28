@@ -19,13 +19,21 @@ python -m partylinks artists --help          # curate the artist dictionary
 The first start builds `data/geonames-<version>.json` (the GeoNames cities the app uses, read once from
 geonamescache's 96 MB of city files, a few seconds); every later start reads only that file.
 
+## Database
+
+PostgreSQL, with nothing to install: with no `PARTYLINKS_DATABASE__URL`, the app starts an embedded
+PostgreSQL server (`pgserver`, in `requirements.txt`) in `data/pgdata`, with a database `partylinks`
+(`localpg.py`), and stops it when the last process using it exits. A fresh local database is empty:
+run `scrape` for some events. To use another server, set `PARTYLINKS_DATABASE__URL=postgresql://...`.
+
 The scheduler is **off locally** (`scheduler.enabled: false`), so `serve` never scrapes on its own.
 Only Railway scrapes on a schedule. Use `scrape` to run a source by hand.
 
-To try a source without touching your local database, point it at a throwaway file:
+To try a source without touching your local database, give it a throwaway database on the local
+server (created on first use):
 
 ```bash
-PARTYLINKS_DATABASE__URL=sqlite:///C:/temp/test.db python -m partylinks scrape issta
+PARTYLINKS_DATABASE__LOCAL_DATABASE=scratch python -m partylinks scrape issta
 ```
 
 Interactive API docs at `/docs` are off by default (`security.api_docs`).

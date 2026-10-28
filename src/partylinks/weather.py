@@ -21,7 +21,6 @@ from typing import Annotated, Any
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request, Response
-from sqlalchemy.engine import make_url
 
 from partylinks.config import Settings, project_path
 from partylinks.places import PlaceIndex, all_cities
@@ -52,14 +51,8 @@ def _may_fetch() -> bool:
 
 
 def cache_file(settings: Settings) -> Path:
-    """Beside the SQLite database (the Railway volume), else under data/."""
-    url = make_url(settings.database.url)
-    db = (
-        project_path(url.database)
-        if url.get_backend_name() == "sqlite" and url.database not in (None, "", ":memory:")
-        else None
-    )
-    return (db.parent if db else project_path("data")) / "weather_cache.json"
+    """On the data volume (data/, Railway's /app/data)."""
+    return project_path("data") / "weather_cache.json"
 
 
 def _load(path: Path) -> None:

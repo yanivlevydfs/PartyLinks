@@ -190,7 +190,6 @@ function Action({ label, run, confirm, kind = "", render }: {
 // --------------------------------------------------------------------------- tabs
 function Overview({ data }: { data: any }) {
   if (!data) return <Loader />;
-  const st = data.storage;
   return (
     <div className="adm-grid">
       <Card title="Events">
@@ -203,9 +202,7 @@ function Overview({ data }: { data: any }) {
       </Card>
       <Card title="Storage">
         <div className="adm-stats">
-          <Stat label="DB file" value={bytes(st.file_bytes)} hint={data.database} />
-          <Stat label="WAL" value={bytes(st.wal_bytes)} />
-          <Stat label="Reclaimable" value={bytes(st.free_bytes)} />
+          <Stat label="Database" value={bytes(data.storage.database_bytes)} hint={data.database} />
           <Stat label="Artwork" value={bytes(data.images.stored_bytes)} hint={`${data.images.stored}/${data.images.total} stored`} />
         </div>
       </Card>
@@ -623,25 +620,15 @@ function Maintenance({ data }: { data: any }) {
           <li>Status: <b>{r.enabled ? "enabled" : "disabled"}</b> · schedule <code>{r.cron}</code> ({data.timezone})</li>
           <li>Deletes events that ended before <b>{r.keep_days_back === 0 ? "today" : `${r.keep_days_back} day(s) ago`}</b> (Israel time), with their tickets and artwork</li>
           <li>Deletes run history older than <b>{r.keep_runs_days} days</b></li>
-          <li>Reclaims disk space afterwards: <b>{r.reclaim_space ? "yes" : "no"}</b></li>
           <li>Next run: <b>{when(r.next_run_at)}</b></li>
         </ul>
         <Action label="Purge expired now" run={() => post("/maintenance/retention")} render={(x) => `Removed ${x.removed_events} events`} />
       </Card>
-      <Card title="Disk space">
+      <Card title="Database">
         <div className="adm-stats">
-          <Stat label="DB file" value={bytes(data.storage.file_bytes)} />
-          <Stat label="WAL" value={bytes(data.storage.wal_bytes)} />
-          <Stat label="Reclaimable" value={bytes(data.storage.free_bytes)} />
+          <Stat label="Size on disk" value={bytes(data.storage.database_bytes)} hint={data.database} />
         </div>
-        <Action label="Reclaim free space" run={() => post("/admin/api/maintenance/vacuum")} render={(x) => `Freed ${bytes(x.freed_bytes)}`} />
-        <Action
-          label="Full vacuum (rebuild file)"
-          confirm="Rebuild now? Writes pause until it finishes"
-          kind="danger"
-          run={() => post("/admin/api/maintenance/vacuum?full=true")}
-          render={(x) => `Freed ${bytes(x.freed_bytes)}`}
-        />
+        <p className="adm-note">PostgreSQL reuses the space of deleted rows by itself (autovacuum).</p>
       </Card>
       <Card title="Map locations">
         <p className="adm-note">

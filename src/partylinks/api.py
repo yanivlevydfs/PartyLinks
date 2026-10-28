@@ -407,7 +407,7 @@ def _city_names(city: str, country: str | None) -> list[str]:
     found = city_abroad(city, country.upper() if country else None)
     return list(dict.fromkeys([city, *(found[1] if found else ())]))
 
-# NULLs sort as the smallest value on every database (SQLite's rule; PostgreSQL's default is the opposite).
+# Missing values (no date, no price) sort as the smallest: first ascending, last descending.
 _SORT_COLUMNS = {
     EventSort.start_asc: EventRow.start_at.asc().nulls_first(),
     EventSort.start_desc: EventRow.start_at.desc().nulls_last(),
@@ -623,11 +623,9 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
         app.state.settings, app.state.db, app.state.service, app.state.scheduler = settings, db, service, scheduler
         app.state.tasks = set()
         async def maintenance() -> None:
-            """Before any source writes: artwork still in the database moves to files, and a file left
-            mostly empty is compacted (a big file is a slow one: every query reads across it). Then
-            genres are re-read if their config changed, the scrapers start, and map coordinates are
+            """Before any source writes: artwork still in the database moves to files. Then genres are re-read if their config changed, the scrapers start, and map coordinates are
             filled for address-only events."""
-            jobs: list[Callable[[], object]] = [service.media.move_to_files, db.compact_if_bloated, service.recompute_genres]
+            jobs: list[Callable[[], object]] = [service.media.move_to_files, service.recompute_genres]
             for job in jobs:
                 try:
                     await asyncio.to_thread(job)
@@ -803,7 +801,7 @@ def hide_email(address: str) -> str:
 
 
 def _json_contains(column: Any, values: list[str]) -> ColumnElement[bool]:
-    """Any-of match on a JSON string array (portable: SQLite and PostgreSQL)."""
+    """Any-of match on a JSON string array (its JSONB text holds each string quoted)."""
     return or_(*(cast(column, String).ilike(f'%"{v}"%') for v in values))
 
 

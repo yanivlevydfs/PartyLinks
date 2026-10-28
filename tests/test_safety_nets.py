@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import threading
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
@@ -33,7 +34,6 @@ from partylinks.service import ScrapeService
 
 def make_service(tmp_path: Path) -> tuple[ScrapeService, Database]:
     settings = Settings(
-        database={"url": f"sqlite:///{tmp_path / 's.db'}"},
         scheduler={"enabled": False},
         media={"download": False},
         dedup={"enabled": False},
@@ -119,37 +119,36 @@ def test_no_new_runs_start_after_shutdown(tmp_path: Path) -> None:
         service.start_source("goout")
 
 
-# ------------------------------------------------------------------ 2. locked-database retry
-def test_locked_database_is_retried_until_it_frees(monkeypatch: Any) -> None:
+# ------------------------------------------------------------------ 2. deadlock retry
+def test_a_deadlock_is_retried_until_it_clears(monkeypatch: Any) -> None:
     monkeypatch.setattr(db_module.time, "sleep", lambda seconds: None)
     calls: list[int] = []
 
     def flaky() -> str:
         calls.append(1)
         if len(calls) < 3:
-            raise OperationalError("UPDATE events", {}, Exception("database is locked"))
+            raise OperationalError("UPDATE events", {}, Exception("deadlock detected"))
         return "saved"
 
     assert _with_db_retry("save", flaky) == "saved" and len(calls) == 3
 
 
-def test_locked_database_gives_up_after_the_retry_budget(monkeypatch: Any) -> None:
+def test_a_deadlock_gives_up_after_the_retry_budget(monkeypatch: Any) -> None:
     monkeypatch.setattr(db_module.time, "sleep", lambda seconds: None)
     calls: list[int] = []
 
     def always_locked() -> None:
         calls.append(1)
-        raise OperationalError("UPDATE events", {}, Exception("database is locked"))
+        raise OperationalError("UPDATE events", {}, Exception("deadlock detected"))
 
     with pytest.raises(OperationalError):
         _with_db_retry("save", always_locked)
     assert len(calls) == db_module.get_settings().database.retries
 
 
-def test_parallel_read_then_write_sessions_never_hit_a_locked_database(tmp_path: Path) -> None:
-    """The prod failure: several threads each read, then write. Deferred SQLite transactions fail
-    the upgrade at once (SQLITE_BUSY_SNAPSHOT); write sessions begin IMMEDIATE and queue instead."""
-    db = Database(f"sqlite:///{tmp_path / 'p.db'}")
+def test_parallel_read_then_write_sessions_all_commit(tmp_path: Path) -> None:
+    """Several threads each read, then write, at once: every write commits (row locks, no lost rows)."""
+    db = Database(os.environ["PARTYLINKS_DATABASE__URL"])
     db.create_schema()
     errors: list[BaseException] = []
 

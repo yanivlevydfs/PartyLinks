@@ -1,4 +1,4 @@
-"""Persistence, retention and API against a temporary SQLite database."""
+"""Persistence, retention and API against the test PostgreSQL database."""
 
 from __future__ import annotations
 
@@ -25,7 +25,6 @@ from partylinks.retention import purge_expired
 
 def settings_for(tmp_path: Path) -> Settings:
     return Settings(
-        database={"url": f"sqlite:///{tmp_path / 'test.db'}"},
         scheduler={"enabled": False},
         media={"download": False, "storage": "database"},
         geocoding={"enabled": True, "max_lookups_per_run": 0},  # never touch the network in tests
@@ -80,19 +79,6 @@ def test_retention_keeps_today_onwards_and_parties_still_in_progress(tmp_path: P
     assert remaining == {"test:still-partying", "test:today", "test:future"}
 
 
-def test_retention_shrinks_sqlite_file(tmp_path: Path) -> None:
-    settings = settings_for(tmp_path)
-    db = seed(settings, [event("old", datetime.now(UTC) - timedelta(days=4))])
-    with db.session() as session:
-        session.query(ImageRow).update({ImageRow.data: b"x" * 5_000_000, ImageRow.downloaded_at: datetime.now(UTC)})
-    db.reclaim_space()
-    before = db.storage_stats()["file_bytes"] or 0
-
-    assert purge_expired(db, MediaStore(settings.media, db), settings.retention, settings.timezone) == 1
-
-    after = db.storage_stats()
-    assert (after["file_bytes"] or 0) < before // 5  # artwork bytes went back to the OS
-    assert after["wal_bytes"] == 0
 
 
 def test_api_filters_categories_and_stored_image(tmp_path: Path) -> None:
@@ -819,7 +805,7 @@ def test_artist_page_lists_their_shows_abroad_too(tmp_path: Path) -> None:
         for row in session.query(EventRow):
             row.lineup = ["flashcookie"] if row.source_event_id == "rome" else []
     with TestClient(create_app(settings, start_scheduler=False)) as client:
-        ids = lambda q: [e["source_event_id"] for e in client.get(f"/events?{q}").json()["items"]]  # noqa: E731
+        ids = lambda q: [e["source_event_id"] for e in client.get(f"/events?{q}").json()["items"]]
         assert ids("artist=flashcookie") == ["rome"]
         assert ids("artist=flashcookie&abroad=false") == []
         assert "rome" not in ids("")  # the main feed stays in Israel
@@ -849,7 +835,7 @@ def test_smart_search_reads_places_genres_prices_and_covers_abroad(tmp_path: Pat
         event("haifa", future, title="Jazz club", address="Haifa, Israel", tickets=[TicketTier(name="Entry", price=Decimal(50))]),
     ])  # fmt: skip
     with TestClient(create_app(settings, start_scheduler=False)) as client:
-        ids = lambda q: sorted(e["source_event_id"] for e in client.get("/events", params={"q": q}).json()["items"])  # noqa: E731
+        ids = lambda q: sorted(e["source_event_id"] for e in client.get("/events", params={"q": q}).json()["items"])
         assert ids("techno") == ["rome", "tlv"]  # search covers abroad too
         assert ids("טכנו roma") == ["rome"]
         assert ids("ג׳אז בחיפה") == ids("jazz haifa") == ["haifa"]
@@ -870,7 +856,7 @@ def test_a_city_abroad_is_one_city_in_hebrew_and_english(tmp_path: Path) -> None
               latitude=48.85, longitude=2.35),
     ])  # fmt: skip
     with TestClient(create_app(settings, start_scheduler=False)) as client:
-        ids = lambda **p: sorted(e["source_event_id"] for e in client.get("/events", params={"abroad": "true", **p}).json()["items"])  # noqa: E731
+        ids = lambda **p: sorted(e["source_event_id"] for e in client.get("/events", params={"abroad": "true", **p}).json()["items"])
         assert ids(q="ברצלונה") == ids(q="barcelona") == ["en", "en2", "he"]  # either language finds both
         assert ids(city="ברצלונה") == ids(city="Barcelona") == ["en", "en2", "he"]
         assert ids(q="טניס") == ["tennis"]  # the site's own category
@@ -887,7 +873,7 @@ def test_search_lists_title_matches_first_then_lineup_and_venue(tmp_path: Path) 
         event("party", soon + timedelta(days=2), title="Moon party"),
     ])  # fmt: skip
     with TestClient(create_app(settings, start_scheduler=False)) as client:
-        ids = lambda qs: [e["source_event_id"] for e in client.get(f"/events?{qs}").json()["items"]]  # noqa: E731
+        ids = lambda qs: [e["source_event_id"] for e in client.get(f"/events?{qs}").json()["items"]]
         assert ids("q=moon") == ["party", "club", "talk"]
         assert ids("q=lecture") == ["talk"]
 
@@ -905,7 +891,7 @@ def test_an_artist_is_found_by_its_name_in_the_other_alphabet(tmp_path: Path) ->
     with db.session() as session:  # lineups come from curated artists only: set it as stored
         session.execute(update(EventRow).where(EventRow.source_event_id == "im").values(lineup=["Infected Mushroom"]))
     with TestClient(create_app(settings, start_scheduler=False)) as client:
-        ids = lambda q: [e["source_event_id"] for e in client.get("/events", params={"q": q}).json()["items"]]  # noqa: E731
+        ids = lambda q: [e["source_event_id"] for e in client.get("/events", params={"q": q}).json()["items"]]
         assert ids("אינפקטד מאשרום") == ["im"]
         assert ids("infected mushroom") == ["im"]
 
@@ -917,7 +903,7 @@ def test_a_typo_of_a_known_name_still_finds_it(tmp_path: Path) -> None:
         event("other", datetime.now(UTC) + timedelta(days=1), title="Quiet evening"),
     ])  # fmt: skip
     with TestClient(create_app(settings, start_scheduler=False)) as client:
-        ids = lambda q: [e["source_event_id"] for e in client.get("/events", params={"q": q}).json()["items"]]  # noqa: E731
+        ids = lambda q: [e["source_event_id"] for e in client.get("/events", params={"q": q}).json()["items"]]
         assert ids("festivl") == ["fest"]
         assert ids("quiet") == ["other"]
 
@@ -946,7 +932,7 @@ def test_a_search_that_finds_nothing_suggests_a_close_name(tmp_path: Path) -> No
     with db.session() as session:  # lineups come from curated artists only: set it as stored
         session.execute(update(EventRow).where(EventRow.source_event_id == "im").values(lineup=["Infected Mushroom"]))
     with TestClient(create_app(settings, start_scheduler=False)) as client:
-        page = lambda q: client.get("/events", params={"q": q}).json()  # noqa: E731
+        page = lambda q: client.get("/events", params={"q": q}).json()
         missed = page("infected mushrron")  # a consonant off: not even a sound-alike
         assert missed["total"] == 0 and missed["did_you_mean"] == "Infected Mushroom"
         assert page("psy")["did_you_mean"] is None  # found: nothing to suggest
@@ -1113,11 +1099,3 @@ def test_search_by_area_does_not_rank_titles_holding_its_words(tmp_path: Path) -
     assert relevance("zygo", cfg) is None
     assert relevance("טכנו בגוש דן", cfg) is not None
 
-
-def test_a_short_search_word_is_matched_as_a_whole_word() -> None:
-    from partylinks.db import has_word
-
-    assert has_word("ערב ראפ בבארבי", "ראפ")
-    assert has_word("מסיבת היפהופ, בראפ ובטראפ", "ראפ")  # a one-letter prefix still counts
-    assert not has_word("סאונד תראפיה", "ראפ")
-    assert has_word("Rap night", "rap") and not has_word("Trap night", "rap")

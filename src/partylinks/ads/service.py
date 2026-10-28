@@ -36,8 +36,8 @@ def promoted_for(
     by_group = {g: i for i, g in sorted(picks, reverse=True) if g}  # a group picked twice: always the same id
     if not by_group:
         return Promoted([], [])
-    # The filters are a column here, not the WHERE: in WHERE, SQLite's planner (no ANALYZE) walks an
-    # index of a filter column (is_primary, country...) over the whole table instead of the group's.
+    # The filters are a column here, not the WHERE: the groups' few rows are read by group_id, and the
+    # filters are judged on them only (no planner walk of a filter column's index over the whole table).
     ok = and_(*filters, upcoming_filter(), EventRow.is_primary.is_(True)).label("ok")
     rows = session.execute(card.add_columns(ok).where(EventRow.group_id.in_(by_group))).all()
     paid = sorted(

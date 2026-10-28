@@ -1,0 +1,42 @@
+"""The local PostgreSQL server for localhost and tests: an embedded one (pgserver), started on demand
+in ``database.local_dir`` and stopped with the last process using it. Production never comes here:
+there ``PARTYLINKS_DATABASE__URL`` names the server.
+"""
+
+from __future__ import annotations
+
+import logging
+from functools import lru_cache
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import make_url
+
+from partylinks.config import DatabaseSettings, project_path
+
+log = logging.getLogger(__name__)
+logging.getLogger("pgserver").setLevel(logging.WARNING)  # its start / stop chatter (stop runs at exit, after logging closed)
+
+
+def local_url(options: DatabaseSettings) -> str:
+    """URL of ``options.local_database`` on the local server, which is started (and the database
+    created, collation "C") when needed."""
+    return _start(str(project_path(options.local_dir)), options.local_database)
+
+
+@lru_cache(maxsize=8)
+def _start(directory: str, database: str) -> str:
+    try:
+        import pgserver
+    except ImportError as exc:  # production image: no local server, the URL must be set
+        raise RuntimeError(
+            "no database URL: set PARTYLINKS_DATABASE__URL, or install the dev dependencies (pgserver) "
+            "for a local PostgreSQL server"
+        ) from exc
+    server = pgserver.get_server(directory, cleanup_mode="stop")
+    admin = create_engine(server.get_uri(), isolation_level="AUTOCOMMIT")
+    with admin.connect() as conn:
+        if not conn.scalar(text("SELECT 1 FROM pg_database WHERE datname = :d"), {"d": database}):
+            conn.execute(text(f'CREATE DATABASE "{database}" TEMPLATE template0 ENCODING \'UTF8\' LC_COLLATE \'C\' LC_CTYPE \'C\''))
+            log.info("local PostgreSQL: created database %s in %s", database, directory)
+    admin.dispose()
+    return make_url(server.get_uri()).set(database=database).render_as_string(hide_password=False)

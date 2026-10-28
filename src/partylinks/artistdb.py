@@ -8,27 +8,20 @@ never accepted as artists (``partylinks artists block``).
 or performers an event links): photo, type, genre and links. Their names are always known, and are
 also spotted in event text. A profile sent again only fills in what is still missing or changed;
 another source's photo / links are never wiped by a sparser profile.
-
-The dictionary used to be its own SQLite file (``enrichment.lineup.artists_db``); that file, when
-present, is imported once into empty tables and then left alone as a backup.
 """
 
 from __future__ import annotations
 
-import json
 import logging
-import sqlite3
 from collections import Counter
 from collections.abc import Iterable
-from datetime import UTC, datetime
-from pathlib import Path
+from datetime import datetime
 
 from sqlalchemy import Boolean, Integer, Text, func, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from partylinks.artists import ArtistProfile
-from partylinks.config import project_path
-from partylinks.db import Base, Database, JSONType, UTCDateTime, dialect_insert, utcnow, with_db_retry
+from partylinks.db import Base, Database, NullableJSON, UTCDateTime, dialect_insert, utcnow, with_db_retry
 
 log = logging.getLogger(__name__)
 
@@ -57,15 +50,13 @@ class ArtistProfileRow(Base):
     image_url: Mapped[str | None] = mapped_column(Text)
     spotify_url: Mapped[str | None] = mapped_column(Text)
     profile_url: Mapped[str | None] = mapped_column(Text)
-    links: Mapped[list[str] | None] = mapped_column(JSONType)  # Instagram, YouTube, SoundCloud, site...
+    links: Mapped[list[str] | None] = mapped_column(NullableJSON)  # Instagram, YouTube, SoundCloud, site...
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
 class ArtistBook:
-    def __init__(self, db: Database, legacy_file: str | Path | None = None) -> None:
+    def __init__(self, db: Database) -> None:
         self.db = db
-        if legacy_file:
-            self._import_legacy(project_path(legacy_file))
 
     def load(self) -> tuple[set[str], set[str]]:
         """(known names, blocked names), both casefolded. Profiled artists are always known."""
@@ -158,42 +149,3 @@ class ArtistBook:
                 write(own)
 
         with_db_retry("artists", save)
-
-    def _import_legacy(self, path: Path) -> None:
-        """Copy the old SQLite artist file into empty tables, once (later starts find the tables full)."""
-        if not path.is_file():
-            return
-        with self.db.session(write=False) as session:
-            if session.scalar(select(func.count()).select_from(ArtistRow)) or session.scalar(
-                select(func.count()).select_from(ArtistProfileRow)
-            ):
-                return
-        with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as old:
-            artists = old.execute("SELECT key, name, seen, blocked, first_seen, last_seen FROM artists").fetchall()
-            columns = {row[1] for row in old.execute("PRAGMA table_info(profiles)")}
-            wanted = ["key", *_PROFILE_COLUMNS, "updated_at"]
-            profiles = old.execute(
-                f"SELECT {', '.join(c if c in columns else 'NULL' for c in wanted)} FROM profiles"
-            ).fetchall() if columns else []  # fmt: skip
-
-        def when(value: str | None) -> datetime:
-            parsed = datetime.fromisoformat(value) if value else utcnow()
-            return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
-
-        artist_rows = [{"key": k, "name": n, "seen": s or 0, "blocked": bool(b), "first_seen": when(f), "last_seen": when(last)}
-                       for k, n, s, b, f, last in artists]  # fmt: skip
-        profile_rows = [
-            dict(zip(wanted, values, strict=True)) | {"links": json.loads(values[-2]) if values[-2] else None,
-                                                      "updated_at": when(values[-1])}
-            for values in profiles
-        ]  # fmt: skip
-
-        def save() -> None:
-            with self.db.session() as session:
-                for model, rows in ((ArtistRow, artist_rows), (ArtistProfileRow, profile_rows)):
-                    for start in range(0, len(rows), 1000):
-                        stmt = dialect_insert(session, model).values(rows[start : start + 1000])
-                        session.execute(stmt.on_conflict_do_nothing(index_elements=["key"]))
-
-        with_db_retry("artist import", save)
-        log.info("artists: imported %d names and %d profiles from %s", len(artist_rows), len(profile_rows), path)
