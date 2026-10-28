@@ -1,10 +1,27 @@
 # Architecture
 
-SPOTX is one Python process (FastAPI) that does three things:
+SPOTX runs as two Python processes on one PostgreSQL database (production; see "Processes" below) and does three things:
 
 1. **Collects:** a scheduler runs each source on its own cron.
 2. **Stores:** events go into PostgreSQL.
 3. **Serves:** the REST API, the React website and server-rendered pages for crawlers.
+
+## Processes (`worker/`)
+
+Python runs one thread at a time per process, so scraping and serving pages in one process made
+visitors wait behind the scrapers (a 0.6 s page took 40 s while the whole-table passes ran, and a
+crawler's burst filled the server's queue). Production therefore runs:
+
+- **the web process** (`partylinks serve`): pages, the API and the admin. It starts the worker, restarts
+  it with backoff if it ever exits, and stops it on shutdown (`worker/supervisor.py`).
+- **the worker** (`partylinks worker`, `worker/runner.py`): the scheduler, every source, retention, and
+  the startup passes (artwork to files, genres, WebP copies, geocoding).
+
+Each has its own CPU and connection pool. They talk through two tables: `worker_state` (heartbeat,
+jobs, retention, write counter; read by `/health`, the admin and the page cache, which goes stale when
+the worker commits data) and `worker_commands` (pause / resume, run now, apply config, from the admin).
+`/health` is `degraded` when the worker's heartbeat is older than `scheduler.worker_stale_seconds`.
+`scheduler.separate_process: false`, tests and localhost (scheduler off) keep everything in one process.
 
 ## One source run
 

@@ -642,3 +642,10 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Concurrency:** ‏`serialize_writes` ברירת מחדל `false`; ב-Railway `PARTYLINKS_DATABASE__SERIALIZE_WRITES=false`. Pool ‏20 + 40 (עד 60 מתוך `max_connections` 100).
 - **עלייה:** `wait_until_ready` לפני `create_schema` (`database.startup_wait_s`, ‏90 ש', backoff): deploy שעולה בזמן restart של Postgres מחכה במקום לקרוס.
 - **באג שתוקן:** עמודות JSON שיכולות להיות ריקות (`artist_profiles.links`, ‏`plan_votes.picks`) הן `JSONB(none_as_null=True)`: ‏`None` נשמר כ-SQL NULL ולא כ-JSON ‏`null`, כדי ש-`COALESCE` ב-`save_profiles` ישמור קישורים קיימים.
+
+### 2026-10-28 (שני תהליכים: web ו-worker)
+- **הבעיה שנמצאה ב-E2E:** ‏`/abroad/france` לקח 41 ש' באתר, 0.61 ש' בתהליך נפרד (SQL ‏0.11 ש'). ה-DB לא היה צוואר הבקבוק: ה-GIL של תהליך אחד שמריץ 84 סורקים ומעברים על כל הטבלה. crawler מילא את `limit_concurrency` ‏(503).
+- **הפתרון (`partylinks/worker/`):** תהליך web ‏(`serve`) ותהליך worker ‏(`worker`: scheduler, מקורות, retention, מעברי עלייה), באותו קונטיינר, כל אחד עם pool משלו (15 + 25, ‏80 יחד מתוך 100). ה-web מרים את ה-worker, מרים אותו מחדש עם backoff אם יצא, ועוצר אותו בכיבוי.
+- **טבלאות חדשות:** `worker_state` (שורה אחת: ‏`id` PK, ‏pid, ‏heartbeat, מצב ה-scheduler, ‏jobs ו-retention ב-JSONB, ‏`changes` ‏BIGINT) ו-`worker_commands` (‏`id` PK, ‏command, ‏args/result ב-JSONB, ‏`done_at` עם אינדקס). ה-heartbeat וה-commands נכתבים דרך ה-engine ולא דרך session, כדי שלא ייחשבו שינוי נתונים; ה-web מבטל את ה-cache כש-`changes` של ה-worker זז.
+- **`ScrapeService(owns_runs=False)`** בתהליך ה-web: לא מסמן runs של ה-worker החי כ-interrupted.
+- **נבדק:** ‏tests ‏(477), ‏E2E מקומי: health, ‏admin (pause/resume/404/config apply), ‏kill ל-worker ‏(עלה מחדש תוך 2 ש'), כיבוי בלי תהליכים יתומים.

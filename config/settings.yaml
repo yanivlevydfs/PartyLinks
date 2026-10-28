@@ -14,10 +14,10 @@ database:
   local_database: partylinks
   echo: false
   # Connection pool and server-side timeouts.
-  # 84 source threads and the site's requests share one pool: up to pool_size + max_overflow = 60
-  # connections, inside Railway Postgres' max_connections (100) with room for admin / psql / a deploy.
-  pool_size: 20
-  max_overflow: 40
+  # Per process: the web server and the worker each have a pool of up to pool_size + max_overflow = 40
+  # connections, 80 together, inside Railway Postgres' max_connections (100) with room for psql / a deploy.
+  pool_size: 15
+  max_overflow: 25
   pool_timeout: 30
   pool_recycle: 1800
   connect_timeout: 10
@@ -132,6 +132,14 @@ scheduler:
   misfire_grace_seconds: 600
   # Each source runs on its own thread; a run exceeding this is stopped and recorded as failed.
   run_timeout_seconds: 1800
+  # Scheduler and sources in a worker process of their own (partylinks/worker): scraping never slows the
+  # site. The web process starts it, restarts it if it exits, and talks to it through the database.
+  separate_process: true
+  heartbeat_seconds: 5          # worker state and admin commands, this often
+  worker_stale_seconds: 60      # no heartbeat this long: /health reports the worker down
+  command_timeout_seconds: 20   # admin waits this long for the worker's answer
+  restart_backoff_max_seconds: 60
+  worker_stop_seconds: 30       # on shutdown: time for running sources to stop
 
 # Transport defaults. Each source gets its own isolated HTTP client built from
 # these values; any key can be overridden per source under `sources.<name>.http`.

@@ -57,6 +57,7 @@ from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
 from partylinks.venues import PLACE_LISTING
 from partylinks.weather import router as weather_router
+from partylinks.worker.link import WorkerLink
 
 
 # --------------------------------------------------------------------------- schemas
@@ -608,7 +609,11 @@ HOME_RAILS: dict[str, dict[str, Any]] = {
 RAIL_POOL = 30
 
 
-def create_app(settings: Settings | None = None, start_scheduler: bool | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, start_scheduler: bool | None = None, worker_process: bool = False
+) -> FastAPI:
+    """``worker_process``: the scheduler and sources run in the worker process (partylinks/worker);
+    this one serves, and reads the worker's state / sends it the admin's commands."""
     settings = settings or get_settings()
     setup_logging(settings.logging)  # also for `serve --reload` workers, which never run cli.main()
 
@@ -616,11 +621,13 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         db = Database(settings.database.url, settings.database.echo, settings.database)
         db.create_schema()
-        service = ScrapeService(settings, db)
-        service.recompute_areas()  # stored events follow the configured areas
+        service = ScrapeService(settings, db, owns_runs=not worker_process)
+        if not worker_process:
+            service.recompute_areas()  # stored events follow the configured areas (the worker does it otherwise)
         run_scheduler = settings.scheduler.enabled if start_scheduler is None else start_scheduler
         scheduler = build_scheduler(settings, service) if run_scheduler else None
         app.state.settings, app.state.db, app.state.service, app.state.scheduler = settings, db, service, scheduler
+        app.state.worker = WorkerLink(db, settings.scheduler) if worker_process else None
         app.state.tasks = set()
         async def maintenance() -> None:
             """Before any source writes: artwork still in the database moves to files. Then genres are re-read if their config changed, the scrapers start, and map coordinates are
@@ -650,16 +657,21 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
                     except Exception:  # a cold page is only slower
                         log.exception("cache warm-up of %s failed", path)
 
-        for job in (maintenance(), *([warm()] if run_scheduler else [])):  # the server that serves visitors
+        jobs = [] if worker_process else [maintenance()]  # the worker runs the startup passes itself
+        if run_scheduler or worker_process:  # the server that serves visitors
+            jobs.append(warm())
+        if app.state.worker:
+            jobs.append(app.state.worker.follow_writes())
+        for job in jobs:
             task = asyncio.create_task(job)
             app.state.tasks.add(task)
             task.add_done_callback(app.state.tasks.discard)
         try:
-            server_status.log_startup(settings, db, scheduler)
+            server_status.log_startup(settings, db, scheduler, app.state.worker)
         except Exception:  # the banner never blocks startup
             log.exception("status: startup report failed")
         if settings.logging.status_every_minutes:
-            beat = asyncio.create_task(server_status.status_loop(settings, db, scheduler))
+            beat = asyncio.create_task(server_status.status_loop(settings, db, scheduler, app.state.worker))
             app.state.tasks.add(beat)
             beat.add_done_callback(app.state.tasks.discard)
         try:
@@ -842,10 +854,16 @@ def _register_routes(app: FastAPI) -> None:
             report["status"] = "down"
             report["checks"]["database"] = f"error: {type(exc).__name__}"
             return report
-        scheduler = state.scheduler
-        report["checks"]["scheduler"] = (
-            "disabled" if scheduler is None else ("running" if scheduler.running else "stopped")
-        )
+        scheduler, worker = state.scheduler, state.worker
+        worker_state = worker.state() if worker else None
+        if worker:  # the scheduler runs in the worker process: its heartbeat says how it is
+            report["checks"]["scheduler"] = (
+                "down (no worker heartbeat)" if not worker_state or not worker_state["alive"] else worker_state["scheduler"]
+            )
+        else:
+            report["checks"]["scheduler"] = (
+                "disabled" if scheduler is None else ("running" if scheduler.running else "stopped")
+            )
         stale_after = timedelta(hours=cfg.scheduler.stale_after_hours)
         now = datetime.now(UTC)
         stale = {
@@ -855,16 +873,19 @@ def _register_routes(app: FastAPI) -> None:
         }
         report["checks"]["stale_sources"] = stale
         report["checks"]["config_errors"] = source_errors(cfg)
-        retention = state.service.retention_state
+        if worker:
+            retention_now = (worker_state or {}).get("retention") or {}
+        else:
+            r = state.service.retention_state
+            retention_now = {"last_success_at": r.last_success_at, "last_error": r.last_error}
         report["checks"]["retention"] = {
-            "last_success_at": retention.last_success_at,
-            "last_error": retention.last_error,
+            "last_success_at": retention_now.get("last_success_at"),
+            "last_error": retention_now.get("last_error"),
         }
-        if (
-            (scheduler is not None and not scheduler.running)
-            or report["checks"]["config_errors"]
-            or retention.last_error
-        ):
+        scheduler_down = (
+            not (worker_state and worker_state["alive"]) if worker else scheduler is not None and not scheduler.running
+        )
+        if scheduler_down or report["checks"]["config_errors"] or retention_now.get("last_error"):
             report["status"] = "degraded"
         try:  # the details (source names, error messages) are for the admin; monitors only need the status
             require_admin(request)
@@ -1406,7 +1427,8 @@ def _register_routes(app: FastAPI) -> None:
     @app.get("/sources", response_model=list[SourceOut], tags=["sources"], dependencies=[AdminDep])
     def list_sources(request: Request, session: SessionDep) -> list[SourceOut]:
         service: ScrapeService = request.app.state.service
-        next_runs = next_run_times(request.app.state.scheduler)
+        worker = request.app.state.worker
+        next_runs = worker.next_runs() if worker else next_run_times(request.app.state.scheduler)
         result = []
         for name, cfg in configured_sources(request.app.state.settings).items():
             last = session.scalar(
@@ -1461,6 +1483,7 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.post("/maintenance/retention", response_model=RetentionOut, tags=["maintenance"], dependencies=[AdminDep])
     async def run_retention(request: Request) -> RetentionOut:
+        """Purge now (in this process: retention is a few bulk deletes, not a scrape)."""
         try:
             return RetentionOut(removed_events=await request.app.state.service.purge_expired())
         except SourceBusyError as exc:
@@ -1469,6 +1492,9 @@ def _register_routes(app: FastAPI) -> None:
     @app.get("/maintenance/retention", tags=["maintenance"], dependencies=[AdminDep])
     def retention_status(request: Request) -> dict[str, Any]:
         cfg: Settings = request.app.state.settings
+        if worker := request.app.state.worker:  # the scheduled passes run in the worker
+            return {**cfg.retention.model_dump(), "next_run_at": worker.next_runs().get(RETENTION_JOB_ID),
+                    **((worker.state() or {}).get("retention") or {})}  # fmt: skip
         state = request.app.state.service.retention_state
         return {
             **cfg.retention.model_dump(),

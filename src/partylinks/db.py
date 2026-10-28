@@ -829,5 +829,6 @@ def start_run(session: Session, source: str, trigger: str) -> ScrapeRunRow:
 # Tables kept in their own packages, imported here so they are on Base before create_schema runs.
 import partylinks.ads.models
 import partylinks.artistdb
-import partylinks.plans.models  # noqa: F401
+import partylinks.plans.models
+import partylinks.worker.models  # noqa: F401
 from partylinks.plans.routes import delete_plans

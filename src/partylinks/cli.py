@@ -1,6 +1,7 @@
 """Command line entry point.
 
-    partylinks serve                 # API + scheduler
+    partylinks serve                 # API (+ the worker process when the scheduler is on)
+    partylinks worker                # scheduler + sources (started by serve; see partylinks/worker)
     partylinks scrape [SOURCE ...]   # run sources once (default: all enabled)
     partylinks sources               # list configured sources
     partylinks cleanup               # purge events that are over (retention)
@@ -22,6 +23,7 @@ from partylinks.db import Database
 from partylinks.logs import setup_logging
 from partylinks.scrapers import SCRAPERS, build_scraper, configured_sources
 from partylinks.service import RunResult, ScrapeService
+from partylinks.worker.supervisor import WorkerProcess
 
 # Command results. INFO even under the WARNING default: they are what the command reports.
 log = logging.getLogger("partylinks.cli")
@@ -73,8 +75,24 @@ def _serve(reload: bool = False) -> int:
             host=settings.api.host, port=settings.api.port, log_config=None, **net,
         )  # fmt: skip
     else:
-        uvicorn.run(create_app(settings), host=settings.api.host, port=settings.api.port, log_config=None, **net)
+        # Scraping in a worker process of its own, so it never slows the site (partylinks/worker).
+        separate = settings.scheduler.enabled and settings.scheduler.separate_process
+        supervisor = WorkerProcess(settings.scheduler) if separate else None
+        if supervisor:
+            supervisor.start()
+        try:
+            app = create_app(settings, start_scheduler=False if separate else None, worker_process=separate)
+            uvicorn.run(app, host=settings.api.host, port=settings.api.port, log_config=None, **net)
+        finally:
+            if supervisor:
+                supervisor.stop()
     return 0
+
+
+def _worker() -> int:
+    from partylinks.worker.runner import main as run_worker
+
+    return run_worker(get_settings())
 
 
 def _chillz_links() -> int:
@@ -140,10 +158,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="partylinks")
     parser.add_argument("-v", "--verbose", action="store_true")
     sub = parser.add_subparsers(dest="command", required=True)
-    serve = sub.add_parser("serve", help="run the REST API with the scheduler")
+    serve = sub.add_parser("serve", help="run the REST API (and the worker process when the scheduler is on)")
     serve.add_argument("--reload", action="store_true", help="restart automatically when code under src/ changes")
     scrape = sub.add_parser("scrape", help="run sources once")
     scrape.add_argument("sources", nargs="*", metavar="SOURCE", help=f"any of: {', '.join(SCRAPERS)}")
+    sub.add_parser("worker", help="run the scheduler and the sources (started by serve)")
     sub.add_parser("sources", help="list configured sources")
     sub.add_parser("cleanup", help="purge events that are over (retention)")
     sub.add_parser("chillz-links", help="write a page of Chillz links to open and save into the inbox")
@@ -164,6 +183,8 @@ def main(argv: list[str] | None = None) -> int:
 def _dispatch(args: argparse.Namespace) -> int:
     if args.command == "serve":
         return _serve(args.reload)
+    if args.command == "worker":
+        return _worker()
     if args.command == "scrape":
         return _scrape(args.sources)
     if args.command == "cleanup":

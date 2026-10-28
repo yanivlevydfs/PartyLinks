@@ -31,8 +31,10 @@ The repo ships two files Railway uses:
 4. Set the variables below.
 5. Generate a domain (Settings → Networking). The app listens on Railway's `$PORT`.
 
-Keep **one replica**: the scheduler, the response cache and the bans live in the process. The data
-is in PostgreSQL (the `Postgres` service, database `railway`; daily backups on that service).
+Keep **one replica**: one container runs the web process and the scraping worker it starts (see
+[architecture](architecture.md), "Processes"); the response cache and the bans live in the web process.
+The data is in PostgreSQL (the `Postgres` service, database `railway`; daily backups on that service).
+Each process has its own pool (`database.pool_size` + `max_overflow`, 40 each, 80 of Postgres' 100).
 
 ## Variables
 

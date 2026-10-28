@@ -30,6 +30,7 @@ from partylinks.logs import debug_enabled, set_debug
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import configured_sources
 from partylinks.service import ScrapeService, SourceBusyError
+from partylinks.worker.link import WorkerTimeout
 
 log = logging.getLogger(__name__)
 
@@ -100,7 +101,7 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
         "images": {"total": images[0], "stored": images[1], "stored_bytes": images[2]},
         "runs": session.scalar(select(func.count()).select_from(ScrapeRunRow)) or 0,
         "storage": request.app.state.db.storage_stats(),
-        "database": make_url(cfg.database.url).render_as_string(hide_password=True),
+        "database": request.app.state.db.engine.url.render_as_string(hide_password=True),
         "warnings": [
             *(
                 []
@@ -123,6 +124,27 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
             ),
             *([] if cfg.admin.token else ["No admin token set: admin works from this machine only."]),
         ],
+        **_scheduler_overview(request, cfg, scheduler),
+    }
+
+
+def _scheduler_overview(request: Request, cfg: Settings, scheduler: AsyncIOScheduler | None) -> dict[str, Any]:
+    """Retention's next run and the scheduler's jobs: from the worker's heartbeat when it runs them."""
+    if worker := request.app.state.worker:
+        state = worker.state() or {}
+        jobs = state.get("jobs") or []
+        retention_next = next((j["next_run_at"] for j in jobs if j["id"] == RETENTION_JOB_ID), None)
+        return {
+            "retention": {**cfg.retention.model_dump(), "next_run_at": retention_next},
+            "scheduler": {
+                "enabled": True,
+                "running": bool(state.get("alive")) and state.get("scheduler") == "running",
+                "paused": state.get("scheduler") == "paused",
+                "worker": {k: state.get(k) for k in ("pid", "started_at", "heartbeat_age_seconds", "alive")},
+                "jobs": jobs,
+            },
+        }
+    return {
         "retention": {**cfg.retention.model_dump(), "next_run_at": next_run_times(scheduler).get(RETENTION_JOB_ID)},
         "scheduler": {
             "enabled": scheduler is not None,
@@ -134,6 +156,17 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
             ],
         },
     }
+
+
+def _ask_worker(request: Request, command: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Send an admin command to the worker process and return its answer (404 / 504 on failure)."""
+    try:
+        result = request.app.state.worker.send(command, args)
+    except WorkerTimeout as exc:
+        raise HTTPException(status.HTTP_504_GATEWAY_TIMEOUT, str(exc)) from exc
+    if error := result.get("error"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, error)
+    return result
 
 
 # --------------------------------------------------------------------------- clicks
@@ -180,6 +213,10 @@ def _scheduler(request: Request) -> AsyncIOScheduler:
 @router.post("/scheduler/{action}")
 def scheduler_control(action: str, request: Request) -> dict[str, str]:
     """``pause`` / ``resume`` every job (runtime only; the YAML decides what runs after a restart)."""
+    if action not in ("pause", "resume"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "action must be pause or resume")
+    if request.app.state.worker:
+        return _ask_worker(request, action)
     scheduler = _scheduler(request)
     if action == "pause":
         scheduler.pause()
@@ -203,6 +240,8 @@ async def scan(request: Request, body: ScanIn | None = None) -> dict[str, list[s
     chosen = body.sources if body and body.sources else [n for n, s in configured.items() if s.enabled]
     if unknown := [n for n in chosen if n not in configured]:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"unknown sources: {', '.join(unknown)}")
+    if request.app.state.worker:  # sources run in the worker process, never in the one serving pages
+        return await asyncio.to_thread(_ask_worker, request, "scan", {"sources": chosen})
     started, busy = [], []
     for name in chosen:
         try:
@@ -244,6 +283,10 @@ def logging_switch(body: DebugIn) -> dict[str, bool]:
 @router.post("/jobs/{job_id}/{action}")
 def job_control(job_id: str, action: str, request: Request) -> dict[str, Any]:
     """Pause / resume one source (or ``retention``) until the next restart or config apply."""
+    if action not in ("pause", "resume"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "action must be pause or resume")
+    if request.app.state.worker:
+        return _ask_worker(request, f"{action}_job", {"id": job_id})
     scheduler = _scheduler(request)
     if scheduler.get_job(job_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"no scheduled job {job_id!r} (disabled in config?)")
@@ -277,7 +320,8 @@ def _hide_url(value: str) -> str:
 def _mask(settings: Settings) -> dict[str, Any]:
     """Effective settings (YAML + environment) with secrets hidden."""
     data = settings.model_dump(mode="json", exclude={"admin"})
-    data["database"]["url"] = make_url(settings.database.url).render_as_string(hide_password=True)
+    if settings.database.url:  # empty: the local server
+        data["database"]["url"] = make_url(settings.database.url).render_as_string(hide_password=True)
     blocks = [data["http"], *(s.get("http", {}) for s in data["sources"].values() if isinstance(s, dict))]
     for http in blocks:
         if not isinstance(http, dict):
@@ -365,9 +409,21 @@ async def put_config(body: ConfigIn, request: Request) -> dict[str, Any]:
 
 @router.post("/config/apply")
 async def apply_config(request: Request) -> dict[str, Any]:
-    """Reload settings from disk + environment and rebuild the scrape service and scheduler."""
+    """Reload settings from disk + environment and rebuild the scrape service and scheduler (in the
+    worker process too, when it runs them)."""
     app: FastAPI = request.app
     old: ScrapeService = app.state.service
+    if app.state.worker:
+        answer = await asyncio.to_thread(_ask_worker, request, "reload")
+        if not answer.get("applied"):
+            return answer
+        get_settings.cache_clear()
+        settings = get_settings()
+        restart = [k for k in RESTART_KEYS if getattr(settings, k) != getattr(app.state.settings, k)]
+        app.state.settings, app.state.service = settings, ScrapeService(settings, app.state.db, owns_runs=False)
+        old.shutdown()
+        log.info("admin: config applied in both processes%s", f" (restart needed for {restart})" if restart else "")
+        return {"applied": True, "restart_required": restart}
     running = [name for name in configured_sources(app.state.settings) if old.is_running(name)]
     if running:
         return {"applied": False, "reason": f"waiting for running sources: {', '.join(running)}; apply again later"}

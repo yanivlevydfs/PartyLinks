@@ -18,12 +18,12 @@ from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import func, select
-from sqlalchemy.engine import make_url
 
 from partylinks.config import Settings
 from partylinks.db import ClickRow, Database, EventRow, ScrapeRunRow, upcoming_filter
 from partylinks.scheduler import next_run_times
 from partylinks.scrapers import configured_sources, source_errors
+from partylinks.worker.link import WorkerLink
 
 log = logging.getLogger("partylinks.status")
 VERSION = "0.1.0"
@@ -64,7 +64,20 @@ def _next_job(scheduler: AsyncIOScheduler, tz: str) -> str:
     return f"{job} at {when.astimezone(ZoneInfo(tz)):%H:%M}"
 
 
-def log_startup(cfg: Settings, db: Database, scheduler: AsyncIOScheduler | None) -> None:
+def _scheduler_line(scheduler: AsyncIOScheduler | None, worker: WorkerLink | None, tz: str) -> str:
+    if worker:
+        state = worker.state()
+        if not state or not state["alive"]:
+            return "worker process: starting / no heartbeat"
+        upcoming = [(t, job) for job, t in worker.next_runs().items() if t]
+        nxt = f", next {min(upcoming)[1]} at {min(upcoming)[0].astimezone(ZoneInfo(tz)):%H:%M}" if upcoming else ""
+        return f"worker process {state['pid']}: {state['scheduler']}, {len(state['jobs'] or [])} jobs{nxt}"
+    if scheduler:
+        return f"on: {len(scheduler.get_jobs())} jobs, next {_next_job(scheduler, tz)}"
+    return "OFF (no scraping here)"
+
+
+def log_startup(cfg: Settings, db: Database, scheduler: AsyncIOScheduler | None, worker: WorkerLink | None = None) -> None:
     sources = configured_sources(cfg)
     enabled = sum(1 for s in sources.values() if s.enabled)
     counts = _counts(db)
@@ -79,9 +92,9 @@ def log_startup(cfg: Settings, db: Database, scheduler: AsyncIOScheduler | None)
         f"===== {cfg.site.name} {VERSION}{f' ({commit})' if commit else ''} starting =====",
         f"server     http://{cfg.api.host}:{cfg.api.port}  public {cfg.site.base_url}  [{where}]",
         f"runtime    Python {platform.python_version()} on {platform.system()}  pid {os.getpid()}  tz {cfg.timezone}",
-        f"database   {make_url(cfg.database.url).render_as_string(hide_password=True)}  {_mb(storage['database_bytes'])}",
+        f"database   {db.engine.url.render_as_string(hide_password=True)}  {_mb(storage['database_bytes'])}",
         f"events     {counts['upcoming']} upcoming / {counts['events']} stored",
-        f"scheduler  {'on: ' + str(len(scheduler.get_jobs())) + ' jobs, next ' + _next_job(scheduler, cfg.timezone) if scheduler else 'OFF (no scraping here)'}",
+        f"scheduler  {_scheduler_line(scheduler, worker, cfg.timezone)}",
         f"sources    {enabled} enabled / {len(sources)}  config errors: {len(source_errors(cfg))}",
         f"proxy      {', '.join(proxies) if proxies else 'none (direct connection)'}",
         (
@@ -98,23 +111,22 @@ def log_startup(cfg: Settings, db: Database, scheduler: AsyncIOScheduler | None)
         log.info(line)
 
 
-def log_status(cfg: Settings, db: Database, scheduler: AsyncIOScheduler | None) -> None:
+def log_status(cfg: Settings, db: Database, scheduler: AsyncIOScheduler | None, worker: WorkerLink | None = None) -> None:
     c = _counts(db)
     runs = ", ".join(f"{n} {k}" for k, n in sorted(c["runs"].items())) or "none"
-    state = "off" if scheduler is None else ("running" if scheduler.running else "STOPPED")
-    nxt = f", next {_next_job(scheduler, cfg.timezone)}" if scheduler else ""
     log.info(
-        "status: up %s | events %d upcoming / %d | runs 24h: %s | scheduler %s%s | clicks 24h: %d",
-        _uptime(), c["upcoming"], c["events"], runs, state, nxt, c["clicks"],
+        "status: up %s | events %d upcoming / %d | runs 24h: %s | scheduler %s | clicks 24h: %d",
+        _uptime(), c["upcoming"], c["events"], runs,
+        _scheduler_line(scheduler, worker, cfg.timezone) if scheduler or worker else "off", c["clicks"],
     )  # fmt: skip
 
 
-async def status_loop(cfg: Settings, db: Database, scheduler: AsyncIOScheduler | None) -> None:
+async def status_loop(cfg: Settings, db: Database, scheduler: AsyncIOScheduler | None, worker: WorkerLink | None = None) -> None:
     """``log_status`` every ``status_every_minutes`` until cancelled; a failure never stops it."""
     while True:
         await asyncio.sleep(cfg.logging.status_every_minutes * 60)
         try:
-            await asyncio.to_thread(log_status, cfg, db, scheduler)
+            await asyncio.to_thread(log_status, cfg, db, scheduler, worker)
         except Exception as exc:  # noqa: BLE001 - the status line must never take the server down
             log.warning("status: %s", exc)
 

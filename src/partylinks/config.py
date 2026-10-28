@@ -61,8 +61,8 @@ class DatabaseSettings(BaseModel):
     echo: bool = False
     # Connection pool. Source threads and page requests share it:
     # pool_size stays open, max_overflow more on bursts, pool_timeout seconds to wait for a free one.
-    pool_size: int = Field(20, ge=1)
-    max_overflow: int = Field(40, ge=0)
+    pool_size: int = Field(15, ge=1)
+    max_overflow: int = Field(25, ge=0)
     pool_timeout: float = Field(30, gt=0)
     pool_recycle: int = Field(1800, ge=-1)  # seconds; reopen older connections (-1 = never)
     connect_timeout: int = Field(10, ge=1)  # seconds to open a connection
@@ -107,6 +107,14 @@ class SchedulerSettings(BaseModel):
     stale_after_hours: float = Field(12, gt=0)
     # Hard limit for one source run; a hung site is stopped and recorded as failed.
     run_timeout_seconds: float = Field(1800, gt=0)
+    # The scheduler and the sources in a worker process of their own (partylinks/worker), so scraping
+    # never slows the site; false keeps them in the web process.
+    separate_process: bool = True
+    heartbeat_seconds: float = Field(5, gt=0)  # the worker publishes its state and reads commands this often
+    worker_stale_seconds: float = Field(60, gt=0)  # no heartbeat for this long: /health says the worker is down
+    command_timeout_seconds: float = Field(20, gt=0)  # how long the admin waits for the worker to answer
+    restart_backoff_max_seconds: float = Field(60, gt=0)  # longest wait before restarting a crashing worker
+    worker_stop_seconds: float = Field(30, gt=0)  # on shutdown, time for running sources to stop before a kill
 
 
 def validate_cron(value: str) -> str:

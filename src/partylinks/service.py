@@ -132,7 +132,8 @@ class RetentionState:
 
 
 class ScrapeService:
-    def __init__(self, settings: Settings, db: Database) -> None:
+    def __init__(self, settings: Settings, db: Database, owns_runs: bool = True) -> None:
+        """``owns_runs``: this process runs the sources (false in the web process when a worker does)."""
         self.settings = settings
         self.db = db
         self.enricher = Enricher(settings.enrichment, settings.timezone)
@@ -158,7 +159,8 @@ class ScrapeService:
         self._executor = ThreadPoolExecutor(max_workers=len(SCRAPERS), thread_name_prefix="partylinks-src")
         self._maintenance = ThreadPoolExecutor(max_workers=1, thread_name_prefix="partylinks-maint")
         self.retention_state = RetentionState()
-        db.mark_interrupted_runs()
+        if owns_runs:  # runs left "running" by a process that died; never the live worker's
+            db.mark_interrupted_runs()
 
     def is_running(self, source: str) -> bool:
         return self._locks[source].locked()
