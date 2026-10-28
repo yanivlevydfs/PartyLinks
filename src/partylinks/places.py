@@ -154,8 +154,9 @@ def city_zone(name: str, country: str) -> str | None:
     return city[4] if city and city[1] == country else None
 
 
-def city_point(name: str, country: str) -> tuple[float, float] | None:
+def city_point(name: str, country: str, min_population: int = 0) -> tuple[float, float] | None:
     """Centre of the city abroad called ``name`` (English or Hebrew) in ``country``: the largest of that
-    name there ("Freiburg", DE: Freiburg im Breisgau, not the small Freiburg on the Elbe); None if unknown."""
-    city = _city(name, country, 0)
+    name there ("Freiburg", DE: Freiburg im Breisgau, not the small Freiburg on the Elbe); None if unknown
+    or under ``min_population``."""
+    city = _city(name, country, min_population)
     return city[5] if city and city[1] == country else None

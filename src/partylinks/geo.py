@@ -23,7 +23,7 @@ from datetime import timedelta
 from typing import Any
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from partylinks.config import CitySettings, GeocodingSettings
 from partylinks.db import Database, EventRow, GeoCacheRow, bulk_update_by_id, upcoming_filter, utcnow, with_db_retry
@@ -36,6 +36,11 @@ log = logging.getLogger(__name__)
 # An abroad city centre this far from the GeoNames city of that name is another place (Freiburg on the
 # Elbe for Freiburg im Breisgau: 600 km). The same city from two sources is a few km apart at most.
 WRONG_CITY_M = 25_000
+# A bare city name abroad means the GeoNames city of that name only if it is this big (Freiburg 230k,
+# Rogers 70k); a smaller one may be a namesake of a town GeoNames doesn't list (under 15,000 people).
+# ponytail: a population rule; the venue's own address would be exact if a source ever gives it.
+SURE_CITY_POPULATION = 50_000
+GEONAMES_KIND = "geonames"  # GeoCacheRow.kind of a centre taken from GeoNames, not Nominatim
 PRECISE = {
     "place", "house", "building", "road", "amenity", "leisure", "tourism", "shop", "office", "club",
     "historic", "craft", "man_made", "industrial", "commercial",
@@ -481,14 +486,19 @@ class Geocoder:
             return f"{clean(city)} @{country}"
 
         def known(city: str, country: str) -> tuple[float, float] | None:
-            """GeoNames first: the largest city of that name in the country, no network. Nominatim's first
-            hit for a bare name can be a village ("Freiburg", DE: Freiburg on the Elbe, 600 km off)."""
-            return city_point(clean(city), country) if country != UNKNOWN_COUNTRY and clean(city) else None
+            """GeoNames first for a big city: the largest of that name in the country, no network. Nominatim's
+            first hit for a bare name can be a village ("Freiburg", DE: Freiburg on the Elbe, 600 km off).
+            A smaller one stays Nominatim's: GeoNames lists only 15,000+ towns, so its "Rosemont" (California,
+            22k) is not the Rosemont of the Rosemont Theatre (Illinois, 4k), which Nominatim finds."""
+            if country == UNKNOWN_COUNTRY or not clean(city):
+                return None
+            return city_point(clean(city), country, min_population=SURE_CITY_POPULATION)
 
         with self.db.session(write=False) as session:
-            places = session.execute(select(EventRow.city, EventRow.country).where(*unplaced).distinct()).all()
             cache = {c.query: c for c in session.scalars(select(GeoCacheRow).where(GeoCacheRow.query.like("% @__")))}
         fixed = self._repoint_abroad(cache, key, known)
+        with self.db.session(write=False) as session:  # after the repoint: cities it reopened are unplaced again
+            places = session.execute(select(EventRow.city, EventRow.country).where(*unplaced).distinct()).all()
         if network:
             retry_before = utcnow() - timedelta(days=self.settings.retry_failed_days)
             todo = list(dict.fromkeys(
@@ -525,13 +535,16 @@ class Geocoder:
         """Events abroad placed earlier at a wrong city centre (Nominatim's village of the same name): moved
         to the GeoNames city. Only points that are exactly the cached city lookup; a venue's own point
         from the seller (Shotgun, Live Tickets) is never touched."""
-        moves: dict[str, tuple[float, float]] = {}  # cache key -> the right centre
+        moves: dict[str, tuple[float, float] | None] = {}  # cache key -> the right centre (None: look it up again)
         for query, hit in cache.items():
             city, _, country = query.rpartition(" @")
             if not (hit.found and hit.latitude is not None and hit.longitude is not None):
                 continue
-            if (point := known(city, country)) and meters(point, (hit.latitude, hit.longitude)) > WRONG_CITY_M:
+            point = known(city, country)
+            if point and meters(point, (hit.latitude, hit.longitude)) > WRONG_CITY_M:
                 moves[query] = point
+            elif point is None and hit.kind == GEONAMES_KIND:  # moved here by an older rule the city no longer meets
+                moves[query] = None
         if not moves:
             return 0
         with self.db.session(write=False) as session:
@@ -543,15 +556,24 @@ class Geocoder:
         for r in rows:
             q = key(r.city or "", r.country or "")
             if q in moves and (r.latitude, r.longitude) == (cache[q].latitude, cache[q].longitude):
-                updates.append({"id": r.id, "latitude": moves[q][0], "longitude": moves[q][1]})
-        for q, (lat, lng) in moves.items():  # the cache says the same, so later events land right too
-            cache[q].latitude, cache[q].longitude, cache[q].kind = lat, lng, "geonames"
-            with_db_retry("geo cache", lambda hit=cache[q]: self._remember(hit))
+                point = moves[q]
+                updates.append({"id": r.id, "latitude": point and point[0], "longitude": point and point[1]})
+        for q, point in moves.items():  # the cache says the same, so later events land right too
+            if point is None:
+                with_db_retry("geo cache", lambda q=q: self._forget(q))  # Nominatim's turn again (next pass)
+                del cache[q]  # and not placed again from this pass's copy of the cache
+            else:
+                cache[q].latitude, cache[q].longitude, cache[q].kind = point[0], point[1], GEONAMES_KIND
+                with_db_retry("geo cache", lambda hit=cache[q]: self._remember(hit))
         if updates:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, updates)
             log.info("geocoding: %d events abroad moved to the right city (%s)", len(updates), ", ".join(sorted(moves))[:300])
         return len(updates)
+
+    def _forget(self, query: str) -> None:
+        with self.db.session() as session:
+            session.execute(delete(GeoCacheRow).where(GeoCacheRow.query == query))
 
     def _remember(self, hit: GeoCacheRow) -> None:
         with self.db.session() as session:

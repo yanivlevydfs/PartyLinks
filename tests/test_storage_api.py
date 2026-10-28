@@ -690,6 +690,27 @@ def test_city_abroad_is_the_geonames_city_not_a_village_of_that_name(tmp_path: P
         assert round(session.get(GeoCacheRow, "Freiburg @DE").latitude, 1) == 48.0  # the cache says so too
 
 
+def test_small_namesake_city_abroad_stays_with_nominatim(tmp_path: Path) -> None:
+    """GeoNames lists towns of 15,000+ only: its Rosemont is California's (22k), the Rosemont Theatre is in
+    Rosemont, Illinois (4k). Under SURE_CITY_POPULATION GeoNames doesn't decide; a centre an older rule took
+    from GeoNames is dropped so Nominatim looks it up again."""
+    from partylinks.db import GeoCacheRow, utcnow
+    from partylinks.geo import GEONAMES_KIND, Geocoder
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [event("r", future, venue_name="Rosemont Theatre", address=None, city="Rosemont", country="US")])
+    with db.session() as session:
+        session.add(GeoCacheRow(query="Rosemont @US", found=True, latitude=38.55185, longitude=-121.36467, kind=GEONAMES_KIND, looked_up_at=utcnow()))
+        session.get(EventRow, "test:r").latitude, session.get(EventRow, "test:r").longitude = 38.55185, -121.36467
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    geo.locate_missing(network=False)
+    with db.session() as session:
+        assert session.get(EventRow, "test:r").latitude is None  # unplaced: Nominatim's turn on the next pass
+        assert session.get(GeoCacheRow, "Rosemont @US") is None
+
+
 def test_web_city_list_mirrors_the_config() -> None:
     import re
 
