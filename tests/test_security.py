@@ -151,7 +151,8 @@ def test_scrapers_are_slowed_and_scripts_refused(tmp_path: Path) -> None:
 
 
 ADMIN = {"authorization": "Bearer s3cret"}
-PUBLIC_WRITES = {"/events/sponsored/hit"}  # the only write a visitor may send
+# The only writes a visitor may send: sponsored views / clicks, and "who's coming?" plans and answers.
+PUBLIC_WRITES = {"/events/sponsored/hit", "/plans", "/plans/{plan_id}/votes"}
 
 
 def _open_app(tmp_path: Path) -> Any:

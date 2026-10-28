@@ -234,6 +234,8 @@
 | `sponsored` | `event_id` (`ads/models.py:21`) | טבעי | |
 | `sponsored_stats` | `(event_id, day)` composite (`ads/models.py:36-37`) | composite | תקין |
 | `flags` | `key` (`db.py:287`) | טבעי | |
+| `plans` | `id` String(12) (`plans/models.py`) | טבעי: הסוד של הקישור (`secrets.token_urlsafe(6)`, 8 תווים) | נוסף 2026-10-28. מופיע ב-URL `/plan/{id}`, לכן חייב להישמר ב-copy. |
+| `plan_votes` | `id` int autoinc (`plans/models.py`) | surrogate | נוסף 2026-10-28. `setval` אחרי copy כמו כל int PK. |
 | `scrape_runs` | `id` int (`db.py:299`) | | |
 
 **אין טבלה בלי PK.**
@@ -243,6 +245,7 @@
 - `ticket_tiers.event_id` → `events.id` (`db.py:172`)
 - `event_images.event_id` → `events.id` (`db.py:203`)
 - `deal_changes.event_id` → `events.id` (`db.py:240`)
+- `plan_votes.plan_id` → `plans.id` (`plans/models.py`, נוסף 2026-10-28). **בלי `ON DELETE CASCADE`**: `plans.routes.delete_plans` מוחק את התשובות לפני התוכנית, באותה טרנזקציה של `delete_events`. ב-PG ה-FK נאכף, אז הסדר הזה (ילד לפני הורה) חובה, והוא כבר כזה. אינדקס על `plan_id` קיים (`index=True`).
 
 CASCADE מתאים לכלל "never past events": ‏retention מוחק אירוע וכל מה שתלוי בו נמחק איתו. `delete_events` (`db.py:791-800`) מוחק את הילדים במפורש לפני ה-parent. ב-PG זה כפול אבל לא מזיק, וזה גם המקום שבו אוספים את קבצי התמונות. להשאיר. ‏PG לא יוצר אינדקס אוטומטית על עמודת FK, אבל לשלושתן יש `index=True`, וזה חיוני ל-CASCADE.
 
@@ -252,6 +255,7 @@ CASCADE מתאים לכלל "never past events": ‏retention מוחק אירו�
 | `events.group_id` / `events.best_listing_id` → `events.id` (self) (`db.py:144`, `db.py:153`) | retention מוחק לפעמים את ה-primary לפני שה-regroup הבא מעדכן את החברים. FK היה מפיל את retention, או מחייב `SET NULL`/`DEFERRABLE`, ו-`regroup` מעדכן אלפי שורות ב-executemany (`dedup.py:245-249`). הערך הזה מחושב מחדש בכל pass, כך שהוא cache ולא קשר. |
 | `events.source`, `scrape_runs.source`, `deal_changes.source` → "sources" | אין טבלת sources. המקורות הם config (`settings.yaml`, `SOURCE_NAMES`). |
 | `clicks.event_id`, `sponsored.event_id`, `sponsored_stats.event_id` → `events.id` | **בכוונה בלי FK.** הם צריכים לשרוד את retention (`db.py:253-255`, `ads/models.py:15-17`, `ads/models.py:31-32`). |
+| `plans.event_id` → `events.id` | **בכוונה בלי FK**, כמו `sponsored`. תוכנית **לא** שורדת את האירוע: `db.delete_events` קורא ל-`delete_plans` לפני מחיקת האירוע. בלי FK, כי `delete_events` מוחק במנות של 1000 ולא צריך cascade, ו-API שלא מוצא את האירוע מחזיר 404. |
 | `events.venue_slug` → venues | אין טבלת venues. השמות מחושבים ב-`venues.py`. |
 | artists | DB נפרד (`artists.py`), ולא אפשרי בין DBs. |
 | `geo_cache` | מפתח שאילתה, ולא קשור לאירוע. |
@@ -259,6 +263,7 @@ CASCADE מתאים לכלל "never past events": ‏retention מוחק אירו�
 ### 9.3 Unique constraints שהקוד מניח
 | הנחה | איפה | מצב | בדיקה (על snapshot, **לא** על prod) | המלצה |
 |---|---|---|---|---|
+| `plan_votes (plan_id, voter)` ייחודי: תשובה אחת לכל דפדפן בתוכנית (נוסף 2026-10-28) | `UniqueConstraint` ב-`plans/models.py`, ה-upsert ב-`plans.routes.vote` (select לפי שניהם, ואז update או insert) | נאכף ב-SQLite ובנוי מה-ORM ב-PG | `SELECT plan_id, voter, count(*) FROM plan_votes GROUP BY 1, 2 HAVING count(*) > 1;` | להשאיר. ב-PG שתי הצבעות ראשונות של אותו דפדפן באותו רגע יכולות להתנגש ב-unique, ואחת מהן תקבל 500. זניח (לחיצה כפולה). אם יפריע: `INSERT ... ON CONFLICT (plan_id, voter) DO UPDATE`. |
 | `events.slug` ייחודי | `db.py:96` (`unique=True`), lookup ב-`api.py:1098`, `seo.py:393` | כבר נאכף ב-SQLite | `SELECT slug, count(*) FROM events WHERE slug IS NOT NULL GROUP BY slug HAVING count(*)>1;` | להשאיר |
 | `(source, source_event_id)` ייחודי | ה-PK בנוי מהם (`models.py:175-176`) | נגזר מה-PK, כל עוד אין `:` בשם source (אין) | `SELECT source, source_event_id, count(*) FROM events GROUP BY 1,2 HAVING count(*)>1;` | **לא להוסיף.** האינדקס כפול ל-PK ועולה בכל upsert. |
 | `(event_id, url)` ייחודי ב-`event_images` | `db.py:664` (`known = {(row.event_id, row.url): row}`) מניח ייחודיות. כפילות נבלעת ב-dict ושורה עודפת נשארת לתמיד. | לא נאכף | `SELECT event_id, url, count(*) FROM event_images GROUP BY 1,2 HAVING count(*)>1;` | לבדוק. אם נקי, **לא להוסיף** constraint (URL ארוך, ומגבלת btree). `models.py:170` כבר מסיר כפילויות במקור. אם יש כפילויות, ניקוי חד-פעמי ב-copy. |
@@ -318,6 +323,8 @@ CASCADE מתאים לכלל "never past events": ‏retention מוחק אירו�
 | `clicks` | להשאיר `at` (`clicks.py:40`). `event_id`/`source` לא בשימוש ב-WHERE. | | insert-only, זניח. אפשר להשאיר. |
 | `searches` | רק `at` (`searches.py:56`). בכוונה בלי אינדקס על `q`: הספירה לפי מילה נעשית ב-Python. | | insert-only, שורה לכל חיפוש (עמוד ראשון). זניח. |
 | `geo_cache` | בלי שינוי. `geo.py:481` (`LIKE '% @__'`) הוא seq scan על טבלה קטנה. | | |
+| `plans` (2026-10-28) | PK `id`, אינדקס `event_id` | `GET /plans/{id}` (PK), `delete_plans` (`event_id IN (...)`) | insert אחד לכל לחיצה על "מי בא איתי?". זניח. |
+| `plan_votes` (2026-10-28) | אינדקס `plan_id`, ה-UNIQUE `(plan_id, voter)` | `plan_id = ?` (רשימת התשובות, `count(*)` מול `MAX_VOTES = 60`), `plan_id = ? AND voter = ?` (ה-UNIQUE משרת), `plan_id IN (subquery)` במחיקה | עד 60 שורות לתוכנית. ה-UNIQUE מתחיל ב-`plan_id`, אז אפשר לוותר על `ix_plan_votes_plan_id` ב-PG (אינדקס כפול). לא חשוב בגודל הזה. |
 
 #### PG-only, נדחה עד שמדידה מצדיקה
 | אפשרות | למה לא עכשיו | מתי כן |
@@ -355,7 +362,7 @@ Snapshot: בתוך הקונטיינר, `VACUUM INTO '/app/data/snapshot-YYYYMMDD
 - **Q-NUL:** לכל עמודת טקסט/JSON: `SELECT count(*) FROM t WHERE instr(col, char(0)) > 0;`
 - **Q-NULL:** לכל עמודה שבמודל היא NOT NULL: `SELECT count(*) FROM t WHERE col IS NULL;`. חשוד במיוחד: עמודות שנוספו ב-ALTER (`is_listed`, `has_discount`, `free_sold_out`, `pay_at_door`, `admits`, `group_*`, `sponsored.placement`, `sponsored_stats.results_views`, `sponsored_stats.results_clicks`, `events.time_known`).
 - **Q-JSON:** `SELECT count(*) FROM events WHERE json_valid(genres) = 0;` (לכל עמודת JSON, כולל `ticket_tiers.price_rounds` ו-`scrape_runs.failures`).
-- **Q-ORPHAN:** `SELECT count(*) FROM ticket_tiers t LEFT JOIN events e ON e.id = t.event_id WHERE e.id IS NULL;`, וכנ"ל ל-`event_images` ול-`deal_changes`.
+- **Q-ORPHAN:** `SELECT count(*) FROM ticket_tiers t LEFT JOIN events e ON e.id = t.event_id WHERE e.id IS NULL;`, וכנ"ל ל-`event_images` ול-`deal_changes`. גם `plan_votes` בלי `plans`, ו-`plans` בלי `events` (צריך להיות 0: `delete_plans` מוחק אותם עם האירוע; FK של `plan_votes` נאכף ב-PG, אז יתום שם יפיל את ה-copy).
 - **Q-DUP:** השאילתות מ-§9.3.
 - **Q-INT:** `SELECT max(id) FROM <t>;` לכל טבלה עם int PK, מול 2^31. ‏`SELECT max(size_bytes) FROM event_images;`
 - **Q-BOOL:** `SELECT DISTINCT is_listed FROM events;` ו-`SELECT DISTINCT time_known FROM events;` (מצפים ל-0/1/NULL בלבד; ב-`time_known` ‏NULL הופך ל-`true`, ה-default).
@@ -375,7 +382,7 @@ Snapshot: בתוך הקונטיינר, `VACUUM INTO '/app/data/snapshot-YYYYMMDD
 ### 10.3 אימות
 - **מספר שורות** לכל טבלה: מקור מול יעד, שוויון מלא.
 - **Checksum** לכל טבלה: `sha256` על tuples מנורמלים (datetime ל-ISO UTC, Decimal ל-`normalize()`, JSON ל-`json.dumps(sort_keys=True)`), לפי סדר PK, מחושב ב-Python משני הצדדים דרך אותם models. כך חוסכים הבדלי ייצוג בין ה-DBs.
-- **Diff התנהגותי (הכי חשוב):** להרים את האפליקציה מקומית פעמיים, פעם על ה-snapshot ופעם על `partylinks_rehearsal` (scheduler כבוי כרגיל ב-local), ולהשוות JSON של רשימה קבועה: `/events`, `/events?sort=price_asc|price_desc|seen_desc|trending`, `/events?genre=techno`, `/events?q=<עברית>`, `/events?artist=<עברית>`, `/events?city=תל אביב`, `/events/map`, `/events/{slug}` (כולל אירוע בחו"ל ואירוע עם `time_known = false`: שעה מקומית, תאריך בלבד), `/events/rails`, `/events?abroad=true&city=פריז` מול `city=Paris` (אותו total), `/sitemap.xml`, `/abroad`, `/venues`, `/artists`, `/categories`. כל הבדל הוא באג (סדר NULL, collation, ILIKE) או מוסבר.
+- **Diff התנהגותי (הכי חשוב):** להרים את האפליקציה מקומית פעמיים, פעם על ה-snapshot ופעם על `partylinks_rehearsal` (scheduler כבוי כרגיל ב-local), ולהשוות JSON של רשימה קבועה: `/events`, `/events?sort=price_asc|price_desc|seen_desc|trending`, `/events?genre=techno`, `/events?q=<עברית>`, `/events?artist=<עברית>`, `/events?city=תל אביב`, `/events/map`, `/events/{slug}` (כולל אירוע בחו"ל ואירוע עם `time_known = false`: שעה מקומית, תאריך בלבד), `/events/rails`, `/events?abroad=true&city=פריז` מול `city=Paris` (אותו total), `/plans/{id}` ו-`/plan/{id}` של תוכנית קיימת (אותן תשובות באותו סדר: `ORDER BY plan_votes.id`), `/sitemap.xml`, `/abroad`, `/venues`, `/artists`, `/categories`. כל הבדל הוא באג (סדר NULL, collation, ILIKE) או מוסבר.
 
 ---
 
@@ -408,6 +415,7 @@ Snapshot: בתוך הקונטיינר, `VACUUM INTO '/app/data/snapshot-YYYYMMDD
   2. upsert עם title או `source_event_id` ארוך, ועם `\x00` (תופס את §6.3).
   3. סדר `price_asc`/`price_desc` עם NULL, זהה בשני ה-dialects (Q3).
   4. `copy-db` round-trip SQLite → PG → SQLite, עם checksums שווים.
+  5. `tests/test_plans.py` על PG: יצירה, הצבעה ושינוי תשובה (ה-UNIQUE), ומחיקה עם האירוע (ה-FK `plan_votes` → `plans` נאכף ב-PG, אז זה בודק את סדר המחיקה).
 - **שמירה על dual-dialect לאורך זמן:** שורה ב-`docs/architecture.md` ("Database") וב-memory: "prod = PostgreSQL. אסור SQL/PRAGMA ספציפי ל-SQLite מחוץ ל-`is_sqlite`. להריץ את ה-suite עם `PARTYLINKS_TEST_PG_URL` לפני push שנוגע ב-DB."
 
 ---
@@ -568,3 +576,14 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **שורות קיימות:** מתעדכנות ב-scrape הבא של כל מקור (upsert כותב את כל `_EVENT_FIELDS`). אין backfill. ב-copy ל-PG הן יעברו כפי שהן.
 - **הפניות לשורות קוד** בסעיפים הקודמים (למשל `db.py:133`) נכונות ל-4a1a6a7 ויכולות לזוז בכמה שורות. השמות (פונקציות, עמודות) הם העיקר.
 - **`events.city` בחו"ל נשמר נקי (`places.city_name`, ב-`enrichment`):** "ברלין, גרמניה" נשמר "ברלין", "BERLIN, GERNANY" נשמר "Berlin". אין שינוי schema ואין שינוי query. הערכים ב-`city` נעשים עקביים יותר, וזה עוזר לשוויון ב-`seo.py` / `blog.py` (אינדקס `city`, §9.4). שורות ישנות מתנקות ב-scrape הבא; עד אז `_merged_cities` מציג את השם הנקי.
+
+### 2026-10-28 ("מי בא איתי?": תוכניות ותשובות)
+- **שתי טבלאות חדשות** (חבילה נפרדת `partylinks/plans/`, על אותו `Base`, נוצרות ב-`create_schema` כמו טבלאות הפרסום):
+  - `plans`: ‏`id VARCHAR(12)` PK (הסוד של הקישור), ‏`event_id VARCHAR(128)` עם אינדקס, ‏`created_at` (`UTCDateTime`).
+  - `plan_votes`: ‏`id` int PK, ‏`plan_id VARCHAR(12)` FK → `plans.id` עם אינדקס, ‏`voter VARCHAR(36)`, ‏`name VARCHAR(40)`, ‏`answer VARCHAR(8)` (yes / maybe / no), ‏`at` (`UTCDateTime`, ‏onupdate), ‏`UNIQUE (plan_id, voter)`.
+- **PK / FK / UNIQUE / אינדקסים:** §9.1, §9.2, §9.3, §9.4 (טבלאות אחרות) עודכנו. ‏`plans.event_id` בכוונה בלי FK, ו-`plan_votes.plan_id` עם FK בלי CASCADE.
+- **queries חדשים:** `GET /plans/{id}` (PK, ואז `plan_votes WHERE plan_id = ? ORDER BY id`), ‏`POST /plans/{id}/votes` (select לפי `(plan_id, voter)`, ‏`count(*)` לפי `plan_id`, ואז insert או update), ‏`POST /plans` (insert). ‏`db.delete_events` מוחק עכשיו גם `plan_votes WHERE plan_id IN (SELECT id FROM plans WHERE event_id IN (...))` ואז `plans WHERE event_id IN (...)`, לפני `events`. הכול SQL סטנדרטי, אותו דבר ב-PG.
+- **Q-LEN:** `name` נחתך ל-40 ב-pydantic לפני הכתיבה, ‏`voter` עד 36 (pattern של אותיות, ספרות ו-`-`), ו-`id` הוא 8 תווים. ב-PG ‏`VARCHAR(n)` לא ייפול.
+- **Q-NUL:** `name` עובר `tidy_text` (שמנקה NUL) לפני הכתיבה.
+- **retention:** בלי שינוי ב-`purge_expired`: התוכניות נמחקות בתוך `delete_events`.
+- **copy-db (§10.2):** שתי הטבלאות ב-`Base.metadata.sorted_tables`, ‏`plans` לפני `plan_votes` (סדר FK). ‏`setval` ל-`plan_votes.id`.

@@ -37,6 +37,7 @@ window.addEventListener("vite:preloadError", (e) => {
 // Leaflet is only loaded when the map is opened.
 const MapPage = lazy(() => import("./pages/MapPage"));
 const AdminPage = lazy(() => import("./pages/Admin"));
+const PlanPage = lazy(() => import("./plans/PlanPage")); // "who's coming with me?" (its own files: plans/)
 
 // ?lang=en / ?lang=he (used by hreflang links and the sitemap) picks the language.
 const urlLang = new URLSearchParams(location.search).get("lang");
@@ -66,6 +67,7 @@ const router = createBrowserRouter([
       { path: "/city/:city/:sub", element: <Landing landing="city" /> },
       { path: "/region/:region", element: <Landing landing="region" /> },
       { path: "/event/:id", element: <EventPage /> },
+      { path: "/plan/:id", element: <Suspense fallback={<Loader />}><PlanPage /></Suspense> },
       { path: "/map", element: <Suspense fallback={<Loader />}><MapPage /></Suspense> },
       { path: "/abroad", element: <Abroad /> },
       { path: "/abroad/:country", element: <Abroad /> },

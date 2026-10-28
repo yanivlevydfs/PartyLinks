@@ -798,6 +798,7 @@ def delete_events(session: Session, event_ids: Sequence[str]) -> list[str]:
         session.execute(delete(TicketRow).where(TicketRow.event_id.in_(chunk)))
         session.execute(delete(ImageRow).where(ImageRow.event_id.in_(chunk)))
         session.execute(delete(DealChangeRow).where(DealChangeRow.event_id.in_(chunk)))
+        delete_plans(session, chunk)  # "who's coming?" plans go with their event
         session.execute(delete(EventRow).where(EventRow.id.in_(chunk)))
     return files
 
@@ -816,3 +817,5 @@ def start_run(session: Session, source: str, trigger: str) -> ScrapeRunRow:
 
 # The ad tables live in partylinks.ads; imported here so they are on Base before create_schema runs.
 import partylinks.ads.models  # noqa: F401
+import partylinks.plans.models  # noqa: F401, E402  (same, for the plan tables)
+from partylinks.plans.routes import delete_plans  # noqa: E402

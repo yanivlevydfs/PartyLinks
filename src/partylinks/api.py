@@ -1129,6 +1129,9 @@ def _register_routes(app: FastAPI) -> None:
     from partylinks.ads.routes import router as ads_router
 
     app.include_router(ads_router)
+    from partylinks.plans.routes import router as plans_router
+
+    app.include_router(plans_router)
     app.include_router(ads_admin_router)
 
     @app.get("/events/rails", response_model=RailsOut, tags=["events"])

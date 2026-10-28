@@ -1346,6 +1346,10 @@ def register(app: FastAPI, site_dir: Path) -> None:
     if not index.is_file():
         return
 
+    from partylinks.plans.routes import register_page
+
+    register_page(app, page)  # /plan/<id>: the WhatsApp preview of a "who's coming?" link
+
     @app.get("/", include_in_schema=False)
     def home(request: Request) -> HTMLResponse:
         return page(request, home_page)
