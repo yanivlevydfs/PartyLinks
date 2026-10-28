@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { Ticket } from "../types";
-import { Weather } from "../Weather";
+import { forecastAt, Weather } from "../Weather";
 import { AddToCalendar, artistPath, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
 
 // URLs in scraped description text become links; trailing punctuation stays text.
@@ -77,7 +77,7 @@ export default function EventPage() {
                   {e.time_slot && ` · ${label(t.slots, e.time_slot)}`}
                 </span>
               </li>}
-              <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={e.start_at} full />
+              <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={forecastAt(e)} zone={e.time_zone} full />
               {(e.venue_name || e.address) && (
                 <li>
                   <i>📍</i>

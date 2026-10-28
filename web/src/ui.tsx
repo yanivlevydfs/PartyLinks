@@ -6,7 +6,7 @@ import { CookieConsent, useConsent } from "./consent";
 import { InstallBanner } from "./Install";
 import { INFO_LINKS } from "./pages/Info";
 import { AdLabel, hit, SponsoredFrame, SponsoredStrip, useAdView } from "./ads/Sponsored";
-import { Weather } from "./Weather";
+import { forecastAt, Weather } from "./Weather";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";
 
@@ -290,7 +290,7 @@ export function Card({ e }: { e: EventSummary }) {
         <div className="date-badge">
           <b>{when(e, t, { day: "numeric" })}</b>
           <span>{when(e, t, { month: "short" })}</span>
-          <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={e.start_at} />
+          <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={forecastAt(e)} zone={e.time_zone} />
         </div>
         {/* A paid card says so; that outranks new / updated. */}
         {e.sponsored ? <AdLabel />

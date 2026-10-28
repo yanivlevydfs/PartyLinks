@@ -5,7 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useSponsored } from "../api";
 import type { EventSummary } from "../types";
 import { eventPath, Img, label, priceLabel, sized, useT, when } from "../ui";
-import { Weather } from "../Weather";
+import { forecastAt, Weather } from "../Weather";
 import "./sponsored.css";
 
 type Side = "right" | "left";
@@ -149,7 +149,7 @@ function Spot({ e, on }: { e: EventSummary; on: boolean }) {
       <div className="date-badge">
         <b>{when(e, t, { day: "numeric" })}</b>
         <span>{when(e, t, { month: "short" })}</span>
-        <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={e.start_at} />
+        <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={forecastAt(e)} zone={e.time_zone} />
       </div>
       {e.is_sold_out ? (
         <span className="flag sold">{t.soldOut}</span>

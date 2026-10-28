@@ -55,11 +55,18 @@ export function slotAt(slots: Slot[], start: number): Slot | undefined {
   });
 }
 
-export function Weather({ lat, lng, city, start, full = false }: {
+/** When an event's forecast is read: its start; a date alone (no time from the seller), that day's noon
+ *  (its stored start is midnight, hours "ago" on the day itself, and would show no forecast).
+ *  ponytail: noon UTC, close to the venue's midday from Europe to Asia; the zone's noon if America needs it. */
+export const forecastAt = (e: { start_at: string | null; time_known?: boolean; local_date: string | null }) =>
+  e.time_known === false && e.local_date ? `${e.local_date}T12:00:00Z` : e.start_at;
+
+export function Weather({ lat, lng, city, start, zone, full = false }: {
   lat: number | null;
   lng: number | null;
   city?: string | null; // no exact point: the city centre's forecast
   start: string | null;
+  zone?: string | null; // a venue abroad: day / night by its own clock
   full?: boolean;
 }) {
   const { lang } = useT();
@@ -81,7 +88,7 @@ export function Weather({ lat, lng, city, start, full = false }: {
   const slot = data && slotAt(data, when);
   if (!slot) return null;
   const [, symbol, temp, rain] = slot;
-  const hour = Number(new Date(when).toLocaleString("en-GB", { timeZone: "Asia/Jerusalem", hour: "numeric", hourCycle: "h23" }));
+  const hour = Number(new Date(when).toLocaleString("en-GB", { timeZone: zone ?? "Asia/Jerusalem", hour: "numeric", hourCycle: "h23" }));
   const [icon, word] = iconFor(symbol, hour < 6 || hour >= 18);
   const w = WORDS[lang];
   const text = `${w[word]}${temp != null ? ` · ${Math.round(temp)}°` : ""}`;
