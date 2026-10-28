@@ -7,11 +7,20 @@ The repo ships two files Railway uses:
 
 - **`Dockerfile`:** builds the website, then runs the API, the scheduler and the site in one
   container, as a non-root user.
-- **`railway.json`:** Dockerfile build, `/health` check, one replica, restart on failure.
+- **`.railway/railway.ts`:** Railway's Infrastructure as Code (it replaced `railway.json`, which
+  Railway deprecated): Dockerfile build, `/health` check (120 s), one replica, restart on failure
+  (5 tries), overlap 0 s, draining 30 s, the `/app/data` volume, the domains, and the variables
+  (`preserve()`: values stay in Railway, never in git). Field names follow the SDK's types
+  (`node_modules/railway/dist/index-*.d.ts`, `BuildConfig` / `DeployConfig`).
+
+  Change it, then `railway config plan` (read-only, shows the diff) and `railway config apply`.
+  A push alone does not apply it. The SDK is the root `package.json` dev dependency (`npm install`).
+  On Windows the SDK checks the CLI through `$env:_`: in PowerShell first
+  `$env:_ = "$env:APPDATA\npm\node_modules\@railway\cli\bin\railway.exe"`.
 
 ## Setup
 
-1. Create a project from this repo (Railway picks up `railway.json`).
+1. Create a project from this repo, then `railway config apply` (`.railway/railway.ts`).
 2. **Add a volume mounted at `/app/data`.** It holds the SQLite database, the artist dictionary and
    the images. Without it every deploy starts empty.
 3. Set the variables below.

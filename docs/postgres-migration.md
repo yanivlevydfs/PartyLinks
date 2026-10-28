@@ -12,7 +12,7 @@
 - **ההחלפה עצמה היא משתנה ב-Railway ולא commit.** ‏`PARTYLINKS_DATABASE__URL` מחליף DB, והסרתו מחזירה ל-SQLite. כך push-ים של sessions אחרים ל-master לא יכולים לשבור את ה-cutover, ו-rollback הוא שינוי של משתנה אחד.
 - **Driver:** ‏psycopg 3 sync (`postgresql+psycopg://`). הקוד כולו sync (threads ו-`asyncio.to_thread`), אז asyncpg לא רלוונטי.
 - **העתקת הנתונים:** פקודת `copy-db` קטנה בתוך `cli.py`, שעובדת דרך ה-SQLAlchemy models עצמם וכך שומרת על אותם types ו-JSON. היא כוללת אימות של מספרי שורות ו-checksum לכל טבלה, ועובדת בשני הכיוונים, כך שגם rollback של נתונים משתמש בה.
-- **Downtime:** בערך כמו deploy רגיל, דקה או שתיים (`railway.json` עם `overlapSeconds: 0`). ה-scheduler כבוי לכ-20–30 דקות, אז ה"נזק" הוא נתונים פחות טריים, לא אתר למטה.
+- **Downtime:** בערך כמו deploy רגיל, דקה או שתיים (`.railway/railway.ts` עם `overlapSeconds: 0`; עד 2026-10-28 `railway.json`). ה-scheduler כבוי לכ-20–30 דקות, אז ה"נזק" הוא נתונים פחות טריים, לא אתר למטה.
 - **שינוי ההתנהגות מכוון להיות אפס בשלב C.** ה-writer lock התהליכי נשאר גם על PG. רק בשלב D, אחרי שבוע יציב, מסירים אותו ומקבלים את התועלת העיקרית.
 
 ---
