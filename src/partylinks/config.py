@@ -79,6 +79,11 @@ class DatabaseSettings(BaseModel):
     application_name: str = "partylinks"  # shown in pg_stat_activity
     # Share of each events page filled on insert: the rest is room for in-place (HOT) updates.
     events_fillfactor: int = Field(85, ge=10, le=100)
+    # Same for ticket tiers: their "remaining" counters change on every scan and are in no index (HOT).
+    ticket_tiers_fillfactor: int = Field(85, ge=10, le=100)
+    # Created at startup when missing; one that cannot be created is logged, never fatal.
+    # pg_stat_statements: per-query timings (the library is preloaded on Railway's PostgreSQL).
+    extensions: list[str] = ["pg_stat_statements"]
     # Writers run concurrently on row locks; true queues this process's writers one at a time.
     serialize_writes: bool = False
     # At startup, how long to wait for the database to answer (it may be restarting) before giving up;

@@ -31,6 +31,7 @@ from sqlalchemy import (
     TypeDecorator,
     UniqueConstraint,
     bindparam,
+    column,
     create_engine,
     delete,
     func,
@@ -39,7 +40,9 @@ from sqlalchemy import (
     literal,
     select,
     text,
+    tuple_,
     update,
+    values,
 )
 from sqlalchemy import event as sa_event
 from sqlalchemy.dialects.postgresql import JSONB
@@ -515,6 +518,7 @@ class Database:
                 for index in table.indexes:  # new indexes, and those of columns added above
                     self._create_index(index)
             self._tune_storage()
+            self._create_extensions()
 
     def wait_until_ready(self) -> None:
         """At startup, wait (with backoff, up to ``database.startup_wait_s``) until PostgreSQL answers:
@@ -554,13 +558,22 @@ class Database:
             log.error("schema: could not create index %s: %s", index.name, exc.orig)
 
     def _tune_storage(self) -> None:
-        """Table storage options the ORM cannot declare: room for HOT updates on events (see ix_events_feed)."""
-        fillfactor = self.options.events_fillfactor
+        """Table storage options the ORM cannot declare: room for HOT updates (see ix_events_feed)."""
+        tables = {"events": self.options.events_fillfactor, "ticket_tiers": self.options.ticket_tiers_fillfactor}
         with self.engine.begin() as conn:
-            current = conn.scalar(text("SELECT reloptions FROM pg_class WHERE oid = 'events'::regclass")) or []
-            if f"fillfactor={fillfactor}" not in current:
-                conn.execute(text(f"ALTER TABLE events SET (fillfactor = {fillfactor})"))
-                log.info("schema: events fillfactor set to %d", fillfactor)
+            for table, fillfactor in tables.items():
+                current = conn.scalar(text(f"SELECT reloptions FROM pg_class WHERE oid = '{table}'::regclass")) or []
+                if f"fillfactor={fillfactor}" not in current:
+                    conn.execute(text(f"ALTER TABLE {table} SET (fillfactor = {fillfactor})"))
+                    log.info("schema: %s fillfactor set to %d", table, fillfactor)
+
+    def _create_extensions(self) -> None:
+        for name in self.options.extensions:
+            try:
+                with self.engine.begin() as conn:
+                    conn.execute(text(f'CREATE EXTENSION IF NOT EXISTS "{name}"'))
+            except DBAPIError as exc:  # not installed, or no privilege: the site runs without it
+                log.warning("schema: extension %s not created: %s", name, exc.orig)
 
     def storage_stats(self) -> dict[str, int]:
         """Size of the database on disk, in bytes (tables, indexes, TOAST; autovacuum reuses free space)."""
@@ -621,7 +634,7 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
     """Bulk upsert a batch of events with a fixed number of statements.
 
     * events  - one multi-row ``INSERT ... ON CONFLICT DO UPDATE``
-    * tickets - one ``DELETE`` + one multi-row ``INSERT`` (tiers are replaced)
+    * tickets - one ``DELETE`` of dropped positions + one multi-row upsert that skips unchanged tiers
     * images  - one ``SELECT``, then bulk ``DELETE`` / ``UPDATE`` / ``INSERT``;
       already-downloaded artwork is kept when its URL is still listed.
 
@@ -664,14 +677,7 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
     if changes:
         session.execute(insert(DealChangeRow), changes)
 
-    session.execute(delete(TicketRow).where(TicketRow.event_id.in_(ids)))
-    ticket_rows = [
-        {"event_id": e.event_id, "position": i, **tier.model_dump(mode="python")}
-        for e in events
-        for i, tier in enumerate(e.tickets)
-    ]
-    if ticket_rows:
-        session.execute(insert(TicketRow), ticket_rows)
+    _write_tiers(session, events)
 
     existing = session.execute(
         select(ImageRow.id, ImageRow.event_id, ImageRow.url, ImageRow.local_path).where(ImageRow.event_id.in_(ids))
@@ -689,6 +695,34 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
     if added:
         session.execute(insert(ImageRow), added)
     return len(events), [row.local_path for row in stale if row.local_path]
+
+
+def _write_tiers(session: Session, events: Sequence[ScrapedEvent]) -> None:
+    """Tiers by (event, position): a tier is written only when one of its values changed, and the
+    positions past an event's new tier count are deleted. Rewriting them all on every scan left
+    a dead row per tier and kept autovacuum busy."""
+    counts = values(column("event_id", Text), column("tiers", Integer), name="counts").data(
+        [(e.event_id, len(e.tickets)) for e in events]
+    )
+    session.execute(
+        delete(TicketRow).where(TicketRow.event_id == counts.c.event_id, TicketRow.position >= counts.c.tiers)
+    )
+    rows = [
+        {"event_id": e.event_id, "position": i, **tier.model_dump(mode="python")}
+        for e in sorted(events, key=lambda e: e.event_id)  # consistent lock order across writers
+        for i, tier in enumerate(e.tickets)
+    ]
+    if not rows:
+        return
+    stmt = pg_insert(TicketRow).values(rows)
+    columns = [c for c in rows[0] if c not in ("event_id", "position")]
+    table = cast(Table, TicketRow.__table__)
+    changed = tuple_(*(table.c[c] for c in columns)).is_distinct_from(tuple_(*(stmt.excluded[c] for c in columns)))
+    session.execute(
+        stmt.on_conflict_do_update(
+            index_elements=["event_id", "position"], set_={c: stmt.excluded[c] for c in columns}, where=changed
+        )
+    )
 
 
 def bulk_update_by_id(session: Session, model: type[Base], rows: list[dict[str, Any]]) -> None:

@@ -29,9 +29,9 @@ FROM pg_stat_user_tables WHERE relname IN ('events', 'ticket_tiers', 'event_imag
 - **מדידה:** קצב `seq_scan` של `events` בשעה, לפני ואחרי ה-deploy.
 - **Rollback:** `PARTYLINKS_API__CACHE_MIN_FRESH_SECONDS=0` ב-Railway.
 
-## שלב 2: הפעלת `pg_stat_statements`
+## שלב 2: הפעלת `pg_stat_statements` (בוצע בקוד)
 
-- **מה:** `CREATE EXTENSION IF NOT EXISTS pg_stat_statements` בתוך `create_schema`, בטרנזקציה משלו ולא fatal (כמו `_create_index`). כך זה קורה בכל deploy, בלי פעולה ידנית בשרת, ובלי לשבור localhost או tests (ב-`pgserver` הספרייה לא טעונה: ה-extension נוצר, ורק ה-view לא זמין).
+- **מה:** `CREATE EXTENSION IF NOT EXISTS pg_stat_statements` בתוך `create_schema`, בטרנזקציה משלו ולא fatal (כמו `_create_index`). כך זה קורה בכל deploy, בלי פעולה ידנית בשרת, ובלי לשבור localhost או tests (ב-`pgserver` המקומי אין את ה-extension בכלל, רק `plpgsql` ו-`vector`: נרשם warning והעלייה ממשיכה).
 - **שימוש:** Top 15 לפי `total_exec_time` אחרי שעה של עומס רגיל. התוצאה קובעת את שלב 5.
 - **אופציונלי:** כרטיס "שאילתות איטיות" במסך הניהול (קריאה מה-view). רק אם יידרש.
 - **Rollback:** `DROP EXTENSION pg_stat_statements`. אין השפעה על נתונים.
@@ -56,7 +56,7 @@ FROM pg_stat_user_tables WHERE relname IN ('events', 'ticket_tiers', 'event_imag
 - **מדידה:** `SHOW` לכל הגדרה, זמני `/events`, ‏`/abroad/france` ו-`/health` במבחן העומס (‏`burst.py`, ‏30 במקביל).
 - **Rollback:** `ALTER SYSTEM RESET <name>` לכל הגדרה, `pg_reload_conf()`, ו-restart.
 
-## שלב 4: מחירי כרטיסים בלי כתיבה מיותרת
+## שלב 4: מחירי כרטיסים בלי כתיבה מיותרת (בוצע, `db._write_tiers`)
 
 - **הבעיה:** `upsert_events` (`db.py`) מוחק ומכניס מחדש את כל ה-tiers של כל אירוע בכל סריקה, גם כשדבר לא השתנה. כל DELETE משאיר שורה מתה, וכל batch מזיז את `Database.changes`.
 - **התיקון:**
@@ -76,7 +76,7 @@ FROM pg_stat_user_tables WHERE relname IN ('events', 'ticket_tiers', 'event_imag
 
 ## סדר ביצוע
 
-1. שלב 1: ממתין ל-deploy (Railway תקוע ב-QUEUED), ואז מדידה.
+1. שלב 1: ב-production מ-2026-10-28 20:08.
 2. שלב 2: commit קטן, deploy, ושעה של איסוף נתונים.
 3. שלב 4: commit, tests, מדידה בגודל production (`measure-at-prod-size`).
 4. שלב 3: אחרי אישור, בשעה שקטה.

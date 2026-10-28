@@ -649,3 +649,10 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **טבלאות חדשות:** `worker_state` (שורה אחת: ‏`id` PK, ‏pid, ‏heartbeat, מצב ה-scheduler, ‏jobs ו-retention ב-JSONB, ‏`changes` ‏BIGINT) ו-`worker_commands` (‏`id` PK, ‏command, ‏args/result ב-JSONB, ‏`done_at` עם אינדקס). ה-heartbeat וה-commands נכתבים דרך ה-engine ולא דרך session, כדי שלא ייחשבו שינוי נתונים; ה-web מבטל את ה-cache כש-`changes` של ה-worker זז.
 - **`ScrapeService(owns_runs=False)`** בתהליך ה-web: לא מסמן runs של ה-worker החי כ-interrupted.
 - **נבדק:** ‏tests ‏(477), ‏E2E מקומי: health, ‏admin (pause/resume/404/config apply), ‏kill ל-worker ‏(עלה מחדש תוך 2 ש'), כיבוי בלי תהליכים יתומים.
+
+### 2026-10-28 (ביצועים: מחירי כרטיסים, pg_stat_statements, מטמון)
+- **`ticket_tiers`:** ‏`upsert_events` לא מוחק ומכניס מחדש את כל ה-tiers. `db._write_tiers`: ‏`DELETE ... USING (VALUES ...)` רק ל-positions שמעבר למספר ה-tiers החדש, ו-`INSERT ... ON CONFLICT (event_id, position) DO UPDATE ... WHERE (עמודות) IS DISTINCT FROM (excluded)`, ממוין לפי `event_id`. tier שלא השתנה לא נכתב (‏`xmin` נשאר).
+- **Storage:** ‏`ticket_tiers` עם `fillfactor` (‏`database.ticket_tiers_fillfactor`, ‏85), כדי שעדכון `remaining` יהיה HOT.
+- **Extensions:** ‏`database.extensions` (‏`[pg_stat_statements]`) נוצרים ב-`create_schema` כשחסרים; כישלון נרשם כ-warning ולא מפיל עלייה (ב-`pgserver` המקומי יש רק `plpgsql` ו-`vector`).
+- **מטמון דפים:** ‏`api.cache_min_fresh_seconds` (‏30): כתיבה לא מבטלת דף צעיר מזה. ראו `postgres-performance.md`.
+- **Tests:** ‏`test_a_rescan_writes_only_the_ticket_tiers_that_changed`. ‏481/481.

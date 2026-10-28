@@ -90,3 +90,32 @@ def test_the_artist_dictionary_counts_and_merges(tmp_path: Path) -> None:
     assert {n: s for n, s, _ in book.rows()}["Millero"] == 3
     assert book.profiles()["dali"] == ArtistProfile("DALI", "eventer", kind="dj", image_url="https://img/d.jpg",
                                                     links=["https://instagram.com/dali"])  # fmt: skip
+
+
+def test_a_rescan_writes_only_the_ticket_tiers_that_changed(tmp_path: Path) -> None:
+    """Unchanged tiers keep their row version (no dead row per scan), a changed one is updated,
+    a tier gone from the site is deleted. An extension the server lacks (pgserver has no
+    pg_stat_statements) is skipped, never fatal."""
+    from partylinks.db import TicketRow
+
+    settings = settings_for(tmp_path)
+    start = datetime.now(UTC) + timedelta(days=1)
+    tiers = [TicketTier(name="Early", price=Decimal(50)), TicketTier(name="Entry", price=Decimal(80)),
+             TicketTier(name="Door", price=Decimal(100))]  # fmt: skip
+    db = seed(settings, [event("a", start, tickets=tiers)])
+
+    def versions() -> dict[int, tuple[str, str, Decimal | None]]:
+        with db.session(write=False) as session:
+            rows = session.execute(select(TicketRow.position, text("ticket_tiers.xmin::text"), TicketRow.name, TicketRow.price))
+            return {r[0]: (r[1], r[2], r[3]) for r in rows}
+
+    before = versions()
+    seed(settings, [event("a", start, tickets=tiers)])
+    assert versions() == before  # same scan again: nothing written
+    seed(settings, [event("a", start, tickets=[tiers[0], TicketTier(name="Entry", price=Decimal(90))])])
+    after = versions()
+    assert after[0] == before[0] and after[1][1:] == ("Entry", Decimal(90)) and after[1][0] != before[1][0]
+    assert 2 not in after
+    with db.session(write=False) as session:
+        options = session.scalar(text("SELECT reloptions FROM pg_class WHERE oid = 'ticket_tiers'::regclass"))
+    assert f"fillfactor={settings.database.ticket_tiers_fillfactor}" in options

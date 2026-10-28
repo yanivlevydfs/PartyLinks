@@ -29,6 +29,8 @@ database:
   keepalive_count: 3
   application_name: partylinks
   events_fillfactor: 85
+  ticket_tiers_fillfactor: 85   # room for HOT updates of the remaining-ticket counters
+  extensions: [pg_stat_statements]   # created at startup when missing (per-query timings)
   serialize_writes: false     # true = this process's writers one at a time (row locks otherwise)
   retries: 4
   startup_wait_s: 90          # at startup, wait this long for the database (under the 120 s health check)
