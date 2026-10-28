@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 from partylinks.config import AreaSettings, EnrichmentSettings, RegionSettings
 from partylinks.models import EntryType, ScrapedEvent, TicketKind
 from partylinks.parsing import slugify
-from partylinks.places import PlaceIndex, all_cities
+from partylinks.places import PlaceIndex, all_cities, city_name
 
 _EDGE_DECOR = re.compile(r"^[^\w'\"(]+|[^\w'\")]+$")
 _LEADING_WITH = re.compile(r"^(?:w/|with|feat\.?|ft\.?)\s+", re.IGNORECASE)
@@ -236,6 +236,8 @@ class Enricher:
         ) or bool(self._coupon and self._coupon.search((event.description or "").lower()))
         self._categorize_time(event)
         event.city = self.canonical_city(event.city, event.address, event.venue_name)
+        if event.city and event.country and event.country != UNKNOWN_COUNTRY:  # "ברלין, גרמניה" -> "ברלין"
+            event.city = city_name(event.city, event.country)
         event.in_target_city = self.in_target_city(event.city, event.address, event.venue_name)
         event.area = self.areas.match(
             event.venue_name, event.address, event.latitude, event.longitude, event.in_target_city, event.city

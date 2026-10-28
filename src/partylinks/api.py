@@ -49,7 +49,7 @@ from partylinks.logs import setup_logging
 from partylinks.media import VARIANT_WIDTHS, variant_path
 from partylinks.models import EntryType
 from partylinks.parsing import TidyText
-from partylinks.places import city_abroad
+from partylinks.places import city_abroad, city_name
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
 from partylinks.search import by_skeleton, did_you_mean, relevance, smart_filters, sounds_like
@@ -396,7 +396,8 @@ def _merged_cities(rows: Iterable[Any]) -> list[tuple[str, int]]:
     spellings: dict[Any, Counter[str]] = {}
     for (city, country), n in counts.items():
         found = city_abroad(city, country) if country else None
-        spellings.setdefault(found[0] if found else city.casefold(), Counter())[city] += n
+        shown = city_name(city, country) if found else city  # rows stored before the name was cleaned
+        spellings.setdefault(found[0] if found else city.casefold(), Counter())[shown] += n
     merged = [(names.most_common(1)[0][0], sum(names.values())) for names in spellings.values()]
     return sorted(merged, key=lambda c: -c[1])
 

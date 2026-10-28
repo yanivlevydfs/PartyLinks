@@ -567,3 +567,4 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **ניקוי תיאורים (`parsing.tidy_text`, ftfy):** `events.description` ו-`ticket_tiers.description` נכתבים נקיים (רווחים, שורות, entities, mojibake, NUL). אין שינוי schema; משפיע על Q-NUL (§6.3). ftfy היא תלות Python, לא של ה-DB.
 - **שורות קיימות:** מתעדכנות ב-scrape הבא של כל מקור (upsert כותב את כל `_EVENT_FIELDS`). אין backfill. ב-copy ל-PG הן יעברו כפי שהן.
 - **הפניות לשורות קוד** בסעיפים הקודמים (למשל `db.py:133`) נכונות ל-4a1a6a7 ויכולות לזוז בכמה שורות. השמות (פונקציות, עמודות) הם העיקר.
+- **`events.city` בחו"ל נשמר נקי (`places.city_name`, ב-`enrichment`):** "ברלין, גרמניה" נשמר "ברלין", "BERLIN, GERNANY" נשמר "Berlin". אין שינוי schema ואין שינוי query. הערכים ב-`city` נעשים עקביים יותר, וזה עוזר לשוויון ב-`seo.py` / `blog.py` (אינדקס `city`, §9.4). שורות ישנות מתנקות ב-scrape הבא; עד אז `_merged_cities` מציג את השם הנקי.

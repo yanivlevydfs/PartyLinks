@@ -6,7 +6,7 @@ from partylinks.config import get_settings
 from partylinks.enrichment import Enricher
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import has_time, read_clock, tidy_text
-from partylinks.places import city_abroad, city_zone
+from partylinks.places import city_abroad, city_name, city_zone
 
 
 def test_spaces_lines_and_marks() -> None:
@@ -38,6 +38,12 @@ def test_city_with_extras() -> None:
     assert city_abroad("Saint-Denis (Paris)", "FR")[1][0] == "Paris"
     assert city_zone("ניו יורק", "US") == "America/New_York"
     assert city_zone("Los Angeles", "US") == "America/Los_Angeles"
+    assert city_name("ברלין, גרמניה", "DE") == "ברלין"
+    assert city_name("BERLIN, GERNANY", "DE") == "Berlin"
+    assert city_name("מינכן, גרמניה", "DE") == "מינכן"
+    assert city_name("Saint-Denis (Paris)", "FR") == "Paris"
+    assert city_name("פריז", "FR") == "פריז" and city_name("Halle (Saale)", "DE") == "Halle (Saale)"
+    assert city_name("וגטור, גואה", "IN") == "וגטור, גואה"  # unknown place: kept as given
 
 
 def test_venue_time_and_date_alone() -> None:

@@ -133,6 +133,20 @@ def city_abroad(name: str, country: str | None = None, min_population: int = 0) 
     return (city[0], city[3]) if city else None
 
 
+def city_name(name: str, country: str | None) -> str:
+    """``name`` without the extras sellers add ("ברלין, גרמניה" -> "ברלין", "BERLIN, GERNANY" -> "Berlin"):
+    the part that names a known city, in its own script (a Latin one in GeoNames' spelling). A known
+    name or an unknown place is kept as given."""
+    cities = _world_cities()
+    if cities.get(_norm(name)):
+        return name
+    city = _city(name, country, 0)
+    if city is None:
+        return name
+    part = next((p.strip() for p in _PARTS.split(name) if any(c[0] == city[0] for c in cities.get(_norm(p), ()))), name)
+    return part if _HEBREW.search(part) else city[3][0]
+
+
 def city_zone(name: str, country: str) -> str | None:
     """Time zone of the city abroad called ``name`` (English or Hebrew) in ``country``; None if unknown."""
     city = _city(name, country, 0)
