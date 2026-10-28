@@ -55,6 +55,33 @@ class LoggingSettings(BaseModel):
 class DatabaseSettings(BaseModel):
     url: str = "sqlite:///data/partylinks.db"
     echo: bool = False
+    # PostgreSQL connection pool (ignored on SQLite). Source threads and page requests share it:
+    # pool_size stays open, max_overflow more on bursts, pool_timeout seconds to wait for a free one.
+    pool_size: int = Field(10, ge=1)
+    max_overflow: int = Field(20, ge=0)
+    pool_timeout: float = Field(30, gt=0)
+    pool_recycle: int = Field(1800, ge=-1)  # seconds; reopen older connections (-1 = never)
+    connect_timeout: int = Field(10, ge=1)  # seconds to open a connection
+    # Server-side safety nets (milliseconds, 0 = off): a stuck statement or an abandoned transaction
+    # is cancelled by PostgreSQL instead of holding row locks forever.
+    statement_timeout_ms: int = Field(120_000, ge=0)
+    idle_in_transaction_timeout_ms: int = Field(300_000, ge=0)
+    lock_timeout_ms: int = Field(60_000, ge=0)
+    # TCP keepalives (seconds idle before the first probe, between probes, probes before giving up):
+    # a connection whose peer vanished is dropped in about a minute instead of hanging.
+    keepalive_idle: int = Field(30, ge=1)
+    keepalive_interval: int = Field(10, ge=1)
+    keepalive_count: int = Field(3, ge=1)
+    application_name: str = "partylinks"  # shown in pg_stat_activity
+    # Share of each events page filled on insert (PostgreSQL): the rest is room for in-place (HOT) updates.
+    events_fillfactor: int = Field(85, ge=10, le=100)
+    # copy-db: rows read and inserted per round trip.
+    copy_batch: int = Field(2000, ge=1)
+    # One writer at a time in this process. None = SQLite only (its file has one writer anyway);
+    # true on PostgreSQL queues writers like SQLite did, false lets them write concurrently (row locks).
+    serialize_writes: bool | None = None
+    # Retries of a write that hit a lock, deadlock, serialization failure or a dropped connection.
+    retries: int = Field(4, ge=1)
 
 
 class ApiSettings(BaseModel):
@@ -292,7 +319,7 @@ class RetentionSettings(BaseModel):
 
     # Scrape run history older than this is deleted too.
     keep_runs_days: int = Field(30, ge=1)
-    # SQLite only: give the space of deleted rows back to the OS after a purge.
+    # SQLite only: give the space of deleted rows back to the OS after a purge (PostgreSQL: autovacuum).
     reclaim_space: bool = True
 
 

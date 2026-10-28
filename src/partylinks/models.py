@@ -20,6 +20,21 @@ from partylinks.artists import ArtistProfile
 from partylinks.parsing import TidyText
 
 
+def without_nul(value: Any) -> Any:
+    """``value`` with every NUL character removed from its strings (nested lists / dicts too). Sites
+    send them now and then; PostgreSQL refuses a NUL in text, so one would cost the whole event.
+    Allocation-free in the usual case: a value without NUL comes back as the very same object."""
+    if isinstance(value, str):
+        return value.replace("\x00", "") if "\x00" in value else value
+    if isinstance(value, dict):
+        items = [(without_nul(k), without_nul(v)) for k, v in value.items()]
+        return value if all(a is k and b is v for (a, b), (k, v) in zip(items, value.items(), strict=True)) else dict(items)
+    if isinstance(value, list | tuple):
+        clean = [without_nul(v) for v in value]
+        return value if all(a is b for a, b in zip(clean, value, strict=True)) else type(value)(clean)
+    return value
+
+
 class TierStatus(StrEnum):
     ON_SALE = "on_sale"
     SOLD_OUT = "sold_out"
@@ -63,6 +78,11 @@ class TicketTier(BaseModel):
     remaining: int | None = None
     sale_start: datetime | None = None
     sale_end: datetime | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _no_nul(cls, data: Any) -> Any:
+        return without_nul(data)
 
     @model_validator(mode="after")
     def _derive_status(self) -> TicketTier:
@@ -152,6 +172,11 @@ class ScrapedEvent(BaseModel):
     time_slot: str | None = None
     is_weekend: bool | None = None
     area: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _no_nul(cls, data: Any) -> Any:
+        return without_nul(data)
 
     @field_validator("start_at", "end_at")
     @classmethod

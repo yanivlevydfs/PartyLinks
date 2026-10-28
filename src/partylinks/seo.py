@@ -220,7 +220,7 @@ def _upcoming(session: Session, *where: Any, limit: int = LIST_LIMIT, abroad: bo
         session.scalars(
             select(EventRow)
             .where(upcoming_filter(), EventRow.country.is_not(None) if abroad else EventRow.country.is_(None), *where)
-            .order_by(EventRow.start_at)
+            .order_by(EventRow.start_at.asc().nulls_first())
             .limit(limit)
             .options(selectinload(EventRow.images))
         )
@@ -548,7 +548,7 @@ def abroad_page(session: Session, cfg: Settings, lang: str) -> Page:
         session.scalars(
             select(EventRow)
             .where(upcoming_filter(), EventRow.country.is_not(None), EventRow.is_primary.is_(True))
-            .order_by(EventRow.start_at)
+            .order_by(EventRow.start_at.asc().nulls_first())
             .limit(LIST_LIMIT)
             .options(selectinload(EventRow.images))
         )
@@ -1152,7 +1152,7 @@ SITEMAP_PART = 10_000
 
 def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
     """Every public page as a <url> entry (Hebrew and English apart, the blog once)."""
-    rows = session.scalars(select(EventRow).where(upcoming_filter()).order_by(EventRow.start_at)).all()
+    rows = session.scalars(select(EventRow).where(upcoming_filter()).order_by(EventRow.start_at.asc().nulls_first())).all()
     paths: list[tuple[str, date | None]] = [("/", None), ("/map", None), ("/abroad", None), ("/venues", None), ("/artists", None), ("/accessibility", None), ("/privacy", None), ("/terms", None)]
     paths += [(p, None) for p in INFO_PAGES]
     today = datetime.now(ZoneInfo(cfg.timezone))  # landing pages change every day

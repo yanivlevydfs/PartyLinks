@@ -212,8 +212,31 @@ airportsdata (`scrapers/abroad.py`, `airports()`).
 
 ## Database
 
-SQLite in WAL mode, so source threads can write concurrently. Writes are batched: one multi-row
-upsert per batch of events, and bulk insert or delete for tickets and images.
+One code base, two databases: SQLite (localhost, tests, and production until the switch) and
+PostgreSQL (production, `PARTYLINKS_DATABASE__URL=postgresql://...`; plan and status in
+[postgres-migration.md](postgres-migration.md)). Writes are batched: one multi-row upsert per batch of
+events, and bulk insert or delete for tickets and images.
 
-`Database.create_schema()` creates missing tables and adds new columns automatically (additive
-only). A rename or type change needs a real migration.
+- **SQLite:** WAL mode, one writer at a time (this process's writers queue on a lock).
+- **PostgreSQL:** psycopg 3, a connection pool (`database.pool_size` / `max_overflow` / `pool_timeout`,
+  pre-ping, recycle), TCP keepalives and server-side `statement_timeout`, `lock_timeout` and
+  `idle_in_transaction_session_timeout`. Writers run concurrently on row locks (rows are always
+  written in id order, so they never deadlock); `database.serialize_writes: true` queues them as on SQLite.
+- **Transient errors are retried** (`db.with_db_retry`, `database.retries`): a locked SQLite file,
+  deadlock, serialization failure, lock timeout, a dropped connection or a full pool.
+- **Same results on both:** NULLs sort as the smallest value everywhere (`nulls_first` / `nulls_last`),
+  the short-word search rule is `db.whole_word` (a Python function on SQLite, a regex on PostgreSQL),
+  JSON is JSONB on PostgreSQL, scraped text is stripped of NUL characters (`models.without_nul`),
+  ids and scraped text are `TEXT` (PostgreSQL enforces `VARCHAR(n)`), and duplicate grouping sorts
+  in Python, never by the database's collation.
+- **Keys:** every table has a primary key; foreign keys with `ON DELETE CASCADE` from tickets, images
+  and deal changes to events, and from plan answers and options to plans. Clicks, sponsored picks and
+  plans point at events without a foreign key on purpose: they outlive retention or go with it in code.
+
+`Database.create_schema()` creates missing tables, adds new columns (with their default, `NOT NULL`
+where the model says so) and builds missing indexes, at every start. On PostgreSQL it runs under an
+advisory lock (one process at a time); an index that cannot be built is logged and the site still
+starts. A rename or type change needs a real migration.
+
+`partylinks copy-db --to URL [--from URL] [--force]` (`dbcopy.py`) copies every table to another
+database through the same models, then verifies each table: row count and a checksum of every row.

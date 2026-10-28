@@ -9,7 +9,7 @@ Any key can be overridden with a `PARTYLINKS_` variable, using `__` for nesting.
 from the environment or from `.env` in the repo root.
 
 ```bash
-PARTYLINKS_DATABASE__URL=postgresql+psycopg://user:pass@host/partylinks
+PARTYLINKS_DATABASE__URL=postgresql://user:pass@host/partylinks
 PARTYLINKS_SOURCES__ZYGO__ENABLED=false
 PARTYLINKS_HTTP__CONCURRENCY=16
 PARTYLINKS_MEDIA__STORAGE=filesystem
@@ -22,7 +22,7 @@ Secrets (admin token, proxy credentials, access headers) belong in variables onl
 | Section | What it controls |
 | --- | --- |
 | `timezone` | App time zone (`Asia/Jerusalem`): local dates, cron times, display |
-| `database` | Database URL (SQLite by default, in `data/`) |
+| `database` | Database URL (SQLite by default, in `data/`; `postgresql://` for PostgreSQL), and for PostgreSQL the pool, timeouts, keepalives, write mode, retries and `copy-db` batch size |
 | `logging` | Level, text or JSON, access log, rotating file |
 | `site` | `base_url`, brand name (`SPOTX`), accessibility and privacy contacts |
 | `utm` | UTM tags on ticket links: `enabled`, `source`, `medium` (see [ticket links](ticket-links.md)) |

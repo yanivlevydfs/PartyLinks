@@ -31,12 +31,15 @@ The repo ships two files Railway uses:
 3. Set the variables below.
 4. Generate a domain (Settings → Networking). The app listens on Railway's `$PORT`.
 
-Keep **one replica**: SQLite and the scheduler are single-instance.
+Keep **one replica**: the scheduler, the response cache and the bans live in the process (and SQLite
+is a file). With PostgreSQL the volume still holds the images, the artist dictionary and the caches.
 
 ## Variables
 
 | Variable | Purpose |
 | --- | --- |
+| `PARTYLINKS_DATABASE__URL` | PostgreSQL: `postgresql://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/partylinks` (the driver is set in code). Unset = SQLite on the volume |
+| `PARTYLINKS_DATABASE__SERIALIZE_WRITES` | `true` queues writers one at a time on PostgreSQL too (the first week after the switch) |
 | `PARTYLINKS_SCHEDULER__ENABLED=true` | Turns scraping on (it is off in `settings.yaml`, so localhost never scrapes) |
 | `PARTYLINKS_SCHEDULER__RUN_ON_STARTUP=true` | Runs every source once when the process starts |
 | `PARTYLINKS_ADMIN__TOKEN` | A long random string for the admin console and the mutating API |

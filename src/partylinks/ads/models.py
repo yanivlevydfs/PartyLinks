@@ -18,7 +18,7 @@ class SponsoredRow(Base):
 
     __tablename__ = "sponsored"
 
-    event_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    event_id: Mapped[str] = mapped_column(Text, primary_key=True)
     side: Mapped[str] = mapped_column(String(8))  # right | left (physical, not RTL start/end)
     position: Mapped[int] = mapped_column(Integer, default=0)  # order within its side
     until: Mapped[datetime | None] = mapped_column(UTCDateTime)  # campaign end; None = while the event is on
@@ -33,7 +33,7 @@ class SponsoredStatRow(Base):
 
     __tablename__ = "sponsored_stats"
 
-    event_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    event_id: Mapped[str] = mapped_column(Text, primary_key=True)
     day: Mapped[date] = mapped_column(Date, primary_key=True)
     title: Mapped[str] = mapped_column(Text)
     views: Mapped[int] = mapped_column(Integer, default=0)

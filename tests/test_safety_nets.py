@@ -143,7 +143,7 @@ def test_locked_database_gives_up_after_the_retry_budget(monkeypatch: Any) -> No
 
     with pytest.raises(OperationalError):
         _with_db_retry("save", always_locked)
-    assert len(calls) == db_module.DB_RETRIES
+    assert len(calls) == db_module.get_settings().database.retries
 
 
 def test_parallel_read_then_write_sessions_never_hit_a_locked_database(tmp_path: Path) -> None:

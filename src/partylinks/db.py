@@ -25,6 +25,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     LargeBinary,
     Numeric,
@@ -32,38 +33,63 @@ from sqlalchemy import (
     Table,
     Text,
     TypeDecorator,
+    UniqueConstraint,
     bindparam,
     create_engine,
     delete,
+    func,
     insert,
     inspect,
+    literal,
     select,
     text,
     update,
 )
 from sqlalchemy import event as sa_event
-from sqlalchemy.engine import Engine, make_url
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.engine import URL, Engine, make_url
+from sqlalchemy.exc import DBAPIError, OperationalError
+from sqlalchemy.exc import TimeoutError as PoolTimeout
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import DeclarativeBase, Mapped, ORMExecuteState, Session, mapped_column, relationship, sessionmaker
+from sqlalchemy.sql.functions import FunctionElement
 
-from partylinks.config import project_path
+from partylinks.config import DatabaseSettings, get_settings, project_path
 from partylinks.models import ScrapedEvent
 
 log = logging.getLogger(__name__)
 
-DB_RETRIES = 4
 WRITE_WAIT_S = 120  # how long a writer queues for the write lock before "database is locked"
+
+# PostgreSQL errors that a second try can get past: serialization failure, deadlock, lock timeout,
+# server shutting down / restarting, connection lost. Never a statement timeout (57014): it would
+# run the same slow statement again.
+RETRYABLE_SQLSTATES = frozenset({"40001", "40P01", "55P03", "57P01", "57P02", "57P03", "08000", "08003", "08006"})
+
+
+def retryable(exc: BaseException) -> bool:
+    """A transient DB error: lock contention (both dialects), a dropped connection or a full pool."""
+    if isinstance(exc, PoolTimeout):
+        return True
+    if not isinstance(exc, DBAPIError):
+        return False
+    if exc.connection_invalidated or getattr(exc.orig, "sqlstate", None) in RETRYABLE_SQLSTATES:
+        return True
+    message = str(exc.orig).lower()
+    return "locked" in message or "deadlock" in message  # SQLite 'database is locked'
 
 
 def with_db_retry[T](what: str, fn: Callable[[], T]) -> T:
-    """Retry a blocking DB call on lock contention (SQLite 'database is locked')."""
-    for attempt in range(1, DB_RETRIES + 1):
+    """Run a DB call (its own transaction), again with backoff on a transient error. Safe: the failed
+    transaction was rolled back, so nothing of it was kept."""
+    retries = get_settings().database.retries
+    for attempt in range(1, retries + 1):
         try:
             return fn()
-        except OperationalError as exc:
-            if attempt == DB_RETRIES or "locked" not in str(exc).lower() and "deadlock" not in str(exc).lower():
+        except (DBAPIError, PoolTimeout) as exc:
+            if attempt == retries or not retryable(exc):
                 raise
-            log.warning("%s: database busy (attempt %d/%d), retrying", what, attempt, DB_RETRIES)
+            log.warning("%s: database busy (attempt %d/%d, %s), retrying", what, attempt, retries, type(exc).__name__)
             time.sleep(2**attempt)
     raise AssertionError("unreachable")
 
@@ -85,6 +111,10 @@ class UTCDateTime(TypeDecorator[datetime]):
         return value.replace(tzinfo=UTC) if value is not None else None
 
 
+# JSON lists / dicts: JSONB on PostgreSQL (binary, indexable with GIN), JSON text on SQLite.
+JSONType = JSON().with_variant(JSONB(), "postgresql")
+
+
 class Base(DeclarativeBase):
     pass
 
@@ -92,69 +122,69 @@ class Base(DeclarativeBase):
 class EventRow(Base):
     __tablename__ = "events"
 
-    id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
     source: Mapped[str] = mapped_column(String(32), index=True)
-    source_event_id: Mapped[str] = mapped_column(String(96))
-    slug: Mapped[str | None] = mapped_column(String(200), unique=True, index=True)
+    source_event_id: Mapped[str] = mapped_column(Text)
+    slug: Mapped[str | None] = mapped_column(Text, unique=True)
     url: Mapped[str] = mapped_column(Text)
     title: Mapped[str] = mapped_column(Text)
     description: Mapped[str | None] = mapped_column(Text)
-    start_at: Mapped[datetime | None] = mapped_column(UTCDateTime, index=True)
+    start_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     end_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     time_known: Mapped[bool] = mapped_column(Boolean, default=True)
     time_zone: Mapped[str | None] = mapped_column(String(48))
     venue_name: Mapped[str | None] = mapped_column(Text)
-    venue_slug: Mapped[str | None] = mapped_column(String(120), index=True)
+    venue_slug: Mapped[str | None] = mapped_column(Text, index=True)
     address: Mapped[str | None] = mapped_column(Text)
-    city: Mapped[str | None] = mapped_column(String(128), index=True)
+    city: Mapped[str | None] = mapped_column(Text, index=True)
     latitude: Mapped[float | None] = mapped_column(Float)
     longitude: Mapped[float | None] = mapped_column(Float)
     country: Mapped[str | None] = mapped_column(String(2), index=True)
-    in_target_city: Mapped[bool | None] = mapped_column(Boolean, index=True)
-    genres: Mapped[list[str]] = mapped_column(JSON, default=list)
-    source_genres: Mapped[list[str]] = mapped_column(JSON, default=list)
-    event_types: Mapped[list[str]] = mapped_column(JSON, default=list)
-    artists: Mapped[list[str]] = mapped_column(JSON, default=list)
-    lineup: Mapped[list[str]] = mapped_column(JSON, default=list)
+    in_target_city: Mapped[bool | None] = mapped_column(Boolean)
+    genres: Mapped[list[str]] = mapped_column(JSONType, default=list)
+    source_genres: Mapped[list[str]] = mapped_column(JSONType, default=list)
+    event_types: Mapped[list[str]] = mapped_column(JSONType, default=list)
+    artists: Mapped[list[str]] = mapped_column(JSONType, default=list)
+    lineup: Mapped[list[str]] = mapped_column(JSONType, default=list)
     local_date: Mapped[date | None] = mapped_column(Date, index=True)
-    day_of_week: Mapped[str | None] = mapped_column(String(16), index=True)
-    time_slot: Mapped[str | None] = mapped_column(String(32), index=True)
+    day_of_week: Mapped[str | None] = mapped_column(String(16))
+    time_slot: Mapped[str | None] = mapped_column(String(32))
     area: Mapped[str | None] = mapped_column(String(32), index=True)
-    is_weekend: Mapped[bool | None] = mapped_column(Boolean, index=True)
+    is_weekend: Mapped[bool | None] = mapped_column(Boolean)
     min_age: Mapped[int | None] = mapped_column(Integer)
     organizer: Mapped[str | None] = mapped_column(Text)
     image_url: Mapped[str | None] = mapped_column(Text)
     currency: Mapped[str] = mapped_column(String(8), default="ILS")
     min_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     max_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
-    has_free_entry: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
-    entry_type: Mapped[str] = mapped_column(String(16), default="unknown", index=True)
+    has_free_entry: Mapped[bool] = mapped_column(Boolean, default=False)
+    entry_type: Mapped[str] = mapped_column(String(16), default="unknown")
     is_sold_out: Mapped[bool] = mapped_column(Boolean, default=False)
     free_sold_out: Mapped[bool] = mapped_column(Boolean, default=False)
     has_discount: Mapped[bool] = mapped_column(Boolean, default=False)
-    extra: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    extra: Mapped[dict[str, Any]] = mapped_column(JSONType, default=dict)
     first_seen_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
-    last_seen_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
+    last_seen_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     # False once a complete run of the source no longer lists it (cancelled / pulled / hidden);
     # set back to True as soon as the source lists it again.
-    is_listed: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    is_listed: Mapped[bool] = mapped_column(Boolean, default=True)
     # Fingerprint of what a buyer sees (tiers, prices, statuses, free entry) and when it last changed.
     offers_hash: Mapped[str | None] = mapped_column(String(40))
-    offers_changed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, index=True)
+    offers_changed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     # Free entry stops at this time ("free until 23:30"); None = no known end. Group-wide too.
     free_entry_until: Mapped[datetime | None] = mapped_column(UTCDateTime)
     group_free_entry_until: Mapped[datetime | None] = mapped_column(UTCDateTime)
     # Listings of the same real event share a group; exactly one is primary (see dedup.py).
-    group_id: Mapped[str | None] = mapped_column(String(128), index=True)
-    is_primary: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    group_id: Mapped[str | None] = mapped_column(Text, index=True)
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=True)
     # Best offer across every listing of the group, so a free / cheaper listing on another
     # source is never hidden behind the primary one. Filters and price sort use these.
     group_size: Mapped[int] = mapped_column(Integer, default=1)
     group_min_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), index=True)
     group_max_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
-    group_has_free_entry: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    group_has_free_entry: Mapped[bool] = mapped_column(Boolean, default=False)
     group_entry_type: Mapped[str] = mapped_column(String(16), default="unknown", index=True)
-    best_listing_id: Mapped[str | None] = mapped_column(String(128))
+    best_listing_id: Mapped[str | None] = mapped_column(Text)
 
     tickets: Mapped[list[TicketRow]] = relationship(
         back_populates="event", cascade="all, delete-orphan", order_by="TicketRow.position"
@@ -169,22 +199,37 @@ class EventRow(Base):
         return next((f"/images/{i.id}" for i in self.images if i.downloaded_at), None)
 
 
+# The default list (/events by date): primary cards in (local_date, start_at, id) order, NULLs first as
+# on SQLite, read in order and stopped at the page's LIMIT instead of sorting every row. Its columns
+# barely change on an upsert, so it keeps updates HOT. PostgreSQL only (partial, ordered NULLS FIRST).
+Index(
+    "ix_events_feed",
+    EventRow.local_date.asc().nulls_first(),
+    EventRow.start_at.asc().nulls_first(),
+    EventRow.id,
+    postgresql_where=EventRow.is_primary.is_(True) & EventRow.is_listed.is_not(False),
+).ddl_if(dialect="postgresql")
+
+
 class TicketRow(Base):
     __tablename__ = "ticket_tiers"
 
+    # One tier per position of an event; also the index of event_id (its first column).
+    __table_args__ = (UniqueConstraint("event_id", "position", name="uq_ticket_tiers_event_position"),)
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"), index=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
     position: Mapped[int] = mapped_column(Integer)
-    source_ticket_id: Mapped[str | None] = mapped_column(String(96))
+    source_ticket_id: Mapped[str | None] = mapped_column(Text)
     name: Mapped[str] = mapped_column(Text)
     description: Mapped[str | None] = mapped_column(Text)
     price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     original_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     service_fee: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     total_price: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
-    price_rounds: Mapped[list[float]] = mapped_column(JSON, default=list)
+    price_rounds: Mapped[list[float]] = mapped_column(JSONType, default=list)
     currency: Mapped[str] = mapped_column(String(8))
-    kind: Mapped[str] = mapped_column(String(16), index=True)
+    kind: Mapped[str] = mapped_column(String(16))
     status: Mapped[str] = mapped_column(String(16))
     admits: Mapped[int] = mapped_column(Integer, default=1)
     is_free: Mapped[bool] = mapped_column(Boolean)
@@ -210,7 +255,7 @@ class ImageRow(Base):
     # Set once stored: relative file path (filesystem storage) or the bytes (database storage).
     local_path: Mapped[str | None] = mapped_column(Text)
     data: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
-    content_type: Mapped[str | None] = mapped_column(String(64))
+    content_type: Mapped[str | None] = mapped_column(Text)
     size_bytes: Mapped[int | None] = mapped_column(Integer)
     downloaded_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     error: Mapped[str | None] = mapped_column(Text)
@@ -224,13 +269,13 @@ class GeoCacheRow(Base):
 
     __tablename__ = "geo_cache"
 
-    query: Mapped[str] = mapped_column(String(300), primary_key=True)
+    query: Mapped[str] = mapped_column(Text, primary_key=True)
     found: Mapped[bool] = mapped_column(Boolean)
     latitude: Mapped[float | None] = mapped_column(Float)
     longitude: Mapped[float | None] = mapped_column(Float)
     # Nominatim's precision ("place" = house number, "road", "amenity", "city", ...) and city name.
     kind: Mapped[str | None] = mapped_column(String(32))
-    city: Mapped[str | None] = mapped_column(String(120))
+    city: Mapped[str | None] = mapped_column(Text)
     label: Mapped[str | None] = mapped_column(Text)
     looked_up_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
@@ -239,9 +284,11 @@ class DealChangeRow(Base):
     """One change to a deal between two scans: price, free entry, availability, tiers, listing."""
 
     __tablename__ = "deal_changes"
+    # An event's changes, newest first (event page); also the index of the event_id foreign key.
+    __table_args__ = (Index("ix_deal_changes_event_at", "event_id", "at"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"), index=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
     source: Mapped[str] = mapped_column(String(32), index=True)
     at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
     # new | price_down | price_up | free_entry_started | free_entry_ended | sold_out |
@@ -260,10 +307,10 @@ class ClickRow(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
-    event_id: Mapped[str] = mapped_column(String(128), index=True)
+    event_id: Mapped[str] = mapped_column(Text, index=True)
     source: Mapped[str] = mapped_column(String(32), index=True)
     title: Mapped[str] = mapped_column(Text)
-    city: Mapped[str | None] = mapped_column(String(128))
+    city: Mapped[str | None] = mapped_column(Text)
     # Where on our page: buy | alt | bar | seo (utm.PLACEMENTS); None = unknown / old link.
     placement: Mapped[str | None] = mapped_column(String(8))
 
@@ -311,19 +358,16 @@ class ScrapeRunRow(Base):
     events_changed: Mapped[int | None] = mapped_column(Integer, default=0)
     events_unlisted: Mapped[int | None] = mapped_column(Integer, default=0)
     error: Mapped[str | None] = mapped_column(Text)
-    failures: Mapped[list[str]] = mapped_column(JSON, default=list)
+    failures: Mapped[list[str]] = mapped_column(JSONType, default=list)
 
 
-def _literal_default(column: Any) -> str | None:
-    """SQL literal of a column's scalar Python default (bool/int/str), else None."""
+def _literal_default(column: Any, dialect: Any) -> str | None:
+    """SQL literal of a column's scalar Python default (bool/int/float/str) in ``dialect``, else None:
+    ``true`` on PostgreSQL, ``1`` on SQLite (PostgreSQL refuses an integer default on a boolean)."""
     value = getattr(column.default, "arg", None)
-    if isinstance(value, bool):
-        return "1" if value else "0"
-    if isinstance(value, int | float):
-        return str(value)
-    if isinstance(value, str):
-        return "'" + value.replace("'", "''") + "'"
-    return None
+    if not isinstance(value, bool | int | float | str):
+        return None
+    return str(literal(value, column.type).compile(dialect=dialect, compile_kwargs={"literal_binds": True}))
 
 
 def _sqlite_pragmas(dbapi_connection: Any, _record: Any) -> None:
@@ -344,6 +388,42 @@ def has_word(text: str | None, word: str | None) -> bool:
     """``word`` as a whole word of ``text``, maybe behind a one-letter Hebrew prefix ("בראפ").
     SQLite's ``has_word()``: a short search word ("ראפ") is not found inside "תראפיה"."""
     return bool(text and word and _word_re(word).search(text.casefold()))
+
+
+# A word character for PostgreSQL's regex: spelled out, so it never depends on the database's
+# collation / ctype (in a "C" database \w is ASCII only, and Hebrew letters would count as spaces).
+_PG_WORD = "0-9A-Za-z_À-ɏͰ-ӿ֐-ۿ"  # digits, Latin, Greek, Cyrillic, Hebrew, Arabic
+_PG_REGEX_META = re.compile(r"[\\.^$*+?()\[\]{}|-]")
+
+
+class whole_word(FunctionElement[bool]):
+    """``column`` has ``word`` as a whole word (see :func:`has_word`), in SQL on either database:
+    SQLite calls the Python function, PostgreSQL runs the same rule as a case-insensitive regex.
+
+    Both the word and the regex are bound parameters built here, so a cached statement never
+    reuses another search's pattern."""
+
+    inherit_cache = True
+    type = Boolean()
+    name = "has_word"
+
+    def __init__(self, column: Any, word: str) -> None:
+        # The word is data, not a pattern: every regex metacharacter in it is escaped.
+        escaped = _PG_REGEX_META.sub(lambda m: "\\" + m.group(), word.casefold())
+        pattern = f"(^|[^{_PG_WORD}])[בלמהוכש]?{escaped}($|[^{_PG_WORD}])"
+        super().__init__(column, literal(word, String), literal(pattern, String))
+
+
+@compiles(whole_word, "sqlite")
+def _whole_word_sqlite(element: whole_word, compiler: Any, **kw: Any) -> str:
+    column, word, _ = list(element.clauses)
+    return f"has_word({compiler.process(column, **kw)}, {compiler.process(word, **kw)})"
+
+
+@compiles(whole_word, "postgresql")
+def _whole_word_postgresql(element: whole_word, compiler: Any, **kw: Any) -> str:
+    column, _, pattern = list(element.clauses)
+    return f"({compiler.process(column, **kw)} ~* {compiler.process(pattern, **kw)})"
 
 
 def _sqlite_begin(conn: Any) -> None:
@@ -414,32 +494,82 @@ def _count_commit(session: Session) -> None:
         Database.changes += 1
 
 
+SCHEMA_LOCK_KEY = 0x5307D8  # pg_advisory_lock key of create_schema: any constant, the same in every process
+
+
+def postgres_url(url: URL) -> URL:
+    """``postgres://`` / ``postgresql://`` (what Railway and most hosts hand out) on the psycopg 3 driver."""
+    if url.drivername in ("postgres", "postgresql"):
+        return url.set(drivername="postgresql+psycopg")
+    return url
+
+
+def _postgres_connect_args(options: DatabaseSettings) -> dict[str, Any]:
+    """libpq settings of every connection: a connect timeout, TCP keepalives (a dead peer is noticed in
+    seconds, not hours) and server-side timeouts, so one stuck statement or abandoned transaction can
+    never hold its locks forever."""
+    server = {
+        "statement_timeout": options.statement_timeout_ms,
+        "idle_in_transaction_session_timeout": options.idle_in_transaction_timeout_ms,
+        "lock_timeout": options.lock_timeout_ms,
+    }
+    return {
+        "connect_timeout": options.connect_timeout,
+        "application_name": options.application_name,
+        "keepalives": 1,
+        "keepalives_idle": options.keepalive_idle,
+        "keepalives_interval": options.keepalive_interval,
+        "keepalives_count": options.keepalive_count,
+        "options": " ".join(f"-c {name}={value}" for name, value in server.items()),
+    }
+
+
+def _ddl_applies(index: Index, dialect: str) -> bool:
+    """False for an index limited to other databases with ``Index(...).ddl_if(dialect=...)``."""
+    wanted = getattr(getattr(index, "_ddl_if", None), "dialect", None)
+    if wanted is None:
+        return True
+    return dialect == wanted if isinstance(wanted, str) else dialect in wanted
+
+
 class Database:
     # Committed writing transactions in this process (any Database): cached API responses
     # keyed by it go stale the moment data changes.
     changes: ClassVar[int] = 0
 
-    def __init__(self, url: str, echo: bool = False) -> None:
-        parsed = make_url(url)
+    def __init__(self, url: str, echo: bool = False, options: DatabaseSettings | None = None) -> None:
+        """``options``: pool, timeouts and write mode (``database`` settings; default: the loaded ones)."""
+        self.options = options = options or get_settings().database
+        parsed = postgres_url(make_url(url))
         if parsed.get_backend_name() == "sqlite" and parsed.database not in (None, "", ":memory:"):
             database = project_path(parsed.database)
             database.parent.mkdir(parents=True, exist_ok=True)
-            url = parsed.set(database=str(database)).render_as_string(hide_password=False)
-            parsed = make_url(url)
+            parsed = parsed.set(database=str(database))
         is_sqlite = parsed.get_backend_name() == "sqlite"
-        self.engine: Engine = create_engine(
-            url,
-            echo=echo,
-            pool_pre_ping=not is_sqlite,
-            # Sources write from separate threads: wait for locks instead of failing.
-            connect_args={"timeout": WRITE_WAIT_S, "check_same_thread": False} if is_sqlite else {},
-            # SQLite connections are cheap and WAL lets readers run beside writers: with the default cap
-            # (5 + 10) a scrape's source threads held every connection and page requests timed out.
-            **({"max_overflow": -1} if is_sqlite else {}),
-        )
         if is_sqlite:
+            self.engine: Engine = create_engine(
+                parsed,
+                echo=echo,
+                # Sources write from separate threads: wait for locks instead of failing.
+                connect_args={"timeout": WRITE_WAIT_S, "check_same_thread": False},
+                # SQLite connections are cheap and WAL lets readers run beside writers: with the default cap
+                # (5 + 10) a scrape's source threads held every connection and page requests timed out.
+                max_overflow=-1,
+            )
             sa_event.listen(self.engine, "connect", _sqlite_pragmas)
             sa_event.listen(self.engine, "begin", _sqlite_begin)
+        else:
+            self.engine = create_engine(
+                parsed,
+                echo=echo,
+                pool_size=options.pool_size,
+                max_overflow=options.max_overflow,
+                pool_timeout=options.pool_timeout,
+                pool_recycle=options.pool_recycle,
+                pool_pre_ping=True,  # a connection the server or the network dropped is replaced, not used
+                pool_use_lifo=True,  # reuse the warmest connections; surplus ones idle out and get recycled
+                connect_args=_postgres_connect_args(options),
+            )
         self._sessions = sessionmaker(self.engine, expire_on_commit=False)
         self._writes = sessionmaker(self.engine.execution_options(sqlite_write=True), expire_on_commit=False)
         for maker in (self._sessions, self._writes):
@@ -448,34 +578,76 @@ class Database:
             sa_event.listen(maker, "after_commit", _count_commit)
         # SQLite has one writer at a time: this process's writers queue here, in order, instead of
         # polling the file lock. Other processes (CLI, scripts) still wait on the busy timeout.
+        # PostgreSQL locks rows, so writers run concurrently unless serialize_writes says otherwise.
+        self.serialize_writes = is_sqlite if options.serialize_writes is None else options.serialize_writes
         self._writer = threading.Lock()
         self._writing = threading.local()
 
     def create_schema(self) -> None:
-        """Create missing tables and add columns introduced since the DB was created.
+        """Create missing tables, add columns introduced since the DB was created, then any missing index.
 
-        ponytail: additive-only auto-migration (new nullable columns); switch to Alembic
-        once a change needs renames, type changes or data backfills.
+        Safe to run from several processes at once (PostgreSQL: one at a time, under an advisory lock),
+        and an index that cannot be built (say, duplicates under a new unique one) is logged, never
+        fatal: the site still starts.
+
+        ponytail: additive-only auto-migration (new columns, new indexes); switch to Alembic once a change
+        needs renames, type changes or data backfills.
         """
-        Base.metadata.create_all(self.engine)
-        existing = inspect(self.engine)
-        with self.engine.begin() as conn:
+        with self._schema_lock():
+            Base.metadata.create_all(self.engine)
+            existing = inspect(self.engine)
+            dialect = self.engine.dialect
+            with self.engine.begin() as conn:
+                for table in Base.metadata.sorted_tables:
+                    present = {c["name"] for c in existing.get_columns(table.name)}
+                    for column in table.columns:
+                        if column.name in present:
+                            continue
+                        ddl = column.type.compile(dialect=dialect)
+                        default = _literal_default(column, dialect)
+                        suffix = f" DEFAULT {default}" if default is not None else ""
+                        if default is not None and not column.nullable:
+                            suffix += " NOT NULL"  # existing rows take the default (PostgreSQL: no rewrite)
+                        conn.execute(text(f'ALTER TABLE {table.name} ADD COLUMN "{column.name}" {ddl}{suffix}'))
+                        log.info("schema: added column %s.%s", table.name, column.name)
             for table in Base.metadata.sorted_tables:
-                present = {c["name"] for c in existing.get_columns(table.name)}
-                for column in table.columns:
-                    if column.name in present:
-                        continue
-                    ddl = column.type.compile(dialect=self.engine.dialect)
-                    default = _literal_default(column)
-                    suffix = f" DEFAULT {default}" if default is not None else ""
-                    conn.execute(text(f'ALTER TABLE {table.name} ADD COLUMN "{column.name}" {ddl}{suffix}'))
-                    if default is not None:  # existing rows get the model default, not NULL
-                        conn.execute(text(f'UPDATE {table.name} SET "{column.name}" = {default}'))
-                    log.info("schema: added column %s.%s", table.name, column.name)
-                for index in table.indexes:  # indexes of columns added above
-                    index.create(conn, checkfirst=True)
+                for index in table.indexes:  # new indexes, and those of columns added above
+                    self._create_index(index)
+            if not self.is_sqlite:
+                self._tune_postgres()
         if self.is_sqlite:
             self._enable_incremental_vacuum()
+
+    @contextmanager
+    def _schema_lock(self) -> Iterator[None]:
+        """PostgreSQL: one process changes the schema at a time (a deploy, a CLI command, a copy)."""
+        if self.is_sqlite:
+            yield
+            return
+        with self.engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            conn.execute(select(func.pg_advisory_lock(SCHEMA_LOCK_KEY)))
+            try:
+                yield
+            finally:
+                conn.execute(select(func.pg_advisory_unlock(SCHEMA_LOCK_KEY)))
+
+    def _create_index(self, index: Index) -> None:
+        if not _ddl_applies(index, self.engine.dialect.name):
+            return
+        try:
+            with self.engine.begin() as conn:
+                index.create(conn, checkfirst=True)
+        except DBAPIError as exc:  # e.g. duplicates under a new unique index: fix the data, retried each start
+            log.error("schema: could not create index %s: %s", index.name, exc.orig)
+
+    def _tune_postgres(self) -> None:
+        """Table storage options the ORM cannot declare: room for HOT updates on events (see ix_events_feed)."""
+        fillfactor = int(self.options.events_fillfactor)
+        with self.engine.begin() as conn:
+            current = conn.scalar(text("SELECT reloptions FROM pg_class WHERE oid = 'events'::regclass")) or []
+            if f"fillfactor={fillfactor}" not in current:
+                conn.execute(text(f"ALTER TABLE events SET (fillfactor = {fillfactor})"))
+                log.info("schema: events fillfactor set to %d", fillfactor)
 
     # ------------------------------------------------------------------ SQLite disk space
     @property
@@ -570,12 +742,16 @@ class Database:
     @contextmanager
     def session(self, write: bool = True) -> Generator[Session]:
         """``write=False`` for page requests: they read beside a writer and never queue behind one."""
-        if not (write and self.is_sqlite):
+        if not write:
             with self._sessions() as session, session.begin():
                 yield session
             return
+        if not self.serialize_writes:
+            with self._writes() as session, session.begin():
+                yield session
+            return
         if getattr(self._writing, "active", False):
-            raise RuntimeError("nested write session: the outer one holds the SQLite write lock")
+            raise RuntimeError("nested write session: the outer one holds the write lock")
         if not self._writer.acquire(timeout=WRITE_WAIT_S):
             raise OperationalError("BEGIN IMMEDIATE", {}, Exception("database is locked (writer queue)"))
         self._writing.active = True

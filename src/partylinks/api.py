@@ -407,14 +407,16 @@ def _city_names(city: str, country: str | None) -> list[str]:
     found = city_abroad(city, country.upper() if country else None)
     return list(dict.fromkeys([city, *(found[1] if found else ())]))
 
+# NULLs sort as the smallest value on every database (SQLite's rule; PostgreSQL's default is the opposite).
 _SORT_COLUMNS = {
-    EventSort.start_asc: EventRow.start_at.asc(),
-    EventSort.start_desc: EventRow.start_at.desc(),
-    EventSort.price_asc: EventRow.group_min_price.asc(),
-    EventSort.price_desc: EventRow.group_min_price.desc(),
-    EventSort.seen_desc: EventRow.last_seen_at.desc(),
-    EventSort.trending: EventRow.group_size.desc(),
+    EventSort.start_asc: EventRow.start_at.asc().nulls_first(),
+    EventSort.start_desc: EventRow.start_at.desc().nulls_last(),
+    EventSort.price_asc: EventRow.group_min_price.asc().nulls_first(),
+    EventSort.price_desc: EventRow.group_min_price.desc().nulls_last(),
+    EventSort.seen_desc: EventRow.last_seen_at.desc().nulls_last(),
+    EventSort.trending: EventRow.group_size.desc().nulls_last(),
 }
+_START = _SORT_COLUMNS[EventSort.start_asc]
 
 
 # --------------------------------------------------------------------------- app
@@ -612,7 +614,7 @@ def create_app(settings: Settings | None = None, start_scheduler: bool | None = 
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-        db = Database(settings.database.url, settings.database.echo)
+        db = Database(settings.database.url, settings.database.echo, settings.database)
         db.create_schema()
         service = ScrapeService(settings, db)
         service.recompute_areas()  # stored events follow the configured areas
@@ -1045,9 +1047,9 @@ def _register_routes(app: FastAPI) -> None:
                 # Not abroad: there local_date is the venue's own day, while cards show Israel time.
                 abroad = request.query_params.get("abroad") == "true"
                 order = (
-                    (EventRow.local_date, _IS_PLACE, EventRow.start_at)
+                    (EventRow.local_date.asc().nulls_first(), _IS_PLACE, _START)
                     if sort is EventSort.start_asc and not abroad
-                    else (_SORT_COLUMNS[sort], EventRow.start_at)
+                    else (_SORT_COLUMNS[sort], _START)
                 )
                 rows = session.scalars(
                     card.where(*where)
@@ -1058,7 +1060,7 @@ def _register_routes(app: FastAPI) -> None:
             else:
                 # Ranking reads every match anyway, so one pass gives both the order and the total
                 # (measured at 35k events: as fast as the count + page it replaces).
-                ids = session.scalars(select(EventRow.id).where(*where).order_by(rank, EventRow.start_at, EventRow.id)).all()
+                ids = session.scalars(select(EventRow.id).where(*where).order_by(rank, _START, EventRow.id)).all()
                 total, wanted = len(ids), ids[start:stop]
                 found = {r.id: r for r in session.scalars(card.where(EventRow.id.in_(wanted)))}
                 rows = [found[i] for i in wanted if i in found]
@@ -1102,7 +1104,7 @@ def _register_routes(app: FastAPI) -> None:
                     EventRow.latitude, EventRow.longitude, EventRow.source, EventRow.group_id,
                 )
                 .where(*filters, located)
-                .order_by(EventRow.start_at, EventRow.id)
+                .order_by(_START, EventRow.id)
             ).all()  # fmt: skip
             unplaced = session.scalar(select(func.count()).select_from(EventRow).where(*filters, not_(located))) or 0
             sources = _group_sources(session, rows)  # type: ignore[arg-type]
@@ -1155,7 +1157,7 @@ def _register_routes(app: FastAPI) -> None:
                 rows = session.scalars(
                     select(EventRow)
                     .where(*filters)
-                    .order_by(_SORT_COLUMNS[EventSort.trending], EventRow.start_at, EventRow.id)
+                    .order_by(_SORT_COLUMNS[EventSort.trending], _START, EventRow.id)
                     .limit(RAIL_POOL)
                     .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
                 ).all()
@@ -1179,7 +1181,7 @@ def _register_routes(app: FastAPI) -> None:
             session.scalars(
                 select(EventRow)
                 .where(EventRow.group_id == row.group_id, EventRow.id != row.id)
-                .order_by(EventRow.min_price.asc(), EventRow.id)
+                .order_by(EventRow.min_price.asc().nulls_first(), EventRow.id)
                 .options(selectinload(EventRow.tickets))
             ).all()
             if row.group_id

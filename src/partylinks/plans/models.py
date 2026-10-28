@@ -5,10 +5,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from partylinks.db import Base, UTCDateTime, utcnow
+from partylinks.db import Base, JSONType, UTCDateTime, utcnow
 
 NAME_LENGTH = 40
 
@@ -20,7 +20,7 @@ class PlanRow(Base):
     __tablename__ = "plans"
 
     id: Mapped[str] = mapped_column(String(12), primary_key=True)  # the link's secret: secrets.token_urlsafe(6)
-    event_id: Mapped[str] = mapped_column(String(128), index=True)
+    event_id: Mapped[str] = mapped_column(Text, index=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
@@ -31,13 +31,13 @@ class PlanVoteRow(Base):
     __table_args__ = (UniqueConstraint("plan_id", "voter"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    plan_id: Mapped[str] = mapped_column(String(12), ForeignKey("plans.id"), index=True)
+    plan_id: Mapped[str] = mapped_column(String(12), ForeignKey("plans.id", ondelete="CASCADE"), index=True)
     voter: Mapped[str] = mapped_column(String(36))
     name: Mapped[str] = mapped_column(String(NAME_LENGTH))
     answer: Mapped[str] = mapped_column(String(8))  # yes | maybe | no
     at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, onupdate=utcnow)
     # "Which party?": the options (event ids) this friend would go to; None in a one-event plan.
-    picks: Mapped[list[str] | None] = mapped_column(JSON)
+    picks: Mapped[list[str] | None] = mapped_column(JSONType)
     # "Who's driving?": drive (has ``seats`` free) | need (a ride) | None. Nullable, no Boolean: added later.
     ride: Mapped[str | None] = mapped_column(String(8))
     seats: Mapped[int | None] = mapped_column(Integer)
@@ -49,6 +49,6 @@ class PlanEventRow(Base):
 
     __tablename__ = "plan_events"
 
-    plan_id: Mapped[str] = mapped_column(String(12), ForeignKey("plans.id"), primary_key=True)
-    event_id: Mapped[str] = mapped_column(String(128), primary_key=True, index=True)
+    plan_id: Mapped[str] = mapped_column(String(12), ForeignKey("plans.id", ondelete="CASCADE"), primary_key=True)
+    event_id: Mapped[str] = mapped_column(Text, primary_key=True, index=True)
     position: Mapped[int] = mapped_column(Integer)  # 1, 2, 3 (option one is the plan's event)

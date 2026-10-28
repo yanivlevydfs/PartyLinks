@@ -7,8 +7,25 @@
 timezone: Asia/Jerusalem
 
 database:
-  url: sqlite:///data/partylinks.db
+  url: sqlite:///data/partylinks.db   # production: PARTYLINKS_DATABASE__URL=postgresql://... (Railway)
   echo: false
+  # PostgreSQL only: connection pool and server-side timeouts (see docs/postgres-migration.md).
+  pool_size: 10
+  max_overflow: 20
+  pool_timeout: 30
+  pool_recycle: 1800
+  connect_timeout: 10
+  statement_timeout_ms: 120000
+  idle_in_transaction_timeout_ms: 300000
+  lock_timeout_ms: 60000
+  keepalive_idle: 30
+  keepalive_interval: 10
+  keepalive_count: 3
+  application_name: partylinks
+  events_fillfactor: 85
+  copy_batch: 2000            # copy-db rows per round trip
+  serialize_writes: null      # null = SQLite only; true = one writer at a time on PostgreSQL too
+  retries: 4
 
 # One format for app, uvicorn and access lines. INFO -> stdout, WARNING+ -> stderr, UTF-8, "\n".
 logging:

@@ -250,14 +250,16 @@ class Deduplicator:
 
     def plan(self, session: Session) -> tuple[int, list[dict[str, Any]]]:
         """(merged groups, rows whose grouping changed): reads only, so it can run outside the write lock."""
-        rows = session.execute(
+        # Same input order, same groups on every pass, on any database: sorted here by code point (the
+        # database's own order of text depends on its collation).
+        rows = sorted(session.execute(
             select(
                 EventRow.id, EventRow.source, EventRow.title, EventRow.local_date, EventRow.start_at,
                 EventRow.latitude, EventRow.longitude, EventRow.venue_slug, EventRow.city, EventRow.url, EventRow.extra,
                 EventRow.genres, EventRow.first_seen_at, EventRow.min_price, EventRow.max_price, EventRow.entry_type,
                 EventRow.has_free_entry, EventRow.free_entry_until, EventRow.is_listed, EventRow.is_sold_out,
-            ).order_by(EventRow.id)  # same input order, same groups on every pass
-        ).all()  # fmt: skip
+            )
+        ).all(), key=lambda r: r.id)  # fmt: skip
         tier_counts = _tier_counts(session)
         by_day: dict[Any, list[_Listing]] = defaultdict(list)
         updates: list[dict[str, Any]] = []

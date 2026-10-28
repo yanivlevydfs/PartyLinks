@@ -16,12 +16,12 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from convertdate import hebrew, holidays
-from sqlalchemy import ColumnElement, SQLColumnExpression, String, and_, case, cast, func, or_, select
+from sqlalchemy import ColumnElement, SQLColumnExpression, String, and_, case, cast, or_, select
 from sqlalchemy.orm import aliased
 
 from partylinks import countries, seo
 from partylinks.config import Settings
-from partylinks.db import EventRow, lineup_contains
+from partylinks.db import EventRow, lineup_contains, whole_word
 from partylinks.places import city_abroad
 
 Cond = ColumnElement[bool]
@@ -208,7 +208,7 @@ def text_match(word: str) -> Cond:
 
     def found(c: SQLColumnExpression[Any]) -> Cond:
         inside = c.ilike(pattern, escape="\\")
-        return and_(inside, func.has_word(c, word)) if len(word) <= SHORT_WORD else inside
+        return and_(inside, whole_word(c, word)) if len(word) <= SHORT_WORD else inside
 
     # The site's own categories too: a ticket site files tennis under "טניס" without the word in the title.
     return or_(lineup_contains(word), _json_has(EventRow.event_types, word), _json_has(EventRow.source_genres, word), *(found(c) for c in (

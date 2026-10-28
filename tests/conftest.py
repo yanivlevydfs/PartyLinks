@@ -1,8 +1,33 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
+from typing import Any
 
 import pytest
+
+# PARTYLINKS_TEST_PG_URL=postgresql://user:pass@host/db pytest  runs every test's database on PostgreSQL:
+# each sqlite:/// URL a test opens is swapped for that database, emptied at the test's first open
+# (sqlite+pysqlite:/// stays SQLite, for tests that need both).
+PG_URL = os.environ.get("PARTYLINKS_TEST_PG_URL")
+
+
+@pytest.fixture(autouse=True)
+def _on_postgres(monkeypatch: pytest.MonkeyPatch) -> None:
+    if not PG_URL:
+        return
+    from partylinks.db import Base, Database
+
+    original = Database.__init__
+    emptied: list[bool] = []
+
+    def init(self: Database, url: str, *args: Any, **kwargs: Any) -> None:
+        original(self, PG_URL if url.startswith("sqlite:///") else url, *args, **kwargs)
+        if not emptied:
+            Base.metadata.drop_all(self.engine)
+            emptied.append(True)
+
+    monkeypatch.setattr(Database, "__init__", init)
 
 
 @pytest.fixture(autouse=True)

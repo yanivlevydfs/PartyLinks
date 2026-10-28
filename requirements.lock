@@ -49,6 +49,10 @@ opentelemetry-api==1.45.1
     # via fastapi
 pillow==13.0.0
     # via partylinks (pyproject.toml)
+psycopg==3.3.6
+    # via partylinks (pyproject.toml)
+psycopg-binary==3.3.6
+    # via psycopg
 pycountry==26.2.16
     # via partylinks (pyproject.toml)
 pycparser==3.12
@@ -84,6 +88,7 @@ typing-extensions==4.16.0
     #   fastapi
     #   geonamescache
     #   opentelemetry-api
+    #   psycopg
     #   pydantic
     #   pydantic-core
     #   pydantic-settings
