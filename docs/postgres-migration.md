@@ -660,3 +660,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 ### 2026-10-28 (הגדרות שרת ורשימות דפים)
 - **שרת:** ‏`ALTER SYSTEM`: ‏`shared_buffers=1GB`, ‏`effective_cache_size=8GB`, ‏`random_page_cost=1.1`, ‏`jit=off`, ‏`work_mem=16MB`, ו-restart. החזרה: `ALTER SYSTEM RESET <name>` ו-restart.
 - **Queries:** ‏`seo.city_pages`, ‏`city_genre_counts`, ‏`region_pages`, ‏`abroad_countries` נשמרות 60 ש' (`seo._facet`, ‏`cachetools`). השאילתות עצמן לא השתנו; הן רצות פעם בדקה במקום אלפי פעמים בשעה.
+
+### 2026-10-28 (upsert של events: רק מה שהשתנה)
+- **עמודה חדשה:** ‏`events.content_hash` ‏(`VARCHAR(40)`, ‏nullable, נוספת ב-`create_schema`): ‏sha1 של כל הערכים שנסרקו (`_EVENT_FIELDS`, ‏`url`, ‏`offers_hash`), ‏`db.content_hash`.
+- **Queries:** ‏`upsert_events`: אירוע שה-`content_hash` שלו לא השתנה מקבל רק `UPDATE events SET last_seen_at, is_listed WHERE id IN (...)` (ממוין); חדשים ומשתנים עוברים את ה-`INSERT ... ON CONFLICT DO UPDATE` המלא. כך `description` ו-`extra` לא נכתבים (ונדחסים ל-TOAST) מחדש בכל סריקה, וערכים שמעברים אחרים קבעו בשורה נשמרים עד שהמקור משתנה.
+- **נמדד:** ‏5,000 אירועים ב-batches של 200, סריקה חוזרת בלי שינוי: 7.2 ש' במקום 15.2 ש'.
+- **Test:** ‏`test_a_rescan_of_an_unchanged_event_only_marks_it_seen`. ‏482/482.

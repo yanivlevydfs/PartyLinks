@@ -81,6 +81,12 @@ FROM pg_stat_user_tables WHERE relname IN ('events', 'ticket_tiers', 'event_imag
 - **`pg_stat_statements` מצא את מקור הסריקות המלאות:** ‏`city_pages`, ‏`city_genre_counts`, ‏`region_pages` ו-`abroad_countries` ב-`seo.py`: ‏`SELECT events.city / genres / area` על כל האירועים הקרובים, כ-19,700 קריאות מ-11:24 UTC, ‏44-106ms כל אחת. כל דף SEO שאל אותן כמה פעמים, ולפעמים בלולאה.
 - **שלב 6 (בוצע):** התשובות שלהן נשמרות ל-`api.cache_ttl_seconds` (‏60 ש') ב-`cachetools.TTLCache` (`seo._facet`). הגיל הזה ממילא מותר לדף במטמון.
 
+## שלב 7: upsert של `events` רק כשהתוכן השתנה (בוצע)
+
+- **הבעיה:** כל סריקה כתבה מחדש כל שורה של `events` במלואה, כי `last_seen_at` משתנה תמיד.
+- **התיקון:** ‏`events.content_hash` (טביעת אצבע של כל הערכים שנסרקו). בלי שינוי: עדכון של `last_seen_at` ו-`is_listed` בלבד. עם שינוי: ה-upsert המלא.
+- **נמדד מקומית:** סריקה חוזרת של 5,000 אירועים: 7.2 ש' במקום 15.2 ש'.
+
 ## סדר ביצוע
 
 1. שלב 1: ב-production מ-2026-10-28 20:08.

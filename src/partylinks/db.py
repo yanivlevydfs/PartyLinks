@@ -170,6 +170,9 @@ class EventRow(Base):
     # Fingerprint of what a buyer sees (tiers, prices, statuses, free entry) and when it last changed.
     offers_hash: Mapped[str | None] = mapped_column(String(40))
     offers_changed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # Fingerprint of every scraped value (content_hash): a rescan that finds it unchanged only marks
+    # the event seen, instead of rewriting the whole row (and its TOASTed description and extra).
+    content_hash: Mapped[str | None] = mapped_column(String(40))
     # Free entry stops at this time ("free until 23:30"); None = no known end. Group-wide too.
     free_entry_until: Mapped[datetime | None] = mapped_column(UTCDateTime)
     group_free_entry_until: Mapped[datetime | None] = mapped_column(UTCDateTime)
@@ -409,6 +412,12 @@ def offers_hash(event: ScrapedEvent) -> str:
     return hashlib.sha1(json.dumps(data, ensure_ascii=False, default=str).encode()).hexdigest()
 
 
+def content_hash(row: dict[str, Any]) -> str:
+    """Fingerprint of an event's scraped values (``_EVENT_FIELDS``, its URL and its offers)."""
+    data = {k: row[k] for k in (*_EVENT_FIELDS, "url", "offers_hash")}
+    return hashlib.sha1(json.dumps(data, ensure_ascii=False, sort_keys=True, default=str).encode()).hexdigest()
+
+
 def _note_write(state: ORMExecuteState) -> None:
     if not state.is_select:  # INSERT / UPDATE / DELETE (bulk or Core) or raw SQL
         state.session.info["wrote"] = True
@@ -633,7 +642,8 @@ _GROUP_COLUMNS = {
 def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int, list[str]]:
     """Bulk upsert a batch of events with a fixed number of statements.
 
-    * events  - one multi-row ``INSERT ... ON CONFLICT DO UPDATE``
+    * events  - one ``UPDATE`` of last_seen_at for those unchanged since the last scan (content_hash),
+      one multi-row ``INSERT ... ON CONFLICT DO UPDATE`` for new and changed ones
     * tickets - one ``DELETE`` of dropped positions + one multi-row upsert that skips unchanged tiers
     * images  - one ``SELECT``, then bulk ``DELETE`` / ``UPDATE`` / ``INSERT``;
       already-downloaded artwork is kept when its URL is still listed.
@@ -647,9 +657,11 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
     ids = [e.event_id for e in events]
     # "Changed at" only moves when the offers really changed (a new event counts as changed now).
     stored = {
-        row.id: (row.offers_hash, row.offers_changed_at)
+        row.id: (row.offers_hash, row.offers_changed_at, row.content_hash)
         for row in session.execute(
-            select(EventRow.id, EventRow.offers_hash, EventRow.offers_changed_at).where(EventRow.id.in_(ids))
+            select(EventRow.id, EventRow.offers_hash, EventRow.offers_changed_at, EventRow.content_hash).where(
+                EventRow.id.in_(ids)
+            )
         )
     }
     hashes = {e.event_id: offers_hash(e) for e in events}
@@ -657,7 +669,7 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
     def changed_at(event_id: str) -> datetime | None:
         if event_id not in stored:
             return now  # new event
-        old_hash, old_at = stored[event_id]
+        old_hash, old_at, _ = stored[event_id]
         if old_hash is None:
             return old_at  # stored before fingerprints existed: no evidence of a change
         return old_at if old_hash == hashes[event_id] else now
@@ -672,8 +684,18 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
          **{f: getattr(e, f) for f in _EVENT_FIELDS}}
         for e in sorted(events, key=lambda e: e.event_id)  # consistent lock order across writers
     ]  # fmt: skip
+    for row in event_rows:
+        row["content_hash"] = content_hash(row)
+    seen = {r["id"] for r in event_rows if r["id"] in stored and stored[r["id"]][2] == r["content_hash"]}
+    changed = [r for r in event_rows if r["id"] not in seen]
     changes = _deal_changes_for(session, events, hashes, now)
-    session.execute(_upsert(session, EventRow, event_rows, key="id", keep=_GROUP_COLUMNS | {"id", "first_seen_at"}))
+    if seen:  # nothing new on the page: a small update, HOT (no indexed column changes)
+        session.execute(
+            update(EventRow).where(EventRow.id.in_(sorted(seen))).values(last_seen_at=now, is_listed=True),
+            execution_options={"synchronize_session": False},
+        )
+    if changed:
+        session.execute(_upsert(session, EventRow, changed, key="id", keep=_GROUP_COLUMNS | {"id", "first_seen_at"}))
     if changes:
         session.execute(insert(DealChangeRow), changes)
 

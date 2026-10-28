@@ -119,3 +119,24 @@ def test_a_rescan_writes_only_the_ticket_tiers_that_changed(tmp_path: Path) -> N
     with db.session(write=False) as session:
         options = session.scalar(text("SELECT reloptions FROM pg_class WHERE oid = 'ticket_tiers'::regclass"))
     assert f"fillfactor={settings.database.ticket_tiers_fillfactor}" in options
+
+
+def test_a_rescan_of_an_unchanged_event_only_marks_it_seen(tmp_path: Path) -> None:
+    """Same scraped values: only last_seen_at / is_listed are written (a marker set in the row
+    survives). Any new value: the whole row is written again."""
+    from sqlalchemy import update
+
+    settings = settings_for(tmp_path)
+    start = datetime.now(UTC) + timedelta(days=1)
+    db = seed(settings, [event("a", start)])
+    with db.session() as session:
+        session.execute(update(EventRow).values(organizer="marker", is_listed=False))
+        seen_before = session.scalar(select(EventRow.last_seen_at))
+    seed(settings, [event("a", start)])
+    with db.session(write=False) as session:
+        row = session.scalars(select(EventRow)).one()
+        assert (row.organizer, row.is_listed) == ("marker", True) and row.last_seen_at > seen_before
+    seed(settings, [event("a", start, title="Renamed night")])
+    with db.session(write=False) as session:
+        row = session.scalars(select(EventRow)).one()
+        assert (row.title, row.organizer) == ("Renamed night", None)
