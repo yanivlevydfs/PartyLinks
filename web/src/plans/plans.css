@@ -111,3 +111,23 @@
   .plan-option { grid-template-columns: minmax(0, 1fr) auto; }
   .plan-option-link, .plan-pick-list li { grid-template-columns: 52px minmax(0, 1fr); }
 }
+
+/* The round "who's coming?" icon on event cards, beside calendar and share (styles.css .share-one / .cal.on-card). */
+.card-wrap > .plan-btn.on-card {
+  position: absolute; inset-inline-end: 98px; bottom: 14px; z-index: 2; width: 34px; height: 34px; padding: 0;
+  justify-content: center; border-radius: 50%; font-size: 15px; border-color: var(--line);
+}
+.card-wrap > .plan-btn.on-card.err { border-color: var(--red); }
+.card-wrap:has(> .plan-btn.on-card) .tags { padding-inline-end: 132px; }
+.trending .card-wrap > .plan-btn.on-card { display: none; } /* compact home rows: no card buttons */
+@media (max-width: 560px) {
+  .card-wrap > .plan-btn.on-card { inset-inline-end: 80px; bottom: 9px; width: 30px; height: 30px; font-size: 13px; }
+  .card-wrap:has(> .plan-btn.on-card) .tags { padding-inline-end: 110px; }
+}
+
+/* Free entry closing: the reminder on a plan. */
+.plan-free { border-color: rgb(43 245 160 / .45) !important; }
+.plan-free.soon { border-color: var(--pink) !important; box-shadow: 0 0 24px rgb(255 46 147 / .18); }
+.plan-free h2 { margin-bottom: 6px; }
+.plan-free p { margin: 0 0 12px; color: var(--muted); }
+.plan-free .e-actions { margin-top: 0; }

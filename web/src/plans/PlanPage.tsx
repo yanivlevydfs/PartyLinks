@@ -8,6 +8,7 @@ import type { EventSummary } from "../types";
 import { AddToCalendar, eventPath, Img, Loader, sized, useT, useTitle, when } from "../ui";
 import { forecastAt, Weather } from "../Weather";
 import { AddOption } from "./AddOption";
+import { FreeEntry, freeTime, freeUntil } from "./FreeEntry";
 import { usePlanText } from "./i18n";
 import "./plans.css";
 import type { Answer, Plan, Ride, Vote } from "./types";
@@ -85,7 +86,10 @@ export default function PlanPage() {
   const drivers = data.votes.filter((v) => v.ride === "drive");
   const riders = data.votes.filter((v) => v.ride === "need");
   const free = drivers.reduce((n, v) => n + (v.seats ?? 0), 0);
-  const message = many ? p.whichMessage(data.options.map((o) => o.title), dayText) : p.message(e.title, whenText, where);
+  const closes = many ? null : freeUntil(e); // one event: its free entry's end goes in the first message too
+  const message = many
+    ? p.whichMessage(data.options.map((o) => o.title), dayText)
+    : p.message(e.title, whenText, where, closes ? p.freeLine(freeTime(e, closes, t)) : "");
   const rideLines = [
     ...drivers.map((v) => `${v.name}: ${p.seatsOf(v.seats ?? 1)}`),
     ...(riders.length ? [`${p.riders}: ${riders.map((v) => v.name).join(", ")}`] : []),
@@ -140,6 +144,7 @@ export default function PlanPage() {
           </div>
         </Link>
       )}
+      <FreeEntry events={data.options} planUrl={url} />
       <AddOption plan={data} onAdded={(plan) => client.setQueryData<Plan>(key, plan)} />
 
       <section className="plan-share">

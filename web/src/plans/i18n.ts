@@ -1,6 +1,9 @@
 // "Who's coming with me?" texts, Hebrew and English (kept beside the feature, not in the site-wide i18n).
 import { useT } from "../ui";
 
+// "ל" + a name: joined to a Hebrew one ("למסיבה"), with a hyphen before Latin or digits ("ל-CAPPELLA").
+const to = (title: string) => (/^[א-ת]/.test(title) ? `ל${title}` : `ל-${title}`);
+
 const he = {
   button: "מי בא איתי?",
   creating: "יוצר…",
@@ -31,7 +34,7 @@ const he = {
   full: "התוכנית מלאה",
   gone: "האירוע הזה כבר לא ברשימה (נגמר או הוסר)",
   toEvent: "לדף האירוע",
-  message: (title: string, when: string, where: string) => `${title}\n${when}${where ? ` · ${where}` : ""}\n\nמי בא? לחצו ותגידו 👇`,
+  message: (title: string, when: string, where: string, extra = "") => `${title}\n${when}${where ? ` · ${where}` : ""}${extra}\n\nמי בא? לחצו ותגידו 👇`,
   groupName: (title: string) => `${title} 🎉`,
   groupMessage: (title: string, names: string[]) => `שם לקבוצה: ${title} 🎉\n\nבאים: ${names.join(", ")}`,
   which: "איזו מסיבה?",
@@ -57,6 +60,16 @@ const he = {
   seatsLeft: (free: number, need: number) => (free >= need ? `${free} מקומות פנויים, ${need} צריכים: יש מקום לכולם` : `${free} מקומות פנויים, ${need} צריכים: חסרים ${need - free}`),
   seatsOf: (n: number) => (n === 1 ? "מקום אחד" : `${n} מקומות`),
   rides: (lines: string[]) => (lines.length ? `\n\n🚗 ${lines.join(" · ")}` : ""),
+  freeTitle: "🎟 כניסה חינם, לזמן מוגבל",
+  freeUntil: (title: string, time: string, left: string) => `הכניסה החינמית ${to(title)} נסגרת ב-${time} (${left}). מי שבא, כדאי להירשם עכשיו.`,
+  freeSoon: "נסגרת בקרוב!",
+  left: (hours: number) => (hours < 1 ? "פחות משעה" : hours < 2 ? "עוד שעה" : hours < 24 ? `עוד ${Math.floor(hours)} שעות` : `עוד ${Math.floor(hours / 24) === 1 ? "יום" : `${Math.floor(hours / 24)} ימים`}`),
+  remind: "📣 תזכורת לחברים בוואטסאפ",
+  remindCal: "⏰ תזכורת ביומן",
+  register: "להירשם חינם ↗",
+  remindMessage: (title: string, time: string, left: string) => `⏰ תזכורת: הכניסה החינמית ${to(title)} נסגרת ב-${time} (${left})!\nמי שבא נרשם עכשיו 👇`,
+  calTitle: (title: string) => `הכניסה החינמית נסגרת: ${title}`,
+  freeLine: (time: string) => `\n🎟 כניסה חינם עד ${time}`,
 };
 
 const en: typeof he = {
@@ -89,7 +102,7 @@ const en: typeof he = {
   full: "This plan is full",
   gone: "This event is no longer listed (over or removed)",
   toEvent: "Event page",
-  message: (title, when, where) => `${title}\n${when}${where ? ` · ${where}` : ""}\n\nWho's coming? Tap and say 👇`,
+  message: (title, when, where, extra = "") => `${title}\n${when}${where ? ` · ${where}` : ""}${extra}\n\nWho's coming? Tap and say 👇`,
   groupName: (title) => `${title} 🎉`,
   groupMessage: (title, names) => `Group name: ${title} 🎉\n\nComing: ${names.join(", ")}`,
   which: "Which party?",
@@ -115,6 +128,16 @@ const en: typeof he = {
   seatsLeft: (free, need) => (free >= need ? `${free} free seats, ${need} need one: room for all` : `${free} free seats, ${need} need one: ${need - free} short`),
   seatsOf: (n) => `${n} seat${n === 1 ? "" : "s"}`,
   rides: (lines) => (lines.length ? `\n\n🚗 ${lines.join(" · ")}` : ""),
+  freeTitle: "🎟 Free entry, for a limited time",
+  freeUntil: (title, time, left) => `Free entry to ${title} closes at ${time} (${left}). If you're coming, sign up now.`,
+  freeSoon: "Closing soon!",
+  left: (hours) => (hours < 1 ? "under an hour" : hours < 24 ? `${Math.floor(hours)}h left` : `${Math.floor(hours / 24)}d left`),
+  remind: "📣 Remind friends on WhatsApp",
+  remindCal: "⏰ Calendar reminder",
+  register: "Sign up free ↗",
+  remindMessage: (title, time, left) => `⏰ Reminder: free entry to ${title} closes at ${time} (${left})!\nIf you're coming, sign up now 👇`,
+  calTitle: (title) => `Free entry closes: ${title}`,
+  freeLine: (time) => `\n🎟 Free entry until ${time}`,
 };
 
 export function usePlanText() {

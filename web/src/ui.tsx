@@ -7,6 +7,7 @@ import { InstallBanner } from "./Install";
 import { INFO_LINKS } from "./pages/Info";
 import { AdLabel, hit, SponsoredFrame, SponsoredStrip, useAdView } from "./ads/Sponsored";
 import { forecastAt, Weather } from "./Weather";
+import { PlanButton } from "./plans/PlanButton";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";
 
@@ -321,6 +322,7 @@ export function Card({ e }: { e: EventSummary }) {
     </Link>
     {e.start_at && <AddToCalendar e={e} start={e.start_at} compact />}
     <ShareButton path={eventPath(e)} title={e.title} />
+    <PlanButton eventId={e.id} compact />
     </div>
   );
 }

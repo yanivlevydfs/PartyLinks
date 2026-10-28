@@ -1,12 +1,13 @@
 // "Who's coming with me?" on an event: makes a plan (POST /plans) and opens its page, where the
 // creator answers first and sends the link to WhatsApp. A plain link there, not window.open after an
-// await, so no popup blocker stands in the way.
+// await, so no popup blocker stands in the way. ``compact``: the round icon on an event card, beside
+// its calendar and share buttons.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlanText } from "./i18n";
 import "./plans.css";
 
-export function PlanButton({ eventId }: { eventId: string }) {
+export function PlanButton({ eventId, compact = false }: { eventId: string; compact?: boolean }) {
   const p = usePlanText();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -23,6 +24,14 @@ export function PlanButton({ eventId }: { eventId: string }) {
       setBusy(false);
     }
   };
+  if (compact) {
+    return (
+      <button type="button" className={"plan-btn on-card" + (error ? " err" : "")} onClick={start} disabled={busy}
+        aria-label={error ? p.failed : p.button} title={error ? p.failed : p.button}>
+        <span aria-hidden>👥</span>
+      </button>
+    );
+  }
   return (
     <>
       <button type="button" className="plan-btn" onClick={start} disabled={busy}>
