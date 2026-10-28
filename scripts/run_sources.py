@@ -5,6 +5,11 @@
     railway run --service web -- python scripts/run_sources.py --runs       # latest runs
     railway run --service web -- python scripts/run_sources.py --runs vibez # one source's runs, with errors
     railway run --service web -- python scripts/run_sources.py --report     # per source, last 24 h (--report 72)
+    railway run --service web -- python scripts/run_sources.py --bans       # banned addresses, minutes left
+    railway run --service web -- python scripts/run_sources.py --unban [ip] # lift one ban (every ban without ip)
+
+A banned address is refused even with the token, so --unban runs from another network, or inside the
+server: ``railway ssh --service web`` then ``PARTYLINKS_URL=http://localhost:$PORT python scripts/run_sources.py --unban``.
 
 ``railway run`` hands this script the service's variables, so the admin token
 (PARTYLINKS_ADMIN__TOKEN) is used without being printed or stored anywhere.
@@ -67,6 +72,12 @@ def main(args: list[str]) -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]  # Hebrew/Cyrillic on a cp1252 console
     if args[:1] == ["--report"]:
         report(int(args[1]) if len(args) > 1 else 24)
+        return
+    if args[:1] == ["--bans"]:
+        print(json.dumps(call("GET", "/admin/api/bans"), indent=1))
+        return
+    if args[:1] == ["--unban"]:
+        print(json.dumps(call("POST", "/admin/api/bans/lift" + (f"?ip={args[1]}" if len(args) > 1 else "")), indent=1))
         return
     if args[:1] == ["--runs"]:
         query = f"/runs?limit=10&source={args[1]}" if len(args) > 1 else "/runs?limit=20"

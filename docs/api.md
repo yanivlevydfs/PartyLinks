@@ -82,3 +82,10 @@ Repeated strikes (vulnerability probes, wrong admin tokens, rate-limit hits) ban
 `ban_minutes`. Card artwork and the site's own files stay out of the per-minute count: one home
 page draws well over a hundred images, and counted there a few reloads banned a visitor's home IP.
 Bans live in memory, so a restart (any deploy) lifts them.
+
+Requests with the valid admin token (the owner's scripts) are not rate limited. They are still
+refused while their IP is banned, so a ban keeps stopping token guessing, and a wrong token is
+still a strike. `GET /admin/api/bans` lists banned IPs with the minutes left;
+`POST /admin/api/bans/lift?ip=…` lifts one (every ban without `ip`). Call it from an address
+that is not banned, or inside the server, where localhost is never banned
+(`scripts/run_sources.py --bans` / `--unban [ip]`).

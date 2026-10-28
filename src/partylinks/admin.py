@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import hmac
 import logging
+import time
 from datetime import datetime
 from typing import Annotated, Any
 from urllib.parse import urlsplit, urlunsplit
@@ -147,6 +148,25 @@ def click_stats(request: Request, session: SessionDep, days: int = Query(30, ge=
 def search_stats(request: Request, session: SessionDep, days: int = Query(30, ge=1, le=365)) -> dict[str, Any]:
     """Searches on the site counted by GET /events?q=... (see partylinks.searches)."""
     return searches.stats(session, request.app.state.settings.timezone, days)
+
+
+# --------------------------------------------------------------------------- bans
+@router.get("/bans")
+def bans(request: Request) -> dict[str, float]:
+    """Banned addresses and the minutes left on each (security middleware, this process)."""
+    guard = getattr(request.app.state, "guard", None)
+    now = time.monotonic()
+    return {ip: round((until - now) / 60, 1) for ip, until in (guard.banned.items() if guard else ()) if until > now}
+
+
+@router.post("/bans/lift")
+def lift_bans(request: Request, ip: str | None = None) -> dict[str, list[str]]:
+    """Lift the ban of ``ip`` (every ban when left out): the owner locked out by their own checks.
+    Call it from an address that is not banned, or from inside the server (localhost is never banned)."""
+    guard = getattr(request.app.state, "guard", None)
+    lifted = guard.pardon(ip) if guard else []
+    log.warning("bans lifted by admin: %s", ", ".join(lifted) or "none")
+    return {"lifted": lifted}
 
 
 # --------------------------------------------------------------------------- scheduler

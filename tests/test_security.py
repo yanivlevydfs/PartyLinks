@@ -59,6 +59,25 @@ def test_rate_limit_and_admin_brute_force(tmp_path: Path) -> None:
         assert page.status_code == 403 and "text/html" in page.headers["content-type"] and "נחסמה" in page.text
 
 
+def test_owner_is_not_rate_limited_and_lifts_bans(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    settings.security.rate_limit_per_minute = 3
+    settings.security.ban_after_strikes = 2
+    settings.admin.token = SecretStr("s3cret")
+    owner = {"authorization": "Bearer s3cret"}
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app, client=("198.51.100.5", 1)) as me, TestClient(app, client=("198.51.100.6", 1)) as other:
+        assert {me.get("/health", headers=owner).status_code for _ in range(10)} == {200}  # the owner's checks
+        assert [other.get("/health").status_code for _ in range(6)] == [200, 200, 200, 429, 429, 403]  # 2 strikes: banned
+        assert other.get("/health", headers=owner).status_code == 403  # the token does not open a ban (no guessing)
+        assert me.get("/admin/api/bans", headers=owner).json().keys() == {"198.51.100.6"}
+        assert me.post("/admin/api/bans/lift?ip=198.51.100.6", headers=owner).json() == {"lifted": ["198.51.100.6"]}
+        assert other.get("/health").status_code == 200 and me.get("/admin/api/bans", headers=owner).json() == {}
+        assert me.post("/admin/api/bans/lift", headers={"authorization": "Bearer nope"}).status_code == 401
+        assert me.post("/admin/api/bans/lift", headers={"authorization": "Bearer nope2"}).status_code == 401
+        assert me.get("/health", headers=owner).status_code == 403  # two wrong tokens: banned, the token or not
+
+
 def test_cache_and_compression(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     settings.admin.token = SecretStr("s3cret")

@@ -9,6 +9,7 @@ trusted proxy (``security.trusted_proxies``) that is the real visitor, not the p
 from __future__ import annotations
 
 import hashlib
+import hmac
 import ipaddress
 import json
 import logging
@@ -164,6 +165,18 @@ class Guard:
             window.popleft()
         return len(window)
 
+    def pardon(self, ip: str | None = None) -> list[str]:
+        """Lift the ban and strikes of ``ip``, or of every address; the addresses that were banned."""
+        lifted = list(self.banned) if ip is None else [ip] if ip in self.banned else []
+        for table in (self.banned, self.strikes, self.bad_tokens):
+            if ip is None:
+                table.clear()
+            else:
+                table.pop(ip, None)
+        for key in [k for k in self.hits if ip is None or k[0] == ip]:  # its request counts too: no instant 429
+            del self.hits[key]
+        return lifted
+
     def is_banned(self, ip: str, now: float) -> bool:
         until = self.banned.get(ip)
         if until is not None and until <= now:
@@ -204,7 +217,9 @@ class SecurityMiddleware:
     async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
-        cfg: SecuritySettings = scope["app"].state.settings.security
+        state = scope["app"].state
+        state.guard = self.guard  # the admin API lists and lifts bans (/admin/api/bans)
+        cfg: SecuritySettings = state.settings.security
         if not cfg.enabled:
             return await self.app(scope, receive, send)
 
@@ -229,8 +244,13 @@ class SecurityMiddleware:
             ]})  # fmt: skip
             await send({"type": "http.response.body", "body": body})
 
-        if not local and self.guard.is_banned(ip, now):
+        if not local and self.guard.is_banned(ip, now):  # first, token or not: a ban also stops token guessing
             return await reject(403, "forbidden")
+        # The owner's own scripts (the valid admin token) are not rate limited: checks that sent many
+        # requests banned the owner for an hour. A wrong token still strikes (below), so guessing is not helped.
+        token = state.settings.admin.token
+        given = headers.get("authorization", "").removeprefix("Bearer ").strip()
+        owner = token is not None and bool(given) and hmac.compare_digest(given.encode(), token.get_secret_value().encode())
         host = headers.get("host", "").rsplit(":", 1)[0].strip("[]").lower()
         if cfg.allowed_hosts and host not in LOOPBACK | {"testserver"} | {h.lower() for h in cfg.allowed_hosts}:
             return await reject(400, "unknown host")
@@ -253,7 +273,7 @@ class SecurityMiddleware:
         blocked = any(bot.lower() in agent.lower() for bot in cfg.blocked_bots)
         if blocked and not local and path not in ("/robots.txt", "/health"):
             return await reject(403, "forbidden")
-        if not local and not path.startswith(STATIC_PATHS):
+        if not local and not owner and not path.startswith(STATIC_PATHS):
             limit = cfg.admin_rate_limit_per_minute if admin else cfg.rate_limit_per_minute
             if self.guard.over_limit(ip, "admin" if admin else "all", limit, now):
                 self.guard.strike(ip, cfg, "rate limit", now)
