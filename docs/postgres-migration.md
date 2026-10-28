@@ -116,10 +116,10 @@
 ### 6.3 DDL ו-schema (כאן PG מחמיר)
 | מיקום | בעיה | פעולה |
 |---|---|---|
-| `db.py:303` `_literal_default` + `db.py:455-457` | ל-Boolean מייצר `DEFAULT 1` / `SET "x" = 1`. **ב-PG זה נכשל** ("column is of type boolean but default expression is of type integer"). כל עמודת bool חדשה שתתווסף אחרי המעבר תפיל את העלייה. | שלב A: לרנדר `true`/`false` לפי dialect (`sa.true()` מקומפל עם `self.engine.dialect`), ולבדוק ב-test על PG |
-| `db.py:457` `ALTER TABLE ... ADD COLUMN` בלי NOT NULL | ב-SQLite הקיים עמודות כמו `is_listed`, `has_discount`, `free_sold_out`, `pay_at_door`, ומאז גם `sponsored.placement`, `sponsored_stats.results_views` ו-`results_clicks`, נוספו כ-nullable. ייתכנו בהן NULL-ים, בעוד שב-PG ה-schema החדש נבנה מה-ORM עם NOT NULL. | בדיקת נתונים §10.1 (Q-NULL). ב-copy להמיר NULL ל-default של המודל. |
+| `db.py:303` `_literal_default` + `db.py:455-457` | ל-Boolean מייצר `DEFAULT 1` / `SET "x" = 1`. **ב-PG זה נכשל** ("column is of type boolean but default expression is of type integer"). כל עמודת bool חדשה שתתווסף אחרי המעבר תפיל את העלייה. דוגמה חיה: `events.time_known` (`Boolean, default=True`, נוסף 2026-10-28) נוסף ב-SQLite כ-`ADD COLUMN "time_known" BOOLEAN DEFAULT 1` ו-`UPDATE ... = 1`. ב-PG שנבנה טרי מ-`create_all` הוא `BOOLEAN NOT NULL` ותקין; הבעיה רק בעמודה הבאה שתתווסף ב-ALTER על PG. | שלב A: לרנדר `true`/`false` לפי dialect (`sa.true()` מקומפל עם `self.engine.dialect`), ולבדוק ב-test על PG |
+| `db.py:457` `ALTER TABLE ... ADD COLUMN` בלי NOT NULL | ב-SQLite הקיים עמודות כמו `is_listed`, `has_discount`, `free_sold_out`, `pay_at_door`, ומאז גם `sponsored.placement`, `sponsored_stats.results_views`, `results_clicks` ו-`events.time_known` (2026-10-28), נוספו כ-nullable. ייתכנו בהן NULL-ים, בעוד שב-PG ה-schema החדש נבנה מה-ORM עם NOT NULL. | בדיקת נתונים §10.1 (Q-NULL). ב-copy להמיר NULL ל-default של המודל. |
 | כל `String(n)` במודלים (`db.py:93-324`) | SQLite מתעלם מאורך. **ב-PG זה `StringDataRightTruncation`.** בזמן ה-copy זה נכשל, ובזמן scrape זה מפיל אירוע (fallback שורה-שורה, `service.py:487-495`), שקט ומסוכן. | §10.1 (Q-LEN) על snapshot. לכל עמודה שחורגת או קרובה לגבול: להחליף ל-`Text` (עדיף, כי ב-PG ל-`text` ול-`varchar` אותו ביצוע), או לקצר בקוד. ממליץ: `source_event_id`, `city`, `venue_slug`, `content_type` ו-`geo_cache.query` ל-`Text`. |
-| תו `\x00` | PG `text` דוחה NUL. `parsing.py:20` מנקה NUL רק בפונקציות שמשתמשות ב-`_INVISIBLE` (`parsing.py:80`, `parsing.py:163`), לא בכל שדה. | §10.1 (Q-NUL). שלב A: ניקוי NUL ב-`ScrapedEvent` validator (מקום אחד ב-`models.py`) |
+| תו `\x00` | PG `text` דוחה NUL. `parsing.py` מנקה NUL בפונקציות שמשתמשות ב-`_INVISIBLE` ו-ftfy (`remove_control_chars`). מ-2026-10-28 `events.description` ו-`ticket_tiers.description` עוברים תמיד דרך `tidy_text` (הטיפוס `TidyText` ב-`models.py`, validator של pydantic), כלומר NUL לא מגיע אליהם מ-scrape חדש. שאר שדות הטקסט (title, venue_name, address, organizer...) עדיין לא. שורות ישנות לא נוקו. | §10.1 (Q-NUL) עדיין לכל העמודות (שורות ישנות). שלב A: אותו `TidyText` (או ניקוי NUL בלבד) על שאר שדות הטקסט של `ScrapedEvent`, מקום אחד ב-`models.py`. |
 | `Integer` PK autoincrement | ב-PG זה `SERIAL` (int4), ואחרי copy חובה `setval` | ב-copy: `setval(pg_get_serial_sequence(t,'id'), max(id))`. ‏`ticket_tiers.id` רץ מהר (delete+insert בכל upsert, `db.py:652-659`), בערך 84k ביום, כלומר כ-70 שנה עד 2^31. אין צורך ב-BigInteger. Q-INT מאמת. |
 | `create_schema` לא מוחק אינדקסים (`db.py:473-474`) | שינוי אינדקסים במודל לא יגיע ל-SQLite קיים | ב-PG ה-schema נבנה טרי, אז זה בסדר. ל-SQLite: רשימת `DROP INDEX IF EXISTS` מפורשת (§9.6). |
 
@@ -134,6 +134,7 @@
 - התאמות טקסטואליות על JSON:
   - `api.py:751-752` `_json_contains`: ‏`CAST(genres AS VARCHAR) ILIKE '%"x"%'`. עובד ב-PG על `json`.
   - `search.py:52-53` `_genre` ו-`seo.py:651`: אותה לוגיקה בשלושה עותקים (seo משתמש ב-`like`, השניים האחרים ב-`ilike`). המלצה: לאחד ל-helper אחד בשלב A.
+  - `search.py` `_json_has(col, word)` (`text_match`): ‏`CAST(event_types AS TEXT) ILIKE` ומ-2026-10-28 גם על `source_genres`. ב-PG `json::text ILIKE` עובד אותו דבר; ב-`jsonb` הטקסט מגיע עם עברית גולמית (לא `\uXXXX`), וזה אפילו מתאים יותר ל-ILIKE על מילה עברית.
   - `db.py:366-377` `lineup_contains`: מנסה גם צורה מוברחת וגם צורה גולמית. עובד גם על `json` וגם על `jsonb` (שמחזיר עברית גולמית).
 - אין `json_extract` או `json_each` בקוד. נבדק ב-grep על `src/` ו-`scripts/`.
 
@@ -141,12 +142,15 @@
 - `db.py:73-83` `UTCDateTime`: שומר naive UTC ומחזיר aware. ב-PG זה `timestamp without time zone` עם אותה התנהגות. **ממליץ להשאיר**, כדי לא לשנות type וכדי שה-copy יהיה פשוט. ה-`TimeZone` של ה-session ב-PG לא משפיע על naive.
 - אין `func.date`, `strftime` או `julianday` ב-SQL. ה-`strftime` שנמצא ב-grep (`enrichment.py:465`, `admin.py:425`) הוא Python.
 - `local_date` / `sponsored_stats.day` הם `Date` ותקינים.
+- **מ-2026-10-28:** `local_date`, `day_of_week` ו-`time_slot` של אירוע בחו"ל מחושבים ב-Python (`enrichment._categorize_time`) באזור הזמן של המקום (`events.time_zone`, IANA, מ-GeoNames דרך `places.city_zone` / `scrapers.abroad.local_zone`), לא של ישראל. אירוע עם `time_known = false` (האתר נתן תאריך בלבד) מקבל את היום כפי שהאתר כתב אותו ו-`time_slot` NULL. `start_at` עצמו נשאר UTC naive כמו היום, אז אין השפעה על ה-type או על ה-copy.
+- **הצגה:** ה-API מחזיר `time_known` ו-`time_zone`; ה-frontend (`ui.tsx` `when`) ו-SEO (`seo.py` `_when` / `_iso`) מציגים באזור של המקום, ו-JSON-LD של אירוע בלי שעה מקבל `startDate` של תאריך בלבד. הכול Python/JS, בלי SQL על אזורי זמן (אין `AT TIME ZONE`), אז ה-`TimeZone` של ה-session ב-PG עדיין לא רלוונטי.
 
 ### 6.7 חיפוש, case ו-collation (עברית)
 | מיקום | מה | ב-PG |
 |---|---|---|
 | `search.py:45-49` `text_match` | ILIKE על title/description/venue_name/city/address ו-lineup | ILIKE אמיתי. בעברית אותה תוצאה. בלטינית לא-ASCII התוצאה מעט רחבה יותר (רצוי). |
-| `api.py:894-901` venue/city | ILIKE עם escape | תקין |
+| `api.py:894-901` venue/city | ILIKE עם escape. מ-2026-10-28 `city` הוא `OR` של ILIKE על `city` ו-`address` לכל שם של העיר (`api._city_names`: עברית + אנגלית מ-GeoNames, "פריז" גם `%Paris%`); שם עם תוספות ("לונדון, אנגליה") מתאים כי זה `%...%`. | תקין, אותו ILIKE. אין אינדקס שמשרת אותו גם היום (seq scan, זניח ב-28k). |
+| `search.py` `smart_filters`: עיר בחו"ל בטקסט (`places.city_abroad`, 100k+ תושבים) | `OR` של `text_match` לכל שם של העיר | אותו ILIKE, לא תלוי DB. |
 | `db.py` `_sqlite_pragmas`: ‏`create_function("has_word")` (נוסף 2026-10-27) | מילה של עד 3 אותיות נמצאת רק כמילה שלמה ("ראפ" לא בתוך "תראפיה"), עם prefix עברי אחד. פונקציית Python שנרשמת על חיבור SQLite. | **לא קיים ב-PG, חוסם.** ב-PG: ‏`col ~* '(^|\W)[בלמהוכש]?ראפ($|\W)'` (‏`\m`/`\M` לא מכירים prefix), או דרך `search_text` + pg_trgm (§9.4). לעבור ל-`func` לפי dialect בשלב A. |
 | `search.py`: ‏`skeleton()`/`sounds_like()`, ‏`did_you_mean()`, typo דרך `difflib` (נוספו 2026-10-27) | התאמה לפי צליל (עברית/לטינית), "התכוונת ל", שגיאות כתיב מול אוצר המילים | רץ ב-Python, לא תלוי DB. עובד אותו דבר. ב-PG אפשר להחליף את ה-typo וה-did-you-mean ב-`similarity()`/`word_similarity()` של pg_trgm (§9.4), לא חובה. |
 | `search.py` ‏`date_ranges()` (convertdate) | "השבוע", "בדצמבר", "חנוכה" לטווח `local_date` | `BETWEEN` על date, תקין |
@@ -298,6 +302,7 @@ CASCADE מתאים לכלל "never past events": ‏retention מוחק אירו�
 | `offers_changed_at` (`:139`) | שובר HOT כשהמחיר משתנה. `service.py:552` מכוסה ע"י `source`. |
 | `is_listed` (`:136`), `is_primary` (`:145`), `in_target_city` (`:109`), `is_weekend` (`:119`), `has_free_entry` (`:126`), `group_has_free_entry` (`:151`) | booleans עם סלקטיביות של כ-30–90%. ה-planner לא בוחר בהם. `is_primary` ו-`is_listed` עוברים ל-predicate של ה-feed index. |
 | `day_of_week` (`:116`), `time_slot` (`:117`) | 7 ו-4 ערכים, לא סלקטיבי |
+| (`time_known`, `time_zone`, נוספו 2026-10-28) | **בלי אינדקס מלכתחילה, ושיישאר כך:** אף query לא מסנן או ממיין לפיהן, רק מחזירים אותן. שתיהן נכתבות ב-upsert (`_EVENT_FIELDS`), אז אינדקס עליהן היה שובר HOT. |
 | `entry_type` (`:127`) | הפילטר משתמש ב-`group_entry_type` (`api.py:912`), ו-`entry_type` עצמו לא מסונן ב-SQL |
 
 בנוסף ל-events: **`fillfactor=85`** (`postgresql_with={"fillfactor": 85}` ב-`__table_args__`), שמשאיר מקום ל-HOT באותו page.
@@ -348,12 +353,13 @@ CASCADE מתאים לכלל "never past events": ‏retention מוחק אירו�
 Snapshot: בתוך הקונטיינר, `VACUUM INTO '/app/data/snapshot-YYYYMMDD.db'`. זה עקבי ולא חוסם קוראים. אחר כך מורידים את הקובץ, או מריצים את הבדיקות בתוך הקונטיינר על ה-snapshot.
 - **Q-LEN:** לכל `String(n)`: `SELECT max(length(col)), sum(length(col) > n) FROM t;`. ‏`length()` של SQLite סופר תווים, בדיוק כמו `varchar(n)` ב-PG.
 - **Q-NUL:** לכל עמודת טקסט/JSON: `SELECT count(*) FROM t WHERE instr(col, char(0)) > 0;`
-- **Q-NULL:** לכל עמודה שבמודל היא NOT NULL: `SELECT count(*) FROM t WHERE col IS NULL;`. חשוד במיוחד: עמודות שנוספו ב-ALTER (`is_listed`, `has_discount`, `free_sold_out`, `pay_at_door`, `admits`, `group_*`, `sponsored.placement`, `sponsored_stats.results_views`, `sponsored_stats.results_clicks`).
+- **Q-NULL:** לכל עמודה שבמודל היא NOT NULL: `SELECT count(*) FROM t WHERE col IS NULL;`. חשוד במיוחד: עמודות שנוספו ב-ALTER (`is_listed`, `has_discount`, `free_sold_out`, `pay_at_door`, `admits`, `group_*`, `sponsored.placement`, `sponsored_stats.results_views`, `sponsored_stats.results_clicks`, `events.time_known`).
 - **Q-JSON:** `SELECT count(*) FROM events WHERE json_valid(genres) = 0;` (לכל עמודת JSON, כולל `ticket_tiers.price_rounds` ו-`scrape_runs.failures`).
 - **Q-ORPHAN:** `SELECT count(*) FROM ticket_tiers t LEFT JOIN events e ON e.id = t.event_id WHERE e.id IS NULL;`, וכנ"ל ל-`event_images` ול-`deal_changes`.
 - **Q-DUP:** השאילתות מ-§9.3.
 - **Q-INT:** `SELECT max(id) FROM <t>;` לכל טבלה עם int PK, מול 2^31. ‏`SELECT max(size_bytes) FROM event_images;`
-- **Q-BOOL:** `SELECT DISTINCT is_listed FROM events;` (מצפים ל-0/1/NULL בלבד).
+- **Q-BOOL:** `SELECT DISTINCT is_listed FROM events;` ו-`SELECT DISTINCT time_known FROM events;` (מצפים ל-0/1/NULL בלבד; ב-`time_known` ‏NULL הופך ל-`true`, ה-default).
+- **Q-TZ:** `SELECT time_zone, count(*) FROM events GROUP BY 1;`: כל ערך שאינו NULL חייב להיות שם IANA תקין (`zoneinfo.ZoneInfo(x)` לא זורק), וב-Q-LEN מול `String(48)` (השם הארוך ב-IANA הוא 32 תווים). אירוע ישראלי: NULL.
 - **Q-SIZE:** `SELECT count(*), sum(length(data)) FROM event_images WHERE data IS NOT NULL;` (קובע את זמן ההעתקה).
 
 ### 10.2 `copy-db` (שלב A, כ-60 שורות ב-`cli.py`)
@@ -369,7 +375,7 @@ Snapshot: בתוך הקונטיינר, `VACUUM INTO '/app/data/snapshot-YYYYMMDD
 ### 10.3 אימות
 - **מספר שורות** לכל טבלה: מקור מול יעד, שוויון מלא.
 - **Checksum** לכל טבלה: `sha256` על tuples מנורמלים (datetime ל-ISO UTC, Decimal ל-`normalize()`, JSON ל-`json.dumps(sort_keys=True)`), לפי סדר PK, מחושב ב-Python משני הצדדים דרך אותם models. כך חוסכים הבדלי ייצוג בין ה-DBs.
-- **Diff התנהגותי (הכי חשוב):** להרים את האפליקציה מקומית פעמיים, פעם על ה-snapshot ופעם על `partylinks_rehearsal` (scheduler כבוי כרגיל ב-local), ולהשוות JSON של רשימה קבועה: `/events`, `/events?sort=price_asc|price_desc|seen_desc|trending`, `/events?genre=techno`, `/events?q=<עברית>`, `/events?artist=<עברית>`, `/events?city=תל אביב`, `/events/map`, `/events/{slug}`, `/events/rails`, `/sitemap.xml`, `/abroad`, `/venues`, `/artists`, `/categories`. כל הבדל הוא באג (סדר NULL, collation, ILIKE) או מוסבר.
+- **Diff התנהגותי (הכי חשוב):** להרים את האפליקציה מקומית פעמיים, פעם על ה-snapshot ופעם על `partylinks_rehearsal` (scheduler כבוי כרגיל ב-local), ולהשוות JSON של רשימה קבועה: `/events`, `/events?sort=price_asc|price_desc|seen_desc|trending`, `/events?genre=techno`, `/events?q=<עברית>`, `/events?artist=<עברית>`, `/events?city=תל אביב`, `/events/map`, `/events/{slug}` (כולל אירוע בחו"ל ואירוע עם `time_known = false`: שעה מקומית, תאריך בלבד), `/events/rails`, `/events?abroad=true&city=פריז` מול `city=Paris` (אותו total), `/sitemap.xml`, `/abroad`, `/venues`, `/artists`, `/categories`. כל הבדל הוא באג (סדר NULL, collation, ILIKE) או מוסבר.
 
 ---
 
@@ -398,7 +404,7 @@ Snapshot: בתוך הקונטיינר, `VACUUM INTO '/app/data/snapshot-YYYYMMDD
 - **Opt-in PG:** fixture אחד ב-`tests/conftest.py`, `db_url(tmp_path)`, שמחזיר `sqlite:///{tmp_path}/t.db`, או את `PARTYLINKS_TEST_PG_URL` כשהוא מוגדר (עם `drop_all`/`create_all` לכל test). להחליף את 7 ה-URLs הקשיחים (§6.11) ב-fixture.
 - הרצה מקומית: `docker run --rm -e POSTGRES_PASSWORD=x -p 5432:5432 postgres:17`, ואז `PARTYLINKS_TEST_PG_URL=postgresql+psycopg://postgres:x@localhost/postgres pytest`.
 - tests חדשים, הכרחיים בלבד:
-  1. `create_schema` מוסיף עמודת Boolean עם default על PG (תופס את §6.3).
+  1. `create_schema` מוסיף עמודת Boolean עם default על PG (תופס את §6.3). מקרה אמיתי לבדוק: DB בלי `events.time_known` ו-`events.time_zone`, ואז `create_schema` (כמו שקרה ב-SQLite ב-2026-10-28).
   2. upsert עם title או `source_event_id` ארוך, ועם `\x00` (תופס את §6.3).
   3. סדר `price_asc`/`price_desc` עם NULL, זהה בשני ה-dialects (Q3).
   4. `copy-db` round-trip SQLite → PG → SQLite, עם checksums שווים.
@@ -554,6 +560,10 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **בלי שינוי schema.**
 
 ### 2026-10-28 (שעה מקומית בחו"ל, תאריך בלי שעה)
-- **שתי עמודות חדשות ב-`events`:** `time_known BOOLEAN NOT NULL DEFAULT TRUE` (False כשהאתר נותן רק תאריך) ו-`time_zone VARCHAR(48)` (אזור הזמן של מקום אירוע בחו"ל, IANA, ‏NULL בישראל). ב-SQLite הן נוספו ב-`create_schema` (ADD COLUMN, שורות קיימות קיבלו `TRUE` / NULL). ב-PG הן חלק מה-DDL של §5, בלי אינדקס: לא מסננים ולא ממיינים לפיהן.
+- **שתי עמודות חדשות ב-`events`:** `time_known BOOLEAN NOT NULL DEFAULT TRUE` (False כשהאתר נותן רק תאריך) ו-`time_zone VARCHAR(48)` (אזור הזמן של מקום אירוע בחו"ל, IANA, ‏NULL בישראל). ב-SQLite הן נוספו ב-`create_schema` (ADD COLUMN, שורות קיימות קיבלו `TRUE` / NULL). ב-PG הן נבנות מה-ORM (`create_all`, §7) כ-`BOOLEAN NOT NULL` ו-`VARCHAR(48)`, בלי אינדקס (§9.4): לא מסננים ולא ממיינים לפיהן. ‏`time_known` הוא הדוגמה החיה לבעיית `DEFAULT 1` (§6.3) ונכנס ל-Q-NULL / Q-BOOL, ו-`time_zone` ל-Q-LEN / Q-TZ (§10.1).
 - **`local_date` / `time_slot` של אירוע בחו"ל** מחושבים עכשיו באזור הזמן של המקום, לא של ישראל. אירוע בלי שעה מקבל `time_slot` NULL. אין שינוי ב-queries.
 - **`GET /events/map`** בוחר גם `time_known`, `time_zone`, `local_date`. אותו `SELECT`, שלוש עמודות נוספות.
+- **ערים עם תוספת** ("לונדון, אנגליה", "Saint-Denis (Paris)") מאוחדות ב-Python (`places._city`, `api._merged_cities`), בלי שינוי SQL.
+- **ניקוי תיאורים (`parsing.tidy_text`, ftfy):** `events.description` ו-`ticket_tiers.description` נכתבים נקיים (רווחים, שורות, entities, mojibake, NUL). אין שינוי schema; משפיע על Q-NUL (§6.3). ftfy היא תלות Python, לא של ה-DB.
+- **שורות קיימות:** מתעדכנות ב-scrape הבא של כל מקור (upsert כותב את כל `_EVENT_FIELDS`). אין backfill. ב-copy ל-PG הן יעברו כפי שהן.
+- **הפניות לשורות קוד** בסעיפים הקודמים (למשל `db.py:133`) נכונות ל-4a1a6a7 ויכולות לזוז בכמה שורות. השמות (פונקציות, עמודות) הם העיקר.
