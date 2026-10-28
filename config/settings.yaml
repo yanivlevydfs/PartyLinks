@@ -402,7 +402,10 @@ enrichment:
                 "להכנס", "להיכנס", "מכנס", "יכנס", "ייכנס", "תכנס", "נכנס",  # "כנס" (conference) inside verbs
                 "pop-up", "pop up", "popup", "פופ אפ", "פופ-אפ", "פופאפ",
                 "בריכת הסולטן", "sultan's pool",  # a concert venue, not a pool
-                "החברה הישראלית", "בחברה הישראלית", "לחברה הישראלית", "והחברה הישראלית"]  # society, not music
+                "החברה הישראלית", "בחברה הישראלית", "לחברה הישראלית", "והחברה הישראלית",  # society, not music
+                "conference centre", "conference center", "jungle joy",  # venues abroad (Malta), not a conference / jungle music
+                "eastern standard time", "eastern daylight time", "eastern time",  # US time zones, not mizrahi
+                "non-commercial", "commercial or non", "potter forest", "organic choir"]  # photo terms, a park, a choir
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
   # talks: their text is read only for these genres.
@@ -1335,6 +1338,40 @@ sources:
     country_path: /en/venues/-/israel
     city_paths: ["/en/cities/tel-aviv", "/en/cities/jerusalem", "/en/cities/haifa", "/en/cities/eilat"]
     cities_sitemap_path: /api/sitemaps/cities/sitemap/0.xml
+    http:
+      concurrency: 4
+
+  posh:
+    # Posh (posh.vip): party and nightlife ticketing, almost all in the US. The explore page's JSON
+    # endpoint lists every upcoming event (~1,600, 100 a page), then each event page's RSC payload
+    # gives address, coordinates, description and currency: ~1,620 requests a run. Times stay in
+    # each venue's own zone. Events abroad go to the abroad section.
+    enabled: true
+    cron: "17 9,21 * * *"
+    site_url: https://posh.vip
+    http:
+      concurrency: 4
+
+  eventbrite:
+    # Eventbrite (eventbrite.com): conferences, meetups, workshops, tours and parties in Israel. The
+    # Israel discovery pages (~75 events, 20 a page) carry every event's data in __SERVER_DATA__;
+    # each event page adds its price (schema.org AggregateOffer). Categories mapped in the scraper.
+    enabled: true
+    cron: "43 9,21 * * *"
+    site_url: https://www.eventbrite.com
+    listing_path: /d/israel/all-events/
+    http:
+      concurrency: 3
+
+  showshappening:
+    # ShowsHappening (showshappening.com): ticketing in Malta, the UK, Germany and Spain. Each
+    # country's home page is a calendar of every show (path, date, categories, tags, flyer, title);
+    # each event page adds the description, the next show's time and the city. Venue and prices
+    # come from a private API and are not read. ~270 events, ~1,000 dates. Abroad section.
+    enabled: true
+    cron: "8 10,22 * * *"
+    site_url: https://www.showshappening.com
+    countries: [mt, gb, de, es]
     http:
       concurrency: 4
 

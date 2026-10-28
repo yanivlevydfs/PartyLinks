@@ -472,7 +472,8 @@ class Enricher:
         if event.country and event.country != UNKNOWN_COUNTRY:
             from partylinks.scrapers.abroad import local_zone  # abroad imports this module
 
-            event.time_zone = local_zone(event.country, self.tz.key, event.city)
+            # A zone the source gives (Posh: each venue's own) beats the country's guess.
+            event.time_zone = event.time_zone or local_zone(event.country, self.tz.key, event.city)
         # A date alone is midnight in the zone the source meant: that day, and no time of day. Not
         # midnight there = the source did give an hour: a timed event, never an all-day one.
         if not event.time_known and event.start_at.timetz().replace(tzinfo=None) != time():

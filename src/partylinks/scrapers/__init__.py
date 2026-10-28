@@ -28,6 +28,7 @@ from partylinks.scrapers.comy import ComyScraper
 from partylinks.scrapers.drop import DropScraper
 from partylinks.scrapers.epgb import EpgbScraper
 from partylinks.scrapers.eventbuzz import EventbuzzScraper
+from partylinks.scrapers.eventbrite import EventbriteScraper
 from partylinks.scrapers.eventer import EventerScraper
 from partylinks.scrapers.eventim import EventimScraper, ZappaScraper
 from partylinks.scrapers.festivalim import FestivalimScraper
@@ -72,7 +73,9 @@ from partylinks.scrapers.pres import PresScraper
 from partylinks.scrapers.ramatganmuni import RamatGanMuniScraper
 from partylinks.scrapers.secrettelaviv import SecretTelAvivScraper
 from partylinks.scrapers.selector import SelectorScraper
+from partylinks.scrapers.posh import PoshScraper
 from partylinks.scrapers.shotgun import ShotgunScraper
+from partylinks.scrapers.showshappening import ShowsHappeningScraper
 from partylinks.scrapers.smarticket import SmarticketScraper
 from partylinks.scrapers.teder import TederScraper
 from partylinks.scrapers.telaviv import TelAvivScraper
@@ -101,6 +104,9 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         BeatRadarScraper,
         VibezScraper,
         ShotgunScraper,
+        PoshScraper,
+        EventbriteScraper,
+        ShowsHappeningScraper,
         BarbyScraper,
         GrayclubScraper,
         ChillzScraper,

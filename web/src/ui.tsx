@@ -54,7 +54,7 @@ export function priceLabel(e: Pick<EventSummary, "entry_type" | "min_price" | "h
 // Display names of the ticket sites we scrape (keys = EventSummary.source).
 const SOURCE_NAMES: Record<string, string> = {
   goout: "Go-Out", eventer: "Eventer", zygo: "Zygo", tickchak: "Tickchak",
-  selector: "Selector", barby: "Barby", grayclub: "Gray Club", chillz: "Chillz",
+  selector: "Selector", barby: "Barby", grayclub: "Gray Club", chillz: "Chillz", posh: "Posh", eventbrite: "Eventbrite", showshappening: "ShowsHappening",
   mevalim: "Mevalim", hulyo: "Hulyo", gagarin: "Gagarin", megatickets: "Megatickets", eventbuzz: "Eventbuzz",
   popit: "Popit", epgb: "Radio EPGB", leaan: "Leaan", kupatbravo: "Kupat Bravo", comy: "Comy", eventim: "Eventim",
   ticketmaster: "Ticketmaster", pres: "PRES", smarticket: "Smarticket", secrettelaviv: "Secret Tel Aviv",

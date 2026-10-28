@@ -37,6 +37,8 @@ pagination and what the listing and the event page provide.
 | `happytlv` | HappyTLV (happytlv.com): Tel Aviv parties, and bars' happy hours (one event per day the deal runs, category **Happy Hour**), plus places across Israel, one event per day each is open (all day when its page gives no hours): escape rooms, attractions, coffee carts, chef restaurants, work spaces, volunteering, clubs, team activities (no address, so no map pin), each its own category | 05:13, 17:13 | yes |
 | `beatradar` | Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties, with its own genre tags; merged with those sources by dedup | 08:26, 20:26 | yes |
 | `shotgun` | Shotgun (shotgun.live): electronic music ticketing. Every city page worldwide (240, mostly France, Brazil and the US; ~3,300 events, to the abroad section), plus its Israeli pages, which list nothing yet | 08:52, 20:52 | yes |
+| `posh` | Posh (posh.vip): party and nightlife ticketing, almost all in the US (~1,600 events, to the abroad section, in each venue's own time zone). No categories of its own: night out by default, others from the title | 09:17, 21:17 | yes |
+| `showshappening` | ShowsHappening (showshappening.com): ticketing in Malta, the UK, Germany and Spain (~270 events, ~1,000 dates, abroad section) with its own categories and tags. No venue or price (loaded from a private API) | 10:08, 22:08 | yes |
 | `vibez` | Vibez (vibez.io): ticketing for communities and party producers: raves, ecstatic dance, club nights | 08:36, 20:36 | yes |
 | `babebar` | Babe Bar (babebar.co.il): club site on WordPress + The Events Calendar (`tribe.py`) | 09:06, 21:06 | yes |
 
@@ -112,6 +114,7 @@ many of them free.
 | Source | Site | Runs daily at | On |
 | --- | --- | --- | --- |
 | `luma` | Luma (luma.com): RSVP pages for tech meetups, hi-tech conferences, startup and community events | 07:23, 19:23 | yes |
+| `eventbrite` | Eventbrite (eventbrite.com/d/israel/all-events/): conferences, meetups, workshops, tours and parties in Israel; its categories and formats are mapped to the site's | 09:43, 21:43 | yes |
 | `meetup` | Meetup (meetup.com): community meetups: tech talks, developer groups, startup and social events | 07:41, 19:41 | yes |
 | `geektime` | Geektime (geektime.co.il/event/): the hi-tech events calendar: meetups, conferences, workshops | 07:29, 19:29 | yes |
 | `peoplecomputers` | People & Computers (anashim umahshevim, events.co.il): Israel's hi-tech conference organizer | 07:37, 19:37 | yes |
