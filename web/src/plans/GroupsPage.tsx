@@ -1,6 +1,6 @@
 // /groups: the signed-in user's groups, one per event (made or answered signed in), soonest first.
 // A group goes with its event; the creator deletes it for everyone, a friend leaves it.
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { SignInButton } from "../accounts/AccountSlot";
 import { useNoIndex } from "../accounts/AccountPage";
@@ -9,6 +9,7 @@ import { Hero, Img, Loader, sized, useT, useTitle, when } from "../ui";
 import { usePlanText } from "./i18n";
 import "./plans.css";
 import type { Group } from "./types";
+import { useGroups } from "./useGroups";
 
 export default function GroupsPage() {
   const p = usePlanText();
@@ -17,11 +18,7 @@ export default function GroupsPage() {
   useNoIndex();
   const me = useMe();
   const qc = useQueryClient();
-  const groups = useQuery<Group[]>({
-    queryKey: ["groups"],
-    queryFn: () => fetch("/api/me/groups", { credentials: "same-origin" }).then((r) => r.json()),
-    enabled: !!me.data,
-  });
+  const groups = useGroups();
   const remove = async (g: Group) => {
     await send(`/api/me/groups/${encodeURIComponent(g.id)}`, "DELETE").catch(() => null);
     await qc.invalidateQueries({ queryKey: ["groups"] });

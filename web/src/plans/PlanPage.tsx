@@ -81,7 +81,11 @@ export default function PlanPage() {
     void fetch(`/plans/${encodeURIComponent(id)}/votes`, {
       method: "POST", headers: WRITE_HEADERS,
       body: JSON.stringify({ voter, name: mine.name, answer: mine.answer, picks: mine.picks, ride: mine.ride, seats: mine.seats ?? undefined }),
-    }).then(async (res) => { if (res.ok) client.setQueryData(key, await res.json()); });
+    }).then(async (res) => {
+      if (!res.ok) return;
+      client.setQueryData(key, await res.json());
+      void client.invalidateQueries({ queryKey: ["groups"] });
+    });
   }, [me, mine, data, claimed]); // eslint-disable-line react-hooks/exhaustive-deps
   const many = (data?.options.length ?? 0) > 1;
   useTitle(data ? (many ? `${p.which} ${data.options.map((o) => o.title).join(" / ")}` : `${p.title} ${data.event.title}`) : p.title);
@@ -127,6 +131,7 @@ export default function PlanPage() {
     if (res.ok) {
       remember(clean);
       client.setQueryData(key, await res.json());
+      void client.invalidateQueries({ queryKey: ["groups"] });
       setNote(p.saved);
     } else setNote(res.status === 409 ? p.full : res.status === 403 ? p.signInToChange : res.status === 429 ? p.slowDown : p.failed);
   };
