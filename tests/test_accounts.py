@@ -58,8 +58,16 @@ def fake(monkeypatch: pytest.MonkeyPatch) -> FakeGoogle:
     return g
 
 
-def sign_in(c: TestClient, fake: FakeGoogle, email: str = "Dana@Example.com", sub: str = "g-1", nxt: str = "/events") -> Any:
-    fake.info = {"sub": sub, "email": email, "email_verified": True, "name": "Dana", "picture": "https://lh3.googleusercontent.com/a"}
+def sign_in(
+    c: TestClient, fake: FakeGoogle, email: str = "Dana@Example.com", sub: str = "g-1", nxt: str = "/events"
+) -> Any:
+    fake.info = {
+        "sub": sub,
+        "email": email,
+        "email_verified": True,
+        "name": "Dana",
+        "picture": "https://lh3.googleusercontent.com/a",
+    }
     c.get("/auth/google/login", params={"next": nxt}, follow_redirects=False)
     return c.get("/auth/google/callback", follow_redirects=False)
 
@@ -78,7 +86,9 @@ def test_sign_in_creates_the_user_once(tmp_path: Path, fake: FakeGoogle) -> None
         assert "spotx_session" in first.cookies
         me = c.get("/api/me")
         assert me.status_code == 200 and me.headers["cache-control"] == "private, no-store"
-        assert me.json()["email"] == "dana@example.com" and me.json()["role"] == "user" and not me.json()["digest_opt_in"]
+        assert (
+            me.json()["email"] == "dana@example.com" and me.json()["role"] == "user" and not me.json()["digest_opt_in"]
+        )
         again = sign_in(c, fake)
         assert again.headers["location"] == "/events"
     with db.session() as s:
@@ -116,8 +126,13 @@ def test_me_edit_sign_out_and_delete(tmp_path: Path, fake: FakeGoogle) -> None:
         assert c.get("/api/me").status_code == 401
         sign_in(c, fake)
         assert c.patch("/api/me", json={"digest_opt_in": True}).status_code == 403  # not from our pages
-        assert c.patch("/api/me", json={"digest_opt_in": True}, headers=OURS | {"Origin": "https://evil.com"}).status_code == 403
-        edited = c.patch("/api/me", json={"digest_opt_in": True, "locale": "en", "name": " Dana L "}, headers=OURS).json()
+        assert (
+            c.patch("/api/me", json={"digest_opt_in": True}, headers=OURS | {"Origin": "https://evil.com"}).status_code
+            == 403
+        )
+        edited = c.patch(
+            "/api/me", json={"digest_opt_in": True, "locale": "en", "name": " Dana L "}, headers=OURS
+        ).json()
         assert edited["digest_opt_in"] and edited["locale"] == "en" and edited["name"] == "Dana L"
         with db.session() as s:
             assert s.scalar(select(UserRow.digest_opt_in_at)) is not None  # proof of consent
@@ -170,7 +185,12 @@ def test_admin_users_actions(tmp_path: Path, fake: FakeGoogle) -> None:
         detail = admin.get(f"/admin/api/users/{dana}").json()
         assert detail["sessions"] == 1 and not detail["blocked"]
         stats = admin.get("/admin/api/users/stats").json()
-        assert stats["total"] == 2 and stats["new_7"] == 2 and stats["admins"] == 1 and sum(d["n"] for d in stats["per_day"]) == 2
+        assert (
+            stats["total"] == 2
+            and stats["new_7"] == 2
+            and stats["admins"] == 1
+            and sum(d["n"] for d in stats["per_day"]) == 2
+        )
         admin.post(f"/admin/api/users/{dana}/block")
         assert user.get("/api/me").status_code == 401
         assert sign_in(user, fake, nxt="/").headers["location"] == "/?signin=blocked"
@@ -202,6 +222,8 @@ def test_logs_never_carry_emails_or_tokens() -> None:
     assert scrub("GET /auth/google/callback?state=abc&code=4/0Ab hi dana@example.com") == (
         "GET /auth/google/callback?state=*** hi ***@***".replace("state=***", "state=***&code=***")
     )
-    record = logging.LogRecord("x", logging.INFO, "", 0, "%s - %s", ("1.2.3.4", "/api/email/unsubscribe?t=SECRET"), None)
+    record = logging.LogRecord(
+        "x", logging.INFO, "", 0, "%s - %s", ("1.2.3.4", "/api/email/unsubscribe?t=SECRET"), None
+    )
     Redact().filter(record)
     assert record.getMessage() == "1.2.3.4 - /api/email/unsubscribe?t=***"

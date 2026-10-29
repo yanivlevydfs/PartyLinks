@@ -49,7 +49,7 @@ AI_CRAWLERS = [
 
 # Operational / private endpoints crawlers have no business indexing.
 ROBOTS_PRIVATE = ["/admin", "/admin/api/", "/docs", "/redoc", "/openapi.json", "/health", "/runs", "/sources",
-                  "/maintenance", "/changes"]  # not /go/: Google must crawl offers.url (the ticket redirect)
+                  "/maintenance", "/changes", "/account", "/alerts", "/saved", "/auth/", "/api/me"]  # not /go/: Google must crawl offers.url (the ticket redirect)
 
 CURRENCY_SYMBOLS = {"ILS": "₪", "EUR": "€", "USD": "$", "GBP": "£"}
 
@@ -610,12 +610,12 @@ def privacy_page(session: Session, cfg: Settings, lang: str) -> Page:
     he = lang == "he"
     title = "מדיניות פרטיות ועוגיות" if he else "Privacy and cookie policy"
     text = (
-        f"{cfg.site.name} פועל לפי חוק הגנת הפרטיות, התשמ\"א-1981 (כולל תיקון 13). אין באתר הרשמה "
-        "ועוגיות פרסום; נשמרים בדפדפן רק פריטים הכרחיים, וסטטיסטיקת גלישה (Google Analytics) ותוכן מצד שלישי "
+        f"{cfg.site.name} פועל לפי חוק הגנת הפרטיות, התשמ\"א-1981 (כולל תיקון 13). השימוש באתר אינו "
+        "מחייב הרשמה (חשבון Google הוא רשות) ואין בו עוגיות פרסום; נשמרים בדפדפן רק פריטים הכרחיים, וסטטיסטיקת גלישה (Google Analytics) ותוכן מצד שלישי "
         "(מפה) נטענים רק בהסכמה."
         if he
-        else f"{cfg.site.name} follows the Israeli Privacy Protection Law, 1981 (including Amendment 13). There is no "
-        "sign-up and no advertising cookies; only necessary items are stored in the browser, and usage statistics "
+        else f"{cfg.site.name} follows the Israeli Privacy Protection Law, 1981 (including Amendment 13). Using the site "
+        "needs no sign-up (a Google account is optional) and there are no advertising cookies; only necessary items are stored in the browser, and usage statistics "
         "(Google Analytics) and third-party content (the map) load only with consent."
     )
     contact = ""  # the address is revealed on the page by a click, never in the HTML (harvesters)

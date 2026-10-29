@@ -4,6 +4,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Loader, TZ } from "../ui";
 import { Sponsored } from "../ads/AdminSponsored";
+import { SignInButton } from "../accounts/AccountSlot";
+import { AdminUsers } from "../accounts/AdminUsers";
 
 // --------------------------------------------------------------------------- api
 const TOKEN_KEY = "partylinks-admin-token";
@@ -56,7 +58,7 @@ const ago = (iso: string | null | undefined) => {
 const adminClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: true } } });
 
 // --------------------------------------------------------------------------- page
-const TABS = ["overview", "health", "clicks", "searches", "sponsored", "sources", "runs", "config", "maintenance"] as const;
+const TABS = ["overview", "health", "clicks", "searches", "users", "sponsored", "sources", "runs", "config", "maintenance"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage() {
@@ -118,6 +120,7 @@ function Admin() {
       {tab === "runs" && <Runs />}
       {tab === "config" && <Config />}
       {tab === "maintenance" && <Maintenance data={ov.data} />}
+      {tab === "users" && <AdminUsers />}
     </main>
   );
 }
@@ -142,6 +145,8 @@ function Login({ error, onLogin }: { error: HttpError; onLogin: () => void }) {
         )}
         <input type="password" autoComplete="current-password" value={token} onChange={(e) => setToken(e.target.value)} placeholder="Admin token" aria-label="Admin token" autoFocus />
         <button className="adm-btn" disabled={!token.trim()}>Sign in</button>
+        <p className="adm-note">or, with a Google account whose role is admin:</p>
+        <SignInButton next="/admin" label="Sign in with Google" />
       </form>
     </main>
   );

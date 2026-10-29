@@ -58,7 +58,11 @@ def list_users(request: Request, q: str = "", page: int = Query(1, ge=1)) -> dic
         where = []
         if q.strip():
             like = f"%{q.strip().lower()}%"
-            where.append(or_(UserRow.email.like(like), func.lower(UserRow.name).like(like), cast(UserRow.id, String) == q.strip()))
+            where.append(
+                or_(
+                    UserRow.email.like(like), func.lower(UserRow.name).like(like), cast(UserRow.id, String) == q.strip()
+                )
+            )
         total = session.scalar(select(func.count()).select_from(UserRow).where(*where)) or 0
         users = session.scalars(
             select(UserRow).where(*where).order_by(UserRow.created_at.desc()).offset((page - 1) * PAGE).limit(PAGE)

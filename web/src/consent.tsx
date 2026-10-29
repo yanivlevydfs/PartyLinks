@@ -126,6 +126,18 @@ export const STORAGE: StorageItem[] = [
     duration: { he: "עד סגירת הלשונית", en: "Until the tab is closed" },
   },
   {
+    name: "spotx_session", provider: US, category: "necessary",
+    kind: { he: "עוגייה (HttpOnly, מאובטחת)", en: "Cookie (HttpOnly, secure)" },
+    purpose: { he: "השארת המחובר לחשבון (רק למי שהתחבר עם Google). אצלנו נשמרת רק טביעת SHA-256 שלה; יציאה מוחקת אותה.", en: "Keeps you signed in (only if you signed in with Google). We keep only its SHA-256 fingerprint; signing out deletes it." },
+    duration: { he: "30 יום מהשימוש האחרון", en: "30 days from last use" },
+  },
+  {
+    name: "spotx_signin", provider: US, category: "necessary",
+    kind: { he: "עוגייה חתומה", en: "Signed cookie" },
+    purpose: { he: "אבטחת תהליך הכניסה עם Google (מניעת זיוף בקשה); נוצרת רק כשלוחצים \"המשך עם Google\".", en: "Secures signing in with Google (stops forged requests); set only when you press \"Continue with Google\"." },
+    duration: { he: "10 דקות", en: "10 minutes" },
+  },
+  {
     name: "cdn.jsdelivr.net", provider: { he: "jsDelivr (רשת הפצת תוכן)", en: "jsDelivr (content delivery network)" }, kind: REQUEST, category: "necessary",
     purpose: { he: "טעינת קובצי השפה וגופן הדיסלקציה של תפריט הנגישות. השרת מקבל את כתובת ה-IP ופרטי הדפדפן.", en: "Loads the accessibility menu's language files and dyslexia font. The server receives your IP address and browser details." },
     duration: NONE,

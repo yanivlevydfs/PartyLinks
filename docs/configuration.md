@@ -26,6 +26,8 @@ Secrets (admin token, proxy credentials, access headers) belong in variables onl
 | `logging` | Level, text or JSON, access log, rotating file |
 | `site` | `base_url`, brand name (`SPOTX`), accessibility and privacy contacts |
 | `utm` | UTM tags on ticket links: `enabled`, `source`, `medium` (see [ticket links](ticket-links.md)) |
+| `accounts` | Optional Google accounts: `enabled`, `session_days`, `max_alerts`, `max_saved`; secrets (`google_client_id`, `google_client_secret`, `session_secret`, `admin_emails`) from the environment only (see [accounts](accounts.md)) |
+| `mail` | Email through Resend: `from_address`, `digest_cron`, `digest_max_events`, `instant_min_interval_minutes`, `matcher_interval_minutes`; `PARTYLINKS_MAIL__RESEND_API_KEY` from the environment only |
 | `security` | Trusted proxies, allowed hosts, rate limits (site, admin, `/go/`), bans, blocked bots, API docs |
 | `api` | Host, port, page sizes, page cache freshness |
 | `scheduler` | On or off (off locally), run on startup, run timeout, the worker process (`separate_process`, heartbeat, stale / command timeouts, restart backoff) |

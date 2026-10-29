@@ -1,0 +1,52 @@
+/* Accounts: the header corner, the user menu, the welcome sheet and /account. */
+.sign-in, .user-btn {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; background: transparent; color: var(--text);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-weight: 600; cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
+}
+.sign-in:hover, .user-btn:hover { border-color: var(--cyan); box-shadow: 0 0 16px rgb(25 227 255 / .35); text-shadow: none; }
+.user-btn { padding: 2px; }
+@media (max-width: 520px) { .sign-in span { display: none; } .sign-in { padding: 7px; } }
+
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; object-fit: cover;
+  background: var(--grad); color: #fff; font-weight: 700;
+}
+.user-menu { position: relative; flex: none; }
+.user-pop {
+  position: absolute; inset-inline-end: 0; top: calc(100% + 8px); z-index: 60; min-width: 220px; max-width: calc(100vw - 32px);
+  display: grid; padding: 8px; border-radius: 14px; background: var(--panel-solid); border: 1px solid var(--line);
+  box-shadow: 0 16px 40px rgb(0 0 0 / .5);
+}
+.user-pop a, .user-pop button {
+  display: block; text-align: start; padding: 10px 12px; border-radius: 10px; color: var(--text); background: none;
+  border: 0; font: inherit; cursor: pointer;
+}
+.user-pop a:hover, .user-pop button:hover { background: var(--panel-2); text-shadow: none; }
+.user-who { display: grid; padding: 6px 12px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.user-who small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+
+.google-btn {
+  display: inline-flex; align-items: center; gap: 10px; padding: 11px 18px; border-radius: 999px; font-weight: 600;
+  background: #fff; color: #1f1f1f; border: 1px solid #dadce0;
+}
+.google-btn:hover { color: #1f1f1f; box-shadow: 0 0 18px rgb(25 227 255 / .35); text-shadow: none; }
+.g-logo { flex: none; }
+
+.sheet-back { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / .6); }
+.sheet {
+  width: min(420px, 100%); padding: 24px; border-radius: 18px; background: var(--panel-solid); border: 1px solid var(--line);
+  box-shadow: 0 20px 60px rgb(0 0 0 / .6); display: grid; gap: 12px;
+}
+.sheet h2 { margin: 0; }
+
+.acc-form, .acc-danger { display: grid; gap: 14px; max-width: 460px; margin-top: 20px; }
+.acc-form label, .acc-danger label { display: grid; gap: 6px; color: var(--muted); }
+.acc-form input, .acc-form select, .acc-danger input {
+  font: inherit; color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+}
+.acc-form input[readonly] { color: var(--muted); }
+.acc-danger { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line); }
+.c-btn.danger { background: var(--red); }
+.acc-danger .c-btn[disabled] { opacity: .45; cursor: not-allowed; }
+.adm-table tr.adm-muted td { opacity: .5; } /* a blocked user in the admin users tab */

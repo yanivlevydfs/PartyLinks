@@ -8,6 +8,7 @@ import { INFO_LINKS } from "./pages/Info";
 import { AdLabel, hit, SponsoredFrame, SponsoredStrip, useAdView } from "./ads/Sponsored";
 import { forecastAt, Weather } from "./Weather";
 import { PlanButton } from "./plans/PlanButton";
+import { AccountSlot } from "./accounts/AccountSlot";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";
 
@@ -127,6 +128,7 @@ export function Layout() {
           <button className="lang" onClick={() => setLang(lang === "he" ? "en" : "he")} aria-label="Language">
             {lang === "he" ? "EN" : "עב"}
           </button>
+          <AccountSlot />
         </div>
       </header>
       <SponsoredFrame>

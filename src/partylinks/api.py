@@ -953,6 +953,7 @@ def _register_routes(app: FastAPI) -> None:
             "email": hide_email(site.contact_email),
             "accessibility": site.accessibility.model_dump(mode="json") | {"email": hide_email(site.accessibility.email)},
             "privacy": site.privacy.model_dump(mode="json") | {"email": hide_email(site.privacy.email)},
+            "accounts": request.app.state.settings.accounts.ready,  # show "Continue with Google"
         }
 
     @app.get("/health", tags=["meta"])

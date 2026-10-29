@@ -47,8 +47,8 @@ const ABOUT = {
       "אירוע שמופיע בכמה אתרים מאוחד לכרטיס אחד, עם כל האפשרויות לקנייה.",
       "לחיצה על \"כרטיסים\" מעבירה ישירות לאתר המוכר. אנחנו לא מוכרים כרטיסים ולא גובים עמלה מכם.",
     ],
-    freeTitle: "חינם ובלי הרשמה",
-    free: "אין חשבונות, אין הרשמה ואין פרסומות מעקב. נכנסים, מוצאים, יוצאים לבלות.",
+    freeTitle: "חינם ובלי חובת הרשמה",
+    free: "הכל פתוח בלי הרשמה ובלי פרסומות מעקב. נכנסים, מוצאים, יוצאים לבלות. רוצים לשמור אירועים בכל מכשיר ולקבל התראות על מסיבות שמתאימות לכם? אפשר להתחבר עם Google, לא חובה.",
   },
   en: {
     intro: "SPOTX is one place for everything happening tonight: parties, concerts, stand-up, theatre, talks and everything in between, all over Israel.",
@@ -60,8 +60,8 @@ const ABOUT = {
       "An event listed on several sites is merged into one card, with every place to buy.",
       "\"Tickets\" takes you straight to the seller. We don't sell tickets and charge you nothing.",
     ],
-    freeTitle: "Free, no sign-up",
-    free: "No accounts, no sign-up and no tracking ads. Come in, find something, go out.",
+    freeTitle: "Free, no sign-up needed",
+    free: "Everything is open without signing up, and there are no tracking ads. Come in, find something, go out. Want saved events on every device and alerts for parties that suit you? Sign in with Google, if you like.",
   },
 };
 
@@ -96,7 +96,7 @@ const FAQ: Record<Lang, [string, string][]> = {
   he: [
     ["מה זה SPOTX?", "אתר שמרכז את כל האירועים, המסיבות וההופעות בישראל מעשרות אתרי כרטיסים, עם חיפוש לפי תאריך, עיר, קטגוריה, מחיר ומרחק ממך."],
     ["אתם מוכרים כרטיסים?", "לא. הכפתור \"כרטיסים\" מעביר לאתר שמוכר את הכרטיס, והרכישה נעשית שם. אנחנו לא צד לעסקה."],
-    ["כמה זה עולה?", "השימוש באתר חינם לגמרי, בלי הרשמה ובלי חשבון."],
+    ["כמה זה עולה?", "השימוש באתר חינם לגמרי ואינו מחייב הרשמה. חשבון Google הוא רשות, לשמירת אירועים ולהתראות."],
     ["המחירים מדויקים?", "המחירים נלקחים מאתרי הכרטיסים ומתעדכנים כל הזמן, אבל הם יכולים להשתנות. המחיר הקובע הוא זה שבאתר המוכר."],
     ["כל כמה זמן האתר מתעדכן?", "הסריקה רצה כל הזמן לאורך היום, כך שאירועים חדשים, שינויים וביטולים מופיעים תוך זמן קצר."],
     ["איך מוצאים אירועים קרובים אליי?", "בחרו \"לידי\" בסינון המיקום, או פתחו את המפה כדי לראות מה קורה סביבכם."],
@@ -108,7 +108,7 @@ const FAQ: Record<Lang, [string, string][]> = {
   en: [
     ["What is SPOTX?", "A site that brings together every event, party and show in Israel from dozens of ticketing sites, searchable by date, city, genre, price and distance from you."],
     ["Do you sell tickets?", "No. The \"Tickets\" button takes you to the site that sells them, and you buy there. We are not a party to the purchase."],
-    ["What does it cost?", "Using the site is completely free, with no sign-up and no account."],
+    ["What does it cost?", "Using the site is completely free and needs no sign-up. A Google account is optional, for saved events and alerts."],
     ["Are the prices accurate?", "Prices come from the ticketing sites and are refreshed constantly, but they can change. The seller's price is the one that counts."],
     ["How often is the site updated?", "Scanning runs throughout the day, so new events, changes and cancellations show up quickly."],
     ["How do I find events near me?", "Choose \"Near me\" in the location filter, or open the map to see what's on around you."],

@@ -13,6 +13,8 @@ Every ticket link points back to the seller.
 | [Configuration](configuration.md) | `config/settings.yaml` and environment overrides |
 | [API](api.md) | Public and admin endpoints |
 | [Admin console](admin.md) | The `/admin` page and what each tab does |
+| [Accounts](accounts.md) | Optional Google sign-in, sessions, what is stored, `/api/me` |
+| [Accounts, alerts and email: design](accounts-alerts-design.md) | Personalisation: saved events, alerts, bell, "For you", weekly digest; decisions and plan ([build plan](plans/2026-10-29-accounts-alerts.md)) |
 | [Ticket links: UTM and clicks](ticket-links.md) | How outbound links are tagged and counted |
 | [SEO and blog](seo-and-blog.md) | Server-rendered pages, sitemaps, `llms.txt`, the blog |
 | [Legal and privacy](legal.md) | Accessibility, privacy, cookies, open items |

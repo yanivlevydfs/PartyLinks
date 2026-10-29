@@ -666,3 +666,10 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Queries:** ‏`upsert_events`: אירוע שה-`content_hash` שלו לא השתנה מקבל רק `UPDATE events SET last_seen_at, is_listed WHERE id IN (...)` (ממוין); חדשים ומשתנים עוברים את ה-`INSERT ... ON CONFLICT DO UPDATE` המלא. כך `description` ו-`extra` לא נכתבים (ונדחסים ל-TOAST) מחדש בכל סריקה, וערכים שמעברים אחרים קבעו בשורה נשמרים עד שהמקור משתנה.
 - **נמדד:** ‏5,000 אירועים ב-batches של 200, סריקה חוזרת בלי שינוי: 7.2 ש' במקום 15.2 ש'.
 - **Test:** ‏`test_a_rescan_of_an_unchanged_event_only_marks_it_seen`. ‏482/482.
+
+### 2026-10-29 (חשבונות Google, רשות)
+- **טבלאות חדשות** (‏`partylinks/accounts/models.py`, נוצרות ב-`create_schema`):
+  - `users`: ‏`id` ‏`VARCHAR(32)` PK (אקראי, המזהה היחיד שנכתב ללוגים), ‏`google_sub` ‏UNIQUE, ‏`email` ‏UNIQUE (באותיות קטנות), ‏`name`, ‏`picture`, ‏`locale`, ‏`role` (‏`user`/`admin`), ‏`blocked_at`, ‏`digest_opt_in` + ‏`digest_opt_in_at` (הסכמה לפי חוק התקשורת 30א), ‏`last_digest_at`, ‏`last_instant_at`, ‏`welcome_sent_at`, ‏`created_at` (אינדקס), ‏`last_login_at`.
+  - `user_sessions`: ‏`id` PK, ‏`user_id` ‏FK ל-`users` עם `ON DELETE CASCADE` (אינדקס), ‏`token_hash` ‏`VARCHAR(64)` ‏UNIQUE (רק SHA-256 של העוגייה), ‏`created_at`, ‏`expires_at` (אינדקס), ‏`last_seen_at`.
+- **Queries:** בכל בקשה עם עוגייה: ‏`SELECT user_sessions JOIN users WHERE token_hash = ?` (UNIQUE), ו-`UPDATE` של `expires_at` לכל היותר פעם ביום לסשן. מחיקת משתמש היא `DELETE FROM users WHERE id = ?` והשאר נמחק ב-CASCADE. ‏`signups per day` בטאב המשתמשים מקובץ ב-Python (ל-pgserver המקומי אין נתוני אזורי זמן).
+- **Tests:** ‏`tests/test_accounts.py` (‏10). ‏495/495.

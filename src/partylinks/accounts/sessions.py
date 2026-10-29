@@ -43,7 +43,9 @@ def user_for(session: Session, token: str | None, days: int) -> UserRow | None:
     if not token:
         return None
     row = session.execute(
-        select(SessionRow, UserRow).join(UserRow, UserRow.id == SessionRow.user_id).where(SessionRow.token_hash == _hash(token))
+        select(SessionRow, UserRow)
+        .join(UserRow, UserRow.id == SessionRow.user_id)
+        .where(SessionRow.token_hash == _hash(token))
     ).first()
     if row is None:
         return None

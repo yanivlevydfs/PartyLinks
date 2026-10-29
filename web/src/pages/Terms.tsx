@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Hero, HiddenEmail, useT, useTitle } from "../ui";
 
-const UPDATED = "2026-10-26";
+const UPDATED = "2026-10-29";
 
 type Section = { title: string; body: string[]; list?: string[] };
 
@@ -44,6 +44,18 @@ const TEXT = {
         title: "קישורים לאתרים אחרים",
         body: [
           "האתר מקשר לאתרים חיצוניים (כמו Go-Out, Eventer, Zygo ואחרים). אתרים אלה אינם בשליטתנו, ואיננו אחראים לתוכנם, לזמינותם, למדיניות שלהם או לעסקאות שתבצעו בהם.",
+        ],
+      },
+      {
+        title: "חשבון משתמש, התראות ומיילים",
+        body: [
+          "החשבון אינו חובה: כל האתר פתוח לשימוש בלי הרשמה. מי שמתחבר עם Google יכול לשמור אירועים, ליצור התראות ולבקש עדכון שבועי בדוא\"ל.",
+        ],
+        list: [
+          "החשבון מיועד לבני 16 ומעלה, חשבון אחד לכל אדם, ולשימוש אישי בלבד.",
+          "התראות ועדכונים נשלחים כמיטב יכולתנו (best effort): אירוע עלול שלא להופיע בהתראה, להגיע באיחור או להשתנות לאחר השליחה. הפרטים הקובעים הם אלה שבאתר הכרטיסים.",
+          "מותר לנו להשעות או לחסום חשבון שמשמש לפגיעה באתר, לאיסוף מידע אוטומטי או בניגוד לתנאים אלה.",
+          "אפשר למחוק את החשבון בכל עת בעמוד \"החשבון שלי\", ולהפסיק מיילים בקישור שבכל מייל. השימוש במידע מתואר במדיניות הפרטיות.",
         ],
       },
       {
@@ -113,6 +125,18 @@ const TEXT = {
         title: "Links to other sites",
         body: [
           "The site links to external sites (such as Go-Out, Eventer, Zygo and others). They are not under our control, and we are not responsible for their content, availability, policies or any transaction you make on them.",
+        ],
+      },
+      {
+        title: "Accounts, alerts and emails",
+        body: [
+          "An account is optional: the whole site works without signing up. If you sign in with Google you can save events, create alerts and ask for a weekly email update.",
+        ],
+        list: [
+          "Accounts are for people aged 16 and over, one account per person, for personal use only.",
+          "Alerts and updates are sent on a best-effort basis: an event may be missed, arrive late or change after it was sent. The ticketing site's details are the ones that count.",
+          "We may suspend or block an account used to harm the site, to collect data automatically, or against these terms.",
+          "You can delete your account at any time on \"My account\", and stop emails with the link in every email. How we use the data is described in the privacy policy.",
         ],
       },
       {
