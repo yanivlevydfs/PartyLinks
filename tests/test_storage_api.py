@@ -139,6 +139,7 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
         index = client.get("/sitemap.xml").text
         assert "<sitemapindex" in index and "/sitemap-1.xml" in index and "/sitemap-2.xml" not in index
         assert client.get("/sitemap-2.xml").status_code == 404 and client.get("/sitemap-0.xml").status_code == 404
+        assert client.get("/event/party-2020-01-01-goout-0000").status_code == 410  # over and deleted: gone for good
         sitemap = client.get("/sitemap-1.xml").text
         assert "/event/" in sitemap and 'hreflang="en"' in sitemap
         # Privacy and cookie policy: crawlable, and its contact comes from /site.

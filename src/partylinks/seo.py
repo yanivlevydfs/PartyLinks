@@ -1377,7 +1377,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
     rendered = ResponseCache(ttl=HTML_TTL_S, max_bytes=HTML_CACHE_BYTES, follow_writes=False)  # scrapes write all day
     app.state.html_cache = rendered  # api.CachedPages serves hits before routing
 
-    def page(request: Request, build: Any) -> HTMLResponse:
+    def page(request: Request, build: Any, missing: int = 404) -> HTMLResponse:
         lang = "en" if request.query_params.get("lang") == "en" else "he"
         settings, db = cfg(request), request.app.state.db
 
@@ -1386,7 +1386,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
                 result = build(session, settings, lang)
             if result is None:
                 t = TEXT[lang]
-                result = Page(t["not_found"], t["site_desc"], request.url.path, lang, noindex=True, status=404,
+                result = Page(t["not_found"], t["site_desc"], request.url.path, lang, noindex=True, status=missing,
                               body=f"<h1>{t['not_found']}</h1>")  # fmt: skip
             return render(index.read_text(encoding="utf-8"), result, settings).encode(), result.status
 
@@ -1413,7 +1413,8 @@ def register(app: FastAPI, site_dir: Path) -> None:
 
     @app.get("/event/{ref}", include_in_schema=False)
     def event(ref: str, request: Request) -> HTMLResponse:
-        return page(request, lambda s, c, lang: event_page(s, c, lang, ref))
+        # An event over is deleted (never kept past its date): 410 tells crawlers it is gone for good.
+        return page(request, lambda s, c, lang: event_page(s, c, lang, ref), missing=410)
 
     @app.get("/venue/{name}", include_in_schema=False)
     def venue(name: str, request: Request) -> HTMLResponse:
