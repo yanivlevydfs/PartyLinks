@@ -215,7 +215,8 @@ def _iso(dt: datetime | None, cfg: Settings, row: EventRow) -> str | None:
     """A time in the venue's zone; a date alone (time unknown) as the date only."""
     if not row.time_known and row.local_date and dt is row.start_at:
         return row.local_date.isoformat()
-    return dt.astimezone(ZoneInfo(row.time_zone or cfg.timezone)).isoformat() if dt else None
+    # Whole seconds: Google's date parser refuses microseconds (first_seen_at has them).
+    return dt.astimezone(ZoneInfo(row.time_zone or cfg.timezone)).isoformat(timespec="seconds") if dt else None
 
 
 def _upcoming(session: Session, *where: Any, limit: int = LIST_LIMIT, abroad: bool = False) -> list[EventRow]:
