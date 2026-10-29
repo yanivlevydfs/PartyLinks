@@ -288,7 +288,15 @@ def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, An
             "availability": "https://schema.org/SoldOut" if row.is_sold_out else "https://schema.org/InStock",
             "validFrom": _iso(row.first_seen_at, cfg, row),
         }
-    return None
+    # No price known: still where to buy and whether it sells (Google wants offers on every event); a
+    # free entry is price 0, otherwise no made-up price.
+    return {
+        "@type": "Offer",
+        "url": _url(cfg, go_path(row.id)),
+        "availability": "https://schema.org/SoldOut" if row.is_sold_out else "https://schema.org/InStock",
+        "validFrom": _iso(row.first_seen_at, cfg, row),
+        **({"price": 0, "priceCurrency": row.currency or "ILS"} if row.entry_type == "free" else {}),
+    }
 
 
 def _organizer(row: EventRow, cfg: Settings) -> dict[str, Any] | None:
@@ -320,7 +328,7 @@ def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
         "eventStatus": "https://schema.org/EventScheduled",
         "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
         "location": _place(row),
-        "image": [i for i in [_cover(cfg, row)] if i],
+        "image": [_cover(cfg, row) or f"{cfg.site.base_url}/og-default.png?v=spotx2"],  # the page's own og:image fallback
         # Google wants one on every event: the seller's text, else the page's own summary (when, where).
         "description": _clip(row.description) or _clip(_summary(row, cfg, "he")),
         "inLanguage": "he",
