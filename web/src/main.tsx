@@ -41,6 +41,7 @@ const AccountPage = lazy(() => import("./accounts/AccountPage")); // optional Go
 const AlertsPage = lazy(() => import("./alerts/AlertsPage")); // alerts (its own files: alerts/)
 const SavedPage = lazy(() => import("./saved/SavedPage")); // saved events (its own files: saved/)
 const PlanPage = lazy(() => import("./plans/PlanPage")); // "who's coming with me?" (its own files: plans/)
+const GroupsPage = lazy(() => import("./plans/GroupsPage")); // the account's event groups (plans/)
 
 // ?lang=en / ?lang=he (used by hreflang links and the sitemap) picks the language.
 const urlLang = new URLSearchParams(location.search).get("lang");
@@ -71,6 +72,7 @@ const router = createBrowserRouter([
       { path: "/region/:region", element: <Landing landing="region" /> },
       { path: "/event/:id", element: <EventPage /> },
       { path: "/plan/:id", element: <Suspense fallback={<Loader />}><PlanPage /></Suspense> },
+      { path: "/groups", element: <Suspense fallback={<Loader />}><GroupsPage /></Suspense> },
       { path: "/map", element: <Suspense fallback={<Loader />}><MapPage /></Suspense> },
       { path: "/abroad", element: <Abroad /> },
       { path: "/abroad/:country", element: <Abroad /> },

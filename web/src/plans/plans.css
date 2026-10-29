@@ -128,3 +128,12 @@
 .plan-free h2 { margin-bottom: 6px; }
 .plan-free p { margin: 0 0 12px; color: var(--muted); }
 .plan-free .e-actions { margin-top: 0; }
+
+/* Groups: the name above a plan, the sign-in note, /groups */
+.plan-name { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; font-weight: 600; }
+.plan-name .search { flex: 1 1 200px; }
+.plan-keep { margin-top: 14px; display: grid; gap: 8px; justify-items: start; color: var(--muted); }
+.groups { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 10px; }
+.group-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+.group-row .plan-option-link { flex: 1; min-width: 0; }
+.group-row small { display: block; color: var(--muted); }

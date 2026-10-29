@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from partylinks.db import Base, NullableJSON, UTCDateTime, utcnow
 
 NAME_LENGTH = 40
+GROUP_NAME_LENGTH = 60
 
 
 class PlanRow(Base):
@@ -19,9 +20,12 @@ class PlanRow(Base):
 
     __tablename__ = "plans"
 
-    id: Mapped[str] = mapped_column(String(12), primary_key=True)  # the link's secret: secrets.token_urlsafe(6)
+    id: Mapped[str] = mapped_column(String(12), primary_key=True)  # the link's secret: secrets.token_urlsafe(9), 72 bits (older links: 6)
     event_id: Mapped[str] = mapped_column(Text, index=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    # A group in the creator's account ("my groups"), when made signed in; renamed only by them.
+    owner_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    name: Mapped[str | None] = mapped_column(String(GROUP_NAME_LENGTH))
 
 
 class PlanVoteRow(Base):
@@ -41,6 +45,8 @@ class PlanVoteRow(Base):
     # "Who's driving?": drive (has ``seats`` free) | need (a ride) | None. Nullable, no Boolean: added later.
     ride: Mapped[str | None] = mapped_column(String(8))
     seats: Mapped[int | None] = mapped_column(Integer)
+    # A signed-in friend's answer: the group shows in their "my groups"; goes with their account.
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
 
 
 class PlanEventRow(Base):

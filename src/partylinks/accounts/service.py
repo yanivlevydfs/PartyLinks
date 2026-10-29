@@ -58,5 +58,9 @@ def block(session: Session, user_id: str, blocked: bool) -> None:
 
 
 def delete_user(session: Session, user_id: str) -> None:
-    """Sessions, saved events, alerts and their matches go with it (ON DELETE CASCADE)."""
+    """Sessions, saved events, alerts and their matches go with it (ON DELETE CASCADE); its group
+    answers and ownerships explicitly (those columns were added later, without a database FK)."""
+    from partylinks.plans.routes import forget_user  # local: plans imports accounts
+
+    forget_user(session, user_id)
     session.execute(delete(UserRow).where(UserRow.id == user_id))

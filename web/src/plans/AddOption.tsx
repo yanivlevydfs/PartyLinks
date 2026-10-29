@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import type { EventPage } from "../types";
 import { Img, sized, useT, when } from "../ui";
 import { usePlanText } from "./i18n";
-import type { Plan } from "./types";
+import { WRITE_HEADERS, type Plan } from "./types";
 
 export function AddOption({ plan, onAdded }: { plan: Plan; onAdded: (plan: Plan) => void }) {
   const { t } = useT();
@@ -39,7 +39,7 @@ export function AddOption({ plan, onAdded }: { plan: Plan; onAdded: (plan: Plan)
   const add = async (id: string) => {
     setBusy(id);
     const res = await fetch(`/plans/${encodeURIComponent(plan.id)}/events`, {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ event_id: id }),
+      method: "POST", headers: WRITE_HEADERS, body: JSON.stringify({ event_id: id }),
     });
     setBusy("");
     if (res.ok) {

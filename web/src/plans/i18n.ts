@@ -70,6 +70,21 @@ const he = {
   remindMessage: (title: string, time: string, left: string) => `⏰ תזכורת: הכניסה החינמית ${to(title)} נסגרת ב-${time} (${left})!\nמי שבא נרשם עכשיו 👇`,
   calTitle: (title: string) => `הכניסה החינמית נסגרת: ${title}`,
   freeLine: (time: string) => `\n🎟 כניסה חינם עד ${time}`,
+  myGroups: "הקבוצות שלי",
+  groupsIntro: "קבוצה לכל אירוע: מי בא, מי מסיע ומי צריך טרמפ. הקבוצה נמחקת כשהאירוע נגמר.",
+  noGroups: "עוד אין לך קבוצות. בדף של אירוע לוחצים על \"מי בא איתי?\" ושולחים לחברים.",
+  browse: "לאירועים",
+  yourAnswer: "את/ה",
+  deleteGroup: "מחיקת הקבוצה",
+  leaveGroup: "יציאה מהקבוצה",
+  nameGroup: "✏️ שם לקבוצה",
+  rename: "✏️ שינוי שם",
+  groupPlaceholder: "למשל: החבר׳ה מהעבודה",
+  failedSave: "לא נשמר, נסו שוב",
+  keepGroup: "התחברו כדי שהקבוצה תישמר ב\"הקבוצות שלי\" ותוכלו לשנות תשובה מכל מכשיר.",
+  inGroups: "הקבוצה שמורה ב\"הקבוצות שלי\"",
+  signInToChange: "את התשובה הזו אפשר לשנות רק מהחשבון שענה אותה",
+  slowDown: "יותר מדי ניסיונות, נסו שוב בעוד דקה",
 };
 
 const en: typeof he = {
@@ -138,6 +153,21 @@ const en: typeof he = {
   remindMessage: (title, time, left) => `⏰ Reminder: free entry to ${title} closes at ${time} (${left})!\nIf you're coming, sign up now 👇`,
   calTitle: (title) => `Free entry closes: ${title}`,
   freeLine: (time) => `\n🎟 Free entry until ${time}`,
+  myGroups: "My groups",
+  groupsIntro: "A group for each event: who's in, who drives and who needs a ride. The group is deleted when the event ends.",
+  noGroups: "No groups yet. On an event page tap \"Who's coming?\" and send it to friends.",
+  browse: "Browse events",
+  yourAnswer: "You",
+  deleteGroup: "Delete group",
+  leaveGroup: "Leave group",
+  nameGroup: "✏️ Name the group",
+  rename: "✏️ Rename",
+  groupPlaceholder: "e.g. The work crew",
+  failedSave: "Not saved, try again",
+  keepGroup: "Sign in to keep this group in \"My groups\" and change your answer from any device.",
+  inGroups: "Saved in \"My groups\"",
+  signInToChange: "Only the account that gave this answer can change it",
+  slowDown: "Too many tries, wait a minute",
 };
 
 export function usePlanText() {

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlanText } from "./i18n";
 import "./plans.css";
+import { WRITE_HEADERS } from "./types";
 
 export function PlanButton({ eventId, compact = false }: { eventId: string; compact?: boolean }) {
   const p = usePlanText();
@@ -16,7 +17,7 @@ export function PlanButton({ eventId, compact = false }: { eventId: string; comp
     setBusy(true);
     setError(false);
     try {
-      const res = await fetch("/plans", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ event_id: eventId }) });
+      const res = await fetch("/plans", { method: "POST", headers: WRITE_HEADERS, body: JSON.stringify({ event_id: eventId }) });
       if (!res.ok) throw new Error(String(res.status));
       navigate(`/plan/${(await res.json()).id}`);
     } catch {

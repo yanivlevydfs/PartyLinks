@@ -236,7 +236,7 @@
 | `sponsored` | `event_id` (`ads/models.py:21`) | טבעי | |
 | `sponsored_stats` | `(event_id, day)` composite (`ads/models.py:36-37`) | composite | תקין |
 | `flags` | `key` (`db.py:287`) | טבעי | |
-| `plans` | `id` String(12) (`plans/models.py`) | טבעי: הסוד של הקישור (`secrets.token_urlsafe(6)`, 8 תווים) | נוסף 2026-10-28. מופיע ב-URL `/plan/{id}`, לכן חייב להישמר ב-copy. |
+| `plans` | `id` String(12) (`plans/models.py`) | טבעי: הסוד של הקישור (`secrets.token_urlsafe(9)`, 12 תווים, מ-2026-10-29; ישנים: 8 תווים) | נוסף 2026-10-28. מופיע ב-URL `/plan/{id}`, לכן חייב להישמר ב-copy. |
 | `plan_votes` | `id` int autoinc (`plans/models.py`) | surrogate | נוסף 2026-10-28. `setval` אחרי copy כמו כל int PK. |
 | `plan_events` | `(plan_id, event_id)` composite (`plans/models.py`) | composite | נוסף 2026-10-28 ("איזו מסיבה?"). |
 | `scrape_runs` | `id` int (`db.py:299`) | | |
@@ -250,6 +250,7 @@
 - `deal_changes.event_id` → `events.id` (`db.py:240`)
 - `plan_votes.plan_id` → `plans.id` (`plans/models.py`, נוסף 2026-10-28). **בלי `ON DELETE CASCADE`**: `plans.routes.delete_plans` מוחק את התשובות לפני התוכנית, באותה טרנזקציה של `delete_events`. ב-PG ה-FK נאכף, אז הסדר הזה (ילד לפני הורה) חובה, והוא כבר כזה. אינדקס על `plan_id` קיים (`index=True`).
 - `plan_events.plan_id` → `plans.id` (`plans/models.py`, נוסף 2026-10-28), גם הוא בלי CASCADE: `delete_plans` מוחק את `plan_events` לפני `plans`. ‏`plan_id` הוא העמודה הראשונה ב-PK, אז ה-PK משמש כאינדקס שלו.
+- `plans.owner_id` → `users.id` (`ON DELETE SET NULL`) ו-`plan_votes.user_id` → `users.id` (`ON DELETE CASCADE`), נוספו 2026-10-29. במסד קיים הן נוספו ב-`ADD COLUMN` של `create_schema`, **בלי** constraint של FK (רק ה-type). לכן `accounts.service.delete_user` קורא ל-`plans.routes.forget_user` שמוחק את התשובות של המשתמש ומאפס `owner_id` במפורש, לפני מחיקת המשתמש. לשתיהן `index=True`.
 
 CASCADE מתאים לכלל "never past events": ‏retention מוחק אירוע וכל מה שתלוי בו נמחק איתו. `delete_events` (`db.py:791-800`) מוחק את הילדים במפורש לפני ה-parent. ב-PG זה כפול אבל לא מזיק, וזה גם המקום שבו אוספים את קבצי התמונות. להשאיר. ‏PG לא יוצר אינדקס אוטומטית על עמודת FK, אבל לשלושתן יש `index=True`, וזה חיוני ל-CASCADE.
 
@@ -708,3 +709,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 
 ### 2026-10-29 (התראות של אירועים שהסתיימו)
 - **Queries:** כל מעבר של ה-matcher (כל 15 דק') מתחיל ב-`DELETE FROM alert_hits WHERE event_id NOT IN (SELECT id FROM events WHERE <upcoming>)`: התראות של אירועים שהסתיימו נמחקות מיד, לא רק כשה-retention מוחק את האירוע. הפעמון ורשימת ההתראות סופרים ומציגים רק `event_id IN (<upcoming>)`. ‏`DELETE /api/me/bell` מוחק התראה אחת (`event_id`) או את כולן.
+
+### 2026-10-29 (קבוצות לאירוע: "הקבוצות שלי")
+- **עמודות חדשות:** `plans.owner_id` (String(32), nullable, אינדקס) ו-`plans.name` (String(60), nullable); `plan_votes.user_id` (String(32), nullable, אינדקס). נוספות ב-`ADD COLUMN` (nullable, בלי default), ראו §9.2 על ה-FK.
+- **Queries:** `GET /api/me/groups`: `SELECT plans WHERE owner_id = :u OR id IN (SELECT plan_id FROM plan_votes WHERE user_id = :u)`, אחר כך האירועים שלהן (`id IN`), התשובות (`plan_id IN`) וספירת `plan_events` ב-`GROUP BY plan_id`. ארבעה queries לכל בקשה, בלי N+1. ‏`DELETE /api/me/groups/{id}`: היוצר מוחק `plan_votes`, `plan_events` ואז `plans` (ילד לפני הורה); חבר מוחק רק את השורה שלו ב-`plan_votes`. ‏`POST /plans/{id}/votes` מחפש קודם לפי `user_id` ואז לפי `voter`.
+- **אבטחה:** הסוד של קישור חדש 12 תווים (72 bits); מפתח הדפדפן נשלח ב-header ‏`X-Plan-Voter` ולא ב-URL; שיוך לחשבון רק בבקשה עם `X-Requested-With: spotx` מה-origin שלנו; תשובה של חשבון משתנה רק מאותו חשבון; rate limit לכל IP: 20 יצירות/הוספות ו-60 תשובות בדקה; `GET /plans/{id}` ו-`/api/me/groups` עם `Cache-Control: private, no-store`.
+- **מחיקה:** קבוצה נמחקת עם האירוע שלה (`delete_plans`, ללא שינוי). מחיקת חשבון: `forget_user`.

@@ -4,14 +4,17 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { SignInButton } from "../accounts/AccountSlot";
+import { useAccountsOn, useMe } from "../accounts/useMe";
 import type { EventSummary } from "../types";
 import { AddToCalendar, eventPath, Img, Loader, sized, useT, useTitle, when } from "../ui";
 import { forecastAt, Weather } from "../Weather";
 import { AddOption } from "./AddOption";
 import { FreeEntry, freeTime, freeUntil } from "./FreeEntry";
+import { GroupName } from "./GroupName";
 import { usePlanText } from "./i18n";
 import "./plans.css";
-import type { Answer, Plan, Ride, Vote } from "./types";
+import { WRITE_HEADERS, type Answer, type Plan, type Ride, type Vote } from "./types";
 
 // The browser's voter key (changes its own answer) and the name it last used. Storage can be off
 // (private mode): then the key lives for this visit only.
@@ -40,7 +43,8 @@ export default function PlanPage() {
   const { data, error, isPending } = useQuery({
     queryKey: key,
     queryFn: async () => {
-      const res = await fetch(`/plans/${encodeURIComponent(id)}?me=${voter}`);
+      // The key goes in a header, never the URL (logs and proxies keep URLs).
+      const res = await fetch(`/plans/${encodeURIComponent(id)}`, { headers: { "X-Plan-Voter": voter } });
       if (!res.ok) throw new Error(String(res.status));
       return (await res.json()) as Plan;
     },
@@ -48,7 +52,10 @@ export default function PlanPage() {
     retry: false,
   });
   const mine = data?.votes.find((v) => v.mine);
+  const accounts = useAccountsOn();
+  const me = useMe().data;
   const [name, setName] = useState(() => stored("plan-name", () => ""));
+  useEffect(() => { if (me && !name) setName(me.name.split(" ")[0] ?? ""); }, [me, name]);
   const [picks, setPicks] = useState<string[]>([]);
   const [ride, setRide] = useState<Ride | null>(null);
   const [seats, setSeats] = useState(3);
@@ -66,6 +73,16 @@ export default function PlanPage() {
       if (mine.seats) setSeats(mine.seats);
     }
   }, [data, filled, mine]);
+  // Back from signing in: this browser's answer joins the account once, so the group is in "my groups".
+  const [claimed, setClaimed] = useState(false);
+  useEffect(() => {
+    if (!me || !mine || !data || data.in_groups || claimed) return;
+    setClaimed(true);
+    void fetch(`/plans/${encodeURIComponent(id)}/votes`, {
+      method: "POST", headers: WRITE_HEADERS,
+      body: JSON.stringify({ voter, name: mine.name, answer: mine.answer, picks: mine.picks, ride: mine.ride, seats: mine.seats ?? undefined }),
+    }).then(async (res) => { if (res.ok) client.setQueryData(key, await res.json()); });
+  }, [me, mine, data, claimed]); // eslint-disable-line react-hooks/exhaustive-deps
   const many = (data?.options.length ?? 0) > 1;
   useTitle(data ? (many ? `${p.which} ${data.options.map((o) => o.title).join(" / ")}` : `${p.title} ${data.event.title}`) : p.title);
 
@@ -104,14 +121,14 @@ export default function PlanPage() {
     if (many && answer !== "no" && chosen.length === 0) return setNote(p.pickOne);
     const r = next.ride !== undefined ? next.ride : ride;
     const res = await fetch(`/plans/${encodeURIComponent(id)}/votes`, {
-      method: "POST", headers: { "content-type": "application/json" },
+      method: "POST", headers: WRITE_HEADERS,
       body: JSON.stringify({ voter, name: clean, answer, picks: many ? chosen : undefined, ride: r, seats: r === "drive" ? next.seats ?? seats : undefined }),
     });
     if (res.ok) {
       remember(clean);
       client.setQueryData(key, await res.json());
       setNote(p.saved);
-    } else setNote(res.status === 409 ? p.full : p.failed);
+    } else setNote(res.status === 409 ? p.full : res.status === 403 ? p.signInToChange : res.status === 429 ? p.slowDown : p.failed);
   };
   const toggle = (optionId: string) => {
     const next = picks.includes(optionId) ? picks.filter((x) => x !== optionId) : [...picks, optionId];
@@ -123,6 +140,7 @@ export default function PlanPage() {
 
   return (
     <main className="wrap plan">
+      <GroupName plan={data} onSaved={(plan) => client.setQueryData<Plan>(key, plan)} />
       {many ? (
         <section className="plan-which" aria-labelledby="plan-which-h">
           <h1 id="plan-which-h">{p.which} <span>{dayText}</span></h1>
@@ -198,6 +216,13 @@ export default function PlanPage() {
           ))}
         </div>
         {note && <p className="plan-note" role="status">{note}</p>}
+        {accounts && !me && (
+          <div className="plan-keep">
+            <p>{p.keepGroup}</p>
+            <SignInButton next={`/plan/${data.id}`} />
+          </div>
+        )}
+        {me && data.in_groups && <p className="plan-keep"><Link to="/groups">{p.inGroups} ›</Link></p>}
       </section>
 
       <section className="plan-list" aria-live="polite">
