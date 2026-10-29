@@ -74,7 +74,10 @@ export function Bell() {
               {bell.data.items.map((h) => (
                 <li key={h.event.id} className={h.seen ? "" : "new"}>
                   <Link to={eventPath(h.event)} onClick={() => setOpen(false)}>
-                    <Img src={sized(h.event.cover_url ?? h.event.image_url, 640)} alt="" className="bell-img" text={h.event.title} />
+                    {/* No picture: a small placeholder, not the cards' title-as-artwork (unreadable at this size). */}
+                    {h.event.cover_url ?? h.event.image_url
+                      ? <Img src={sized(h.event.cover_url ?? h.event.image_url, 640)} alt="" className="bell-img" />
+                      : <span className="bell-img bell-noimg" aria-hidden>🎉</span>}
                     <span>
                       <b dir="auto">{h.event.title}</b>
                       <small>{when(h.event, ui, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</small>
