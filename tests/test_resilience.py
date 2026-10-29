@@ -427,6 +427,41 @@ def test_a_working_israeli_proxy_is_shared_until_it_dies() -> None:
     base._israel_good = None
 
 
+def test_a_dead_israeli_pool_is_found_in_one_parallel_check() -> None:
+    from partylinks.scrapers import base
+
+    base._israel_good, base._israel_dead = None, {}
+    http = HttpSettings(israel_proxy=", ".join(f"http://il{i}:{i}" for i in range(50)), backoff_seconds=0)
+
+    def probe(live: set[str]) -> _Probe:
+        scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
+
+        def client(proxy: str | None) -> httpx.AsyncClient:
+            def answer(request: httpx.Request) -> httpx.Response:
+                if proxy not in live:
+                    raise httpx.ConnectTimeout("proxy down", request=request)
+                return httpx.Response(403)  # refused by the site: the proxy itself works
+
+            return httpx.AsyncClient(transport=httpx.MockTransport(answer))
+
+        scraper._new_client = client  # type: ignore[method-assign]
+        return scraper
+
+    async def fetch(scraper: _Probe) -> str | None:
+        async with scraper:
+            await asyncio.gather(*(scraper.request("GET", "https://site.example/") for _ in range(3)))
+        return scraper._proxy
+
+    with pytest.raises(base.SourceBlockedError, match="no Israeli proxy answers"):
+        asyncio.run(fetch(probe(set())))
+    base._israel_dead = {}
+    scraper = probe({"http://il7:7"})
+    with pytest.raises(httpx.HTTPStatusError):  # 403 on the one live proxy, nothing else left
+        asyncio.run(fetch(scraper))
+    assert scraper._proxy == "http://il7:7" and base._israel_good is None
+    base._israel_good, base._israel_dead = None, {}
+
+
 def test_many_sources_finishing_together_share_one_rerun_of_a_whole_table_pass() -> None:
     import threading
     import time

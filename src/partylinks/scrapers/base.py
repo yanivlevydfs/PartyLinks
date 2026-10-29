@@ -132,6 +132,7 @@ _israel_lock = threading.Lock()  # check-and-set across source threads
 _israel_dead: dict[str, float] = {}
 DEAD_FOR_SECONDS = 1800
 FEED_TTL_SECONDS = 1800
+PROBE_SECONDS = 15  # each Israeli proxy gets this long to answer the source's first request
 
 
 def _israeli_feed(url: str | None) -> list[str]:
@@ -208,6 +209,7 @@ class BaseScraper[S: SourceSettings](ABC):
         self._client: httpx.AsyncClient | None = None
         self._retired_clients: list[httpx.AsyncClient] = []  # replaced after a proxy failure; closed at exit
         self._semaphore = asyncio.Semaphore(self.http.concurrency)
+        self._probe: asyncio.Task[None] | None = None  # the Israeli pool's one parallel check (see _probe_israeli)
         self._backoff = wait_exponential(multiplier=self.http.backoff_seconds, max=60)
 
     # ----------------------------------------------------------------- lifecycle
@@ -286,8 +288,51 @@ class BaseScraper[S: SourceSettings](ABC):
         except _RefusedByProxyIP as exc:
             raise SourceBlockedError(f"{self.name}: access denied by the site on every proxy ({exc})") from exc
 
+    async def _probe_israeli(self, url: str) -> None:
+        """Try every Israeli proxy of the pool at once on the source's first URL, and keep only those that
+        answer (any status: a refusal is the site's, not the proxy's). Walked one by one, a pool of dead
+        free proxies took the whole 30-min run; in parallel it takes ``PROBE_SECONDS``. None answers: the
+        source goes on with the rest of its pool, or stops."""
+        global _israel_good
+        now = time.monotonic()
+        with _israel_lock:
+            dead = {p for p, at in _israel_dead.items() if now - at < DEAD_FOR_SECONDS}
+        current = [p for p in [self._proxy, *self._spare_proxies] if p]
+        candidates = [p for p in current if p in self._israeli and p not in dead]
+
+        async def answers(proxy: str) -> bool:
+            client = self._new_client(proxy)
+            try:
+                async with asyncio.timeout(PROBE_SECONDS), client.stream("GET", url):
+                    return True  # the headers came back: enough, a big page is not read through a slow proxy
+            except Exception:  # noqa: BLE001 - whatever breaks, this proxy is no use
+                return False
+            finally:
+                await client.aclose()
+
+        alive = {p for p, ok in zip(candidates, await asyncio.gather(*map(answers, candidates)), strict=True) if ok}
+        with _israel_lock:
+            for p in self._israeli - alive:
+                _israel_dead[p] = now
+            if _israel_good not in alive:
+                _israel_good = None
+        rest = [p for p in current if p not in self._israeli]
+        pool = sorted(alive, key=lambda p: p != _israel_good) + rest
+        self.log.info("Israeli proxies: %d of %d answer", len(alive), len(self._israeli))
+        if not pool:
+            raise SourceBlockedError(f"{self.name}: no Israeli proxy answers ({len(self._israeli)} tried)")
+        if pool[0] != self._proxy:
+            if self._client is not None:
+                self._retired_clients.append(self._client)
+            self._client, self._proxy = self._new_client(pool[0]), pool[0]
+        self._spare_proxies = pool[1:]
+
     async def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         global _israel_good
+        if self._israeli and self._client is not None:
+            if self._probe is None:
+                self._probe = asyncio.ensure_future(self._probe_israeli(url))
+            await asyncio.shield(self._probe)  # parallel requests wait for the one check
         # The usual retries, plus one for each move to another proxy of the pool: a site that refuses
         # one proxy IP gets the next one, but a plain timeout is not retried pool-size times over.
         switches = [0]

@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
+import mmap
 import os
 import signal
 from collections.abc import Callable
@@ -78,11 +79,13 @@ class Worker:
     async def _startup(self) -> None:
         """Before any source writes: artwork still in the database moves to files and genres are re-read
         if their config changed; then the scrapers start, and map coordinates are filled."""
-        for job in (self.service.media.move_to_files, self.service.recompute_genres):
+        steps = (("move_to_files", lambda: self.service.media.move_to_files()),
+                 ("recompute_genres", lambda: self.service.recompute_genres()))  # fmt: skip
+        for name, job in steps:
             try:
                 await asyncio.to_thread(job)
             except Exception:  # the scrapers run regardless
-                log.exception("worker: startup step %s failed", getattr(job, "__name__", job))
+                log.exception("worker: startup step %s failed", name)
         # WebP copies older files still lack: in the background, so the scrapers start now.
         self._spawn(asyncio.to_thread(self.service.media.build_missing_variants))
         self.scheduler.start()
@@ -101,6 +104,8 @@ class Worker:
                 beats += 1
                 if beats % 720 == 0:  # about hourly: answered commands older than a day go
                     await asyncio.to_thread(self._prune)
+                    log.info("worker: memory %s MB, web %s MB, %d sources running", _rss_mb(os.getpid()),
+                             _rss_mb(os.getppid()), sum(self.service.is_running(n) for n in configured_sources(self.settings)))
             except Exception:
                 log.exception("worker: heartbeat failed")
             await asyncio.sleep(every)
@@ -196,6 +201,15 @@ class Worker:
         with self.db.engine.begin() as conn:
             stmt = insert(WorkerStateRow).values(row)  # on the engine: the heartbeat is no data change
             conn.execute(stmt.on_conflict_do_update(index_elements=["id"], set_={k: stmt.excluded[k] for k in row if k != "id"}))
+
+
+def _rss_mb(pid: int) -> int | None:
+    """Resident memory of a process (Linux /proc; None elsewhere)."""
+    try:
+        with open(f"/proc/{pid}/statm") as f:
+            return int(f.read().split()[1]) * mmap.PAGESIZE // 2**20
+    except (OSError, ValueError):
+        return None
 
 
 def _report(name: str) -> Callable[[Future[RunResult]], None]:

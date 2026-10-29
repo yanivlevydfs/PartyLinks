@@ -16,7 +16,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/src \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1     # ~90 source threads each got a glibc malloc arena that never shrinks: the worker grew to the
+    # 8 GB limit and was killed (Oct 2026). Two arenas keep freed memory reusable.
+    MALLOC_ARENA_MAX=2 \
     # Hosts collect stdout: one JSON object per line, no log file inside the container.
     PARTYLINKS_LOGGING__FORMAT=json \
     PARTYLINKS_LOGGING__FILE= \
