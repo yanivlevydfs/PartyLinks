@@ -119,8 +119,8 @@ button, input, select { font: inherit; color: inherit; }
 .nav a:hover { color: var(--text); text-shadow: none; background: var(--panel-2); }
 .nav a.active { color: #fff; background: rgb(255 46 147 / .14); box-shadow: inset 0 0 0 1px var(--line-hot), 0 0 18px rgb(255 46 147 / .25); }
 .lang {
-  flex: none; background: transparent; border: 1px solid var(--line); border-radius: 999px;
-  padding: 7px 14px; cursor: pointer; font-weight: 700; transition: border-color .2s, box-shadow .2s;
+  flex: none; height: 36px; background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  padding: 0 14px; line-height: 1; cursor: pointer; font-weight: 700; transition: border-color .2s, box-shadow .2s;
 }
 .lang:hover { border-color: var(--cyan); box-shadow: 0 0 16px rgb(25 227 255 / .35); }
 
@@ -893,6 +893,12 @@ html .asw-menu-btn:hover {
   box-shadow: 0 0 18px rgb(157 77 255 / .8), inset 0 -4px 8px rgb(40 0 80 / .45) !important;
 }
 html .asw-menu-btn svg { width: 22px !important; height: 22px !important; filter: drop-shadow(0 1px 2px rgb(40 0 80 / .6)); }
+/* Bottom-left corner of every page, both languages (physical sides on purpose). Under the cookie and install
+   sheets (z 2000/1900), so while one is open it covers the button instead of the button covering its buttons. */
+html .asw-menu-btn {
+  top: auto !important; right: auto !important; z-index: 1001 !important;
+  left: max(16px, env(safe-area-inset-left)) !important; bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+}
 
 /* ------------------------------------------------------------------ freshness */
 .fresh {
@@ -1181,9 +1187,8 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 .tabbar, .buy-bar { display: none; }
 @media (max-width: 760px) {
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
-  /* Logo flush at the start, the buttons packed at the end, and the end gutter widened to 62px (16 + its 38px + 8)
-     for the accessibility button. Physical margins: the logo is direction ltr, so its logical ones flip. */
-  .top-row { height: 56px; gap: 8px; padding-inline-end: 62px; }
+  /* Logo flush at the start, the buttons packed at the end. Physical margins: the logo is direction ltr, so its logical ones flip. */
+  .top-row { height: 56px; gap: 8px; }
   .top .nav { display: none; }
   .top-row .logo { margin-left: auto; }
   [dir="ltr"] .top-row .logo { margin-left: 0; margin-right: auto; }
@@ -1241,19 +1246,16 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
     color: var(--cyan); font: 700 14px/1.4 var(--display); text-decoration: underline; text-underline-offset: 3px;
   }
 
-  /* The accessibility button sits in the header's last slot (kept free by .top-row), so it never covers content. */
-  html .asw-menu-btn {
-    top: calc(9px + env(safe-area-inset-top)) !important; bottom: auto !important;
-    left: max(16px, env(safe-area-inset-left)) !important; right: auto !important; width: 38px !important; height: 38px !important; z-index: 1001 !important;
-  }
-  html[dir="ltr"] .asw-menu-btn { left: auto !important; right: max(16px, env(safe-area-inset-right)) !important; }
+  /* The accessibility button floats just above the tab bar (64px) and the sticky buy bar on event pages. */
+  html .asw-menu-btn { bottom: calc(76px + env(safe-area-inset-bottom)) !important; width: 40px !important; height: 40px !important; }
+  html body:has(.buy-bar) .asw-menu-btn { bottom: calc(136px + env(safe-area-inset-bottom)) !important; }
 
   .hero { padding: 22px 0 14px; }
   .hero h1 { font-size: clamp(28px, 8.5vw, 40px); letter-spacing: -1px; }
   .search { margin-top: 14px; padding: 12px 18px; font-size: 16px; }
   .foot { margin-top: 24px; padding-block: 28px; }
 
-  /* Popups sit above the tab bar, buttons on one row; the accessibility button steps aside meanwhile. */
+  /* Popups sit above the tab bar, buttons on one row; they cover the accessibility button meanwhile. */
   .consent, .install { inset: auto 8px calc(70px + env(safe-area-inset-bottom)); }
   .consent { max-height: calc(100dvh - 140px); }
   .consent-in { padding: 14px 14px 12px; font-size: 13px; line-height: 1.45; }
@@ -1479,5 +1481,5 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 @media (max-width: 380px) {
   .top-row { gap: 6px; }
   .logo .word { font-size: 20px; }
-  .top-row .lang { padding: 7px 10px; }
+  .top-row .lang { padding: 0 10px; }
 }

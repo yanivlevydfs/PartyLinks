@@ -1,12 +1,14 @@
 /* Accounts: the header corner, the user menu, the welcome sheet and /account. */
+/* Header controls share one 36px height (like .bell-btn and .saved-link), contents centred. */
 .sign-in, .user-btn {
-  flex: none; display: inline-flex; align-items: center; gap: 6px; background: transparent; color: var(--text);
-  border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-weight: 600; cursor: pointer;
+  flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; background: transparent; color: var(--text);
+  border: 1px solid var(--line); border-radius: 999px; padding: 0 12px; font-weight: 600; line-height: 1; cursor: pointer;
   transition: border-color .2s, box-shadow .2s;
 }
+.sign-in .g-logo { display: block; }
 .sign-in:hover, .user-btn:hover { border-color: var(--cyan); box-shadow: 0 0 16px rgb(25 227 255 / .35); text-shadow: none; }
-.user-btn { padding: 2px; }
-@media (max-width: 520px) { .sign-in span { display: none; } .sign-in { padding: 7px; } }
+.user-btn { width: 36px; padding: 0; }
+@media (max-width: 520px) { .sign-in span { display: none; } .sign-in { width: 36px; padding: 0; } }
 
 .avatar {
   width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; object-fit: cover;
