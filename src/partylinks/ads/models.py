@@ -5,16 +5,16 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import Date, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Date, Integer, String, Text, delete, select
+from sqlalchemy.orm import Mapped, Session, mapped_column
 
-from partylinks.db import Base, UTCDateTime, utcnow
+from partylinks.db import Base, EventRow, UTCDateTime, utcnow
 
 
 class SponsoredRow(Base):
     """A paid placement, picked in the admin: in the side rails, first in the event results it
-    matches, or both. No foreign key: retention may delete the event, and the API then simply
-    stops showing it."""
+    matches, or both. No foreign key (the event table is rewritten by upserts): ``prune_sponsored``
+    removes the pick once retention deletes its event. Its views and clicks stay (SponsoredStatRow)."""
 
     __tablename__ = "sponsored"
 
@@ -41,3 +41,9 @@ class SponsoredStatRow(Base):
     # The part of views / clicks from the top of the event results (the rest: the rails).
     results_views: Mapped[int] = mapped_column(Integer, default=0)
     results_clicks: Mapped[int] = mapped_column(Integer, default=0)
+
+
+def prune_sponsored(session: Session) -> None:
+    """Called by ``db.delete_events``: a pick whose event is gone (ended, deleted by retention) leaves the
+    rails and the admin list, and its slot is free again. Also clears picks orphaned before this existed."""
+    session.execute(delete(SponsoredRow).where(SponsoredRow.event_id.not_in(select(EventRow.id))))

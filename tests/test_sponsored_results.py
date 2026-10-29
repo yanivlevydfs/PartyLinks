@@ -86,3 +86,25 @@ def test_paid_matches_lead_page_one_only_when_they_match(tmp_path: Path) -> None
         assert (report["views"], report["clicks"], report["results_views"], report["results_clicks"]) == (2, 1, 1, 1)
         assert [s["placement"] for s in client.get("/admin/api/sponsored").json()["items"]][:1] == ["both"]
 
+
+
+def test_a_pick_goes_with_its_event(tmp_path: Path) -> None:
+    """Retention deleting an ended event removes its sponsored pick (and picks orphaned earlier); the
+    advertiser report keeps its numbers."""
+    from sqlalchemy import func, select
+
+    from partylinks.ads.models import SponsoredRow, SponsoredStatRow
+    from partylinks.db import delete_events
+
+    settings = settings_for(tmp_path)
+    soon = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [event(k, soon) for k in ("a", "b")])
+    with db.session() as s:
+        s.add_all([SponsoredRow(event_id="test:a", side="right"), SponsoredRow(event_id="test:b", side="left"),
+                   SponsoredRow(event_id="test:gone-long-ago", side="left")])  # fmt: skip
+        s.add(SponsoredStatRow(event_id="test:a", day=soon.date(), title="Techno night a", views=5, clicks=1))
+    with db.session() as s:
+        delete_events(s, ["test:a"])
+    with db.session() as s:
+        assert set(s.scalars(select(SponsoredRow.event_id))) == {"test:b"}
+        assert s.scalar(select(func.sum(SponsoredStatRow.views))) == 5
