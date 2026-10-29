@@ -50,7 +50,7 @@ AI_CRAWLERS = [
 
 # Operational / private endpoints crawlers have no business indexing.
 ROBOTS_PRIVATE = ["/admin", "/admin/api/", "/docs", "/redoc", "/openapi.json", "/health", "/runs", "/sources",
-                  "/maintenance", "/changes", "/account", "/alerts", "/saved", "/auth/", "/api/me"]  # not /go/: Google must crawl offers.url (the ticket redirect)
+                  "/maintenance", "/changes", "/account", "/alerts", "/saved", "/groups", "/auth/", "/api/me"]  # not /go/: Google must crawl offers.url (the ticket redirect)
 
 CURRENCY_SYMBOLS = {"ILS": "₪", "EUR": "€", "USD": "$", "GBP": "£"}
 
@@ -1501,5 +1501,5 @@ def register(app: FastAPI, site_dir: Path) -> None:
 
     # A person's own pages (accounts, saved events, alerts): the app draws them; never indexed.
     for path, he, en in (("/account", "החשבון שלי", "My account"), ("/saved", "אירועים שמורים", "Saved events"),
-                         ("/alerts", "ההתראות שלי", "My alerts")):  # fmt: skip
+                         ("/alerts", "ההתראות שלי", "My alerts"), ("/groups", "הקבוצות שלי", "My groups")):  # fmt: skip
         app.get(path, include_in_schema=False)(_own_page(path, he, en))

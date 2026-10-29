@@ -117,7 +117,10 @@ def test_groups_in_the_account(tmp_path: Path, fake: FakeGoogle) -> None:
     with TestClient(app) as owner, TestClient(app) as friend:
         sign_in(owner, fake)
         assert owner.get("/api/me/groups").json() == []
-        made = owner.post("/plans", json={"event_id": "test:a", "name": " The  gang "}, headers=OURS).json()
+        page = owner.get("/groups")  # the app draws it; the server answers (when the site is built), never indexed
+        if page.status_code == 200 and "<head" in page.text:
+            assert "noindex" in page.text
+        made =owner.post("/plans", json={"event_id": "test:a", "name": " The  gang "}, headers=OURS).json()
         pid = made["id"]
         assert len(pid) == 12 and made["name"] == "The gang" and made["owner"] and made["in_groups"]
         # Without our header the same cookie makes an anonymous plan: a cross-site form can't fill an account.
