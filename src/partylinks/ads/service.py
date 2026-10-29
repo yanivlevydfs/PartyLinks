@@ -18,7 +18,7 @@ class Promoted(NamedTuple):
 
 
 def promoted_for(
-    session: Session, card: Select[tuple[EventRow]], filters: list[ColumnElement[bool]], page: int, cap: int
+    session: Session, card: Select[EventRow], filters: list[ColumnElement[bool]], page: int, cap: int
 ) -> Promoted:
     """Up to ``cap`` picks with placement results / both, campaign not over, that pass the list's own
     ``filters`` (the very WHERE of the list), by start time, as their duplicate group's primary
