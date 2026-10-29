@@ -1,5 +1,5 @@
 // "Save as alert": the current filters (or the quiz's answers, or an artist / venue) as an alert.
-// Signed out: a small sheet with "Continue with Google"; back from Google, ?save_alert=1 saves it (Bell).
+// Signed out: the sign-in popup; back from Google, ?save_alert=<the criteria as JSON> saves it (Bell).
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { SignInSheet } from "../accounts/SignInSheet";
