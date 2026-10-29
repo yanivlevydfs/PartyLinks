@@ -321,7 +321,8 @@ def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
         "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
         "location": _place(row),
         "image": [i for i in [_cover(cfg, row)] if i],
-        "description": _clip(row.description) or None,
+        # Google wants one on every event: the seller's text, else the page's own summary (when, where).
+        "description": _clip(row.description) or _clip(_summary(row, cfg, "he")),
         "inLanguage": "he",
         "isAccessibleForFree": row.entry_type == "free" or None,
         "typicalAgeRange": f"{row.min_age}-" if row.min_age else None,
