@@ -23,7 +23,7 @@ A worker job, `artwork:draw`, two minutes after start and then every 15 minutes 
 
 1. **Plan:** one short transaction finds the events that need a card (`service.needing`) and deletes the
    cards no longer needed; the events to draw (new, or changed since their card was drawn: name, stores,
-   date, city) are copied into plain `Job` objects. At most 300 a pass.
+   date, city) are copied into plain `Job` objects. At most 1,500 a pass (production had 4,284 events with no picture on 2026-10-29: three passes).
 2. **Draw, concurrently:** asyncio tasks, 4 at a time (`CONCURRENCY`, bounded by the CPUs), each in a thread.
    Pillow's blur, resize and WebP encoding run outside the GIL. No transaction is open while drawing.
 3. **Save, one transaction per card:** re-check that the event still has no picture, then one upsert writes

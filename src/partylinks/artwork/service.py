@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import CursorResult
 
 log = logging.getLogger(__name__)
-PER_PASS = 300  # ~0.3 s of CPU each: the first pass after a deploy spreads ~700 over a few runs
+PER_PASS = 1500  # ~0.1 s each, 4 at a time: production had 4,284 events with no picture (2026-10-29), 3 passes
 # ponytail: threads, bounded by the worker's CPUs (Pillow's heavy steps release the GIL); a process pool
 # if drawing ever becomes the worker's bottleneck.
 CONCURRENCY = max(1, min(4, os.cpu_count() or 1))
