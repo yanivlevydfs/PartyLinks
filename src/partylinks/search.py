@@ -156,7 +156,7 @@ PARTY = ("techno", "house", "trance", "mainstream", "hip_hop", "electronic", "ni
          "disco_funk", "drum_and_bass", "bass_dubstep", "hardstyle", "edm", "throwback", "mizrahi", "rnb", "dancehall_reggae", "dark_wave")
 SYNONYMS: dict[str, tuple[str, ...]] = {
     "מסיבה": PARTY, "מסיבות": PARTY, "party": PARTY, "parties": PARTY, "ליין": PARTY, "רייב": PARTY, "rave": PARTY,
-    "מסיבת טבע": ("trance",), "מסיבות טבע": ("trance",), "פסיכדלי": ("trance",), "psytrance": ("trance",), "פסי טראנס": ("trance",),
+    "מסיבת טבע": ("nature_party", "trance"), "מסיבות טבע": ("nature_party", "trance"), "פסיכדלי": ("trance",), "psytrance": ("trance",), "פסי טראנס": ("trance",),
     "הופעה": ("live_show",), "הופעות": ("live_show",), "הופעה חיה": ("live_show",), "קונצרט": ("live_show", "classical_opera"),
     "concert": ("live_show",), "live": ("live_show",), "מועדון": ("nightclubs",), "מועדונים": ("nightclubs",), "קלאב": ("nightclubs",),
     "הצגה": ("theatre",), "הצגות": ("theatre",), "תאטרון": ("theatre",), "מחזמר": ("theatre",), "סרט": ("cinema",), "סרטים": ("cinema",),
@@ -166,6 +166,7 @@ SYNONYMS: dict[str, tuple[str, ...]] = {
     "גאה": ("lgbt",), "להטב": ("lgbt",), "להט״ב": ("lgbt",), "חדר בריחה": ("escape_rooms",), "חדרי בריחה": ("escape_rooms",),
     "בריכה": ("pools",), "בריכות": ("pools",), "פארק מים": ("pools",), "פארקי מים": ("pools",),
     "מסיבת בריכה": ("pool_party",), "מסיבות בריכה": ("pool_party",), "pool party": ("pool_party",),
+    "אלכוהול חופשי": ("open_bar",), "open bar": ("open_bar",), "40 פלוס": ("over_40",), "40+": ("over_40",), "נוער": ("youth",),
     "הפי אוור": ("happy_hour",), "יוגה": ("yoga_wellness",), "אופרה": ("classical_opera",), "קלאסית": ("classical_opera",),
     "רוק": ("rock_indie",), "אינדי": ("rock_indie",), "דיסקו": ("disco_funk",), "רגאטון": ("reggaeton_latin",), "לטיני": ("reggaeton_latin",),
 }  # fmt: skip

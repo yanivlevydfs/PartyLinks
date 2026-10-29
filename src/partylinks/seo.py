@@ -118,6 +118,7 @@ GENRES_HE = {
     "escape_rooms": "חדרי בריחה", "attractions": "אטרקציות", "coffee_carts": "עגלות קפה", "fine_dining": "מסעדות שף",
     "work_spaces": "חללי עבודה", "volunteering": "התנדבות", "team_activities": "פעילויות לצוות", "nightclubs": "מועדונים",
     "pools": "בריכות ופארקי מים", "pool_party": "מסיבות בריכה",
+    "nature_party": "מסיבות טבע", "open_bar": "אלכוהול חופשי", "over_40": "מסיבות 40 פלוס", "youth": "מסיבות נוער",
     "g_parties": "מסיבות ומועדונים", "g_live": "הופעות ומוזיקה חיה", "g_stage": "במה ומסך", "g_culture": "תרבות והעשרה",
     "g_kids": "ילדים ומשפחה", "g_food": "אוכל ושתייה", "g_leisure": "פנאי וספורט", "g_tech": "הייטק ועסקים",
     "g_community": "קהילה ו-LGBTQ+",
@@ -133,6 +134,7 @@ GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBT
                  "ballroom": "Ballroom Dancing", "folk_dance": "Folk Dancing", "latin_dance": "Latin Dancing",
                  "team_activities": "Team activities", "nightclubs": "Clubs",
                  "pools": "Pools & Water parks", "pool_party": "Pool parties",
+                 "nature_party": "Nature parties", "open_bar": "Open bar", "over_40": "40+ parties", "youth": "Teen parties",
                  "g_parties": "Parties & Clubs", "g_live": "Live Music", "g_stage": "Stage & Screen",
                  "g_culture": "Culture & Learning", "g_kids": "Kids & Family", "g_food": "Food & Drinks",
                  "g_leisure": "Leisure & Sport", "g_tech": "Tech & Business", "g_community": "Community & LGBTQ+"}  # fmt: skip

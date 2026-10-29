@@ -333,6 +333,12 @@ enrichment:
             "מגלשות מים", "water park", "waterpark", "aquapark", "swimming pool"]
     tours: ["סיור מודרך", "סיורים מודרכים", "סיור רגלי", "guided tour", "walking tour"]
     pool_party: ["מסיבת בריכה", "מסיבות בריכה", "pool party", "pool parties", "poolparty"]
+    # Party sub-categories (Yotzim's categories, Oct 2026). Not plain "open air" (club nights on a roof),
+    # "נוער" (youth orchestras) or "אלכוהול חופשי" ("למעט ערבי אלכוהול חופשי": except those nights).
+    nature_party: ["nature party", "nature parties", "מסיבת טבע", "מסיבות טבע"]
+    open_bar: ["open bar", "open-bar", "אופן בר", "בר פתוח", "מסיבת אלכוהול חופשי", "אלכוהול חופשי כל הלילה"]
+    over_40: ["40 plus", "40 פלוס", "גילאי 40", "מגיל 40", "over 40", "40+ party"]
+    youth: ["teen party", "teens party", "מסיבת נוער", "מסיבות נוער"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
     happy_hour: ["happy hour", "happy-hour", "happyhour", "האפי האוור", "האפי אוור", "הפי האוור"]
@@ -399,12 +405,12 @@ enrichment:
   # (and a member family's sub-genres). A genre may sit in more than one; every genre needs one.
   genre_groups:
     g_parties: [electronic, mainstream, pop, hip_hop, rnb, reggaeton_latin, dancehall_reggae, disco_funk, dark_wave,
-                throwback, nightclubs, pool_party, karaoke, festival]
+                throwback, nightclubs, pool_party, karaoke, festival, nature_party, open_bar, over_40, youth]
     g_live: [live_show, israeli, rock_indie, jazz, classical_opera, world_balkan, greek, arabic]
     g_stage: [theatre, stand_up, cinema, dance]
     g_culture: [culture, exhibitions, lectures, workshops, tours, religious, holidays, markets]
     g_kids: [kids, attractions, pools, escape_rooms]
-    g_food: [food, happy_hour, fine_dining, coffee_carts]
+    g_food: [food, happy_hour, fine_dining, coffee_carts, open_bar]
     g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, environment, volunteering, team_activities]
     g_tech: [hi_tech, conference, work_spaces, meetups]
     g_community: [lgbt, liberal, kink, sensual, gender_balance, meetups]
@@ -1322,6 +1328,43 @@ sources:
     cron: "25 6,18 * * *"
     site_url: https://airdrop.co.il
     listing_path: /events?when=upcoming
+    http:
+      concurrency: 4
+
+  yotzim:
+    # Yotzim (yotzim.com): party guide (Tel Aviv nights, nature parties, festivals, Koh Phangan).
+    # Each category page links its events; an event takes the genre words of every category listing
+    # it. Event pages carry MusicEvent JSON-LD. robots.txt disallows /api/, /profile, /t/ (tickets).
+    enabled: true
+    cron: "12 9,21 * * *"
+    site_url: https://yotzim.com
+    categories:
+      /events: []
+      /genres/techno: [techno]
+      /genres/hard-techno: [hard techno]
+      /genres/trance: [trance]
+      /genres/house: [house]
+      /genres/hip-hop: [hip hop]
+      /genres/mainstream: [mainstream]
+      /genres/rothschild: [nightclubs]
+      /events/nature: [nature party]
+      /events/open-bar: [open bar]
+      /events/40-plus: [40 plus]
+      /events/youth: [teen party]
+      /events/wine: [טעימות יין]
+      /events/artists: [concert]
+      /parties/festivals: [festival]
+      /phangan: [rave]
+      /holidays/halloween: [holidays]
+      /holidays/hanukkah: [holidays]
+      /holidays/silvester: [holidays]
+      /holidays/purim: [holidays]
+      /holidays/pesach: [holidays]
+      /holidays/yom-haatzmaut: [holidays]
+      /holidays/lag-baomer: [holidays]
+      /holidays/shavuot: [holidays]
+      /holidays/rosh-hashana: [holidays]
+      /holidays/sukkot: [holidays]
     http:
       concurrency: 4
 

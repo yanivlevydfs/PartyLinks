@@ -89,6 +89,7 @@ from partylinks.scrapers.tribe import BabeBarScraper, GagarinScraper
 from partylinks.scrapers.viagogo import ViagogoScraper
 from partylinks.scrapers.vibez import VibezScraper
 from partylinks.scrapers.xplorer import XplorerScraper
+from partylinks.scrapers.yotzim import YotzimScraper
 from partylinks.scrapers.zygo import ZygoScraper
 
 log = logging.getLogger(__name__)
@@ -131,6 +132,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         JerusalemTheatreScraper,
         DropScraper,
         AirdropScraper,
+        YotzimScraper,
         LumaScraper,
         GeektimeScraper,
         PeopleComputersScraper,
