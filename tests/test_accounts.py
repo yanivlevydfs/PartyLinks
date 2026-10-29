@@ -7,7 +7,6 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
-import pytest
 from fastapi.responses import RedirectResponse
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
@@ -49,13 +48,6 @@ class FakeGoogle:
 
     async def authorize_access_token(self, request: Any) -> dict[str, Any]:
         return {"userinfo": self.info}
-
-
-@pytest.fixture
-def fake(monkeypatch: pytest.MonkeyPatch) -> FakeGoogle:
-    g = FakeGoogle()
-    monkeypatch.setattr(google, "client", lambda request: g)
-    return g
 
 
 def sign_in(

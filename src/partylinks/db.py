@@ -866,6 +866,7 @@ def delete_events(session: Session, event_ids: Sequence[str]) -> list[str]:
         session.execute(delete(ImageRow).where(ImageRow.event_id.in_(chunk)))
         session.execute(delete(DealChangeRow).where(DealChangeRow.event_id.in_(chunk)))
         delete_plans(session, chunk)  # "who's coming?" plans go with their event
+        delete_saved(session, chunk)  # hearts go with their event
         session.execute(delete(EventRow).where(EventRow.id.in_(chunk)))
     return files
 
@@ -887,5 +888,7 @@ import partylinks.accounts.models
 import partylinks.ads.models
 import partylinks.artistdb
 import partylinks.plans.models
+import partylinks.saved.models
 import partylinks.worker.models  # noqa: F401
 from partylinks.plans.routes import delete_plans
+from partylinks.saved.routes import delete_saved

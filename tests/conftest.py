@@ -39,3 +39,14 @@ def _no_live_israeli_proxies(monkeypatch: pytest.MonkeyPatch) -> None:
     """`israel_proxy` sources would fetch the live proxy feed and dial real proxies."""
     monkeypatch.setenv("PARTYLINKS_HTTP__ISRAEL_PROXY_FEED", "")
     monkeypatch.setenv("PARTYLINKS_HTTP__ISRAEL_PROXY", "")
+
+
+@pytest.fixture
+def fake(monkeypatch: pytest.MonkeyPatch) -> object:
+    """Google's side of "Continue with Google" (tests/test_accounts.py FakeGoogle): set ``.info`` to sign in."""
+    from partylinks.accounts import google
+    from tests.test_accounts import FakeGoogle
+
+    g = FakeGoogle()
+    monkeypatch.setattr(google, "client", lambda request: g)
+    return g

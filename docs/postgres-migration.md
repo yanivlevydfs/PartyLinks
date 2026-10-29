@@ -673,3 +673,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
   - `user_sessions`: ‏`id` PK, ‏`user_id` ‏FK ל-`users` עם `ON DELETE CASCADE` (אינדקס), ‏`token_hash` ‏`VARCHAR(64)` ‏UNIQUE (רק SHA-256 של העוגייה), ‏`created_at`, ‏`expires_at` (אינדקס), ‏`last_seen_at`.
 - **Queries:** בכל בקשה עם עוגייה: ‏`SELECT user_sessions JOIN users WHERE token_hash = ?` (UNIQUE), ו-`UPDATE` של `expires_at` לכל היותר פעם ביום לסשן. מחיקת משתמש היא `DELETE FROM users WHERE id = ?` והשאר נמחק ב-CASCADE. ‏`signups per day` בטאב המשתמשים מקובץ ב-Python (ל-pgserver המקומי אין נתוני אזורי זמן).
 - **Tests:** ‏`tests/test_accounts.py` (‏10). ‏495/495.
+
+### 2026-10-29 (אירועים שמורים, הלב)
+- **טבלה חדשה:** `saved_events` (‏`partylinks/saved/models.py`): ‏PK ‏(`user_id`, ‏`event_id`), ‏`user_id` ‏FK ל-`users` עם `ON DELETE CASCADE`, ‏`event_id` עם אינדקס, בלי FK ל-`events` (כמו `plans`): ‏`db.delete_events` קורא ל-`saved.routes.delete_saved`, כך שלב של אירוע שנגמר נמחק איתו. ‏`saved_at`.
+- **Queries:** רשימת השמורים: `events WHERE group_id IN (SELECT group_id FROM events WHERE id IN (...) OR slug IN (...)) AND is_primary AND upcoming`, כך שאירוע שקובץ מחדש עדיין מוצג (הראשי של הקבוצה). שמירה: `INSERT ... ON CONFLICT DO NOTHING`. מיזוג אחרי כניסה: עד `accounts.max_saved` ‏(500).
+- **ציבורי:** ‏`GET /events/cards?ids=` (עד 100) לכרטיסים של לבבות ששמורים במכשיר בלי חשבון; נרשם לפני `/events/{event_ref}`.
+- **Tests:** ‏`tests/test_saved.py` (‏4). ‏499/499.

@@ -47,3 +47,8 @@ def install(app: FastAPI, settings: Settings) -> None:
         app.include_router(google_router)
     app.include_router(me_router)  # /api/me answers 401 when nobody can sign in
     app.include_router(admin_router)
+
+    from partylinks.accounts.admin_routes import COUNTS
+    from partylinks.saved.routes import saved_counts
+
+    COUNTS["saved"] = saved_counts

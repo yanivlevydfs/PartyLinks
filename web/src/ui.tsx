@@ -9,6 +9,8 @@ import { AdLabel, hit, SponsoredFrame, SponsoredStrip, useAdView } from "./ads/S
 import { forecastAt, Weather } from "./Weather";
 import { PlanButton } from "./plans/PlanButton";
 import { AccountSlot } from "./accounts/AccountSlot";
+import { SaveHeart } from "./saved/SaveHeart";
+import { SavedLink } from "./saved/SavedLink";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";
 
@@ -128,6 +130,7 @@ export function Layout() {
           <button className="lang" onClick={() => setLang(lang === "he" ? "en" : "he")} aria-label="Language">
             {lang === "he" ? "EN" : "עב"}
           </button>
+          <SavedLink />
           <AccountSlot />
         </div>
       </header>
@@ -322,6 +325,7 @@ export function Card({ e }: { e: EventSummary }) {
         </div>
       </div>
     </Link>
+    <SaveHeart eventId={e.id} />
     {e.start_at && <AddToCalendar e={e} start={e.start_at} compact />}
     <ShareButton path={eventPath(e)} title={e.title} />
     <PlanButton eventId={e.id} compact />

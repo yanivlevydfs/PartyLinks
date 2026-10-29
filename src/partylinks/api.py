@@ -37,6 +37,7 @@ from partylinks.accounts import sign_in_state
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.ads import service as ads
+from partylinks.saved.routes import router as saved_router
 from partylinks.config import Settings, get_settings
 from partylinks.db import (
     Database,
@@ -824,6 +825,7 @@ def create_app(
     # other sites' pages get no Access-Control-Allow-Origin, so their reads are blocked.
     app.add_middleware(CORSMiddleware, allow_origins=[settings.site.base_url.rstrip("/")], allow_methods=["GET"])
     app.add_middleware(SecurityMiddleware)  # outermost: rejects before any work is done
+    app.include_router(saved_router)  # saved events; before /events/{event_ref} so /events/cards is not an event
     _register_routes(app)
     app.include_router(admin_router)
     app.include_router(weather_router)

@@ -126,6 +126,11 @@ export const STORAGE: StorageItem[] = [
     duration: { he: "עד סגירת הלשונית", en: "Until the tab is closed" },
   },
   {
+    name: "spotx-saved", provider: US, kind: LOCAL, category: "necessary",
+    purpose: { he: "האירועים ששמרתם בלב, כשאינכם מחוברים לחשבון. נשמר רק במכשיר: עמוד השמורים שולח את מזהי האירועים כדי להציג אותם, ואיננו שומרים אותם. בכניסה לחשבון הרשימה עוברת אליו ונמחקת מהמכשיר.", en: "The events you saved with the heart while not signed in. Kept on this device only: the saved page sends the event ids to show them, and we don't store them. When you sign in, the list moves to your account and is cleared here." },
+    duration: { he: "עד שתמחקו את נתוני האתר בדפדפן", en: "Until you clear the site's data in your browser" },
+  },
+  {
     name: "spotx_session", provider: US, category: "necessary",
     kind: { he: "עוגייה (HttpOnly, מאובטחת)", en: "Cookie (HttpOnly, secure)" },
     purpose: { he: "השארת המחובר לחשבון (רק למי שהתחבר עם Google). אצלנו נשמרת רק טביעת SHA-256 שלה; יציאה מוחקת אותה.", en: "Keeps you signed in (only if you signed in with Google). We keep only its SHA-256 fingerprint; signing out deletes it." },

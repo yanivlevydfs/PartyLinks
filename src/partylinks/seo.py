@@ -1481,6 +1481,17 @@ def register(app: FastAPI, site_dir: Path) -> None:
                  "/region/{region}", "/abroad/{country}"):  # fmt: skip
         app.get(path, include_in_schema=False)(landing)
 
+    def _own_page(path: str, he: str, en: str) -> Callable[[Request], HTMLResponse]:
+        def own(request: Request) -> HTMLResponse:
+            return page(request, lambda s, c, lang: Page(he if lang == "he" else en, "", path, lang, noindex=True))
+
+        return own
+
     @app.get("/admin", include_in_schema=False)
     def admin(request: Request) -> HTMLResponse:
         return page(request, lambda s, c, lang: Page("Admin", "", "/admin", lang, noindex=True))
+
+    # A person's own pages (accounts, saved events, alerts): the app draws them; never indexed.
+    for path, he, en in (("/account", "החשבון שלי", "My account"), ("/saved", "אירועים שמורים", "Saved events"),
+                         ("/alerts", "ההתראות שלי", "My alerts")):  # fmt: skip
+        app.get(path, include_in_schema=False)(_own_page(path, he, en))
