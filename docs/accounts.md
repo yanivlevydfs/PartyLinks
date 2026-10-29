@@ -35,13 +35,16 @@ address and any `code=`, `state=`, `t=` or `token=` value as a safety net.
 
 ## Saved events (the save bell)
 
-Every event card, the event page and the map pins have a save bell (🔔; the header's bell with a tick links to them, the plain bell is alert news); the header links to `/saved` with the
-count. It works without an account: the ids are kept in the browser (localStorage `spotx-saved`) and
-`/saved` shows them through `GET /events/cards?ids=` (at most 100). Signed in, saved events live in
-`saved_events`; on sign-in the browser's list is merged into the account once (`POST /api/me/saved/merge`)
-and cleared from the device. A saved event is removed with its event when the event ends (never past events),
-and the list always shows each group's primary listing, so a regrouped event stays. At most
-`accounts.max_saved` (500) per user. Code: `src/partylinks/saved/`, `web/src/saved/`.
+Every event card (the grid and the home page's scrolling rows), the event page and the map pins have a save
+bell (🔔). Saving needs an account: a signed-out visitor who presses it gets a sign-in popup
+(`accounts/SignInSheet.tsx`), and Google brings them back to the same page with `?save_event=<id>`, where the
+header's "Saved" button (`saved/SavedLink.tsx`) saves it and says so. That button, with the count, opens
+`/saved`; the header's plain bell is alert news. Saved events live in `saved_events`, are removed with their
+event when it ends (never past events), and always show each group's primary listing, so a regrouped event
+stays. At most `accounts.max_saved` (500) per user. Only when Google sign-in is not configured (localhost)
+does the bell keep the ids on the device (localStorage `spotx-saved`, shown through `GET /events/cards`);
+anything kept there is merged into the account at the next sign-in. Code: `src/partylinks/saved/`,
+`web/src/saved/`.
 
 ## Alerts ("save search"), the bell and "For you"
 
