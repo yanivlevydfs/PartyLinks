@@ -38,3 +38,10 @@
 .pop li > a { flex: 1; min-width: 0; }
 .pop li > .save-btn { flex: none; width: 28px; height: 28px; backdrop-filter: none; }
 .pop li > .save-btn svg { width: 15px; height: 15px; }
+
+.saved-wrap { position: relative; flex: none; }
+.saved-toast {
+  position: absolute; inset-inline-end: 0; top: calc(100% + 8px); z-index: 61; white-space: nowrap;
+  padding: 8px 14px; border-radius: 999px; background: var(--panel-solid); border: 1px solid var(--green); color: var(--green);
+}
+.saved-toast.bad { border-color: var(--red); color: var(--red); }

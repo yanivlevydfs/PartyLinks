@@ -2,7 +2,7 @@
 // Signed out: a small sheet with "Continue with Google"; back from Google, ?save_alert=1 saves it (Bell).
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { SignInButton } from "../accounts/AccountSlot";
+import { SignInSheet } from "../accounts/SignInSheet";
 import { useAccountsOn, useMe } from "../accounts/useMe";
 import type { Filters } from "../store";
 import { useAlertText } from "./i18n";
@@ -65,15 +65,7 @@ export function SaveAlertButton({ filters, q, label }: { filters?: Filters; q?: 
           {state === "saving" ? t.saving : state === "failed" ? t.failed : state === "full" ? t.tooMany : label ?? t.save}
         </button>
       )}
-      {ask && (
-        <div className="sheet-back" onClick={() => setAsk(false)}>
-          <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="alert-signin" onClick={(e) => e.stopPropagation()}>
-            <h2 id="alert-signin">{t.signInTitle}</h2>
-            <p>{t.signInText}</p>
-            <SignInButton next={nextUrl(criteria)} />
-          </div>
-        </div>
-      )}
+      {ask && <SignInSheet title={t.signInTitle} text={t.signInText} next={nextUrl(criteria)} onClose={() => setAsk(false)} />}
     </>
   );
 }

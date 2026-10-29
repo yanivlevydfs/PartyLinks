@@ -53,3 +53,5 @@
 .acc-check { display: flex !important; align-items: flex-start; gap: 10px; color: var(--text) !important; cursor: pointer; }
 .acc-check input { margin-top: 4px; width: 18px; height: 18px; flex: none; accent-color: var(--pink); }
 .adm-mail { width: 100%; height: 720px; border: 1px solid var(--line); border-radius: 12px; background: #06040b; }
+.sheet-small { font-size: 13px; margin: 0; }
+.sheet .google-btn { justify-self: start; }
