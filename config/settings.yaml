@@ -108,15 +108,16 @@ security:
   max_body_bytes: 1000000
   # /docs, /redoc, /openapi.json
   api_docs: false
-  # SEO tools, AI-training and dataset crawlers, and scripts / headless browsers (not people). Search
-  # engines and AI search assistants (Googlebot, Bingbot, OAI-SearchBot, Claude-SearchBot...) stay welcome.
+  # SEO tools and dataset / data-harvesting crawlers. Search engines and AI (Googlebot, Bingbot, GPTBot,
+  # ClaudeBot, Google-Extended, OAI-SearchBot, PerplexityBot...) are welcome.
   blocked_bots: [AhrefsBot, SemrushBot, MJ12bot, DotBot, Bytespider, PetalBot, DataForSeoBot, BLEXBot,
                  serpstatbot, MegaIndex, Barkrowler, ZoominfoBot, Scrapy,
-                 GPTBot, ClaudeBot, anthropic-ai, CCBot, Google-Extended, Applebot-Extended, cohere-ai, Diffbot,
-                 ImagesiftBot, Omgilibot, Amazonbot, meta-externalagent, img2dataset, Timpibot, AI2Bot,
-                 python-requests, python-urllib, aiohttp, python-httpx, Go-http-client, curl/, Wget, libwww-perl,
-                 okhttp, Java/, node-fetch, axios/, undici, Apache-HttpClient, HeadlessChrome, PhantomJS,
-                 Puppeteer, Playwright, Selenium, colly]
+                 CCBot, Diffbot, ImagesiftBot, Omgilibot, img2dataset, Timpibot]
+  # Scripts / headless browsers: refused on the JSON data API and ticket links only. AI assistants that
+  # browse for a person (Gemini, agents) fetch with these, so pages and llms.txt stay open to them.
+  blocked_clients: [python-requests, python-urllib, aiohttp, python-httpx, Go-http-client, curl/, Wget, libwww-perl,
+                    okhttp, Java/, node-fetch, axios/, undici, Apache-HttpClient, HeadlessChrome, PhantomJS,
+                    Puppeteer, Playwright, Selenium, colly]
 
 api:
   host: 0.0.0.0

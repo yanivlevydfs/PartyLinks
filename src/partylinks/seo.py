@@ -43,7 +43,8 @@ HTML_CACHE_BYTES = 64 << 20
 LLMS_LIMIT = 400
 DESC_LIMIT = 300
 AI_CRAWLERS = [
-    "OAI-SearchBot", "ChatGPT-User", "Claude-SearchBot", "Claude-User", "PerplexityBot", "Perplexity-User", "Bingbot",
+    "OAI-SearchBot", "ChatGPT-User", "GPTBot", "Claude-SearchBot", "Claude-User", "ClaudeBot", "PerplexityBot",
+    "Perplexity-User", "Google-Extended", "Applebot-Extended", "Bingbot",
 ]  # fmt: skip
 
 # Operational / private endpoints crawlers have no business indexing.
@@ -1273,9 +1274,9 @@ def robots(cfg: Settings) -> str:
     ai = "".join(f"User-agent: {bot}\n" for bot in AI_CRAWLERS)
     blocked = "".join(f"User-agent: {bot}\n" for bot in cfg.security.blocked_bots)
     return (
-        f"# Search engines and AI search assistants are welcome; AI-training and data crawlers are not.\n"
+        f"# Search engines and AI are welcome; SEO tools and data harvesters are not.\n"
         f"User-agent: *\nAllow: /\n{private}\n{ai}Allow: /\n{private}\n"
-        + (f"# Data harvesters and AI-training crawlers: not welcome (also refused by the server).\n{blocked}Disallow: /\n\n" if blocked else "")
+        + (f"# SEO tools and data harvesters: not welcome (also refused by the server).\n{blocked}Disallow: /\n\n" if blocked else "")
         + f"Sitemap: {cfg.site.base_url}/sitemap.xml\n"
     )
 

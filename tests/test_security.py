@@ -148,6 +148,11 @@ def test_scrapers_are_slowed_and_scripts_refused(tmp_path: Path) -> None:
         assert c.get("/health").status_code == 200  # the rest of the site doesn't
         assert c.get("/health", headers={"user-agent": "python-requests/2.32"}).status_code == 200  # health probes pass
         assert c.get("/", headers={"user-agent": "python-requests/2.32"}).status_code == 403
+    # Script clients: pages and llms.txt open (AI assistants browse with them), the data API refused.
+    settings.security.blocked_bots, settings.security.blocked_clients = [], ["curl/"]
+    with TestClient(create_app(settings, start_scheduler=False), client=("198.51.100.4", 1)) as c:
+        assert c.get("/llms.txt", headers={"user-agent": "curl/8.5"}).status_code == 200
+        assert c.get("/events", headers={"user-agent": "curl/8.5"}).status_code == 403
 
 
 ADMIN = {"authorization": "Bearer s3cret"}

@@ -491,6 +491,9 @@ class SecuritySettings(BaseModel):
         "AhrefsBot", "SemrushBot", "MJ12bot", "DotBot", "Bytespider", "PetalBot", "DataForSeoBot",
         "BLEXBot", "serpstatbot", "MegaIndex", "Barkrowler", "ZoominfoBot", "Scrapy",
     ])  # fmt: skip
+    # Scripts and headless browsers: refused (403) on the JSON data API and /go/ only, so AI assistants
+    # browsing for a person can still read the pages and llms.txt.
+    blocked_clients: list[str] = Field(default_factory=list)
 
 
 class Settings(BaseSettings):

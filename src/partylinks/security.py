@@ -273,6 +273,9 @@ class SecurityMiddleware:
         blocked = any(bot.lower() in agent.lower() for bot in cfg.blocked_bots)
         if blocked and not local and path not in ("/robots.txt", "/health"):
             return await reject(403, "forbidden")
+        script = any(c.lower() in agent.lower() for c in cfg.blocked_clients)
+        if script and not local and path.startswith((*DATA_PATHS, "/go/")):
+            return await reject(403, "forbidden")
         if not local and not owner and not path.startswith(STATIC_PATHS):
             limit = cfg.admin_rate_limit_per_minute if admin else cfg.rate_limit_per_minute
             if self.guard.over_limit(ip, "admin" if admin else "all", limit, now):
