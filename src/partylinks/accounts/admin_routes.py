@@ -31,7 +31,7 @@ class RoleIn(BaseModel):
 def _row(user: UserRow, live: dict[str, int], extra: dict[str, dict[str, int]]) -> dict[str, Any]:
     return {
         "id": user.id, "name": user.name, "email": user.email, "picture": user.picture, "role": user.role,
-        "locale": user.locale, "blocked": user.blocked_at is not None, "digest_opt_in": user.digest_opt_in,
+        "locale": user.locale, "gender": user.gender, "blocked": user.blocked_at is not None, "digest_opt_in": user.digest_opt_in,
         "created_at": user.created_at, "last_login_at": user.last_login_at, "sessions": live.get(user.id, 0),
         **{name: counts.get(user.id, 0) for name, counts in extra.items()},
     }  # fmt: skip

@@ -42,6 +42,7 @@ export default function GroupsPage() {
                     <small>{when(g.event, t, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</small>
                     <small>
                       {p.going(g.going)} · {p.maybes(g.maybe)}
+                      {(g.men > 0 || g.women > 0) && ` · ${p.mix(g.men, g.women)}`}
                       {(g.seats > 0 || g.riders > 0) && ` · 🚗 ${p.seatsOf(g.seats)} · 🙋 ${g.riders}`}
                       {g.answer && ` · ${p.yourAnswer}: ${p[g.answer]}`}
                     </small>

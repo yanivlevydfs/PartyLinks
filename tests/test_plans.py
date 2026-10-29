@@ -167,3 +167,23 @@ def test_plan_writes_are_rate_limited(tmp_path: Path) -> None:
     with TestClient(app) as c:
         codes = [c.post("/plans", json={"event_id": "test:a"}).status_code for _ in range(21)]
         assert codes[:20] == [201] * 20 and codes[20] == 429
+
+
+def test_gender_on_a_group_answer_and_the_account(tmp_path: Path, fake: FakeGoogle) -> None:
+    app, _ = _accounts_app(tmp_path)
+    with TestClient(app) as c, TestClient(app) as guest:
+        sign_in(c, fake)
+        assert c.get("/api/me").json()["gender"] is None  # not asked yet
+        pid = c.post("/plans", json={"event_id": "test:a"}, headers=OURS).json()["id"]
+        vote = {"voter": ME, "name": "דנה", "answer": "yes", "gender": "female"}
+        assert c.post(f"/plans/{pid}/votes", json={**vote, "gender": "other"}, headers=OURS).status_code == 422
+        c.post(f"/plans/{pid}/votes", json=vote, headers=OURS)
+        assert c.get("/api/me").json()["gender"] == "female"  # remembered for the next group
+        guest.post(f"/plans/{pid}/votes", json={"voter": FRIEND, "name": "רון", "answer": "maybe", "gender": "male"})
+        votes = c.get(f"/plans/{pid}").json()["votes"]
+        assert [v["gender"] for v in votes] == ["female", "male"]
+        # Changing an answer without saying it again keeps it.
+        c.post(f"/plans/{pid}/votes", json={"voter": ME, "name": "דנה", "answer": "maybe"}, headers=OURS)
+        g = c.get("/api/me/groups").json()[0]
+        assert (g["men"], g["women"]) == (1, 1)
+        assert c.patch("/api/me", json={"gender": "none"}, headers=OURS).json()["gender"] == "none"

@@ -9,6 +9,7 @@ export interface Me {
   locale: "he" | "en";
   role: string;
   digest_opt_in: boolean;
+  gender: "male" | "female" | "none" | null;
 }
 
 /** A write from our pages: the header the server checks for (a cross-site form can't set it). */

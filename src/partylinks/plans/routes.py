@@ -13,7 +13,7 @@ from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from partylinks.accounts.guard import SameOrigin, limited, same_origin
-from partylinks.accounts.models import UserRow
+from partylinks.accounts.models import Gender, UserRow
 from partylinks.accounts.sessions import OptionalUserDep, UserDep, optional_user
 from partylinks.db import EventRow
 from partylinks.parsing import tidy_text
@@ -52,11 +52,13 @@ class VoteIn(BaseModel):
     picks: list[str] | None = Field(default=None, max_length=MAX_OPTIONS)  # option event ids (several events)
     ride: Ride | None = None
     seats: int | None = Field(default=None, ge=1, le=MAX_SEATS)  # with ride=drive
+    gender: Gender | None = None  # signed in, also kept on the account
 
 
 class VoteOut(BaseModel):
     name: str
     answer: Answer
+    gender: Gender | None
     mine: bool
     picks: list[str]
     ride: Ride | None
@@ -107,7 +109,7 @@ def _plan_out(session: Session, plan: PlanRow, voter: str | None, user: UserRow 
         options=options,
         votes=[
             VoteOut(
-                name=v.name, answer=v.answer,  # type: ignore[arg-type]
+                name=v.name, answer=v.answer, gender=v.gender,  # type: ignore[arg-type]
                 mine=(voter is not None and v.voter == voter) or (uid is not None and v.user_id == uid),
                 picks=[p for p in v.picks or [] if p in rows], ride=v.ride, seats=v.seats,  # type: ignore[arg-type]
             )
@@ -220,8 +222,11 @@ def vote(plan_id: str, body: VoteIn, request: Request) -> PlanOut:
         ride = body.ride if body.answer != "no" else None
         row.name, row.answer, row.picks = name, body.answer, picks
         row.ride, row.seats = ride, (body.seats or 1) if ride == "drive" else None
+        row.gender = body.gender or row.gender
         if user is not None:
             row.user_id = user.id
+            if body.gender and user.gender != body.gender:  # remembered for the next group
+                session.execute(update(UserRow).where(UserRow.id == user.id).values(gender=body.gender))
         session.flush()
         return _plan_out(session, plan, body.voter, user)
 
@@ -237,6 +242,8 @@ class GroupOut(BaseModel):
     maybe: int
     seats: int  # free seats offered
     riders: int
+    men: int  # of those in or maybe, by their own answer
+    women: int
 
 
 @router.get("/api/me/groups", response_model=list[GroupOut], include_in_schema=False)
@@ -265,6 +272,8 @@ def my_groups(user: UserDep, request: Request, response: Response) -> list[Group
                 answer=own.answer if own else None,  # type: ignore[arg-type]
                 going=sum(v.answer == "yes" for v in vs), maybe=sum(v.answer == "maybe" for v in vs),
                 seats=sum(v.seats or 0 for v in vs if v.ride == "drive"), riders=sum(v.ride == "need" for v in vs),
+                men=sum(v.gender == "male" and v.answer != "no" for v in vs),
+                women=sum(v.gender == "female" and v.answer != "no" for v in vs),
             ))  # fmt: skip
         return out
 

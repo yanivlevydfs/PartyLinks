@@ -13,6 +13,7 @@ interface User {
   locale: string;
   blocked: boolean;
   digest_opt_in: boolean;
+  gender: string | null;
   created_at: string;
   last_login_at: string;
   sessions: number;
@@ -73,6 +74,7 @@ function Detail({ id, onClose }: { id: string; onClose: () => void }) {
           <tr><td>Id</td><td><code>{u.id}</code></td></tr>
           <tr><td>Role</td><td>{u.role}{u.blocked && <> · <b className="adm-warn">blocked {day(u.blocked_at)}</b></>}</td></tr>
           <tr><td>Joined / last sign-in</td><td>{day(u.created_at)} / {day(u.last_login_at)}</td></tr>
+          <tr><td>Gender</td><td>{u.gender ?? "not asked"}</td></tr>
           <tr><td>Weekly digest</td><td>{u.digest_opt_in ? `yes, since ${day(u.digest_opt_in_at)}` : "no"}</td></tr>
           <tr><td>Signed-in browsers</td><td>{u.sessions}</td></tr>
           {"saved" in u && <tr><td>Saved events</td><td>{u.saved}</td></tr>}

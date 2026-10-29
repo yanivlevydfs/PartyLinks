@@ -715,3 +715,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Queries:** `GET /api/me/groups`: `SELECT plans WHERE owner_id = :u OR id IN (SELECT plan_id FROM plan_votes WHERE user_id = :u)`, אחר כך האירועים שלהן (`id IN`), התשובות (`plan_id IN`) וספירת `plan_events` ב-`GROUP BY plan_id`. ארבעה queries לכל בקשה, בלי N+1. ‏`DELETE /api/me/groups/{id}`: היוצר מוחק `plan_votes`, `plan_events` ואז `plans` (ילד לפני הורה); חבר מוחק רק את השורה שלו ב-`plan_votes`. ‏`POST /plans/{id}/votes` מחפש קודם לפי `user_id` ואז לפי `voter`.
 - **אבטחה:** הסוד של קישור חדש 12 תווים (72 bits); מפתח הדפדפן נשלח ב-header ‏`X-Plan-Voter` ולא ב-URL; שיוך לחשבון רק בבקשה עם `X-Requested-With: spotx` מה-origin שלנו; תשובה של חשבון משתנה רק מאותו חשבון; rate limit לכל IP: 20 יצירות/הוספות ו-60 תשובות בדקה; `GET /plans/{id}` ו-`/api/me/groups` עם `Cache-Control: private, no-store`.
 - **מחיקה:** קבוצה נמחקת עם האירוע שלה (`delete_plans`, ללא שינוי). מחיקת חשבון: `forget_user`.
+
+### 2026-10-29 (מגדר)
+- **עמודות חדשות:** `users.gender` ו-`plan_votes.gender`, שתיהן String(8) nullable בלי default (`male` / `female` / `none` = מעדיף/ה לא לומר; NULL = לא נשאל). נוספות ב-`ADD COLUMN`, בגבול 8 תווים (Q-LEN).
+- **כתיבה:** ‏`PATCH /api/me` (`gender`); ‏`POST /plans/{id}/votes` שומר את המגדר בתשובה, ומשתמש מחובר שבחר מגדר מעודכן גם ב-`users` (`UPDATE users SET gender` רק כשהערך השתנה). תשובה בלי מגדר שומרת את הקודם.
+- **קריאה:** ‏`/api/me/groups` סופר `men` / `women` ב-Python מאותן שורות `plan_votes` שכבר נקראות: אין query חדש.
+

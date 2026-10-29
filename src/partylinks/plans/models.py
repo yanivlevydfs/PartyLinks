@@ -47,6 +47,7 @@ class PlanVoteRow(Base):
     seats: Mapped[int | None] = mapped_column(Integer)
     # A signed-in friend's answer: the group shows in their "my groups"; goes with their account.
     user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    gender: Mapped[str | None] = mapped_column(String(8))  # male | female | none (would rather not say)
 
 
 class PlanEventRow(Base):

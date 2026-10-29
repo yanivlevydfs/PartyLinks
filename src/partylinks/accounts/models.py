@@ -4,11 +4,14 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from partylinks.db import Base, UTCDateTime, utcnow
+
+Gender = Literal["male", "female", "none"]  # "none": would rather not say
 
 
 class UserRow(Base):
@@ -23,6 +26,9 @@ class UserRow(Base):
     name: Mapped[str] = mapped_column(Text)
     picture: Mapped[str | None] = mapped_column(Text)
     locale: Mapped[str] = mapped_column(String(2), default="he")  # the language of the emails
+    # The user's own answer (male | female | none = would rather not say), asked when joining a group;
+    # None until asked. Words on the site follow it ("בא" / "באה").
+    gender: Mapped[str | None] = mapped_column(String(8))
     role: Mapped[str] = mapped_column(String(10), default="user")  # user | admin
     blocked_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     # The weekly digest carries ticket links: advertising under the Communications Law (§30A), so it

@@ -14,7 +14,7 @@ import { FreeEntry, freeTime, freeUntil } from "./FreeEntry";
 import { GroupName } from "./GroupName";
 import { usePlanText } from "./i18n";
 import "./plans.css";
-import { WRITE_HEADERS, type Answer, type Plan, type Ride, type Vote } from "./types";
+import { WRITE_HEADERS, type Answer, type Gender, type Plan, type Ride, type Vote } from "./types";
 
 // The browser's voter key (changes its own answer) and the name it last used. Storage can be off
 // (private mode): then the key lives for this visit only.
@@ -60,6 +60,8 @@ export default function PlanPage() {
   const [picks, setPicks] = useState<string[]>([]);
   const [ride, setRide] = useState<Ride | null>(null);
   const [seats, setSeats] = useState(3);
+  const [gender, setGender] = useState<Gender | null>(null);
+  useEffect(() => { if (me?.gender) setGender((g) => g ?? me.gender); }, [me]);
   const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   // This browser's saved answer fills the form once, when the plan first loads.
@@ -71,6 +73,7 @@ export default function PlanPage() {
       setName(mine.name);
       setPicks(mine.picks);
       setRide(mine.ride);
+      if (mine.gender) setGender(mine.gender);
       if (mine.seats) setSeats(mine.seats);
     }
   }, [data, filled, mine]);
@@ -117,7 +120,7 @@ export default function PlanPage() {
     ...(riders.length ? [`${p.riders}: ${riders.map((v) => v.name).join(", ")}`] : []),
   ];
 
-  const save = async (next: { answer?: Answer; picks?: string[]; ride?: Ride | null; seats?: number }) => {
+  const save = async (next: { answer?: Answer; picks?: string[]; ride?: Ride | null; seats?: number; gender?: Gender }) => {
     const answer = next.answer ?? mine?.answer;
     if (!answer) return; // the form only saves once an answer is picked
     const clean = name.trim();
@@ -127,7 +130,7 @@ export default function PlanPage() {
     const r = next.ride !== undefined ? next.ride : ride;
     const res = await fetch(`/plans/${encodeURIComponent(id)}/votes`, {
       method: "POST", headers: WRITE_HEADERS,
-      body: JSON.stringify({ voter, name: clean, answer, picks: many ? chosen : undefined, ride: r, seats: r === "drive" ? next.seats ?? seats : undefined }),
+      body: JSON.stringify({ voter, name: clean, answer, picks: many ? chosen : undefined, ride: r, seats: r === "drive" ? next.seats ?? seats : undefined, gender: next.gender ?? gender ?? undefined }),
     });
     if (res.ok) {
       remember(clean);
@@ -142,6 +145,9 @@ export default function PlanPage() {
     if (mine && next.length) void save({ picks: next });
   };
   const chooseRide = (r: Ride | null) => { setRide(r); if (mine) void save({ ride: r }); };
+  const chooseGender = (g: Gender) => { setGender(g); if (mine) void save({ gender: g }); };
+  const men = data.votes.filter((v) => v.answer !== "no" && v.gender === "male").length;
+  const women = data.votes.filter((v) => v.answer !== "no" && v.gender === "female").length;
   const copy = () => navigator.clipboard?.writeText(url).then(() => setCopied(true), () => {});
 
   return (
@@ -198,6 +204,15 @@ export default function PlanPage() {
           </fieldset>
         )}
         <fieldset className="plan-where">
+          <legend>{p.genderLegend}</legend>
+          {([["male", p.male], ["female", p.female], ["none", p.noSay]] as const).map(([g, label]) => (
+            <label key={g} className={"plan-chip" + (gender === g ? " on" : "")}>
+              <input type="radio" name="plan-gender" checked={gender === g} onChange={() => chooseGender(g)} />
+              <span>{label}</span>
+            </label>
+          ))}
+        </fieldset>
+        <fieldset className="plan-where">
           <legend>{p.ride}</legend>
           {([["drive", p.drive], ["need", p.need], [null, p.noRide]] as const).map(([r, label]) => (
             <label key={String(r)} className={"plan-chip" + (ride === r ? " on" : "")}>
@@ -217,7 +232,7 @@ export default function PlanPage() {
         <div className="plan-answers" role="group" aria-label={p.title}>
           {ANSWERS.map((a) => (
             <button key={a} type="button" className={`plan-a ${a}` + (mine?.answer === a ? " on" : "")} aria-pressed={mine?.answer === a} onClick={() => save({ answer: a })}>
-              {p[a]}
+              {a === "yes" ? p.yesAs(gender) : p[a]}
             </button>
           ))}
         </div>
@@ -232,7 +247,7 @@ export default function PlanPage() {
       </section>
 
       <section className="plan-list" aria-live="polite">
-        <p className="plan-count"><b>{p.going(by("yes").length)}</b> · {p.maybes(by("maybe").length)} · {p.nos(by("no").length)}</p>
+        <p className="plan-count"><b>{p.going(by("yes").length)}</b> · {p.maybes(by("maybe").length)} · {p.nos(by("no").length)}{(men > 0 || women > 0) && ` · ${p.mix(men, women)}`}</p>
         {data.votes.length === 0 ? <p className="msg">{p.nobody}</p> : ANSWERS.map((a) => by(a).length > 0 && (
           <div key={a} className={`plan-group ${a}`}>
             <h3>{p[a]}</h3>

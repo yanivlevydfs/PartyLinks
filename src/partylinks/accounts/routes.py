@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from partylinks.accounts import sessions
 from partylinks.accounts.guard import SameOrigin, limited
-from partylinks.accounts.models import UserRow
+from partylinks.accounts.models import Gender, UserRow
 from partylinks.accounts.service import delete_user
 from partylinks.accounts.sessions import UserDep
 from partylinks.db import utcnow
@@ -30,6 +30,7 @@ class MeOut(BaseModel):
     locale: str
     role: str
     digest_opt_in: bool
+    gender: Gender | None
     created_at: datetime
 
 
@@ -37,6 +38,7 @@ class MePatch(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
     locale: Literal["he", "en"] | None = None
     digest_opt_in: bool | None = None
+    gender: Gender | None = None
 
 
 @router.get("/me", response_model=MeOut)
@@ -54,6 +56,8 @@ def edit_me(body: MePatch, user: UserDep, request: Request, response: Response) 
             row.name = body.name.strip()
         if body.locale is not None:
             row.locale = body.locale
+        if body.gender is not None:
+            row.gender = body.gender
         if body.digest_opt_in is not None and body.digest_opt_in != row.digest_opt_in:
             row.digest_opt_in = body.digest_opt_in
             row.digest_opt_in_at = utcnow() if body.digest_opt_in else None  # proof of consent (§30A)

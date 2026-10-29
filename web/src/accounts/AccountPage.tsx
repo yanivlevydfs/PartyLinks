@@ -37,6 +37,14 @@ function Profile({ me }: { me: Me }) {
     }
   };
   // The digest is advertising (ticket links): only on the user's own tick, saved at once with its time.
+  const setGender = async (gender: Me["gender"]) => {
+    try {
+      qc.setQueryData(["me"], await send<Me>("/api/me", "PATCH", { gender }));
+      setNote(t.savedOk);
+    } catch {
+      setNote(t.failed);
+    }
+  };
   const toggleDigest = async (on: boolean) => {
     try {
       qc.setQueryData(["me"], await send<Me>("/api/me", "PATCH", { digest_opt_in: on }));
@@ -64,6 +72,14 @@ function Profile({ me }: { me: Me }) {
           <select value={locale} onChange={(e) => setLocale(e.target.value as Me["locale"])}>
             <option value="he">עברית</option>
             <option value="en">English</option>
+          </select>
+        </label>
+        <label>{t.gender}
+          <select value={me.gender ?? ""} onChange={(e) => setGender(e.target.value as Me["gender"])}>
+            {!me.gender && <option value="" disabled>{t.genderPick}</option>}
+            <option value="male">{t.male}</option>
+            <option value="female">{t.female}</option>
+            <option value="none">{t.noSay}</option>
           </select>
         </label>
         <button className="c-btn">{t.save}</button>
