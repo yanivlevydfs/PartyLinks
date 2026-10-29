@@ -1141,11 +1141,15 @@ def _jsonld_tag(data: dict[str, Any]) -> str:
     return f'<script type="application/ld+json">{text}</script>'
 
 
-def render(template: str, page: Page, cfg: Settings) -> str:
+def render(template: str, page: Page, cfg: Settings, alt: Page | None = None) -> str:
+    """``alt``: the same page in the other language; a pasted link's preview (og/twitter) shows both."""
     canonical = _url(cfg, page.path, page.lang if page.lang in page.langs else page.langs[0])
     image = page.image or f"{cfg.site.base_url}/og-default.png?v=spotx2"
     t = TEXT[page.lang]
     other = "en" if page.lang == "he" else "he"
+    preview = page.description
+    if alt and alt.description and alt.description != page.description:
+        preview = _clip(f"{page.description} | {alt.description}", 300)
     head = [
         f"<title>{escape(page.title)}</title>",
         f'<meta name="description" content="{escape(page.description)}" />',
@@ -1158,14 +1162,15 @@ def render(template: str, page: Page, cfg: Settings) -> str:
         f'<meta property="og:type" content="{page.og_type}" />',
         f'<meta property="og:site_name" content="{escape(cfg.site.name)}" />',
         f'<meta property="og:title" content="{escape(page.title)}" />',
-        f'<meta property="og:description" content="{escape(page.description)}" />',
+        f'<meta property="og:description" content="{escape(preview)}" />',
         f'<meta property="og:url" content="{escape(canonical)}" />',
         f'<meta property="og:image" content="{escape(image)}" />',
+        f'<meta property="og:image:alt" content="{escape(page.title)}" />',
         f'<meta property="og:locale" content="{t["locale"]}" />',
         *([f'<meta property="og:locale:alternate" content="{TEXT[other]["locale"]}" />'] if len(page.langs) > 1 else []),
         '<meta name="twitter:card" content="summary_large_image" />',
         f'<meta name="twitter:title" content="{escape(page.title)}" />',
-        f'<meta name="twitter:description" content="{escape(page.description)}" />',
+        f'<meta name="twitter:description" content="{escape(preview)}" />',
         f'<meta name="twitter:image" content="{escape(image)}" />',
         *(f'<meta name="{name}" content="{escape(token)}" />' for name, token in (
             ("google-site-verification", cfg.site.verification.google), ("msvalidate.01", cfg.site.verification.bing),
@@ -1384,11 +1389,13 @@ def register(app: FastAPI, site_dir: Path) -> None:
         def make() -> tuple[bytes, int]:
             with db.session(write=False) as session:
                 result = build(session, settings, lang)
+                # The other language too, for the bilingual link preview (once per cached page).
+                alt = build(session, settings, "he" if lang == "en" else "en") if result and len(result.langs) > 1 else None
             if result is None:
                 t = TEXT[lang]
                 result = Page(t["not_found"], t["site_desc"], request.url.path, lang, noindex=True, status=missing,
                               body=f"<h1>{t['not_found']}</h1>")  # fmt: skip
-            return render(index.read_text(encoding="utf-8"), result, settings).encode(), result.status
+            return render(index.read_text(encoding="utf-8"), result, settings, alt).encode(), result.status
 
         body, code = rendered.get((request.url.path, request.url.query), make)
         return HTMLResponse(body, status_code=code)
