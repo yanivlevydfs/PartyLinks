@@ -58,13 +58,13 @@ site:
   # accessibility coordinator who can be reached: fill these in before going public.
   accessibility:
     coordinator: ""        # full name
-    email: ""
+    email: spotxisrael@gmail.com
     phone: ""
     updated: 2026-10-26    # last review of the statement (renamed SPOTX)
   # Privacy and cookie policy at /privacy (Israeli Privacy Protection Law, Amendment 13): a contact
   # for access / correction / deletion requests. The cookie banner itself is in web/src/consent.tsx.
   privacy:
-    email: ""
+    email: spotxisrael@gmail.com
     updated: 2026-10-26    # last review of the policy (renamed SPOTX)
   # New pages pushed to Bing / Yandex (src/partylinks/indexnow.py). The key is public (served at
   # /<key>.txt); runs only when base_url is https, so never from localhost.

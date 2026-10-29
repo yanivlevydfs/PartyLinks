@@ -27,8 +27,7 @@ Adding client-side analytics later would mean updating `consent.tsx` and the pri
 
 ## Open items
 
-- [ ] **Privacy contact email:** `site.privacy.email` is empty. `/privacy` says the address
-  "will be published soon", and the admin page shows a warning.
-- [ ] **Accessibility coordinator:** `site.accessibility` (name, and an email or phone) is empty.
+- [x] **Privacy contact email:** `site.privacy.email` is spotxisrael@gmail.com (also the contact address).
+- [ ] **Accessibility coordinator:** `site.accessibility.email` is spotxisrael@gmail.com; the coordinator's name is still empty.
   The law requires a reachable coordinator.
 - [ ] Have a lawyer review the privacy policy text.
