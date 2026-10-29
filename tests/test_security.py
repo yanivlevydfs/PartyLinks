@@ -250,6 +250,18 @@ def test_ticket_redirect_only_goes_to_web_pages(tmp_path: Path) -> None:
         assert c.get("/go/https://evil.example/").status_code == 404  # an id, never a URL to follow
 
 
+def test_ticket_link_limit_slows_a_crawler_but_never_bans_it(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    settings.security.go_rate_limit_per_minute, settings.security.ban_after_strikes = 3, 2
+    seed(settings, [event("ok", datetime.now(UTC) + timedelta(days=2))])
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app, follow_redirects=False, client=("216.73.217.111", 1)) as c:
+        bot = {"user-agent": "Mozilla/5.0 (compatible; ClaudeBot/1.0; +claudebot@anthropic.com)"}
+        codes = [c.get("/go/test:ok", headers=bot).status_code for _ in range(10)]
+        assert codes[:3] == [302] * 3 and set(codes[3:]) == {429}
+        assert c.get("/robots.txt", headers=bot).status_code == 200  # never banned from the site
+
+
 def test_cors_lets_only_the_site_read_and_never_write(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     app = create_app(settings, start_scheduler=False)
