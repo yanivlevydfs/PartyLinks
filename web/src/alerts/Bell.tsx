@@ -49,6 +49,11 @@ export function Bell() {
   }, [open]);
   if (!me) return null;
   const unseen = bell.data?.unseen ?? 0;
+  /** Remove one notification, or all of them (no id). */
+  const remove = (eventId?: string) => {
+    const q = eventId ? `?event_id=${encodeURIComponent(eventId)}` : "";
+    send(`/api/me/bell${q}`, "DELETE").then(() => bell.refetch()).catch(() => {});
+  };
   const toggle = () => {
     setOpen(!open);
     if (!open && unseen) send("/api/me/bell/seen", "POST").then(() => bell.refetch()).catch(() => {});
@@ -66,7 +71,10 @@ export function Bell() {
       {saved !== null && <p className="bell-toast" role="status">{saved ? t.saved : t.failed}</p>}
       {open && (
         <div className="bell-pop">
-          <b className="bell-title">{t.bell}</b>
+          <div className="bell-head">
+            <b className="bell-title">{t.bell}</b>
+            {!!bell.data?.items.length && <button type="button" className="link-btn" onClick={() => remove()}>{t.clearAll}</button>}
+          </div>
           {!bell.data?.items.length ? (
             <p className="muted">{t.bellEmpty}</p>
           ) : (
@@ -84,6 +92,8 @@ export function Bell() {
                       <small className="bell-why" dir="auto">🔔 {h.alert}</small>
                     </span>
                   </Link>
+                  <button type="button" className="bell-x" aria-label={`${t.remove}: ${h.event.title}`} title={t.remove}
+                    onClick={() => remove(h.event.id)}>✕</button>
                 </li>
               ))}
             </ul>

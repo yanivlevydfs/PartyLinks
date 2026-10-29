@@ -60,3 +60,12 @@
   position: absolute; inset-inline-end: 0; top: calc(100% + 8px); z-index: 61; margin: 0; white-space: nowrap;
   padding: 8px 14px; border-radius: 999px; background: var(--panel-solid); border: 1px solid var(--green); color: var(--green);
 }
+.bell-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 6px 8px; }
+.bell-head .bell-title { padding: 0; }
+.bell-pop li { position: relative; }
+.bell-x {
+  position: absolute; top: 6px; inset-inline-end: 6px; width: 26px; height: 26px; padding: 0; border-radius: 50%;
+  border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px;
+}
+.bell-x:hover, .bell-x:focus-visible { background: var(--panel-2); color: var(--text); }
+.bell-pop li a { padding-inline-end: 34px; }

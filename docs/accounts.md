@@ -75,7 +75,7 @@ filters show on the site.
 - A match is a row in `alert_hits`; its key (alert, event) keeps an event from being sent twice. The first
   pass after a deploy only sets the cursor, so existing events never flood anyone.
 
-The header bell (signed in) shows the newest 30 matches, polls once a minute while the tab is visible, and
+Matches of events that are over are neither shown nor counted, and each matcher pass deletes them from `alert_hits` (before retention deletes the event). The header bell (signed in) shows the newest 30 matches, polls once a minute while the tab is visible, and
 marks them seen when opened. "For you" on the home page shows up to 12 upcoming events matching any active
 alert (cached 10 minutes per user). Matches go with their event when it ends. Code: `src/partylinks/alerts/`,
 `web/src/alerts/`.
@@ -121,6 +121,7 @@ A Resend account problem (key, quota, billing) stops the run and shows in the ad
 | POST | `/api/me/alerts/preview` | The same for criteria not saved yet (the form's "N events match now") |
 | GET | `/api/me/bell` | `{unseen, items: [{event, alert, matched_at, seen}]}` |
 | POST | `/api/me/bell/seen` | Mark all as seen |
+| DELETE | `/api/me/bell?event_id=` | Remove one notification, or all of them without `event_id` (never re-sent: the matcher only looks at new events) |
 | GET | `/api/me/for-you` | Up to 12 upcoming events matching any active alert |
 
 Writes need the header `X-Requested-With: spotx` and, when the browser sends one, an `Origin` matching

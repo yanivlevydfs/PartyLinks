@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from cachetools import TTLCache
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from partylinks.accounts.guard import SameOrigin, limited
@@ -17,7 +17,7 @@ from partylinks.accounts.sessions import UserDep
 from partylinks.alerts.criteria import Criteria, unknown
 from partylinks.alerts.models import AlertHitRow, AlertRow
 from partylinks.config import Settings
-from partylinks.db import EventRow, utcnow
+from partylinks.db import EventRow, upcoming_filter, utcnow
 from partylinks.saved.routes import cards
 
 NO_STORE = {"Cache-Control": "private, no-store"}
@@ -42,6 +42,12 @@ class AlertPatch(BaseModel):
     name: str | None = Field(None, max_length=80)
     instant: bool | None = None
     active: bool | None = None
+
+
+def _live() -> Any:
+    """A match of an event not over yet: an ended one is neither shown nor counted (and the matcher's pass
+    deletes it, before retention gets to the event)."""
+    return AlertHitRow.event_id.in_(select(EventRow.id).where(upcoming_filter()))
 
 
 def _today(cfg: Settings) -> Any:
@@ -85,7 +91,7 @@ def list_alerts(user: UserDep, request: Request, response: Response) -> dict[str
         unseen = dict(
             session.execute(
                 select(AlertHitRow.alert_id, func.count())
-                .where(AlertHitRow.user_id == user.id, AlertHitRow.seen_at.is_(None))
+                .where(AlertHitRow.user_id == user.id, AlertHitRow.seen_at.is_(None), _live())
                 .group_by(AlertHitRow.alert_id)
             ).all()
         )
@@ -176,12 +182,13 @@ def bell(user: UserDep, request: Request, response: Response) -> dict[str, Any]:
     response.headers.update(NO_STORE)
     with request.app.state.db.session(write=False) as session:
         unseen = session.scalar(
-            select(func.count()).select_from(AlertHitRow).where(AlertHitRow.user_id == user.id, AlertHitRow.seen_at.is_(None))
+            select(func.count()).select_from(AlertHitRow)
+            .where(AlertHitRow.user_id == user.id, AlertHitRow.seen_at.is_(None), _live())
         ) or 0  # fmt: skip
         hits = session.execute(
             select(AlertHitRow.event_id, AlertHitRow.matched_at, AlertHitRow.seen_at, AlertRow.name)
             .join(AlertRow, AlertRow.id == AlertHitRow.alert_id)
-            .where(AlertHitRow.user_id == user.id)
+            .where(AlertHitRow.user_id == user.id, _live())
             .order_by(AlertHitRow.matched_at.desc())
             .limit(BELL_SIZE * 2)  # one event can match two alerts: shown once
         ).all()
@@ -205,6 +212,18 @@ def bell_seen(user: UserDep, request: Request) -> Response:
             .where(AlertHitRow.user_id == user.id, AlertHitRow.seen_at.is_(None))
             .values(seen_at=utcnow())
         )
+    return Response(status_code=204)
+
+
+@router.delete("/bell", status_code=204, dependencies=WRITE)
+def bell_remove(user: UserDep, request: Request, event_id: str | None = None) -> Response:
+    """Remove one notification (``event_id``) or all of them. A removed match never comes back: the matcher
+    only looks at events new since its last pass."""
+    with request.app.state.db.session() as session:
+        where = [AlertHitRow.user_id == user.id]
+        if event_id is not None:
+            where.append(AlertHitRow.event_id == event_id)
+        session.execute(delete(AlertHitRow).where(*where))
     return Response(status_code=204)
 
 

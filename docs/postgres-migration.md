@@ -705,3 +705,6 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Queries:** אירועים שצריכים כרטיס: ‏`events WHERE is_primary AND upcoming AND NOT EXISTS (event_images JOIN events listing ON listing.group_id = events.group_id WHERE downloaded_at IS NOT NULL OR error IS NULL)`, על האינדקס של `group_id`. כל כרטיס נשמר בטרנזקציה משלו: בדיקה חוזרת שאין תמונה ו-`INSERT ... ON CONFLICT (event_id) DO UPDATE`.
 - **נמדד:** ‏28,000 אירועים מקומית: 1.5 ש' למציאה; 104 מ"ש לכרטיס, 4 במקביל.
 - **Tests:** ‏`tests/test_artwork.py` (‏6). ‏526/526.
+
+### 2026-10-29 (התראות של אירועים שהסתיימו)
+- **Queries:** כל מעבר של ה-matcher (כל 15 דק') מתחיל ב-`DELETE FROM alert_hits WHERE event_id NOT IN (SELECT id FROM events WHERE <upcoming>)`: התראות של אירועים שהסתיימו נמחקות מיד, לא רק כשה-retention מוחק את האירוע. הפעמון ורשימת ההתראות סופרים ומציגים רק `event_id IN (<upcoming>)`. ‏`DELETE /api/me/bell` מוחק התראה אחת (`event_id`) או את כולן.

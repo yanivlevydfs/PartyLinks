@@ -14,17 +14,20 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, select, text
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.orm import Session
 
 from partylinks.accounts.models import UserRow
 from partylinks.alerts.criteria import Criteria
-from partylinks.alerts.models import AlertRow, AlertStateRow
+from partylinks.alerts.models import AlertHitRow, AlertRow, AlertStateRow
 from partylinks.config import Settings
 from partylinks.db import Database, EventRow, upcoming_filter, utcnow
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import CursorResult
 
 log = logging.getLogger(__name__)
 # An event is matched once it is this old: by then its run has committed (first_seen_at is stamped before the
@@ -87,8 +90,16 @@ def _insert_hits(session: Session, rows: list[tuple[int, str, str, datetime]]) -
     ))  # fmt: skip
 
 
+def prune_ended(db: Database) -> int:
+    """Matches of events that are over leave the table at once, not only when retention deletes the event."""
+    with db.session() as session:
+        ended = delete(AlertHitRow).where(AlertHitRow.event_id.not_in(select(EventRow.id).where(upcoming_filter())))
+        return cast("CursorResult[Any]", session.execute(ended)).rowcount or 0
+
+
 def run(settings: Settings, db: Database) -> int:
     """One pass over the events first seen since the last one. Returns the number of new hits."""
+    prune_ended(db)
     now = utcnow()
     upto = now - SETTLE
     today = datetime.now(ZoneInfo(settings.timezone)).date()

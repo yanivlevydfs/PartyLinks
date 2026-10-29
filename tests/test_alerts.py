@@ -11,14 +11,14 @@ from zoneinfo import ZoneInfo
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from partylinks.accounts.models import UserRow
 from partylinks.alerts import matcher
 from partylinks.alerts.criteria import Criteria
 from partylinks.alerts.models import AlertHitRow, AlertRow
 from partylinks.api import create_app
-from partylinks.db import Database, delete_events, utcnow
+from partylinks.db import Database, EventRow, delete_events, utcnow
 from partylinks.models import TicketTier
 from tests.test_accounts import OURS, FakeGoogle, _settings, sign_in
 from tests.test_storage_api import event, seed
@@ -186,3 +186,32 @@ def test_admin_sees_the_alert_count(tmp_path: Path, fake: FakeGoogle) -> None:
         admin.delete(f"/admin/api/users/{uid}", headers=OURS)
     with db.session() as s:
         assert s.scalar(select(func.count()).select_from(AlertRow)) == 0  # deleting the user deletes the alerts
+
+
+def test_ended_events_leave_the_bell_and_users_can_remove_notifications(tmp_path: Path, fake: FakeGoogle) -> None:
+    app, db, settings = _app(tmp_path, events=[])
+    matcher.run(settings, db)
+    with TestClient(app) as c:
+        sign_in(c, fake)
+        c.post("/api/me/alerts", json={"criteria": {"q": "techno"}}, headers=OURS)
+        seed(settings, [event(k, SOON + timedelta(hours=i)) for i, k in enumerate("abc")])
+        matcher.run(settings, db)
+        assert c.get("/api/me/bell").json()["unseen"] == 3
+        # Event a ends: gone from the count and the list at once, and the next pass deletes its row.
+        with db.session() as s:
+            past = datetime.now(UTC) - timedelta(days=2)
+            s.execute(update(EventRow).where(EventRow.id == "test:a").values(start_at=past, end_at=past + timedelta(hours=2)))
+        bell = c.get("/api/me/bell").json()
+        assert bell["unseen"] == 2 and {i["event"]["id"] for i in bell["items"]} == {"test:b", "test:c"}
+        assert c.get("/api/me/alerts").json()["items"][0]["unseen"] == 2
+        matcher.run(settings, db)
+        with db.session() as s:
+            assert s.scalar(select(func.count()).select_from(AlertHitRow).where(AlertHitRow.event_id == "test:a")) == 0
+        # The user removes one, then all.
+        assert c.delete("/api/me/bell", params={"event_id": "test:b"}).status_code == 403  # not from our pages
+        assert c.delete("/api/me/bell", params={"event_id": "test:b"}, headers=OURS).status_code == 204
+        assert [i["event"]["id"] for i in c.get("/api/me/bell").json()["items"]] == ["test:c"]
+        assert c.delete("/api/me/bell", headers=OURS).status_code == 204
+        assert c.get("/api/me/bell").json() == {"unseen": 0, "items": []}
+        matcher.run(settings, db)
+        assert c.get("/api/me/bell").json()["items"] == []  # removed ones never come back
