@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "createdAt": "2026-10-29T13:36:44.138Z",
+        "reason": "Claude: email template; mail clients don't load web fonts, so Arial/Helvetica is the deliberate safe stack"
+      }
+    ]
+  }
+}
