@@ -51,6 +51,12 @@ def outbox(monkeypatch: pytest.MonkeyPatch) -> Outbox:
     return box
 
 
+@pytest.fixture(autouse=True)
+def _no_settle(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Match events the moment they are saved (production waits matcher.SETTLE for post-scrape steps)."""
+    monkeypatch.setattr(matcher, "SETTLE", timedelta(0))
+
+
 def _app(tmp_path: Path, events: list[Any] | None = None) -> tuple[Any, Database, Any]:
     settings = _settings(tmp_path)
     settings.mail = settings.mail.model_validate({"resend_api_key": "re_test"})
@@ -154,11 +160,11 @@ def test_switches_account_errors_and_admin(tmp_path: Path, fake: FakeGoogle, out
         uid = admin.get("/api/me").json()["id"]
         preview = admin.get("/admin/api/email/preview", params={"user_id": uid})
         assert preview.status_code == 200 and "Techno night a" in preview.text
-        assert admin.post("/admin/api/email/test", params={"kind": "welcome"}).json() == {"sent": True}
-        admin.post("/admin/api/email/switches", json={"digest": False})
+        assert admin.post("/admin/api/email/test", params={"kind": "welcome"}, headers=OURS).json() == {"sent": True}
+        admin.post("/admin/api/email/switches", json={"digest": False}, headers=OURS)
         jobs.digest(settings, db)
         assert len(outbox.messages) == 1  # only the test
-        admin.post("/admin/api/email/switches", json={"digest": True})
+        admin.post("/admin/api/email/switches", json={"digest": True}, headers=OURS)
         outbox.fail = ResendError(code=402, error_type="payment_required", message="unpaid", suggested_action="")
         jobs.digest(settings, db)  # an account problem: recorded, nothing raised
         runs = admin.get("/admin/api/email").json()["runs"]

@@ -13,11 +13,11 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from partylinks.accounts.models import UserRow
@@ -27,6 +27,10 @@ from partylinks.config import Settings
 from partylinks.db import Database, EventRow, upcoming_filter, utcnow
 
 log = logging.getLogger(__name__)
+# An event is matched once it is this old: by then its run has committed (first_seen_at is stamped before the
+# commit), duplicates are regrouped and places geocoded (area / region filters need them).
+# ponytail: a fixed wait; a "post-steps done" mark per run would allow less, if 30 minutes ever matters.
+SETTLE = timedelta(minutes=30)
 LISTS = ("genre", "region", "area", "time_slot")  # any-of: the union of each value's events
 WHEN = ("weekend", "date_from", "date_to")  # one window together
 
@@ -86,16 +90,24 @@ def _insert_hits(session: Session, rows: list[tuple[int, str, str, datetime]]) -
 def run(settings: Settings, db: Database) -> int:
     """One pass over the events first seen since the last one. Returns the number of new hits."""
     now = utcnow()
+    upto = now - SETTLE
     today = datetime.now(ZoneInfo(settings.timezone)).date()
     with db.session() as session:
         state = session.get(AlertStateRow, 1)
         if state is None:  # the first pass starts now: no flood of events that were already there
-            session.add(AlertStateRow(id=1, cursor=now))
+            session.add(AlertStateRow(id=1, cursor=upto))
             return 0
+        # New = a group whose first listing was first seen in this window (a second listing of a party
+        # already announced is not news), shown by its primary listing.
+        group = func.coalesce(EventRow.group_id, EventRow.id)
+        new_groups = (
+            select(group).group_by(group)
+            .having(func.min(EventRow.first_seen_at) > state.cursor, func.min(EventRow.first_seen_at) <= upto)
+        )  # fmt: skip
         new_ids = list(session.scalars(
-            select(EventRow.id).where(EventRow.first_seen_at > state.cursor, EventRow.is_primary.is_(True), upcoming_filter())
+            select(EventRow.id).where(group.in_(new_groups), EventRow.is_primary.is_(True), upcoming_filter())
         ))  # fmt: skip
-        state.cursor = now
+        state.cursor = upto
         if not new_ids:
             return 0
         alerts = session.execute(

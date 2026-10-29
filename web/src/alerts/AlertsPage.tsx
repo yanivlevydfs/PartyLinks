@@ -57,8 +57,7 @@ function NewAlert({ full }: { full: boolean }) {
   const [note, setNote] = useState("");
   const patch = (p: Partial<Criteria>) => setC((cur) => ({ ...cur, ...p }));
   const preview = usePreview(c);
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async () => {
     if (isEmpty(c)) return setNote(t.emptyCriteria);
     try {
       await create(c, name(c), instant);
@@ -71,10 +70,12 @@ function NewAlert({ full }: { full: boolean }) {
   };
   if (full) return <p className="muted">{t.tooMany}</p>;
   return (
-    <form className="alert-new-form" onSubmit={submit}>
+    // Not a <form>: the chips and genre picker are plain buttons, which would each submit one.
+    <section className="alert-new-form">
       <h2>{t.newTitle}</h2>
       <label className="alert-word">{t.word}
-        <input value={c.q} maxLength={100} onChange={(e) => patch({ q: e.target.value })} dir="auto" />
+        <input value={c.q} maxLength={100} onChange={(e) => patch({ q: e.target.value })} dir="auto"
+          onKeyDown={(e) => e.key === "Enter" && submit()} />
       </label>
       <div className="alert-chips">
         {(["all", "weekend", "week", "month"] as const).map((w) => (
@@ -105,9 +106,9 @@ function NewAlert({ full }: { full: boolean }) {
       <p className="muted" role="status">
         {isEmpty(c) ? t.emptyCriteria : preview.data ? t.now(preview.data.total) : <Loader small />}
       </p>
-      <button className="c-btn" disabled={isEmpty(c)}>{t.create}</button>
+      <button type="button" className="c-btn" disabled={isEmpty(c)} onClick={submit}>{t.create}</button>
       {note && <p className="adm-err" role="alert">{note}</p>}
-    </form>
+    </section>
   );
 }
 

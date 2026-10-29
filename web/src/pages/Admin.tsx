@@ -25,6 +25,7 @@ export async function call<T = any>(path: string, init: RequestInit = {}): Promi
     headers: {
       ...(init.body ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "X-Requested-With": "spotx", // our page: what admin changes signed in with Google need (cross-site requests can't set it)
       ...init.headers,
     },
   });

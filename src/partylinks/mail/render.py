@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -123,8 +123,13 @@ def _forecasts(settings: Settings, cards: list[dict[str, Any]]) -> dict[str, str
             continue
         lat, lng = spots[c["id"]]
         start = datetime.fromisoformat(c["start_at"])
-        fitting = [s for s in slots.get((round(lat, 1), round(lng, 1)), []) if datetime.fromisoformat(s[0]) <= start]
-        if fitting and (s := fitting[-1])[2] is not None:
+        cell = slots.get((round(lat, 1), round(lng, 1)), [])
+        fitting = [s for s in cell if datetime.fromisoformat(s[0]) <= start]
+        # Started already (today's morning tour): the forecast begins now, so its first slot.
+        s = fitting[-1] if fitting else (cell[0] if cell else None)
+        if s is not None and start > datetime.fromisoformat(s[0]) + timedelta(hours=s[4]):
+            s = None  # past the forecast's reach: no weather rather than the wrong day's
+        if s is not None and s[2] is not None:
             out[c["id"]] = f"{_sky(s[1])} {round(s[2])}°"
     return out
 

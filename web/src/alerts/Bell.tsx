@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { send, useMe } from "../accounts/useMe";
-import { useStore } from "../store";
 import { eventPath, Img, sized, useT, when } from "../ui";
 import { useAlertText } from "./i18n";
-import { EMPTY, SAVE_PARAM } from "./SaveAlertButton";
-import { toCriteria, useAlertActions, useBell, useCriteriaName } from "./useAlerts";
+import { pendingCriteria, SAVE_PARAM } from "./SaveAlertButton";
+import { isEmpty, useAlertActions, useBell, useCriteriaName } from "./useAlerts";
 import "./alerts.css";
 
-function usePendingAlert() {
+/** Back from Google with ?save_alert=...: save the alert the visitor asked for, and say whether it worked. */
+function usePendingAlert(setSaved: (ok: boolean) => void) {
   const me = useMe().data;
   const { create } = useAlertActions();
   const name = useCriteriaName();
@@ -20,8 +20,8 @@ function usePendingAlert() {
     if (!me || !pending) return;
     url.searchParams.delete(SAVE_PARAM);
     history.replaceState(history.state, "", url.pathname + url.search + url.hash);
-    const criteria = pending.startsWith("q:") ? { ...EMPTY, q: pending.slice(2) } : toCriteria(useStore.getState().filters);
-    create(criteria, name(criteria)).catch(() => {});
+    const criteria = pendingCriteria(pending);
+    if (criteria && !isEmpty(criteria)) create(criteria, name(criteria)).then(() => setSaved(true)).catch(() => setSaved(false));
   }, [me?.id]);
 }
 
@@ -32,7 +32,13 @@ export function Bell() {
   const bell = useBell();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
-  usePendingAlert();
+  const [saved, setSaved] = useState<boolean | null>(null);
+  usePendingAlert(setSaved);
+  useEffect(() => {
+    if (saved === null) return;
+    const done = setTimeout(() => setSaved(null), 6000);
+    return () => clearTimeout(done);
+  }, [saved]);
   useEffect(() => {
     if (!open) return;
     const away = (e: Event) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
@@ -57,6 +63,7 @@ export function Bell() {
         {unseen > 0 && <b aria-hidden>{unseen > 99 ? "99+" : unseen}</b>}
       </button>
       <span className="sr-only" aria-live="polite">{unseen ? t.unseen(unseen) : ""}</span>
+      {saved !== null && <p className="bell-toast" role="status">{saved ? t.saved : t.failed}</p>}
       {open && (
         <div className="bell-pop">
           <b className="bell-title">{t.bell}</b>

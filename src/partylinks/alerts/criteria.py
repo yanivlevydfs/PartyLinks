@@ -29,7 +29,8 @@ class Criteria(BaseModel):
     @field_validator("q")
     @classmethod
     def _q(cls, v: str) -> str:
-        return " ".join(v.split())
+        v = " ".join(v.split())
+        return v if len(v) >= 2 else ""  # the site searches 2+ letters: one letter is no word (else: every event)
 
     @field_validator("when")
     @classmethod

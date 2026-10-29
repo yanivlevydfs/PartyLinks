@@ -2,7 +2,7 @@
 // "spotx-saved"). Signed in: the server, toggled optimistically. On sign-in the device's list is merged
 // into the account once, then cleared here.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { send, useMe } from "../accounts/useMe";
@@ -43,21 +43,30 @@ export function useServerSaved() {
   });
 }
 
+/** Once signed in, the hearts kept on this device join the account. Mounted once (the header's SavedLink),
+ *  not in useSaved: every heart on the page calls that, and each would send its own merge. */
+export function useMergeOnSignIn() {
+  const me = useMe().data;
+  const qc = useQueryClient();
+  const ids = useLocalSaved((s) => s.ids);
+  const clear = useLocalSaved((s) => s.clear);
+  const busy = useRef(false);
+  useEffect(() => {
+    if (!me || !ids.length || busy.current) return;
+    busy.current = true;
+    send<SavedList>("/api/me/saved/merge", "POST", { ids })
+      .then((list) => { qc.setQueryData(["saved", me.id], list); clear(); })
+      .catch(() => {}) // tried again on the next page
+      .finally(() => { busy.current = false; });
+  }, [me?.id, ids.length]);
+}
+
 export function useSaved() {
   const me = useMe().data;
   const qc = useQueryClient();
   const local = useLocalSaved();
   const server = useServerSaved();
   const ids = me ? server.data?.ids ?? [] : local.ids;
-
-  // Once signed in, the hearts kept on this device join the account.
-  useEffect(() => {
-    if (!me || !local.ids.length) return;
-    const pending = local.ids;
-    send<SavedList>("/api/me/saved/merge", "POST", { ids: pending })
-      .then((list) => { qc.setQueryData(["saved", me.id], list); local.clear(); })
-      .catch(() => {}); // tried again on the next page
-  }, [me?.id, local.ids.length]);
 
   const toggle = async (id: string) => {
     if (!me) return local.toggle(id);

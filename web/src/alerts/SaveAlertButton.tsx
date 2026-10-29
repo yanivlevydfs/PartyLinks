@@ -14,11 +14,23 @@ export const EMPTY: Criteria = {
   q: "", genres: [], regions: [], areas: [], city: null, slots: [], freeOnly: false, discountOnly: false, when: "all",
 };
 
-/** Where to come back after Google: this page, saving the alert on arrival. ``q`` for an artist / venue alert. */
-function nextUrl(q?: string) {
+/** Where to come back after Google: this page, with the alert itself in the address (the page's filters
+ *  don't survive the trip to Google and back), saved on arrival (Bell). */
+function nextUrl(criteria: Criteria) {
   const url = new URL(location.href);
-  url.searchParams.set(SAVE_PARAM, q ? `q:${q}` : "1");
+  url.searchParams.set(SAVE_PARAM, JSON.stringify(criteria));
   return url.pathname + url.search;
+}
+
+/** The alert a visitor asked for before signing in, from the address (null: none, or not one of ours). */
+export function pendingCriteria(raw: string | null): Criteria | null {
+  if (!raw) return null;
+  try {
+    const c = JSON.parse(raw);
+    return c && typeof c === "object" ? { ...EMPTY, ...c } : null;
+  } catch {
+    return null;
+  }
 }
 
 export function SaveAlertButton({ filters, q, label }: { filters?: Filters; q?: string; label?: string }) {
@@ -58,7 +70,7 @@ export function SaveAlertButton({ filters, q, label }: { filters?: Filters; q?: 
           <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="alert-signin" onClick={(e) => e.stopPropagation()}>
             <h2 id="alert-signin">{t.signInTitle}</h2>
             <p>{t.signInText}</p>
-            <SignInButton next={nextUrl(q)} />
+            <SignInButton next={nextUrl(criteria)} />
           </div>
         </div>
       )}

@@ -313,7 +313,9 @@ class SecurityMiddleware:
                     out.append((b"cache-control", b"no-store"))
                 elif cache and message["status"] == 200 and not any(k.lower() == b"cache-control" for k, _ in out):
                     out.append((b"cache-control", cache))
-                if message["status"] == 401 and not local:  # wrong admin token on any route: brute-force guard
+                # A wrong admin token on any route: brute-force guard. Only when a token was sent: a signed-out
+                # visitor's GET /api/me is a 401 too, and must not count against their address.
+                if message["status"] == 401 and not local and headers.get("authorization"):
                     self.guard.bad_token(ip, headers.get("authorization", ""), cfg, time.monotonic())
                 message = {**message, "headers": out}
             await send(message)

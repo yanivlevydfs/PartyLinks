@@ -15,9 +15,14 @@ def scrub(text: str) -> str:
 
 
 class Redact(logging.Filter):
+    """The message and, for the plain-text format, the traceback (cached in ``exc_text``, which the
+    formatter reuses). The JSON format scrubs its own traceback (logs.JsonFormatter)."""
+
     def filter(self, record: logging.LogRecord) -> bool:
         if isinstance(record.args, tuple) and record.args:
             record.args = tuple(scrub(a) if isinstance(a, str) else a for a in record.args)
         elif isinstance(record.msg, str):
             record.msg = scrub(record.msg)
+        if record.exc_info and not record.exc_text:
+            record.exc_text = scrub(logging.Formatter().formatException(record.exc_info))
         return True

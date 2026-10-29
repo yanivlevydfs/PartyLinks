@@ -39,6 +39,8 @@ def sign_in(
         session.add(user)
     if user.blocked_at is not None:
         raise Blocked
+    if email != user.email and session.scalar(select(UserRow.id).where(UserRow.email == email, UserRow.id != user.id)):
+        raise EmailTaken  # their Google address changed to one another account already has
     user.email, user.picture, user.last_login_at = email, picture, utcnow()
     if email in {e.strip().lower() for e in admin_emails}:
         user.role = "admin"

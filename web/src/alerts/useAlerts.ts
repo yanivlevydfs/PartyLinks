@@ -41,7 +41,7 @@ export function toCriteria(f: Filters): Criteria {
 }
 
 export const isEmpty = (c: Criteria) =>
-  !c.q && !c.genres.length && !c.regions.length && !c.areas.length && !c.city && !c.slots.length && !c.freeOnly && !c.discountOnly;
+  c.q.trim().length < 2 && !c.genres.length && !c.regions.length && !c.areas.length && !c.city && !c.slots.length && !c.freeOnly && !c.discountOnly;
 
 /** A short name from the criteria, in the page's language ("Techno · Tel Aviv · Weekend"). */
 export function useCriteriaName() {

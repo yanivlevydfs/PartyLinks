@@ -83,15 +83,16 @@ def preview(request: Request, user_id: str, kind: Kind = "digest") -> HTMLRespon
 
 
 @router.post("/email/test")
-def test_send(request: Request, kind: Kind = "digest", user_id: str | None = None) -> dict[str, Any]:
-    """Sends one email of ``kind`` to the signed-in admin (or, with the token, to ``user_id``)."""
+def test_send(request: Request, kind: Kind = "digest") -> dict[str, Any]:
+    """Sends one email of ``kind`` to the signed-in admin's own address, never to another user: a digest
+    carries ticket links, so it goes only to someone who agreed (Communications Law §30A)."""
     settings = request.app.state.settings
     if not mailer.ready(settings):
         raise HTTPException(409, "email is not set up (PARTYLINKS_MAIL__RESEND_API_KEY)")
     me = optional_user(request)
-    target = user_id or (me.id if me else None)
-    if target is None:
-        raise HTTPException(400, "sign in with Google, or pass user_id")
+    if me is None:
+        raise HTTPException(400, "sign in with Google: the test goes to your own address")
+    target = me.id
     started = jobs.utcnow()
     with request.app.state.db.session(write=False) as session:
         user = session.get(UserRow, target)

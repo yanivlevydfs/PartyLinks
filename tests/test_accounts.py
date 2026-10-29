@@ -183,16 +183,16 @@ def test_admin_users_actions(tmp_path: Path, fake: FakeGoogle) -> None:
             and stats["admins"] == 1
             and sum(d["n"] for d in stats["per_day"]) == 2
         )
-        admin.post(f"/admin/api/users/{dana}/block")
+        admin.post(f"/admin/api/users/{dana}/block", headers=OURS)
         assert user.get("/api/me").status_code == 401
         assert sign_in(user, fake, nxt="/").headers["location"] == "/?signin=blocked"
-        admin.post(f"/admin/api/users/{dana}/unblock")
+        admin.post(f"/admin/api/users/{dana}/unblock", headers=OURS)
         sign_in(user, fake)
-        admin.post(f"/admin/api/users/{dana}/role", json={"role": "admin"})
+        admin.post(f"/admin/api/users/{dana}/role", json={"role": "admin"}, headers=OURS)
         assert user.get("/api/me").json()["role"] == "admin"
-        admin.post(f"/admin/api/users/{dana}/revoke")
+        admin.post(f"/admin/api/users/{dana}/revoke", headers=OURS)
         assert user.get("/api/me").status_code == 401
-        assert admin.delete(f"/admin/api/users/{dana}").json() == {"ok": True}
+        assert admin.delete(f"/admin/api/users/{dana}", headers=OURS).json() == {"ok": True}
         assert admin.get(f"/admin/api/users/{dana}").status_code == 404
 
 
@@ -219,3 +219,34 @@ def test_logs_never_carry_emails_or_tokens() -> None:
     )
     Redact().filter(record)
     assert record.getMessage() == "1.2.3.4 - /api/email/unsubscribe?t=***"
+
+
+def test_signed_out_visitors_are_not_struck(tmp_path: Path) -> None:
+    """A signed-out page load asks /api/me (401): that is no wrong admin token, so no strike."""
+    settings = _settings(tmp_path)
+    settings.security.ban_after_strikes = 1
+    with TestClient(create_app(settings, start_scheduler=False), client=("198.51.100.30", 1)) as c:
+        for _ in range(3):
+            assert c.get("/api/me").status_code == 401
+        assert c.get("/health").status_code == 200  # not banned
+
+
+def test_changed_google_email_already_taken(tmp_path: Path, fake: FakeGoogle) -> None:
+    app, _ = _app(tmp_path)
+    with TestClient(app) as c:
+        sign_in(c, fake, email="a@example.com", sub="g-a")
+        c.cookies.clear()
+        sign_in(c, fake, email="b@example.com", sub="g-b")
+        c.cookies.clear()
+        # g-a's Google address is now b@example.com, which g-b has: refused, not a 500.
+        assert sign_in(c, fake, email="b@example.com", sub="g-a", nxt="/").headers["location"] == "/?signin=taken"
+
+
+def test_admin_changes_with_the_cookie_need_our_pages(tmp_path: Path, fake: FakeGoogle) -> None:
+    app, _ = _app(tmp_path)
+    with TestClient(app) as admin:
+        sign_in(admin, fake, email=ADMIN, sub="g-admin")
+        uid = admin.get("/api/me").json()["id"]
+        assert admin.get("/admin/api/users").status_code == 200  # reading needs no header
+        assert admin.post(f"/admin/api/users/{uid}/revoke").status_code == 403  # a cross-site form could do this
+        assert admin.post(f"/admin/api/users/{uid}/revoke", headers=OURS).status_code == 200

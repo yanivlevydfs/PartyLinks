@@ -1,12 +1,13 @@
 // The header's heart: a link to /saved with the number of saved events.
 import { Link } from "react-router-dom";
 import { useSavedText } from "./i18n";
-import { useSaved } from "./useSaved";
+import { useMergeOnSignIn, useSaved } from "./useSaved";
 import "./saved.css";
 
 export function SavedLink() {
   const t = useSavedText();
   const { count } = useSaved();
+  useMergeOnSignIn();
   return (
     <Link className="saved-link" to="/saved" aria-label={count ? `${t.title} (${count})` : t.title} title={t.title}>
       <svg viewBox="0 0 24 24" aria-hidden width="18" height="18">

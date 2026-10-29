@@ -147,7 +147,7 @@ def instant(settings: Settings, db: Database) -> None:
                 sections=[Section("", events)], button=(t["alerts_button"], link(settings, "/alerts", "instant", user.locale)),
             ))  # fmt: skip
         session.expunge_all()
-    done = _send(settings, db, "instant", f"instant:{started:%Y%m%d%H}", messages, skipped, started)
+    done = _send(settings, db, "instant", f"instant:{started.timestamp():.0f}", messages, skipped, started)
     with db.session() as session:
         now = utcnow()
         # Every pending match of a user it went to (more than INSTANT_MAX are dropped: they are in the bell).

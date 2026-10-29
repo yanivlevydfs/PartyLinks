@@ -21,7 +21,7 @@ from datetime import UTC, datetime
 from io import TextIOWrapper
 from typing import IO, Any, cast
 
-from partylinks.accounts.redact import Redact
+from partylinks.accounts.redact import Redact, scrub
 from partylinks.config import LOG_FORMAT, LoggingSettings, project_path
 
 # Libraries that log every request; only their problems are worth a line.
@@ -39,11 +39,11 @@ class JsonFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
         if record.exc_info:
-            entry["exception"] = self.formatException(record.exc_info)
+            entry["exception"] = scrub(self.formatException(record.exc_info))
             # Log viewers show the message and fold the traceback: the error itself belongs on the line.
             exc = record.exc_info[1]
             if exc is not None:
-                entry["message"] += f": {type(exc).__name__}: {str(exc).splitlines()[0] if str(exc) else ''}"[:300]
+                entry["message"] += scrub(f": {type(exc).__name__}: {str(exc).splitlines()[0] if str(exc) else ''}")[:300]
         return json.dumps(entry, ensure_ascii=False)
 
 

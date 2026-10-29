@@ -26,6 +26,12 @@ from tests.test_storage_api import event, seed
 SOON = datetime.now(UTC) + timedelta(days=2)
 
 
+@pytest.fixture(autouse=True)
+def _no_settle(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Match events the moment they are saved (production waits matcher.SETTLE for post-scrape steps)."""
+    monkeypatch.setattr(matcher, "SETTLE", timedelta(0))
+
+
 def test_criteria_keep_dates_relative() -> None:
     c = Criteria(when="weekend", genres=["techno"], freeOnly=True)
     assert c.params(date(2026, 10, 29)) == {
@@ -38,7 +44,7 @@ def test_criteria_keep_dates_relative() -> None:
     with pytest.raises(ValidationError):
         Criteria(when="2026-11-03~2026-11-01")
     assert Criteria(genres=["a", "b"]).digest() == Criteria(genres=["b", "a"]).digest()
-    assert Criteria(when="weekend").is_empty() and not Criteria(q="x").is_empty()
+    assert Criteria(when="weekend").is_empty() and Criteria(q="x").is_empty() and not Criteria(q="xy").is_empty()
 
 
 def _app(tmp_path: Path, events: list[Any] | None = None, **extra: Any) -> tuple[Any, Database, Any]:
@@ -55,6 +61,8 @@ def test_alerts_api(tmp_path: Path, fake: FakeGoogle) -> None:
         assert c.post("/api/me/alerts", json={"criteria": {"q": "techno"}}, headers=OURS).status_code == 401
         sign_in(c, fake)
         assert c.post("/api/me/alerts", json={"criteria": {"when": "weekend"}}, headers=OURS).status_code == 422
+        one = c.post("/api/me/alerts", json={"criteria": {"q": "a"}}, headers=OURS)
+        assert one.status_code == 422  # one letter is no word: it would have matched every event
         bad = c.post("/api/me/alerts", json={"criteria": {"genres": ["nope"]}}, headers=OURS)
         assert bad.status_code == 422 and "genre nope" in bad.text
         made = c.post("/api/me/alerts", json={"criteria": {"q": "techno"}, "name": "Techno"}, headers=OURS)
@@ -87,10 +95,16 @@ VARIED = [  # (id, title, city, free, days ahead, hour)
     ("b1", "Reggae beach party", "Eilat", False, 6, 18),
 ]
 SEARCHES = [
-    {"q": "techno"}, {"q": "party", "freeOnly": True}, {"q": "zzzz-nothing"},
-    {"genres": ["techno"]}, {"genres": ["techno", "house"], "when": "week"},
-    {"regions": ["tel_aviv"]}, {"regions": ["tel_aviv"], "freeOnly": True},
-    {"q": "techno", "regions": ["tel_aviv"]}, {"slots": ["night"]}, {"freeOnly": True, "when": "month"},
+    {"q": "techno"},
+    {"q": "party", "freeOnly": True},
+    {"q": "zzzz-nothing"},
+    {"genres": ["techno"]},
+    {"genres": ["techno", "house"], "when": "week"},
+    {"regions": ["tel_aviv"]},
+    {"regions": ["tel_aviv"], "freeOnly": True},
+    {"q": "techno", "regions": ["tel_aviv"]},
+    {"slots": ["night"]},
+    {"freeOnly": True, "when": "month"},
     {"genres": ["jazz", "stand_up"], "slots": ["evening", "night"]},
 ]
 
@@ -126,7 +140,9 @@ def test_matcher_matches_what_events_shows(tmp_path: Path, fake: FakeGoogle) -> 
         for alert_id, search in zip([*ids, twin], [*SEARCHES, SEARCHES[0]], strict=True):
             with db.session() as s:
                 hit = set(s.scalars(select(AlertHitRow.event_id).where(AlertHitRow.alert_id == alert_id)))
-            shown = {e["id"] for e in c.get("/events", params=_api(Criteria(**search)) | {"page_size": 50}).json()["items"]}
+            shown = {
+                e["id"] for e in c.get("/events", params=_api(Criteria(**search)) | {"page_size": 50}).json()["items"]
+            }
             assert hit == shown, search
             matched += 0 < len(hit) < len(VARIED)  # a search that picks some events, not none or all
         assert matched >= 8
@@ -167,6 +183,6 @@ def test_admin_sees_the_alert_count(tmp_path: Path, fake: FakeGoogle) -> None:
         rows = {u["email"]: u for u in admin.get("/admin/api/users").json()["items"]}
         assert rows["dana@example.com"]["alerts"] == 1
         uid = rows["dana@example.com"]["id"]
-        admin.delete(f"/admin/api/users/{uid}")
+        admin.delete(f"/admin/api/users/{uid}", headers=OURS)
     with db.session() as s:
         assert s.scalar(select(func.count()).select_from(AlertRow)) == 0  # deleting the user deletes the alerts

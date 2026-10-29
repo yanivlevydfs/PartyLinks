@@ -45,9 +45,12 @@ RESTART_KEYS = ("database", "api")
 def require_admin(request: Request) -> None:
     """A signed-in admin (Google account with role admin); else the bearer token when ``admin.token``
     is set; otherwise only requests from this machine."""
+    from partylinks.accounts.guard import same_origin
     from partylinks.accounts.sessions import optional_user
 
     if (user := optional_user(request)) is not None and user.role == "admin":
+        if request.method not in ("GET", "HEAD"):
+            same_origin(request)  # a cookie rides along on a cross-site request: changes only from our pages
         return
     token = request.app.state.settings.admin.token
     if token is None:
