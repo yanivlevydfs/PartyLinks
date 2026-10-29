@@ -574,3 +574,29 @@ def test_tickchak_reads_every_configured_category_and_tags_its_events() -> None:
     assert cfg.categories["standup"] == "stand-up" and cfg.categories["parties"] == ""
     # One category, as before, when none are configured.
     assert TickchakScraper(cfg.model_copy(update={"categories": {}, "category_slug": "parties"}), HttpSettings(), "UTC").page_paths() == ["parties"]
+
+
+def test_the_shared_israeli_proxy_is_used_without_checking_the_list() -> None:
+    from partylinks.scrapers import base
+
+    base._israel_good, base._israel_dead = "http://il3:3", {}
+    http = HttpSettings(israel_proxy=", ".join(f"http://il{i}:{i}" for i in range(10)), backoff_seconds=0)
+    scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
+    asked: list[str | None] = []
+
+    def client(proxy: str | None) -> httpx.AsyncClient:
+        def answer(request: httpx.Request) -> httpx.Response:
+            asked.append(proxy)
+            return httpx.Response(200)
+
+        return httpx.AsyncClient(transport=httpx.MockTransport(answer))
+
+    scraper._new_client = client  # type: ignore[method-assign]
+
+    async def fetch() -> None:
+        async with scraper:
+            await scraper.request("GET", "https://site.example/")
+
+    asyncio.run(fetch())
+    assert asked == ["http://il3:3"]  # straight on the working one, no other proxy asked
+    base._israel_good = None

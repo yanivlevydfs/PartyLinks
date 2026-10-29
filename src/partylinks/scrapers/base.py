@@ -292,10 +292,9 @@ class BaseScraper[S: SourceSettings](ABC):
         """Try every Israeli proxy of the pool at once on the source's first URL, and keep only those that
         answer (any status: a refusal is the site's, not the proxy's). Walked one by one, a pool of dead
         free proxies took the whole 30-min run; in parallel it takes ``PROBE_SECONDS``. None answers: the
-        source goes on with the rest of its pool, or stops. The whole list every run, the ones found dead
+        source goes on with the rest of its pool, or stops. The whole list each time, the ones found dead
         lately too: free proxies come back, and a parallel check costs the same for 1 or 100."""
         global _israel_good
-        now = time.monotonic()
         current = [p for p in [self._proxy, *self._spare_proxies] if p]
         candidates = [p for p in current if p in self._israeli]
 
@@ -310,9 +309,7 @@ class BaseScraper[S: SourceSettings](ABC):
                 await client.aclose()
 
         alive = {p for p, ok in zip(candidates, await asyncio.gather(*map(answers, candidates)), strict=True) if ok}
-        with _israel_lock:
-            for p in self._israeli - alive:
-                _israel_dead[p] = now
+        with _israel_lock:  # nothing marked dead here: one slow answer is no reason to skip a proxy later
             if _israel_good not in alive:
                 _israel_good = None
         rest = [p for p in current if p not in self._israeli]
@@ -329,9 +326,12 @@ class BaseScraper[S: SourceSettings](ABC):
     async def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         global _israel_good
         if self._israeli and self._client is not None:
-            if self._probe is None:
+            # On the shared working proxy (another source found it): no check. None yet, or it died: find
+            # the next one that works, across the whole list at once.
+            if self._probe is None and (_israel_good is None or self._proxy != _israel_good):
                 self._probe = asyncio.ensure_future(self._probe_israeli(url))
-            await asyncio.shield(self._probe)  # parallel requests wait for the one check
+            if self._probe is not None:
+                await asyncio.shield(self._probe)  # parallel requests wait for the one check
         # The usual retries, plus one for each move to another proxy of the pool: a site that refuses
         # one proxy IP gets the next one, but a plain timeout is not retried pool-size times over.
         switches = [0]
