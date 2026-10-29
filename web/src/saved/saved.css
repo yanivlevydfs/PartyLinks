@@ -45,3 +45,10 @@
   padding: 8px 14px; border-radius: 999px; background: var(--panel-solid); border: 1px solid var(--green); color: var(--green);
 }
 .saved-toast.bad { border-color: var(--red); color: var(--red); }
+
+/* Signed in: the avatar menu's row. */
+.user-pop .saved-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.saved-item b {
+  min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
+  background: var(--pink); color: #fff; font-size: 12px; line-height: 20px; text-align: center;
+}

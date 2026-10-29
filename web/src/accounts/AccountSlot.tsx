@@ -2,6 +2,7 @@
 // nothing when sign-in is off. A plain link to our server, which redirects to Google: no Google script.
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { SavedMenuItem } from "../saved/SavedLink";
 import { useAccountText } from "./i18n";
 import { signInUrl, useAccountsOn, useMe, useSignOut } from "./useMe";
 import { WelcomeSheet } from "./WelcomeSheet";
@@ -58,7 +59,9 @@ function UserMenu() {
       {open && (
         <div className="user-pop" role="menu">
           <div className="user-who"><b dir="auto">{me.name}</b><small dir="ltr">{me.email}</small></div>
+          <SavedMenuItem onClick={close} />
           <Link role="menuitem" to="/account" onClick={close}>{t.account}</Link>
+          <Link role="menuitem" to="/groups" onClick={close}>{t.groups}</Link>
           {me.role === "admin" && <Link role="menuitem" to="/admin" onClick={close}>{t.admin}</Link>}
           <button role="menuitem" onClick={() => { close(); void signOut(); }}>{t.signOut}</button>
         </div>

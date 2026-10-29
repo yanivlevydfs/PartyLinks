@@ -1,5 +1,6 @@
 // The header's saved events: "Saved" with the count, linking to /saved. Words, not a second bell: the
-// header's bell is alert news, and the 🔔 on an event is what saves it.
+// header's bell is alert news, and the 🔔 on an event is what saves it. Signed in, the link lives in the
+// avatar menu (SavedMenuItem) and the header keeps only the toast.
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -25,8 +26,21 @@ function usePendingSave(done: (ok: boolean) => void) {
 }
 import "./saved.css";
 
+/** "Saved events" with the count, a row of the avatar menu. */
+export function SavedMenuItem({ onClick }: { onClick: () => void }) {
+  const t = useSavedText();
+  const { count } = useSaved();
+  return (
+    <Link role="menuitem" className="saved-item" to="/saved" onClick={onClick}>
+      <span>{t.title}</span>
+      {count > 0 && <b aria-hidden>{count > 99 ? "99+" : count}</b>}
+    </Link>
+  );
+}
+
 export function SavedLink() {
   const t = useSavedText();
+  const me = useMe().data;
   const { count } = useSaved();
   useMergeOnSignIn();
   const [toast, setToast] = useState<boolean | null>(null);
@@ -38,10 +52,10 @@ export function SavedLink() {
   }, [toast]);
   return (
     <span className="saved-wrap">
-      <Link className="saved-link" to="/saved" aria-label={count ? `${t.title} (${count})` : t.title}>
+      {!me && <Link className="saved-link" to="/saved" aria-label={count ? `${t.title} (${count})` : t.title}>
         <span>{t.nav}</span>
         {count > 0 && <b aria-hidden>{count > 99 ? "99+" : count}</b>}
-      </Link>
+      </Link>}
       {toast !== null && <span className={"saved-toast" + (toast ? "" : " bad")} role="status">{toast ? t.savedToast : t.failedToast}</span>}
     </span>
   );

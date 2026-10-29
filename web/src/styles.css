@@ -1178,9 +1178,10 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 .tabbar, .buy-bar { display: none; }
 @media (max-width: 760px) {
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
-  .top-row { height: 56px; }
+  /* Logo at the start, the buttons packed at the end, and the last 46px kept for the accessibility button. */
+  .top-row { height: 56px; gap: 8px; padding-inline-end: 46px; }
   .top .nav { display: none; }
-  .top-row { justify-content: space-between; }
+  .top-row .logo { margin-inline-end: auto; }
   .tabbar {
     position: fixed; z-index: 1000; inset: auto 0 0; display: grid; grid-template-columns: repeat(6, 1fr);
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
@@ -1231,12 +1232,12 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
     color: var(--cyan); font: 700 14px/1.4 var(--display); text-decoration: underline; text-underline-offset: 3px;
   }
 
-  /* The accessibility button sits in the header beside the language button, so it never covers content. */
+  /* The accessibility button sits in the header's last slot (kept free by .top-row), so it never covers content. */
   html .asw-menu-btn {
-    top: calc(8px + env(safe-area-inset-top)) !important; bottom: auto !important;
-    left: 72px !important; right: auto !important; width: 38px !important; height: 38px !important; z-index: 1001 !important;
+    top: calc(9px + env(safe-area-inset-top)) !important; bottom: auto !important;
+    left: max(16px, env(safe-area-inset-left)) !important; right: auto !important; width: 38px !important; height: 38px !important; z-index: 1001 !important;
   }
-  html[dir="ltr"] .asw-menu-btn { left: auto !important; right: 72px !important; }
+  html[dir="ltr"] .asw-menu-btn { left: auto !important; right: max(16px, env(safe-area-inset-right)) !important; }
 
   .hero { padding: 22px 0 14px; }
   .hero h1 { font-size: clamp(28px, 8.5vw, 40px); letter-spacing: -1px; }
