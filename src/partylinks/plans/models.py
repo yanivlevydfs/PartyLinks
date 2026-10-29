@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from partylinks.db import Base, NullableJSON, UTCDateTime, utcnow
@@ -32,7 +32,11 @@ class PlanVoteRow(Base):
     """One friend's answer. ``voter`` is the browser's random key (who may change it); never sent back."""
 
     __tablename__ = "plan_votes"
-    __table_args__ = (UniqueConstraint("plan_id", "voter"),)
+    __table_args__ = (
+        UniqueConstraint("plan_id", "voter"),
+        # One answer per account in a plan, whatever device: two first answers at once can't both land.
+        Index("uq_plan_votes_plan_user", "plan_id", "user_id", unique=True, postgresql_where=text("user_id IS NOT NULL")),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     plan_id: Mapped[str] = mapped_column(String(12), ForeignKey("plans.id", ondelete="CASCADE"), index=True)

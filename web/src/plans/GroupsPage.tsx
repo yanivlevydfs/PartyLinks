@@ -1,6 +1,7 @@
 // /groups: the signed-in user's groups, one per event (made or answered signed in), soonest first.
 // A group goes with its event; the creator deletes it for everyone, a friend leaves it.
 import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { SignInButton } from "../accounts/AccountSlot";
 import { useNoIndex } from "../accounts/AccountPage";
@@ -19,8 +20,16 @@ export default function GroupsPage() {
   const me = useMe();
   const qc = useQueryClient();
   const groups = useGroups();
+  const [failed, setFailed] = useState(false);
   const remove = async (g: Group) => {
-    await send(`/api/me/groups/${encodeURIComponent(g.id)}`, "DELETE").catch(() => null);
+    // Deleting is for everyone in the group, and can't be undone: ask first. Leaving only takes the user's answer.
+    if (g.owner && !window.confirm(p.confirmDelete(g.name ?? g.event.title))) return;
+    try {
+      await send(`/api/me/groups/${encodeURIComponent(g.id)}`, "DELETE");
+      setFailed(false);
+    } catch {
+      setFailed(true);
+    }
     await qc.invalidateQueries({ queryKey: ["groups"] });
   };
   return (
@@ -28,6 +37,7 @@ export default function GroupsPage() {
       <Hero title={p.myGroups} />
       <main className="wrap plan">
         <p className="muted">{p.groupsIntro}</p>
+        {failed && <p className="plan-err" role="alert">{p.failedSave}</p>}
         {me.isLoading || groups.isLoading ? <Loader /> : !me.data ? <SignInButton next="/groups" /> : !groups.data?.length ? (
           <p className="muted">{p.noGroups} <Link to="/">{p.browse}</Link></p>
         ) : (

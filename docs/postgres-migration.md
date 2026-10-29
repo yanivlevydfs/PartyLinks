@@ -720,4 +720,5 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **עמודות חדשות:** `users.gender` ו-`plan_votes.gender`, שתיהן String(8) nullable בלי default (`male` / `female` / `none` = מעדיף/ה לא לומר; NULL = לא נשאל). נוספות ב-`ADD COLUMN`, בגבול 8 תווים (Q-LEN).
 - **כתיבה:** ‏`PATCH /api/me` (`gender`); ‏`POST /plans/{id}/votes` שומר את המגדר בתשובה, ומשתמש מחובר שבחר מגדר מעודכן גם ב-`users` (`UPDATE users SET gender` רק כשהערך השתנה). תשובה בלי מגדר שומרת את הקודם.
 - **קריאה:** ‏`/api/me/groups` סופר `men` / `women` ב-Python מאותן שורות `plan_votes` שכבר נקראות: אין query חדש.
+- **אינדקס חדש:** `uq_plan_votes_plan_user` ייחודי חלקי על `plan_votes (plan_id, user_id) WHERE user_id IS NOT NULL`: תשובה אחת לחשבון בתוכנית. שתי תשובות ראשונות באותו רגע: השנייה מקבלת 409 (IntegrityError נתפס). אם יש כבר כפילויות ב-prod, `create_schema` רושם שגיאה וממשיך; בדיקה: `SELECT plan_id, user_id, count(*) FROM plan_votes WHERE user_id IS NOT NULL GROUP BY 1, 2 HAVING count(*) > 1;`. תשובה אנונימית של אותו דפדפן מלפני הכניסה נמחקת כשהחשבון עונה.
 

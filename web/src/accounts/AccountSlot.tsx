@@ -69,7 +69,7 @@ function UserMenu() {
           <BellMenuItem onClick={close} />
           <SavedMenuItem onClick={close} />
           <Link role="menuitem" to="/account" onClick={close}>{t.account}</Link>
-          <Link role="menuitem" to="/groups" onClick={close}>{t.groups}</Link>
+          <Link role="menuitem" to="/groups" onClick={close}><span aria-hidden>👥</span> {t.groups}</Link>
           {me.role === "admin" && <Link role="menuitem" to="/admin" onClick={close}>{t.admin}</Link>}
           <button role="menuitem" className="menu-phone" onClick={() => { close(); setLang(lang === "he" ? "en" : "he"); }}>
             🌐 {lang === "he" ? "English" : "עברית"}

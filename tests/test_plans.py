@@ -187,3 +187,32 @@ def test_gender_on_a_group_answer_and_the_account(tmp_path: Path, fake: FakeGoog
         g = c.get("/api/me/groups").json()[0]
         assert (g["men"], g["women"]) == (1, 1)
         assert c.patch("/api/me", json={"gender": "none"}, headers=OURS).json()["gender"] == "none"
+
+
+def test_one_person_one_answer_and_a_shared_browser(tmp_path: Path, fake: FakeGoogle) -> None:
+    app, _ = _accounts_app(tmp_path)
+    with TestClient(app) as phone, TestClient(app) as laptop:
+        sign_in(phone, fake)
+        pid = phone.post("/plans", json={"event_id": "test:a"}, headers=OURS).json()["id"]
+        phone.post(f"/plans/{pid}/votes", json={"voter": ME, "name": "דנה", "answer": "yes"}, headers=OURS)
+        laptop.post(f"/plans/{pid}/votes", json={"voter": FRIEND, "name": "דנה", "answer": "maybe"})  # before signing in
+        sign_in(laptop, fake)
+        after = laptop.post(f"/plans/{pid}/votes", json={"voter": FRIEND, "name": "דנה", "answer": "no"}, headers=OURS).json()
+        assert [(v["answer"], v["mine"]) for v in after["votes"]] == [("no", True)]  # one row, not two
+
+        # The laptop signs out: its key no longer shows (or changes) her answer.
+        laptop.post("/api/auth/logout", headers=OURS)
+        assert [v["mine"] for v in laptop.get(f"/plans/{pid}", headers={"x-plan-voter": FRIEND}).json()["votes"]] == [False]
+
+
+def test_the_creator_deletes_the_account_the_group_stays(tmp_path: Path, fake: FakeGoogle) -> None:
+    app, db = _accounts_app(tmp_path)
+    with TestClient(app) as owner, TestClient(app) as friend:
+        sign_in(owner, fake)
+        pid = owner.post("/plans", json={"event_id": "test:a", "name": "Gang"}, headers=OURS).json()["id"]
+        friend.post(f"/plans/{pid}/votes", json={"voter": FRIEND, "name": "רון", "answer": "yes"})
+        assert owner.delete("/api/me", headers=OURS).status_code == 204
+        plan = friend.get(f"/plans/{pid}").json()
+        assert plan["name"] == "Gang" and not plan["owner"] and len(plan["votes"]) == 1
+        with db.session(write=False) as s:
+            assert s.get(PlanRow, pid).owner_id is None  # forget_user, not only the FK (prod columns have none)

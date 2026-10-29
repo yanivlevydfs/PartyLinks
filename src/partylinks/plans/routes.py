@@ -10,6 +10,7 @@ from fastapi import APIRouter, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, or_, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from partylinks.accounts.guard import SameOrigin, limited, same_origin
@@ -110,7 +111,9 @@ def _plan_out(session: Session, plan: PlanRow, voter: str | None, user: UserRow 
         votes=[
             VoteOut(
                 name=v.name, answer=v.answer, gender=v.gender,  # type: ignore[arg-type]
-                mine=(voter is not None and v.voter == voter) or (uid is not None and v.user_id == uid),
+                # By the browser's key only while the answer is anonymous: on a shared browser, someone
+                # else's signed-in answer is not "mine" after they sign out.
+                mine=(voter is not None and v.voter == voter and v.user_id in (None, uid)) or (uid is not None and v.user_id == uid),
                 picks=[p for p in v.picks or [] if p in rows], ride=v.ride, seats=v.seats,  # type: ignore[arg-type]
             )
             for v in votes
@@ -209,7 +212,13 @@ def vote(plan_id: str, body: VoteIn, request: Request) -> PlanOut:
         votes = select(PlanVoteRow).where(PlanVoteRow.plan_id == plan_id)
         # Signed in, the account's answer (from any device) comes first; then this browser's.
         row = session.scalar(votes.where(PlanVoteRow.user_id == user.id)) if user else None
-        if row is None:
+        if row is not None:
+            # This browser's earlier anonymous answer, from before signing in, is the same person: one row.
+            session.execute(delete(PlanVoteRow).where(
+                PlanVoteRow.plan_id == plan_id, PlanVoteRow.voter == body.voter,
+                PlanVoteRow.user_id.is_(None), PlanVoteRow.id != row.id,
+            ))  # fmt: skip
+        else:
             row = session.scalar(votes.where(PlanVoteRow.voter == body.voter))
             if row is not None and row.user_id is not None and (user is None or row.user_id != user.id):
                 # An account's answer changes only signed in as that account, whatever key is sent.
@@ -227,7 +236,10 @@ def vote(plan_id: str, body: VoteIn, request: Request) -> PlanOut:
             row.user_id = user.id
             if body.gender and user.gender != body.gender:  # remembered for the next group
                 session.execute(update(UserRow).where(UserRow.id == user.id).values(gender=body.gender))
-        session.flush()
+        try:
+            session.flush()
+        except IntegrityError:  # the same browser or account answering twice at once: the other one landed
+            raise HTTPException(status.HTTP_409_CONFLICT, "answered at the same time, try again") from None
         return _plan_out(session, plan, body.voter, user)
 
 

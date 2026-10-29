@@ -27,14 +27,25 @@ const stored = (key: string, make: () => string) => {
     return make();
   }
 };
-const voter = stored("plan-voter", () => crypto.randomUUID());
+let voter = stored("plan-voter", () => crypto.randomUUID());
+// A shared browser whose key carries someone's signed-in answer: this visitor answers with a key of their own.
+const newVoter = () => {
+  voter = crypto.randomUUID();
+  try { localStorage.setItem("plan-voter", voter); } catch { /* off */ }
+};
 const remember = (name: string) => { try { localStorage.setItem("plan-name", name); } catch { /* off */ } };
 
 const ANSWERS: Answer[] = ["yes", "maybe", "no"];
 const wa = (text: string) => `https://wa.me/?text=${encodeURIComponent(text)}`;
 const LONG = { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" } as const;
 
+// One page per plan: going from one plan to another starts fresh (its form, the one-time sign-in link).
 export default function PlanPage() {
+  const { id = "" } = useParams();
+  return <PlanView key={id} />;
+}
+
+function PlanView() {
   const { id = "" } = useParams();
   const { t } = useT();
   const p = usePlanText();
@@ -128,10 +139,15 @@ export default function PlanPage() {
     const chosen = next.picks ?? picks;
     if (many && answer !== "no" && chosen.length === 0) return setNote(p.pickOne);
     const r = next.ride !== undefined ? next.ride : ride;
-    const res = await fetch(`/plans/${encodeURIComponent(id)}/votes`, {
+    const send = () => fetch(`/plans/${encodeURIComponent(id)}/votes`, {
       method: "POST", headers: WRITE_HEADERS,
       body: JSON.stringify({ voter, name: clean, answer, picks: many ? chosen : undefined, ride: r, seats: r === "drive" ? next.seats ?? seats : undefined, gender: next.gender ?? gender ?? undefined }),
     });
+    let res = await send();
+    if (res.status === 403 && !me && !mine) { // this browser's key holds another account's answer
+      newVoter();
+      res = await send();
+    }
     if (res.ok) {
       remember(clean);
       client.setQueryData(key, await res.json());
