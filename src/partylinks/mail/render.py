@@ -35,16 +35,20 @@ SKY = (  # MET Norway symbol codes, by prefix
 
 TEXT: dict[str, dict[str, Any]] = {
     "he": {
-        "dir": "rtl", "free": "כניסה חופשית", "from": "החל מ-", "soldOut": "אזל", "open": "לפרטים ולכרטיסים",
+        "dir": "rtl", "free": "כניסה חופשית", "from": "החל מ-", "soldOut": "אזל", "open": "לפרטים ולכרטיסים", "tickets": "לכרטיסים",
         "why": "קיבלת את המייל כי ביקשת אותו בחשבון שלך ב-SPOTX.",
         "stop": "להפסקת המיילים האלה", "settings": "הגדרות החשבון", "contact": "יצירת קשר",
         "welcome_subject": "ברוכים הבאים ל-SPOTX 🎉",
         "welcome_title": "ברוכים הבאים, {name}!",
-        "welcome_body": [
-            "מעכשיו אפשר לשמור אירועים בפעמון 🔔 ולראות אותם בכל מכשיר.",
-            "רוצים לשמוע על מסיבות שמתאימות לכם? בחרו סינון בעמוד הבית (ז׳אנר, אזור, מתי) ולחצו \"שמירה כהתראה\". כשיעלה אירוע מתאים, הוא יופיע בפעמון ובשורה \"בשבילך\".",
-            "ובחשבון אפשר להפעיל עדכון שבועי במייל, כל יום חמישי בבוקר.",
+        "welcome_body": ["החשבון שלך מוכן. ככה מוציאים ממנו את המקסימום:"],
+        "welcome_steps": [
+            ("🔔", "שומרים אירועים", "לוחצים על הפעמון בכל אירוע, והוא מחכה לכם ב\"שמורים\" בכל מכשיר."),
+            ("✨", "מקבלים התראות", "בוחרים סינון (ז׳אנר, אזור, מתי) ולוחצים \"שמירה כהתראה\": כל אירוע חדש שמתאים יופיע אצלכם."),
+            ("📬", "עדכון שבועי במייל", "בחשבון אפשר להפעיל מייל קצר כל חמישי בבוקר, עם מה ששמרתם ומה חדש לסופ״ש."),
         ],
+        "welcome_kicker": "ברוכים הבאים", "welcome_preheader": "שמירת אירועים, התראות על מסיבות ועדכון שבועי",
+        "digest_kicker": "העדכון השבועי", "digest_label": "העדכון השבועי · {date}",
+        "instant_kicker": "התראה חדשה", "instant_label": "התראה · {date}",
         "welcome_button": "לאירועים", "welcome_why": "קיבלת את המייל כי נרשמת ל-SPOTX עם חשבון Google.",
         "instant_subject": "🔔 {n} אירועים חדשים שמתאימים לך",
         "instant_subject_1": "🔔 אירוע חדש שמתאים לך: {title}",
@@ -58,16 +62,20 @@ TEXT: dict[str, dict[str, Any]] = {
         "alerts_button": "להתראות שלי",
     },
     "en": {
-        "dir": "ltr", "free": "Free entry", "from": "From ", "soldOut": "Sold out", "open": "Details and tickets",
+        "dir": "ltr", "free": "Free entry", "from": "From ", "soldOut": "Sold out", "open": "Details and tickets", "tickets": "Tickets",
         "why": "You're getting this email because you asked for it in your SPOTX account.",
         "stop": "Stop these emails", "settings": "Account settings", "contact": "Contact",
         "welcome_subject": "Welcome to SPOTX 🎉",
         "welcome_title": "Welcome, {name}!",
-        "welcome_body": [
-            "You can now save events with the bell 🔔 and see them on every device.",
-            "Want to hear about parties that suit you? Pick filters on the home page (genre, area, when) and press \"Save as alert\". When a matching event comes up, it shows in the bell and in the \"For you\" row.",
-            "In your account you can also turn on a weekly email, every Thursday morning.",
+        "welcome_body": ["Your account is ready. Here's how to get the most out of it:"],
+        "welcome_steps": [
+            ("🔔", "Save events", "Tap the bell on any event and it waits for you under \"Saved\" on every device."),
+            ("✨", "Get alerts", "Pick filters (genre, area, when) and press \"Save as alert\": every new event that matches shows up for you."),
+            ("📬", "A weekly email", "Turn on a short email every Thursday morning in your account: what you saved and what's new this weekend."),
         ],
+        "welcome_kicker": "Welcome", "welcome_preheader": "Save events, get party alerts and a weekly update",
+        "digest_kicker": "Weekly update", "digest_label": "Weekly update · {date}",
+        "instant_kicker": "New alert", "instant_label": "Alert · {date}",
         "welcome_button": "See events", "welcome_why": "You're getting this email because you signed up to SPOTX with Google.",
         "instant_subject": "🔔 {n} new events that suit you",
         "instant_subject_1": "🔔 A new event that suits you: {title}",
@@ -174,16 +182,28 @@ def _cards(settings: Settings, sections: list[Section], kind: str, lang: str) ->
         if image and image.startswith("/images/"):
             image = f"{base}{image}/640.webp"
         c["_url"] = link(settings, f"/event/{c.get('slug') or c['id']}", kind, lang)
-        c["_image"] = image if image and image.startswith("https://") else None
+        c["_image"] = image if image and image.startswith(("https://", "http://")) else None
         c["_when"] = _when(c, lang, settings.timezone)
         c["_place"] = " · ".join(x for x in (c.get("venue_name"), c.get("city")) if x)
         c["_weather"] = sky.get(c["id"], "")
         c["_price"] = _price(c, t)
 
 
+def _today(settings: Settings) -> str:
+    now = datetime.now(ZoneInfo(settings.timezone))
+    return f"{now.day}.{now.month}"
+
+
+def _preheader(sections: list[Section]) -> str:
+    """The inbox's line under the subject: the first events' names."""
+    names = [e["title"] for s in sections for e in s.events][:3]
+    return " · ".join(names)
+
+
 def render(
     settings: Settings, *, kind: str, lang: str, name: str, sections: list[Section], unsubscribe_url: str,
     title: str, subject: str, intro: list[str] | None = None, button: tuple[str, str] | None = None, why: str | None = None,
+    steps: list[tuple[str, str, str]] | None = None,
 ) -> tuple[str, str, str]:  # fmt: skip
     """(subject, html, text) of one email."""
     lang = lang if lang in TEXT else "he"
@@ -194,5 +214,8 @@ def render(
         "why": why or t["why"], "unsubscribe": unsubscribe_url, "name": name,
         "settings_url": link(settings, "/account", kind, lang), "contact_url": link(settings, "/contact", kind, lang),
         "home": link(settings, "/", kind, lang), "site": settings.site.name,
+        "logo": settings.site.base_url.rstrip("/") + "/icon-192.png", "steps": steps or [],
+        "kicker": t.get(f"{kind}_kicker", ""), "label": t.get(f"{kind}_label", "").format(date=_today(settings)),
+        "preheader": t.get(f"{kind}_preheader") or _preheader(sections),
     }  # fmt: skip
     return subject, _env.get_template("email.html").render(context), _env.get_template("email.txt").render(context)

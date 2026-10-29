@@ -83,7 +83,7 @@ def welcome_parts(settings: Settings, user: UserRow) -> dict[str, Any]:
     t = TEXT[user.locale if user.locale in TEXT else "he"]
     return {
         "title": t["welcome_title"].format(name=user.name.split(" ")[0]), "subject": t["welcome_subject"],
-        "intro": t["welcome_body"], "sections": [], "why": t["welcome_why"],
+        "intro": t["welcome_body"], "steps": t["welcome_steps"], "sections": [], "why": t["welcome_why"],
         "button": (t["welcome_button"], link(settings, "/", "welcome", user.locale)),
     }  # fmt: skip
 

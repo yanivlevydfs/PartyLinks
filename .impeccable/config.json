@@ -8,6 +8,15 @@
         "value": "arial",
         "createdAt": "2026-10-29T13:36:44.138Z",
         "reason": "Claude: email template; mail clients don't load web fonts, so Arial/Helvetica is the deliberate safe stack"
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "src/partylinks/mail/templates/email.html"
+        ],
+        "createdAt": "2026-10-29T17:12:30.171Z",
+        "reason": "Claude: the logo's src is a Jinja variable ({{ logo }}, https://spotx.fun/icon-192.png) the detector can't resolve"
       }
     ]
   }

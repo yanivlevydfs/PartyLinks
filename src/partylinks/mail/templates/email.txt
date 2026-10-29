@@ -1,6 +1,8 @@
 {{ site }} · {{ title }}
 {% for p in intro %}
 {{ p }}
+{% endfor %}{% for icon, head, text in steps %}
+{{ icon }} {{ head }}: {{ text }}
 {% endfor %}{% for s in sections %}{% if s.events %}
 {{ s.title }}
 {% for e in s.events %}
