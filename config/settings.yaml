@@ -1099,8 +1099,9 @@ sources:
     # Comy stand-up box office (WordPress). Tickets are sold on PRES (tickets.comy.co.il), whose
     # robots.txt disallows all, so the home page lists show pages (/event/<slug>/) and each page
     # is parsed for its performances (date, time, place, PRES/Gray Club link, sold-out badge).
-    # Off: the comy host under `pres` reads the same shows with city, prices and tickets left.
-    enabled: false
+    # On (owner's choice, 2026-10-29) beside the comy host under `pres`, which reads the same shows with
+    # city, prices and tickets left; dedup merges the two listings of each show.
+    enabled: true
     cron: "33 6,18 * * *"
     site_url: https://comy.co.il
     listing_path: /

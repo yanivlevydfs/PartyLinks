@@ -1,10 +1,13 @@
 # Sources
 
-SPOTX collects from 84 configured sources (83 on). Each one has its own module in
+SPOTX collects from 88 configured sources (87 on). Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
   `cron` of its block).
+- **Bad runs:** a run that failed, was blocked, found no events or far fewer than usual is retried after 15
+  minutes, 1 hour and 3 hours; a source still bad after that is paused and the admins are emailed (see
+  [admin](admin.md), "Run manager").
 - **Where scraping happens:** only on Railway. Locally the scheduler is always off.
 - **How sites are read:** scrapers read a site's own JSON or schema.org data over plain HTTP
   where it exists. Otherwise they parse HTML with selectors kept in config. No browser is used.
@@ -35,7 +38,8 @@ pagination and what the listing and the event page provide.
 | `secrettelaviv` | Secret Tel Aviv (secrettelaviv.com/tickets): curated city listings (parties, live music, culture...) | 07:59, 19:59 | yes |
 | `makore` | Makore (makore.co.il, "מה קורה"): an events guide for all of Israel | 09:41, 21:41 | yes |
 | `happytlv` | HappyTLV (happytlv.com): Tel Aviv parties, and bars' happy hours (one event per day the deal runs, category **Happy Hour**), plus places across Israel, one event per day each is open (all day when its page gives no hours): escape rooms, attractions, coffee carts, chef restaurants, work spaces, volunteering, clubs, team activities (no address, so no map pin), each its own category | 05:13, 17:13 | yes |
-| `beatradar` | Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties, with its own genre tags; merged with those sources by dedup | 08:26, 20:26 | yes |
+| `beatradar` | Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties, with its own genre tags; merged with those sources by dedup. Blocked for now (see below) | 08:26, 20:26 | yes |
+| `yotzim` | Yotzim (yotzim.com): party guide (Tel Aviv nights, nature parties, open bar, 40+, teen parties, festivals, Koh Phangan, holidays), read by category page; each event takes the genre words of every category listing it. Only upcoming events are fetched | 09:12, 21:12 | yes |
 | `shotgun` | Shotgun (shotgun.live): electronic music ticketing. Every city page worldwide (240, mostly France, Brazil and the US; ~3,300 events, to the abroad section), plus its Israeli pages, which list nothing yet | 08:52, 20:52 | yes |
 | `posh` | Posh (posh.vip): party and nightlife ticketing, almost all in the US (~1,600 events, to the abroad section, in each venue's own time zone). No categories of its own: night out by default, others from the title | 09:17, 21:17 | yes |
 | `showshappening` | ShowsHappening (showshappening.com): ticketing in Malta, the UK, Germany and Spain (~270 events, ~1,000 dates, abroad section) with its own categories and tags. No venue or price (loaded from a private API) | 10:08, 22:08 | yes |
@@ -57,7 +61,7 @@ pagination and what the listing and the event page provide.
 | `hulyo` | Hulyo (hulyo.co.il): last-minute show deals | 06:42, 18:42 | yes |
 | `megatickets` | Megatickets (megatickets.co.il) | 06:00, 18:00 | yes |
 | `eventbuzz` | Eventbuzz (eventbuzz.co.il): independent productions and community events | 07:10, 19:10 | yes |
-| `comy` | Comy (comy.co.il), stand-up box office. Off: the `comy` host under `pres` reads the same shows with prices | 06:33, 18:33 | no |
+| `comy` | Comy (comy.co.il), stand-up box office. On beside the `comy` host under `pres` (prices, tickets left); dedup merges the two | 06:33, 18:33 | no |
 | `jerusalemtheatre` | Jerusalem Theatre (jerusalem-theatre.co.il): theatre, music, dance, festivals and children's shows | 07:33, 19:33 | yes |
 | `beershevatheatre` | Be'er Sheva Theatre (b7t.co.il): repertoire, guest shows and children's theatre | 06:53, 18:53 | yes |
 | `arenas` | Arenas, stadiums and amphitheaters, from Tickchak LIVE (`tickchak.py`) | 07:57, 19:57 | yes |
@@ -151,14 +155,21 @@ description says it is a package.
 Issta's listing gives the trip dates but not the show date. The package page is disallowed by
 its robots.txt, so an Issta event spans the trip, from departure to return.
 
-## Blocked: Chillz
+## Chillz: the Vercel checkpoint
 
-Chillz event pages sit behind a Vercel Security Checkpoint, a JavaScript challenge. Since
-2026-10-22 the scraper gets `429` with `X-Vercel-Mitigated: challenge` on event pages, even from
-a residential Israeli IP, so a plain proxy does not help. Its runs are recorded as `blocked`.
+Chillz event pages sit behind a Vercel Security Checkpoint. From 2026-10-22 it answered `429` with
+`X-Vercel-Mitigated: challenge`, even from a residential Israeli IP: it refused Python's TLS handshake,
+not the address. The source now speaks as Chrome (`http.impersonate: chrome`, curl_cffi), which passes,
+through the usual proxy. If the checkpoint still answers, the run stops after two requests and is recorded
+as `blocked`. Pages saved by hand into `data/chillz_inbox/` are still imported on every run.
 
-Pages saved by hand into `data/chillz_inbox/` are still imported on every run, but no manual
-work is planned. The scraper stays as it is.
+## Blocked: Beat Radar
+
+Beat Radar's Cloudflare admits Israeli home connections only (October 2026). Railway, the Evomi proxy IPs
+(USA) and Israeli datacenter proxies all get its `403` block page, which is recorded as a `blocked` run, not
+a crash. The source has `israel_proxy: true` and speaks as Chrome (`http.impersonate: chrome`), so an Israeli
+IP that reaches it also passes Cloudflare's client check. The fix needs an Israeli residential or ISP proxy
+first in `PARTYLINKS_HTTP__ISRAEL_PROXY`.
 
 ## Checked and not added
 
