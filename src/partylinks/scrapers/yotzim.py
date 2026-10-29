@@ -4,19 +4,17 @@ robots.txt allows all but ``/api/``, ``/profile``, ``/notifications`` and ``/t/`
 redirect, so the seller's link is not followed). Discovery is by category: each category page
 (``/genres/techno``, ``/events/nature``, ``/holidays/halloween``...; ``categories`` in config)
 links its event cards, and every event takes the genre words of the categories that list it.
-The sitemap adds any event no category shows. Category pages also keep past events, so pages of
-events already over are remembered (``PAST_FILE``) and never fetched again.
+Each page's "recently" rail (``היה לאחרונה``, events already over) is dropped, so past events are
+never fetched and nothing about them is kept (no sitemap: it lists past events too).
 Details: each page's schema.org ``MusicEvent`` JSON-LD gives name, start/end with offset, place
 (a venue, or only the city), country, age range, poster, organizer and one ``Offer`` price.
 """
 
 from __future__ import annotations
 
-import asyncio
 import re
 from collections import defaultdict
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import urljoin, urlsplit
 
@@ -24,21 +22,20 @@ from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, has_time, html_to_text, jsonld_nodes, schema_types, to_decimal
 from partylinks.scrapers.abroad import country_code, local_zone
 from partylinks.scrapers.airdrop import _list, _local
-from partylinks.scrapers.base import BaseScraper, SourceSettings
-from partylinks.scrapers.chillz import _load_past, _save_past
+from partylinks.scrapers.base import BaseScraper, SourceSettings, gather_or_cancel
 
 _EVENT_LINK = re.compile(r'href="(/event/[^"#?]+)"')
-_SITEMAP_EVENT = re.compile(r"<loc>(https://[^<]+/event/[^<]+)</loc>")
 _AGE = re.compile(r"\d+")
-# "Other events that might fit": shown when a category has nothing coming, not of that category.
-_SUGGESTED = re.compile(r"<h2[^>]*>אירועים אחרים[^<]*</h2>.*?(?=<h2|</section>|$)", re.DOTALL)
+# Rails headed "recently" / "what was at..." ("היה לאחרונה", "מה היה ב...") list events already over;
+# "other events that might fit" / "meanwhile, the coming parties" ("אירועים אחרים", "בינתיים") are
+# upcoming but not of the page's category. Each runs to the next heading or the end of its section.
+_PAST = re.compile(r"<h2[^>]*>\s*(?:היה לאחרונה|מה היה).*?(?=<h2|</section>|$)", re.DOTALL)
+_SUGGESTED = re.compile(r"<h2[^>]*>\s*(?:אירועים אחרים|בינתיים).*?(?=<h2|</section>|$)", re.DOTALL)
 SITE_NAME = "יוצאים!"  # the guide itself, named as organizer of the nights it runs
-PAST_FILE = "data/yotzim_past.json"
 
 
 class YotzimSettings(SourceSettings):
     site_url: str
-    sitemap_path: str = "/sitemap.xml"
     # Category path -> genre words its events declare (matched by enrichment's genre keywords).
     categories: dict[str, list[str]]
 
@@ -49,39 +46,29 @@ class YotzimScraper(BaseScraper[YotzimSettings]):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._past: set[str] = set()
         self._genres: dict[str, list[str]] = {}
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        pages = await asyncio.gather(*(self.get_text(s.site_url + path) for path in s.categories))
+        pages = await gather_or_cancel(self.get_text(s.site_url + path) for path in s.categories)
         self._genres = category_genres(dict(zip(s.categories, pages, strict=True)), s.categories, s.site_url)
         if not self._genres:
-            raise ParseError("no category lists any event")
-        sitemap = await self.optional("sitemap", self.get_text(s.site_url + s.sitemap_path))
-        urls = list(dict.fromkeys([*self._genres, *_SITEMAP_EVENT.findall(sitemap or "")]))
-        self._past = await asyncio.to_thread(_load_past, PAST_FILE)
-        todo = [u for u in urls if u not in self._past]
-        self.log.info("%d event pages (%d known past skipped)", len(todo), len(urls) - len(todo))
-        try:
-            async for event in self.stream_isolated(todo, self._fetch_event, label=lambda u: u):
-                yield event
-        finally:
-            _save_past(self._past, PAST_FILE)
+            raise ParseError("no category lists any upcoming event")
+        self.log.info("%d upcoming event pages", len(self._genres))
+        async for event in self.stream_isolated(self._genres, self._fetch_event, label=lambda u: u):
+            yield event
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
-        event = parse_event(await self.get_text(url), url, self.timezone, self._genres.get(url, []))
-        if event is not None and (event.end_at or event.start_at) < datetime.now(UTC) - timedelta(days=1):
-            self._past.add(url)  # over: never fetched again (the service never stores it either)
-            return None
-        return event
+        return parse_event(await self.get_text(url), url, self.timezone, self._genres[url])
 
 
 def category_genres(pages: dict[str, str], categories: dict[str, list[str]], site_url: str) -> dict[str, list[str]]:
-    """Event page URL -> genre words of every category page listing it (in category order). Events
-    only suggested on a page ("other events that might fit") are discovered but not tagged."""
+    """Upcoming event page URL -> genre words of every category page listing it (in category order).
+    Events only suggested on a page ("other events that might fit") are discovered but not tagged;
+    the "recently" rail (past events) is skipped."""
     genres: dict[str, list[str]] = defaultdict(list)
-    for path, page_html in pages.items():
+    for path, raw in pages.items():
+        page_html = _PAST.sub("", raw)
         own = set(_EVENT_LINK.findall(_SUGGESTED.sub("", page_html)))
         for href in dict.fromkeys(_EVENT_LINK.findall(page_html)):
             words = genres[urljoin(site_url + "/", href)]

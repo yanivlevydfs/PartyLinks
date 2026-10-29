@@ -22,6 +22,12 @@ def test_categories_tag_the_events_they_list() -> None:
     assert len(genres) >= 20 and all(url.startswith(f"{SITE}/event/") for url in genres)
     tagged = [url for url, words in genres.items() if words == ["nature party"]]
     assert tagged and f"{SITE}/event/vortex-festival-12-13-nov-2026" in tagged
+    # The "recently" rail (events already over) is never fetched.
+    assert f"{SITE}/event/back-to-the-mountains" not in genres
+    # A holiday already over: "what was at Rosh Hashana" is skipped, "meanwhile" upcoming is not tagged.
+    rosh = {"/holidays/rosh-hashana": (FIXTURES / "rosh-hashana.html").read_text("utf-8")}
+    upcoming = category_genres(rosh, {"/holidays/rosh-hashana": ["holidays"]}, SITE)
+    assert upcoming and not any(upcoming.values())
 
 
 def test_suggested_events_are_not_tagged() -> None:
