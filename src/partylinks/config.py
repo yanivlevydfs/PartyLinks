@@ -128,6 +128,13 @@ class SchedulerSettings(BaseModel):
     command_timeout_seconds: float = Field(20, gt=0)  # how long the admin waits for the worker to answer
     restart_backoff_max_seconds: float = Field(60, gt=0)  # longest wait before restarting a crashing worker
     worker_stop_seconds: float = Field(30, gt=0)  # on shutdown, time for running sources to stop before a kill
+    # Run manager (partylinks.runs): at most this many sources run at once, the rest wait in a queue.
+    max_parallel_runs: int = Field(6, ge=1)
+    # A bad run (failed, blocked, no events, or under low_count_ratio of the usual count) is run again
+    # after each of these; still bad after the last, the source is paused and the admins are emailed.
+    retry_after_minutes: list[float] = Field(default_factory=lambda: [15, 60, 180])
+    low_count_ratio: float = Field(0.3, ge=0, le=1)
+    low_count_min_usual: int = Field(10, ge=1)  # sources usually finding fewer are not judged by count
 
 
 def validate_cron(value: str) -> str:

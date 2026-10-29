@@ -27,6 +27,7 @@ from partylinks import clicks, searches
 from partylinks.config import Settings, config_path, get_settings, project_path
 from partylinks.db import EventRow, ImageRow, ScrapeRunRow, TicketRow, upcoming_filter
 from partylinks.logs import debug_enabled, set_debug
+from partylinks.runs.health import paused_sources, set_paused
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import configured_sources
 from partylinks.service import ScrapeService, SourceBusyError
@@ -108,6 +109,8 @@ def overview(request: Request, session: SessionDep) -> dict[str, Any]:
         "tickets": session.scalar(select(func.count()).select_from(TicketRow)) or 0,
         "images": {"total": images[0], "stored": images[1], "stored_bytes": images[2]},
         "runs": session.scalar(select(func.count()).select_from(ScrapeRunRow)) or 0,
+        # Broken sources the run manager paused (or an admin did): no scheduled runs until resumed.
+        "paused_sources": paused_sources(session),
         "storage": request.app.state.db.storage_stats(),
         "database": request.app.state.db.engine.url.render_as_string(hide_password=True),
         "warnings": [
@@ -290,9 +293,12 @@ def logging_switch(body: DebugIn) -> dict[str, bool]:
 
 @router.post("/jobs/{job_id}/{action}")
 def job_control(job_id: str, action: str, request: Request) -> dict[str, Any]:
-    """Pause / resume one source (or ``retention``) until the next restart or config apply."""
+    """Pause / resume one source (kept across restarts; resume also lifts the run manager's pause)
+    or ``retention`` (until the next restart or config apply)."""
     if action not in ("pause", "resume"):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "action must be pause or resume")
+    if job_id in configured_sources(request.app.state.settings):
+        set_paused(request.app.state.db, job_id, action == "pause")
     if request.app.state.worker:
         return _ask_worker(request, f"{action}_job", {"id": job_id})
     scheduler = _scheduler(request)

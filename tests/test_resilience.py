@@ -528,20 +528,6 @@ def test_throttled_proxy_ip_moves_to_the_next_proxy() -> None:
     assert asyncio.run(run()) == 200 and scraper._proxy == "http://b:2"
 
 
-def test_a_run_lost_to_dead_proxies_is_retried_but_a_site_error_is_not() -> None:
-    from partylinks.service import RunResult, _proxy_failure
-
-    def run(status: str, error: str | None) -> RunResult:
-        return RunResult(1, "zappa", status, 0, 0, 0, error)
-
-    assert _proxy_failure(run("failed", "RemoteProtocolError: Server disconnected without sending a response."))
-    assert _proxy_failure(run("blocked", "zappa: access denied by the site on every proxy (403 via this proxy)"))
-    assert not _proxy_failure(run("failed", "ParseError: no event objects in the listing page payload"))
-    assert not _proxy_failure(run("success", None))
-    assert _proxy_failure(RunResult(1, "livevents", "partial", 0, 0, 24, None))  # every month failed
-    assert not _proxy_failure(RunResult(1, "mevalim", "partial", 1965, 1964, 13, None))
-
-
 def test_chillz_never_fetches_a_page_of_a_past_event_twice(tmp_path, monkeypatch) -> None:
     from partylinks.scrapers import chillz
 

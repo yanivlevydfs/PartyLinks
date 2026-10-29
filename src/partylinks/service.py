@@ -59,6 +59,7 @@ from partylinks.media import MediaStore
 from partylinks.models import ScrapedEvent
 from partylinks.places import all_cities
 from partylinks.retention import is_current, purge_expired
+from partylinks.runs.health import RunHealth
 from partylinks.scrapers import SCRAPERS, build_scraper, source_settings
 from partylinks.scrapers.base import SourceBlockedError
 from partylinks.venues import venue_updates
@@ -66,19 +67,6 @@ from partylinks.venues import venue_updates
 log = logging.getLogger(__name__)
 
 SAVE_BATCH_SIZE = 200
-
-
-PROXY_RETRY, PROXY_RETRY_AFTER_S = "proxy-retry", 600
-# Errors of a dead or refused proxy (not of the site's content).
-_PROXY_ERRORS = ("ProxyError", "ConnectError", "ConnectTimeout", "RemoteProtocolError", "ReadError", "SOCKS", "on every proxy",
-                 "timed out after",
-                 "403 Forbidden")  # refused on every proxy of the pool: other IPs later  # the run limit spent walking dead proxies (tiuli, barak, issta, movieland)
-
-
-def _proxy_failure(result: RunResult) -> bool:
-    if result.status == "partial" and not result.events_saved and result.events_failed:
-        return True  # every page failed (livevents: each month on a dead proxy) and nothing was saved
-    return result.status in ("failed", "blocked") and any(m in (result.error or "") for m in _PROXY_ERRORS)
 
 
 class Coalesced:
@@ -155,15 +143,23 @@ class ScrapeService:
         # After a run: shared by all sources finishing together (see Coalesced).
         self._regroup_soon, self._geocode_soon = Coalesced(self.regroup), Coalesced(self.geocode)
         self._stopping = threading.Event()
-        # One thread per source so all sources can run at the same time; retention has its own.
-        self._executor = ThreadPoolExecutor(max_workers=len(SCRAPERS), thread_name_prefix="partylinks-src")
+        # At most max_parallel_runs sources at once (proxy pool, memory); the rest queue. Retention has its own.
+        self._executor = ThreadPoolExecutor(
+            max_workers=settings.scheduler.max_parallel_runs, thread_name_prefix="partylinks-src"
+        )
+        self._queued: set[str] = set()  # claimed, waiting for a free slot
+        self.health = RunHealth(settings, db, self.start_source, self._stopping)
         self._maintenance = ThreadPoolExecutor(max_workers=1, thread_name_prefix="partylinks-maint")
         self.retention_state = RetentionState()
         if owns_runs:  # runs left "running" by a process that died; never the live worker's
             db.mark_interrupted_runs()
 
     def is_running(self, source: str) -> bool:
+        """Running or queued (the source is claimed either way)."""
         return self._locks[source].locked()
+
+    def is_queued(self, source: str) -> bool:
+        return source in self._queued
 
     @property
     def retention_running(self) -> bool:
@@ -184,13 +180,15 @@ class ScrapeService:
         lock = self._locks[source]
         if not lock.acquire(blocking=False):
             raise SourceBusyError(f"{source} is already running")
+        self._queued.add(source)
         try:
             future = self._executor.submit(self._run_in_thread, source, trigger, lock)
         except BaseException:
+            self._queued.discard(source)
             lock.release()
             raise
         # Cancelled while still queued (shutdown): the worker never runs, so release here.
-        future.add_done_callback(lambda f: lock.release() if f.cancelled() else None)
+        future.add_done_callback(lambda f: (self._queued.discard(source), lock.release()) if f.cancelled() else None)
         return future
 
     async def run_source(self, source: str, trigger: str = "manual") -> RunResult:
@@ -326,25 +324,13 @@ class ScrapeService:
         return await asyncio.to_thread(fn, *args)
 
     def _run_in_thread(self, source: str, trigger: str, lock: threading.Lock) -> RunResult:
+        self._queued.discard(source)
         try:
             result = asyncio.run(self._run(source, trigger))
         finally:
             lock.release()
-        if trigger != PROXY_RETRY and _proxy_failure(result) and not self._stopping.is_set():
-            # Its proxies died mid-run: once more later, on others (the dead ones go last, see base.py).
-            log.info("source %s failed on its proxies: running it again in %d min", source, PROXY_RETRY_AFTER_S // 60)
-            timer = threading.Timer(PROXY_RETRY_AFTER_S, self._retry_source, (source,))
-            timer.daemon = True
-            timer.start()
+        self.health.after_run(result, trigger)  # retry a bad run later; pause a broken source
         return result
-
-    def _retry_source(self, source: str) -> None:
-        if self._stopping.is_set():
-            return
-        try:
-            self.start_source(source, PROXY_RETRY)
-        except SourceBusyError:
-            pass  # already running again (schedule or admin): that run is the retry
 
     def _purge_in_thread(self) -> int:
         state = self.retention_state

@@ -694,3 +694,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **טבלאות חדשות** (‏`partylinks/mail/models.py`, בלי מידע אישי): `email_runs` (‏`id` PK, ‏`kind` ‏welcome/instant/digest/test עם אינדקס, ‏`started_at` עם אינדקס, ‏`finished_at`, ‏`sent`, ‏`failed`, ‏`skipped`, ‏`error` בלי כתובות) ו-`mail_switches` (שורה אחת: ‏`welcome`, ‏`instant`, ‏`digest`).
 - **Queries:** ‏welcome: ‏`users WHERE welcome_sent_at IS NULL AND blocked_at IS NULL AND created_at < now-2min LIMIT 500`. ‏instant: ‏`alert_hits JOIN event_alerts JOIN users WHERE instant_sent_at IS NULL AND instant AND active AND (last_instant_at IS NULL OR < now-60min)`. ‏digest: ‏`users WHERE digest_opt_in AND (last_digest_at IS NULL OR < now-6d)`, ולכל משתמש: שמורים ב-7 הימים הקרובים, ‏hits שלא נשלחו באירועים ב-10 הימים הקרובים, ואם יש פחות מ-4: ‏`build_event_filters(weekend, free_entry)` ‏LIMIT 12. החתמת `welcome_sent_at` / ‏`instant_sent_at` / ‏`digest_sent_at` / ‏`last_*` רק אחרי שליחה שהצליחה.
 - **Tests:** ‏`tests/test_mail.py` (‏5, ‏Resend מדומה).
+
+### 2026-10-29 (מנהל ריצות: ניסיון חוזר, תקרת ריצות, השהיית מקור שבור)
+- **בלי טבלאות או עמודות חדשות.** השהיה נשמרת ב-`flags` (‏`key = 'paused:<source>'`, ‏`on`), כך שהיא שורדת restart ו-deploy.
+- **Queries:** אחרי כל ריצה (‏`partylinks/runs/health.py`): ‏`scrape_runs.events_found WHERE source = ? AND id <> ? AND status IN ('success','partial') AND events_found > 0 ORDER BY id DESC LIMIT 5` (חציון = "הכמות הרגילה"; משתמש באינדקס על `source`). לפני כל ריצה מתוזמנת: ‏`flags` לפי מפתח ראשי. ב-admin overview: ‏`flags WHERE key LIKE 'paused:%' AND on`.
+- **Tests:** ‏`tests/test_run_health.py` (‏2).

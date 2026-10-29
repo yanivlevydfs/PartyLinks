@@ -23,6 +23,9 @@ STARTUP_STAGGER = timedelta(minutes=3)
 
 async def _scheduled_run(service: ScrapeService, source: str) -> None:
     try:
+        if await asyncio.to_thread(service.health.paused, source):
+            log.info("skipping scheduled %s run: paused (broken source; a healthy admin run unpauses it)", source)
+            return
         await service.run_source(source, trigger="schedule")
     except SourceBusyError:
         log.info("skipping scheduled %s run: previous run still in progress", source)
