@@ -80,6 +80,8 @@ export function AboutPage() {
         <ul>{t.how.map((x) => <li key={x}>{x}</li>)}</ul>
         <h2>{t.freeTitle}</h2>
         <p>{t.free}</p>
+        <h2>{title("/contact", lang)}</h2>
+        <Mail />
         <p>
           <Link to="/faq">{title("/faq", lang)}</Link>{" · "}
           <Link to="/contact">{title("/contact", lang)}</Link>{" · "}
