@@ -41,6 +41,9 @@ SCANNER_AGENTS = re.compile(
 DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
 # The listings as JSON: what a scraper wants, limited per IP beyond the general rate limit.
 DATA_PATHS = ("/events", "/categories", "/posts", "/ticket-sites", "/locate")
+# The app's own JSON (group plans, a user's account): only our pages call it, so script clients are
+# refused there too. Not /plan/<id>: WhatsApp's link preview reads that page.
+APP_API_PATHS = ("/plans", "/api/me")
 # Card artwork and the site's own files: one home page draws well over a hundred, so they don't
 # count toward the general rate limit (a few reloads banned a visitor).
 STATIC_PATHS = ("/images/", "/artwork/", "/assets/", "/icons/", "/favicon")
@@ -274,7 +277,7 @@ class SecurityMiddleware:
         if blocked and not local and path not in ("/robots.txt", "/health"):
             return await reject(403, "forbidden")
         script = any(c.lower() in agent.lower() for c in cfg.blocked_clients)
-        if script and not local and path.startswith((*DATA_PATHS, "/go/")):
+        if script and not local and path.startswith((*DATA_PATHS, *APP_API_PATHS, "/go/")):
             return await reject(403, "forbidden")
         if not local and not owner and not path.startswith(STATIC_PATHS):
             limit = cfg.admin_rate_limit_per_minute if admin else cfg.rate_limit_per_minute

@@ -153,6 +153,9 @@ def test_scrapers_are_slowed_and_scripts_refused(tmp_path: Path) -> None:
     with TestClient(create_app(settings, start_scheduler=False), client=("198.51.100.4", 1)) as c:
         assert c.get("/llms.txt", headers={"user-agent": "curl/8.5"}).status_code == 200
         assert c.get("/events", headers={"user-agent": "curl/8.5"}).status_code == 403
+        assert c.post("/plans", json={"event_id": "x"}, headers={"user-agent": "curl/8.5"}).status_code == 403
+        assert c.get("/api/me/groups", headers={"user-agent": "curl/8.5"}).status_code == 403
+        assert c.get("/plan/x", headers={"user-agent": "curl/8.5"}).status_code != 403  # the preview page stays open
 
 
 ADMIN = {"authorization": "Bearer s3cret"}
@@ -160,7 +163,7 @@ ADMIN = {"authorization": "Bearer s3cret"}
 PUBLIC_WRITES = {"/events/sponsored/hit", "/plans", "/plans/{plan_id}/votes", "/plans/{plan_id}/events",
                  "/api/email/unsubscribe"}  # a signed token, from the mail client (RFC 8058)
 # A signed-in user's own writes: refused without a session cookie (403 first when not from our pages).
-USER_WRITES = ("/api/me", "/api/auth/")
+USER_WRITES = ("/api/me", "/api/auth/", "/plans/{plan_id}")  # the last: a group's rename, by its creator
 
 
 def _open_app(tmp_path: Path) -> Any:

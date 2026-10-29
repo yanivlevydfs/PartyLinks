@@ -55,7 +55,8 @@ export default function PlanPage() {
   const accounts = useAccountsOn();
   const me = useMe().data;
   const [name, setName] = useState(() => stored("plan-name", () => ""));
-  useEffect(() => { if (me && !name) setName(me.name.split(" ")[0] ?? ""); }, [me, name]);
+  // Signed in with no name yet: the account's first name, once (clearing the field leaves it clear).
+  useEffect(() => { if (me) setName((n) => n || (me.name.split(" ")[0] ?? "")); }, [me]);
   const [picks, setPicks] = useState<string[]>([]);
   const [ride, setRide] = useState<Ride | null>(null);
   const [seats, setSeats] = useState(3);
