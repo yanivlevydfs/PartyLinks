@@ -1,5 +1,9 @@
 # Accounts, Saved Events, Alerts and Email: Implementation Plan
 
+**Status:** executed 2026-10-29 (phases 0–5, commits `65f8f66` to `10c4f6c`). Kept as the record of the
+plan; the code differs in the points under "Deviations" at the end. How it works now:
+[`docs/accounts.md`](../accounts.md).
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** optional Google accounts on SPOTX, with saved events (a heart), event alerts ("save search"), a notification bell, a "For you" row and email (welcome, instant, a weekly digest on Thursday at 10:00), plus admin pages for users and email, and updated legal pages.
@@ -1316,3 +1320,25 @@ Recheck the 0-scan index list on 2026-11-04 (memory `unused-indexes-check`) toge
 - The production-size matcher timing is recorded.
 - The legal pages are live with Phase 1.
 - The open items in design §20 are tracked (lawyer review, the 2017 security regulations, privacy email).
+
+## Deviations (what was built differently)
+
+- **Saved events:** a 🔔 save bell (`web/src/saved/SaveButton.tsx`), not a heart (`SaveHeart.tsx` was not
+  kept). Saving needs an account: signed out, the sign-in popup (`web/src/accounts/SignInSheet.tsx`), and the
+  event is saved back from Google through `?save_event=<id>` (`SavedLink.tsx`). localStorage `spotx-saved`
+  is used only where Google sign-in is not configured. The header has a labelled "Saved" button with the
+  count, the alert-news bell and the account menu (`AccountSlot.tsx`, instead of `SignInButton.tsx` and
+  `UserMenu.tsx`).
+- **Save as alert, signed out:** the criteria travel in `?save_alert=<json>` and the header bell saves them.
+- **Matcher (Task 3.4):** one query per distinct criteria set measured 330 s at production size; built as
+  one query per single filter value, combined in Python, with a `COPY` insert (27.3 s for 500 new events ×
+  50k alerts at 28k events, `scripts/time_matcher.py`). It waits 30 minutes after an event is first seen
+  and counts only new duplicate groups. No pass after each source run.
+- **Criteria:** a one-letter word is no filter; an alert with nothing else set is refused.
+- **Email:** from `SPOTX <events@spotx.fun>` (sender only), reply-to `contact@spotx.fun`; idempotency keys per
+  run and chunk; the admin's test send goes only to the signed-in admin's own address.
+- **Admin:** changes with an admin's Google session need `X-Requested-With: spotx`; a `401` is a bad-token
+  strike only when an `Authorization` header was sent; tracebacks in logs are scrubbed too.
+- **Not built:** purging expired sessions; the server-rendered landing-page "every Thursday" call to action.
+
+The design record lists the same changes: [accounts-alerts-design.md, section 21](../accounts-alerts-design.md#21-changes-after-implementation).

@@ -15,7 +15,8 @@ PARTYLINKS_HTTP__CONCURRENCY=16
 PARTYLINKS_MEDIA__STORAGE=filesystem
 ```
 
-Secrets (admin token, proxy credentials, access headers) belong in variables only.
+Secrets (admin token, proxy credentials, access headers, the Google client secret, the session secret,
+the Resend key) belong in variables only: Railway's variables in production, `.env` (gitignored) locally.
 
 ## Sections
 
@@ -24,14 +25,14 @@ Secrets (admin token, proxy credentials, access headers) belong in variables onl
 | `timezone` | App time zone (`Asia/Jerusalem`): local dates, cron times, display |
 | `database` | PostgreSQL URL (empty: the embedded local server in `local_dir`), pool, timeouts, keepalives, write mode, retries, startup wait |
 | `logging` | Level, text or JSON, access log, rotating file |
-| `site` | `base_url`, brand name (`SPOTX`), accessibility and privacy contacts |
+| `site` | `base_url`, brand name (`SPOTX`), the contact address (`email`; empty: `privacy.email`, now contact@spotx.fun), accessibility and privacy contacts |
 | `utm` | UTM tags on ticket links: `enabled`, `source`, `medium` (see [ticket links](ticket-links.md)) |
 | `accounts` | Optional Google accounts: `enabled`, `session_days`, `max_alerts`, `max_saved`; secrets (`google_client_id`, `google_client_secret`, `session_secret`, `admin_emails`) from the environment only (see [accounts](accounts.md)) |
-| `mail` | Email through Resend: `from_address`, `digest_cron`, `digest_max_events`, `instant_min_interval_minutes`, `matcher_interval_minutes`; `PARTYLINKS_MAIL__RESEND_API_KEY` from the environment only |
+| `mail` | Email through Resend: `from_address` (`SPOTX <events@spotx.fun>`, sender only; replies go to the site's contact address), `digest_cron` (Thursday 10:00), `digest_max_events`, `instant_min_interval_minutes`, `matcher_interval_minutes`; `PARTYLINKS_MAIL__RESEND_API_KEY` from the environment only |
 | `security` | Trusted proxies, allowed hosts, rate limits (site, admin, `/go/`), bans, blocked bots, API docs |
 | `api` | Host, port, page sizes, page cache freshness |
-| `scheduler` | On or off (off locally), run on startup, run timeout, the worker process (`separate_process`, heartbeat, stale / command timeouts, restart backoff) |
-| `http` | Default transport for every source: timeout, retries, delay, concurrency, user agent, proxy |
+| `scheduler` | On or off (off locally), run on startup, run timeout, the worker process (`separate_process`, heartbeat, stale / command timeouts, restart backoff), and the run manager: `max_parallel_runs` (6), `retry_after_minutes` (15, 60, 180), `low_count_ratio` (0.3), `low_count_min_usual` (10) (see [admin](admin.md)) |
+| `http` | Default transport for every source: timeout, retries, delay, concurrency, user agent, proxy (`source_proxy`; `israel_proxy` and `israel_proxy_feed` for sources with `israel_proxy: true`), `impersonate` (speak as a browser, e.g. `chrome`, through curl_cffi) |
 | `enrichment` | Genre keywords, lineup parsing, time slots, weekend days, free-entry words, cities, areas |
 | `dedup` | Rules for grouping duplicate listings |
 | `geocoding` | Nominatim settings and manual venue pins |

@@ -38,6 +38,19 @@ PARTYLINKS_DATABASE__LOCAL_DATABASE=scratch python -m partylinks scrape issta
 
 Interactive API docs at `/docs` are off by default (`security.api_docs`).
 
+## Accounts and email locally
+
+Settings and secrets are read from `.env` in the repo root (gitignored; `.env.example` shows the format).
+Google sign-in works on localhost when `.env` has `PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_ID`,
+`PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_SECRET` and `PARTYLINKS_ACCOUNTS__SESSION_SECRET` (and
+`PARTYLINKS_ACCOUNTS__ADMIN_EMAILS` to sign in to `/admin` with Google). The OAuth client allows
+`http://localhost:8000/auth/google/callback`, so use port 8000. Without those variables sign-in is off: the
+site shows no account UI, and the save bell keeps saved events on the device (localStorage `spotx-saved`).
+
+The alert matcher and the welcome, instant and digest emails are scheduler jobs, so with the scheduler off
+they never run locally, even with `PARTYLINKS_MAIL__RESEND_API_KEY` set (only the admin's test send would go). To time a matcher pass at production size, on its own throwaway
+local database: `python scripts/time_matcher.py [--events 28000] [--alerts 50000] [--new 500]`.
+
 ## Tests and lint
 
 ```bash

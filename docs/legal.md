@@ -20,13 +20,18 @@ Keep that list in sync with the code.
 
 ## Optional accounts (personal data, since 2026-10-29)
 
-Signing in with Google is optional; nothing on the site needs it. For those who sign in, the `users`
+Signing in with Google is optional; browsing, search, the map and ticket links never need it. Saving an
+event or an alert does. For those who sign in, the `users`
 table keeps the Google id, email, name, picture URL, email language, saved events and alerts, and the
 weekly-digest consent with its time (Communications Law §30A: the digest is off until the user ticks
 it). No IP address or user agent is kept with an account. Deleting the account removes everything at
 once. Processors: Railway (hosting, DB), Google (sign-in), Resend (email). The privacy page section
 "User account (optional)" and the terms section "Accounts, alerts and emails" describe this; the
-storage list has `spotx_session` and `spotx_signin`. See [accounts](accounts.md).
+storage list has `spotx_session`, `spotx_signin` and `spotx-saved` (saved event ids on the device, used only
+where Google sign-in is not configured, and moved into the account at sign-in). Emails come from
+`SPOTX <events@spotx.fun>` (a sender with no inbox); replies and every request go to contact@spotx.fun, which
+the site shows only on a click (never in the HTML or as plain text in `/site`). Each email has a one-click
+unsubscribe; the digest goes only to users who ticked it. See [accounts](accounts.md).
 
 ## Server-side records with no personal data
 

@@ -30,6 +30,13 @@ The repo ships two files Railway uses:
    library version). Without it every deploy starts empty.
 4. Set the variables below.
 5. Generate a domain (Settings → Networking). The app listens on Railway's `$PORT`.
+6. **Google sign-in (optional accounts):** in Google Cloud, an OAuth client of type "Web application" with
+   the redirect URIs `https://spotx.fun/auth/google/callback` and `http://localhost:8000/auth/google/callback`
+   (scopes `openid email profile`). Its id and secret go into the `PARTYLINKS_ACCOUNTS__*` variables. Without
+   them sign-in is off and the site shows no account UI (see [accounts](accounts.md)).
+7. **Email (Resend):** verify the sending domain `spotx.fun` at Resend (its SPF and DKIM DNS records) and set
+   `PARTYLINKS_MAIL__RESEND_API_KEY` (a send-only key is enough). Emails go from `SPOTX <events@spotx.fun>`,
+   a sender with no inbox; replies go to `contact@spotx.fun`. Without the key every email is off.
 
 Keep **one replica**: one container runs the web process and the scraping worker it starts (see
 [architecture](architecture.md), "Processes"); the response cache and the bans live in the web process.
@@ -46,6 +53,12 @@ Each process has its own pool (`database.pool_size` + `max_overflow`, 40 each, 8
 | `PARTYLINKS_SCHEDULER__RUN_ON_STARTUP=true` | Runs every source once when the process starts |
 | `PARTYLINKS_ADMIN__TOKEN` | A long random string for the admin console and the mutating API |
 | `PARTYLINKS_HTTP__SOURCE_PROXY` | Proxy every source goes through, so sites never see the server's IP. A comma-separated list is a failover pool: a source moves to the next URL only when the proxy itself fails. A source can opt out with `proxied: false` |
+| `PARTYLINKS_HTTP__ISRAEL_PROXY` | Israeli proxies, a comma-separated list, tried first by sources with `israel_proxy: true` (`source_proxy` is the last resort) |
+| `PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_ID` | The Google OAuth client id |
+| `PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_SECRET` | Its secret |
+| `PARTYLINKS_ACCOUNTS__SESSION_SECRET` | A long random string: signs the sign-in state cookie and the unsubscribe links (changing it breaks every unsubscribe link already sent) |
+| `PARTYLINKS_ACCOUNTS__ADMIN_EMAILS` | JSON list of emails made admins on sign-in; they also get the run manager's "source paused" emails |
+| `PARTYLINKS_MAIL__RESEND_API_KEY` | Resend API key; without it no email is sent |
 | `PARTYLINKS_SITE__BASE_URL` | Only for a custom domain; otherwise `https://$RAILWAY_PUBLIC_DOMAIN` is used |
 | `PARTYLINKS_SECURITY__ALLOWED_HOSTS` | Host names the site answers to, e.g. `["spotx.fun","www.spotx.fun"]` |
 | `PARTYLINKS_SOURCES__<NAME>__HTTP__HEADERS` | Secret headers for one source (e.g. an access key a site gave us) |

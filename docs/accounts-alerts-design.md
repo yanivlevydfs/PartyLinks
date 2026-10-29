@@ -1,7 +1,9 @@
 # Accounts, event alerts and email: design
 
 **Date:** 2026-10-29
-**Status:** Implemented 2026-10-29 (phases 0–5). How it works now: [accounts.md](accounts.md).
+**Status:** Implemented 2026-10-29 (phases 0–5). This is the design record; where the build differs, the
+text below says so and [section 21](#21-changes-after-implementation) lists the changes. How it works now:
+[accounts.md](accounts.md).
 **Model:** CheapFlights (`H:\GitHub\cheapflights`): Google accounts, deal alerts, report email, admin users tab. This copies that concept and applies it to events.
 
 ---
@@ -13,7 +15,7 @@
   - an optional **instant email** per alert;
   - an in-site **notification bell**.
   Signed-in users also get a **"For you" row** on the home page.
-- **Saved events:** a heart on every event card and event page, with a `/saved` page. It works **without login**: hearts are kept in the browser. On sign-in they are merged into the account and synced across devices. Saved events coming up that week lead the digest.
+- **Saved events:** a 🔔 save bell (not a heart, as first designed) on every event card, the home page's rows, the event page and map pins, with a `/saved` page. Saving **needs an account** (changed after implementation): a signed-out visitor gets a sign-in popup and the event is saved on the way back from Google. Only where Google sign-in is not configured (localhost) are saved ids kept in the browser, merged into the account at sign-in. Saved events coming up that week lead the digest.
 
 - **Why:** personalised events and a weekly reason to come back. This is the same retention loop CheapFlights runs for flights.
 
@@ -74,7 +76,7 @@
 | D9 | Login never required | Gate some features | Owner rule |
 | D10 | Bell items are `alert_hits` rows with `seen_at`; no separate notifications table | A `notifications` table as in CheapFlights | One row already means "this event matched this alert"; a second table would copy it |
 | D11 | The matcher reuses the `/events` filter builder | A separate Python matcher | One source of truth: an alert matches exactly what the same filters show on the site |
-| D13 | Saved events (a heart) in v1, working signed out through localStorage and merged on sign-in | Account-only hearts; leave it for later | Owner: do it as well. The login-optional rule means the heart can't need an account. |
+| D13 | Saved events (a heart) in v1, working signed out through localStorage and merged on sign-in | Account-only hearts; leave it for later | Owner: do it as well. The login-optional rule means the heart can't need an account. **Changed after implementation:** a bell, and saving needs an account (browsing still never does); see section 21. |
 | D12 | Sessions in the DB, token stored as SHA-256, 30-day rolling, no IP or user agent stored | CheapFlights' 24h sessions; JWT | Users of an event site expect to stay signed in. A DB row can be revoked. Least data kept. |
 
 ## 5. Architecture
@@ -92,7 +94,7 @@ Web process (partylinks serve)                                           │
   /admin/api/users..., /admin/api/email...
 
 Worker process (partylinks worker, APScheduler)
-  alerts.matcher   every 15 min: new events (first_seen_at > last pass) × active alerts → alert_hits
+  alerts.matcher   every 15 min: new groups (first seen since last pass, 30+ min old) × active alerts → alert_hits
   mail.instant     right after the matcher: users with unsent instant hits, at most 1 email per hour
   mail.digest      cron Thu 10:00 Asia/Jerusalem: opted-in users → one digest each
   mail.welcome     after sign-up (within 5 min)
@@ -164,7 +166,7 @@ Limit: 20 alerts per user (`accounts.max_alerts`).
 
 The primary key `(alert_id, event_id)` is what guarantees an event is never notified twice for the same alert. This is the events version of CheapFlights' ratchet.
 
-### `saved_events` (the heart)
+### `saved_events` (the save bell)
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -219,9 +221,9 @@ Limit: 500 per user.
 | POST | `/api/me/bell/seen` | Mark all as seen |
 | GET | `/api/me/for-you` | Up to 12 upcoming events matching any active alert, soonest first, grouped like `/events` |
 | GET | `/api/me/saved` | Saved events as event cards, upcoming only, soonest first |
-| PUT / DELETE | `/api/me/saved/{event_id}` | Heart on / off |
+| PUT / DELETE | `/api/me/saved/{event_id}` | Save on / off |
 | POST | `/api/me/saved/merge` | `{ids: [...]}` from localStorage after sign-in; unknown and past ids are dropped. Returns the full list. |
-| GET | `/api/events/cards?ids=` | Signed out: cards for the hearts kept in localStorage (at most 100 ids; a public read that goes through the page cache) |
+| GET | `/events/cards?ids=` | Cards for ids kept in localStorage, used only where sign-in is not configured (at most 100 ids; a public read that goes through the page cache) |
 | GET / POST | `/api/email/unsubscribe?t=…` | GET shows a confirm page; POST is RFC 8058 one-click |
 
 `/api/me*` responses are `Cache-Control: private, no-store` and are kept out of the page cache in `api.py`. The script-client block in `security.py` covers the data API. `/api/me*` must work for browsers only, which a session cookie already ensures.
@@ -231,24 +233,24 @@ Limit: 500 per user.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/users?q=&page=` | Search by email or name: joined date, last login, number of alerts, digest, active sessions, role, blocked |
-| GET | `/users/{id}` | Detail: profile, alerts, the last 50 hits |
+| GET | `/users/{id}` | Detail: profile, live sessions, saved and alert counts, consent, block and email dates (built: no alert list or hits) |
 | POST | `/users/{id}/revoke` | Delete all sessions |
 | POST | `/users/{id}/block`, `/unblock` | Block or unblock |
 | POST | `/users/{id}/role` | `user` / `admin` |
 | DELETE | `/users/{id}` | Same path as the user's own delete |
-| GET | `/users/stats?days=` | Signups per day, opted-in count, alerts, top alert genres, regions and artists |
-| GET | `/email` | Switches, Resend status (key present, domain verified), last runs |
+| GET | `/users/stats?days=` | Signups (total, 7 and 30 days, per day), opted-in, admins, blocked (built: no top genres, regions or artists) |
+| GET | `/email` | Switches, Resend status (ready, key present; built: no domain check), from address, digest schedule, last 20 runs |
 | POST | `/email/switches` | Digest, instant and welcome on/off. Stored in the one-row `mail_switches` table (`worker_state` is rewritten every heartbeat). |
-| POST | `/email/test?kind=digest` | Sends to the signed-in admin's own email |
+| POST | `/email/test?kind=digest` | Sends to the signed-in admin's own email only, never another user's (`digest` or `welcome`) |
 | GET | `/email/preview?user_id=&kind=digest` | The rendered HTML, not sent |
 
-`require_admin` in `admin.py` gets one hook line: accept the token, **or** a valid session whose user has `role = admin` and is not blocked.
+`require_admin` in `admin.py` gets one hook line: accept the token, **or** a valid session whose user has `role = admin` and is not blocked. Built: with the session, every change (not GET or HEAD) also needs `X-Requested-With: spotx` and our own `Origin`, since the cookie rides along on a cross-site request.
 
 ## 9. Matching engine (`alerts/matcher.py`)
 
-- **When:** a worker job every 15 minutes, plus once after each source run finishes. One run at a time, behind a lock.
+- **When:** a worker job (`alerts:match`) every 15 minutes, one at a time (APScheduler `max_instances=1`). Built: no extra pass after each source run.
 
-- **Input:** event group primaries with `first_seen_at > last_pass_at` that are still upcoming. The cursor is stored in the one-row `alert_state` table.
+- **Input:** built as: upcoming primaries of the duplicate groups whose *first* listing was first seen after the cursor and at least 30 minutes ago (`SETTLE`: the run has committed, duplicates are regrouped, places geocoded). A second listing of a party already announced is not new. The cursor is stored in the one-row `alert_state` table.
 
 - **How:**
   1. If there are no new events, stop.
@@ -257,7 +259,7 @@ Limit: 500 per user.
   4. Insert `alert_hits` rows with `ON CONFLICT DO NOTHING`.
 - **Why reuse matters:** an alert "techno, Tel Aviv, weekend" must match exactly what those filters show on the site. Two implementations would drift apart.
 
-- **Cost:** one query per distinct set of criteria, each over a small id list (the new events of 15 minutes, usually under 500). `ponytail:` ceiling is about 50k distinct criteria sets per pass. If measurements show it is slow, upgrade to batching criteria sets with the same genre and region into one query using `VALUES` joins. **Measure at production size before pushing.**
+- **Cost:** designed as one query per distinct set of criteria. Measured, that was 330 s a pass (31k distinct sets × 500 new events). Built instead: one query per *single filter value* (each genre, region, area, time slot, word, date window) over the new events, combined per alert in Python (AND between filters, any-of inside a list; the same answer as `build_event_filters`), and the hits written with `COPY` into a temporary table plus one `INSERT ... ON CONFLICT DO NOTHING`. Measured with `scripts/time_matcher.py` at 28k events and 50k alerts: 27.3 s for 500 new events.
 
 - **"For you"** (`/api/me/for-you`) uses the same builder: OR of the user's active alerts, upcoming events only, limit 12. It is cached for 10 minutes per user in memory (cachetools).
 
@@ -267,50 +269,47 @@ Limit: 500 per user.
 | --- | --- | --- | --- |
 | Welcome | ≤5 min after first sign-in | What alerts are, a "create your first alert" link, the digest checkbox reminder | Welcome switch |
 | Instant | After a matcher pass | New events for alerts that have `instant` on, combined into one email, at most 1 per user per hour | User's `instant` flag and the instant switch |
-| Weekly digest | **Thu 10:00 Asia/Jerusalem** | First, **"Your saved events this week"** (hearts with dates in the next 7 days). Then up to 12 upcoming events (next 10 days) matching the user's alerts that were not in an earlier digest; then "This weekend's free events" as filler. With no alerts at all, weekend highlights. Each card: image (`/images/{id}/640.webp`), date and time, venue, **weather**, price or "free", button to the event page. | `digest_opt_in` and the digest switch |
+| Weekly digest | **Thu 10:00 Asia/Jerusalem** | First, **"Your saved events this week"** (saved events with dates in the next 7 days). Then up to 12 upcoming events (next 10 days) matching the user's alerts that were not in an earlier digest; then, in a quiet week (fewer than 4 events so far), "This weekend's free events" and the weekend's highlights as filler. Each card: image (`/images/{id}/640.webp`), date and time, venue, **weather**, price or "free", button to the event page. | `digest_opt_in` and the digest switch |
 | Contact / test | Admin | | |
 
-- **Sending:** the Resend batch API in chunks of 100. Each email has an idempotency key `{kind}:{user_id}:{period}`, where period is the ISO week for the digest and the hour for instant, so a retried run never sends twice. Errors are classified as in CheapFlights' `is_account_error`: an account or key error stops the run; a per-recipient error is counted and skipped.
+- **Sending:** the Resend batch API in chunks of 100. Built: each request has an idempotency key made of the run's name (`digest:<ISO week>`, `instant:<run start>`, `welcome:<minute>`) and a hash of the chunk's user ids, so the same chunk sent again goes once; users are stamped after a successful send, so the next run skips them. Errors are classified as in CheapFlights' `is_account_error`: an account or key error stops the run; a per-recipient error is counted and skipped.
 
 - **Templates:** Jinja2, HE (RTL) and EN, with table layout and inline CSS. They live in `mail/templates/`. Links carry the site's UTM tags (`utm_source=email&utm_campaign=digest|instant|welcome`).
 
 - **Unsubscribe:** the token is itsdangerous-signed `{user_id, kind}`. Every email has the headers `List-Unsubscribe: <https://spotx.fun/api/email/unsubscribe?t=…>` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click`, plus a footer link. Unsubscribing from the digest sets `digest_opt_in = false`; from instant, it turns off `instant` on all of that user's alerts.
 
-- **From:** `SPOTX <events@spotx.fun>`. Reply-to is the site contact address.
+- **From:** `SPOTX <events@spotx.fun>`, a sender only (no inbox). Reply-to is the site contact address, `contact@spotx.fun`.
 
 - **Sender details (§30A):** the footer gives the sender's name and contact address and says how to refuse.
 
 ## 11. Frontend
 
-### New files
+### New files (as built)
 
 ```text
 web/src/accounts/
-  useMe.ts            react-query: /api/me (null when signed out); signIn(next), signOut()
-  SignInButton.tsx    "Continue with Google" (a plain link to /auth/google/login, no Google script)
-  UserMenu.tsx        Header avatar: my alerts, settings, sign out
+  useMe.ts            react-query: /api/me (null when signed out); sign-in URL, sign out
+  AccountSlot.tsx     Header corner: "Continue with Google" (a plain link, no Google script) or the avatar
+                      menu (my account, "⚙️ Site admin" for admins, sign out)
+  SignInSheet.tsx     The sign-in popup shared by the save bell and "Save as alert", drawn at the page root
   AccountPage.tsx     /account: name, email language, digest checkbox, delete account
-  WelcomeSheet.tsx    After the first sign-in: digest opt-in and a first alert
+  WelcomeSheet.tsx    After the first sign-in: digest opt-in and a first alert; ?signin=... errors
   AdminUsers.tsx      Admin tab "users"
   AdminEmail.tsx      Admin tab "email"
   accounts.css, i18n.ts
 web/src/alerts/
   AlertsPage.tsx      /alerts: list, create, edit, pause, instant toggle, live preview count
-  AlertForm.tsx       Reuses GenrePicker / Calendar / region pickers from Filters.tsx
-  AlertCard.tsx
-  SaveAlertButton.tsx "Save as alert" from the current filters (signed out: soft sign-in prompt)
-  Bell.tsx            Header bell, unseen badge, dropdown of event cards
+  SaveAlertButton.tsx "Save as alert" from the current filters; signed out: the sign-in popup, and the
+                      criteria travel in ?save_alert=<json>
+  Bell.tsx            Header bell (alert news), unseen badge, dropdown of event cards; saves ?save_alert=
   ForYouRow.tsx       Home-page row
-  alerts.css, i18n.ts, types.ts
-```
-
-```text
+  useAlerts.ts, alerts.css, i18n.ts
 web/src/saved/
-  useSaved.ts         One hook for both states. Signed out: zustand persist key "spotx-saved" (event ids).
-                      Signed in: react-query /api/me/saved with an optimistic toggle.
-                      On sign-in: POST merge, then clear the local list.
-  SaveHeart.tsx       Heart button (aria-pressed, labelled "Save event" / "שמור אירוע")
-  SavedPage.tsx       /saved: upcoming saved events; signed out, a soft note "sign in to keep them on every device"
+  useSaved.ts         Signed in: react-query /api/me/saved with an optimistic toggle. localStorage
+                      "spotx-saved" only where sign-in is not configured; merged once at sign-in.
+  SaveButton.tsx      The save bell (aria-pressed); signed out: the sign-in popup, back with ?save_event=<id>
+  SavedLink.tsx       Header "שמורים / Saved" button with the count, to /saved; saves ?save_event=<id>
+  SavedPage.tsx       /saved: upcoming saved events
   saved.css, i18n.ts
 ```
 
@@ -319,32 +318,32 @@ web/src/saved/
 | File | Hook |
 | --- | --- |
 | `main.tsx` | Routes `/account`, `/alerts` |
-| Header in `ui.tsx` | `<Bell/>` + `<UserMenu/>` or `<SignInButton/>` |
+| Header in `ui.tsx` | `<SavedLink/>`, `<Bell/>` and `<AccountSlot/>` |
 | `Filters.tsx` | `<SaveAlertButton filters={…}/>` next to the result count |
 | `pages/Quiz.tsx` | Last step: "Save these answers as an alert" |
 | `pages/Home.tsx` | `<ForYouRow/>` when signed in |
 | `pages/MapPage.tsx` | `<SaveAlertButton/>` with the map's filters |
 | `pages/EventPage.tsx` | "Alert me about {artist}" / "about {venue}" (an alert with `q`) |
-| Event card in `ui.tsx`, `pages/EventPage.tsx`, the map popup in `pages/MapPage.tsx`, `ForYouRow` | `<SaveHeart eventId=…/>` |
-| `main.tsx` | Route `/saved`; header link "Saved (n)" |
+| Event card in `ui.tsx` (grid, home rows, "For you"), `pages/EventPage.tsx`, the map popup in `pages/MapPage.tsx` | `<SaveButton eventId=…/>` |
+| `main.tsx` | Route `/saved` |
 | `pages/Admin.tsx` | `TABS` gains `"users"`, `"email"` |
-| `consent.tsx` | Storage list: `spotx_session` (necessary) and `session` (sign-in only, 10 minutes, necessary) |
+| `consent.tsx` | Storage list: `spotx_session` (necessary), `spotx_signin` (sign-in only, 10 minutes, necessary) and `spotx-saved` |
 
 ### Every-surface checklist
 
-- [ ] Filters bar, quiz, map, event page: "Save as alert"
+- [x] Filters bar (home, landing pages, map), quiz, event page (its first artist): "Save as alert"
 
-- [ ] SEO landing pages (`/city/x`, `/genre/x`, server-rendered too): "Get these events every Thursday" (a sign-in link with `next`)
+- [ ] SEO landing pages, server-rendered: "Get these events every Thursday". Not built; the React landing pages have "Save as alert" in the filter bar
 
-- [ ] Blog post announcing alerts, in HE and in `content/blog/en/<slug>.html`
+- [x] Blog post announcing alerts, in HE and in `content/blog/en/<slug>.html` (`party-alerts-weekly-email`)
 
-- [ ] i18n: every string in HE and EN
+- [x] i18n: every string in HE and EN
 
-- [ ] Heart on every surface that shows an event: home, browse, abroad, map popup, event page, "For you", landing pages (the React version)
+- [x] The save bell on every surface that shows an event: home and its rows, browse, abroad, map pins, event page, "For you", landing pages (the React version)
 
-- [ ] `robots.txt`: disallow `/account`, `/alerts`, `/saved`, `/auth/`; these pages are `noindex` and not in the sitemap
+- [x] `robots.txt`: disallow `/account`, `/alerts`, `/saved`, `/auth/`, `/api/me`; these pages answer 200 `noindex` and are not in the sitemap
 
-- [ ] Accessibility (IS 5568): bell and menus keyboard-reachable, `aria-live` on the bell count, form labels
+- [x] Accessibility (IS 5568): bell and menus keyboard-reachable, `aria-live` on the bell count, form labels
 
 ## 12. Security
 
@@ -410,7 +409,7 @@ Accounts are optional. Users must be 16 or older. One account per person. We may
 
 ### Cookie / storage list (`consent.tsx`)
 
-Add `spotx_session` and the sign-in `session` cookie as necessary, and the localStorage key `spotx-saved` (saved event ids, necessary, kept on the device until cleared). No new optional category, because no Google script loads (D8).
+Add `spotx_session` and the sign-in cookie (built as `spotx_signin`) as necessary, and the localStorage key `spotx-saved` (saved event ids, necessary, kept on the device until cleared; used only where sign-in is not configured). No new optional category, because no Google script loads (D8).
 
 ### `docs/legal.md`
 
@@ -428,9 +427,9 @@ Update the table and the "server-side records" section.
 
 - **users tab:** a search box and a paged table (avatar, name, email, joined, last login, alerts, digest ✓, sessions, role, blocked). A row opens a drawer: alerts with their criteria, the last hits, and the buttons revoke / block / role / delete (delete needs the email typed). On top, stats cards (total, new in 7 and 30 days, opted-in, alerts, instant alerts) and a signups-per-day chart reusing the clicks tab's chart.
 
-- **email tab:** a Resend status card (key set, domain verified, from address); three switches (digest, instant, welcome); "send test to me" per kind; "preview as user" (user picker, then an iframe of the rendered HTML); the last 20 `email_runs`.
+- **email tab:** a Resend status card (key set, from address; built without a domain check); three switches (digest, instant, welcome); "send test to me" per kind; "preview as user" (user picker, then an iframe of the rendered HTML); the last 20 `email_runs`.
 
-- **overview tab:** warnings for "Resend key missing", "Google OAuth not configured" and "privacy email empty".
+- **overview tab:** warnings for "Resend key missing", "Google OAuth not configured" and "privacy email empty". Built: only the privacy-email warning; the email tab shows whether Resend is ready.
 
 ## 16. Edge cases
 
@@ -442,8 +441,8 @@ Update the table and the "server-side records" section.
 | Event removed or ended | Retention deletes its hits (A7) |
 | Alert edited | `criteria_hash` changes; old hits stay; only new events match the new criteria |
 | A user with 0 alerts opts in to the digest | Gets weekend highlights and free events |
-| A saved event ends or is removed | Retention deletes the row. Signed out, `useSaved` drops ids that `/api/events/cards` no longer returns. |
-| Hearts on two devices, then sign-in on both | Each device merges its local list; PK `(user_id, event_id)` makes the merge `ON CONFLICT DO NOTHING` |
+| A saved event ends or is removed | Retention deletes the row. Where sign-in is not configured, `useSaved` drops ids that `/events/cards` no longer returns. |
+| Saved on two devices (sign-in not configured), then sign-in on both | Each device merges its local list; PK `(user_id, event_id)` makes the merge `ON CONFLICT DO NOTHING` |
 | Resend down mid-run | Each email has an idempotency key; the next run resends only the unsent |
 | Worker restarts mid-digest | `last_digest_at` is stamped per user after a successful send, so a rerun skips those already sent |
 | Blocked during an active session | Every `/api/me` call re-reads the user, so the user is signed out at the next request |
@@ -535,12 +534,43 @@ New dependencies (pyproject, requirements and lock): `authlib`, `itsdangerous`, 
 
 ## 20. Open items
 
-- [ ] Create the Resend account, verify spotx.fun (SPF, DKIM, DMARC), set the env key.
+- [x] Create the Resend account, verify spotx.fun, set the env key (`PARTYLINKS_MAIL__RESEND_API_KEY` on Railway).
 
-- [ ] Create the Google OAuth client and set the client id and secret in Railway.
+- [x] Create the Google OAuth client and set the client id and secret in Railway.
 
-- [ ] Set `site.privacy.email`.
+- [x] Set `site.privacy.email` (contact@spotx.fun).
 
 - [ ] Lawyer review (privacy text, §30A wording, the 2017 security regulations).
 
 - [ ] Decide whether long-inactive accounts (for example 24 months without sign-in) are deleted after a warning email. Not in v1.
+
+## 21. Changes after implementation
+
+What the build does differently from the design above (all 2026-10-29):
+
+- **Saving needs an account.** The save button is a 🔔 bell, not a heart, on every event card, the home
+  page's rows, the event page and map pins. A signed-out visitor gets the sign-in popup
+  (`web/src/accounts/SignInSheet.tsx`) and the event is saved on the way back from Google (`?save_event=<id>`).
+  "Save as alert" works the same way, with the criteria in `?save_alert=<json>`. localStorage `spotx-saved` is
+  used only where Google sign-in is not configured (localhost) and is merged into the account at sign-in.
+  Browsing still never needs an account.
+- **Header:** a labelled "שמורים / Saved" button with the count (to `/saved`), a plain bell for alert news
+  (signed in), and the avatar menu with "⚙️ ניהול האתר / Site admin" for admins.
+- **Matcher:** waits 30 minutes after an event is first seen (`SETTLE`); only a new duplicate group counts
+  as new; one query per single filter value, combined in Python; `COPY` insert. 27.3 s for 500 new events ×
+  50k alerts at 28k events. No extra pass after each source run.
+- **Criteria:** a one-letter word is no filter (the site searches 2+ letters); with nothing else set the alert
+  is refused.
+- **Email:** sent from `SPOTX <events@spotx.fun>` (sender only), replies to `contact@spotx.fun`. Idempotency
+  keys are per run and chunk, not per user and period. The admin's test send goes only to the signed-in
+  admin's own address.
+- **Admin:** changes made with an admin's Google session need the `X-Requested-With: spotx` header (and our
+  `Origin`). The users detail and stats are smaller than designed (counts, no hit lists or top genres); no
+  overview warnings for Resend or Google, and no Resend domain check.
+- **Security:** a `401` counts as a wrong-token strike only when an `Authorization` header was sent, so a
+  signed-out visitor's `GET /api/me` never bans them. Tracebacks are scrubbed of email addresses too.
+- **Not built:** retention does not delete expired sessions (an expired session is refused when read and
+  stays in `user_sessions`); the server-rendered landing-page "every Thursday" call to action.
+- **File names:** `AccountSlot.tsx` (instead of `SignInButton.tsx` and `UserMenu.tsx`), `SaveButton.tsx` and
+  `SavedLink.tsx` (instead of `SaveHeart.tsx`), no `AlertForm.tsx` / `AlertCard.tsx` (inside `AlertsPage.tsx`),
+  no `alerts/repo.py`. Section 17a keeps the planned names.

@@ -52,16 +52,28 @@ An alert is a saved search: the site's own filters (genres, regions, neighbourho
 free only, discount only, when as "any time / weekend / 7 days / 30 days" or a date range, and a word such
 as an artist or venue). "🔔 Save as alert" appears in the filter bar (home, landing pages, map) whenever a
 filter or search is set, on the quiz's last step, and on an event page for its first artist. Signed out, it
-asks to sign in and saves the alert on the way back (`?save_alert=1`, or `q:<artist>`). `/alerts` lists them
+opens the same sign-in popup as the save bell and saves the alert on the way back: the criteria travel in the
+address as `?save_alert=<criteria as JSON>` (the page's filters don't survive the trip to Google), and the
+header bell saves them on arrival. A one-letter word is no filter (the site searches 2+ letters); an alert with
+nothing else set is refused. `/alerts` lists them
 (new matches, "email me at once", pause, see events, delete) and makes new ones. At most
 `accounts.max_alerts` (20) per user; the same search saved twice is one alert.
 
 The worker matches new events every `mail.matcher_interval_minutes` (15) (`alerts/matcher.py`, job
-`alerts:match`): events first seen since the last pass, against every active alert of a user who is not
-blocked, through `api.build_event_filters`, the same function `/events` uses, so an alert finds exactly
-what the same filters show on the site. Each distinct set of filters is queried once. A match is a row in
-`alert_hits`; its key (alert, event) keeps an event from being sent twice. The first pass after a deploy
-only sets the cursor, so existing events never flood anyone.
+`alerts:match`), against every active alert of a user who is not blocked, through
+`api.build_event_filters`, the same function `/events` uses, so an alert finds exactly what the same
+filters show on the site.
+
+- **What is new:** a duplicate *group* whose first listing was first seen since the last pass, shown by its
+  primary listing. A second listing of a party already announced is not news. An event is matched only
+  once it is 30 minutes old (`SETTLE`): by then its run has committed, duplicates are regrouped and places
+  geocoded (the area and region filters need them).
+- **How:** one query per single filter value (each genre, region, area, time slot, word, date window) over
+  the new events, combined per alert in Python (AND between filters, any-of inside a list). Matches go in
+  with `COPY` into a temporary table and one `INSERT ... ON CONFLICT DO NOTHING`. Measured with
+  `scripts/time_matcher.py` at production size (28k events, 50k alerts): 27.3 s for 500 new events.
+- A match is a row in `alert_hits`; its key (alert, event) keeps an event from being sent twice. The first
+  pass after a deploy only sets the cursor, so existing events never flood anyone.
 
 The header bell (signed in) shows the newest 30 matches, polls once a minute while the tab is visible, and
 marks them seen when opened. "For you" on the home page shows up to 12 upcoming events matching any active
@@ -71,8 +83,9 @@ alert (cached 10 minutes per user). Matches go with their event when it ends. Co
 ## Email (Resend)
 
 Sent by the worker through Resend's batch API (100 a request, at most two requests a second, an
-idempotency key per request) from `mail.from_address` (`SPOTX <events@spotx.fun>`; the domain is verified
-at Resend), reply-to the contact address. Nothing is sent without `PARTYLINKS_MAIL__RESEND_API_KEY`
+idempotency key per request, made from the run's name and the chunk's users) from `mail.from_address`
+(`SPOTX <events@spotx.fun>`, a sender only with no inbox; the domain is verified at Resend). Replies go to
+the site's contact address, `contact@spotx.fun` (`site.contact_email`). Nothing is sent without `PARTYLINKS_MAIL__RESEND_API_KEY`
 (a send-only key is enough), and each kind has an admin switch (email tab).
 
 | Email | When | To whom |
@@ -86,7 +99,8 @@ with picture, day and time, place, weather (from the site's forecast cache) and 
 `utm_source=email`, a footer with why it came, and an unsubscribe link plus the RFC 8058 one-click headers.
 The link is a signed `{user, kind}` token that never expires: `GET /api/email/unsubscribe?t=` shows a confirm
 page (link scanners open links), `POST` unsubscribes (`digest`: digest off; `instant`: every alert's instant
-off; `all`, in the welcome: both). Each run is recorded in `email_runs` (counts and the first error only).
+off; `all`, in the welcome: both). Each run is recorded in `email_runs` (counts and the first error only). The admin's test send goes only to
+the signed-in admin's own address.
 A Resend account problem (key, quota, billing) stops the run and shows in the admin. Code: `src/partylinks/mail/`.
 
 ## API

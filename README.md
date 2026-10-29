@@ -1,6 +1,6 @@
 # SPOTX
 
-SPOTX collects events from 84 sources on a schedule (Israeli ticketing sites, clubs and venues, city and
+SPOTX collects events from 88 sources on a schedule (Israeli ticketing sites, clubs and venues, city and
 community-centre calendars, event guides, and sellers of shows abroad) and shows them on one website in
 Hebrew and English. It covers parties, concerts, theatre, stand-up, cinema, tech meetups, community
 events and shows abroad.
@@ -14,6 +14,10 @@ For every event it keeps:
 
 Each ticket link sends the visitor to the seller through a UTM-tagged, counted redirect. Friends plan
 together with "who's coming with me?": a poll per event (or between up to four), shared in WhatsApp.
+
+Browsing never needs an account. An optional Google sign-in adds saved events (the 🔔 save bell), alerts
+for new events that match a saved search, a notification bell, a "For you" row and email: an instant alert
+(at most hourly) and a weekly digest on Thursday morning, only for those who ask for it.
 
 The backend is Python (FastAPI, SQLAlchemy, PostgreSQL) and the website is React + TypeScript (Vite).
 Production runs on Railway and deploys on every push to `master`.
@@ -41,6 +45,7 @@ All docs are in [docs/](docs/README.md):
 - [Configuration](docs/configuration.md)
 - [API](docs/api.md)
 - [Admin console](docs/admin.md)
+- [Accounts, saved events, alerts and email](docs/accounts.md)
 - [Ticket links: UTM and clicks](docs/ticket-links.md)
 - [SEO and blog](docs/seo-and-blog.md)
 - [Legal and privacy](docs/legal.md)

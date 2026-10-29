@@ -11,6 +11,9 @@ plain-HTML copy of the content inside `#root`. React replaces that copy on load.
 `/tonight`, `/weekend`, `/genre/<genre>`, `/genre/<genre>/<when>`, `/city/<city>`,
 `/accessibility`, `/privacy`, `/terms`, and the blog pages.
 
+A person's own pages, `/account`, `/saved` and `/alerts`, answer `200` with a bare `noindex` shell (a title
+only) that the React app draws; they are in no sitemap.
+
 Each page has:
 
 - **Head tags:** `<title>`, description, canonical URL, and hreflang for Hebrew and English
@@ -36,7 +39,7 @@ Unknown pages return a real `404`. Filters on the site move the URL to their lan
 | File | Contents |
 | --- | --- |
 | `/sitemap.xml` | A sitemap index, with parts of up to 10,000 URLs at `/sitemap-<part>.xml`: upcoming events, venues, artists, landing pages and posts, with hreflang alternates |
-| `/robots.txt` | Search engines and AI crawlers allowed. Private paths disallowed (`/admin`, `/go/`, `/health`, `/runs`, `/sources`, `/changes`, API docs). Data harvesters disallowed and also refused by the server |
+| `/robots.txt` | Search engines and AI crawlers allowed. Private paths disallowed (`/admin`, `/admin/api/`, `/health`, `/runs`, `/sources`, `/maintenance`, `/changes`, API docs, and the account paths `/account`, `/alerts`, `/saved`, `/auth/`, `/api/me`). `/go/` stays allowed: Google must crawl `offers.url`, and crawlers' visits are not counted as clicks. Data harvesters disallowed and also refused by the server |
 | `/llms.txt` | A site summary, the API, and the next 400 events |
 
 Set `site.base_url` to the public domain: canonical links, the sitemap, JSON-LD and share
@@ -61,6 +64,9 @@ Each post is a file `content/blog/<slug>.html`: a YAML header between `---` line
   only `title`, `description` and `faq` in the header (date, category and the rest come from the
   Hebrew file) and the same `<!--events-->` comments. `?lang=en` serves it, with hreflang and
   sitemap alternates. A post without one is shown in Hebrew to English readers too.
+
+Posts include `party-alerts-weekly-email` (Hebrew and English): saved events, party alerts and the weekly
+email.
 
 Posts are served three ways:
 

@@ -674,10 +674,10 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Queries:** בכל בקשה עם עוגייה: ‏`SELECT user_sessions JOIN users WHERE token_hash = ?` (UNIQUE), ו-`UPDATE` של `expires_at` לכל היותר פעם ביום לסשן. מחיקת משתמש היא `DELETE FROM users WHERE id = ?` והשאר נמחק ב-CASCADE. ‏`signups per day` בטאב המשתמשים מקובץ ב-Python (ל-pgserver המקומי אין נתוני אזורי זמן).
 - **Tests:** ‏`tests/test_accounts.py` (‏10). ‏495/495.
 
-### 2026-10-29 (אירועים שמורים, הלב)
-- **טבלה חדשה:** `saved_events` (‏`partylinks/saved/models.py`): ‏PK ‏(`user_id`, ‏`event_id`), ‏`user_id` ‏FK ל-`users` עם `ON DELETE CASCADE`, ‏`event_id` עם אינדקס, בלי FK ל-`events` (כמו `plans`): ‏`db.delete_events` קורא ל-`saved.routes.delete_saved`, כך שלב של אירוע שנגמר נמחק איתו. ‏`saved_at`.
+### 2026-10-29 (אירועים שמורים, פעמון השמירה)
+- **טבלה חדשה:** `saved_events` (‏`partylinks/saved/models.py`): ‏PK ‏(`user_id`, ‏`event_id`), ‏`user_id` ‏FK ל-`users` עם `ON DELETE CASCADE`, ‏`event_id` עם אינדקס, בלי FK ל-`events` (כמו `plans`): ‏`db.delete_events` קורא ל-`saved.models.delete_saved`, כך ששמירה של אירוע שנגמר נמחקת איתו. ‏`saved_at`.
 - **Queries:** רשימת השמורים: `events WHERE group_id IN (SELECT group_id FROM events WHERE id IN (...) OR slug IN (...)) AND is_primary AND upcoming`, כך שאירוע שקובץ מחדש עדיין מוצג (הראשי של הקבוצה). שמירה: `INSERT ... ON CONFLICT DO NOTHING`. מיזוג אחרי כניסה: עד `accounts.max_saved` ‏(500).
-- **ציבורי:** ‏`GET /events/cards?ids=` (עד 100) לכרטיסים של לבבות ששמורים במכשיר בלי חשבון; נרשם לפני `/events/{event_ref}`.
+- **ציבורי:** ‏`GET /events/cards?ids=` (עד 100) לכרטיסים של אירועים ששמורים במכשיר (localStorage), רק כשהכניסה עם Google לא מוגדרת (localhost); שמירה דורשת חשבון; נרשם לפני `/events/{event_ref}`.
 - **Tests:** ‏`tests/test_saved.py` (‏4). ‏499/499.
 
 ### 2026-10-29 (התראות: חיפוש שמור, פעמון, "בשבילך")
@@ -685,14 +685,14 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
   - `event_alerts`: ‏`id` PK, ‏`user_id` ‏FK ל-`users` ‏CASCADE (אינדקס), ‏`name`, ‏`criteria` ‏JSONB (תת-קבוצה של מסנני האתר, תאריכים יחסיים), ‏`criteria_hash` (אינדקס; אותו חיפוש = אותו hash), ‏`instant`, ‏`active`, ‏`created_at`, ‏`updated_at`.
   - `alert_hits`: ‏PK ‏(`alert_id`, ‏`event_id`): המפתח הוא מה שמונע שליחה כפולה. ‏`alert_id` ‏FK ‏CASCADE, ‏`event_id` (אינדקס, בלי FK; ‏`db.delete_events` מוחק דרך `alerts.models.delete_hits`), ‏`user_id` (אינדקס), ‏`matched_at`, ‏`seen_at` (הפעמון), ‏`instant_sent_at`, ‏`digest_sent_at`.
   - `alert_state`: שורה אחת, ‏`cursor` של ה-matcher.
-- **Queries:** ה-matcher (worker, כל 15 דק'): ‏`events WHERE first_seen_at > cursor AND is_primary AND upcoming` (האירועים החדשים), ואז שאילתה אחת לכל `criteria_hash` שונה: ‏`events WHERE id = ANY(:new) AND <build_event_filters של ההתראה>`, ו-`INSERT INTO alert_hits ... ON CONFLICT DO NOTHING` ב-chunks של 5,000. ‏"בשבילך": ‏OR של המסננים של כל ההתראות הפעילות, ‏LIMIT 12, נשמר בזיכרון 10 דק' למשתמש.
+- **Queries:** ה-matcher (worker, כל 15 דק'): הקבוצות החדשות, ‏`SELECT coalesce(group_id, id) FROM events GROUP BY 1 HAVING min(first_seen_at) > cursor AND min(first_seen_at) <= now - 30 min` (רשומה שנייה של מסיבה שכבר הוכרזה אינה חדשה; 30 הדקות נותנות לריצה להיכנס ול-dedup ולגיאוקוד לרוץ), ומהן הראשי (`is_primary AND upcoming`). בתכנון: שאילתה אחת לכל `criteria_hash` שונה; מה שנבנה בפועל, בסעיף "שינוי אחרי מדידה" למטה. ‏"בשבילך": ‏OR של המסננים של כל ההתראות הפעילות, ‏LIMIT 12, נשמר בזיכרון 10 דק' למשתמש.
 - **שינוי אחרי מדידה:** שאילתה לכל `criteria_hash` לקחה 330 ש' למעבר (31,545 חיפושים שונים x ‏500 אירועים חדשים). עכשיו: שאילתה אחת לכל *ערך* מסנן בודד (ז'אנר, אזור, שכונה, משבצת זמן, מילה, חלון תאריכים), כ-100 שאילתות קטנות על האירועים החדשים, וחיתוך/איחוד של הקבוצות ב-Python לכל התראה (זהה ל-`build_event_filters`: ‏AND בין מסננים, any-of בתוך רשימה). ה-hits נכתבים ב-`COPY` לטבלה זמנית ו-`INSERT ... SELECT ... ON CONFLICT DO NOTHING` (‏`INSERT` רב-שורות של SQLAlchemy לקח 140 ש').
 - **נמדד** (‏`scripts/time_matcher.py`, ‏pgserver מקומי, 28,000 אירועים, 50,000 התראות של 10,000 משתמשים): 500 אירועים חדשים: 27.3 ש' (825,241 hits); ‏100 חדשים: 7.3 ש'.
 - **Tests:** ‏`tests/test_alerts.py` (‏5), כולל parity על 12 חיפושים: ה-hits של כל התראה שווים בדיוק למה ש-`/events` מחזיר לאותם מסננים. ‏504/504.
 
 ### 2026-10-29 (מיילים דרך Resend)
 - **טבלאות חדשות** (‏`partylinks/mail/models.py`, בלי מידע אישי): `email_runs` (‏`id` PK, ‏`kind` ‏welcome/instant/digest/test עם אינדקס, ‏`started_at` עם אינדקס, ‏`finished_at`, ‏`sent`, ‏`failed`, ‏`skipped`, ‏`error` בלי כתובות) ו-`mail_switches` (שורה אחת: ‏`welcome`, ‏`instant`, ‏`digest`).
-- **Queries:** ‏welcome: ‏`users WHERE welcome_sent_at IS NULL AND blocked_at IS NULL AND created_at < now-2min LIMIT 500`. ‏instant: ‏`alert_hits JOIN event_alerts JOIN users WHERE instant_sent_at IS NULL AND instant AND active AND (last_instant_at IS NULL OR < now-60min)`. ‏digest: ‏`users WHERE digest_opt_in AND (last_digest_at IS NULL OR < now-6d)`, ולכל משתמש: שמורים ב-7 הימים הקרובים, ‏hits שלא נשלחו באירועים ב-10 הימים הקרובים, ואם יש פחות מ-4: ‏`build_event_filters(weekend, free_entry)` ‏LIMIT 12. החתמת `welcome_sent_at` / ‏`instant_sent_at` / ‏`digest_sent_at` / ‏`last_*` רק אחרי שליחה שהצליחה.
+- **Queries:** ‏welcome: ‏`users WHERE welcome_sent_at IS NULL AND blocked_at IS NULL AND created_at < now-2min LIMIT 500`. ‏instant: ‏`alert_hits JOIN event_alerts JOIN users WHERE instant_sent_at IS NULL AND instant AND active AND (last_instant_at IS NULL OR < now-60min)`. ‏digest: ‏`users WHERE digest_opt_in AND (last_digest_at IS NULL OR < now-6d)`, ולכל משתמש: שמורים ב-7 הימים הקרובים, ‏hits שלא נשלחו באירועים ב-10 הימים הקרובים, ואם יש פחות מ-4: ‏`build_event_filters(weekend, free_entry)` ו-`build_event_filters(weekend)`, ‏LIMIT 12 כל אחת. החתמת `welcome_sent_at` / ‏`instant_sent_at` / ‏`digest_sent_at` / ‏`last_*` רק אחרי שליחה שהצליחה.
 - **Tests:** ‏`tests/test_mail.py` (‏5, ‏Resend מדומה).
 
 ### 2026-10-29 (מנהל ריצות: ניסיון חוזר, תקרת ריצות, השהיית מקור שבור)

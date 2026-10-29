@@ -1,10 +1,12 @@
 # Architecture
 
-SPOTX runs as two Python processes on one PostgreSQL database (production; see "Processes" below) and does three things:
+SPOTX runs as two Python processes on one PostgreSQL database (production; see "Processes" below) and does four things:
 
 1. **Collects:** a scheduler runs each source on its own cron.
 2. **Stores:** events go into PostgreSQL.
 3. **Serves:** the REST API, the React website and server-rendered pages for crawlers.
+4. **Tells:** optional Google accounts save events and alerts; the worker matches new events against the
+   alerts and sends email (see "Accounts, saved events, alerts and email" below).
 
 ## Processes (`worker/`)
 
@@ -14,8 +16,10 @@ crawler's burst filled the server's queue). Production therefore runs:
 
 - **the web process** (`partylinks serve`): pages, the API and the admin. It starts the worker, restarts
   it with backoff if it ever exits, and stops it on shutdown (`worker/supervisor.py`).
-- **the worker** (`partylinks worker`, `worker/runner.py`): the scheduler, every source, retention, and
-  the startup passes (artwork to files, genres, WebP copies, geocoding).
+- **the worker** (`partylinks worker`, `worker/runner.py`): the scheduler, every source, retention, the
+  account jobs (`alerts:match` every 15 minutes with the instant emails after it, `mail:welcome` every 5
+  minutes, `mail:digest` on Thursday 10:00), and the startup passes (artwork to files, genres, WebP copies,
+  geocoding).
 
 Each has its own CPU and connection pool. They talk through two tables: `worker_state` (heartbeat,
 jobs, retention, write counter; read by `/health`, the admin and the page cache, which goes stale when
@@ -40,6 +44,11 @@ scrape -> enrich -> save -> artwork -> regroup duplicates -> record the run
   rest of the batch is saved. Collected events are flushed even on timeout or block.
 - **Every run is recorded** in `scrape_runs`: counts, status (`success`, `partial`, `failed`,
   `blocked`) and per-event failures.
+- **At most `scheduler.max_parallel_runs` (6) sources at once.** The rest wait in a queue.
+- **Bad runs are retried** (`runs/health.py`): a run that failed, was blocked, found no events or far fewer
+  than usual is run again after 15 minutes, 1 hour and 3 hours; still bad, the source is paused (kept in the
+  `flags` table as `paused:<source>`) and the admins are emailed. A healthy run unpauses it (see
+  [admin](admin.md), "Run manager").
 
 ## Enrichment (`enrichment.py`)
 
@@ -179,6 +188,28 @@ Up to 60 answers per plan. A plan is deleted with its own event (`db.delete_even
 `plans.routes.delete_plans`); a compared event that is over just leaves the options. All code lives in
 `src/partylinks/plans/` and `web/src/plans/`; the rest of the app has one-line hooks only.
 
+## Accounts, saved events, alerts and email (`accounts/`, `saved/`, `alerts/`, `mail/`)
+
+Browsing never needs an account. Signing in with Google (Authlib, a server redirect, no Google script on
+our pages) adds saved events, alerts ("save search"), the header bell, a "For you" row and email. Each part
+is its own package, with `web/src/accounts/`, `web/src/saved/` and `web/src/alerts/` on the site; the rest
+of the app has hook lines only: `api.py` installs the routers and serves `accounts` in `/site`,
+`admin.require_admin` accepts an admin's Google session, `scheduler.py` adds the account jobs, `db.delete_events`
+removes saved events and alert matches with their event, `logs.py` adds the `Redact` filter (no email
+address or sign-in / unsubscribe token in any log line, tracebacks too), and `seo.py` serves `/account`,
+`/saved`, `/alerts` as `noindex` pages.
+
+- **Saving** an event (the 🔔 save bell on every card, the home page's rows, the event page and map pins)
+  and **saving an alert** need an account; a signed-out visitor gets a sign-in popup, and the event or alert
+  is saved on the way back from Google.
+- **The matcher** (`alerts/matcher.py`) takes the new duplicate groups (first seen since the last pass, at
+  least 30 minutes old) and matches them through `api.build_event_filters`, the function `/events` uses, so
+  an alert finds what the same filters show on the site.
+- **Email** goes through Resend from the worker: welcome, instant (at most hourly per user) and the weekly
+  digest (only for users who ticked it). The web process sends only the admin's test.
+
+Details, tables and endpoints: [accounts](accounts.md); the design record: [accounts-alerts-design.md](accounts-alerts-design.md).
+
 ## Code layout
 
 ```
@@ -205,8 +236,9 @@ src/partylinks/
   media.py                    artwork download and storage
   retention.py                purge finished events
   db.py                       schema, lightweight auto-migration, bulk writes
-  service.py                  threaded runner
-  scheduler.py                one cron job per source + retention
+  service.py                  threaded runner (at most scheduler.max_parallel_runs at once)
+  runs/health.py              run manager: bad runs retried, a broken source paused, admins emailed
+  scheduler.py                one cron job per source + retention + the account jobs
   api.py                      FastAPI app, public API, /go/ redirect
   admin.py                    admin API (/admin/api)
   security.py                 headers, host check, bot blocking, rate limits, bans
@@ -218,11 +250,26 @@ src/partylinks/
   ads/                        advertising, apart from the rest: models.py (sponsored,
                               sponsored_stats tables), routes.py (rails, hits, admin picks),
                               service.py (sponsored first in matching results)
+  accounts/                   optional Google accounts: config.py, models.py (users, user_sessions),
+                              google.py (Authlib sign-in), sessions.py (spotx_session cookie), routes.py
+                              (/api/me), guard.py (rate limits, same-origin writes), admin_routes.py
+                              (users tab), redact.py (log scrubbing)
+  saved/                      saved events: models.py (saved_events), routes.py (/api/me/saved, /events/cards)
+  alerts/                     alerts: criteria.py, models.py (event_alerts, alert_hits, alert_state),
+                              matcher.py, routes.py (/api/me/alerts, bell, for-you), jobs.py (worker jobs)
+  mail/                       email through Resend: config.py, models.py (email_runs, mail_switches),
+                              send.py, render.py + templates/ (Jinja2), jobs.py (welcome, instant, digest),
+                              tokens.py + routes.py (unsubscribe), admin_routes.py (email tab)
   logs.py                     one logging setup for every process
   cli.py                      command line
 web/                          React + TypeScript website (Vite)
 web/src/plans/                the plan page, the 👥 button, which-party, rides, free-entry reminder
 web/src/ads/                  the paid side rails, the results' Sponsored label, their CSS and the admin's sponsored tab
+web/src/accounts/             header account corner and menu, sign-in popup (SignInSheet), welcome sheet,
+                              /account, the admin's users and email tabs
+web/src/saved/                the save bell (SaveButton), the header's "Saved" button with the count, /saved
+web/src/alerts/               "Save as alert", the header's alert-news bell, /alerts, the "For you" row
+scripts/time_matcher.py       times a matcher pass at production size on a throwaway local database
 tests/                        pytest, with real-page fixtures under tests/fixtures/
 ```
 
@@ -251,8 +298,10 @@ and bulk insert or delete for tickets and images.
   missing dates and prices sort as the smallest value; the short-word search rule is `db.whole_word`
   (a regex); duplicate grouping sorts in Python, never by the database's collation.
 - **Keys:** every table has a primary key; foreign keys with `ON DELETE CASCADE` from tickets, images
-  and deal changes to events, and from plan answers and options to plans. Clicks, sponsored picks and
-  plans point at events without a foreign key on purpose: they outlive retention or go with it in code.
+  and deal changes to events, from plan answers and options to plans, and from sessions, saved events,
+  alerts and their matches to users (deleting a user removes everything that is theirs). Clicks, sponsored picks,
+  plans, saved events and alert matches point at events without a foreign key on purpose: they outlive
+  retention or go with it in code.
 
 `Database.create_schema()` creates missing tables, adds new columns (with their default, `NOT NULL`
 where the model says so) and builds missing indexes, at every start, under an advisory lock (one
