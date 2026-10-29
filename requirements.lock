@@ -12,6 +12,8 @@ anyio==4.15.1
     #   starlette
 apscheduler==3.11.3
     # via partylinks (pyproject.toml)
+authlib==1.9.1
+    # via partylinks (pyproject.toml)
 cachetools==7.2.6
     # via partylinks (pyproject.toml)
 certifi==2026.10.19
@@ -19,12 +21,21 @@ certifi==2026.10.19
     #   curl-cffi
     #   httpcore
     #   httpx
+    #   requests
 cffi==2.1.1
-    # via curl-cffi
+    # via
+    #   cryptography
+    #   curl-cffi
+charset-normalizer==3.5.2
+    # via requests
 click==8.5.0
     # via uvicorn
 convertdate==2.5.1
     # via partylinks (pyproject.toml)
+cryptography==50.0.2
+    # via
+    #   authlib
+    #   joserfc
 curl-cffi==0.16.3
     # via partylinks (pyproject.toml)
 fastapi==0.153.0
@@ -45,8 +56,17 @@ idna==3.20
     # via
     #   anyio
     #   httpx
+    #   requests
+itsdangerous==2.2.0
+    # via partylinks (pyproject.toml)
+jinja2==3.1.6
+    # via partylinks (pyproject.toml)
+joserfc==1.7.7
+    # via authlib
 json-repair==0.61.7
     # via partylinks (pyproject.toml)
+markupsafe==3.0.4
+    # via jinja2
 opentelemetry-api==1.45.1
     # via fastapi
 pillow==13.0.0
@@ -74,6 +94,10 @@ python-dotenv==1.2.4
     # via pydantic-settings
 pyyaml==6.0.3
     # via pydantic-settings
+requests==2.34.2
+    # via resend
+resend==2.50.0
+    # via partylinks (pyproject.toml)
 selectolax==1.0.1
     # via partylinks (pyproject.toml)
 socksio==1.0.0
@@ -94,6 +118,7 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   pydantic-settings
+    #   resend
     #   sqlalchemy
     #   starlette
     #   typing-inspection
@@ -106,6 +131,8 @@ tzdata==2026.2
     # via partylinks (pyproject.toml)
 tzlocal==5.4.4
     # via apscheduler
+urllib3==2.8.0
+    # via requests
 uvicorn==0.54.0
     # via partylinks (pyproject.toml)
 wcwidth==0.9.4
