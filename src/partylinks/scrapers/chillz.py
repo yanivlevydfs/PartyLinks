@@ -201,21 +201,21 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
 PAST_FILE = "data/chillz_past.json"
 
 
-def _load_past(file: str = PAST_FILE) -> set[str]:
+def _load_past() -> set[str]:
     try:
-        return set(json.loads(project_path(file).read_text("utf-8")))
+        return set(json.loads(project_path(PAST_FILE).read_text("utf-8")))
     except (OSError, ValueError):
         return set()
 
 
-def _save_past(urls: set[str], file: str = PAST_FILE) -> None:
-    path = project_path(file)
+def _save_past(urls: set[str]) -> None:
+    path = project_path(PAST_FILE)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.with_suffix(".tmp").write_text(json.dumps(sorted(urls)), "utf-8")
         path.with_suffix(".tmp").replace(path)
     except OSError as exc:
-        logging.getLogger(__name__).warning("%s not saved: %s", file, exc)
+        logging.getLogger(__name__).warning("chillz past pages not saved: %s", exc)
 
 
 _SAVED_FROM = re.compile(r"<!--\s*saved from url=\(\d+\)(\S+?)\s*-->", re.IGNORECASE)

@@ -50,3 +50,13 @@ def test_new_genres_and_tech_house_is_not_hi_tech() -> None:
         event.model_copy(update={"source_genres": ["tech house", "dark wave", "yoga"], "event_types": []})
     )
     assert found == ["dark_wave", "house", "yoga_wellness"]
+
+
+def test_cloudflare_403_is_a_blocked_run() -> None:
+    import httpx
+
+    scraper = beatradar.BeatRadarScraper.__new__(beatradar.BeatRadarScraper)  # is_blocked reads only the response
+    page = httpx.Response(403, headers={"server": "cloudflare"}, text="<!DOCTYPE html>")
+    assert scraper.is_blocked(page)
+    assert not scraper.is_blocked(httpx.Response(403, headers={"server": "nginx"}))
+    assert not scraper.is_blocked(httpx.Response(200, headers={"server": "cloudflare"}, json=[]))

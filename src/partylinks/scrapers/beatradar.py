@@ -16,6 +16,8 @@ from decimal import Decimal
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+import httpx
+
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, parse_iso, to_decimal
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -37,6 +39,11 @@ class BeatRadarSettings(SourceSettings):
 class BeatRadarScraper(BaseScraper[BeatRadarSettings]):
     name = "beatradar"
     settings_model = BeatRadarSettings
+
+    def is_blocked(self, response: httpx.Response) -> bool:
+        """Cloudflare's block page (403): the API answers Israeli home connections only (Oct 2026), so a
+        foreign, proxy or datacenter IP is refused whatever the client looks like. A blocked run, not a crash."""
+        return response.status_code == 403 and response.headers.get("server", "").lower() == "cloudflare"
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings

@@ -1373,10 +1373,15 @@ sources:
     # request lists every upcoming party (~120) with tiers, artists and genre tags; the ticket link
     # (Go-Out / Selector) is kept, so dedup merges it with those sources. robots.txt is absent.
     enabled: true
-    israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    # Cloudflare lets only Israeli home connections in (Oct 2026): Railway, the Evomi IPs (USA) and Israeli
+    # datacenter proxies get its 403 page, which is recorded as a blocked run. Speaks as Chrome (as Chillz) so
+    # an Israeli IP that reaches it also passes Cloudflare's client check.
+    israel_proxy: true
     cron: "26 8,20 * * *"
     site_url: https://beatradar.co.il
     events_path: /api/events
+    http:
+      impersonate: chrome
 
   vibez:
     # Vibez (vibez.io): ticketing for communities and party producers (raves, ecstatic dance, club
