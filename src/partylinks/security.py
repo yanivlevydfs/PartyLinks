@@ -43,7 +43,7 @@ DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
 DATA_PATHS = ("/events", "/categories", "/posts", "/ticket-sites", "/locate")
 # Card artwork and the site's own files: one home page draws well over a hundred, so they don't
 # count toward the general rate limit (a few reloads banned a visitor).
-STATIC_PATHS = ("/images/", "/assets/", "/icons/", "/favicon")
+STATIC_PATHS = ("/images/", "/artwork/", "/assets/", "/icons/", "/favicon")
 
 CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "default-src 'self'",

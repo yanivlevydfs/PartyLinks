@@ -37,6 +37,8 @@ from partylinks.accounts import sign_in_state
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.ads import service as ads
+from partylinks.artwork import service as artwork
+from partylinks.artwork.routes import router as artwork_router
 from partylinks.saved.routes import router as saved_router
 from partylinks.config import Settings, get_settings
 from partylinks.db import (
@@ -826,6 +828,7 @@ def create_app(
     app.add_middleware(CORSMiddleware, allow_origins=[settings.site.base_url.rstrip("/")], allow_methods=["GET"])
     app.add_middleware(SecurityMiddleware)  # outermost: rejects before any work is done
     app.include_router(saved_router)  # saved events; before /events/{event_ref} so /events/cards is not an event
+    app.include_router(artwork_router)  # drawn cards for events with no picture
     _register_routes(app)
     app.include_router(admin_router)
     app.include_router(weather_router)
@@ -893,11 +896,13 @@ def _summary_extras(session: Session, rows: Sequence[EventRow]) -> dict[str, dic
     deals = _best_deals(session, rows)
     sources = _group_sources(session, rows)
     covers = _group_covers(session, rows)
+    # Only with no picture of its own or its group's: a real picture always wins (artwork package).
+    drawn = artwork.urls(session, [r.id for r in rows if not (r.cover_url or covers.get(r.group_id or ""))])
     return {
         r.id: {
             "best_deal": deals.get(r.best_listing_id) if r.best_listing_id else None,
             "sources": sources[r.id],
-            "cover_url": r.cover_url or covers.get(r.group_id or ""),
+            "cover_url": r.cover_url or covers.get(r.group_id or "") or drawn.get(r.id),
         }
         for r in rows
     }

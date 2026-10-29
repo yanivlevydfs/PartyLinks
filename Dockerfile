@@ -38,6 +38,8 @@ COPY src/ src/
 COPY config/ config/
 COPY content/ content/
 COPY --from=web /web/dist web/dist
+# Ticket sites' display names: the website builds them in, the server draws them on event artwork.
+COPY web/src/sourceNames.json web/src/sourceNames.json
 
 # Images, caches, inboxes: mount a volume at /app/data or everything resets on
 # deploy (Railway: a service volume; it refuses a VOLUME instruction here).

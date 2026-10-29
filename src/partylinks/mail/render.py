@@ -179,7 +179,7 @@ def _cards(settings: Settings, sections: list[Section], kind: str, lang: str) ->
     base = settings.site.base_url.rstrip("/")
     for c in everything:
         image = c.get("cover_url") or c.get("image_url")
-        if image and image.startswith("/images/"):
+        if image and image.startswith(("/images/", "/artwork/")):
             image = f"{base}{image}/640.webp"
         c["_url"] = link(settings, f"/event/{c.get('slug') or c['id']}", kind, lang)
         c["_image"] = image if image and image.startswith(("https://", "http://")) else None

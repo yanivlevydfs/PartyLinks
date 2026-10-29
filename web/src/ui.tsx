@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import sourceNames from "./sourceNames.json";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
@@ -56,23 +57,7 @@ export function priceLabel(e: Pick<EventSummary, "entry_type" | "min_price" | "h
 }
 
 // Display names of the ticket sites we scrape (keys = EventSummary.source).
-const SOURCE_NAMES: Record<string, string> = {
-  goout: "Go-Out", eventer: "Eventer", zygo: "Zygo", tickchak: "Tickchak",
-  selector: "Selector", barby: "Barby", grayclub: "Gray Club", chillz: "Chillz", posh: "Posh", eventbrite: "Eventbrite", showshappening: "ShowsHappening",
-  mevalim: "Mevalim", hulyo: "Hulyo", gagarin: "Gagarin", megatickets: "Megatickets", eventbuzz: "Eventbuzz",
-  popit: "Popit", epgb: "Radio EPGB", leaan: "Leaan", kupatbravo: "Kupat Bravo", comy: "Comy", eventim: "Eventim",
-  ticketmaster: "Ticketmaster", pres: "PRES", smarticket: "Smarticket", secrettelaviv: "Secret Tel Aviv",
-  tiktik: "TikTik", teder: "Teder", makore: "Makore", jerusalemtheatre: "Jerusalem Theatre", drop: "Drop", airdrop: "Airdrop", yotzim: "Yotzim", luma: "Luma", geektime: "Geektime",
-  peoplecomputers: "People & Computers", meetup: "Meetup", zappa: "Zappa", beershevatheatre: "Be'er Sheva Theatre", arenas: "Arenas",
-  happytlv: "HappyTLV", issta: "Issta", livevents: "Live Events", kishreyteufa: "Kishrey Teufa", ticketplace: "Ticket Place",
-  beatradar: "Beat Radar", vibez: "Vibez", shotgun: "Shotgun", planet: "Planet", ravhen: "Rav-Hen", cinemacity: "Cinema City",
-  hotcinema: "Hot Cinema", lev: "Lev Cinema", cinematheque_tlv: "Tel Aviv Cinematheque", cinematheque_jlm: "Jerusalem Cinematheque",
-  movieland: "Movieland", megaevents: "Mega Events", viagogo: "viagogo", hamenagen: "HaMenagen", hatarbut: "Heichal HaTarbut",
-  holon: "Holon", kikarhamusica: "Kikar HaMusica", xplorer: "Xplorer", livetickets: "LiveTickets", tiuli: "Tiuli",
-  festivalim: "Festivalim", telaviv: "Tel Aviv-Yafo", munievents: "Municipal calendars", haifamuni: "Haifa", ramatganmuni: "Ramat Gan",
-  ogo: "OGO", muzi: "Muzi", matnasnet: "Community centres", onecity: "OneCity", habama: "Habama", friendshist: "FRIENDS",
-  poalimatarim: "Poalim Atarim", tickethouse: "Ticket House", barak: "Barak Tickets", bargiyora: "Bar Giyora", haezor: "HaEzor", levontin7: "Levontin 7", babebar: "BaBe Bar", yellowsubmarine: "Yellow Submarine", halutz: "HaHalutz 33", meety: "Meety", funzing: "Funzing", ticketeams: "Ticketeams",
-};
+const SOURCE_NAMES: Record<string, string> = sourceNames; // web/src/sourceNames.json: the server reads it too (event artwork)
 export const sourceName = (source: string) => SOURCE_NAMES[source] ?? source;
 
 /** Ticket-site tags: every store selling the event (this listing's first). */
@@ -249,7 +234,8 @@ export function Chip({ on, onClick, children, className }: { on: boolean; onClic
 /** Our stored artwork (``/images/123``) resized to ``width`` as WebP (640 cards, 1280 event page);
  *  the sellers' own image URLs pass through. og:image keeps the original (server side). */
 export function sized<T extends string | null | undefined>(src: T, width: 640 | 1280): T | string {
-  return src && /^\/images\/\d+$/.test(src) ? `${src}/${width}.webp` : src;
+  // Stored pictures and drawn cards (events with no picture) both come in 640 and 1280 WebP.
+  return src && /^\/(images|artwork)\/\d+$/.test(src) ? `${src}/${width}.webp` : src;
 }
 
 /** Without artwork: ``text`` (the event title) set large on the gradient, else a note. */

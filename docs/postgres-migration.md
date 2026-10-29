@@ -699,3 +699,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **בלי טבלאות או עמודות חדשות.** השהיה נשמרת ב-`flags` (‏`key = 'paused:<source>'`, ‏`on`), כך שהיא שורדת restart ו-deploy.
 - **Queries:** אחרי כל ריצה (‏`partylinks/runs/health.py`): ‏`scrape_runs.events_found WHERE source = ? AND id <> ? AND status IN ('success','partial') AND events_found > 0 ORDER BY id DESC LIMIT 5` (חציון = "הכמות הרגילה"; משתמש באינדקס על `source`). לפני כל ריצה מתוזמנת: ‏`flags` לפי מפתח ראשי. ב-admin overview: ‏`flags WHERE key LIKE 'paused:%' AND on`.
 - **Tests:** ‏`tests/test_run_health.py` (‏2).
+
+### 2026-10-29 (תמונות לאירועים בלי תמונה)
+- **טבלה חדשה:** `event_artwork` (‏`partylinks/artwork/models.py`): ‏`id` PK (הכתובת `/artwork/{id}`), ‏`event_id` ‏UNIQUE (הליסטינג הראשי של הקבוצה, בלי FK; ‏`db.delete_events` מוחק דרך `artwork.models.delete_artwork`), ‏`signature` (מה צויר: שינוי מצייר מחדש), ‏`webp_1280` ו-`webp_640` ‏BYTEA (deferred), ‏`made_at`.
+- **Queries:** אירועים שצריכים כרטיס: ‏`events WHERE is_primary AND upcoming AND NOT EXISTS (event_images JOIN events listing ON listing.group_id = events.group_id WHERE downloaded_at IS NOT NULL OR error IS NULL)`, על האינדקס של `group_id`. כל כרטיס נשמר בטרנזקציה משלו: בדיקה חוזרת שאין תמונה ו-`INSERT ... ON CONFLICT (event_id) DO UPDATE`.
+- **נמדד:** ‏28,000 אירועים מקומית: 1.5 ש' למציאה; 104 מ"ש לכרטיס, 4 במקביל.
+- **Tests:** ‏`tests/test_artwork.py` (‏6). ‏526/526.

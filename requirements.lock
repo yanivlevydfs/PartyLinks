@@ -90,6 +90,8 @@ pydantic-settings==2.16.1
     # via partylinks (pyproject.toml)
 pymeeus==0.5.12
     # via convertdate
+python-bidi==0.6.12
+    # via partylinks (pyproject.toml)
 python-dotenv==1.2.4
     # via pydantic-settings
 pyyaml==6.0.3

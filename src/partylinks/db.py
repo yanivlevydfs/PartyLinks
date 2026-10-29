@@ -868,6 +868,7 @@ def delete_events(session: Session, event_ids: Sequence[str]) -> list[str]:
         delete_plans(session, chunk)  # "who's coming?" plans go with their event
         delete_saved(session, chunk)  # hearts go with their event
         delete_hits(session, chunk)  # alert matches too
+        delete_artwork(session, chunk)  # drawn cards of events with no picture
         session.execute(delete(EventRow).where(EventRow.id.in_(chunk)))
     prune_sponsored(session)  # sponsored picks of events now gone
     return files
@@ -888,6 +889,7 @@ def start_run(session: Session, source: str, trigger: str) -> ScrapeRunRow:
 # Tables kept in their own packages, imported here so they are on Base before create_schema runs.
 import partylinks.accounts.models
 import partylinks.alerts.models
+import partylinks.artwork.models
 import partylinks.ads.models
 import partylinks.artistdb
 import partylinks.mail.models
@@ -896,5 +898,6 @@ import partylinks.saved.models
 import partylinks.worker.models  # noqa: F401
 from partylinks.ads.models import prune_sponsored
 from partylinks.alerts.models import delete_hits
+from partylinks.artwork.models import delete_artwork
 from partylinks.plans.routes import delete_plans
 from partylinks.saved.models import delete_saved

@@ -98,6 +98,9 @@ def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOSchedu
     from partylinks.alerts.jobs import schedule as schedule_alerts  # local: alerts imports the api
 
     schedule_alerts(scheduler, settings, service)  # alert matching (and the email jobs)
+    from partylinks.artwork.jobs import schedule as schedule_artwork
+
+    schedule_artwork(scheduler, settings, service)  # drawn cards for events with no picture
     return scheduler
 
 

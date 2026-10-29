@@ -29,8 +29,9 @@ from cachetools import TTLCache
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlalchemy import ColumnElement, String, cast, or_, select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, object_session, selectinload
 
+from partylinks.artwork.service import urls as artwork_urls
 from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
 from partylinks.db import EventRow, lineup_contains, upcoming_filter
@@ -177,10 +178,15 @@ def go_path(event_id: str) -> str:
     return f"/go/{quote(event_id, safe='')}"
 
 
-def _cover(cfg: Settings, row: EventRow) -> str | None:
+def _cover(cfg: Settings, row: EventRow, drawn: bool = True) -> str | None:
+    """The event's picture; with ``drawn``, else its drawn card (link previews). Google's event data (JSON-LD)
+    asks drawn=False: a title card is no picture of the event."""
     if row.cover_url:
         return cfg.site.base_url + row.cover_url
-    return row.image_url
+    if row.image_url or not drawn or (session := object_session(row)) is None:
+        return row.image_url
+    card = artwork_urls(session, [row.id]).get(row.id)
+    return cfg.site.base_url + card if card else None
 
 
 def _when(row: EventRow, cfg: Settings, lang: str) -> str:
@@ -337,7 +343,7 @@ def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
         "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
         "location": _place(row),
         # The event's own artwork only: Google wants images that represent the event, not the site logo.
-        "image": [i for i in [_cover(cfg, row)] if i],
+        "image": [i for i in [_cover(cfg, row, drawn=False)] if i],
         "description": _clip(row.description) or _clip(_about(row)),
         "inLanguage": "he",
         "isAccessibleForFree": row.entry_type == "free" or None,

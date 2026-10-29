@@ -13,6 +13,7 @@ Every ticket link points back to the seller.
 | [Configuration](configuration.md) | `config/settings.yaml` and environment overrides |
 | [API](api.md) | Public and admin endpoints |
 | [Admin console](admin.md) | The `/admin` page, what each tab does, the run manager |
+| [Event artwork](artwork.md) | Drawn cards for events with no picture: when, how (concurrent, one transaction per card), where they show |
 | [Accounts](accounts.md) | Optional Google sign-in, sessions, what is stored, saved events, alerts, the bell, "For you", email, `/api/me` |
 | [Accounts, alerts and email: design](accounts-alerts-design.md) | The design record (implemented 2026-10-29): decisions, and what changed after implementation ([build plan](plans/2026-10-29-accounts-alerts.md), executed) |
 | [Ticket links: UTM and clicks](ticket-links.md) | How outbound links are tagged and counted |
