@@ -1,7 +1,7 @@
 # Accounts, event alerts and email: design
 
 **Date:** 2026-10-29
-**Status:** Design approved in brainstorming. Not implemented.
+**Status:** Implemented 2026-10-29 (phases 0–5). How it works now: [accounts.md](accounts.md).
 **Model:** CheapFlights (`H:\GitHub\cheapflights`): Google accounts, deal alerts, report email, admin users tab. This copies that concept and applies it to events.
 
 ---
