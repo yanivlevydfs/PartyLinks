@@ -292,13 +292,12 @@ class BaseScraper[S: SourceSettings](ABC):
         """Try every Israeli proxy of the pool at once on the source's first URL, and keep only those that
         answer (any status: a refusal is the site's, not the proxy's). Walked one by one, a pool of dead
         free proxies took the whole 30-min run; in parallel it takes ``PROBE_SECONDS``. None answers: the
-        source goes on with the rest of its pool, or stops."""
+        source goes on with the rest of its pool, or stops. The whole list every run, the ones found dead
+        lately too: free proxies come back, and a parallel check costs the same for 1 or 100."""
         global _israel_good
         now = time.monotonic()
-        with _israel_lock:
-            dead = {p for p, at in _israel_dead.items() if now - at < DEAD_FOR_SECONDS}
         current = [p for p in [self._proxy, *self._spare_proxies] if p]
-        candidates = [p for p in current if p in self._israeli and p not in dead]
+        candidates = [p for p in current if p in self._israeli]
 
         async def answers(proxy: str) -> bool:
             client = self._new_client(proxy)

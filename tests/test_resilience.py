@@ -454,8 +454,7 @@ def test_a_dead_israeli_pool_is_found_in_one_parallel_check() -> None:
 
     with pytest.raises(base.SourceBlockedError, match="no Israeli proxy answers"):
         asyncio.run(fetch(probe(set())))
-    base._israel_dead = {}
-    scraper = probe({"http://il7:7"})
+    scraper = probe({"http://il7:7"})  # all 50 just marked dead: the next run still checks every one
     with pytest.raises(httpx.HTTPStatusError):  # 403 on the one live proxy, nothing else left
         asyncio.run(fetch(scraper))
     assert scraper._proxy == "http://il7:7" and base._israel_good is None
