@@ -13,6 +13,7 @@ import { AccountSlot } from "./accounts/AccountSlot";
 import { Bell } from "./alerts/Bell";
 import { SaveButton } from "./saved/SaveButton";
 import { SavedLink } from "./saved/SavedLink";
+import { useMe } from "./accounts/useMe";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";
 
@@ -86,6 +87,7 @@ export function useTitle(title: string | undefined) {
 export function Layout() {
   const { t, lang } = useT();
   const setLang = useStore((s) => s.setLang);
+  const me = useMe().data;
   const cats = useCategories().data;
   const openConsent = useConsent((s) => s.openSettings);
 
@@ -113,7 +115,7 @@ export function Layout() {
             <NavLink to="/stores">{t.nav.stores}</NavLink>
             <NavLink to="/blog">{t.nav.blog}</NavLink>
           </nav>
-          <button className="lang" onClick={() => setLang(lang === "he" ? "en" : "he")} aria-label="Language">
+          <button className={"lang" + (me ? " lang-signed-in" : "")} onClick={() => setLang(lang === "he" ? "en" : "he")} aria-label="Language">
             {lang === "he" ? "EN" : "עב"}
           </button>
           <Bell />

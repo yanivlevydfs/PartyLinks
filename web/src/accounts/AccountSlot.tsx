@@ -2,7 +2,10 @@
 // nothing when sign-in is off. A plain link to our server, which redirects to Google: no Google script.
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { BellMenuItem } from "../alerts/Bell";
+import { useBell } from "../alerts/useAlerts";
 import { SavedMenuItem } from "../saved/SavedLink";
+import { useStore } from "../store";
 import { useAccountText } from "./i18n";
 import { signInUrl, useAccountsOn, useMe, useSignOut } from "./useMe";
 import { WelcomeSheet } from "./WelcomeSheet";
@@ -40,6 +43,9 @@ function UserMenu() {
   const t = useAccountText();
   const me = useMe().data!;
   const signOut = useSignOut();
+  const unseen = useBell().data?.unseen ?? 0;
+  const lang = useStore((s) => s.lang);
+  const setLang = useStore((s) => s.setLang);
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -55,14 +61,19 @@ function UserMenu() {
     <div className="user-menu" ref={box}>
       <button className="user-btn" aria-haspopup="menu" aria-expanded={open} aria-label={t.menu} onClick={() => setOpen(!open)}>
         <Avatar name={me.name} picture={me.picture} />
+        {unseen > 0 && <b className="menu-phone avatar-dot" aria-hidden />}
       </button>
       {open && (
         <div className="user-pop" role="menu">
           <div className="user-who"><b dir="auto">{me.name}</b><small dir="ltr">{me.email}</small></div>
+          <BellMenuItem onClick={close} />
           <SavedMenuItem onClick={close} />
           <Link role="menuitem" to="/account" onClick={close}>{t.account}</Link>
           <Link role="menuitem" to="/groups" onClick={close}>{t.groups}</Link>
           {me.role === "admin" && <Link role="menuitem" to="/admin" onClick={close}>{t.admin}</Link>}
+          <button role="menuitem" className="menu-phone" onClick={() => { close(); setLang(lang === "he" ? "en" : "he"); }}>
+            🌐 {lang === "he" ? "English" : "עברית"}
+          </button>
           <button role="menuitem" onClick={() => { close(); void signOut(); }}>{t.signOut}</button>
         </div>
       )}

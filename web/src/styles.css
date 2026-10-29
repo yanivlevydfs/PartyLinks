@@ -1181,10 +1181,16 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 .tabbar, .buy-bar { display: none; }
 @media (max-width: 760px) {
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
-  /* Logo at the start, the buttons packed at the end, and the last 46px kept for the accessibility button. */
-  .top-row { height: 56px; gap: 8px; padding-inline-end: 46px; }
+  /* Logo flush at the start, the buttons packed at the end, and the end gutter widened to 62px (16 + its 38px + 8)
+     for the accessibility button. Physical margins: the logo is direction ltr, so its logical ones flip. */
+  .top-row { height: 56px; gap: 8px; padding-inline-end: 62px; }
   .top .nav { display: none; }
-  .top-row .logo { margin-inline-end: auto; }
+  .top-row .logo { margin-left: auto; }
+  [dir="ltr"] .top-row .logo { margin-left: 0; margin-right: auto; }
+  /* Signed in: language and bell live in the avatar menu (AccountSlot), the header keeps logo + avatar. */
+  .top-row .lang-signed-in, .top-row .bell-btn { display: none; }
+  .top-row .bell { position: absolute; }
+  html .menu-phone { display: flex !important; }
   .tabbar {
     position: fixed; z-index: 1000; inset: auto 0 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));

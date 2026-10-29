@@ -1,6 +1,8 @@
 // The header bell (signed in only): new matches of the user's alerts. Opening it marks them seen.
 // Back from Google with ?save_alert=..., it also saves the alert the visitor asked for before signing in.
+// On phones the bell button hides and the avatar menu's BellMenuItem opens the same panel.
 import { useEffect, useRef, useState } from "react";
+import { create } from "zustand";
 import { Link } from "react-router-dom";
 import { send, useMe } from "../accounts/useMe";
 import { eventPath, Img, sized, useT, when } from "../ui";
@@ -8,6 +10,32 @@ import { useAlertText } from "./i18n";
 import { pendingCriteria, SAVE_PARAM } from "./SaveAlertButton";
 import { isEmpty, useAlertActions, useBell, useCriteriaName } from "./useAlerts";
 import "./alerts.css";
+
+/** Whether the bell's panel is open: shared, so the avatar menu's row can open it. */
+const usePanel = create<{ open: boolean; setOpen: (open: boolean) => void }>((set) => ({ open: false, setOpen: (open) => set({ open }) }));
+
+/** Opens or closes the panel; opening marks the news seen. */
+function useToggle() {
+  const { open, setOpen } = usePanel();
+  const bell = useBell();
+  return () => {
+    setOpen(!open);
+    if (!open && bell.data?.unseen) send("/api/me/bell/seen", "POST").then(() => bell.refetch()).catch(() => {});
+  };
+}
+
+/** The avatar menu's "Alerts" row with the unseen count (phones, where the header has no bell button). */
+export function BellMenuItem({ onClick }: { onClick: () => void }) {
+  const t = useAlertText();
+  const unseen = useBell().data?.unseen ?? 0;
+  const toggle = useToggle();
+  return (
+    <button role="menuitem" className="menu-phone menu-count" onClick={() => { onClick(); toggle(); }}>
+      <span>🔔 {t.bell}</span>
+      {unseen > 0 && <b aria-hidden>{unseen > 99 ? "99+" : unseen}</b>}
+    </button>
+  );
+}
 
 /** Back from Google with ?save_alert=...: save the alert the visitor asked for, and say whether it worked. */
 function usePendingAlert(setSaved: (ok: boolean) => void) {
@@ -30,7 +58,8 @@ export function Bell() {
   const { t: ui } = useT();
   const me = useMe().data;
   const bell = useBell();
-  const [open, setOpen] = useState(false);
+  const { open, setOpen } = usePanel();
+  const toggle = useToggle();
   const box = useRef<HTMLDivElement>(null);
   const [saved, setSaved] = useState<boolean | null>(null);
   usePendingAlert(setSaved);
@@ -53,10 +82,6 @@ export function Bell() {
   const remove = (eventId?: string) => {
     const q = eventId ? `?event_id=${encodeURIComponent(eventId)}` : "";
     send(`/api/me/bell${q}`, "DELETE").then(() => bell.refetch()).catch(() => {});
-  };
-  const toggle = () => {
-    setOpen(!open);
-    if (!open && unseen) send("/api/me/bell/seen", "POST").then(() => bell.refetch()).catch(() => {});
   };
   return (
     <div className="bell" ref={box}>

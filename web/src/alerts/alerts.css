@@ -23,7 +23,7 @@
   max-height: min(70vh, 560px); overflow: auto; padding: 10px; border-radius: 14px;
   background: var(--panel-solid); border: 1px solid var(--line); box-shadow: 0 16px 40px rgb(0 0 0 / .5);
 }
-@media (max-width: 520px) { .bell-pop { position: fixed; inset-inline: 16px; top: 64px; width: auto; } }
+@media (max-width: 760px) { .bell-pop { position: fixed; inset-inline: 16px; top: 64px; width: auto; } }
 .bell-title { display: block; padding: 4px 6px 8px; }
 .bell-pop ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .bell-pop li a { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 10px; padding: 8px; border-radius: 10px; color: var(--text); }
@@ -69,3 +69,16 @@
 }
 .bell-x:hover, .bell-x:focus-visible { background: var(--panel-2); color: var(--text); }
 .bell-pop li a { padding-inline-end: 34px; }
+
+/* The avatar menu's phone-only rows (BellMenuItem, language) and the avatar's unseen dot; shown under 760px (styles.css). */
+.menu-phone { display: none !important; }
+.user-pop .menu-count { align-items: center; justify-content: space-between; gap: 10px; }
+.menu-count b {
+  min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
+  background: var(--pink); color: #fff; font-size: 12px; line-height: 20px; text-align: center;
+}
+.user-btn { position: relative; }
+.avatar-dot {
+  position: absolute; top: -2px; inset-inline-end: -2px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--pink); border: 2px solid var(--bg);
+}
