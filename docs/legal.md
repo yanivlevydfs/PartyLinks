@@ -27,7 +27,7 @@ Adding client-side analytics later would mean updating `consent.tsx` and the pri
 
 ## Open items
 
-- [x] **Privacy contact email:** `site.privacy.email` is spotxisrael@gmail.com (also the contact address).
-- [ ] **Accessibility coordinator:** `site.accessibility.email` is spotxisrael@gmail.com; the coordinator's name is still empty.
+- [x] **Privacy contact email:** `site.privacy.email` is contact@spotx.fun (also the contact address).
+- [ ] **Accessibility coordinator:** `site.accessibility.email` is contact@spotx.fun; the coordinator's name is still empty.
   The law requires a reachable coordinator.
 - [ ] Have a lawyer review the privacy policy text.

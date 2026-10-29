@@ -32,6 +32,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from partylinks import clicks, searches, seo, utm
 from partylinks import status as server_status
+from partylinks.accounts import install as install_accounts
+from partylinks.accounts import sign_in_state
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.ads import service as ads
@@ -815,6 +817,7 @@ def create_app(
     app.state.response_cache = ResponseCache(
         ttl=settings.api.cache_ttl_seconds, min_fresh=settings.api.cache_min_fresh_seconds
     )
+    sign_in_state(app, settings)  # innermost: only the Google sign-in routes read it
     app.add_middleware(CachedPages)  # inside gzip and security: a cached page is still compressed and guarded
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     # CORS: only the site itself may read the API from a browser (the app is same-origin anyway);
@@ -824,6 +827,7 @@ def create_app(
     _register_routes(app)
     app.include_router(admin_router)
     app.include_router(weather_router)
+    install_accounts(app, settings)  # optional Google accounts: /auth, /api/me, the admin users tab
     # The React site (web/), once built with `npm run build`. Mounted last so API routes win.
     site = Path(__file__).resolve().parents[2] / "web" / "dist"
     seo.register(app, site)  # server-rendered pages + sitemap/robots/llms.txt, before the static catch-all

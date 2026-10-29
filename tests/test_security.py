@@ -158,6 +158,8 @@ def test_scrapers_are_slowed_and_scripts_refused(tmp_path: Path) -> None:
 ADMIN = {"authorization": "Bearer s3cret"}
 # The only writes a visitor may send: sponsored views / clicks, and "who's coming?" plans and answers.
 PUBLIC_WRITES = {"/events/sponsored/hit", "/plans", "/plans/{plan_id}/votes", "/plans/{plan_id}/events"}
+# A signed-in user's own writes: refused without a session cookie (403 first when not from our pages).
+USER_WRITES = ("/api/me", "/api/auth/")
 
 
 def _open_app(tmp_path: Path) -> Any:
@@ -165,6 +167,7 @@ def _open_app(tmp_path: Path) -> Any:
     settings = settings_for(tmp_path)
     settings.admin.token = SecretStr("s3cret")
     settings.security.rate_limit_per_minute = settings.security.data_rate_limit_per_minute = 100_000
+    settings.security.admin_rate_limit_per_minute = 100_000  # the enumeration below asks every admin route
     settings.security.ban_after_strikes = 100_000
     return create_app(settings, start_scheduler=False)
 
@@ -185,7 +188,8 @@ def test_every_write_and_admin_route_needs_the_token(tmp_path: Path) -> None:
                 if method == "GET" and not route.path.startswith("/admin/api"):
                     continue
                 got = outsider.request(method, path, json={})
-                assert got.status_code == 401, f"{method} {route.path} answered {got.status_code} without a token"
+                refused = {401, 403} if route.path.startswith(USER_WRITES) else {401}
+                assert got.status_code in refused, f"{method} {route.path} answered {got.status_code} without a token"
                 checked += 1
         assert checked > 20  # the enumeration really found the admin routes
 

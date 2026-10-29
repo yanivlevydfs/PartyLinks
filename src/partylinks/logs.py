@@ -21,6 +21,7 @@ from datetime import UTC, datetime
 from io import TextIOWrapper
 from typing import IO, Any, cast
 
+from partylinks.accounts.redact import Redact
 from partylinks.config import LOG_FORMAT, LoggingSettings, project_path
 
 # Libraries that log every request; only their problems are worth a line.
@@ -134,6 +135,7 @@ def setup_logging(settings: LoggingSettings, verbose: bool = False) -> None:
     for handler in handlers:
         handler.setFormatter(formatter)
         handler.addFilter(_UvicornName())
+        handler.addFilter(Redact())  # no email address or sign-in / unsubscribe token in a log line
         setattr(handler, _MARK, True)
         root.addHandler(handler)
     global _level

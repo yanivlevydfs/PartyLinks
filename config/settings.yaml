@@ -58,13 +58,13 @@ site:
   # accessibility coordinator who can be reached: fill these in before going public.
   accessibility:
     coordinator: ""        # full name
-    email: spotxisrael@gmail.com
+    email: contact@spotx.fun
     phone: ""
     updated: 2026-10-26    # last review of the statement (renamed SPOTX)
   # Privacy and cookie policy at /privacy (Israeli Privacy Protection Law, Amendment 13): a contact
   # for access / correction / deletion requests. The cookie banner itself is in web/src/consent.tsx.
   privacy:
-    email: spotxisrael@gmail.com
+    email: contact@spotx.fun
     updated: 2026-10-26    # last review of the policy (renamed SPOTX)
   # New pages pushed to Bing / Yandex (src/partylinks/indexnow.py). The key is public (served at
   # /<key>.txt); runs only when base_url is https, so never from localhost.
@@ -84,6 +84,23 @@ utm:
   enabled: true
   source: spotx
   medium: affiliate
+
+# Optional Google accounts (src/partylinks/accounts, docs/accounts-alerts-design.md): saved events across
+# devices, alerts, the bell and email. Nothing on the site needs an account. Secrets in the environment only:
+# PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_ID, __GOOGLE_CLIENT_SECRET, __SESSION_SECRET, __ADMIN_EMAILS.
+accounts:
+  enabled: true
+  session_days: 30         # a signed-in browser stays signed in this long (rolled forward on use)
+  max_alerts: 20           # alerts per user
+  max_saved: 500           # saved events per user
+
+# Email through Resend (src/partylinks/mail). Off until PARTYLINKS_MAIL__RESEND_API_KEY is set.
+mail:
+  from_address: "SPOTX <events@spotx.fun>"
+  digest_cron: "0 10 * * thu"      # the weekly digest, in the site's timezone
+  digest_max_events: 12
+  instant_min_interval_minutes: 60  # at most one instant alert email per user per hour
+  matcher_interval_minutes: 15      # how often new events are matched against alerts
 
 # Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
 # https, no framing), vulnerability-scanner and data-harvester blocking, per-IP rate limits and

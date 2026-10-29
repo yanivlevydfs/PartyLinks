@@ -43,7 +43,12 @@ RESTART_KEYS = ("database", "api")
 
 # --------------------------------------------------------------------------- auth
 def require_admin(request: Request) -> None:
-    """Bearer token when ``admin.token`` is set; otherwise only requests from this machine."""
+    """A signed-in admin (Google account with role admin); else the bearer token when ``admin.token``
+    is set; otherwise only requests from this machine."""
+    from partylinks.accounts.sessions import optional_user
+
+    if (user := optional_user(request)) is not None and user.role == "admin":
+        return
     token = request.app.state.settings.admin.token
     if token is None:
         # A reverse proxy makes every request look local, so forwarded requests never count.
@@ -312,7 +317,7 @@ def _hide_url(value: str) -> str:
     parts = [urlsplit(u.strip()) for u in value.split(",")]
     return ",".join(
         urlunsplit(p._replace(netloc="••••@" + p.netloc.rsplit("@", 1)[1] if "@" in p.netloc else p.netloc,
-                              query="••••" if p.query else ""))  # fmt: skip
+                              query="••••" if p.query else ""))
         for p in parts
     )
 

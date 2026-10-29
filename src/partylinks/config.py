@@ -23,6 +23,9 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 
+from partylinks.accounts.config import AccountsSettings
+from partylinks.mail.config import MailSettings
+
 CONFIG_ENV_VAR = "PARTYLINKS_CONFIG"
 LOG_FORMAT = "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
 # Relative paths in the config (DB file, media, inboxes) resolve against the project
@@ -520,6 +523,8 @@ class Settings(BaseSettings):
     geocoding: GeocodingSettings = Field(default_factory=GeocodingSettings)
     security: SecuritySettings = Field(default_factory=SecuritySettings)
     utm: UtmSettings = Field(default_factory=UtmSettings)
+    accounts: AccountsSettings = Field(default_factory=AccountsSettings)
+    mail: MailSettings = Field(default_factory=MailSettings)
     # Raw per-source blocks; each scraper validates its own block with its own model.
     # None = a block whose keys are all commented out (reported as invalid, not a crash).
     sources: dict[str, dict[str, Any] | None] = Field(default_factory=dict)
