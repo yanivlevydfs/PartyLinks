@@ -10,7 +10,7 @@ import { forecastAt, Weather } from "./Weather";
 import { PlanButton } from "./plans/PlanButton";
 import { AccountSlot } from "./accounts/AccountSlot";
 import { Bell } from "./alerts/Bell";
-import { SaveHeart } from "./saved/SaveHeart";
+import { SaveButton } from "./saved/SaveButton";
 import { SavedLink } from "./saved/SavedLink";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";
@@ -327,7 +327,7 @@ export function Card({ e }: { e: EventSummary }) {
         </div>
       </div>
     </Link>
-    <SaveHeart eventId={e.id} />
+    <SaveButton eventId={e.id} />
     {e.start_at && <AddToCalendar e={e} start={e.start_at} compact />}
     <ShareButton path={eventPath(e)} title={e.title} />
     <PlanButton eventId={e.id} compact />

@@ -6,7 +6,7 @@ const he = {
   unsave: "הסרה מהשמורים",
   title: "אירועים שמורים",
   nav: "שמורים",
-  empty: "עוד לא שמרתם אירועים. לחצו על הלב באירוע כדי לשמור אותו כאן.",
+  empty: "עוד לא שמרתם אירועים. לחצו על הפעמון באירוע כדי לשמור אותו כאן.",
   device: "השמורים נשמרים במכשיר הזה. התחברו כדי לראות אותם בכל מכשיר.",
   browse: "לכל האירועים",
 };
@@ -16,7 +16,7 @@ const en: typeof he = {
   unsave: "Remove from saved",
   title: "Saved events",
   nav: "Saved",
-  empty: "No saved events yet. Tap the heart on an event to keep it here.",
+  empty: "No saved events yet. Tap the bell on an event to keep it here.",
   device: "Saved on this device. Sign in to see them on every device.",
   browse: "All events",
 };

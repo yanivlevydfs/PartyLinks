@@ -33,13 +33,13 @@ to it goes with it (`ON DELETE CASCADE`).
 Logs carry the user id only. A filter on every log handler (`accounts/redact.py`) replaces any email
 address and any `code=`, `state=`, `t=` or `token=` value as a safety net.
 
-## Saved events (the heart)
+## Saved events (the save bell)
 
-Every event card, the event page and the map pins have a heart; the header links to `/saved` with the
+Every event card, the event page and the map pins have a save bell (🔔; the header's bell with a tick links to them, the plain bell is alert news); the header links to `/saved` with the
 count. It works without an account: the ids are kept in the browser (localStorage `spotx-saved`) and
-`/saved` shows them through `GET /events/cards?ids=` (at most 100). Signed in, hearts live in
+`/saved` shows them through `GET /events/cards?ids=` (at most 100). Signed in, saved events live in
 `saved_events`; on sign-in the browser's list is merged into the account once (`POST /api/me/saved/merge`)
-and cleared from the device. A heart is removed with its event when the event ends (never past events),
+and cleared from the device. A saved event is removed with its event when the event ends (never past events),
 and the list always shows each group's primary listing, so a regrouped event stays. At most
 `accounts.max_saved` (500) per user. Code: `src/partylinks/saved/`, `web/src/saved/`.
 
@@ -95,9 +95,9 @@ A Resend account problem (key, quota, billing) stops the run and shows in the ad
 | DELETE | `/api/me` | Delete the account |
 | POST | `/api/auth/logout` | Sign out |
 | GET | `/api/me/saved` | Saved events as cards, upcoming, soonest first |
-| PUT / DELETE | `/api/me/saved/{event_id}` | Heart on / off (404 for an unknown or ended event, 409 over the limit) |
+| PUT / DELETE | `/api/me/saved/{event_id}` | Save on / off (404 for an unknown or ended event, 409 over the limit) |
 | POST | `/api/me/saved/merge` | `{ids: [...]}` from the browser after sign-in |
-| GET | `/events/cards?ids=` | Public: cards for a signed-out browser's hearts |
+| GET | `/events/cards?ids=` | Public: cards for a signed-out browser's saved events |
 | GET / POST | `/api/me/alerts` | List (with unseen counts) / create (422 for no filter or an unknown genre / region / slot, 409 over the limit) |
 | PATCH / DELETE | `/api/me/alerts/{id}` | Edit criteria, name, instant, active / delete |
 | GET | `/api/me/alerts/{id}/preview` | What the alert finds now: `{total, items}` |

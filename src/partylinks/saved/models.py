@@ -12,7 +12,7 @@ from partylinks.db import Base, UTCDateTime, utcnow
 
 
 class SavedEventRow(Base):
-    """A heart. No foreign key to events (like plans): ``delete_saved`` removes it with its event."""
+    """A saved event (the save bell). No foreign key to events (like plans): ``delete_saved`` removes it with its event."""
 
     __tablename__ = "saved_events"
 
@@ -22,5 +22,5 @@ class SavedEventRow(Base):
 
 
 def delete_saved(session: Session, event_ids: list[str]) -> None:
-    """Called by ``db.delete_events``: hearts go with their event (never past events)."""
+    """Called by ``db.delete_events``: saved events go with their event (never past events)."""
     session.execute(delete(SavedEventRow).where(SavedEventRow.event_id.in_(event_ids)))

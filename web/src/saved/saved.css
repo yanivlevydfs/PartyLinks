@@ -1,23 +1,23 @@
-/* Saved events: the heart on cards and event pages, the header link, /saved. */
-.save-heart {
+/* Saved events: the save bell on cards and event pages, the header link, /saved. */
+.save-btn {
   display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; cursor: pointer;
   border-radius: 50%; border: 1px solid rgb(255 255 255 / .25); background: rgb(6 4 11 / .7); backdrop-filter: blur(8px);
   color: #fff; transition: transform .15s, border-color .2s, box-shadow .2s;
 }
-.save-heart svg { fill: none; stroke: currentColor; stroke-width: 2; }
-.save-heart:hover { border-color: var(--pink); box-shadow: 0 0 16px rgb(255 46 147 / .45); }
-.save-heart:active { transform: scale(.9); }
-.save-heart.on { color: var(--pink); border-color: var(--pink); }
-.save-heart.on svg { fill: currentColor; }
-.save-heart.large { width: 44px; height: 44px; }
-.save-heart.large svg { width: 22px; height: 22px; }
+.save-btn svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.save-btn:hover { border-color: var(--pink); box-shadow: 0 0 16px rgb(255 46 147 / .45); }
+.save-btn:active { transform: scale(.9); }
+.save-btn.on { color: var(--pink); border-color: var(--pink); }
+.save-btn.on svg { fill: currentColor; }
+.save-btn.large { width: 44px; height: 44px; }
+.save-btn.large svg { width: 22px; height: 22px; }
 
 /* On a card: the image's top corner; the "new / updated" badge moves below it. */
-.card-wrap > .save-heart { position: absolute; top: 12px; inset-inline-end: 12px; z-index: 3; }
-.card-wrap:has(> .save-heart) .fresh { top: 54px; }
+.card-wrap > .save-btn { position: absolute; top: 12px; inset-inline-end: 12px; z-index: 3; }
+.card-wrap:has(> .save-btn) .fresh { top: 54px; }
 @media (max-width: 560px) {
-  .card-wrap > .save-heart { top: 8px; inset-inline-end: 8px; width: 30px; height: 30px; }
-  .card-wrap:has(> .save-heart) .fresh { top: 46px; }
+  .card-wrap > .save-btn { top: 8px; inset-inline-end: 8px; width: 30px; height: 30px; }
+  .card-wrap:has(> .save-btn) .fresh { top: 46px; }
 }
 
 .saved-link {
@@ -25,7 +25,7 @@
   border: 1px solid var(--line); border-radius: 50%; color: var(--text);
 }
 .saved-link:hover { border-color: var(--pink); text-shadow: none; }
-.saved-link svg { fill: none; stroke: currentColor; stroke-width: 2; }
+.saved-link svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .saved-link b {
   position: absolute; top: -5px; inset-inline-end: -5px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px;
   background: var(--pink); color: #fff; font-size: 11px; line-height: 18px; text-align: center;
@@ -34,8 +34,8 @@
 .saved-note { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 20px; color: var(--muted); }
 .saved-note p { margin: 0; }
 
-/* In a map pin's list: a small heart after each event. */
-.pop li:has(> .save-heart) { display: flex; align-items: center; gap: 6px; }
+/* In a map pin's list: a small save bell after each event. */
+.pop li:has(> .save-btn) { display: flex; align-items: center; gap: 6px; }
 .pop li > a { flex: 1; min-width: 0; }
-.pop li > .save-heart { flex: none; width: 28px; height: 28px; backdrop-filter: none; }
-.pop li > .save-heart svg { width: 15px; height: 15px; }
+.pop li > .save-btn { flex: none; width: 28px; height: 28px; backdrop-filter: none; }
+.pop li > .save-btn svg { width: 15px; height: 15px; }

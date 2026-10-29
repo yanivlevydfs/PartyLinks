@@ -127,7 +127,7 @@ export const STORAGE: StorageItem[] = [
   },
   {
     name: "spotx-saved", provider: US, kind: LOCAL, category: "necessary",
-    purpose: { he: "האירועים ששמרתם בלב, כשאינכם מחוברים לחשבון. נשמר רק במכשיר: עמוד השמורים שולח את מזהי האירועים כדי להציג אותם, ואיננו שומרים אותם. בכניסה לחשבון הרשימה עוברת אליו ונמחקת מהמכשיר.", en: "The events you saved with the heart while not signed in. Kept on this device only: the saved page sends the event ids to show them, and we don't store them. When you sign in, the list moves to your account and is cleared here." },
+    purpose: { he: "האירועים ששמרתם בפעמון, כשאינכם מחוברים לחשבון. נשמר רק במכשיר: עמוד השמורים שולח את מזהי האירועים כדי להציג אותם, ואיננו שומרים אותם. בכניסה לחשבון הרשימה עוברת אליו ונמחקת מהמכשיר.", en: "The events you saved with the bell while not signed in. Kept on this device only: the saved page sends the event ids to show them, and we don't store them. When you sign in, the list moves to your account and is cleared here." },
     duration: { he: "עד שתמחקו את נתוני האתר בדפדפן", en: "Until you clear the site's data in your browser" },
   },
   {

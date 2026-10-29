@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import Supercluster from "supercluster";
 import { Link } from "react-router-dom";
 import { useCategories, useMapEvents } from "../api";
-import { SaveHeart } from "../saved/SaveHeart";
+import { SaveButton } from "../saved/SaveButton";
 import { genreLabel } from "../i18n";
 import { useAllowed, useConsent } from "../consent";
 import { Filters, filterParams, GROUP_ICON } from "../Filters";
@@ -194,7 +194,7 @@ function Spot({ list }: { list: MapEvent[] }) {
                   <span dir="auto">{e.title}</span>
                   <Sources e={e} />
                 </Link>
-                <SaveHeart eventId={e.id} />
+                <SaveButton eventId={e.id} />
               </li>
             ))}
           </ul>

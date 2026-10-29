@@ -43,8 +43,8 @@ export function useServerSaved() {
   });
 }
 
-/** Once signed in, the hearts kept on this device join the account. Mounted once (the header's SavedLink),
- *  not in useSaved: every heart on the page calls that, and each would send its own merge. */
+/** Once signed in, the events saved on this device join the account. Mounted once (the header's SavedLink),
+ *  not in useSaved: every save button on the page calls that, and each would send its own merge. */
 export function useMergeOnSignIn() {
   const me = useMe().data;
   const qc = useQueryClient();
@@ -80,7 +80,7 @@ export function useSaved() {
     try {
       await send(`/api/me/saved/${encodeURIComponent(id)}`, on ? "DELETE" : "PUT");
     } catch {
-      qc.setQueryData(key, before); // put the heart back as it was
+      qc.setQueryData(key, before); // put the button back as it was
     }
     qc.invalidateQueries({ queryKey: key });
   };

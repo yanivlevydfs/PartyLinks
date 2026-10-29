@@ -1,4 +1,5 @@
-// The header's heart: a link to /saved with the number of saved events.
+// The header's saved events: a bell with a tick (the plain bell beside it is alert news), linking to /saved
+// with the number of saved events.
 import { Link } from "react-router-dom";
 import { useSavedText } from "./i18n";
 import { useMergeOnSignIn, useSaved } from "./useSaved";
@@ -11,7 +12,7 @@ export function SavedLink() {
   return (
     <Link className="saved-link" to="/saved" aria-label={count ? `${t.title} (${count})` : t.title} title={t.title}>
       <svg viewBox="0 0 24 24" aria-hidden width="18" height="18">
-        <path d="M12 20.5s-7.5-4.6-10-9.3C.4 7.9 2.3 4 6.1 4c2.2 0 3.5 1.2 4.4 2.5h3C14.4 5.2 15.7 4 17.9 4c3.8 0 5.7 3.9 4.1 7.2-2.5 4.7-10 9.3-10 9.3z" />
+        <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16zM10 20a2 2 0 0 0 4 0" /><path d="M9.6 10.8l1.7 1.7 3.1-3.3" />
       </svg>
       {count > 0 && <b aria-hidden>{count > 99 ? "99+" : count}</b>}
     </Link>

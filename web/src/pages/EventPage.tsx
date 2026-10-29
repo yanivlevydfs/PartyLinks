@@ -7,7 +7,7 @@ import { genreLabel, type Strings } from "../i18n";
 import type { Ticket } from "../types";
 import { forecastAt, Weather } from "../Weather";
 import { PlanButton } from "../plans/PlanButton";
-import { SaveHeart } from "../saved/SaveHeart";
+import { SaveButton } from "../saved/SaveButton";
 import { AddToCalendar, artistPath, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
 
 // URLs in scraped description text become links; trailing punctuation stays text.
@@ -111,7 +111,7 @@ export default function EventPage() {
               <Share path={eventPath(e)} title={e.title} />
               {e.start_at && <AddToCalendar e={e} start={e.start_at} />}
               <PlanButton eventId={e.id} />
-              <SaveHeart eventId={e.id} large />
+              <SaveButton eventId={e.id} large />
             </div>
             {!!e.alternatives?.length && (
               <div className="alts">
