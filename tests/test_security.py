@@ -157,7 +157,8 @@ def test_scrapers_are_slowed_and_scripts_refused(tmp_path: Path) -> None:
 
 ADMIN = {"authorization": "Bearer s3cret"}
 # The only writes a visitor may send: sponsored views / clicks, and "who's coming?" plans and answers.
-PUBLIC_WRITES = {"/events/sponsored/hit", "/plans", "/plans/{plan_id}/votes", "/plans/{plan_id}/events"}
+PUBLIC_WRITES = {"/events/sponsored/hit", "/plans", "/plans/{plan_id}/votes", "/plans/{plan_id}/events",
+                 "/api/email/unsubscribe"}  # a signed token, from the mail client (RFC 8058)
 # A signed-in user's own writes: refused without a session cookie (403 first when not from our pages).
 USER_WRITES = ("/api/me", "/api/auth/")
 

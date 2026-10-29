@@ -1,8 +1,10 @@
 // After Google: "?welcome=1" (first sign-in) says hello, "?signin=..." says why it didn't work.
 // Closing drops the parameter from the address.
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAccountText } from "./i18n";
-import { useMe } from "./useMe";
+import { send, useMe, type Me } from "./useMe";
 
 function dropParams(...names: string[]) {
   const url = new URL(location.href);
@@ -13,6 +15,7 @@ function dropParams(...names: string[]) {
 export function WelcomeSheet() {
   const t = useAccountText();
   const me = useMe().data;
+  const qc = useQueryClient();
   const [params] = useState(() => new URLSearchParams(location.search));
   const [open, setOpen] = useState(params.has("welcome") || params.has("signin"));
   const close = () => { setOpen(false); dropParams("welcome", "signin"); };
@@ -34,6 +37,13 @@ export function WelcomeSheet() {
           <>
             <h2 id="welcome-title" dir="auto">{t.welcomeTitle(me!.name.split(" ")[0])}</h2>
             <p>{t.welcomeText}</p>
+            {/* Unticked: the weekly email needs the user's own yes (Communications Law §30A). */}
+            <label className="acc-check">
+              <input type="checkbox" checked={me!.digest_opt_in}
+                onChange={() => send<Me>("/api/me", "PATCH", { digest_opt_in: !me!.digest_opt_in }).then((m) => qc.setQueryData(["me"], m)).catch(() => {})} />
+              <span>{t.digest}</span>
+            </label>
+            <Link to="/alerts" onClick={close}>{t.welcomeAlerts} ›</Link>
           </>
         )}
         <button className="c-btn" onClick={close} autoFocus>{t.close}</button>

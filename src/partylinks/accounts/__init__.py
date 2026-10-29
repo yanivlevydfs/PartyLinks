@@ -56,3 +56,8 @@ def install(app: FastAPI, settings: Settings) -> None:
     COUNTS["saved"] = saved_counts
     COUNTS["alerts"] = alert_counts
     app.include_router(alerts_router)
+    from partylinks.mail.admin_routes import router as mail_admin_router
+    from partylinks.mail.routes import router as mail_router
+
+    app.include_router(mail_router)  # unsubscribe links
+    app.include_router(mail_admin_router)

@@ -1,0 +1,17 @@
+{{ site }} · {{ title }}
+{% for p in intro %}
+{{ p }}
+{% endfor %}{% for s in sections %}{% if s.events %}
+{{ s.title }}
+{% for e in s.events %}
+* {{ e.title }}
+  {{ e._when }}{% if e._weather %}  {{ e._weather }}{% endif %}{% if e._place %} | {{ e._place }}{% endif %}{% if e._price %} | {{ e._price }}{% endif %}
+  {{ e._url }}
+{% endfor %}{% endif %}{% endfor %}{% if button %}
+{{ button[0] }}: {{ button[1] }}
+{% endif %}
+--
+{{ why }}
+{{ t.stop }}: {{ unsubscribe }}
+{{ t.settings }}: {{ settings_url }}
+{{ t.contact }}: {{ contact_url }}

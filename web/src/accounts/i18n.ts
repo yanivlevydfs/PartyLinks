@@ -13,6 +13,8 @@ const he = {
   name: "שם",
   email: "דוא״ל",
   emailLang: "שפת המיילים",
+  digest: "שלחו לי עדכון שבועי במייל, כל יום חמישי בבוקר: האירועים ששמרתי, מה חדש בהתראות שלי, ומה קורה בסופ״ש.",
+  digestNote: "אפשר להפסיק בכל עת, כאן או בקישור שבכל מייל. מיילים מיידיים על התראה מסוימת מפעילים בעמוד ההתראות.",
   save: "שמירה",
   savedOk: "נשמר",
   deleteTitle: "מחיקת החשבון",
@@ -23,6 +25,7 @@ const he = {
   why: "החשבון לא חובה: כל האתר פתוח בלי הרשמה. עם חשבון אפשר לשמור אירועים בכל מכשיר, לקבל התראות על מסיבות שמתאימות לך ועדכון שבועי.",
   welcomeTitle: (name: string) => `ברוכים הבאים, ${name}!`,
   welcomeText: "מעכשיו אפשר לשמור אירועים ולקבל התראות על מסיבות שמתאימות לך.",
+  welcomeAlerts: "יצירת התראה ראשונה",
   close: "סגירה",
   failed: "משהו השתבש, נסו שוב",
   signin: {
@@ -45,6 +48,8 @@ const en: typeof he = {
   name: "Name",
   email: "Email",
   emailLang: "Email language",
+  digest: "Send me a weekly email every Thursday morning: my saved events, what's new for my alerts, and what's on this weekend.",
+  digestNote: "You can stop it any time, here or with the link in every email. Instant emails for a given alert are set on the alerts page.",
   save: "Save",
   savedOk: "Saved",
   deleteTitle: "Delete account",
@@ -55,6 +60,7 @@ const en: typeof he = {
   why: "An account is optional: the whole site is open without signing up. With one you can keep saved events on every device, get alerts for parties that suit you and a weekly update.",
   welcomeTitle: (name) => `Welcome, ${name}!`,
   welcomeText: "You can now save events and get alerts for parties that suit you.",
+  welcomeAlerts: "Create a first alert",
   close: "Close",
   failed: "Something went wrong, try again",
   signin: {

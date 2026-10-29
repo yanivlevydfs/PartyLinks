@@ -889,6 +889,7 @@ import partylinks.accounts.models
 import partylinks.alerts.models
 import partylinks.ads.models
 import partylinks.artistdb
+import partylinks.mail.models
 import partylinks.plans.models
 import partylinks.saved.models
 import partylinks.worker.models  # noqa: F401

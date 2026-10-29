@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ t.dir }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>{{ title }}</title>
+</head>
+<body style="margin:0;padding:0;background:#06040b;color:#f7f2ff;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#06040b;">
+<tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;" dir="{{ t.dir }}">
+  <tr><td style="padding:0 4px 18px;text-align:{{ 'right' if t.dir == 'rtl' else 'left' }};">
+    <a href="{{ home }}" style="color:#f7f2ff;text-decoration:none;font-size:26px;font-weight:900;letter-spacing:1px;">SPOT<span style="color:#ff2e93;">X</span></a>
+  </td></tr>
+  <tr><td style="padding:0 4px 8px;text-align:{{ 'right' if t.dir == 'rtl' else 'left' }};">
+    <h1 style="margin:0 0 10px;font-size:24px;line-height:1.3;color:#ffffff;">{{ title }}</h1>
+    {% for p in intro %}<p style="margin:0 0 10px;font-size:15px;line-height:1.6;color:#d8cff0;">{{ p }}</p>{% endfor %}
+  </td></tr>
+  {% for s in sections %}{% if s.events %}
+  <tr><td style="padding:18px 4px 8px;text-align:{{ 'right' if t.dir == 'rtl' else 'left' }};">
+    <h2 style="margin:0;font-size:18px;color:#ffffff;">{{ s.title }}</h2>
+  </td></tr>
+  {% for e in s.events %}
+  <tr><td style="padding:6px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#140d22;border:1px solid #2a1f45;border-radius:14px;">
+      <tr>
+        {% if e._image %}<td width="140" valign="top" style="padding:10px;"><a href="{{ e._url }}"><img src="{{ e._image }}" width="120" height="90" alt="" style="display:block;width:120px;height:90px;object-fit:cover;border-radius:10px;border:0;"></a></td>{% endif %}
+        <td valign="top" style="padding:12px 12px 12px {{ '12px' if e._image else '14px' }};text-align:{{ 'right' if t.dir == 'rtl' else 'left' }};">
+          <a href="{{ e._url }}" style="color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;line-height:1.35;" dir="auto">{{ e.title }}</a>
+          <div style="margin-top:6px;font-size:13px;color:#b3a6d4;line-height:1.6;">
+            {% if e._when %}📅 {{ e._when }}{% endif %}{% if e._weather %} &nbsp; {{ e._weather }}{% endif %}<br>
+            {% if e._place %}📍 <span dir="auto">{{ e._place }}</span>{% endif %}
+          </div>
+          <div style="margin-top:8px;">
+            {% if e._price %}<span style="display:inline-block;background:#ffffff;color:#0a0612;font-weight:700;font-size:12px;border-radius:999px;padding:3px 10px;">{{ e._price }}</span>{% endif %}
+            <a href="{{ e._url }}" style="display:inline-block;color:#19e3ff;font-size:13px;font-weight:700;text-decoration:none;padding:3px 6px;">{{ t.open }} ›</a>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+  {% endfor %}{% endif %}{% endfor %}
+  {% if button %}
+  <tr><td align="center" style="padding:22px 4px 6px;">
+    <a href="{{ button[1] }}" style="display:inline-block;background:#ff2e93;color:#0a0612;text-decoration:none;font-weight:700;font-size:15px;border-radius:999px;padding:12px 26px;">{{ button[0] }}</a>
+  </td></tr>
+  {% endif %}
+  <tr><td style="padding:28px 4px 0;font-size:12px;line-height:1.7;color:#a99ec9;text-align:center;">
+    {{ why }}<br>
+    <a href="{{ unsubscribe }}" style="color:#b3a6d4;">{{ t.stop }}</a> · <a href="{{ settings_url }}" style="color:#b3a6d4;">{{ t.settings }}</a> · <a href="{{ contact_url }}" style="color:#b3a6d4;">{{ t.contact }}</a><br>
+    {{ site }} · spotx.fun
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

@@ -65,6 +65,27 @@ marks them seen when opened. "For you" on the home page shows up to 12 upcoming 
 alert (cached 10 minutes per user). Matches go with their event when it ends. Code: `src/partylinks/alerts/`,
 `web/src/alerts/`.
 
+## Email (Resend)
+
+Sent by the worker through Resend's batch API (100 a request, at most two requests a second, an
+idempotency key per request) from `mail.from_address` (`SPOTX <events@spotx.fun>`; the domain is verified
+at Resend), reply-to the contact address. Nothing is sent without `PARTYLINKS_MAIL__RESEND_API_KEY`
+(a send-only key is enough), and each kind has an admin switch (email tab).
+
+| Email | When | To whom |
+| --- | --- | --- |
+| Welcome | Every 5 minutes, for accounts made 2+ minutes ago | Every new account, once |
+| Instant | After each matcher pass | Alerts set to "email me at once"; at most one email per user per `mail.instant_min_interval_minutes` (60), up to 10 events |
+| Weekly digest | `mail.digest_cron` (Thursday 10:00, Israel time) | Only users who ticked it (off by default: it carries ticket links, so it is advertising under the Communications Law §30A; the tick's time is kept). Saved events this week first, then new matches (next 10 days), then this weekend's free events and highlights in a quiet week. Once a week. |
+
+Every email (Hebrew right to left or English, by the account's email language) has its events as cards
+with picture, day and time, place, weather (from the site's forecast cache) and price, links tagged
+`utm_source=email`, a footer with why it came, and an unsubscribe link plus the RFC 8058 one-click headers.
+The link is a signed `{user, kind}` token that never expires: `GET /api/email/unsubscribe?t=` shows a confirm
+page (link scanners open links), `POST` unsubscribes (`digest`: digest off; `instant`: every alert's instant
+off; `all`, in the welcome: both). Each run is recorded in `email_runs` (counts and the first error only).
+A Resend account problem (key, quota, billing) stops the run and shows in the admin. Code: `src/partylinks/mail/`.
+
 ## API
 
 | Method | Path | |

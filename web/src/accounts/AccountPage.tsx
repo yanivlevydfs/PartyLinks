@@ -36,6 +36,15 @@ function Profile({ me }: { me: Me }) {
       setNote(t.failed);
     }
   };
+  // The digest is advertising (ticket links): only on the user's own tick, saved at once with its time.
+  const toggleDigest = async (on: boolean) => {
+    try {
+      qc.setQueryData(["me"], await send<Me>("/api/me", "PATCH", { digest_opt_in: on }));
+      setNote(t.savedOk);
+    } catch {
+      setNote(t.failed);
+    }
+  };
   const remove = async () => {
     try {
       await send("/api/me", "DELETE");
@@ -60,6 +69,13 @@ function Profile({ me }: { me: Me }) {
         <button className="c-btn">{t.save}</button>
         <p className="muted" role="status">{note}</p>
       </form>
+      <section className="acc-form">
+        <label className="acc-check">
+          <input type="checkbox" checked={me.digest_opt_in} onChange={() => toggleDigest(!me.digest_opt_in)} />
+          <span>{t.digest}</span>
+        </label>
+        <p className="muted">{t.digestNote}</p>
+      </section>
       <section className="acc-danger">
         <h2>{t.deleteTitle}</h2>
         <p>{t.deleteText}</p>
