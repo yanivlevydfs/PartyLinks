@@ -21,14 +21,13 @@
 }
 
 .saved-link {
-  flex: none; position: relative; display: inline-grid; place-items: center; width: 36px; height: 36px;
-  border: 1px solid var(--line); border-radius: 50%; color: var(--text);
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 999px; color: var(--text); font-weight: 700;
 }
 .saved-link:hover { border-color: var(--pink); text-shadow: none; }
-.saved-link svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .saved-link b {
-  position: absolute; top: -5px; inset-inline-end: -5px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px;
-  background: var(--pink); color: #fff; font-size: 11px; line-height: 18px; text-align: center;
+  min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
+  background: var(--pink); color: #fff; font-size: 12px; line-height: 20px; text-align: center;
 }
 
 .saved-note { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 20px; color: var(--muted); }
