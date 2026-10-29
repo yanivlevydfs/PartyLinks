@@ -1,7 +1,7 @@
 // Every ticket site / box office the events come from, with how many upcoming events each sells (GET /ticket-sites).
 // Crawlers without JavaScript get a summary from seo.py (INFO_PAGES).
 import type { CSSProperties } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { type TicketSite, useCategories, useTicketSites } from "../api";
 import type { Lang } from "../i18n";
 import { DEFAULT_FILTERS, useStore } from "../store";
@@ -31,7 +31,8 @@ const STORES: Record<string, [string | null, Kind]> = {
   pres: ["https://pres.global", "tickets"], drop: ["https://tdrop.net", "tickets"], vibez: ["https://web.vibez.io", "tickets"],
   shotgun: ["https://shotgun.live", "tickets"], luma: ["https://luma.com", "tickets"], meetup: ["https://www.meetup.com", "tickets"],
   arenas: ["https://live.tickchak.co.il", "tickets"], barak: ["https://www.barak-tickets.co.il", "tickets"],
-  comy: ["https://comy.co.il", "tickets"],
+  comy: ["https://comy.co.il", "tickets"], eventbrite: ["https://www.eventbrite.com", "tickets"],
+  posh: ["https://posh.vip", "abroad"], showshappening: ["https://www.showshappening.com", "abroad"],
   barby: ["https://barby.co.il", "venue"], grayclub: ["https://grayclub.co.il", "venue"], epgb: ["https://epgb.co.il", "venue"],
   teder: ["https://www.teder.fm", "venue"], gagarin: ["https://gagarin.co.il", "venue"], zappa: ["https://www.zappa-club.co.il", "venue"],
   kikarhamusica: ["https://kikar-hamusica.com/shows/he", "venue"],
@@ -101,7 +102,7 @@ export default function StoresPage() {
   useTitle(t.title);
   const sites = useTicketSites();
   const cats = useCategories();
-  // Stores with events in Israel can be browsed on the home page (its ?source= filter).
+  // Stores with events in Israel are browsed on the home page (its ?source= filter), the rest on /abroad.
   const browsable = new Set(cats.data?.sources.map((s) => s.value));
   // /ticket-sites down (a server without it, a restart): the home filter's counts, Israel only.
   const fallback: TicketSite[] | undefined = sites.isError ? cats.data?.sources.map((s) => ({ name: s.value, events: s.events, updated_at: null })) : undefined;
@@ -144,7 +145,8 @@ export default function StoresPage() {
                 <span className="store-bar"><span style={{ width: `${Math.max(3, (s.events / max) * 100)}%` }} /></span>
                 <div className="store-foot">
                   {s.updated_at && <small>{t.updated} {ago(s.updated_at, strings.locale)}</small>}
-                  {browsable.has(s.name) && <button className="linkish" onClick={() => browse(s.name)}>{t.browse}</button>}
+                  {browsable.has(s.name) ? <button className="linkish" onClick={() => browse(s.name)}>{t.browse}</button>
+                    : s.events > 0 && <Link className="linkish" to={`/abroad?source=${encodeURIComponent(s.name)}`}>{t.browse}</Link>}
                   {url && <a href={url} target="_blank" rel="noopener noreferrer">{t.site} ↗</a>}
                 </div>
               </li>

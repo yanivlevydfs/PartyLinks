@@ -16,9 +16,9 @@ export default function Abroad() {
   const title = (country && info?.title) || t.abroad.title;
   useTitle(title);
   // Filters: every option comes from the stored events (the categories facets), never a fixed list.
-  // Kept in the URL (?q=&country=&city=&from=&to=): a filtered view is a shareable link and survives a reload.
+  // Kept in the URL (?q=&country=&city=&from=&to=&source=): a filtered view is a shareable link and survives a reload.
   const [params, setParams] = useSearchParams();
-  const [q, pick, city, from, to] = ["q", "country", "city", "from", "to"].map((k) => params.get(k) ?? "");
+  const [q, pick, city, from, to, source] = ["q", "country", "city", "from", "to", "source"].map((k) => params.get(k) ?? "");
   const set = (patch: Record<string, string>) => {
     const next = new URLSearchParams(params);
     for (const [k, v] of Object.entries(patch)) if (v) next.set(k, v); else next.delete(k);
@@ -84,8 +84,8 @@ export default function Abroad() {
           <span className="sort-label">{t.abroad.to}</span>
           <input type="date" value={to} min={from || undefined} onChange={(e) => set({ to: e.target.value })} aria-label={t.abroad.to} />
         </label>
-        {(pick || city || from || to || q) && (
-          <button className="f-clear" onClick={() => { setText(""); set({ q: "", country: "", city: "", from: "", to: "" }); }}>{t.abroad.clear}</button>
+        {(pick || city || from || to || q || source) && (
+          <button className="f-clear" onClick={() => { setText(""); set({ q: "", country: "", city: "", from: "", to: "", source: "" }); }}>{t.abroad.clear}</button>
         )}
       </div>
       <main className="wrap">
@@ -94,6 +94,7 @@ export default function Abroad() {
             params={{
               abroad: "true", country: code, city: city || undefined, q: q.length >= 2 ? q : undefined,
               date_from: from ? `${from}T00:00:00` : undefined, date_to: to ? `${to}T23:59:59` : undefined,
+              source: source || undefined,
             }}
             empty={(page) => page?.did_you_mean ? (
               <div className="msg">
