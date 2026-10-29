@@ -38,6 +38,7 @@ window.addEventListener("vite:preloadError", (e) => {
 const MapPage = lazy(() => import("./pages/MapPage"));
 const AdminPage = lazy(() => import("./pages/Admin"));
 const AccountPage = lazy(() => import("./accounts/AccountPage")); // optional Google account (its own files: accounts/)
+const AlertsPage = lazy(() => import("./alerts/AlertsPage")); // alerts (its own files: alerts/)
 const SavedPage = lazy(() => import("./saved/SavedPage")); // saved events (its own files: saved/)
 const PlanPage = lazy(() => import("./plans/PlanPage")); // "who's coming with me?" (its own files: plans/)
 
@@ -81,6 +82,7 @@ const router = createBrowserRouter([
       { path: "/blog/category/:category", element: <BlogIndex /> },
       { path: "/blog/:slug", element: <BlogPost /> },
       { path: "/accessibility", element: <AccessibilityPage /> },
+      { path: "/alerts", element: <Suspense fallback={<Loader />}><AlertsPage /></Suspense> },
       { path: "/saved", element: <Suspense fallback={<Loader />}><SavedPage /></Suspense> },
       { path: "/account", element: <Suspense fallback={<Loader />}><AccountPage /></Suspense> },
       { path: "/admin", element: <Suspense fallback={<Loader />}><AdminPage /></Suspense> },

@@ -49,6 +49,10 @@ def install(app: FastAPI, settings: Settings) -> None:
     app.include_router(admin_router)
 
     from partylinks.accounts.admin_routes import COUNTS
+    from partylinks.alerts.routes import alert_counts
+    from partylinks.alerts.routes import router as alerts_router
     from partylinks.saved.routes import saved_counts
 
     COUNTS["saved"] = saved_counts
+    COUNTS["alerts"] = alert_counts
+    app.include_router(alerts_router)

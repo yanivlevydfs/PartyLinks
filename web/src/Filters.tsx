@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { create } from "zustand";
+import { SaveAlertButton } from "./alerts/SaveAlertButton";
 import { useCategories, useEvents, type Params } from "./api";
 import type { Categories, Facet } from "./types";
 import { genreLabel } from "./i18n";
@@ -136,7 +137,7 @@ export function Filters() {
     </div>
   );
 
-  const active = dirty && (
+  const active = (dirty || f.q.trim().length >= 2) && (
     <div className="f-active">
       {f.when !== "all" && <Pill onClear={() => set({ when: "all" })}>{whenLabel}</Pill>}
       {f.regions.map((r) => <Pill key={r} onClear={() => set({ regions: f.regions.filter((x) => x !== r), areas: [], city: null })}>{label(t.areas, r)}</Pill>)}
@@ -148,7 +149,8 @@ export function Filters() {
       {f.freeOnly && <Pill onClear={() => set({ freeOnly: false })}>{t.freeOnly}</Pill>}
       {f.discountOnly && <Pill onClear={() => set({ discountOnly: false })}>{t.discountOnly}</Pill>}
       {f.hideSoldOut && <Pill onClear={() => set({ hideSoldOut: false })}>{t.hideSoldOut}</Pill>}
-      <button className="f-clear" onClick={clear}>{t.clearFilters}</button>
+      <SaveAlertButton filters={f} />
+      {dirty && <button className="f-clear" onClick={clear}>{t.clearFilters}</button>}
     </div>
   );
   const panels: [Panel, string, number][] = [

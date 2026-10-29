@@ -92,6 +92,9 @@ def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOSchedu
             coalesce=True,
             misfire_grace_time=settings.scheduler.misfire_grace_seconds,
         )
+    from partylinks.alerts.jobs import schedule as schedule_alerts  # local: alerts imports the api
+
+    schedule_alerts(scheduler, settings, service)  # alert matching (and the email jobs)
     return scheduler
 
 

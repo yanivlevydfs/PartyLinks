@@ -113,11 +113,6 @@ def event_cards(request: Request, ids: Annotated[list[str], Query(max_length=MAX
         return {"items": cards(session, ids[:MAX_CARDS])}
 
 
-def delete_saved(session: Session, event_ids: list[str]) -> None:
-    """Called by ``db.delete_events``: hearts go with their event (never past events)."""
-    session.execute(delete(SavedEventRow).where(SavedEventRow.event_id.in_(event_ids)))
-
-
 def saved_counts(session: Session, user_ids: list[str]) -> dict[str, int]:
     """For the admin's users tab."""
     query = (

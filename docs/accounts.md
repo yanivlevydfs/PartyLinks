@@ -43,6 +43,28 @@ and cleared from the device. A heart is removed with its event when the event en
 and the list always shows each group's primary listing, so a regrouped event stays. At most
 `accounts.max_saved` (500) per user. Code: `src/partylinks/saved/`, `web/src/saved/`.
 
+## Alerts ("save search"), the bell and "For you"
+
+An alert is a saved search: the site's own filters (genres, regions, neighbourhoods or city, time slots,
+free only, discount only, when as "any time / weekend / 7 days / 30 days" or a date range, and a word such
+as an artist or venue). "🔔 Save as alert" appears in the filter bar (home, landing pages, map) whenever a
+filter or search is set, on the quiz's last step, and on an event page for its first artist. Signed out, it
+asks to sign in and saves the alert on the way back (`?save_alert=1`, or `q:<artist>`). `/alerts` lists them
+(new matches, "email me at once", pause, see events, delete) and makes new ones. At most
+`accounts.max_alerts` (20) per user; the same search saved twice is one alert.
+
+The worker matches new events every `mail.matcher_interval_minutes` (15) (`alerts/matcher.py`, job
+`alerts:match`): events first seen since the last pass, against every active alert of a user who is not
+blocked, through `api.build_event_filters`, the same function `/events` uses, so an alert finds exactly
+what the same filters show on the site. Each distinct set of filters is queried once. A match is a row in
+`alert_hits`; its key (alert, event) keeps an event from being sent twice. The first pass after a deploy
+only sets the cursor, so existing events never flood anyone.
+
+The header bell (signed in) shows the newest 30 matches, polls once a minute while the tab is visible, and
+marks them seen when opened. "For you" on the home page shows up to 12 upcoming events matching any active
+alert (cached 10 minutes per user). Matches go with their event when it ends. Code: `src/partylinks/alerts/`,
+`web/src/alerts/`.
+
 ## API
 
 | Method | Path | |
@@ -55,6 +77,13 @@ and the list always shows each group's primary listing, so a regrouped event sta
 | PUT / DELETE | `/api/me/saved/{event_id}` | Heart on / off (404 for an unknown or ended event, 409 over the limit) |
 | POST | `/api/me/saved/merge` | `{ids: [...]}` from the browser after sign-in |
 | GET | `/events/cards?ids=` | Public: cards for a signed-out browser's hearts |
+| GET / POST | `/api/me/alerts` | List (with unseen counts) / create (422 for no filter or an unknown genre / region / slot, 409 over the limit) |
+| PATCH / DELETE | `/api/me/alerts/{id}` | Edit criteria, name, instant, active / delete |
+| GET | `/api/me/alerts/{id}/preview` | What the alert finds now: `{total, items}` |
+| POST | `/api/me/alerts/preview` | The same for criteria not saved yet (the form's "N events match now") |
+| GET | `/api/me/bell` | `{unseen, items: [{event, alert, matched_at, seen}]}` |
+| POST | `/api/me/bell/seen` | Mark all as seen |
+| GET | `/api/me/for-you` | Up to 12 upcoming events matching any active alert |
 
 Writes need the header `X-Requested-With: spotx` and, when the browser sends one, an `Origin` matching
 `site.base_url`. Sign-in is limited to 10 requests a minute per IP, and account writes to 30.

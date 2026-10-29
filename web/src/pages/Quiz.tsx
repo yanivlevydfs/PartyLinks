@@ -1,5 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { SaveAlertButton } from "../alerts/SaveAlertButton";
+import { useAlertText } from "../alerts/i18n";
 import { useCategories, useEvents } from "../api";
 import { Calendar, filterParams, GenrePicker, toggle, whenText } from "../Filters";
 import { DEFAULT_FILTERS, useStore, type Filters } from "../store";
@@ -23,6 +25,7 @@ function query(f: Filters) {
 export function Quiz() {
   const { t, lang } = useT();
   const q = t.quiz;
+  const alertText = useAlertText();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [d, setD] = useState<Filters>(() => ({ ...DEFAULT_FILTERS, sort: useStore.getState().filters.sort }));
@@ -164,6 +167,7 @@ export function Quiz() {
         {(step > 0 || (calOpen && d.when !== "all")) && (
           <>
             {step === STEPS - 1 && !!total && <button className="quiz-skip" onClick={surprise}>{q.surprise}</button>}
+            {step === STEPS - 1 && <SaveAlertButton filters={d} label={alertText.quizSave} />}
             <button className="quiz-go" onClick={next} disabled={total === 0}>
               {step === STEPS - 1 ? q.go(total ?? 0) : step === 0 || picked(step, d) ? q.next : q.skip}
               <span aria-hidden>{lang === "he" ? "←" : "→"}</span>

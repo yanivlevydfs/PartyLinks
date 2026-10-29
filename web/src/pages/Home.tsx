@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { ForYouRow } from "../alerts/ForYouRow";
 import { useCategories, useLandingInfo, useRails } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
@@ -133,6 +134,7 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
         </div>
       </Hero>
       <main className="wrap">
+        <ForYouRow />
         {quiz ? (
           <>
             <Quiz />
@@ -166,7 +168,7 @@ function Trending() {
 }
 
 /** A sideways row of cards: a random 12 of the row's pool (undefined: still loading). */
-function Rail({ title, sub, pool }: { title: string; sub: string; pool: EventSummary[] | undefined }) {
+export function Rail({ title, sub, pool }: { title: string; sub: string; pool: EventSummary[] | undefined }) {
   const row = useRef<HTMLDivElement>(null);
   // Shuffled once per visit: a fresh copy replacing the stored one doesn't reshuffle the row under the visitor.
   // A stored copy may be days old, so events already over are dropped.

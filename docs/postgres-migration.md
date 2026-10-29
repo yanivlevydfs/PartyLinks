@@ -679,3 +679,13 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Queries:** רשימת השמורים: `events WHERE group_id IN (SELECT group_id FROM events WHERE id IN (...) OR slug IN (...)) AND is_primary AND upcoming`, כך שאירוע שקובץ מחדש עדיין מוצג (הראשי של הקבוצה). שמירה: `INSERT ... ON CONFLICT DO NOTHING`. מיזוג אחרי כניסה: עד `accounts.max_saved` ‏(500).
 - **ציבורי:** ‏`GET /events/cards?ids=` (עד 100) לכרטיסים של לבבות ששמורים במכשיר בלי חשבון; נרשם לפני `/events/{event_ref}`.
 - **Tests:** ‏`tests/test_saved.py` (‏4). ‏499/499.
+
+### 2026-10-29 (התראות: חיפוש שמור, פעמון, "בשבילך")
+- **טבלאות חדשות** (‏`partylinks/alerts/models.py`):
+  - `event_alerts`: ‏`id` PK, ‏`user_id` ‏FK ל-`users` ‏CASCADE (אינדקס), ‏`name`, ‏`criteria` ‏JSONB (תת-קבוצה של מסנני האתר, תאריכים יחסיים), ‏`criteria_hash` (אינדקס; אותו חיפוש = אותו hash), ‏`instant`, ‏`active`, ‏`created_at`, ‏`updated_at`.
+  - `alert_hits`: ‏PK ‏(`alert_id`, ‏`event_id`): המפתח הוא מה שמונע שליחה כפולה. ‏`alert_id` ‏FK ‏CASCADE, ‏`event_id` (אינדקס, בלי FK; ‏`db.delete_events` מוחק דרך `alerts.models.delete_hits`), ‏`user_id` (אינדקס), ‏`matched_at`, ‏`seen_at` (הפעמון), ‏`instant_sent_at`, ‏`digest_sent_at`.
+  - `alert_state`: שורה אחת, ‏`cursor` של ה-matcher.
+- **Queries:** ה-matcher (worker, כל 15 דק'): ‏`events WHERE first_seen_at > cursor AND is_primary AND upcoming` (האירועים החדשים), ואז שאילתה אחת לכל `criteria_hash` שונה: ‏`events WHERE id = ANY(:new) AND <build_event_filters של ההתראה>`, ו-`INSERT INTO alert_hits ... ON CONFLICT DO NOTHING` ב-chunks של 5,000. ‏"בשבילך": ‏OR של המסננים של כל ההתראות הפעילות, ‏LIMIT 12, נשמר בזיכרון 10 דק' למשתמש.
+- **שינוי אחרי מדידה:** שאילתה לכל `criteria_hash` לקחה 330 ש' למעבר (31,545 חיפושים שונים x ‏500 אירועים חדשים). עכשיו: שאילתה אחת לכל *ערך* מסנן בודד (ז'אנר, אזור, שכונה, משבצת זמן, מילה, חלון תאריכים), כ-100 שאילתות קטנות על האירועים החדשים, וחיתוך/איחוד של הקבוצות ב-Python לכל התראה (זהה ל-`build_event_filters`: ‏AND בין מסננים, any-of בתוך רשימה). ה-hits נכתבים ב-`COPY` לטבלה זמנית ו-`INSERT ... SELECT ... ON CONFLICT DO NOTHING` (‏`INSERT` רב-שורות של SQLAlchemy לקח 140 ש').
+- **נמדד** (‏`scripts/time_matcher.py`, ‏pgserver מקומי, 28,000 אירועים, 50,000 התראות של 10,000 משתמשים): 500 אירועים חדשים: 27.3 ש' (825,241 hits); ‏100 חדשים: 7.3 ש'.
+- **Tests:** ‏`tests/test_alerts.py` (‏5), כולל parity על 12 חיפושים: ה-hits של כל התראה שווים בדיוק למה ש-`/events` מחזיר לאותם מסננים. ‏504/504.

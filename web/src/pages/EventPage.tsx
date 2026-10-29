@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { SaveAlertButton } from "../alerts/SaveAlertButton";
+import { useAlertText } from "../alerts/i18n";
 import { useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { Ticket } from "../types";
@@ -26,6 +28,7 @@ export default function EventPage() {
   useTitle(e?.title);
   const back = () => (history.state?.idx > 0 ? navigate(-1) : navigate("/"));
   const [more, setMore] = useState(false);
+  const alertText = useAlertText();
 
   if (isError) return <p className="msg wrap">{t.error}</p>;
   if (isPending) return <Loader />;
@@ -129,6 +132,7 @@ export default function EventPage() {
             <h4>{t.lineup}</h4>
             <div className="lineup-list">
               {e.lineup.map((a) => <Link key={a} to={artistPath(a)}>{a}</Link>)}
+              <SaveAlertButton q={e.lineup[0]} label={alertText.artist(e.lineup[0])} />
             </div>
           </section>
         )}
