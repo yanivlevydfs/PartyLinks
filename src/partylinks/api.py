@@ -617,6 +617,114 @@ HOME_RAILS: dict[str, dict[str, Any]] = {
 RAIL_POOL = 30
 
 
+def build_event_filters(
+    cfg: Settings,
+    *,
+    sounds_like: Sequence[str] = (),
+    source: list[str] | None = None,
+    genre: list[str] | None = None,
+    artist: str | None = None,
+    venue: str | None = None,
+    venue_slug: str | None = None,
+    city: str | None = None,
+    in_target_city: bool | None = None,
+    abroad: bool | None = None,
+    country: str | None = None,
+    anywhere: bool = False,
+    entry_type: list[EntryType] | None = None,
+    free_entry: bool | None = None,
+    sold_out: bool | None = None,
+    discount: bool | None = None,
+    day_of_week: list[str] | None = None,
+    time_slot: list[str] | None = None,
+    area: list[str] | None = None,
+    region: list[str] | None = None,
+    weekend: bool | None = None,
+    on_date: date | None = None,
+    upcoming: bool = True,
+    include_duplicates: bool = False,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    q: str | None = None,
+) -> list[ColumnElement[bool]]:
+    """WHERE clauses of the event filters: /events and /events/map (through ``event_filters``) and the
+    alert matcher, which has no request. ``sounds_like``: lineup names that sound like ``q``."""
+    tz = ZoneInfo(cfg.timezone)
+    filters: list[ColumnElement[bool]] = []
+    if source:
+        # Any listing of the event's group sold there: a party also on Zygo shows under Zygo
+        # even when the group's primary listing is Go-Out's.
+        listing = aliased(EventRow)
+        filters.append(EventRow.group_id.in_(select(listing.group_id).where(listing.source.in_(source))))
+    if genre:
+        filters.append(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(genre)))
+    if artist:
+        filters.append(lineup_contains(artist))
+    if venue:
+        filters.append(EventRow.venue_name.ilike(_contains(venue), escape="\\"))
+    if venue_slug:
+        filters.append(EventRow.venue_slug == venue_slug)
+    if city:
+        filters.append(or_(*(
+            cond for name in _city_names(city, country)
+            for cond in (EventRow.city.ilike(_contains(name), escape="\\"), EventRow.address.ilike(_contains(name), escape="\\"))
+        )))  # fmt: skip
+    if in_target_city is not None:
+        filters.append(EventRow.in_target_city.is_(in_target_city))
+    # Search, an artist's or a venue's page and the artist / venue indexes cover every event, abroad too.
+    if abroad is not None or not (q or artist or venue or venue_slug or anywhere):
+        filters.append(EventRow.country.is_not(None) if abroad else EventRow.country.is_(None))
+    if country:
+        filters.append(EventRow.country == country.upper())
+    if entry_type:
+        filters.append(EventRow.group_entry_type.in_([e.value for e in entry_type]))
+    if free_entry is not None:
+        free_now = and_(
+            EventRow.group_has_free_entry.is_(True),
+            or_(EventRow.group_free_entry_until.is_(None), EventRow.group_free_entry_until > datetime.now(UTC)),
+        )
+        filters.append(free_now if free_entry else not_(free_now))
+    if sold_out is not None:
+        filters.append(EventRow.is_sold_out.is_(sold_out))
+    if discount is not None:
+        listing = aliased(EventRow)
+        discounted = EventRow.group_id.in_(select(listing.group_id).where(listing.has_discount.is_(True)))
+        filters.append(discounted if discount else not_(discounted))
+    if day_of_week:
+        filters.append(EventRow.day_of_week.in_([d.lower() for d in day_of_week]))
+    if time_slot:
+        filters.append(EventRow.time_slot.in_(time_slot))
+    if area:
+        filters.append(EventRow.area.in_(area))
+    if region:
+        # Tel Aviv is the target city (its events carry neighbourhood areas); other regions are area keys.
+        any_of = [EventRow.area.in_([r for r in region if r != "tel_aviv"])]
+        if "tel_aviv" in region:
+            any_of.append(EventRow.in_target_city.is_(True))
+        filters.append(or_(*any_of))
+    if weekend is not None:
+        filters.append(EventRow.is_weekend.is_(weekend))
+    if on_date:
+        filters.append(EventRow.local_date == on_date)
+    if upcoming:
+        filters.append(upcoming_filter())
+    if not include_duplicates:
+        filters.append(EventRow.is_primary.is_(True))
+    if date_from:
+        filters.append(EventRow.start_at >= (date_from if date_from.tzinfo else date_from.replace(tzinfo=tz)))
+    if date_to:
+        filters.append(EventRow.start_at <= (date_to if date_to.tzinfo else date_to.replace(tzinfo=tz)))
+    if min_price is not None:
+        filters.append(EventRow.group_max_price >= min_price)
+    if max_price is not None:
+        filters.append(EventRow.group_min_price <= max_price)
+    if q:
+        filters += smart_filters(q, cfg, sounds_like)
+    return filters
+
+
 def create_app(
     settings: Settings | None = None, start_scheduler: bool | None = None, worker_process: bool = False
 ) -> FastAPI:
@@ -963,79 +1071,9 @@ def _register_routes(app: FastAPI) -> None:
         ] = None,
     ) -> list[ColumnElement[bool]]:
         """WHERE clauses of the event filters, shared by the list and the map."""
-        cfg: Settings = request.app.state.settings
-        tz = ZoneInfo(cfg.timezone)
-        filters: list[ColumnElement[bool]] = []
-        if source:
-            # Any listing of the event's group sold there: a party also on Zygo shows under Zygo
-            # even when the group's primary listing is Go-Out's.
-            listing = aliased(EventRow)
-            filters.append(EventRow.group_id.in_(select(listing.group_id).where(listing.source.in_(source))))
-        if genre:
-            filters.append(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(genre)))
-        if artist:
-            filters.append(lineup_contains(artist))
-        if venue:
-            filters.append(EventRow.venue_name.ilike(_contains(venue), escape="\\"))
-        if venue_slug:
-            filters.append(EventRow.venue_slug == venue_slug)
-        if city:
-            filters.append(or_(*(
-                cond for name in _city_names(city, country)
-                for cond in (EventRow.city.ilike(_contains(name), escape="\\"), EventRow.address.ilike(_contains(name), escape="\\"))
-            )))  # fmt: skip
-        if in_target_city is not None:
-            filters.append(EventRow.in_target_city.is_(in_target_city))
-        # Search, an artist's or a venue's page and the artist / venue indexes cover every event, abroad too.
-        if abroad is not None or not (q or artist or venue or venue_slug or anywhere):
-            filters.append(EventRow.country.is_not(None) if abroad else EventRow.country.is_(None))
-        if country:
-            filters.append(EventRow.country == country.upper())
-        if entry_type:
-            filters.append(EventRow.group_entry_type.in_([e.value for e in entry_type]))
-        if free_entry is not None:
-            free_now = and_(
-                EventRow.group_has_free_entry.is_(True),
-                or_(EventRow.group_free_entry_until.is_(None), EventRow.group_free_entry_until > datetime.now(UTC)),
-            )
-            filters.append(free_now if free_entry else not_(free_now))
-        if sold_out is not None:
-            filters.append(EventRow.is_sold_out.is_(sold_out))
-        if discount is not None:
-            listing = aliased(EventRow)
-            discounted = EventRow.group_id.in_(select(listing.group_id).where(listing.has_discount.is_(True)))
-            filters.append(discounted if discount else not_(discounted))
-        if day_of_week:
-            filters.append(EventRow.day_of_week.in_([d.lower() for d in day_of_week]))
-        if time_slot:
-            filters.append(EventRow.time_slot.in_(time_slot))
-        if area:
-            filters.append(EventRow.area.in_(area))
-        if region:
-            # Tel Aviv is the target city (its events carry neighbourhood areas); other regions are area keys.
-            any_of = [EventRow.area.in_([r for r in region if r != "tel_aviv"])]
-            if "tel_aviv" in region:
-                any_of.append(EventRow.in_target_city.is_(True))
-            filters.append(or_(*any_of))
-        if weekend is not None:
-            filters.append(EventRow.is_weekend.is_(weekend))
-        if on_date:
-            filters.append(EventRow.local_date == on_date)
-        if upcoming:
-            filters.append(upcoming_filter())
-        if not include_duplicates:
-            filters.append(EventRow.is_primary.is_(True))
-        if date_from:
-            filters.append(EventRow.start_at >= (date_from if date_from.tzinfo else date_from.replace(tzinfo=tz)))
-        if date_to:
-            filters.append(EventRow.start_at <= (date_to if date_to.tzinfo else date_to.replace(tzinfo=tz)))
-        if min_price is not None:
-            filters.append(EventRow.group_max_price >= min_price)
-        if max_price is not None:
-            filters.append(EventRow.group_min_price <= max_price)
-        if q:
-            filters += smart_filters(q, cfg, _sounds_like(request, q))
-        return filters
+        params = dict(locals())  # every query parameter, by name
+        del params["request"]
+        return build_event_filters(request.app.state.settings, sounds_like=_sounds_like(request, q) if q else (), **params)
 
     # A default, not Annotated: string annotations (``from __future__``) cannot see this local function.
     event_filters_dep = Depends(event_filters)
