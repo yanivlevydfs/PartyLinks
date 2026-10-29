@@ -6,6 +6,7 @@ import asyncio
 import base64
 import json
 import logging
+import re
 import threading
 import time
 from collections import Counter
@@ -790,6 +791,7 @@ def _summary_extras(session: Session, rows: Sequence[EventRow]) -> dict[str, dic
 
 log = logging.getLogger(__name__)
 
+CRAWLER = re.compile(r"bot|crawler|spider|google-", re.IGNORECASE)  # search crawlers following /go/, not clicks
 MAX_LIST_PARAMS = 20
 EVENT_CHANGES_LIMIT = 20
 
@@ -1150,7 +1152,8 @@ def _register_routes(app: FastAPI) -> None:
         if not row or not row.url.startswith(("https://", "http://")):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "event not found")
         headers = {"Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow"}
-        clicks.record(session, row, at)
+        if not CRAWLER.search(request.headers.get("user-agent", "")):  # Googlebot checks offers.url: not a click
+            clicks.record(session, row, at)
         url = utm.tagged(row.url, request.app.state.settings.utm, row, at)
         return RedirectResponse(url, status.HTTP_302_FOUND, headers=headers)
 

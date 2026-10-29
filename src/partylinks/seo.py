@@ -49,7 +49,7 @@ AI_CRAWLERS = [
 
 # Operational / private endpoints crawlers have no business indexing.
 ROBOTS_PRIVATE = ["/admin", "/admin/api/", "/docs", "/redoc", "/openapi.json", "/health", "/runs", "/sources",
-                  "/maintenance", "/changes", "/go/"]
+                  "/maintenance", "/changes"]  # not /go/: Google must crawl offers.url (the ticket redirect)
 
 CURRENCY_SYMBOLS = {"ILS": "₪", "EUR": "€", "USD": "$", "GBP": "£"}
 
@@ -257,12 +257,19 @@ def _place(row: EventRow) -> dict[str, Any]:
     return place
 
 
+def _ticket_url(row: EventRow, cfg: Settings) -> str:
+    """Our /go/ redirect to the seller (seller links never sit in a page). Google wants offers.url
+    crawlable, so robots.txt allows /go/; crawlers' visits are not counted as clicks."""
+    return _url(cfg, go_path(row.id))
+
+
 def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, Any] | None:
+    """Per Google: an Offer per ticket type, price with fees, availability InStock / SoldOut / PreOrder only."""
     availability = {
         "on_sale": "https://schema.org/InStock",
         "sold_out": "https://schema.org/SoldOut",
         "coming_soon": "https://schema.org/PreOrder",
-        "closed": "https://schema.org/Discontinued",
+        "closed": "https://schema.org/SoldOut",
     }
     offers = [
         {
@@ -271,7 +278,7 @@ def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, An
             "price": float(t.total_price if t.total_price is not None else t.price or 0),
             "priceCurrency": t.currency,
             "availability": availability.get(t.status, "https://schema.org/InStock"),
-            "url": _url(cfg, go_path(row.id)),
+            "url": _ticket_url(row, cfg),
             # On sale since: the seller's own sale start, else when we first saw it on sale.
             "validFrom": _iso(t.sale_start or row.first_seen_at, cfg, row),
         }
@@ -280,37 +287,34 @@ def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, An
     ]
     if offers:
         return offers
-    if row.min_price is not None:
+    if row.min_price is not None:  # tiers unknown: one Offer at the lowest price (Google's "price")
         return {
-            "@type": "AggregateOffer",
-            "lowPrice": float(row.min_price),
-            "highPrice": float(row.max_price if row.max_price is not None else row.min_price),
+            "@type": "Offer",
+            "price": float(row.min_price),
             "priceCurrency": row.currency,
-            "url": _url(cfg, go_path(row.id)),
+            "url": _ticket_url(row, cfg),
             "availability": "https://schema.org/SoldOut" if row.is_sold_out else "https://schema.org/InStock",
             "validFrom": _iso(row.first_seen_at, cfg, row),
         }
-    # No price known: still where to buy and whether it sells (Google wants offers on every event); a
-    # free entry is price 0, otherwise no made-up price.
-    return {
-        "@type": "Offer",
-        "url": _url(cfg, go_path(row.id)),
-        "availability": "https://schema.org/SoldOut" if row.is_sold_out else "https://schema.org/InStock",
-        "validFrom": _iso(row.first_seen_at, cfg, row),
-        **({"price": 0, "priceCurrency": row.currency or "ILS"} if row.entry_type == "free" else {}),
-    }
+    return None  # no price known: no made-up offer
 
 
 def _organizer(row: EventRow, cfg: Settings) -> dict[str, Any] | None:
     """Who puts the event on: the organizer the seller names, with its ticket page as the link (we keep
     no organizer sites); without one, the venue (a club runs its own nights), with its page here."""
     if row.organizer:
-        return {"@type": "Organization", "name": row.organizer, "url": _url(cfg, go_path(row.id))}
+        return {"@type": "Organization", "name": row.organizer, "url": _ticket_url(row, cfg)}
     if row.venue_name:
         return {"@type": "Organization", "name": row.venue_name, "url": _url(cfg, f"/venue/{quote(row.venue_name, safe='')}")}
     # Neither (16 of 6,680, all Geektime's own conferences): the site that runs and sells it, by its
-    # source name (as the tickets link shows it); no seller address in the page, only our /go/ redirect.
-    return {"@type": "Organization", "name": row.source, "url": _url(cfg, go_path(row.id))}
+    # source name (as the tickets link shows it), linked to its ticket page.
+    return {"@type": "Organization", "name": row.source, "url": _ticket_url(row, cfg)}
+
+
+def _about(row: EventRow) -> str:
+    """A description without the seller's text. Google: describe the event, don't repeat date or place."""
+    parts = [row.title, ", ".join(row.lineup[:5]), ", ".join(genre_label(g, "he") for g in (row.genres or [])[:3]), row.organizer]
+    return " · ".join(p for p in parts if p)
 
 
 def _end(row: EventRow, cfg: Settings) -> str | None:
@@ -330,9 +334,9 @@ def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
         "eventStatus": "https://schema.org/EventScheduled",
         "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
         "location": _place(row),
-        "image": [_cover(cfg, row) or f"{cfg.site.base_url}/og-default.png?v=spotx2"],  # the page's own og:image fallback
-        # Google wants one on every event: the seller's text, else the page's own summary (when, where).
-        "description": _clip(row.description) or _clip(_summary(row, cfg, "he")),
+        # The event's own artwork only: Google wants images that represent the event, not the site logo.
+        "image": [i for i in [_cover(cfg, row)] if i],
+        "description": _clip(row.description) or _clip(_about(row)),
         "inLanguage": "he",
         "isAccessibleForFree": row.entry_type == "free" or None,
         "typicalAgeRange": f"{row.min_age}-" if row.min_age else None,

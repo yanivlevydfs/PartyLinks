@@ -131,11 +131,21 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
     assert all(o["validFrom"] for o in data["offers"]) and data["endDate"]
     assert data["organizer"]["name"] and data["organizer"]["url"].startswith("http")
     assert data["performer"] and all(p["name"] for p in data["performer"])
+    # Google's Event rules: offers.url crawlable (robots.txt allows /go/), dates without microseconds,
+    # availability InStock / SoldOut / PreOrder only.
+    assert all("." not in o["validFrom"] for o in data["offers"])
+    assert {o["availability"] for o in data["offers"]} <= {f"https://schema.org/{a}" for a in ("InStock", "SoldOut", "PreOrder")}
+    # Nothing known: no made-up offer or logo image, and a description that doesn't repeat date or place.
+    row.description, row.tickets, row.images, row.min_price, row.image_url = None, [], [], None, None
+    bare = event_jsonld(row, settings)
+    assert "offers" not in bare and "image" not in bare
+    assert bare["description"].startswith(row.title) and str(future.year) not in bare["description"]
     json.dumps(data, ensure_ascii=False, default=str)
 
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         robots = client.get("/robots.txt").text
         assert "Disallow: /admin" in robots and "Sitemap: http://localhost:8000/sitemap.xml" in robots
+        assert "Disallow: /go/" not in robots  # Google crawls offers.url
         index = client.get("/sitemap.xml").text
         assert "<sitemapindex" in index and "/sitemap-1.xml" in index and "/sitemap-2.xml" not in index
         assert client.get("/sitemap-2.xml").status_code == 404 and client.get("/sitemap-0.xml").status_code == 404
