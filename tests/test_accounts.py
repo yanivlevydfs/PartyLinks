@@ -250,3 +250,12 @@ def test_admin_changes_with_the_cookie_need_our_pages(tmp_path: Path, fake: Fake
         assert admin.get("/admin/api/users").status_code == 200  # reading needs no header
         assert admin.post(f"/admin/api/users/{uid}/revoke").status_code == 403  # a cross-site form could do this
         assert admin.post(f"/admin/api/users/{uid}/revoke", headers=OURS).status_code == 200
+
+
+
+def test_authlib_has_httpx2() -> None:
+    """Authlib needs httpx2: without it, it falls back to httpx with a deprecation warning on every start
+    (an error line in Railway's log), and a later Authlib drops that fallback, which would break sign-in."""
+    import importlib.util
+
+    assert importlib.util.find_spec("httpx2") is not None

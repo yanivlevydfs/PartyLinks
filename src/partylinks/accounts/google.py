@@ -4,12 +4,8 @@ nonce, PKCE and the ID token; no Google script ever loads on our pages (no conse
 from __future__ import annotations
 
 import logging
-import warnings
 from typing import Any
 
-# Authlib's own import of its httpx helper warns on stderr (an "error" line in Railway) on every start; it is
-# Authlib's internal deprecation, nothing we call. Silenced for that one message only.
-warnings.filterwarnings("ignore", message="The httpx module is deprecated")
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
