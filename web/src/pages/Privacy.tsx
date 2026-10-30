@@ -97,7 +97,7 @@ const TEXT = {
       {
         title: "שינויים במדיניות",
         body: [
-          "אם נשנה את המידע שנשמר או את השימוש בו, נעדכן את המסמך ואת תאריך העדכון. שינוי שמחייב הסכמה יוביל להצגת חלון ההסכמה מחדש, וההסכמה הקודמת לא תחול עליו. הבחירה שלכם אינה נשמרת במכשיר, ולכן נשאל אתכם מחדש בכל ביקור.",
+          "אם נשנה את המידע שנשמר או את השימוש בו, נעדכן את המסמך ואת תאריך העדכון. שינוי שמחייב הסכמה יוביל להצגת חלון ההסכמה מחדש, וההסכמה הקודמת לא תחול עליו. הבחירה שלכם נשמרת בדפדפן ל-30 יום; אחרי זה, או אם תמחקו את נתוני האתר, נשאל שוב.",
         ],
       },
     ] as Section[],
@@ -193,7 +193,7 @@ const TEXT = {
       {
         title: "Changes to this policy",
         body: [
-          "If we change what is stored or how it is used, we will update this page and its date. A change that needs consent brings the consent window back, and earlier consent will not cover it. Your choice is not saved on your device, so we ask again on every visit.",
+          "If we change what is stored or how it is used, we will update this page and its date. A change that needs consent brings the consent window back, and earlier consent will not cover it. Your choice is kept in your browser for 30 days; after that, or if you clear the site's data, we ask again.",
         ],
       },
     ] as Section[],

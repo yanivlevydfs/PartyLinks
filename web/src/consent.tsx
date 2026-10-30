@@ -46,11 +46,12 @@ function analytics(on: boolean) {
   document.head.append(s);
 }
 
-// Never written to the device: the choice lives in memory for this tab only, so the banner
-// comes back on every visit. The key earlier versions stored is deleted on load.
-try { localStorage.removeItem("partylinks-consent"); } catch {}
 // Bump when a category is added or the use of data changes: everyone is asked again.
 export const CONSENT_VERSION = 2;
+// The choice is kept on the device (strictly necessary: it records the consent itself) so the banner
+// doesn't come back on every refresh or page; asked again after this long, or on a new version.
+const CONSENT_KEY = "partylinks-consent";
+const CONSENT_MAX_DAYS = 30;
 
 type Choices = Record<Category, boolean>;
 export interface Consent {
@@ -68,12 +69,25 @@ interface ConsentState {
   close: () => void;
 }
 
+/** The saved choice, if it is this version's and not older than CONSENT_MAX_DAYS. */
+function stored(): Consent | null {
+  try {
+    const c = JSON.parse(localStorage.getItem(CONSENT_KEY) ?? "null") as Consent | null;
+    if (c?.v === CONSENT_VERSION && Date.now() - Date.parse(c.at) < CONSENT_MAX_DAYS * 864e5) return c;
+    localStorage.removeItem(CONSENT_KEY);
+  } catch {}
+  return null;
+}
+const saved = stored();
+if (saved) analytics(saved.choices.analytics);
+
 export const useConsent = create<ConsentState>()((set, get) => ({
-  consent: null,
-  panel: "banner",
+  consent: saved,
+  panel: saved ? null : "banner",
   save: (choices) => {
     const consent: Consent = { v: CONSENT_VERSION, id: get().consent?.id ?? crypto.randomUUID(), at: new Date().toISOString(), choices };
     set({ consent, panel: null });
+    try { localStorage.setItem(CONSENT_KEY, JSON.stringify(consent)); } catch {}
     analytics(choices.analytics);
   },
   openSettings: () => set({ panel: "settings" }),
@@ -103,6 +117,11 @@ const REQUEST = { he: "בקשת רשת לצד שלישי", en: "Request to a thi
 const NONE = { he: "לא נשמר במכשיר", en: "Nothing stored on the device" };
 
 export const STORAGE: StorageItem[] = [
+  {
+    name: CONSENT_KEY, provider: US, kind: LOCAL, category: "necessary",
+    purpose: { he: "הבחירה שלך בחלון העוגיות (מה אישרת ומתי), כדי שלא נשאל שוב בכל עמוד.", en: "Your choice in the cookie window (what you allowed and when), so we don't ask again on every page." },
+    duration: { he: "30 יום, או עד שינוי במדיניות שמחייב הסכמה חדשה", en: "30 days, or until a policy change that needs new consent" },
+  },
   {
     name: "partylinks", provider: US, kind: LOCAL, category: "necessary",
     purpose: { he: "שמירת שפת התצוגה שבחרת (עברית / אנגלית).", en: "Remembers the display language you chose (Hebrew / English)." },
@@ -170,7 +189,7 @@ const TEXT = {
   he: {
     region: "הסכמה לעוגיות ולתוכן חיצוני",
     title: "הפרטיות שלך חשובה לנו",
-    body: "אנחנו שומרים בדפדפן רק את מה שנחוץ להפעלת האתר: השפה והגדרות הנגישות. הבחירה שלך כאן לא נשמרת במכשיר. אין באתר עוגיות פרסום. בהסכמתך נטענים גם Google Analytics, לסטטיסטיקת גלישה, ומפת OpenFreeMap; שניהם מקבלים את כתובת ה-IP שלך. אפשר לשנות את הבחירה בכל עת דרך \"הגדרות עוגיות\" בתחתית העמוד.",
+    body: "אנחנו שומרים בדפדפן רק את מה שנחוץ להפעלת האתר: השפה והגדרות הנגישות. הבחירה שלך נשמרת בדפדפן ל-30 יום, כדי שלא נשאל שוב בכל עמוד. אין באתר עוגיות פרסום. בהסכמתך נטענים גם Google Analytics, לסטטיסטיקת גלישה, ומפת OpenFreeMap; שניהם מקבלים את כתובת ה-IP שלך. אפשר לשנות את הבחירה בכל עת דרך \"הגדרות עוגיות\" בתחתית העמוד.",
     policy: "מדיניות הפרטיות והעוגיות",
     acceptAll: "אישור הכל",
     rejectAll: "דחיית הכל",
@@ -191,7 +210,7 @@ const TEXT = {
   en: {
     region: "Cookie and external content consent",
     title: "Your privacy matters to us",
-    body: "We only store what the site needs to work in your browser: your language and accessibility settings. The choice you make here is not saved on your device. There are no advertising cookies. With your consent we also load Google Analytics, for usage statistics, and the OpenFreeMap map; both receive your IP address. You can change your choice at any time from \"Cookie settings\" at the bottom of the page.",
+    body: "We only store what the site needs to work in your browser: your language and accessibility settings. Your choice is kept in your browser for 30 days, so we don't ask again on every page. There are no advertising cookies. With your consent we also load Google Analytics, for usage statistics, and the OpenFreeMap map; both receive your IP address. You can change your choice at any time from \"Cookie settings\" at the bottom of the page.",
     policy: "Privacy and cookie policy",
     acceptAll: "Accept all",
     rejectAll: "Reject all",
