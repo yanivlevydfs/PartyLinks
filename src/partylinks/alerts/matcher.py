@@ -129,6 +129,12 @@ def run(settings: Settings, db: Database) -> int:
         state.cursor = upto
         if not new_ids:
             return 0
+        # Which sources the new events come from: a source flooding "new" events every pass shows here.
+        by_source = session.execute(
+            select(EventRow.source, func.count()).where(EventRow.id.in_(new_ids))
+            .group_by(EventRow.source).order_by(func.count().desc()).limit(8)
+        ).all()  # fmt: skip
+        log.info("alerts: new events by source: %s", ", ".join(f"{src} {n}" for src, n in by_source))
         alerts = session.execute(
             select(AlertRow.id, AlertRow.user_id, AlertRow.criteria, AlertRow.criteria_hash)
             .join(UserRow, UserRow.id == AlertRow.user_id)
