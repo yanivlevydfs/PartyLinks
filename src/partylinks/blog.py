@@ -183,7 +183,7 @@ def _embed_rows(session: Any, params: dict[str, str], cfg: Settings) -> list[Eve
     if "city" in params:
         where.append(EventRow.city == params["city"])
     if "venue" in params:
-        where.append(EventRow.venue_name.ilike(f"%{params['venue']}%"))
+        where.append(seo.like_contains(EventRow.venue_name, params["venue"]))
     if "artist" in params:
         where.append(lineup_contains(params["artist"]))
     if "free_entry" in params:

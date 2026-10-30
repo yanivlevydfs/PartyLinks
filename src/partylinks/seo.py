@@ -36,6 +36,7 @@ from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
 from partylinks.db import EventRow, lineup_contains, upcoming_filter
 from partylinks.places import all_cities
+from partylinks.retention import is_current
 
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
 LIST_LIMIT = 60  # events listed on index pages
@@ -453,8 +454,8 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
         .where(or_(EventRow.id == ref, EventRow.slug == ref))
         .options(selectinload(EventRow.tickets), selectinload(EventRow.images))
     )
-    if row is None:
-        return None
+    if row is None or not is_current(row.start_at, row.end_at, cfg.retention, cfg.timezone):
+        return None  # over but not purged yet (the nightly pass): gone all the same, never a past event's page
     t = TEXT[lang]
     summary = _summary(row, cfg, lang)
     where = " · ".join(x for x in [row.venue_name, row.address, row.city] if x)
@@ -484,9 +485,15 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
     )
 
 
+def like_contains(column: Any, value: str) -> ColumnElement[bool]:
+    """Case-insensitive substring match with the visitor's % and _ taken literally ("100% club" is not every venue)."""
+    escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return column.ilike(f"%{escaped}%", escape="\\")
+
+
 def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     t = TEXT[lang]
-    rows = _upcoming(session, EventRow.venue_name.ilike(f"%{name}%"))
+    rows = _upcoming(session, like_contains(EventRow.venue_name, name))
     path = f"/venue/{quote(name, safe='')}"
     place: dict[str, Any] = {"@context": "https://schema.org", **(_place(rows[0]) if rows else {"@type": "Place"}), "name": name}
     place["@type"] = "MusicVenue"
@@ -1064,7 +1071,7 @@ def _related(session: Session, cfg: Settings, lang: str, path: str) -> list[tupl
         by_city = city_genre_counts(session, cfg)
         out += [(f"/city/{c.key}/{rest[0]}", f"{genre_label(rest[0], lang)} {'ב' + c.he if he else 'in ' + c.en}") for c in cities if rest[0] in by_city.get(c.he, {})]
     elif head == "venue" and rest:
-        row = session.scalars(select(EventRow.city).where(upcoming_filter(), EventRow.venue_name.ilike(f"%{unquote(rest[0])}%"), EventRow.city.is_not(None)).limit(1)).first()
+        row = session.scalars(select(EventRow.city).where(upcoming_filter(), like_contains(EventRow.venue_name, unquote(rest[0])), EventRow.city.is_not(None)).limit(1)).first()
         c = next((x for x in cities if x.he == row), None)
         if c:
             city_links(c)
