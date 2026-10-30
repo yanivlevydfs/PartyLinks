@@ -1,12 +1,13 @@
-// /alerts: the user's saved searches. Each one: its filters, new matches, "email me at once", pause,
-// see its events, delete. A new one from the same pickers as the home filters.
-import { useState } from "react";
+// /alerts: the user's saved searches as cards (what it looks for, new matches, on/off, instant email,
+// see its events, edit, delete), and one form, in steps, to make a new one or edit one:
+// what to look for -> how many events match now -> a name -> how to be told -> save.
+import { useId, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { SignInButton } from "../accounts/AccountSlot";
 import { useNoIndex } from "../accounts/AccountPage";
 import { useMe } from "../accounts/useMe";
 import { useCategories } from "../api";
-import { GenrePicker, toggle } from "../Filters";
+import { GenrePicker, toggle, whenText } from "../Filters";
 import { DEFAULT_FILTERS, useStore } from "../store";
 import { Chip, Hero, label, Loader, useT, useTitle } from "../ui";
 import { useAlertText } from "./i18n";
@@ -14,99 +15,185 @@ import { EMPTY } from "./SaveAlertButton";
 import { criteriaWords, isEmpty, useAlertActions, useAlerts, useCriteriaName, usePreview, type Alert, type Criteria } from "./useAlerts";
 import "./alerts.css";
 
-function AlertRow({ a }: { a: Alert }) {
+const WHEN = ["all", "weekend", "week", "month"] as const;
+
+/** An on/off switch with its words beside it (the site's consent switch). */
+function Switch({ on, onChange, children }: { on: boolean; onChange: () => void; children: ReactNode }) {
+  return (
+    <label className="alert-switch">
+      <input type="checkbox" role="switch" className="switch" checked={on} onChange={onChange} />
+      <span>{children}</span>
+    </label>
+  );
+}
+
+/** One labelled group of chips in the form. */
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <fieldset className="alert-group">
+      <legend>{title}</legend>
+      <div className="alert-chips">{children}</div>
+    </fieldset>
+  );
+}
+
+function AlertCard({ a }: { a: Alert }) {
   const t = useAlertText();
   const { t: ui, lang } = useT();
   const { edit, remove } = useAlertActions();
   const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
+  const [confirm, setConfirm] = useState(false);
   const show = () => {
-    const c = a.criteria;
-    useStore.getState().setFilters({ ...DEFAULT_FILTERS, ...c, shops: [], hideSoldOut: false, sort: "start_at" });
+    useStore.getState().setFilters({ ...DEFAULT_FILTERS, ...a.criteria, shops: [], hideSoldOut: false, sort: "start_at" });
     useStore.getState().setQuizDone(true);
     navigate("/");
   };
+  if (editing) return <li className="alert-card"><AlertForm alert={a} onDone={() => setEditing(false)} /></li>;
   return (
-    <li className={"alert-row" + (a.active ? "" : " off")}>
+    <li className={"alert-card" + (a.active ? "" : " off")}>
       <div className="alert-head">
-        <b dir="auto">{a.name}</b>
+        <h3 dir="auto">{a.name}</h3>
         {a.unseen > 0 && <span className="alert-new">{t.unseen(a.unseen)}</span>}
       </div>
       <div className="alert-tags">{criteriaWords(a.criteria, ui, lang).map((w) => <span key={w} className="tag" dir="auto">{w}</span>)}</div>
-      <label className="alert-check">
-        <input type="checkbox" checked={a.instant} onChange={() => edit(a.id, { instant: !a.instant })} /> {t.instant}
-      </label>
-      <div className="alert-actions">
-        <button className="c-btn ghost" onClick={show}>{t.show}</button>
-        <button className="c-btn ghost" onClick={() => edit(a.id, { active: !a.active })} aria-pressed={a.active}>
-          {a.active ? t.active : t.paused}
-        </button>
-        <button className="c-btn ghost" onClick={() => remove(a.id)}>{t.remove}</button>
+      {!a.active && <p className="alert-note">{t.pausedNote}</p>}
+      <div className="alert-switches">
+        <Switch on={a.active} onChange={() => edit(a.id, { active: !a.active })}>{a.active ? t.active : t.paused}</Switch>
+        <Switch on={a.instant} onChange={() => edit(a.id, { instant: !a.instant })}>{t.email}</Switch>
       </div>
+      {confirm ? (
+        <div className="alert-actions" role="group" aria-label={t.confirmRemove}>
+          <b>{t.confirmRemove}</b>
+          <button type="button" className="c-btn danger" onClick={() => remove(a.id)}>{t.yesRemove}</button>
+          <button type="button" className="c-btn ghost" onClick={() => setConfirm(false)} autoFocus>{t.cancel}</button>
+        </div>
+      ) : (
+        <div className="alert-actions">
+          <button type="button" className="c-btn" onClick={show}>{t.show}</button>
+          <button type="button" className="c-btn ghost" onClick={() => setEditing(true)}>{t.edit}</button>
+          <button type="button" className="c-btn ghost" onClick={() => setConfirm(true)}>{t.remove}</button>
+        </div>
+      )}
     </li>
   );
 }
 
-function NewAlert({ full }: { full: boolean }) {
+/** A new alert (no ``alert``) or an edit of one. */
+function AlertForm({ alert, onDone }: { alert?: Alert; onDone?: () => void }) {
   const t = useAlertText();
   const { t: ui } = useT();
   const cats = useCategories().data;
-  const { create } = useAlertActions();
-  const name = useCriteriaName();
-  const [c, setC] = useState<Criteria>(EMPTY);
-  const [instant, setInstant] = useState(false);
+  const { create, edit } = useAlertActions();
+  const autoName = useCriteriaName();
+  const [c, setC] = useState<Criteria>(alert?.criteria ?? EMPTY);
+  const [name, setName] = useState(alert?.name ?? "");
+  const [instant, setInstant] = useState(alert?.instant ?? false);
   const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const id = useId();
   const patch = (p: Partial<Criteria>) => setC((cur) => ({ ...cur, ...p }));
   const preview = usePreview(c);
+  const empty = isEmpty(c);
+
+  // Under one region: its cities (Tel Aviv: its neighbourhoods), as in the home filters.
+  const regionKeys = new Set(cats?.regions?.map((r) => r.value));
+  const one = c.regions.length === 1 ? c.regions[0] : null;
+  const subAreas = one === "tel_aviv"
+    ? (cats?.areas ?? []).filter((a) => !regionKeys.has(a.value) && a.value !== "outside" && a.value !== "abroad")
+    : (cats?.cities ?? []).filter((x) => one && x.area === one);
+
   const submit = async () => {
-    if (isEmpty(c)) return setNote(t.emptyCriteria);
+    if (empty) return setNote(t.emptyCriteria);
+    setBusy(true);
     try {
-      await create(c, name(c), instant);
-      setC(EMPTY);
-      setInstant(false);
-      setNote("");
+      const n = name.trim() || autoName(c);
+      if (alert) await edit(alert.id, { criteria: c, name: n, instant });
+      else await create(c, n, instant);
+      setC(EMPTY); setName(""); setInstant(false); setNote("");
+      onDone?.();
     } catch (err) {
       setNote(String(err).includes("409") ? t.tooMany : t.failed);
+    } finally {
+      setBusy(false);
     }
   };
-  if (full) return <p className="muted">{t.tooMany}</p>;
+
   return (
     // Not a <form>: the chips and genre picker are plain buttons, which would each submit one.
-    <section className="alert-new-form">
-      <h2>{t.newTitle}</h2>
-      <label className="alert-word">{t.word}
-        <input value={c.q} maxLength={100} onChange={(e) => patch({ q: e.target.value })} dir="auto"
-          onKeyDown={(e) => e.key === "Enter" && submit()} />
-      </label>
-      <div className="alert-chips">
-        {(["all", "weekend", "week", "month"] as const).map((w) => (
-          <Chip key={w} on={c.when === w} onClick={() => patch({ when: w })}>{w === "all" ? t.all : ui[w]}</Chip>
-        ))}
+    <section className="alert-form" aria-labelledby={id}>
+      <h2 id={id}>{alert ? t.editTitle : t.newTitle}</h2>
+
+      <div className="alert-step">
+        <h3><span className="alert-num" aria-hidden>1</span>{t.what}</h3>
+        <p className="alert-hint">{t.whatHint}</p>
+        <label className="alert-field">{t.word}
+          <input value={c.q} maxLength={100} onChange={(e) => patch({ q: e.target.value })} dir="auto" placeholder={t.wordHint} />
+        </label>
+        {!!cats?.genres.length && (
+          <GenrePicker cats={cats} value={c.genres} onChange={(genres) => patch({ genres })} />
+        )}
+        {!!cats?.regions?.length && (
+          <Group title={ui.area}>
+            <Chip on={!c.regions.length} onClick={() => patch({ regions: [], areas: [], city: null })}>{ui.allAreas}</Chip>
+            {cats.regions.map((r) => (
+              <Chip key={r.value} on={c.regions.includes(r.value)} onClick={() => patch({ regions: toggle(c.regions, r.value), areas: [], city: null })}>
+                {label(ui.areas, r.value)}
+              </Chip>
+            ))}
+          </Group>
+        )}
+        {one && subAreas.length > 1 && (
+          <Group title={one === "tel_aviv" ? ui.neighborhood : ui.city}>
+            <Chip on={!c.areas.length && !c.city} onClick={() => patch({ areas: [], city: null })}>{ui.all}</Chip>
+            {subAreas.map((a) => one === "tel_aviv" ? (
+              <Chip key={a.value} on={c.areas.includes(a.value)} onClick={() => patch({ areas: toggle(c.areas, a.value) })}>{label(ui.areas, a.value)}</Chip>
+            ) : (
+              <Chip key={a.value} on={c.city === a.value} onClick={() => patch({ city: c.city === a.value ? null : a.value })}>{a.value}</Chip>
+            ))}
+          </Group>
+        )}
+        <Group title={t.when}>
+          {WHEN.map((w) => <Chip key={w} on={c.when === w} onClick={() => patch({ when: w })}>{w === "all" ? t.all : ui[w]}</Chip>)}
+          {/* A date range saved from the home filters: kept until another choice. */}
+          {!(WHEN as readonly string[]).includes(c.when) && <Chip on onClick={() => {}}>{whenText(ui, c.when)}</Chip>}
+        </Group>
+        <Group title={ui.slot}>
+          {Object.entries(ui.slots).map(([k, n]) => <Chip key={k} on={c.slots.includes(k)} onClick={() => patch({ slots: toggle(c.slots, k) })}>{n}</Chip>)}
+        </Group>
+        <Group title={t.price}>
+          <Chip className="toggle free" on={c.freeOnly} onClick={() => patch({ freeOnly: !c.freeOnly })}>
+            <span className="tick" aria-hidden /> {ui.freeOnly}
+          </Chip>
+          <Chip className="toggle" on={c.discountOnly} onClick={() => patch({ discountOnly: !c.discountOnly })}>
+            <span className="tick" aria-hidden /> {ui.discountOnly}
+          </Chip>
+        </Group>
+        <p className={"alert-preview" + (empty ? "" : " live")} role="status">
+          {empty ? t.emptyCriteria : preview.data ? t.now(preview.data.total) : <Loader small />}
+        </p>
       </div>
-      {!!cats?.regions?.length && (
-        <div className="alert-chips">
-          {cats.regions.map((r) => (
-            <Chip key={r.value} on={c.regions.includes(r.value)} onClick={() => patch({ regions: toggle(c.regions, r.value), areas: [], city: null })}>
-              {label(ui.areas, r.value)}
-            </Chip>
-          ))}
-        </div>
-      )}
-      {!!cats?.genres.length && <GenrePicker cats={cats} value={c.genres} onChange={(genres) => patch({ genres })} />}
-      <div className="alert-chips">
-        {Object.entries(ui.slots).map(([k, n]) => (
-          <Chip key={k} on={c.slots.includes(k)} onClick={() => patch({ slots: toggle(c.slots, k) })}>{n}</Chip>
-        ))}
-        <Chip className="toggle free" on={c.freeOnly} onClick={() => patch({ freeOnly: !c.freeOnly })}>
-          <span className="tick" aria-hidden /> {ui.freeOnly}
-        </Chip>
+
+      <div className="alert-step">
+        <h3><span className="alert-num" aria-hidden>2</span>{t.name}</h3>
+        <label className="alert-field">
+          <span className="sr-only">{t.name}</span>
+          <input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} dir="auto"
+            placeholder={empty ? "" : autoName(c)} aria-describedby={id + "-name"} />
+        </label>
+        <p className="alert-hint" id={id + "-name"}>{t.nameHint}</p>
       </div>
-      <label className="alert-check">
-        <input type="checkbox" checked={instant} onChange={() => setInstant(!instant)} /> {t.instant}
-      </label>
-      <p className="muted" role="status">
-        {isEmpty(c) ? t.emptyCriteria : preview.data ? t.now(preview.data.total) : <Loader small />}
-      </p>
-      <button type="button" className="c-btn" disabled={isEmpty(c)} onClick={submit}>{t.create}</button>
+
+      <div className="alert-step">
+        <h3><span className="alert-num" aria-hidden>3</span>{t.how}</h3>
+        <p className="alert-hint">{t.howBell}</p>
+        <Switch on={instant} onChange={() => setInstant(!instant)}>{t.instant}</Switch>
+      </div>
+
+      <div className="alert-actions">
+        <button type="button" className="c-btn" disabled={empty || busy} onClick={submit}>{alert ? t.saveEdit : t.create}</button>
+        {onDone && <button type="button" className="c-btn ghost" onClick={onDone}>{t.cancel}</button>}
+      </div>
       {note && <p className="adm-err" role="alert">{note}</p>}
     </section>
   );
@@ -119,20 +206,33 @@ export default function AlertsPage() {
   const me = useMe();
   const alerts = useAlerts();
   const items = alerts.data?.items ?? [];
+  const max = alerts.data?.max ?? 20;
+  const [adding, setAdding] = useState(false);
   return (
     <>
       <Hero title={t.title} />
-      <main className="wrap statement">
-        <p>{t.intro}</p>
-        {me.isLoading ? <Loader /> : !me.data ? <SignInButton next="/alerts" /> : alerts.isLoading ? <Loader /> : (
+      <main className="wrap alerts-page">
+        <p className="alert-intro">{t.intro}</p>
+        {me.isLoading ? <Loader /> : !me.data ? (
+          <div className="alert-empty"><p>{t.signedOut}</p><SignInButton next="/alerts" /></div>
+        ) : alerts.isLoading ? <Loader /> : items.length ? (
           <>
-            {items.length ? (
-              <>
-                <p className="muted">{t.limit(items.length, alerts.data!.max)}</p>
-                <ul className="alert-list">{items.map((a) => <AlertRow key={a.id} a={a} />)}</ul>
-              </>
-            ) : <p className="muted">{t.none}</p>}
-            <NewAlert full={items.length >= (alerts.data?.max ?? 20)} />
+            <div className="alert-list-head">
+              <h2>{t.listTitle} <small>{t.limit(items.length, max)}</small></h2>
+              {!adding && items.length < max && <button type="button" className="c-btn" onClick={() => setAdding(true)}>{t.add}</button>}
+            </div>
+            {adding && <AlertForm onDone={() => setAdding(false)} />}
+            {items.length >= max && <p className="alert-note">{t.tooMany}</p>}
+            <ul className="alert-list">{items.map((a) => <AlertCard key={a.id} a={a} />)}</ul>
+          </>
+        ) : (
+          <>
+            <div className="alert-empty">
+              <span className="alert-empty-icon" aria-hidden>🔔</span>
+              <h2>{t.noneTitle}</h2>
+              <p>{t.none}</p>
+            </div>
+            <AlertForm />
           </>
         )}
       </main>
