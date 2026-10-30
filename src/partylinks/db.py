@@ -47,7 +47,7 @@ from sqlalchemy import (
 from sqlalchemy import event as sa_event
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.engine import URL, Engine, make_url
+from sqlalchemy.engine import URL, CursorResult, Engine, make_url
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.exc import TimeoutError as PoolTimeout
 from sqlalchemy.orm import DeclarativeBase, Mapped, ORMExecuteState, Session, mapped_column, relationship, sessionmaker
@@ -599,7 +599,7 @@ class Database:
                 .where(ScrapeRunRow.status == "running")
                 .values(status="interrupted", error="process stopped before the run finished", finished_at=utcnow())
             )
-            count = result.rowcount or 0
+            count = cast("CursorResult[Any]", result).rowcount or 0
         if count:
             log.warning("marked %d unfinished runs as interrupted", count)
         return count
