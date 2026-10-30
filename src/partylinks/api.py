@@ -23,10 +23,11 @@ import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from sqlalchemy import ColumnElement, String, and_, cast, func, not_, or_, select
+from sqlalchemy.exc import DataError
 from sqlalchemy.orm import Session, aliased, defer, load_only, selectinload, undefer
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -433,12 +434,14 @@ class _SiteFiles(StaticFiles):
     async def get_response(self, path: str, scope: Any) -> Response:
         try:
             return await super().get_response(path, scope)
+        except OSError:  # a name the filesystem refuses ("<" on Windows, a component over 255 bytes): no such file
+            pass
         except StarletteHTTPException as exc:
             if exc.status_code != status.HTTP_404_NOT_FOUND:
                 raise
-            response = await super().get_response("index.html", scope)
-            response.status_code = status.HTTP_404_NOT_FOUND  # client renders "not found"; crawlers see 404
-            return response
+        response = await super().get_response("index.html", scope)
+        response.status_code = status.HTTP_404_NOT_FOUND  # client renders "not found"; crawlers see 404
+        return response
 
 
 class ResponseCache:
@@ -817,6 +820,14 @@ def create_app(
         openapi_url="/openapi.json" if docs else None,
     )
     app.state.settings = settings  # read by SecurityMiddleware before the lifespan finishes too
+
+    @app.exception_handler(DataError)
+    async def _bad_value(request: Request, exc: DataError) -> JSONResponse:
+        # A value PostgreSQL refuses (a NUL byte in a string, a number past bigint): the request's
+        # fault, whichever route took it in; 400, not a 500 that reads as the site being down.
+        log.info("request: %s %s refused by the database: %s", request.method, request.url.path, exc.orig)
+        return JSONResponse({"detail": "invalid value"}, status_code=status.HTTP_400_BAD_REQUEST)
+
     app.state.response_cache = ResponseCache(
         ttl=settings.api.cache_ttl_seconds, min_fresh=settings.api.cache_min_fresh_seconds
     )
