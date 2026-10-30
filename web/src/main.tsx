@@ -13,6 +13,7 @@ import { AboutPage, ContactPage, FaqPage, PartnersPage } from "./pages/Info";
 import PrivacyPage from "./pages/Privacy";
 import StoresPage from "./pages/Stores";
 import TermsPage from "./pages/Terms";
+import { STRINGS } from "./i18n";
 import { useStore } from "./store";
 import { Layout, Loader } from "./ui";
 import "./styles.css";
@@ -102,6 +103,11 @@ const router = createBrowserRouter([
 
 // Accessibility widget (Sienna): text size, contrast, dyslexia font, stop animations, big cursor...
 // Its own chunk, loaded after the app; it follows <html lang> so עב/EN switches its language too.
+// <html lang> is set to the visitor's language first: the widget watches it from load but builds its
+// menu asynchronously, so a lang change in between (an English visitor's first render) threw in it.
+const { lang } = useStore.getState();
+document.documentElement.lang = lang;
+document.documentElement.dir = STRINGS[lang].dir;
 import("sienna-accessibility");
 
 // No copying the listings: copy, cut and the context menu are blocked, except in text fields (search)
