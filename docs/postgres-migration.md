@@ -722,3 +722,7 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **קריאה:** ‏`/api/me/groups` סופר `men` / `women` ב-Python מאותן שורות `plan_votes` שכבר נקראות: אין query חדש.
 - **אינדקס חדש:** `uq_plan_votes_plan_user` ייחודי חלקי על `plan_votes (plan_id, user_id) WHERE user_id IS NOT NULL`: תשובה אחת לחשבון בתוכנית. שתי תשובות ראשונות באותו רגע: השנייה מקבלת 409 (IntegrityError נתפס). אם יש כבר כפילויות ב-prod, `create_schema` רושם שגיאה וממשיך; בדיקה: `SELECT plan_id, user_id, count(*) FROM plan_votes WHERE user_id IS NOT NULL GROUP BY 1, 2 HAVING count(*) > 1;`. תשובה אנונימית של אותו דפדפן מלפני הכניסה נמחקת כשהחשבון עונה.
 
+### 2026-10-30 (הצפת הפעמון)
+- **Query:** ב-`alerts.matcher.run` אירוע "חדש" מסונן ב-`NOT EXISTS` על `events` (alias): אותו `source`, `title` ו-`start_at`, id אחר, ו-`first_seen_at <= cursor`. מקור שנותן להופעה id חדש (השורה הישנה `is_listed = false`, ו-dedup לא מקבץ אותה) הודיע עליה שוב בכל מעבר. ה-NOT EXISTS רץ רק על האירועים החדשים של המעבר (`id IN (...)`), ונשען על האינדקסים הקיימים של `events`.
+- **שאילתה נוספת:** `SELECT id, start_at FROM events WHERE id IN (<new>)` כדי לשמור לכל משתמש רק את `accounts.max_hits_per_pass` (ברירת מחדל 30) הקרובים ביותר במעבר.
+
