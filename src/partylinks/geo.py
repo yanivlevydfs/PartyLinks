@@ -460,7 +460,8 @@ class Geocoder:
         budget = self.settings.max_lookups_per_run
         asked = 0
         with httpx.Client(
-            headers={"User-Agent": self.settings.user_agent, "Accept-Language": "he,en"}, timeout=20
+            headers={"User-Agent": self.settings.user_agent, "Accept-Language": "he,en"},
+            timeout=self.settings.timeout_seconds,
         ) as client:
             for row in pending:
                 if stop is not None and stop.is_set():
@@ -470,8 +471,11 @@ class Geocoder:
                     if hit is None or (not hit.found and hit.looked_up_at < retry_before):
                         if asked >= budget:
                             return asked
-                        hit = cache[query] = self._ask(client, query)
+                        answer = self._ask(client, query)
                         asked += 1
+                        if answer is None:  # Nominatim down or refusing: no point asking more this pass
+                            return asked
+                        hit = cache[query] = answer
                         with_db_retry("geo cache", lambda hit=hit: self._remember(hit))  # sources save in parallel
                     if hit.found and self._trusted(row, hit):
                         break
@@ -508,12 +512,15 @@ class Geocoder:
             ))[: self.settings.max_lookups_per_run]  # fmt: skip
             if todo:
                 with httpx.Client(
-                    headers={"User-Agent": self.settings.user_agent, "Accept-Language": "he,en"}, timeout=20
+                    headers={"User-Agent": self.settings.user_agent, "Accept-Language": "he,en"},
+            timeout=self.settings.timeout_seconds,
                 ) as client:
                     for city, country in todo:
                         if stop is not None and stop.is_set():
                             break
                         hit = self._ask(client, clean(city), country)
+                        if hit is None:  # Nominatim down or refusing: the next pass asks again
+                            break
                         hit.query = key(city, country)
                         cache[hit.query] = hit
                         with_db_retry("geo cache", lambda hit=hit: self._remember(hit))
@@ -579,8 +586,10 @@ class Geocoder:
         with self.db.session() as session:
             session.merge(hit)
 
-    def _ask(self, client: httpx.Client, query: str, country: str | None = None) -> GeoCacheRow:
-        """With ``country`` (abroad): a city anywhere in that country, any precision."""
+    def _ask(self, client: httpx.Client, query: str, country: str | None = None) -> GeoCacheRow | None:
+        """With ``country`` (abroad): a city anywhere in that country, any precision. None when the
+        request itself failed (timeout, 429, 5xx, not JSON): that is no answer, so nothing is cached;
+        cached as "not found" it kept the address off the map for ``retry_failed_days``."""
         global _last_request
         with _rate_lock:
             wait = _last_request + self.settings.min_interval_seconds - time.monotonic()
@@ -602,7 +611,7 @@ class Geocoder:
                 results = response.json()
             except (httpx.HTTPError, ValueError) as exc:
                 log.warning("geocoding %r failed: %s", query, exc)
-                results = []
+                return None
             finally:
                 _last_request = time.monotonic()
         for r in results:

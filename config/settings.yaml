@@ -646,6 +646,9 @@ geocoding:
   # Israeli localities OSM files under "ps" (Ma'ale Adumim, Ariel, Oranit...) need it too, or never geocode.
   country_codes: il,ps
   retry_failed_days: 14
+  # One Nominatim request's limit. A failed request (timeout, 429, 5xx) is not cached as "not found"
+  # and ends that pass's lookups: the next pass asks again.
+  timeout_seconds: 20
   max_area_distance_m: 2500
   viewbox: "34.739,32.030,34.852,32.147"   # Tel Aviv-Yafo: preferred, not exclusive
   results_per_query: 5

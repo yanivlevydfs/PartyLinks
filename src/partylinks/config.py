@@ -384,6 +384,8 @@ class GeocodingSettings(BaseModel):
     # Results requested per query; the first one that passes the checks is used.
     results_per_query: int = Field(5, ge=1, le=10)
     retry_failed_days: int = Field(14, ge=1)
+    # One Nominatim request's limit; a failed request is not cached and ends the pass's lookups.
+    timeout_seconds: float = Field(20, gt=0)
     # A hit further than this from the area its address keywords name is a same-name street elsewhere.
     max_area_distance_m: float = Field(2500, gt=0)
     # Manual pins, only for places OpenStreetMap doesn't know: venue-name / address keyword
