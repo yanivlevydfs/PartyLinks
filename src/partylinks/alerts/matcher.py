@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, exists, func, select, text
+from sqlalchemy import delete, exists, func, select, text, update
 from sqlalchemy.orm import Session, aliased
 
 from partylinks.accounts.models import UserRow
@@ -34,6 +34,9 @@ log = logging.getLogger(__name__)
 # commit), duplicates are regrouped and places geocoded (area / region filters need them).
 # ponytail: a fixed wait; a "post-steps done" mark per run would allow less, if 30 minutes ever matters.
 SETTLE = timedelta(minutes=30)
+# Until 8d588e9 (deployed by then) one click on the quiz, or a sign-in URL from history, saved an alert nobody
+# asked for. Those, never touched since, are switched off once (not deleted: /alerts can switch one back on).
+UNASKED_BEFORE = datetime(2026, 10, 30, 9, 45)  # naive UTC, as the columns
 LISTS = ("genre", "region", "area", "time_slot")  # any-of: the union of each value's events
 WHEN = ("weekend", "date_from", "date_to")  # one window together
 
@@ -97,8 +100,25 @@ def prune_ended(db: Database) -> int:
         return cast("CursorResult[Any]", session.execute(ended)).rowcount or 0
 
 
+def retire_unasked(db: Database) -> int:
+    """Switches off the alerts saved by the old one-click button and clears their notifications."""
+    with db.session() as session:
+        ids = list(session.scalars(
+            update(AlertRow)
+            .where(AlertRow.active.is_(True), AlertRow.created_at < UNASKED_BEFORE, AlertRow.updated_at < UNASKED_BEFORE)
+            .values(active=False).returning(AlertRow.id)
+        ))  # fmt: skip
+        if ids:
+            session.execute(
+                update(AlertHitRow).where(AlertHitRow.alert_id.in_(ids), AlertHitRow.cleared_at.is_(None)).values(cleared_at=utcnow())
+            )  # fmt: skip
+            log.warning("alerts: switched off %d alerts saved before the confirm step", len(ids))
+        return len(ids)
+
+
 def run(settings: Settings, db: Database) -> int:
     """One pass over the events first seen since the last one. Returns the number of new hits."""
+    retire_unasked(db)
     prune_ended(db)
     now = utcnow()
     upto = now - SETTLE

@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import update
 
 from partylinks.alerts import matcher
+from partylinks.alerts.models import AlertRow
 from partylinks.api import create_app
 from partylinks.db import EventRow
 from tests.test_accounts import OURS, FakeGoogle, _settings, sign_in
@@ -92,3 +93,26 @@ def test_a_day_gives_a_user_at_most_the_daily_cap(tmp_path: Path, fake: FakeGoog
         seed(settings, [event("h", SOON, title="Techno night h")])
         assert matcher.run(settings, db) == 0
         assert c.get("/api/me/bell").json()["unseen"] == 4
+
+
+def test_alerts_saved_by_the_old_one_click_button_are_switched_off_once(tmp_path: Path, fake: FakeGoogle) -> None:
+    settings = _settings(tmp_path)
+    db = seed(settings, [])
+    app = create_app(settings, start_scheduler=False)
+    matcher.run(settings, db)
+    with TestClient(app) as c:
+        sign_in(c, fake)
+        old = c.post("/api/me/alerts", json={"criteria": {"q": "techno"}}, headers=OURS).json()["id"]
+        kept = c.post("/api/me/alerts", json={"criteria": {"q": "house"}}, headers=OURS).json()["id"]
+        seed(settings, [event("x", SOON, title="Techno night x")])
+        assert matcher.run(settings, db) == 1
+        then = matcher.UNASKED_BEFORE - timedelta(days=1)
+        with db.session() as s:
+            s.execute(update(AlertRow).values(created_at=then, updated_at=then))
+            s.execute(update(AlertRow).where(AlertRow.id == kept).values(updated_at=matcher.UNASKED_BEFORE))  # edited since
+        assert matcher.retire_unasked(db) == 1
+        assert c.get("/api/me/bell").json()["unseen"] == 0
+        active = {a["id"]: a["active"] for a in c.get("/api/me/alerts").json()["items"]}
+        assert active == {old: False, kept: True}
+        assert c.patch(f"/api/me/alerts/{old}", json={"active": True}, headers=OURS).status_code == 200
+        assert matcher.retire_unasked(db) == 0  # switched back on by the user: stays on
