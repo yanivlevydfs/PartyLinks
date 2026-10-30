@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, or_, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import defer, selectinload
 
 from partylinks.admin import AdminDep
@@ -64,18 +65,20 @@ def sponsored_hit(body: SponsoredHitIn, request: Request, session: SessionDep) -
     event = session.get(EventRow, body.event_id)
     if event and session.get(SponsoredRow, body.event_id) and flag_on(session, "sponsored"):
         day = datetime.now(ZoneInfo(request.app.state.settings.timezone)).date()
-        # ponytail: read-then-write, so two first hits of a day at the same instant can clash (one is lost).
-        stat = session.get(SponsoredStatRow, (body.event_id, day))
-        if stat is None:
-            stat = SponsoredStatRow(event_id=body.event_id, day=day, title=event.title, views=0, clicks=0)
-            session.add(stat)
-        if body.kind == "view":
-            stat.views += 1
-        else:
-            stat.clicks += 1
-        if body.where == "results":
-            stat.results_views = (stat.results_views or 0) + (body.kind == "view")
-            stat.results_clicks = (stat.results_clicks or 0) + (body.kind == "click")
+        # One atomic upsert: the old read-then-write let two first hits of a day both insert, and the
+        # second's primary-key clash was a 500 to the visitor.
+        view, click = int(body.kind == "view"), int(body.kind == "click")
+        results = body.where == "results"
+        stat = SponsoredStatRow.__table__.c
+        row = {"views": view, "clicks": click, "results_views": view * results, "results_clicks": click * results}
+        session.execute(
+            pg_insert(SponsoredStatRow)
+            .values(event_id=body.event_id, day=day, title=event.title, **row)
+            .on_conflict_do_update(
+                index_elements=[stat.event_id, stat.day],
+                set_={k: func.coalesce(stat[k], 0) + v for k, v in row.items()},
+            )
+        )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
