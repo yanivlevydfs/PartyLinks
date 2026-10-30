@@ -5,7 +5,7 @@ import { useCategories, useEvents, type Params } from "./api";
 import type { Categories, Facet } from "./types";
 import { genreLabel } from "./i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "./store";
-import { Chip, label, Loader, Select, sourceName, today, tomorrow, TZ, useT } from "./ui";
+import { byName, Chip, label, Loader, Select, sourceName, today, tomorrow, TZ, useT } from "./ui";
 
 // The one home-page filter: its state lives in the store, the API query comes from filterParams(),
 // and every landing page (/tonight, /genre/x, /city/x) only presets that same state.
@@ -296,7 +296,7 @@ function Pill({ children, onClear }: { children: ReactNode; onClear: () => void 
 
 /** One drawer's rows (desktop), or all of them (the phone sheet). */
 function Rows({ only }: { only?: Panel }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const f = useStore((s) => s.filters);
   const set = useStore((s) => s.setFilters);
   const cats = useCategories().data;
@@ -305,17 +305,19 @@ function Rows({ only }: { only?: Panel }) {
   const regionKeys = new Set(cats?.regions?.map((r) => r.value));
   // Under Tel Aviv alone: its neighbourhoods. Under another region alone: its cities.
   const one = f.regions.length === 1 ? f.regions[0] : null;
+  // Every row in the order of the names it shows (א-ת / A-Z), "all" first.
+  const regions = byName(cats?.regions, (v) => label(t.areas, v), lang);
   const subAreas = one === "tel_aviv"
-    ? (cats?.areas ?? []).filter((a) => !regionKeys.has(a.value) && a.value !== "outside" && a.value !== "abroad")
-    : (cats?.cities ?? []).filter((c) => one && c.area === one);
-  const shops = cats?.sources ?? []; // busiest first
+    ? byName((cats?.areas ?? []).filter((a) => !regionKeys.has(a.value) && a.value !== "outside" && a.value !== "abroad"), (v) => label(t.areas, v), lang)
+    : byName((cats?.cities ?? []).filter((c) => one && c.area === one), (v) => v, lang);
+  const shops = byName(cats?.sources, sourceName, lang);
 
   return (
     <>
-      {show("area") && !!cats?.regions?.length && (
+      {show("area") && !!regions.length && (
         <FilterRow label={t.area}>
           <Chip on={!f.regions.length} onClick={() => set({ regions: [], areas: [], city: null })}>{t.allAreas}</Chip>
-          {cats.regions.map((r) => (
+          {regions.map((r) => (
             <Chip key={r.value} on={f.regions.includes(r.value)}
               onClick={() => set({ regions: toggle(f.regions, r.value), areas: [], city: null })}>
               {label(t.areas, r.value)} <small>{r.events}</small>
@@ -377,7 +379,7 @@ export function GenrePicker({ cats, value, onChange, quiz }: { cats?: Categories
   const name = (v: string) => genreLabel(lang, v);
   const abc = (a: string, b: string) => name(a).localeCompare(name(b), lang);
   // Families and categories in alphabetical order (א-ת / A-Z), each with its count.
-  const groups = [...(cats?.genre_groups ?? [])].sort((a, b) => abc(a.value, b.value));
+  const groups = byName(cats?.genre_groups, name, lang);
   const fams = cats?.genre_families ?? {};
   const counts = new Map(cats?.genres.map((g) => [g.value, g.events]));
   // Sub-genres all the way down (dance -> latin_dance -> salsa); hip hop <-> R&B point at each other.

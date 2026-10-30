@@ -9,7 +9,7 @@ import { useMe } from "../accounts/useMe";
 import { useCategories } from "../api";
 import { GenrePicker, toggle, whenText } from "../Filters";
 import { DEFAULT_FILTERS, useStore } from "../store";
-import { Chip, Hero, label, Loader, useT, useTitle } from "../ui";
+import { byName, Chip, Hero, label, Loader, useT, useTitle } from "../ui";
 import { useAlertText } from "./i18n";
 import { EMPTY } from "./SaveAlertButton";
 import { criteriaWords, isEmpty, useAlertActions, useAlerts, useCriteriaName, usePreview, type Alert, type Criteria } from "./useAlerts";
@@ -82,7 +82,7 @@ function AlertCard({ a }: { a: Alert }) {
 /** A new alert (no ``alert``) or an edit of one. */
 function AlertForm({ alert, onDone }: { alert?: Alert; onDone?: () => void }) {
   const t = useAlertText();
-  const { t: ui } = useT();
+  const { t: ui, lang } = useT();
   const cats = useCategories().data;
   const { create, edit } = useAlertActions();
   const autoName = useCriteriaName();
@@ -99,9 +99,11 @@ function AlertForm({ alert, onDone }: { alert?: Alert; onDone?: () => void }) {
   // Under one region: its cities (Tel Aviv: its neighbourhoods), as in the home filters.
   const regionKeys = new Set(cats?.regions?.map((r) => r.value));
   const one = c.regions.length === 1 ? c.regions[0] : null;
+  // In the order of the names they show (א-ת / A-Z), as in the home filters.
+  const regions = byName(cats?.regions, (v) => label(ui.areas, v), lang);
   const subAreas = one === "tel_aviv"
-    ? (cats?.areas ?? []).filter((a) => !regionKeys.has(a.value) && a.value !== "outside" && a.value !== "abroad")
-    : (cats?.cities ?? []).filter((x) => one && x.area === one);
+    ? byName((cats?.areas ?? []).filter((a) => !regionKeys.has(a.value) && a.value !== "outside" && a.value !== "abroad"), (v) => label(ui.areas, v), lang)
+    : byName((cats?.cities ?? []).filter((x) => one && x.area === one), (v) => v, lang);
 
   const submit = async () => {
     if (empty) return setNote(t.emptyCriteria);
@@ -133,10 +135,10 @@ function AlertForm({ alert, onDone }: { alert?: Alert; onDone?: () => void }) {
         {!!cats?.genres.length && (
           <GenrePicker cats={cats} value={c.genres} onChange={(genres) => patch({ genres })} />
         )}
-        {!!cats?.regions?.length && (
+        {!!regions.length && (
           <Group title={ui.area}>
             <Chip on={!c.regions.length} onClick={() => patch({ regions: [], areas: [], city: null })}>{ui.allAreas}</Chip>
-            {cats.regions.map((r) => (
+            {regions.map((r) => (
               <Chip key={r.value} on={c.regions.includes(r.value)} onClick={() => patch({ regions: toggle(c.regions, r.value), areas: [], city: null })}>
                 {label(ui.areas, r.value)}
               </Chip>

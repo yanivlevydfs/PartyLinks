@@ -15,10 +15,10 @@ from datetime import datetime, time
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from partylinks.config import AreaSettings, EnrichmentSettings, RegionSettings
+from partylinks.config import AreaSettings, CitySettings, EnrichmentSettings, RegionSettings
 from partylinks.models import EntryType, ScrapedEvent, TicketKind
 from partylinks.parsing import slugify
-from partylinks.places import PlaceIndex, all_cities, city_name
+from partylinks.places import PlaceIndex, all_cities, city_name, latin_town
 
 _EDGE_DECOR = re.compile(r"^[^\w'\"(]+|[^\w'\")]+$")
 _LEADING_WITH = re.compile(r"^(?:w/|with|feat\.?|ft\.?)\s+", re.IGNORECASE)
@@ -192,7 +192,13 @@ class Enricher:
         self._coupon = _keyword_pattern(settings.coupon_keywords)
         self._city = _place_pattern(settings.target_city.aliases)
         self._cities = [(c.he, p) for c in settings.cities if (p := _place_pattern([c.he, c.en, *c.aliases]))]
-        self._places = PlaceIndex(all_cities(settings.cities, settings.places_min_population))
+        extra = [CitySettings(key=slugify(he) or he, he=he, en=he, aliases=a) for he, a in settings.city_aliases.items()]
+        self._places = PlaceIndex([*all_cities(settings.cities, settings.places_min_population), *extra])
+        self._city_prefix = (
+            re.compile(rf"^(?:{'|'.join(map(re.escape, settings.city_prefixes))})\s+", re.IGNORECASE)
+            if settings.city_prefixes else None
+        )  # fmt: skip
+        self._not_cities = {c.casefold() for c in settings.not_cities}
         self._lineup_header = _keyword_pattern(settings.lineup.header_keywords)
         self._lineup_ignore = {w.casefold() for w in settings.lineup.ignore}
         self._genre_words = {w.casefold() for words in settings.genres.values() for w in words}
@@ -491,7 +497,10 @@ class Enricher:
     def canonical_city(self, city: str | None, address: str | None, venue: str | None = None) -> str | None:
         """One spelling per city ("Tel Aviv-Yafo", "תל אביב-יפו" -> "תל אביב"). The city field wins;
         otherwise the city named last in the address (streets are often named after cities:
-        "שדרות ירושלים 19, תל אביב"), then in the venue name. Unknown cities are kept; zip codes dropped."""
+        "שדרות ירושלים 19, תל אביב"), then in the venue name. Unknown cities are kept; zip codes dropped.
+        A prefix ("קיבוץ יגור") goes, a whole Latin field naming a small town gets its Hebrew name."""
+        if city and self._city_prefix:
+            city = self._city_prefix.sub("", city.strip()) or city
         for text in (city, address, venue):
             if not text:
                 continue
@@ -503,7 +512,12 @@ class Enricher:
         for text in (city, address):
             if hits := self._places.find(text):
                 return max(hits)[1]
-        return None if city is None or city.strip().isdigit() else city.strip()
+        if city is None or city.strip().isdigit() or city.strip().casefold() in self._not_cities:
+            return None
+        if town := latin_town(city):  # "Ierusalim" -> the configured "ירושלים"; "kfar blum" -> "כפר בלום"
+            return max(self._places.find(town[0]) or [(0, town[1])])[1]
+        # One spelling of what is left: "קרית חיים" = "קריית חיים", "כרם מהר״ל" = "כרם מהר\"ל".
+        return re.sub(r"^קרית ", "קריית ", city.strip().replace("״", '"').replace("׳", "'"))
 
     def in_target_city(self, city: str | None, address: str | None, venue: str | None) -> bool | None:
         """Whether the event is in the target city. A city or address that names another place means no;

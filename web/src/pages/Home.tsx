@@ -220,7 +220,9 @@ function Suggestions({ q }: { q: string }) {
       .filter((x) => x.value.toLocaleLowerCase().includes(text))
       .sort((a, b) => +b.value.toLocaleLowerCase().startsWith(text) - +a.value.toLocaleLowerCase().startsWith(text) || b.events - a.events)
       .slice(0, n);
-    const cities = Object.entries(CITIES).filter(([, c]) => c.he.includes(q.trim()) || c.en.toLowerCase().includes(text)).slice(0, 2)
+    const cities = Object.entries(CITIES).filter(([, c]) => c.he.includes(q.trim()) || c.en.toLowerCase().includes(text))
+      .sort(([, a], [, b]) => +b[lang].toLocaleLowerCase().startsWith(text) - +a[lang].toLocaleLowerCase().startsWith(text) || a[lang].localeCompare(b[lang], lang))
+      .slice(0, 2)
       .map(([slug, c]) => ({ key: "c" + slug, icon: "📍", label: c[lang], to: `/city/${slug}`, n: cats.cities.find((x) => x.value === c.he)?.events }));
     const genres = cats.genres.filter((g) => genreLabel(lang, g.value).toLocaleLowerCase().includes(text) || g.value.replace("_", " ").includes(text))
       .slice(0, 2).map((g) => ({ key: "g" + g.value, icon: "🎵", label: genreLabel(lang, g.value), to: `/genre/${g.value}`, n: g.events }));

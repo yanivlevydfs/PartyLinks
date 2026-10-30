@@ -1066,10 +1066,11 @@ def _related(session: Session, cfg: Settings, lang: str, path: str) -> list[tupl
     elif head == "region" and rest:
         region = rest[0].replace("-", "_")
         counts = Counter(session.scalars(select(EventRow.city).where(upcoming_filter(), EventRow.area == region)))
-        out += [(f"/city/{c.key}", c.he if he else c.en) for c in sorted(cities, key=lambda c: -counts[c.he]) if counts[c.he]]
+        out += sorted(((f"/city/{c.key}", c.he if he else c.en) for c in cities if counts[c.he]), key=lambda x: x[1].casefold())  # א-ת / A-Z
     elif head == "genre" and rest:
         by_city = city_genre_counts(session, cfg)
-        out += [(f"/city/{c.key}/{rest[0]}", f"{genre_label(rest[0], lang)} {'ב' + c.he if he else 'in ' + c.en}") for c in cities if rest[0] in by_city.get(c.he, {})]
+        out += [(f"/city/{c.key}/{rest[0]}", f"{genre_label(rest[0], lang)} {'ב' + c.he if he else 'in ' + c.en}")
+                for c in sorted(cities, key=lambda c: (c.he if he else c.en).casefold()) if rest[0] in by_city.get(c.he, {})]
     elif head == "venue" and rest:
         row = session.scalars(select(EventRow.city).where(upcoming_filter(), like_contains(EventRow.venue_name, unquote(rest[0])), EventRow.city.is_not(None)).limit(1)).first()
         c = next((x for x in cities if x.he == row), None)

@@ -5,7 +5,7 @@ import { useAlertText } from "../alerts/i18n";
 import { useCategories, useEvents } from "../api";
 import { Calendar, filterParams, GenrePicker, toggle, whenText } from "../Filters";
 import { DEFAULT_FILTERS, useStore, type Filters } from "../store";
-import { eventPath, label, today, tomorrow, TZ, useT } from "../ui";
+import { byName, eventPath, label, today, tomorrow, TZ, useT } from "../ui";
 import { Weather } from "../Weather";
 
 const SLOT_ICONS: Record<string, string> = { morning: "☀️", afternoon: "🌤️", evening: "🌆", night: "🌙" };
@@ -84,7 +84,7 @@ export function Quiz() {
 
   const day = (v: string) => new Date(v + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, weekday: "long" });
   const isPicked = d.when !== "all" && ![today(), tomorrow(), "tonight", "weekend"].includes(d.when);
-  const regions = cats?.regions ?? [];
+  const regions = byName(cats?.regions, (v) => label(t.areas, v), lang); // א-ת / A-Z, as in the filters
   // Picked options stay visible even if the facets no longer list them.
   const slots = Object.keys(t.slots).filter((k) => d.slots.includes(k) || cats?.time_slots.some((s) => s.value === k));
   const slotCount = new Map((cats?.time_slots ?? []).map((s) => [s.value, s.events]));

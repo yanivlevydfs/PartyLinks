@@ -30,6 +30,10 @@ export function useT(): { t: Strings; lang: Lang } {
 export const label = (map: object, key: string | null | undefined) =>
   key ? ((map as Record<string, string>)[key] ?? key) : "";
 
+/** Facets in the order of the names their chips show: א-ת / A-Z (each keeps its count). */
+export const byName = <T extends { value: string }>(xs: readonly T[] | undefined, name: (v: string) => string, lang: string) =>
+  [...(xs ?? [])].sort((a, b) => name(a.value).localeCompare(name(b.value), lang));
+
 export function money(value: number, currency: string, locale: string) {
   return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
 }

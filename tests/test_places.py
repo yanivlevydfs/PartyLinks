@@ -21,6 +21,24 @@ def test_any_israeli_town_in_the_city_field_or_address() -> None:
     assert city(None, None, "מגדל המים") is None  # a venue name is not searched for small towns
 
 
+def test_one_name_per_place_in_the_city_field() -> None:
+    city = ENRICHER.canonical_city
+    assert city("מועצה אזורית גדרות", None) == "גדרות"  # prefixes go
+    assert city("מועצה מקומית אורנית", None) == city("oranit", None) == "אורנית"
+    assert city("מושב בית יצחק", None) == "בית יצחק"
+    assert city("קיבוץ יגור", None) == city("yagur", None) == "יגור"
+    assert city("kfar blum", None) == city("קיבוץ כפר בלום", None) == "כפר בלום"  # small town, Latin -> Hebrew
+    assert city("Meishar", None) == "מישר"
+    assert city("HaZore'a", None) == "הזורע"  # apostrophes and accents don't count
+    assert city("Ierusalim", None) == "ירושלים"  # a configured city keeps its spelling
+    assert city("beit rimon", None) == "בית רימון"  # config alias
+    assert city("מרכז אומנויות הבמה פרדס חנה", None) == "פרדס חנה-כרכור"
+    assert city("קרית חיים", None) == "קריית חיים"
+    assert city("כרם מהר״ל", None) == 'כרם מהר"ל'
+    assert city("ישראל", None) is None  # a country, not a city
+    assert city("Kalamata", None) == "Kalamata"  # an unknown place is kept
+
+
 def test_towns_have_plain_names_a_centre_and_a_radius() -> None:
     towns = {t.en: t for t in israeli_places(SETTINGS.enrichment.places_min_population)}
     savyon = towns["Savyon"]

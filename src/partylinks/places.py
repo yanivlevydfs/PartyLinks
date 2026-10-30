@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import math
 import re
+import unicodedata
 from functools import lru_cache
 
 from partylinks import geonames
@@ -26,7 +27,8 @@ MAX_WORDS = 4  # "קריית שמונה", "מודיעין מכבים רעות"
 
 
 def _norm(text: str) -> str:
-    return " ".join(_WORD.findall(text.lower().replace("־", " ").replace("-", " ").replace("–", " ")))
+    text = text.lower().replace("־", " ").replace("-", " ").replace("–", " ").replace("״", '"').replace("׳", "'")
+    return " ".join(_WORD.findall(text))
 
 
 def _radius_m(population: int) -> float:
@@ -83,6 +85,33 @@ class PlaceIndex:
                     hits.append((i, city))
                     break
         return hits
+
+
+@lru_cache(maxsize=1)
+def _latin_towns() -> dict[str, tuple[str, str]]:
+    """Latin name -> (GeoNames name, Hebrew name) of the biggest Israeli locality (500+) called that.
+    The Hebrew name is the first of GeoNames' Hebrew ones with the most words ("עצמון שגב", not "עצמון")."""
+    out: dict[str, tuple[str, str]] = {}
+    for c in sorted(geonames.israel(), key=lambda c: -c["population"]):
+        hebrew = [_NIQQUD.sub("", a).strip("‎‏ ") for a in c["alternatenames"] if _HEBREW.search(a)]
+        if not hebrew:
+            continue
+        he = max(hebrew, key=lambda h: len(h.split()))
+        for name in (c["name"], *c["alternatenames"]):
+            if not _HEBREW.search(name) and (key := _latin_key(name)):
+                out.setdefault(key, (c["name"], he))
+    return out
+
+
+def _latin_key(name: str) -> str:
+    """Latin spelling without accents and apostrophes: "Yif‘at", "Yif'at", "yifat" are one key."""
+    return _norm(unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().replace("'", "").replace("`", ""))
+
+
+def latin_town(name: str) -> tuple[str, str] | None:
+    """The Israeli locality a whole Latin city field names ("kfar blum", "Meishar"), any size: its
+    GeoNames name and its Hebrew name. Whole field only: in free text a small town's name is often a word."""
+    return _latin_towns().get(_latin_key(name)) if name.isascii() else None
 
 
 def all_cities(configured: list[CitySettings], min_population: int) -> list[CitySettings]:
