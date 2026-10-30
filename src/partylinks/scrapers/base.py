@@ -264,6 +264,12 @@ class BaseScraper[S: SourceSettings](ABC):
         self._client, self._proxy = self._new_client(proxy), proxy
         return True
 
+    @property
+    def working_http(self) -> HttpSettings:
+        """``http`` on the proxy the run ended on. ``http.proxy`` stays the pool's first entry, which for an
+        Israeli pool is a random free proxy, mostly dead: artwork downloaded through it all failed."""
+        return self.http.model_copy(update={"proxy": self._proxy or self.http.proxy})
+
     def is_blocked(self, response: httpx.Response) -> bool:
         """Sources override this to recognise their site's access-denied responses."""
         return False

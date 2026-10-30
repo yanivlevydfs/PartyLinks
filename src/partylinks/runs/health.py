@@ -121,9 +121,9 @@ class RunHealth:
         self._email(source, strikes, reason, result.run_id)
 
     def _retry(self, source: str) -> None:
-        if self._stopping.is_set() or self.paused(source):
-            return
-        try:
+        try:  # on a timer thread: an error here would vanish from the log
+            if self._stopping.is_set() or self.paused(source):
+                return
             self._start(source, RETRY_TRIGGER)
         except Exception as exc:  # noqa: BLE001 - busy (already running: that run is the retry) or stopping
             log.info("retry of %s not started: %s", source, exc)

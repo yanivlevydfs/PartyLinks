@@ -329,7 +329,10 @@ class ScrapeService:
             result = asyncio.run(self._run(source, trigger))
         finally:
             lock.release()
-        self.health.after_run(result, trigger)  # retry a bad run later; pause a broken source
+        try:
+            self.health.after_run(result, trigger)  # retry a bad run later; pause a broken source
+        except Exception:  # the run is recorded; a DB blip here must not turn it into an error
+            log.exception("source %s: health check after the run failed", source)
         return result
 
     def _purge_in_thread(self) -> int:
@@ -353,9 +356,6 @@ class ScrapeService:
 
     async def _run(self, source: str, trigger: str) -> RunResult:
         run_id = await asyncio.to_thread(_with_db_retry, "start run", lambda: self._create_run(source, trigger))
-        known, blocked = await asyncio.to_thread(self.artists.load)
-        profiles = await asyncio.to_thread(self.artists.profiles)
-        self.enricher.learn_artists(known, blocked, featured=[p.name for p in profiles.values()])
         found = saved = 0
         status, error = "success", None
         scraper = None
@@ -377,6 +377,10 @@ class ScrapeService:
         deadline = asyncio.timeout(timeout)
         try:
             async with deadline:
+                # Inside the try: a failure here is recorded as this run's, not left "running" until a restart.
+                known, blocked = await asyncio.to_thread(self.artists.load)
+                profiles = await asyncio.to_thread(self.artists.profiles)
+                self.enricher.learn_artists(known, blocked, featured=[p.name for p in profiles.values()])
                 scraper = build_scraper(source, self.settings)
                 scraper.known_images = await asyncio.to_thread(self._known_images, source)
                 scraper.linked_urls = await asyncio.to_thread(self._linked_urls, source)
@@ -431,7 +435,7 @@ class ScrapeService:
         # Post-processing: outside the scrape timeout; failures only downgrade to partial.
         if saved > 0 and scraper is not None and not self._stopping.is_set():
             if self.settings.media.download:
-                await self._post_step(source, "artwork", failures, self.media.download_pending(source, scraper.http))
+                await self._post_step(source, "artwork", failures, self.media.download_pending(source, scraper.working_http))
             if self.settings.dedup.enabled:
                 await self._post_step(source, "regroup", failures, asyncio.to_thread(self._regroup_soon))
             # Saving overwrote coordinates with what the source sent; restore / look up the rest.
