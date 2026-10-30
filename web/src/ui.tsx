@@ -246,7 +246,7 @@ export function sized<T extends string | null | undefined>(src: T, width: 640 | 
 }
 
 /** Without artwork: ``text`` (the event title) set large on the gradient, else a note. */
-export function Img({ src, alt, className, text }: { src: string | null | undefined; alt: string; className: string; text?: string }) {
+export function Img({ src, alt, className, text, eager }: { src: string | null | undefined; alt: string; className: string; text?: string; eager?: boolean }) {
   const [broken, setBroken] = useState(false);
   if (!src || broken)
     return text ? (
@@ -254,7 +254,7 @@ export function Img({ src, alt, className, text }: { src: string | null | undefi
     ) : (
       <div className={className + " noimg"} aria-hidden>♫</div>
     );
-  return <img className={className} src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />;
+  return <img className={className} src={src} alt={alt} loading={eager ? "eager" : "lazy"} referrerPolicy="no-referrer" onError={() => setBroken(true)} />;
 }
 
 const DAY_MS = 24 * 3600 * 1000;

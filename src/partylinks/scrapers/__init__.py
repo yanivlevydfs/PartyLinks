@@ -13,7 +13,6 @@ from partylinks.scrapers.barby import BarbyScraper
 from partylinks.scrapers.bargiyora import BarGiyoraScraper
 from partylinks.scrapers.haezor import HaEzorScraper
 from partylinks.scrapers.levontin7 import Levontin7Scraper
-from partylinks.scrapers.zoatlv import ZoaTlvScraper
 from partylinks.scrapers.yellowsubmarine import YellowSubmarineScraper
 from partylinks.scrapers.halutz import HalutzScraper
 from partylinks.scrapers.meety import MeetyScraper
@@ -181,7 +180,6 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         BarGiyoraScraper,
         HaEzorScraper,
         Levontin7Scraper,
-        ZoaTlvScraper,
         YellowSubmarineScraper,
         HalutzScraper,
         MeetyScraper,

@@ -58,7 +58,7 @@ export default function EventPage() {
 
         <div className="e-top">
           <div className="e-poster">
-            <Img src={sized(hero, 1280)} alt={e.title} className="e-img" text={e.title} />
+            <Img src={sized(hero, 1280)} alt={e.title} className="e-img" text={e.title} eager />
           </div>
 
           <div className="e-info">
