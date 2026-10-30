@@ -5,7 +5,7 @@ import { useCategories, useLandingInfo, useRails } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
-import { artistPath, Card, CardSkeletons, EventGrid, Hero, Related, useT, useTitle, venuePath } from "../ui";
+import { artistPath, Card, CardSkeletons, EventGrid, GridLoading, Hero, Related, useT, useTitle, venuePath } from "../ui";
 import type { EventSummary } from "../types";
 import { Quiz } from "./Quiz";
 
@@ -62,8 +62,11 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
       regions: landing === "region" && region ? [region.replace("-", "_")] : [],
     });
   }, [landing, genre, when, city, sub, region, set]);
-  // /city/:city: the city's region comes with the categories.
-  const cityRegion = cityName && cats?.cities.find((c) => c.value === cityName.he)?.area;
+  // /city/:city: the city's region comes with the categories (Tel Aviv's is known: the target city, as landingPath).
+  const cityRegion = cityName && (city === "tel-aviv" ? "tel_aviv" : cats?.cities.find((c) => c.value === cityName.he)?.area);
+  // The list waits for the city's whole filter (its name, its region): a list fetched for half of it would be
+  // replaced under the reader a moment later (a big layout shift).
+  const cityPending = landing === "city" && (!cityName || (!cityRegion && !cats));
   useEffect(() => {
     if (cityName) set({ regions: cityRegion ? [cityRegion] : [], areas: [], city: cityRegion === "tel_aviv" ? null : cityName.he });
   }, [cityName, cityRegion, set]);
@@ -146,7 +149,8 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
             {landing && info?.intro && <p className="landing-intro">{info.intro}</p>}
             <Filters />
             {/* Nothing found: a close name to try, and what is hot meanwhile instead of an empty page. */}
-            <EventGrid params={filterParams(f)} empty={(page) => <><Relax didYouMean={page?.did_you_mean} />{f.q && <Trending />}</>} />
+            {cityPending ? <GridLoading />
+              : <EventGrid params={filterParams(f)} empty={(page) => <><Relax didYouMean={page?.did_you_mean} />{f.q && <Trending />}</>} />}
             {landing && <Related path={pathname} />}
           </>
         )}

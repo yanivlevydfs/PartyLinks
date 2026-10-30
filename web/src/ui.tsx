@@ -513,6 +513,12 @@ export function Loader({ small }: { small?: boolean }) {
   );
 }
 
+/** The list while it loads: its count line (blank, so the cards do not move down when it fills) and card skeletons. */
+export function GridLoading() {
+  const { t } = useT();
+  return <><p className="count" aria-hidden>&nbsp;</p><div className="grid" aria-busy="true" aria-label={t.loading}><CardSkeletons n={8} /></div></>;
+}
+
 /** Paged event grid for any /events filter set; matching paid placements first, marked. */
 export function EventGrid({ params, empty }: { params: Params; empty?: (page?: EventPage) => ReactNode }) {
   const { t } = useT();
@@ -521,7 +527,7 @@ export function EventGrid({ params, empty }: { params: Params; empty?: (page?: E
   const total = q.data?.pages[0]?.total ?? 0;
 
   if (q.isError) return <p className="msg">{t.error}</p>;
-  if (q.isPending) return <div className="grid" aria-busy="true" aria-label={t.loading}><CardSkeletons n={8} /></div>;
+  if (q.isPending) return <GridLoading />;
   return (
     <>
       <p className="count">{t.results(total)}</p>

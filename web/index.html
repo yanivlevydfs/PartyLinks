@@ -14,6 +14,10 @@
     <link rel="icon" href="/favicon.svg?v=spotx2" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=spotx2" />
     <link rel="manifest" href="/site.webmanifest?v=spotx2" />
+    <!-- The headings' font (Rubik 900) arrives with the page, not after the first paint: a heading drawn in the
+         fallback font first wraps to another line, then jumps back when Rubik swaps in (layout shift). -->
+    <link rel="preload" href="/node_modules/@fontsource/rubik/files/rubik-hebrew-900-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/node_modules/@fontsource/rubik/files/rubik-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin />
     <!-- Boot screen: covers the prerendered text (kept for crawlers) until the app paints; main.tsx
          removes it. Inline because it must show before any stylesheet; CSP allows inline styles. -->
     <style>
@@ -35,7 +39,8 @@
       @keyframes ring-ripple { 0%, 10% { transform: scale(.6); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
       @keyframes boot-out { to { opacity: 0; visibility: hidden; } }
       /* If the app never loads (script blocked or failed), the prerendered page shows after 12s. */
-      .ssr { opacity: 0; animation: ssr-in 0s 12s forwards; }
+      /* flow-root: its heading's top margin stays inside (not on <body>), so the page does not move up 20px when the app replaces it. */
+      .ssr { opacity: 0; display: flow-root; animation: ssr-in 0s 12s forwards; }
       @keyframes ssr-in { to { opacity: 1; } }
       @media (prefers-reduced-motion: reduce) { #boot .pin, #boot .ring { animation: none; } }
     </style>

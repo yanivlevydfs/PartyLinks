@@ -97,12 +97,13 @@ export const usePost = (slug: string, lang: string) =>
 
 export interface LandingInfo { title: string | null; intro: string | null; links: { path: string; label: string }[]; country: string | null; city: { he: string; en: string } | null }
 
-// The page the server rendered (div.ssr, replaced by the app) already has this address's title and intro:
-// shown until /landing-info answers, so the heading does not grow a line under the reader (layout shift).
+// The page the server rendered (div.ssr, replaced by the app) already has this address's title, intro and related
+// links: shown until /landing-info answers, so the heading does not grow a line and the links do not pop in (layout shift).
 const ssr = document.querySelector("#root > .ssr");
 const ssrInfo = ssr && {
   path: location.pathname, lang: document.documentElement.lang,
-  info: { title: ssr.querySelector("h1")?.textContent || null, intro: ssr.querySelector("h1 + p")?.textContent || null, links: [], country: null, city: null } as LandingInfo,
+  info: { title: ssr.querySelector("h1")?.textContent || null, intro: ssr.querySelector("h1 + p")?.textContent || null,
+    links: [...ssr.querySelectorAll(":scope > nav a")].map((a) => ({ path: a.getAttribute("href") ?? "", label: a.textContent ?? "" })), country: null, city: null } as LandingInfo,
 };
 
 /** Title, intro and related links of a page, as the server renders them for crawlers. */

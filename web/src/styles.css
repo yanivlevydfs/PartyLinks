@@ -142,6 +142,9 @@ button, input, select { font: inherit; color: inherit; }
 .hero h1 {
   margin: 0; text-wrap: balance;
   font: 900 clamp(34px, 4.6vw, 68px)/1 var(--display); letter-spacing: -2px;
+  /* Whole pixels: the accessibility widget (Sienna) writes every heading's size back as parseInt(its size) when it
+     loads, so 62.8px became 62px and the title lost a line a second after the page painted (layout shift). */
+  font-size: round(down, clamp(34px, 4.6vw, 68px), 1px);
   color: #fff; filter: drop-shadow(0 0 28px rgb(255 46 147 / .35));
   overflow-wrap: anywhere;
 }
@@ -1250,7 +1253,7 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   html body:has(.buy-bar) .asw-menu-btn { bottom: calc(136px + env(safe-area-inset-bottom)) !important; }
 
   .hero { padding: 22px 0 14px; }
-  .hero h1 { font-size: clamp(28px, 8.5vw, 40px); letter-spacing: -1px; }
+  .hero h1 { font-size: clamp(28px, 8.5vw, 40px); font-size: round(down, clamp(28px, 8.5vw, 40px), 1px); letter-spacing: -1px; }
   .search { margin-top: 14px; padding: 12px 18px; font-size: 16px; }
   .foot { margin-top: 24px; padding-block: 28px; }
 
