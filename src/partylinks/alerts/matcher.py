@@ -167,7 +167,9 @@ def run(settings: Settings, db: Database) -> int:
             criteria.setdefault(digest, Criteria.model_validate(raw))
         sets = _Sets(settings, session, new_ids)
         stamp = now.replace(tzinfo=None)  # UTCDateTime columns hold naive UTC
-        info = session.execute(select(EventRow.id, EventRow.start_at, EventRow.title).where(EventRow.id.in_(new_ids))).all()
+        info = session.execute(
+            select(EventRow.id, EventRow.start_at, EventRow.title).where(EventRow.id.in_(new_ids))
+        ).all()
         starts = {i: s for i, s, _ in info}
         titles = {i: t for i, _, t in info}
         per_user: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(list))  # user -> event -> alerts
@@ -192,7 +194,9 @@ def run(settings: Settings, db: Database) -> int:
             soonest = list(shows.values())[: max(cap, 0)]
             rows += [(a, e, u, stamp) for e in soonest for a in events[e]]
             if len(shows) > len(soonest):
-                log.warning("alerts: user %s had %d new matches in one pass, kept the soonest %d", u, len(shows), len(soonest))
+                log.warning(
+                    "alerts: user %s had %d new matches in one pass, kept the soonest %d", u, len(shows), len(soonest)
+                )
         _insert_hits(session, rows)
     log.info(
         "alerts: %d new events, %d alerts (%d distinct), %d queries, %d hits",

@@ -71,7 +71,10 @@ def test_one_pass_gives_a_user_at_most_the_cap_soonest_first(tmp_path: Path, fak
     with TestClient(app) as c:
         sign_in(c, fake)
         c.post("/api/me/alerts", json={"criteria": {"q": "techno"}}, headers=OURS)
-        seed(settings, [event(k, SOON + timedelta(hours=5 - i), title=f"Techno night {k}") for i, k in enumerate("abcde")])
+        seed(
+            settings,
+            [event(k, SOON + timedelta(hours=5 - i), title=f"Techno night {k}") for i, k in enumerate("abcde")],
+        )
         assert matcher.run(settings, db) == 2
         bell = c.get("/api/me/bell").json()
         assert bell["unseen"] == 2 and {i["event"]["id"] for i in bell["items"]} == {"test:e", "test:d"}  # the soonest
@@ -109,7 +112,9 @@ def test_alerts_saved_by_the_old_one_click_button_are_switched_off_once(tmp_path
         then = matcher.UNASKED_BEFORE - timedelta(days=1)
         with db.session() as s:
             s.execute(update(AlertRow).values(created_at=then, updated_at=then))
-            s.execute(update(AlertRow).where(AlertRow.id == kept).values(updated_at=matcher.UNASKED_BEFORE))  # edited since
+            s.execute(
+                update(AlertRow).where(AlertRow.id == kept).values(updated_at=matcher.UNASKED_BEFORE)
+            )  # edited since
         assert matcher.retire_unasked(db) == 1
         assert c.get("/api/me/bell").json()["unseen"] == 0
         active = {a["id"]: a["active"] for a in c.get("/api/me/alerts").json()["items"]}
