@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import os
+import subprocess
 import threading
 import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 from partylinks.config import SchedulerSettings
 from partylinks.db import Database
@@ -102,3 +105,52 @@ def test_a_worker_that_exits_is_started_again(monkeypatch) -> None:  # type: ign
         time.sleep(0.01)
     process.stop()
     assert len(starts) == 3 and starts[0][-1] == "worker" and stopped.is_set()
+
+
+def test_a_hung_worker_is_stopped_and_started_again(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Stale heartbeat of this process: stopped and restarted. Starting up (no heartbeat of its own yet), a
+    fresh heartbeat or an unreadable state never stop it."""
+    processes: list[Any] = []
+    read = [0]
+
+    class FakeProcess:
+        def __init__(self, args: list[str]) -> None:
+            self.pid, self.ended = 100 + len(processes), threading.Event()
+            processes.append(self)
+
+        def wait(self, timeout: float | None = None) -> int:
+            if not self.ended.wait(timeout):
+                raise subprocess.TimeoutExpired("worker", timeout or 0)
+            return -15
+
+        def poll(self) -> int | None:
+            return -15 if self.ended.is_set() else None
+
+        def terminate(self) -> None:
+            self.stopped_at_read = read[0]
+            self.ended.set()
+
+        kill = terminate
+
+    reads = iter([
+        None,  # starting: no state yet
+        {"pid": 1, "started_at": datetime.now(UTC), "heartbeat_age_seconds": 999},  # another process's row
+        RuntimeError("database down"),
+        {"pid": 100, "started_at": datetime.now(UTC) + timedelta(seconds=1), "heartbeat_age_seconds": 30},  # busy, alive
+    ])
+
+    def state() -> dict[str, Any] | None:
+        read[0] += 1
+        value = next(reads, {"pid": 100, "started_at": datetime.now(UTC) + timedelta(seconds=1), "heartbeat_age_seconds": 301})
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+    monkeypatch.setattr(supervisor.subprocess, "Popen", FakeProcess)
+    process = supervisor.WorkerProcess(SchedulerSettings(heartbeat_seconds=0.01, restart_backoff_max_seconds=0.01), state)
+    process.start()
+    deadline = time.monotonic() + 5
+    while len(processes) < 2 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    process.stop()
+    assert len(processes) == 2 and processes[0].stopped_at_read == 5  # only the stale heartbeat stopped it

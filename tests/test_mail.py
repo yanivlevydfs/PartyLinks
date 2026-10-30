@@ -15,6 +15,7 @@ from resend.exceptions import ResendError
 from sqlalchemy import select, update
 
 from partylinks.accounts.models import UserRow
+from partylinks.alerts.models import AlertHitRow
 from partylinks.alerts import matcher
 from partylinks.api import create_app
 from partylinks.db import Database, EventRow
@@ -132,6 +133,24 @@ def test_instant_is_capped_hourly(tmp_path: Path, fake: FakeGoogle, outbox: Outb
         s.execute(update(UserRow).values(last_instant_at=datetime.now(UTC) - timedelta(hours=2)))
     jobs.instant(settings, db)
     assert len(outbox.messages) == 2 and "Techno night b" in outbox.messages[1]["subject"]
+
+
+def test_instant_skips_old_matches(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> None:
+    """Turning instant on later (an alert's or the admin switch) sends no backlog: old matches stay in the bell."""
+    app, db, settings = _app(tmp_path, events=[])
+    matcher.run(settings, db)
+    with TestClient(app) as c:
+        sign_in(c, fake)
+        c.post("/api/me/alerts", json={"criteria": {"q": "techno"}, "instant": True}, headers=OURS)
+    seed(settings, [event("a", SOON)])
+    matcher.run(settings, db)
+    with db.session() as s:
+        s.execute(update(AlertHitRow).values(matched_at=datetime.now(UTC) - timedelta(minutes=settings.mail.instant_max_age_minutes + 1)))
+    seed(settings, [event("b", SOON + timedelta(hours=1))])
+    matcher.run(settings, db)
+    jobs.instant(settings, db)
+    assert len(outbox.messages) == 1 and "Techno night b" in outbox.messages[0]["subject"]
+    assert "Techno night a" not in outbox.messages[0]["html"]
 
 
 def test_unsubscribe_link(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> None:

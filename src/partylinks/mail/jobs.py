@@ -109,18 +109,21 @@ def welcome(settings: Settings, db: Database) -> None:
 
 # --------------------------------------------------------------------------- instant
 def instant(settings: Settings, db: Database) -> None:
-    """New matches of alerts set to "email me at once": one email per user, at most hourly."""
+    """New matches of alerts set to "email me at once": one email per user, at most hourly. Only matches of
+    the last ``instant_max_age_minutes``: turning instant on (an alert's or the admin switch) never emails
+    old ones, they stay in the bell."""
     if not _on(settings, db, "instant"):
         return
     started = utcnow()
     wait = started - timedelta(minutes=settings.mail.instant_min_interval_minutes)
+    fresh = started - timedelta(minutes=settings.mail.instant_max_age_minutes)
     with db.session() as session:
         pending = session.execute(
             select(AlertHitRow.user_id, AlertHitRow.event_id)
             .join(AlertRow, AlertRow.id == AlertHitRow.alert_id)
             .join(UserRow, UserRow.id == AlertHitRow.user_id)
             .where(
-                AlertHitRow.instant_sent_at.is_(None), AlertHitRow.cleared_at.is_(None), AlertRow.instant.is_(True), AlertRow.active.is_(True),
+                AlertHitRow.instant_sent_at.is_(None), AlertHitRow.cleared_at.is_(None), AlertHitRow.matched_at >= fresh, AlertRow.instant.is_(True), AlertRow.active.is_(True),
                 UserRow.blocked_at.is_(None), (UserRow.last_instant_at.is_(None)) | (UserRow.last_instant_at < wait),
             )
             .order_by(AlertHitRow.matched_at)

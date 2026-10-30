@@ -30,8 +30,6 @@ from partylinks.worker.models import STATE_ID, WorkerCommandRow, WorkerStateRow
 
 log = logging.getLogger(__name__)
 
-KEEP_COMMANDS = timedelta(days=1)
-
 
 def _iso(value: datetime | None) -> str | None:
     return value.isoformat() if value else None
@@ -107,7 +105,7 @@ class Worker:
                     await self._off_loop(self._finish, command.id, result)
                 await self._off_loop(self._publish)
                 beats += 1
-                if beats % 720 == 0:  # about hourly: answered commands older than a day go
+                if beats % 720 == 0:  # about hourly: old answered commands go (worker_commands_keep_hours)
                     await self._off_loop(self._prune)
                     log.info("worker: memory %s MB, web %s MB, %d sources running", _rss_mb(os.getpid()),
                              _rss_mb(os.getppid()), sum(self.service.is_running(n) for n in configured_sources(self.settings)))
@@ -180,8 +178,9 @@ class Worker:
             conn.execute(update(WorkerCommandRow).where(WorkerCommandRow.id == command_id).values(done_at=utcnow(), result=result))
 
     def _prune(self) -> None:
+        keep = timedelta(hours=self.settings.scheduler.worker_commands_keep_hours)
         with self.db.engine.begin() as conn:
-            conn.execute(delete(WorkerCommandRow).where(WorkerCommandRow.done_at < utcnow() - KEEP_COMMANDS))
+            conn.execute(delete(WorkerCommandRow).where(WorkerCommandRow.done_at < utcnow() - keep))
 
     def _job(self, job: Any) -> dict[str, Any]:
         nxt = getattr(job, "next_run_time", None)  # a job added before the scheduler starts has none yet

@@ -101,6 +101,7 @@ mail:
   digest_cron: "0 10 * * thu"      # the weekly digest, in the site's timezone
   digest_max_events: 12
   instant_min_interval_minutes: 60  # at most one instant alert email per user per hour
+  instant_max_age_minutes: 180      # matches older than this are never emailed (turning instant on sends no backlog)
   matcher_interval_minutes: 15      # how often new events are matched against alerts
 
 # Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
@@ -166,6 +167,9 @@ scheduler:
   restart_backoff_max_seconds: 60
   worker_stable_after_seconds: 600   # ran this long before exiting: restarted at once; sooner: backoff doubles
   worker_stop_seconds: 30       # on shutdown: time for running sources to stop
+  worker_hung_after_seconds: 300   # running but no heartbeat this long: hung, stopped and restarted
+  worker_commands_keep_hours: 24   # answered admin commands are deleted after this
+  startup_stagger_seconds: 180     # run_on_startup: sources start this far apart, never all at once
 
 # Transport defaults. Each source gets its own isolated HTTP client built from
 # these values; any key can be overridden per source under `sources.<name>.http`.

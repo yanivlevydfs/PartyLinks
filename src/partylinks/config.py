@@ -130,6 +130,11 @@ class SchedulerSettings(BaseModel):
     # A worker that ran this long before exiting restarts at once; one that dies sooner backs off (doubling).
     worker_stable_after_seconds: float = Field(600, gt=0)
     worker_stop_seconds: float = Field(30, gt=0)  # on shutdown, time for running sources to stop before a kill
+    # A running worker whose heartbeat is this old is hung: stopped and restarted. Well above worker_stale_seconds,
+    # so a busy worker is never killed; judged only after its first heartbeat.
+    worker_hung_after_seconds: float = Field(300, gt=0)
+    worker_commands_keep_hours: float = Field(24, gt=0)  # answered admin commands are deleted after this
+    startup_stagger_seconds: float = Field(180, ge=0)  # run_on_startup: each source this long after the previous
     # Run manager (partylinks.runs): at most this many sources run at once, the rest wait in a queue.
     max_parallel_runs: int = Field(6, ge=1)
     # A bad run (failed, blocked, no events, or under low_count_ratio of the usual count) is run again

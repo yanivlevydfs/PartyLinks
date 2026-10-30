@@ -77,11 +77,13 @@ def _serve(reload: bool = False) -> int:
     else:
         # Scraping in a worker process of its own, so it never slows the site (partylinks/worker).
         separate = settings.scheduler.enabled and settings.scheduler.separate_process
-        supervisor = WorkerProcess(settings.scheduler) if separate else None
+        app = create_app(settings, start_scheduler=False if separate else None, worker_process=separate)
+        # The worker's heartbeat, once the app has started (app.state.worker): a hung worker is restarted.
+        state = lambda: app.state.worker.state() if getattr(app.state, "worker", None) else None  # noqa: E731
+        supervisor = WorkerProcess(settings.scheduler, state) if separate else None
         if supervisor:
             supervisor.start()
         try:
-            app = create_app(settings, start_scheduler=False if separate else None, worker_process=separate)
             uvicorn.run(app, host=settings.api.host, port=settings.api.port, log_config=None, **net)
         finally:
             if supervisor:

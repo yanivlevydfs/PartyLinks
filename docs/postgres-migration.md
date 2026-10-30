@@ -744,3 +744,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **שאילתה:** ה-NOT EXISTS של ה-matcher כבר לא דורש אותו `start_at`: ‏`EXISTS (SELECT 1 FROM events o WHERE o.source = e.source AND o.title = e.title AND o.id <> e.id AND o.first_seen_at <= :cursor)`. ספקים כמו funzing (סיור יומי) ו-muzi מוסיפים כל יום מועד חדש לאותו מופע, וכל מועד נספר כאירוע חדש בפעמון. מופע חדש בכמה מועדים במעבר אחד = התראה אחת, המועד הקרוב (בקוד, לפי title).
 - **אינדקס חדש:** `ix_events_source_title` על `events (source, title)` לבדיקה הזו, נבנה ב-`create_schema`. ‏`ix_events_source_start` כבר לא בשימוש בקוד; נשאר בפרודקשן (create_schema לא מוחק) ויימחק בבדיקת האינדקסים של 2026-11-04.
 - **Tests:** ‏`tests/test_alerts_flood.py::test_more_dates_of_a_known_show_are_not_news_and_a_new_show_is_one_hit`.
+
+### 2026-10-30 (מייל מיידי: בלי התאמות ישנות)
+- **שאילתה:** ה-query של ה-instant (‏`mail/jobs.py`) מוסיף `alert_hits.matched_at >= now - mail.instant_max_age_minutes` (ברירת מחדל 180). הדלקת "מיידי" להתראה או של המתג הגלובלי כבר לא שולחת התאמות מלפני ימים; הן נשארות בפעמון. בלי אינדקס חדש: הסינון רץ על אותן שורות של ה-JOIN (‏`instant_sent_at IS NULL`).
+- **בלי שינוי:** ‏`worker_state` נקרא גם מה-supervisor (‏`WorkerLink.state`, אותה שורה לפי מפתח ראשי, כל `heartbeat_seconds`) כדי לזהות worker תקוע (‏`scheduler.worker_hung_after_seconds`).
+- **Tests:** ‏`tests/test_mail.py::test_instant_skips_old_matches`, ‏`tests/test_worker.py::test_a_hung_worker_is_stopped_and_started_again`.

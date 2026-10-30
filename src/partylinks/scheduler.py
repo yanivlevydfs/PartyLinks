@@ -18,7 +18,6 @@ from partylinks.service import ScrapeService, SourceBusyError
 log = logging.getLogger(__name__)
 
 RETENTION_JOB_ID = "retention"
-STARTUP_STAGGER = timedelta(minutes=3)
 
 
 async def _scheduled_run(service: ScrapeService, source: str) -> None:
@@ -55,10 +54,11 @@ def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOSchedu
     scheduler = AsyncIOScheduler(timezone=settings.timezone)
     now = datetime.now(ZoneInfo(settings.timezone))
     enabled = [(n, s) for n, s in configured_sources(settings).items() if s.enabled]
+    stagger = timedelta(seconds=settings.scheduler.startup_stagger_seconds)
     for index, (name, source) in enumerate(enabled):
         # Startup runs are spread out so a deploy never fires every source at once.
         # APScheduler treats an explicit next_run_time=None as "paused", so only pass it when set.
-        startup = {"next_run_time": now + index * STARTUP_STAGGER} if settings.scheduler.run_on_startup else {}
+        startup = {"next_run_time": now + index * stagger} if settings.scheduler.run_on_startup else {}
         try:  # one bad trigger skips only that source
             scheduler.add_job(
                 _scheduled_run,
