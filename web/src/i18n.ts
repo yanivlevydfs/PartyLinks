@@ -1,6 +1,10 @@
 // UI strings + labels for the API's enum values (genres, weekdays, time slots, entry types).
 export type Lang = "he" | "en";
 
+// "1 event" / "אירוע אחד", not "1 events".
+const heEvents = (n: number) => (n === 1 ? "אירוע אחד" : `${n} אירועים`);
+const enEvents = (n: number) => `${n} event${n === 1 ? "" : "s"}`;
+
 export const STRINGS = {
   he: {
     dir: "rtl",
@@ -41,8 +45,8 @@ export const STRINGS = {
     artistsTitle: "אמנים ו־DJs",
     verified: "אמן מאומת",
     upcomingAt: "אירועים קרובים",
-    noLocation: (n: number) => `${n} אירועים ללא מיקום על המפה`,
-    onMap: (n: number) => `${n} אירועים על המפה`,
+    noLocation: (n: number) => `${heEvents(n)} ללא מיקום על המפה`,
+    onMap: (n: number) => `${heEvents(n)} על המפה`,
     back: "חזרה",
     notFound: "העמוד לא נמצא",
     nf: {
@@ -55,7 +59,7 @@ export const STRINGS = {
       drop: "תחזירו את הביט",
       stop: "עצרו את המוזיקה",
     },
-    events: (n: number) => `${n} אירועים`,
+    events: heEvents,
     locale: "he-IL",
     tagline: "כל האירועים במקום אחד.",
     landing: { tonight: "מה עושים הערב?", weekend: "מה עושים בסופ״ש?", genre: (g: string) => `${g}: כל האירועים`, city: (c: string) => `מה עושים ב${c}?`, genreTonight: (g: string) => `${g} הערב`, genreWeekend: (g: string) => `${g} בסופ״ש` },
@@ -81,7 +85,7 @@ export const STRINGS = {
       skip: "לא משנה, תמשיכו",
       back: "חזרה",
       more: (n: number) => `עוד ${n}`,
-      go: (n: number) => `הראו לי ${n} אירועים`,
+      go: (n: number) => `הראו לי ${heEvents(n)}`,
       waiting: "אירועים מחכים לכם",
       outOf: (n: number) => `מתוך ${n.toLocaleString("he-IL")}`,
       none: "אין כלום עם הבחירה הזו, נסו לוותר על משהו",
@@ -102,7 +106,7 @@ export const STRINGS = {
     sortDate: "תאריך",
     sortPrice: "מחיר",
     sortNew: "חדשים",
-    results: (n: number) => `${n} אירועים`,
+    results: heEvents,
     loadMore: "טען עוד",
     trending: "חם עכשיו",
     trendingSub: "האירועים שמופיעים בהכי הרבה אתרי כרטיסים בשבועיים הקרובים",
@@ -147,7 +151,7 @@ export const STRINGS = {
     findGenre: "חיפוש קטגוריה…",
     allOf: (name: string) => `כל ה${name}`,
     clearFilters: "ניקוי",
-    showN: (n: number) => `הצגת ${n} אירועים`,
+    showN: (n: number) => `הצגת ${heEvents(n)}`,
     alsoAt: "מופיע גם ב־",
     map: "פתח במפה",
     age: (n: number) => `${n}+`,
@@ -238,8 +242,8 @@ export const STRINGS = {
     artistsTitle: "Artists & DJs",
     verified: "Verified artist",
     upcomingAt: "Upcoming events",
-    noLocation: (n: number) => `${n} events have no map location`,
-    onMap: (n: number) => `${n} events on the map`,
+    noLocation: (n: number) => `${enEvents(n)} ${n === 1 ? "has" : "have"} no map location`,
+    onMap: (n: number) => `${enEvents(n)} on the map`,
     back: "Back",
     notFound: "Page not found",
     nf: {
@@ -252,7 +256,7 @@ export const STRINGS = {
       drop: "Drop the beat",
       stop: "Stop the music",
     },
-    events: (n: number) => `${n} events`,
+    events: enEvents,
     locale: "en-GB",
     tagline: "All the events in one place.",
     landing: { tonight: "What's on tonight?", weekend: "What's on this weekend?", genre: (g: string) => `${g} events`, city: (c: string) => `What's on in ${c}?`, genreTonight: (g: string) => `${g} tonight`, genreWeekend: (g: string) => `${g} this weekend` },
@@ -278,7 +282,7 @@ export const STRINGS = {
       skip: "Doesn't matter, next",
       back: "Back",
       more: (n: number) => `${n} more`,
-      go: (n: number) => `Show me ${n} events`,
+      go: (n: number) => `Show me ${enEvents(n)}`,
       waiting: "events waiting for you",
       outOf: (n: number) => `out of ${n.toLocaleString("en-US")}`,
       none: "Nothing matches that, try dropping something",
@@ -299,7 +303,7 @@ export const STRINGS = {
     sortDate: "Date",
     sortPrice: "Price",
     sortNew: "Newest",
-    results: (n: number) => `${n} events`,
+    results: enEvents,
     loadMore: "Load more",
     trending: "Trending",
     trendingSub: "The events listed on the most ticket sites in the next two weeks",
@@ -344,7 +348,7 @@ export const STRINGS = {
     findGenre: "Find a category…",
     allOf: (name: string) => `All ${name}`,
     clearFilters: "Clear",
-    showN: (n: number) => `Show ${n} events`,
+    showN: (n: number) => `Show ${enEvents(n)}`,
     alsoAt: "Also listed on",
     map: "Open in maps",
     age: (n: number) => `${n}+`,
