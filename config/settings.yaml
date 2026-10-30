@@ -100,6 +100,7 @@ mail:
   from_address: "SPOTX <events@spotx.fun>"   # sender only (no inbox); replies go to site.email (contact@spotx.fun)
   digest_cron: "0 10 * * thu"      # the weekly digest, in the site's timezone
   digest_max_events: 12
+  instant_enabled: false            # owner's rule: one email a week (the digest); alerts show in the bell only
   instant_min_interval_minutes: 60  # at most one instant alert email per user per hour
   instant_max_age_minutes: 180      # matches older than this are never emailed (turning instant on sends no backlog)
   matcher_interval_minutes: 15      # how often new events are matched against alerts

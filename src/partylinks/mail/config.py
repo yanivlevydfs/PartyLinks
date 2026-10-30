@@ -10,6 +10,7 @@ class MailSettings(BaseModel):
     from_address: str = "SPOTX <events@spotx.fun>"
     digest_cron: str = "0 10 * * thu"  # in settings.timezone
     digest_max_events: int = Field(12, ge=1, le=30)
+    instant_enabled: bool = False  # off: one email a week (the digest); alerts still fill the bell
     instant_min_interval_minutes: int = Field(60, ge=5)
     instant_max_age_minutes: int = Field(180, ge=5)  # older matches are never emailed, only shown in the bell
     matcher_interval_minutes: int = Field(15, ge=1)

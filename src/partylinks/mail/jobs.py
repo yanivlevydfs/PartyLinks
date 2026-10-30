@@ -42,6 +42,8 @@ def switches(session: Session) -> MailSwitchesRow:
 def _on(settings: Settings, db: Database, kind: str) -> bool:
     if not (settings.accounts.enabled and mailer.ready(settings)):
         return False
+    if kind == "instant" and not settings.mail.instant_enabled:
+        return False
     with db.session() as session:
         return bool(getattr(switches(session), kind))
 

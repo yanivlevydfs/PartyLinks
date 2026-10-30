@@ -60,7 +60,8 @@ def _no_settle(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _app(tmp_path: Path, events: list[Any] | None = None) -> tuple[Any, Database, Any]:
     settings = _settings(tmp_path)
-    settings.mail = settings.mail.model_validate({"resend_api_key": "re_test"})
+    # instant on here so its rules stay tested; production runs with it off (one weekly email)
+    settings.mail = settings.mail.model_validate({"resend_api_key": "re_test", "instant_enabled": True})
     settings.site.email = "contact@spotx.test"
     db = seed(
         settings, events if events is not None else [event(k, SOON + timedelta(hours=i)) for i, k in enumerate("abc")]
@@ -234,3 +235,19 @@ def test_switches_account_errors_and_admin(tmp_path: Path, fake: FakeGoogle, out
         jobs.digest(settings, db)  # an account problem: recorded, nothing raised
         runs = admin.get("/admin/api/email").json()["runs"]
         assert runs[0]["kind"] == "digest" and runs[0]["failed"] == 1 and "unpaid" in runs[0]["error"]
+
+
+def test_instant_emails_are_off_by_default(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> None:
+    """The owner's rule: one email a week. With mail.instant_enabled off, an instant alert's matches stay in the bell."""
+    app, db, settings = _app(tmp_path, events=[])
+    settings.mail = settings.mail.model_validate({"resend_api_key": "re_test"})
+    matcher.run(settings, db)
+    with TestClient(app) as c:
+        sign_in(c, fake)
+        c.post("/api/me/alerts", json={"criteria": {"q": "techno"}, "instant": True}, headers=OURS)
+        seed(settings, [event("a", SOON)])
+        matcher.run(settings, db)
+        assert c.get("/api/me/bell").json()["unseen"] == 1
+        assert c.get("/api/me/alerts").json()["instant_email"] is False
+    jobs.instant(settings, db)
+    assert outbox.messages == []

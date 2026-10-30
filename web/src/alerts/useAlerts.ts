@@ -66,7 +66,7 @@ export function criteriaWords(c: Criteria, t: ReturnType<typeof useT>["t"], lang
 
 export function useAlerts() {
   const me = useMe().data;
-  return useQuery<{ items: Alert[]; max: number }>({
+  return useQuery<{ items: Alert[]; max: number; instant_email?: boolean }>({
     queryKey: ["alerts", me?.id],
     queryFn: () => fetch("/api/me/alerts", { credentials: "same-origin" }).then((r) => r.json()),
     enabled: !!me,

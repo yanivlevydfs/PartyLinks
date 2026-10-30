@@ -60,7 +60,7 @@ function AlertCard({ a }: { a: Alert }) {
       {!a.active && <p className="alert-note">{t.pausedNote}</p>}
       <div className="alert-switches">
         <Switch on={a.active} onChange={() => edit(a.id, { active: !a.active })}>{a.active ? t.active : t.paused}</Switch>
-        <Switch on={a.instant} onChange={() => edit(a.id, { instant: !a.instant })}>{t.email}</Switch>
+        {useAlerts().data?.instant_email && <Switch on={a.instant} onChange={() => edit(a.id, { instant: !a.instant })}>{t.email}</Switch>}
       </div>
       {confirm ? (
         <div className="alert-actions" role="group" aria-label={t.confirmRemove}>
@@ -189,7 +189,7 @@ function AlertForm({ alert, onDone }: { alert?: Alert; onDone?: () => void }) {
       <div className="alert-step">
         <h3><span className="alert-num" aria-hidden>3</span>{t.how}</h3>
         <p className="alert-hint">{t.howBell}</p>
-        <Switch on={instant} onChange={() => setInstant(!instant)}>{t.instant}</Switch>
+        {useAlerts().data?.instant_email && <Switch on={instant} onChange={() => setInstant(!instant)}>{t.instant}</Switch>}
       </div>
 
       <div className="alert-actions">

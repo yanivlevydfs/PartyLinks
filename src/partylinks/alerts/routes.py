@@ -103,6 +103,7 @@ def list_alerts(user: UserDep, request: Request, response: Response) -> dict[str
         return {
             "items": [_out(a, unseen.get(a.id, 0)) for a in alerts],
             "max": request.app.state.settings.accounts.max_alerts,
+            "instant_email": request.app.state.settings.mail.instant_enabled,
         }
 
 
