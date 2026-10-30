@@ -858,6 +858,10 @@ def get_session(request: Request) -> Iterator[Session]:
 
 
 SessionDep = Annotated[Session, Depends(get_session)]
+# Closed when the endpoint returns, not after the body is sent: a FileResponse reads the file on the
+# shared thread pool, and a burst of image requests holding connections while waiting for those
+# threads (pool size == thread count) used to deadlock until pool_timeout (500s on the home page).
+ReleasedSessionDep = Annotated[Session, Depends(get_session, scope="function")]
 
 
 def _best_deals(session: Session, rows: Sequence[EventRow]) -> dict[str, DealOut]:
@@ -1325,11 +1329,11 @@ def _register_routes(app: FastAPI) -> None:
         ]
 
     @app.get("/images/{image_id}", tags=["events"], response_class=Response)
-    def get_image(image_id: int, request: Request, session: SessionDep) -> Response:
+    def get_image(image_id: int, request: Request, session: ReleasedSessionDep) -> Response:
         return _image_response(image_id, request, session)
 
     @app.get("/images/{image_id}/{width}.webp", tags=["events"], response_class=Response)
-    def get_image_copy(image_id: int, width: int, request: Request, session: SessionDep) -> Response:
+    def get_image_copy(image_id: int, width: int, request: Request, session: ReleasedSessionDep) -> Response:
         """The artwork resized to ``width`` (640 cards, 1280 event page) as WebP. A copy not made
         yet (or never: animations, unreadable files) serves the original, cached for an hour only,
         so the edge picks up the copy once it exists. Never converts on request."""

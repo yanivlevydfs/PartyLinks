@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import PIL.features
+from fastapi import Request
 from fastapi.testclient import TestClient
 from PIL import Image
 from sqlalchemy import text, update
@@ -327,3 +328,34 @@ def test_cut_off_artwork_is_not_stored_and_is_fetched_again(tmp_path: Path, monk
         row = session.get(ImageRow, image_id)
         assert row is not None and row.downloaded_at is None and row.local_path is None
     assert not media2.path_for("test/flyer.webp").exists()
+
+
+def test_image_requests_release_their_db_connection_before_sending_the_file(tmp_path: Path, monkeypatch: Any) -> None:
+    """A FileResponse reads the file on the thread pool; holding a connection meanwhile let a burst of
+    card images exhaust the pool and deadlock until pool_timeout (production, 40 x 500)."""
+    from partylinks import api as api_module
+
+    settings, _, media, image_id = stored(tmp_path, picture((1600, 900)))
+    media.build_missing_variants()
+    open_sessions: list[int] = []
+    seen_while_sending: list[int] = []
+
+    def tracked(request: Request) -> Any:
+        open_sessions.append(1)
+        try:
+            yield from api_module.get_session(request)
+        finally:
+            open_sessions.pop()
+
+    class Recording(api_module.FileResponse):  # type: ignore[misc,name-defined]
+        async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+            seen_while_sending.append(len(open_sessions))
+            await super().__call__(scope, receive, send)
+
+    monkeypatch.setattr(api_module, "FileResponse", Recording)
+    app = create_app(settings, start_scheduler=False)
+    app.dependency_overrides[api_module.get_session] = tracked
+    with TestClient(app) as client:
+        assert client.get(f"/images/{image_id}/640.webp").status_code == 200
+        assert client.get(f"/images/{image_id}").status_code == 200
+    assert seen_while_sending == [0, 0]

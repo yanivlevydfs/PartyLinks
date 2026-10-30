@@ -347,3 +347,11 @@ def test_end_before_start_is_the_next_day_or_unknown() -> None:
 def test_verbs_and_pop_ups_are_no_genres() -> None:
     assert "conference" not in ENRICHER._detect_genres(make(title="BAMESHEK", description="אפשר להכנס עד 23:00"))
     assert "pop" not in ENRICHER._detect_genres(make(title="Avenue Matcha Pop-Up & Party", description=""))
+
+
+def test_featured_artist_matched_across_dotless_i_does_not_fail_the_event() -> None:
+    """Case-insensitive regex matches "YILDIRIM" to "Yıldırım", whose casefold differs (production KeyError)."""
+    enricher = Enricher(SETTINGS.enrichment, SETTINGS.timezone)
+    enricher.learn_artists([], featured=["Derya Yıldırım"])
+    event = enricher.enrich(make(title="DERYA YILDIRIM & GRUP ŞIMŞEK", description=""))
+    assert event is not None and len(event.lineup) == 1 and event.lineup[0].casefold().startswith("derya")

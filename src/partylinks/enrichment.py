@@ -324,7 +324,8 @@ class Enricher:
         if pattern is None:
             return []
         text = f"{event.title}\n{event.description or ''}"
-        return [spelling[m.group(0).casefold()] for m in pattern.finditer(text)]
+        # (?i) also equates i / ı / İ, whose casefolds differ ("YILDIRIM" for "Yıldırım"): keep it as written.
+        return [spelling.get(m.group(0).casefold(), m.group(0)) for m in pattern.finditer(text)]
 
     def _unglue(self, name: str) -> list[str]:
         """"MOSKOMILLEROADARU" -> MOSKO, MILLERO, ADARU when MILLERO is a known artist.
