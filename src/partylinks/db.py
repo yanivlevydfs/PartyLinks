@@ -859,6 +859,8 @@ def _upsert(session: Session, model: type[Base], rows: list[dict[str, Any]], key
 
 def delete_events(session: Session, event_ids: Sequence[str]) -> list[str]:
     """Bulk delete events with their tickets and images. Returns local artwork files to remove."""
+    from partylinks.plans.routes import delete_plans  # local: plans.routes imports accounts, which imports db
+
     files: list[str] = []
     for chunk in _chunks(list(event_ids), 1000):
         files += [p for p in session.scalars(select(ImageRow.local_path).where(ImageRow.event_id.in_(chunk))) if p]
@@ -899,5 +901,4 @@ import partylinks.saved.models
 import partylinks.worker.models
 from partylinks.ads.models import prune_sponsored
 from partylinks.alerts.models import delete_hits
-from partylinks.plans.routes import delete_plans
 from partylinks.saved.models import delete_saved

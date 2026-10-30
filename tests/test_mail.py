@@ -17,7 +17,7 @@ from sqlalchemy import select, update
 from partylinks.accounts.models import UserRow
 from partylinks.alerts import matcher
 from partylinks.api import create_app
-from partylinks.db import Database
+from partylinks.db import Database, EventRow
 from partylinks.mail import jobs, tokens
 from partylinks.mail.models import EmailRunRow
 from tests.test_accounts import OURS, FakeGoogle, _settings, sign_in
@@ -64,6 +64,9 @@ def _app(tmp_path: Path, events: list[Any] | None = None) -> tuple[Any, Database
     db = seed(
         settings, events if events is not None else [event(k, SOON + timedelta(hours=i)) for i, k in enumerate("abc")]
     )
+    if events is None:  # the digest's filler is this weekend's events: true whatever weekday the tests run on
+        with db.session() as s:
+            s.execute(update(EventRow).values(is_weekend=True))
     return create_app(settings, start_scheduler=False), db, settings
 
 
