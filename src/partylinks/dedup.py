@@ -9,7 +9,9 @@ by default and exposes the rest as alternatives.
 
 Two listings match when they are on the same local date and either one links to
 the other's page, or all of these hold: similar normalized titles, start times
-within ``max_start_gap_minutes`` and compatible locations.
+within ``max_start_gap_minutes`` and compatible locations. Titles alike once filler words go
+("דרור קרן במופע סטנדאפ" / "דרור קרן") count as identical; a title whose words are all in the other's
+("שומרי הדרקונים" / "שומרי הדרקונים - מחזמר הרפתקאות") matches only at the same hour and place.
 """
 
 from __future__ import annotations
@@ -73,6 +75,8 @@ class _Listing:
     has_free_entry: bool
     free_entry_until: datetime | None = None
     sold_out: bool = False
+    core: frozenset[str] = frozenset()  # title words without filler ("מופע", "חנוכה")
+    timed: bool = True  # False: the source gave only the date
 
 
 def title_key(title: str | None, stopwords: set[str]) -> str:
@@ -117,6 +121,40 @@ class Deduplicator:
         self._priority = {name: rank for rank, name in enumerate(settings.source_priority)}
         self._promoter_pages = set(settings.promoter_page_sources)
         self._kind = {g: kind for kind, genres in settings.kinds.items() for g in genres}
+        self._filler = {w.lower() for w in settings.title_filler}
+
+    def _distinctive(self, core: frozenset[str]) -> bool:
+        """Enough of a name to match on alone: "דרור קרן", not "techno"."""
+        s = self.settings
+        return len(core) >= s.subset_min_words and sum(map(len, core)) >= s.subset_min_chars
+
+    def _ratio(self, a: _Listing, b: _Listing, floor: float = 0.0) -> float:
+        """Title likeness; 1.0 when the titles differ only in filler words. Below ``floor``: 0.0, cheaply."""
+        if a.core == b.core and self._distinctive(a.core):
+            return 1.0
+        la, lb = len(a.title_key), len(b.title_key)
+        if 2 * min(la, lb) < floor * (la + lb):  # real_quick_ratio without building the matcher's index
+            return 0.0
+        m = SequenceMatcher(None, a.title_key, b.title_key)
+        if m.quick_ratio() < floor:
+            return 0.0
+        return m.ratio()
+
+    def _subset(self, a: _Listing, b: _Listing) -> bool:
+        """One box office adds words to the name ("שומרי הדרקונים" / "+ מחזמר הרפתקאות"): one event only at
+        the same hour (or date, untimed), at the same spot or venue, of a shared kind. A multi-hall venue's
+        other shows at that hour have other names, so they never pass."""
+        small, big = (a.core, b.core) if len(a.core) <= len(b.core) else (b.core, a.core)
+        if not small < big or not self._distinctive(small) or (a.kinds and b.kinds and not a.kinds & b.kinds):
+            return False
+        s = self.settings
+        if a.timed and b.timed and a.start and b.start:
+            if abs((a.start - b.start).total_seconds()) > s.subset_max_start_gap_minutes * 60:
+                return False
+        distance = _distance_m(a, b)
+        if distance is not None:
+            return distance <= s.max_distance_meters
+        return bool(a.venue_slug) and a.venue_slug == b.venue_slug
 
     def same_event(self, a: _Listing, b: _Listing, shared_urls: frozenset[str] = frozenset()) -> bool:
         """Name, date, hour, place and kind must all agree; in doubt two listings stay apart."""
@@ -129,11 +167,10 @@ class Deduplicator:
             return True
         if not a.title_key or not b.title_key:
             return False
-        matcher = SequenceMatcher(None, a.title_key, b.title_key)
-        threshold = self.settings.title_similarity
-        if matcher.real_quick_ratio() < threshold or matcher.quick_ratio() < threshold or matcher.ratio() < threshold:
-            return False
-        if self._other_kind(a, b, matcher.ratio()):
+        ratio = self._ratio(a, b, self.settings.title_similarity)
+        if ratio < self.settings.title_similarity:
+            return self._subset(a, b)
+        if self._other_kind(a, b, ratio):
             return False
         distance = _distance_m(a, b)
         if distance is not None:
@@ -141,11 +178,11 @@ class Deduplicator:
                 return True
             s = self.settings
             gap = abs((a.start - b.start).total_seconds()) if a.start and b.start else None
-            window = s.party_max_start_gap_minutes if self._party(a, b, matcher.ratio()) else s.strong_max_start_gap_minutes
+            window = s.party_max_start_gap_minutes if self._party(a, b, ratio) else s.strong_max_start_gap_minutes
             return (
                 gap is not None
                 and gap <= window * 60
-                and matcher.ratio() >= s.strong_title_similarity
+                and ratio >= s.strong_title_similarity
                 and distance <= s.strong_max_distance_meters
             )
         if a.venue_slug and b.venue_slug:
@@ -156,7 +193,7 @@ class Deduplicator:
         s = self.settings
         return (
             (bool(a.city and a.city == b.city) or a.source == b.source and a.source in self._promoter_pages)
-            and matcher.ratio() >= s.strong_title_similarity and len(a.title_key.split()) >= 3
+            and ratio >= s.strong_title_similarity and len(a.title_key.split()) >= 3
             and a.start is not None and b.start is not None
             and abs((a.start - b.start).total_seconds()) <= s.strong_max_start_gap_minutes * 60
         )  # fmt: skip
@@ -171,7 +208,8 @@ class Deduplicator:
         s = self.settings
         if self._sessions(a, b):
             return True
-        if a.start and b.start and abs((a.start - b.start).total_seconds()) > s.max_start_gap_minutes * 60:
+        # A date-only listing (no hour) may be any of that day's sessions; _compatible keeps those apart.
+        if a.timed and b.timed and a.start and b.start and abs((a.start - b.start).total_seconds()) > s.max_start_gap_minutes * 60:
             # A party's listings carry its doors / entry times (20:00 on one site, 21:30 on another); a
             # show's listings hours apart are its sessions.
             gap = abs((a.start - b.start).total_seconds())
@@ -191,7 +229,7 @@ class Deduplicator:
         if a.source == b.source or "music" not in a.kinds | b.kinds or self._other_kind(a, b, 0.0):
             return False
         if ratio is None:
-            ratio = SequenceMatcher(None, a.title_key, b.title_key).ratio()
+            ratio = self._ratio(a, b)
         return ratio >= self.settings.strong_title_similarity
 
     def _other_kind(self, a: _Listing, b: _Listing, ratio: float | None = None) -> bool:
@@ -199,7 +237,7 @@ class Deduplicator:
         if not (a.kinds and b.kinds) or a.kinds & b.kinds:
             return False
         if ratio is None:
-            ratio = SequenceMatcher(None, a.title_key, b.title_key).ratio()
+            ratio = self._ratio(a, b)
         return ratio < self.settings.strong_title_similarity
 
     def _sessions(self, a: _Listing, b: _Listing) -> bool:
@@ -258,6 +296,7 @@ class Deduplicator:
                 EventRow.latitude, EventRow.longitude, EventRow.venue_slug, EventRow.city, EventRow.url, EventRow.extra,
                 EventRow.genres, EventRow.first_seen_at, EventRow.min_price, EventRow.max_price, EventRow.entry_type,
                 EventRow.has_free_entry, EventRow.free_entry_until, EventRow.is_listed, EventRow.is_sold_out,
+                EventRow.time_known,
             )
         ).all(), key=lambda r: r.id)  # fmt: skip
         tier_counts = _tier_counts(session)
@@ -276,6 +315,7 @@ class Deduplicator:
                 tiers=tier_counts.get(r.id, 0), first_seen=r.first_seen_at,
                 min_price=r.min_price, max_price=r.max_price, entry_type=r.entry_type,
                 has_free_entry=r.has_free_entry, free_entry_until=r.free_entry_until, sold_out=bool(r.is_sold_out),
+                core=frozenset(title.split()) - self._filler, timed=r.time_known is not False,
             )  # fmt: skip
             # An unlisted row stands alone: as a group's primary it would hide its listed copies.
             if r.local_date is None or r.is_listed is False:

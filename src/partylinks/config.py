@@ -266,6 +266,12 @@ class EnrichmentSettings(BaseModel):
     # Every other Israeli locality of at least this many people (GeoNames, places.py) is known too:
     # its spelling and its area on the map. Smaller ones are often plain words ("מגדל").
     places_min_population: int = Field(2000, ge=0)
+    # Words a city field puts before the locality's name ("קיבוץ יגור", "מועצה אזורית גדרות"): dropped.
+    city_prefixes: list[str] = Field(default_factory=list)
+    # City fields that name no city ("ישראל"): no city.
+    not_cities: list[str] = Field(default_factory=list)
+    # Canonical city -> more spellings GeoNames lacks ("פרדס חנה", "oranit"), found like a town's names.
+    city_aliases: dict[str, list[str]] = Field(default_factory=dict)
     genres: dict[str, list[str]] = Field(default_factory=dict)
     # More words per genre matched only against what the source declares (its categories), never the
     # title or description: too short or common to trust in free text ("AI", "ענן").
@@ -328,6 +334,14 @@ class DedupSettings(BaseModel):
     strong_max_start_gap_minutes: int = Field(15, ge=0)
     strong_max_distance_meters: float = Field(1500, ge=0)
     title_stopwords: list[str] = Field(default_factory=list)
+    # Words box offices add to a show's name ("במופע", "סטנדאפ", "חנוכה"): titles equal without them are
+    # identical. A title whose remaining words are all in the other's (one site adds "מחזמר הרפתקאות") is
+    # one event only within subset_max_start_gap_minutes and max_distance_meters (or one venue), and only
+    # when its words are distinctive: subset_min_words words, subset_min_chars letters ("techno" alone no).
+    title_filler: list[str] = Field(default_factory=list)
+    subset_min_words: int = Field(2, ge=1)
+    subset_min_chars: int = Field(6, ge=1)
+    subset_max_start_gap_minutes: int = Field(15, ge=0)
     # Which listing represents a merged event (first = preferred). Unlisted sources rank last.
     source_priority: list[str] = Field(default_factory=list)
     # Sites with a page per promoter / entry time of one party (20:00 and 21:00 pages). Any other site's

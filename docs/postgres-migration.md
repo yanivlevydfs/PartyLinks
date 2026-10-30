@@ -749,3 +749,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **שאילתה:** ה-query של ה-instant (‏`mail/jobs.py`) מוסיף `alert_hits.matched_at >= now - mail.instant_max_age_minutes` (ברירת מחדל 180). הדלקת "מיידי" להתראה או של המתג הגלובלי כבר לא שולחת התאמות מלפני ימים; הן נשארות בפעמון. בלי אינדקס חדש: הסינון רץ על אותן שורות של ה-JOIN (‏`instant_sent_at IS NULL`).
 - **בלי שינוי:** ‏`worker_state` נקרא גם מה-supervisor (‏`WorkerLink.state`, אותה שורה לפי מפתח ראשי, כל `heartbeat_seconds`) כדי לזהות worker תקוע (‏`scheduler.worker_hung_after_seconds`).
 - **Tests:** ‏`tests/test_mail.py::test_instant_skips_old_matches`, ‏`tests/test_worker.py::test_a_hung_worker_is_stopped_and_started_again`.
+
+### 2026-10-30 (dedup: מילות מילוי ושם חלקי של אותו מופע)
+- **שאילתה:** ה-SELECT של `Deduplicator.plan` (‏`dedup.py`) קורא גם את `events.time_known` (עמודה קיימת, אותה סריקה מלאה, בלי אינדקס חדש). רשומה בלי שעה (רק תאריך) כבר לא נפסלת מול רשומה עם שעה בגלל פער השעות; זוגות בתוך הקבוצה עדיין נבדקים (‏`_compatible`), כך ששני מועדים של אותו יום לא מתחברים דרכה.
+- **התאמת שמות:** ‏`dedup.title_filler` (‏"במופע", "סטנדאפ", "חנוכה"...): שמות שזהים בלי מילות המילוי נחשבים זהים. שם שכל מילותיו נמצאות בשם השני ("שומרי הדרקונים" / "+ מחזמר הרפתקאות") מתאחד רק באותה שעה (‏`subset_max_start_gap_minutes`), באותו מקום (‏`max_distance_meters` או אותו `venue_slug`) ועם 2+ מילים ו-6+ אותיות (‏`subset_min_words`, `subset_min_chars`).
+- **ביצועים:** ‏plan על 55k אירועים סינתטיים ב-pgserver מקומי: לפני 29.1 / 29.7 שנ', אחרי 28.6 / 30.3 שנ' (אותו תהליך, לסירוגין). חסם האורך של `real_quick_ratio` נבדק לפני בניית ה-SequenceMatcher, וזה מקזז את הזוגות הנוספים.
+- **Tests:** ‏`tests/test_dedup.py::test_box_office_filler_and_extra_words_merge_at_one_hour_and_place`, ‏`test_extra_words_never_merge_other_shows_hours_or_places`, ‏`test_date_only_listing_joins_its_show_by_name_and_place`.

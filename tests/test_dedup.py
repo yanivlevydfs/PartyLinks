@@ -312,3 +312,47 @@ def test_second_venue_and_group_pass_rewrites_nothing(tmp_path: Path) -> None:
     with db.session(write=False) as session:  # nothing left to change: no rows held under the write lock
         assert venue_updates(session) == []
         assert Deduplicator(settings.dedup).plan(session)[1] == []
+
+
+ZOA = (32.074601, 34.7845)
+
+
+def test_box_office_filler_and_extra_words_merge_at_one_hour_and_place(tmp_path: Path) -> None:
+    later = START + timedelta(days=1)
+    _, groups = grouped(tmp_path, [
+        listing("tickchak", "1", "דרור קרן", where=ZOA, source_genres=["stand_up"]),
+        listing("zoatlv", "2", "דרור קרן", where=ZOA),
+        listing("mevalim", "3", "דרור קרן במופע סטנדאפ", where=ZOA, source_genres=["stand_up"]),
+        listing("kupatbravo", "4", "שומרי הדרקונים - חנוכה 2026", start=later, source_genres=["kids"]),
+        listing("smarticket", "5", "שומרי הדרקונים - מחזמר הרפתקאות - חנוכה 2026", start=later, source_genres=["kids"]),
+        listing("kupatbravo", "6", "סינדרלה – מבית הבלט הישראלי", start=later + timedelta(hours=3)),
+        listing("smarticket", "7", "סינדרלה - מבית הבלט הישראלי חנוכה 2026", start=later + timedelta(hours=3)),
+    ])  # fmt: skip
+    assert groups["tickchak:1"][0] == groups["zoatlv:2"][0] == groups["mevalim:3"][0]
+    assert groups["kupatbravo:4"][0] == groups["smarticket:5"][0]
+    assert groups["kupatbravo:6"][0] == groups["smarticket:7"][0] != groups["kupatbravo:4"][0]
+
+
+def test_extra_words_never_merge_other_shows_hours_or_places(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("tickchak", "1", "דרור קרן", where=ZOA),
+        listing("mevalim", "2", "שחר חסון", where=ZOA),  # another hall, same hour
+        listing("goout", "3", "Techno night", where=ZOA),
+        listing("eventer", "4", "Techno brunch", where=ZOA),  # one shared word is no name
+        listing("smarticket", "5", "שומרי הדרקונים", start=START + timedelta(minutes=45)),
+        listing("kupatbravo", "6", "שומרי הדרקונים - מחזמר הרפתקאות", start=START + timedelta(minutes=45), where=(32.0962, 34.7732)),
+        listing("leaan", "7", "דרור קרן ואורחים", where=ZOA, start=START + timedelta(minutes=40)),
+    ])  # fmt: skip
+    assert len({groups[f"{s}:{n}"][0] for s, n in [("tickchak", 1), ("mevalim", 2), ("goout", 3), ("eventer", 4)]}) == 4
+    assert groups["smarticket:5"][0] != groups["kupatbravo:6"][0]  # 460 m apart: subset needs one spot
+    assert groups["leaan:7"][0] != groups["tickchak:1"][0]  # 40 min apart: subset needs one hour
+
+
+def test_date_only_listing_joins_its_show_by_name_and_place(tmp_path: Path) -> None:
+    midnight = START.replace(hour=0, minute=0)
+    _, groups = grouped(tmp_path, [
+        listing("tickchak", "1", "דרור קרן", where=ZOA),
+        listing("mevalim", "2", "דרור קרן במופע", where=ZOA, start=midnight, time_known=False),
+        listing("goout", "3", "שחר חסון", where=ZOA, start=midnight, time_known=False),
+    ])  # fmt: skip
+    assert groups["tickchak:1"][0] == groups["mevalim:2"][0] != groups["goout:3"][0]

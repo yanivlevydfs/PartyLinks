@@ -208,7 +208,7 @@ enrichment:
     - {key: jerusalem, he: "ירושלים", en: Jerusalem, aliases: ["jerusalem", "ירושלים", "י-ם", "י\"ם"], center: [31.78, 35.21], radius_m: 12000}
     - {key: haifa, he: "חיפה", en: Haifa, aliases: ["haifa", "חיפה"], center: [32.80, 35.00], radius_m: 10000}
     - {key: kfar-saba, he: "כפר סבא", en: Kfar Saba, aliases: ["kfar saba", "kefar sava"], center: [32.175, 34.907], radius_m: 5000}
-    - {key: herzliya, he: "הרצליה", en: Herzliya, aliases: ["herzliya", "herzeliya"], center: [32.163, 34.844], radius_m: 6000}
+    - {key: herzliya, he: "הרצליה", en: Herzliya, aliases: ["herzliya", "herzeliya", "hertzliya"], center: [32.163, 34.844], radius_m: 6000}
     - {key: raanana, he: "רעננה", en: Ra'anana, aliases: ["raanana", "ra'anana"], center: [32.184, 34.871], radius_m: 4000}
     - {key: hod-hasharon, he: "הוד השרון", en: Hod HaSharon, aliases: ["hod hasharon", "hod ha-sharon"], center: [32.150, 34.892], radius_m: 4000}
     - {key: ramat-hasharon, he: "רמת השרון", en: Ramat HaSharon, aliases: ["ramat hasharon"], center: [32.146, 34.839], radius_m: 4000}
@@ -231,6 +231,24 @@ enrichment:
     - {key: bnei-brak, he: "בני ברק", en: Bnei Brak, aliases: ["bnei brak", "bene beraq", "בני-ברק"], center: [32.084, 34.834], radius_m: 3000}
     - {key: kiryat-bialik, he: "קריית ביאליק", en: Kiryat Bialik, aliases: ["kiryat bialik", "קרית ביאליק"], center: [32.833, 35.085], radius_m: 3000}
     - {key: kiryat-motzkin, he: "קריית מוצקין", en: Kiryat Motzkin, aliases: ["kiryat motzkin", "קרית מוצקין"], center: [32.837, 35.077], radius_m: 2500}
+  # A city field is one place once: "קיבוץ יגור" / "מועצה אזורית גדרות" lose the prefix, a whole Latin field
+  # naming any Israeli locality (GeoNames, 500+) takes its Hebrew name ("kfar blum" -> "כפר בלום").
+  city_prefixes: ["מועצה אזורית", "מועצה האזורית", "מועצה איזורית", "מועצה האיזורית", "המועצה האזורית",
+                  "מועצה מקומית", "המועצה המקומית", "קיבוץ", "מושב", "kibbutz", "moshav"]
+  not_cities: ["ישראל", "israel"]
+  # Spellings GeoNames lacks (West Bank towns, short names): found in a city field or an address like its names.
+  city_aliases:
+    "פרדס חנה-כרכור": ["פרדס חנה", "פרדס חנה כרכור", "pardes hanna"]
+    "יקנעם עילית": ["יקנעם", "yokne'am illit", "yokneam"]
+    "זכרון יעקב": ["zichron yaakov", "zihron", "zichron"]
+    "איירפורט סיטי": ["קרית שדה התעופה", "קריית שדה התעופה", "airport city"]
+    "אורנית": ["oranit"]
+    "מעלה אדומים": ["maale adumim", "ma'ale adumim"]
+    "גבעת אבני": ["givat avni"]
+    "דרום השרון": ["drom hasharon"]
+    "בית גוברין": ["בית גברין", "beit guvrin", "bet guvrin"]
+    "בית רימון": ["beit rimon"]
+    "שדה בוקר": ["sde boker"]
   # Canonical genre -> keywords, matched case-insensitively against the genres and
   # event types each source declares and (if detect_genres_from_text) title + description.
   genres:
@@ -607,6 +625,16 @@ dedup:
   strong_max_distance_meters: 1500
   title_stopwords: ["the", "x", "and", "with", "feat", "ft", "tlv", "tel", "aviv", "night", "party",
                     "מסיבת", "מסיבה", "ב", "עם", "את"]
+  # Words box offices add to a show's name: "דרור קרן במופע סטנדאפ" = "דרור קרן". Years, dates and dashes
+  # already go. A title whose words all appear in the other's ("שומרי הדרקונים" / "שומרי הדרקונים - מחזמר
+  # הרפתקאות") is one event only at the same hour (+-subset_max_start_gap_minutes; any hour when a site gives
+  # only the date) and spot (max_distance_meters or one venue), and only with 2+ words of 6+ letters.
+  title_filler: ["מופע", "במופע", "המופע", "הופעה", "בהופעה", "ההופעה", "סטנדאפ", "סטנד", "אפ", "מחזמר",
+                 "הצגה", "חנוכה", "בחנוכה", "פסח", "בפסח", "סוכות", "בסוכות", "show", "live", "stand", "up",
+                 "standup", "musical", "hanukkah", "chanukah"]
+  subset_min_words: 2
+  subset_min_chars: 6
+  subset_max_start_gap_minutes: 15
   # Direct sellers before aggregators; first listed wins as the primary listing.
   source_priority: [goout, eventer, zygo, selector, barby, grayclub, chillz, tickchak]
   promoter_page_sources: [goout, zygo, popit, drop]
