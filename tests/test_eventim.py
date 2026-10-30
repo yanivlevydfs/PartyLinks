@@ -2,10 +2,18 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from decimal import Decimal
 
-from partylinks.scrapers.eventim import parse_event, sitemap_event_urls
+import httpx
+import pytest
+
+from partylinks.config import Settings
+from partylinks.models import ScrapedEvent
+from partylinks.scrapers import build_scraper
+from partylinks.scrapers.base import SourceBlockedError
+from partylinks.scrapers.eventim import EventimScraper, parse_event, sitemap_event_urls
 
 TZ = "Asia/Jerusalem"
 URL = "https://www.eventim.co.il/event/show-venue-22285519/"
@@ -85,3 +93,70 @@ def test_zappa_pages_go_to_the_zappa_source_only() -> None:
     words = ["זאפה", "אמפי-שוני"]
     assert pick_urls(urls, words, []) == urls[:3]
     assert pick_urls(urls, [], words) == urls[3:]
+
+
+def _ld_only_page() -> str:
+    node = {
+        "@context": "https://schema.org", "@type": "MusicEvent", "name": "שלמה ארצי",
+        "url": "https://www.eventim.co.il/event/show-venue-22285519/", "startDate": "2026-12-03T21:30:00",
+        "image": "https://www.eventim.co.il/obj/media/artwork/arzi.jpg",
+        "location": {"@type": "Place", "name": "היכל מנורה", "address": {"streetAddress": "יגאל אלון 51", "addressLocality": "תל אביב"},
+                     "geo": {"latitude": 32.07, "longitude": 34.79}},
+        "performer": {"@type": "Person", "name": "שלמה ארצי"},
+        "offers": [{"@type": "Offer", "name": "יציע", "price": "199", "priceCurrency": "ILS"},
+                   {"@type": "Offer", "name": "רחבה", "price": "349", "priceCurrency": "ILS"}],
+    }  # fmt: skip
+    return f'<script type="application/ld+json">{json.dumps(node, ensure_ascii=False)}</script>'
+
+
+def test_page_without_page_meta_is_read_from_json_ld() -> None:
+    event = parse_event(_ld_only_page(), URL, TZ, "zappa")
+    assert event is not None
+    assert (event.source, event.source_event_id, event.title) == ("zappa", "22285519", "שלמה ארצי")
+    assert event.start_at is not None and event.start_at.isoformat() == "2026-12-03T21:30:00+02:00"
+    assert (event.venue_name, event.city, event.latitude) == ("היכל מנורה", "תל אביב", 32.07)
+    assert (event.min_price, event.max_price, event.artists) == (Decimal(199), Decimal(349), ["שלמה ארצי"])
+    assert event.image_url == "https://www.eventim.co.il/obj/media/artwork/arzi.jpg"
+
+
+CHALLENGE = "<html><head><title>Access Denied</title></head><body>Reference #18.abc _abck</body></html>"
+
+
+def _run(pages: dict[str, httpx.Response]) -> tuple[list[ScrapedEvent], EventimScraper]:
+    sitemap = "".join(f"<url><loc>https://www.eventim.co.il/event/{p}/</loc></url>" for p in pages)
+    scraper = build_scraper("eventim", Settings())
+    assert isinstance(scraper, EventimScraper)
+    scraper.http.request_delay_seconds = 0
+    scraper.http.backoff_seconds = 0
+    scraper.settings.max_empty_streak = 3
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith(".xml.gz"):
+            return httpx.Response(200, text=f"<urlset>{sitemap}</urlset>", headers={"content-type": "application/xml"})
+        return pages[request.url.path.strip("/").rsplit("/", 1)[-1]]
+
+    async def go() -> list[ScrapedEvent]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.scrape()]
+
+    return asyncio.run(go()), scraper
+
+
+def _html(body: str) -> httpx.Response:
+    return httpx.Response(200, text=body, headers={"content-type": "text/html; charset=utf-8"})
+
+
+def test_run_reads_page_meta_and_json_ld_pages() -> None:
+    events, scraper = _run({"a-1": _html(PAGE_META % "1|0" + TICKETS), "b-22285519": _html(_ld_only_page())})
+    assert sorted(e.title for e in events) == ["לירון אופיר", "שלמה ארצי"] and scraper.empty_pages == 0
+
+
+def test_challenge_page_stops_the_run_as_blocked() -> None:
+    with pytest.raises(SourceBlockedError):
+        _run({"a-1": _html(CHALLENGE), "b-2": _html(CHALLENGE)})
+
+
+def test_empty_pages_in_a_row_stop_the_run_as_blocked() -> None:
+    with pytest.raises(SourceBlockedError, match="in a row"):
+        _run({f"e-{i}": _html("<title>אירועים</title>") for i in range(5)})
