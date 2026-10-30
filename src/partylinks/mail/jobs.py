@@ -187,8 +187,9 @@ def digest_parts(settings: Settings, session: Session, user: UserRow) -> tuple[d
     shown |= {c["id"] for c in matches}
     sections = [Section(t["digest_saved"], saved), Section(t["digest_matches"], matches)]
     if len(shown) < 4:  # a quiet week: this weekend's free events, then the weekend's highlights
-        weekend = {"weekend": True, "date_to": datetime.combine(today + timedelta(days=7), datetime.max.time())}
-        for title, extra in ((t["digest_free"], {"free_entry": True}), (t["digest_weekend"], {})):
+        weekend: dict[str, Any] = {"weekend": True, "date_to": datetime.combine(today + timedelta(days=7), datetime.max.time())}
+        fillers: tuple[tuple[str, dict[str, Any]], ...] = ((t["digest_free"], {"free_entry": True}), (t["digest_weekend"], {}))
+        for title, extra in fillers:
             ids = session.scalars(
                 select(EventRow.id).where(*build_event_filters(settings, **weekend, **extra)).order_by(EventRow.group_size.desc(), EventRow.start_at).limit(FILLER * 2)
             )  # fmt: skip
