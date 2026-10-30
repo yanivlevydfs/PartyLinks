@@ -93,6 +93,7 @@ const he = {
   inGroups: "הקבוצה שמורה ב\"הקבוצות שלי\"",
   signInToChange: "את התשובה הזו אפשר לשנות רק מהחשבון שענה אותה",
   slowDown: "יותר מדי ניסיונות, נסו שוב בעוד דקה",
+  loadFailed: "לא הצלחנו לטעון, נסו לרענן בעוד רגע",
 };
 
 const en: typeof he = {
@@ -184,6 +185,7 @@ const en: typeof he = {
   inGroups: "Saved in \"My groups\"",
   signInToChange: "Only the account that gave this answer can change it",
   slowDown: "Too many tries, wait a minute",
+  loadFailed: "Couldn't load it, try refreshing in a moment",
 };
 
 export function usePlanText() {

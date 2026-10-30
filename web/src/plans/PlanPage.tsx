@@ -106,8 +106,10 @@ function PlanView() {
   useTitle(data ? (many ? `${p.which} ${data.options.map((o) => o.title).join(" / ")}` : `${p.title} ${data.event.title}`) : p.title);
 
   if (isPending) return <Loader />;
-  if (error || !data) {
-    return <main className="wrap plan"><p className="msg">{p.gone}</p><Link className="f-pill" to="/">SPOTX</Link></main>;
+  // A refresh that fails (a network blip, a 429) keeps the plan on screen; only a 404 means it is gone.
+  const gone = error?.message === "404";
+  if (gone || !data) {
+    return <main className="wrap plan"><p className="msg">{gone ? p.gone : p.loadFailed}</p><Link className="f-pill" to="/">SPOTX</Link></main>;
   }
 
   const e = data.event;
@@ -144,7 +146,7 @@ function PlanView() {
       body: JSON.stringify({ voter, name: clean, answer, picks: many ? chosen : undefined, ride: r, seats: r === "drive" ? next.seats ?? seats : undefined, gender: next.gender ?? gender ?? undefined }),
     });
     let res = await send();
-    if (res.status === 403 && !me && !mine) { // this browser's key holds another account's answer
+    if (res.status === 403 && !mine) { // this browser's key holds another account's answer (signed out, or signed in as someone else)
       newVoter();
       res = await send();
     }

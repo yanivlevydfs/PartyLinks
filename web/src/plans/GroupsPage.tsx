@@ -38,7 +38,7 @@ export default function GroupsPage() {
       <main className="wrap plan">
         <p className="muted">{p.groupsIntro}</p>
         {failed && <p className="plan-err" role="alert">{p.failedSave}</p>}
-        {me.isLoading || groups.isLoading ? <Loader /> : !me.data ? <SignInButton next="/groups" /> : !groups.data?.length ? (
+        {me.isLoading || groups.isLoading ? <Loader /> : !me.data ? <SignInButton next="/groups" /> : groups.isError ? <p className="plan-err" role="alert">{p.loadFailed}</p> : !groups.data?.length ? (
           <p className="muted">{p.noGroups} <Link to="/">{p.browse}</Link></p>
         ) : (
           <ul className="groups">

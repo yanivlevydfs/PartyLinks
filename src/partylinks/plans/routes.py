@@ -84,6 +84,17 @@ def _option_ids(session: Session, plan: PlanRow) -> list[str]:
     return [plan.event_id, *extra]
 
 
+def _live(session: Session, ids: list[str]) -> dict[str, EventRow]:
+    """The events of ``ids`` still current (``retention.is_current``): one over but not purged yet (the
+    hourly pass; never, locally) is gone for a plan already, as for its event page."""
+    from partylinks.config import get_settings  # local, as db.upcoming_filter: config loads lazily
+    from partylinks.retention import current_clause
+
+    cfg = get_settings()
+    now = or_(EventRow.start_at.is_(None), current_clause(cfg.retention, cfg.timezone))
+    return {r.id: r for r in session.scalars(select(EventRow).where(EventRow.id.in_(ids), now))}
+
+
 def _summaries(session: Session, events: list[EventRow]) -> list[dict[str, Any]]:
     from partylinks.api import EventSummaryOut, _summary_extras  # local: api imports this module
 
@@ -93,7 +104,7 @@ def _summaries(session: Session, events: list[EventRow]) -> list[dict[str, Any]]
 
 def _plan_out(session: Session, plan: PlanRow, voter: str | None, user: UserRow | None = None) -> PlanOut:
     ids = _option_ids(session, plan)
-    rows = {r.id: r for r in session.scalars(select(EventRow).where(EventRow.id.in_(ids)))}
+    rows = _live(session, ids)
     events = [rows[i] for i in ids if i in rows]
     if plan.event_id not in rows:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "plan not found")  # its event is over or gone
@@ -133,14 +144,14 @@ def _signed_in(request: Request) -> UserRow | None:
 
 def _plan(session: Session, plan_id: str) -> PlanRow:
     plan = session.get(PlanRow, plan_id)
-    if plan is None or session.get(EventRow, plan.event_id) is None:
+    if plan is None or not _live(session, [plan.event_id]):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "plan not found")
     return plan
 
 
 def _event(session: Session, ref: str) -> EventRow:
     event = session.scalar(select(EventRow).where(or_(EventRow.id == ref, EventRow.slug == ref)))
-    if event is None:
+    if event is None or not _live(session, [event.id]):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "event not found")
     return event
 
@@ -266,7 +277,7 @@ def my_groups(user: UserDep, request: Request, response: Response) -> list[Group
     with request.app.state.db.session(write=False) as session:
         joined = select(PlanVoteRow.plan_id).where(PlanVoteRow.user_id == user.id)
         plans = session.scalars(select(PlanRow).where(or_(PlanRow.owner_id == user.id, PlanRow.id.in_(joined)))).all()
-        events = {e.id: e for e in session.scalars(select(EventRow).where(EventRow.id.in_([p.event_id for p in plans])))}
+        events = _live(session, [p.event_id for p in plans])
         plans = [p for p in plans if p.event_id in events]
         plans.sort(key=lambda p: (events[p.event_id].start_at is None, events[p.event_id].start_at or 0, p.id))
         cards = _summaries(session, [events[p.event_id] for p in plans])
@@ -327,7 +338,7 @@ def register_page(app: FastAPI, page: Any) -> None:
 
     def plan_page(session: Session, cfg: Any, lang: str, plan_id: str) -> Any:
         plan = session.get(PlanRow, plan_id)
-        row = session.get(EventRow, plan.event_id) if plan else None
+        row = _live(session, [plan.event_id]).get(plan.event_id) if plan else None
         if plan is None or row is None:
             return None
         t, when = TEXT[lang], seo._when(row, cfg, lang)

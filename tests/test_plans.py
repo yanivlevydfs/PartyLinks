@@ -216,3 +216,18 @@ def test_the_creator_deletes_the_account_the_group_stays(tmp_path: Path, fake: F
         assert plan["name"] == "Gang" and not plan["owner"] and len(plan["votes"]) == 1
         with db.session(write=False) as s:
             assert s.get(PlanRow, pid).owner_id is None  # forget_user, not only the FK (prod columns have none)
+
+
+def test_a_plan_goes_when_its_event_is_over_before_the_purge(tmp_path: Path, fake: FakeGoogle) -> None:
+    from partylinks.db import EventRow
+
+    app, db = _accounts_app(tmp_path)
+    with TestClient(app) as c:
+        sign_in(c, fake)
+        pid = c.post("/plans", json={"event_id": "test:a"}, headers=OURS).json()["id"]
+        with db.session() as s:  # over, still in the table until the hourly purge
+            s.get(EventRow, "test:a").start_at = datetime.now(UTC) - timedelta(days=2)
+        assert c.get(f"/plans/{pid}").status_code == 404
+        assert c.post(f"/plans/{pid}/votes", json={"voter": ME, "name": "x", "answer": "yes"}).status_code == 404
+        assert c.get("/api/me/groups").json() == []
+        assert c.post("/plans", json={"event_id": "test:a"}).status_code == 404  # no new plan for it either
