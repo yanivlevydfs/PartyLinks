@@ -199,9 +199,8 @@ function Tile({ icon, title, sub, n, on, onClick, wx }: { icon: string; title: s
     <button className={"quiz-tile" + (on ? " on" : "")} aria-pressed={on} onClick={onClick} disabled={n === 0 && !on}>
       <span className="quiz-icon" aria-hidden>{icon}</span>
       <b>{title}</b>
-      {sub && <small>{sub}</small>}
+      {(sub || wx) && <span className="quiz-tile-foot">{sub && <small>{sub}</small>}{wx}</span>}
       {n != null && <em>{n}</em>}
-      {wx}
     </button>
   );
 }
