@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { send, useMe } from "../accounts/useMe";
 import { eventPath, Img, sized, useT, when } from "../ui";
 import { useAlertText } from "./i18n";
-import { pendingCriteria, SAVE_PARAM } from "./SaveAlertButton";
+import { pendingCriteria, SAVE_PARAM, takePending } from "./SaveAlertButton";
 import { isEmpty, useAlertActions, useBell, useCriteriaName } from "./useAlerts";
 import "./alerts.css";
 
@@ -37,8 +37,10 @@ export function BellMenuItem({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** Back from Google with ?save_alert=...: save the alert the visitor asked for, and say whether it worked. */
-function usePendingAlert(setSaved: (ok: boolean) => void) {
+/** Back from Google with ?save_alert=...: save the alert the visitor asked for, and say whether it worked.
+ *  Only when this tab just sent them to Google for it (takePending): a stale or replayed URL just loses the param. */
+type Saved = { ok: true; id: number | null; name: string } | { ok: false } | null; // id null: no Undo
+function usePendingAlert(setSaved: (s: Saved) => void) {
   const me = useMe().data;
   const { create } = useAlertActions();
   const name = useCriteriaName();
@@ -48,8 +50,16 @@ function usePendingAlert(setSaved: (ok: boolean) => void) {
     if (!me || !pending) return;
     url.searchParams.delete(SAVE_PARAM);
     history.replaceState(history.state, "", url.pathname + url.search + url.hash);
+    if (!takePending(pending)) return;
     const criteria = pendingCriteria(pending);
-    if (criteria && !isEmpty(criteria)) create(criteria, name(criteria)).then(() => setSaved(true)).catch(() => setSaved(false));
+    if (criteria && !isEmpty(criteria)) {
+      const n = name(criteria);
+      // The same search saved twice comes back as the old alert: no Undo then (it would delete that one).
+      fetch("/api/me/alerts", { credentials: "same-origin" }).then((r) => r.json()).then(async (list: { items: { id: number }[] }) => {
+        const a = (await create(criteria, n))!;
+        setSaved({ ok: true, id: list.items.some((x) => x.id === a.id) ? null : a.id, name: n });
+      }).catch(() => setSaved({ ok: false }));
+    }
   }, [me?.id]);
 }
 
@@ -58,15 +68,15 @@ export function Bell() {
   const { t: ui } = useT();
   const me = useMe().data;
   const bell = useBell();
-  const { clear } = useAlertActions();
+  const { clear, remove: removeAlert } = useAlertActions();
   const { open, setOpen } = usePanel();
   const toggle = useToggle();
   const box = useRef<HTMLDivElement>(null);
-  const [saved, setSaved] = useState<boolean | null>(null);
+  const [saved, setSaved] = useState<Saved>(null);
   usePendingAlert(setSaved);
   useEffect(() => {
     if (saved === null) return;
-    const done = setTimeout(() => setSaved(null), 6000);
+    const done = setTimeout(() => setSaved(null), 12000);
     return () => clearTimeout(done);
   }, [saved]);
   useEffect(() => {
@@ -91,12 +101,21 @@ export function Bell() {
         {unseen > 0 && <b aria-hidden>{unseen > 99 ? "99+" : unseen}</b>}
       </button>
       <span className="sr-only" aria-live="polite">{unseen ? t.unseen(unseen) : ""}</span>
-      {saved !== null && <p className="bell-toast" role="status">{saved ? t.saved : t.failed}</p>}
+      {saved && (
+        <p className="bell-toast" role="status">
+          {saved.ok ? <><span dir="auto">{t.saved}: {saved.name}</span>{" "}
+            {saved.id !== null && <button type="button" className="link-btn" onClick={() => { removeAlert(saved.id!).catch(() => {}); setSaved(null); }}>{t.undo}</button>}</>
+            : t.failed}
+        </p>
+      )}
       {open && (
         <div className="bell-pop">
           <div className="bell-head">
             <b className="bell-title">{t.bell}</b>
-            {!!bell.data?.items.length && <button type="button" className="link-btn" onClick={() => remove()}>{t.clearAll}</button>}
+            <span className="bell-links">
+              <Link to="/alerts" onClick={() => setOpen(false)}>{t.bellAll}</Link>
+              {!!bell.data?.items.length && <button type="button" className="link-btn" onClick={() => remove()}>{t.clearAll}</button>}
+            </span>
           </div>
           {!bell.data?.items.length ? (
             <p className="muted">{t.bellEmpty}</p>
@@ -112,16 +131,15 @@ export function Bell() {
                     <span>
                       <b dir="auto">{h.event.title}</b>
                       <small>{when(h.event, ui, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</small>
-                      <small className="bell-why" dir="auto">🔔 {h.alert}</small>
                     </span>
                   </Link>
+                  <Link className="bell-why" to="/alerts" onClick={() => setOpen(false)} title={t.why} dir="auto">🔔 {h.alert}</Link>
                   <button type="button" className="bell-x" aria-label={`${t.remove}: ${h.event.title}`} title={t.remove}
                     onClick={() => remove(h.event.id)}>✕</button>
                 </li>
               ))}
             </ul>
           )}
-          <Link className="bell-all" to="/alerts" onClick={() => setOpen(false)}>{t.bellAll}</Link>
         </div>
       )}
     </div>

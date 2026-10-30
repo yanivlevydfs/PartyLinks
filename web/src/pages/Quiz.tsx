@@ -167,7 +167,6 @@ export function Quiz() {
         {(step > 0 || (calOpen && d.when !== "all")) && (
           <>
             {step === STEPS - 1 && !!total && <button className="quiz-skip" onClick={surprise}>{q.surprise}</button>}
-            {step === STEPS - 1 && <SaveAlertButton filters={d} label={alertText.quizSave} />}
             <button className="quiz-go" onClick={next} disabled={total === 0}>
               {step === STEPS - 1 ? q.go(total ?? 0) : step === 0 || picked(step, d) ? q.next : q.skip}
               <span aria-hidden>{lang === "he" ? "←" : "→"}</span>
@@ -175,6 +174,8 @@ export function Quiz() {
           </>
         )}
       </div>
+      {/* Below the footer, a quiet link: never beside "show events", where it was clicked by mistake. */}
+      {step === STEPS - 1 && <div className="quiz-alert"><SaveAlertButton filters={d} label={alertText.quizSave} /></div>}
     </section>
   );
 }

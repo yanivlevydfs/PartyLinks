@@ -1130,7 +1130,7 @@ sources:
 
   eventim:
     # Eventim Israel: event pages from the events sitemap (gzip, ~660), each parsed from its
-    # schema.org JSON-LD (venue, performer, prices per seating category). robots.txt disallows
+    # dataLayer pageMeta and ticket rows, else its schema.org JSON-LD (venue, performer, prices). robots.txt disallows
     # /api/ and /search/; the homepage refuses non-browser clients, the sitemap and pages do not.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
@@ -1138,6 +1138,12 @@ sources:
     site_url: https://www.eventim.co.il
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
     skip_url_words: ["זאפה", "אמפי-שוני"]   # read by the zappa source
+    # A page with neither pageMeta nor an Event JSON-LD is logged (status, size, title, markers).
+    # One with a challenge marker moves to the next proxy; max_empty_streak such pages in a row stop
+    # the run as blocked instead of running into the 30-min timeout.
+    challenge_markers: ["Access Denied", "bm-verify", "_sec/cp_challenge", "Please enable JavaScript", "captcha", "Pardon Our Interruption"]
+    diagnostic_markers: ["akamai", "_abck", "sec-if-cpt"]
+    max_empty_streak: 20
     http:
       # Akamai drops a browser user agent from a non-browser handshake: speak as Chrome (curl_cffi,
       # as Chillz does), whose handshake matches its user agent. (Before: an honest non-browser UA.)
@@ -1513,6 +1519,12 @@ sources:
     site_url: https://www.eventim.co.il
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
     url_words: ["זאפה", "אמפי-שוני"]
+    # A page with neither pageMeta nor an Event JSON-LD is logged (status, size, title, markers).
+    # One with a challenge marker moves to the next proxy; max_empty_streak such pages in a row stop
+    # the run as blocked instead of running into the 30-min timeout.
+    challenge_markers: ["Access Denied", "bm-verify", "_sec/cp_challenge", "Please enable JavaScript", "captcha", "Pardon Our Interruption"]
+    diagnostic_markers: ["akamai", "_abck", "sec-if-cpt"]
+    max_empty_streak: 20
     http:
       impersonate: chrome
       concurrency: 1
