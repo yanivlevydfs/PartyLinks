@@ -13,8 +13,6 @@ from partylinks.config import SchedulerSettings
 
 log = logging.getLogger(__name__)
 
-STABLE_AFTER_S = 600  # a worker that ran this long restarts at once; a crashing one backs off
-
 
 class WorkerProcess:
     def __init__(self, settings: SchedulerSettings) -> None:
@@ -30,14 +28,19 @@ class WorkerProcess:
         backoff = 1.0
         while not self._stopping.is_set():
             started = time.monotonic()
-            # Same interpreter, environment and working directory; logs go to the same stdout / stderr.
-            self._process = subprocess.Popen([sys.executable, "-m", "partylinks", "worker"])
-            log.info("worker: process %d started", self._process.pid)
-            code = self._process.wait()
+            try:
+                # Same interpreter, environment and working directory; logs go to the same stdout / stderr.
+                self._process = subprocess.Popen([sys.executable, "-m", "partylinks", "worker"])
+                log.info("worker: process %d started", self._process.pid)
+                code: int | str = self._process.wait()
+            except Exception as exc:  # e.g. out of memory or pids: this thread is the only restarter
+                log.exception("worker: could not start the process")
+                code = f"none ({type(exc).__name__})"
             if self._stopping.is_set():
                 return
             ran = time.monotonic() - started
-            backoff = 1.0 if ran > STABLE_AFTER_S else min(backoff * 2, self.settings.restart_backoff_max_seconds)
+            stable = ran > self.settings.worker_stable_after_seconds
+            backoff = 1.0 if stable else min(backoff * 2, self.settings.restart_backoff_max_seconds)
             log.error("worker: process exited with code %s after %.0fs; restarting in %.0fs", code, ran, backoff)
             self._stopping.wait(backoff)
 

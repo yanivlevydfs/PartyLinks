@@ -12,7 +12,7 @@ import mmap
 import os
 import signal
 from collections.abc import Callable
-from concurrent.futures import Future
+from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -46,7 +46,10 @@ class Worker:
         self.service.recompute_areas()
         self.scheduler = build_scheduler(settings, self.service)
         self._stop = asyncio.Event()
-        self._tasks: set[asyncio.Task[Any]] = set()
+        self._tasks: set[asyncio.Future[Any]] = set()
+        # The heartbeat's own thread: geocoding, WebP backfill, artwork and alerts fill the loop's default
+        # executor (cpu_count + 4 threads) for minutes, and a heartbeat queued behind them looked like a dead worker.
+        self._beat_thread = ThreadPoolExecutor(max_workers=1, thread_name_prefix="worker-beat")
 
     # ------------------------------------------------------------------ lifecycle
     async def run(self) -> None:
@@ -69,12 +72,14 @@ class Worker:
             self.service.shutdown()
             with contextlib.suppress(Exception):  # the database may be the reason we stop
                 await asyncio.to_thread(self._publish, "stopped")
+            self._beat_thread.shutdown(wait=False)
             self.db.engine.dispose()
 
     def _spawn(self, job: Any) -> None:
-        task = asyncio.create_task(job)
+        task = asyncio.ensure_future(job)
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
+        task.add_done_callback(_log_failure)  # a background step that raised said nothing before
 
     async def _startup(self) -> None:
         """Before any source writes: artwork still in the database moves to files and genres are re-read
@@ -97,18 +102,21 @@ class Worker:
         beats = 0
         while True:
             try:
-                for command in await asyncio.to_thread(self._pending):
+                for command in await self._off_loop(self._pending):
                     result = self._execute(command.command, command.args or {})  # on the loop: scheduler calls
-                    await asyncio.to_thread(self._finish, command.id, result)
-                await asyncio.to_thread(self._publish)
+                    await self._off_loop(self._finish, command.id, result)
+                await self._off_loop(self._publish)
                 beats += 1
                 if beats % 720 == 0:  # about hourly: answered commands older than a day go
-                    await asyncio.to_thread(self._prune)
+                    await self._off_loop(self._prune)
                     log.info("worker: memory %s MB, web %s MB, %d sources running", _rss_mb(os.getpid()),
                              _rss_mb(os.getppid()), sum(self.service.is_running(n) for n in configured_sources(self.settings)))
             except Exception:
                 log.exception("worker: heartbeat failed")
             await asyncio.sleep(every)
+
+    async def _off_loop(self, fn: Callable[..., Any], *args: Any) -> Any:
+        return await asyncio.get_running_loop().run_in_executor(self._beat_thread, fn, *args)
 
     # ------------------------------------------------------------------ commands
     def _execute(self, command: str, args: dict[str, Any]) -> dict[str, Any]:
@@ -210,6 +218,11 @@ def _rss_mb(pid: int) -> int | None:
             return int(f.read().split()[1]) * mmap.PAGESIZE // 2**20
     except (OSError, ValueError):
         return None
+
+
+def _log_failure(task: asyncio.Future[Any]) -> None:
+    if not task.cancelled() and (exc := task.exception()) is not None:
+        log.error("worker: background step failed", exc_info=exc)
 
 
 def _report(name: str) -> Callable[[Future[RunResult]], None]:

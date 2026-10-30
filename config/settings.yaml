@@ -164,6 +164,7 @@ scheduler:
   worker_stale_seconds: 60      # no heartbeat this long: /health reports the worker down
   command_timeout_seconds: 20   # admin waits this long for the worker's answer
   restart_backoff_max_seconds: 60
+  worker_stable_after_seconds: 600   # ran this long before exiting: restarted at once; sooner: backoff doubles
   worker_stop_seconds: 30       # on shutdown: time for running sources to stop
 
 # Transport defaults. Each source gets its own isolated HTTP client built from

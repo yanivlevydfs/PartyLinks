@@ -127,6 +127,8 @@ class SchedulerSettings(BaseModel):
     worker_stale_seconds: float = Field(60, gt=0)  # no heartbeat for this long: /health says the worker is down
     command_timeout_seconds: float = Field(20, gt=0)  # how long the admin waits for the worker to answer
     restart_backoff_max_seconds: float = Field(60, gt=0)  # longest wait before restarting a crashing worker
+    # A worker that ran this long before exiting restarts at once; one that dies sooner backs off (doubling).
+    worker_stable_after_seconds: float = Field(600, gt=0)
     worker_stop_seconds: float = Field(30, gt=0)  # on shutdown, time for running sources to stop before a kill
     # Run manager (partylinks.runs): at most this many sources run at once, the rest wait in a queue.
     max_parallel_runs: int = Field(6, ge=1)
