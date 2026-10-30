@@ -542,9 +542,9 @@ class CachedPages:
         if scope["type"] == "http" and scope["method"] == "GET":
             state = scope["app"].state
             key = (scope.get("root_path", "") + scope["path"], scope.get("query_string", b"").decode("latin-1"))
-            for cache, media in ((getattr(state, "html_cache", None), b"text/html; charset=utf-8"),
-                                 (state.response_cache, b"application/json")):  # fmt: skip
-                if cache and (hit := cache.peek(key)):
+            for cache, media, k in ((getattr(state, "html_cache", None), b"text/html; charset=utf-8", seo.html_key(*key)),
+                                    (state.response_cache, b"application/json", key)):  # fmt: skip
+                if cache and (hit := cache.peek(k)):
                     body, code = hit
                     await send({"type": "http.response.start", "status": code, "headers": [
                         (b"content-type", media), (b"content-length", str(len(body)).encode()),

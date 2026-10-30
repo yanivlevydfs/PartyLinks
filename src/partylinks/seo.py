@@ -21,7 +21,7 @@ from functools import cache
 from html import escape
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote, unquote
+from urllib.parse import parse_qs, quote, unquote
 from zoneinfo import ZoneInfo
 
 import yaml
@@ -1348,6 +1348,12 @@ def llms_txt(session: Session, cfg: Settings) -> str:
 
 
 # --------------------------------------------------------------------------- routes
+def html_key(path: str, query: str) -> tuple[str, str]:
+    """A rendered page's cache key: its path and language only. Keyed on the whole query, every share
+    link's own ?fbclid= / utm_ tags missed the cache and rebuilt the page (~1.5 s for the home page)."""
+    return path, "lang=en" if parse_qs(query).get("lang", [""])[-1] == "en" else ""
+
+
 def register(app: FastAPI, site_dir: Path) -> None:
     """Crawl files always; server-rendered pages only when the React build exists."""
 
@@ -1418,7 +1424,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
                               body=f"<h1>{t['not_found']}</h1>")  # fmt: skip
             return render(index.read_text(encoding="utf-8"), result, settings, alt).encode(), result.status
 
-        body, code = rendered.get((request.url.path, request.url.query), make)
+        body, code = rendered.get(html_key(request.url.path, request.url.query), make)
         return HTMLResponse(body, status_code=code)
 
     @app.get("/landing-info", tags=["meta"])

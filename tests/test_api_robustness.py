@@ -59,7 +59,7 @@ def _mixed_events() -> list[Any]:
 
 def _get_routes(app: Any) -> list[APIRoute]:
     routes = [r for top in app.routes for r in getattr(getattr(top, "original_router", None), "routes", [top])]
-    return [r for r in routes if isinstance(r, APIRoute) and "GET" in r.methods and r.path not in SKIP]
+    return [r for r in routes if isinstance(r, APIRoute) and "GET" in (r.methods or ()) and r.path not in SKIP]
 
 
 def _fill(path: str, value: str) -> str:
@@ -128,6 +128,12 @@ def test_seo_pages_render_valid_markup(tmp_path: Path) -> None:
             got = c.get(path)
             assert got.status_code in (200, 404), path
             _valid_page(got)
+        # Share links' tracking tags reuse the cached page; only the language makes another.
+        pages = len(app.state.html_cache._items)
+        for query in ("fbclid=abc", "utm_source=whatsapp&utm_medium=share", "fbclid=xyz&lang=he"):
+            assert c.get(f"/tonight?{query}").status_code == 200
+        assert len(app.state.html_cache._items) == pages
+        assert 'lang="en"' in c.get("/tonight?fbclid=1&lang=en").text
         for path in ("/genre/no-such-genre", "/city/atlantis"):
             assert c.get(path).status_code == 404, path
 
