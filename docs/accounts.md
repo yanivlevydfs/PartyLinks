@@ -96,7 +96,13 @@ the site's contact address, `contact@spotx.fun` (`site.contact_email`). Nothing 
 
 Every email (Hebrew right to left or English, by the account's email language) has its events as cards
 with picture, day and time, place, weather (from the site's forecast cache) and price, links tagged
-`utm_source=email`, a footer with why it came, and an unsubscribe link plus the RFC 8058 one-click headers.
+`utm_source=email`, a footer with why it came (manage alerts, settings, unsubscribe, contact), and an unsubscribe
+link plus the RFC 8058 one-click headers. Layout: one 600px column of tables with inline styles, dark by design and
+declared `color-scheme: dark` (nothing for a dark mode to invert). Pictures are real `<img>` tags pointing at JPEG crops
+cut to their frame (`/images/{id}/mail-1104x552.jpg` for a section's lead card, `mail-224x168.jpg` for rows; the same
+under `/artwork/{id}/` for drawn cards), because Gmail and Outlook drop CSS backgrounds, don't crop, and don't reliably
+draw WebP. Only pictures we store are used, never the source's own URL (a brand-new event's may not be downloaded
+yet): no stored picture and no drawn card means a card without a picture.
 The link is a signed `{user, kind}` token that never expires: `GET /api/email/unsubscribe?t=` shows a confirm
 page (link scanners open links), `POST` unsubscribes (`digest`: digest off; `instant`: every alert's instant
 off; `all`, in the welcome: both). Each run is recorded in `email_runs` (counts and the first error only). The admin's test send goes only to

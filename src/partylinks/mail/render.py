@@ -15,6 +15,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from partylinks import weather
 from partylinks.config import Settings
+from partylinks.mail.images import HERO, THUMB, mail_image
 from partylinks.utm import tag_url
 
 log = logging.getLogger(__name__)
@@ -35,9 +36,9 @@ SKY = (  # MET Norway symbol codes, by prefix
 
 TEXT: dict[str, dict[str, Any]] = {
     "he": {
-        "dir": "rtl", "free": "כניסה חופשית", "from": "החל מ-", "soldOut": "אזל", "open": "לפרטים ולכרטיסים", "tickets": "לכרטיסים",
+        "dir": "rtl", "free": "כניסה חופשית", "from": "החל מ-", "soldOut": "אזל", "open": "לכרטיסים", "tickets": "לפרטים",
         "why": "קיבלת את המייל כי ביקשת אותו בחשבון שלך ב-SPOTX.",
-        "stop": "להפסקת המיילים האלה", "settings": "הגדרות החשבון", "contact": "יצירת קשר",
+        "stop": "הסרה מרשימת התפוצה", "settings": "הגדרות החשבון", "contact": "יצירת קשר", "alerts": "ניהול ההתראות",
         "welcome_subject": "ברוכים הבאים ל-SPOTX 🎉",
         "welcome_title": "ברוכים הבאים, {name}!",
         "welcome_body": ["החשבון שלך מוכן. ככה מוציאים ממנו את המקסימום:"],
@@ -46,8 +47,8 @@ TEXT: dict[str, dict[str, Any]] = {
             ("✨", "מקבלים התראות", "בוחרים סינון (ז׳אנר, אזור, מתי) ולוחצים \"שמירה כהתראה\": כל אירוע חדש שמתאים יופיע אצלכם."),
             ("📬", "עדכון שבועי במייל", "בחשבון אפשר להפעיל מייל קצר כל חמישי בבוקר, עם מה ששמרתם ומה חדש לסופ״ש."),
         ],
-        "welcome_kicker": "ברוכים הבאים", "welcome_preheader": "שמירת אירועים, התראות על מסיבות ועדכון שבועי",
-        "digest_kicker": "העדכון השבועי", "digest_label": "העדכון השבועי · {date}",
+        "welcome_kicker": "", "welcome_preheader": "שמירת אירועים, התראות על מסיבות ועדכון שבועי",
+        "digest_kicker": "", "digest_label": "השבוע · {date}",
         "instant_kicker": "התראה חדשה", "instant_label": "התראה · {date}",
         "welcome_button": "לאירועים", "welcome_why": "קיבלת את המייל כי נרשמת ל-SPOTX עם חשבון Google.",
         "instant_subject": "🔔 {n} אירועים חדשים שמתאימים לך",
@@ -55,16 +56,17 @@ TEXT: dict[str, dict[str, Any]] = {
         "instant_title": "עלו אירועים חדשים שמתאימים להתראות שלך",
         "digest_subject": "🎉 מה קורה השבוע: {n} אירועים בשבילך",
         "digest_title": "העדכון השבועי שלך",
-        "digest_saved": "🔔 השמורים שלך השבוע",
-        "digest_matches": "✨ חדש בהתראות שלך",
-        "digest_free": "🎟️ כניסה חופשית בסופ״ש",
-        "digest_weekend": "🔥 בסופ״ש הקרוב",
+        "digest_intro": "מה ששמרת, מה שחדש בהתראות שלך ומה שכדאי לא לפספס השבוע.",
+        "digest_saved": "השמורים שלך השבוע",
+        "digest_matches": "חדש בהתראות שלך",
+        "digest_free": "כניסה חופשית בסופ״ש",
+        "digest_weekend": "בסופ״ש הקרוב",
         "alerts_button": "להתראות שלי",
     },
     "en": {
-        "dir": "ltr", "free": "Free entry", "from": "From ", "soldOut": "Sold out", "open": "Details and tickets", "tickets": "Tickets",
+        "dir": "ltr", "free": "Free entry", "from": "From ", "soldOut": "Sold out", "open": "Tickets", "tickets": "Details",
         "why": "You're getting this email because you asked for it in your SPOTX account.",
-        "stop": "Stop these emails", "settings": "Account settings", "contact": "Contact",
+        "stop": "Unsubscribe", "settings": "Account settings", "contact": "Contact", "alerts": "Manage alerts",
         "welcome_subject": "Welcome to SPOTX 🎉",
         "welcome_title": "Welcome, {name}!",
         "welcome_body": ["Your account is ready. Here's how to get the most out of it:"],
@@ -73,8 +75,8 @@ TEXT: dict[str, dict[str, Any]] = {
             ("✨", "Get alerts", "Pick filters (genre, area, when) and press \"Save as alert\": every new event that matches shows up for you."),
             ("📬", "A weekly email", "Turn on a short email every Thursday morning in your account: what you saved and what's new this weekend."),
         ],
-        "welcome_kicker": "Welcome", "welcome_preheader": "Save events, get party alerts and a weekly update",
-        "digest_kicker": "Weekly update", "digest_label": "Weekly update · {date}",
+        "welcome_kicker": "", "welcome_preheader": "Save events, get party alerts and a weekly update",
+        "digest_kicker": "", "digest_label": "This week · {date}",
         "instant_kicker": "New alert", "instant_label": "Alert · {date}",
         "welcome_button": "See events", "welcome_why": "You're getting this email because you signed up to SPOTX with Google.",
         "instant_subject": "🔔 {n} new events that suit you",
@@ -82,10 +84,11 @@ TEXT: dict[str, dict[str, Any]] = {
         "instant_title": "New events match your alerts",
         "digest_subject": "🎉 What's on this week: {n} events for you",
         "digest_title": "Your weekly update",
-        "digest_saved": "🔔 Your saved events this week",
-        "digest_matches": "✨ New for your alerts",
-        "digest_free": "🎟️ Free entry this weekend",
-        "digest_weekend": "🔥 This weekend",
+        "digest_intro": "What you saved, what's new for your alerts and what not to miss this week.",
+        "digest_saved": "Your saved events this week",
+        "digest_matches": "New for your alerts",
+        "digest_free": "Free entry this weekend",
+        "digest_weekend": "This weekend",
         "alerts_button": "My alerts",
     },
 }  # fmt: skip
@@ -160,7 +163,7 @@ def _price(card: dict[str, Any], t: dict[str, Any]) -> str:
     if low is None:
         return ""
     sign = {"ILS": "₪", "EUR": "€", "USD": "$", "GBP": "£"}.get(card.get("currency") or "ILS", "")
-    return f"{t['from']}{sign}{low:g}"
+    return f"{t['from']}\u2066{sign}{low:g}\u2069"  # isolated: Hebrew text doesn't flip "₪80"
 
 
 def link(settings: Settings, path: str, kind: str, lang: str) -> str:
@@ -178,20 +181,34 @@ def _cards(settings: Settings, sections: list[Section], kind: str, lang: str) ->
     sky = _forecasts(settings, everything)
     base = settings.site.base_url.rstrip("/")
     for c in everything:
-        image = c.get("cover_url") or c.get("image_url")
-        if image and image.startswith(("/images/", "/artwork/")):
-            image = f"{base}{image}/640.webp"
+        # Only pictures we store (/images/, or the drawn /artwork/ card), never the source's own URL: a
+        # brand-new event's picture may not be downloaded yet, and the source's host isn't ours to rely on
+        # (an instant alert of 2026-10-30 showed empty boxes for two events scraped minutes before it went).
+        cover = c.get("cover_url") or ""
+        ours = cover.startswith(("/images/", "/artwork/"))
+        c["_hero"] = f"{base}{mail_image(cover, HERO)}" if ours else None
+        c["_thumb"] = f"{base}{mail_image(cover, THUMB)}" if ours else None
+        c["_image"] = c["_hero"]
+        c["_title"] = _short(c.get("title") or "")
         c["_url"] = link(settings, f"/event/{c.get('slug') or c['id']}", kind, lang)
-        c["_image"] = image if image and image.startswith(("https://", "http://")) else None
         c["_when"] = _when(c, lang, settings.timezone)
         c["_place"] = " · ".join(x for x in (c.get("venue_name"), c.get("city")) if x)
         c["_weather"] = sky.get(c["id"], "")
         c["_price"] = _price(c, t)
 
 
-def _today(settings: Settings) -> str:
+def _today(settings: Settings, kind: str = "") -> str:
+    """Today's date; the digest's coming week (30.10–5.11)."""
     now = datetime.now(ZoneInfo(settings.timezone))
-    return f"{now.day}.{now.month}"
+    if kind != "digest":
+        return f"{now.day}.{now.month}"
+    end = now + timedelta(days=6)
+    return f"\u2066{now.day}.{now.month}–{end.day}.{end.month}\u2069"  # isolated: stays in order in Hebrew
+
+
+def _short(title: str, limit: int = 80) -> str:
+    """A title that fits two lines of a card."""
+    return title if len(title) <= limit else title[: limit - 1].rsplit(" ", 1)[0].rstrip(" -–|,·") + "…"
 
 
 def _preheader(sections: list[Section]) -> str:
@@ -210,12 +227,13 @@ def render(
     t = TEXT[lang]
     _cards(settings, sections, kind, lang)
     context = {
-        "t": t, "lang": lang, "title": title, "intro": intro or [], "sections": sections, "button": button,
+        "t": t, "lang": lang, "title": title, "intro": intro if intro is not None else ([t[f"{kind}_intro"]] if f"{kind}_intro" in t else []), "sections": sections, "button": button,
         "why": why or t["why"], "unsubscribe": unsubscribe_url, "name": name,
-        "settings_url": link(settings, "/account", kind, lang), "contact_url": link(settings, "/contact", kind, lang),
+        "settings_url": link(settings, "/account", kind, lang), "alerts_url": link(settings, "/alerts", kind, lang),
+        "email": settings.site.contact_email, "contact_url": link(settings, "/contact", kind, lang),
         "home": link(settings, "/", kind, lang), "site": settings.site.name,
         "logo": settings.site.base_url.rstrip("/") + "/icon-192.png", "steps": steps or [],
-        "kicker": t.get(f"{kind}_kicker", ""), "label": t.get(f"{kind}_label", "").format(date=_today(settings)),
+        "kicker": t.get(f"{kind}_kicker", ""), "label": t.get(f"{kind}_label", "").format(date=_today(settings, kind)),
         "preheader": t.get(f"{kind}_preheader") or _preheader(sections),
     }  # fmt: skip
     return subject, _env.get_template("email.html").render(context), _env.get_template("email.txt").render(context)

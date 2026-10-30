@@ -14,6 +14,7 @@
 {% endif %}
 --
 {{ why }}
+{{ t.alerts }}: {{ alerts_url }}
 {{ t.stop }}: {{ unsubscribe }}
 {{ t.settings }}: {{ settings_url }}
 {{ t.contact }}: {{ contact_url }}

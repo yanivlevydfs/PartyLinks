@@ -40,6 +40,7 @@ from partylinks.admin import router as admin_router
 from partylinks.ads import service as ads
 from partylinks.artwork import service as artwork
 from partylinks.artwork.routes import router as artwork_router
+from partylinks.mail.images import router as mail_images_router
 from partylinks.saved.routes import router as saved_router
 from partylinks.config import Settings, get_settings
 from partylinks.db import (
@@ -840,6 +841,7 @@ def create_app(
     app.add_middleware(SecurityMiddleware)  # outermost: rejects before any work is done
     app.include_router(saved_router)  # saved events; before /events/{event_ref} so /events/cards is not an event
     app.include_router(artwork_router)  # drawn cards for events with no picture
+    app.include_router(mail_images_router)  # JPEG crops of the pictures, for emails
     _register_routes(app)
     app.include_router(admin_router)
     app.include_router(weather_router)

@@ -1,17 +1,17 @@
-{#- SPOTX email. Table layout, inline styles and bgcolor attributes: what Gmail, Outlook and Apple Mail draw.
-    A section opens with its first event large (full-width picture), the rest as compact rows. -#}
+{#- SPOTX email: one 600px column. Tables, inline styles and bgcolor attributes (what Gmail, Outlook and
+    Apple Mail draw); the <style> block only tightens the phone layout. Dark by design and declared dark, so
+    a mail app's dark mode has nothing to invert. Pictures are <img> JPEGs already cut to their frame
+    (mail/images.py): mail apps don't crop, and Gmail/Outlook drop CSS backgrounds and WebP.
+    A section opens with its first event large, the rest as compact rows. -#}
 {%- set start = 'right' if t.dir == 'rtl' else 'left' -%}
 {%- set end = 'left' if t.dir == 'rtl' else 'right' -%}
 {%- set font = "'Heebo','Rubik','Segoe UI',Arial,Helvetica,sans-serif" -%}
 {%- macro price(e) -%}
-  {%- if e._price -%}<span style="display:inline-block;background:#ffffff;color:#0a0612;font:800 13px/1 {{ font }};border-radius:999px;padding:7px 12px;">{{ e._price }}</span>{%- endif -%}
+  {%- if e._price -%}<span style="display:inline-block;background:#251b3d;border:1px solid #3d2f63;color:#ffffff;font:700 14px/1 {{ font }};border-radius:999px;padding:8px 12px;white-space:nowrap;">{{ e._price }}</span>{%- endif -%}
 {%- endmacro -%}
 {%- macro meta(e, size) -%}
-  <div style="margin:8px 0 0;font:400 {{ size }}px/1.65 {{ font }};color:#c9bfe6;">
-    {%- if e._when %}<span style="white-space:nowrap;">🗓️ {{ e._when }}</span>{% endif -%}
-    {%- if e._weather %}<span style="white-space:nowrap;">&nbsp;&nbsp;·&nbsp;&nbsp;{{ e._weather }}</span>{% endif -%}
-    {%- if e._place %}<br>📍 <span dir="auto">{{ e._place }}</span>{% endif -%}
-  </div>
+  {%- if e._when %}<div style="margin:8px 0 0;font:700 {{ size }}px/1.5 {{ font }};color:#ece7f7;"><span style="white-space:nowrap;">{{ e._when }}</span>{% if e._weather %} <span style="font-weight:400;color:#c4bcdb;white-space:nowrap;">&nbsp;·&nbsp; {{ e._weather }}</span>{% endif %}</div>{% endif -%}
+  {%- if e._place %}<div style="margin:2px 0 0;font:400 {{ size }}px/1.5 {{ font }};color:#c4bcdb;" dir="auto">{{ e._place }}</div>{% endif -%}
 {%- endmacro -%}
 <!doctype html>
 <html lang="{{ lang }}" dir="{{ t.dir }}" xmlns="http://www.w3.org/1999/xhtml">
@@ -19,71 +19,70 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
 <meta name="color-scheme" content="dark">
 <meta name="supported-color-schemes" content="dark">
 <title>{{ title }}</title>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
-  body { margin:0; padding:0; background:#06040b; color:#d8cff0; }
+  :root { color-scheme: dark; supported-color-schemes: dark; }
+  body { margin:0; padding:0; background:#0b0814; }
   a { text-decoration:none; }
-  img { border:0; outline:none; display:block; }
+  img { border:0; outline:none; display:block; -ms-interpolation-mode:bicubic; }
   @media (max-width:620px) {
     .wrap { width:100% !important; }
-    .pad { padding-left:20px !important; padding-right:20px !important; }
-    .h1 { font-size:26px !important; }
-    .thumb, .thumb a { width:96px !important; height:72px !important; }
+    .pad { padding-left:16px !important; padding-right:16px !important; }
+    .h1 { font-size:24px !important; }
   }
 </style>
 </head>
-<body style="margin:0;padding:0;background:#06040b;color:#d8cff0;" bgcolor="#06040b">
+<body style="margin:0;padding:0;background:#0b0814;" bgcolor="#0b0814">
 {#- The line mail apps show beside the subject; padded so the rest of the email doesn't follow it. #}
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#06040b;">{{ preheader }}&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#06040b" style="background:#06040b;color:#d8cff0;">
-<tr><td align="center" style="padding:28px 12px 40px;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0b0814;">{{ preheader }}&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0b0814" style="background:#0b0814;">
+<tr><td align="center" style="padding:24px 8px 40px;">
 <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" dir="{{ t.dir }}" style="width:600px;max-width:600px;">
 
-  {#- Header: the mark and the wordmark, the email's label opposite. #}
-  <tr><td class="pad" style="padding:0 24px 18px;">
+  {#- Header: the mark and the wordmark; what this email is, opposite. #}
+  <tr><td class="pad" style="padding:0 24px 16px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
       <td align="{{ start }}" valign="middle">
         <a href="{{ home }}" style="text-decoration:none;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td valign="middle" style="padding-{{ end }}:10px;"><img src="{{ logo }}" width="34" height="34" alt="" style="display:block;width:34px;height:34px;border-radius:9px;"></td>
-            <td valign="middle" style="font:900 24px/1 {{ font }};letter-spacing:1px;color:#ffffff;" dir="ltr">SPOT<span style="color:#ff2e93;">X</span></td>
+            <td valign="middle" style="padding-{{ end }}:8px;"><img src="{{ logo }}" width="32" height="32" alt="" style="display:block;width:32px;height:32px;border-radius:8px;"></td>
+            <td valign="middle" style="font:900 22px/1 {{ font }};color:#ffffff;" dir="ltr">SPOT<span style="color:#ff3d9a;">X</span></td>
           </tr></table>
         </a>
       </td>
       {%- if label %}
-      <td align="{{ end }}" valign="middle" style="font:700 12px/1.3 {{ font }};color:#b3a6d4;letter-spacing:.5px;">{{ label }}</td>
+      <td align="{{ end }}" valign="middle" style="font:700 14px/1.4 {{ font }};color:#d6cfe8;">{{ label }}</td>
       {%- endif %}
     </tr></table>
   </td></tr>
 
   {#- The card that holds everything. #}
-  <tr><td bgcolor="#120b20" style="background:#120b20;color:#d8cff0;border:1px solid #2a1f45;border-radius:22px;overflow:hidden;">
+  <tr><td bgcolor="#140e22" style="background:#140e22;border:1px solid #271d3d;border-radius:20px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-      <tr><td height="4" bgcolor="#ff2e93" style="height:4px;line-height:4px;font-size:0;background:#ff2e93;background-image:linear-gradient(90deg,#ff2e93,#9d4dff 50%,#19e3ff);">&nbsp;</td></tr>
 
-      {#- Opening: kicker, headline, lead. #}
-      <tr><td class="pad" align="{{ start }}" style="padding:34px 36px 6px;">
-        {%- if kicker %}<div style="font:800 12px/1.2 {{ font }};letter-spacing:2px;text-transform:uppercase;color:#ff2e93;margin:0 0 12px;">{{ kicker }}</div>{% endif %}
-        <h1 class="h1" style="margin:0;font:900 30px/1.25 {{ font }};color:#ffffff;" dir="auto">{{ title }}</h1>
+      {#- Opening: headline and one line. #}
+      <tr><td class="pad" align="{{ start }}" style="padding:32px 24px 8px;">
+        {%- if kicker %}<div style="margin:0 0 8px;font:700 14px/1.4 {{ font }};color:#ff3d9a;">{{ kicker }}</div>{% endif %}
+        <h1 class="h1" style="margin:0;font:800 28px/1.3 {{ font }};color:#ffffff;" dir="auto">{{ title }}</h1>
         {%- for p in intro %}
-        <p style="margin:14px 0 0;font:400 16px/1.7 {{ font }};color:#d8cff0;">{{ p }}</p>
+        <p style="margin:12px 0 0;font:400 16px/1.6 {{ font }};color:#e4def2;">{{ p }}</p>
         {%- endfor %}
       </td></tr>
 
       {#- Welcome: what an account gives, as three steps. #}
       {%- if steps %}
-      <tr><td class="pad" style="padding:22px 36px 4px;">
+      <tr><td class="pad" style="padding:16px 24px 0;">
         {%- for icon, head, text in steps %}
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;"><tr>
-          <td width="52" valign="top" style="width:52px;">
-            <div style="width:44px;height:44px;line-height:44px;text-align:center;font-size:22px;border-radius:14px;background:#1d1233;border:1px solid #3a2a63;color:#ffffff;">{{ icon }}</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1b1430" style="background:#1b1430;border-radius:14px;margin:0 0 8px;"><tr>
+          <td width="64" valign="top" align="center" style="width:64px;padding:16px 0 16px;">
+            <div style="width:40px;height:40px;line-height:40px;text-align:center;font-size:20px;border-radius:12px;background:#251b3d;">{{ icon }}</div>
           </td>
-          <td valign="top" align="{{ start }}" style="padding-{{ start }}:6px;">
-            <div style="font:800 16px/1.35 {{ font }};color:#ffffff;">{{ head }}</div>
-            <div style="margin-top:3px;font:400 14px/1.6 {{ font }};color:#c9bfe6;">{{ text }}</div>
+          <td valign="top" align="{{ start }}" style="padding:16px {{ '16px' if t.dir == 'ltr' else '0' }} 16px {{ '0' if t.dir == 'ltr' else '16px' }};">
+            <div style="font:800 16px/1.4 {{ font }};color:#ffffff;">{{ head }}</div>
+            <div style="margin-top:4px;font:400 15px/1.6 {{ font }};color:#d6cfe8;">{{ text }}</div>
           </td>
         </tr></table>
         {%- endfor %}
@@ -92,48 +91,48 @@
 
       {#- Sections of events. #}
       {%- for s in sections if s.events %}
-      <tr><td class="pad" align="{{ start }}" style="padding:30px 36px 12px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td align="{{ start }}" style="font:800 19px/1.3 {{ font }};color:#ffffff;white-space:nowrap;">{{ s.title }}</td>
-          <td width="100%" style="padding-{{ start }}:14px;"><div style="height:1px;line-height:1px;font-size:0;background:#2a1f45;">&nbsp;</div></td>
-        </tr></table>
+      {%- if s.title %}
+      <tr><td class="pad" align="{{ start }}" style="padding:32px 24px 12px;">
+        <h2 style="margin:0;font:800 20px/1.35 {{ font }};color:#ffffff;">{{ s.title }}</h2>
+        <div style="margin-top:8px;width:40px;height:3px;line-height:3px;font-size:0;background:#ff3d9a;border-radius:2px;">&nbsp;</div>
       </td></tr>
+      {%- else %}
+      <tr><td height="16" style="height:16px;line-height:16px;font-size:0;">&nbsp;</td></tr>
+      {%- endif %}
       {%- for e in s.events %}
       {%- if loop.first %}
       {#- The section's lead event: large. #}
-      <tr><td class="pad" style="padding:6px 36px 10px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1a1030" style="background:#1a1030;color:#d8cff0;border:1px solid #33255a;border-radius:18px;overflow:hidden;">
-          {%- if e._image %}
-          {#- A background, not an <img>: mail apps don't crop images (Gmail ignores object-fit), and a tall
-              poster would fill the screen. Cropped to a fixed frame; without background support, the dark frame. #}
-          <tr><td height="270" bgcolor="#0d0818" style="height:270px;background-color:#0d0818;background-image:url('{{ e._image }}');background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:18px 18px 0 0;"><a href="{{ e._url }}" aria-label="{{ e.title }}" style="display:block;height:270px;line-height:270px;font-size:0;">&nbsp;</a></td></tr>
+      <tr><td class="pad" style="padding:4px 24px 8px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1b1430" style="background:#1b1430;border-radius:14px;">
+          {%- if e._hero %}
+          <tr><td style="padding:0;font-size:0;line-height:0;">
+            <a href="{{ e._url }}"><img src="{{ e._hero }}" width="552" height="276" alt="{{ e.title }}" style="display:block;width:100%;max-width:552px;height:auto;border:0;border-radius:14px 14px 0 0;background:#0d0818;color:#c4bcdb;font:400 14px {{ font }};"></a>
+          </td></tr>
           {%- endif %}
-          <tr><td align="{{ start }}" style="padding:18px 20px 20px;">
-            <a href="{{ e._url }}" style="font:800 20px/1.35 {{ font }};color:#ffffff;text-decoration:none;" dir="auto">{{ e.title }}</a>
-            {{ meta(e, 14) }}
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px;"><tr>
-              <td style="padding-{{ end }}:10px;">{{ price(e) }}</td>
-              <td><a href="{{ e._url }}" style="display:inline-block;background:#ff2e93;color:#0a0612;font:800 14px/1 {{ font }};border-radius:999px;padding:11px 18px;text-decoration:none;white-space:nowrap;">{{ t.open }} ›</a></td>
+          <tr><td align="{{ start }}" style="padding:16px 20px 20px;">
+            <a href="{{ e._url }}" style="font:800 20px/1.35 {{ font }};color:#ffffff;text-decoration:none;" dir="auto">{{ e._title }}</a>
+            {{ meta(e, 15) }}
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;"><tr>
+              <td align="{{ start }}" valign="middle">{{ price(e) }}</td>
+              <td align="{{ end }}" valign="middle"><a href="{{ e._url }}" style="display:inline-block;background:#ff3d9a;color:#14081f;font:800 15px/1 {{ font }};border-radius:999px;padding:12px 24px;text-decoration:none;white-space:nowrap;">{{ t.open }}</a></td>
             </tr></table>
           </td></tr>
         </table>
       </td></tr>
       {%- else %}
       {#- The rest: compact rows. #}
-      <tr><td class="pad" style="padding:5px 36px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#160d28" style="background:#160d28;color:#d8cff0;border:1px solid #2a1f45;border-radius:14px;">
+      <tr><td class="pad" style="padding:4px 24px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1b1430" style="background:#1b1430;border-radius:14px;">
           <tr>
-            {%- if e._image %}
-            <td width="132" valign="top" style="width:132px;padding:10px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-                <td class="thumb" width="112" height="84" bgcolor="#0d0818" style="width:112px;height:84px;background-color:#0d0818;background-image:url('{{ e._image }}');background-size:cover;background-position:center;background-repeat:no-repeat;border-radius:10px;"><a href="{{ e._url }}" aria-label="{{ e.title }}" style="display:block;width:112px;height:84px;font-size:0;line-height:84px;">&nbsp;</a></td>
-              </tr></table>
+            {%- if e._thumb %}
+            <td width="128" valign="top" style="width:128px;padding:12px 0 12px;padding-{{ start }}:12px;font-size:0;line-height:0;">
+              <a href="{{ e._url }}"><img src="{{ e._thumb }}" width="112" height="84" alt="{{ e.title }}" style="display:block;width:112px;height:84px;border:0;border-radius:10px;background:#0d0818;color:#c4bcdb;font:400 12px {{ font }};"></a>
             </td>
             {%- endif %}
-            <td valign="top" align="{{ start }}" style="padding:12px {{ '14px' if not e._image else '12px' }};">
-              <a href="{{ e._url }}" style="font:800 15px/1.4 {{ font }};color:#ffffff;text-decoration:none;" dir="auto">{{ e.title }}</a>
-              {{ meta(e, 13) }}
-              <div style="margin-top:8px;">{{ price(e) }}&nbsp; <a href="{{ e._url }}" style="font:800 13px/1 {{ font }};color:#19e3ff;text-decoration:none;white-space:nowrap;">{{ t.tickets }} ›</a></div>
+            <td valign="top" align="{{ start }}" style="padding:12px 16px;">
+              <a href="{{ e._url }}" style="font:800 16px/1.4 {{ font }};color:#ffffff;text-decoration:none;" dir="auto">{{ e._title }}</a>
+              {{ meta(e, 14) }}
+              <div style="margin-top:8px;">{{ price(e) }}{% if e._price %}&nbsp;&nbsp;{% endif %}<a href="{{ e._url }}" style="font:700 14px/1 {{ font }};color:#5fe3ff;text-decoration:none;white-space:nowrap;">{{ t.tickets }} {{ '‹' if t.dir == 'rtl' else '›' }}</a></div>
             </td>
           </tr>
         </table>
@@ -144,22 +143,25 @@
 
       {#- One clear action. #}
       {%- if button %}
-      <tr><td align="center" style="padding:30px 24px 38px;">
-        <a href="{{ button[1] }}" style="display:inline-block;background:#ff2e93;color:#0a0612;font:800 16px/1 {{ font }};border-radius:999px;padding:16px 34px;text-decoration:none;">{{ button[0] }}</a>
+      <tr><td align="center" style="padding:32px 24px 32px;">
+        <a href="{{ button[1] }}" style="display:inline-block;background:#ff3d9a;color:#14081f;font:800 16px/1 {{ font }};border-radius:999px;padding:16px 32px;text-decoration:none;">{{ button[0] }}</a>
       </td></tr>
       {%- else %}
-      <tr><td height="28" style="height:28px;line-height:28px;font-size:0;">&nbsp;</td></tr>
+      <tr><td height="24" style="height:24px;line-height:24px;font-size:0;">&nbsp;</td></tr>
       {%- endif %}
     </table>
   </td></tr>
 
-  {#- Footer. #}
-  <tr><td class="pad" align="center" style="padding:26px 30px 0;font:400 12px/1.8 {{ font }};color:#a99ec9;">
+  {#- Footer: why this came, and every way out. #}
+  <tr><td class="pad" align="center" style="padding:24px 24px 0;font:400 13px/1.7 {{ font }};color:#b9b0d3;">
     {{ why }}<br>
-    <a href="{{ unsubscribe }}" style="color:#d8cff0;text-decoration:underline;">{{ t.stop }}</a>
-    &nbsp;·&nbsp; <a href="{{ settings_url }}" style="color:#d8cff0;text-decoration:underline;">{{ t.settings }}</a>
-    &nbsp;·&nbsp; <a href="{{ contact_url }}" style="color:#d8cff0;text-decoration:underline;">{{ t.contact }}</a>
-    <div style="margin-top:14px;font:800 13px/1 {{ font }};letter-spacing:1px;color:#8a7fae;" dir="ltr">SPOT<span style="color:#ff2e93;">X</span> &nbsp;·&nbsp; spotx.fun</div>
+    <a href="{{ alerts_url }}" style="color:#e4def2;text-decoration:underline;">{{ t.alerts }}</a>
+    &nbsp;·&nbsp; <a href="{{ settings_url }}" style="color:#e4def2;text-decoration:underline;">{{ t.settings }}</a>
+    &nbsp;·&nbsp; <a href="{{ unsubscribe }}" style="color:#e4def2;text-decoration:underline;">{{ t.stop }}</a>
+    <div style="margin-top:8px;">
+      <a href="{{ contact_url }}" style="color:#e4def2;text-decoration:underline;">{{ t.contact }}</a>{% if email %} &nbsp;·&nbsp; <a href="mailto:{{ email }}" style="color:#e4def2;text-decoration:none;" dir="ltr">{{ email }}</a>{% endif %}
+    </div>
+    <div style="margin-top:16px;font:800 13px/1 {{ font }};color:#9a90bb;" dir="ltr">SPOT<span style="color:#ff3d9a;">X</span> &nbsp;·&nbsp; spotx.fun</div>
   </td></tr>
 
 </table>

@@ -21,6 +21,7 @@ FastAPI, served by the same process as the website.
 | GET | `/categories` | Counts per genre, date, weekday, time slot, entry type, venue, city, lineup, event type, source |
 | GET | `/images/{id}` | Stored artwork: the 1280px WebP copy (originals are deleted once converted); the original only for pictures that can't be converted |
 | GET | `/images/{id}/{640\|1280}.webp` | The artwork resized to that width as WebP, cached a year (`immutable`). Until the copy exists: the original, cached an hour |
+| GET | `/images/{id}/mail-{1104x552\|224x168}.jpg`, `/artwork/{id}/mail-….jpg` | For emails: the picture center-cropped to that size as JPEG (mail apps don't crop or reliably draw WebP). Made on first request, kept in `<media>/_mail/`, cached a week |
 | POST | `/plans` | "Who's coming with me?": a new plan for an event (`{"event_id": id or slug}`). Returns its `id`; the link to send is `/plan/{id}` (server-rendered for WhatsApp's preview, never indexed) |
 | GET | `/plans/{id}` | The plan's events (`event` = option one, `options` = all of them) and every answer (`name`, `answer` = `yes` / `maybe` / `no`, `picks`, `ride`, `seats`). `?me=<voter key>` marks this browser's own answer (`mine`); keys are never returned |
 | POST | `/plans/{id}/events` | "Which party?": another event to compare (`{"event_id": id or slug}`), up to 4 per plan (409); anyone with the link |
