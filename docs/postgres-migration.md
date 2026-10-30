@@ -725,4 +725,5 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 ### 2026-10-30 (הצפת הפעמון)
 - **Query:** ב-`alerts.matcher.run` אירוע "חדש" מסונן ב-`NOT EXISTS` על `events` (alias): אותו `source`, `title` ו-`start_at`, id אחר, ו-`first_seen_at <= cursor`. מקור שנותן להופעה id חדש (השורה הישנה `is_listed = false`, ו-dedup לא מקבץ אותה) הודיע עליה שוב בכל מעבר. ה-NOT EXISTS רץ רק על האירועים החדשים של המעבר (`id IN (...)`), ונשען על האינדקסים הקיימים של `events`.
 - **שאילתה נוספת:** `SELECT id, start_at FROM events WHERE id IN (<new>)` כדי לשמור לכל משתמש רק את `accounts.max_hits_per_pass` (ברירת מחדל 30) הקרובים ביותר במעבר.
+- **אינדקס חדש:** `ix_events_source_start` על `events (source, start_at)` לבדיקת ה-NOT EXISTS הזו (בדיקה אחת לאינדקס לכל אירוע חדש). נבנה ב-`create_schema` (CREATE INDEX, לא CONCURRENTLY: ~56k שורות, שניות בודדות).
 

@@ -211,6 +211,8 @@ Index(
     EventRow.id,
     postgresql_where=EventRow.is_primary.is_(True) & EventRow.is_listed.is_not(False),
 )
+# The alert matcher's "already listed by this source?" check (same source, start and title): one probe each.
+Index("ix_events_source_start", EventRow.source, EventRow.start_at)
 
 
 class TicketRow(Base):
