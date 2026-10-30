@@ -73,7 +73,7 @@ export function useAlerts() {
   });
 }
 
-/** Create, edit, delete; every change refreshes the list, the bell and "For you". */
+/** Create, edit, delete, clear the bell; every change refreshes the list, the bell and "For you". */
 export function useAlertActions() {
   const qc = useQueryClient();
   const refresh = () => Promise.all(["alerts", "bell", "for-you"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
@@ -89,6 +89,11 @@ export function useAlertActions() {
     },
     remove: async (id: number) => {
       await send(`/api/me/alerts/${id}`, "DELETE");
+      await refresh();
+    },
+    /** Remove one notification, or all of them (no id): "For you" stops showing them too. */
+    clear: async (eventId?: string) => {
+      await send(`/api/me/bell${eventId ? `?event_id=${encodeURIComponent(eventId)}` : ""}`, "DELETE");
       await refresh();
     },
   };

@@ -58,6 +58,7 @@ export function Bell() {
   const { t: ui } = useT();
   const me = useMe().data;
   const bell = useBell();
+  const { clear } = useAlertActions();
   const { open, setOpen } = usePanel();
   const toggle = useToggle();
   const box = useRef<HTMLDivElement>(null);
@@ -79,10 +80,7 @@ export function Bell() {
   if (!me) return null;
   const unseen = bell.data?.unseen ?? 0;
   /** Remove one notification, or all of them (no id). */
-  const remove = (eventId?: string) => {
-    const q = eventId ? `?event_id=${encodeURIComponent(eventId)}` : "";
-    send(`/api/me/bell${q}`, "DELETE").then(() => bell.refetch()).catch(() => {});
-  };
+  const remove = (eventId?: string) => { clear(eventId).catch(() => {}); };
   return (
     <div className="bell" ref={box}>
       <button className="bell-btn" aria-haspopup="true" aria-expanded={open} onClick={toggle}

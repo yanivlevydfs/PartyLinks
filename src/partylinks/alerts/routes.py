@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from cachetools import TTLCache
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, delete, func, or_, select, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from partylinks.accounts.guard import SameOrigin, limited
@@ -48,6 +48,11 @@ def _live() -> Any:
     """A match of an event not over yet: an ended one is neither shown nor counted (and the matcher's pass
     deletes it, before retention gets to the event)."""
     return AlertHitRow.event_id.in_(select(EventRow.id).where(upcoming_filter()))
+
+
+def _shown() -> Any:
+    """A match still in the bell: not over and not cleared by the user."""
+    return and_(AlertHitRow.cleared_at.is_(None), _live())
 
 
 def _today(cfg: Settings) -> Any:
@@ -91,7 +96,7 @@ def list_alerts(user: UserDep, request: Request, response: Response) -> dict[str
         unseen = dict(
             session.execute(
                 select(AlertHitRow.alert_id, func.count())
-                .where(AlertHitRow.user_id == user.id, AlertHitRow.seen_at.is_(None), _live())
+                .where(AlertHitRow.user_id == user.id, AlertHitRow.seen_at.is_(None), _shown())
                 .group_by(AlertHitRow.alert_id)
             ).all()
         )
@@ -183,12 +188,12 @@ def bell(user: UserDep, request: Request, response: Response) -> dict[str, Any]:
     with request.app.state.db.session(write=False) as session:
         unseen = session.scalar(
             select(func.count()).select_from(AlertHitRow)
-            .where(AlertHitRow.user_id == user.id, AlertHitRow.seen_at.is_(None), _live())
+            .where(AlertHitRow.user_id == user.id, AlertHitRow.seen_at.is_(None), _shown())
         ) or 0  # fmt: skip
         hits = session.execute(
             select(AlertHitRow.event_id, AlertHitRow.matched_at, AlertHitRow.seen_at, AlertRow.name)
             .join(AlertRow, AlertRow.id == AlertHitRow.alert_id)
-            .where(AlertHitRow.user_id == user.id, _live())
+            .where(AlertHitRow.user_id == user.id, _shown())
             .order_by(AlertHitRow.matched_at.desc())
             .limit(BELL_SIZE * 2)  # one event can match two alerts: shown once
         ).all()
@@ -217,19 +222,21 @@ def bell_seen(user: UserDep, request: Request) -> Response:
 
 @router.delete("/bell", status_code=204, dependencies=WRITE)
 def bell_remove(user: UserDep, request: Request, event_id: str | None = None) -> Response:
-    """Remove one notification (``event_id``) or all of them. A removed match never comes back: the matcher
-    only looks at events new since its last pass."""
+    """Remove one notification (``event_id``) or all of them. The match is stamped ``cleared_at``, not deleted:
+    "For you" hides a cleared event too, and the key keeps the matcher from adding it back."""
     with request.app.state.db.session() as session:
-        where = [AlertHitRow.user_id == user.id]
+        where = [AlertHitRow.user_id == user.id, AlertHitRow.cleared_at.is_(None)]
         if event_id is not None:
             where.append(AlertHitRow.event_id == event_id)
-        session.execute(delete(AlertHitRow).where(*where))
+        session.execute(update(AlertHitRow).where(*where).values(cleared_at=utcnow()))
+    _for_you.pop(user.id, None)
     return Response(status_code=204)
 
 
 @router.get("/for-you")
 def for_you(user: UserDep, request: Request, response: Response) -> dict[str, Any]:
-    """Upcoming events matching any of the user's active alerts, soonest first."""
+    """Upcoming events matching any of the user's active alerts, soonest first; not those the user cleared
+    from the bell."""
     response.headers.update(NO_STORE)
     if (items := _for_you.get(user.id)) is not None:
         return {"items": items}
@@ -242,8 +249,14 @@ def for_you(user: UserDep, request: Request, response: Response) -> dict[str, An
             items = []
         else:
             any_alert = or_(*(and_(*where(Criteria.model_validate(c), cfg)) for c in raw))
+            cleared = select(AlertHitRow.event_id).where(
+                AlertHitRow.user_id == user.id, AlertHitRow.cleared_at.is_not(None)
+            )
             ids = session.scalars(
-                select(EventRow.id).where(any_alert).order_by(EventRow.start_at, EventRow.id).limit(FOR_YOU)
+                select(EventRow.id)
+                .where(any_alert, EventRow.id.not_in(cleared))
+                .order_by(EventRow.start_at, EventRow.id)
+                .limit(FOR_YOU)
             )
             items = cards(session, list(ids))
     _for_you[user.id] = items

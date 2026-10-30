@@ -215,3 +215,37 @@ def test_ended_events_leave_the_bell_and_users_can_remove_notifications(tmp_path
         assert c.get("/api/me/bell").json() == {"unseen": 0, "items": []}
         matcher.run(settings, db)
         assert c.get("/api/me/bell").json()["items"] == []  # removed ones never come back
+
+
+def test_cleared_notifications_leave_for_you_and_are_not_emailed(
+    tmp_path: Path, fake: FakeGoogle, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import resend
+
+    from partylinks.mail import jobs
+
+    sent: list[Any] = []
+    monkeypatch.setattr(resend.Batch, "send", lambda params, options=None: sent.extend(params) or {"data": []})
+    monkeypatch.setattr("partylinks.mail.send.PAUSE", 0)
+    app, db, settings = _app(tmp_path, events=[])
+    settings.mail = settings.mail.model_validate({"resend_api_key": "re_test"})
+    matcher.run(settings, db)
+    with TestClient(app) as c:
+        sign_in(c, fake)
+        c.post("/api/me/alerts", json={"criteria": {"q": "techno"}, "instant": True}, headers=OURS)
+        seed(settings, [event(k, SOON + timedelta(hours=i)) for i, k in enumerate("abc")])
+        matcher.run(settings, db)
+        ids = lambda: [e["id"] for e in c.get("/api/me/for-you").json()["items"]]  # noqa: E731
+        assert ids() == ["test:a", "test:b", "test:c"]  # now cached
+        assert c.delete("/api/me/bell", params={"event_id": "test:a"}, headers=OURS).status_code == 204
+        assert ids() == ["test:b", "test:c"]  # the clear dropped the cached row
+        assert c.get("/api/me/bell").json()["unseen"] == 2
+        assert c.delete("/api/me/bell", headers=OURS).status_code == 204
+        assert ids() == [] and c.get("/api/me/bell").json() == {"unseen": 0, "items": []}
+        assert c.get("/api/me/alerts").json()["items"][0]["unseen"] == 0
+        with db.session() as s:  # kept, stamped: the key keeps the matcher from adding them back
+            assert s.scalar(select(func.count()).select_from(AlertHitRow).where(AlertHitRow.cleared_at.is_not(None))) == 3
+        matcher.run(settings, db)
+        assert ids() == [] and c.get("/api/me/bell").json()["items"] == []
+    jobs.instant(settings, db)
+    assert sent == []  # cleared before the email went: not sent

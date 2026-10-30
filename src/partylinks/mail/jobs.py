@@ -120,7 +120,7 @@ def instant(settings: Settings, db: Database) -> None:
             .join(AlertRow, AlertRow.id == AlertHitRow.alert_id)
             .join(UserRow, UserRow.id == AlertHitRow.user_id)
             .where(
-                AlertHitRow.instant_sent_at.is_(None), AlertRow.instant.is_(True), AlertRow.active.is_(True),
+                AlertHitRow.instant_sent_at.is_(None), AlertHitRow.cleared_at.is_(None), AlertRow.instant.is_(True), AlertRow.active.is_(True),
                 UserRow.blocked_at.is_(None), (UserRow.last_instant_at.is_(None)) | (UserRow.last_instant_at < wait),
             )
             .order_by(AlertHitRow.matched_at)
@@ -174,7 +174,7 @@ def digest_parts(settings: Settings, session: Session, user: UserRow) -> tuple[d
     hit_ids = list(session.scalars(
         select(AlertHitRow.event_id)
         .join(EventRow, EventRow.id == AlertHitRow.event_id)
-        .where(AlertHitRow.user_id == user.id, AlertHitRow.digest_sent_at.is_(None), upcoming_filter(), EventRow.start_at <= later)
+        .where(AlertHitRow.user_id == user.id, AlertHitRow.digest_sent_at.is_(None), AlertHitRow.cleared_at.is_(None), upcoming_filter(), EventRow.start_at <= later)
         .order_by(EventRow.start_at)
     ))  # fmt: skip
     shown = {c["id"] for c in saved}

@@ -424,7 +424,9 @@ select option { background: var(--panel-solid); color: var(--text); }
 }
 
 /* --------------------------------------------------------------- trending */
-.trending { margin: 24px 0 8px; padding: 22px 0 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+/* Its own layer above the quiz: the quiz card is positioned (its rim) and its glow reaches ~80px below it,
+   so without this it painted over the first row's heading and arrow buttons. Under the header and sponsored rails. */
+.trending { position: relative; z-index: 1; margin: 24px 0 8px; padding: 22px 0 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
 .trending-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 0 22px 14px; }
 .trending h2 { margin: 0; font: 800 20px/1.2 var(--display); letter-spacing: 1px; text-transform: uppercase; }
 .trending h2 span { color: var(--pink); }

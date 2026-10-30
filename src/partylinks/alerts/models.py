@@ -29,7 +29,8 @@ class AlertRow(Base):
 
 
 class AlertHitRow(Base):
-    """This event matched this alert. The key keeps an event from being sent twice; ``seen_at`` is the bell."""
+    """This event matched this alert. The key keeps an event from being sent twice; ``seen_at`` is the bell,
+    ``cleared_at`` the user removed it from the bell."""
 
     __tablename__ = "alert_hits"
 
@@ -40,6 +41,8 @@ class AlertHitRow(Base):
     seen_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     instant_sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     digest_sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # Removed from the bell: kept (not deleted) so "For you" hides the event too and no email sends it.
+    cleared_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
 
 
 class AlertStateRow(Base):

@@ -684,7 +684,7 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 ### 2026-10-29 (התראות: חיפוש שמור, פעמון, "בשבילך")
 - **טבלאות חדשות** (‏`partylinks/alerts/models.py`):
   - `event_alerts`: ‏`id` PK, ‏`user_id` ‏FK ל-`users` ‏CASCADE (אינדקס), ‏`name`, ‏`criteria` ‏JSONB (תת-קבוצה של מסנני האתר, תאריכים יחסיים), ‏`criteria_hash` (אינדקס; אותו חיפוש = אותו hash), ‏`instant`, ‏`active`, ‏`created_at`, ‏`updated_at`.
-  - `alert_hits`: ‏PK ‏(`alert_id`, ‏`event_id`): המפתח הוא מה שמונע שליחה כפולה. ‏`alert_id` ‏FK ‏CASCADE, ‏`event_id` (אינדקס, בלי FK; ‏`db.delete_events` מוחק דרך `alerts.models.delete_hits`), ‏`user_id` (אינדקס), ‏`matched_at`, ‏`seen_at` (הפעמון), ‏`instant_sent_at`, ‏`digest_sent_at`.
+  - `alert_hits`: ‏PK ‏(`alert_id`, ‏`event_id`): המפתח הוא מה שמונע שליחה כפולה. ‏`alert_id` ‏FK ‏CASCADE, ‏`event_id` (אינדקס, בלי FK; ‏`db.delete_events` מוחק דרך `alerts.models.delete_hits`), ‏`user_id` (אינדקס), ‏`matched_at`, ‏`seen_at` (הפעמון), ‏`instant_sent_at`, ‏`digest_sent_at`, ‏`cleared_at` (המשתמש ניקה מהפעמון, ראו "עדכונים" 2026-10-30).
   - `alert_state`: שורה אחת, ‏`cursor` של ה-matcher.
 - **Queries:** ה-matcher (worker, כל 15 דק'): הקבוצות החדשות, ‏`SELECT coalesce(group_id, id) FROM events GROUP BY 1 HAVING min(first_seen_at) > cursor AND min(first_seen_at) <= now - 30 min` (רשומה שנייה של מסיבה שכבר הוכרזה אינה חדשה; 30 הדקות נותנות לריצה להיכנס ול-dedup ולגיאוקוד לרוץ), ומהן הראשי (`is_primary AND upcoming`). בתכנון: שאילתה אחת לכל `criteria_hash` שונה; מה שנבנה בפועל, בסעיף "שינוי אחרי מדידה" למטה. ‏"בשבילך": ‏OR של המסננים של כל ההתראות הפעילות, ‏LIMIT 12, נשמר בזיכרון 10 דק' למשתמש.
 - **שינוי אחרי מדידה:** שאילתה לכל `criteria_hash` לקחה 330 ש' למעבר (31,545 חיפושים שונים x ‏500 אירועים חדשים). עכשיו: שאילתה אחת לכל *ערך* מסנן בודד (ז'אנר, אזור, שכונה, משבצת זמן, מילה, חלון תאריכים), כ-100 שאילתות קטנות על האירועים החדשים, וחיתוך/איחוד של הקבוצות ב-Python לכל התראה (זהה ל-`build_event_filters`: ‏AND בין מסננים, any-of בתוך רשימה). ה-hits נכתבים ב-`COPY` לטבלה זמנית ו-`INSERT ... SELECT ... ON CONFLICT DO NOTHING` (‏`INSERT` רב-שורות של SQLAlchemy לקח 140 ש').
@@ -727,3 +727,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **שאילתה נוספת:** `SELECT id, start_at FROM events WHERE id IN (<new>)` כדי לשמור לכל משתמש רק את `accounts.max_hits_per_pass` (ברירת מחדל 30) הקרובים ביותר במעבר.
 - **אינדקס חדש:** `ix_events_source_start` על `events (source, start_at)` לבדיקת ה-NOT EXISTS הזו (בדיקה אחת לאינדקס לכל אירוע חדש). נבנה ב-`create_schema` (CREATE INDEX, לא CONCURRENTLY: ~56k שורות, שניות בודדות).
 
+
+### 2026-10-30 (ניקוי הפעמון מסתיר גם מ"בשבילך")
+- **עמודה חדשה:** `alert_hits.cleared_at` (UTCDateTime, nullable, בלי default), נוספת ב-`ADD COLUMN` של `create_schema`. ‏`DELETE /api/me/bell` כבר לא מוחק: `UPDATE alert_hits SET cleared_at = now() WHERE user_id = :u AND cleared_at IS NULL [AND event_id = :e]`, ומנקה את ה-cache של "בשבילך" לאותו משתמש. השורה נשארת, כך שהמפתח (`alert_id`, `event_id`) ממשיך למנוע מה-matcher להוסיף אותה שוב.
+- **Queries:** הפעמון, ספירת ה-unseen שלו ושל כל התראה ב-`/api/me/alerts` מוסיפים `cleared_at IS NULL`. ‏`/api/me/for-you`: ‏`events WHERE <any active alert> AND id NOT IN (SELECT event_id FROM alert_hits WHERE user_id = :u AND cleared_at IS NOT NULL)`, על האינדקס של `user_id`. מיילים: instant ו-digest מוסיפים `cleared_at IS NULL` (לא שולחים מה שהמשתמש ניקה).
+- **ללא שינוי:** ה-matcher עדיין מוחק בכל מעבר hits של אירועים שהסתיימו (גם מנוקים), ו-`delete_hits` מוחק אותם עם האירוע.
+- **Tests:** ‏`tests/test_alerts.py::test_cleared_notifications_leave_for_you_and_are_not_emailed`.
