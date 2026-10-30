@@ -74,3 +74,21 @@ def test_one_pass_gives_a_user_at_most_the_cap_soonest_first(tmp_path: Path, fak
         assert matcher.run(settings, db) == 2
         bell = c.get("/api/me/bell").json()
         assert bell["unseen"] == 2 and {i["event"]["id"] for i in bell["items"]} == {"test:e", "test:d"}  # the soonest
+
+
+def test_a_day_gives_a_user_at_most_the_daily_cap(tmp_path: Path, fake: FakeGoogle) -> None:
+    """A source back after days of failures lists its backlog at once: the bell still grows by a few a day."""
+    settings = _settings(tmp_path, max_hits_per_pass=3, max_hits_per_day=4)
+    db = seed(settings, [])
+    app = create_app(settings, start_scheduler=False)
+    matcher.run(settings, db)
+    with TestClient(app) as c:
+        sign_in(c, fake)
+        c.post("/api/me/alerts", json={"criteria": {"q": "techno"}}, headers=OURS)
+        seed(settings, [event(k, SOON, title=f"Techno night {k}") for k in "abc"])
+        assert matcher.run(settings, db) == 3
+        seed(settings, [event(k, SOON, title=f"Techno night {k}") for k in "defg"])
+        assert matcher.run(settings, db) == 1  # 3 + 1 = the day's 4
+        seed(settings, [event("h", SOON, title="Techno night h")])
+        assert matcher.run(settings, db) == 0
+        assert c.get("/api/me/bell").json()["unseen"] == 4

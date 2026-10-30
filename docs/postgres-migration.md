@@ -755,3 +755,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **התאמת שמות:** ‏`dedup.title_filler` (‏"במופע", "סטנדאפ", "חנוכה"...): שמות שזהים בלי מילות המילוי נחשבים זהים. שם שכל מילותיו נמצאות בשם השני ("שומרי הדרקונים" / "+ מחזמר הרפתקאות") מתאחד רק באותה שעה (‏`subset_max_start_gap_minutes`), באותו מקום (‏`max_distance_meters` או אותו `venue_slug`) ועם 2+ מילים ו-6+ אותיות (‏`subset_min_words`, `subset_min_chars`).
 - **ביצועים:** ‏plan על 55k אירועים סינתטיים ב-pgserver מקומי: לפני 29.1 / 29.7 שנ', אחרי 28.6 / 30.3 שנ' (אותו תהליך, לסירוגין). חסם האורך של `real_quick_ratio` נבדק לפני בניית ה-SequenceMatcher, וזה מקזז את הזוגות הנוספים.
 - **Tests:** ‏`tests/test_dedup.py::test_box_office_filler_and_extra_words_merge_at_one_hour_and_place`, ‏`test_extra_words_never_merge_other_shows_hours_or_places`, ‏`test_date_only_listing_joins_its_show_by_name_and_place`.
+
+### 2026-10-30 (תקרה יומית לפעמון)
+- **שאילתה נוספת ב-`alerts.matcher.run`:** ‏`SELECT user_id, count(DISTINCT event_id) FROM alert_hits WHERE user_id IN (<users with matches>) AND matched_at >= now - 1 day GROUP BY user_id`. משתמשת באינדקס הקיים על `alert_hits.user_id`; אין אינדקס חדש.
+- **למה:** מקור שחזר אחרי ימים של כשלונות (telaviv: 472/571 מהעירייה, ואז 1011 אירועים) מכניס את כל מה שהצטבר כחדש בבת אחת; עם תקרה למעבר בלבד (30) הפעמון הגיע ל-99+. עכשיו כל משתמש מקבל לכל היותר `accounts.max_hits_per_day` (ברירת מחדל 10) התראות חדשות ב-24 שעות, הקרובות ביותר.
+- **Tests:** ‏`tests/test_alerts_flood.py::test_a_day_gives_a_user_at_most_the_daily_cap`.

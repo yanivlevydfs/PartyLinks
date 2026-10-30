@@ -94,6 +94,7 @@ accounts:
   max_alerts: 20           # alerts per user
   max_saved: 500           # saved events per user
   max_hits_per_pass: 30    # new bell notifications per user per matcher pass (soonest kept): a flood guard
+  max_hits_per_day: 10     # ...and per user in any 24 hours (a source back after failing dumps its backlog)
 
 # Email through Resend (src/partylinks/mail). Off until PARTYLINKS_MAIL__RESEND_API_KEY is set.
 mail:

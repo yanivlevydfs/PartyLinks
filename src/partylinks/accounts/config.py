@@ -15,6 +15,8 @@ class AccountsSettings(BaseModel):
     max_saved: int = Field(500, ge=1)
     # New bell notifications one user can get from one matcher pass (every 15 min): a flood guard.
     max_hits_per_pass: int = Field(30, ge=1)
+    # ...and from all passes of the last 24 hours: a source back after days of failures lists its backlog at once.
+    max_hits_per_day: int = Field(10, ge=1)
     admin_emails: list[str] = Field(default_factory=list)  # promoted to admin on sign-in
 
     @property

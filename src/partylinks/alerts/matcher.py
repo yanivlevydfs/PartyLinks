@@ -156,17 +156,23 @@ def run(settings: Settings, db: Database) -> int:
                 for a, u in who:
                     per_user[u][event_id].append(a)
         # A new show listed at many dates is one notification, its soonest date. Flood guard: one pass gives
-        # a user at most max_hits_per_pass new events, the soonest.
-        cap = settings.accounts.max_hits_per_pass
+        # a user at most max_hits_per_pass new events, the soonest, and no more than max_hits_per_day in 24 hours.
+        day = session.execute(
+            select(AlertHitRow.user_id, func.count(AlertHitRow.event_id.distinct()))
+            .where(AlertHitRow.user_id.in_(list(per_user)), AlertHitRow.matched_at >= stamp - timedelta(days=1))
+            .group_by(AlertHitRow.user_id)
+        ).all()  # fmt: skip
+        had = dict(day)
         rows = []
         for u, events in per_user.items():
+            cap = min(settings.accounts.max_hits_per_pass, settings.accounts.max_hits_per_day - had.get(u, 0))
             shows: dict[str, str] = {}
             for e in sorted(events, key=lambda e: (starts.get(e) is None, starts.get(e) or now, e)):
                 shows.setdefault(titles.get(e) or e, e)
-            soonest = list(shows.values())[:cap]
+            soonest = list(shows.values())[: max(cap, 0)]
             rows += [(a, e, u, stamp) for e in soonest for a in events[e]]
-            if len(shows) > cap:
-                log.warning("alerts: user %s had %d new matches in one pass, kept the soonest %d", u, len(shows), cap)
+            if len(shows) > len(soonest):
+                log.warning("alerts: user %s had %d new matches in one pass, kept the soonest %d", u, len(shows), len(soonest))
         _insert_hits(session, rows)
     log.info(
         "alerts: %d new events, %d alerts (%d distinct), %d queries, %d hits",
