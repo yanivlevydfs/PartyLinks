@@ -2359,6 +2359,25 @@ sources:
     http:
       concurrency: 2
 
+  zoatlv:
+    # ZOA House / בית ציוני אמריקה: culture house (shows, stand-up, lectures, conferences), Tel Aviv. WordPress:
+    # /event/ (30 a page) lists upcoming events only; each event's page adds the text and the seller's link
+    # (Leaan, EASYTIX...), which ties it to the seller's own listing. robots.txt allows everything.
+    enabled: true
+    cron: "26 7,19 * * *"
+    site_url: https://zoatlv.co.il
+    listing_path: /event/
+    page_path: /event/page/{page}/
+    max_pages: 30
+    seller_hosts: {tickets.zoatlv.co.il: easytix.co.il}   # ZOA's EASYTIX box office, listed by easytix
+    venue_name: בית ציוני אמריקה
+    address: דניאל פריש 1
+    city: תל אביב-יפו
+    latitude: 32.0746   # Nominatim: the arts centre itself
+    longitude: 34.7823
+    http:
+      concurrency: 2
+
   yellowsubmarine:
     # Yellow Submarine: live-music club, Jerusalem. WordPress: /event/ lists every upcoming show (date
     # without a year, door / show times); each show's page adds the year, prices, text and the Eventer link.
@@ -2410,6 +2429,38 @@ sources:
     # over Israel, from the JSON API its own pages read (api-il.funzing.com/api/v2).
     enabled: true
     cron: "19 7,19 * * *"
+    http:
+      concurrency: 4
+
+  easytix:
+    # EASYTIX (easytix.co.il): the nimi ticketing platform (live.nimi.co.il JSON API) behind easytix and
+    # the white-label box offices below. Each marketplace's public events + the easytix home rail; one
+    # ticket request per coming event for prices. Domains from the site's own bundle (Oct 2026).
+    enabled: true
+    cron: "37 8,20 * * *"
+    site_url: https://easytix.co.il
+    api_url: https://live.nimi.co.il
+    max_span_days: 31
+    skip_accounts: [sarkis-12311, sarkis-1, haasam]  # test events; Haasam pub sells punch cards
+    marketplaces:
+      - {domain: easytix.co.il}
+      - {domain: comedyclub.co.il, genres: [סטנדאפ]}  # Camel; its locations name the city
+      - {domain: hormesis.club, city: תל אביב-יפו}
+      - {domain: zoatlv.co.il, city: תל אביב-יפו}
+      - {domain: tickets.jerusalemzoo.org.il, city: ירושלים}
+      - {domain: radical.org.il}
+      - {domain: minkovsky-records.com}
+      - {domain: villaaccadia.com}
+      - {domain: kaeteclub.com}
+      - {domain: adifplus.co.il}
+      - {domain: bambooclub.co.il}
+      - {domain: articket.co.il}
+      - {domain: tkt.tixw.com}
+      - {domain: firefly-members.com}
+      - {domain: circles-community.com}
+      - {domain: cloudtlv.com}
+      - {domain: members.bohemaclub.com}
+      - {domain: events.michaelewis.com}
     http:
       concurrency: 4
 

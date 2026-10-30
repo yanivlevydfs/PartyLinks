@@ -1,0 +1,46 @@
+[
+ {
+  "_id": "6ae0dc5c80b034e37dbdca2e",
+  "name": "מלווה לפי הצורך",
+  "price": 89,
+  "currency": "ILS",
+  "is_enabled": "true",
+  "is_sold_out": false,
+  "ticketsLeft": 182,
+  "start_date": "",
+  "end_date": ""
+ },
+ {
+  "_id": "6ae0dc5c96cd37801bc2b018",
+  "name": "כיסא גלגלים",
+  "price": 0,
+  "currency": "ILS",
+  "is_enabled": "true",
+  "is_sold_out": false,
+  "ticketsLeft": 4,
+  "start_date": "",
+  "end_date": ""
+ },
+ {
+  "_id": "6ae0dc5d80b034e37dbdca31",
+  "name": "מלווה לפי הצורך",
+  "price": 119,
+  "currency": "ILS",
+  "is_enabled": "true",
+  "is_sold_out": false,
+  "ticketsLeft": 182,
+  "start_date": "",
+  "end_date": ""
+ },
+ {
+  "_id": "6ae0dc5d80b034e37dbdca34",
+  "name": "כיסא גלגלים",
+  "price": 0,
+  "currency": "ILS",
+  "is_enabled": "true",
+  "is_sold_out": false,
+  "ticketsLeft": 4,
+  "start_date": "",
+  "end_date": ""
+ }
+]

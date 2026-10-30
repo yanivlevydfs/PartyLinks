@@ -13,6 +13,7 @@ from partylinks.scrapers.barby import BarbyScraper
 from partylinks.scrapers.bargiyora import BarGiyoraScraper
 from partylinks.scrapers.haezor import HaEzorScraper
 from partylinks.scrapers.levontin7 import Levontin7Scraper
+from partylinks.scrapers.zoatlv import ZoaTlvScraper
 from partylinks.scrapers.yellowsubmarine import YellowSubmarineScraper
 from partylinks.scrapers.halutz import HalutzScraper
 from partylinks.scrapers.meety import MeetyScraper
@@ -30,6 +31,7 @@ from partylinks.scrapers.epgb import EpgbScraper
 from partylinks.scrapers.eventbuzz import EventbuzzScraper
 from partylinks.scrapers.eventbrite import EventbriteScraper
 from partylinks.scrapers.eventer import EventerScraper
+from partylinks.scrapers.easytix import EasytixScraper
 from partylinks.scrapers.eventim import EventimScraper, ZappaScraper
 from partylinks.scrapers.festivalim import FestivalimScraper
 from partylinks.scrapers.friendshist import FriendsHistScraper
@@ -179,10 +181,12 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         BarGiyoraScraper,
         HaEzorScraper,
         Levontin7Scraper,
+        ZoaTlvScraper,
         YellowSubmarineScraper,
         HalutzScraper,
         MeetyScraper,
         FunzingScraper,
+        EasytixScraper,
         TicketeamsScraper,
         BabeBarScraper,
     )

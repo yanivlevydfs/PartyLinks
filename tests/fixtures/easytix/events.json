@@ -1,0 +1,210 @@
+[
+ {
+  "_id": "6ac3da1a5aca2712b21c5340",
+  "name": "קובי בלולו במופע סטנדאפ!",
+  "description": "<strong>קובי בלולו מגיע לקאמל קומדי קלאב למופע סטנדאפ באורך מלא!</strong>\n\n&nbsp;",
+  "type": "electronic-party",
+  "start_date": "2026-10-31T19:30:00.000Z",
+  "start_hour": "2026-10-31T19:30:00.000Z",
+  "end_date": "",
+  "end_hour": "",
+  "is_enabled": true,
+  "isPublic": true,
+  "is_password_enabled": false,
+  "isOnlyForMembers": false,
+  "location": "קאמל קומדי קלאב, אלנבי 128א\\', תל-אביב",
+  "design": {
+   "image": "https://comedyclub.co.il/wp-content/uploads/2026/10/IMG-20261005-WA0019.jpg"
+  },
+  "account": {
+   "name": "קאמל קומדי קלאב",
+   "handler": "camel",
+   "_id": "6768161ed2187a6b511103e5"
+  },
+  "handler": "balulu-31-10",
+  "marketplace": "674dd2660196b63ccbca6582",
+  "timezone": "Asia/Jerusalem"
+ },
+ {
+  "_id": "6ae07acb9ebac8c1a19fb633",
+  "name": "פותחים סופ\\\"ש! מרתון סטנדאפ פצץ",
+  "description": "<span style=\\\"color: #800080;\\\"><strong>פותחים את הסופ״ש בהכי חזק ולאט לאט מגבירים עם </strong></span><span style=\\\"color: #808000;\\\"><strong>מיטב אמני הקאמל קומדי קלאב על הבמה בספיישל סטנד אפ פצץ לפתיחת הסופ\\\"ש!</strong></span>",
+  "type": "electronic-party",
+  "start_date": "2026-11-20T20:00:00.000Z",
+  "start_hour": "2026-11-20T20:00:00.000Z",
+  "end_date": "",
+  "end_hour": "",
+  "is_enabled": true,
+  "isPublic": true,
+  "is_password_enabled": false,
+  "isOnlyForMembers": false,
+  "location": "קאמל קומדי קלאב, אלנבי 128א\\', תל-אביב",
+  "design": {
+   "image": "https://comedyclub.co.il/wp-content/uploads/2026/02/IMG-20260225-WA0012.jpg"
+  },
+  "account": {
+   "name": "קאמל קומדי קלאב",
+   "handler": "camel",
+   "_id": "6768161ed2187a6b511103e5"
+  },
+  "handler": "camel-20-11",
+  "marketplace": "674dd2660196b63ccbca6582",
+  "timezone": "Asia/Jerusalem"
+ },
+ {
+  "_id": "6adf82b228180eadd64c9729",
+  "name": "רועי לוי - סטנדאפ! גבעתיים",
+  "description": "<p class=\"ql-direction-rtl ql-align-right\"><strong>﻿רועי לוי, אחד הקולות המזוהים, המשפיעים והוותיקים בסצנת הקומדיה הישראלית, מביא אל הבמה מופע סטנדאפ אישי, קצבי ומשוחרר.</strong></p><p class=\"ql-direction-rtl ql-align-right\"><strong>המופע של רועי לוי מתאפיין ביכולת אלתור פנומנלית, שנינות מהירה ואינט",
+  "type": "culture",
+  "start_date": "2027-01-07T12:00:00.000Z",
+  "start_hour": "2027-01-07T19:00:00.000Z",
+  "end_date": "",
+  "end_hour": "",
+  "is_enabled": true,
+  "isPublic": true,
+  "is_password_enabled": false,
+  "isOnlyForMembers": false,
+  "location": "תיאטרון גבעתיים ",
+  "design": {
+   "image": "https://d2iyod2z8hftl8.cloudfront.net/live_1793121428675_roey-07-01.jpeg"
+  },
+  "account": {
+   "name": "רועי לוי - סיבוב הופעות 2026",
+   "handler": "roeylevy",
+   "_id": "6a7c5837ff63e77d2a168ea4"
+  },
+  "handler": "roey-07-01",
+  "marketplace": "674dd2660196b63ccbca6582",
+  "timezone": "Asia/Jerusalem"
+ },
+ {
+  "_id": "69f2fc26170cf0e3e6600fcf",
+  "name": "sound healing",
+  "description": "<p>xxf xfgfg xg fxg</p>",
+  "type": "other",
+  "start_date": "2026-04-30T12:00:00.000Z",
+  "start_hour": "",
+  "end_date": "2027-01-01T12:00:00.000Z",
+  "end_hour": "",
+  "is_enabled": true,
+  "isPublic": true,
+  "is_password_enabled": false,
+  "isOnlyForMembers": false,
+  "location": "",
+  "design": {
+   "image": "https://d2iyod2z8hftl8.cloudfront.net/live_1783866411644_soundhealing.jpeg"
+  },
+  "account": {
+   "name": "studio",
+   "handler": "studio",
+   "_id": "69f2fb8056ad3bd242214bbc"
+  },
+  "handler": "soundhealing",
+  "marketplace": "660574ec5b182bb3cfb1d749",
+  "timezone": "Asia/Jerusalem"
+ },
+ {
+  "_id": "6acfc5b8d5d877c4a54b8aa4",
+  "name": "סלוט 1",
+  "description": "<p>פרטים בקרוב</p>",
+  "type": "wellness",
+  "start_date": "2026-11-13T12:00:00.000Z",
+  "start_hour": "2026-11-13T07:15:00.399Z",
+  "end_date": "2026-11-13T12:00:00.000Z",
+  "end_hour": "2026-11-13T08:35:00.411Z",
+  "is_enabled": false,
+  "isPublic": true,
+  "is_password_enabled": false,
+  "isOnlyForMembers": false,
+  "location": "הפארק הלאומי רמת גן - שער התותים ",
+  "design": {
+   "image": "https://d2iyod2z8hftl8.cloudfront.net/live_1792001351576_Onlife.jpeg"
+  },
+  "account": {
+   "name": "און לייף",
+   "handler": "onlife",
+   "_id": "6acfc428acf0b276658716e6"
+  },
+  "handler": "Onlife",
+  "marketplace": "650c30a7376bdc0220cd73c2",
+  "timezone": "Asia/Jerusalem"
+ },
+ {
+  "_id": "6a3be93cb3ccd040e26c02c4",
+  "name": "Yin Yoga ",
+  "description": "<p><span style=\"color: rgb(54, 61, 46);\">Led by Yael Segev. A slow, quiet practice with long held poses that support joint mobility and deep release. Combines breath awareness and guided stillness to create space for rest and internal balance.</span></p>",
+  "type": "wellness",
+  "start_date": "2026-07-12T12:00:00.000Z",
+  "start_hour": "",
+  "end_date": "2027-02-28T12:00:00.000Z",
+  "end_hour": "",
+  "is_enabled": true,
+  "isPublic": true,
+  "is_password_enabled": false,
+  "isOnlyForMembers": true,
+  "location": "",
+  "design": {
+   "image": "https://d2iyod2z8hftl8.cloudfront.net/live_1781099415982_Yinyoga_14-06-26.jpeg"
+  },
+  "account": {
+   "name": "Wellness",
+   "handler": "Wellness",
+   "_id": "67d977c322cfcb83331391ad"
+  },
+  "handler": "Yinyoga_12-07-26",
+  "marketplace": "67cd61581667eb6f28d94279",
+  "timezone": "Asia/Jerusalem"
+ },
+ {
+  "_id": "6ac78da7c06ce12f41a776e0",
+  "name": "ערב וולנס מוזיקלי",
+  "description": "<p class=\"ql-direction-rtl ql-align-center\"><strong style=\"color: rgb(153, 51, 255);\">ערב של מוזיקה, צלילים ורוגע באקווריום ישראל</strong></p><p class=\"ql-direction-rtl ql-align-center\">הערב מתחיל בהרצאה אינטראקטיבית על השפעת המוזיקה על הגוף והנפש, ועל הקשר בין צלילים, רטט וחיות הים, לצד הקרנת המיני",
+  "type": "other",
+  "start_date": "2026-11-03T12:00:00.000Z",
+  "start_hour": "2026-11-03T15:00:00.000Z",
+  "end_date": "",
+  "end_hour": "",
+  "is_enabled": true,
+  "isPublic": true,
+  "is_password_enabled": false,
+  "isOnlyForMembers": false,
+  "location": "אקווריום ישראל",
+  "design": {
+   "image": "https://d2iyod2z8hftl8.cloudfront.net/live_1791462654652_asset.jpeg"
+  },
+  "account": {
+   "name": "פעילויות מיוחדות באקווריום",
+   "handler": "aquariumspecialevents",
+   "_id": "69f62eb5fe790994a4562153"
+  },
+  "handler": "Wellness",
+  "marketplace": "68209105045ec15cb76b24f6",
+  "timezone": "Asia/Jerusalem"
+ },
+ {
+  "_id": "698a017aa8dd5fbfe9489755",
+  "name": "כרטיס כניסה לגן החיות",
+  "description": "<p class=\"ql-align-right ql-direction-rtl\">ידוע לי כי כל מידע שיימסר על ידי ו/או שייאסף אודותיי יישמר במאגרי המידע שבשליטת גן החיות התנכי בירושלים על שם משפחת טיש בע\"מ (חל\"צ) (להלן: \"החברה\") לצורך מתן השירות, ורכישת כרטיסים בהתאם <a href=\"https://www.jerusalemzoo.org.il/heb/privacy-policy\" rel=\"noop",
+  "type": "other",
+  "start_date": "2026-02-10T12:00:00.000Z",
+  "start_hour": "",
+  "end_date": "2030-01-01T12:00:00.000Z",
+  "end_hour": "",
+  "is_enabled": true,
+  "isPublic": true,
+  "is_password_enabled": false,
+  "isOnlyForMembers": false,
+  "location": "גן החיות התנ״כי בירושלים",
+  "design": {
+   "image": "https://d2iyod2z8hftl8.cloudfront.net/live_1770656096204_zoo.jpeg"
+  },
+  "account": {
+   "name": "כרטיסי כניסה",
+   "handler": "tickets",
+   "_id": "6989ea7465f2efe83892df79"
+  },
+  "handler": "zoo",
+  "marketplace": "68209105045ec15cb76b24f6",
+  "timezone": "Asia/Jerusalem"
+ }
+]
