@@ -74,6 +74,7 @@ pagination and what the listing and the event page provide.
 | `bargiyora` | Bar Giyora (bar-giyora.co.il): live-show bar in Tel Aviv: music, stand-up, lectures | 06:26, 18:26 | yes |
 | `haezor` | HaEzor / The Zone (haezor.com): live-music club in Tel Aviv | 06:36, 18:36 | yes |
 | `levontin7` | Levontin 7 (levontin7.com): live-music club in Tel Aviv | 06:46, 18:46 | yes |
+| `zoatlv` | ZOA House (zoatlv.co.il): culture house in Tel Aviv: stand-up, plays, kids' shows, lectures, courses | 07:26, 19:26 | yes |
 | `yellowsubmarine` | Yellow Submarine (yellowsubmarine.org.il): live-music club in Jerusalem | 06:58, 18:58 | yes |
 | `halutz` | HaHalutz 33 (halutz.co.il): culture bar in Be'er Sheva's Old City, second stage in Sderot | 07:16, 19:16 | yes |
 | `viagogo` | viagogo (viagogo.com/il): international ticket resale, events in Israel | 06:44, 18:44 | yes |

@@ -2359,6 +2359,25 @@ sources:
     http:
       concurrency: 2
 
+  zoatlv:
+    # ZOA House / בית ציוני אמריקה: culture house (shows, stand-up, lectures, conferences), Tel Aviv. WordPress:
+    # /event/ (30 a page) lists upcoming events only; each event's page adds the text and the seller's link
+    # (Leaan, EASYTIX...), which ties it to the seller's own listing. robots.txt allows everything.
+    enabled: true
+    cron: "26 7,19 * * *"
+    site_url: https://zoatlv.co.il
+    listing_path: /event/
+    page_path: /event/page/{page}/
+    max_pages: 30
+    seller_hosts: {tickets.zoatlv.co.il: easytix.co.il}   # ZOA's EASYTIX box office, listed by easytix
+    venue_name: בית ציוני אמריקה
+    address: דניאל פריש 1
+    city: תל אביב-יפו
+    latitude: 32.0746   # Nominatim: the arts centre itself
+    longitude: 34.7823
+    http:
+      concurrency: 2
+
   yellowsubmarine:
     # Yellow Submarine: live-music club, Jerusalem. WordPress: /event/ lists every upcoming show (date
     # without a year, door / show times); each show's page adds the year, prices, text and the Eventer link.
