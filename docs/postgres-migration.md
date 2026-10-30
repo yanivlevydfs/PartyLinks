@@ -739,3 +739,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **כתיבה:** ‏`POST /api/email/unsubscribe` (‏`digest` / `all`): ‏`UPDATE users SET digest_opt_in = false, digest_opt_in_at = NULL, digest_opt_out_at = COALESCE(digest_opt_out_at, now())` (הסירוב הראשון נשמר בלחיצה חוזרת). ‏`PATCH /api/me` כשהדיג'סט משתנה: כיבוי שם `now()`, הדלקה מנקה ל-NULL.
 - **קריאה:** ‏`GET /admin/api/users/{id}` מחזיר את העמודה (אותה שורה שכבר נקראת, בלי query חדש).
 - **Tests:** ‏`tests/test_mail.py::test_opt_out_time_is_kept_and_shown_to_the_admin`, ‏`test_unsubscribe_link`.
+
+### 2026-10-30 (מועד נוסף של מופע מוכר אינו חדשות)
+- **שאילתה:** ה-NOT EXISTS של ה-matcher כבר לא דורש אותו `start_at`: ‏`EXISTS (SELECT 1 FROM events o WHERE o.source = e.source AND o.title = e.title AND o.id <> e.id AND o.first_seen_at <= :cursor)`. ספקים כמו funzing (סיור יומי) ו-muzi מוסיפים כל יום מועד חדש לאותו מופע, וכל מועד נספר כאירוע חדש בפעמון. מופע חדש בכמה מועדים במעבר אחד = התראה אחת, המועד הקרוב (בקוד, לפי title).
+- **אינדקס חדש:** `ix_events_source_title` על `events (source, title)` לבדיקה הזו, נבנה ב-`create_schema`. ‏`ix_events_source_start` כבר לא בשימוש בקוד; נשאר בפרודקשן (create_schema לא מוחק) ויימחק בבדיקת האינדקסים של 2026-11-04.
+- **Tests:** ‏`tests/test_alerts_flood.py::test_more_dates_of_a_known_show_are_not_news_and_a_new_show_is_one_hit`.

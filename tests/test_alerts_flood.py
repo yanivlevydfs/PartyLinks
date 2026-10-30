@@ -45,6 +45,23 @@ def test_a_show_relisted_under_a_new_id_is_not_news_again(tmp_path: Path, fake: 
         assert matcher.run(settings, db) == 1
 
 
+def test_more_dates_of_a_known_show_are_not_news_and_a_new_show_is_one_hit(tmp_path: Path, fake: FakeGoogle) -> None:
+    settings = _settings(tmp_path)
+    db = seed(settings, [])
+    app = create_app(settings, start_scheduler=False)
+    matcher.run(settings, db)
+    with TestClient(app) as c:
+        sign_in(c, fake)
+        c.post("/api/me/alerts", json={"criteria": {"q": "techno"}}, headers=OURS)
+        # A new show at three dates: one notification, the soonest date.
+        seed(settings, [event(f"t{d}", SOON + timedelta(days=d), title="Techno tour") for d in (2, 0, 1)])
+        assert matcher.run(settings, db) == 1
+        assert [i["event"]["id"] for i in c.get("/api/me/bell").json()["items"]] == ["test:t0"]
+        # The next day the source adds one more date of it: not news.
+        seed(settings, [event("t9", SOON + timedelta(days=9), title="Techno tour")])
+        assert matcher.run(settings, db) == 0
+
+
 def test_one_pass_gives_a_user_at_most_the_cap_soonest_first(tmp_path: Path, fake: FakeGoogle) -> None:
     settings = _settings(tmp_path, max_hits_per_pass=2)
     db = seed(settings, [])

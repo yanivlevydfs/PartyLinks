@@ -115,12 +115,12 @@ def run(settings: Settings, db: Database) -> int:
             select(group).group_by(group)
             .having(func.min(EventRow.first_seen_at) > state.cursor, func.min(EventRow.first_seen_at) <= upto)
         )  # fmt: skip
-        # A source that gives a show a new id (the old row unlisted, so dedup leaves it out) is not news:
-        # the same source had the same title at the same start before this window. Without this, those
-        # re-listings came back to the bell every pass, even after the user cleared them.
+        # A show the source already listed before this window is not news, at any date: a re-listing under
+        # a new id, or one more date of it (a daily tour adds a slot every day, a play adds shows). Without
+        # this, those dates came back to the bell every pass, even after the user cleared them.
         older = aliased(EventRow)
         relisted = exists().where(
-            older.source == EventRow.source, older.title == EventRow.title, older.start_at == EventRow.start_at,
+            older.source == EventRow.source, older.title == EventRow.title,
             older.id != EventRow.id, older.first_seen_at <= state.cursor,
         )  # fmt: skip
         new_ids = list(session.scalars(
@@ -147,20 +147,26 @@ def run(settings: Settings, db: Database) -> int:
             criteria.setdefault(digest, Criteria.model_validate(raw))
         sets = _Sets(settings, session, new_ids)
         stamp = now.replace(tzinfo=None)  # UTCDateTime columns hold naive UTC
-        starts = dict(session.execute(select(EventRow.id, EventRow.start_at).where(EventRow.id.in_(new_ids))).all())
+        info = session.execute(select(EventRow.id, EventRow.start_at, EventRow.title).where(EventRow.id.in_(new_ids))).all()
+        starts = {i: s for i, s, _ in info}
+        titles = {i: t for i, _, t in info}
         per_user: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(list))  # user -> event -> alerts
         for digest, who in owners.items():
             for event_id in sets.match(criteria[digest].params(today)):
                 for a, u in who:
                     per_user[u][event_id].append(a)
-        # Flood guard: one pass gives a user at most max_hits_per_pass new events, the soonest.
+        # A new show listed at many dates is one notification, its soonest date. Flood guard: one pass gives
+        # a user at most max_hits_per_pass new events, the soonest.
         cap = settings.accounts.max_hits_per_pass
         rows = []
         for u, events in per_user.items():
-            soonest = sorted(events, key=lambda e: (starts.get(e) is None, starts.get(e) or now, e))[:cap]
+            shows: dict[str, str] = {}
+            for e in sorted(events, key=lambda e: (starts.get(e) is None, starts.get(e) or now, e)):
+                shows.setdefault(titles.get(e) or e, e)
+            soonest = list(shows.values())[:cap]
             rows += [(a, e, u, stamp) for e in soonest for a in events[e]]
-            if len(events) > cap:
-                log.warning("alerts: user %s had %d new matches in one pass, kept the soonest %d", u, len(events), cap)
+            if len(shows) > cap:
+                log.warning("alerts: user %s had %d new matches in one pass, kept the soonest %d", u, len(shows), cap)
         _insert_hits(session, rows)
     log.info(
         "alerts: %d new events, %d alerts (%d distinct), %d queries, %d hits",
