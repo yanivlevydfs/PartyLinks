@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import sourceNames from "./sourceNames.json";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, ScrollRestoration } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { CookieConsent, useConsent } from "./consent";
@@ -84,6 +84,9 @@ export function useTitle(title: string | undefined) {
 }
 
 // --------------------------------------------------------------------------- layout
+// The home page and its filter pages (/genre/x, /tonight...) are one page: picking a filter keeps the scroll.
+const LANDING = /^\/(tonight|weekend|genre|city|region)?(\/|$)/;
+
 export function Layout() {
   const { t, lang } = useT();
   const setLang = useStore((s) => s.setLang);
@@ -98,6 +101,8 @@ export function Layout() {
 
   return (
     <>
+      {/* A new page starts at the top (an event opened from a scrolled list started near its bottom); back restores. */}
+      <ScrollRestoration getKey={(loc) => (LANDING.test(loc.pathname) ? "landing" : loc.key)} />
       <CookieConsent />
       <InstallBanner />
       <header className="top">
