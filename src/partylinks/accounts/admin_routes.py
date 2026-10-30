@@ -97,7 +97,7 @@ def user_detail(user_id: str, request: Request) -> dict[str, Any]:
         user = _user(session, user_id)
         live, extra = _counts(session, [user.id])
         return _row(user, live, extra) | {
-            "digest_opt_in_at": user.digest_opt_in_at, "blocked_at": user.blocked_at,
+            "digest_opt_in_at": user.digest_opt_in_at, "digest_opt_out_at": user.digest_opt_out_at, "blocked_at": user.blocked_at,
             "welcome_sent_at": user.welcome_sent_at, "last_digest_at": user.last_digest_at,
         }  # fmt: skip
 

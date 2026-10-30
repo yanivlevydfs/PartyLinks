@@ -143,14 +143,57 @@ def test_unsubscribe_link(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> N
         uid = c.get("/api/me").json()["id"]
         c.cookies.clear()
         token = tokens.make(settings, uid, "all")
-        assert c.get("/api/email/unsubscribe", params={"t": token + "x"}).status_code == 400
+        bad = c.get("/api/email/unsubscribe", params={"t": token + "x"})
+        assert bad.status_code == 400 and "text/html" in bad.headers["content-type"]  # a page, not JSON
+        assert "הקישור לא תקין" in bad.text and "/account" in bad.text
+        assert c.post("/api/email/unsubscribe", params={"t": "junk"}).status_code == 400
         assert c.get("/api/email/unsubscribe", params={"t": token}).status_code == 200  # a GET changes nothing
         with db.session() as s:
             assert s.get(UserRow, uid).digest_opt_in
         assert c.post("/api/email/unsubscribe", params={"t": token}).status_code == 200  # one-click
+        with db.session() as s:
+            refused = s.get(UserRow, uid).digest_opt_out_at
+            assert refused is not None
+        assert c.post("/api/email/unsubscribe", params={"t": token}).status_code == 200  # again: the first refusal stays
+        with db.session() as s:
+            assert s.get(UserRow, uid).digest_opt_out_at == refused
         sign_in(c, fake)
         assert not c.get("/api/me").json()["digest_opt_in"]
         assert not c.get("/api/me/alerts").json()["items"][0]["instant"]
+
+
+def test_unsubscribe_links_survive_a_secret_rotation(tmp_path: Path) -> None:
+    from pydantic import SecretStr
+
+    settings = _settings(tmp_path)
+    old = tokens.make(settings, "u1", "digest")  # signed with accounts.session_secret
+    settings.mail.unsubscribe_secret = SecretStr("new-" + "n" * 32)
+    new = tokens.make(settings, "u1", "digest")
+    assert new != old and tokens.read(settings, old) == tokens.read(settings, new) == ("u1", "digest")
+    # The session secret rotated too: the links signed with it still work from the old list.
+    settings.mail.unsubscribe_old_secrets = [settings.accounts.session_secret]
+    settings.accounts.session_secret = SecretStr("rotated-" + "r" * 32)
+    assert tokens.read(settings, old) == tokens.read(settings, new) == ("u1", "digest")
+    assert tokens.make(settings, "u1", "digest") == new  # still signed with unsubscribe_secret
+    settings.mail.unsubscribe_old_secrets = []
+    assert tokens.read(settings, old) is None
+
+
+def test_opt_out_time_is_kept_and_shown_to_the_admin(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> None:
+    app, db, settings = _app(tmp_path)
+    with TestClient(app) as c:
+        sign_in(c, fake, email="boss@spotx.test", sub="g-admin")
+        uid = c.get("/api/me").json()["id"]
+        c.patch("/api/me", json={"digest_opt_in": True}, headers=OURS)
+        with db.session() as s:
+            assert s.get(UserRow, uid).digest_opt_out_at is None
+        c.patch("/api/me", json={"digest_opt_in": False}, headers=OURS)
+        with db.session() as s:
+            assert s.get(UserRow, uid).digest_opt_out_at is not None
+        assert c.get(f"/admin/api/users/{uid}").json()["digest_opt_out_at"]
+        c.patch("/api/me", json={"digest_opt_in": True}, headers=OURS)
+        with db.session() as s:
+            assert s.get(UserRow, uid).digest_opt_out_at is None and s.get(UserRow, uid).digest_opt_in_at is not None
 
 
 def test_switches_account_errors_and_admin(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> None:

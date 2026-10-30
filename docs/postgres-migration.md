@@ -733,3 +733,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Queries:** הפעמון, ספירת ה-unseen שלו ושל כל התראה ב-`/api/me/alerts` מוסיפים `cleared_at IS NULL`. ‏`/api/me/for-you`: ‏`events WHERE <any active alert> AND id NOT IN (SELECT event_id FROM alert_hits WHERE user_id = :u AND cleared_at IS NOT NULL)`, על האינדקס של `user_id`. מיילים: instant ו-digest מוסיפים `cleared_at IS NULL` (לא שולחים מה שהמשתמש ניקה).
 - **ללא שינוי:** ה-matcher עדיין מוחק בכל מעבר hits של אירועים שהסתיימו (גם מנוקים), ו-`delete_hits` מוחק אותם עם האירוע.
 - **Tests:** ‏`tests/test_alerts.py::test_cleared_notifications_leave_for_you_and_are_not_emailed`.
+
+### 2026-10-30 (זמן הסירוב לדיג'סט)
+- **עמודה חדשה:** `users.digest_opt_out_at` (UTCDateTime, nullable, בלי default), נוספת ב-`ADD COLUMN` של `create_schema`. מתי המשתמש סירב לדיג'סט השבועי; NULL כשהוא שוב בפנים.
+- **כתיבה:** ‏`POST /api/email/unsubscribe` (‏`digest` / `all`): ‏`UPDATE users SET digest_opt_in = false, digest_opt_in_at = NULL, digest_opt_out_at = COALESCE(digest_opt_out_at, now())` (הסירוב הראשון נשמר בלחיצה חוזרת). ‏`PATCH /api/me` כשהדיג'סט משתנה: כיבוי שם `now()`, הדלקה מנקה ל-NULL.
+- **קריאה:** ‏`GET /admin/api/users/{id}` מחזיר את העמודה (אותה שורה שכבר נקראת, בלי query חדש).
+- **Tests:** ‏`tests/test_mail.py::test_opt_out_time_is_kept_and_shown_to_the_admin`, ‏`test_unsubscribe_link`.

@@ -270,7 +270,8 @@ class SecurityMiddleware:
             if not local:
                 self.guard.strike(ip, cfg, f"probe {path[:80]}", now)
             return await reject(404, "not found")
-        if not agent and path != "/health":
+        # RFC 8058 one-click unsubscribe comes from mail providers, some of which send no User-Agent.
+        if not agent and path not in ("/health", "/api/email/unsubscribe"):
             return await reject(403, "forbidden")
         # Local calls (the startup cache warm-up runs through httpx) and health probes pass.
         blocked = any(bot.lower() in agent.lower() for bot in cfg.blocked_bots)

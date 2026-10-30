@@ -176,6 +176,19 @@ def _open_app(tmp_path: Path) -> Any:
     return create_app(settings, start_scheduler=False)
 
 
+def test_one_click_unsubscribe_needs_no_user_agent(tmp_path: Path) -> None:
+    """RFC 8058: mail providers POST the List-Unsubscribe link, some with no User-Agent."""
+    from partylinks.mail import tokens
+
+    settings = settings_for(tmp_path)
+    settings.accounts.session_secret = SecretStr("s" * 32)
+    token = tokens.make(settings, "nobody", "all")
+    with TestClient(create_app(settings, start_scheduler=False), client=("198.51.100.9", 1)) as c:
+        no_agent = {"user-agent": ""}
+        assert c.post("/api/email/unsubscribe", params={"t": token}, headers=no_agent).status_code == 200
+        assert c.get("/", headers=no_agent).status_code == 403  # everything else still needs one
+
+
 def test_every_write_and_admin_route_needs_the_token(tmp_path: Path) -> None:
     """A route that changes state, or one under /admin/api, is refused without the token:
     enumerated from the app, so a route added later without AdminDep fails here."""

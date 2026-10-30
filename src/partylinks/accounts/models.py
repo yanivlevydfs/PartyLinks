@@ -35,6 +35,7 @@ class UserRow(Base):
     # needs the user's explicit yes, kept with its time.
     digest_opt_in: Mapped[bool] = mapped_column(Boolean, default=False)
     digest_opt_in_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    digest_opt_out_at: Mapped[datetime | None] = mapped_column(UTCDateTime)  # when they said no; None once back in
     last_digest_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     last_instant_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     welcome_sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)

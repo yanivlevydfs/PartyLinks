@@ -61,6 +61,7 @@ def edit_me(body: MePatch, user: UserDep, request: Request, response: Response) 
         if body.digest_opt_in is not None and body.digest_opt_in != row.digest_opt_in:
             row.digest_opt_in = body.digest_opt_in
             row.digest_opt_in_at = utcnow() if body.digest_opt_in else None  # proof of consent (§30A)
+            row.digest_opt_out_at = None if body.digest_opt_in else utcnow()
         out = MeOut.model_validate(row)
     response.headers.update(NO_STORE)
     return out
