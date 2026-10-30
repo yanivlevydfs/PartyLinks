@@ -623,6 +623,16 @@ dedup:
     art: [exhibitions]
     food: [markets, food]
 
+# Event forecasts (GET /weather): MET Norway, one fetch per ~10 km cell, cached beside the database.
+weather:
+  timeout_seconds: 10           # one MET / Nominatim request; a slow upstream never holds a visitor longer
+  min_ttl_seconds: 3600         # never refetch a place sooner, whatever MET's Expires says
+  failure_ttl_seconds: 300      # a failed fetch or place lookup waits this long before trying again
+  max_fetches: 120              # upstream fetches per window, whatever callers ask (the endpoint is public)
+  fetch_window_seconds: 600
+  browser_cache_seconds: 900
+  unknown_place_cache_seconds: 86400
+
 # Coordinates for events whose source gives only an address, so they show on the map.
 # Order: manual pins below -> another event at the same venue / street address -> cached or new
 # OpenStreetMap Nominatim lookup (max 1 request/second; every answer is cached in geo_cache).

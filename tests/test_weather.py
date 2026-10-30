@@ -9,6 +9,7 @@ from typing import Any, ClassVar, Self
 import pytest
 
 from partylinks import weather
+from partylinks.config import Settings, WeatherSettings
 
 MET = {
     "properties": {
@@ -70,8 +71,31 @@ def test_one_fetch_per_place_kept_across_restarts(tmp_path: Path, calls: list[di
     assert asyncio.run(weather.forecast(32.08, 34.78, "test", path)) == first and len(calls) == 1
 
 
-def test_fetches_are_capped(tmp_path: Path, calls: list[dict[str, Any]], monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(weather, "MAX_FETCHES", 2)
+def test_fetches_are_capped(tmp_path: Path, calls: list[dict[str, Any]]) -> None:
+    cfg = WeatherSettings(max_fetches=2)
     for lat in (31.0, 32.0, 33.0):
-        asyncio.run(weather.forecast(lat, 35.0, "test", tmp_path / "w.json"))
+        asyncio.run(weather.forecast(lat, 35.0, "test", tmp_path / "w.json", cfg))
     assert len(calls) == 2
+
+
+def test_a_failed_place_lookup_backs_off(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Nominatim down: one timeout, then the next unknown places answer at once (no request each)."""
+    tried: list[str] = []
+
+    class DownClient:
+        def __init__(self, **_: Any) -> None: ...
+        async def __aenter__(self) -> Self:
+            return self
+        async def __aexit__(self, *_: object) -> None: ...
+        async def get(self, url: str, params: dict[str, Any]) -> Any:
+            tried.append(params["q"])
+            raise weather.httpx.ConnectTimeout("down")
+
+    monkeypatch.setattr(weather.httpx, "AsyncClient", DownClient)
+    monkeypatch.setattr(weather, "_found", {})
+    monkeypatch.setattr(weather, "_fetched_at", [])
+    monkeypatch.setattr(weather, "_nominatim_down_until", 0.0)
+    settings, path = Settings(), tmp_path / "places.json"
+    assert asyncio.run(weather._looked_up(settings, "כפר נידח", path)) is None
+    assert asyncio.run(weather._looked_up(settings, "עוד כפר", path)) is None
+    assert tried == ["כפר נידח"] and "כפר נידח" not in weather._found  # asked again once the back-off is over

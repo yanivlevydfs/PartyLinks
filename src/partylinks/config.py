@@ -506,6 +506,21 @@ class SecuritySettings(BaseModel):
     blocked_clients: list[str] = Field(default_factory=list)
 
 
+class WeatherSettings(BaseModel):
+    """Event forecasts (partylinks.weather): MET Norway's Locationforecast, cached per 0.1° cell."""
+
+    url: str = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
+    # One MET or Nominatim request's limit: a slow upstream never holds a visitor's request longer.
+    timeout_seconds: float = Field(10, gt=0)
+    min_ttl_seconds: float = Field(3600, gt=0)  # never refetch a place sooner, whatever MET's Expires says
+    failure_ttl_seconds: float = Field(300, gt=0)  # a failed fetch / lookup is not retried for every card
+    # Whatever callers ask (the endpoint is public), at most this many upstream fetches per window.
+    max_fetches: int = Field(120, ge=1)
+    fetch_window_seconds: float = Field(600, gt=0)
+    browser_cache_seconds: int = Field(900, ge=0)  # Cache-Control on a forecast
+    unknown_place_cache_seconds: int = Field(86400, ge=0)  # ...and on "no such place" (looked up, not found)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="PARTYLINKS_",
@@ -532,6 +547,7 @@ class Settings(BaseSettings):
     utm: UtmSettings = Field(default_factory=UtmSettings)
     accounts: AccountsSettings = Field(default_factory=AccountsSettings)
     mail: MailSettings = Field(default_factory=MailSettings)
+    weather: WeatherSettings = Field(default_factory=WeatherSettings)
     # Raw per-source blocks; each scraper validates its own block with its own model.
     # None = a block whose keys are all commented out (reported as invalid, not a crash).
     sources: dict[str, dict[str, Any] | None] = Field(default_factory=dict)
