@@ -40,9 +40,8 @@ from partylinks.admin import router as admin_router
 from partylinks.ads import service as ads
 from partylinks.artwork import service as artwork
 from partylinks.artwork.routes import router as artwork_router
-from partylinks.mail.images import router as mail_images_router
-from partylinks.saved.routes import router as saved_router
 from partylinks.config import Settings, get_settings
+from partylinks.config_store import store as config_overrides
 from partylinks.db import (
     Database,
     DealChangeRow,
@@ -54,10 +53,12 @@ from partylinks.db import (
 )
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.logs import setup_logging
+from partylinks.mail.images import router as mail_images_router
 from partylinks.media import VARIANT_WIDTHS, variant_path
 from partylinks.models import EntryType
 from partylinks.parsing import TidyText
 from partylinks.places import city_abroad, city_name
+from partylinks.saved.routes import router as saved_router
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
 from partylinks.search import by_skeleton, did_you_mean, relevance, smart_filters, sounds_like
@@ -741,13 +742,17 @@ def create_app(
 ) -> FastAPI:
     """``worker_process``: the scheduler and sources run in the worker process (partylinks/worker);
     this one serves, and reads the worker's state / sends it the admin's commands."""
+    from_config = settings is None  # the app's own settings (not a test's): the admin's overrides apply
     settings = settings or get_settings()
     setup_logging(settings.logging)  # also for `serve --reload` workers, which never run cli.main()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        nonlocal settings
         db = Database(settings.database.url, settings.database.echo, settings.database)
         db.create_schema()
+        if from_config:
+            settings = config_overrides.load(db)  # settings.yaml + the admin's overrides from the database
         service = ScrapeService(settings, db, owns_runs=not worker_process)
         if not worker_process:
             service.recompute_areas()  # stored events follow the configured areas (the worker does it otherwise)
@@ -1235,6 +1240,9 @@ def _register_routes(app: FastAPI) -> None:
 
     app.include_router(plans_router)
     app.include_router(ads_admin_router)
+    from partylinks.config_store.routes import router as config_overrides_router
+
+    app.include_router(config_overrides_router)
 
     @app.get("/events/rails", response_model=RailsOut, tags=["events"])
     def rails(request: Request) -> Response:

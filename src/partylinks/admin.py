@@ -24,7 +24,8 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from partylinks import clicks, searches
-from partylinks.config import Settings, config_path, get_settings, project_path
+from partylinks.config import Settings, config_path, project_path
+from partylinks.config_store import store as config_overrides
 from partylinks.db import EventRow, ImageRow, ScrapeRunRow, TicketRow, upcoming_filter
 from partylinks.logs import debug_enabled, set_debug
 from partylinks.runs.health import paused_sources, set_paused
@@ -431,8 +432,7 @@ async def apply_config(request: Request) -> dict[str, Any]:
         answer = await asyncio.to_thread(_ask_worker, request, "reload")
         if not answer.get("applied"):
             return answer
-        get_settings.cache_clear()
-        settings = get_settings()
+        settings = config_overrides.load(app.state.db)  # file + the admin's overrides from the database
         restart = [k for k in RESTART_KEYS if getattr(settings, k) != getattr(app.state.settings, k)]
         app.state.settings, app.state.service = settings, ScrapeService(settings, app.state.db, owns_runs=False)
         old.shutdown()
@@ -441,8 +441,7 @@ async def apply_config(request: Request) -> dict[str, Any]:
     running = [name for name in configured_sources(app.state.settings) if old.is_running(name)]
     if running:
         return {"applied": False, "reason": f"waiting for running sources: {', '.join(running)}; apply again later"}
-    get_settings.cache_clear()
-    settings = get_settings()
+    settings = config_overrides.load(app.state.db)
     restart = [k for k in RESTART_KEYS if getattr(settings, k) != getattr(app.state.settings, k)]
     service = ScrapeService(settings, app.state.db)
     service.recompute_areas()

@@ -24,6 +24,7 @@ from pydantic_settings import (
 )
 
 from partylinks.accounts.config import AccountsSettings
+from partylinks.config_store.source import OverridesSource
 from partylinks.mail.config import MailSettings
 
 CONFIG_ENV_VAR = "PARTYLINKS_CONFIG"
@@ -604,6 +605,7 @@ class Settings(BaseSettings):
             init_settings,
             env_settings,
             dotenv_settings,
+            OverridesSource(settings_cls),  # the admin's changes, from the database (partylinks.config_store)
             YamlConfigSettingsSource(settings_cls, yaml_file=yaml_path, yaml_file_encoding="utf-8"),
         )
 

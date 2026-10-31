@@ -800,3 +800,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **הבאג:** אירוע בלי `end_at` (כמחצית האירועים, 27,559 מתוך 53,902) נשאר מוצג עד חצות גם אחרי שהתחיל: ב-20:22 הוצגו 1,194 אירועים שהתחילו בלי שעת סיום, 618 מהם לפני יותר מ-6 שעות (הקרנה ב-16:15 עדיין ברשימה). מסיבה של אתמול ב-23:00 בלי סיום נעלמה כבר בחצות.
 - **השאילתה:** ב-`retention.current_clause` אירוע בלי `end_at` נוכחי כש-`start_at > now - assumed_duration_hours` (חדש ב-`retention`, ברירת מחדל 3), או כשהוא רישום של יום שלם (`time_known IS false` או `start_at` = חצות היום המקומית) מהיום. אירוע עם `end_at` כמקודם. אותו כלל ב-`is_current` (ייבוא, עמוד אירוע) ובמחיקה השעתית. בלי שינוי טבלאות, עמודות או אינדקס; בלי פונקציית אזור זמן ב-SQL (שרת ה-PostgreSQL המקומי לא מכיר `Asia/Jerusalem`). נמדד בפרוד: ‏53,896 ל-53,389 אירועים ראשיים נוכחיים, ‏51 ms ל-31 ms.
 - **Tests:** ‏`tests/test_resilience.py::test_no_end_time_ends_after_assumed_duration_all_day_at_midnight`.
+
+### 2026-10-31 (פרמטרים מה-admin נשמרים ב-DB)
+- **הבאג:** לשונית config ב-admin שמרה את `config/settings.yaml` בתוך הקונטיינר; הקובץ מגיע מה-image, וכל deploy מחק כל שינוי (רק `/app/data` נשמר).
+- **טבלה חדשה:** ‏`config_overrides` ‏(`id` serial PK, ‏`data` JSONB, ‏`note` text, ‏`created_at` timestamp UTC). שורה לכל גרסה שנשמרה, החדשה בתוקף; נשמרות 50 האחרונות (`DELETE ... WHERE id NOT IN (SELECT id ... ORDER BY id DESC LIMIT 50)` בכל שמירה). נוצרת ב-`create_schema` (‏`partylinks.config_store.models`), בלי foreign keys ובלי אינדקס נוסף מעבר ל-PK.
+- **שאילתות:** ‏`SELECT ... ORDER BY id DESC LIMIT 1` בהפעלה של כל תהליך (web, worker) ובכל apply מה-admin; רשימת הגרסאות בלשונית. כמה שורות לכל היותר.
+- **Tests:** ‏`tests/test_config_store.py`.

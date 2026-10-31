@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Loader, TZ } from "../ui";
 import { Sponsored } from "../ads/AdminSponsored";
+import { Overrides } from "../config_store/AdminOverrides";
 import { SignInButton } from "../accounts/AccountSlot";
 import { AdminEmail } from "../accounts/AdminEmail";
 import { AdminUsers } from "../accounts/AdminUsers";
@@ -120,7 +121,7 @@ function Admin() {
       {tab === "sponsored" && <Sponsored />}
       {tab === "sources" && <Sources />}
       {tab === "runs" && <Runs />}
-      {tab === "config" && <Config />}
+      {tab === "config" && <Overrides />}
       {tab === "maintenance" && <Maintenance data={ov.data} />}
       {tab === "users" && <AdminUsers />}
       {tab === "email" && <AdminEmail />}
@@ -553,71 +554,6 @@ function RunRow({ r }: { r: any }) {
   );
 }
 
-function Config() {
-  const qc = useQueryClient();
-  const cfg = useQuery({ queryKey: ["config"], queryFn: () => call("/admin/api/config"), refetchOnWindowFocus: false });
-  const [text, setText] = useState<string | null>(null);
-  const [check, setCheck] = useState<{ ok: boolean; errors: string[] } | null>(null);
-  const [saved, setSaved] = useState<any>(null);
-  const [err, setErr] = useState("");
-  const [busy, setBusy] = useState(false);
-  const yamlText = text ?? cfg.data?.yaml ?? "";
-  const dirty = text != null && text !== cfg.data?.yaml;
-
-  const run = async (fn: () => Promise<void>) => {
-    setBusy(true); setErr(""); setSaved(null);
-    try { await fn(); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
-  };
-  const validate = () => run(async () => setCheck(await post("/admin/api/config/validate", { yaml: yamlText })));
-  const save = () => run(async () => {
-    const r = await call("/admin/api/config", { method: "PUT", body: JSON.stringify({ yaml: yamlText }) });
-    setSaved(r); setCheck(null); setText(null);
-    await qc.invalidateQueries();
-  });
-  const loadBackup = (name: string) => name && run(async () => {
-    setText((await call(`/admin/api/config/backups/${encodeURIComponent(name)}`)).yaml);
-    setCheck(null);
-  });
-
-  if (cfg.isError) return <p className="adm-err">{String(cfg.error)}</p>;
-  if (!cfg.data) return <Loader />;
-  return (
-    <div className="adm-config">
-      <div className="adm-bar">
-        <code className="adm-path">{cfg.data.path}</code>
-        <button className="adm-btn ghost" onClick={validate} disabled={busy}>Validate</button>
-        <button className="adm-btn" onClick={save} disabled={busy || !dirty}>Save &amp; apply</button>
-        <button className="adm-btn ghost" onClick={() => { setText(null); setCheck(null); }} disabled={busy || !dirty}>Discard changes</button>
-        {cfg.data.backups.length > 0 && (
-          <select value="" onChange={(e) => loadBackup(e.target.value)} aria-label="Load a backup">
-            <option value="">Load backup…</option>
-            {cfg.data.backups.map((b: string) => <option key={b}>{b}</option>)}
-          </select>
-        )}
-      </div>
-      {check && (check.ok ? <p className="adm-ok">✓ Valid</p> : <pre className="adm-err">{check.errors.join("\n")}</pre>)}
-      {err && <pre className="adm-err">{err}</pre>}
-      {saved && (
-        <p className={saved.applied ? "adm-ok" : "adm-warn"}>
-          Saved (previous version kept as {saved.backup}).{" "}
-          {saved.applied ? "Applied now." : `Not applied yet: ${saved.reason}`}
-          {saved.restart_required?.length > 0 && ` Restart the server for: ${saved.restart_required.join(", ")}.`}
-        </p>
-      )}
-      <textarea className="adm-yaml" spellCheck={false} value={yamlText} onChange={(e) => setText(e.target.value)} aria-label="settings.yaml" />
-      <p className="adm-note">
-        Environment variables (<code>PARTYLINKS_*</code>, <code>.env</code>) override the file. Saving checks the file, keeps a backup in
-        <code> config/backups/</code>, and reloads sources, schedules, enrichment, media and retention without a restart. Changes to
-        <code> database</code> or <code>api</code> need a restart.
-      </p>
-      <details className="adm-effective">
-        <summary>Settings in use right now (file + environment, secrets hidden)</summary>
-        <pre>{JSON.stringify(cfg.data.effective, null, 2)}</pre>
-      </details>
-    </div>
-  );
-}
-
 function Maintenance({ data }: { data: any }) {
   if (!data) return <Loader />;
   const r = data.retention;
@@ -627,6 +563,7 @@ function Maintenance({ data }: { data: any }) {
         <ul className="adm-list">
           <li>Status: <b>{r.enabled ? "enabled" : "disabled"}</b> · schedule <code>{r.cron}</code> ({data.timezone})</li>
           <li>Deletes events that ended before <b>{r.keep_days_back === 0 ? "today" : `${r.keep_days_back} day(s) ago`}</b> (Israel time), with their tickets and artwork</li>
+          <li>No end time: hidden and deleted <b>{r.assumed_duration_hours} h</b> after the start (all-day listings at midnight) · change it under <b>config</b>: <code>retention.assumed_duration_hours</code></li>
           <li>Deletes run history older than <b>{r.keep_runs_days} days</b></li>
           <li>Next run: <b>{when(r.next_run_at)}</b></li>
         </ul>

@@ -21,7 +21,8 @@ from apscheduler.schedulers.base import STATE_PAUSED, STATE_RUNNING
 from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert
 
-from partylinks.config import Settings, get_settings
+from partylinks.config import Settings
+from partylinks.config_store import store as config_overrides
 from partylinks.db import Database, utcnow
 from partylinks.scheduler import build_scheduler
 from partylinks.scrapers import configured_sources
@@ -157,8 +158,7 @@ class Worker:
         old = self.service
         if running := [n for n in configured_sources(self.settings) if old.is_running(n)]:
             return {"applied": False, "reason": f"waiting for running sources: {', '.join(running)}; apply again later"}
-        get_settings.cache_clear()
-        self.settings = get_settings()
+        self.settings = config_overrides.load(self.db)  # file + the admin's overrides from the database
         self.service = ScrapeService(self.settings, self.db)
         self.service.recompute_areas()
         if self.scheduler.running:
@@ -235,5 +235,6 @@ def _report(name: str) -> Callable[[Future[RunResult]], None]:
 def main(settings: Settings) -> int:
     db = Database(settings.database.url, settings.database.echo, settings.database)
     db.create_schema()
+    settings = config_overrides.load(db)  # settings.yaml + the admin's overrides from the database
     asyncio.run(Worker(settings, db).run())
     return 0

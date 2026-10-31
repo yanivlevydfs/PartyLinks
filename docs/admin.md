@@ -24,7 +24,7 @@ neither configured, the console works only from the same machine.
 | **sponsored** | Paid placements: the site-wide switch, search and add events, per pick where it shows (side rails, top of results, or both), rail side and order, campaign end; and the advertiser report (views, clicks, CTR, the part from results) with CSV download |
 | **sources** | Each source's schedule and last run; run now, pause or resume a source (kept across deploys; resume also lifts a run-manager pause), debug logging |
 | **runs** | Run history, filtered by source and status, with counts (found, saved, failed, changed, removed) and errors |
-| **config** | Edit `settings.yaml` with validation, automatic backups in `config/backups/`, and apply without a restart |
+| **config** | Override any setting: the changed keys only, saved in the database (`config_overrides`, every version kept), validated as file + overrides, applied in both processes without a restart; "Back to file" per key. `settings.yaml` (from git) is shown read-only, with the settings in use |
 | **maintenance** | Purge now, database size, geocode missing places (and correct city centres abroad), recompute areas, regroup duplicates |
 
 ## Run manager (`runs/health.py`)

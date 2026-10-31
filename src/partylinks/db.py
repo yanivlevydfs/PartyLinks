@@ -934,6 +934,7 @@ import partylinks.ads.models
 import partylinks.alerts.models
 import partylinks.artistdb
 import partylinks.artwork.models
+import partylinks.config_store.models
 import partylinks.mail.models
 import partylinks.plans.models
 import partylinks.saved.models

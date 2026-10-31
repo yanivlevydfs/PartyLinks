@@ -3,6 +3,15 @@
 Every setting lives in `config/settings.yaml`. There are no hard-coded URLs, limits or schedules in
 the code. A different file can be used with `PARTYLINKS_CONFIG=/path/to/settings.yaml`.
 
+## Admin overrides (database)
+
+The admin's **config** tab overrides any setting without a deploy. Only the changed keys are stored,
+in the `config_overrides` table (each save is a version; the newest is in force), and they are deep-merged
+over `settings.yaml` when settings load, in the web and the worker process alike, at startup and on
+every apply. A deploy replaces the file, never the overrides; "Back to file" drops one key. `database`
+and `admin` cannot be set there. Priority: environment variables > database overrides > `settings.yaml`.
+Code: `partylinks/config_store/`.
+
 ## Environment overrides
 
 Any key can be overridden with a `PARTYLINKS_` variable, using `__` for nesting. Variables are read
