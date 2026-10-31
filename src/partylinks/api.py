@@ -673,7 +673,8 @@ def build_event_filters(
     if artist:
         filters.append(lineup_has(artist))
     if venue:
-        filters.append(EventRow.venue_name.ilike(_contains(venue), escape="\\"))
+        # The venue's page: that name only, any case ("היכל התרבות" is not every היכל התרבות in the country).
+        filters.append(seo.like_contains(EventRow.venue_name, venue, whole=True))
     if venue_slug:
         filters.append(EventRow.venue_slug == venue_slug)
     if city:
@@ -1054,7 +1055,7 @@ def _register_routes(app: FastAPI) -> None:
             str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="DJ / performer in the lineup")
         ] = None,
         venue: Annotated[
-            str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="Venue name contains")
+            str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="Venue name (the whole name, any case)")
         ] = None,
         venue_slug: Annotated[str | None, Query(description="Exact venue slug")] = None,
         city: Annotated[str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="City contains")] = None,

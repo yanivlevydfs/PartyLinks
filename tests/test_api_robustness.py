@@ -158,3 +158,25 @@ def test_seo_pages_render_valid_markup(tmp_path: Path) -> None:
             assert got.status_code == 200
             _valid_page(got)
         assert c.get("/blog/no-such-post").status_code == 404
+
+
+def test_a_venue_page_is_that_venue_only(tmp_path: Path) -> None:
+    settings = _settings(tmp_path)
+    now = datetime.now(UTC)
+    seed(settings, [
+        event("hall", now + timedelta(days=1), venue_name="היכל התרבות"),
+        event("hall-rishon", now + timedelta(days=1), venue_name="היכל התרבות ראשון לציון"),
+        event("berlin", now + timedelta(days=5), venue_name="Berghain", address="Berlin, Germany", city="Berlin",
+              country="DE", latitude=52.51, longitude=13.44),
+    ])  # fmt: skip
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app, raise_server_exceptions=False, client=("198.51.100.79", 1)) as c:
+        found = c.get("/events", params={"venue": "היכל התרבות"}).json()["items"]
+        assert [e["id"] for e in found] == ["test:hall"]
+        assert [e["id"] for e in c.get("/events", params={"venue": "berghain"}).json()["items"]] == ["test:berlin"]
+        page = c.get("/venue/" + quote("היכל התרבות", safe="")).text
+        assert "Techno night hall<" in page and "Techno night hall-rishon" not in page
+        # A venue abroad is in the index and the sitemap, so its page lists its events and is indexed.
+        abroad = c.get("/venue/Berghain").text
+        assert "Techno night berlin" in abroad and "noindex" not in abroad
+        assert "/venue/Berghain" in c.get("/venues").text

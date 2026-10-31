@@ -69,3 +69,19 @@ def test_one_name_in_two_cities_is_two_venues() -> None:
         at("nocity", "תיאטרון באר שבע", "", None),
     ]
     assert infer_venues(rows) == {"tlv2": "הקאמרי", "bs2": "תיאטרון באר שבע"}
+
+
+def test_spellings_alike_but_for_punctuation_are_one_venue() -> None:
+    def at(id: str, name: str, city: str) -> VenueInput:
+        return VenueInput(id, name, name, None, None, None, city)
+
+    rows = [
+        at("a", "בית העם רחובות.", "רחובות"),
+        at("b", "בית העם רחובות.", "רחובות"),
+        at("c", "בית העם - רחובות", "רחובות"),
+        at("d", "The Wave Club", "אילת"),
+        at("e", "The wave club", "אילת"),
+        at("f", "The Wave Club", "אילת"),
+        at("g", "The wave club", "חיפה"),  # another city: another place
+    ]
+    assert infer_venues(rows) == {"c": "בית העם רחובות.", "e": "The Wave Club"}

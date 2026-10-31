@@ -5,7 +5,7 @@ Every site (and every promoter) writes venues differently - "Gagarin Club TLV",
 No alias lists: names are tied together by *where* they are.
 
 * Names whose events sit at the same spot (within ``RADIUS_M``) or at the same
-  street + number are one venue, shown under its most common real name (a name
+  street + number, or spelled alike but for case and punctuation, in one city, are one venue, shown under its most common real name (a name
   that is just an address, "שדרות רוטשילד 24", only wins when there is nothing else).
 * An event without a name takes the venue at its spot / street + number, or else
   its street address ("Rothschild Blvd 24"). A bare "Tel Aviv" says nothing: its
@@ -155,7 +155,11 @@ def infer_venues(rows: list[VenueInput]) -> dict[str, str | None]:
         parent[find(a)] = find(b)
 
     by_street: dict[tuple[str, str], Node] = {}
+    by_slug: dict[tuple[str, str], Node] = {}
     for r in named:
+        # Spellings that differ only in case and punctuation ("בית העם - רחובות" / "בית העם רחובות.").
+        if slug := slugify(r.source_name):
+            union(node[r.id], by_slug.setdefault((node[r.id][0], slug), node[r.id]))
         if key := street_key(r.address):
             union(node[r.id], by_street.setdefault((node[r.id][0], key), node[r.id]))
     for cell in grid.values():

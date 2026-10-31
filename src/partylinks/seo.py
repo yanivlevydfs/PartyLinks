@@ -489,15 +489,18 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
     )
 
 
-def like_contains(column: Any, value: str) -> ColumnElement[bool]:
-    """Case-insensitive substring match with the visitor's % and _ taken literally ("100% club" is not every venue)."""
+def like_contains(column: Any, value: str, *, whole: bool = False) -> ColumnElement[bool]:
+    """Case-insensitive substring match with the visitor's % and _ taken literally ("100% club" is not every venue).
+    ``whole``: the whole value, any case - a venue's page is that venue only ("היכל התרבות" is not every
+    היכל התרבות in the country)."""
     escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    return column.ilike(f"%{escaped}%", escape="\\")
+    return column.ilike(escaped if whole else f"%{escaped}%", escape="\\")
 
 
 def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     t = TEXT[lang]
-    rows = _upcoming(session, like_contains(EventRow.venue_name, name))
+    # Abroad too: the venues index and sitemap list venues abroad, and the app's venue page shows their events.
+    rows = _upcoming(session, like_contains(EventRow.venue_name, name, whole=True), abroad=None)
     path = f"/venue/{quote(name, safe='')}"
     place: dict[str, Any] = {"@context": "https://schema.org", **(_place(rows[0]) if rows else {"@type": "Place"}), "name": name}
     place["@type"] = "MusicVenue"
@@ -1080,7 +1083,7 @@ def _related(session: Session, cfg: Settings, lang: str, path: str) -> list[tupl
         out += [(f"/city/{c.key}/{rest[0]}", f"{genre_label(rest[0], lang)} {'ב' + c.he if he else 'in ' + c.en}")
                 for c in sorted(cities, key=lambda c: (c.he if he else c.en).casefold()) if rest[0] in by_city.get(c.he, {})]
     elif head == "venue" and rest:
-        row = session.scalars(select(EventRow.city).where(upcoming_filter(), like_contains(EventRow.venue_name, unquote(rest[0])), EventRow.city.is_not(None)).limit(1)).first()
+        row = session.scalars(select(EventRow.city).where(upcoming_filter(), like_contains(EventRow.venue_name, unquote(rest[0]), whole=True), EventRow.city.is_not(None)).limit(1)).first()
         c = next((x for x in cities if x.he == row), None)
         if c:
             city_links(c)
