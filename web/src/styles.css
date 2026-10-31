@@ -751,10 +751,11 @@ select option { background: var(--panel-solid); color: var(--text); }
 }
 @media (prefers-reduced-motion: reduce) { .map-cat { transition: none; } .map-cat:hover { transform: none; } }
 .map .leaflet-popup-content-wrapper, .map .leaflet-popup-tip {
-  background: rgb(14 9 26 / .95); color: var(--text); border: 1px solid var(--line-hot);
+  background: var(--panel-solid); color: var(--text); border: 1px solid var(--line-hot);
   box-shadow: 0 0 30px rgb(255 46 147 / .35);
 }
 .map a.leaflet-popup-close-button { color: var(--muted); }
+.map a.leaflet-popup-close-button:hover { color: var(--text); }
 .map.leaflet-container { font: inherit; }
 .map .leaflet-control-attribution { background: rgb(6 4 11 / .7) !important; color: var(--muted); }
 .map .leaflet-control-attribution a { color: var(--muted); }
@@ -764,12 +765,19 @@ select option { background: var(--panel-solid); color: var(--text); }
   background: rgb(255 46 147 / .85); border: 2px solid rgb(255 255 255 / .8); color: #fff; font-weight: 700;
   box-shadow: 0 0 8px var(--pink);
 }
-.pop { min-width: 200px; }
-.pop-venue { display: block; font: 700 16px/1.2 var(--display); color: var(--pink) !important; margin-bottom: 6px; }
-.pop ul { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; max-height: 45vh; overflow-y: auto; }
-.pop-count { display: block; color: var(--muted); margin-bottom: 6px; }
-.pop li a { display: grid; color: var(--text) !important; }
+/* Leaflet's close button sits top-right in both directions: keep the right margin clear of it, and make it finger-sized. */
+.map .leaflet-popup-content { margin: 14px 34px 14px 16px; }
+.map a.leaflet-popup-close-button { width: 32px; height: 32px; font: 22px/32px system-ui, sans-serif; }
+.pop { min-width: 200px; overflow-wrap: anywhere; }
+.pop-venue { display: block; font: 700 16px/1.2 var(--display); color: var(--pink) !important; margin-bottom: 4px; }
+.pop ul { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 4px; max-height: min(45vh, 320px); overflow-y: auto; overscroll-behavior: contain; }
+.pop-count { display: block; color: var(--muted); margin-bottom: 8px; }
+/* Each event: date, title and ticket sites, the save bell beside them. */
+.pop li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding-block: 6px; border-top: 1px solid var(--line); }
+.pop li a { display: grid; gap: 2px; color: var(--text) !important; }
+.pop li a span { font-weight: 600; line-height: 1.3; }
 .pop li small { color: var(--cyan); }
+.pop .sources { justify-self: start; }
 
 /* ------------------------------------------------------------------ responsive */
 @media (max-width: 760px) {

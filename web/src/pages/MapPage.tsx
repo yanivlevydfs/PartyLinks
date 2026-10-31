@@ -5,10 +5,10 @@ import "@maplibre/maplibre-gl-leaflet";
 import maplibregl from "maplibre-gl";
 import rtlText from "@mapbox/mapbox-gl-rtl-text/mapbox-gl-rtl-text.min.js?url";
 import { CircleMarker, MapContainer, Marker, Popup, useMap, useMapEvent } from "react-leaflet";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Supercluster from "supercluster";
 import { Link } from "react-router-dom";
-import { useCategories, useMapEvents } from "../api";
+import { toQuery, useCategories, useMapEvents } from "../api";
 import { SaveButton } from "../saved/SaveButton";
 import { genreLabel } from "../i18n";
 import { useAllowed, useConsent } from "../consent";
@@ -46,7 +46,8 @@ export default function MapPage() {
   // The home page's filter (same store): the map shows what the list shows, not every event at once.
   // Every date by default: ~17k pins, clustered, ~1 MB gzipped.
   const f = useStore((s) => s.filters);
-  const { data, isError, isPending } = useMapEvents(filterParams({ ...f, sort: "start_at" }));
+  const params = filterParams({ ...f, sort: "start_at" });
+  const { data, isError, isPending } = useMapEvents(params);
   useTitle(t.nav.map);
   // Tiles come from OpenStreetMap's servers (they see the visitor's IP): only with consent,
   // given in the cookie settings or here, for this visit or for good.
@@ -79,7 +80,7 @@ export default function MapPage() {
       <div className="wrap map-wrap">
       <MapContainer center={ISRAEL} zoom={8} className="map" scrollWheelZoom>
         {showTiles && <Tiles lang={lang} />}
-        <FitTo points={[...spots.values()].map((l) => [l[0].latitude, l[0].longitude] as [number, number])} />
+        <FitTo filter={toQuery(params)} points={[...spots.values()].map((l) => [l[0].latitude, l[0].longitude] as [number, number])} />
         <Pins spots={[...spots.values()]} />
       </MapContainer>
       </div>
@@ -156,7 +157,9 @@ function Pins({ spots }: { spots: MapEvent[][] }) {
   const b = map.getBounds();
   return index.getClusters([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], Math.round(map.getZoom())).map((c) => {
     const [lng, lat] = c.geometry.coordinates;
-    if (!("cluster" in c.properties)) return <Spot key={c.properties.list[0].id} list={c.properties.list} />;
+    // Keyed by place, not by its first event: a refetch reorders/changes the list, and a new key
+    // remounted the pin and closed its open popup.
+    if (!("cluster" in c.properties)) return <Spot key={`${lat},${lng}`} list={c.properties.list} />;
     const { cluster_id: id, n } = c.properties;
     const size = Math.round(Math.min(30 + Math.log2(n) * 5, 56));
     return (
@@ -172,6 +175,13 @@ function Pins({ spots }: { spots: MapEvent[][] }) {
   });
 }
 
+// A finger needs a bigger target than a 5px dot: on touch screens a wide, invisible stroke takes the tap
+// (a miss landed on the map, which closed the open popup instead of opening the next one).
+const TOUCH = window.matchMedia("(pointer: coarse)").matches;
+const PIN = TOUCH
+  ? { color: "#ff2e93", fillColor: "#ff2e93", fillOpacity: 0.7, weight: 22, opacity: 0 }
+  : { color: "#ff2e93", fillColor: "#ff2e93", fillOpacity: 0.7, weight: 1 };
+
 /** One location and its events. */
 function Spot({ list }: { list: MapEvent[] }) {
   const { t } = useT();
@@ -180,9 +190,10 @@ function Spot({ list }: { list: MapEvent[] }) {
       center={[list[0].latitude, list[0].longitude]}
       // Small pins that grow slowly: big ones merged into one pink blob over the whole country.
       radius={Math.min(5 + Math.log2(list.length) * 2, 14)}
-      pathOptions={{ color: "#ff2e93", fillColor: "#ff2e93", fillOpacity: 0.7, weight: 1 }}
+      pathOptions={PIN}
     >
-      <Popup>
+      {/* Narrow enough for a phone, and panned clear of the zoom buttons. */}
+      <Popup maxWidth={260} autoPanPaddingTopLeft={[56, 12]} autoPanPaddingBottomRight={[12, 12]}>
         <div className="pop">
           {list[0].venue_name && <Link className="pop-venue" to={venuePath(list[0].venue_name)}>{list[0].venue_name}</Link>}
           <small className="pop-count">{t.results(list.length)}</small>
@@ -209,19 +220,22 @@ const near = ([la, ln]: [number, number], [cla, cln]: [number, number], deg: num
   Math.abs(la - cla) < deg && Math.abs(ln - cln) < deg;
 const TEL_AVIV: [number, number] = [32.08, 34.78];
 
-/** Zoom to the pins whenever the filter changes what is shown. A phone fits the
- *  Tel Aviv pins first (else Israel's), so a few abroad don't zoom it out to Europe. */
-function FitTo({ points }: { points: [number, number][] }) {
+/** Zoom to the pins when the filter changes. Only then: a background refetch (tab back in focus,
+ *  new events scraped) used to refit the map, jumping away and closing the open popup.
+ *  A phone fits the Tel Aviv pins first (else Israel's), so a few abroad don't zoom it out to Europe. */
+function FitTo({ filter, points }: { filter: string; points: [number, number][] }) {
   const map = useMap();
-  const key = points.map((p) => p.join()).sort().join("|");
+  const fitted = useRef<string | null>(null);
   useEffect(() => {
+    if (!points.length || fitted.current === filter) return;
+    fitted.current = filter;
     let fit = points;
     if (window.matchMedia("(max-width: 760px)").matches) {
       const tlv = points.filter((p) => near(p, TEL_AVIV, 0.2));
       const il = points.filter((p) => near(p, [31.4, 35], 2));
       fit = tlv.length ? tlv : il.length ? il : points;
     }
-    if (fit.length) map.fitBounds(fit, { padding: [30, 30], maxZoom: 15 });
-  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+    map.fitBounds(fit, { padding: [30, 30], maxZoom: 15 });
+  }, [filter, points.length]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
