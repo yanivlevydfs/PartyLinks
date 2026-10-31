@@ -810,3 +810,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 ### 2026-10-31 (דף אמן: טקסט "אודות" מהרישומים שלנו)
 - **השאילתה:** ‏`artist_bio.facts` קורא לאמן את `local_date`, ‏`venue_name`, ‏`city`, ‏`country`, ‏`genres` של האירועים הראשיים הנוכחיים שבהרכב שלהם (אותו `lineup_has` ואותו `upcoming_filter` של דף האמן), לפי `start_at`. רץ בדף `/artist/<name>` שהשרת מרנדר וב-`/landing-info?path=/artist/<name>` (דף האמן באפליקציה). בלי שינוי טבלאות, עמודות או אינדקס; רק חמש עמודות, לא שורות שלמות.
 - **Tests:** ‏`tests/test_artist_bio.py`, ‏`tests/test_storage_api.py::test_artist_page_finds_a_hebrew_name`.
+
+### 2026-10-31 (מקומות: לוגו, "אודות" וקישורים מקטלוג המקומות של Eventer)
+- **טבלה חדשה:** ‏`venue_profiles` ‏(`key` text PK, למשל `eventer-barby`; ‏`name`, ‏`source`, ‏`aliases` JSONB, ‏`about`, ‏`address`, ‏`latitude`/`longitude` float, ‏`links` JSONB, ‏`profile_url`, ‏`logo_url` - כתובת התמונה באתר שממנה נוצר הלוגו; ‏`logo` bytea, ‏WebP ברוחב 960 לכל היותר, deferred; ‏`updated_at`). נוצרת ב-`create_schema` (‏`partylinks.venue_profiles`), בלי foreign keys ובלי אינדקס מעבר ל-PK. ~80 שורות.
+- **כתיבה:** בכל סבב של eventer (‏`venues_path`: קטלוג אחד, דף לכל מקום, לוגו לכל מקום); upsert שורה-שורה ‏(~80). הלוגו מומר ונשמר רק כשה-`logo_url` השתנה. מקומית: ‏`partylinks venue-profiles`.
+- **קריאה:** ‏`/categories` - ‏`SELECT` של כל הפרופילים בלי `logo` (‏`defer`), ועוד `latitude`, ‏`longitude` לשאילתת ה-facets הקיימת (נקודה לכל שם מקום, להתאמה לפי מיקום). דף מקום (שרת ו-`/landing-info`) - הפרופילים ועוד `SELECT latitude, longitude ... WHERE venue_name ILIKE <שם> LIMIT 1`. ‏`/venue-logos/<key>.webp` - ה-`logo` של שורה אחת לפי PK.
+- **Tests:** ‏`tests/test_venue_profiles.py`.

@@ -198,6 +198,8 @@ class BaseScraper[S: SourceSettings](ABC):
         # Profiles this source already saved, by casefolded name (filled by the service), so a
         # catalog that needs a request per artist only fetches the new ones.
         self.known_artists: dict[str, ArtistProfile] = {}
+        # Venues the site curates (logo, about; venue_profiles); the service saves them.
+        self.venue_profiles: list[Any] = []
         # Artwork URLs already stored per source_event_id (filled by the service before a run),
         # so a source that needs an extra request per event for artwork can skip known events.
         self.known_images: dict[str, list[str]] = {}

@@ -62,6 +62,7 @@ from partylinks.retention import is_current, purge_expired
 from partylinks.runs.health import RunHealth
 from partylinks.scrapers import SCRAPERS, build_scraper, source_settings
 from partylinks.scrapers.base import SourceBlockedError
+from partylinks.venue_profiles import VenueBook
 from partylinks.venues import venue_updates
 
 log = logging.getLogger(__name__)
@@ -126,6 +127,7 @@ class ScrapeService:
         self.db = db
         self.enricher = Enricher(settings.enrichment, settings.timezone)
         self.artists = ArtistBook(db)
+        self.venues = VenueBook(db, settings.media.webp_quality)
         if not self.artists.load()[0]:  # first start: seed the dictionary from the lineups already stored
             with db.session() as session:
                 lineups = list(session.scalars(select(EventRow.lineup)))
@@ -444,6 +446,8 @@ class ScrapeService:
             await self._post_step(
                 source, "artist profiles", failures, asyncio.to_thread(self.artists.save_profiles, scraper.artist_profiles)
             )
+        if scraper is not None and scraper.venue_profiles and not self._stopping.is_set():
+            await self._post_step(source, "venue profiles", failures, asyncio.to_thread(self.venues.save, scraper.venue_profiles))
         if status == "success" and failures:
             status = "partial"
 

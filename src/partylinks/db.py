@@ -938,6 +938,7 @@ import partylinks.config_store.models
 import partylinks.mail.models
 import partylinks.plans.models
 import partylinks.saved.models
+import partylinks.venue_profiles
 import partylinks.worker.models
 from partylinks.ads.models import prune_sponsored
 from partylinks.alerts.models import delete_hits

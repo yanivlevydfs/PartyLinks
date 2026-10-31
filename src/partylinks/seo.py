@@ -32,6 +32,9 @@ from sqlalchemy import ColumnElement, String, cast, or_, select
 from sqlalchemy.orm import Session, object_session, selectinload
 
 from partylinks.artist_bio import bio as artist_bio
+from partylinks.venue_profiles import load_profiles as load_venue_profiles
+from partylinks.venue_profiles import logo_path as venue_logo_path
+from partylinks.venue_profiles import profile_for as venue_profile_for
 from partylinks.artwork.service import urls as artwork_urls
 from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
@@ -508,14 +511,22 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     place["url"] = _url(cfg, path)
     if rows:
         place["event"] = [{"@id": _url(cfg, event_path(r)) + "#event", "name": r.title, "startDate": _iso(r.start_at, cfg, r)} for r in rows]
+    profile = venue_profile_for(session, load_venue_profiles(session), name)
+    about = (profile.about if profile else None) or t["venue_desc"].format(name=name)
+    logo = cfg.site.base_url + logo if profile and (logo := venue_logo_path(profile)) else None
+    place["description"] = about
+    if logo:
+        place["image"] = logo
+    if profile and profile.links:
+        place["sameAs"] = profile.links
     return Page(
         title=f"{name} · {t['upcoming']} · {cfg.site.name}",
-        description=t["venue_desc"].format(name=name),
+        description=about[:300],
         path=path,
         lang=lang,
-        image=_cover(cfg, rows[0]) if rows else None,
+        image=logo or (_cover(cfg, rows[0]) if rows else None),
         jsonld=[place, _breadcrumbs(cfg, lang, (t["venues"], "/venues"), (name, path))],
-        body=f"<h1>{escape(name)}</h1><p>{escape(t['venue_desc'].format(name=name))}</p>" + _event_list_html(rows, cfg, lang)
+        body=f"<h1>{escape(name)}</h1><p>{escape(about)}</p>" + _event_list_html(rows, cfg, lang)
         + _links_html(_related(session, cfg, lang, path), lang),
         noindex=not rows,
     )
@@ -1111,6 +1122,9 @@ def landing_info(session: Session, cfg: Settings, lang: str, path: str) -> dict[
     links = [{"path": p, "label": n} for p, n in _related(session, cfg, lang, path)]
     if land is None:
         intro = artist_bio(session, cfg, lang, unquote(path[len("/artist/"):])) if path.startswith("/artist/") else None
+        if path.startswith("/venue/"):
+            profile = venue_profile_for(session, load_venue_profiles(session), unquote(path[len("/venue/"):]))
+            intro = profile.about if profile else None
         return {"title": None, "intro": intro, "links": links, "country": None, "city": None}
     title, _, intro, _ = _landing_text(land.kind, lang, land.label, land.place)
     country = abroad_countries(session).get(path.rsplit("/", 1)[-1]) if land.abroad else None

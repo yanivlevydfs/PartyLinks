@@ -411,7 +411,7 @@ export function ShareButton({ path, title }: { path: string; title: string }) {
   );
 }
 
-const SHARE_ICONS: Record<string, ReactNode> = {
+export const SHARE_ICONS: Record<string, ReactNode> = {
   whatsapp: (
     <>
       <path d="M12 2.5a9.5 9.5 0 0 0-8.2 14.3L2.5 21.5l4.8-1.3A9.5 9.5 0 1 0 12 2.5z" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -420,6 +420,16 @@ const SHARE_ICONS: Record<string, ReactNode> = {
   ),
   facebook: <path d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.8c0-.9.3-1.6 1.6-1.6h1.7V4.4c-.3 0-1.3-.1-2.5-.1-2.5 0-4.1 1.5-4.1 4.2v2.3H7.4V14h2.8v8z" />,
   x: <path d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L1.8 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z" />,
+  instagram: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.3" cy="6.7" r=".6" fill="currentColor" />
+    </g>
+  ),
+  web: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" />
+    </g>
+  ),
 };
 
 /** WhatsApp / Facebook / X share links for a page of this site. */

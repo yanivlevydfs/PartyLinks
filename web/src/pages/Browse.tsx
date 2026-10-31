@@ -3,12 +3,12 @@ import { useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo } from "../api";
 import type { Facet } from "../types";
-import { artistPath, Chip, EventGrid, Hero, Img, label, Loader, Related, useT, useTitle, venuePath } from "../ui";
+import { artistPath, Chip, EventGrid, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
 const PAGE = 60;
 
-function FacetIndex({ title, facets, path, byArea }: {
-  title: string; facets: Facet[] | undefined; path: (v: string) => string; byArea?: boolean;
+function FacetIndex({ title, facets, path, byArea, logos }: {
+  title: string; facets: Facet[] | undefined; path: (v: string) => string; byArea?: boolean; logos?: boolean;
 }) {
   const { t } = useT();
   const [q, setQ] = useState("");
@@ -45,8 +45,8 @@ function FacetIndex({ title, facets, path, byArea }: {
         {fuzzy && <p className="msg">{t.closest(q)}</p>}
         <div className="facet-grid">
           {shown.slice(0, limit).map((f) => (
-            <Link key={f.value} className={"facet" + (f.image_url ? " with-photo" : "")} to={path(f.value)}>
-              {f.image_url && <Img src={f.image_url} alt="" className="facet-photo" />}
+            <Link key={f.value} className={"facet" + (f.image_url ? (logos ? " with-logo" : " with-photo") : "")} to={path(f.value)}>
+              {f.image_url && <Img src={f.image_url} alt="" className={logos ? "facet-logo" : "facet-photo"} />}
               <b dir="auto">{f.value}{f.verified && <Verified />}</b>
               <small>{t.events(f.events)}{f.area ? ` · ${label(t.areas, f.area)}` : ""}{f.kind ? ` · ${f.kind.toUpperCase()}` : ""}</small>
             </Link>
@@ -64,7 +64,10 @@ function FacetIndex({ title, facets, path, byArea }: {
 
 export function VenuesIndex() {
   const { t } = useT();
-  return <FacetIndex title={t.venuesTitle} facets={useCategories({ anywhere: "true" }).data?.venues} path={venuePath} byArea />;
+  const venues = useCategories({ anywhere: "true" }).data?.venues;
+  // Venues a ticket site curates (logo, about) first, as a showcase; the rest by events, as before.
+  const shown = venues && [...venues.filter((v) => v.image_url), ...venues.filter((v) => !v.image_url)];
+  return <FacetIndex title={t.venuesTitle} facets={shown} path={venuePath} byArea logos />;
 }
 
 export function ArtistsIndex() {
@@ -74,8 +77,11 @@ export function ArtistsIndex() {
 
 export function VenuePage() {
   const { name = "" } = useParams();
-  const { t } = useT();
+  const { t, lang } = useT();
   useTitle(name);
+  const about = useLandingInfo(useLocation().pathname, lang).data?.intro; // the venue's own text (venue_profiles)
+  // Same query cache as the venues index: no extra request.
+  const profile = useCategories({ anywhere: "true" }).data?.venues.find((f) => f.verified && f.value.toLowerCase() === name.toLowerCase());
   // Shares the query cache with the grid below, so this costs no extra request.
   const first = useEvents({ venue: name }).data?.pages[0]?.items[0];
   const where = first && [first.address, first.city].filter(Boolean).join(" · ");
@@ -83,6 +89,7 @@ export function VenuePage() {
   return (
     <>
       <Hero title={name}>
+        {profile?.image_url && <Img src={profile.image_url} alt={name} className="venue-logo" eager />}
         {where && <p className="sub">📍 {where}</p>}
         {mapQuery && (
           <a className="sub" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} target="_blank" rel="noopener noreferrer">
@@ -91,6 +98,13 @@ export function VenuePage() {
         )}
       </Hero>
       <main className="wrap">
+        {(about || profile?.links?.length) && (
+          <section className="venue-about">
+            <h4 className="section-title">{t.aboutVenue}</h4>
+            <SocialLinks urls={profile?.links ?? []} />
+            {about && <About text={about} />}
+          </section>
+        )}
         <h4 className="section-title">{t.upcomingAt}</h4>
         <EventGrid params={{ venue: name }} />
         <Related path={`/venue/${encodeURIComponent(name)}`} />
@@ -129,6 +143,38 @@ export function ArtistPage() {
         <EventGrid params={{ artist: name }} />
       </main>
     </>
+  );
+}
+
+/** A venue's own text, four lines until opened (some sites write a page of history). */
+function About({ text }: { text: string }) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const long = text.length > 320;
+  return (
+    <>
+      <p className={"landing-intro venue-text" + (long && !open ? " clamped" : "")} dir="auto">{text}</p>
+      {long && !open && <button className="link-btn" onClick={() => setOpen(true)}>{t.readMore}</button>}
+    </>
+  );
+}
+
+/** Round icon links to a venue's own pages (Facebook, Instagram, its site). */
+function SocialLinks({ urls }: { urls: string[] }) {
+  const links = urls.filter((u) => /^https?:\/\//i.test(u));
+  if (!links.length) return null;
+  return (
+    <div className="share">
+      {links.map((u) => {
+        const site = siteName(u);
+        const icon = site === "facebook" || site === "instagram" ? site : "web";
+        return (
+          <a key={u} className={"share-btn " + icon} href={u} target="_blank" rel="noopener noreferrer" aria-label={site} title={site}>
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>{SHARE_ICONS[icon]}</svg>
+          </a>
+        );
+      })}
+    </div>
   );
 }
 

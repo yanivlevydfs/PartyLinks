@@ -803,6 +803,7 @@ sources:
     artist_page_path: /artists/{link_name}
     max_new_artists: 40
     # Venue catalog (~80 clubs/halls: logo, about, links, location), read every run (venue_profiles).
+    venues_path: /eventContainer/Venue/listByType.js
 
   zygo:
     enabled: true

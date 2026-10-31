@@ -6,6 +6,7 @@
     partylinks sources               # list configured sources
     partylinks cleanup               # purge events that are over (retention)
     partylinks chillz-links          # page of Chillz links to open and save into the inbox
+    partylinks venue-profiles        # read Eventer's venue catalog (logo, about) now, not on its next run
 """
 
 from __future__ import annotations
@@ -124,6 +125,28 @@ def _chillz_links() -> int:
     return 0
 
 
+def _venue_profiles() -> int:
+    from partylinks.scrapers.eventer import EventerScraper
+    from partylinks.venue_profiles import VenueBook
+    from partylinks.venue_profiles.eventer import eventer_venues
+
+    settings = get_settings()
+    scraper = build_scraper("eventer", settings)
+    if not isinstance(scraper, EventerScraper):
+        raise TypeError("the 'eventer' source is not the Eventer scraper")
+
+    async def read() -> list:  # type: ignore[type-arg]
+        async with scraper:
+            return await eventer_venues(scraper)
+
+    profiles = asyncio.run(read())
+    db = Database(settings.database.url, options=settings.database)
+    db.create_schema()
+    saved = VenueBook(db, settings.media.webp_quality).save(profiles)
+    log.info("%d venue profiles (%d with a logo), %d failures", saved, sum(1 for p in profiles if p.logo), len(scraper.failures))
+    return 0
+
+
 def _cleanup() -> int:
     settings = get_settings()
     db = Database(settings.database.url, settings.database.echo, settings.database)
@@ -168,6 +191,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("sources", help="list configured sources")
     sub.add_parser("cleanup", help="purge events that are over (retention)")
     sub.add_parser("chillz-links", help="write a page of Chillz links to open and save into the inbox")
+    sub.add_parser("venue-profiles", help="read Eventer's venue catalog (logo, about, links) now")
     artists = sub.add_parser("artists", help="curate the artist dictionary (used to split glued names)")
     artists.add_argument("action", choices=["list", "add", "block", "unblock"])
     artists.add_argument("names", nargs="*", metavar="NAME")
@@ -193,6 +217,8 @@ def _dispatch(args: argparse.Namespace) -> int:
         return _cleanup()
     if args.command == "chillz-links":
         return _chillz_links()
+    if args.command == "venue-profiles":
+        return _venue_profiles()
     if args.command == "artists":
         return _artists(args.action, args.names)
     return _sources()

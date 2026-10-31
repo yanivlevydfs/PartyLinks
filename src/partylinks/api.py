@@ -64,6 +64,11 @@ from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
 from partylinks.search import by_skeleton, did_you_mean, relevance, smart_filters, sounds_like
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
+from partylinks.venue_profiles import VenueProfile
+from partylinks.venue_profiles import linked_names as linked_venue_names
+from partylinks.venue_profiles import load_profiles as load_venue_profiles
+from partylinks.venue_profiles import logo_path as venue_logo_path
+from partylinks.venue_profiles import match as match_venue_profiles
 from partylinks.venues import PLACE_LISTING
 from partylinks.weather import router as weather_router
 from partylinks.worker.link import WorkerLink
@@ -359,6 +364,24 @@ class FacetValue(BaseModel):
     profile_url: str | None = None
     links: list[str] | None = None
     members: list[str] | None = None  # genre families (the filter's groups): their genres, in order
+
+
+def venue_facets(
+    facets: list[FacetValue], venue_area: dict[str, str], rows: list[Any], profiles: list[VenueProfile], linked: dict[str, str]
+) -> list[FacetValue]:
+    """Venue counts with their area, and the logo / links of the venues a ticket site curates."""
+    spots: dict[str, tuple[float, float] | None] = {f.value: None for f in facets}
+    for r in rows:
+        if r.venue_name and r.latitude is not None and spots.get(r.venue_name) is None:
+            spots[r.venue_name] = (r.latitude, r.longitude)
+    found = match_venue_profiles(profiles, spots, linked)
+    out = []
+    for f in facets:
+        update: dict[str, Any] = {"area": venue_area.get(f.value)}
+        if p := found.get(f.value):
+            update |= {"verified": True, "image_url": venue_logo_path(p), "profile_url": p.profile_url, "links": p.links or None}
+        out.append(f.model_copy(update=update))
+    return out
 
 
 class Categories(BaseModel):
@@ -1340,6 +1363,18 @@ def _register_routes(app: FastAPI) -> None:
             for c, t, sl, u, st in session.execute(query).all()
         ]
 
+    @app.get("/venue-logos/{key}.webp", tags=["events"], response_class=Response)
+    def venue_logo(key: str, request: Request) -> Response:
+        found = request.app.state.service.venues.logo(key)
+        if found is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "no logo")
+        data, updated = found
+        etag = f'"{key}-{int(updated.timestamp())}"'
+        headers = {"Cache-Control": "public, max-age=86400", "ETag": etag}
+        if request.headers.get("if-none-match") == etag:
+            return Response(status_code=status.HTTP_304_NOT_MODIFIED, headers=headers)
+        return Response(content=data, media_type="image/webp", headers=headers)
+
     @app.get("/images/{image_id}", tags=["events"], response_class=Response)
     def get_image(image_id: int, request: Request, session: ReleasedSessionDep) -> Response:
         return _image_response(image_id, request, session)
@@ -1446,7 +1481,7 @@ def _register_routes(app: FastAPI) -> None:
         query = select(
             EventRow.genres, EventRow.local_date, EventRow.day_of_week, EventRow.time_slot, EventRow.area,
             EventRow.group_entry_type, EventRow.venue_name, EventRow.city, EventRow.lineup, EventRow.event_types,
-            EventRow.source, EventRow.in_target_city, EventRow.country,
+            EventRow.source, EventRow.in_target_city, EventRow.country, EventRow.latitude, EventRow.longitude,
         ).where(*filters)  # fmt: skip
         rows = session.execute(query).all()
 
@@ -1508,7 +1543,7 @@ def _register_routes(app: FastAPI) -> None:
             areas=facet(lambda r: [r.area]),
             regions=facet(lambda r: [region(r)]),
             entry_types=facet(lambda r: [r.group_entry_type]),
-            venues=[f.model_copy(update={"area": venue_area.get(f.value)}) for f in facet(lambda r: [r.venue_name])],
+            venues=venue_facets(facet(lambda r: [r.venue_name]), venue_area, rows, load_venue_profiles(session), linked_venue_names(session)),
             cities=[FacetValue(value=c, events=n, area=city_region.get(c)) for c, n in _merged_cities(rows)],
             countries=facet(lambda r: [r.country]),
             lineup=artist_facet(),

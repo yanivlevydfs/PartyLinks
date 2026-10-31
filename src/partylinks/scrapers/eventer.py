@@ -32,6 +32,8 @@ from partylinks.parsing import (
 )
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.eventer_sitemap import is_over, sitemap_link_names
+from partylinks.venue_profiles import VENUE_PROFILE
+from partylinks.venue_profiles.eventer import eventer_venues
 
 UNLIMITED = -1
 CATEGORIES_SLIDER = 6  # sliderType of the home page's category tiles
@@ -61,6 +63,10 @@ class EventerSettings(SourceSettings):
     artist_page_path: str = "/artists/{link_name}"
     # New artists whose profile is fetched per run; the rest are saved from the catalog alone.
     max_new_artists: int = Field(40, ge=0)
+    # The site's venue catalog (logo, about, links; venue_profiles). Empty = skip.
+    venues_path: str = ""
+    venue_path: str = "/Venue/{link_name}/byLink.js"
+    venue_page_path: str = "/venues/{link_name}"
 
 
 class EventerScraper(BaseScraper[EventerSettings]):
@@ -73,6 +79,8 @@ class EventerScraper(BaseScraper[EventerSettings]):
         if self.settings.artists_path:
             self.artist_profiles = await self.optional("artists", self._list_artists()) or []
             self.log.info("listed %d artists", len(self.artist_profiles))
+        if self.settings.venues_path:
+            self.venue_profiles = await self.optional("venues", eventer_venues(self)) or []
         async for event in self.stream_isolated(link_names, self._fetch_event, label=lambda n: n):
             yield event
 
@@ -217,6 +225,8 @@ def parse_event(details: dict[str, Any], tickets_payload: dict[str, Any], page_u
             "status": event.get("status"),
             "open_doors": schedule.get("openDoors"),
             "allow_multiple_tickets": tickets_payload.get("allowMultipleTickets"),
+            # The site's own venue (its catalog page): ties our venue name to its logo and about (venue_profiles).
+            VENUE_PROFILE: next((f"{EventerScraper.name}-{v}" for v in platform.get("venues") or [] if v), None),
         },
     )
 

@@ -54,6 +54,7 @@ def test_eventer_free_and_paid_tiers() -> None:
     assert kinds == {TicketKind.FREE, TicketKind.PAID}
     assert event.min_price == 0 and event.max_price == Decimal(109)
     assert event.venue_name and event.city and event.latitude
+    assert event.extra["venue_profile"] == "eventer-63f0a9f4cd384f30dba03a2e"  # the site's venue (logo, about)
     assert len(event.images) >= 2
 
 
