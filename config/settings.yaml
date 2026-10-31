@@ -784,13 +784,16 @@ sources:
     # syrup: Syrup club, Haifa.
     users: ["tomix", "forumclub", "syrup", "levontin7", "mazkeka", "hangar11"]
     # Every public event page, newest first (the sitemap is in creation order, no dates): the newest
-    # 12,000 reach back ~9 months, where events still to come were put on sale. Most are past and
+    # 6,000 reach back ~4 months, where most events still to come were put on sale. Most are past and
     # dropped after their details (one request each); robots.txt's disallowed (private) ones are skipped.
+    # Eventer banned all 5 proxy IPs (403) at 8 parallel requests over 12,000 pages (2026-10-31): 3 at a
+    # time, 1 s apart.
     sitemap_path: /sitemap.xml
-    sitemap_newest: 12000
+    sitemap_newest: 6000
     run_timeout_seconds: 5400
     http:
-      concurrency: 8
+      concurrency: 3
+      request_delay_seconds: 1.0
     list_path: /sliders/categories/{category}/events.js
     event_details_path: /events/explainNames/{link_name}.js
     ticket_types_path: /events/{event_id}/ticketTypes.js
@@ -799,6 +802,8 @@ sources:
     artist_path: /Artist/{link_name}/byLink.js
     artist_page_path: /artists/{link_name}
     max_new_artists: 40
+    # Venue catalog (~80 clubs/halls: logo, about, links, location), read every run (venue_profiles).
+    venues_path: /eventContainer/Venue/listByType.js
 
   zygo:
     enabled: true
