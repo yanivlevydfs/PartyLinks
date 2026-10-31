@@ -2,7 +2,8 @@
 
 Event pages are an empty JavaScript shell; the page itself loads its data from the app's public Base44
 entities API (``/api/apps/<app id>/entities/<Entity>``), which this source reads the same way:
-- ``Event`` filtered server-side to ``calculated_status`` upcoming / live, so no past event is fetched
+- ``Event`` filtered server-side to ``calculated_status`` upcoming / live and an end date from today on,
+  so no past event is fetched
   (~300 rows, one request): names and descriptions in English / Hebrew, start / end date and time,
   the original event / seller link (``event_link``, kept as ``extra["purchase_url"]``), artwork,
   category ids, coordinates and the id of the venue's ``Location``.
@@ -23,10 +24,14 @@ from urllib.parse import urlsplit
 
 from pydantic import Field
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import clean_str, to_float, zone
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
+# ponytail: retention's defaults (config/settings.yaml uses the same); pass Settings.retention in if they ever differ.
+_RETENTION = RetentionSettings()
 _HEBREW = re.compile(r"[֐-׿]")
 _DATE = re.compile(r"(\d{4})-(\d{2})-(\d{2})")
 _CLOCK = re.compile(r"(\d{1,2}):(\d{2})")
@@ -65,7 +70,11 @@ class SecretTelAvivAppScraper(BaseScraper[SecretTelAvivAppSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        rows = await self._entities("Event", {"status": "active", "calculated_status": {"$in": s.live_statuses}})
+        # The site's calculated_status lags (an event over yesterday may still read "upcoming"), so its end date
+        # is filtered too, and every event goes through retention's own rule (is_current) before it is yielded.
+        today = datetime.now(zone(self.timezone)).date().isoformat()
+        query = {"status": "active", "calculated_status": {"$in": s.live_statuses}, "event_end_date": {"$gte": today}}
+        rows = await self._entities("Event", query)
         self.log.info("listed %d events", len(rows))
         location_ids = sorted({r["base44_location_id"] for r in rows if r.get("base44_location_id")})
         locations = (
@@ -86,7 +95,7 @@ class SecretTelAvivAppScraper(BaseScraper[SecretTelAvivAppSettings]):
             except Exception as exc:  # noqa: BLE001 - one bad row must not cost the others
                 self.record_failure(f"event {row.get('id')}", exc)
                 continue
-            if event:
+            if event and is_current(event.start_at, event.end_at, _RETENTION, self.timezone):
                 yield event
 
 

@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 88 configured sources, all on. Each one has its own module in
+SPOTX collects from 92 configured sources, all on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
