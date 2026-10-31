@@ -383,6 +383,9 @@ class BaseScraper[S: SourceSettings](ABC):
                     raise _RefusedByProxyIP(f"{response.status_code} via this proxy")
                 if self.is_blocked(response):
                     raise SourceBlockedError(f"{self.name}: access denied by the site ({response.status_code})")
+                # An Israeli-only site refusing the fallback proxy: the cause is the dead Israeli pool, not the site.
+                if refused and self._israeli and self._proxy not in self._israeli:
+                    raise SourceBlockedError(f"{self.name}: no Israeli proxy answers; the site refuses the other proxies ({response.status_code})")
                 response.raise_for_status()
                 if self._proxy is not None and self._proxy in self._israeli and _israel_good != self._proxy:
                     with _israel_lock:

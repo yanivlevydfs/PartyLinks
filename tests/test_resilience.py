@@ -522,6 +522,33 @@ def test_a_dead_israeli_pool_is_found_in_one_parallel_check() -> None:
     base._israel_good, base._israel_dead = None, {}
 
 
+def test_a_refusal_on_the_fallback_proxy_blames_the_dead_israeli_pool() -> None:
+    """Every Israeli proxy dead, the site refuses the usual pool: the error names the Israeli pool, not a 403."""
+    from partylinks.scrapers import base
+
+    base._israel_good, base._israel_dead = None, {}
+    http = HttpSettings(source_proxy="http://pool:1", israel_proxy="http://il1:1, http://il2:2", backoff_seconds=0)
+    scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
+
+    def client(proxy: str | None) -> httpx.AsyncClient:
+        def answer(request: httpx.Request) -> httpx.Response:
+            if proxy != "http://pool:1":
+                raise httpx.ConnectTimeout("proxy down", request=request)
+            return httpx.Response(403)
+
+        return httpx.AsyncClient(transport=httpx.MockTransport(answer))
+
+    scraper._new_client = client  # type: ignore[method-assign]
+
+    async def run() -> None:
+        async with scraper:
+            await scraper.request("GET", "https://site.example/")
+
+    with pytest.raises(base.SourceBlockedError, match="no Israeli proxy answers; the site refuses the other proxies"):
+        asyncio.run(run())
+    base._israel_good, base._israel_dead = None, {}
+
+
 def test_the_israeli_probe_goes_over_https() -> None:
     """A free proxy that intercepts TLS passes a plain-HTTP check, then fails every request with
     CERTIFICATE_VERIFY_FAILED: the probe asks over HTTPS, so it counts as dead there."""
