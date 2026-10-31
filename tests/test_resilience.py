@@ -266,6 +266,42 @@ def test_listing_drops_todays_events_that_already_ended(tmp_path: Path) -> None:
     assert sorted(shown) == ["test:allday", "test:late"]
 
 
+def test_no_end_time_ends_after_assumed_duration_all_day_at_midnight(tmp_path: Path) -> None:
+    from zoneinfo import ZoneInfo
+
+    from sqlalchemy import select
+
+    from partylinks.retention import current_clause, is_current
+
+    settings, db = db_for(tmp_path)
+    s, tz = settings.retention, settings.timezone
+    assert s.assumed_duration_hours == 3
+    zone = ZoneInfo(tz)
+    day = datetime.now(zone).date()
+    at = lambda h, m=0: datetime(day.year, day.month, day.day, h, m, tzinfo=zone)
+    yesterday = lambda h: at(h) - timedelta(days=1)
+    now = at(20)
+    cases = {
+        "screening": (at(16, 15), None, True, False),  # started 3h45 ago, no end: over
+        "justin": (at(17, 30), None, True, True),  # started 2h30 ago: still shown
+        "tonight": (at(22), None, True, True),
+        "allday": (at(0), None, True, True),  # a 00:00 start is an all-day listing: until midnight
+        "untimed": (at(9), None, False, True),  # no hour given: until midnight
+        "lastnight": (yesterday(23), None, True, False),  # yesterday 23:00, no end: over at 02:00
+        "ended": (at(8), at(10), True, False),
+        "running": (at(18), at(23), True, True),
+    }
+    for key, (start, end, known, current) in cases.items():
+        assert is_current(start, end, s, tz, now, time_known=known) is current, key
+    with db.session() as session:
+        upsert_events(session, [event(k, start_at=a, end_at=b, time_known=t) for k, (a, b, t, _) in cases.items()])
+    with db.session() as session:
+        shown = set(session.scalars(select(EventRow.id).where(current_clause(s, tz, now))))
+    assert shown == {f"test:{k}" for k, (*_, current) in cases.items() if current}
+    # last night's 23:00 party with no end is still on at 01:59 (gone at 02:00)
+    assert is_current(yesterday(23), None, s, tz, at(1, 59), time_known=True)
+
+
 def test_artwork_run_with_successes_and_failures_persists_both(tmp_path: Path, monkeypatch: Any) -> None:
     settings, db = db_for(tmp_path)
     settings.media.storage = "database"

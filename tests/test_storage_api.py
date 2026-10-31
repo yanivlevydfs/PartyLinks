@@ -69,7 +69,8 @@ def test_retention_keeps_today_onwards_and_parties_still_in_progress(tmp_path: P
         event("yesterday-no-end", today - timedelta(hours=3), end_at=None),  # the screenshot: no end time
         event("still-partying", now - timedelta(hours=3), end_at=now + timedelta(hours=3)),  # last night, still on
         event("season-listing", today - timedelta(days=20), end_at=now + timedelta(days=10)),  # far end date
-        event("today", today + timedelta(hours=1), end_at=None),  # no end time: kept all day
+        event("today", now + timedelta(hours=1), end_at=None),  # no end time, not started: kept
+        event("started-4h-no-end", now - timedelta(hours=4), end_at=None),  # over after 3 hours (assumed_duration_hours)
         event("future", now + timedelta(days=2)),
     ])  # fmt: skip
 

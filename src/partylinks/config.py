@@ -365,6 +365,9 @@ class RetentionSettings(BaseModel):
     # (only if it started within this many hours, so multi-week "season" listings don't).
     keep_in_progress: bool = True
     in_progress_max_hours: float = Field(16, gt=0)
+    # An event with no end time is over this many hours after it starts (nobody arrives later). An all-day
+    # listing (no hour: time_known false, or a 00:00 start) stays until the day ends instead.
+    assumed_duration_hours: float = Field(3, gt=0)
 
     @field_validator("cron")
     @classmethod

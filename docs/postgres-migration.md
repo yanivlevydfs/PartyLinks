@@ -795,3 +795,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **הבאג:** deploy או restart באמצע סבב סריקה רשמו אותו `interrupted`, והמקור חיכה לסבב הבא שלו ב-cron (עד חצי יום). בלילה של 10-31 נקטעו כך eventer, goout, grayclub, posh, shotgun, showshappening, tickchak, zygo ו-munievents.
 - **שאילתה חדשה:** ‏`Database.interrupted_sources` - ‏`row_number() OVER (PARTITION BY source ORDER BY id DESC)` על `scrape_runs`, שלושת הסבבים האחרונים לכל מקור. מקור שהסבב האחרון שלו `interrupted` (ופחות מ-`scheduler.resume_max_in_a_row` = 3 ברצף) מקבל ב-`build_scheduler` הפעלה מיידית, מדורגת ב-`startup_stagger_seconds`. אין שינוי טבלאות או עמודות; ~70 מקורות × 3 שורות, פעם אחת בהפעלה.
 - **Tests:** ‏`tests/test_run_health.py::test_a_run_a_restart_cut_short_starts_again_at_startup`.
+
+### 2026-10-31 (אירוע בלי שעת סיום מוסתר 3 שעות אחרי תחילתו)
+- **הבאג:** אירוע בלי `end_at` (כמחצית האירועים, 27,559 מתוך 53,902) נשאר מוצג עד חצות גם אחרי שהתחיל: ב-20:22 הוצגו 1,194 אירועים שהתחילו בלי שעת סיום, 618 מהם לפני יותר מ-6 שעות (הקרנה ב-16:15 עדיין ברשימה). מסיבה של אתמול ב-23:00 בלי סיום נעלמה כבר בחצות.
+- **השאילתה:** ב-`retention.current_clause` אירוע בלי `end_at` נוכחי כש-`start_at > now - assumed_duration_hours` (חדש ב-`retention`, ברירת מחדל 3), או כשהוא רישום של יום שלם (`time_known IS false` או `start_at` = חצות היום המקומית) מהיום. אירוע עם `end_at` כמקודם. אותו כלל ב-`is_current` (ייבוא, עמוד אירוע) ובמחיקה השעתית. בלי שינוי טבלאות, עמודות או אינדקס; בלי פונקציית אזור זמן ב-SQL (שרת ה-PostgreSQL המקומי לא מכיר `Asia/Jerusalem`). נמדד בפרוד: ‏53,896 ל-53,389 אירועים ראשיים נוכחיים, ‏51 ms ל-31 ms.
+- **Tests:** ‏`tests/test_resilience.py::test_no_end_time_ends_after_assumed_duration_all_day_at_midnight`.

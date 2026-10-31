@@ -588,4 +588,4 @@ def fill_artwork(event: ScrapedEvent, known: dict[str, list[str]], by_title: dic
 
 def _finished_before(event: ScrapedEvent, settings: Settings) -> bool:
     """Same rule as display and retention (retention.is_current): over -> never stored."""
-    return not is_current(event.start_at, event.end_at, settings.retention, settings.timezone)
+    return not is_current(event.start_at, event.end_at, settings.retention, settings.timezone, time_known=event.time_known)

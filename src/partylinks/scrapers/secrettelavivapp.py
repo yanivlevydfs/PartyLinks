@@ -95,7 +95,7 @@ class SecretTelAvivAppScraper(BaseScraper[SecretTelAvivAppSettings]):
             except Exception as exc:  # noqa: BLE001 - one bad row must not cost the others
                 self.record_failure(f"event {row.get('id')}", exc)
                 continue
-            if event and is_current(event.start_at, event.end_at, _RETENTION, self.timezone):
+            if event and is_current(event.start_at, event.end_at, _RETENTION, self.timezone, time_known=event.time_known):
                 yield event
 
 

@@ -40,7 +40,7 @@ async def check(name: str, show: int) -> int:
         failures = list(scraper.failures)
     kept = [e for _, e in pairs if e is not None]
     total = len(kept)
-    past = [e for e in kept if not is_current(e.start_at, e.end_at, settings.retention, settings.timezone)]
+    past = [e for e in kept if not is_current(e.start_at, e.end_at, settings.retention, settings.timezone, time_known=e.time_known)]
     no_genre = [e for e in kept if not e.genres]
     crons = {n: str((b or {}).get("cron") or "") for n, b in settings.sources.items() if (b or {}).get("enabled", True)}
 

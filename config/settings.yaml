@@ -721,6 +721,9 @@ retention:
   keep_days_back: 0
   keep_in_progress: true
   in_progress_max_hours: 16
+  # No end time: over (hidden and purged) this many hours after the start. All-day listings (no hour, or a 00:00
+  # start) stay until midnight.
+  assumed_duration_hours: 3
   # Scrape run history (scrape_runs) older than this many days is deleted as well.
   keep_runs_days: 30
 

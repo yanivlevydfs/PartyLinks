@@ -458,7 +458,7 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
         .where(or_(EventRow.id == ref, EventRow.slug == ref))
         .options(selectinload(EventRow.tickets), selectinload(EventRow.images))
     )
-    if row is None or not is_current(row.start_at, row.end_at, cfg.retention, cfg.timezone):
+    if row is None or not is_current(row.start_at, row.end_at, cfg.retention, cfg.timezone, time_known=row.time_known):
         return None  # over but not purged yet (the nightly pass): gone all the same, never a past event's page
     t = TEXT[lang]
     summary = _summary(row, cfg, lang)
@@ -549,7 +549,8 @@ def _names(session: Session, kind: str) -> list[str]:
     column = EventRow.venue_name if kind == "venues" else EventRow.lineup
     spellings: Counter[str] = Counter()
     for value in session.scalars(select(column).where(upcoming_filter(), EventRow.is_primary.is_(True))):
-        spellings.update(n for n in ([value] if kind == "venues" else value or []) if n)
+        names: list[str] = [value] if isinstance(value, str) else list(value or [])  # a venue or a lineup
+        spellings.update(n for n in names if n)
     merged: dict[str, tuple[str, int]] = {}
     for name, n in spellings.most_common():
         shown, total = merged.get(name.casefold(), (name, 0))
@@ -1207,7 +1208,7 @@ def render(template: str, page: Page, cfg: Settings, alt: Page | None = None) ->
         f'<meta name="twitter:image" content="{escape(image)}" />',
         *(f'<meta name="{name}" content="{escape(token)}" />' for name, token in (
             ("google-site-verification", cfg.site.verification.google), ("msvalidate.01", cfg.site.verification.bing),
-            ("yandex-verification", cfg.site.verification.yandex)) if token),  # fmt: skip
+            ("yandex-verification", cfg.site.verification.yandex)) if token),
         # Local signals: the whole site is about Israel.
         '<meta name="geo.region" content="IL" />',
         '<meta name="geo.placename" content="Israel" />',
