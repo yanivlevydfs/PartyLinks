@@ -140,9 +140,10 @@ class SchedulerSettings(BaseModel):
     # Run manager (partylinks.runs): at most this many sources run at once, the rest wait in a queue.
     max_parallel_runs: int = Field(6, ge=1)
     # A bad run (failed, blocked, no events, or under low_count_ratio of the usual count) is run again
-    # after each of these; still bad after the last, the source is paused and the admins are emailed.
+    # after each of these; still bad after the last, the source is paused (shown in the admin).
     retry_after_minutes: list[float] = Field(default_factory=lambda: [15, 60, 180])
     low_count_ratio: float = Field(0.3, ge=0, le=1)
+    email_on_pause: bool = False  # also email the admins when a source is paused (the owner asked for none)
     low_count_min_usual: int = Field(10, ge=1)  # sources usually finding fewer are not judged by count
 
 

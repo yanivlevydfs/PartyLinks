@@ -129,6 +129,8 @@ class RunHealth:
             log.info("retry of %s not started: %s", source, exc)
 
     def _email(self, source: str, strikes: int, reason: str, run_id: int) -> None:
+        if not self.settings.scheduler.email_on_pause:
+            return
         from partylinks.mail import send as mailer  # local: mail pulls in the accounts package
 
         admins = [a.strip() for a in self.settings.accounts.admin_emails if a.strip()]

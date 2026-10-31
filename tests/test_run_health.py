@@ -83,3 +83,18 @@ def test_a_run_a_restart_cut_short_starts_again_at_startup() -> None:
             session.add_all(ScrapeRunRow(source=source, trigger="schedule", status=s) for s in statuses)
     # zygo finished after it was cut; posh was cut 3 times in a row (it may be what kills the process).
     assert db.interrupted_sources(3) == {"goout", "ogo"}
+
+
+def test_a_paused_source_emails_nobody_unless_asked(monkeypatch) -> None:
+    from partylinks.mail import send as mailer
+
+    h = RunHealth(Settings(), Database(os.environ["PARTYLINKS_DATABASE__URL"]), lambda *a: None, threading.Event())
+    h.settings.accounts.admin_emails = ["owner@example.com"]
+    sent: list = []
+    monkeypatch.setattr(mailer, "ready", lambda settings: True)
+    monkeypatch.setattr(mailer, "send", lambda settings, messages, key: sent.extend(messages))
+    h._email("zappa", 4, "failed: timed out", 1)
+    assert sent == []
+    h.settings.scheduler.email_on_pause = True
+    h._email("zappa", 4, "failed: timed out", 1)
+    assert [m.to for m in sent] == ["owner@example.com"]
