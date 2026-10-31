@@ -24,7 +24,8 @@ def retention_cutoff(settings: RetentionSettings, timezone: str, now: datetime |
 
 
 # --------------------------------------------------------------------------- the one rule
-# An event is current when it starts on/after the cutoff (today, local), or when it
+# An event is current when it starts on/after the cutoff (today, local) and has not ended yet
+# (a morning show that ended at 10:00 is gone by the evening), or when it
 # started within the last `in_progress_max_hours` and its end is still ahead (a party
 # that began last night and is still going). Everything else is over: never imported,
 # never shown, and purged. Used by import (service), display (db.upcoming_filter) and
@@ -39,7 +40,7 @@ def is_current(
         return True  # undated: kept until the source stops listing it (see purge_expired)
     now = now or datetime.now(UTC)
     if start >= retention_cutoff(settings, timezone, now):
-        return True
+        return end is None or end > now or settings.keep_days_back > 0
     return (
         settings.keep_in_progress
         and end is not None
@@ -52,6 +53,8 @@ def current_clause(settings: RetentionSettings, timezone: str, now: datetime | N
     """SQL form of :func:`is_current` for dated events."""
     now = now or datetime.now(UTC)
     upcoming = EventRow.start_at >= retention_cutoff(settings, timezone, now)
+    if settings.keep_days_back == 0:  # today's events that already ended are over too
+        upcoming = and_(upcoming, or_(EventRow.end_at.is_(None), EventRow.end_at > now))
     if not settings.keep_in_progress:
         return upcoming
     # end_at IS NOT NULL is explicit: without it a NULL end makes the whole clause NULL

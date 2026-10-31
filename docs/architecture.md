@@ -101,7 +101,8 @@ change is stored in `deal_changes`: `new`, `price_down`, `price_up`, `free_entry
 ## Retention (`retention.py`)
 
 Only current events are kept. An hourly job purges events that are over, with their tickets,
-artwork and change history. A party that started last night and is still running stays until it
+artwork and change history. An event of today whose end has passed is over too (a 08:00-10:00 show
+is not listed in the evening). A party that started last night and is still running stays until it
 ends (`in_progress_max_hours`). Run history older than `keep_runs_days` is deleted too; PostgreSQL's
 autovacuum reuses the freed space.
 

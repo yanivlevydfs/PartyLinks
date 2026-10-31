@@ -774,3 +774,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **`seo._names` (‏`/artists`, ‏`/venues` וה-sitemap):** ‏`SELECT lineup` (או `venue_name`) בלבד במקום שורות `EventRow` מלאות (עם התיאורים) של כל האירועים; ראשיים בלבד; "PETTRA" ו-"Pettra" שם אחד (כתיב הנפוץ), כמו ב-`/categories`.
 - **ביצועים (28k אירועים סינתטיים, pgserver מקומי):** `_names` לפני 2.54 שנ', אחרי 0.16 שנ'; סינון אמן 0.022 → 0.025 שנ'.
 - **Tests:** ‏`tests/test_storage_api.py::test_artist_page_is_the_whole_name_any_case_once_per_event`, ‏`test_artist_page_lists_their_shows_abroad_too`, ‏`test_artist_page_finds_a_hebrew_name`.
+
+### 2026-10-31 (אירוע של היום שכבר נגמר לא מוצג)
+- **הבאג:** הכלל "מהיום והלאה" (`retention.current_clause` / `is_current`) השאיר ברשימה עד חצות אירוע של היום שהסתיים כבר (מופע 08:00-10:00 הוצג גם ב-22:00), בניגוד לכלל "אף פעם לא אירועי עבר".
+- **השאילתה:** לחלק "מהיום" נוסף `AND (end_at IS NULL OR end_at > now())` כש-`keep_days_back` הוא 0. אותו כלל משמש הצגה (`upcoming_filter`), ייבוא ומחיקה, ולכן אירוע שנגמר נמחק במעבר השעתי. בלי שינוי טבלאות ובלי אינדקס חדש: תנאי סינון על השורות שהאינדקס על `start_at` כבר מחזיר.
+- **Tests:** ‏`tests/test_resilience.py::test_listing_drops_todays_events_that_already_ended`, ‏`test_current_event_rule_at_2am`.

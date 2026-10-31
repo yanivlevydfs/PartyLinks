@@ -239,6 +239,31 @@ def test_current_event_rule_at_2am() -> None:
     assert not is_current(at(19, 23), at(20, 5), s, tz, at(20, 6))  # ...and gone after it ends
     assert not is_current(at(1, 22), at(30, 4), s, tz, now)  # "season" listing that started weeks ago
     assert is_current(at(20, 22), None, s, tz, now)  # tonight
+    assert is_current(at(20, 8), at(20, 10), s, tz, at(20, 9))  # this morning's show, still on
+    assert not is_current(at(20, 8), at(20, 10), s, tz, at(20, 21))  # ...ended at 10:00: over by the evening
+
+
+def test_listing_drops_todays_events_that_already_ended(tmp_path: Path) -> None:
+    from zoneinfo import ZoneInfo
+
+    from sqlalchemy import select
+
+    from partylinks.retention import current_clause
+
+    settings, db = db_for(tmp_path)
+    tz = ZoneInfo(settings.timezone)
+    day = datetime.now(tz).date()
+    at = lambda h, m=0: datetime(day.year, day.month, day.day, h, m, tzinfo=tz)
+    with db.session() as session:
+        upsert_events(session, [
+            event("morning", start_at=at(8), end_at=at(10)),  # ended at 10:00
+            event("allday", start_at=at(8), end_at=at(23, 30)),  # still on at 23:00
+            event("late", start_at=at(22)),  # no end given
+        ])  # fmt: skip
+    with db.session() as session:
+        clause = current_clause(settings.retention, settings.timezone, at(23))
+        shown = session.scalars(select(EventRow.id).where(clause)).all()
+    assert sorted(shown) == ["test:allday", "test:late"]
 
 
 def test_artwork_run_with_successes_and_failures_persists_both(tmp_path: Path, monkeypatch: Any) -> None:
