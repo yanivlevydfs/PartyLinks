@@ -760,3 +760,10 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **שאילתה נוספת ב-`alerts.matcher.run`:** ‏`SELECT user_id, count(DISTINCT event_id) FROM alert_hits WHERE user_id IN (<users with matches>) AND matched_at >= now - 1 day GROUP BY user_id`. משתמשת באינדקס הקיים על `alert_hits.user_id`; אין אינדקס חדש.
 - **למה:** מקור שחזר אחרי ימים של כשלונות (telaviv: 472/571 מהעירייה, ואז 1011 אירועים) מכניס את כל מה שהצטבר כחדש בבת אחת; עם תקרה למעבר בלבד (30) הפעמון הגיע ל-99+. עכשיו כל משתמש מקבל לכל היותר `accounts.max_hits_per_day` (ברירת מחדל 10) התראות חדשות ב-24 שעות, הקרובות ביותר.
 - **Tests:** ‏`tests/test_alerts_flood.py::test_a_day_gives_a_user_at_most_the_daily_cap`.
+
+### 2026-10-31 (גיאוקודינג: נקודה שהונחה נשארת)
+- **הבאג:** בכל מעבר אותם 188 אירועים "הונחו" ואז נמחקו במעבר הבא (‏`drop_bad_points`, סיבה "region": smarticket 100, makore 31...). `locate_missing` בדק רק את רדיוס העיר, ו-`drop_bad_points` בדק גם סתירה לאזור בטקסט, ישראל ונקודה משותפת ל-4+ מקומות. עכשיו שני הצדדים עוברים דרך אותו `Geocoder._bad`, ו-`locate_missing` לא מניח נקודה שתהיה משותפת ל-`PLACEHOLDER_VENUES` מקומות שונים.
+- **שאילתה נוספת ב-`locate_missing`:** ‏`SELECT venue_name, address, latitude, longitude FROM events WHERE latitude IS NOT NULL AND country IS NULL` (אותה סריקה ש-`drop_bad_points` כבר עושה; בלי אינדקס חדש, בלי שינוי טבלאות).
+- **Nominatim:** ‏`PRECISE` כולל גם את סוגי הרחוב (‏`secondary`, `residential`...): "ז'בוטינסקי 15, הרצליה" חוזר כ-`secondary` ונפסל. תשובות שנשמרו כ"לא נמצא" נשאלות שוב אחרי `retry_failed_days` (14).
+- **ביצועים:** ‏`locate_missing` על 28k אירועים סינתטיים (22k עם נקודה, 6k בלי) ב-pgserver מקומי: לפני 21.6 / 18.5 שנ', אחרי 20.6 / 19.9 שנ'.
+- **Tests:** ‏`tests/test_storage_api.py::test_placed_points_survive_the_next_pass`.

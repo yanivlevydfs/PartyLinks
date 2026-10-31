@@ -44,6 +44,8 @@ GEONAMES_KIND = "geonames"  # GeoCacheRow.kind of a centre taken from GeoNames, 
 PRECISE = {
     "place", "house", "building", "road", "amenity", "leisure", "tourism", "shop", "office", "club",
     "historic", "craft", "man_made", "industrial", "commercial",
+    # A street is "road" or its highway class: "ז'בוטינסקי 15, הרצליה" comes back as "secondary".
+    "primary", "secondary", "tertiary", "residential", "unclassified", "living_street", "pedestrian",
 }  # fmt: skip
 _FLOOR = re.compile(r"קומה\s*-?\s*\d*\s*-?|\bfloor\s*-?\d*|\bfl\.?\s*-?\d+", re.IGNORECASE)
 _NOT_TEXT = re.compile(r"[^\w\s,.'\"׳״\-/&]", re.UNICODE)  # emojis, symbols
@@ -109,8 +111,12 @@ _GENERIC_VENUE_WORDS = re.compile(
 )
 
 
+def _rounded(point: tuple[float, float]) -> tuple[float, float]:
+    return round(point[0] or 0, 5), round(point[1] or 0, 5)
+
+
 def _point(row: Place) -> tuple[float, float]:
-    return round(row.latitude or 0, 5), round(row.longitude or 0, 5)
+    return _rounded((row.latitude, row.longitude))
 
 
 def venue_key(name: str | None) -> str | None:
@@ -164,7 +170,6 @@ def candidates(row: Place) -> list[str]:
     return list(dict.fromkeys(q for q in out if len(q) >= 4))
 
 
-
 # A name made only of one of these would match any hall / theatre / bar in town.
 _GENERIC_NAMES = {
     "אולם", "תיאטרון", "מוזיאון", "מרכז", "מועדון", "בר", "היכל", "סטודיו", "אודיטוריום", "קלאב", "גלריה",
@@ -181,7 +186,9 @@ _GENERIC_WORDS = {w.lower() for w in _GENERIC_NAMES} | {
 
 
 # The generic words as they appear inside venue keys (spaces gone, a leading "ה" sometimes dropped).
-_GENERIC_PIECES = sorted({v for w in _GENERIC_WORDS for v in (w, w.removeprefix("ה")) if len(v) >= 2}, key=len, reverse=True)
+_GENERIC_PIECES = sorted(
+    {v for w in _GENERIC_WORDS for v in (w, w.removeprefix("ה")) if len(v) >= 2}, key=len, reverse=True
+)
 
 
 def _vague(name: str, city: str | None, town: str) -> bool:
@@ -192,7 +199,9 @@ def _vague(name: str, city: str | None, town: str) -> bool:
     return _city_key(name) in places or (not city and all(w in _GENERIC_WORDS for w in words if w))
 
 
-_TRAILING_CITY = re.compile(r"[\s,\-]*(?:תל[\s\-]*אביב(?:[\s\-]*יפו)?|ת\"א(?:[\s\-]*יפו)?|ת״א|tel[\s\-]*aviv(?:[\s\-]*yafo)?)$", re.IGNORECASE)
+_TRAILING_CITY = re.compile(
+    r"[\s,\-]*(?:תל[\s\-]*אביב(?:[\s\-]*יפו)?|ת\"א(?:[\s\-]*יפו)?|ת״א|tel[\s\-]*aviv(?:[\s\-]*yafo)?)$", re.IGNORECASE
+)
 
 
 def venue_variants(venue: str) -> list[str]:
@@ -287,7 +296,11 @@ class GeoStats:
 
 class Geocoder:
     def __init__(
-        self, settings: GeocodingSettings, areas: AreaMatcher, target_city_aliases: list[str], db: Database,
+        self,
+        settings: GeocodingSettings,
+        areas: AreaMatcher,
+        target_city_aliases: list[str],
+        db: Database,
         cities: list[CitySettings] | None = None,
     ) -> None:
         self.settings = settings
@@ -311,21 +324,41 @@ class Geocoder:
         with self.db.session(write=False) as session:
             known_venue, known_street = self._known(session)
             cache = {c.query: c for c in session.scalars(select(GeoCacheRow).where(GeoCacheRow.found.is_(True)))}
-            missing = session.execute(select(*_PLACE_COLUMNS).where(upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_(None))).all()
+            missing = session.execute(
+                select(*_PLACE_COLUMNS).where(
+                    upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_(None)
+                )
+            ).all()
+            placed = session.execute(
+                select(EventRow.venue_name, EventRow.address, EventRow.latitude, EventRow.longitude)
+                .where(EventRow.latitude.is_not(None), EventRow.country.is_(None))
+            ).all()  # fmt: skip
         stats.missing = len(missing)
-        unplaced: Counter[str] = Counter()
-        updates = []
+        # Only points drop_bad_points would keep: a point it clears was placed again by the next pass, every
+        # pass (the same 188 events dropped as "region" and placed back, many times an hour, Oct 2026).
+        found = {}
         for row in missing:
-            point = next(
+            found[row.id] = next(
                 (p for p in (
                     self._pin(row),
                     _venue_match(known_venue, row.venue_name, row.city),
                     _in_city(known_street.get(street_key(row.address) or ""), row.city),
                     self._from_cache(row, cache),
-                ) if p and self._in_its_city(row, p)),
+                ) if p and self._bad(row, p) is None),
                 None,
             )  # fmt: skip
-            if point:
+        venues: defaultdict[Point, set[str]] = defaultdict(set)
+        for r in placed:
+            venues[_point(r)].add(venue_key(r.venue_name) or street_key(r.address) or "")
+        for row in missing:
+            if p := found[row.id]:
+                venues[_rounded(p)].add(venue_key(row.venue_name) or street_key(row.address) or "")
+        shared = {p for p, keys in venues.items() if distinct_venues(keys) >= PLACEHOLDER_VENUES}
+        unplaced: Counter[str] = Counter()
+        updates = []
+        for row in missing:
+            point = found[row.id]
+            if point and _rounded(point) not in shared:
                 area = self.areas.match(row.venue_name, row.address, *point, row.in_target_city, row.city)
                 updates.append({"id": row.id, "latitude": point[0], "longitude": point[1], "area": area})
             elif candidates(row):
@@ -350,7 +383,11 @@ class Geocoder:
         that re-sends a bad point shows it on the map until that source's geocode step."""
         with self.db.session(write=False) as session:  # read and judge outside the write lock
             # Abroad points are city centres shared by every venue there (_locate_abroad): not placeholders.
-            rows = session.execute(select(*_PLACE_COLUMNS, EventRow.source).where(EventRow.latitude.is_not(None), EventRow.country.is_(None))).all()
+            rows = session.execute(
+                select(*_PLACE_COLUMNS, EventRow.source).where(
+                    EventRow.latitude.is_not(None), EventRow.country.is_(None)
+                )
+            ).all()
         venues: defaultdict[tuple[float, float], set[str]] = defaultdict(set)
         for r in rows:
             venues[_point(r)].add(venue_key(r.venue_name) or street_key(r.address) or "")
@@ -359,14 +396,11 @@ class Geocoder:
         why: Counter[str] = Counter()  # "source: reason", for the log
         shared: Counter[tuple[float, float]] = Counter()
         for r in rows:
-            # An event in Israel (no country) placed abroad: beatradar's "North" sat in Portugal (Oct 2026).
-            outside = not self._in_its_city(r, (r.latitude, r.longitude)) or not self.areas.in_israel(r.latitude, r.longitude)  # type: ignore[arg-type]
-            # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
-            contradicts = not outside and self._contradicts(r)
+            reason = self._bad(r, (r.latitude, r.longitude))
             placeholder = distinct.setdefault(_point(r), distinct_venues(venues[_point(r)])) >= PLACEHOLDER_VENUES
-            if outside or contradicts or placeholder:
+            if reason or placeholder:
                 bad.append({"id": r.id, "latitude": None, "longitude": None})
-                why[f"{r.source}: {'outside its city' if outside else 'region' if contradicts else 'shared'}"] += 1
+                why[f"{r.source}: {reason or 'shared'}"] += 1
                 if placeholder:
                     shared[_point(r)] += 1
         if bad:
@@ -381,11 +415,21 @@ class Geocoder:
                 log.info("geocoding: shared point %s x%d: %s", point, n, " | ".join(sorted(venues[point])[:6]))
         return dropped
 
-    def _contradicts(self, row: Place) -> bool:
+    def _bad(self, row: Place, point: Point) -> str | None:
+        """Why ``point`` is wrong for this event in Israel, or None. One rule for drop_bad_points (clears)
+        and locate_missing (places): when they disagreed, every pass cleared what the last one placed."""
+        # An event in Israel (no country) placed abroad: beatradar's "North" sat in Portugal (Oct 2026).
+        if not self._in_its_city(row, point) or not self.areas.in_israel(*point):
+            return "outside its city"
+        # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
+        return "region" if self._contradicts(row, point) else None
+
+    def _contradicts(self, row: Place, point: Point | None = None) -> bool:
         """The text names a region the point is outside of ("...בגן שמואל" placed in Tel Aviv). Outside the
         target city the place in the text wins; rows known to be in it are judged by the city check alone."""
+        lat, lon = point or (row.latitude, row.longitude)
         return row.in_target_city is not True and self.areas.contradicts(
-            row.city, row.venue_name, row.address, row.latitude, row.longitude
+            row.city, row.venue_name, row.address, lat, lon
         )
 
     def _in_its_city(self, row: Place, point: Point) -> bool:
@@ -449,7 +493,9 @@ class Geocoder:
             cache = {c.query: c for c in session.scalars(select(GeoCacheRow))}
             pending = [
                 row
-                for row in session.scalars(select(EventRow).where(upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_(None)))
+                for row in session.scalars(
+                    select(EventRow).where(upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_(None))
+                )
                 if not (
                     self._pin(row)
                     or _venue_match(known_venue, row.venue_name, row.city)
@@ -484,7 +530,12 @@ class Geocoder:
     def _locate_abroad(self, network: bool, stop: threading.Event | None) -> int:
         """Events abroad: their city's point, enough for the weather (abroad is not on the map).
         One lookup per city, in the same cache, rate limit and budget as the lookups in Israel."""
-        unplaced = (upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_not(None), EventRow.city.is_not(None))
+        unplaced = (
+            upcoming_filter(),
+            EventRow.latitude.is_(None),
+            EventRow.country.is_not(None),
+            EventRow.city.is_not(None),
+        )
 
         def key(city: str, country: str) -> str:
             return f"{clean(city)} @{country}"
@@ -513,7 +564,7 @@ class Geocoder:
             if todo:
                 with httpx.Client(
                     headers={"User-Agent": self.settings.user_agent, "Accept-Language": "he,en"},
-            timeout=self.settings.timeout_seconds,
+                    timeout=self.settings.timeout_seconds,
                 ) as client:
                     for city, country in todo:
                         if stop is not None and stop.is_set():
@@ -556,8 +607,9 @@ class Geocoder:
             return 0
         with self.db.session(write=False) as session:
             rows = session.execute(
-                select(EventRow.id, EventRow.city, EventRow.country, EventRow.latitude, EventRow.longitude)
-                .where(upcoming_filter(), EventRow.country.is_not(None), EventRow.latitude.is_not(None))
+                select(EventRow.id, EventRow.city, EventRow.country, EventRow.latitude, EventRow.longitude).where(
+                    upcoming_filter(), EventRow.country.is_not(None), EventRow.latitude.is_not(None)
+                )
             ).all()
         updates = []
         for r in rows:
@@ -575,7 +627,9 @@ class Geocoder:
         if updates:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, updates)
-            log.info("geocoding: %d events abroad moved to the right city (%s)", len(updates), ", ".join(sorted(moves))[:300])
+            log.info(
+                "geocoding: %d events abroad moved to the right city (%s)", len(updates), ", ".join(sorted(moves))[:300]
+            )
         return len(updates)
 
     def _forget(self, query: str) -> None:
@@ -629,7 +683,9 @@ class Geocoder:
     def _fits(self, query: str, hit: GeoCacheRow) -> bool:
         if hit.kind not in PRECISE:
             return False
-        if any(k in _city_key(query) for k in self._city_keys) and not any(k in _city_key(hit.city) for k in self._city_keys):
+        if any(k in _city_key(query) for k in self._city_keys) and not any(
+            k in _city_key(hit.city) for k in self._city_keys
+        ):
             return False
         area = self.areas.keyword_area(None, query)
         center = self.areas.center(area) if area else None

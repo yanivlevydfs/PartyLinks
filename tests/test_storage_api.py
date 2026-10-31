@@ -41,7 +41,10 @@ def event(event_id: str, start: datetime, **extra: Any) -> ScrapedEvent:
         "end_at": start + timedelta(hours=6),
         "address": "Tel Aviv-Yafo, Israel",
         "images": [f"https://example.com/{event_id}.jpg"],
-        "tickets": [TicketTier(name="Free before 23:30", price=Decimal(0)), TicketTier(name="Entry", price=Decimal(80))],
+        "tickets": [
+            TicketTier(name="Free before 23:30", price=Decimal(0)),
+            TicketTier(name="Entry", price=Decimal(80)),
+        ],
     }
     return ScrapedEvent(**(fields | extra))
 
@@ -77,8 +80,6 @@ def test_retention_keeps_today_onwards_and_parties_still_in_progress(tmp_path: P
         assert session.query(ImageRow).count() == len(remaining)  # purged events' artwork rows go too
     # still-partying is current either way: started today, or last night and not over yet.
     assert remaining == {"test:still-partying", "test:today", "test:future"}
-
-
 
 
 def test_api_filters_categories_and_stored_image(tmp_path: Path) -> None:
@@ -134,7 +135,9 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
     # Google's Event rules: offers.url crawlable (robots.txt allows /go/), dates without microseconds,
     # availability InStock / SoldOut / PreOrder only.
     assert all("." not in o["validFrom"] for o in data["offers"])
-    assert {o["availability"] for o in data["offers"]} <= {f"https://schema.org/{a}" for a in ("InStock", "SoldOut", "PreOrder")}
+    assert {o["availability"] for o in data["offers"]} <= {
+        f"https://schema.org/{a}" for a in ("InStock", "SoldOut", "PreOrder")
+    }
     # Nothing known: no made-up offer or logo image, and a description that doesn't repeat date or place.
     row.description, row.tickets, row.images, row.min_price, row.image_url = None, [], [], None, None
     bare = event_jsonld(row, settings)
@@ -171,7 +174,9 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
     with TestClient(app) as client:
         techno = client.get("/genre/techno")
         assert techno.status_code == 200 and '"FAQPage"' in techno.text
-        assert "כרגע יש 3 אירועים" in techno.text and "כן, 3 אירועים בכניסה חופשית" in techno.text  # answers come from the listings
+        assert (
+            "כרגע יש 3 אירועים" in techno.text and "כן, 3 אירועים בכניסה חופשית" in techno.text
+        )  # answers come from the listings
         assert client.get("/genre/karaoke").status_code == 404  # no events: no thin page
         assert "Techno night 0" in client.get("/tonight?lang=en").text
         assert "/genre/techno" in client.get("/sitemap-1.xml").text and "/tonight" in client.get("/").text
@@ -184,13 +189,21 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
         # City x genre: its own page, linked from the city page (not the home page) and in the sitemap.
         city_techno = client.get("/city/tel-aviv/techno")
         assert city_techno.status_code == 200 and "טכנו בתל אביב" in city_techno.text and '"City"' in city_techno.text
-        assert 'href="/city/tel-aviv/techno"' in city.text and "/city/tel-aviv/techno" in client.get("/sitemap-1.xml").text
-        assert client.get("/city/tel-aviv/karaoke").status_code == 404 and client.get("/city/nowhere/techno").status_code == 404
+        assert (
+            'href="/city/tel-aviv/techno"' in city.text and "/city/tel-aviv/techno" in client.get("/sitemap-1.xml").text
+        )
+        assert (
+            client.get("/city/tel-aviv/karaoke").status_code == 404
+            and client.get("/city/nowhere/techno").status_code == 404
+        )
         assert client.get("/region/sharon").status_code == 404 and client.get("/abroad/greece").status_code == 404
         key = settings.site.indexnow.key
         assert key and client.get(f"/{key}.txt").text == key and client.get("/llms.txt").status_code == 200
         info = client.get("/landing-info", params={"path": "/city/tel-aviv/techno", "lang": "en"}).json()
-        assert info["title"] == "Techno events in Tel Aviv" and {"path": "/city/tel-aviv", "label": "All events in Tel Aviv"} in info["links"]
+        assert (
+            info["title"] == "Techno events in Tel Aviv"
+            and {"path": "/city/tel-aviv", "label": "All events in Tel Aviv"} in info["links"]
+        )
         # Cached pages (Hebrew paths, queries, 404s too) are answered before routing, so a threadpool
         # full of cold builds never delays them: with the database gone the cached copies still come back.
         paths = ["/", "/tonight?lang=en", "/city/tel-aviv", "/genre/karaoke", "/venue/בארבי", "/categories"]
@@ -209,7 +222,9 @@ def test_city_names_are_canonical() -> None:
     enricher = Enricher(settings_for(Path(".")).enrichment, "Asia/Jerusalem")
     assert enricher.canonical_city("Tel Aviv-Yafo", None) == "תל אביב"
     assert enricher.canonical_city("תל אביב-יפו", None) == "תל אביב"
-    assert enricher.canonical_city(None, "שדרות ירושלים 19, תל אביב-יפו, ישראל") == "תל אביב"  # street named after a city
+    assert (
+        enricher.canonical_city(None, "שדרות ירושלים 19, תל אביב-יפו, ישראל") == "תל אביב"
+    )  # street named after a city
     assert enricher.canonical_city("השרון", "השרון 14, תל אביב-יפו") == "תל אביב"
     assert enricher.canonical_city("השרון", None, "מייז תל אביב | MAZE TLV") == "תל אביב"
     assert enricher.canonical_city("6473303", None) is None  # zip code
@@ -227,9 +242,11 @@ def test_geocoding_reuses_known_places_and_rejects_vague_hits(tmp_path: Path) ->
     assert street_key("אבן גבירול 30 קומה -1") == "אבן גבירול 30"
     assert street_key("בטבע היפה שלנו 🏕️") is None
     from partylinks.geo import venue_key
+
     assert venue_key("מועדון הבארבי") == venue_key("בארבי")
     assert venue_key("Jimmy who tel aviv") == venue_key("JIMMYWHO? Bar & Lounge")
     from partylinks.geo import venue_variants
+
     assert "מוזיאון תל אביב" in venue_variants("מוזיאון תל אביב, אולם אסיא")
     assert "הוואנה" in venue_variants("הוואנה מיוזיק קלאב")
     assert "אולם" not in venue_variants("אולם ברטונוב")  # a generic word alone would match any hall
@@ -282,7 +299,9 @@ def test_geocoder_drops_placeholder_and_out_of_city_source_points(tmp_path: Path
         event("real2", future, venue_name="Barby", latitude=32.0535, longitude=34.7601),  # same venue twice is fine
     ])  # fmt: skip
     enricher = Enricher(settings.enrichment, settings.timezone)
-    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    geo = Geocoder(
+        settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+    )
     assert geo.drop_bad_points() == 5
     with db.session() as session:
         placed = {r.source_event_id for r in session.query(EventRow) if r.latitude is not None}
@@ -361,12 +380,17 @@ def test_blog_posts_pages_feed_and_live_embeds(tmp_path: Path, monkeypatch: pyte
         'faq:\n  - q: "שאלה?"\n    a: "תשובה."\n---\n<h2>הכי טוב</h2><p>שלום</p>\n<!--events genre=techno limit=2-->\n<p>סוף</p>',
         encoding="utf-8",
     )
-    (content / "later.html").write_text("---\ntitle: t\ndescription: d\ndate: 2999-01-01\n---\n<p>x</p>", encoding="utf-8")
-    (content / "gone.html").write_text("---\ntitle: t\ndescription: d\ndate: 2026-01-01\nexpires: 2026-01-02\n---\n<p>x</p>", encoding="utf-8")
+    (content / "later.html").write_text(
+        "---\ntitle: t\ndescription: d\ndate: 2999-01-01\n---\n<p>x</p>", encoding="utf-8"
+    )
+    (content / "gone.html").write_text(
+        "---\ntitle: t\ndescription: d\ndate: 2026-01-01\nexpires: 2026-01-02\n---\n<p>x</p>", encoding="utf-8"
+    )
     (content / "broken.html").write_text("---\ntitle: [\n---\n", encoding="utf-8")
     (content / "en").mkdir()
     (content / "en" / "guide.html").write_text(
-        '---\ntitle: "Techno guide"\ndescription: "About"\n---\n<h2>The best</h2>\n<!--events genre=techno limit=2-->', encoding="utf-8"
+        '---\ntitle: "Techno guide"\ndescription: "About"\n---\n<h2>The best</h2>\n<!--events genre=techno limit=2-->',
+        encoding="utf-8",
     )
 
     posts = blog.load_posts(settings, content)
@@ -416,7 +440,10 @@ def test_admin_scan_runs_all_enabled_or_the_chosen_sources(tmp_path: Path) -> No
         enabled = [n for n, s in configured_sources(settings).items() if s.enabled]
         assert set(everything["started"]) | set(everything["busy"]) == set(enabled) and everything["busy"] == ["barby"]
         calls.clear()
-        assert client.post("/admin/api/scan", json={"sources": ["goout", "eventer"]}).json()["started"] == ["goout", "eventer"]
+        assert client.post("/admin/api/scan", json={"sources": ["goout", "eventer"]}).json()["started"] == [
+            "goout",
+            "eventer",
+        ]
         assert calls == ["goout", "eventer"]
         assert client.post("/admin/api/scan", json={"sources": ["nope"]}).status_code == 404
 
@@ -581,13 +608,29 @@ def test_cached_responses_follow_writes_and_map_returns_located_events(tmp_path:
             clock.sleep(0.05)
         pins = client.get("/events/map").json()
         assert "test:a" in [p["id"] for p in pins["items"]] and len(pins["items"]) + pins["unplaced"] == 2
-        assert set(pins["items"][0]) == {"id", "slug", "title", "start_at", "time_known", "time_zone", "local_date", "venue_name", "latitude", "longitude", "source", "sources"}
+        assert set(pins["items"][0]) == {
+            "id",
+            "slug",
+            "title",
+            "start_at",
+            "time_known",
+            "time_zone",
+            "local_date",
+            "venue_name",
+            "latitude",
+            "longitude",
+            "source",
+            "sources",
+        }
 
 
 def test_seller_links_leave_only_through_the_rate_limited_redirect(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     start = datetime.now(UTC) + timedelta(days=1)
-    seed(settings, [event("a", start, url="https://seller.example/a", extra={"purchase_url": "https://seller.example/buy"})])
+    seed(
+        settings,
+        [event("a", start, url="https://seller.example/a", extra={"purchase_url": "https://seller.example/buy"})],
+    )
     with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}) as client:
         pages = [client.get(p).text for p in ("/events", "/events/test:a", "/events/map", "/changes", "/event/test:a")]
         assert not [p for p in pages if "seller.example" in p]
@@ -602,7 +645,9 @@ def test_seller_links_leave_only_through_the_rate_limited_redirect(tmp_path: Pat
         assert stats["total"] == stats["today"] == stats["per_day"][-1]["clicks"] == 3
         assert len(stats["per_day"]) == 7
         assert stats["per_placement"] == {"buy": 1, "alt": 1, "unknown": 1}
-        assert stats["top_events"] == [{"event_id": "test:a", "title": stats["top_events"][0]["title"], "source": "test", "clicks": 3}]
+        assert stats["top_events"] == [
+            {"event_id": "test:a", "title": stats["top_events"][0]["title"], "source": "test", "clicks": 3}
+        ]
     limit = settings.security.go_rate_limit_per_minute
     with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}, client=("203.0.113.9", 1)) as client:
         codes = [client.get("/go/test%3Aa", follow_redirects=False).status_code for _ in range(limit + 1)]
@@ -618,10 +663,15 @@ def test_searches_are_counted_for_the_admin(tmp_path: Path) -> None:
         client.get("/events?q=techno&sponsored=true&page=2")  # same search, next page: not counted
         client.get("/events?q=techno&free_entry=true")  # a side count with the same words: not counted
         client.get("/events?q=zzzz&sponsored=true")
-        client.get("/events?q=techno&sponsored=true", headers={"authorization": "Bearer x"})  # the admin's own: not counted
+        client.get(
+            "/events?q=techno&sponsored=true", headers={"authorization": "Bearer x"}
+        )  # the admin's own: not counted
         stats = client.get("/admin/api/searches?days=7").json()
         assert (stats["total"], stats["today"], stats["distinct"], stats["no_results"]) == (2, 2, 2, 1)
-        assert stats["top"] == [{"q": "techno", "searches": 1, "results": 1}, {"q": "zzzz", "searches": 1, "results": 0}]
+        assert stats["top"] == [
+            {"q": "techno", "searches": 1, "results": 1},
+            {"q": "zzzz", "searches": 1, "results": 0},
+        ]
         assert stats["top_misses"] == [{"q": "zzzz", "searches": 1}]
 
 
@@ -640,7 +690,9 @@ def test_geocoder_takes_a_venue_point_only_from_the_same_city(tmp_path: Path) ->
         event("hall", future, venue_name="תיאטרון הקאמרי אולם 1", city="ראשון לציון"),
     ])  # fmt: skip
     enricher = Enricher(settings.enrichment, settings.timezone)
-    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    geo = Geocoder(
+        settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+    )
     geo.locate_missing(network=False)
     with db.session() as session:
         placed = {r.source_event_id: r.latitude for r in session.query(EventRow)}
@@ -654,11 +706,20 @@ def test_geocoder_places_events_abroad_at_their_city(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     future = datetime.now(UTC) + timedelta(days=2)
     # Four venues in Berlin share the city point: not mistaken for a placeholder and dropped.
-    db = seed(settings, [event(f"b{i}", future, venue_name=f"Club {i}", address=None, city="ברלין", country="DE") for i in range(4)])
+    db = seed(
+        settings,
+        [event(f"b{i}", future, venue_name=f"Club {i}", address=None, city="ברלין", country="DE") for i in range(4)],
+    )
     with db.session() as session:
-        session.add(GeoCacheRow(query="ברלין @DE", found=True, latitude=52.52, longitude=13.4, kind="city", looked_up_at=utcnow()))
+        session.add(
+            GeoCacheRow(
+                query="ברלין @DE", found=True, latitude=52.52, longitude=13.4, kind="city", looked_up_at=utcnow()
+            )
+        )
     enricher = Enricher(settings.enrichment, settings.timezone)
-    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    geo = Geocoder(
+        settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+    )
     geo.locate_missing(network=False)
     geo.locate_missing(network=False)
     with db.session() as session:
@@ -680,11 +741,25 @@ def test_city_abroad_is_the_geonames_city_not_a_village_of_that_name(tmp_path: P
         event("venue", future, venue_name="Jazzhaus", address=None, city="Freiburg", country="DE"),
     ])  # fmt: skip
     with db.session() as session:
-        session.add(GeoCacheRow(query="Freiburg @DE", found=True, latitude=53.825248, longitude=9.28872, kind="town", looked_up_at=utcnow()))
+        session.add(
+            GeoCacheRow(
+                query="Freiburg @DE",
+                found=True,
+                latitude=53.825248,
+                longitude=9.28872,
+                kind="town",
+                looked_up_at=utcnow(),
+            )
+        )
         session.get(EventRow, "test:old").latitude, session.get(EventRow, "test:old").longitude = 53.825248, 9.28872
-        session.get(EventRow, "test:venue").latitude, session.get(EventRow, "test:venue").longitude = 47.9947988, 7.8404909
+        session.get(EventRow, "test:venue").latitude, session.get(EventRow, "test:venue").longitude = (
+            47.9947988,
+            7.8404909,
+        )
     enricher = Enricher(settings.enrichment, settings.timezone)
-    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    geo = Geocoder(
+        settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+    )
     geo.locate_missing(network=False)
     with db.session() as session:
         point = lambda i: (round(session.get(EventRow, i).latitude, 2), round(session.get(EventRow, i).longitude, 2))
@@ -702,12 +777,25 @@ def test_small_namesake_city_abroad_stays_with_nominatim(tmp_path: Path) -> None
 
     settings = settings_for(tmp_path)
     future = datetime.now(UTC) + timedelta(days=2)
-    db = seed(settings, [event("r", future, venue_name="Rosemont Theatre", address=None, city="Rosemont", country="US")])
+    db = seed(
+        settings, [event("r", future, venue_name="Rosemont Theatre", address=None, city="Rosemont", country="US")]
+    )
     with db.session() as session:
-        session.add(GeoCacheRow(query="Rosemont @US", found=True, latitude=38.55185, longitude=-121.36467, kind=GEONAMES_KIND, looked_up_at=utcnow()))
+        session.add(
+            GeoCacheRow(
+                query="Rosemont @US",
+                found=True,
+                latitude=38.55185,
+                longitude=-121.36467,
+                kind=GEONAMES_KIND,
+                looked_up_at=utcnow(),
+            )
+        )
         session.get(EventRow, "test:r").latitude, session.get(EventRow, "test:r").longitude = 38.55185, -121.36467
     enricher = Enricher(settings.enrichment, settings.timezone)
-    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    geo = Geocoder(
+        settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+    )
     geo.locate_missing(network=False)
     with db.session() as session:
         assert session.get(EventRow, "test:r").latitude is None  # unplaced: Nominatim's turn on the next pass
@@ -763,7 +851,10 @@ def test_sponsored_rails_show_upcoming_picks_in_admin_order(tmp_path: Path) -> N
         listed = client.get("/admin/api/sponsored").json()
         assert listed["enabled"] is True
         assert [(s["event_id"], s["live"]) for s in listed["items"]] == [
-            ("test:a", True), ("test:d", False), ("test:b", True), ("test:c", True),
+            ("test:a", True),
+            ("test:d", False),
+            ("test:b", True),
+            ("test:c", True),
         ]
         assert client.put("/admin/api/sponsored", json=[{"event_id": "test:nope", "side": "left"}]).status_code == 404
         assert client.put("/admin/api/sponsored", json=picks[:1] * 2).status_code == 422
@@ -774,7 +865,10 @@ def test_sponsored_rails_show_upcoming_picks_in_admin_order(tmp_path: Path) -> N
         hit("test:nope", "click"), hit("test:b", "nonsense")  # unknown event / kind: not counted
         report = client.get("/admin/api/sponsored/stats?days=7").json()
         assert (report["views"], report["clicks"]) == (3, 1)
-        assert [(e["event_id"], e["views"], e["clicks"]) for e in report["events"]] == [("test:b", 2, 1), ("test:c", 1, 0)]
+        assert [(e["event_id"], e["views"], e["clicks"]) for e in report["events"]] == [
+            ("test:b", 2, 1),
+            ("test:c", 1, 0),
+        ]
         client.post("/admin/api/sponsored/enabled", json={"on": False})
         assert client.get("/events/sponsored").json() == {"right": [], "left": []}  # every ad hidden
         hit("test:b", "click")  # nothing on show: not counted
@@ -817,7 +911,9 @@ def test_stored_events_take_genres_added_to_the_config(tmp_path: Path) -> None:
 def test_artist_page_lists_their_shows_abroad_too(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     future = datetime.now(UTC) + timedelta(days=2)
-    db = seed(settings, [event("rome", future, address="Roma, Italy", latitude=41.9, longitude=12.5), event("tlv", future)])
+    db = seed(
+        settings, [event("rome", future, address="Roma, Italy", latitude=41.9, longitude=12.5), event("tlv", future)]
+    )
     with db.session() as session:  # lineups come from curated artists only: set it as stored
         for row in session.query(EventRow):
             row.lineup = ["flashcookie"] if row.source_event_id == "rome" else []
@@ -873,11 +969,15 @@ def test_a_city_abroad_is_one_city_in_hebrew_and_english(tmp_path: Path) -> None
               latitude=48.85, longitude=2.35),
     ])  # fmt: skip
     with TestClient(create_app(settings, start_scheduler=False)) as client:
-        ids = lambda **p: sorted(e["source_event_id"] for e in client.get("/events", params={"abroad": "true", **p}).json()["items"])
+        ids = lambda **p: sorted(
+            e["source_event_id"] for e in client.get("/events", params={"abroad": "true", **p}).json()["items"]
+        )
         assert ids(q="ברצלונה") == ids(q="barcelona") == ["en", "en2", "he"]  # either language finds both
         assert ids(city="ברצלונה") == ids(city="Barcelona") == ["en", "en2", "he"]
         assert ids(q="טניס") == ["tennis"]  # the site's own category
-        cities = {c["value"]: c["events"] for c in client.get("/categories", params={"abroad": "true"}).json()["cities"]}
+        cities = {
+            c["value"]: c["events"] for c in client.get("/categories", params={"abroad": "true"}).json()["cities"]
+        }
         assert cities == {"Barcelona": 3, "Paris": 1}  # one entry, in its most used spelling
 
 
@@ -959,7 +1059,10 @@ def test_a_search_that_finds_nothing_suggests_a_close_name(tmp_path: Path) -> No
 def test_a_search_that_finds_nothing_is_logged(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     settings = settings_for(tmp_path)
     seed(settings, [event("party", datetime.now(UTC) + timedelta(days=1), title="Moon party")])
-    with TestClient(create_app(settings, start_scheduler=False)) as client, caplog.at_level(logging.INFO, "partylinks.api"):
+    with (
+        TestClient(create_app(settings, start_scheduler=False)) as client,
+        caplog.at_level(logging.INFO, "partylinks.api"),
+    ):
         client.get("/events?q=moon")
         client.get("/events?q=zzzqqq")
     assert [r.getMessage() for r in caplog.records if "search miss" in r.getMessage()] == ["search miss: 'zzzqqq'"]
@@ -1029,7 +1132,9 @@ def test_tel_aviv_is_assumed_only_for_events_known_to_be_there() -> None:
 
     from partylinks.geo import candidates
 
-    unknown = candidates(SimpleNamespace(venue_name="היכל התרבות מנשה בגן שמואל", city=None, address=None, in_target_city=None))
+    unknown = candidates(
+        SimpleNamespace(venue_name="היכל התרבות מנשה בגן שמואל", city=None, address=None, in_target_city=None)
+    )
     assert not any("תל אביב" in q for q in unknown)  # was answered with Tel Aviv's culture hall
     known = candidates(SimpleNamespace(venue_name="בארבי", city=None, address=None, in_target_city=True))
     assert known == ["בארבי, תל אביב"]
@@ -1044,10 +1149,34 @@ def test_a_point_its_own_text_contradicts_teaches_no_other_event(tmp_path: Path)
     db = seed(settings, [event("wrong", future, venue_name="היכל התרבות מנשה בגן שמואל", address=None,
                                latitude=32.0734714, longitude=34.7800344)])  # fmt: skip
     enricher = Enricher(settings.enrichment, settings.timezone)
-    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    geo = Geocoder(
+        settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+    )
     with db.session(write=False) as session:
         known, _ = geo._known(session)
     assert _venue_match(known, "היכל התרבות מנשה בגן שמואל", None) is None
+
+
+def test_placed_points_survive_the_next_pass(tmp_path: Path) -> None:
+    """The pass placed points drop_bad_points cleared on the next pass ("region"): the same 188 events
+    were placed and dropped again, many times an hour (Oct 2026). Placed now = still there next pass."""
+    from partylinks.geo import Geocoder
+
+    settings = settings_for(tmp_path)
+    tlv = (32.0734714, 34.7800344)
+    settings.geocoding.venues = {"קיבוץ הגושרים": tlv, "בארבי": (32.0535, 34.7627)}
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [event("galilee", future, venue_name="קיבוץ הגושרים", address=None),
+                         event("barby", future, venue_name="בארבי")])  # fmt: skip
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(
+        settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+    )
+    first, second = geo.locate_missing(network=False), geo.locate_missing(network=False)
+    with db.session() as session:
+        placed = {r.source_event_id: r.latitude for r in session.query(EventRow)}
+    assert placed == {"galilee": None, "barby": 32.0535}  # a Tel Aviv point for a Galilee kibbutz: never placed
+    assert (first.located, second.located, second.missing) == (1, 0, 1)  # barby stayed placed
 
 
 def test_region_words_that_are_also_names_or_streets_do_not_contradict_a_point() -> None:
@@ -1055,8 +1184,12 @@ def test_region_words_that_are_also_names_or_streets_do_not_contradict_a_point()
 
     areas = Enricher(Settings().enrichment, "Asia/Jerusalem").areas
     # Real production points (Oct 2026), all correct, cleared every pass before.
-    for venue, lat, lng in (("אולם גולן, בית יד לבנים", 32.1465, 34.8406), ("תיאטרון הצפון", 32.8217, 35.0744),
-                            ("האנגר גשר- אילת 11 תא-יפו", 32.0984, 34.7745), ("גלרית הפוסט, שדרות ויצמן 27", 32.1389, 34.8183)):
+    for venue, lat, lng in (
+        ("אולם גולן, בית יד לבנים", 32.1465, 34.8406),
+        ("תיאטרון הצפון", 32.8217, 35.0744),
+        ("האנגר גשר- אילת 11 תא-יפו", 32.0984, 34.7745),
+        ("גלרית הפוסט, שדרות ויצמן 27", 32.1389, 34.8183),
+    ):
         assert not areas.contradicts(None, venue, None, lat, lng), venue
     assert areas.contradicts("שדרות", "מועדון", None, 32.08, 34.78)  # the city field still counts
     assert areas.contradicts(None, "קיבוץ הגושרים", None, 31.25, 34.79)  # an unambiguous place still does
@@ -1115,4 +1248,3 @@ def test_search_by_area_does_not_rank_titles_holding_its_words(tmp_path: Path) -
     assert relevance("גוש דן", cfg) is None
     assert relevance("zygo", cfg) is None
     assert relevance("טכנו בגוש דן", cfg) is not None
-
