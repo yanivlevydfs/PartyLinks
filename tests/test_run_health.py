@@ -71,3 +71,15 @@ def test_runs_wait_for_a_free_slot(monkeypatch) -> None:
         assert service._executor._max_workers == 2
     finally:
         service.shutdown()
+
+
+def test_a_run_a_restart_cut_short_starts_again_at_startup() -> None:
+    db = Database(os.environ["PARTYLINKS_DATABASE__URL"])
+    db.create_schema()
+    runs = {"goout": ["success", "interrupted"], "zygo": ["interrupted", "success"],
+            "posh": ["interrupted", "interrupted", "interrupted"], "ogo": ["interrupted", "interrupted"]}  # fmt: skip
+    with db.session() as session:
+        for source, statuses in runs.items():
+            session.add_all(ScrapeRunRow(source=source, trigger="schedule", status=s) for s in statuses)
+    # zygo finished after it was cut; posh was cut 3 times in a row (it may be what kills the process).
+    assert db.interrupted_sources(3) == {"goout", "ogo"}

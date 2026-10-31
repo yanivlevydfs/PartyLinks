@@ -115,6 +115,8 @@ class ApiSettings(BaseModel):
 class SchedulerSettings(BaseModel):
     enabled: bool = True
     run_on_startup: bool = False
+    # A source whose last run a restart interrupted runs again at startup, unless this many in a row were.
+    resume_max_in_a_row: int = Field(3, ge=1)
     misfire_grace_seconds: int = Field(600, ge=0)
     # /health flags an enabled source with no successful run for this long.
     stale_after_hours: float = Field(12, gt=0)

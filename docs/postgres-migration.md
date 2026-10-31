@@ -790,3 +790,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **עמוד השרת:** גם בחו"ל (‏`_upcoming(abroad=None)`): מקום בחו"ל היה ב-sitemap אבל העמוד שלו היה ריק ו-noindex.
 - **`venues.infer_venues`:** שמות שזהים חוץ מרישיות וסימני פיסוק ‏(‏`slugify` זהה) באותה עיר הם מקום אחד ("בית העם - רחובות" / "בית העם רחובות."). ‏~28k קריאות slugify נוספות: ‏~0.14 שנ'.
 - **Tests:** ‏`tests/test_api_robustness.py::test_a_venue_page_is_that_venue_only`, ‏`tests/test_venues.py::test_spellings_alike_but_for_punctuation_are_one_venue`.
+
+### 2026-10-31 (סבב שנקטע ב-deploy רץ שוב בהפעלה)
+- **הבאג:** deploy או restart באמצע סבב סריקה רשמו אותו `interrupted`, והמקור חיכה לסבב הבא שלו ב-cron (עד חצי יום). בלילה של 10-31 נקטעו כך eventer, goout, grayclub, posh, shotgun, showshappening, tickchak, zygo ו-munievents.
+- **שאילתה חדשה:** ‏`Database.interrupted_sources` - ‏`row_number() OVER (PARTITION BY source ORDER BY id DESC)` על `scrape_runs`, שלושת הסבבים האחרונים לכל מקור. מקור שהסבב האחרון שלו `interrupted` (ופחות מ-`scheduler.resume_max_in_a_row` = 3 ברצף) מקבל ב-`build_scheduler` הפעלה מיידית, מדורגת ב-`startup_stagger_seconds`. אין שינוי טבלאות או עמודות; ~70 מקורות × 3 שורות, פעם אחת בהפעלה.
+- **Tests:** ‏`tests/test_run_health.py::test_a_run_a_restart_cut_short_starts_again_at_startup`.

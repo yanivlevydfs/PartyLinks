@@ -381,7 +381,9 @@ def _literal_default(column: Any, dialect: Any) -> str | None:
 # "C" database \w is ASCII only, and Hebrew letters would count as spaces).
 _WORD_CHARS = "0-9A-Za-z_\u00c0-\u024f\u0370-\u04ff\u0590-\u06ff"  # digits, Latin, Greek, Cyrillic, Hebrew, Arabic
 _REGEX_META = str.maketrans({c: "\\" + c for c in "\\.^$*+?()[]{}|-"})
-_HEBREW_PREFIXES = "\u05d1\u05dc\u05de\u05d4\u05d5\u05db\u05e9"  # one-letter prefixes: bet, lamed, mem, he, vav, kaf, shin
+_HEBREW_PREFIXES = (
+    "\u05d1\u05dc\u05de\u05d4\u05d5\u05db\u05e9"  # one-letter prefixes: bet, lamed, mem, he, vav, kaf, shin
+)
 
 
 def whole_word(column: Any, word: str) -> ColumnElement[bool]:
@@ -615,6 +617,29 @@ class Database:
         if count:
             log.warning("marked %d unfinished runs as interrupted", count)
         return count
+
+    def interrupted_sources(self, max_in_a_row: int) -> set[str]:
+        """Sources whose latest run was interrupted (a deploy or restart cut it), fewer than
+        ``max_in_a_row`` times in a row: a run that keeps killing the process is not resumed again."""
+        ranked = select(
+            ScrapeRunRow.source,
+            ScrapeRunRow.status,
+            func.row_number().over(partition_by=ScrapeRunRow.source, order_by=ScrapeRunRow.id.desc()).label("n"),
+        ).subquery()
+        with self.session(write=False) as session:
+            rows = session.execute(
+                select(ranked.c.source, ranked.c.status)
+                .where(ranked.c.n <= max_in_a_row)
+                .order_by(ranked.c.source, ranked.c.n)
+            ).all()
+        latest: dict[str, list[str]] = defaultdict(list)
+        for source, status in rows:
+            latest[source].append(status)
+        return {
+            s
+            for s, statuses in latest.items()
+            if statuses[0] == "interrupted" and statuses.count("interrupted") < max_in_a_row
+        }
 
     @contextmanager
     def session(self, write: bool = True) -> Generator[Session]:

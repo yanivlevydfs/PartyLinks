@@ -55,10 +55,18 @@ def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOSchedu
     now = datetime.now(ZoneInfo(settings.timezone))
     enabled = [(n, s) for n, s in configured_sources(settings).items() if s.enabled]
     stagger = timedelta(seconds=settings.scheduler.startup_stagger_seconds)
+    # A run a deploy cut short starts again now, not at its next cron (up to half a day later).
+    resume = service.db.interrupted_sources(settings.scheduler.resume_max_in_a_row)
+    if resume:
+        log.warning("resuming %d sources a restart interrupted: %s", len(resume), ", ".join(sorted(resume)))
+    resumed = 0
     for index, (name, source) in enumerate(enabled):
         # Startup runs are spread out so a deploy never fires every source at once.
         # APScheduler treats an explicit next_run_time=None as "paused", so only pass it when set.
         startup = {"next_run_time": now + index * stagger} if settings.scheduler.run_on_startup else {}
+        if not startup and name in resume:
+            startup = {"next_run_time": now + resumed * stagger}
+            resumed += 1
         try:  # one bad trigger skips only that source
             scheduler.add_job(
                 _scheduled_run,
