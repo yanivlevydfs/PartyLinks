@@ -1,7 +1,7 @@
 // Venue / artist pages and their index lists.
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useCategories, useEvents } from "../api";
+import { Link, useLocation, useParams } from "react-router-dom";
+import { useCategories, useEvents, useLandingInfo } from "../api";
 import type { Facet } from "../types";
 import { artistPath, Chip, EventGrid, Hero, Img, label, Loader, Related, useT, useTitle, venuePath } from "../ui";
 
@@ -106,8 +106,9 @@ function Verified() {
 
 export function ArtistPage() {
   const { name = "" } = useParams();
-  const { t } = useT();
+  const { t, lang } = useT();
   useTitle(name);
+  const about = useLandingInfo(useLocation().pathname, lang).data?.intro; // written from our listings (artist_bio.py)
   // Same query cache as the artists index: no extra request.
   const profile = useCategories({ anywhere: "true" }).data?.lineup.find((f) => f.verified && f.value.toLowerCase() === name.toLowerCase());
   return (
@@ -123,6 +124,7 @@ export function ArtistPage() {
         ))}
       </Hero>
       <main className="wrap">
+        {about && <p className="landing-intro">{about}</p>}
         <h4 className="section-title">{t.upcomingAt}</h4>
         <EventGrid params={{ artist: name }} />
       </main>

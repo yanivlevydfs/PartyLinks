@@ -974,6 +974,10 @@ def test_artist_page_finds_a_hebrew_name(tmp_path: Path) -> None:
         assert ids("artist=balkan") == []  # the whole name: "Adam" is not "Adam Ten"
         assert ids("artist=שלומי כהן") == []
         assert "שלומי שבן" in client.get("/artist/שלומי שבן").text
+        # The page's "about" line is written from the listings, also for the web app (artist_bio.py).
+        assert "ל־שלומי שבן יש הופעה קרובה אחת" in client.get("/artist/שלומי שבן").text
+        info = client.get("/landing-info", params={"path": "/artist/%D7%A9%D7%9C%D7%95%D7%9E%D7%99%20%D7%A9%D7%91%D7%9F", "lang": "en"})
+        assert info.json()["intro"].startswith("שלומי שבן has 1 upcoming show on")
 
 
 def test_smart_search_reads_places_genres_prices_and_covers_abroad(tmp_path: Path) -> None:

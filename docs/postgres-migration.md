@@ -806,3 +806,7 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **טבלה חדשה:** ‏`config_overrides` ‏(`id` serial PK, ‏`data` JSONB, ‏`note` text, ‏`created_at` timestamp UTC). שורה לכל גרסה שנשמרה, החדשה בתוקף; נשמרות 50 האחרונות (`DELETE ... WHERE id NOT IN (SELECT id ... ORDER BY id DESC LIMIT 50)` בכל שמירה). נוצרת ב-`create_schema` (‏`partylinks.config_store.models`), בלי foreign keys ובלי אינדקס נוסף מעבר ל-PK.
 - **שאילתות:** ‏`SELECT ... ORDER BY id DESC LIMIT 1` בהפעלה של כל תהליך (web, worker) ובכל apply מה-admin; רשימת הגרסאות בלשונית. כמה שורות לכל היותר.
 - **Tests:** ‏`tests/test_config_store.py`.
+
+### 2026-10-31 (דף אמן: טקסט "אודות" מהרישומים שלנו)
+- **השאילתה:** ‏`artist_bio.facts` קורא לאמן את `local_date`, ‏`venue_name`, ‏`city`, ‏`country`, ‏`genres` של האירועים הראשיים הנוכחיים שבהרכב שלהם (אותו `lineup_has` ואותו `upcoming_filter` של דף האמן), לפי `start_at`. רץ בדף `/artist/<name>` שהשרת מרנדר וב-`/landing-info?path=/artist/<name>` (דף האמן באפליקציה). בלי שינוי טבלאות, עמודות או אינדקס; רק חמש עמודות, לא שורות שלמות.
+- **Tests:** ‏`tests/test_artist_bio.py`, ‏`tests/test_storage_api.py::test_artist_page_finds_a_hebrew_name`.

@@ -31,6 +31,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlalchemy import ColumnElement, String, cast, or_, select
 from sqlalchemy.orm import Session, object_session, selectinload
 
+from partylinks.artist_bio import bio as artist_bio
 from partylinks.artwork.service import urls as artwork_urls
 from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
@@ -531,14 +532,16 @@ def artist_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
         "url": _url(cfg, path),
         "performerIn": [{"@id": _url(cfg, event_path(r)) + "#event", "name": r.title, "startDate": _iso(r.start_at, cfg, r)} for r in rows],
     }
+    about = (artist_bio(session, cfg, lang, name) if rows else None) or t["artist_desc"].format(name=name)
+    person["description"] = about
     return Page(
         title=f"{name} · {t['artists']} · {cfg.site.name}",
-        description=t["artist_desc"].format(name=name),
+        description=about,
         path=path,
         lang=lang,
         image=_cover(cfg, rows[0]) if rows else None,
         jsonld=[person, _breadcrumbs(cfg, lang, (t["artists"], "/artists"), (name, path))],
-        body=f"<h1>{escape(name)}</h1><p>{escape(t['artist_desc'].format(name=name))}</p>" + _event_list_html(rows, cfg, lang),
+        body=f"<h1>{escape(name)}</h1><p>{escape(about)}</p>" + _event_list_html(rows, cfg, lang),
         noindex=not rows,
     )
 
@@ -1107,7 +1110,8 @@ def landing_info(session: Session, cfg: Settings, lang: str, path: str) -> dict[
     land = resolve_landing(session, cfg, lang, path)
     links = [{"path": p, "label": n} for p, n in _related(session, cfg, lang, path)]
     if land is None:
-        return {"title": None, "intro": None, "links": links, "country": None, "city": None}
+        intro = artist_bio(session, cfg, lang, unquote(path[len("/artist/"):])) if path.startswith("/artist/") else None
+        return {"title": None, "intro": intro, "links": links, "country": None, "city": None}
     title, _, intro, _ = _landing_text(land.kind, lang, land.label, land.place)
     country = abroad_countries(session).get(path.rsplit("/", 1)[-1]) if land.abroad else None
     city = {"he": land.city.he, "en": land.city.en} if land.city else None
