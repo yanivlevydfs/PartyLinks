@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 from zoneinfo import ZoneInfo
 
@@ -35,8 +35,11 @@ log = logging.getLogger(__name__)
 # ponytail: a fixed wait; a "post-steps done" mark per run would allow less, if 30 minutes ever matters.
 SETTLE = timedelta(minutes=30)
 # Until 8d588e9 (deployed by then) one click on the quiz, or a sign-in URL from history, saved an alert nobody
-# asked for. Those, never touched since, are switched off once (not deleted: /alerts can switch one back on).
-UNASKED_BEFORE = datetime(2026, 10, 30, 9, 45)  # naive UTC, as the columns
+# asked for. Those are switched off once (not deleted): any edit before RETIRED_AT (toggling them at /alerts
+# while they flooded the bell) still counts as unasked; one switched back on after it is left alone.
+# Aware datetimes: UTCDateTime reads a naive one as the server's local time (Israel), 2-3 hours off.
+UNASKED_BEFORE = datetime(2026, 10, 30, 9, 45, tzinfo=UTC)
+RETIRED_AT = datetime(2026, 10, 31, 1, 30, tzinfo=UTC)  # after this fix is deployed
 LISTS = ("genre", "region", "area", "time_slot")  # any-of: the union of each value's events
 WHEN = ("weekend", "date_from", "date_to")  # one window together
 
@@ -105,7 +108,7 @@ def retire_unasked(db: Database) -> int:
     with db.session() as session:
         ids = list(session.scalars(
             update(AlertRow)
-            .where(AlertRow.active.is_(True), AlertRow.created_at < UNASKED_BEFORE, AlertRow.updated_at < UNASKED_BEFORE)
+            .where(AlertRow.active.is_(True), AlertRow.created_at < UNASKED_BEFORE, AlertRow.updated_at < RETIRED_AT)
             .values(active=False).returning(AlertRow.id)
         ))  # fmt: skip
         if ids:
@@ -181,7 +184,7 @@ def run(settings: Settings, db: Database) -> int:
         # a user at most max_hits_per_pass new events, the soonest, and no more than max_hits_per_day in 24 hours.
         day = session.execute(
             select(AlertHitRow.user_id, func.count(AlertHitRow.event_id.distinct()))
-            .where(AlertHitRow.user_id.in_(list(per_user)), AlertHitRow.matched_at >= stamp - timedelta(days=1))
+            .where(AlertHitRow.user_id.in_(list(per_user)), AlertHitRow.matched_at >= now - timedelta(days=1))
             .group_by(AlertHitRow.user_id)
         ).all()  # fmt: skip
         had = dict(day)

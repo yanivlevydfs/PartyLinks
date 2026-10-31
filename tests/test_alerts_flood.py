@@ -112,12 +112,32 @@ def test_alerts_saved_by_the_old_one_click_button_are_switched_off_once(tmp_path
         then = matcher.UNASKED_BEFORE - timedelta(days=1)
         with db.session() as s:
             s.execute(update(AlertRow).values(created_at=then, updated_at=then))
-            s.execute(
-                update(AlertRow).where(AlertRow.id == kept).values(updated_at=matcher.UNASKED_BEFORE)
-            )  # edited since
+            s.execute(update(AlertRow).where(AlertRow.id == kept).values(updated_at=matcher.RETIRED_AT))  # edited since
         assert matcher.retire_unasked(db) == 1
         assert c.get("/api/me/bell").json()["unseen"] == 0
         active = {a["id"]: a["active"] for a in c.get("/api/me/alerts").json()["items"]}
         assert active == {old: False, kept: True}
         assert c.patch(f"/api/me/alerts/{old}", json={"active": True}, headers=OURS).status_code == 200
+        with db.session() as s:  # ...after the retirement
+            s.execute(
+                update(AlertRow).where(AlertRow.id == old).values(updated_at=matcher.RETIRED_AT + timedelta(minutes=1))
+            )
         assert matcher.retire_unasked(db) == 0  # switched back on by the user: stays on
+
+
+def test_the_retirement_cutoff_is_utc_whatever_the_server_zone(tmp_path: Path, fake: FakeGoogle) -> None:
+    """Made 2 hours before the cutoff (UTC) and toggled before the retirement: switched off. The naive cutoff
+    was read as Israel time and missed an alert made at 07:48 UTC."""
+    settings = _settings(tmp_path)
+    db = seed(settings, [])
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app) as c:
+        sign_in(c, fake)
+        made = c.post("/api/me/alerts", json={"criteria": {"q": "salsa"}}, headers=OURS).json()["id"]
+        with db.session() as s:
+            s.execute(update(AlertRow).values(
+                created_at=matcher.UNASKED_BEFORE - timedelta(hours=2), updated_at=matcher.RETIRED_AT - timedelta(hours=14)
+            ))  # fmt: skip
+        assert matcher.retire_unasked(db) == 1
+        assert [a["active"] for a in c.get("/api/me/alerts").json()["items"]] == [False]
+        assert made
