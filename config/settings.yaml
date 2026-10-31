@@ -2505,6 +2505,21 @@ sources:
     http:
       concurrency: 2
 
+  reading3:
+    # Reading 3: concert hall at the Tel Aviv port. Old ASP.NET site: the shows page lists every show on
+    # sale (~10); each show's page has one table row per performance (date, doors, start, price, seller's
+    # link: Eventer, Kartisim, Vibez, Kupat). No robots.txt.
+    enabled: true
+    cron: "18 9,21 * * *"
+    site_url: https://www.reading3.co.il
+    venue_name: רידינג 3
+    address: יוסף יקותיאלי 6
+    city: תל אביב-יפו
+    latitude: 32.1018   # Nominatim: יוסף יקותיאלי 6
+    longitude: 34.7761
+    http:
+      concurrency: 2
+
   zoatlv:
     # ZOA House / בית ציוני אמריקה: culture house (shows, stand-up, lectures, conferences), Tel Aviv. WordPress:
     # /event/ (30 a page) lists upcoming events only; each event's page adds the text and the seller's link

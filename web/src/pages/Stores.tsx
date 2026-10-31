@@ -38,7 +38,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   teder: ["https://www.teder.fm", "venue"], gagarin: ["https://gagarin.co.il", "venue"], zappa: ["https://www.zappa-club.co.il", "venue"],
   kikarhamusica: ["https://kikar-hamusica.com/shows/he", "venue"],
   yellowsubmarine: ["https://yellowsubmarine.org.il", "venue"], halutz: ["https://www.halutz.co.il", "venue"],
-  haezor: ["https://haezor.com", "venue"], levontin7: ["https://levontin7.com", "venue"], babebar: ["https://babebar.co.il", "venue"],
+  haezor: ["https://haezor.com", "venue"], levontin7: ["https://levontin7.com", "venue"], reading3: ["https://www.reading3.co.il", "venue"], babebar: ["https://babebar.co.il", "venue"],
   bargiyora: ["https://bar-giyora.co.il", "venue"],
   makore: ["https://www.makore.co.il", "culture"], jerusalemtheatre: ["https://www.jerusalem-theatre.co.il", "culture"],
   beershevatheatre: ["https://b7t.co.il", "culture"], hatarbut: ["https://www.hatarbut.co.il", "culture"], zoatlv: ["https://zoatlv.co.il", "culture"],
