@@ -1441,7 +1441,7 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 }
 .stores {
   list-style: none; margin: 0 0 32px; padding: 0;
-  display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
 }
 .store {
   --c: hsl(var(--hue) 100% 62%);
@@ -1468,19 +1468,21 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   box-shadow: 0 6px 20px -6px var(--c), inset 0 0 0 1px rgb(255 255 255 / .2);
 }
 .store-head { display: grid; min-width: 0; }
-.store-head b { font: 700 18px/1.2 var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.store-head b { font: 700 18px/1.2 var(--display); overflow-wrap: anywhere; text-wrap: balance; } /* the whole name, on two lines if need be */
 [dir="rtl"] .store-head b { text-align: right; }
-.store-head small { color: var(--muted); font-size: 13px; }
+.store-head small { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; } /* a long domain wraps, not under the count */
+.store-head small span { display: inline-block; max-width: 100%; } /* the domain moves down whole */
 .store-count { grid-row: span 2; display: grid; justify-items: end; text-align: end; }
 .store-count b {
   font: 900 30px/1 var(--display); font-variant-numeric: tabular-nums;
   background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.store-count small { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.store-count small { color: var(--muted); font-size: 11px; max-width: 9ch; } /* two short lines: room for the store's name */
 .store-bar { grid-column: 1 / -1; height: 4px; margin-top: 10px; border-radius: 4px; background: rgb(255 255 255 / .06); overflow: hidden; }
 .store-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--c), var(--pink)); box-shadow: 0 0 10px var(--c); }
 .store-foot { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 13px; }
 .store-foot small { color: var(--muted); margin-inline-end: auto; }
+.store-foot a, .store-foot .linkish { padding-block: 5px; } /* 24px+ tap targets */
 .store-foot .linkish { color: var(--pink); text-decoration: none; font-weight: 600; }
 .store-foot .linkish:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) { .store { animation: none; } }

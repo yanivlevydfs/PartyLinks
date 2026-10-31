@@ -90,7 +90,7 @@ export interface TicketSite { name: string; events: number; updated_at: string |
 
 /** The stores page: upcoming events per ticket site, with its last scrape. */
 export const useTicketSites = () =>
-  useQuery({ queryKey: ["ticket-sites"], queryFn: () => getJSON<{ stores: TicketSite[] }>("/ticket-sites"), staleTime: 5 * 60_000 });
+  useQuery({ queryKey: ["ticket-sites"], queryFn: () => getJSON<{ stores: TicketSite[]; total?: number }>("/ticket-sites"), staleTime: 5 * 60_000 });
 
 export const usePost = (slug: string, lang: string) =>
   useQuery({ queryKey: ["post", slug, lang], queryFn: () => getJSON<Post>(`/posts/${encodeURIComponent(slug)}?lang=${lang}`) });

@@ -341,6 +341,7 @@ class StoreOut(BaseModel):
 
 class Stores(BaseModel):
     stores: list[StoreOut]
+    total: int  # upcoming real events across all stores, each once (one sold on three sites counts 1, not 3)
 
 
 class FacetValue(BaseModel):
@@ -1390,8 +1391,10 @@ def _register_routes(app: FastAPI) -> None:
         """The ticket sites events come from, with how many upcoming events each sells (the stores page)."""
 
         def build(session: Session) -> Stores:
-            listings = select(EventRow.group_id, EventRow.source).where(upcoming_filter()).distinct()
-            counts = Counter(source for _, source in session.execute(listings))
+            listings = session.execute(
+                select(EventRow.group_id, EventRow.source).where(upcoming_filter()).distinct()
+            ).all()
+            counts = Counter(source for _, source in listings)
             last_runs = (
                 select(ScrapeRunRow.source, func.max(ScrapeRunRow.finished_at))
                 .where(ScrapeRunRow.status.in_(("success", "partial")))
@@ -1402,7 +1405,8 @@ def _register_routes(app: FastAPI) -> None:
             for name, cfg in configured_sources(request.app.state.settings).items():
                 if cfg.enabled:
                     counts.setdefault(name, 0)
-            return Stores(stores=[StoreOut(name=s, events=n, updated_at=done.get(s)) for s, n in counts.most_common()])
+            stores = [StoreOut(name=s, events=n, updated_at=done.get(s)) for s, n in counts.most_common()]
+            return Stores(stores=stores, total=len({group for group, _ in listings}))
 
         return _cached(request, build)
 

@@ -57,7 +57,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   happytlv: ["https://www.happytlv.com", "guide"], tiuli: ["https://www.tiuli.com", "guide"], meety: ["https://meety.co.il", "guide"],
   funzing: ["https://il.funzing.com", "tickets"], easytix: ["https://easytix.co.il", "tickets"], ticketeams: ["https://ticketeams.co.il", "abroad"],
   festivalim: ["https://www.festivalim.co.il", "guide"], ogo: ["https://www.ogo.co.il", "guide"], muzi: ["https://muzi.co.il", "guide"],
-  airdrop: ["https://airdrop.co.il", "guide"],
+  airdrop: ["https://airdrop.co.il", "guide"], yotzim: ["https://yotzim.com", "guide"],
   telaviv: ["https://www.tel-aviv.gov.il", "city"], haifamuni: ["https://www.haifa.muni.il", "city"],
   ramatganmuni: ["https://www.ramat-gan.muni.il", "city"], holon: ["https://www.holon.muni.il", "city"],
   munievents: [null, "city"], matnasnet: [null, "city"], onecity: [null, "city"],
@@ -107,6 +107,8 @@ export default function StoresPage() {
   // /ticket-sites down (a server without it, a restart): the home filter's counts, Israel only.
   const fallback: TicketSite[] | undefined = sites.isError ? cats.data?.sources.map((s) => ({ name: s.value, events: s.events, updated_at: null })) : undefined;
   const stores = sites.data?.stores ?? fallback;
+  // Each event once: one sold on three sites is one event (the stores' counts would add it three times).
+  const total = sites.data?.total ?? stores?.reduce((n, s) => n + s.events, 0) ?? 0;
   const failed = sites.isError && cats.isError;
   const setFilters = useStore((s) => s.setFilters);
   const setQuizDone = useStore((s) => s.setQuizDone);
@@ -117,7 +119,6 @@ export default function StoresPage() {
     navigate("/");
   };
   const max = stores?.[0]?.events ?? 1;
-  const total = stores?.reduce((n, s) => n + s.events, 0) ?? 0;
 
   return (
     <>

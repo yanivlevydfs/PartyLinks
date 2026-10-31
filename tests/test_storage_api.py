@@ -105,7 +105,9 @@ def test_api_filters_categories_and_stored_image(tmp_path: Path) -> None:
         categories = client.get("/categories").json()
         assert {"value": "free_and_paid", "events": 2} in categories["entry_types"]
         assert client.get("/sources").status_code == 200
-        stores = client.get("/ticket-sites").json()["stores"]
+        body = client.get("/ticket-sites").json()
+        stores = body["stores"]
+        assert body["total"] == 2  # real events, each once (not the sum of the stores' listings)
         assert stores and stores[0]["events"] > 0  # busiest first; enabled sources without events too, at 0
         assert {"goout", "airdrop"} <= {s["name"] for s in stores}
         assert "חנויות הכרטיסים" in client.get("/stores").text
