@@ -767,3 +767,10 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Nominatim:** ‏`PRECISE` כולל גם את סוגי הרחוב (‏`secondary`, `residential`...): "ז'בוטינסקי 15, הרצליה" חוזר כ-`secondary` ונפסל. תשובות שנשמרו כ"לא נמצא" נשאלות שוב אחרי `retry_failed_days` (14).
 - **ביצועים:** ‏`locate_missing` על 28k אירועים סינתטיים (22k עם נקודה, 6k בלי) ב-pgserver מקומי: לפני 21.6 / 18.5 שנ', אחרי 20.6 / 19.9 שנ'.
 - **Tests:** ‏`tests/test_storage_api.py::test_placed_points_survive_the_next_pass`.
+
+### 2026-10-31 (דף אמן: השם המלא, רישום אחד לאירוע)
+- **הבאג:** ‏`/events?artist=` ודף האמן שהשרת מרנדר חיפשו את השם כתת-מחרוזת בטקסט ה-JSONB של `lineup`: בדף של "Adam" (‏11 אירועים ברשימת האמנים) הופיעו 43-46 אירועים של Adam Ten, Omer Adam, Adame DJ ו-ADAM PORT, תחת התמונה של אדם הזמר. עכשיו ‏`db.lineup_has`: ‏`CAST(lineup AS VARCHAR) ILIKE '%"<השם כ-JSON>"%'`, כלומר איבר שלם ברשימה, בלי תלות ברישיות (החיפוש הכללי נשאר עם `lineup_contains`). אותה סריקה כמו קודם, בלי אינדקס חדש.
+- **דף האמן בשרת (`seo.artist_page`):** כולל גם אירועים בחו"ל (כמו דף ה-React; קודם דף של אמן שמופיע רק בחו"ל יצא ריק ו-noindex אבל היה ב-sitemap). ‏`seo._upcoming` מוסיף `is_primary IS TRUE`: אותה מסיבה שנמכרת בארבעה אתרים מופיעה פעם אחת (קודם 4-5 פעמים בדף ובכל רשימה מרונדרת).
+- **`seo._names` (‏`/artists`, ‏`/venues` וה-sitemap):** ‏`SELECT lineup` (או `venue_name`) בלבד במקום שורות `EventRow` מלאות (עם התיאורים) של כל האירועים; ראשיים בלבד; "PETTRA" ו-"Pettra" שם אחד (כתיב הנפוץ), כמו ב-`/categories`.
+- **ביצועים (28k אירועים סינתטיים, pgserver מקומי):** `_names` לפני 2.54 שנ', אחרי 0.16 שנ'; סינון אמן 0.022 → 0.025 שנ'.
+- **Tests:** ‏`tests/test_storage_api.py::test_artist_page_is_the_whole_name_any_case_once_per_event`, ‏`test_artist_page_lists_their_shows_abroad_too`, ‏`test_artist_page_finds_a_hebrew_name`.

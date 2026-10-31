@@ -394,6 +394,14 @@ def lineup_contains(name: str) -> ColumnElement[bool]:
     return EventRow.lineup.cast(String).ilike(f"%{escaped}%", escape="\\")
 
 
+def lineup_has(name: str) -> ColumnElement[bool]:
+    """Events with `name` as one whole name of their lineup, any case: an artist's page. "Adam" is not
+    "Omer Adam" or "Adam Ten" (``lineup_contains`` is the search's substring match)."""
+    quoted = json.dumps(name, ensure_ascii=False)  # the element as the JSONB text spells it, quotes included
+    escaped = quoted.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return EventRow.lineup.cast(String).ilike(f"%{escaped}%", escape="\\")
+
+
 def upcoming_filter() -> ColumnElement[bool]:
     """Current events only: today onwards, plus last night's parties still in progress."""
     from partylinks.config import get_settings  # local: config is loaded lazily

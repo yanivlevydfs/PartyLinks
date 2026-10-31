@@ -34,7 +34,7 @@ from sqlalchemy.orm import Session, object_session, selectinload
 from partylinks.artwork.service import urls as artwork_urls
 from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
-from partylinks.db import EventRow, lineup_contains, upcoming_filter
+from partylinks.db import EventRow, lineup_has, upcoming_filter
 from partylinks.places import all_cities
 from partylinks.retention import is_current
 
@@ -228,11 +228,15 @@ def _iso(dt: datetime | None, cfg: Settings, row: EventRow) -> str | None:
     return dt.astimezone(ZoneInfo(row.time_zone or cfg.timezone)).isoformat(timespec="seconds") if dt else None
 
 
-def _upcoming(session: Session, *where: Any, limit: int = LIST_LIMIT, abroad: bool = False) -> list[EventRow]:
+def _upcoming(session: Session, *where: Any, limit: int = LIST_LIMIT, abroad: bool | None = False) -> list[EventRow]:
+    """``abroad``: None for events anywhere (an artist's page, like the site's). One listing per real event
+    (the primary): the same party sold on four sites is listed once."""
+    if abroad is not None:
+        where = (EventRow.country.is_not(None) if abroad else EventRow.country.is_(None), *where)
     return list(
         session.scalars(
             select(EventRow)
-            .where(upcoming_filter(), EventRow.country.is_not(None) if abroad else EventRow.country.is_(None), *where)
+            .where(upcoming_filter(), EventRow.is_primary.is_(True), *where)
             .order_by(EventRow.start_at.asc().nulls_first())
             .limit(limit)
             .options(selectinload(EventRow.images))
@@ -515,7 +519,7 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
 
 def artist_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     t = TEXT[lang]
-    rows = _upcoming(session, lineup_contains(name))
+    rows = _upcoming(session, lineup_has(name), abroad=None)  # the whole name, abroad too: as /events?artist=
     path = f"/artist/{quote(name, safe='')}"
     person = {
         "@context": "https://schema.org",
@@ -537,13 +541,17 @@ def artist_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
 
 
 def _names(session: Session, kind: str) -> list[str]:
-    rows = session.scalars(select(EventRow).where(upcoming_filter())).all()
-    counts: dict[str, int] = {}
-    for r in rows:
-        for n in ([r.venue_name] if kind == "venues" else r.lineup or []):
-            if n:
-                counts[n] = counts.get(n, 0) + 1
-    return sorted(counts, key=lambda n: (-counts[n], n))
+    """Venue / artist names, most events first. Only the one column (not ~28k whole rows); "PETTRA" and
+    "Pettra" are one name (one page, one sitemap URL), spelled the most used way, as /categories does."""
+    column = EventRow.venue_name if kind == "venues" else EventRow.lineup
+    spellings: Counter[str] = Counter()
+    for value in session.scalars(select(column).where(upcoming_filter(), EventRow.is_primary.is_(True))):
+        spellings.update(n for n in ([value] if kind == "venues" else value or []) if n)
+    merged: dict[str, tuple[str, int]] = {}
+    for name, n in spellings.most_common():
+        shown, total = merged.get(name.casefold(), (name, 0))
+        merged[name.casefold()] = (shown, total + n)
+    return [name for name, _ in sorted(merged.values(), key=lambda item: (-item[1], item[0]))]
 
 
 def index_page(session: Session, cfg: Settings, lang: str, kind: str) -> Page:

@@ -49,7 +49,7 @@ from partylinks.db import (
     EventRow,
     ImageRow,
     ScrapeRunRow,
-    lineup_contains,
+    lineup_has,
     upcoming_filter,
 )
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
@@ -670,7 +670,7 @@ def build_event_filters(
     if genre:
         filters.append(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(genre)))
     if artist:
-        filters.append(lineup_contains(artist))
+        filters.append(lineup_has(artist))
     if venue:
         filters.append(EventRow.venue_name.ilike(_contains(venue), escape="\\"))
     if venue_slug:

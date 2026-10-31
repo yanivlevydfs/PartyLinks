@@ -922,6 +922,40 @@ def test_artist_page_lists_their_shows_abroad_too(tmp_path: Path) -> None:
         assert ids("artist=flashcookie") == ["rome"]
         assert ids("artist=flashcookie&abroad=false") == []
         assert "rome" not in ids("")  # the main feed stays in Israel
+    from partylinks.seo import artist_page
+
+    with db.session() as session:  # the server-rendered page too (it was Israel only: empty, noindex)
+        page = artist_page(session, settings, "he", "flashcookie")
+        assert page.body.count("<li>") == 1 and not page.noindex
+
+
+def test_artist_page_is_the_whole_name_any_case_once_per_event(tmp_path: Path) -> None:
+    from partylinks.seo import _names, artist_page
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    lineups = {"adam": ["Adam"], "upper": ["ADAM", "Noa"], "ten": ["Adam Ten"], "omer": ["Omer Adam"],
+               "quote": ['DJ "Q"'], "copy": ["Adam"]}  # fmt: skip
+    db = seed(settings, [event(i, future) for i in lineups])
+    with db.session() as session:  # lineups as stored; "copy" is another site's listing of "adam"
+        for row in session.query(EventRow):
+            row.lineup = lineups[row.source_event_id]
+            if row.source_event_id == "copy":
+                row.group_id, row.is_primary = "test:adam", False
+
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda **p: {e["source_event_id"] for e in client.get("/events", params=p).json()["items"]}
+        assert ids(artist="adam") == {"adam", "upper"}  # not Adam Ten's or Omer Adam's shows
+        assert ids(artist='DJ "Q"') == {"quote"}
+        lineup = {
+            f["value"]: f["events"] for f in client.get("/categories", params={"anywhere": "true"}).json()["lineup"]
+        }
+        assert lineup["Adam"] == 2  # the index's count is the page's
+
+    with db.session() as session:
+        assert artist_page(session, settings, "he", "Adam").body.count("<li>") == 2  # one listing per event
+        names = _names(session, "artists")
+        assert names[0] == "Adam" and "ADAM" not in names  # one page and sitemap URL per artist
 
 
 def test_artist_page_finds_a_hebrew_name(tmp_path: Path) -> None:
@@ -933,7 +967,8 @@ def test_artist_page_finds_a_hebrew_name(tmp_path: Path) -> None:
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         ids = lambda q: [e["source_event_id"] for e in client.get(f"/events?{q}").json()["items"]]
         assert ids("artist=שלומי שבן") == ["show"]
-        assert ids("artist=balkan") == ["show"]
+        assert ids("artist=balkan beat BOX") == ["show"]
+        assert ids("artist=balkan") == []  # the whole name: "Adam" is not "Adam Ten"
         assert ids("artist=שלומי כהן") == []
         assert "שלומי שבן" in client.get("/artist/שלומי שבן").text
 
