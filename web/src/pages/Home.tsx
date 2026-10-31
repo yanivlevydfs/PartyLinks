@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ForYouRow } from "../alerts/ForYouRow";
-import { useCategories, useLandingInfo, useRails } from "../api";
+import { useCategories, useEvents, useLandingInfo, useRails } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
@@ -121,6 +121,8 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   // The plain home page asks "where to?" first; a search, a landing page or an answered quiz shows the list.
   const quizDone = useStore((s) => s.quizDone);
   const quiz = !landing && !f.q && !quizDone;
+  // Everything on the site: the quiz's own unfiltered query, so the cache answers it, no extra request.
+  const all = useEvents(filterParams({ ...DEFAULT_FILTERS, sort: f.sort })).data?.pages[0]?.total;
   const again = () => {
     set({ ...DEFAULT_FILTERS, sort: f.sort });
     useStore.getState().setQuizDone(false);
@@ -129,6 +131,7 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   return (
     <>
       <Hero title={quiz ? t.quiz.title : heading}>
+        {quiz && !!all && <p className="hero-pitch"><b>{all.toLocaleString(t.locale)}</b> {t.quiz.pitch}</p>}
         {/* Suggestions stay open while focus is anywhere in the box (Tab into them), close on leaving or Escape. */}
         <div className="search-box" onFocus={() => setSuggest(true)} onKeyDown={(e) => e.key === "Escape" && setSuggest(false)}
           onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setSuggest(false)}>

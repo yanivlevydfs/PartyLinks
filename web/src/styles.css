@@ -150,6 +150,8 @@ button, input, select { font: inherit; color: inherit; }
 }
 .hero .sub { display: inline-block; margin: 14px 12px 0 0; color: var(--muted); font-size: 17px; }
 .hero a.sub { color: var(--cyan); }
+.hero-pitch { margin: 12px 0 0; color: var(--muted); font-size: 18px; }
+.hero-pitch b { color: var(--cyan); font-size: 1.25em; font-variant-numeric: tabular-nums; }
 .search {
   display: block; width: min(640px, 100%); margin-top: 22px;
   background: rgb(10 6 20 / .7); border: 1px solid var(--line); border-radius: 999px;
