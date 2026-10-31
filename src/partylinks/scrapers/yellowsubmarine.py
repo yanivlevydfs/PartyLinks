@@ -16,6 +16,7 @@ from collections.abc import AsyncIterator
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
+import httpx
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.models import ScrapedEvent, TicketTier
@@ -42,6 +43,11 @@ class YellowSubmarineSettings(SourceSettings):
 class YellowSubmarineScraper(BaseScraper[YellowSubmarineSettings]):
     name = "yellowsubmarine"
     settings_model = YellowSubmarineSettings
+
+    def is_blocked(self, response: httpx.Response) -> bool:
+        """Cloudflare's challenge (403, ``cf-mitigated: challenge``): the site admits Israeli connections only
+        (Oct 2026), so every other IP gets it whatever the client looks like. A blocked run, not a crash."""
+        return response.headers.get("cf-mitigated") == "challenge"
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings

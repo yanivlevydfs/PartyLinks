@@ -2516,7 +2516,9 @@ sources:
     # Yellow Submarine: live-music club, Jerusalem. WordPress: /event/ lists every upcoming show (date
     # without a year, door / show times); each show's page adds the year, prices, text and the Eventer link.
     enabled: true
-    israel_proxy: true  # 403 to all five evomi IPs from Railway; answers Israeli IPs (Oct 2026)
+    # Cloudflare challenges every non-Israeli IP (Railway, evomi), Chrome or not (2026-10-31); Israeli IPs pass
+    # without one. Speaks as Chrome so an Israeli proxy also passes Cloudflare's client check (as beatradar).
+    israel_proxy: true
     cron: "58 6,18 * * *"
     site_url: https://yellowsubmarine.org.il
     listing_path: /event/
@@ -2526,6 +2528,7 @@ sources:
     latitude: 31.7540   # Nominatim: הרכבים 13
     longitude: 35.2129
     http:
+      impersonate: chrome
       concurrency: 2
 
   halutz:
