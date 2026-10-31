@@ -7,6 +7,10 @@ import type { PostBlock, PostSummary } from "../types";
 import { Card, Hero, Img, Loader, useT, useTitle } from "../ui";
 import NotFound from "./NotFound";
 
+// A post's date is a calendar day ("2026-10-20", parsed as UTC midnight): shown in UTC, or a reader west
+// of UTC (New York) would see the day before.
+const day = (iso: string, locale: string) => new Date(iso).toLocaleDateString(locale, { timeZone: "UTC" });
+
 function PostCard({ p, featured }: { p: PostSummary; featured?: boolean }) {
   const { t, lang } = useT();
   return (
@@ -16,7 +20,7 @@ function PostCard({ p, featured }: { p: PostSummary; featured?: boolean }) {
         <span className="post-cat">{p.category[lang]}</span>
         <h3>{p.title}</h3>
         <p>{p.description}</p>
-        <small>{new Date(p.date).toLocaleDateString(t.locale)} · {t.blog.minutes(p.read_minutes)}</small>
+        <small>{day(p.date, t.locale)} · {t.blog.minutes(p.read_minutes)}</small>
       </div>
     </Link>
   );
@@ -92,7 +96,7 @@ export function BlogPost() {
       <Hero title={p.title}>
         <p className="sub">
           <Link to={`/blog/category/${p.category.key}`}>{p.category[lang]}</Link> ·{" "}
-          <time dateTime={p.date}>{new Date(p.date).toLocaleDateString(t.locale)}</time> · {t.blog.minutes(p.read_minutes)}
+          <time dateTime={p.date}>{day(p.date, t.locale)}</time> · {t.blog.minutes(p.read_minutes)}
         </p>
       </Hero>
       <main className="wrap post-layout">
