@@ -30,6 +30,20 @@ _UVICORN = ("uvicorn", "uvicorn.error", "uvicorn.access")
 _MARK = "_partylinks_handler"
 
 
+def first_line(exc: BaseException) -> str:
+    """An error's first line: httpx adds a second, "For more information check: <MDN link>"."""
+    return next(iter(str(exc).splitlines()), "")
+
+
+class _OneLineErrors(logging.Filter):
+    """An exception given as a log argument (``log.warning("...: %s", exc)``) shows its first line only."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.args, tuple) and any(isinstance(a, BaseException) for a in record.args):
+            record.args = tuple(first_line(a) if isinstance(a, BaseException) else a for a in record.args)
+        return True
+
+
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         entry: dict[str, Any] = {
@@ -43,7 +57,7 @@ class JsonFormatter(logging.Formatter):
             # Log viewers show the message and fold the traceback: the error itself belongs on the line.
             exc = record.exc_info[1]
             if exc is not None:
-                entry["message"] += scrub(f": {type(exc).__name__}: {str(exc).splitlines()[0] if str(exc) else ''}")[:300]
+                entry["message"] += scrub(f": {type(exc).__name__}: {first_line(exc)}")[:300]
         return json.dumps(entry, ensure_ascii=False)
 
 
@@ -135,6 +149,7 @@ def setup_logging(settings: LoggingSettings, verbose: bool = False) -> None:
     for handler in handlers:
         handler.setFormatter(formatter)
         handler.addFilter(_UvicornName())
+        handler.addFilter(_OneLineErrors())
         handler.addFilter(Redact())  # no email address or sign-in / unsubscribe token in a log line
         setattr(handler, _MARK, True)
         root.addHandler(handler)

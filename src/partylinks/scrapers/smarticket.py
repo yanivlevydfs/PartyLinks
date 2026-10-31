@@ -39,6 +39,8 @@ _CANCELLED = re.compile(r"לא\s+תתקיים|בוטל|נדחה")
 _SOLD_OUT = re.compile(r"אזל")
 _SOON = re.compile(r"בקרוב|טרם\s+נפתח|תהיה\s+זמינה")
 _FREE = re.compile(r"הכניסה\s+חופשית|ללא\s+עלות")
+# A hall named "מפגש ב-ZOOM": an online meeting, skipped like every source's online events.
+_ONLINE = re.compile(r"\bzoom\b|זום", re.IGNORECASE)
 CALENDAR_WINDOW = timedelta(days=182)
 
 
@@ -166,9 +168,11 @@ def parse_event(
     s: SmarticketSettings,
     timezone: str,
 ) -> ScrapedEvent | None:
-    """One performance; None when the venue marks it cancelled or gives it no date."""
+    """One performance; None when the venue marks it cancelled, gives it no date or holds it online."""
     message = clean_str(performance.get("unavailability_msg"))
     if message and _CANCELLED.search(message):
+        return None
+    if _ONLINE.search(clean_str(performance.get("event_place")) or ""):
         return None
     start = _local(performance.get("show_date"), performance.get("show_time"), timezone)
     if start is None:

@@ -69,6 +69,14 @@ def test_unbookable_without_tickets_or_message_is_sold_out() -> None:
     assert elsewhere is not None and not elsewhere.is_sold_out
 
 
+def test_online_meeting_is_skipped() -> None:
+    """"מפגש ב-ZOOM" is a hall name, not a place: never stored, so never geocoded or pinned."""
+    show, performance = iter_performances(parse_shows_body(_body(), "tzavta"))[0]
+    assert parse_event(show, {**performance, "event_place": "מפגש ב-ZOOM"}, TZAVTA, SETTINGS, TZ) is None
+    assert parse_event(show, {**performance, "event_place": "הרצאה בזום"}, TZAVTA, SETTINGS, TZ) is None
+    assert parse_event(show, performance, TZAVTA, SETTINGS, TZ) is not None
+
+
 def test_tenant_host() -> None:
     assert tenant_host("tzavta", "smarticket.co.il") == "tzavta.smarticket.co.il"
     assert tenant_host("tickets.raanana.muni.il", "smarticket.co.il") == "tickets.raanana.muni.il"

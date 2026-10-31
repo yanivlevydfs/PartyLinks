@@ -486,6 +486,67 @@ def test_a_dead_israeli_pool_is_found_in_one_parallel_check() -> None:
     base._israel_good, base._israel_dead = None, {}
 
 
+def test_the_israeli_probe_goes_over_https() -> None:
+    """A free proxy that intercepts TLS passes a plain-HTTP check, then fails every request with
+    CERTIFICATE_VERIFY_FAILED: the probe asks over HTTPS, so it counts as dead there."""
+    from partylinks.scrapers import base
+
+    base._israel_good, base._israel_dead = None, {}
+    http = HttpSettings(israel_proxy="http://mitm:1, http://il2:2", backoff_seconds=0)
+    scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
+    probed: list[str] = []
+
+    def client(proxy: str | None) -> httpx.AsyncClient:
+        def answer(request: httpx.Request) -> httpx.Response:
+            probed.append(request.url.scheme)
+            if proxy == "http://mitm:1" and request.url.scheme == "https":
+                raise httpx.ConnectError("[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed", request=request)
+            return httpx.Response(200)
+
+        return httpx.AsyncClient(transport=httpx.MockTransport(answer))
+
+    scraper._new_client = client  # type: ignore[method-assign]
+
+    async def run() -> None:
+        async with scraper:
+            await scraper._probe_israeli("http://site.example/")
+
+    asyncio.run(run())
+    assert set(probed) == {"https"} and scraper._proxy == "http://il2:2" and scraper._spare_proxies == []
+    base._israel_good, base._israel_dead = None, {}
+
+
+def test_failures_and_log_lines_keep_an_errors_first_line() -> None:
+    """httpx puts "For more information check: <MDN link>" on a second line of every status error."""
+    import logging
+
+    from partylinks.logs import _OneLineErrors
+
+    request = httpx.Request("GET", "https://x.example/")
+    message = "Client error '403 Forbidden'\nFor more information check: https://mdn"
+    exc = httpx.HTTPStatusError(message, request=request, response=httpx.Response(403))
+    scraper = probe(lambda r: httpx.Response(200))
+    scraper.record_failure("item 1", exc)
+    assert scraper.failures == ["item 1: HTTPStatusError: Client error '403 Forbidden'"]
+    record = logging.LogRecord("x", logging.INFO, __file__, 1, "no artwork for %s: %s", ("e1", exc), None)
+    assert _OneLineErrors().filter(record) and record.getMessage() == "no artwork for e1: Client error '403 Forbidden'"
+
+
+def test_a_shutdown_stops_the_run_instead_of_skipping_every_item() -> None:
+    """A deploy closes the thread pools: every item left would fail alike and log one line each."""
+    scraper = probe(lambda r: httpx.Response(200))
+
+    async def fetch(item: int) -> int:
+        raise RuntimeError("cannot schedule new futures after shutdown")
+
+    async def run() -> list[int]:
+        return [x async for x in scraper.stream_isolated(range(100), fetch, label=str)]
+
+    with pytest.raises(RuntimeError, match="after shutdown"):
+        asyncio.run(run())
+    assert scraper.failures == []
+
+
 def test_many_sources_finishing_together_share_one_rerun_of_a_whole_table_pass() -> None:
     import threading
     import time

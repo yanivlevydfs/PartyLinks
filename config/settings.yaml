@@ -584,6 +584,7 @@ enrichment:
       places: ["השרון", "רעננה", "כפר סבא", "הרצליה", "נתניה", "כפר יונה", "תל מונד", "קדימה", "אבן יהודה", "פרדסיה",
                "חדרה", "פרדס חנה", "כרכור", "קיסריה", "אור עקיבא", "בנימינה", "גבעת חיים", "גן שמואל", "עין שמר",
                "כפר ויתקין", "רשפון", "מכמורת", "גלילות", "אליכין", "עמק חפר", "hefer valley",
+               "נווה ירק",  # 32.133 N: north of the gush_dan box (Drom HaSharon culture hall)
                "hasharon", "raanana", "ra'anana", "kfar saba", "herzliya", "netanya", "kfar yona", "kadima",
                "even yehuda", "hadera", "pardes hanna", "caesarea", "or akiva", "binyamina", "glilot"]
       boxes: [[32.13, 32.55, 34.7, 35.6]]
@@ -592,7 +593,7 @@ enrichment:
                "יהוד", "אור יהודה", "גבעת שמואל", "ראש העין", "גני תקווה", "שוהם", "סביון", "ראשון לציון", "נס ציונה",
                "רחובות", "יבנה", "באר יעקב", "לוד", "רמלה", "מודיעין", "איירפורט סיטי", "קריית שדה התעופה",
                "קרית שדה התעופה", "נתב\"ג", "גבעת ברנר", "גדרה", "גדרות", "מזכרת בתיה", "משמר השבעה", "בית דגן",
-               "השפלה", "מרכז הארץ", "מרכז ארץ ישראל", "כפר רות", "אלעד", "אורנית", "אריאל", "נען", "מזור", "מישר", "נווה ירק", "בית יצחק",
+               "השפלה", "מרכז הארץ", "מרכז ארץ ישראל", "כפר רות", "אלעד", "אורנית", "אריאל", "נען", "מזור", "מישר", "בית יצחק",
                "ramat gan", "givatayim", "bnei brak", "holon", "bat yam", "petah tikva", "petach tikva",
                "kiryat ono", "yehud", "or yehuda", "rosh haayin", "rosh ha'ayin", "shoham", "rishon lezion",
                "rishon le zion", "ness ziona", "nes ziona", "rehovot", "yavne", "lod", "ramla", "modiin", "modi'in",
@@ -704,6 +705,12 @@ geocoding:
     "maze tlv": [32.0622584, 34.7789901]               # MAZE nightclub, HaSharon 12 (OSM nightclub node)
     "the place tlv": [32.0535, 34.7627]                # THE PLACE, Kibbutz Galuyot 52 (old Barby building)
     "פולי בר": [32.0644504, 34.7759825]                # Polly, Rothschild Blvd 60 (OSM tags its city as Holon by mistake)
+    # Smarticket halls Nominatim cannot place from their text (OSM points, Oct 2026).
+    "אודיטוריום רוטשילד מוז": [32.1022898, 34.7959021]  # Rothschild Center & Auditorium, MUZA (Eretz Israel Museum), Haim Levanon 2
+    "היכל התאטרון מוצקין": [32.8447546, 35.0798714]    # Heichal HaTeatron, HaHashmonaim, Kiryat Motzkin
+    "היכל התרבות, עמק דותן 49": [31.8991635, 35.0148195]  # Modi'in culture hall, Emek Dotan 49
+    "היכל התרבות דרום השרון": [32.1329956, 34.9113417]  # Drom HaSharon culture hall, by Neve Yarak
+    "היכל התרבות, דרום השרון": [32.1329956, 34.9113417]  # the same hall as Leaan writes it
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is

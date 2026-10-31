@@ -38,6 +38,7 @@ from tenacity import AsyncRetrying, RetryCallState, retry_if_exception, retry_if
 
 from partylinks.artists import ArtistProfile
 from partylinks.config import HttpSettings, validate_cron
+from partylinks.logs import first_line
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, to_int
 
@@ -258,7 +259,7 @@ class BaseScraper[S: SourceSettings](ABC):
         alive = [p for p in self._spare_proxies if now - dead.get(p, -DEAD_FOR_SECONDS) >= DEAD_FOR_SECONDS]
         proxy = good if good in self._spare_proxies else (alive or self._spare_proxies)[0]
         self._spare_proxies.remove(proxy)
-        why = f"{type(exc).__name__}: {str(exc)[:160]}" if exc else "refused by the site"
+        why = f"{type(exc).__name__}: {first_line(exc)[:160]}" if exc else "refused by the site"
         self.log.warning("proxy failed (%s): switching to %s", why, proxy.rpartition("@")[2])
         self._retired_clients.append(failed)
         self._client, self._proxy = self._new_client(proxy), proxy
@@ -304,10 +305,14 @@ class BaseScraper[S: SourceSettings](ABC):
         current = [p for p in [self._proxy, *self._spare_proxies] if p]
         candidates = [p for p in current if p in self._israeli]
 
+        # Over HTTPS, the certificate checked (the clients' default): a free proxy that intercepts TLS
+        # fails here, not later on every request with CERTIFICATE_VERIFY_FAILED.
+        https = str(httpx.URL(url).copy_with(scheme="https"))
+
         async def answers(proxy: str) -> bool:
             client = self._new_client(proxy)
             try:
-                async with asyncio.timeout(PROBE_SECONDS), client.stream("GET", url):
+                async with asyncio.timeout(PROBE_SECONDS), client.stream("GET", https):
                     return True  # the headers came back: enough, a big page is not read through a slow proxy
             except Exception:  # noqa: BLE001 - whatever breaks, this proxy is no use
                 return False
@@ -408,7 +413,11 @@ class BaseScraper[S: SourceSettings](ABC):
 
     # ----------------------------------------------------------------- failure log
     def record_failure(self, what: str, exc: BaseException) -> None:
-        message = f"{what}: {type(exc).__name__}: {exc}"[:500]
+        """Record one skipped item. Not while shutting down: a deploy closes the thread pools and every
+        item left fails alike ("cannot schedule new futures after shutdown", 120 lines): the run stops."""
+        if isinstance(exc, RuntimeError) and "cannot schedule new futures" in str(exc):
+            raise exc
+        message = f"{what}: {type(exc).__name__}: {first_line(exc)}"[:500]
         self.failures.append(message)
         self.log.warning("skipped %s", message)
 
