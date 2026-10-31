@@ -1420,6 +1420,15 @@ sources:
       concurrency: 2            # small site: ~380 event pages a run
       request_delay_seconds: 1.0
 
+  secrettelavivapp:
+    # Secret Tel Aviv App (secrettelaviv.app): the same team's newer guide, a Base44 app whose pages are an
+    # empty JS shell. Read from the public entities API its own pages call: Event (filtered server-side to
+    # upcoming / live, so no past event is fetched), Location (venue name, Hebrew address) and EventCategory
+    # (the .com's category names, mapped by enrichment.genres). 3 requests a run, coordinates on every
+    # event with a place. Events also on secrettelaviv.com merge in dedup.
+    enabled: true
+    cron: "29 8,20 * * *"
+
   makore:
     # Makore ("מה קורה"): an events guide for all of Israel (workshops, tours, kids' activities too),
     # so only these category pages are read. Each page's JSON-LD ItemList gives ~28 events with venue,

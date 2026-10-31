@@ -178,7 +178,7 @@ SOURCE_ALIASES = {
     "goout": ("go out", "go-out", "גו אאוט", "גואאוט"), "eventer": ("אוונטר", "איוונטר"), "zygo": ("זייגו",),
     "tickchak": ("טיקצ'אק", "טיקצאק"), "smarticket": ("סמרטיקט",), "barby": ("בארבי",), "kupatbravo": ("קופת ברבו", "kupat bravo"), "easytix": ("איזיטיקס", "easy tix"),
     "ticketmaster": ("טיקטמאסטר",), "mevalim": ("מבלים",), "hulyo": ("הוליו",), "popit": ("פופיט",), "beatradar": ("beat radar", "ביט ראדר"),
-    "happytlv": ("happy tlv", "הפי תל אביב"), "secrettelaviv": ("secret tel aviv",), "cinemacity": ("cinema city", "סינמה סיטי"),
+    "happytlv": ("happy tlv", "הפי תל אביב"), "secrettelaviv": ("secret tel aviv",), "secrettelavivapp": ("secret tel aviv app",), "cinemacity": ("cinema city", "סינמה סיטי"),
     "hotcinema": ("hot cinema", "הוט סינמה"), "ravhen": ("rav hen", "רב חן"), "lev": ("סינמה לב",), "zappa": ("זאפה",),
     "zoatlv": ("zoa tlv", "zoa house"), "eventimlight": ("eventim light", "eventim-light"),
 }  # fmt: skip
