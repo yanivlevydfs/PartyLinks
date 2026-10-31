@@ -228,9 +228,17 @@ class MediaStore:
             return 0, 0
         semaphore = asyncio.Semaphore(http.concurrency)
         stored_count = failed_count = 0
+        from partylinks.scrapers.base import _ImpersonatingTransport  # the scrapers' own transport
+
+        # A source that speaks as Chrome (http.impersonate) fetches its artwork as Chrome too: Eventim Light's
+        # Akamai refuses the images to Python's handshake just as it refuses the pages.
+        speak_as = http.impersonate
+        timeouts = (min(10.0, http.timeout_seconds), http.timeout_seconds)
+        transport = _ImpersonatingTransport(speak_as, http.proxy, timeouts) if speak_as else None
         async with httpx.AsyncClient(
-            timeout=http.timeout_seconds, follow_redirects=True, proxy=http.proxy, headers={"User-Agent": http.user_agent}
-        ) as client:
+            timeout=http.timeout_seconds, follow_redirects=True, proxy=None if speak_as else http.proxy, transport=transport,
+            headers={} if speak_as else {"User-Agent": http.user_agent},
+        ) as client:  # fmt: skip
             # Chunks bound memory (BLOBs) and SQL parameters, and keep what finished if a later chunk fails.
             for chunk in _chunks(pending, PERSIST_CHUNK):
                 results = await asyncio.gather(

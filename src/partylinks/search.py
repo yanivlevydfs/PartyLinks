@@ -180,7 +180,7 @@ SOURCE_ALIASES = {
     "ticketmaster": ("טיקטמאסטר",), "mevalim": ("מבלים",), "hulyo": ("הוליו",), "popit": ("פופיט",), "beatradar": ("beat radar", "ביט ראדר"),
     "happytlv": ("happy tlv", "הפי תל אביב"), "secrettelaviv": ("secret tel aviv",), "cinemacity": ("cinema city", "סינמה סיטי"),
     "hotcinema": ("hot cinema", "הוט סינמה"), "ravhen": ("rav hen", "רב חן"), "lev": ("סינמה לב",), "zappa": ("זאפה",),
-    "zoatlv": ("zoa tlv", "zoa house"),
+    "zoatlv": ("zoa tlv", "zoa house"), "eventimlight": ("eventim light", "eventim-light"),
 }  # fmt: skip
 
 

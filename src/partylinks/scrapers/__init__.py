@@ -33,6 +33,7 @@ from partylinks.scrapers.eventbrite import EventbriteScraper
 from partylinks.scrapers.eventer import EventerScraper
 from partylinks.scrapers.easytix import EasytixScraper
 from partylinks.scrapers.eventim import EventimScraper, ZappaScraper
+from partylinks.scrapers.eventimlight import EventimLightScraper
 from partylinks.scrapers.festivalim import FestivalimScraper
 from partylinks.scrapers.friendshist import FriendsHistScraper
 from partylinks.scrapers.geektime import GeektimeScraper
@@ -189,6 +190,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         EasytixScraper,
         TicketeamsScraper,
         BabeBarScraper,
+        EventimLightScraper,
     )
 }
 

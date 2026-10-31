@@ -33,6 +33,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   arenas: ["https://live.tickchak.co.il", "tickets"], barak: ["https://www.barak-tickets.co.il", "tickets"],
   comy: ["https://comy.co.il", "tickets"], eventbrite: ["https://www.eventbrite.com", "tickets"],
   posh: ["https://posh.vip", "abroad"], showshappening: ["https://www.showshappening.com", "abroad"],
+  eventimlight: ["https://www.eventim-light.com", "abroad"],
   barby: ["https://barby.co.il", "venue"], grayclub: ["https://grayclub.co.il", "venue"], epgb: ["https://epgb.co.il", "venue"],
   teder: ["https://www.teder.fm", "venue"], gagarin: ["https://gagarin.co.il", "venue"], zappa: ["https://www.zappa-club.co.il", "venue"],
   kikarhamusica: ["https://kikar-hamusica.com/shows/he", "venue"],

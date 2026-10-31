@@ -1151,6 +1151,78 @@ sources:
     longitude: 34.8934
     ticket_hosts: [standupist.co.il, go-out.co, eventbuzz.co.il, eventer.co.il, smarticket.co.il, tickchak.co.il]
 
+  eventimlight:
+    # Eventim Light (eventim-light.com): CTS Eventim's self-service box office, a shop per organizer and
+    # market (/<country>/a/<organizerId>/). No public catalogue or sitemap: shops come from the Common Crawl
+    # URL index (each crawl read once) and are kept in known_file, growing run by run. One request per shop:
+    # its page carries every upcoming event as JSON (venue with country and coordinates, category, lowest
+    # price, sold out). Israeli venues to Israel, the rest abroad. Akamai + Queue-it pass as Chrome.
+    enabled: true
+    cron: "33 4,16 * * *"
+    run_timeout_seconds: 10800
+    site_url: https://www.eventim-light.com
+    shop_path: "/{country}/a/{shop}/"
+    event_path: "/{country}/a/{shop}/e/{event}"
+    image_path: "/{country}/api/image/{image}/facebook_event_cover/webp"
+    countries: [de, at, ch, uk, nl, it, es, dk, se, "no", fi, fr, be, pl, cz, pt, ie, lu, hu, il]
+    seed_shops: [de/6395bc712f27c4432c8bda66]
+    cdx_url: https://index.commoncrawl.org
+    cdx_collections: 12
+    cdx_timeout_seconds: 300
+    cdx_attempts: 6
+    cdx_budget_seconds: 1800
+    known_file: data/eventimlight_shops.json
+    max_shops: 100000
+    # The shop's own category goes in as is (English ones, "Comedy", "Theater", "Festivals", "Classical", match
+    # by themselves); these add the words the enrichment knows for the others (lower case). Oct 2026, by count.
+    categories:
+      party: [nightclubs]
+      clubkonzerte: [concert]
+      rock & pop: [rock, pop]
+      weitere konzerte: [concert]
+      konzerte: [concert]
+      jazz & blues: [jazz]
+      klassik: [classical]
+      oper & operette: [classical]
+      kinderveranstaltung: [kids]
+      familie: [kids]
+      lesung: [lecture]
+      vortrag: [lecture]
+      literatur: [lecture]
+      hard & heavy: [metal]
+      tanz: [dance]
+      schlager & volksmusik: [concert]
+      electronic & dance: [electronic]
+      country & folk: [folk]
+      hiphop & black: [hip hop]
+      ausstellungen: [exhibition]
+      führungen & rundfahrten: [tours]
+      karneval: [holidays]
+      weihnachten: [holidays]
+      silvester: [holidays]
+      silvester & neujahr: [holidays]
+      oktoberfeste: [holidays]
+      kino: [screening]
+      film: [screening]
+      messe: [shopping]
+      eishockey: [sport]
+      fußball: [sport]
+      basketball: [sport]
+      wrestling: [sport]
+      motorsport: [sport]
+      boxen & kampfsport: [sport]
+      discoteca & baile: [nightclubs]
+      clubs and dance: [nightclubs]
+      clubs en feesten: [nightclubs]
+      muziek en festivals: [concert]
+      teater: [theater]
+      comedia: [comedy]
+    http:
+      # Akamai refuses Python's TLS handshake; Chrome's passes, Queue-it too (Oct 2026).
+      impersonate: chrome
+      concurrency: 4
+      request_delay_seconds: 0.5
+
   comy:
     # Comy stand-up box office (WordPress). Tickets are sold on PRES (tickets.comy.co.il), whose
     # robots.txt disallows all, so the home page lists show pages (/event/<slug>/) and each page
