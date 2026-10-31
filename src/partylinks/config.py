@@ -346,6 +346,9 @@ class DedupSettings(BaseModel):
     subset_min_words: int = Field(2, ge=1)
     subset_min_chars: int = Field(6, ge=1)
     subset_max_start_gap_minutes: int = Field(15, ge=0)
+    # A price from a listing with no ticket tiers (a guide like Makore copying the box office) below this
+    # share of the lowest tiered listing's price is a typo ("13" for "130"): not the merged event's price.
+    secondhand_price_min_ratio: float = Field(0.3, ge=0, le=1)
     # Which listing represents a merged event (first = preferred). Unlisted sources rank last.
     source_priority: list[str] = Field(default_factory=list)
     # Sites with a page per promoter / entry time of one party (20:00 and 21:00 pages). Any other site's

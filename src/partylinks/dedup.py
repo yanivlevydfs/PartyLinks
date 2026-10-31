@@ -258,6 +258,10 @@ class Deduplicator:
         # Prices and entry type of what can still be bought; a fully sold-out event keeps its own.
         selling = [m for m in members if not m.sold_out] or members
         priced = [m for m in selling if m.min_price is not None] or [m for m in members if m.min_price is not None]
+        # A tierless listing's price far under the box office's own is a typo there, not a deal (0 = free: kept).
+        tiered = [m.min_price for m in priced if m.tiers and m.min_price]
+        floor = min(tiered) * Decimal(str(self.settings.secondhand_price_min_ratio)) if tiered else 0
+        priced = [m for m in priced if m.tiers or not m.min_price or m.min_price >= floor] or priced
         best = min(priced, key=lambda m: (m.min_price, self._primary_rank(m))) if priced else primary
         kinds = {k for m in selling for k in _KINDS.get(m.entry_type, ())} or {
             k for m in members for k in _KINDS.get(m.entry_type, ())

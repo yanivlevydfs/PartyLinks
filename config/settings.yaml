@@ -627,6 +627,9 @@ dedup:
   strong_title_similarity: 0.95
   strong_max_start_gap_minutes: 15
   strong_max_distance_meters: 1500
+  # A guide's single price (no ticket tiers) under 30% of the ticket seller's lowest is a typo: Makore's
+  # "13 ₪" for Monica Sex at Reading 3, sold at 120 on Muzi. Not used as the merged event's "from" price.
+  secondhand_price_min_ratio: 0.3
   title_stopwords: ["the", "x", "and", "with", "feat", "ft", "tlv", "tel", "aviv", "night", "party",
                     "מסיבת", "מסיבה", "ב", "עם", "את"]
   # Words box offices add to a show's name: "דרור קרן במופע סטנדאפ" = "דרור קרן". Years, dates and dashes

@@ -228,6 +228,22 @@ def test_sold_out_copy_never_fronts_or_prices_the_event(tmp_path: Path) -> None:
     assert rows["goout:a"].group_min_price == 120
 
 
+def test_guides_typo_price_never_prices_the_event(tmp_path: Path) -> None:
+    # Makore listed Monica Sex at Reading 3 for "13 ₪" (no tiers); Muzi sells it from 120.
+    settings, _ = grouped(tmp_path, [
+        listing("muzi", "a", "מוניקה סקס", tickets=[TicketTier(name="כרטיס", price=Decimal(120)),
+                                                   TicketTier(name="כרטיס", price=Decimal(145))]),
+        listing("makore", "b", "מוניקה סקס", min_price=Decimal(13), tickets=[]),
+        listing("makore", "c", "Free jam", min_price=Decimal(0), tickets=[]),
+        listing("muzi", "d", "Free jam", tickets=[TicketTier(name="Entry", price=Decimal(50))]),
+    ])  # fmt: skip
+    with Database(settings.database.url).session() as session:
+        rows = {r.id: r for r in session.query(EventRow)}
+    assert rows["makore:b"].group_id == rows["muzi:a"].group_id
+    assert rows["makore:b"].group_min_price == 120 and rows["makore:b"].best_listing_id == "muzi:a"
+    assert rows["muzi:d"].group_min_price == 0  # free stays free
+
+
 def test_api_returns_one_event_with_alternatives(tmp_path: Path) -> None:
     settings, _ = grouped(tmp_path, [
         listing("goout", "a", "WHITE THURSDAY - MAOR BUZAGLO", tickets=[TicketTier(name="Entry", price=Decimal(90))]),
