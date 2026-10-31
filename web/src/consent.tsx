@@ -10,7 +10,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { create } from "zustand";
-import { useT } from "./ui";
+import { TZ, useT } from "./ui";
 
 export type Category = "analytics" | "external";
 const OPTIONAL: Category[] = ["analytics", "external"];
@@ -295,7 +295,7 @@ export function CookieConsent() {
             </details>
             <p className="consent-meta">
               <Link to="/privacy">{t.policy}</Link>
-              {consent && <> · {t.lastChoice(new Date(consent.at).toLocaleString(ui.locale, { dateStyle: "medium", timeStyle: "short" }))}</>}
+              {consent && <> · {t.lastChoice(new Date(consent.at).toLocaleString(ui.locale, { timeZone: TZ, dateStyle: "medium", timeStyle: "short" }))}</>}
             </p>
           </>
         )}

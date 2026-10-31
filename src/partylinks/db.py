@@ -102,7 +102,11 @@ class UTCDateTime(TypeDecorator[datetime]):
     cache_ok = True
 
     def process_bind_param(self, value: datetime | None, dialect: Any) -> datetime | None:
-        return value.astimezone(UTC).replace(tzinfo=None) if value is not None else None
+        # A naive value is already UTC: astimezone() would read it in the server's own zone (2-3 h off
+        # on an Israeli machine, right only where TZ=UTC), so the same code stored different instants.
+        if value is None or value.tzinfo is None:
+            return value
+        return value.astimezone(UTC).replace(tzinfo=None)
 
     def process_result_value(self, value: datetime | None, dialect: Any) -> datetime | None:
         return value.replace(tzinfo=UTC) if value is not None else None

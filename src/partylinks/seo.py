@@ -1239,7 +1239,7 @@ def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
     paths += [(p, None) for p in INFO_PAGES]
     today = datetime.now(ZoneInfo(cfg.timezone))  # landing pages change every day
     paths += [(p, today) for p, _, _ in _landing_paths(session, cfg)]
-    paths += [(event_path(r), r.last_seen_at) for r in rows]
+    paths += [(event_path(r), r.last_seen_at.astimezone(today.tzinfo)) for r in rows]  # Israel's day, not UTC's
     paths += [(f"/venue/{quote(n, safe='')}", None) for n in _names(session, "venues")]
     paths += [(f"/artist/{quote(n, safe='')}", None) for n in _names(session, "artists")]
     urls = []

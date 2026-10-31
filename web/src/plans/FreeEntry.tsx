@@ -2,7 +2,7 @@
 // known end (group_free_entry_until), the plan shows when it closes and offers a ready WhatsApp
 // reminder for the group and a calendar alarm half an hour before. Under 24 hours left: marked.
 import { useEffect, useState } from "react";
-import { useT, when } from "../ui";
+import { TZ, useT, when } from "../ui";
 import { usePlanText } from "./i18n";
 import type { PlanEvent } from "./types";
 
@@ -20,7 +20,8 @@ export function freeTime(e: PlanEvent, at: number, t: ReturnType<typeof useT>["t
   const iso = new Date(at).toISOString();
   const timed = { ...e, time_known: true };
   const clock = when(timed, t, { hour: "2-digit", minute: "2-digit" }, iso);
-  const sameDay = new Date(at).toDateString() === new Date().toDateString();
+  const day = (ms: number) => new Date(ms).toLocaleDateString("en-CA", { timeZone: e.time_zone ?? TZ });
+  const sameDay = day(at) === day(Date.now());
   return sameDay ? clock : `${clock}, ${when(timed, t, { weekday: "short" }, iso)}`;
 }
 

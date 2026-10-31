@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import AsyncIterator
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -107,7 +107,7 @@ class SmarticketScraper(BaseScraper[SmarticketSettings]):
         return events
 
     async def _calendar_shows(self, host: str) -> list[dict[str, Any]]:
-        start, rows = date.today(), []
+        start, rows = datetime.now(ZoneInfo(self.timezone)).date(), []  # Israel's today, not the server's
         for _ in range(self.settings.calendar_windows):
             end = start + CALENDAR_WINDOW
             payload = await self.get_json(

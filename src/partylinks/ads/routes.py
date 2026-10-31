@@ -9,7 +9,7 @@ from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import defer, selectinload
@@ -17,6 +17,7 @@ from sqlalchemy.orm import defer, selectinload
 from partylinks.admin import AdminDep
 from partylinks.ads.models import SponsoredRow, SponsoredStatRow
 from partylinks.api import EventSummaryOut, SessionDep, _summary_extras
+from partylinks.config import get_settings
 from partylinks.db import EventRow, FlagRow, flag_on, upcoming_filter
 
 router = APIRouter()
@@ -90,6 +91,12 @@ class SponsoredIn(BaseModel):
     side: Literal["right", "left"]
     until: datetime | None = None  # campaign end; None = while the event is on
     placement: Literal["rails", "results", "both"] = "rails"  # side rails, first in matching results, or both
+
+    @field_validator("until")
+    @classmethod
+    def _israel(cls, value: datetime | None) -> datetime | None:
+        """The admin's "ends 5.11" arrives as Israel's wall clock (2026-11-05T23:59), not the browser's."""
+        return value.replace(tzinfo=ZoneInfo(get_settings().timezone)) if value and value.tzinfo is None else value
 
 
 @admin_router.get("/sponsored")

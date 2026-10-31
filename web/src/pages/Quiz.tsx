@@ -182,14 +182,17 @@ export function Quiz() {
 
 // The tiles' forecast: Tel Aviv in the evening (now, once the evening has begun); the weekend's is Friday night.
 const TLV = { lat: 32.08, lng: 34.78 };
+// Israel's clock, whatever zone the browser is in: that day's offset ("GMT+02:00" -> "+02:00").
 function evening(date: string, hour = 20): string {
-  const at = new Date(`${date}T${String(hour).padStart(2, "0")}:00:00`);
+  const zone = new Intl.DateTimeFormat("en", { timeZone: TZ, timeZoneName: "longOffset" })
+    .formatToParts(new Date(`${date}T12:00:00Z`)).find((p) => p.type === "timeZoneName")?.value.slice(3) || "Z";
+  const at = new Date(`${date}T${String(hour).padStart(2, "0")}:00:00${zone}`);
   return new Date(Math.max(at.getTime(), Date.now())).toISOString();
 }
 function friday(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7));
-  return d.toLocaleDateString("en-CA", { timeZone: TZ });
+  const d = new Date(today() + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() + ((5 - d.getUTCDay() + 7) % 7));
+  return d.toISOString().slice(0, 10);
 }
 const tileWeather = (start: string) => <Weather lat={TLV.lat} lng={TLV.lng} start={start} />;
 

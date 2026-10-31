@@ -343,7 +343,7 @@ function Searches() {
               <thead><tr><th>When</th><th>Search</th><th>Results</th></tr></thead>
               <tbody>
                 {d.recent.map((r: any, i: number) => (
-                  <tr key={i}><td>{new Date(r.at).toLocaleString("he-IL")}</td><td>{r.q}</td><td>{r.results}</td></tr>
+                  <tr key={i}><td>{new Date(r.at).toLocaleString("he-IL", { timeZone: TZ })}</td><td>{r.q}</td><td>{r.results}</td></tr>
                 ))}
               </tbody>
             </table>

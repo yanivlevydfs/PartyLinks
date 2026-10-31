@@ -24,7 +24,8 @@ interface Pick {
   live?: boolean; // as last saved; unknown for picks added since
 }
 
-const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: TZ }) : "");
+// A pick not yet saved is Israel's wall clock ("2026-11-05T23:59:00"), a saved one an instant.
+const day = (iso: string | null) => (!iso ? "" : iso.length === 19 ? iso.slice(0, 10) : new Date(iso).toLocaleDateString("en-CA", { timeZone: TZ }));
 const dateTime = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("en-GB", { timeZone: TZ, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
 const strip = (picks: Pick[]) => picks.map(({ event_id, side, until, placement }) => ({ event_id, side, until, placement }));
@@ -148,7 +149,7 @@ export function Sponsored() {
                     <label className="adm-sp-until">
                       Campaign ends
                       <input type="date" value={day(p.until)}
-                        onChange={(e) => update(p.event_id, { until: e.target.value ? new Date(`${e.target.value}T23:59`).toISOString() : null })} />
+                        onChange={(e) => update(p.event_id, { until: e.target.value ? `${e.target.value}T23:59:00` : null })} />
                       {p.until && <button className="adm-btn ghost" onClick={() => update(p.event_id, { until: null })}>clear</button>}
                     </label>
                   </div>
