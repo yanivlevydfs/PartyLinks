@@ -31,6 +31,7 @@ from partylinks.parsing import (
     to_int,
 )
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
+from partylinks.scrapers.eventer_sitemap import is_over, sitemap_link_names
 
 UNLIMITED = -1
 CATEGORIES_SLIDER = 6  # sliderType of the home page's category tiles
@@ -48,6 +49,10 @@ class EventerSettings(SourceSettings):
     # Producer profiles (user linkNames) whose whole event list is read on top of the sliders.
     users: list[str] = Field(default_factory=list)
     user_events_path: str = "/user/{user}/getData"
+    # The newest `sitemap_newest` event pages of the sitemap, read on top of the rest (eventer_sitemap). Empty path = off.
+    sitemap_path: str = ""
+    robots_path: str = "/robots.txt"
+    sitemap_newest: int = Field(12000, ge=0)
     event_details_path: str
     ticket_types_path: str
     # The site's artist catalog (one request) and each artist's profile (social links). Empty = skip.
@@ -107,17 +112,22 @@ class EventerScraper(BaseScraper[EventerSettings]):
                 for slide in payload.get("slides") or payload.get("events") or []  # user getData: events
                 if isinstance(slide, dict) and slide.get("linkName") and slide.get("slideType", EVENT_SLIDE) == EVENT_SLIDE
             )
+        if s.sitemap_path:
+            newest = sitemap_link_names(self, s.base_url, s.sitemap_path, s.robots_path, s.sitemap_newest)
+            seen.update(dict.fromkeys(await self.optional("sitemap", newest) or []))
         if not seen and self.failures:
             raise ParseError("every listing failed")
         return list(seen)
 
-    async def _fetch_event(self, link_name: str) -> ScrapedEvent:
+    async def _fetch_event(self, link_name: str) -> ScrapedEvent | None:
         s = self.settings
         details = await self.get_json(s.base_url + s.event_details_path.format(link_name=link_name), expect=dict)
         event = details.get("event")
         event_id = event.get("_id") if isinstance(event, dict) else None
         if not event_id:
             raise ParseError("event id missing")
+        if is_over(event, self.timezone):  # most sitemap pages: dropped before their ticket request
+            return None
         # Ticket endpoint down -> still save the event, without tiers.
         tickets_payload = await self.optional(
             f"{link_name} tickets", self.get_json(s.base_url + s.ticket_types_path.format(event_id=event_id), expect=dict)
