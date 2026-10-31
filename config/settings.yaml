@@ -1173,6 +1173,7 @@ sources:
     cdx_budget_seconds: 1800
     known_file: data/eventimlight_shops.json
     max_shops: 100000
+    chunk_shops: 200   # one shop renews the Queue-it pass, then this many in parallel
     # The shop's own category goes in as is (English ones, "Comedy", "Theater", "Festivals", "Classical", match
     # by themselves); these add the words the enrichment knows for the others (lower case). Oct 2026, by count.
     categories:

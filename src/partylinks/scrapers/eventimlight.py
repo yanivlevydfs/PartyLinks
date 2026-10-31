@@ -62,6 +62,8 @@ class EventimLightSettings(SourceSettings):
     known_file: Path = Path("data/eventimlight_shops.json")
     # Safety cap on shops fetched per run (not a volume limit).
     max_shops: int = Field(100_000, ge=1)
+    # Shops fetched in parallel after one of them renews the Queue-it pass (see scrape).
+    chunk_shops: int = Field(200, ge=1)
     # Eventim Light's category names (lower case) as the category words the enrichment knows.
     categories: dict[str, list[str]] = Field(default_factory=dict)
 
@@ -93,10 +95,17 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
                 raise
             return parse_shop(page, shop, self.settings)
 
-        # One shop per market first, alone: it takes the Queue-it pass (a cookie) that lets the market's
-        # other shops answer at once. Started in parallel, every shop queued its own pass behind the rest.
-        first = list({shop.partition("/")[0]: shop for shop in reversed(shops)}.values())
-        batches = [[shop] for shop in first] + [sorted(set(shops) - set(first))]
+        # Shops go in chunks of one market, each led by one shop alone: it takes (or renews) the Queue-it
+        # pass, a cookie that lets the chunk's other shops answer at once. Started all in parallel, every
+        # shop queued its own pass behind the rest; in one long batch the pass expired midway (Oct 2026:
+        # 420 of 6,400 shops of the later markets came back as Queue-it pages).
+        size = self.settings.chunk_shops
+        batches = []
+        for market in dict.fromkeys(shop.partition("/")[0] for shop in shops):
+            mine = [shop for shop in shops if shop.partition("/")[0] == market]
+            for start in range(0, len(mine), size):
+                chunk = mine[start : start + size]
+                batches += [chunk[:1], chunk[1:]]
         try:
             for batch in batches:
                 async for events in self.stream_isolated(batch, fetch, label=lambda s: s):
