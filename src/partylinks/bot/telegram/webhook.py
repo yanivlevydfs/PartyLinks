@@ -49,7 +49,8 @@ async def start(app: FastAPI) -> Application | None:
     if not cfg.enabled or cfg.telegram_token is None:
         log.info("bot: Telegram off (bot.enabled false or no PARTYLINKS_BOT__TELEGRAM_TOKEN)")
         return None
-    if not strong(cfg.telegram_webhook_secret):
+    secret = cfg.telegram_webhook_secret
+    if secret is None or not strong(secret):
         log.error(
             "bot: PARTYLINKS_BOT__TELEGRAM_WEBHOOK_SECRET is missing or shorter than %d characters: the Telegram bot stays off",
             MIN_SECRET,
@@ -74,7 +75,7 @@ async def start(app: FastAPI) -> Application | None:
     if url.startswith("https://"):  # Telegram posts to https only; on localhost, set bot.webhook_url to a tunnel
         try:
             await bot.bot.set_webhook(
-                url, secret_token=cfg.telegram_webhook_secret.get_secret_value(), allowed_updates=UPDATES,
+                url, secret_token=secret.get_secret_value(), allowed_updates=UPDATES,
                 drop_pending_updates=False,
             )  # fmt: skip
             await handlers.describe(bot)
