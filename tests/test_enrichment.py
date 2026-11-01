@@ -366,6 +366,20 @@ def test_an_event_without_coordinates_takes_its_towns_region_or_abroad() -> None
     assert areas.match(None, None, None, None, None, None, "MT") == "abroad"  # no place at all, but the country
 
 
+def test_real_misplaced_regions_november_2026() -> None:
+    settings = get_settings()
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    areas = enricher.areas
+    # Harish's library on "רחוב לוטם" (a Galilee kibbutz too), no coordinates: the town decides.
+    assert areas.match("הספרייה העירונית - רחוב לוטם 1", None, None, None, False, "חריש") == "sharon"
+    # Shoham's hall on "שדרות עמק איילון": a boulevard, not Sderot.
+    assert areas.match("מרכז אמנויות הבמה שוהם", "שדרות עמק איילון 47", 32.0, 34.9457, False, "שהם") == "gush_dan"
+    assert areas.match("קפה גרג", "קניון הרים, צומת גוש עציון", 31.645, 35.131, False, "גוש עציון") == "jerusalem"
+    # Jaffa Road in Jerusalem is not Jaffa in Tel Aviv.
+    assert enricher.in_target_city("ירושלים", "יפו, ירושלים", None) is False
+    assert enricher.in_target_city("תל אביב", "יפו 10", None) is True
+
+
 def test_fallback_words_only_when_nothing_else_names_a_genre() -> None:
     show = make(title="אגממנון", description="ההצגה בבימוי ... שחקנים: ...")
     assert ENRICHER._detect_genres(show) == ["theatre"]

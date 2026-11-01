@@ -125,14 +125,20 @@ class AreaMatcher:
     ) -> str:
         """Region of an event outside the target city: a named place (city first), a country abroad,
         then coordinates (the town's centre when the event has none)."""
-        if named := self.named_region(city, venue_name, address):
+        if named := self.named_region(city, None, None):
             return named.key
         if country and country not in LOCAL_COUNTRIES:
             return ABROAD_AREA
-        if (latitude is None or longitude is None) and city and self._town_point:
-            latitude, longitude = self._town_point(city) or (None, None)
+        # A known town without coordinates: its centre beats a street or venue word ("רחוב לוטם", Harish).
+        town = self._town_point(city) if (latitude is None or longitude is None) and city and self._town_point else None
+        if not town and (named := self.named_region(None, venue_name, address)):
+            return named.key
+        latitude, longitude = town or (latitude, longitude)
         if latitude is None or longitude is None or not self._regions:
-            return OUTSIDE_AREA
+            # Nothing else to go by: even "צפון" in "מחוז הצפון" is the place.
+            last = next((r for text in (address, venue_name) for r, pattern in self._regions
+                         if text and pattern and pattern.search(text.lower())), None)  # fmt: skip
+            return last.key if last else OUTSIDE_AREA
         for region, _ in self._regions:
             if _in_boxes(region, latitude, longitude):
                 return region.key
@@ -144,9 +150,10 @@ class AreaMatcher:
         return not boxed or any(_in_boxes(r, latitude, longitude) for r in boxed)
 
     def named_region(self, city: str | None, venue_name: str | None, address: str | None) -> RegionSettings | None:
-        """Region of the first place named in the city, address or venue name (in that order)."""
-        for text in (city, address, venue_name):
-            for region, pattern in self._regions:
+        """Region of the first place named in the city, address or venue name (in that order); in the
+        address and venue name not the words that are usually streets ("שדרות עמק איילון", Shoham)."""
+        for text, regions in ((city, self._regions), (address, self._regions_in_names), (venue_name, self._regions_in_names)):
+            for region, pattern in regions:
                 if text and pattern and pattern.search(text.lower()):
                     return region
         return None
@@ -570,6 +577,9 @@ class Enricher:
         haystack = " | ".join(filter(None, [city, address, venue])).lower()
         if not haystack or self._city is None:
             return None
+        # "יפו, ירושלים" is Jaffa Road: a city field naming another region decides before the address.
+        if city and not self._city.search(city.lower()) and self.areas.named_region(city, None, None):
+            return False
         if self._city.search(haystack):
             return True
         if city or address:
