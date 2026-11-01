@@ -362,7 +362,8 @@ enrichment:
     # Party sub-categories (Yotzim's categories, Oct 2026). Not plain "open air" (club nights on a roof),
     # "נוער" (youth orchestras) or "אלכוהול חופשי" ("למעט ערבי אלכוהול חופשי": except those nights).
     nature_party: ["nature party", "nature parties", "מסיבת טבע", "מסיבות טבע"]
-    open_bar: ["open bar", "open-bar", "אופן בר", "בר פתוח", "מסיבת אלכוהול חופשי", "אלכוהול חופשי כל הלילה"]
+    open_bar: ["open bar", "open-bar", "אופן בר", "בר פתוח", "מסיבת אלכוהול חופשי", "אלכוהול חופשי כל הלילה",
+               "free alcohol", "שתיה חופשית", "שתייה חופשית"]
     over_40: ["40 plus", "40 פלוס", "גילאי 40", "מגיל 40", "over 40", "40+ party"]
     youth: ["teen party", "teens party", "מסיבת נוער", "מסיבות נוער"]
     # Culture words that name what the event is, read in the title only (title_genres).
@@ -428,14 +429,18 @@ enrichment:
   # nothing else matched, so a party that mentions "סדנה" keeps its music genres alone.
   fallback_genres:
     theatre: ["הצגה", "ההצגה", "בהצגה", "שחקנים", "בימוי", "ובימוי", "מחזה", "תפאורה", "תלבושות", "תיאטרון",
-              "תאטרון", "דרמה", "קומדיה", "theatre", "theater", "play"]
-    kids: ["לגילאי", "לקטנטנים", "הילדים", "ילדים", "לילדים", "לכל המשפחה", "ההורים", "פעוטות", "kids", "children", "family"]
+              "תאטרון", "דרמה", "קומדיה", "theatre", "theater", "play",
+              # Israel's repertory companies, named in a hall's title ("שלום בית-הקאמרי").
+              "הקאמרי", "הבימה", "בית ליסין", "תיאטרון גשר", "החאן", "תיאטרון הספריה"]
+    kids: ["לגילאי", "לקטנטנים", "הילדים", "ילדים", "לילדים", "לכל המשפחה", "ההורים", "פעוטות", "kids", "children", "family",
+           "שעת סיפור", "תינוקות", "הנקה", "כיתות"]
     live_show: ["מופע", "המופע", "שירים", "השירים", "מוזיקלי", "מוזיקלית", "להקה", "להקת", "זמר", "זמרת",
-                "קונצרט", "הופעה", "ההופעה", "נגנים", "concert", "live", "band", "tribute"]
+                "קונצרט", "הופעה", "ההופעה", "נגנים", "concert", "live", "band", "tribute",
+                "תזמורת", "כליזמר", "מחווה ל", "פסקול", "שרים", "מנגנת", "מנגנים"]
     stand_up: ["סטנדאפ", "סטנד אפ", "סטנדאפיסט", "קומיקאי", "open mic", "stand up", "comedian"]
-    lectures: ["הרצאה", "מרצה", "הרצאות", "lecture", "talk"]
-    workshops: ["סדנה", "סדנת", "סדנאות", "workshop"]
-    tours: ["סיור", "סיורים", "guided tour"]
+    lectures: ["הרצאה", "מרצה", "הרצאות", "הרצאתה", "הרצאתו", "lecture", "talk", "ד\"ר", "פרופ'", "מפגש ב-zoom"]
+    workshops: ["סדנה", "סדנת", "סדנאות", "workshop", "חוג", "קורס"]
+    tours: ["סיור", "סיורים", "סיורי", "guided tour"]
     dance: ["מחול", "להקת מחול", "בלט", "ballet"]
     exhibitions: ["תערוכה", "תערוכת", "exhibition", "museum"]
   # Sources that sell one kind of event: its genre when neither their category nor the text names one
@@ -457,6 +462,9 @@ enrichment:
     rnb: [hip_hop]
   # The genre filter's families, in screen order: picking one ("g_parties") shows every member's events
   # (and a member family's sub-genres). A genre may sit in more than one; every genre needs one.
+    sport: ["קבוצת ריצה", "אימוני", "כדורסל", "כדורגל"]
+    yoga_wellness: ["טאי צ'י", "יוגה", "פילאטיס", "מדיטציה"]
+    nightclubs: ["מסיבה", "מסיבת", "party", "soirée", "soiree", "festa", "fiesta", "baile", "club night", "pub crawl"]
   genre_groups:
     g_parties: [electronic, mainstream, pop, hip_hop, rnb, reggaeton_latin, dancehall_reggae, disco_funk, dark_wave,
                 throwback, nightclubs, pool_party, karaoke, festival, nature_party, open_bar, over_40, youth]
@@ -464,6 +472,11 @@ enrichment:
     g_stage: [theatre, stand_up, cinema, dance]
     g_culture: [culture, exhibitions, lectures, workshops, tours, religious, holidays, markets]
     g_kids: [kids, attractions, pools, escape_rooms]
+    # Municipal culture halls (shows the title alone doesn't name), concert trips abroad, party sites.
+    smarticket: [culture]
+    ticketplace: [live_show]
+    happytlv: [nightclubs]
+    shotgun: [nightclubs]
     g_food: [food, happy_hour, fine_dining, coffee_carts, open_bar]
     g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, environment, volunteering, team_activities]
     g_tech: [hi_tech, conference, work_spaces, meetups]

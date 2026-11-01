@@ -325,12 +325,13 @@ class Enricher:
             from_text &= talk_genres
         if found | from_text:
             return sorted(found | from_text)
-        if default := self.settings.source_default_genres.get(event.source):
-            return list(default)
         whole = _LINKS.sub(" ", f"{event.title}\n{event.description or ''}".lower())
         for phrase in self.settings.text_ignore:
             whole = whole.replace(phrase.lower(), " ")
-        return sorted(g for g, pattern in self._fallback.items() if pattern.search(whole))
+        # The show's own words first ("תזמורת" at a culture hall is a concert), then the source's usual kind.
+        if fallback := sorted(g for g, pattern in self._fallback.items() if pattern.search(whole)):
+            return fallback
+        return list(self.settings.source_default_genres.get(event.source, []))
 
     # ------------------------------------------------------------------ lineup
     def _lineup(self, event: ScrapedEvent) -> list[str]:

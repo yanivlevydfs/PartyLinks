@@ -329,7 +329,7 @@ def test_words_in_passing_are_no_genres() -> None:
     assert genres("מנגינה של סתיו", "התמונה נוצרה בבינה מלאכותית.") == []
     assert genres("Cold Brew workshop", "🇮🇱 עברית\nיואב, איש דאטה ביום") == ["workshops"]  # by its title; not data (a day job) or Israeli (a language)
     assert genres("Classico screening", "המשחק: דור רומנו, סול כהן רוזנברג") == []  # Sol is a name
-    assert genres("Pilots party", "כל שבוע, למעט ערבי אלכוהול חופשי") == []  # "ערבי": evenings, not Arabic
+    assert genres("Pilots party", "כל שבוע, למעט ערבי אלכוהול חופשי") == ["nightclubs"]  # "ערבי": evenings, not Arabic
     # Tech from the title still counts; the description only for declared tech events.
     assert "ai" in genres("בינה מלאכותית | היכרות עם מודל שפה", "")
     assert "startups" in genres("Founders night", "startup founders meet", ("hi-tech",))
@@ -371,3 +371,10 @@ def test_fallback_words_only_when_nothing_else_names_a_genre() -> None:
     assert ENRICHER._detect_genres(show) == ["theatre"]
     party = make(title="Techno night", description="סדנה לפני המסיבה")
     assert ENRICHER._detect_genres(party) == ["techno"]  # the fallback "סדנה" is not read: techno was found
+
+
+def test_a_sources_usual_kind_only_when_its_words_name_none() -> None:
+    hall = make(source="smarticket", title="אגממנון", description="")
+    assert ENRICHER._detect_genres(hall) == ["culture"]  # a culture hall's show, title alone
+    concert = make(source="smarticket", title="תזמורת ירושלים - איציק קלה", description="")
+    assert ENRICHER._detect_genres(concert) == ["live_show"]  # its own word beats the hall's default
