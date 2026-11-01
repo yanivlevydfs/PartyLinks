@@ -67,6 +67,23 @@ people, messages, searches, inline queries, ticket clicks from the bot's cards (
 day, what the bot did (by kind), top searches and searches that found nothing. Rows in `bot_usage` carry a
 hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 
+## The entry screen and the menu
+
+- **Entry screen** (`core/consent.py`): the first message of a new chat, whatever it is, gets the banner
+  (`bot.banner_url`, default the site's `/og-default.png`) with what the bot does, that it is free, a
+  disclaimer and what it keeps, in Hebrew and English, and "I agree" / "Decline". Before "I agree" nothing
+  is kept: no `bot_chats` row, no usage tag. "Decline" deletes whatever there was. A chat silent for
+  `bot.inactive_days` (365) is deleted with its alerts, reminders and watches. The site's privacy page has
+  a section on the bot.
+- **Menu** (`core/menu.py`, `/menu`, the 🏠 keyboard button, and under the welcome): categories (the
+  site's genre groups, then a group's genres), areas (the six regions and abroad) and dates (tonight,
+  tomorrow, the weekend, this week), plus free, near me, my alerts, my reminders and English / עברית.
+  Every button carries the whole choice (`m:<screen>:<genre>:<area>:<when>`, under 64 bytes), so the menu
+  keeps no state; the pickers replace the pressed message instead of adding one. A choice runs as the
+  site's search words ("טכנו בצפון בסופ״ש"), so "more", 🔔 alert me and "and tomorrow?" work on it; under
+  its results a bar changes one part and keeps the others.
+- **Hebrew first**, like the site: English only when the user writes English or picks it.
+
 ## Code (`src/partylinks/bot/`)
 
 | File | Role |

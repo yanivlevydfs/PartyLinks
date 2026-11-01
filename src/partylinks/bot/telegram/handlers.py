@@ -23,7 +23,7 @@ from telegram.ext import (
 from partylinks.bot.core.conversation import DEFAULT_LANG, Conversation
 from partylinks.bot.core.flood import Flood
 from partylinks.bot.core.phrases import say
-from partylinks.bot.core.reply import Reply
+from partylinks.bot.core.reply import CONSENT, Reply
 from partylinks.bot.core.understand import lang_of
 from partylinks.bot.telegram import render
 from partylinks.config import Settings
@@ -34,7 +34,7 @@ CHANNEL = "telegram"
 PRIVATE = filters.ChatType.PRIVATE
 INLINE_CACHE_SECONDS = 60
 CONCURRENT_UPDATES = 16
-COMMANDS = [("start", "התחלה"), ("alerts", "ההתראות שלי"), ("reminders", "התזכורות והמעקבים שלי"), ("digest", "סיכום שבועי לסופ״ש"),
+COMMANDS = [("menu", "תפריט: קטגוריות, אזורים ותאריכים"), ("start", "התחלה"), ("alerts", "ההתראות שלי"), ("reminders", "התזכורות והמעקבים שלי"), ("digest", "סיכום שבועי לסופ״ש"),
             ("lang", "English / עברית"), ("help", "עזרה"), ("stop", "מחיקת כל המידע שלי")]  # fmt: skip
 # What an empty chat shows before /start (≤512 characters), and the profile's "about" (≤120).
 DESCRIPTION = (
@@ -60,6 +60,7 @@ class Handlers:
     def install(self, app: Application) -> None:
         app.add_handler(CommandHandler("start", self.on_start, filters=PRIVATE))
         app.add_handler(CommandHandler("help", self.on_help, filters=PRIVATE))
+        app.add_handler(CommandHandler("menu", self.on_menu, filters=PRIVATE))
         app.add_handler(CommandHandler("alerts", self.on_alerts, filters=PRIVATE))
         app.add_handler(CommandHandler("lang", self.on_lang, filters=PRIVATE))
         app.add_handler(CommandHandler("reminders", self.on_reminders, filters=PRIVATE))
@@ -79,8 +80,10 @@ class Handlers:
         return str(chat.id if chat else user.id if user else ""), DEFAULT_LANG
 
     async def _answer(
-        self, update: Update, context: ContextTypes.DEFAULT_TYPE, make: Callable[[str, str], Awaitable[Reply]]
-    ) -> None:
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE, make: Callable[[str, str], Awaitable[Reply]],
+        gated: bool = True,
+    ) -> None:  # fmt: skip
+        """``gated``: the entry screen first, until the chat agreed (all but its own buttons and /stop)."""
         chat_id, lang = self._who(update)
         if not chat_id:
             return
@@ -89,8 +92,16 @@ class Handlers:
             if verdict == "warn":
                 await context.bot.send_message(chat_id, say("slow_down", lang))
             return
-        await context.bot.send_chat_action(chat_id, "typing")
+        screen = await self.talk.gate(chat_id) if gated else None
+        if screen is not None:
+            await render.send(context.bot, chat_id, screen, lang)
+            return
+        query = update.callback_query
+        if query is None:
+            await context.bot.send_chat_action(chat_id, "typing")
         reply = await make(chat_id, lang)
+        if query is not None and await render.edit(query, reply):
+            return
         await render.send(context.bot, chat_id, reply, reply_lang(reply, lang))
 
     # ------------------------------------------------------------------ updates
@@ -99,6 +110,9 @@ class Handlers:
 
     async def on_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await self._answer(update, context, lambda c, l: self.talk.text(c, "עזרה" if l == "he" else "help", l))
+
+    async def on_menu(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        await self._answer(update, context, self.talk.menu)
 
     async def on_alerts(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await self._answer(update, context, self.talk.alerts)
@@ -113,7 +127,7 @@ class Handlers:
         await self._answer(update, context, lambda c, _: self.talk.set_lang(c))
 
     async def on_stop(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        await self._answer(update, context, self.talk.stop)
+        await self._answer(update, context, self.talk.stop, gated=False)
 
     async def on_text(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         text = update.effective_message.text if update.effective_message else ""
@@ -141,7 +155,8 @@ class Handlers:
             pass
         if query.message is None or not query.data or query.message.chat.type != "private":
             return
-        await self._answer(update, context, lambda c, l: self.talk.press(c, query.data or "", l))
+        data = query.data
+        await self._answer(update, context, lambda c, l: self.talk.press(c, data, l), gated=not data.startswith(CONSENT))
 
     async def on_inline(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         query = update.inline_query

@@ -9,6 +9,7 @@ from html import escape
 
 from telegram import (
     Bot,
+    CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     InlineQueryResultArticle,
@@ -45,7 +46,7 @@ def main_keyboard(lang: str) -> ReplyKeyboardMarkup:
             [KeyboardButton(label("near", lang), request_location=True)],
             [KeyboardButton(label("tonight", lang)), KeyboardButton(label("weekend", lang))],
             [KeyboardButton(label("my_alerts", lang)), KeyboardButton(label("my_events", lang))],
-            [KeyboardButton(label("help", lang))],
+            [KeyboardButton(label("menu_home", lang)), KeyboardButton(label("help", lang))],
         ],
         resize_keyboard=True,
         is_persistent=True,
@@ -71,13 +72,48 @@ async def send_card(bot: Bot, chat_id: int | str, card: Card) -> None:
     await bot.send_message(chat_id, caption(card), parse_mode=ParseMode.HTML, reply_markup=markup, link_preview_options=NO_PREVIEW)
 
 
+def _html(reply: Reply) -> str:
+    return reply.text if reply.html else escape(reply.text)
+
+
+async def edit(query: CallbackQuery, reply: Reply) -> bool:
+    """A menu screen in place of the pressed message (its text, or its picture's caption). False: it could
+    not (too old, say): send it as a new message instead."""
+    message = query.message
+    if not reply.edit or reply.cards or reply.ask_location or message is None:
+        return False
+    try:
+        if getattr(message, "photo", None):
+            await query.edit_message_caption(_html(reply), parse_mode=ParseMode.HTML, reply_markup=keyboard(reply.buttons))
+        else:
+            await query.edit_message_text(
+                _html(reply), parse_mode=ParseMode.HTML, reply_markup=keyboard(reply.buttons), link_preview_options=NO_PREVIEW
+            )  # fmt: skip
+        return True
+    except BadRequest as exc:
+        return "not modified" in exc.message  # the same screen pressed twice: nothing to do
+
+
 async def send(bot: Bot, chat_id: int | str, reply: Reply, lang: str) -> None:
-    """Every message of ``reply``, in order. With no cards the buttons go under the text."""
+    """Every message of ``reply``, in order. With no cards the buttons go under the text (or the picture)."""
     under_text = None if reply.cards else keyboard(reply.buttons)
-    markup = main_keyboard(lang) if reply.ask_location else under_text
-    await bot.send_message(chat_id, escape(reply.text), parse_mode=ParseMode.HTML, reply_markup=markup, link_preview_options=NO_PREVIEW)
-    if reply.ask_location and under_text:
-        await bot.send_message(chat_id, "👇", reply_markup=under_text)
+    sent = False
+    if reply.photo:  # the banner with the text as its caption; a picture Telegram cannot fetch: text alone
+        try:
+            await bot.send_photo(chat_id, reply.photo, caption=_html(reply), parse_mode=ParseMode.HTML, reply_markup=under_text)
+            sent = True
+        except BadRequest as exc:
+            log.info("bot: banner not sent (%s), sent as text", exc.message)
+    if sent:
+        if reply.ask_location:  # the keyboard under the typing box needs a message of its own
+            await bot.send_message(chat_id, escape(reply.after or "👇"), reply_markup=main_keyboard(lang))
+        if not reply.cards:
+            return
+    else:
+        markup = main_keyboard(lang) if reply.ask_location else under_text
+        await bot.send_message(chat_id, _html(reply), parse_mode=ParseMode.HTML, reply_markup=markup, link_preview_options=NO_PREVIEW)
+        if reply.ask_location and under_text:
+            await bot.send_message(chat_id, "👇", reply_markup=under_text)
     if reply.document:
         name, content = reply.document
         await bot.send_document(chat_id, InputFile(content, filename=name))

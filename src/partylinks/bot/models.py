@@ -35,6 +35,8 @@ class BotChatRow(Base):
     digest_sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     blocked_at: Mapped[datetime | None] = mapped_column(UTCDateTime)  # the user blocked the bot: nothing is sent
+    consent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)  # "I agree" on the entry screen (consent.py)
+    seen_at: Mapped[datetime | None] = mapped_column(UTCDateTime)  # last message: inactive chats are deleted
 
 
 class BotAlertRow(Base):

@@ -12,6 +12,7 @@ MORE, ALERT, ALERT_YES, ALERT_NO, REFINE, DELETE_ALERT, SEARCH, LANG = (
 # Under a card (``{prefix}{event number}``, refs.py) and in its ➕ menu (event_actions.py).
 REMIND, WATCH, SIMILAR, OPTIONS, ICS, PLAN, FOLLOW = "rem:", "wat:", "sim:", "opt:", "ics:", "who:", "fol:"
 FORGET, DIGEST = "fgt:", "dig:"  # /reminders: delete one; /digest: its choice
+MENU, CONSENT = "m:", "ok:"  # the menu's screens (menu.py); the entry screen's agree / decline (consent.py)
 MAX_ACTION_BYTES = 64
 
 
@@ -42,3 +43,6 @@ class Reply:
     ask_location: bool = False  # offer the "share my location" button
     after: str | None = None  # a line after the cards (the buttons go under it)
     document: tuple[str, bytes] | None = None  # a file sent after the text: (name, content), e.g. the .ics
+    photo: str | None = None  # a picture with the text as its caption (the entry screen's banner)
+    html: bool = False  # ``text`` is already HTML (our own fixed texts only, never an event's)
+    edit: bool = False  # a menu screen: replaces the message whose button was pressed, when it can

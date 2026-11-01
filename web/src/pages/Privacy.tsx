@@ -44,6 +44,17 @@ const TEXT = {
         ],
       },
       {
+        title: "בוט הטלגרם (רשות)",
+        body: ["אפשר לחפש אירועים גם בבוט שלנו בטלגרם. הבוט שומר מידע רק אחרי שלחצתם \"אישור והמשך\" במסך הכניסה שלו:"],
+        list: [
+          "מזהה הצ'אט בטלגרם, השפה, החיפוש האחרון (כדי להמשיך אותו, כמו \"ומחר?\"), ומיקום ששיתפתם בעצמכם לחיפוש \"קרוב אליי\".",
+          "מה שביקשתם במפורש: התראות, תזכורות, מעקב מחיר והסיכום השבועי.",
+          "לסטטיסטיקת שימוש נשמר סוג הפעולה ומילות החיפוש, עם טביעה מקוצרת של מזהה הצ'אט ולא המזהה עצמו.",
+          "צ'אט שאינו פעיל 12 חודשים נמחק עם כל המידע שלו. הפקודה /stop מוחקת הכל מיד, וגם \"ביטול\" במסך הכניסה.",
+          "ההודעות עוברות דרך Telegram (Telegram FZ-LLC, איחוד האמירויות), שחלה עליה מדיניות הפרטיות שלה.",
+        ],
+      },
+      {
         title: "מה אנחנו לא עושים",
         body: [],
         list: [
@@ -137,6 +148,17 @@ const TEXT = {
           "Purposes: running the account, saved events, alerts, the emails you asked for, and security. We don't use the data for targeted advertising and never sell it.",
           "Retention and deletion: data is kept while the account exists. An event that has ended is removed from saved events and alerts. You can delete the account at any time on \"My account\"; deletion is immediate and permanent.",
           "Accounts are for people aged 16 and over.",
+        ],
+      },
+      {
+        title: "Telegram bot (optional)",
+        body: ["You can also search events in our Telegram bot. It keeps data only after you tap \"I agree\" on its entry screen:"],
+        list: [
+          "Your Telegram chat ID, language, your last search (to continue it, as in \"and tomorrow?\"), and a location you shared yourself for a \"near me\" search.",
+          "What you asked for explicitly: alerts, reminders, price watches and the weekly picks.",
+          "For usage statistics we keep the kind of action and the search words, with a shortened fingerprint of the chat ID, not the ID itself.",
+          "A chat inactive for 12 months is deleted with all its data. /stop deletes everything at once, and so does \"Decline\" on the entry screen.",
+          "Messages pass through Telegram (Telegram FZ-LLC, United Arab Emirates), whose own privacy policy applies.",
         ],
       },
       {

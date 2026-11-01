@@ -836,3 +836,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
   - `bot_usage`: ‏`id` serial PK, ‏`at` (אינדקס), ‏`channel`, ‏`chat` (hash של ה-chat id, ‏NULL אחרי `/stop`), ‏`kind`, ‏`q`, ‏`results`.
 - **שאילתות:** בכל סבב של ה-job ‏(`bot.alert_interval_minutes`): ‏`DELETE ... WHERE event_id NOT IN (<upcoming>)` ב-`bot_refs`, ‏`bot_reminders` (גם שנשלחו), ‏`bot_watches`; ‏`bot_channel_posts` מעל 60 יום; ‏`bot_usage` מעל `bot.usage_days`. תזכורות: ‏`JOIN bot_chats JOIN events WHERE remind_at <= now AND sent_at IS NULL AND <upcoming>`, ואז `UPDATE sent_at`. מעקבים: כל `bot_watches JOIN events` (שורה לכל מעקב) ועדכון `last_*`. דומים: ‏`build_event_filters(genre, area)` עם `LIMIT`. סיכום וערוץ: ‏`build_event_filters(weekend | on_date)` ‏`LEFT JOIN (clicks של 7 ימים GROUP BY event_id)` ממוין לפי הקליקים. טאב האדמין: ‏`bot_usage WHERE at >= since` ו-`count(*)` על טבלאות הבוט ועל `clicks WHERE placement = 'tg'`.
 - **Tests:** ‏`tests/test_bot_features.py`.
+
+### 2026-11-01 (בוט Telegram: מסך כניסה ותפריט)
+- **עמודות חדשות ב-`bot_chats`** (נוספות ב-`create_schema`): ‏`consent_at` (לחיצה על "אישור והמשך"; בלעדיו אין שורה כלל), ‏`seen_at` (ההודעה האחרונה, מתעדכן בכל הודעה).
+- **שאילתות:** בכל הודעה `SELECT consent_at FROM bot_chats WHERE channel = ? AND chat_id = ?` (על ה-UNIQUE הקיים). בכל סבב של ה-job: ‏`DELETE FROM bot_chats WHERE coalesce(seen_at, created_at) < now - bot.inactive_days` (התראות, תזכורות ומעקבים נמחקים ב-CASCADE). "ביטול" במסך הכניסה: ‏`DELETE` של שורת הצ'אט ו-`UPDATE bot_usage SET chat = NULL`.
+- **Tests:** ‏`tests/test_bot_menu.py`.

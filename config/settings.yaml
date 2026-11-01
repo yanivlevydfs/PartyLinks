@@ -136,6 +136,8 @@ bot:
   channel_hour: 16            #   the weekend's on digest_weekday; empty: no posts
   channel_results: 5
   usage_days: 180             # usage rows kept for the admin's bot tab
+  inactive_days: 365          # a chat silent this long is deleted, alerts with it (the entry screen says 12 months)
+  banner_url: null            # the entry screen's picture; empty: site.base_url + /og-default.png
 
 # Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
 # https, no framing), vulnerability-scanner and data-harvester blocking, per-IP rate limits and

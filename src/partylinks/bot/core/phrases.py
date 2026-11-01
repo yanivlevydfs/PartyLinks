@@ -11,7 +11,7 @@ PHRASES: dict[str, dict[str, tuple[str, ...]]] = {
             (
                 "היי! 👋 אני הבוט של SPOTX. כתבו לי מה בא לכם, ואמצא לכם מסיבות, הופעות ואירועים עם לינק לכרטיסים.\n\n"
                 "למשל:\n• טכנו בתל אביב בסופ״ש\n• הופעות בחיפה מחר\n• משהו חינם הערב\n• Infected Mushroom\n\n"
-                "אפשר גם לשתף מיקום 📍 ואמצא מה קורה לידכם."
+                "אפשר גם לשתף מיקום 📍 ואמצא מה קורה לידכם, או לבחור מהתפריט 👇"
             ),
         ),
         "en": (
@@ -19,7 +19,7 @@ PHRASES: dict[str, dict[str, tuple[str, ...]]] = {
                 "Hi! 👋 I'm the SPOTX bot. Tell me what you're in the mood for and I'll find parties, shows and "
                 "events with ticket links.\n\nFor example:\n• techno in Tel Aviv this weekend\n• live music in Haifa "
                 "tomorrow\n• something free tonight\n• Infected Mushroom\n\nOr share your location 📍 and I'll find "
-                "what's on near you."
+                "what's on near you. Or pick from the menu 👇"
             ),
         ),
     },
@@ -175,6 +175,22 @@ PHRASES: dict[str, dict[str, tuple[str, ...]]] = {
         "he": ("מחקתי את כל מה ששמרתי עליכם, כולל ההתראות. אם תכתבו שוב, נתחיל מחדש 👋",),
         "en": ("I deleted everything I kept about you, alerts included. Write again any time to start over 👋",),
     },
+    "menu": {
+        "he": ("🏠 מה בא לכם? בחרו קטגוריה, אזור או תאריך, או פשוט כתבו לי מה אתם מחפשים 👇",),
+        "en": ("🏠 What are you up for? Pick a category, an area or a date, or just write what you're looking for 👇",),
+    },
+    "menu_pick_group": {"he": ("🎵 איזה סוג אירוע?",), "en": ("🎵 What kind of event?",)},
+    "menu_pick_genre": {"he": ("🎵 {g}: מה בדיוק?",), "en": ("🎵 {g}: which one?",)},
+    "menu_pick_area": {"he": ("📍 איפה?",), "en": ("📍 Where?",)},
+    "menu_pick_date": {"he": ("📅 מתי?",), "en": ("📅 When?",)},
+    "keyboard_hint": {
+        "he": ("⌨️ הכפתורים למטה תמיד כאן: הערב, סופ״ש, קרוב אליי והתפריט.",),
+        "en": ("⌨️ The buttons below are always here: tonight, weekend, near me and the menu.",),
+    },
+    "declined": {
+        "he": ("בסדר, לא שמרתי עליכם כלום 👋 אם תתחרטו, /start",),
+        "en": ("OK, I kept nothing about you 👋 Changed your mind? /start",),
+    },
     "lang_set": {"he": ("מעכשיו אדבר עברית 🇮🇱",), "en": ("I'll speak English from now on 🇬🇧",)},
     "slow_down": {"he": ("רגע, נשימה 😅 עוד דקה אמשיך.",), "en": ("Whoa, one moment 😅 I'll be back in a minute.",)},
     "error": {
@@ -275,6 +291,16 @@ LABELS: dict[str, dict[str, str]] = {
     "weekend": {"he": "🎉 בסופ״ש", "en": "🎉 This weekend"},
     "cheap": {"he": "💸 הכי זול", "en": "💸 Cheapest"},
     "free": {"he": "🆓 חינם", "en": "🆓 Free"},
+    "menu_genres": {"he": "🎵 קטגוריות", "en": "🎵 Categories"},
+    "menu_areas": {"he": "📍 אזורים", "en": "📍 Areas"},
+    "menu_dates": {"he": "📅 מתי", "en": "📅 When"},
+    "menu_home": {"he": "🏠 תפריט", "en": "🏠 Menu"},
+    "menu_show": {"he": "✅ הצג תוצאות", "en": "✅ Show results"},
+    "menu_back": {"he": "⬅️ חזרה", "en": "⬅️ Back"},
+    "menu_all": {"he": "כל", "en": "All"},
+    "menu_everywhere": {"he": "🇮🇱 כל הארץ", "en": "🇮🇱 All of Israel"},
+    "menu_anytime": {"he": "🗓 כל התאריכים", "en": "🗓 Any date"},
+    "menu_lang": {"he": "🌐 English", "en": "🌐 עברית"},
     "my_alerts": {"he": "🔔 ההתראות שלי", "en": "🔔 My alerts"},
     "help": {"he": "❓ עזרה", "en": "❓ Help"},
     "free_entry": {"he": "🆓 כניסה חופשית", "en": "🆓 Free entry"},

@@ -14,7 +14,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from partylinks.bot.core import digest, event_actions, understand, usage
+from partylinks.bot.core import consent, digest, event_actions, menu, understand, usage
 from partylinks.bot.core.card import cards
 from partylinks.bot.core.find import Found, search, search_or_widen
 from partylinks.bot.core.phrases import label, say
@@ -22,10 +22,12 @@ from partylinks.bot.core.reply import (
     ALERT,
     ALERT_NO,
     ALERT_YES,
+    CONSENT,
     DELETE_ALERT,
     DIGEST,
     LANG,
     MAX_ACTION_BYTES,
+    MENU,
     MORE,
     REFINE,
     SEARCH,
@@ -69,6 +71,7 @@ class Conversation:
             )  # fmt: skip
             chat = session.scalars(mine).one()
         chat.blocked_at = None  # writing again after blocking the bot: it may send again
+        chat.seen_at = utcnow()  # silent for bot.inactive_days: deleted (consent.prune)
         return chat
 
     def _recent(self, chat: BotChatRow) -> str | None:
@@ -88,6 +91,15 @@ class Conversation:
         """One row for the admin's bot tab (usage.py)."""
         await self._in_db(lambda s: usage.record(s, self.channel, chat_id, kind, q, results))
 
+    async def gate(self, chat_id: str) -> Reply | None:
+        """The entry screen, until the chat agreed (consent.py); None once it has."""
+        agreed = await self._in_db(lambda s: consent.given(s, self.channel, chat_id))
+        return None if agreed else consent.screen(self.settings())
+
+    async def menu(self, chat_id: str, lang_hint: str) -> Reply:
+        lang = await self._in_db(lambda s: self._chat(s, chat_id, lang_hint).lang)
+        return menu.home(self.settings(), lang)
+
     async def start(self, chat_id: str, lang_hint: str) -> Reply:
         def work(session: Session) -> str:
             usage.record(session, self.channel, chat_id, "start")
@@ -97,7 +109,8 @@ class Conversation:
             return chat.lang
 
         lang = await self._in_db(work)
-        return Reply(say("welcome", lang), buttons=self._starters(lang), ask_location=True)
+        home = menu.home(self.settings(), lang)
+        return Reply(say("welcome", lang), buttons=home.buttons, photo=consent.banner(self.settings()), after=say("keyboard_hint", lang), ask_location=True)
 
     async def text(self, chat_id: str, text: str, lang_hint: str) -> Reply:
         cfg = self.settings()
@@ -112,6 +125,8 @@ class Conversation:
         lang, message, chat = await self._in_db(work)
         if text.strip() in (label("my_events", "he"), label("my_events", "en")):  # the keyboard's button
             return await self.reminders(chat_id, lang)
+        if text.strip() in (label("menu_home", "he"), label("menu_home", "en")):
+            return menu.home(cfg, lang)
         if message.kind in ("greeting", "empty"):
             return Reply(say("greeting", lang), buttons=self._starters(lang))
         if message.kind == "thanks":
@@ -142,6 +157,13 @@ class Conversation:
         return await self._search(chat_id, chat.lang, self._recent(chat) or "", chat.last_cheap, (lat, lng))
 
     async def press(self, chat_id: str, action: str, lang_hint: str) -> Reply:
+        if action.startswith(CONSENT):  # before anything is kept: no row, no usage tag until "I agree"
+            if action == consent.AGREE:
+                await consent.agree(self, chat_id, lang_hint)
+                return await self.start(chat_id, lang_hint)
+            await consent.decline(self, chat_id)
+            return Reply(say("declined", lang_hint))
+
         def work(session: Session) -> BotChatRow:
             usage.record(session, self.channel, chat_id, "press", q=action.partition(":")[0] or action)
             return self._chat(session, chat_id, lang_hint)
@@ -165,6 +187,8 @@ class Conversation:
             return await self._search(chat_id, lang, action.removeprefix(SEARCH), False, None)
         if action.startswith(REFINE):
             return await self._refine(chat, lang, action.removeprefix(REFINE))
+        if action.startswith(MENU):
+            return await menu.press(self, chat_id, lang, action)
         if action.startswith(DIGEST):
             return await digest.choose(self, chat_id, lang, action.removeprefix(DIGEST))
         if (reply := await event_actions.press(self, chat_id, lang, action)) is not None:

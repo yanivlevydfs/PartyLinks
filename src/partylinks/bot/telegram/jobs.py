@@ -17,7 +17,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from telegram.error import Forbidden, TelegramError
 from telegram.ext import AIORateLimiter, ExtBot
 
-from partylinks.bot.core import alerts, channel, digest, refs, remind, usage
+from partylinks.bot.core import alerts, channel, consent, digest, refs, remind, usage
 from partylinks.bot.core.card import cards, money
 from partylinks.bot.core.phrases import duration, label, say
 from partylinks.bot.core.reply import Card, Reply
@@ -128,6 +128,7 @@ async def _with_bot(service: ScrapeService, name: str, work: Callable[[ExtBot], 
 
 
 def _tidy(settings: Settings, db: Database) -> None:
+    consent.prune(settings, db)  # first: an inactive chat's alerts and reminders go with it
     alerts.prune(db)
     remind.prune(db)
     channel.prune(db)
