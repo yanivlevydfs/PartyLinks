@@ -36,7 +36,6 @@ def html(t: dict) -> str:
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>{css}
 *{{margin:0;box-sizing:border-box}} html{{overflow:hidden}}
 body{{width:1200px;height:630px;overflow:hidden;background:#07060c;font-family:Heebo,sans-serif;color:#fff;position:relative}}
-.grid{{position:absolute;inset:0;background-image:linear-gradient(rgb(255 255 255/.045) 1px,transparent 1px),linear-gradient(90deg,rgb(255 255 255/.045) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse at 50% 45%,#000 30%,transparent 80%)}}
 .glow1{{position:absolute;width:700px;height:700px;left:-200px;top:-260px;background:radial-gradient(circle,rgb(255 46 147/.32),transparent 65%)}}
 .glow2{{position:absolute;width:760px;height:760px;right:-260px;bottom:-380px;background:radial-gradient(circle,rgb(25 227 255/.18),transparent 65%)}}
 .glow3{{position:absolute;width:640px;height:640px;right:120px;top:-300px;background:radial-gradient(circle,rgb(157 77 255/.28),transparent 65%)}}
@@ -51,7 +50,7 @@ h1 .g{{background:linear-gradient(100deg,#ff2e93,#9d4dff 55%,#19e3ff);-webkit-ba
 .foot{{position:absolute;bottom:34px;left:84px;right:84px;display:flex;justify-content:space-between;align-items:center;font-weight:700}}
 .brand{{font-family:Rubik;font-weight:900;font-size:30px;letter-spacing:2px}} .brand span{{color:#ff2e93;text-shadow:0 0 14px #ff2e93}}
 .badge{{font-size:20px;padding:8px 18px;border-radius:999px;background:linear-gradient(100deg,#ff2e93,#9d4dff);box-shadow:0 0 30px rgb(255 46 147/.45)}}
-</style></head><body><div class=grid></div><div class=glow1></div><div class=glow3></div><div class=glow2></div>
+</style></head><body><div class=glow1></div><div class=glow3></div><div class=glow2></div>
 <div class=wrap dir="{t['dir']}"><div class=icon></div><div class=text><h1>{t['l1']}<br><span class=g>{t['l2']}</span></h1>
 <div class=sub>{t['sub']}</div><div class=chips>{chips}</div></div></div>
 <div class=foot dir="{t['dir']}"><span class=brand>SPOT<span>X</span>.FUN</span><span class=badge>{t['badge']}</span></div></body></html>"""

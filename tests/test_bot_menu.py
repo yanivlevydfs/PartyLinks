@@ -123,4 +123,4 @@ def test_the_entry_screen_is_one_picture_with_its_buttons(tmp_path: Path) -> Non
     _run(render.send(bot, CHAT, consent.screen(settings_for(tmp_path)), "he"))  # type: ignore[arg-type]
     assert [kind for kind, _ in bot.sent] == ["photo"]
     sent = bot.sent[0][1]
-    assert sent["photo"].endswith("/bot-banner-he.png") and "<b>" in sent["caption"] and sent["reply_markup"]
+    assert "/bot-banner-he.png" in sent["photo"] and "<b>" in sent["caption"] and sent["reply_markup"]

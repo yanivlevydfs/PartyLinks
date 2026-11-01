@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from partylinks.bot.core.conversation import Conversation
 
 AGREE, DECLINE = CONSENT + "yes", CONSENT + "no"
-BANNER = "/bot-banner-{lang}.png"  # web/public, made by scripts/bot_banner.py
+BANNER = "/bot-banner-{lang}.png?v=2"  # web/public, made by scripts/bot_banner.py; ?v: Telegram caches by URL, bump it with the picture
 
 
 def banner(cfg: Settings, lang: str = "he") -> str:
