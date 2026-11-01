@@ -106,6 +106,37 @@ mail:
   instant_max_age_minutes: 180      # matches older than this are never emailed (turning instant on sends no backlog)
   matcher_interval_minutes: 15      # how often new events are matched against alerts
 
+# The Telegram bot (src/partylinks/bot, docs/bot.md): search in chat, event cards with ticket links, alerts.
+# Off until both secrets are set, in the environment only: PARTYLINKS_BOT__TELEGRAM_TOKEN (from @BotFather)
+# and PARTYLINKS_BOT__TELEGRAM_WEBHOOK_SECRET (any 1-256 of A-Z a-z 0-9 _ -). Every value below can be
+# changed in the admin's config tab.
+bot:
+  enabled: true
+  # webhook_url: https://spotx.fun/bot/telegram   # default: site.base_url + /bot/telegram (a tunnel on localhost)
+  results: 5                  # event cards per answer
+  inline_results: 10          # cards offered by "@bot ..." typed in any chat
+  max_text_length: 200        # longer messages are cut
+  messages_per_minute: 20     # per chat; past it the bot asks to wait
+  inline_per_minute: 60       # "@bot ..." queries per user (one per keystroke); past it, no answer
+  memory_minutes: 60          # "ומחר?" / "and in Haifa?" continues a search this recent
+  near_km: 10                 # "near me": events within this distance of the shared location
+  max_alerts: 10              # alerts per chat
+  alert_interval_minutes: 30  # how often new events are matched against the chats' alerts and sent
+  alert_max_events: 5         # event cards in one alert message (the soonest)
+  alert_max_per_day: 10       # alert cards per chat in any 24 hours
+  reminder_hours: [24, 2]     # ⏰ under a card: a message this many hours before the start, each
+  max_reminders: 30           # events with a reminder, per chat
+  max_watches: 20             # 👁 watched events (price drop, sold out, tickets back), per chat
+  watch_min_drop_percent: 5   # a smaller price drop is not sent
+  similar_results: 5          # 🔁 similar events shown
+  digest_weekday: 3           # 📬 /digest (opt-in): the weekend's picks on this day (0 Monday .. 6 Sunday)
+  digest_hour: 12             #   at this hour, site time zone
+  digest_results: 5
+  # channel_id: "@spotx_events"  # a Telegram channel (the bot its admin): a daily post of tonight's picks,
+  channel_hour: 16            #   the weekend's on digest_weekday; empty: no posts
+  channel_results: 5
+  usage_days: 180             # usage rows kept for the admin's bot tab
+
 # Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
 # https, no framing), vulnerability-scanner and data-harvester blocking, per-IP rate limits and
 # temporary bans (probes such as /.env or /wp-login.php, wrong admin tokens, rate-limit hits).

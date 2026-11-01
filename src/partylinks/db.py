@@ -319,7 +319,7 @@ class ClickRow(Base):
     source: Mapped[str] = mapped_column(String(32), index=True)
     title: Mapped[str] = mapped_column(Text)
     city: Mapped[str | None] = mapped_column(Text)
-    # Where on our page: buy | alt | bar | seo (utm.PLACEMENTS); None = unknown / old link.
+    # Where on our page: buy | alt | bar | seo | tg (utm.PLACEMENTS); None = unknown / old link.
     placement: Mapped[str | None] = mapped_column(String(8))
 
 
@@ -934,6 +934,7 @@ import partylinks.ads.models
 import partylinks.alerts.models
 import partylinks.artistdb
 import partylinks.artwork.models
+import partylinks.bot.models
 import partylinks.config_store.models
 import partylinks.mail.models
 import partylinks.plans.models

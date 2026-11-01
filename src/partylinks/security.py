@@ -47,6 +47,9 @@ APP_API_PATHS = ("/plans", "/api/me")
 # Card artwork and the site's own files: one home page draws well over a hundred, so they don't
 # count toward the general rate limit (a few reloads banned a visitor).
 STATIC_PATHS = ("/images/", "/artwork/", "/assets/", "/icons/", "/favicon")
+# Chat apps' webhooks (partylinks.bot): every user's message comes from the app's few servers, so a
+# per-IP limit would ban the app; the route checks its own secret on every request.
+WEBHOOK_PATHS = ("/bot/telegram",)
 
 CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "default-src 'self'",
@@ -271,7 +274,7 @@ class SecurityMiddleware:
                 self.guard.strike(ip, cfg, f"probe {path[:80]}", now)
             return await reject(404, "not found")
         # RFC 8058 one-click unsubscribe comes from mail providers, some of which send no User-Agent.
-        if not agent and path not in ("/health", "/api/email/unsubscribe"):
+        if not agent and path not in ("/health", "/api/email/unsubscribe", *WEBHOOK_PATHS):
             return await reject(403, "forbidden")
         # Local calls (the startup cache warm-up runs through httpx) and health probes pass.
         blocked = any(bot.lower() in agent.lower() for bot in cfg.blocked_bots)
@@ -280,7 +283,7 @@ class SecurityMiddleware:
         script = any(c.lower() in agent.lower() for c in cfg.blocked_clients)
         if script and not local and path.startswith((*DATA_PATHS, *APP_API_PATHS, "/go/")):
             return await reject(403, "forbidden")
-        if not local and not owner and not path.startswith(STATIC_PATHS):
+        if not local and not owner and not path.startswith((*STATIC_PATHS, *WEBHOOK_PATHS)):
             limit = cfg.admin_rate_limit_per_minute if admin else cfg.rate_limit_per_minute
             if self.guard.over_limit(ip, "admin" if admin else "all", limit, now):
                 self.guard.strike(ip, cfg, "rate limit", now)

@@ -816,3 +816,23 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **כתיבה:** בכל סבב של eventer (‏`venues_path`: קטלוג אחד, דף לכל מקום, לוגו לכל מקום); upsert שורה-שורה ‏(~80). הלוגו מומר ונשמר רק כשה-`logo_url` השתנה. מקומית: ‏`partylinks venue-profiles`.
 - **קריאה:** ‏`/categories` - ‏`SELECT` של כל הפרופילים בלי `logo` (‏`defer`), ועוד `latitude`, ‏`longitude` לשאילתת ה-facets הקיימת (נקודה לכל שם מקום, להתאמה לפי מיקום). דף מקום (שרת ו-`/landing-info`) - הפרופילים ועוד `SELECT latitude, longitude ... WHERE venue_name ILIKE <שם> LIMIT 1`. ‏`/venue-logos/<key>.webp` - ה-`logo` של שורה אחת לפי PK.
 - **Tests:** ‏`tests/test_venue_profiles.py`.
+
+### 2026-11-01 (בוט Telegram: חיפוש בצ'אט והתראות)
+- **טבלאות חדשות** (‏`partylinks/bot/models.py`, נוצרות ב-`create_schema`):
+  - `bot_chats`: ‏`id` serial PK, ‏`channel` (‏`telegram`), ‏`chat_id`, ‏UNIQUE ‏(`channel`, ‏`chat_id`); ‏`lang`, ‏`lang_chosen`, החיפוש האחרון (`last_query`, ‏`last_offset`, ‏`last_cheap`, ‏`last_lat`/`last_lng`, ‏`last_at`), ‏`pending_alert`, ‏`created_at`, ‏`blocked_at`. בלי שם ובלי טלפון; ‏`/stop` מוחק את השורה.
+  - `bot_alerts`: ‏`id` serial PK, ‏`chat_ref` ‏FK ל-`bot_chats` ‏CASCADE (אינדקס), ‏`query` (מילות החיפוש: ‏`Criteria(q=query)`), ‏UNIQUE ‏(`chat_ref`, ‏`query`), ‏`active`, ‏`created_at`.
+  - `bot_alert_hits`: ‏PK ‏(`alert_id`, ‏`event_id`) - המפתח מונע שליחה כפולה; ‏`alert_id` ‏FK ‏CASCADE, ‏`event_id` עם אינדקס ובלי FK, ‏`matched_at`, ‏`sent_at`.
+  - `bot_state`: שורה אחת (`id` = 1), ‏`cursor` של ה-matcher של הבוט.
+- **שאילתות:** חיפוש בצ'אט הוא `build_event_filters` של האתר (כמו `/events`), ‏`count(*)` ועמוד של 5 (`bot.results`); "קרוב אליי" מוסיף `latitude/longitude BETWEEN` (קופסה) ומרחק שטוח בריבוע `<= r²`, ממוין לפיו. כל `bot.alert_interval_minutes` (30) ב-worker: ‏`DELETE FROM bot_alert_hits WHERE event_id NOT IN (<upcoming>)`; האירועים החדשים מ-`alerts.matcher.new_event_ids` (אותה שאילתה של ההתראות באתר, הוצאה לפונקציה בלי שינוי); התאמה ב-`matcher._Sets` לכל `query` שונה; ‏`INSERT ... ON CONFLICT DO NOTHING` ל-hits; ‏hits שלא נשלחו `JOIN bot_alerts JOIN bot_chats JOIN events WHERE <upcoming>`, וספירת מה שנשלח לכל צ'אט ב-24 שעות. אחרי שליחה: ‏`UPDATE bot_alert_hits SET sent_at`.
+- **Tests:** ‏`tests/test_bot_conversation.py`, ‏`tests/test_bot_telegram.py`, ‏`tests/test_bot_understand.py`.
+
+### 2026-11-01 (בוט Telegram, שלבים 1ב, 1ג, 2: תזכורות, מעקבים, דומים, יומן, סיכום, ערוץ, סטטיסטיקה)
+- **עמודות חדשות ב-`bot_chats`** (נוספות ב-`create_schema`): ‏`digest_on` ‏boolean ‏DEFAULT false, ‏`digest_query` text, ‏`digest_sent_at`.
+- **טבלאות חדשות** (‏`partylinks/bot/models.py`):
+  - `bot_refs`: ‏`id` serial PK, ‏`event_id` UNIQUE. מספר קצר לאירוע בכפתורים (callback עד 64 בתים). ‏`INSERT ... ON CONFLICT DO NOTHING` ו-`SELECT ... WHERE event_id IN (...)` לכל עמוד כרטיסים.
+  - `bot_reminders`: ‏`id` serial PK, ‏`chat_ref` FK ‏CASCADE (אינדקס), ‏`event_id` (אינדקס), ‏`remind_at` (אינדקס), ‏`sent_at`, ‏UNIQUE ‏(`chat_ref`, ‏`event_id`, ‏`remind_at`).
+  - `bot_watches`: ‏`id` serial PK, ‏`chat_ref` FK ‏CASCADE (אינדקס), ‏`event_id` (אינדקס), ‏`last_price` numeric(10,2), ‏`last_sold_out`, ‏`created_at`, ‏UNIQUE ‏(`chat_ref`, ‏`event_id`).
+  - `bot_channel_posts`: ‏PK ‏(`channel`, ‏`event_id`), ‏`posted_at` (אינדקס).
+  - `bot_usage`: ‏`id` serial PK, ‏`at` (אינדקס), ‏`channel`, ‏`chat` (hash של ה-chat id, ‏NULL אחרי `/stop`), ‏`kind`, ‏`q`, ‏`results`.
+- **שאילתות:** בכל סבב של ה-job ‏(`bot.alert_interval_minutes`): ‏`DELETE ... WHERE event_id NOT IN (<upcoming>)` ב-`bot_refs`, ‏`bot_reminders` (גם שנשלחו), ‏`bot_watches`; ‏`bot_channel_posts` מעל 60 יום; ‏`bot_usage` מעל `bot.usage_days`. תזכורות: ‏`JOIN bot_chats JOIN events WHERE remind_at <= now AND sent_at IS NULL AND <upcoming>`, ואז `UPDATE sent_at`. מעקבים: כל `bot_watches JOIN events` (שורה לכל מעקב) ועדכון `last_*`. דומים: ‏`build_event_filters(genre, area)` עם `LIMIT`. סיכום וערוץ: ‏`build_event_filters(weekend | on_date)` ‏`LEFT JOIN (clicks של 7 ימים GROUP BY event_id)` ממוין לפי הקליקים. טאב האדמין: ‏`bot_usage WHERE at >= since` ו-`count(*)` על טבלאות הבוט ועל `clicks WHERE placement = 'tg'`.
+- **Tests:** ‏`tests/test_bot_features.py`.

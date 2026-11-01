@@ -8,6 +8,7 @@ import { Overrides } from "../config_store/AdminOverrides";
 import { SignInButton } from "../accounts/AccountSlot";
 import { AdminEmail } from "../accounts/AdminEmail";
 import { AdminUsers } from "../accounts/AdminUsers";
+import { AdminBot } from "../bot/AdminBot";
 
 // --------------------------------------------------------------------------- api
 const TOKEN_KEY = "partylinks-admin-token";
@@ -61,7 +62,7 @@ const ago = (iso: string | null | undefined) => {
 const adminClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: true } } });
 
 // --------------------------------------------------------------------------- page
-const TABS = ["overview", "health", "clicks", "searches", "users", "email", "sponsored", "sources", "runs", "config", "maintenance"] as const;
+const TABS = ["overview", "health", "clicks", "searches", "bot", "users", "email", "sponsored", "sources", "runs", "config", "maintenance"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage() {
@@ -125,6 +126,7 @@ function Admin() {
       {tab === "maintenance" && <Maintenance data={ov.data} />}
       {tab === "users" && <AdminUsers />}
       {tab === "email" && <AdminEmail />}
+      {tab === "bot" && <AdminBot />}
     </main>
   );
 }

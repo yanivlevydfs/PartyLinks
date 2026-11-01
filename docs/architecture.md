@@ -213,6 +213,19 @@ address or sign-in / unsubscribe token in any log line, tracebacks too), and `se
 
 Details, tables and endpoints: [accounts](accounts.md); the design record: [accounts-alerts-design.md](accounts-alerts-design.md).
 
+## The Telegram bot (`bot/`)
+
+A chat bot that finds events from what people write ("טכנו בתל אביב בסופ״ש", "jazz tonight") and sends
+event cards with ticket links (through `/go/`, `at=tg`). `bot/core/` is the conversation and knows no chat
+app; `bot/telegram/` is the adapter. Search is `api.build_event_filters` with the site's `smart_filters`, so
+the bot finds what the site finds. Telegram posts updates to `POST /bot/telegram` in the web process (a
+webhook, checked by its secret, outside the per-IP rate limit); the worker matches new events against the
+chats' alerts (`alerts.matcher`'s new events and filter sets) and sends them, with reminders, price and
+ticket watches, the opt-in weekly digest and a daily broadcast-channel post. Its usage is counted in
+`bot_usage` for the admin's bot tab (`GET /admin/api/bot`). Hook lines only: `api.py`
+installs the route, `config.py` adds `bot:`, `db.py` imports the tables, `scheduler.py` adds the job,
+`security.py` exempts the webhook, `utm.py` knows `tg`. Details: [bot](bot.md).
+
 ## Code layout
 
 ```

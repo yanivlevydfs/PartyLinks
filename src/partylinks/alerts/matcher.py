@@ -119,6 +119,28 @@ def retire_unasked(db: Database) -> int:
         return len(ids)
 
 
+def new_event_ids(session: Session, since: datetime, upto: datetime) -> list[str]:
+    """The upcoming events that are news in (since, upto]: the site's alerts and the bot's (partylinks.bot)."""
+    # New = a group whose first listing was first seen in this window (a second listing of a party
+    # already announced is not news), shown by its primary listing.
+    group = func.coalesce(EventRow.group_id, EventRow.id)
+    new_groups = (
+        select(group).group_by(group)
+        .having(func.min(EventRow.first_seen_at) > since, func.min(EventRow.first_seen_at) <= upto)
+    )  # fmt: skip
+    # A show the source already listed before this window is not news, at any date: a re-listing under
+    # a new id, or one more date of it (a daily tour adds a slot every day, a play adds shows). Without
+    # this, those dates came back to the bell every pass, even after the user cleared them.
+    older = aliased(EventRow)
+    relisted = exists().where(
+        older.source == EventRow.source, older.title == EventRow.title,
+        older.id != EventRow.id, older.first_seen_at <= since,
+    )  # fmt: skip
+    return list(session.scalars(
+        select(EventRow.id).where(group.in_(new_groups), EventRow.is_primary.is_(True), upcoming_filter(), ~relisted)
+    ))  # fmt: skip
+
+
 def run(settings: Settings, db: Database) -> int:
     """One pass over the events first seen since the last one. Returns the number of new hits."""
     retire_unasked(db)
@@ -131,24 +153,7 @@ def run(settings: Settings, db: Database) -> int:
         if state is None:  # the first pass starts now: no flood of events that were already there
             session.add(AlertStateRow(id=1, cursor=upto))
             return 0
-        # New = a group whose first listing was first seen in this window (a second listing of a party
-        # already announced is not news), shown by its primary listing.
-        group = func.coalesce(EventRow.group_id, EventRow.id)
-        new_groups = (
-            select(group).group_by(group)
-            .having(func.min(EventRow.first_seen_at) > state.cursor, func.min(EventRow.first_seen_at) <= upto)
-        )  # fmt: skip
-        # A show the source already listed before this window is not news, at any date: a re-listing under
-        # a new id, or one more date of it (a daily tour adds a slot every day, a play adds shows). Without
-        # this, those dates came back to the bell every pass, even after the user cleared them.
-        older = aliased(EventRow)
-        relisted = exists().where(
-            older.source == EventRow.source, older.title == EventRow.title,
-            older.id != EventRow.id, older.first_seen_at <= state.cursor,
-        )  # fmt: skip
-        new_ids = list(session.scalars(
-            select(EventRow.id).where(group.in_(new_groups), EventRow.is_primary.is_(True), upcoming_filter(), ~relisted)
-        ))  # fmt: skip
+        new_ids = new_event_ids(session, state.cursor, upto)
         state.cursor = upto
         if not new_ids:
             return 0

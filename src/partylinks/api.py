@@ -34,6 +34,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from partylinks import clicks, searches, seo, utm
 from partylinks import status as server_status
 from partylinks.accounts import install as install_accounts
+from partylinks.bot import install as install_bot
 from partylinks.accounts import sign_in_state
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
@@ -876,6 +877,7 @@ def create_app(
     app.include_router(admin_router)
     app.include_router(weather_router)
     install_accounts(app, settings)  # optional Google accounts: /auth, /api/me, the admin users tab
+    install_bot(app)  # the Telegram bot's webhook (partylinks.bot); off until its secrets are set
     # The React site (web/), once built with `npm run build`. Mounted last so API routes win.
     site = Path(__file__).resolve().parents[2] / "web" / "dist"
     seo.register(app, site)  # server-rendered pages + sitemap/robots/llms.txt, before the static catch-all
