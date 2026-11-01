@@ -1440,6 +1440,9 @@ sources:
       - {host: matnaskg, venue_name: היכל התרבות קריית גת, city: קריית גת}
       - {host: heichal-hm, venue_name: היכל התרבות איירפורט סיטי, city: איירפורט סיטי}
       - {host: mishkanb7, venue_name: המשכן לאמנויות הבמה באר שבע, city: באר שבע}
+      # Be'er Sheva's community centres (its title says Beit Shemesh; the halls are Be'er Sheva's).
+      - {host: matnasbs, venue_name: "מתנ\"סים באר שבע", city: באר שבע}
+      - {host: sdotnegev, venue_name: היכל התרבות שדות נגב, city: שדות נגב}
       # Kivunim, Be'er Sheva's culture company (kivunim7.co.il): shows, Katedra, youth and seniors.
       - {host: kivunimb7, venue_name: כיוונים באר שבע, city: באר שבע, skip_categories: ["מוזאונים"],
          # Youth counselling, open "until 2027-12-31 00:00": services, not events.
