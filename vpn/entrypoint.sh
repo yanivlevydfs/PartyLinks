@@ -27,7 +27,7 @@ pull-filter ignore "ifconfig-ipv6"
 nobind
 resolv-retry infinite
 script-security 2
-mssfix 1300
+mssfix ${VPN_MSSFIX:-1250}
 data-ciphers ${VPN_CIPHERS:-AES-256-GCM:AES-128-GCM:AES-256-CBC}
 data-ciphers-fallback AES-256-CBC
 auth ${VPN_AUTH:-SHA256}
@@ -35,6 +35,11 @@ remote-cert-tls server
 auth-nocache
 verb ${VPN_VERB:-3}
 auth-user-pass $dir/auth.txt
+# OpenVPN starts tunproxy with its own environment only: pass tunproxy's settings through setenv.
+setenv VPN_PROXY_PORT "${VPN_PROXY_PORT:-8888}"
+setenv VPN_ALLOW "${VPN_ALLOW:-fd00::/8 10.0.0.0/8 127.0.0.1 ::1}"
+setenv VPN_MTU "${VPN_MTU:-1200}"
+setenv VPN_DNS "${VPN_DNS:-1.1.1.1}"
 ca $dir/ca.crt
 cert $dir/client.crt
 key $dir/client.key

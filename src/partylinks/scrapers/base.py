@@ -185,8 +185,8 @@ class BaseScraper[S: SourceSettings](ABC):
             now = time.monotonic()
             # The shared working one first, recently dead ones last (stable: the shuffle stays among equals).
             israeli.sort(key=lambda p: (p != _israel_good, now - _israel_dead.get(p, -DEAD_FOR_SECONDS) < DEAD_FOR_SECONDS))
-            if http.israel_vpn:  # our own exit always first; the free proxies only if it fails
-                israeli = [http.israel_vpn] + [p for p in israeli if p != http.israel_vpn]
+            if http.israel_vpn:  # our own exit and nothing else: the free proxies and the pool don't work for these sites
+                israeli, pool = [http.israel_vpn], []
             pool = israeli + pool
             self._israeli = set(israeli)
         else:

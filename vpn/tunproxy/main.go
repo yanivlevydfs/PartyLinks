@@ -93,7 +93,7 @@ func main() {
 	}
 
 	listen := "[::]:" + env("VPN_PROXY_PORT", "8888")
-	log.Printf("tunproxy: VPN address %s, HTTP proxy on %s for %v", local, listen, allow)
+	log.Printf("tunproxy: VPN address %s, MTU %d, DNS %s, HTTP proxy on %s for %v", local, mtu, dns, listen, allow)
 	// The VPN gives an IPv4 address only: a site's IPv6 address would hang, so dial over IPv4.
 	dial := func(ctx context.Context, _, address string) (net.Conn, error) {
 		return tnet.DialContext(ctx, "tcp4", address)
