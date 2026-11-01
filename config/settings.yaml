@@ -443,6 +443,9 @@ enrichment:
     tours: ["סיור", "סיורים", "סיורי", "guided tour"]
     dance: ["מחול", "להקת מחול", "בלט", "ballet"]
     exhibitions: ["תערוכה", "תערוכת", "exhibition", "museum"]
+    sport: ["קבוצת ריצה", "אימוני", "כדורסל", "כדורגל"]
+    yoga_wellness: ["טאי צ'י", "יוגה", "פילאטיס", "מדיטציה"]
+    nightclubs: ["מסיבה", "מסיבת", "party", "soirée", "soiree", "festa", "fiesta", "baile", "club night", "pub crawl"]
   # Sources that sell one kind of event: its genre when neither their category nor the text names one
   # (TikTik / LiveEvents / TicketHouse list concerts abroad by artist name; Pres the Cameri and Habima).
   source_default_genres:
@@ -450,6 +453,11 @@ enrichment:
     livevents: [live_show]
     tickethouse: [live_show]
     pres: [theatre]
+    # Municipal culture halls (shows the title alone doesn't name), concert trips abroad, party sites.
+    smarticket: [culture]
+    ticketplace: [live_show]
+    happytlv: [nightclubs]
+    shotgun: [nightclubs]
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
@@ -462,9 +470,6 @@ enrichment:
     rnb: [hip_hop]
   # The genre filter's families, in screen order: picking one ("g_parties") shows every member's events
   # (and a member family's sub-genres). A genre may sit in more than one; every genre needs one.
-    sport: ["קבוצת ריצה", "אימוני", "כדורסל", "כדורגל"]
-    yoga_wellness: ["טאי צ'י", "יוגה", "פילאטיס", "מדיטציה"]
-    nightclubs: ["מסיבה", "מסיבת", "party", "soirée", "soiree", "festa", "fiesta", "baile", "club night", "pub crawl"]
   genre_groups:
     g_parties: [electronic, mainstream, pop, hip_hop, rnb, reggaeton_latin, dancehall_reggae, disco_funk, dark_wave,
                 throwback, nightclubs, pool_party, karaoke, festival, nature_party, open_bar, over_40, youth]
@@ -472,11 +477,6 @@ enrichment:
     g_stage: [theatre, stand_up, cinema, dance]
     g_culture: [culture, exhibitions, lectures, workshops, tours, religious, holidays, markets]
     g_kids: [kids, attractions, pools, escape_rooms]
-    # Municipal culture halls (shows the title alone doesn't name), concert trips abroad, party sites.
-    smarticket: [culture]
-    ticketplace: [live_show]
-    happytlv: [nightclubs]
-    shotgun: [nightclubs]
     g_food: [food, happy_hour, fine_dining, coffee_carts, open_bar]
     g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, environment, volunteering, team_activities]
     g_tech: [hi_tech, conference, work_spaces, meetups]
