@@ -83,6 +83,8 @@ class SourceSettings(BaseModel):
     proxied: bool = True
     # The site only answers Israeli IPs: try `http.israel_proxy` first (see HttpSettings).
     israel_proxy: bool = False
+    # Go out only through our Israeli VPN (http.israel_vpn, Railway production): no free proxies, no pool.
+    vpn: bool = False
     # This source's run limit when it needs longer than scheduler.run_timeout_seconds.
     run_timeout_seconds: float | None = Field(None, gt=0)
 
@@ -178,17 +180,18 @@ class BaseScraper[S: SourceSettings](ABC):
         # A proxied source starts on the first URL of `source_proxy` and moves to the next when the
         # proxy fails or the site refuses its IP (403 / is_blocked). A per-source proxy wins.
         pool = [p.strip() for p in (http.source_proxy or "").split(",") if p.strip()] if settings.proxied else []
-        if settings.israel_proxy:
+        if settings.vpn and http.israel_vpn:  # our own exit and nothing else: no free proxies, no pool
+            # The source's name as the proxy user, so the vpn logs say who asked (@source:onecity).
+            vpn = http.israel_vpn if "@" in http.israel_vpn else http.israel_vpn.replace("://", f"://{self.name}@", 1)
+            pool = [vpn]
+            self._israeli = {vpn}
+        elif settings.israel_proxy:
             israeli = [p.strip() for p in (http.israel_proxy or "").split(",") if p.strip()]
             israeli = list(dict.fromkeys(_israeli_feed(http.israel_proxy_feed) + israeli))
             random.shuffle(israeli)  # no known good one yet: walk the free proxies in random order
             now = time.monotonic()
             # The shared working one first, recently dead ones last (stable: the shuffle stays among equals).
             israeli.sort(key=lambda p: (p != _israel_good, now - _israel_dead.get(p, -DEAD_FOR_SECONDS) < DEAD_FOR_SECONDS))
-            if http.israel_vpn:  # our own exit and nothing else: the free proxies and the pool don't work for these sites
-                # The source's name as the proxy user, so the vpn logs say who asked (@source:onecity).
-                vpn = http.israel_vpn if "@" in http.israel_vpn else http.israel_vpn.replace("://", f"://{self.name}@", 1)
-                israeli, pool = [vpn], []
             pool = israeli + pool
             self._israeli = set(israeli)
         else:

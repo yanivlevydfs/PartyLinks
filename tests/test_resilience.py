@@ -440,8 +440,10 @@ def test_israel_proxy_sources_try_israeli_ips_first_then_the_usual_pool() -> Non
 
 def test_israel_vpn_replaces_every_other_proxy() -> None:
     http = HttpSettings(source_proxy="http://pool:1", israel_proxy="http://il1:1, http://il2:2", israel_vpn="http://vpn:8888")
-    scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
+    scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True, vpn=True), http, "UTC")
     assert scraper.http.proxy == f"http://{scraper.name}@vpn:8888" and scraper._spare_proxies == []
+    no_vpn = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")  # barak: the free proxies
+    assert no_vpn.http.proxy in {"http://il1:1", "http://il2:2"}
     plain = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
     assert plain.http.proxy == "http://pool:1"
 

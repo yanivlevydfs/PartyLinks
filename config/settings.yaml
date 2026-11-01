@@ -1186,6 +1186,7 @@ sources:
     ticket_groups_path: /api/presentations/{id}/ticketGroups
     event_page_path: /order/{id}
     skip_titles: ["בדיקה", "שוברים", "תשלום בקופה"]
+    vpn: true  # our Israeli VPN only (Railway production)
     hosts:
       - {key: lessin, url: "https://lessin.presglobal.store", venue: "תיאטרון בית ליסין", city: "תל אביב"}
       - {key: ipo, url: "https://ipo.presglobal.store", city: "תל אביב"}
@@ -1367,6 +1368,7 @@ sources:
     skip_url_words: ["זאפה", "אמפי-שוני"]   # read by the zappa source
     # A page with neither pageMeta nor an Event JSON-LD is logged (status, size, title, markers).
     # One with a challenge marker moves to the next proxy; max_empty_streak such pages in a row stop
+    vpn: true  # our Israeli VPN only (Railway production)
     # the run as blocked instead of running into the 30-min timeout.
     challenge_markers: ["Access Denied", "bm-verify", "_sec/cp_challenge", "Please enable JavaScript", "captcha", "Pardon Our Interruption"]
     diagnostic_markers: ["akamai", "_abck", "sec-if-cpt"]
@@ -1645,6 +1647,7 @@ sources:
     http:
       impersonate: chrome
 
+    vpn: true  # our Israeli VPN only (Railway production)
   vibez:
     # Vibez (vibez.io): ticketing for communities and party producers (raves, ecstatic dance, club
     # nights). Public JSON API: 5 pages of 20 upcoming events, then each event's description and
@@ -1757,6 +1760,7 @@ sources:
     url_words: ["זאפה", "אמפי-שוני"]
     # A page with neither pageMeta nor an Event JSON-LD is logged (status, size, title, markers).
     # One with a challenge marker moves to the next proxy; max_empty_streak such pages in a row stop
+    vpn: true  # our Israeli VPN only (Railway production)
     # the run as blocked instead of running into the 30-min timeout.
     challenge_markers: ["Access Denied", "bm-verify", "_sec/cp_challenge", "Please enable JavaScript", "captcha", "Pardon Our Interruption"]
     diagnostic_markers: ["akamai", "_abck", "sec-if-cpt"]
@@ -1975,6 +1979,7 @@ sources:
     presentations_path: /api/presentations/
     features_path: /api/features/
     ticket_groups_path: /api/presentations/{id}/ticketGroups
+    vpn: true  # our Israeli VPN only (Railway production)
     order_url: https://cintlv.presglobal.store/order/{id}
     days_ahead: 7
 
@@ -2010,6 +2015,7 @@ sources:
     branches:
       "1291": {venue_name: מובילנד חיפה, address: "משה פלימן 4, קניון עזריאלי", city: חיפה}
       "1293": {venue_name: מובילנד הצוק, address: "יוניצמן 21", city: תל אביב}
+    vpn: true  # our Israeli VPN only (Railway production)
       "1290": {venue_name: מובילנד כרמיאל, address: "החרושת 15, מתחם גן העיר", city: כרמיאל}
       "1292": {venue_name: מובילנד נתניה, address: "גיבורי ישראל 17, מתחם עמי פולג", city: נתניה}
       "1294": {venue_name: מובילנד עפולה, address: "יוסף ברזילי 5, קניון בלו וואלי", city: עפולה}
@@ -2053,6 +2059,7 @@ sources:
     ajax_action: events_table_action
     calendar_path: /events/
     http:
+    vpn: true  # our Israeli VPN only (Railway production)
       concurrency: 2
 
   issta:
@@ -2067,6 +2074,7 @@ sources:
 
   happytlv:
     # HappyTLV: Tel Aviv night-out guide. One sitemap; upcoming party pages (the date is in the path,
+    vpn: true  # our Israeli VPN only (Railway production)
     # ~170) give a schema.org Event with the seller's link, and bars' happy-hour pages (~240) give
     # the deal and its weekly hours, made into one event per day over `happy_hour_days`, under the
     # happy_hour category. Hub pages are skipped. robots.txt allows all but /_api/.
@@ -2160,6 +2168,7 @@ sources:
     # One ~800 KB page through a free Israeli proxy: 30 s ran out on every run (ReadTimeout), Oct 2026.
     run_timeout_seconds: 3600
     http:
+    vpn: true  # our Israeli VPN only (Railway production)
       timeout_seconds: 120
 
   kikarhamusica:
@@ -2214,6 +2223,7 @@ sources:
     max_events: 200
     http:
       concurrency: 4
+    vpn: true  # our Israeli VPN only (Railway production)
       request_delay_seconds: 0.5
 
   festivalim:
@@ -2243,6 +2253,7 @@ sources:
     item_path: /Pages/MainItemPage.aspx
     city: תל אביב-יפו
     http:
+    vpn: true  # our Israeli VPN only (Railway production)
       timeout_seconds: 60       # one ~9 MB response
 
   munievents:
@@ -2381,6 +2392,7 @@ sources:
     city: חיפה
     http:
       concurrency: 4
+    vpn: true  # our Israeli VPN only (Railway production)
       request_delay_seconds: 0.3
 
   ramatganmuni:
@@ -2469,6 +2481,7 @@ sources:
       - {url: https://www.even-yehuda.muni.il, city: אבן יהודה}
       - {url: https://www.tiberias.muni.il, city: טבריה}
       - {url: https://www.tira.muni.il, city: טירה}
+    vpn: true  # our Israeli VPN only (Railway production)
       - {url: https://www.kiryat-ata.org.il, city: קריית אתא}
     http:
       concurrency: 2
@@ -2546,6 +2559,7 @@ sources:
       - /city/באר-שבע-308/
       - /city/בנימינה-1957/
       - /city/הרצליה-314/
+    # No vpn: Akamai challenges the VPN's IP (0 events); the free IL proxies got up to 83 (Nov 2026)
       - /city/זכרון-יעקב-1948/
       - /city/חיפה-והצפון-307/
       - /city/ירושלים-306/
@@ -2654,6 +2668,7 @@ sources:
     venue_name: הצוללת הצהובה
     address: הרכבים 13
     city: ירושלים
+    vpn: true  # our Israeli VPN only (Railway production)
     latitude: 31.7540   # Nominatim: הרכבים 13
     longitude: 35.2129
     http:
