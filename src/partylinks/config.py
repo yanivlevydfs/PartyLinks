@@ -429,6 +429,9 @@ class GeocodingSettings(BaseModel):
     timeout_seconds: float = Field(20, gt=0)
     # A hit further than this from the area its address keywords name is a same-name street elsewhere.
     max_area_distance_m: float = Field(2500, gt=0)
+    # A source point farther than this from a small town (under places_min_population) named as the event's
+    # city is wrong ("קיבוץ דן" on Tel Aviv's opera house); bigger towns use their own radius.
+    small_town_radius_m: float = Field(3000, gt=0)
     # Manual pins, only for places OpenStreetMap doesn't know: venue-name / address keyword
     # (case-insensitive) -> [lat, lon]. Checked first.
     venues: dict[str, tuple[float, float]] = Field(default_factory=dict)

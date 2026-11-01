@@ -774,6 +774,7 @@ geocoding:
   # and ends that pass's lookups: the next pass asks again.
   timeout_seconds: 20
   max_area_distance_m: 2500
+  small_town_radius_m: 3000
   viewbox: "34.739,32.030,34.852,32.147"   # Tel Aviv-Yafo: preferred, not exclusive
   results_per_query: 5
   # Manual pins for recurring venues whose source gives a venue name but no address
@@ -799,6 +800,11 @@ geocoding:
     "היכל התרבות, עמק דותן 49": [31.8991635, 35.0148195]  # Modi'in culture hall, Emek Dotan 49
     "היכל התרבות דרום השרון": [32.1329956, 34.9113417]  # Drom HaSharon culture hall, by Neve Yarak
     "היכל התרבות, דרום השרון": [32.1329956, 34.9113417]  # the same hall as Leaan writes it
+    # Sellers put it in Modi'in (from "חבל מודיעין"), in Ramat Gan and on Tel Aviv's hall (Nov 2026).
+    "היכל התרבות איירפורט": [31.9899, 34.9131]          # Hevel Modi'in culture hall, HaGilboa 4, Airport City
+    "היכל התרבות חבל מודיעין": [31.9899, 34.9131]       # the same hall
+    # The Khan's (Jerusalem) road shows there kept the tenant's city: Nominatim answered in Jerusalem (Nov 2026).
+    "בית ציוני אמריקה": [32.0746, 34.7822]              # Beit Zionei America, Daniel Frisch 1, Tel Aviv
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is

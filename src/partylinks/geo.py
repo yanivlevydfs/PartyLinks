@@ -20,6 +20,7 @@ import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import timedelta
+from functools import cache
 from typing import Any
 
 import httpx
@@ -28,7 +29,7 @@ from sqlalchemy import delete, select
 from partylinks.config import CitySettings, GeocodingSettings
 from partylinks.db import Database, EventRow, GeoCacheRow, bulk_update_by_id, upcoming_filter, utcnow, with_db_retry
 from partylinks.enrichment import UNKNOWN_COUNTRY, AreaMatcher, meters
-from partylinks.places import city_point
+from partylinks.places import city_point, israeli_places
 
 log = logging.getLogger(__name__)
 
@@ -182,6 +183,9 @@ _GENERIC_WORDS = {w.lower() for w in _GENERIC_NAMES} | {
     "התרבות", "תרבות", "המוסיקה", "המוזיקה", "מוסיקה", "מוזיקה", "לאמנויות", "ואומנויות", "אמנויות", "האמנויות",
     "לתרבות", "הקהילתי", "קהילתי", "העירוני", "עירוני", "הבמה", "הספורט", "ספורט", "האירועים", "אירועים",
     "המופעים", "מופעים", "ההופעות", "בית", "העם", "מתנ\"ס", "מתנס", "culture", "music", "arts", "art", "cultural", "events",
+    # Names every town has ("בית יד לבנים", "הספרייה העירונית", "סינמטק") or no place at all ("ישראל").
+    "יד", "לבנים", "ספרייה", "הספרייה", "ספריה", "הספריה", "העירונית", "עירונית", "העירייה", "עירייה", "בניין",
+    "העיר", "סינמטק", "אמפי", "ישראל", "israel", "library", "municipality", "cinematheque", "amphitheater",
 }  # fmt: skip
 
 
@@ -251,6 +255,8 @@ def _venue_match(known: Known, name: str | None, city: str | None = None) -> Poi
     key = venue_key(name)
     if not key:
         return None
+    if _generic_key(key):  # "היכל התרבות" in Airport City took Tel Aviv's: only the one known in this city
+        return (known.get(key) or {}).get(city) if city else None
     if point := _in_city(known.get(key), city):
         return point
     return next(
@@ -261,6 +267,7 @@ def _venue_match(known: Known, name: str | None, city: str | None = None) -> Poi
     )  # fmt: skip
 
 
+@cache  # pure, called per venue on every pass
 def _generic_key(key: str) -> bool:
     """A key made only of kind-of-place words ("יכלהתרבות" = "היכל התרבות"): inside a longer name it
     says nothing about which hall - "היכל התרבות מנשה בגן שמואל" took Tel Aviv's culture hall point."""
@@ -305,9 +312,15 @@ class Geocoder:
     ) -> None:
         self.settings = settings
         self._cities = {c.he: c for c in cities or [] if c.center}
+        if cities is not None:  # small towns too, for the radius check of an event's own city field
+            for town in israeli_places(0):
+                if town.center and town.he not in self._cities:
+                    radius = max(town.radius_m, settings.small_town_radius_m)
+                    self._cities[town.he] = town.model_copy(update={"radius_m": radius})
         self.areas = areas
         self.db = db
         self._city_keys = {_city_key(a) for a in target_city_aliases if a.strip()}
+        self._target = next((c for c in self._cities.values() if _city_key(c.he) in self._city_keys), None)
         self._pins = {k.lower(): v for k, v in settings.venues.items()}
 
     # ------------------------------------------------------------------ public
@@ -418,8 +431,13 @@ class Geocoder:
     def _bad(self, row: Place, point: Point) -> str | None:
         """Why ``point`` is wrong for this event in Israel, or None. One rule for drop_bad_points (clears)
         and locate_missing (places): when they disagreed, every pass cleared what the last one placed."""
+        # A manual pin wins over the sellers' points and the city field: Airport City's hall sat on three wrong
+        # points, one of them Modi'in's centre from "חבל מודיעין" (Nov 2026). The region check still holds.
+        pin = self._pin(row)
+        if pin and meters(pin, point) > self.settings.max_area_distance_m:
+            return "off its pin"
         # An event in Israel (no country) placed abroad: beatradar's "North" sat in Portugal (Oct 2026).
-        if not self._in_its_city(row, point) or not self.areas.in_israel(*point):
+        if (not pin and not self._in_its_city(row, point)) or not self.areas.in_israel(*point):
             return "outside its city"
         # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
         return "region" if self._contradicts(row, point) else None
@@ -433,8 +451,10 @@ class Geocoder:
         )
 
     def _in_its_city(self, row: Place, point: Point) -> bool:
-        """Within the radius of the event's city, when that city is a known one."""
-        city = self._cities.get(row.city or "")
+        """Within the radius of the event's city, when that city is a known one. A row with no city but known
+        to be in the target city is held to it: secrettelaviv's "Hakaron" (Jaffa) kept Nominatim's bare-name
+        answer, "הקרון" in Mateh Binyamin, from before it was marked Tel Aviv (Nov 2026)."""
+        city = self._cities.get(row.city or "") or (self._target if row.in_target_city else None)
         return city is None or meters(city.center, point) <= city.radius_m  # type: ignore[arg-type]
 
     # ------------------------------------------------------------------ sources of coordinates
@@ -558,7 +578,7 @@ class Geocoder:
             retry_before = utcnow() - timedelta(days=self.settings.retry_failed_days)
             todo = list(dict.fromkeys(
                 (city, country) for city, country in places
-                if clean(city) and not known(city, country)
+                if city and country and clean(city) and not known(city, country)
                 and ((hit := cache.get(key(city, country))) is None or (not hit.found and hit.looked_up_at < retry_before))
             ))[: self.settings.max_lookups_per_run]  # fmt: skip
             if todo:

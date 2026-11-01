@@ -24,13 +24,16 @@ import json
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime, timedelta
+from functools import cache
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from partylinks.config import get_settings
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, html_to_text, to_decimal, to_int
+from partylinks.places import PlaceIndex, all_cities
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 UNKNOWN_TENANT = "לא נמצאה מערכת"
@@ -198,6 +201,7 @@ def parse_event(
     prices = [t.price for t in tickets if t.price is not None]
 
     host = tenant_host(tenant.host, s.tenant_domain)
+    hall = None if tenant.rooms else clean_str(performance.get("event_place"))
     category = clean_str(show.get("category")) or tenant.category
     image = clean_str(show.get("image"))
     return ScrapedEvent(
@@ -208,8 +212,8 @@ def parse_event(
         description=html_to_text(performance.get("content") or show.get("content") or show.get("brief")),
         start_at=start,
         end_at=end,
-        venue_name=(None if tenant.rooms else clean_str(performance.get("event_place"))) or tenant.venue_name,
-        city=tenant.city,
+        venue_name=hall or tenant.venue_name,
+        city=_hall_city(hall) or tenant.city,
         source_genres=[category] if category else [],
         images=[f"https://{host}{s.uploads_path}{image}"] if image else [],
         min_price=min(prices, default=None),
@@ -224,6 +228,21 @@ def parse_event(
             "unavailability_msg": message,
         },
     )
+
+
+@cache
+def _localities() -> PlaceIndex:
+    # The configured cities first, so "ירושלים" is Jerusalem and not one of GeoNames' other names for it.
+    enrichment = get_settings().enrichment
+    return PlaceIndex(all_cities(enrichment.cities, enrichment.places_min_population))
+
+
+def _hall_city(hall: str | None) -> str | None:
+    """The town a touring show's hall names ("היכל התרבות יבנה"): the tenant's own city went with it,
+    and Tzavta's or Yiddishpiel's road shows landed on Tel Aviv's culture hall (Nov 2026). The last town
+    named wins - "אולם תרבות נתיבות (שד' ירושלים 6 נתיבות)" is in Netivot."""
+    hits = _localities().find(hall)
+    return max(hits)[1] if hits else None
 
 
 def _status(performance: dict[str, Any], message: str | None) -> TierStatus:

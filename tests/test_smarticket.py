@@ -77,6 +77,21 @@ def test_online_meeting_is_skipped() -> None:
     assert parse_event(show, performance, TZAVTA, SETTINGS, TZ) is not None
 
 
+def test_touring_hall_in_another_town_takes_that_town() -> None:
+    """A Tel Aviv tenant's road show: the hall's town, not the tenant's city (they sat on Tel Aviv's hall)."""
+    show, performance = iter_performances(parse_shows_body(_body(), "tzavta"))[0]
+
+    def city(hall: str) -> str | None:
+        event = parse_event(show, {**performance, "event_place": hall}, TZAVTA, SETTINGS, TZ)
+        assert event is not None
+        return event.city
+
+    assert city("היכל התרבות יבנה") == "יבנה"
+    assert city("אולם תרבות נתיבות (שד' ירושלים 6 נתיבות)") == "נתיבות"
+    assert city("היכל התרבות בית העם, בצלאל 11, ירושלים (ז'ראר בכר)") == "ירושלים"
+    assert city("צוותא 2") == TZAVTA.city
+
+
 def test_tenant_host() -> None:
     assert tenant_host("tzavta", "smarticket.co.il") == "tzavta.smarticket.co.il"
     assert tenant_host("tickets.raanana.muni.il", "smarticket.co.il") == "tickets.raanana.muni.il"
