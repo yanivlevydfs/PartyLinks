@@ -40,4 +40,4 @@ class BotSettings(BaseModel):
     usage_days: int = Field(180, ge=7)  # usage rows kept for the admin's bot tab
     # The entry screen and the menu (consent.py, menu.py).
     inactive_days: int = Field(365, ge=30)  # a chat silent this long is deleted, alerts with it (the entry screen says so)
-    banner_url: str | None = None  # the entry screen's picture; empty: the site's /og-default.png
+    banner_url: str | None = None  # the banner's address, {lang} for he / en; empty: the site's /bot-banner-{lang}.png

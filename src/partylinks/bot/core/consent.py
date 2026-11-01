@@ -20,11 +20,12 @@ if TYPE_CHECKING:
     from partylinks.bot.core.conversation import Conversation
 
 AGREE, DECLINE = CONSENT + "yes", CONSENT + "no"
-BANNER = "/og-default.png"  # the site's own share picture (web/public)
+BANNER = "/bot-banner-{lang}.png"  # web/public, made by scripts/bot_banner.py
 
 
-def banner(cfg: Settings) -> str:
-    return cfg.bot.banner_url or cfg.site.base_url.rstrip("/") + BANNER
+def banner(cfg: Settings, lang: str = "he") -> str:
+    """The banner in ``lang`` (the entry screen, in both languages, shows the Hebrew one)."""
+    return (cfg.bot.banner_url or cfg.site.base_url.rstrip("/") + BANNER).format(lang=lang)
 
 
 def text(cfg: Settings) -> str:

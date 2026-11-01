@@ -70,7 +70,8 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 ## The entry screen and the menu
 
 - **Entry screen** (`core/consent.py`): the first message of a new chat, whatever it is, gets the banner
-  (`bot.banner_url`, default the site's `/og-default.png`) with what the bot does, that it is free, a
+  (`bot.banner_url`, default the site's `/bot-banner-he.png` and `-en.png`, made by
+  `scripts/bot_banner.py`; the welcome after "I agree" shows the chat's language) with what the bot does, that it is free, a
   disclaimer and what it keeps, in Hebrew and English, and "I agree" / "Decline". Before "I agree" nothing
   is kept: no `bot_chats` row, no usage tag. "Decline" deletes whatever there was. A chat silent for
   `bot.inactive_days` (365) is deleted with its alerts, reminders and watches. The site's privacy page has

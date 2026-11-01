@@ -110,7 +110,7 @@ class Conversation:
 
         lang = await self._in_db(work)
         home = menu.home(self.settings(), lang)
-        return Reply(say("welcome", lang), buttons=home.buttons, photo=consent.banner(self.settings()), after=say("keyboard_hint", lang), ask_location=True)
+        return Reply(say("welcome", lang), buttons=home.buttons, photo=consent.banner(self.settings(), lang), after=say("keyboard_hint", lang), ask_location=True)
 
     async def text(self, chat_id: str, text: str, lang_hint: str) -> Reply:
         cfg = self.settings()
