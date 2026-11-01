@@ -56,9 +56,9 @@ The code is in `src/partylinks/scrapers/base.py` (`BaseScraper.__init__`). The f
 | eventim | true | 0: Akamai challenge page (`sec-if-cpt`) | blocked |
 | zappa | true | 0: same Akamai challenge (Eventim's system) | blocked |
 | holon | true | 0: the site does not answer CyberGhost's IPs (TCP timeout) | failed |
-| barak | no | 0: Akamai challenge through the VPN. The free proxies refuse it too, and evomi gets empty pages | up to 83 through a free proxy that is gone |
+| barak | no | 0 through the VPN (Akamai challenge). On its usual path (free proxies, then evomi): 24, partial, many pages empty | up to 83 |
 
-eventim, zappa, barak and holon need a residential Israeli IP. A VPN IP is a datacenter IP, so it will not open them.
+eventim, zappa and holon, and barak's empty pages, need a residential Israeli IP. A VPN IP is a datacenter IP, so it will not open them.
 
 ## Architecture
 
