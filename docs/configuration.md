@@ -42,7 +42,7 @@ the Resend key, the Telegram bot token and webhook secret) belong in variables o
 | `security` | Trusted proxies, allowed hosts, rate limits (site, admin, `/go/`), bans, blocked bots, API docs |
 | `api` | Host, port, page sizes, page cache freshness |
 | `scheduler` | On or off (off locally), run on startup, run timeout, the worker process (`separate_process`, heartbeat, stale / command timeouts, restart backoff), and the run manager: `max_parallel_runs` (6), `retry_after_minutes` (15, 60, 180), `low_count_ratio` (0.3), `low_count_min_usual` (10) (see [admin](admin.md)) |
-| `http` | Default transport for every source: timeout, retries, delay, concurrency, user agent, proxy (`source_proxy`; `israel_proxy` and `israel_proxy_feed` for sources with `israel_proxy: true`), `impersonate` (speak as a browser, e.g. `chrome`, through curl_cffi) |
+| `http` | Default transport for every source: timeout, retries, delay, concurrency, user agent, proxy (`source_proxy`; `israel_proxy` and `israel_proxy_feed` for sources with `israel_proxy: true`; `israel_vpn` for sources with `vpn: true`), `impersonate` (speak as a browser, e.g. `chrome`, through curl_cffi) |
 | `enrichment` | Genre keywords, lineup parsing, time slots, weekend days, free-entry words, cities, areas |
 | `dedup` | Rules for grouping duplicate listings |
 | `geocoding` | Nominatim settings and manual venue pins |

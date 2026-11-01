@@ -45,7 +45,8 @@ sources are never changed to make room for a new one.
    | --- | --- |
    | 200 for plain httpx | Defaults |
    | 403 / Vercel checkpoint / Cloudflare TLS block, 200 for Chrome | `http.impersonate: chrome` (curl_cffi) |
-   | Answers Israeli IPs only | `israel_proxy: true` |
+   | Answers Israeli IPs only | `israel_proxy: true` (free Israeli proxies) |
+   | Refuses the free Israeli proxies too | `vpn: true`: our Israeli VPN only (Railway production, `vpn/`) |
    | Cloudflare JS challenge for every client | Stop and tell the user; the tool's permission classifier may block bypass work |
 
 5. **Count the requests per run.** The site's own rate limits matter; set `http.concurrency` and
@@ -169,7 +170,8 @@ Only these lines change outside the new files:
     cron: "29 8,20 * * *"     # twice a day, on a minute + hours no other source uses
     site_url: https://mysite.example
     # venue_name / address / city / latitude / longitude   - single-venue sources
-    # israel_proxy: true                                   - Israeli IPs only
+    # israel_proxy: true                                   - Israeli IPs only (free Israeli proxies)
+    # vpn: true                                            - only through our Israeli VPN (Railway production)
     # unlist_missing: false                                - the listing is not the full catalogue
     # run_timeout_seconds: 3600                            - runs longer than the default
     http:
