@@ -42,6 +42,7 @@ All docs are in [docs/](docs/README.md):
 - [Sources](docs/sources.md)
 - [Running locally](docs/running-locally.md)
 - [Deployment](docs/deployment.md)
+- [Israeli VPN](docs/vpn.md)
 - [Configuration](docs/configuration.md)
 - [API](docs/api.md)
 - [Admin console](docs/admin.md)

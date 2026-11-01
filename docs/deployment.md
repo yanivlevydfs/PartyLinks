@@ -54,7 +54,7 @@ Each process has its own pool (`database.pool_size` + `max_overflow`, 40 each, 8
 | `PARTYLINKS_ADMIN__TOKEN` | A long random string for the admin console and the mutating API |
 | `PARTYLINKS_HTTP__SOURCE_PROXY` | Proxy every source goes through, so sites never see the server's IP. A comma-separated list is a failover pool: a source moves to the next URL only when the proxy itself fails. A source can opt out with `proxied: false` |
 | `PARTYLINKS_HTTP__ISRAEL_PROXY` | Israeli proxies, a comma-separated list, tried first by sources with `israel_proxy: true` (`source_proxy` is the last resort) |
-| `PARTYLINKS_HTTP__ISRAEL_VPN` | Our Israeli VPN, `http://vpn.railway.internal:8888` (the `vpn` service, `vpn/`). Sources with `vpn: true` go out through it and nothing else. Production only: unset on localhost, where `vpn: true` sources take their usual path |
+| `PARTYLINKS_HTTP__ISRAEL_VPN` | Our Israeli VPN, `http://vpn.railway.internal:8888` (the `vpn` service, `vpn/`). Sources with `vpn: true` go out through it and nothing else. Production only: unset on localhost, where `vpn: true` sources take their usual path. See [Israeli VPN](vpn.md) |
 | `PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_ID` | The Google OAuth client id |
 | `PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_SECRET` | Its secret |
 | `PARTYLINKS_ACCOUNTS__SESSION_SECRET` | A long random string: signs the sign-in state cookie and the unsubscribe links (changing it breaks every unsubscribe link already sent) |

@@ -10,6 +10,7 @@ Every ticket link points back to the seller.
 | [Sources](sources.md) | Every site we collect from, its schedule, and the sites we left out |
 | [Running locally](running-locally.md) | Install, run, test, build the website |
 | [Deployment](deployment.md) | Railway setup, variables, proxy, logs |
+| [Israeli VPN](vpn.md) | The `vpn` service: `vpn: true` sources, Railway setup, logs, reconnecting |
 | [Configuration](configuration.md) | `config/settings.yaml` and environment overrides |
 | [API](api.md) | Public and admin endpoints |
 | [Admin console](admin.md) | The `/admin` page, what each tab does, the run manager |
