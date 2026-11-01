@@ -325,7 +325,7 @@ def test_words_in_passing_are_no_genres() -> None:
     # Real listings (October 2026) that were tagged by a word in passing.
     smurfs = genres("הדרדסים ההצגה", "הדמויות שכבשו את מסכי הטלוויזיה והקולנוע\nיזמים ומפיקים ראשיים: דוריס", ("הצגות ילדים",))
     assert smurfs == ["kids", "theatre"]  # its declared category; not cinema, not startups
-    assert genres("נישואים גרעיניים", "קומדיה זוגית. יש להציג את הכרטיס האלקטרוני בכניסה") == []
+    assert genres("נישואים גרעיניים", "קומדיה זוגית. יש להציג את הכרטיס האלקטרוני בכניסה") == ["theatre"]  # a comedy play; not electronic
     assert genres("מנגינה של סתיו", "התמונה נוצרה בבינה מלאכותית.") == []
     assert genres("Cold Brew workshop", "🇮🇱 עברית\nיואב, איש דאטה ביום") == ["workshops"]  # by its title; not data (a day job) or Israeli (a language)
     assert genres("Classico screening", "המשחק: דור רומנו, סול כהן רוזנברג") == []  # Sol is a name
@@ -364,3 +364,10 @@ def test_an_event_without_coordinates_takes_its_towns_region_or_abroad() -> None
     assert areas.match("San Siro", None, None, None, False, "Milan") == "abroad"  # a big city abroad
     assert areas.match(None, "DE", None, None, False, None, "DE") == "abroad"  # only a country, not Israel
     assert areas.match(None, None, None, None, None, None, "MT") == "abroad"  # no place at all, but the country
+
+
+def test_fallback_words_only_when_nothing_else_names_a_genre() -> None:
+    show = make(title="אגממנון", description="ההצגה בבימוי ... שחקנים: ...")
+    assert ENRICHER._detect_genres(show) == ["theatre"]
+    party = make(title="Techno night", description="סדנה לפני המסיבה")
+    assert ENRICHER._detect_genres(party) == ["techno"]  # the fallback "סדנה" is not read: techno was found

@@ -394,11 +394,11 @@ enrichment:
     live_show: ["live music", "livemusic", "international artists", "concert", "concerts", "other concerts",
                 "show", "shows", "performances", "music", "הופעות", "הופעה", "הופעות מוזיקה", "מופע", "מופעים",
                 "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki"]  # concets: Eventer's spelling of its concerts category
-    festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль"]
+    festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele"]
     meetups: ["meetups", "community", "meeting", "קהילה", "קהילות", "קהילתי", "קהילתית", "קהילתיים", "בקהילה",
               "קהילתיות", "פעילות חברתית", "языковой клуб", "משחקי קופסא", "ברים פאבים"]
     culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית"]
-    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון"]
+    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum"]
     workshops: ["workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест", "course", "courses", "craft", "baking"]
     cinema: ["sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב"]
     stand_up: ["comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ", "comy", "סאטירה", "קומדי בר", "סטנד-אפ", "סטנדאפ", "stand-up", "kleinkunst", "monólogo", "comédie"]
@@ -410,19 +410,34 @@ enrichment:
     sport: ["sport", "sports", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
             "מרוץ", "אופניים", "אימוני כושר", "קבוצת הליכה", "פוצ'יוולי", "footvolley", "urheilu"]
     yoga_wellness: ["wellness", "health", "בריאות", "פילאטיס"]
-    classical_opera: ["classical", "קלאסי"]
+    classical_opera: ["classical", "קלאסי", "música clásica", "opéra", "opérette"]
     # Muzi's genre slugs.
     israeli: ["hebrew"]
     mizrahi: ["yam_tichoni"]
     rock_indie: ["rocknroll"]
-    world_balkan: ["world"]
+    world_balkan: ["world", "música del mundo"]
     theatre: ["theater", "theatre", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus"]
     kids: ["kids", "children", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
            "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך"]
-    lectures: ["lecture", "lectures", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar"]
-    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "rundvisning", "visita guiada", "touristik"]
+    lectures: ["lecture", "lectures", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "foredrag"]
+    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "rundvisning", "visita guiada", "touristik", "viajes y aire libre"]
     dance: ["dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט"]
     conference: ["conferences"]  # Eventer's category (the text genre matches "conference" alone)
+  # Last resort, for an event no category, title word or source default placed: words a show's text uses
+  # for what it is ("ההצגה", "שחקנים", "המופע", "מרצה"). Read in the title and description, only when
+  # nothing else matched, so a party that mentions "סדנה" keeps its music genres alone.
+  fallback_genres:
+    theatre: ["הצגה", "ההצגה", "בהצגה", "שחקנים", "בימוי", "ובימוי", "מחזה", "תפאורה", "תלבושות", "תיאטרון",
+              "תאטרון", "דרמה", "קומדיה", "theatre", "theater", "play"]
+    kids: ["לגילאי", "לקטנטנים", "הילדים", "ילדים", "לילדים", "לכל המשפחה", "ההורים", "פעוטות", "kids", "children", "family"]
+    live_show: ["מופע", "המופע", "שירים", "השירים", "מוזיקלי", "מוזיקלית", "להקה", "להקת", "זמר", "זמרת",
+                "קונצרט", "הופעה", "ההופעה", "נגנים", "concert", "live", "band", "tribute"]
+    stand_up: ["סטנדאפ", "סטנד אפ", "סטנדאפיסט", "קומיקאי", "open mic", "stand up", "comedian"]
+    lectures: ["הרצאה", "מרצה", "הרצאות", "lecture", "talk"]
+    workshops: ["סדנה", "סדנת", "סדנאות", "workshop"]
+    tours: ["סיור", "סיורים", "guided tour"]
+    dance: ["מחול", "להקת מחול", "בלט", "ballet"]
+    exhibitions: ["תערוכה", "תערוכת", "exhibition", "museum"]
   # Sources that sell one kind of event: its genre when neither their category nor the text names one
   # (TikTik / LiveEvents / TicketHouse list concerts abroad by artist name; Pres the Cameri and Habima).
   source_default_genres:

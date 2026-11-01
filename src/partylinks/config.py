@@ -290,6 +290,8 @@ class EnrichmentSettings(BaseModel):
     declared_genres_only: list[str] = Field(default_factory=list)
     # A source's genres when nothing else names one (a box office that sells only concerts).
     source_default_genres: dict[str, list[str]] = Field(default_factory=dict)
+    # Words read in title + description only when nothing else gave the event a genre.
+    fallback_genres: dict[str, list[str]] = Field(default_factory=dict)
     # Phrases removed from title + description before genres are read ("הכרטיס האלקטרוני").
     text_ignore: list[str] = Field(default_factory=list)
     # A title with one of these is a talk, not a party: genres it describes ("the birth of house and

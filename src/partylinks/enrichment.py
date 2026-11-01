@@ -203,6 +203,9 @@ class Enricher:
             if (pattern := _place_pattern(words, prefixes=2))
         }
         self._talk = _place_pattern(settings.talk_keywords, prefixes=2)
+        self._fallback = {
+            genre: pattern for genre, words in settings.fallback_genres.items() if (pattern := _place_pattern(words, prefixes=2))
+        }
         self._free = _keyword_pattern(settings.free_entry_keywords)
         self._pay_at_door = _keyword_pattern(settings.pay_at_door_keywords)
         self._coupon = _keyword_pattern(settings.coupon_keywords)
@@ -320,7 +323,14 @@ class Enricher:
             from_text &= talk_genres | title_only
         elif (found | from_text) & talk_genres:
             from_text &= talk_genres
-        return sorted(found | from_text) or list(self.settings.source_default_genres.get(event.source, []))
+        if found | from_text:
+            return sorted(found | from_text)
+        if default := self.settings.source_default_genres.get(event.source):
+            return list(default)
+        whole = _LINKS.sub(" ", f"{event.title}\n{event.description or ''}".lower())
+        for phrase in self.settings.text_ignore:
+            whole = whole.replace(phrase.lower(), " ")
+        return sorted(g for g, pattern in self._fallback.items() if pattern.search(whole))
 
     # ------------------------------------------------------------------ lineup
     def _lineup(self, event: ScrapedEvent) -> list[str]:
