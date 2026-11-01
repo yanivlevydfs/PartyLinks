@@ -65,7 +65,7 @@ class FriendsHistScraper(BaseScraper[FriendsHistSettings]):
             for e in build_events(shows, halls, s, self.timezone, self.record_failure)
             if (e.end_at or e.start_at or now) >= now
         ]
-        self.log.info("%d upcoming events, %d with a city", len(events), sum(1 for e in events if e.city))
+        self.log.debug("%d upcoming events, %d with a city", len(events), sum(1 for e in events if e.city))
         for event in events:
             yield event
 
@@ -78,7 +78,7 @@ class FriendsHistScraper(BaseScraper[FriendsHistSettings]):
             return parse_hall(body) if body else None
 
         halls = dict(h for h in await gather_or_cancel(hall(u) for u in urls) if h)
-        self.log.info("halls: %d pages, %d with a city", len(urls), sum(1 for c, _ in halls.values() if c))
+        self.log.debug("halls: %d pages, %d with a city", len(urls), sum(1 for c, _ in halls.values() if c))
         return halls
 
 

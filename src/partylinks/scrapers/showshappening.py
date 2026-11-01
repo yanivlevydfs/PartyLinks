@@ -28,7 +28,7 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _CARD = re.compile(
     r'<a href="(/[^"]+)" class="calendar_events_result_event_container" data-show-date="([^"]*)"\s*'
-    r'data-category="([^"]*)" data-tags="([^"]*)">\s*<img src="([^"]*)"[^>]*>\s*<p>(.*?)</p>', re.S)
+    r'data-category="([^"]*)" data-tags="([^"]*)">\s*<img src="([^"]*)"[^>]*>\s*<p>(.*?)</p>', re.DOTALL)
 _META = re.compile(r'<meta property="(og:[a-z]+|description)" content="([^"]*)"')
 _SHOWDATE = re.compile(r'class="showdate" value="[A-Za-z]+ (\d{1,2}-[A-Za-z]{3}-\d{4}) (\d{1,2}:\d{2})"')
 _EVENTID = re.compile(r'id="eventid" value="([0-9a-f-]+)"')
@@ -67,7 +67,7 @@ class ShowsHappeningScraper(BaseScraper[ShowsHappeningSettings]):
             for card in cards(page, country):
                 entry = listed.setdefault(card["path"], {**card, "dates": []})
                 entry["dates"].append(card["date"])
-        self.log.info("listed %d events (%d shows)", len(listed), sum(len(e["dates"]) for e in listed.values()))
+        self.log.debug("listed %d events (%d shows)", len(listed), sum(len(e["dates"]) for e in listed.values()))
         async for events in self.stream_isolated(list(listed.values()), self._fetch_event, label=lambda e: e["path"]):
             for event in events:
                 yield event

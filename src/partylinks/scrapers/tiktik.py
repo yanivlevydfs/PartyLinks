@@ -54,7 +54,7 @@ class TiktikScraper(BaseScraper[TiktikSettings]):
         for category in s.category_ids:
             products = await self.paginate(lambda index: self._listing_page(category, index), PAGE_SIZE, s.max_pages)  # noqa: B023 - awaited here
             by_url.update((p["permalink"], p) for p in products if isinstance(p, dict) and p.get("permalink"))
-        self.log.info("listed %d products", len(by_url))
+        self.log.debug("listed %d products", len(by_url))
         async for event in self.stream_isolated(by_url.values(), self._fetch_product, label=lambda p: p["permalink"]):
             yield event
 

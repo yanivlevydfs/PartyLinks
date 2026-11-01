@@ -75,7 +75,7 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
                 items.setdefault(entity_id, item)
                 if label:
                     labels.setdefault(entity_id, set()).add(label)
-        self.log.info("listed %d events", len(items))
+        self.log.debug("listed %d events", len(items))
         events: list[ScrapedEvent] = []
         missing: list[tuple[ScrapedEvent, str]] = []  # no artwork here: the seller's page may have it
         # Smarticket box offices the smarticket source reads are left to it: it has the artwork, and
@@ -140,7 +140,7 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
             try:
                 image = og_image(await self.get_text(link))
             except Exception as exc:  # noqa: BLE001 - optional artwork: a seller refusing bots never ends the run
-                self.log.info("no provider artwork for %s: %s", event.source_event_id, exc)
+                self.log.debug("no provider artwork for %s: %s", event.source_event_id, exc)
         if image:
             event.images, event.image_url = [image], image
 

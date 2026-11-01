@@ -154,7 +154,7 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
         assert "Disallow: /go/" not in robots  # Google crawls offers.url
         index = client.get("/sitemap.xml").text
         assert "<sitemapindex" in index and "/sitemap-1.xml" in index and "/sitemap-2.xml" not in index
-        assert client.get("/sitemap-2.xml").status_code == 404 and client.get("/sitemap-0.xml").status_code == 404
+        assert client.get("/sitemap-2.xml").status_code == 410 and client.get("/sitemap-0.xml").status_code == 410
         assert client.get("/event/party-2020-01-01-goout-0000").status_code == 410  # over and deleted: gone for good
         sitemap = client.get("/sitemap-1.xml").text
         assert "/event/" in sitemap and 'hreflang="en"' in sitemap
@@ -180,14 +180,14 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
         assert (
             "כרגע יש 3 אירועים" in techno.text and "כן, 3 אירועים בכניסה חופשית" in techno.text
         )  # answers come from the listings
-        assert client.get("/genre/karaoke").status_code == 404  # no events: no thin page
+        assert client.get("/genre/karaoke").status_code == 410  # no events: no thin page
         assert "Techno night 0" in client.get("/tonight?lang=en").text
         assert "/genre/techno" in client.get("/sitemap-1.xml").text and "/tonight" in client.get("/").text
         city = client.get("/city/tel-aviv")  # "Tel Aviv-Yafo, Israel" was stored as the canonical "תל אביב"
         assert city.status_code == 200 and "מה עושים בתל אביב" in city.text
-        assert client.get("/city/haifa").status_code == 404
-        assert client.get("/genre/techno/weekend").status_code in (200, 404)  # depends on today's weekday
-        assert client.get("/genre/techno/someday").status_code == 404
+        assert client.get("/city/haifa").status_code == 410
+        assert client.get("/genre/techno/weekend").status_code in (200, 410)  # depends on today's weekday
+        assert client.get("/genre/techno/someday").status_code == 410
         assert "/city/tel-aviv" in client.get("/sitemap-1.xml").text
         # City x genre: its own page, linked from the city page (not the home page) and in the sitemap.
         city_techno = client.get("/city/tel-aviv/techno")
@@ -196,10 +196,10 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
             'href="/city/tel-aviv/techno"' in city.text and "/city/tel-aviv/techno" in client.get("/sitemap-1.xml").text
         )
         assert (
-            client.get("/city/tel-aviv/karaoke").status_code == 404
-            and client.get("/city/nowhere/techno").status_code == 404
+            client.get("/city/tel-aviv/karaoke").status_code == 410
+            and client.get("/city/nowhere/techno").status_code == 410
         )
-        assert client.get("/region/sharon").status_code == 404 and client.get("/abroad/greece").status_code == 404
+        assert client.get("/region/sharon").status_code == 410 and client.get("/abroad/greece").status_code == 410
         key = settings.site.indexnow.key
         assert key and client.get(f"/{key}.txt").text == key and client.get("/llms.txt").status_code == 200
         info = client.get("/landing-info", params={"path": "/city/tel-aviv/techno", "lang": "en"}).json()
@@ -207,7 +207,7 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
             info["title"] == "Techno events in Tel Aviv"
             and {"path": "/city/tel-aviv", "label": "All events in Tel Aviv"} in info["links"]
         )
-        # Cached pages (Hebrew paths, queries, 404s too) are answered before routing, so a threadpool
+        # Cached pages (Hebrew paths, queries, 410s too) are answered before routing, so a threadpool
         # full of cold builds never delays them: with the database gone the cached copies still come back.
         paths = ["/", "/tonight?lang=en", "/city/tel-aviv", "/genre/karaoke", "/venue/בארבי", "/categories"]
         before = {p: client.get(p) for p in paths}
@@ -408,12 +408,12 @@ def test_blog_posts_pages_feed_and_live_embeds(tmp_path: Path, monkeypatch: pyte
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         assert client.get("/posts").json()["items"][0]["category"]["key"] == "music"
         assert client.get("/posts/guide").json()["faq"] == [{"q": "שאלה?", "a": "תשובה."}]
-        assert client.get("/posts/later").status_code == 404
+        assert client.get("/posts/later").status_code == 410
         assert client.get("/posts/guide?lang=en").json()["toc"] == [{"id": "the-best", "title": "The best"}]
         assert "מדריך טכנו" in client.get("/blog/rss.xml").text
         assert "/blog/guide" in client.get("/sitemap-1.xml").text and "/blog/guide" in client.get("/llms.txt").text
         page = client.get("/blog/guide")
-        if page.status_code != 404:  # server-rendered pages need the React build (web/dist)
+        if page.status_code != 410:  # server-rendered pages need the React build (web/dist)
             assert '"BlogPosting"' in page.text and '"FAQPage"' in page.text
             assert "Techno night 0" in page.text and 'hreflang="en"' in page.text
             assert "Techno guide" in client.get("/blog/guide?lang=en").text
@@ -448,7 +448,7 @@ def test_admin_scan_runs_all_enabled_or_the_chosen_sources(tmp_path: Path) -> No
             "eventer",
         ]
         assert calls == ["goout", "eventer"]
-        assert client.post("/admin/api/scan", json={"sources": ["nope"]}).status_code == 404
+        assert client.post("/admin/api/scan", json={"sources": ["nope"]}).status_code == 410
 
 
 def test_logging_is_info_by_default_and_debug_logs_everything(tmp_path: Path) -> None:
@@ -464,7 +464,8 @@ def test_logging_is_info_by_default_and_debug_logs_everything(tmp_path: Path) ->
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         log = logging.getLogger("uvicorn.access")
         assert not debug_enabled() and logging.getLogger().level == logging.INFO
-        assert not log.filter(access(200)) and log.filter(access(404)) and log.filter(access(500))
+        # Only server errors at INFO: a 410 (gone) or 401 (signed out) is a visitor's doing, noise.
+        assert not log.filter(access(200)) and not log.filter(access(410)) and log.filter(access(500))
         assert log.isEnabledFor(logging.INFO)
 
         assert client.post("/admin/api/logging", json={"on": True}).json() == {"debug": True}
@@ -643,7 +644,7 @@ def test_seller_links_leave_only_through_the_rate_limited_redirect(tmp_path: Pat
         assert "utm_content=buy" in go.headers["location"]
         client.get("/go/test%3Aa?at=alt", follow_redirects=False)
         client.get("/go/test%3Aa?at=nonsense", follow_redirects=False)
-        client.get("/go/missing", follow_redirects=False)  # 404: not counted
+        client.get("/go/missing", follow_redirects=False)  # gone: the home page, not counted
         stats = client.get("/admin/api/clicks?days=7").json()
         assert stats["total"] == stats["today"] == stats["per_day"][-1]["clicks"] == 3
         assert len(stats["per_day"]) == 7
@@ -859,7 +860,7 @@ def test_sponsored_rails_show_upcoming_picks_in_admin_order(tmp_path: Path) -> N
             ("test:b", True),
             ("test:c", True),
         ]
-        assert client.put("/admin/api/sponsored", json=[{"event_id": "test:nope", "side": "left"}]).status_code == 404
+        assert client.put("/admin/api/sponsored", json=[{"event_id": "test:nope", "side": "left"}]).status_code == 410
         assert client.put("/admin/api/sponsored", json=picks[:1] * 2).status_code == 422
         assert client.get("/events/test:a").status_code == 200  # the slug route still works
         hit = lambda event_id, kind: client.post("/events/sponsored/hit", json={"event_id": event_id, "kind": kind})
@@ -889,7 +890,7 @@ def test_busy_towns_outside_the_config_get_city_pages(tmp_path: Path) -> None:
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         page = client.get("/city/shoham")  # a GeoNames town with 10 upcoming events
         assert page.status_code == 200 and "מה עושים בשהם" in page.text
-        assert client.get("/city/yavne").status_code == 404  # 5 events: too few for a town page
+        assert client.get("/city/yavne").status_code == 410  # 5 events: too few for a town page
         assert "/city/shoham" in client.get("/sitemap-1.xml").text
         assert client.get("/landing-info", params={"path": "/city/shoham"}).json()["city"]["he"] == "שהם"
 

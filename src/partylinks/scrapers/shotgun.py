@@ -54,7 +54,7 @@ class ShotgunScraper(BaseScraper[ShotgunSettings]):
         paths = [*s.city_paths, *(u.removeprefix(s.site_url) for u in [*venues, *cities] if u.startswith(s.site_url))]
         listings = await self.gather_pages(list(dict.fromkeys(paths)))
         urls = list(dict.fromkeys(u for page in listings for u in links(page, _EVENT_LINK, s.site_url)))
-        self.log.info("listed %d Israeli venues, %d cities, %d events", len(venues), len(cities), len(urls))
+        self.log.debug("listed %d Israeli venues, %d cities, %d events", len(venues), len(cities), len(urls))
         if len(urls) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
         async for event in self.stream_isolated(urls[: s.max_events], self._fetch_event, label=lambda u: u):

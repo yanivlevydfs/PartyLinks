@@ -54,7 +54,7 @@ class GeektimeScraper(BaseScraper[GeektimeSettings]):
             datetime.now(ZoneInfo(self.timezone)).date(),
             s.skip_title_words,
         )
-        self.log.info("listed %d in-person events", len(events))
+        self.log.debug("listed %d in-person events", len(events))
         for event in events:
             yield event
 

@@ -92,7 +92,7 @@ class TicketeamsScraper(BaseScraper[TicketeamsSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         terms = Terms({tax: parse_terms(await self._list(tax, "id,name,slug,parent")) for tax in TAXONOMIES})
         products = await self._list("product", "id,link,title," + ",".join(TAXONOMIES))
-        self.log.info("listed %d products", len(products))
+        self.log.debug("listed %d products", len(products))
         now = datetime.now().astimezone()
 
         async def detail(product: dict[str, Any]) -> ScrapedEvent | None:

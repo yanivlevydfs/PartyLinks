@@ -79,11 +79,11 @@ class MevalimScraper(BaseScraper[MevalimSettings]):
         for region in self.settings.regions:  # regions overlap (a Tel Aviv show is also "central")
             for event in await self.optional(f"region {region.path}", self._region_events(region)) or []:
                 events.setdefault(event.source_event_id, event)
-        self.log.info("listed %d events", len(events))
+        self.log.debug("listed %d events", len(events))
         for catalog in self.settings.artist_catalogs:
             self.artist_profiles += await self.optional(f"artists {catalog.kind}", self._list_artists(catalog)) or []
         if self.settings.artist_catalogs:
-            self.log.info("listed %d artists", len(self.artist_profiles))
+            self.log.debug("listed %d artists", len(self.artist_profiles))
         if not self.settings.fetch_artwork:
             for event in events.values():
                 yield event

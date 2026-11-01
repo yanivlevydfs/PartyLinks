@@ -92,7 +92,7 @@ class EasytixScraper(BaseScraper[EasytixSettings]):
                 found[e["_id"]] = (e, by_id.get(_marketplace_id(e) or ""))
         now = datetime.now().astimezone()
         events = [ev for e, m in found.values() if (ev := parse_event(e, m, s, self.timezone)) and _upcoming(ev, now)]
-        self.log.info("%d events listed, %d coming and public", len(found), len(events))
+        self.log.debug("%d events listed, %d coming and public", len(found), len(events))
 
         async def with_tickets(event: ScrapedEvent) -> ScrapedEvent:
             tickets = await self.optional(

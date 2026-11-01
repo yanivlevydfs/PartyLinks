@@ -48,7 +48,7 @@ class LoggingSettings(BaseModel):
     debug: bool = False
     # text: for people; json: one object per line for log platforms (Railway, Datadog, ...).
     format: Literal["text", "json"] = "text"
-    access_log: bool = True  # HTTP request lines: only failed ones (4xx/5xx) unless debug is on
+    access_log: bool = True  # HTTP request lines: only server errors (5xx) unless debug is on
     # Optional rotating log file (relative to the project); unset on hosts that collect stdout.
     file: str | None = None
     file_max_mb: int = Field(10, ge=1)

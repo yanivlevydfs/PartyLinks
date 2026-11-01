@@ -78,7 +78,7 @@ class TicketHouseScraper(BaseScraper[TicketHouseSettings]):
         events = [e for e in (parse_event(i, s.site_url + s.event_path) for i in items) if e]
         # Matches are skipped: the site is parties, shows and culture.
         sports = [e for e in events if is_sport(e.title)]
-        self.log.info("listed %d events, %d on sale, %d sports matches skipped", len(items), len(events), len(sports))
+        self.log.debug("listed %d events, %d on sale, %d sports matches skipped", len(items), len(events), len(sports))
         for event in events:
             if not is_sport(event.title):
                 yield event

@@ -113,7 +113,7 @@ class PresScraper(BaseScraper[PresSettings]):
             except Exception as exc:  # noqa: BLE001 - one host down never drops the others
                 self.record_failure(f"{host.key} listing", exc)
                 continue
-            self.log.info(
+            self.log.debug(
                 "%s: listed %d performances of %d shows",
                 host.key,
                 sum(map(len, shows.values())),

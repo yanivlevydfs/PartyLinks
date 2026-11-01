@@ -54,7 +54,7 @@ class YotzimScraper(BaseScraper[YotzimSettings]):
         self._genres = category_genres(dict(zip(s.categories, pages, strict=True)), s.categories, s.site_url)
         if not self._genres:
             raise ParseError("no category lists any upcoming event")
-        self.log.info("%d upcoming event pages", len(self._genres))
+        self.log.debug("%d upcoming event pages", len(self._genres))
         async for event in self.stream_isolated(self._genres, self._fetch_event, label=lambda u: u):
             yield event
 

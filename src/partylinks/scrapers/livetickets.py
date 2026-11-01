@@ -63,7 +63,7 @@ class LiveTicketsScraper(BaseScraper[LiveTicketsSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         listings = await self._listings()
-        self.log.info("crawling %d listing pages", len(listings))
+        self.log.debug("crawling %d listing pages", len(listings))
         # An event is on its performer's, city's and venue's pages; only some of those hang under a
         # category page, so categories merge across pages before the event goes out.
         # ponytail: events are held until the crawl ends (~2 min); stream per page if runs get long.

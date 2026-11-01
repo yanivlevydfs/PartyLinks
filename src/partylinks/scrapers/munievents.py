@@ -106,7 +106,7 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
                     card.tags = list(dict.fromkeys([*card.tags, *tags.get(card.url, [])]))
             else:
                 cards = listed
-            self.log.info("%s: %d upcoming events (%s)", site.url, len(cards), "feed" if feed else "listing")
+            self.log.debug("%s: %d upcoming events (%s)", site.url, len(cards), "feed" if feed else "listing")
 
             async def fetch(card: Card, site: MuniSite = site) -> ScrapedEvent | None:
                 listed_only = build_event(card, None, site, self.timezone)

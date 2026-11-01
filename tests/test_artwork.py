@@ -38,7 +38,7 @@ def test_only_events_with_no_picture_get_a_card(tmp_path: Path) -> None:
         assert cards["test:bare"].startswith("/artwork/") and cards["test:coming"] is None
         got = c.get(cards["test:bare"] + "/640.webp")
         assert got.status_code == 200 and got.headers["content-type"] == "image/webp" and got.content[:4] == b"RIFF"
-        assert c.get(cards["test:bare"] + "/333.webp").status_code == 404
+        assert c.get(cards["test:bare"] + "/333.webp").status_code == 410
 
 
 def test_a_real_picture_wins_and_the_card_goes(tmp_path: Path) -> None:

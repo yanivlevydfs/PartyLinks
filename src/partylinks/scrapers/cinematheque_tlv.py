@@ -62,7 +62,7 @@ class TelAvivCinemathequeScraper(BaseScraper[TelAvivCinemathequeSettings]):
         features = await self.optional("features", self.get_json(s.api_url + s.features_path, expect=list))
         today = datetime.now(zone(self.timezone)).date()
         groups = group_screenings(listing, self.timezone, today, s.days_ahead)
-        self.log.info("listed %d movie-days", len(groups))
+        self.log.debug("listed %d movie-days", len(groups))
 
         # Prices from each feature's first screening in the window.
         first: dict[str, Any] = {}

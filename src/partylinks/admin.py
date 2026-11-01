@@ -12,7 +12,7 @@ import time
 from datetime import datetime
 from typing import Annotated, Any
 from urllib.parse import urlsplit, urlunsplit
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -366,7 +366,7 @@ def validate_config(text: str) -> tuple[Settings | None, list[str]]:
     errors: list[str] = []
     try:
         ZoneInfo(settings.timezone)
-    except Exception:
+    except (ZoneInfoNotFoundError, ValueError):
         errors.append(f"timezone: unknown zone {settings.timezone!r}")
     crons = {"retention.cron": settings.retention.cron} | {
         f"sources.{n}.cron": s.cron for n, s in configured_sources(settings).items()

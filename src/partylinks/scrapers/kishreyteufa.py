@@ -43,7 +43,7 @@ class KishreyTeufaScraper(BaseScraper[KishreyTeufaSettings]):
         s = self.settings
         rows = parse_feed(await self.get_text(s.site_url + s.show_path))
         music = [r for r in rows if r.get("categoryid") == s.music_category_id]
-        self.log.info("feed has %d events, %d music", len(rows), len(music))
+        self.log.debug("feed has %d events, %d music", len(rows), len(music))
         for row in music:
             try:
                 yield parse_row(row, s.site_url + s.search_path, self.timezone)

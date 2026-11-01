@@ -41,7 +41,7 @@ class Levontin7Scraper(BaseScraper[Levontin7Settings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         cards = parse_listing(await self.get_text(s.site_url + s.listing_path))
-        self.log.info("listed %d shows", len(cards))
+        self.log.debug("listed %d shows", len(cards))
         for card in cards:
             try:
                 event = parse_card(card, s, self.timezone)

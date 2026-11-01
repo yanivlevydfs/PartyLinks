@@ -66,7 +66,7 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
                 if event is not None and event.source_event_id not in seen:
                     seen.add(event.source_event_id)
                     yield event
-        self.log.info("listed %d events", len(seen))
+        self.log.debug("listed %d events", len(seen))
 
     async def _category(self, path: str) -> list[dict[str, Any]]:
         s = self.settings

@@ -50,7 +50,7 @@ class ComyScraper(BaseScraper[ComySettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         pages = listing_pages(await self.get_text(s.site_url + s.listing_path), s.site_url + s.event_page_prefix)
-        self.log.info("listed %d show pages", len(pages))
+        self.log.debug("listed %d show pages", len(pages))
         today = datetime.now(ZoneInfo(self.timezone)).date()
 
         async def show(url: str) -> list[ScrapedEvent]:

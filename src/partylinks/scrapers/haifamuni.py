@@ -43,7 +43,7 @@ class HaifaMuniScraper(BaseScraper[HaifaMuniSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         cards = parse_listing(await self.get_text(s.site_url + s.listing_path))
-        self.log.info("listed %d events", len(cards))
+        self.log.debug("listed %d events", len(cards))
 
         async def fetch(card: tuple[str, str]) -> list[ScrapedEvent]:
             post_id, url = card

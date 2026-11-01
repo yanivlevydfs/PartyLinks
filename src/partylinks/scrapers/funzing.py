@@ -58,7 +58,7 @@ class FunzingScraper(BaseScraper[FunzingSettings]):
             ids.extend(dated)
             if not dated:
                 break
-        self.log.info("listed %d experiences with dates", len(ids))
+        self.log.debug("listed %d experiences with dates", len(ids))
         now = datetime.now().astimezone()
 
         async def detail(funz_id: int) -> list[ScrapedEvent]:

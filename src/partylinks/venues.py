@@ -194,7 +194,7 @@ def resolve_venues(session: Session) -> int:
     """Apply :func:`infer_venues` to the database; returns the number of events changed."""
     updates = venue_updates(session)
     bulk_update_by_id(session, EventRow, updates)
-    log.info("venues: renamed %d events", len(updates))
+    log.debug("venues: renamed %d events", len(updates))
     return len(updates)
 
 

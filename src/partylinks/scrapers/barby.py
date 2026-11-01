@@ -59,7 +59,7 @@ class BarbyScraper(BaseScraper[BarbySettings]):
         payload = await self.get_json(s.site_url + s.list_path, expect=dict)
         listing = payload.get("returnShow")
         shows = [show for show in (listing.get("show") if isinstance(listing, dict) else None) or [] if isinstance(show, dict)]
-        self.log.info("listed %d events", len(shows))
+        self.log.debug("listed %d events", len(shows))
         async for event in self.stream_isolated(shows, self._fetch_event, label=lambda show: str(show.get("showId"))):
             yield event
 

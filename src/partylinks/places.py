@@ -93,7 +93,7 @@ def _latin_towns() -> dict[str, tuple[str, str]]:
     The Hebrew name is the first of GeoNames' Hebrew ones with the most words ("עצמון שגב", not "עצמון")."""
     out: dict[str, tuple[str, str]] = {}
     for c in sorted(geonames.israel(), key=lambda c: -c["population"]):
-        hebrew = [_NIQQUD.sub("", a).strip("‎‏ ") for a in c["alternatenames"] if _HEBREW.search(a)]
+        hebrew = [_NIQQUD.sub("", a).strip("\u200e\u200f ") for a in c["alternatenames"] if _HEBREW.search(a)]
         if not hebrew:
             continue
         he = max(hebrew, key=lambda h: len(h.split()))

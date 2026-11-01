@@ -44,7 +44,7 @@ class DropScraper(BaseScraper[DropSettings]):
         urls = upcoming_urls(await self.get_text(s.site_url + s.sitemap_path), datetime.now(UTC) - timedelta(days=1))
         if len(urls) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
-        self.log.info("listed %d upcoming events", len(urls))
+        self.log.debug("listed %d upcoming events", len(urls))
         async for event in self.stream_isolated(urls[: s.max_events], self._fetch_event, label=lambda u: u):
             yield event
 

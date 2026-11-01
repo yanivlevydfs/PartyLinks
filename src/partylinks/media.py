@@ -214,7 +214,7 @@ class MediaStore:
                     continue
                 result["files"] += 1
                 result["bytes"] += stat.st_size
-        log.info(
+        log.debug(
             "artwork sweep%s: %d orphan files, %.1f MB %s",
             " (dry run)" if dry_run else "", result["files"], result["bytes"] / 1e6, "found" if dry_run else "removed",
         )
@@ -249,7 +249,7 @@ class MediaStore:
                 failed = [r for r in results if r.get("error") is not None]
                 await asyncio.to_thread(with_db_retry, f"{source} artwork", lambda s=stored, f=failed: self._persist(s, f))
                 stored_count, failed_count = stored_count + len(stored), failed_count + len(failed)
-        log.info("%s artwork: %d stored, %d failed", source, stored_count, failed_count)
+        log.debug("%s artwork: %d stored, %d failed", source, stored_count, failed_count)
         return stored_count, failed_count
 
     def _pending(self, source: str) -> list[tuple[int, str]]:
@@ -320,7 +320,7 @@ class MediaStore:
         todo = [p for p in (self.path_for(r) for r in relatives) if p.is_file()]
         if not todo:
             return 0, 0
-        log.info("artwork copies: %d of %d files still have their original, %d threads", len(todo), len(relatives), threads)
+        log.debug("artwork copies: %d of %d files still have their original, %d threads", len(todo), len(relatives), threads)
         made = failed = 0
         started = time.monotonic()
 
@@ -342,8 +342,8 @@ class MediaStore:
                 if ok is not None:
                     made, failed = made + ok, failed + (not ok)
                 if done % 500 == 0:
-                    log.info("artwork copies: %d/%d (%d kept the original only), %.0fs", done, len(todo), failed, time.monotonic() - started)
-        log.info(
+                    log.debug("artwork copies: %d/%d (%d kept the original only), %.0fs", done, len(todo), failed, time.monotonic() - started)
+        log.debug(
             "artwork copies: %s, %d converted (original deleted), %d kept the original only (animated, huge or unreadable), %.0fs",
             "stopped" if self._stop.is_set() else "done", made, failed, time.monotonic() - started,
         )
@@ -360,7 +360,7 @@ class MediaStore:
             )
         for relative in relatives:
             self.path_for(relative).unlink(missing_ok=True)
-        log.info("artwork: %d unreadable files queued to download again", len(relatives))
+        log.debug("artwork: %d unreadable files queued to download again", len(relatives))
 
     def move_to_files(self, batch: int = 200, log_every: int = 10) -> int:
         """With ``storage: filesystem``, move artwork still kept in the database to files, a batch at
@@ -391,9 +391,9 @@ class MediaStore:
                 webp_only(self.path_for(relative), self.settings.webp_quality)
             moved, batches = moved + len(rows), batches + 1
             if batches % log_every == 0:
-                log.info("artwork: %d images moved from the database to files", moved)
+                log.debug("artwork: %d images moved from the database to files", moved)
         if moved:
-            log.info("artwork: done, %d images moved from the database to files", moved)
+            log.debug("artwork: done, %d images moved from the database to files", moved)
         return moved
 
     async def _fetch(self, client: httpx.AsyncClient, url: str) -> tuple[bytes, str]:

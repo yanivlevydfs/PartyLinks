@@ -61,7 +61,7 @@ class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         urls = parse_listing(await self.get_text(s.site_url + s.listing_path), s)
-        self.log.info("listed %d events", len(urls))
+        self.log.debug("listed %d events", len(urls))
         async for event in self.stream_isolated(urls, self._fetch_event, label=lambda u: u):
             yield event
 

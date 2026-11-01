@@ -40,7 +40,7 @@ class JerusalemTheatreScraper(BaseScraper[JerusalemTheatreSettings]):
         s = self.settings
         board = await self.get_json(s.site_url + s.board_path, params={"action": "getBoard"}, expect=dict)
         events = parse_board(board, s, self.timezone)
-        self.log.info("listed %d performances", len(events))
+        self.log.debug("listed %d performances", len(events))
         for event in events:
             yield event
 

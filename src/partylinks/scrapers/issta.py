@@ -64,7 +64,7 @@ class IsstaScraper(BaseScraper[IsstaSettings]):
         s = self.settings
         page = await self.get_text(s.site_url + s.listing_path)
         events = parse_listing(page, s.site_url, self.timezone)
-        self.log.info("listed %d events", len(events))
+        self.log.debug("listed %d events", len(events))
         for event in events:
             yield event
 

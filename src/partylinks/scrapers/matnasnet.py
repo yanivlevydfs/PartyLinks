@@ -87,7 +87,7 @@ class MatnasnetScraper(BaseScraper[MatnasnetSettings]):
         for page_url in listing_urls(site, datetime.now(zone(self.timezone)).date()):
             page = await self.optional(f"{page_url} listing", self.get_text(page_url))
             ids.update(dict.fromkeys(parse_listing(page or "")))
-        self.log.info("%s: listed %d events", site.city, len(ids))
+        self.log.debug("%s: listed %d events", site.city, len(ids))
 
         async def fetch(event_id: str) -> ScrapedEvent | None:
             url = f"{site.url}/page.php?type=event&id={event_id}"

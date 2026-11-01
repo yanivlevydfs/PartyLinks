@@ -50,9 +50,9 @@ def _mixed_events() -> list[Any]:
         event("no-price", now + timedelta(days=2), tickets=[], images=[], description=None),
         event("no-end", now + timedelta(days=3), end_at=None, latitude=32.08, longitude=34.78),
         event("abroad", now + timedelta(days=10), address="Berlin, Germany", city="Berlin", country="DE",
-              latitude=52.52, longitude=13.40, lineup=["Ben Klock"]),  # fmt: skip
+              latitude=52.52, longitude=13.40, lineup=["Ben Klock"]),
         event("weird", now + timedelta(days=4), title='<b>"Quotes" & </script> שלום 🎉', venue_name="100% _club_",
-              description="</script><script>alert(1)</script>"),  # fmt: skip
+              description="</script><script>alert(1)</script>"),
         event("past", now - timedelta(days=3), end_at=now - timedelta(days=3) + timedelta(hours=4)),
     ]
 
@@ -99,7 +99,7 @@ def test_every_get_route_survives_hostile_input(tmp_path: Path) -> None:
     assert not failures, "\n".join(failures)
 
 
-LD = re.compile(r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', re.S)
+LD = re.compile(r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', re.DOTALL)
 
 
 def _valid_page(got: Any) -> list[Any]:
@@ -126,7 +126,7 @@ def test_seo_pages_render_valid_markup(tmp_path: Path) -> None:
         for path in ("/", "/?lang=en", "/tonight", "/weekend", "/genre/techno", "/city/tel-aviv", "/venue/Gagarin",
                      "/artist/DJ%20Shadow", "/venues", "/artists", "/map", "/abroad", "/blog", "/privacy", "/terms"):  # fmt: skip
             got = c.get(path)
-            assert got.status_code in (200, 404), path
+            assert got.status_code in (200, 410), path
             _valid_page(got)
         # Share links' tracking tags reuse the cached page; only the language makes another.
         pages = len(app.state.html_cache._items)
@@ -135,7 +135,7 @@ def test_seo_pages_render_valid_markup(tmp_path: Path) -> None:
         assert len(app.state.html_cache._items) == pages
         assert 'lang="en"' in c.get("/tonight?fbclid=1&lang=en").text
         for path in ("/genre/no-such-genre", "/city/atlantis"):
-            assert c.get(path).status_code == 404, path
+            assert c.get(path).status_code == 410, path
 
         # LIKE wildcards in a name are taken literally: "%" is not every venue.
         assert "Techno night plain" not in c.get("/venue/%25").text
@@ -146,9 +146,10 @@ def test_seo_pages_render_valid_markup(tmp_path: Path) -> None:
         ElementTree.fromstring(sitemap.content)
         for loc in re.findall(r"<loc>([^<]+)</loc>", sitemap.text):
             part = loc.split("/")[-1]
-            assert (got := c.get(f"/{part}")).status_code == 200, part
+            got = c.get(f"/{part}")
+            assert got.status_code == 200, part
             ElementTree.fromstring(got.content)
-        assert c.get("/sitemap-999.xml").status_code == 404
+        assert c.get("/sitemap-999.xml").status_code == 410
         assert c.get("/robots.txt").status_code == 200 and "Sitemap:" in c.get("/robots.txt").text
         assert c.get("/llms.txt").status_code == 200
         assert c.get("/blog/rss.xml").status_code == 200 and ElementTree.fromstring(c.get("/blog/rss.xml").content) is not None
@@ -157,7 +158,7 @@ def test_seo_pages_render_valid_markup(tmp_path: Path) -> None:
             got = c.get(f"/blog/{post['slug']}")
             assert got.status_code == 200
             _valid_page(got)
-        assert c.get("/blog/no-such-post").status_code == 404
+        assert c.get("/blog/no-such-post").status_code == 410
 
 
 def test_a_venue_page_is_that_venue_only(tmp_path: Path) -> None:

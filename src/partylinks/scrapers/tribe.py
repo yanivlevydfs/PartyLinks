@@ -59,7 +59,7 @@ class TribeScraper(BaseScraper[TribeSettings]):
             page = await self.get_json(url, expect=dict)
             items += [e for e in page.get("events") or [] if isinstance(e, dict)]
             url = page.get("next_rest_url") or None
-        self.log.info("listed %d events", len(items))
+        self.log.debug("listed %d events", len(items))
         for item in items:
             try:
                 if event := parse_event(item, s, self.name, self.timezone):

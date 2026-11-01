@@ -82,7 +82,7 @@ class LevScraper(BaseScraper[LevSettings]):
 
         listings = [x async for x in self.stream_isolated(slots, listing, lambda slot: f"listing {slot[0]} {slot[1]}")]
         movie_urls = sorted({sc.movie_url for _, _, screenings in listings for sc in screenings})
-        self.log.info("listed %d screenings of %d movies", sum(len(x[2]) for x in listings), len(movie_urls))
+        self.log.debug("listed %d screenings of %d movies", sum(len(x[2]) for x in listings), len(movie_urls))
 
         async def detail(url: str) -> tuple[str, dict[str, Any]]:
             return url, parse_movie(await self.get_text(url))

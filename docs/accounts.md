@@ -118,7 +118,7 @@ A Resend account problem (key, quota, billing) stops the run and shows in the ad
 | DELETE | `/api/me` | Delete the account |
 | POST | `/api/auth/logout` | Sign out |
 | GET | `/api/me/saved` | Saved events as cards, upcoming, soonest first |
-| PUT / DELETE | `/api/me/saved/{event_id}` | Save on / off (404 for an unknown or ended event, 409 over the limit) |
+| PUT / DELETE | `/api/me/saved/{event_id}` | Save on / off (410 for an unknown or ended event, 409 over the limit) |
 | POST | `/api/me/saved/merge` | `{ids: [...]}` from the browser after sign-in |
 | GET | `/events/cards?ids=` | Public: cards for a signed-out browser's saved events |
 | GET / POST | `/api/me/alerts` | List (with unseen counts) / create (422 for no filter or an unknown genre / region / slot, 409 over the limit) |

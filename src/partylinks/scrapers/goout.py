@@ -59,10 +59,10 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         refs = await self._list_event_urls()
-        self.log.info("listed %d events", len(refs))
+        self.log.debug("listed %d events", len(refs))
         if self.settings.artists_endpoint:
             self.artist_profiles = await self.optional("artists", self._list_artists()) or []
-            self.log.info("listed %d artists", len(self.artist_profiles))
+            self.log.debug("listed %d artists", len(self.artist_profiles))
         async for event in self.stream_isolated(refs, self._fetch_event, label=lambda ref: ref):
             yield event
 

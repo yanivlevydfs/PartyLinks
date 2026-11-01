@@ -133,7 +133,7 @@ def test_without_secrets_there_is_no_webhook(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     seed(settings, [])
     with TestClient(create_app(settings, start_scheduler=False)) as c:
-        assert c.post(PATH, json={}, headers={SECRET_HEADER: "x", "user-agent": "t"}).status_code == 404
+        assert c.post(PATH, json={}, headers={SECRET_HEADER: "x", "user-agent": "t"}).status_code == 410
 
 
 # ---------------------------------------------------------------------- alerts job

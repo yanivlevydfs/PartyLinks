@@ -62,7 +62,7 @@ class ZoaTlvScraper(BaseScraper[ZoaTlvSettings]):
             if not new:
                 break  # past the last real page (it redirects to page 1)
             cards.update((c["url"], c) for c in new)
-        self.log.info("listed %d events", len(cards))
+        self.log.debug("listed %d events", len(cards))
         events = []
         for card in cards.values():
             try:

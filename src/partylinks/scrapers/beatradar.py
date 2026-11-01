@@ -48,7 +48,7 @@ class BeatRadarScraper(BaseScraper[BeatRadarSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         items = await self.get_json(s.site_url + s.events_path, expect=list)
-        self.log.info("listed %d events", len(items))
+        self.log.debug("listed %d events", len(items))
         for item in items:
             try:
                 event = parse_event(item, self.timezone)

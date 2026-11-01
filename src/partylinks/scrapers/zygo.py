@@ -55,7 +55,7 @@ class ZygoScraper(BaseScraper[ZygoSettings]):
         ids = await self._list_event_ids()
         prefix = self.settings.site_url + "/event/"
         linked = [url for url in self.linked_urls if url.startswith(prefix)]
-        self.log.info("listed %d events, %d more linked from other sites", len(ids), len(linked))
+        self.log.debug("listed %d events, %d more linked from other sites", len(ids), len(linked))
         seen: set[str] = set()  # a linked page can be a listed event under its other id
         async for event in self.stream_isolated([*ids, *linked], self._fetch_event, label=lambda i: i):
             if event.source_event_id not in seen:

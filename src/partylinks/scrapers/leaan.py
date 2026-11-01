@@ -54,7 +54,7 @@ class LeaanScraper(BaseScraper[LeaanSettings]):
         raws = listing_events(await self.get_text(s.site_url + s.listing_path))
         if not raws:
             raise ParseError("no events in the homepage search index")
-        self.log.info("listed %d events", len(raws))
+        self.log.debug("listed %d events", len(raws))
         for raw in raws:
             try:
                 if (event := parse_event(raw, page_url, self.timezone, now)) is not None:
@@ -67,7 +67,7 @@ class LeaanScraper(BaseScraper[LeaanSettings]):
         sitemap = await self.optional("sitemap", self.get_text(s.site_url + s.sitemap_path)) or ""
         listed = {str(r.get("id")) for r in raws}
         missing = [i for i in sitemap_event_ids(sitemap, s.event_page_path) if i not in listed]
-        self.log.info("%d sitemap events missing from the listing", len(missing))
+        self.log.debug("%d sitemap events missing from the listing", len(missing))
 
         async def fetch(event_id: str) -> ScrapedEvent | None:
             url = page_url.format(slug="event", event_id=event_id)

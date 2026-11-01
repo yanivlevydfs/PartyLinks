@@ -18,7 +18,7 @@ def test_builder_matches_the_endpoint(tmp_path: Path) -> None:
     settings.security.rate_limit_per_minute = settings.security.data_rate_limit_per_minute = 100_000
     db = seed(settings, [event(k, datetime.now(UTC) + timedelta(days=2, hours=i)) for i, k in enumerate("abc")])
     with db.session(write=False) as session:
-        count = lambda **params: session.scalar(  # noqa: E731
+        count = lambda **params: session.scalar(
             select(func.count()).select_from(EventRow).where(*build_event_filters(settings, **params))
         )
         free, techno = count(free_entry=True), count(q="techno")

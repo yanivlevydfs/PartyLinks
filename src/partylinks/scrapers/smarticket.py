@@ -103,7 +103,7 @@ class SmarticketScraper(BaseScraper[SmarticketSettings]):
                 continue
             if event is not None and event.start_at is not None and (event.end_at or event.start_at) >= now:
                 events.append(event)
-        self.log.info("%s: %d upcoming events", tenant.host, len(events))
+        self.log.debug("%s: %d upcoming events", tenant.host, len(events))
         return events
 
     async def _calendar_shows(self, host: str) -> list[dict[str, Any]]:

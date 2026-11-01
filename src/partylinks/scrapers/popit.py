@@ -59,7 +59,7 @@ class PopitScraper(BaseScraper[PopitSettings]):
         events = event_objects(rsc)
         if not events:
             raise ParseError("no event objects in the listing page payload")
-        self.log.info("listed %d events", len(events))
+        self.log.debug("listed %d events", len(events))
         for raw in events:
             try:
                 yield parse_event(raw, rsc, s.site_url + s.event_page_path, self.timezone)

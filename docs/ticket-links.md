@@ -3,7 +3,7 @@
 Every ticket link on the site points to `/go/<event id>`, never straight to the seller. This
 redirect is the only place a seller's URL leaves the server. On each click it:
 
-1. **Looks up the event.** An unknown event or a non-http(s) URL returns `404`.
+1. **Looks up the event.** An unknown event (one that is over is deleted) or a non-http(s) URL returns `410 Gone`, so search engines drop the link.
 2. **Counts the click** in the `clicks` table (`clicks.py`).
 3. **Adds UTM tags** to the seller's URL (`utm.py`).
 4. **Redirects (302)** with `Cache-Control: private, no-store` and `X-Robots-Tag: noindex, nofollow`.

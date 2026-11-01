@@ -285,7 +285,7 @@ class ScrapeService:
             with self.db.session() as session:
                 session.execute(update(EventRow), updates)
         changed = len(updates)
-        log.info("areas/cities: updated %d events", changed)
+        log.debug("areas/cities: updated %d events", changed)
         return changed
 
     def regroup(self) -> int:
@@ -302,7 +302,7 @@ class ScrapeService:
         if renames:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, renames)
-        log.info("venues: renamed %d events", len(renames))
+        log.debug("venues: renamed %d events", len(renames))
         with self.db.session(write=False) as session:
             merged, changed = self.deduplicator.plan(session)
         if changed:
@@ -560,7 +560,7 @@ class ScrapeService:
                     session.execute(update(EventRow).where(EventRow.id.in_(gone)).values(is_listed=False))
                     record_delisted(session, source, gone)
                 run.events_unlisted = len(gone)
-                log.info("source %s: %d events no longer listed", source, len(gone))
+                log.debug("source %s: %d events no longer listed", source, len(gone))
 
     def _finish_run(self, result: RunResult, failures: list[str]) -> None:
         with self.db.session() as session:

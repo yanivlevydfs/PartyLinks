@@ -34,7 +34,14 @@ import httpx
 from curl_cffi import requests as curl_requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from socksio.exceptions import SOCKSError
-from tenacity import AsyncRetrying, RetryCallState, retry_if_exception, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    AsyncRetrying,
+    RetryCallState,
+    retry_if_exception,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from partylinks.artists import ArtistProfile
 from partylinks.config import HttpSettings, validate_cron
@@ -148,7 +155,7 @@ def _israeli_feed(url: str | None) -> list[str]:
     try:
         rows = httpx.get(url, timeout=10).raise_for_status().json()["data"]
         # httpx speaks to HTTP(S) and SOCKS5 proxies (socksio); SOCKS4 is skipped.
-        scheme = lambda protocols: "http" if {"http", "https"} & set(protocols) else "socks5" if "socks5" in protocols else None  # noqa: E731
+        scheme = lambda protocols: "http" if {"http", "https"} & set(protocols) else "socks5" if "socks5" in protocols else None
         proxies = [f"{scheme(r.get('protocols', []))}://{r['ip']}:{r['port']}" for r in rows if scheme(r.get("protocols", []))]
     except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
         logging.getLogger(__name__).warning("israel_proxy_feed failed: %s", exc)
@@ -191,7 +198,7 @@ class BaseScraper[S: SourceSettings](ABC):
         self.timezone = timezone
         self.log = logging.getLogger(f"partylinks.scrapers.{self.name}")
         # Credentials stay out of the log: only the proxy's host.
-        self.log.info("via %s", self.http.proxy.rpartition("@")[2] if self.http.proxy else "direct connection (no proxy)")
+        self.log.debug("via %s", self.http.proxy.rpartition("@")[2] if self.http.proxy else "direct connection (no proxy)")
         self.failures: list[str] = []
         # Artists the site curates (photo, type, links); the service saves them to the artist book.
         self.artist_profiles: list[ArtistProfile] = []
@@ -332,7 +339,7 @@ class BaseScraper[S: SourceSettings](ABC):
                 _israel_good = None
         rest = [p for p in current if p not in self._israeli]
         pool = sorted(alive, key=lambda p: p != _israel_good) + rest
-        self.log.info("Israeli proxies: %d of %d answer", len(alive), len(self._israeli))
+        self.log.debug("Israeli proxies: %d of %d answer", len(alive), len(self._israeli))
         if not pool:
             raise SourceBlockedError(f"{self.name}: no Israeli proxy answers ({len(self._israeli)} tried)")
         if pool[0] != self._proxy:

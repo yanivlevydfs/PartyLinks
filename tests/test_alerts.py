@@ -82,7 +82,7 @@ def test_alerts_api(tmp_path: Path, fake: FakeGoogle) -> None:
         c.cookies.clear()
         sign_in(c, fake, email="other@example.com", sub="g-other")
         mine = c.get("/api/me/alerts").json()["items"]
-        assert mine == [] and c.get("/api/me/alerts/999/preview").status_code == 404
+        assert mine == [] and c.get("/api/me/alerts/999/preview").status_code == 410
 
 
 VARIED = [  # (id, title, city, free, days ahead, hour)
@@ -235,7 +235,7 @@ def test_cleared_notifications_leave_for_you_and_are_not_emailed(
         c.post("/api/me/alerts", json={"criteria": {"q": "techno"}, "instant": True}, headers=OURS)
         seed(settings, [event(k, SOON + timedelta(hours=i)) for i, k in enumerate("abc")])
         matcher.run(settings, db)
-        ids = lambda: [e["id"] for e in c.get("/api/me/for-you").json()["items"]]  # noqa: E731
+        ids = lambda: [e["id"] for e in c.get("/api/me/for-you").json()["items"]]
         assert ids() == ["test:a", "test:b", "test:c"]  # now cached
         assert c.delete("/api/me/bell", params={"event_id": "test:a"}, headers=OURS).status_code == 204
         assert ids() == ["test:b", "test:c"]  # the clear dropped the cached row

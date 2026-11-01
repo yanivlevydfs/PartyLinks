@@ -27,7 +27,7 @@ def _app(tmp_path: Path):
 def test_plan_answers_and_privacy(tmp_path: Path) -> None:
     app, _ = _app(tmp_path)
     with TestClient(app) as c:
-        assert c.post("/plans", json={"event_id": "nope"}).status_code == 404
+        assert c.post("/plans", json={"event_id": "nope"}).status_code == 410
         plan = c.post("/plans", json={"event_id": "test:a"}).json()
         pid = plan["id"]
         assert len(pid) >= 8 and plan["event"]["title"] == "Techno night a" and plan["votes"] == []
@@ -45,10 +45,10 @@ def test_plan_answers_and_privacy(tmp_path: Path) -> None:
         assert c.post(f"/plans/{pid}/votes", json={"voter": ME, "name": " ", "answer": "yes"}).status_code == 422
         assert c.post(f"/plans/{pid}/votes", json={"voter": ME, "name": "x", "answer": "sure"}).status_code == 422
         assert c.post(f"/plans/{pid}/votes", json={"voter": "a b", "name": "x", "answer": "yes"}).status_code == 422
-        assert c.post("/plans/missing/votes", json={"voter": ME, "name": "x", "answer": "yes"}).status_code == 404
+        assert c.post("/plans/missing/votes", json={"voter": ME, "name": "x", "answer": "yes"}).status_code == 410
 
         page = c.get(f"/plan/{pid}")  # the link preview WhatsApp reads (when the site is built)
-        assert page.status_code in (200, 404)
+        assert page.status_code in (200, 410)
         if page.status_code == 200 and "<head" in page.text:
             assert "noindex" in page.text and "Techno night a" in page.text
 
@@ -67,7 +67,7 @@ def test_plan_is_capped_and_goes_with_its_event(tmp_path: Path) -> None:
             delete_events(session, ["test:a"])
         with db.session(write=False) as session:
             assert session.query(PlanRow).count() == 0 and session.query(PlanVoteRow).count() == 0
-        assert c.get(f"/plans/{pid}").status_code == 404
+        assert c.get(f"/plans/{pid}").status_code == 410
 
 
 def test_which_party_and_who_drives(tmp_path: Path) -> None:
@@ -81,7 +81,7 @@ def test_which_party_and_who_drives(tmp_path: Path) -> None:
             c.post(f"/plans/{pid}/events", json={"event_id": f"test:{k}"})
         assert c.post(f"/plans/{pid}/events", json={"event_id": "test:e"}).status_code == 409  # MAX_OPTIONS
         assert MAX_OPTIONS == 4
-        assert c.post(f"/plans/{pid}/events", json={"event_id": "nope"}).status_code == 404
+        assert c.post(f"/plans/{pid}/events", json={"event_id": "nope"}).status_code == 410
 
         vote = {"voter": ME, "name": "יניב", "answer": "yes", "picks": ["test:b", "test:x", "test:b"], "ride": "drive", "seats": 3}
         me = next(v for v in c.post(f"/plans/{pid}/votes", json=vote).json()["votes"] if v["mine"])
@@ -154,12 +154,12 @@ def test_groups_in_the_account(tmp_path: Path, fake: FakeGoogle) -> None:
         assert owner.get(f"/plans/{pid}").json()["votes"] == []
         assert owner.delete(f"/api/me/groups/{pid}").status_code == 403  # not from our pages
         assert owner.delete(f"/api/me/groups/{pid}", headers=OURS).status_code == 204  # the creator deletes it
-        assert owner.get(f"/plans/{pid}").status_code == 404
+        assert owner.get(f"/plans/{pid}").status_code == 410
 
         g2 = owner.post("/plans", json={"event_id": "test:a"}, headers=OURS).json()["id"]
         with db.session() as s:
             delete_events(s, ["test:a"])  # the event ends: the group goes
-        assert owner.get("/api/me/groups").json() == [] and owner.get(f"/plans/{g2}").status_code == 404
+        assert owner.get("/api/me/groups").json() == [] and owner.get(f"/plans/{g2}").status_code == 410
 
 
 def test_plan_writes_are_rate_limited(tmp_path: Path) -> None:
@@ -227,7 +227,7 @@ def test_a_plan_goes_when_its_event_is_over_before_the_purge(tmp_path: Path, fak
         pid = c.post("/plans", json={"event_id": "test:a"}, headers=OURS).json()["id"]
         with db.session() as s:  # over, still in the table until the hourly purge
             s.get(EventRow, "test:a").start_at = datetime.now(UTC) - timedelta(days=2)
-        assert c.get(f"/plans/{pid}").status_code == 404
-        assert c.post(f"/plans/{pid}/votes", json={"voter": ME, "name": "x", "answer": "yes"}).status_code == 404
+        assert c.get(f"/plans/{pid}").status_code == 410
+        assert c.post(f"/plans/{pid}/votes", json={"voter": ME, "name": "x", "answer": "yes"}).status_code == 410
         assert c.get("/api/me/groups").json() == []
-        assert c.post("/plans", json={"event_id": "test:a"}).status_code == 404  # no new plan for it either
+        assert c.post("/plans", json={"event_id": "test:a"}).status_code == 410  # no new plan for it either

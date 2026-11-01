@@ -39,7 +39,7 @@ class MegaticketsScraper(BaseScraper[MegaticketsSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         slugs = await self._list_slugs()
-        self.log.info("listed %d events", len(slugs))
+        self.log.debug("listed %d events", len(slugs))
         async for event in self.stream_isolated(slugs, self._fetch_event, label=lambda s: s):
             yield event
 

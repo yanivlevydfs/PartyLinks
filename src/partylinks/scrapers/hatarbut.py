@@ -65,7 +65,7 @@ class HatarbutScraper(BaseScraper[HatarbutSettings]):
         by_page: dict[str, list[dict[str, Any]]] = {}
         for row in rows:
             by_page.setdefault(str(row.get("url") or ""), []).append(row)
-        self.log.info("listed %d performances of %d shows", len(rows), len(by_page))
+        self.log.debug("listed %d performances of %d shows", len(rows), len(by_page))
 
         async def show(url: str) -> list[ScrapedEvent]:
             page = await self.optional(f"page {url}", self.get_text(url)) if url else None

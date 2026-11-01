@@ -13,6 +13,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from partylinks.db import Database, SearchRow, utcnow
@@ -32,7 +33,7 @@ def record(db: Database, q: str, results: int) -> None:
     try:
         with db.session() as session:
             session.add(SearchRow(q=normalize(q), results=results))
-    except Exception as exc:  # a lost search is not worth a failed request
+    except SQLAlchemyError as exc:  # a lost search is not worth a failed request
         log.warning("search not recorded: %s", exc)
 
 
@@ -42,7 +43,7 @@ def typed(rows: Sequence[Any]) -> list[Any]:
     # ponytail: two visitors typing the same prefix within 30 s merge into one; fine at today's traffic.
     kept = []
     for i, r in enumerate(rows):
-        later = takewhile(lambda n: n.at - r.at <= TYPING_GAP, islice(rows, i + 1, None))  # only the next 30 s
+        later = takewhile(lambda n, r=r: n.at - r.at <= TYPING_GAP, islice(rows, i + 1, None))  # only the next 30 s
         if not any(n.q != r.q and n.q.startswith(r.q) for n in later):
             kept.append(r)
     return kept

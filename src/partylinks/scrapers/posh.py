@@ -30,18 +30,18 @@ _US = {"usa", "us", "united states", "united states of america"}
 # title says otherwise; these title words add the matching category word the enrichment knows.
 # Music genres come from the title / description as for every source.
 _KINDS = [
-    (re.compile(r"halloween|thanksgiving|christmas|new year|nye\b|friendsgiving|valentine|cinco de mayo|juneteenth", re.I), "holidays"),
-    (re.compile(r"\bmarket\b|\bvendors?\b|pop[- ]?up shop|\bbazaar\b|\bflea\b", re.I), "shopping"),
-    (re.compile(r"\bbrunch|\bfood\b|tasting|\bwine\b|dinner", re.I), "food"),
-    (re.compile(r"comedy|comedian|stand[- ]?up", re.I), "comedy"),
-    (re.compile(r"happy hour", re.I), "happy hour"),
-    (re.compile(r"\bfestival|\bfest\b", re.I), "festival"),
-    (re.compile(r"\bconcert\b|\blive music\b|\bin concert\b", re.I), "concert"),
-    (re.compile(r"karaoke", re.I), "karaoke"),
-    (re.compile(r"\byoga\b|wellness|sound bath|meditation", re.I), "wellness"),
-    (re.compile(r"networking|mixer|meet[- ]?up", re.I), "community"),
-    (re.compile(r"tailgate|game day|\b5k\b|tournament", re.I), "sports"),
-    (re.compile(r"\bpool party|pool day", re.I), "pool party"),
+    (re.compile(r"halloween|thanksgiving|christmas|new year|nye\b|friendsgiving|valentine|cinco de mayo|juneteenth", re.IGNORECASE), "holidays"),
+    (re.compile(r"\bmarket\b|\bvendors?\b|pop[- ]?up shop|\bbazaar\b|\bflea\b", re.IGNORECASE), "shopping"),
+    (re.compile(r"\bbrunch|\bfood\b|tasting|\bwine\b|dinner", re.IGNORECASE), "food"),
+    (re.compile(r"comedy|comedian|stand[- ]?up", re.IGNORECASE), "comedy"),
+    (re.compile(r"happy hour", re.IGNORECASE), "happy hour"),
+    (re.compile(r"\bfestival|\bfest\b", re.IGNORECASE), "festival"),
+    (re.compile(r"\bconcert\b|\blive music\b|\bin concert\b", re.IGNORECASE), "concert"),
+    (re.compile(r"karaoke", re.IGNORECASE), "karaoke"),
+    (re.compile(r"\byoga\b|wellness|sound bath|meditation", re.IGNORECASE), "wellness"),
+    (re.compile(r"networking|mixer|meet[- ]?up", re.IGNORECASE), "community"),
+    (re.compile(r"tailgate|game day|\b5k\b|tournament", re.IGNORECASE), "sports"),
+    (re.compile(r"\bpool party|pool day", re.IGNORECASE), "pool party"),
 ]
 _NIGHT_OUT = {"holidays", "festival", "karaoke", "pool party", "happy hour"}  # still a party: keep nightclubs
 
@@ -66,7 +66,7 @@ class PoshScraper(BaseScraper[PoshSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         listed = await self._list()
-        self.log.info("listed %d upcoming events", len(listed))
+        self.log.debug("listed %d upcoming events", len(listed))
         async for event in self.stream_isolated(listed, self._fetch_event, label=lambda e: e.get("url", "")):
             yield event
 
@@ -107,7 +107,7 @@ def rsc_text(page_html: str) -> str:
 
 def _field(text: str, key: str) -> str | None:
     """The first JSON string value of ``"key":"..."`` in the payload."""
-    m = re.search(r'"%s":("(?:[^"\\]|\\.)*")' % re.escape(key), text)
+    m = re.search(rf'"{re.escape(key)}":("(?:[^"\\]|\\.)*")', text)
     if not m:
         return None
     try:

@@ -334,7 +334,7 @@ def main() -> None:
 
     urls = discover_sitemap_urls()
     urls = urls[:MAX_PAGES]
-    log.info("Discovered %d event candidate URLs.", len(urls))
+    log.debug("Discovered %d event candidate URLs.", len(urls))
 
     deals: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
@@ -352,7 +352,7 @@ def main() -> None:
                 "extraction": result.get("extraction"),
             })
 
-        log.info("[%d/%d] %s: %s", index, len(urls), result.get("status"), url)
+        log.debug("[%d/%d] %s: %s", index, len(urls), result.get("status"), url)
 
         # A conservative pause between page requests. Stop if the origin starts
         # returning checkpoint responses instead of increasing request pressure.
@@ -373,7 +373,7 @@ def main() -> None:
         "diagnostics": diagnostics,
     }
     save_json(OUTPUT_PATH, output)
-    log.info("Saved %d deals to %s (cache: %s)", len(deals), OUTPUT_PATH, CACHE_PATH)
+    log.debug("Saved %d deals to %s (cache: %s)", len(deals), OUTPUT_PATH, CACHE_PATH)
 
 
 if __name__ == "__main__":

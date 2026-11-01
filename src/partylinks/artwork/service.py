@@ -138,7 +138,7 @@ async def run_async(settings: Settings, db: Database) -> dict[str, int]:
                 return False
 
     drawn = sum(await asyncio.gather(*(one(j) for j in jobs)))
-    log.info("artwork: %d events without a picture, %d drawn, %d removed", needed, drawn, removed)
+    log.debug("artwork: %d events without a picture, %d drawn, %d removed", needed, drawn, removed)
     return {"needing": needed, "drawn": drawn, "removed": removed}
 
 

@@ -45,7 +45,7 @@ class Reading3Scraper(BaseScraper[Reading3Settings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         cards = parse_listing(await self.get_text(s.site_url + s.listing_path), s.site_url)
-        self.log.info("listed %d shows", len(cards))
+        self.log.debug("listed %d shows", len(cards))
         for show_id, image in cards.items():
             url = s.site_url + s.show_path.format(id=show_id)
             page = await self.optional(f"show {show_id}", self.get_text(url))

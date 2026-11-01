@@ -447,7 +447,7 @@ Update the table and the "server-side records" section.
 | Worker restarts mid-digest | `last_digest_at` is stamped per user after a successful send, so a rerun skips those already sent |
 | Blocked during an active session | Every `/api/me` call re-reads the user, so the user is signed out at the next request |
 | User deletes account between matcher and send | Rows cascade; the send loop re-reads users and skips missing ones |
-| `accounts.enabled: false` | Account UI hidden, `/auth` returns 404, jobs idle; the site is unchanged |
+| `accounts.enabled: false` | Account UI hidden, `/auth` returns 410, jobs idle; the site is unchanged |
 
 ## 17. Testing
 

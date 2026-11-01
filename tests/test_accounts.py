@@ -193,7 +193,7 @@ def test_admin_users_actions(tmp_path: Path, fake: FakeGoogle) -> None:
         admin.post(f"/admin/api/users/{dana}/revoke", headers=OURS)
         assert user.get("/api/me").status_code == 401
         assert admin.delete(f"/admin/api/users/{dana}", headers=OURS).json() == {"ok": True}
-        assert admin.get(f"/admin/api/users/{dana}").status_code == 404
+        assert admin.get(f"/admin/api/users/{dana}").status_code == 410
 
 
 def test_sign_in_is_rate_limited(tmp_path: Path, fake: FakeGoogle) -> None:

@@ -51,7 +51,7 @@ class AirdropScraper(BaseScraper[AirdropSettings]):
         urls = listing_urls(await self.get_text(s.site_url + s.listing_path), s.site_url)
         if not urls:
             raise ParseError("listing has no event cards")
-        self.log.info("listed %d upcoming events", len(urls))
+        self.log.debug("listed %d upcoming events", len(urls))
         async for event in self.stream_isolated(urls, self._fetch_event, label=lambda u: u):
             yield event
 

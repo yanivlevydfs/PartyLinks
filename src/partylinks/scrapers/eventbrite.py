@@ -57,11 +57,11 @@ _CATEGORIES = {
 }
 # Events listed with no category at all: category words from the title (Hebrew or English).
 _TITLE_WORDS = [
-    (re.compile(r"workshop|סדנ", re.I), "workshop"),
-    (re.compile(r"\btours?\b|סיור|experience|מקרוב", re.I), "tours"),
-    (re.compile(r"lecture|\btalk\b|הרצא", re.I), "lecture"),
-    (re.compile(r"demo day|accelerator|startup|סטארט", re.I), "startups"),
-    (re.compile(r"conference|summit|כנס", re.I), "conference"),
+    (re.compile(r"workshop|סדנ", re.IGNORECASE), "workshop"),
+    (re.compile(r"\btours?\b|סיור|experience|מקרוב", re.IGNORECASE), "tours"),
+    (re.compile(r"lecture|\btalk\b|הרצא", re.IGNORECASE), "lecture"),
+    (re.compile(r"demo day|accelerator|startup|סטארט", re.IGNORECASE), "startups"),
+    (re.compile(r"conference|summit|כנס", re.IGNORECASE), "conference"),
 ]
 
 
@@ -77,7 +77,7 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         listed = await self._list()
-        self.log.info("listed %d upcoming events", len(listed))
+        self.log.debug("listed %d upcoming events", len(listed))
         async for event in self.stream_isolated(listed, self._fetch_event, label=lambda e: e.get("url", "")):
             yield event
 

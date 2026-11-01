@@ -50,7 +50,7 @@ class PoalimAtarimScraper(BaseScraper[PoalimAtarimSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         sites = parse_listing(next_data(await self.get_text(self.settings.site_url)))
-        self.log.info("listed %d sites", len(sites))
+        self.log.debug("listed %d sites", len(sites))
         async for events in self.stream_isolated(sites, self._fetch_site, label=lambda site: str(site.get("eid"))):
             for event in events:
                 yield event

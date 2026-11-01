@@ -59,7 +59,7 @@ class OneCityScraper(BaseScraper[OneCitySettings]):
                 self.record_failure(site.url, exc)
                 continue
             events = parse_rows(rows or [], site, self.timezone, skip)
-            self.log.info("%s: %d events", site.city, len(events))
+            self.log.debug("%s: %d events", site.city, len(events))
             for event in events:
                 yield event
 

@@ -90,10 +90,10 @@ class GrayclubScraper(BaseScraper[GrayclubSettings]):
         for branch in self.settings.branches:
             for card in await self.optional(f"branch {branch.city}", self._branch_cards(branch)) or []:
                 cards.setdefault(card["url"], {**card, "city": branch.city})
-        self.log.info("listed %d events", len(cards))
+        self.log.debug("listed %d events", len(cards))
         if self.settings.artist_sitemap_path:
             self.artist_profiles = await self.optional("artists", self._list_artists()) or []
-            self.log.info("read %d new artist pages", len(self.artist_profiles))
+            self.log.debug("read %d new artist pages", len(self.artist_profiles))
         async for event in self.stream_isolated(cards.values(), self._fetch_event, label=lambda c: c["url"]):
             yield event
 

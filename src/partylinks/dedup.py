@@ -148,9 +148,8 @@ class Deduplicator:
         if not small < big or not self._distinctive(small) or (a.kinds and b.kinds and not a.kinds & b.kinds):
             return False
         s = self.settings
-        if a.timed and b.timed and a.start and b.start:
-            if abs((a.start - b.start).total_seconds()) > s.subset_max_start_gap_minutes * 60:
-                return False
+        if a.timed and b.timed and a.start and b.start and abs((a.start - b.start).total_seconds()) > s.subset_max_start_gap_minutes * 60:
+            return False
         distance = _distance_m(a, b)
         if distance is not None:
             return distance <= s.max_distance_meters
@@ -369,7 +368,7 @@ class Deduplicator:
         changed = [
             u for u in updates if u["id"] in current and any(getattr(current[u["id"]], c) != u[c] for c in _GROUP_FIELDS)
         ]
-        log.info("dedup: %d listings, %d merged groups, %d rows changed", len(rows), merged, len(changed))
+        log.debug("dedup: %d listings, %d merged groups, %d rows changed", len(rows), merged, len(changed))
         return merged, changed
 
 

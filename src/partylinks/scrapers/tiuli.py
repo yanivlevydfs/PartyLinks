@@ -66,7 +66,7 @@ class TiuliScraper(BaseScraper[TiuliSettings]):
         cards = parse_listing(await self.get_text(s.site_url + s.list_path))
         if len(cards) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(cards))
-        self.log.info("listed %d dated cards", len(cards))
+        self.log.debug("listed %d dated cards", len(cards))
         today = datetime.now(zone(self.timezone)).date()
 
         async def fetch(card: Card) -> list[ScrapedEvent]:

@@ -62,7 +62,7 @@ class VibezScraper(BaseScraper[VibezSettings]):
             if not items:
                 break
             listed.update((i["id"], i) for i in items if isinstance(i, dict) and i.get("id"))
-        self.log.info("listed %d events", len(listed))
+        self.log.debug("listed %d events", len(listed))
         async for event in self.stream_isolated(list(listed), self._fetch_event, label=lambda i: i):
             yield event
 

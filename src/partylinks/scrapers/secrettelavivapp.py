@@ -75,7 +75,7 @@ class SecretTelAvivAppScraper(BaseScraper[SecretTelAvivAppSettings]):
         today = datetime.now(zone(self.timezone)).date().isoformat()
         query = {"status": "active", "calculated_status": {"$in": s.live_statuses}, "event_end_date": {"$gte": today}}
         rows = await self._entities("Event", query)
-        self.log.info("listed %d events", len(rows))
+        self.log.debug("listed %d events", len(rows))
         location_ids = sorted({r["base44_location_id"] for r in rows if r.get("base44_location_id")})
         locations = (
             await self.optional("locations", self._entities("Location", {"id": {"$in": location_ids}}))

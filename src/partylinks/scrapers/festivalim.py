@@ -72,7 +72,7 @@ class FestivalimScraper(BaseScraper[FestivalimSettings]):
                 break
         else:
             self.log.warning("listing truncated at max_pages=%d", s.max_pages)
-        self.log.info("listed %d dated festivals", len(events))
+        self.log.debug("listed %d dated festivals", len(events))
 
         async def detail(event: ScrapedEvent) -> ScrapedEvent:
             page = await self.optional(str(event.url), self.get_text(str(event.url)))

@@ -56,7 +56,7 @@ class KupatbravoScraper(BaseScraper[KupatbravoSettings]):
         urls = sitemap_show_urls(await self.get_text(s.site_url + s.sitemap_path), s.event_page_prefix)
         if len(urls) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
-        self.log.info("listed %d shows", len(urls))
+        self.log.debug("listed %d shows", len(urls))
         async for events in self.stream_isolated(urls[: s.max_events], self._fetch_show, label=lambda u: u):
             for event in events:
                 yield event

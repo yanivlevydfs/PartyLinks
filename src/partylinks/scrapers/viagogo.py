@@ -50,7 +50,7 @@ class ViagogoScraper(BaseScraper[ViagogoSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         rows = await self.paginate(self._page, PAGE_SIZE, self.settings.max_pages)
-        self.log.info("listed %d events", len(rows))
+        self.log.debug("listed %d events", len(rows))
         today = datetime.now(ZoneInfo(self.timezone)).date()
         seen: set[str] = set()
         for row in rows:

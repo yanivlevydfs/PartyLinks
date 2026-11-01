@@ -28,15 +28,15 @@ def test_headers_probes_bots_and_bans(tmp_path: Path) -> None:
         ok = local.get("/health")
         assert ok.headers["x-frame-options"] == "DENY" and "frame-ancestors 'none'" in ok.headers["content-security-policy"]
         assert "server" not in ok.headers
-        assert local.get("/docs").status_code == 404 and local.get("/openapi.json").status_code == 404
+        assert local.get("/docs").status_code == 410 and local.get("/openapi.json").status_code == 410
 
-        assert outsider.get("/events", headers={"user-agent": "sqlmap/1.7"}).status_code == 404
+        assert outsider.get("/events", headers={"user-agent": "sqlmap/1.7"}).status_code == 410
         assert outsider.get("/", headers={"user-agent": "Mozilla/5.0 (compatible; AhrefsBot/7.0)"}).status_code == 403
         assert outsider.get("/robots.txt", headers={"user-agent": "AhrefsBot"}).status_code == 200
         assert "User-agent: AhrefsBot" in local.get("/robots.txt").text
 
-        assert outsider.get("/.env").status_code == 404
-        assert outsider.get("/wp-login.php?x=1").status_code == 404  # third strike: banned
+        assert outsider.get("/.env").status_code == 410
+        assert outsider.get("/wp-login.php?x=1").status_code == 410  # third strike: banned
         assert outsider.get("/health").status_code == 403
         assert local.get("/health").status_code == 200  # this machine is never banned
 
@@ -49,8 +49,8 @@ def test_rate_limit_and_admin_brute_force(tmp_path: Path) -> None:
     app = create_app(settings, start_scheduler=False)
     with TestClient(app, client=("198.51.100.1", 1)) as a, TestClient(app, client=("198.51.100.2", 1)) as b:
         assert [a.get("/health").status_code for _ in range(4)] == [200, 200, 200, 429]
-        assert {b.get(f"/images/{i}").status_code for i in range(5)} == {404}  # artwork: not limited
-        assert {b.get(f"/images/{i}/640.webp").status_code for i in range(5)} == {404}  # nor its WebP copies
+        assert {b.get(f"/images/{i}").status_code for i in range(5)} == {410}  # artwork: not limited
+        assert {b.get(f"/images/{i}/640.webp").status_code for i in range(5)} == {410}  # nor its WebP copies
         # The admin page sends one token on several requests at once: a repeated typo is one strike.
         assert [b.get("/admin/api/overview", headers={"authorization": "Bearer nope"}).status_code for _ in range(5)] == [401] * 5
         assert b.get("/admin/api/overview", headers={"authorization": "Bearer nope2"}).status_code == 401
@@ -245,7 +245,7 @@ def test_backup_names_cannot_leave_the_backup_folder(tmp_path: Path) -> None:
     with TestClient(app, client=("198.51.100.22", 1)) as c:
         for name in ("..%2Fsettings.yaml", "..%5Csettings.yaml", "%2e%2e%2f%2e%2e%2fpyproject.toml"):
             got = c.get(f"/admin/api/config/backups/{name}", headers=ADMIN)
-            assert got.status_code == 404, (name, got.status_code)
+            assert got.status_code == 410, (name, got.status_code)
 
 
 def test_ticket_redirect_only_goes_to_web_pages(tmp_path: Path) -> None:
@@ -260,8 +260,9 @@ def test_ticket_redirect_only_goes_to_web_pages(tmp_path: Path) -> None:
         ok = c.get("/go/test:ok")
         assert ok.status_code == 302 and ok.headers["location"].startswith("https://example.com/ok")
         assert "no-store" in ok.headers["cache-control"]
-        assert c.get("/go/test:bad").status_code == 404
-        assert c.get("/go/https://evil.example/").status_code == 404  # an id, never a URL to follow
+        for path in ("/go/test:bad", "/go/https://evil.example/"):  # an id, never a URL to follow
+            gone = c.get(path, follow_redirects=False)
+            assert gone.status_code == 410 and "location" not in gone.headers
 
 
 def test_ticket_link_limit_slows_a_crawler_but_never_bans_it(tmp_path: Path) -> None:
@@ -292,13 +293,13 @@ def test_hostile_input_is_refused_not_crashed_on(tmp_path: Path) -> None:
     seed(settings, [event("a", datetime.now(UTC) + timedelta(days=2))])
     app = create_app(settings, start_scheduler=False)
     with TestClient(app, raise_server_exceptions=False) as c:
-        assert c.get("/events/' OR '1'='1").status_code == 404
+        assert c.get("/events/' OR '1'='1").status_code == 410
         assert c.get("/events", params={"q": "'; DROP TABLE events;--"}).status_code == 200
         assert c.get("/events/test:a").status_code == 200  # the table is still there
         assert c.get("/events", params={"sort": "id; DELETE"}).status_code == 422
         assert len(c.get("/events", params={"size": 10_000}).json()["items"]) <= settings.api.max_page_size
         assert c.get("/locate", params={"lat": 999, "lng": 0}).status_code == 422
-        assert c.get("/images/..%2F..%2Fetc%2Fpasswd").status_code in (404, 422)
+        assert c.get("/images/..%2F..%2Fetc%2Fpasswd").status_code in (410, 422)
         assert c.get("/changes", params={"kind": ["x"] * 500}).status_code == 422
         assert c.post("/events/sponsored/hit", json={"event_id": "x" * 10_000, "kind": "view"}).status_code == 422
         assert c.post("/events/sponsored/hit", json={"event_id": "test:a", "kind": "steal"}).status_code == 422

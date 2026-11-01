@@ -90,7 +90,7 @@ class SecretTelAvivScraper(BaseScraper[SecretTelAvivSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         feed = parse_feed(await self.get_text(s.site_url + s.feed_path), s, self.timezone)
-        self.log.info("listed %d events", len(feed))
+        self.log.debug("listed %d events", len(feed))
         done: set[str] = set()
 
         async def detail(event: ScrapedEvent) -> ScrapedEvent | None:

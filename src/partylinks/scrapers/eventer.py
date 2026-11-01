@@ -78,10 +78,10 @@ class EventerScraper(BaseScraper[EventerSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         link_names = await self._list_link_names()
-        self.log.info("listed %d events", len(link_names))
+        self.log.debug("listed %d events", len(link_names))
         if self.settings.artists_path:
             self.artist_profiles = await self.optional("artists", self._list_artists()) or []
-            self.log.info("listed %d artists", len(self.artist_profiles))
+            self.log.debug("listed %d artists", len(self.artist_profiles))
         if self.settings.venues_path:
             self.venue_profiles = await self.optional("venues", eventer_venues(self)) or []
         async for event in self.stream_isolated(link_names, self._fetch_event, label=lambda n: n):

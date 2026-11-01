@@ -31,7 +31,7 @@ Each page has:
   - `performer`: the lineup, else the organizer
   - `location.address.addressCountry`: the event's own country (abroad), not always Israel
 
-Unknown pages return a real `404`. Filters on the site move the URL to their landing page
+Unknown pages, and pages of events that are over (deleted), return `410 Gone` everywhere (api.py `_gone`), so search engines drop them instead of retrying a `404`. Filters on the site move the URL to their landing page
 (`/genre/...`, `/city/...`), so filtered views are indexable.
 
 ## Crawl files

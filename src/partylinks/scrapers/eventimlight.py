@@ -82,7 +82,7 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
         except Exception as exc:  # noqa: BLE001 - the index is down: the known shops still run
             self.log.warning("Common Crawl discovery failed: %s %s", type(exc).__name__, exc)
         shops = sorted({*self.settings.seed_shops, *known["shops"]})[: self.settings.max_shops]
-        self.log.info("%d shops to check (%d crawls read)", len(shops), len(known["collections"]))
+        self.log.debug("%d shops to check (%d crawls read)", len(shops), len(known["collections"]))
         gone: set[str] = set()
 
         async def fetch(shop: str) -> list[ScrapedEvent]:
@@ -114,7 +114,7 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
         finally:
             known["shops"] = sorted(set(known["shops"]) - gone)
             save_known(self.settings.known_file, known)  # direct: on shutdown the thread pool is closed
-        self.log.info("%d of %d shops closed", len(gone), len(shops))
+        self.log.debug("%d of %d shops closed", len(gone), len(shops))
 
     async def shop_page(self, shop: str) -> str:
         """A shop's page, past its cookie-test redirect."""
@@ -163,7 +163,7 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
                 new = found - set(known["shops"])
                 known["shops"] = sorted({*known["shops"], *found})
                 known["collections"].append(coll)
-                self.log.info("Common Crawl %s: %d URLs, %d shops, %d new", coll, len(lines), len(found), len(new))
+                self.log.debug("Common Crawl %s: %d URLs, %d shops, %d new", coll, len(lines), len(found), len(new))
                 save_known(s.known_file, known)
 
 

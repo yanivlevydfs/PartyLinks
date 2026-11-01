@@ -67,7 +67,7 @@ class MovielandScraper(BaseScraper[MovielandSettings]):
         movies = await self.get_json(s.site_url + s.events_path, params={"isHideVODRent": "true"}, expect=list)
         today = datetime.now(ZoneInfo(self.timezone)).date()
         days = {today + timedelta(days=i) for i in range(s.days_ahead)}
-        self.log.info("listed %d movies", len(movies))
+        self.log.debug("listed %d movies", len(movies))
         for event in parse_events(movies, s, days, self.timezone):
             yield event
 

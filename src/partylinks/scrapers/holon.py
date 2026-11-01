@@ -46,7 +46,7 @@ class HolonScraper(BaseScraper[HolonSettings]):
         rows = tree.css("tr.rowMain")
         if not rows:
             raise ParseError("no event rows on the events board")
-        self.log.info("listed %d events", len(rows))
+        self.log.debug("listed %d events", len(rows))
         for row in rows:
             try:
                 if event := parse_row(row, tree, s, self.timezone):

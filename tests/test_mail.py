@@ -15,8 +15,8 @@ from resend.exceptions import ResendError
 from sqlalchemy import select, update
 
 from partylinks.accounts.models import UserRow
-from partylinks.alerts.models import AlertHitRow
 from partylinks.alerts import matcher
+from partylinks.alerts.models import AlertHitRow
 from partylinks.api import create_app
 from partylinks.db import Database, EventRow
 from partylinks.mail import jobs, tokens
@@ -200,7 +200,7 @@ def test_unsubscribe_links_survive_a_secret_rotation(tmp_path: Path) -> None:
 
 
 def test_opt_out_time_is_kept_and_shown_to_the_admin(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> None:
-    app, db, settings = _app(tmp_path)
+    app, db, _ = _app(tmp_path)
     with TestClient(app) as c:
         sign_in(c, fake, email="boss@spotx.test", sub="g-admin")
         uid = c.get("/api/me").json()["id"]

@@ -372,7 +372,7 @@ class Geocoder:
                 bulk_update_by_id(session, EventRow, updates)
         stats.located += len(updates)
         stats.unplaced_venues = [v for v, _ in unplaced.most_common(5) if v]
-        log.info("geocoding: %s", stats.summary())
+        log.debug("geocoding: %s", stats.summary())
         return stats
 
     def drop_bad_points(self) -> int:
@@ -408,11 +408,11 @@ class Geocoder:
                 bulk_update_by_id(session, EventRow, bad)
         dropped = len(bad)
         if dropped:
-            log.info("geocoding: dropped %d source coordinates that are placeholders or outside the city", dropped)
+            log.debug("geocoding: dropped %d source coordinates that are placeholders or outside the city", dropped)
             # Which source sends them and why, and the busiest shared points with a few of their venues.
-            log.info("geocoding: dropped by source: %s", ", ".join(f"{k} {n}" for k, n in why.most_common(12)))
+            log.debug("geocoding: dropped by source: %s", ", ".join(f"{k} {n}" for k, n in why.most_common(12)))
             for point, n in shared.most_common(5):
-                log.info("geocoding: shared point %s x%d: %s", point, n, " | ".join(sorted(venues[point])[:6]))
+                log.debug("geocoding: shared point %s x%d: %s", point, n, " | ".join(sorted(venues[point])[:6]))
         return dropped
 
     def _bad(self, row: Place, point: Point) -> str | None:
@@ -627,7 +627,7 @@ class Geocoder:
         if updates:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, updates)
-            log.info(
+            log.debug(
                 "geocoding: %d events abroad moved to the right city (%s)", len(updates), ", ".join(sorted(moves))[:300]
             )
         return len(updates)

@@ -64,7 +64,7 @@ class EpgbScraper(BaseScraper[EpgbSettings]):
             },
             headers={"apikey": key, "Authorization": f"Bearer {key}"},
         )
-        self.log.info("listed %d events", len(rows))
+        self.log.debug("listed %d events", len(rows))
         for row in rows:
             try:
                 yield parse_event(row, s, self.timezone)

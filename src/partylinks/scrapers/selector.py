@@ -43,7 +43,7 @@ class SelectorScraper(BaseScraper[SelectorSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         ids = await self._list_event_ids()
-        self.log.info("listed %d events", len(ids))
+        self.log.debug("listed %d events", len(ids))
         async for event in self.stream_isolated(ids, self._fetch_event, label=str):
             yield event
 

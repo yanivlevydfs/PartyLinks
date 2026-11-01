@@ -88,7 +88,7 @@ class OgoScraper(BaseScraper[OgoSettings]):
         urls = upcoming_event_urls(sitemaps, s.locale, today, today + timedelta(days=s.days_ahead))
         if len(urls) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
-        self.log.info("listed %d upcoming events", len(urls))
+        self.log.debug("listed %d upcoming events", len(urls))
         async for event in self.stream_isolated(urls[: s.max_events], self._fetch_event, label=lambda u: u):
             yield event
 

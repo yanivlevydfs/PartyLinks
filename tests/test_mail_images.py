@@ -60,8 +60,8 @@ def test_route_cuts_a_stored_picture_to_jpeg_at_the_asked_size(tmp_path: Path) -
         assert media.path_for(f"_mail/i{image_id}-224x168.jpg").is_file()  # kept on disk
         again = client.get(f"/images/{image_id}/mail-224x168.jpg")
         assert again.status_code == 200 and again.content == got.content
-        assert client.get(f"/images/{image_id}/mail-500x500.jpg").status_code == 404
-        assert client.get("/images/999999/mail-224x168.jpg").status_code == 404
+        assert client.get(f"/images/{image_id}/mail-500x500.jpg").status_code == 410
+        assert client.get("/images/999999/mail-224x168.jpg").status_code == 410
 
 
 def test_digest_footer_unsubscribes_in_one_click_and_resubscribing_brings_it_back(

@@ -32,15 +32,15 @@ from sqlalchemy import ColumnElement, String, cast, or_, select
 from sqlalchemy.orm import Session, object_session, selectinload
 
 from partylinks.artist_bio import bio as artist_bio
-from partylinks.venue_profiles import load_profiles as load_venue_profiles
-from partylinks.venue_profiles import logo_path as venue_logo_path
-from partylinks.venue_profiles import profile_for as venue_profile_for
 from partylinks.artwork.service import urls as artwork_urls
 from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
 from partylinks.db import EventRow, lineup_has, upcoming_filter
 from partylinks.places import all_cities
 from partylinks.retention import is_current
+from partylinks.venue_profiles import load_profiles as load_venue_profiles
+from partylinks.venue_profiles import logo_path as venue_logo_path
+from partylinks.venue_profiles import profile_for as venue_profile_for
 
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
 LIST_LIMIT = 60  # events listed on index pages
@@ -1418,7 +1418,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
     @app.get("/sitemap-{part}.xml", include_in_schema=False)
     def sitemap_part_xml(part: int, request: Request) -> Response:
         xml = sitemap_part(cached_urls(request), part)
-        return Response(xml, media_type="application/xml") if xml else Response(status_code=404)
+        return Response(xml, media_type="application/xml") if xml else Response(status_code=410)
 
     if key := app.state.settings.site.indexnow.key:  # IndexNow ownership proof (partylinks.indexnow)
         app.get(f"/{key}.txt", include_in_schema=False)(lambda: PlainTextResponse(key))
@@ -1440,7 +1440,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
     rendered = ResponseCache(ttl=HTML_TTL_S, max_bytes=HTML_CACHE_BYTES, follow_writes=False)  # scrapes write all day
     app.state.html_cache = rendered  # api.CachedPages serves hits before routing
 
-    def page(request: Request, build: Any, missing: int = 404) -> HTMLResponse:
+    def page(request: Request, build: Any, missing: int = 410) -> HTMLResponse:  # 410: drop it, like every missing page
         lang = "en" if request.query_params.get("lang") == "en" else "he"
         settings, db = cfg(request), request.app.state.db
 
@@ -1479,7 +1479,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
     @app.get("/event/{ref}", include_in_schema=False)
     def event(ref: str, request: Request) -> HTMLResponse:
         # An event over is deleted (never kept past its date): 410 tells crawlers it is gone for good.
-        return page(request, lambda s, c, lang: event_page(s, c, lang, ref), missing=410)
+        return page(request, lambda s, c, lang: event_page(s, c, lang, ref))
 
     @app.get("/venue/{name}", include_in_schema=False)
     def venue(name: str, request: Request) -> HTMLResponse:

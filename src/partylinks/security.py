@@ -61,8 +61,8 @@ CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "font-src 'self' https://cdn.jsdelivr.net/npm/sienna-accessibility/",
     "img-src 'self' data: blob: https:",  # map tiles and event artwork hosted by the sources
     "worker-src 'self' blob:",  # the map's vector-tile workers
-    "connect-src 'self' https://tiles.openfreemap.org https://cdn.jsdelivr.net/npm/sienna-accessibility/ https://*.google-analytics.com "
-    "https://*.analytics.google.com https://*.googletagmanager.com https://cloudflareinsights.com",
+    ("connect-src 'self' https://tiles.openfreemap.org https://cdn.jsdelivr.net/npm/sienna-accessibility/ https://*.google-analytics.com "
+    "https://*.analytics.google.com https://*.googletagmanager.com https://cloudflareinsights.com"),
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -272,7 +272,7 @@ class SecurityMiddleware:
         if PROBE.search(raw) or SCANNER_AGENTS.search(agent):
             if not local:
                 self.guard.strike(ip, cfg, f"probe {path[:80]}", now)
-            return await reject(404, "not found")
+            return await reject(410, "gone")  # as every missing address (api.py _gone)
         # RFC 8058 one-click unsubscribe comes from mail providers, some of which send no User-Agent.
         if not agent and path not in ("/health", "/api/email/unsubscribe", *WEBHOOK_PATHS):
             return await reject(403, "forbidden")

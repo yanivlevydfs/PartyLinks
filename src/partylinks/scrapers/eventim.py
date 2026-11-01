@@ -91,7 +91,7 @@ class EventimScraper(BaseScraper[EventimSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         urls = await self._list_urls()
-        self.log.info("listed %d events", len(urls))
+        self.log.debug("listed %d events", len(urls))
         async for event in self.stream_isolated(urls, self._fetch_event, label=lambda u: u):
             yield event
 

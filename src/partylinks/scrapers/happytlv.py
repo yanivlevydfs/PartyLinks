@@ -89,7 +89,7 @@ class HappyTlvScraper(BaseScraper[HappyTlvSettings]):
         party_pages = set(parties)
         if len(pages) > s.max_pages:
             self.log.warning("listing truncated at max_pages=%d (%d found)", s.max_pages, len(pages))
-        self.log.info(
+        self.log.debug(
             "listed %d upcoming parties, %d happy-hour and %d place pages", len(parties), len(bars), len(places)
         )
 

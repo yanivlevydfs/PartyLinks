@@ -44,7 +44,7 @@ class HulyoScraper(BaseScraper[HulyoSettings]):
         s = self.settings
         feed = await self.get_json(s.site_url + s.feed_path, expect=dict)
         deals = list_deals(feed, s.areas)
-        self.log.info("listed %d events", len(deals))
+        self.log.debug("listed %d events", len(deals))
         for deal in deals:
             try:
                 yield parse_event(deal, s, self.timezone)

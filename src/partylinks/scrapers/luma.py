@@ -48,7 +48,7 @@ class LumaScraper(BaseScraper[LumaSettings]):
         ids: dict[str, None] = {}
         for center in self.settings.centers:
             ids.update(dict.fromkeys(await self._list(center)))
-        self.log.info("listed %d upcoming events", len(ids))
+        self.log.debug("listed %d upcoming events", len(ids))
         async for event in self.stream_isolated(list(ids), self._fetch_event, label=lambda i: i):
             yield event
 

@@ -45,7 +45,7 @@ class MeetyScraper(BaseScraper[MeetySettings]):
             page = await self.optional(f"interest {value}", self.get_text(f"{base}/events?i={quote_plus(value)}"))
             for event_id in parse_listing(page or ""):
                 cards.setdefault(event_id, []).append(label)
-        self.log.info("listed %d events", len(cards))
+        self.log.debug("listed %d events", len(cards))
 
         async def detail(item: tuple[str, list[str]]) -> ScrapedEvent | None:
             event_id, genres = item

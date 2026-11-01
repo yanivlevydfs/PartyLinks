@@ -65,7 +65,7 @@ class TicketmasterScraper(BaseScraper[TicketmasterSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         codes = parse_sitemap(await self.get_text(s.site_url + s.sitemap_path))
-        self.log.info("listed %d events", len(codes))
+        self.log.debug("listed %d events", len(codes))
         async for events in self.stream_isolated(codes, self._fetch_event, label=str):
             for event in events:
                 yield event

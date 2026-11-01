@@ -58,7 +58,7 @@ class BarGiyoraScraper(BaseScraper[BarGiyoraSettings]):
                 break
         else:
             self.log.warning("listing truncated at max_pages=%d", s.max_pages)
-        self.log.info("listed %d events", len(cards))
+        self.log.debug("listed %d events", len(cards))
 
         products: dict[str, dict[str, Any]] = {}
         ids = list(cards)

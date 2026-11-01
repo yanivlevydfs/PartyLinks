@@ -30,7 +30,7 @@ def test_hearts_of_a_signed_in_user(tmp_path: Path, fake: FakeGoogle) -> None:
         assert c.put("/api/me/saved/test:a").status_code == 403  # not from our pages
         assert c.put("/api/me/saved/test:a", headers=OURS).json()["ids"] == ["test:a"]
         assert c.put("/api/me/saved/test:a", headers=OURS).json()["ids"] == ["test:a"]  # twice is once
-        assert c.put("/api/me/saved/nope", headers=OURS).status_code == 404
+        assert c.put("/api/me/saved/nope", headers=OURS).status_code == 410
         c.put("/api/me/saved/test:c", headers=OURS)
         saved = c.get("/api/me/saved")
         assert saved.headers["cache-control"] == "private, no-store"

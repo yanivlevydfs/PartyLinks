@@ -53,7 +53,7 @@ class BarakScraper(BaseScraper[BarakSettings]):
         found = list(urls.values())
         if len(found) > self.settings.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", self.settings.max_events, len(found))
-        self.log.info("listed %d events", len(found))
+        self.log.debug("listed %d events", len(found))
         async for event in self.stream_isolated(
             found[: self.settings.max_events], self._fetch_event, label=lambda u: u
         ):

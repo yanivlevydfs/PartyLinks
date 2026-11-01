@@ -7,7 +7,7 @@
 * streams are UTF-8 with ``\\n`` endings whatever the console code page (Hebrew titles never
   crash a log call on Windows);
 * an optional rotating UTF-8 file (``logging.file``) gets the same lines;
-* quiet by default (``level: WARNING``, request lines only for 4xx/5xx); debug mode logs
+* quiet by default (``level: WARNING``, request lines only for 5xx); debug mode logs
   everything and can be switched on at runtime with :func:`set_debug`.
 """
 
@@ -78,12 +78,13 @@ class _RotatingFile(logging.handlers.RotatingFileHandler):
 
 
 class _FailedRequestsOnly(logging.Filter):
-    """uvicorn access lines carry (client, method, path, http_version, status): keep 4xx/5xx."""
+    """uvicorn access lines carry (client, method, path, http_version, status): keep 5xx only. 4xx are the
+    visitor's or a scanner's doing (410 gone, 401 signed out, 403 blocked), noise at INFO; debug shows them."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         args = record.args if isinstance(record.args, tuple) else ()
         try:
-            return len(args) < 5 or int(str(args[4])) >= 400
+            return len(args) < 5 or int(str(args[4])) >= 500
         except (TypeError, ValueError):
             return True
 

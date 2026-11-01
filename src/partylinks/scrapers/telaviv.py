@@ -63,7 +63,7 @@ class TelAvivScraper(BaseScraper[TelAvivSettings]):
         if len(items) >= s.max_items:
             self.log.warning("listing truncated at max_items=%d", s.max_items)
         events = parse_items(items, s, self.timezone)
-        self.log.info("listed %d events", len(events))
+        self.log.debug("listed %d events", len(events))
         for event in events:
             yield event
 

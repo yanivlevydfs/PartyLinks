@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, Response, status
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
@@ -34,13 +35,14 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from partylinks import clicks, searches, seo, utm
 from partylinks import status as server_status
 from partylinks.accounts import install as install_accounts
-from partylinks.bot import install as install_bot
 from partylinks.accounts import sign_in_state
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.ads import service as ads
 from partylinks.artwork import service as artwork
 from partylinks.artwork.routes import router as artwork_router
+from partylinks.bot import install as install_bot
+from partylinks.bot.telegram.webhook import username as telegram_username
 from partylinks.config import Settings, get_settings
 from partylinks.config_store import store as config_overrides
 from partylinks.db import (
@@ -467,7 +469,7 @@ class _SiteFiles(StaticFiles):
             if exc.status_code != status.HTTP_404_NOT_FOUND:
                 raise
         response = await super().get_response("index.html", scope)
-        response.status_code = status.HTTP_404_NOT_FOUND  # client renders "not found"; crawlers see 404
+        response.status_code = status.HTTP_410_GONE  # client renders "not found"; crawlers drop it (gone_handler)
         return response
 
 
@@ -853,6 +855,14 @@ def create_app(
     )
     app.state.settings = settings  # read by SecurityMiddleware before the lifespan finishes too
 
+    @app.exception_handler(StarletteHTTPException)
+    async def _gone(request: Request, exc: StarletteHTTPException) -> Response:
+        # Nothing at this address is "gone" (410), not "not found" (404), everywhere: an event that is
+        # over is deleted, and 410 tells search engines to drop its links for good instead of retrying.
+        if exc.status_code == status.HTTP_404_NOT_FOUND:
+            exc = StarletteHTTPException(status.HTTP_410_GONE, exc.detail, exc.headers)
+        return await http_exception_handler(request, exc)
+
     @app.exception_handler(DataError)
     async def _bad_value(request: Request, exc: DataError) -> JSONResponse:
         # A value PostgreSQL refuses (a NUL byte in a string, a number past bigint): the request's
@@ -1010,6 +1020,7 @@ def _register_routes(app: FastAPI) -> None:
             "accessibility": site.accessibility.model_dump(mode="json") | {"email": hide_email(site.accessibility.email)},
             "privacy": site.privacy.model_dump(mode="json") | {"email": hide_email(site.privacy.email)},
             "accounts": request.app.state.settings.accounts.ready,  # show "Continue with Google"
+            "telegram": telegram_username(request.app),  # the bot's @name (web/src/bot/TelegramPromo.tsx)
         }
 
     @app.get("/health", tags=["meta"])
@@ -1029,7 +1040,7 @@ def _register_routes(app: FastAPI) -> None:
                     ).all()
                 )
             report["checks"]["database"] = "ok"
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - health reports any database failure as "down", never raises
             response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
             report["status"] = "down"
             report["checks"]["database"] = f"error: {type(exc).__name__}"
@@ -1149,7 +1160,7 @@ def _register_routes(app: FastAPI) -> None:
         sponsored: Annotated[
             bool, Query(description="Paid placements matching these filters first, marked (the site's own lists)")
         ] = False,
-        background: BackgroundTasks = BackgroundTasks(),
+        background: BackgroundTasks = BackgroundTasks(),  # noqa: B008 - FastAPI injects the request's tasks
     ) -> Response:
         cfg: Settings = request.app.state.settings
         size = min(page_size or cfg.api.default_page_size, cfg.api.max_page_size)
@@ -1248,9 +1259,10 @@ def _register_routes(app: FastAPI) -> None:
         (one click at a time, rate-limited by SecurityMiddleware), counted, and UTM-tagged for the
         seller's analytics. ``at`` = where on our page it was clicked (utm.PLACEMENTS)."""
         row = session.get(EventRow, event_id)
-        if not row or not row.url.startswith(("https://", "http://")):
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "event not found")
         headers = {"Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow"}
+        if not row or not row.url.startswith(("https://", "http://")):
+            # An event that is over is deleted (no past events kept): 410, so search engines drop the link.
+            raise HTTPException(status.HTTP_410_GONE, "event gone", headers=headers)
         if not CRAWLER.search(request.headers.get("user-agent", "")):  # Googlebot checks offers.url: not a click
             clicks.record(session, row, at)
         url = utm.tagged(row.url, request.app.state.settings.utm, row, at)

@@ -59,7 +59,7 @@ class HalutzScraper(BaseScraper[HalutzSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         cards = parse_listing(await self.get_json(s.site_url + s.listing_path, expect=list))
-        self.log.info("listed %d shows", len(cards))
+        self.log.debug("listed %d shows", len(cards))
         for card in cards:
             # The date is only on the page: without it there is no event.
             page = await self.optional(f"page {card['url']}", self.get_text(card["url"]))

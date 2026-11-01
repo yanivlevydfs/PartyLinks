@@ -61,7 +61,7 @@ class TicketPlaceScraper(BaseScraper[TicketPlaceSettings]):
             for p in products
             if isinstance(p, dict) and p.get("link")
         }
-        self.log.info("listed %d products", len(festivals))
+        self.log.debug("listed %d products", len(festivals))
 
         async def fetch(url: str) -> ScrapedEvent | None:
             return parse_product(await self.get_text(url), url, self.timezone, festival=festivals[url])

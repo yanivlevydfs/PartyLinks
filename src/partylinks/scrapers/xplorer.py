@@ -47,7 +47,7 @@ class XplorerScraper(BaseScraper[XplorerSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         ids = artist_ids(await self.get_text(s.site_url + s.music_path))
-        self.log.info("listed %d artists", len(ids))
+        self.log.debug("listed %d artists", len(ids))
 
         async def artist(artist_id: str) -> tuple[str, str | None, list[str]]:
             page = await self.get_text(s.site_url + s.artist_path + artist_id)
@@ -61,7 +61,7 @@ class XplorerScraper(BaseScraper[XplorerSettings]):
                 names = events.setdefault(event_id, (artist_id, []))[1]
                 if name and name not in names:
                     names.append(name)
-        self.log.info("listed %d events", len(events))
+        self.log.debug("listed %d events", len(events))
 
         async def detail(event_id: str) -> ScrapedEvent | None:
             artist_id, names = events[event_id]

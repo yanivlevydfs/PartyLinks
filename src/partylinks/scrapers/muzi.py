@@ -76,7 +76,7 @@ class MuziScraper(BaseScraper[MuziSettings]):
         pages = list(urls)
         if len(pages) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(pages))
-        self.log.info("listed %d event pages from %d sitemaps", len(pages), len(sitemaps))
+        self.log.debug("listed %d event pages from %d sitemaps", len(pages), len(sitemaps))
         today = datetime.now(zone(self.timezone)).date()
 
         async def fetch(url: str) -> ScrapedEvent | None:

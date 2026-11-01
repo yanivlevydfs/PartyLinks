@@ -99,7 +99,7 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
         # Pages of events already over stay over: never fetched again (~1,860 of ~1,960 a run, Oct 2026).
         self._past = await asyncio.to_thread(_load_past)
         urls = [url for url, _ in pages if url not in self._past][: self.settings.max_pages]
-        self.log.info("discovered %d candidate pages (%d known past events skipped)", len(urls), len(pages) - len(urls))
+        self.log.debug("discovered %d candidate pages (%d known past events skipped)", len(urls), len(pages) - len(urls))
         if not urls:
             return
         try:
@@ -138,7 +138,7 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
             except Exception as exc:  # noqa: BLE001 - one bad file never blocks the rest
                 self.failures.append(f"inbox/{path.name}: {exc}")
                 self.log.warning("inbox file %s skipped: %s", path.name, exc)
-        self.log.info("inbox: %d events from %s", len(events), folder)
+        self.log.debug("inbox: %d events from %s", len(events), folder)
         return events
 
     async def candidate_pages(self) -> list[tuple[str, datetime | None]]:

@@ -31,7 +31,7 @@ class PeopleComputersScraper(BaseScraper[PeopleComputersSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         events = parse_feed(await self.get_text(self.settings.feed_url))
-        self.log.info("listed %d conferences", len(events))
+        self.log.debug("listed %d conferences", len(events))
         for event in events:
             yield event
 

@@ -49,7 +49,7 @@ class MegaeventsScraper(BaseScraper[MegaeventsSettings]):
         raw_events = event_objects(flight_payload(page))
         if not raw_events:
             raise ParseError("no event objects in the home page payload")
-        self.log.info("listed %d events", len(raw_events))
+        self.log.debug("listed %d events", len(raw_events))
         featured = featured_prices(page)
         for raw in raw_events:
             try:

@@ -56,7 +56,7 @@ class PlanetScraper(BaseScraper[PlanetSettings]):
         today = datetime.now(zone(self.timezone)).date()
         days = [today + timedelta(days=i) for i in range(self.settings.days_ahead)]
         branches = (await self._body(f"cinemas/with-event/until/{days[-1]}")).get("cinemas") or []
-        self.log.info("listed %d branches", len(branches))
+        self.log.debug("listed %d branches", len(branches))
 
         async def day_events(item: tuple[dict[str, Any], date]) -> list[ScrapedEvent]:
             branch, day = item

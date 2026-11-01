@@ -107,7 +107,7 @@ function PlanView() {
 
   if (isPending) return <Loader />;
   // A refresh that fails (a network blip, a 429) keeps the plan on screen; only a 404 means it is gone.
-  const gone = error?.message === "404";
+  const gone = error?.message === "404" || error?.message === "410";
   if (gone || !data) {
     return <main className="wrap plan"><p className="msg">{gone ? p.gone : p.loadFailed}</p><Link className="f-pill" to="/">SPOTX</Link></main>;
   }

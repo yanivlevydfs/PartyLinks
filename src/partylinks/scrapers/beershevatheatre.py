@@ -45,7 +45,7 @@ class BeerShevaTheatreScraper(BaseScraper[BeerShevaTheatreSettings]):
         ids: dict[str, None] = {}
         for url in self.settings.listing_urls:
             ids.update(dict.fromkeys(performance_ids(await self.get_text(quote(url, safe=":/")))))
-        self.log.info("listed %d performances", len(ids))
+        self.log.debug("listed %d performances", len(ids))
         async for event in self.stream_isolated(list(ids), self._fetch, label=lambda i: i):
             yield event
 

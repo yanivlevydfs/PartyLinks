@@ -46,7 +46,7 @@ class RamatGanMuniScraper(BaseScraper[RamatGanMuniSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         cards = parse_listing(await self.get_json(s.api_url + s.listing_path, expect=dict))
-        self.log.info("listed %d events (box-office mirrors skipped)", len(cards))
+        self.log.debug("listed %d events (box-office mirrors skipped)", len(cards))
 
         async def fetch(card: dict[str, Any]) -> ScrapedEvent:
             detail = await self.get_json(s.api_url + "/Event" + card["detailsLink"]["url"], expect=dict)

@@ -64,7 +64,7 @@ class CinemaCityScraper(BaseScraper[CinemaCitySettings]):
         features = await self.optional("features", self.get_json(s.api_url + s.features_path, expect=list))
         today = datetime.now(zone(self.timezone)).date()
         events = parse_presentations(listing, features or [], s, self.timezone, today)
-        self.log.info("listed %d movie-days", len(events))
+        self.log.debug("listed %d movie-days", len(events))
         for event in events:
             yield event
 

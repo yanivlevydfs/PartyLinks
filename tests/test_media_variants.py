@@ -184,7 +184,7 @@ def test_copy_route_serves_webp_immutable_and_falls_back_to_the_original(tmp_pat
         assert copy.headers["cache-control"] == "public, max-age=31536000, immutable"
         again = client.get(f"/images/{image_id}/640.webp", headers={"if-none-match": copy.headers["etag"]})
         assert again.status_code == 304
-        assert client.get(f"/images/{image_id}/999.webp").status_code == 404
+        assert client.get(f"/images/{image_id}/999.webp").status_code == 410
         assert client.get(f"/images/{image_id}").content == original  # the original route is unchanged
 
 
