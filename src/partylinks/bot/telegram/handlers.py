@@ -7,7 +7,7 @@ import hashlib
 import logging
 from collections.abc import Awaitable, Callable
 
-from telegram import BotCommand, Update
+from telegram import BotCommand, MenuButtonCommands, Update
 from telegram.error import BadRequest, TelegramError
 from telegram.ext import (
     AIORateLimiter,
@@ -40,6 +40,26 @@ COMMANDS = {
     "en": [("start", "Start"), ("alerts", "My alerts"), ("reminders", "My reminders and watches"), ("digest", "Weekly weekend picks"),
            ("lang", "עברית / English"), ("help", "Help"), ("stop", "Delete all my data")],
 }  # fmt: skip
+# What an empty chat shows before /start (≤512 characters), and the profile's "about" (≤120).
+DESCRIPTIONS = {
+    "he": (
+        "🎉 SPOTX: כל המסיבות, ההופעות והאירועים בישראל ובעולם, במקום אחד.\n\n"
+        "כתבו לי כמו לחבר: \"טכנו בתל אביב הערב\", \"משהו לילדים בשבת בחיפה\", \"הופעה בברלין בדצמבר\".\n\n"
+        "🎟 קישור לכרטיסים ולאירוע · ⏰ תזכורת לפני · 👁 מעקב מחיר · 🔔 התראות על אירועים חדשים · 📅 ליומן\n\n"
+        "חינם, בלי הרשמה. לחצו התחל ↓"
+    ),
+    "en": (
+        "🎉 SPOTX: every party, gig and event in Israel and abroad, in one place.\n\n"
+        "Write to me like to a friend: \"techno in Tel Aviv tonight\", \"something for kids on Saturday in Haifa\", "
+        "\"a concert in Berlin in December\".\n\n"
+        "🎟 Ticket and event links · ⏰ Reminders · 👁 Price watch · 🔔 Alerts on new events · 📅 To your calendar\n\n"
+        "Free, no sign-up. Tap Start ↓"
+    ),
+}
+ABOUT = {
+    "he": "מסיבות, הופעות ואירועים בישראל ובעולם: חיפוש, כרטיסים, תזכורות והתראות. בחינם. spotx.fun",
+    "en": "Parties, gigs and events in Israel and abroad: search, tickets, reminders and alerts. Free. spotx.fun",
+}
 
 
 def chat_tag(chat_id: int | str) -> str:
@@ -179,6 +199,10 @@ def build(token: str, settings: Callable[[], Settings], db: Database) -> Applica
 
 
 async def describe(app: Application) -> None:
-    """The command menu, in Hebrew and in English."""
+    """The command menu, the description and the about text, in Hebrew and in English."""
     for lang, commands in COMMANDS.items():
-        await app.bot.set_my_commands([BotCommand(c, d) for c, d in commands], language_code=None if lang == "he" else "en")
+        code = None if lang == "he" else "en"
+        await app.bot.set_my_commands([BotCommand(c, d) for c, d in commands], language_code=code)
+        await app.bot.set_my_description(DESCRIPTIONS[lang], language_code=code)
+        await app.bot.set_my_short_description(ABOUT[lang], language_code=code)
+    await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())

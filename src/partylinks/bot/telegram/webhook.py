@@ -7,6 +7,7 @@ slow search never makes Telegram retry it."""
 
 from __future__ import annotations
 
+import asyncio
 import hmac
 import logging
 import time
@@ -17,6 +18,7 @@ from typing import Any
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response, status
 from pydantic import SecretStr
 from telegram import Update
+from telegram.error import NetworkError
 from telegram.ext import Application
 
 from partylinks.bot.telegram import handlers
@@ -27,6 +29,8 @@ PATH = "/bot/telegram"
 SECRET_HEADER = "x-telegram-bot-api-secret-token"
 UPDATES = ["message", "callback_query", "inline_query"]
 MIN_SECRET = 16  # characters; Telegram allows 1-256 of A-Z a-z 0-9 _ -
+START_ATTEMPTS = 4
+START_PAUSE = 3.0  # seconds, times the attempt number
 
 
 def strong(secret: SecretStr | None) -> bool:
@@ -52,12 +56,20 @@ async def start(app: FastAPI) -> Application | None:
         )
         return None
     bot = handlers.build(cfg.telegram_token.get_secret_value(), lambda: app.state.settings, app.state.db)
-    try:
-        await bot.initialize()
-        await bot.start()
-    except Exception:  # a wrong token, Telegram unreachable: the site runs regardless
-        log.exception("bot: Telegram did not start")
-        return None
+    for attempt in range(1, START_ATTEMPTS + 1):
+        try:
+            await bot.initialize()
+            await bot.start()
+            break
+        except NetworkError as exc:  # timed out (seen on a busy boot): Telegram is usually there a moment later
+            if attempt == START_ATTEMPTS:
+                log.exception("bot: Telegram did not start after %d attempts", attempt)
+                return None
+            log.warning("bot: Telegram did not answer (%s), attempt %d of %d", exc, attempt, START_ATTEMPTS)
+            await asyncio.sleep(START_PAUSE * attempt)
+        except Exception:  # a wrong token: the site runs regardless
+            log.exception("bot: Telegram did not start")
+            return None
     url = webhook_url(settings)
     if url.startswith("https://"):  # Telegram posts to https only; on localhost, set bot.webhook_url to a tunnel
         try:
