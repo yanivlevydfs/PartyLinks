@@ -20,7 +20,7 @@ from telegram.ext import (
     filters,
 )  # fmt: skip
 
-from partylinks.bot.core.conversation import Conversation, lang_from_app
+from partylinks.bot.core.conversation import DEFAULT_LANG, Conversation
 from partylinks.bot.core.flood import Flood
 from partylinks.bot.core.phrases import say
 from partylinks.bot.core.reply import Reply
@@ -34,32 +34,16 @@ CHANNEL = "telegram"
 PRIVATE = filters.ChatType.PRIVATE
 INLINE_CACHE_SECONDS = 60
 CONCURRENT_UPDATES = 16
-COMMANDS = {
-    "he": [("start", "התחלה"), ("alerts", "ההתראות שלי"), ("reminders", "התזכורות והמעקבים שלי"), ("digest", "סיכום שבועי לסופ״ש"),
-           ("lang", "English / עברית"), ("help", "עזרה"), ("stop", "מחיקת כל המידע שלי")],
-    "en": [("start", "Start"), ("alerts", "My alerts"), ("reminders", "My reminders and watches"), ("digest", "Weekly weekend picks"),
-           ("lang", "עברית / English"), ("help", "Help"), ("stop", "Delete all my data")],
-}  # fmt: skip
+COMMANDS = [("start", "התחלה"), ("alerts", "ההתראות שלי"), ("reminders", "התזכורות והמעקבים שלי"), ("digest", "סיכום שבועי לסופ״ש"),
+            ("lang", "English / עברית"), ("help", "עזרה"), ("stop", "מחיקת כל המידע שלי")]  # fmt: skip
 # What an empty chat shows before /start (≤512 characters), and the profile's "about" (≤120).
-DESCRIPTIONS = {
-    "he": (
+DESCRIPTION = (
         "🎉 SPOTX: כל המסיבות, ההופעות והאירועים בישראל ובעולם, במקום אחד.\n\n"
         "כתבו לי כמו לחבר: \"טכנו בתל אביב הערב\", \"משהו לילדים בשבת בחיפה\", \"הופעה בברלין בדצמבר\".\n\n"
         "🎟 קישור לכרטיסים ולאירוע · ⏰ תזכורת לפני · 👁 מעקב מחיר · 🔔 התראות על אירועים חדשים · 📅 ליומן\n\n"
         "חינם, בלי הרשמה. לחצו התחל ↓"
-    ),
-    "en": (
-        "🎉 SPOTX: every party, gig and event in Israel and abroad, in one place.\n\n"
-        "Write to me like to a friend: \"techno in Tel Aviv tonight\", \"something for kids on Saturday in Haifa\", "
-        "\"a concert in Berlin in December\".\n\n"
-        "🎟 Ticket and event links · ⏰ Reminders · 👁 Price watch · 🔔 Alerts on new events · 📅 To your calendar\n\n"
-        "Free, no sign-up. Tap Start ↓"
-    ),
-}
-ABOUT = {
-    "he": "מסיבות, הופעות ואירועים בישראל ובעולם: חיפוש, כרטיסים, תזכורות והתראות. בחינם. spotx.fun",
-    "en": "Parties, gigs and events in Israel and abroad: search, tickets, reminders and alerts. Free. spotx.fun",
-}
+)
+ABOUT = "מסיבות, הופעות ואירועים בישראל ובעולם: חיפוש, כרטיסים, תזכורות והתראות. בחינם. spotx.fun"
 
 
 def chat_tag(chat_id: int | str) -> str:
@@ -92,7 +76,7 @@ class Handlers:
     @staticmethod
     def _who(update: Update) -> tuple[str, str]:
         user, chat = update.effective_user, update.effective_chat
-        return str(chat.id if chat else user.id if user else ""), lang_from_app(user.language_code if user else None)
+        return str(chat.id if chat else user.id if user else ""), DEFAULT_LANG
 
     async def _answer(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE, make: Callable[[str, str], Awaitable[Reply]]
@@ -166,7 +150,7 @@ class Handlers:
         # Asked on every keystroke: its own budget, a few times a chat's.
         if self.flood.check(f"inline:{query.from_user.id}", self.settings().bot.inline_per_minute) != "ok":
             return
-        lang = lang_from_app(query.from_user.language_code if query.from_user else None)
+        lang = lang_of(query.query, DEFAULT_LANG)
         found = await self.talk.inline(query.query, lang)
         await query.answer(render.inline_results(found), cache_time=INLINE_CACHE_SECONDS, is_personal=False)
 
@@ -199,10 +183,12 @@ def build(token: str, settings: Callable[[], Settings], db: Database) -> Applica
 
 
 async def describe(app: Application) -> None:
-    """The command menu, the description and the about text, in Hebrew and in English."""
-    for lang, commands in COMMANDS.items():
-        code = None if lang == "he" else "en"
-        await app.bot.set_my_commands([BotCommand(c, d) for c, d in commands], language_code=code)
-        await app.bot.set_my_description(DESCRIPTIONS[lang], language_code=code)
-        await app.bot.set_my_short_description(ABOUT[lang], language_code=code)
+    """The command menu, the description and the about text: Hebrew for every user, like the site. Clears
+    the English ones an earlier version set, which Telegram showed to every English-language app."""
+    await app.bot.set_my_commands([BotCommand(c, d) for c, d in COMMANDS])
+    await app.bot.set_my_description(DESCRIPTION)
+    await app.bot.set_my_short_description(ABOUT)
+    await app.bot.delete_my_commands(language_code="en")
+    await app.bot.set_my_description("", language_code="en")
+    await app.bot.set_my_short_description("", language_code="en")
     await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())

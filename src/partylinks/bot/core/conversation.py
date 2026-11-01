@@ -44,9 +44,7 @@ ALERT_QUERY_MAX = event_actions.ALERT_QUERY_MAX
 REFINE_WORDS = {"tonight": {"he": "הערב", "en": "tonight"}, "weekend": {"he": "בסופ״ש", "en": "this weekend"}}
 
 
-def lang_from_app(code: str | None) -> str:
-    """The chat app's language (Telegram's language_code) -> he / en; Hebrew unless it says otherwise."""
-    return "en" if code and not code.lower().startswith(("he", "iw")) else "he"
+DEFAULT_LANG = "he"  # like the site: Hebrew first, English when the user writes English or picks /lang
 
 
 def _fits(action: str) -> bool:
@@ -93,7 +91,10 @@ class Conversation:
     async def start(self, chat_id: str, lang_hint: str) -> Reply:
         def work(session: Session) -> str:
             usage.record(session, self.channel, chat_id, "start")
-            return self._chat(session, chat_id, lang_hint).lang
+            chat = self._chat(session, chat_id, lang_hint)
+            if not chat.lang_chosen:  # a new start speaks Hebrew, until /lang says otherwise
+                chat.lang = DEFAULT_LANG
+            return chat.lang
 
         lang = await self._in_db(work)
         return Reply(say("welcome", lang), buttons=self._starters(lang), ask_location=True)
@@ -317,12 +318,13 @@ class Conversation:
         return await self._search(chat.chat_id, lang, message.query, chat.last_cheap, near)
 
     def _starters(self, lang: str) -> list[list[Button]]:
-        """Ideas for a chat with no search yet: tonight, this weekend, free."""
-        return [[
-            Button(label("tonight", lang), SEARCH + REFINE_WORDS["tonight"][lang]),
-            Button(label("weekend", lang), SEARCH + REFINE_WORDS["weekend"][lang]),
-            Button(label("free", lang), SEARCH + ("חינם" if lang == "he" else "free")),
-        ]]  # fmt: skip
+        """Ideas for a chat with no search yet: tonight, this weekend, free. One a row: three in a row are cut
+        to "…" under a short message."""
+        return [
+            [Button(label("tonight", lang), SEARCH + REFINE_WORDS["tonight"][lang])],
+            [Button(label("weekend", lang), SEARCH + REFINE_WORDS["weekend"][lang])],
+            [Button(label("free", lang), SEARCH + ("חינם" if lang == "he" else "free"))],
+        ]
 
     # ------------------------------------------------------------------ alerts
     async def _alert_offer(self, chat_id: str, lang: str) -> Reply:
