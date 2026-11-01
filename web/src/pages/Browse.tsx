@@ -6,6 +6,8 @@ import type { Facet } from "../types";
 import { artistPath, Chip, EventGrid, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
 const PAGE = 60;
+// A to Z: English (abc) then Hebrew (אבג), case and accents ignored, "2" before "10".
+const byName = new Intl.Collator(["en", "he"], { numeric: true, sensitivity: "base" });
 
 function FacetIndex({ title, facets, path, byArea, logos }: {
   title: string; facets: Facet[] | undefined; path: (v: string) => string; byArea?: boolean; logos?: boolean;
@@ -19,7 +21,7 @@ function FacetIndex({ title, facets, path, byArea, logos }: {
   useTitle(title);
   // Case-insensitive, ignores spaces/punctuation, so "gray club" finds "Gray Club תל אביב-יפו".
   const norm = (s: string) => s.toLocaleLowerCase().replace(/[\s\-_.·'"׳״]/g, "");
-  const inArea = facets?.filter((f) => !area || f.area === area);
+  const inArea = facets?.filter((f) => !area || f.area === area).sort((a, b) => byName.compare(a.value, b.value));
   const match = (s: string) => inArea?.filter((f) => norm(f.value).includes(s)) ?? [];
   const exact = match(norm(q));
   // A typo at the end ("יניבדד") finds nothing: drop letters from the end until names match (3 letters at least).
@@ -65,9 +67,7 @@ function FacetIndex({ title, facets, path, byArea, logos }: {
 export function VenuesIndex() {
   const { t } = useT();
   const venues = useCategories({ anywhere: "true" }).data?.venues;
-  // Venues a ticket site curates (logo, about) first, as a showcase; the rest by events, as before.
-  const shown = venues && [...venues.filter((v) => v.image_url), ...venues.filter((v) => !v.image_url)];
-  return <FacetIndex title={t.venuesTitle} facets={shown} path={venuePath} byArea logos />;
+  return <FacetIndex title={t.venuesTitle} facets={venues} path={venuePath} byArea logos />;
 }
 
 export function ArtistsIndex() {
