@@ -469,16 +469,22 @@ enrichment:
            "שעת סיפור", "תינוקות", "הנקה", "כיתות"]
     live_show: ["מופע", "המופע", "שירים", "השירים", "מוזיקלי", "מוזיקלית", "להקה", "להקת", "זמר", "זמרת",
                 "קונצרט", "הופעה", "ההופעה", "נגנים", "concert", "live", "band", "tribute",
-                "תזמורת", "כליזמר", "מחווה ל", "פסקול", "שרים", "מנגנת", "מנגנים"]
+                "תזמורת", "כליזמר", "מחווה ל", "פסקול", "שרים", "מנגנת", "מנגנים", "אנסמבל", "קוורטט", "מארח את",
+                "konzert", "koncert", "julekoncert", "konsertti", "the music of"]
     stand_up: ["סטנדאפ", "סטנד אפ", "סטנדאפיסט", "קומיקאי", "open mic", "stand up", "comedian"]
-    lectures: ["הרצאה", "מרצה", "הרצאות", "הרצאתה", "הרצאתו", "lecture", "talk", "ד\"ר", "פרופ'", "מפגש ב-zoom"]
+    lectures: ["הרצאה", "מרצה", "הרצאות", "הרצאתה", "הרצאתו", "lecture", "talk", "ד\"ר", "פרופ'", "מפגש ב-zoom", "סדרה בזום", "סמסטר", "lesung"]
     workshops: ["סדנה", "סדנת", "סדנאות", "workshop", "חוג", "קורס"]
-    tours: ["סיור", "סיורים", "סיורי", "guided tour"]
+    tours: ["סיור", "סיורים", "סיורי", "guided tour", "führung", "stadtführung"]
     dance: ["מחול", "להקת מחול", "בלט", "ballet"]
     exhibitions: ["תערוכה", "תערוכת", "exhibition", "museum"]
-    sport: ["קבוצת ריצה", "אימוני", "כדורסל", "כדורגל"]
+    sport: ["קבוצת ריצה", "אימוני", "כדורסל", "כדורגל", "פורמולה 1", "גרנד פרי", "nfl", "grand prix", "סופר קאפ", "super cup", "גביע", "ליגת האלופות"]
+    food: ["kochkurs", "grillkurs", "tasting", "verkostung", "whiskytasting", "brunch", "frühstück", "dinner", "bbq",
+           "küche", "ארוחת", "טעימות"]
+    markets: ["שוק", "שוק איכרים", "יריד", "markt", "weihnachtsmarkt", "flohmarkt"]
+    cinema: ["סינמטק", "נקרין", "מקרינים", "סרטים", "הקרנה"]
+    festival: ["festival", "פסטיבל"]
     yoga_wellness: ["טאי צ'י", "יוגה", "פילאטיס", "מדיטציה"]
-    nightclubs: ["מסיבה", "מסיבת", "party", "soirée", "soiree", "festa", "fiesta", "baile", "club night", "pub crawl"]
+    nightclubs: ["מסיבה", "מסיבת", "party", "soirée", "soiree", "festa", "fiesta", "baile", "club night", "pub crawl", "סבב ברים"]
   # Sources that sell one kind of event: its genre when neither their category nor the text names one
   # (TikTik / LiveEvents / TicketHouse list concerts abroad by artist name; Pres the Cameri and Habima).
   source_default_genres:
@@ -491,6 +497,8 @@ enrichment:
     ticketplace: [live_show]
     happytlv: [nightclubs]
     shotgun: [nightclubs]
+    livetickets: [live_show]  # concert trips; sports trips say "פורמולה 1" / "NFL" (fallback words)
+    arenas: [culture]
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
