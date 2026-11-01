@@ -1,0 +1,2 @@
+# entrypoint.sh runs in Linux: keep LF even on a Windows checkout
+* text=auto eol=lf
