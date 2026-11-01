@@ -805,6 +805,7 @@ geocoding:
     "היכל התרבות חבל מודיעין": [31.9899, 34.9131]       # the same hall
     # The Khan's (Jerusalem) road shows there kept the tenant's city: Nominatim answered in Jerusalem (Nov 2026).
     "בית ציוני אמריקה": [32.0746, 34.7822]              # Beit Zionei America, Daniel Frisch 1, Tel Aviv
+    "מדיטק": [32.0118153, 34.7774368]                  # Holon Mediatheque, Golda Meir 6 (all its halls)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
@@ -1444,7 +1445,7 @@ sources:
          # Youth counselling, open "until 2027-12-31 00:00": services, not events.
          skip_titles: ["התקבלתי - מפגשי ייעוץ בתחום התעסוקה", "ייעוץ והכוונה להכשרות מקצועיות ולימודי תעודה", "ייעוץ מלגות"]}
       # Holon Mediatheque (mediatheque.org.il): library, kids' theatre, comics. Courses and museum entry left out.
-      - {host: mediatheque, venue_name: מדיטק חולון, city: חולון, skip_categories: ["קורסי", "מוזיאון", "בדיקה"]}
+      - {host: mediatheque, venue_name: מדיטק חולון, city: חולון, rooms: true, skip_categories: ["קורסי", "מוזיאון", "בדיקה"]}
       - {host: mishkan-ashdod, venue_name: המשכן לאמנויות הבמה אשדוד, city: אשדוד}
       - {host: matnasgan, venue_name: מרכז קהילתי מזרח נתניה, city: נתניה}
       - {host: makombalev, venue_name: היכל התרבות ראש העין, city: ראש העין}
