@@ -58,6 +58,8 @@ class EventerSettings(SourceSettings):
     sitemap_newest: int = Field(12000, ge=0)
     event_details_path: str
     ticket_types_path: str
+    # This many ticket requests refused (403) in a row -> the rest of the run skips them (events saved without tiers).
+    tickets_refused_limit: int = Field(20, ge=1)
     # The site's artist catalog (one request) and each artist's profile (social links). Empty = skip.
     artists_path: str = ""
     artist_path: str = "/Artist/{link_name}/byLink.js"
@@ -146,11 +148,30 @@ class EventerScraper(BaseScraper[EventerSettings]):
             raise ParseError("event id missing")
         if is_over(event, self.timezone):  # most sitemap pages: dropped before their ticket request
             return None
-        # Ticket endpoint down -> still save the event, without tiers.
-        tickets_payload = await self.optional(
-            f"{link_name} tickets", self.get_json(s.base_url + s.ticket_types_path.format(event_id=event_id), expect=dict)
-        ) or {}
-        return parse_event(details, tickets_payload, f"{s.base_url}/{link_name}", self.timezone)
+        return parse_event(details, await self._tickets(link_name, event_id), f"{s.base_url}/{link_name}", self.timezone)
+
+    async def _tickets(self, link_name: str, event_id: str) -> dict[str, Any]:
+        """Ticket endpoint down -> the event is still saved, without tiers. Refused (403) for every event
+        (2026-11-01: an empty 403 from the site itself, while event details still load) -> stop asking
+        after ``tickets_refused_limit`` in a row instead of one wasted request and log line per event."""
+        s = self.settings
+        refused = getattr(self, "_tickets_refused", 0)
+        if refused >= s.tickets_refused_limit:
+            return {}
+        try:
+            payload = await self.get_json(s.base_url + s.ticket_types_path.format(event_id=event_id), expect=dict)
+        except SourceBlockedError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            refused = refused + 1 if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code == 403 else 0
+            self._tickets_refused = refused
+            if refused == s.tickets_refused_limit:
+                self.record_failure("tickets", ParseError(f"refused {refused} times in a row: skipped for the rest of the run"))
+            elif refused < s.tickets_refused_limit:
+                self.record_failure(f"{link_name} tickets", exc)
+            return {}
+        self._tickets_refused = 0
+        return payload
 
 
     async def _list_artists(self) -> list[ArtistProfile]:
