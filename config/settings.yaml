@@ -1439,6 +1439,12 @@ sources:
       - {host: matnaskg, venue_name: היכל התרבות קריית גת, city: קריית גת}
       - {host: heichal-hm, venue_name: היכל התרבות איירפורט סיטי, city: איירפורט סיטי}
       - {host: mishkanb7, venue_name: המשכן לאמנויות הבמה באר שבע, city: באר שבע}
+      # Kivunim, Be'er Sheva's culture company (kivunim7.co.il): shows, Katedra, youth and seniors.
+      - {host: kivunimb7, venue_name: כיוונים באר שבע, city: באר שבע, skip_categories: ["מוזאונים"],
+         # Youth counselling, open "until 2027-12-31 00:00": services, not events.
+         skip_titles: ["התקבלתי - מפגשי ייעוץ בתחום התעסוקה", "ייעוץ והכוונה להכשרות מקצועיות ולימודי תעודה", "ייעוץ מלגות"]}
+      # Holon Mediatheque (mediatheque.org.il): library, kids' theatre, comics. Courses and museum entry left out.
+      - {host: mediatheque, venue_name: מדיטק חולון, city: חולון, skip_categories: ["קורסי", "מוזיאון", "בדיקה"]}
       - {host: mishkan-ashdod, venue_name: המשכן לאמנויות הבמה אשדוד, city: אשדוד}
       - {host: matnasgan, venue_name: מרכז קהילתי מזרח נתניה, city: נתניה}
       - {host: makombalev, venue_name: היכל התרבות ראש העין, city: ראש העין}
