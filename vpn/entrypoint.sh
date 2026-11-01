@@ -26,6 +26,11 @@ pull-filter ignore "route-ipv6"
 pull-filter ignore "ifconfig-ipv6"
 nobind
 resolv-retry infinite
+connect-retry 5 60
+# A silent link exits instead of OpenVPN's in-place restart: the loop below reconnects with a fresh tunproxy.
+pull-filter ignore "ping-restart"
+ping 10
+ping-exit 60
 script-security 2
 mssfix ${VPN_MSSFIX:-1250}
 data-ciphers ${VPN_CIPHERS:-AES-256-GCM:AES-128-GCM:AES-256-CBC}
@@ -40,10 +45,22 @@ setenv VPN_PROXY_PORT "${VPN_PROXY_PORT:-8888}"
 setenv VPN_ALLOW "${VPN_ALLOW:-fd00::/8 10.0.0.0/8 127.0.0.1 ::1}"
 setenv VPN_MTU "${VPN_MTU:-1200}"
 setenv VPN_DNS "${VPN_DNS:-1.1.1.1}"
+setenv VPN_CHECK_HOST "${VPN_CHECK_HOST:-1.1.1.1:443}"
+setenv VPN_CHECK_SECONDS "${VPN_CHECK_SECONDS:-60}"
+setenv VPN_CHECK_FAILS "${VPN_CHECK_FAILS:-3}"
 ca $dir/ca.crt
 cert $dir/client.crt
 key $dir/client.key
 EOF
 
-echo "Starting OpenVPN $(openvpn --version | head -1 | cut -d' ' -f2) to $VPN_REMOTE"
-exec openvpn --config "$dir/client.ovpn"
+# Reconnect forever: OpenVPN exits on a dead server, a refused login or when tunproxy stops it
+# (its liveness or country check failed), or after 60 s without a ping from the server (ping-exit).
+pid=
+trap 'kill -TERM "$pid" 2>/dev/null; exit 0' TERM INT
+while true; do
+    echo "{\"level\":\"INFO\",\"msg\":\"starting OpenVPN $(openvpn --version | head -1 | cut -d' ' -f2) to $VPN_REMOTE\",\"event\":\"connect_vpn\"}"
+    openvpn --config "$dir/client.ovpn" & pid=$!
+    wait "$pid" && code=0 || code=$?
+    echo "{\"level\":\"WARN\",\"msg\":\"OpenVPN exited ($code): reconnecting in ${VPN_RETRY_SECONDS:-5}s\",\"event\":\"reconnect\",\"code\":$code}"
+    sleep "${VPN_RETRY_SECONDS:-5}"
+done

@@ -186,7 +186,9 @@ class BaseScraper[S: SourceSettings](ABC):
             # The shared working one first, recently dead ones last (stable: the shuffle stays among equals).
             israeli.sort(key=lambda p: (p != _israel_good, now - _israel_dead.get(p, -DEAD_FOR_SECONDS) < DEAD_FOR_SECONDS))
             if http.israel_vpn:  # our own exit and nothing else: the free proxies and the pool don't work for these sites
-                israeli, pool = [http.israel_vpn], []
+                # The source's name as the proxy user, so the vpn logs say who asked (@source:onecity).
+                vpn = http.israel_vpn if "@" in http.israel_vpn else http.israel_vpn.replace("://", f"://{self.name}@", 1)
+                israeli, pool = [vpn], []
             pool = israeli + pool
             self._israeli = set(israeli)
         else:
