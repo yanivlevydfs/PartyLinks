@@ -294,7 +294,7 @@ enrichment:
     live_show: ["live show", "liveshow", "live shows", "live band", "הופעה חיה", "מופע חי", "מופעי לייב"]
     lgbt: ["lgbt", "lgbtq", "gay", "queer", "pride", "drag", "להט\"ב", "גאווה", "דראג"]
     # Not "comedy" / "קומדיה" in text: theatre plays are comedies too (declared below).
-    stand_up: ["stand up", "standup", "stand-up", "סטנדאפ"]
+    stand_up: ["stand up", "standup", "stand-up", "סטנדאפ", "סטנד אפ", "קומדי בר"]
     karaoke: ["karaoke", "קריוקי"]
     yoga_wellness: ["yoga", "ecstatic dance", "meditation", "breathwork", "sound healing", "cacao ceremony", "יוגה",
                     "אקסטטיק", "מדיטציה", "נשימה מעגלית", "טקס קקאו"]
@@ -365,6 +365,11 @@ enrichment:
     open_bar: ["open bar", "open-bar", "אופן בר", "בר פתוח", "מסיבת אלכוהול חופשי", "אלכוהול חופשי כל הלילה"]
     over_40: ["40 plus", "40 פלוס", "גילאי 40", "מגיל 40", "over 40", "40+ party"]
     youth: ["teen party", "teens party", "מסיבת נוער", "מסיבות נוער"]
+    # Culture words that name what the event is, read in the title only (title_genres).
+    workshops: ["סדנה", "סדנת", "סדנאות", "workshop"]
+    kids: ["משחקייה", "ג'ימבורי", "לגיל הרך", "הצגת ילדים", "פעוטות"]
+    theatre: ["הצגה", "מחזה", "מחזמר"]
+    lectures: ["הרצאה", "הרצאת"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
     happy_hour: ["happy hour", "happy-hour", "happyhour", "האפי האוור", "האפי אוור", "הפי האוור"]
@@ -388,22 +393,22 @@ enrichment:
     # box offices, guides (OGO tags, some in Russian), viagogo / abroad sellers.
     live_show: ["live music", "livemusic", "international artists", "concert", "concerts", "other concerts",
                 "show", "shows", "performances", "music", "הופעות", "הופעה", "הופעות מוזיקה", "מופע", "מופעים",
-                "מוזיקה", "מוסיקה", "concets"]  # concets: Eventer's spelling of its concerts category
+                "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki"]  # concets: Eventer's spelling of its concerts category
     festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль"]
     meetups: ["meetups", "community", "meeting", "קהילה", "קהילות", "קהילתי", "קהילתית", "קהילתיים", "בקהילה",
               "קהילתיות", "פעילות חברתית", "языковой клуб", "משחקי קופסא", "ברים פאבים"]
     culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית"]
-    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה"]
+    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון"]
     workshops: ["workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест", "course", "courses", "craft", "baking"]
-    cinema: ["sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary"]
-    stand_up: ["comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ"]
+    cinema: ["sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב"]
+    stand_up: ["comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ", "comy", "סאטירה", "קומדי בר", "סטנד-אפ", "סטנדאפ", "stand-up", "kleinkunst", "monólogo", "comédie"]
     markets: ["shopping", "יריד", "ירידים", "שוק", "שווקים", "ярмарка"]
     food: ["food events", "food", "אוכל", "מזון", "מפגשים קולינריים", "טעימות יין", "טעימות בירה", "tastings"]
     environment: ["environmental", "סביבה", "איכות הסביבה", "קיימות", "טבע", "גינות"]
     religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат", "chassidic", "religion"]
     holidays: ["holidays", "halloween", "חגים", "חג", "праздник"]
     sport: ["sport", "sports", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
-            "מרוץ", "אופניים", "אימוני כושר", "קבוצת הליכה", "פוצ'יוולי", "footvolley"]
+            "מרוץ", "אופניים", "אימוני כושר", "קבוצת הליכה", "פוצ'יוולי", "footvolley", "urheilu"]
     yoga_wellness: ["wellness", "health", "בריאות", "פילאטיס"]
     classical_opera: ["classical", "קלאסי"]
     # Muzi's genre slugs.
@@ -411,13 +416,20 @@ enrichment:
     mizrahi: ["yam_tichoni"]
     rock_indie: ["rocknroll"]
     world_balkan: ["world"]
-    theatre: ["theater", "theatre", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays"]
+    theatre: ["theater", "theatre", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus"]
     kids: ["kids", "children", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
-           "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families"]
-    lectures: ["lecture", "lectures", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature"]
-    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips"]
+           "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך"]
+    lectures: ["lecture", "lectures", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar"]
+    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "rundvisning", "visita guiada", "touristik"]
     dance: ["dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט"]
     conference: ["conferences"]  # Eventer's category (the text genre matches "conference" alone)
+  # Sources that sell one kind of event: its genre when neither their category nor the text names one
+  # (TikTik / LiveEvents / TicketHouse list concerts abroad by artist name; Pres the Cameri and Habima).
+  source_default_genres:
+    tiktik: [live_show]
+    livevents: [live_show]
+    tickethouse: [live_show]
+    pres: [theatre]
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
@@ -468,6 +480,8 @@ enrichment:
   # events take them from the title alone ("בינה מלאכותית | היכרות עם מודל שפה").
   # Pools likewise take the title alone.
   declared_text_genres: [hi_tech, pools]
+  # Genres read from the title only, never the description ("סדנאות יוגה" at a festival is no workshop).
+  title_genres: [workshops, kids, theatre, lectures]
   talk_keywords: ["הרצאה", "הרצאות", "lecture", "סדנה", "סדנת", "workshop", "קפה דעת"]
   # A ticket tier named with one of these and priced 0 is treated as free entry.
   # DJ / performer extraction from descriptions. A line matching a header keyword

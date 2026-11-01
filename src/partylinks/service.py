@@ -217,7 +217,7 @@ class ScrapeService:
         event meanwhile may be overwritten with its older text's genres until its next run.
         """
         fields = {"genres", "declared_genres", "genre_families", "detect_genres_from_text", "text_ignore",
-                  "talk_keywords", "talk_genres", "declared_text_genres"}  # fmt: skip
+                  "talk_keywords", "talk_genres", "declared_text_genres", "source_default_genres", "title_genres"}  # fmt: skip
         config = json.dumps(self.settings.enrichment.model_dump(include=fields), sort_keys=True, ensure_ascii=False)
         key = "genres:" + hashlib.sha256(config.encode()).hexdigest()[:16]
         with self.db.session(write=False) as session:
@@ -274,7 +274,7 @@ class ScrapeService:
                 here = venue_inside.get(row.venue_name.casefold())
             if here is None and row.latitude is not None and row.longitude is not None and target and target.center:
                 here = meters(target.center, (row.latitude, row.longitude)) <= target.radius_m
-            area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, here, city)
+            area = matcher.match(row.venue_name, row.address, row.latitude, row.longitude, here, city, row.country)
             scraper = SCRAPERS.get(row.source)
             abroad = area == ABROAD_AREA or (scraper is not None and scraper.abroad_only)
             country = row.country or (UNKNOWN_COUNTRY if abroad else None)

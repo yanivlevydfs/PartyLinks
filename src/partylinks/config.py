@@ -288,6 +288,8 @@ class EnrichmentSettings(BaseModel):
     # Sources whose own categories are precise: their text is not read for genres (a Funzing tour of
     # "the Greek market" is not Greek music).
     declared_genres_only: list[str] = Field(default_factory=list)
+    # A source's genres when nothing else names one (a box office that sells only concerts).
+    source_default_genres: dict[str, list[str]] = Field(default_factory=dict)
     # Phrases removed from title + description before genres are read ("הכרטיס האלקטרוני").
     text_ignore: list[str] = Field(default_factory=list)
     # A title with one of these is a talk, not a party: genres it describes ("the birth of house and
@@ -297,6 +299,8 @@ class EnrichmentSettings(BaseModel):
     talk_genres: list[str] = Field(default_factory=list)
     # Genres (and their sub-genres) read from the text only when the source declares one of them.
     declared_text_genres: list[str] = Field(default_factory=list)
+    # Genres read from the title only, never the description.
+    title_genres: list[str] = Field(default_factory=list)
     lineup: LineupSettings = Field(default_factory=LineupSettings)
     time_slots: list[TimeSlot] = Field(default_factory=list)
     weekend_days: list[str] = Field(default_factory=list)

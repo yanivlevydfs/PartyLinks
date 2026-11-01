@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from partylinks.artistdb import ArtistBook
-from partylinks.config import Settings
+from partylinks.config import Settings, get_settings
 from partylinks.db import Database
 from partylinks.enrichment import Enricher
 from partylinks.models import EntryType, ScrapedEvent, TicketTier
@@ -289,7 +289,7 @@ def test_adult_nightlife_genres_from_strong_phrases_only() -> None:
 
 def test_talk_takes_no_genres_from_its_description() -> None:
     talk = make(title="הרצאה - ריקוד המכונה", description="כך נולדו ההיפ הופ, ההאוס והטכנו")
-    assert ENRICHER._detect_genres(talk) == []
+    assert ENRICHER._detect_genres(talk) == ["lectures"]  # a lecture by its title; no music from its text
 
 
 def test_named_region_overrides_far_coordinates() -> None:
@@ -327,7 +327,7 @@ def test_words_in_passing_are_no_genres() -> None:
     assert smurfs == ["kids", "theatre"]  # its declared category; not cinema, not startups
     assert genres("נישואים גרעיניים", "קומדיה זוגית. יש להציג את הכרטיס האלקטרוני בכניסה") == []
     assert genres("מנגינה של סתיו", "התמונה נוצרה בבינה מלאכותית.") == []
-    assert genres("Cold Brew workshop", "🇮🇱 עברית\nיואב, איש דאטה ביום") == []  # language, a day job
+    assert genres("Cold Brew workshop", "🇮🇱 עברית\nיואב, איש דאטה ביום") == ["workshops"]  # by its title; not data (a day job) or Israeli (a language)
     assert genres("Classico screening", "המשחק: דור רומנו, סול כהן רוזנברג") == []  # Sol is a name
     assert genres("Pilots party", "כל שבוע, למעט ערבי אלכוהול חופשי") == []  # "ערבי": evenings, not Arabic
     # Tech from the title still counts; the description only for declared tech events.
@@ -355,3 +355,12 @@ def test_featured_artist_matched_across_dotless_i_does_not_fail_the_event() -> N
     enricher.learn_artists([], featured=["Derya Yıldırım"])
     event = enricher.enrich(make(title="DERYA YILDIRIM & GRUP ŞIMŞEK", description=""))
     assert event is not None and len(event.lineup) == 1 and event.lineup[0].casefold().startswith("derya")
+
+
+def test_an_event_without_coordinates_takes_its_towns_region_or_abroad() -> None:
+    settings = get_settings()
+    areas = Enricher(settings.enrichment, settings.timezone).areas
+    assert areas.match("אולם המופעים", None, None, None, False, "חריש") == "sharon"  # GeoNames centre of the town
+    assert areas.match("San Siro", None, None, None, False, "Milan") == "abroad"  # a big city abroad
+    assert areas.match(None, "DE", None, None, False, None, "DE") == "abroad"  # only a country, not Israel
+    assert areas.match(None, None, None, None, None, None, "MT") == "abroad"  # no place at all, but the country

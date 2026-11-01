@@ -367,7 +367,7 @@ class FacetValue(BaseModel):
 
 
 def venue_facets(
-    facets: list[FacetValue], venue_area: dict[str, str], rows: list[Any], profiles: list[VenueProfile], linked: dict[str, str]
+    facets: list[FacetValue], venue_area: dict[str, str], rows: Sequence[Any], profiles: list[VenueProfile], linked: dict[str, str]
 ) -> list[FacetValue]:
     """Venue counts with their area, and the logo / links of the venues a ticket site curates."""
     spots: dict[str, tuple[float, float] | None] = {f.value: None for f in facets}

@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import math
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import datetime, time
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 from partylinks.config import AreaSettings, CitySettings, EnrichmentSettings, RegionSettings
 from partylinks.models import EntryType, ScrapedEvent, TicketKind
 from partylinks.parsing import slugify
-from partylinks.places import PlaceIndex, all_cities, city_name, latin_town
+from partylinks.places import PlaceIndex, all_cities, city_name, city_point, israeli_places, latin_town
 
 _EDGE_DECOR = re.compile(r"^[^\w'\"(]+|[^\w'\")]+$")
 _LEADING_WITH = re.compile(r"^(?:w/|with|feat\.?|ft\.?)\s+", re.IGNORECASE)
@@ -57,10 +57,13 @@ def _keyword_pattern(keywords: list[str]) -> re.Pattern[str] | None:
 _LINKS = re.compile(r"\S+@\S+|https?://\S+|www\.\S+|\b[\w-]+(?:\.[\w-]+)*\.(?:com|org|net|co|io|il|info|me|app)\b\S*")
 
 OUTSIDE_AREA = "outside"
+# A city name with no country is taken for a city abroad only when that city is this big (no village guesses).
+TOWN_ABROAD_MIN_POPULATION = 100_000
 ABROAD_AREA = "abroad"
 # ISO 3166 "unknown": an event abroad whose country the source does not give. Any country code
 # keeps an event out of the Israeli feed and in the abroad section.
 UNKNOWN_COUNTRY = "ZZ"
+LOCAL_COUNTRIES = {"IL", "PS", UNKNOWN_COUNTRY}  # an event in one of these is placed by its town
 
 
 def meters(a: tuple[float, float], b: tuple[float, float]) -> float:
@@ -75,7 +78,14 @@ class AreaMatcher:
     """Area of the target city, or region of the country outside it, for an event
     (also used to backfill stored rows)."""
 
-    def __init__(self, areas: list[AreaSettings], regions: list[RegionSettings] | None = None) -> None:
+    def __init__(
+        self,
+        areas: list[AreaSettings],
+        regions: list[RegionSettings] | None = None,
+        town_point: Callable[[str], tuple[float, float] | None] | None = None,
+    ) -> None:
+        # The centre of a town by name, for an event outside the target city that has no coordinates.
+        self._town_point = town_point
         self._areas = [(area, _keyword_pattern(area.keywords)) for area in areas]
         self._regions = [(r, _place_pattern(r.places)) for r in regions or []]
         # In a venue name or a street address these are rarely the place: "תיאטרון הצפון" (Haifa),
@@ -94,11 +104,12 @@ class AreaMatcher:
         longitude: float | None,
         in_target_city: bool | None,
         city: str | None = None,
+        country: str | None = None,
     ) -> str | None:
         if not self._areas:
             return None
-        if in_target_city is False:
-            return self.region(city, venue_name, address, latitude, longitude)
+        if in_target_city is False or (in_target_city is None and country and country not in LOCAL_COUNTRIES):
+            return self.region(city, venue_name, address, latitude, longitude, country)
         if key := self.keyword_area(venue_name, address):
             return key
         if latitude is None or longitude is None:
@@ -110,11 +121,16 @@ class AreaMatcher:
 
     def region(
         self, city: str | None, venue_name: str | None, address: str | None,
-        latitude: float | None, longitude: float | None,
+        latitude: float | None, longitude: float | None, country: str | None = None,
     ) -> str:
-        """Region of an event outside the target city: a named place (city first), then coordinates."""
+        """Region of an event outside the target city: a named place (city first), a country abroad,
+        then coordinates (the town's centre when the event has none)."""
         if named := self.named_region(city, venue_name, address):
             return named.key
+        if country and country not in LOCAL_COUNTRIES:
+            return ABROAD_AREA
+        if (latitude is None or longitude is None) and city and self._town_point:
+            latitude, longitude = self._town_point(city) or (None, None)
         if latitude is None or longitude is None or not self._regions:
             return OUTSIDE_AREA
         for region, _ in self._regions:
@@ -216,7 +232,17 @@ class Enricher:
         self._blocked: set[str] = set()
         self._featured: tuple[re.Pattern[str] | None, dict[str, str]] = (None, {})
         self._weekend = {d.lower() for d in settings.weekend_days}
-        self.areas = AreaMatcher(settings.areas, settings.regions)
+        # Every GeoNames locality (500+ people) by its Hebrew names: the city field names a town outright,
+        # so the small ones that are also words ("הזורע", "כפר שמריהו") are safe here.
+        self._town_centers = {
+            c.he: c.center for c in [*israeli_places(0), *all_cities(settings.cities, settings.places_min_population)]
+            if c.center
+        } | {a: c.center for c in israeli_places(0) for a in c.aliases if c.center}
+        self.areas = AreaMatcher(settings.areas, settings.regions, self.town_point)
+
+    def town_point(self, city: str) -> tuple[float, float] | None:
+        """Centre of the town ``city`` names: an Israeli one (GeoNames), else a big city abroad ("Milan")."""
+        return self._town_centers.get(city) or city_point(city, None, min_population=TOWN_ABROAD_MIN_POPULATION)
 
     def is_dropped(self, event: ScrapedEvent) -> bool:
         """True when enrich() would drop the event (another city while focusing on one)."""
@@ -246,7 +272,8 @@ class Enricher:
             event.city = city_name(event.city, event.country)
         event.in_target_city = self.in_target_city(event.city, event.address, event.venue_name)
         event.area = self.areas.match(
-            event.venue_name, event.address, event.latitude, event.longitude, event.in_target_city, event.city
+            event.venue_name, event.address, event.latitude, event.longitude, event.in_target_city, event.city,
+            event.country,
         )
         if event.area == ABROAD_AREA and not event.country:  # coordinates outside Israel (Go-Out abroad)
             event.country = UNKNOWN_COUNTRY
@@ -267,8 +294,9 @@ class Enricher:
     def _detect_genres(self, event: ScrapedEvent) -> list[str]:
         declared = " | ".join([*event.source_genres, *event.event_types]).lower()
         talk = self._talk is not None and self._talk.search(event.title.lower())
-        read_text = self.settings.detect_genres_from_text and not talk and event.source not in self.settings.declared_genres_only
-        text = f"{event.title}\n{event.description or ''}".lower() if read_text else ""
+        read_text = self.settings.detect_genres_from_text and event.source not in self.settings.declared_genres_only
+        # A talk's description names its subject, not its kind: only its title is read, for the talk genres.
+        text = (event.title if talk else f"{event.title}\n{event.description or ''}").lower() if read_text else ""
         text = _LINKS.sub(" ", text)  # "info@bg-house.org" is not house music
         for phrase in self.settings.text_ignore:
             text = text.replace(phrase.lower(), " ")
@@ -285,9 +313,14 @@ class Enricher:
         # A tech talk or conference ("Israeli startups", "the music industry's AI") has a subject, not a
         # music genre: its text is read only for the talk genres.
         talk_genres = set(self.settings.expand_genres(self.settings.talk_genres))
-        if (found | from_text) & talk_genres:
+        title_only = set(self.settings.title_genres)
+        title = event.title.lower()
+        from_text -= {g for g in title_only if g in self._genres and not self._genres[g].search(title)}
+        if talk:  # its title: the talk genres and the title-only ones ("סדנת בישול", "הרצאה על...")
+            from_text &= talk_genres | title_only
+        elif (found | from_text) & talk_genres:
             from_text &= talk_genres
-        return sorted(found | from_text)
+        return sorted(found | from_text) or list(self.settings.source_default_genres.get(event.source, []))
 
     # ------------------------------------------------------------------ lineup
     def _lineup(self, event: ScrapedEvent) -> list[str]:
