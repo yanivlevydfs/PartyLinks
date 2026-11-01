@@ -1180,13 +1180,13 @@ sources:
     # proxy's, Nov 2026): same API as `pres`, through the Israeli proxies.
     enabled: true
     israel_proxy: true
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "34 6,18 * * *"
     presentations_path: /api/presentations
     features_path: /api/features
     ticket_groups_path: /api/presentations/{id}/ticketGroups
     event_page_path: /order/{id}
     skip_titles: ["בדיקה", "שוברים", "תשלום בקופה"]
-    vpn: true  # our Israeli VPN only (Railway production)
     hosts:
       - {key: lessin, url: "https://lessin.presglobal.store", venue: "תיאטרון בית ליסין", city: "תל אביב"}
       - {key: ipo, url: "https://ipo.presglobal.store", city: "תל אביב"}
@@ -1362,13 +1362,13 @@ sources:
     # /api/ and /search/; the homepage refuses non-browser clients, the sitemap and pages do not.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "13 8,20 * * *"
     site_url: https://www.eventim.co.il
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
     skip_url_words: ["זאפה", "אמפי-שוני"]   # read by the zappa source
     # A page with neither pageMeta nor an Event JSON-LD is logged (status, size, title, markers).
     # One with a challenge marker moves to the next proxy; max_empty_streak such pages in a row stop
-    vpn: true  # our Israeli VPN only (Railway production)
     # the run as blocked instead of running into the 30-min timeout.
     challenge_markers: ["Access Denied", "bm-verify", "_sec/cp_challenge", "Please enable JavaScript", "captcha", "Pardon Our Interruption"]
     diagnostic_markers: ["akamai", "_abck", "sec-if-cpt"]
@@ -1641,13 +1641,13 @@ sources:
     # datacenter proxies get its 403 page, which is recorded as a blocked run. Speaks as Chrome (as Chillz) so
     # an Israeli IP that reaches it also passes Cloudflare's client check.
     israel_proxy: true
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "26 8,20 * * *"
     site_url: https://beatradar.co.il
     events_path: /api/events
     http:
       impersonate: chrome
 
-    vpn: true  # our Israeli VPN only (Railway production)
   vibez:
     # Vibez (vibez.io): ticketing for communities and party producers (raves, ecstatic dance, club
     # nights). Public JSON API: 5 pages of 20 upcoming events, then each event's description and
@@ -1754,13 +1754,13 @@ sources:
     # pages (~180) with the Eventim parser; the eventim source skips them. Same Akamai limits.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "47 9,21 * * *"
     site_url: https://www.eventim.co.il
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
     url_words: ["זאפה", "אמפי-שוני"]
     # A page with neither pageMeta nor an Event JSON-LD is logged (status, size, title, markers).
     # One with a challenge marker moves to the next proxy; max_empty_streak such pages in a row stop
-    vpn: true  # our Israeli VPN only (Railway production)
     # the run as blocked instead of running into the 30-min timeout.
     challenge_markers: ["Access Denied", "bm-verify", "_sec/cp_challenge", "Please enable JavaScript", "captcha", "Pardon Our Interruption"]
     diagnostic_markers: ["akamai", "_abck", "sec-if-cpt"]
@@ -1973,13 +1973,13 @@ sources:
     # business day; lecture-course meetings are tagged הרצאה. robots.txt allows all but /wp-admin.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "5 10,22 * * *"
     http: {concurrency: 3, impersonate: chrome}  # Chrome (curl_cffi), as Chillz does
     api_url: https://cintlv.presglobal.store
     presentations_path: /api/presentations/
     features_path: /api/features/
     ticket_groups_path: /api/presentations/{id}/ticketGroups
-    vpn: true  # our Israeli VPN only (Railway production)
     order_url: https://cintlv.presglobal.store/order/{id}
     days_ahead: 7
 
@@ -2009,13 +2009,13 @@ sources:
     # here by TheaterId. robots.txt allows everything.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "2 8,20 * * *"
     site_url: https://movieland.co.il
     days_ahead: 3
     branches:
       "1291": {venue_name: מובילנד חיפה, address: "משה פלימן 4, קניון עזריאלי", city: חיפה}
       "1293": {venue_name: מובילנד הצוק, address: "יוניצמן 21", city: תל אביב}
-    vpn: true  # our Israeli VPN only (Railway production)
       "1290": {venue_name: מובילנד כרמיאל, address: "החרושת 15, מתחם גן העיר", city: כרמיאל}
       "1292": {venue_name: מובילנד נתניה, address: "גיבורי ישראל 17, מתחם עמי פולג", city: נתניה}
       "1294": {venue_name: מובילנד עפולה, address: "יוסף ברזילי 5, קניון בלו וואלי", city: עפולה}
@@ -2053,13 +2053,13 @@ sources:
     # dates, and a link and "from" price when an offer exists. robots.txt is absent.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "31 3,15 * * *"
     site_url: https://livevents.co.il
     ajax_path: /wp-admin/admin-ajax.php
     ajax_action: events_table_action
     calendar_path: /events/
     http:
-    vpn: true  # our Israeli VPN only (Railway production)
       concurrency: 2
 
   issta:
@@ -2068,13 +2068,13 @@ sources:
     # trip (departure to return). Destination from the airport code (airportsdata).
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "47 4,16 * * *"
     site_url: https://www.issta.co.il
     listing_path: /tickets
 
   happytlv:
     # HappyTLV: Tel Aviv night-out guide. One sitemap; upcoming party pages (the date is in the path,
-    vpn: true  # our Israeli VPN only (Railway production)
     # ~170) give a schema.org Event with the seller's link, and bars' happy-hour pages (~240) give
     # the deal and its weekly hours, made into one event per day over `happy_hour_days`, under the
     # happy_hour category. Hub pages are skipped. robots.txt allows all but /_api/.
@@ -2162,13 +2162,13 @@ sources:
     # Recurring series show only their first date and fall out by retention. robots.txt allows the page.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "9 4,16 * * *"
     listing_url: https://www.holon.muni.il/Havingfun/Pages/allevents.aspx
     city: חולון
     # One ~800 KB page through a free Israeli proxy: 30 s ran out on every run (ReadTimeout), Oct 2026.
     run_timeout_seconds: 3600
     http:
-    vpn: true  # our Israeli VPN only (Railway production)
       timeout_seconds: 120
 
   kikarhamusica:
@@ -2217,13 +2217,13 @@ sources:
     # localities and organizers' own sites. robots.txt disallows /search, /ajax, /map, /content.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "39 4,16 * * *"
     site_url: https://www.tiuli.com
     list_path: /events
     max_events: 200
     http:
       concurrency: 4
-    vpn: true  # our Israeli VPN only (Railway production)
       request_delay_seconds: 0.5
 
   festivalim:
@@ -2247,13 +2247,13 @@ sources:
     # robots.txt allows /_vti_bin/.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "51 5,17 * * *"
     site_url: https://www.tel-aviv.gov.il
     list_path: /_vti_bin/TlvSP2013PublicSite/TlvListUtils.svc/GetEvBenList
     item_path: /Pages/MainItemPage.aspx
     city: תל אביב-יפו
     http:
-    vpn: true  # our Israeli VPN only (Railway production)
       timeout_seconds: 60       # one ~9 MB response
 
   munievents:
@@ -2386,13 +2386,13 @@ sources:
     # performance; a season is kept as its first day. robots.txt allows everything.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "57 4,16 * * *"
     site_url: https://www.haifa.muni.il
     listing_path: /culture/city-events/
     city: חיפה
     http:
       concurrency: 4
-    vpn: true  # our Israeli VPN only (Railway production)
       request_delay_seconds: 0.3
 
   ramatganmuni:
@@ -2475,13 +2475,13 @@ sources:
     # Events sold by a Smarticket box office the smarticket source reads are skipped.
     enabled: true
     israel_proxy: true  # 403 to every site from the evomi IPs (0 events, Oct 2026); answers Israeli IPs
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "17 4,16 * * *"
     sites:
       - {url: https://www.karmiel.muni.il, city: כרמיאל}
       - {url: https://www.even-yehuda.muni.il, city: אבן יהודה}
       - {url: https://www.tiberias.muni.il, city: טבריה}
       - {url: https://www.tira.muni.il, city: טירה}
-    vpn: true  # our Israeli VPN only (Railway production)
       - {url: https://www.kiryat-ata.org.il, city: קריית אתא}
     http:
       concurrency: 2
@@ -2553,13 +2553,13 @@ sources:
     # Shares Eventim's event ids: most events are also stored by `eventim`. Not yet seen live (Oct 2026).
     enabled: true
     israel_proxy: true  # Eventim's Akamai: unreachable from abroad; refused a free IL proxy (Oct 2026)
+    # No vpn: Akamai challenges the VPN's IP (0 events); the free IL proxies got up to 83 (Nov 2026)
     cron: "4 7,19 * * *"
     site_url: https://www.barak-tickets.co.il
     city_paths:   # the site's nav regions (Jan 2026)
       - /city/באר-שבע-308/
       - /city/בנימינה-1957/
       - /city/הרצליה-314/
-    # No vpn: Akamai challenges the VPN's IP (0 events); the free IL proxies got up to 83 (Nov 2026)
       - /city/זכרון-יעקב-1948/
       - /city/חיפה-והצפון-307/
       - /city/ירושלים-306/
@@ -2662,13 +2662,13 @@ sources:
     # Cloudflare challenges every non-Israeli IP (Railway, evomi), Chrome or not (2026-10-31); Israeli IPs pass
     # without one. Speaks as Chrome so an Israeli proxy also passes Cloudflare's client check (as beatradar).
     israel_proxy: true
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "58 6,18 * * *"
     site_url: https://yellowsubmarine.org.il
     listing_path: /event/
     venue_name: הצוללת הצהובה
     address: הרכבים 13
     city: ירושלים
-    vpn: true  # our Israeli VPN only (Railway production)
     latitude: 31.7540   # Nominatim: הרכבים 13
     longitude: 35.2129
     http:
