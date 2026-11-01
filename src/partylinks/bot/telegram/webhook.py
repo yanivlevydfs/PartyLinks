@@ -87,6 +87,12 @@ async def start(app: FastAPI) -> Application | None:
     return bot
 
 
+def username(app: FastAPI) -> str | None:
+    """The running bot's @name (GET /site: the site's "open in Telegram" banner), None when it is off."""
+    bot: Application | None = getattr(app.state, "telegram", None)
+    return bot.bot.username if bot is not None else None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Runs inside the app's own lifespan (after its settings and database are up)."""
