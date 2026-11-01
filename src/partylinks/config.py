@@ -186,6 +186,9 @@ class HttpSettings(BaseModel):
     # Live list of free Israeli proxies (geonode JSON), fetched at most every 30 minutes and put
     # before `israel_proxy`, so the pool follows the free proxies as they come and go.
     israel_proxy_feed: str | None = None
+    # Our own Israeli exit (vpn/: CyberGhost on Railway's private network), tried before every free
+    # proxy. Set on Railway production only: PARTYLINKS_HTTP__ISRAEL_VPN=http://vpn.railway.internal:8888
+    israel_vpn: str | None = None
     # Speak as this browser at the TLS/HTTP2 level (curl_cffi, e.g. "chrome"), for sites whose bot
     # check refuses Python's handshake. The browser's own User-Agent replaces `user_agent`.
     impersonate: str | None = None

@@ -438,6 +438,14 @@ def test_israel_proxy_sources_try_israeli_ips_first_then_the_usual_pool() -> Non
     assert plain.http.proxy == "http://pool:1" and plain._spare_proxies == []
 
 
+def test_israel_vpn_goes_before_every_free_proxy() -> None:
+    http = HttpSettings(source_proxy="http://pool:1", israel_proxy="http://il1:1, http://il2:2", israel_vpn="http://vpn:8888")
+    scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
+    assert scraper.http.proxy == "http://vpn:8888"
+    assert set(scraper._spare_proxies[:2]) == {"http://il1:1", "http://il2:2"}
+    assert scraper._spare_proxies[-1] == "http://pool:1"
+
+
 def test_israel_proxy_feed_goes_first_and_is_cached(monkeypatch) -> None:
     from partylinks.scrapers import base
 

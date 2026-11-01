@@ -319,7 +319,7 @@ class ConfigIn(BaseModel):
     yaml: str
 
 
-PROXY_KEYS = ("proxy", "source_proxy", "israel_proxy", "israel_proxy_feed")
+PROXY_KEYS = ("proxy", "source_proxy", "israel_proxy", "israel_proxy_feed", "israel_vpn")
 
 
 def _hide_url(value: str) -> str:
