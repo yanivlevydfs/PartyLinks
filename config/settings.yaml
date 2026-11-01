@@ -1446,6 +1446,22 @@ sources:
       # Be'er Sheva's community centres (its title says Beit Shemesh; the halls are Be'er Sheva's).
       - {host: matnasbs, venue_name: "מתנ\"סים באר שבע", city: באר שבע}
       - {host: sdotnegev, venue_name: היכל התרבות שדות נגב, city: שדות נגב}
+      # Municipal and council box offices found by a nationwide search (2026-11-02). Classes, courses,
+      # rentals and the online copies of lectures are left out (keep_categories / skip_title_words).
+      - {host: makefet, venue_name: "מקפת - מרכזים קהילתיים פתח תקווה", city: פתח תקווה,
+         keep_categories: ["תיאטראות", "מרכזים קהילתיים"], skip_title_words: ["קורס", "חוג"]}
+      - {host: beitariela, venue_name: בית אריאלה, city: תל אביב, rooms: true,
+         skip_categories: ["שכירות"], skip_title_words: ["מקוון", "קורס", "סמסטר", "כיתות", "כיתת"]}
+      - {host: zamarin, venue_name: בית התותחן זכרון יעקב, city: זכרון יעקב, skip_title_words: ["קורס", "חוג"]}
+      - {host: netivim, venue_name: נתיבים - החברה לקהילה ופנאי נתיבות, city: נתיבות,
+         skip_categories: ["סדנא"], skip_title_words: ["קורס", "חוג"]}
+      - {host: maianot, venue_name: תרבות עמק המעיינות}
+      - {host: matnastiv, venue_name: הרשת הקהילתית קריית טבעון, city: קריית טבעון, skip_title_words: ["קורס", "חוג"]}
+      - {host: eventshadera, venue_name: "אגף אתו\"ס עיריית חדרה", city: חדרה}
+      - {host: traintheater, venue_name: תיאטרון הקרון, city: ירושלים, rooms: true}
+      - {host: haulam-phk, venue_name: האולם - בית תרבות מקומי פרדס חנה כרכור, city: פרדס חנה-כרכור, rooms: true}
+      - {host: dolev, venue_name: "מתנ\"ס קריית אונו", city: קריית אונו}
+      - {host: fringeb7, venue_name: תיאטרון הפרינג' באר שבע, city: באר שבע, rooms: true}
       # Kivunim, Be'er Sheva's culture company (kivunim7.co.il): shows, Katedra, youth and seniors.
       - {host: kivunimb7, venue_name: כיוונים באר שבע, city: באר שבע, skip_categories: ["מוזאונים"],
          # Youth counselling, open "until 2027-12-31 00:00": services, not events.

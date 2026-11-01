@@ -210,3 +210,29 @@ def test_calendar_fallback() -> None:
     shows = asyncio.run(scraper._calendar_shows("petah-tikva.smarticket.co.il"))
     assert len(calls) == 2 and calls[1]["start"] > calls[0]["end"]
     assert len(shows) == 2  # same rows in both windows are deduplicated
+
+
+def test_keep_categories_and_skip_title_words() -> None:
+    """Classes and rentals sit beside the shows: keep_categories keeps only the listed categories,
+    skip_title_words drops a course or the online copy of a lecture by a word in its title."""
+    shows = json.loads(_body())
+    future = (date.today() + timedelta(days=30)).isoformat()
+    for show in shows:
+        for performance in show["events"]:
+            performance["show_date"] = future
+    scraper = SmarticketScraper(SETTINGS, HttpSettings(), TZ)
+
+    async def fake_get_text(url: str, **_: object) -> str:
+        return json.dumps(shows, ensure_ascii=False)
+
+    scraper.get_text = fake_get_text  # type: ignore[method-assign]
+
+    def ids(**update: object) -> set[str]:
+        events = asyncio.run(scraper._scrape_tenant(TZAVTA.model_copy(update=update)))
+        return {e.source_event_id for e in events}
+
+    everything = ids()
+    assert "tzavta:18241" in everything and "tzavta:17950" in everything
+    assert "tzavta:18241" not in ids(keep_categories=["בידור"])  # no category: not kept
+    assert "tzavta:17950" in ids(keep_categories=["בידור"])
+    assert "tzavta:17950" not in ids(skip_title_words=["חנוך"])
