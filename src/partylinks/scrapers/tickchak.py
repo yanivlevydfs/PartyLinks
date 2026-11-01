@@ -8,6 +8,8 @@ reported ``count`` is reached, plus ``/customEventsNew``. Nothing about the
 sections is hard-coded; they are discovered from the page every run.
 Slider items already carry venue, artists, price range and provider link, so no
 per-event request is needed. Ticket tiers live on the upstream provider.
+Events whose seller set no category are on no category page: the event sitemap adds them
+(``tickchak_sitemap``, one page request each).
 """
 
 from __future__ import annotations
@@ -22,10 +24,13 @@ from urllib.parse import urlsplit
 from pydantic import Field
 
 from partylinks.artists import ArtistProfile
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, from_unix, next_data, og_image, to_decimal
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.matnasnet import covered_smarticket_hosts
+from partylinks.scrapers.tickchak_sitemap import unlisted_items
 
 SLIDER_SECTION = "eventSlider"
 LOOP_SECTION = "loopSections"
@@ -45,6 +50,10 @@ class TickchakSettings(SourceSettings):
     custom_events_path: str
     page_size: int = Field(20, ge=1)
     max_pages: int = Field(50, ge=1)
+    # Events on no category page, read from the event sitemap (tickchak_sitemap). Empty = off.
+    event_sitemap_path: str = ""
+    # The label of sitemap events whose seller set no category (as `categories` labels a page's events).
+    uncategorized_label: str = ""
 
 
 class TickchakScraper(BaseScraper[TickchakSettings]):
@@ -70,11 +79,23 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         for path in self.page_paths():
             label = s.categories.get(path.split("/", 1)[0])
             # One category failing (a renamed slug) never costs the others; the first one must load.
-            found = await (self._page_items(path) if not items else self.optional(f"category {path}", self._page_items(path)))
+            found = await (
+                self._page_items(path) if not items else self.optional(f"category {path}", self._page_items(path))
+            )
             for entity_id, item in (found or {}).items():
                 items.setdefault(entity_id, item)
                 if label:
                     labels.setdefault(entity_id, set()).add(label)
+        if s.event_sitemap_path:
+            sitemap = unlisted_items(self, s.site_url + s.event_sitemap_path, set(items))
+            for item in await self.optional("event sitemap", sitemap) or []:
+                slug = item.get("categorySlug")
+                # A category we do not read (football) stays out; no category gets uncategorized_label.
+                label = s.categories.get(slug) if slug else s.uncategorized_label
+                if label is not None:
+                    items.setdefault(item["entityId"], item)
+                    if label:
+                        labels.setdefault(item["entityId"], set()).add(label)
         self.log.debug("listed %d events", len(items))
         events: list[ScrapedEvent] = []
         missing: list[tuple[ScrapedEvent, str]] = []  # no artwork here: the seller's page may have it
@@ -88,6 +109,9 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
                 event = parse_event(item, s.site_url, self.name)
             except Exception as exc:  # noqa: BLE001 - isolate per-item failures
                 self.record_failure(str(entity_id), exc)
+                continue
+            # Today's shows stay listed after they end (and the sitemap lists them too): over is not imported.
+            if not is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
                 continue
             event.event_types = sorted({*event.event_types, *labels.get(entity_id, ())})
             events.append(event)

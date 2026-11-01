@@ -24,7 +24,7 @@ pagination and what the listing and the event page provide.
 | `goout` | GO-OUT (go-out.co) | 06:35, 18:35 | yes |
 | `eventer` | Eventer (eventer.co.il) | 06:56, 18:56 | yes |
 | `zygo` | ZYGO (zygo.co.il) | 07:24, 19:24 | yes |
-| `tickchak` | Tickchak LIVE (live.tickchak.co.il): an aggregator across ticketing providers | 07:45, 19:45 | yes |
+| `tickchak` | Tickchak LIVE (live.tickchak.co.il): an aggregator across ticketing providers; events on no category page (municipal halls, museums) from its event sitemap (`tickchak_sitemap.py`) | 07:45, 19:45 | yes |
 | `selector` | Selector (selector.org.il) | 08:06, 20:06 | yes |
 | `drop` | Drop (tdrop.net): self-serve ticketing for party producers: raves, house parties, festivals | 08:17, 20:17 | yes |
 | `airdrop` | Airdrop (airdrop.co.il): party guide for clubs, festivals and party trips abroad | 06:25, 18:25 | yes |

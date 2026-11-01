@@ -937,6 +937,9 @@ sources:
     custom_events_path: /customEventsNew
     page_size: 20
     max_pages: 200
+    # ~320 events on no category page (municipal halls, museums): one page each from the event sitemap.
+    event_sitemap_path: /api/sitemap/event.xml
+    uncategorized_label: culture   # their seller set no category: a general culture event
 
   selector:
     enabled: true
