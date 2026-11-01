@@ -40,16 +40,12 @@ def keyboard(rows: list[list[Button]]) -> InlineKeyboardMarkup | None:
 
 
 def main_keyboard(lang: str) -> ReplyKeyboardMarkup:
-    """The buttons under the typing box: share location, tonight, this weekend, my alerts, help."""
+    """One small row under the typing box: share the location (only a keyboard button can ask for it) and
+    the menu, where everything else is. Not persistent: the user can fold it away."""
     return ReplyKeyboardMarkup(
-        [
-            [KeyboardButton(label("near", lang), request_location=True)],
-            [KeyboardButton(label("tonight", lang)), KeyboardButton(label("weekend", lang))],
-            [KeyboardButton(label("my_alerts", lang)), KeyboardButton(label("my_events", lang))],
-            [KeyboardButton(label("menu_home", lang)), KeyboardButton(label("help", lang))],
-        ],
+        [[KeyboardButton(label("near", lang), request_location=True), KeyboardButton(label("menu_home", lang))]],
         resize_keyboard=True,
-        is_persistent=True,
+        input_field_placeholder=label("type_hint", lang),
     )
 
 

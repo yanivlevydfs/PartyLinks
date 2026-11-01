@@ -184,8 +184,8 @@ PHRASES: dict[str, dict[str, tuple[str, ...]]] = {
     "menu_pick_area": {"he": ("📍 איפה?",), "en": ("📍 Where?",)},
     "menu_pick_date": {"he": ("📅 מתי?",), "en": ("📅 When?",)},
     "keyboard_hint": {
-        "he": ("⌨️ הכפתורים למטה תמיד כאן: הערב, סופ״ש, קרוב אליי והתפריט.",),
-        "en": ("⌨️ The buttons below are always here: tonight, weekend, near me and the menu.",),
+        "he": ("📍 קרוב אליי ו-🏠 התפריט תמיד למטה. אפשר גם פשוט לכתוב.",),
+        "en": ("📍 Near me and 🏠 the menu are always below. Or just write.",),
     },
     "declined": {
         "he": ("בסדר, לא שמרתי עליכם כלום 👋 אם תתחרטו, /start",),
@@ -295,6 +295,7 @@ LABELS: dict[str, dict[str, str]] = {
     "menu_areas": {"he": "📍 אזורים", "en": "📍 Areas"},
     "menu_dates": {"he": "📅 מתי", "en": "📅 When"},
     "menu_home": {"he": "🏠 תפריט", "en": "🏠 Menu"},
+    "type_hint": {"he": "למשל: טכנו בתל אביב הערב", "en": "e.g. techno in Tel Aviv tonight"},
     "menu_show": {"he": "✅ הצג תוצאות", "en": "✅ Show results"},
     "menu_back": {"he": "⬅️ חזרה", "en": "⬅️ Back"},
     "menu_all": {"he": "כל", "en": "All"},
