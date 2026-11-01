@@ -247,7 +247,13 @@ Other sessions commit to `master` at the same time:
 5. **Check an event page:** `https://spotx.fun/event/<slug>` must return 200 and show the
    weather, the map pin and the ticket button.
 6. **Check the stores:** the source appears on `/ticket-sites` and in the source filter.
-7. **Later runs:** `run_sources.py --report 24` the next day. A source that keeps failing gets paused,
+7. **Check the venue and artist pages:** they are built from the stored events, so each venue the
+   source writes must open at `https://spotx.fun/venue/<venue name>` (200, with its events) and appear
+   in `/venues`. Halls of one building should land under one venue (`rooms: true`, or a pin in
+   `geocoding.venues`), not one page per room. When the site names artists, open one
+   `/artist/<name>` page. A tenant or host added to an existing source (Smarticket, PRES, Tickchak)
+   gets the same checks: it adds venues even when it adds no source.
+8. **Later runs:** `run_sources.py --report 24` the next day. A source that keeps failing gets paused,
    and the admins are emailed.
 
 ## 9. Done checklist
@@ -263,3 +269,4 @@ Other sessions commit to `master` at the same time:
 - [ ] `tests/test_<name>.py`; `check_source.py` says `OK`; ruff; full pytest; `tsc` if web changed
 - [ ] Committed with only my hunks, pushed, deploy `SUCCESS`
 - [ ] Prod run `success`; events, coords, genres in the DB; `640.webp` is `image/webp`; event page 200
+- [ ] Its venues open under `/venue/<name>` and in `/venues` (one venue per building); an `/artist/` page when the site names artists
