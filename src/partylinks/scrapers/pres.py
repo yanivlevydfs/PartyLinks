@@ -330,6 +330,18 @@ def _one_line(value: Any) -> str | None:
     return clean_str(" ".join(str(value).split())) if value is not None else None
 
 
+class PresIsraelScraper(PresScraper):
+    """PRES box offices that answer Israeli IPs only (Beit Lessin, the IPO: 403 to Railway's and the
+    proxy's IPs, Nov 2026): same API, their own source so only they go through the Israeli proxies."""
+
+    name = "pres_il"
+
+    async def scrape(self) -> AsyncIterator[ScrapedEvent]:
+        async for event in super().scrape():
+            event.source = self.name
+            yield event
+
+
 def _waze_coordinates(url: Any) -> tuple[float | None, float | None]:
     m = _WAZE_LL.search(unquote(str(url or "")))
     return (float(m.group(1)), float(m.group(2))) if m else (None, None)

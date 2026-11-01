@@ -55,7 +55,8 @@ pagination and what the listing and the event page provide.
 | `ticketmaster` | Ticketmaster Israel (ticketmaster.co.il): concerts, shows and festivals nationwide | 06:49, 18:49 | yes |
 | `eventim` | Eventim Israel (eventim.co.il): concerts, theatre, shows and sport | 08:13, 20:13 | yes |
 | `zappa` | Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni, on the Eventim platform (`eventim.py`) | 09:47, 21:47 | yes |
-| `pres` | PRES ticketing platform (pres.global): Kupat Tel Aviv, Cameri, Habima, the Israeli Opera, the Philharmonic, Beit Lessin, the Khan and more | 06:28, 18:28 | yes |
+| `pres` | PRES ticketing platform (pres.global): Kupat Tel Aviv, Cameri, Habima, the Israeli Opera, the Khan and more | 06:28, 18:28 | yes |
+| `pres_il` | PRES box offices that answer Israeli IPs only: Beit Lessin, the Israel Philharmonic (`pres.py`, through the Israeli proxies) | 06:34, 18:34 | yes |
 | `kupatbravo` | Kupat Bravo (kupatbravo.co.il): nationwide box office (theatre, concerts, opera, dance, kids) | 06:41, 18:41 | yes |
 | `smarticket` | Smarticket - white-label box office used by theatres and municipal culture halls | 06:14, 18:14 | yes |
 | `leaan` | Leaan (leaan.co.il): ticketing site for shows, stand-up, kids' shows and sport (Next.js) | 07:17, 19:17 | yes |

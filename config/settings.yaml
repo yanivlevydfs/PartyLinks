@@ -1172,10 +1172,23 @@ sources:
          artwork_json: "https://www.habima.co.il/wp-content/themes/tyco-wp/cache/allShowsData.json"}
       - {key: opera, url: "https://tickets.israel-opera.co.il", venue: "האופרה הישראלית", city: "תל אביב",
          artwork_index: "https://www.israel-opera.co.il/wp-json/wp/v2/show?per_page=100&orderby=modified&_fields=link"}
-      - {key: ipo, url: "https://ipo.presglobal.store", city: "תל אביב"}
-      - {key: lessin, url: "https://lessin.presglobal.store", venue: "תיאטרון בית ליסין", city: "תל אביב"}
       - {key: khan, url: "https://khan.pres.global", venue: "תיאטרון החאן", city: "ירושלים",
          artwork_index: "https://www.khan.co.il/shows-list", artwork_page_link: 'https://www\.khan\.co\.il/shows/\d+/[^"]+'}
+
+  pres_il:
+    # The PRES box offices on presglobal.store answer Israeli IPs only (403 to Railway's and the
+    # proxy's, Nov 2026): same API as `pres`, through the Israeli proxies.
+    enabled: true
+    israel_proxy: true
+    cron: "34 6,18 * * *"
+    presentations_path: /api/presentations
+    features_path: /api/features
+    ticket_groups_path: /api/presentations/{id}/ticketGroups
+    event_page_path: /order/{id}
+    skip_titles: ["בדיקה", "שוברים", "תשלום בקופה"]
+    hosts:
+      - {key: lessin, url: "https://lessin.presglobal.store", venue: "תיאטרון בית ליסין", city: "תל אביב"}
+      - {key: ipo, url: "https://ipo.presglobal.store", city: "תל אביב"}
 
   kupatbravo:
     # Kupat Bravo box office (nationwide; own platform, no API). Sitemap lists every show page

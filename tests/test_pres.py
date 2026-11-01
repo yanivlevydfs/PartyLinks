@@ -25,7 +25,7 @@ def _fixture(name: str) -> Any:
     return json.loads((FIXTURES / name).read_text(encoding="utf-8"))
 
 
-def _scrape(monkeypatch) -> tuple[dict[str, Any], list[tuple[str, str]]]:
+def _scrape(monkeypatch, cls: Any = pres.PresScraper) -> tuple[dict[str, Any], list[tuple[str, str]]]:
     settings = pres.PresSettings(
         cron="12 */3 * * *",
         presentations_path="/api/presentations/",
@@ -50,7 +50,7 @@ def _scrape(monkeypatch) -> tuple[dict[str, Any], list[tuple[str, str]]]:
             ),
         ],
     )
-    scraper = pres.PresScraper(settings, HttpSettings(), TZ)
+    scraper = cls(settings, HttpSettings(), TZ)
     responses = {
         ("GET", f"{KUPAT}/api/presentations/"): "kupat_presentations.json",
         ("GET", f"{KUPAT}/api/features/"): "kupat_features.json",
@@ -131,6 +131,11 @@ def test_scrape_hosts(monkeypatch) -> None:
     assert tour.image_url and tour.image_url.startswith("https://cdn.presglobal.pro/lessin/feature/")
     assert [(t.name, t.price) for t in tour.tickets] == [("אולם", Decimal(50))]
     assert tour_sold.is_sold_out and tour_sold.tickets[0].price == Decimal(50)
+
+
+def test_israel_only_hosts_are_their_own_source(monkeypatch) -> None:
+    events, _ = _scrape(monkeypatch, pres.PresIsraelScraper)
+    assert {e.source for e in events.values()} == {"pres_il"}
 
 
 def test_og_image_is_encoded_and_skips_wordpress_placeholder() -> None:
