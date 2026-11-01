@@ -31,3 +31,13 @@ def test_is_over_uses_end_or_three_hours_after_start() -> None:
     assert not is_over({"schedule": {"start": "2026-11-19 20:00", "end": "2026-11-19 22:00"}}, "Asia/Jerusalem", now)
     assert not is_over({"schedule": {"start": "2026-11-01 13:00"}}, "Asia/Jerusalem", now)  # 11:00 UTC + 3 h
     assert not is_over({"schedule": {}}, "Asia/Jerusalem", now)
+
+
+def test_a_deleted_event_is_gone_not_a_block() -> None:
+    import httpx
+
+    from partylinks.scrapers.eventer import EventerScraper
+
+    gone = httpx.Response(403, content=b'{"message":"Event does not exist"}')
+    assert EventerScraper.is_gone(None, gone)  # type: ignore[arg-type]
+    assert not EventerScraper.is_gone(None, httpx.Response(403, content=b"<html>Access denied</html>"))  # type: ignore[arg-type]

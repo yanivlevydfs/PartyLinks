@@ -277,6 +277,11 @@ class BaseScraper[S: SourceSettings](ABC):
         """Sources override this to recognise their site's access-denied responses."""
         return False
 
+    def is_gone(self, response: httpx.Response) -> bool:
+        """Sources override this for a page the site deleted but answers with a refusal (Eventer: 403):
+        not a block, so no move to the next proxy; the request fails once, as a 404 would."""
+        return False
+
     def default_headers(self) -> dict[str, str]:
         """Extra headers for this source's client (e.g. Origin/Referer)."""
         return {}
@@ -380,6 +385,7 @@ class BaseScraper[S: SourceSettings](ABC):
                 # Refused (403) or throttled (429 / 503: the site rations this IP): the next proxy, while
                 # the pool lasts; then the usual backoff retries on the last one.
                 refused = response.status_code in (403, *THROTTLED) or _firewall_code(response.status_code)
+                refused = refused and not self.is_gone(response)
                 if (self.is_blocked(response) or refused) and self._next_proxy(client, None):
                     switches[0] += 1
                     raise _RefusedByProxyIP(f"{response.status_code} via this proxy")

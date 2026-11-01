@@ -17,6 +17,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 from urllib.parse import quote
 
+import httpx
 from pydantic import Field
 
 from partylinks.artists import ArtistProfile
@@ -84,6 +85,10 @@ class EventerScraper(BaseScraper[EventerSettings]):
         async for event in self.stream_isolated(link_names, self._fetch_event, label=lambda n: n):
             yield event
 
+    def is_gone(self, response: httpx.Response) -> bool:
+        # A deleted event (old sitemap pages): 403 {"message":"Event does not exist"}.
+        return response.status_code == 403 and b"does not exist" in response.content
+
     async def _list_link_names(self) -> list[str]:
         s = self.settings
         categories, sliders = list(s.categories), []
@@ -129,7 +134,12 @@ class EventerScraper(BaseScraper[EventerSettings]):
 
     async def _fetch_event(self, link_name: str) -> ScrapedEvent | None:
         s = self.settings
-        details = await self.get_json(s.base_url + s.event_details_path.format(link_name=link_name), expect=dict)
+        try:
+            details = await self.get_json(s.base_url + s.event_details_path.format(link_name=link_name), expect=dict)
+        except httpx.HTTPStatusError as exc:
+            if self.is_gone(exc.response):  # deleted on the site: nothing to save, not a failure
+                return None
+            raise
         event = details.get("event")
         event_id = event.get("_id") if isinstance(event, dict) else None
         if not event_id:
