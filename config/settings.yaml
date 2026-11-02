@@ -508,6 +508,8 @@ enrichment:
     livetickets: [live_show]  # concert trips; sports trips say "פורמולה 1" / "NFL" (fallback words)
     arenas: [culture]
     gagarin: [nightclubs]  # club nights the API leaves uncategorised ("INSOMNIA #25")
+    tzkrti: [culture]  # "evenings" and "social events" (a Christmas market, a conference) name no genre
+    goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
     telaviv: [culture]  # municipal programme tagged by audience or "קהילה"
     munievents: [culture]  # municipal programme tagged by audience or "קהילה"
@@ -2524,6 +2526,8 @@ sources:
     # each event page's JSON-LD + theme fields (time, place, tags, seller link). Events sold by a
     # Smarticket box office the smarticket source reads are skipped. robots: only /manager/ disallowed.
     enabled: true
+    israel_proxy: true  # gan yavne, binyamina, akko answer 403 to non-Israeli IPs (Nov 2026)
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "41 5,17 * * *"
     sites:
       - {url: https://www.elkana.org.il, city: אלקנה, months: 2}
@@ -2682,6 +2686,28 @@ sources:
     longitude: 34.7869
     http:
       concurrency: 1
+
+  goshow:
+    # GoShow: box office of Tel Aviv's small stages (AMAMA, Stand Up Factory, Comedy Bar, Bar Giora,
+    # Enav) and pubs nationwide. The home page lists every upcoming date (~270, 1 request); each
+    # date's page adds full title, artwork, text, prices and producer (~270 requests). No categories.
+    enabled: true
+    cron: "21 7,19 * * *"
+    site_url: https://www.goshow.co.il
+    http:
+      concurrency: 3
+      request_delay_seconds: 0.5
+
+  tzkrti:
+    # Tzkrti (tzkrti.com, تذكرتي): the Arab sector's ticketing site (Nazareth, Haifa, Akka, Tarshiha...).
+    # Public JSON API, 12 events a page, ~6 pages; country=il keeps Israel (it also sells in Jordan and
+    # the PA). Place with address and coordinates, category, lowest price, artwork. Courses skipped.
+    enabled: true
+    cron: "27 7,19 * * *"
+    site_url: https://tzkrti.com
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
 
   levontin7:
     # Levontin 7: live-music club, Tel Aviv. WordPress + FAT Event: the home page carries every upcoming

@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 93 configured sources, all on. Each one has its own module in
+SPOTX collects from 95 configured sources, all on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -76,6 +76,8 @@ pagination and what the listing and the event page provide.
 | `kikarhamusica` | Kikar HaMusica (kikar-hamusica.com): Jerusalem's music square, daily live sets | 03:33, 15:33 | yes |
 | `bargiyora` | Bar Giyora (bar-giyora.co.il): live-show bar in Tel Aviv: music, stand-up, lectures | 06:26, 18:26 | yes |
 | `haezor` | HaEzor / The Zone (haezor.com): live-music club in Tel Aviv | 06:36, 18:36 | yes |
+| `goshow` | GoShow (goshow.co.il): box office of AMAMA, Stand Up Factory, Comedy Bar and small stages and pubs | 07:21, 19:21 | yes |
+| `tzkrti` | Tzkrti (tzkrti.com): the Arab sector's ticketing site: Nazareth, Haifa, Akka, Tarshiha | 07:27, 19:27 | yes |
 | `levontin7` | Levontin 7 (levontin7.com): live-music club in Tel Aviv | 06:46, 18:46 | yes |
 | `reading3` | Reading 3 (reading3.co.il): concert hall at the Tel Aviv port | 09:18, 21:18 | yes |
 | `zoatlv` | ZOA House (zoatlv.co.il): culture house in Tel Aviv: stand-up, plays, kids' shows, lectures, courses | 07:26, 19:26 | yes |
