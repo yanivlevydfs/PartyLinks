@@ -798,6 +798,7 @@ geocoding:
   # checked by hand; venues OSM does not know precisely are left off the map, not guessed.
   #   "venue or address keyword": [lat, lon]
   venues:
+    "shittim": [30.1767437, 35.0165285]                  # Shittim festival site, Arava; secrettelavivapp sent 34.66 (Sinai), Nov 2026
     "הוואנה מיוזיק קלאב": [32.0743385, 34.7957614]     # Havana Music Club, Yigal Alon
     "מוזיאון תל אביב": [32.0775956, 34.7866422]        # Tel Aviv Museum of Art, Shaul HaMelech 27 (all halls)
     "סוזן דלל": [32.0602817, 34.7643775]               # Suzanne Dellal Centre, Neve Tzedek
@@ -1180,6 +1181,8 @@ sources:
     # PRES ticketing platform: one API per box office (theatres, opera, IPO, Kupat Tel Aviv).
     # Kupat also resells other venues' seats, so cross-host duplicates are expected (dedup merges them).
     enabled: true
+    # ipo / lessin / cintlv .presglobal.store answer Railway and evomi with 403, our VPN with 200 (Nov 2026).
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "28 6,18 * * *"
     presentations_path: /api/presentations/
     features_path: /api/features/
@@ -2344,6 +2347,9 @@ sources:
     enabled: true
     # Not israel_proxy: some municipal sites refuse the evomi IPs, but the free Israeli proxies are
     # mostly dead - the run spent its hour on them and saved 0 (102 on evomi), Oct 2026.
+    # Nov 2026: ~25 sites (rehovot, kfar-saba, herzliya, eilat, bat-yam...) answer evomi with 403 and our
+    # VPN with 200. rosh-haayin, nahariya: no answer from any datacenter IP, VPN included (home IPs only).
+    vpn: true  # our Israeli VPN only (Railway production)
     # Dozens of municipal sites a run: longer than the 30-min default (Oct 2026).
     run_timeout_seconds: 3600
     http:

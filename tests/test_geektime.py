@@ -44,3 +44,12 @@ def test_people_and_computers_feed() -> None:
     assert mamram.venue_name == "אקספו תל אביב" and mamram.address == "שדרות רוקח 101, תל אביב"
     assert mamram.images and mamram.description and "יזמות" in mamram.description
     assert mamram.source_genres == ["hi-tech", "conference"]
+
+
+def test_geektime_button_with_text_for_href_falls_back_to_the_card() -> None:
+    """A card whose button href holds the event's text (594681, Nov 2026) keeps the card's own link."""
+    page = (FIXTURES / "geektime/event.html").read_text("utf-8")
+    page = page.replace('href="https://luma.com/b3br07wf"', 'href="Hey Frontendistim, state management"')
+    events = parse_page(page, "https://www.geektime.co.il/event/", TZ, TODAY, ["gold bar"])
+    seed = next(e for e in events if e.source_event_id == "594130")
+    assert seed.url.unicode_string() == "https://www.geektime.co.il/event/?accordion-594130"

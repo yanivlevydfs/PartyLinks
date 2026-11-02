@@ -58,6 +58,16 @@ The code is in `src/partylinks/scrapers/base.py` (`BaseScraper.__init__`). The f
 | holon | true | 0: the site does not answer CyberGhost's IPs (TCP timeout) | failed |
 | barak | no | 0 through the VPN (Akamai challenge). On its usual path (free proxies, then evomi): 24, partial, many pages empty | up to 83 |
 
+Added 2026-11-02, after a 72-hour sweep of the failed runs (each site tested from the server: Railway IP vs VPN):
+
+| Source | `vpn` | Why |
+| --- | --- | --- |
+| matnasnet | true | matnasbga, matnasganyavne, mako: 403 without, 200 through the VPN |
+| munievents | true | ~25 city sites (rehovot, kfar-saba, herzliya, eilat, bat-yam, kiryat-gat...): 403 without, 200 through the VPN. rosh-haayin, nahariya and ariel answer no datacenter IP, VPN included |
+| pres | true | ipo / lessin / cintlv `.presglobal.store`: 403 without, 200 through the VPN |
+
+Set in settings.yaml and, for the running server at once, as admin overrides (`sources.<name>.vpn`).
+
 eventim, zappa and holon, and barak's empty pages, need a residential Israeli IP. A VPN IP is a datacenter IP, so it will not open them.
 
 ## Architecture

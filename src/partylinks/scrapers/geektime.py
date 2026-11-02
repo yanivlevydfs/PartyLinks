@@ -105,6 +105,8 @@ def parse_card(event_id: str, card: str, page_url: str, timezone: str, today: da
     address = first(r"card__address[^>]*>(.*?)</div>")
     link = first(r'href="([^"]+)" class="btn btn-green')
     link = f"https://{link}" if link and not link.startswith(("http://", "https://")) else link
+    if link and (" " in link.strip() or "." not in link):  # the button's href holds text, not an address
+        link = None
     return ScrapedEvent(
         source=GeektimeScraper.name,
         source_event_id=event_id,
