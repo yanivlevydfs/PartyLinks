@@ -21,14 +21,14 @@ from functools import cache
 from html import escape
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, quote, unquote
+from urllib.parse import parse_qs, quote, unquote, urlsplit
 from zoneinfo import ZoneInfo
 
 import yaml
 from cachetools import TTLCache
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, PlainTextResponse
-from sqlalchemy import ColumnElement, String, cast, or_, select
+from sqlalchemy import ColumnElement, String, cast, func, or_, select
 from sqlalchemy.orm import Session, object_session, selectinload
 
 from partylinks.artist_bio import bio as artist_bio
@@ -41,6 +41,7 @@ from partylinks.retention import is_current
 from partylinks.venue_profiles import load_profiles as load_venue_profiles
 from partylinks.venue_profiles import logo_path as venue_logo_path
 from partylinks.venue_profiles import profile_for as venue_profile_for
+from partylinks.venues import PLACE_LISTING
 
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
 LIST_LIMIT = 60  # events listed on index pages
@@ -392,6 +393,10 @@ def _item_list(rows: list[EventRow], cfg: Settings, name: str) -> dict[str, Any]
     }
 
 
+# A place "open today" (a club, a lake, an escape room listed every day), not a dated event.
+_NOT_PLACE = ~func.coalesce(EventRow.extra[PLACE_LISTING].as_boolean(), False)
+
+
 def _website(cfg: Settings, lang: str) -> list[dict[str, Any]]:
     org = {
         "@context": "https://schema.org",
@@ -399,6 +404,8 @@ def _website(cfg: Settings, lang: str) -> list[dict[str, Any]]:
         "@id": cfg.site.base_url + "/#org",
         "name": cfg.site.name,
         "url": cfg.site.base_url + "/",
+        "alternateName": urlsplit(cfg.site.base_url).hostname,
+        "description": TEXT[lang]["site_desc"],
         "logo": cfg.site.base_url + "/icon-512.png?v=spotx2",
         "areaServed": {"@type": "Country", "name": "Israel"},
     }
@@ -407,6 +414,8 @@ def _website(cfg: Settings, lang: str) -> list[dict[str, Any]]:
         "@type": "WebSite",
         "@id": cfg.site.base_url + "/#website",
         "name": cfg.site.name,
+        # Google's site name: the domain as the last fallback name ("spotx.fun").
+        "alternateName": urlsplit(cfg.site.base_url).hostname,
         "url": cfg.site.base_url + "/",
         "description": TEXT[lang]["site_desc"],
         "inLanguage": ["he", "en"],
@@ -421,15 +430,22 @@ def _where_to(session: Session, cfg: Settings, lang: str) -> list[tuple[str, str
     he, qa = lang == "he", []
     for when, ask in (("tonight", ("לאן יוצאים הערב?", "Where to go out tonight?")),
                       ("weekend", ("לאן יוצאים בסוף השבוע?", "Where to go out this weekend?"))):  # fmt: skip
-        rows = _upcoming(session, *_when_where(when, cfg), limit=500)
+        where = (*_when_where(when, cfg), _NOT_PLACE)
+        rows = _upcoming(session, *where, limit=500)
         if not rows:
             continue
-        top = ", ".join(dict.fromkeys(r.title for r in rows[:5]))
+        # The real count (rows stop at 500), and examples that are events many sites sell, not places open daily.
+        count = session.scalar(
+            select(func.count()).select_from(EventRow)
+            .where(upcoming_filter(), EventRow.is_primary.is_(True), EventRow.country.is_(None), *where)
+        ) or len(rows)  # fmt: skip
+        popular = sorted(rows, key=lambda r: -(r.group_size or 1))
+        top = ", ".join(list(dict.fromkeys(r.title for r in popular))[:5])
         genres = ", ".join(genre_label(g, lang) for g, _ in Counter(g for r in rows for g in r.genres or []).most_common(3))
         qa.append((ask[0 if he else 1], (
-            f"יש {len(rows)} אירועים ב-{cfg.site.name}, למשל: {top}." + (f" הכי הרבה: {genres}." if genres else "")
+            f"יש {count} אירועים ב-{cfg.site.name}, למשל: {top}." + (f" הכי הרבה: {genres}." if genres else "")
             + " בוחרים מתי, איפה (או לידי), קטגוריה ושעה, ומקבלים רק את מה שמתאים."
-            if he else f"{cfg.site.name} lists {len(rows)} events, such as {top}." + (f" Most popular: {genres}." if genres else "")
+            if he else f"{cfg.site.name} lists {count} events, such as {top}." + (f" Most popular: {genres}." if genres else "")
             + " Pick when, where (or near me), genre and time, and get only what fits."
         )))  # fmt: skip
     return qa
@@ -437,7 +453,7 @@ def _where_to(session: Session, cfg: Settings, lang: str) -> list[tuple[str, str
 
 def home_page(session: Session, cfg: Settings, lang: str) -> Page:
     t = TEXT[lang]
-    rows = _upcoming(session)
+    rows = _upcoming(session, _NOT_PLACE)
     faq = _where_to(session, cfg, lang)
     faq_ld = {
         "@context": "https://schema.org",
