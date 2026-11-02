@@ -1,6 +1,6 @@
 // "SPOTX on Telegram": the bot's banner on the home page. Drawn in CSS (no picture: no extra request,
 // see the rate-limit note in memory), shown only while the bot runs (GET /site → telegram, its @name),
-// and hidden for 30 days once closed.
+// and hidden for 30 days once closed. Desktop only (hidden under 720px in the CSS).
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useT } from "../ui";

@@ -86,7 +86,8 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 - **Hebrew first**, like the site: English only when the user writes English or picks it.
 - **On the site** (`web/src/bot/TelegramPromo.tsx`): a banner on the home page (under "For you", not on
   search results), drawn in CSS with no picture, shown only while the bot runs (`GET /site` gives its
-  `telegram` @name), opening `t.me/<bot>?start=site`; closing it hides it for 30 days.
+  `telegram` @name), opening `t.me/<bot>?start=site`; closing it hides it for 30 days. Desktop only:
+  hidden on screens under 720px.
 
 ## Code (`src/partylinks/bot/`)
 
