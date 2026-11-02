@@ -476,7 +476,7 @@ enrichment:
     stand_up: ["סטנדאפ", "סטנד אפ", "סטנדאפיסט", "קומיקאי", "open mic", "stand up", "comedian"]
     lectures: ["הרצאה", "מרצה", "הרצאות", "הרצאתה", "הרצאתו", "lecture", "talk", "ד\"ר", "פרופ'", "מפגש ב-zoom", "סדרה בזום", "סמסטר", "lesung"]
     workshops: ["סדנה", "סדנת", "סדנאות", "workshop", "חוג", "קורס"]
-    tours: ["סיור", "סיורים", "סיורי", "guided tour", "führung", "stadtführung"]
+    tours: ["סיור", "סיורים", "סיורי", "guided tour", "führung", "stadtführung", "טיול", "טיולים", "טיולי"]
     dance: ["מחול", "להקת מחול", "בלט", "ballet"]
     exhibitions: ["תערוכה", "תערוכת", "exhibition", "museum", "שיח גלריה", "בתערוכה", "תערוכות", "במוזיאון", "אוצרת"]
     sport: ["קבוצת ריצה", "אימוני", "כדורסל", "כדורגל", "פורמולה 1", "גרנד פרי", "nfl", "grand prix", "סופר קאפ", "super cup", "גביע", "ליגת האלופות"]
@@ -560,7 +560,8 @@ enrichment:
                 "conference centre", "conference center", "jungle joy",  # venues abroad (Malta), not a conference / jungle music
                 "eastern standard time", "eastern daylight time", "eastern time",  # US time zones, not mizrahi
                 "non-commercial", "commercial or non", "potter forest", "organic choir",  # photo terms, a park, a choir
-                "תרגום סימולטני לאנגלית, ערבית", "בשפה הערבית", "בשפה הרוסית", "english, russian, arabic"]  # a tour's language, not Arabic music
+                "תרגום סימולטני לאנגלית, ערבית", "בשפה הערבית", "בשפה הרוסית", "english, russian, arabic",
+                "מסיבה זו", "מסיבות שונות", "מסיבות טכניות", "מסיבות בטיחות", "מסיבות שאינן"]  # "for this reason", not a party  # a tour's language, not Arabic music
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
   # talks: their text is read only for these genres.
@@ -1603,6 +1604,23 @@ sources:
       - {host: tlv-bialik, rooms: true, venue_name: בית ביאליק, city: תל אביב-יפו, skip_title_words: ["כרטיס כניסה", "בזום"]}
       - {host: moby, rooms: true, venue_name: מוזיאוני בת ים - MOBY, city: בת ים}
       - {host: herzliyamuseum, rooms: true, venue_name: מוזיאון הרצליה לאמנות עכשווית, city: הרצליה}
+      # Found in the Wayback Machine's index of *.smarticket.co.il (Nov 2026).
+      # FRIENDS culture club's box office: theatre, kids' shows, stand-up, concerts, films, talks in halls nationwide.
+      - {host: friends, venue_name: FRIENDS}
+      - {host: beit-zvi, rooms: true, venue_name: בית צבי - בית הספר לאמנויות הבמה, city: רמת גן}
+      - {host: evenyehuda-community, venue_name: מרכז קהילתי אבן יהודה, city: אבן יהודה, skip_title_words: ["חוג", "קורס", "ג׳ימבורי", "ג'ימבורי"]}
+      - {host: eilatmatnasim, venue_name: רשת המתנ"סים אילת, city: אילת, skip_title_words: ["חוג", "קורס"]}
+      - {host: elad-theater, venue_name: תיאטרון אלעד, city: אילת}
+      - {host: arts, rooms: true, venue_name: הפקולטה לאמנויות אוניברסיטת תל אביב, city: תל אביב-יפו,
+         skip_categories: ["העשרה באמנויות"], skip_title_words: ["רפרטואר"]}
+      - {host: bh, venue_name: BH הפקות, city: אשדוד}
+      - {host: etzion, venue_name: מתנ"ס גוש עציון, skip_title_words: ["חוג", "קורס"]}
+      - {host: barrocade, venue_name: בארוקדה - קולקטיב הבארוק הישראלי}
+      - {host: clipa, venue_name: תיאטרון קליפה}
+      - {host: davidov, venue_name: דוידוב הפקות}
+      - {host: hamesila-bet, rooms: true, venue_name: "המסילה ב׳ - תרבות, פנאי וקהילה"}
+      - {host: brener, venue_name: מועצה אזורית ברנר}
+      - {host: hanadiv-farm, venue_name: חוות הנדיב, city: זכרון יעקב, skip_titles: ["כניסה לחווה"]}
       - {host: htbeithaam, venue_name: היכל התרבות בית העם ירושלים, city: ירושלים}
       - {host: isb7, venue_name: הסינפונייטה הישראלית באר שבע}
       - {host: gderot, venue_name: בית העם גדרות}
