@@ -44,6 +44,7 @@ function AlertCard({ a }: { a: Alert }) {
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const instantEmail = useAlerts().data?.instant_email; // before the edit form's early return: hooks run every render
   const show = () => {
     useStore.getState().setFilters({ ...DEFAULT_FILTERS, ...a.criteria, shops: [], hideSoldOut: false, sort: "start_at" });
     useStore.getState().setQuizDone(true);
@@ -60,7 +61,7 @@ function AlertCard({ a }: { a: Alert }) {
       {!a.active && <p className="alert-note">{t.pausedNote}</p>}
       <div className="alert-switches">
         <Switch on={a.active} onChange={() => edit(a.id, { active: !a.active })}>{a.active ? t.active : t.paused}</Switch>
-        {useAlerts().data?.instant_email && <Switch on={a.instant} onChange={() => edit(a.id, { instant: !a.instant })}>{t.email}</Switch>}
+        {instantEmail && <Switch on={a.instant} onChange={() => edit(a.id, { instant: !a.instant })}>{t.email}</Switch>}
       </div>
       {confirm ? (
         <div className="alert-actions" role="group" aria-label={t.confirmRemove}>
@@ -94,6 +95,7 @@ function AlertForm({ alert, onDone }: { alert?: Alert; onDone?: () => void }) {
   const id = useId();
   const patch = (p: Partial<Criteria>) => setC((cur) => ({ ...cur, ...p }));
   const preview = usePreview(c);
+  const instantEmail = useAlerts().data?.instant_email;
   const empty = isEmpty(c);
 
   // Under one region: its cities (Tel Aviv: its neighbourhoods), as in the home filters.
@@ -189,7 +191,7 @@ function AlertForm({ alert, onDone }: { alert?: Alert; onDone?: () => void }) {
       <div className="alert-step">
         <h3><span className="alert-num" aria-hidden>3</span>{t.how}</h3>
         <p className="alert-hint">{t.howBell}</p>
-        {useAlerts().data?.instant_email && <Switch on={instant} onChange={() => setInstant(!instant)}>{t.instant}</Switch>}
+        {instantEmail && <Switch on={instant} onChange={() => setInstant(!instant)}>{t.instant}</Switch>}
       </div>
 
       <div className="alert-actions">
