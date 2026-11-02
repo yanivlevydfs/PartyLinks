@@ -829,6 +829,7 @@ geocoding:
   # checked by hand; venues OSM does not know precisely are left off the map, not guessed.
   #   "venue or address keyword": [lat, lon]
   venues:
+    "room 48": [32.0743905, 34.7758641]                 # ROOM 48, King George 48, Tel Aviv (Ozen Bar's club; Airdrop / Makore name it alone)
     "טיקוטין": [32.8093487, 34.9853850]                  # Tikotin Museum of Japanese Art, Haifa (Carmel centre)
     "טיקטין": [32.8093487, 34.9853850]                   # same hall as Haifa Museums spell it ("אודיטוריום טיקטין")
     "מוזיאון הטבע התנ\"כי": [31.7545650, 34.9954937]      # Biblical Natural History Museum, Beit Shemesh
