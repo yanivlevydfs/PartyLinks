@@ -1510,7 +1510,7 @@ sources:
       # Municipal and council box offices found by a nationwide search (2026-11-02). Classes, courses,
       # rentals and the online copies of lectures are left out (keep_categories / skip_title_words).
       - {host: makefet, venue_name: "מקפת - מרכזים קהילתיים פתח תקווה", city: פתח תקווה,
-         keep_categories: ["תיאטראות", "מרכזים קהילתיים"], skip_title_words: ["קורס", "חוג"]}
+         keep_categories: ["תיאטראות", "מרכזים קהילתיים", "יד לבנים"], skip_title_words: ["קורס", "חוג"]}
       - {host: beitariela, venue_name: בית אריאלה, city: תל אביב, rooms: true,
          skip_categories: ["שכירות"], skip_title_words: ["מקוון", "קורס", "סמסטר", "כיתות", "כיתת"]}
       - {host: zamarin, venue_name: בית התותחן זכרון יעקב, city: זכרון יעקב, skip_title_words: ["קורס", "חוג"]}
