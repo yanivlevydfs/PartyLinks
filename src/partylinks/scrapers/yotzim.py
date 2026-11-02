@@ -50,8 +50,11 @@ class YotzimScraper(BaseScraper[YotzimSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        pages = await gather_or_cancel(self.get_text(s.site_url + path) for path in s.categories)
-        self._genres = category_genres(dict(zip(s.categories, pages, strict=True)), s.categories, s.site_url)
+        pages = await gather_or_cancel(
+            self.optional(f"category {path}", self.get_text(s.site_url + path)) for path in s.categories
+        )
+        loaded = {path: page for path, page in zip(s.categories, pages, strict=True) if page is not None}
+        self._genres = category_genres(loaded, s.categories, s.site_url)
         if not self._genres:
             raise ParseError("no category lists any upcoming event")
         self.log.debug("%d upcoming event pages", len(self._genres))

@@ -1,7 +1,9 @@
 """Teder (teder.fm) - the radio station's nights at Beit Romano, including the Rafi room.
 
-No API: the homepage lists the upcoming events as cards linking to ``/events/<id>``,
-and each event page carries the title, a ``dd.mm.yy`` date, the start time, the room
+No API: the homepage's events section is filled by a POST to ``/?f=_get_content&section=events``
+(an HTML fragment of cards linking to ``/events/<id>``; the site's ModSecurity answers 406 to a
+POST without a body, so a dummy form field is sent), and each event page carries the title,
+a ``dd.mm.yy`` date, the start time, the room
 (yard, Rafi, Teder...), the description and the artwork. Most nights are free and
 never reach a ticket site; free entry is read from the description ("כניסה חופשית"),
 a price from the page's price box when it has one. Selectors and labels live in config.
@@ -16,11 +18,13 @@ from decimal import Decimal
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from selectolax.lexbor import LexborHTMLParser
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text, og_image, to_decimal
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _PRICE = re.compile(r"\d+(?:\.\d+)?")
@@ -39,6 +43,8 @@ class TederSelectors(BaseModel):
 class TederSettings(SourceSettings):
     site_url: str
     listing_path: str
+    # Form fields POSTed to the listing (the events fragment); empty = a plain GET.
+    listing_form: dict[str, str] = Field(default_factory=dict)
     event_path_prefix: str
     selectors: TederSelectors
     # Phrases that mean entry is free ("כניסה חופשית").
@@ -54,10 +60,13 @@ class TederScraper(BaseScraper[TederSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        urls = parse_listing(await self.get_text(s.site_url + s.listing_path), s)
+        url = s.site_url + s.listing_path
+        page = (await self.request("POST", url, data=s.listing_form)).text if s.listing_form else await self.get_text(url)
+        urls = parse_listing(page, s)
         self.log.debug("listed %d events", len(urls))
         async for event in self.stream_isolated(urls, self._fetch_event, label=lambda u: u):
-            yield event
+            if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
+                yield event
 
     async def _fetch_event(self, url: str) -> ScrapedEvent:
         return parse_event(await self.get_text(url), url, self.settings, self.timezone)

@@ -68,7 +68,7 @@ class MovielandScraper(BaseScraper[MovielandSettings]):
         today = datetime.now(ZoneInfo(self.timezone)).date()
         days = {today + timedelta(days=i) for i in range(s.days_ahead)}
         self.log.debug("listed %d movies", len(movies))
-        for event in parse_events(movies, s, days, self.timezone):
+        for event in parse_events(movies, s, days, self.timezone, datetime.now(ZoneInfo(self.timezone))):
             yield event
 
 
@@ -76,8 +76,11 @@ def business_day(start: datetime) -> date:
     return (start - timedelta(days=1)).date() if start.hour < _NIGHT_HOUR else start.date()
 
 
-def parse_events(movies: list[Any], settings: MovielandSettings, days: set[date], timezone: str) -> list[ScrapedEvent]:
-    """The ``/api/Events`` list -> one event per movie, branch and business day in ``days``."""
+def parse_events(
+    movies: list[Any], settings: MovielandSettings, days: set[date], timezone: str, now: datetime | None = None
+) -> list[ScrapedEvent]:
+    """The ``/api/Events`` list -> one event per movie, branch and business day in ``days``; screenings
+    that already started (before ``now``) are left out, so the day starts at its next screening."""
     tz = ZoneInfo(timezone)
     events = []
     for movie in movies:
@@ -89,7 +92,7 @@ def parse_events(movies: list[Any], settings: MovielandSettings, days: set[date]
                 start = datetime.fromisoformat(show["Date"]).replace(tzinfo=tz)
             except (KeyError, TypeError, ValueError):
                 continue
-            if (day := business_day(start)) in days:
+            if (day := business_day(start)) in days and (now is None or start >= now):
                 groups[(str(show.get("TheaterId")), day)].append((start, show))
         for (branch_id, day), shows in groups.items():
             shows.sort(key=lambda x: x[0])
@@ -129,6 +132,7 @@ def build_event(
         min_age=int(age.group(1)) if age else None,
         image_url=settings.site_url + settings.images_path + quote(pic) if pic else None,
         extra={
+            "purchase_url": shows[0][1].get("BookingNativeUrl") or None,
             "showtimes": [start.isoformat() for start, _ in shows],
             "movie_id": movie_id,
             "branch_id": branch_id,

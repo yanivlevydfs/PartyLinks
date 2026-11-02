@@ -50,6 +50,7 @@ class CinemaCitySettings(SourceSettings):
     features_path: str
     movie_url: str  # formatted with ``id`` (the feature id)
     days_ahead: int = Field(3, ge=1)
+    default_runtime_minutes: int = Field(120, ge=1)  # a screening without durationInMinutes
     # venueLocationId -> address / city (the API names the branch only).
     branches: dict[str, Branch] = Field(default_factory=dict)
 
@@ -130,6 +131,8 @@ def parse_movie_day(
         title=clean_str(first.get("featureName")) or clean_str(feature.get("name")) or movie,
         description="\n\n".join(line for line in lines if line),
         start_at=times[0],
+        # Until the last screening ends: with no end, the day's listing is over 3 h after its first one.
+        end_at=times[-1] + timedelta(minutes=to_int(first.get("durationInMinutes")) or s.default_runtime_minutes),
         venue_name=clean_str(first.get("locationName")),
         address=place.address,
         city=place.city,

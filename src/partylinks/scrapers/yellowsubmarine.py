@@ -46,8 +46,10 @@ class YellowSubmarineScraper(BaseScraper[YellowSubmarineSettings]):
 
     def is_blocked(self, response: httpx.Response) -> bool:
         """Cloudflare's challenge (403, ``cf-mitigated: challenge``): the site admits Israeli connections only
-        (Oct 2026), so every other IP gets it whatever the client looks like. A blocked run, not a crash."""
-        return response.headers.get("cf-mitigated") == "challenge"
+        (Oct 2026), so every other IP gets it whatever the client looks like. Its plain 403 block page (no
+        such header) is the same refusal. A blocked run, not a crash."""
+        cloudflare = response.status_code == 403 and response.headers.get("server", "").lower() == "cloudflare"
+        return response.headers.get("cf-mitigated") == "challenge" or cloudflare
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings

@@ -453,7 +453,7 @@ class ScrapeService:
 
         if not self._stopping.is_set():  # shutting down: the run is recorded as interrupted on next start
             try:
-                await asyncio.to_thread(_with_db_retry, "track changes", lambda: self._track_changes(source, run_id, status))
+                await asyncio.to_thread(_with_db_retry, "track changes", lambda: self._track_changes(source, run_id, status, found))
             except Exception:
                 log.exception("source %s: change tracking failed", source)
 
@@ -538,7 +538,7 @@ class ScrapeService:
         self.media.delete_files(orphaned_files)
         return saved
 
-    def _track_changes(self, source: str, run_id: int, status: str) -> None:
+    def _track_changes(self, source: str, run_id: int, status: str, found: int | None = None) -> None:
         """Record how many known events changed offers in this run; unlist the ones that vanished."""
         with self.db.session() as session:
             run = session.get(ScrapeRunRow, run_id)
@@ -551,8 +551,9 @@ class ScrapeService:
                 )
             )
             run.events_unlisted = 0
-            # Only a complete run proves an event is gone; a partial / failed / blocked one proves nothing.
-            if status == "success" and source_settings(source, self.settings).unlist_missing:
+            # Only a complete run proves an event is gone; a partial / failed / blocked one proves nothing,
+            # nor does one that found nothing at all (a changed page layout reads as an empty listing).
+            if status == "success" and found != 0 and source_settings(source, self.settings).unlist_missing:
                 gone = session.scalars(
                     select(EventRow.id).where(EventRow.source == source, EventRow.last_seen_at < started, upcoming_filter())
                 ).all()

@@ -20,8 +20,10 @@ from decimal import Decimal
 
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text, zone
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _SHOW = re.compile(r"(\d{1,2})/(\d{1,2})/(\d{4})(?:,?\s*שעה\s*(\d{1,2}):(\d{2}))?")
@@ -50,8 +52,9 @@ class HaifaMuniScraper(BaseScraper[HaifaMuniSettings]):
             return parse_event(await self.get_text(url), post_id, url, s.city, self.timezone)
 
         async for events in self.stream_isolated(cards, fetch, label=lambda c: c[1]):
-            for event in events:
-                yield event
+            for event in events:  # past performances and started seasons are on the page too
+                if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known):
+                    yield event
 
 
 def _text(node: LexborNode | None) -> str:

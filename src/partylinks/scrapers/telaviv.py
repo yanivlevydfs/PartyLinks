@@ -24,8 +24,10 @@ from typing import Any
 
 from pydantic import Field
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import clean_str, html_to_text, zone
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _IMG = re.compile(r'src="([^"]+)"')
@@ -64,8 +66,9 @@ class TelAvivScraper(BaseScraper[TelAvivSettings]):
             self.log.warning("listing truncated at max_items=%d", s.max_items)
         events = parse_items(items, s, self.timezone)
         self.log.debug("listed %d events", len(events))
-        for event in events:
-            yield event
+        for event in events:  # runs that started before today (exhibitions, clubs) are over by retention's rule
+            if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
+                yield event
 
 
 def search(s: TelAvivSettings, timezone: str) -> dict[str, Any]:

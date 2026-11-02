@@ -14,6 +14,7 @@ LISTING = """
 <a class="purchaseBtn" href="../../../shows/a/view/?ContentID=4591">לרכישה</a>
 <a href="../../../shows/a/view/?ContentID=4606">עמרי סבח</a>
 <a href="../../../home/a/main/">דף הבית</a>
+<a href="../../../company/a/about/?ContentID=253" class="linkNav">גלריה</a>
 """
 
 SHOW = """

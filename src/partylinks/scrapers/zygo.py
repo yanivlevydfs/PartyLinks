@@ -53,6 +53,8 @@ class ZygoScraper(BaseScraper[ZygoSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         ids = await self._list_event_ids()
+        if not ids:
+            raise ParseError("the event listing is empty")
         prefix = self.settings.site_url + "/event/"
         linked = [url for url in self.linked_urls if url.startswith(prefix)]
         self.log.debug("listed %d events, %d more linked from other sites", len(ids), len(linked))

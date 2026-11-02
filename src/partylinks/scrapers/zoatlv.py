@@ -23,7 +23,7 @@ from pydantic import Field, HttpUrl
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import clean_str, html_to_text, read_clock, zone
+from partylinks.parsing import ParseError, clean_str, html_to_text, read_clock, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.search import MONTHS
 
@@ -54,6 +54,8 @@ class ZoaTlvScraper(BaseScraper[ZoaTlvSettings]):
         s = self.settings
         first = await self.get_text(s.site_url + s.listing_path)
         cards = {c["url"]: c for c in parse_listing(first)}
+        if not cards:
+            raise ParseError("no a.event-loop card on the listing page (markup changed?)")
         for page in range(2, min(last_page(first), s.max_pages) + 1):
             html = await self.optional(
                 f"listing page {page}", self.get_text(s.site_url + s.page_path.format(page=page))
@@ -72,6 +74,9 @@ class ZoaTlvScraper(BaseScraper[ZoaTlvSettings]):
                 continue
             if event is not None:
                 events.append(event)
+            else:
+                problem = ParseError(f"no date or title: {card['day']} {card['month']}")
+                self.record_failure(f"event {unquote(card['url'])}", problem)
 
         async def detail(event: ScrapedEvent) -> ScrapedEvent:
             page = await self.optional(f"page {unquote(str(event.url))}", self.get_text(str(event.url)))

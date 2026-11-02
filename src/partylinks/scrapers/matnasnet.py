@@ -23,9 +23,10 @@ from urllib.parse import unquote, urljoin, urlsplit
 from pydantic import BaseModel, ConfigDict, Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
-from partylinks.config import get_settings
+from partylinks.config import RetentionSettings, get_settings
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import clean_str, jsonld_nodes, schema_types, to_decimal, zone
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.smarticket import tenant_host
 
@@ -91,7 +92,10 @@ class MatnasnetScraper(BaseScraper[MatnasnetSettings]):
 
         async def fetch(event_id: str) -> ScrapedEvent | None:
             url = f"{site.url}/page.php?type=event&id={event_id}"
-            return build_event(url, await self.get_text(url), site, self.timezone, skip)
+            event = build_event(url, await self.get_text(url), site, self.timezone, skip)
+            # The listing's upcoming part still shows today's past shows and courses that began months ago.
+            current = event and is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known)
+            return event if current else None
 
         async for event in self.stream_isolated(ids, fetch, label=lambda i: f"{site.url} event {i}"):
             yield event

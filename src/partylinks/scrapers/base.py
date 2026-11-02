@@ -184,7 +184,8 @@ class BaseScraper[S: SourceSettings](ABC):
             # The source's name as the proxy user, so the vpn logs say who asked (@source:onecity).
             vpn = http.israel_vpn if "@" in http.israel_vpn else http.israel_vpn.replace("://", f"://{self.name}@", 1)
             pool = [vpn]
-            self._israeli = {vpn}
+            # One exit: no probe, and no part in the free proxies' shared "good" one (each source's URL differs).
+            self._israeli = set()
         elif settings.israel_proxy:
             israeli = [p.strip() for p in (http.israel_proxy or "").split(",") if p.strip()]
             israeli = list(dict.fromkeys(_israeli_feed(http.israel_proxy_feed) + israeli))
@@ -196,6 +197,7 @@ class BaseScraper[S: SourceSettings](ABC):
             self._israeli = set(israeli)
         else:
             self._israeli = set()
+        self._vpn = settings.vpn and bool(http.israel_vpn)
         self._spare_proxies = pool[1:] if pool and "proxy" not in overrides else []
         self._proxy = overrides.get("proxy") or (pool[0] if pool else None)  # the client's current proxy
         self._pool_size = 1 + len(self._spare_proxies)
@@ -247,6 +249,7 @@ class BaseScraper[S: SourceSettings](ABC):
             # pool of free proxies is walked in minutes. Reads keep the full timeout.
             timeout=httpx.Timeout(self.http.timeout_seconds, connect=connect),
             follow_redirects=True,
+            event_hooks={"response": [_one_location]},
             proxy=None if impersonate else proxy,
             transport=_ImpersonatingTransport(impersonate, proxy, (connect, self.http.timeout_seconds)) if impersonate else None,
             headers={
@@ -405,6 +408,8 @@ class BaseScraper[S: SourceSettings](ABC):
                     raise _RefusedByProxyIP(f"{response.status_code} via this proxy")
                 if self.is_blocked(response):
                     raise SourceBlockedError(f"{self.name}: access denied by the site ({response.status_code})")
+                if self._vpn and refused and response.status_code not in THROTTLED:
+                    raise SourceBlockedError(f"{self.name}: the site refuses our Israeli VPN ({response.status_code})")
                 # An Israeli-only site refusing the fallback proxy: the cause is the dead Israeli pool, not the site.
                 if refused and self._israeli and self._proxy not in self._israeli:
                     raise SourceBlockedError(f"{self.name}: no Israeli proxy answers; the site refuses the other proxies ({response.status_code})")
@@ -572,6 +577,13 @@ class _ImpersonatingTransport(httpx.AsyncBaseTransport):
 
     async def aclose(self) -> None:
         await self._session.close()
+
+
+async def _one_location(response: httpx.Response) -> None:
+    """A redirect sent with its Location twice (OGO's uncached 308s): httpx would join them into
+    "a, a" and follow that to a 404. Keep the first."""
+    if len(locations := response.headers.get_list("location")) > 1:
+        response.headers["location"] = locations[0]
 
 
 def _json(response: httpx.Response, expect: Any) -> Any:

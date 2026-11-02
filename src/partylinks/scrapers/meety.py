@@ -20,7 +20,7 @@ from urllib.parse import parse_qs, quote, quote_plus, urlsplit
 from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import clean_str, html_to_text, zone
+from partylinks.parsing import ParseError, clean_str, html_to_text, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _STAMP = re.compile(r"(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})")
@@ -41,16 +41,21 @@ class MeetyScraper(BaseScraper[MeetySettings]):
         base = self.settings.site_url
         first = await self.get_text(f"{base}/events")
         cards = parse_listing(first)
+        if not cards:
+            raise ParseError("no event cards on /events")
         for value, label in parse_interests(first):
             page = await self.optional(f"interest {value}", self.get_text(f"{base}/events?i={quote_plus(value)}"))
             for event_id in parse_listing(page or ""):
                 cards.setdefault(event_id, []).append(label)
         self.log.debug("listed %d events", len(cards))
 
-        async def detail(item: tuple[str, list[str]]) -> ScrapedEvent | None:
+        async def detail(item: tuple[str, list[str]]) -> ScrapedEvent:
             event_id, genres = item
             url = f"{base}/events/{event_id}"
-            return parse_event(event_id, url, await self.get_text(url), genres, base, self.timezone)
+            event = parse_event(event_id, url, await self.get_text(url), genres, base, self.timezone)
+            if event is None:  # retried once, then recorded: a markup change shows as partial, not 0 events
+                raise ParseError("event page without title or date")
+            return event
 
         async for event in self.stream_isolated(cards.items(), detail, lambda item: f"event {item[0]}"):
             yield event

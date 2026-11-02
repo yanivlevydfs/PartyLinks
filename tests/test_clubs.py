@@ -28,7 +28,7 @@ def test_haezor_calendar_and_show_page() -> None:
 
     haezor.add_page(tierra, (FIXTURES / "haezor" / "event.html").read_text(encoding="utf-8"))
     assert tierra.images == ["https://haezor.com/wp-content/uploads/TIERRA-LATINA.png"]
-    assert tierra.source_genres == ["מוזיקה לטינית"]
+    assert tierra.source_genres == ["הופעה", "מוזיקה לטינית"]  # the listing's kind, then the page's subtitle
     assert (tierra.extra or {})["purchase_url"].startswith("https://secure.cardcom.solutions/")
     assert "סלסה" in (tierra.description or "")
 

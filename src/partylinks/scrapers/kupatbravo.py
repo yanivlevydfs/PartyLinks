@@ -26,6 +26,7 @@ from partylinks.models import ScrapedEvent
 from partylinks.parsing import (
     ParseError,
     clean_str,
+    has_time,
     html_to_text,
     og_image,
     to_decimal,
@@ -117,6 +118,7 @@ def parse_show(page_html: str, url: str, timezone: str) -> list[ScrapedEvent]:
                 **common,
                 source_event_id=seance.group(1),
                 start_at=start_at,
+                time_known=has_time(start),
                 venue_name=clean_str(p.get("name")),
                 address=clean_str(p.get("streetAddress")),
                 city=clean_str(p.get("addressLocality")),

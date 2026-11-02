@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict
 from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import clean_str, html_to_text, to_int
+from partylinks.parsing import ParseError, clean_str, html_to_text, to_int
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _TIME = re.compile(r"^(\d{1,2}):(\d{2})$")
@@ -50,6 +50,8 @@ class LevSettings(SourceSettings):
     showtimes_action: str = "movie_on_location_new"
     # Days listed, today included.
     days_ahead: int = 3
+    # Length of a screening when the movie page gives no runtime: the event ends after the last one.
+    default_runtime_minutes: int = 120
     branches: dict[str, LevBranch]
 
 
@@ -81,6 +83,8 @@ class LevScraper(BaseScraper[LevSettings]):
             return branch_id, day, parse_showtimes(await self.get_text(s.site_url + s.showtimes_path, params=params))
 
         listings = [x async for x in self.stream_isolated(slots, listing, lambda slot: f"listing {slot[0]} {slot[1]}")]
+        if listings and not any(screenings for _, _, screenings in listings):
+            raise ParseError("no screening in any branch listing (markup changed?)")
         movie_urls = sorted({sc.movie_url for _, _, screenings in listings for sc in screenings})
         self.log.debug("listed %d screenings of %d movies", sum(len(x[2]) for x in listings), len(movie_urls))
 
@@ -89,7 +93,9 @@ class LevScraper(BaseScraper[LevSettings]):
 
         movies = dict([x async for x in self.stream_isolated(movie_urls, detail, lambda url: f"movie {unquote(url)}")])
         for branch_id, day, screenings in listings:
-            for event in build_events(screenings, branch_id, s.branches[branch_id], day, movies, self.timezone):
+            for event in build_events(
+                screenings, branch_id, s.branches[branch_id], day, movies, self.timezone, s.default_runtime_minutes
+            ):
                 yield event
 
 
@@ -166,6 +172,7 @@ def build_events(
     day: date,
     movies: dict[str, dict[str, Any]],
     timezone: str,
+    default_runtime_minutes: int = 120,
 ) -> list[ScrapedEvent]:
     """One event per movie of this branch and day, starting at its first screening."""
     tz = ZoneInfo(timezone)
@@ -202,6 +209,9 @@ def build_events(
                 title=movie.get("title") or shows[0][1].title,
                 description="\n\n".join(x for x in (movie.get("synopsis"), times) if x),
                 start_at=shows[0][0],
+                # Over after the last screening, not 3 h after the first (retention's default): a movie
+                # first shown at 11:00 stays listed for its 21:00 screening.
+                end_at=shows[-1][0] + timedelta(minutes=movie.get("runtime_minutes") or default_runtime_minutes),
                 venue_name=branch.venue_name,
                 address=branch.address,
                 city=branch.city,

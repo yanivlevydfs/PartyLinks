@@ -14,8 +14,10 @@ import re
 from collections.abc import AsyncIterator
 from email.utils import parsedate_to_datetime
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, html_to_text
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _ITEM = re.compile(r"<item>(.*?)</item>", re.DOTALL)
@@ -30,10 +32,16 @@ class PeopleComputersScraper(BaseScraper[PeopleComputersSettings]):
     settings_model = PeopleComputersSettings
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
-        events = parse_feed(await self.get_text(self.settings.feed_url))
-        self.log.debug("listed %d conferences", len(events))
-        for event in events:
-            yield event
+        items = _ITEM.findall(await self.get_text(self.settings.feed_url))
+        self.log.debug("listed %d conferences", len(items))
+        for item in items:
+            try:
+                event = parse_item(item)
+            except Exception as exc:  # noqa: BLE001 - one bad item must not cost the others
+                self.record_failure(f"item {item[:80]!r}", exc)
+                continue
+            if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
+                yield event
 
 
 def parse_feed(feed: str) -> list[ScrapedEvent]:

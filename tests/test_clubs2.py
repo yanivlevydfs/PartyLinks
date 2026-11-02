@@ -8,6 +8,8 @@ from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import httpx
+
 from partylinks.config import Settings
 from partylinks.scrapers import halutz, yellowsubmarine
 
@@ -106,3 +108,10 @@ def test_yellowsubmarine_festival_stages() -> None:
     assert radical.venue_name == "בית רדיקל" and radical.city == "תל אביב-יפו"
     home = next(e for e in events.values() if e and e.title.endswith("– צוללת צהובה"))
     assert home.venue_name == cfg.venue_name and home.latitude == cfg.latitude
+
+
+def test_yellowsubmarine_cloudflare_403_is_a_blocked_run() -> None:
+    scraper = yellowsubmarine.YellowSubmarineScraper.__new__(yellowsubmarine.YellowSubmarineScraper)
+    assert scraper.is_blocked(httpx.Response(403, headers={"cf-mitigated": "challenge"}))
+    assert scraper.is_blocked(httpx.Response(403, headers={"server": "cloudflare"}))  # block page, no header
+    assert not scraper.is_blocked(httpx.Response(200, headers={"server": "cloudflare"}))

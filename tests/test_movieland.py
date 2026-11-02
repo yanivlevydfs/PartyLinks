@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from partylinks.scrapers.movieland import MovielandBranch, MovielandSettings, parse_events
 
@@ -41,3 +42,12 @@ def test_non_film_items_are_not_cinema() -> None:
     events = {e.extra["movie_id"]: e for e in parse_events(MOVIES, SETTINGS, days, TZ)}
     assert events[5095].source_genres == [] and events[5095].min_age is None  # football broadcast
     assert events[5050].source_genres == ["קולנוע"] and events[5050].min_age == 12
+
+
+def test_started_screenings_are_left_out() -> None:
+    """An evening run starts each day at its next screening: a 14:00 start would read as over by 20:00."""
+    now = datetime(2026, 10, 22, 20, 0, tzinfo=ZoneInfo(TZ))
+    events = parse_events(MOVIES, SETTINGS, DAYS, TZ, now)
+    assert events and all(e.start_at is not None and e.start_at >= now for e in events)
+    assert all(s >= now.isoformat() for e in events for s in e.extra["showtimes"])
+    assert events[0].extra["purchase_url"].startswith("https://")

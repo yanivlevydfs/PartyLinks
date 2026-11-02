@@ -745,3 +745,13 @@ def test_the_shared_israeli_proxy_is_used_without_checking_the_list() -> None:
     asyncio.run(fetch())
     assert asked == ["http://il3:3"]  # straight on the working one, no other proxy asked
     base._israel_good = None
+
+
+def test_a_site_refusing_our_vpn_is_blocked_at_once_without_a_probe() -> None:
+    http = HttpSettings(israel_vpn="http://vpn:8888", israel_proxy="http://il1:1", request_delay_seconds=0, backoff_seconds=0)
+    scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True, vpn=True), http, "UTC")
+    calls: list[str] = []
+    scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(lambda r: calls.append(str(r.url)) or httpx.Response(472)))
+    with pytest.raises(SourceBlockedError, match=r"refuses our Israeli VPN \(472\)"):
+        asyncio.run(scraper.get_text("https://site/x"))
+    assert calls == ["https://site/x"]  # one request: no probe, no retries

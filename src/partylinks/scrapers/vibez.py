@@ -54,7 +54,8 @@ class VibezScraper(BaseScraper[VibezSettings]):
         listed: dict[str, dict[str, Any]] = {}
         for page in range(1, s.max_pages + 1):
             try:
-                items = (await self.get_json(f"{s.api_url}/events", params={"page": page})).get("events") or []
+                payload = await self.get_json(f"{s.api_url}/events", params={"page": page}, expect=dict)
+                items = payload.get("events") or []
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code == 400:  # "expected :page in 1..5": past the last page
                     break
@@ -62,6 +63,8 @@ class VibezScraper(BaseScraper[VibezSettings]):
             if not items:
                 break
             listed.update((i["id"], i) for i in items if isinstance(i, dict) and i.get("id"))
+        if not listed:
+            raise ParseError("the event listing is empty")
         self.log.debug("listed %d events", len(listed))
         async for event in self.stream_isolated(list(listed), self._fetch_event, label=lambda i: i):
             yield event

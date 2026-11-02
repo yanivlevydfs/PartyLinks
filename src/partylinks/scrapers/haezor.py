@@ -121,8 +121,9 @@ def add_page(event: ScrapedEvent, page_html: str) -> None:
     )
     if image and image.startswith("http"):
         event.images = [image]
+    # .clsName is the show's subtitle ("המחווה האולטימטיבית לפרינס"), sometimes a style: read it, keep "הופעה".
     if genre := clean_str(t.text()) if (t := tree.css_first(".clsName")) else None:
-        event.source_genres = [genre]
+        event.source_genres = [*event.source_genres, genre]
     if (article := tree.css_first(".clsBody article")) and (text := html_to_text(article.html)):
         event.description = text
     if (buy := tree.css_first("a.clsBuyLink")) and (href := buy.attributes.get("href")) and href.startswith("http"):

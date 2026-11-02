@@ -28,8 +28,10 @@ from urllib.parse import urlsplit
 from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, html_to_text, og_image, zone
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _DAY = re.compile(r"(\d{1,2})/(\d{1,2})")
@@ -75,8 +77,9 @@ class TiuliScraper(BaseScraper[TiuliSettings]):
             return build_events(card, page, today, self.timezone)
 
         async for events in self.stream_isolated(cards[: s.max_events], fetch, label=lambda c: c.url):
-            for event in events:
-                yield event
+            for event in events:  # "29/10 , 05/11": the passed dates of a card are not yielded
+                if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known):
+                    yield event
 
 
 def _text(node: LexborNode | None) -> str | None:

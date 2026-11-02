@@ -15,11 +15,12 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from decimal import Decimal
 
+import httpx
 from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import clean_str, from_unix, html_to_text, to_decimal, zone
-from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 
 _SIZE = re.compile(r"-\d+x\d+(?=\.\w+$)")  # "-1000x437.jpg": a thumbnail of the full image
 
@@ -50,7 +51,15 @@ class Levontin7Scraper(BaseScraper[Levontin7Settings]):
                 continue
             if event is None:
                 continue
-            page = await self.optional(f"page {card['url']}", self.get_text(card["url"]))
+            try:
+                page = await self.get_text(card["url"])
+            except SourceBlockedError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - one page never stops the run
+                if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code == 404:
+                    continue  # an unpublished show still on the cached home page: not an event any more
+                self.record_failure(f"page {card['url']}", exc)
+                page = None
             if page:
                 add_page(event, page)
             yield event

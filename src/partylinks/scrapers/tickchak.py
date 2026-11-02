@@ -76,16 +76,18 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         s = self.settings
         items: dict[Any, dict[str, Any]] = {}
         labels: dict[Any, set[str]] = {}
+        loaded = False
         for path in self.page_paths():
             label = s.categories.get(path.split("/", 1)[0])
-            # One category failing (a renamed slug) never costs the others; the first one must load.
-            found = await (
-                self._page_items(path) if not items else self.optional(f"category {path}", self._page_items(path))
-            )
+            # One page failing (a renamed slug) never costs the others; at least one must load.
+            found = await self.optional(f"page {path}", self._page_items(path))
+            loaded = loaded or found is not None
             for entity_id, item in (found or {}).items():
                 items.setdefault(entity_id, item)
                 if label:
                     labels.setdefault(entity_id, set()).add(label)
+        if not loaded:
+            raise ParseError("no listing page loaded")
         if s.event_sitemap_path:
             sitemap = unlisted_items(self, s.site_url + s.event_sitemap_path, set(items))
             for item in await self.optional("event sitemap", sitemap) or []:
@@ -125,8 +127,12 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         # so the rest is read over the next runs. Shuffled: dead seller links (redirect to /404) are
         # never stored, so in listing order they would take the same slots every run.
         random.shuffle(missing)
+        waiting = {id(e) for e, _ in missing[: s.max_artwork_lookups]}
+        for event in events:  # first everything that needs no lookup: a run timeout then keeps them
+            if id(event) not in waiting:
+                yield event
         await asyncio.gather(*(self._provider_artwork(e, link) for e, link in missing[: s.max_artwork_lookups]))
-        for event in events:
+        for event, _ in missing[: s.max_artwork_lookups]:
             yield event
 
     async def _page_items(self, path: str) -> dict[Any, dict[str, Any]]:

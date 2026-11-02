@@ -43,8 +43,10 @@ class BeerShevaTheatreScraper(BaseScraper[BeerShevaTheatreSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         ids: dict[str, None] = {}
-        for url in self.settings.listing_urls:
-            ids.update(dict.fromkeys(performance_ids(await self.get_text(quote(url, safe=":/")))))
+        for index, url in enumerate(self.settings.listing_urls):
+            fetch = self.get_text(quote(url, safe=":/"))  # the first page must load
+            page = await (self.optional(f"listing {url}", fetch) if index else fetch)
+            ids.update(dict.fromkeys(performance_ids(page or "")))
         self.log.debug("listed %d performances", len(ids))
         async for event in self.stream_isolated(list(ids), self._fetch, label=lambda i: i):
             yield event

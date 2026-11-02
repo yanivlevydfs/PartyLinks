@@ -66,7 +66,8 @@ class Reading3Scraper(BaseScraper[Reading3Settings]):
 def parse_listing(page_html: str, site_url: str) -> dict[str, str]:
     """Shows page -> {ContentID: artwork URL} (each show once, as listed)."""
     shows: dict[str, str] = {}
-    for link in LexborHTMLParser(page_html).css("a[href*='ContentID=']"):
+    # Show pages only: the nav's /company/a/about/?ContentID=253 is a gallery the show page answers 500 for.
+    for link in LexborHTMLParser(page_html).css("a[href*='/view/?ContentID=']"):
         ids = parse_qs(urlsplit(link.attributes.get("href") or "").query).get("ContentID")
         if not ids or not ids[0].isdigit():
             continue

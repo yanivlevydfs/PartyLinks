@@ -129,7 +129,10 @@ def _row(page_html: str, label: str) -> str:
 
 def parse_event(page_html: str, url: str, timezone: str, today: date | None = None) -> ScrapedEvent | None:
     """The page's event; None when cancelled or already over."""
-    node = next((n for n in _jsonld_objects(page_html) if schema_types(n) & {"musicevent", "event"}), None)
+    objects = _jsonld_objects(page_html)
+    node = next((n for n in objects if schema_types(n) & {"musicevent", "event"}), None)
+    if node is None and objects:  # a promo post filed as an event ("רוצה לדעת על הופעות..."): Yoast graph, no Event
+        return None
     if node is None:
         raise ParseError(f"{url}: no Event JSON-LD")
     if str(node.get("eventStatus") or "").endswith("EventCancelled"):

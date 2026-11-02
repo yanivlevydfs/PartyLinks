@@ -10,7 +10,7 @@ the box office, so none are given. robots.txt allows everything but the admin pa
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from datetime import UTC, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -39,13 +39,18 @@ class JerusalemTheatreScraper(BaseScraper[JerusalemTheatreSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         board = await self.get_json(s.site_url + s.board_path, params={"action": "getBoard"}, expect=dict)
-        events = parse_board(board, s, self.timezone)
+        events = parse_board(board, s, self.timezone, self.record_failure)
         self.log.debug("listed %d performances", len(events))
         for event in events:
             yield event
 
 
-def parse_board(board: dict[str, Any], s: JerusalemTheatreSettings, timezone: str) -> list[ScrapedEvent]:
+def parse_board(
+    board: dict[str, Any],
+    s: JerusalemTheatreSettings,
+    timezone: str,
+    on_error: Callable[[str, Exception], None] = lambda what, exc: None,
+) -> list[ScrapedEvent]:
     items = board.get("items")
     if not isinstance(items, dict):
         raise ParseError("board without items")
@@ -55,7 +60,12 @@ def parse_board(board: dict[str, Any], s: JerusalemTheatreSettings, timezone: st
         if not isinstance(show, dict) or show.get("parent-group") in s.skip_groups:
             continue
         for performance in show.get("dates") or []:
-            if isinstance(performance, dict) and (event := parse_performance(show, performance, groups, s, timezone)):
+            try:
+                event = parse_performance(show, performance, groups, s, timezone) if isinstance(performance, dict) else None
+            except Exception as exc:  # noqa: BLE001 - one bad performance never drops the board
+                on_error(f"show {show.get('id')}", exc)
+                continue
+            if event:
                 events.setdefault(event.source_event_id, event)
     return list(events.values())
 

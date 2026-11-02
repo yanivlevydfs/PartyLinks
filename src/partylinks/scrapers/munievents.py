@@ -34,9 +34,11 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import clean_str, html_to_text, zone
 from partylinks.places import PlaceIndex, israeli_places
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _DATE = re.compile(r"(\d{1,2})[./](\d{1,2})[./](\d{4})")
@@ -110,6 +112,10 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
 
             async def fetch(card: Card, site: MuniSite = site) -> ScrapedEvent | None:
                 listed_only = build_event(card, None, site, self.timezone)
+                if listed_only is not None and not is_current(
+                    listed_only.start_at, listed_only.end_at, RetentionSettings(), self.timezone, time_known=listed_only.time_known
+                ):
+                    return None  # a season that began already (שנת תשפ"ז): the service never stores it, skip its page
                 if listed_only is not None and not self.wanted(listed_only):
                     return listed_only
                 detail = await self.optional(card.url, self.get_text(card.url))

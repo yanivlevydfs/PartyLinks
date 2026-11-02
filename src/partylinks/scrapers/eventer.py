@@ -21,6 +21,7 @@ import httpx
 from pydantic import Field
 
 from partylinks.artists import ArtistProfile
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import (
     ParseError,
@@ -31,6 +32,7 @@ from partylinks.parsing import (
     to_float,
     to_int,
 )
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.eventer_sitemap import is_over, sitemap_link_names
 from partylinks.venue_profiles import VENUE_PROFILE
@@ -58,6 +60,9 @@ class EventerSettings(SourceSettings):
     sitemap_newest: int = Field(12000, ge=0)
     event_details_path: str
     ticket_types_path: str
+    # Event statuses whose ticket list is public: ticketTypes.js answers an empty 403 for every other one
+    # (4, 5, 7: off sale), from any IP (Nov 2026) - and in production each such 403 moved the run to the next proxy.
+    ticket_statuses: list[int] = Field(default_factory=lambda: [1])
     # This many ticket requests refused (403) in a row -> the rest of the run skips them (events saved without tiers).
     tickets_refused_limit: int = Field(20, ge=1)
     # The site's artist catalog (one request) and each artist's profile (social links). Empty = skip.
@@ -148,7 +153,12 @@ class EventerScraper(BaseScraper[EventerSettings]):
             raise ParseError("event id missing")
         if is_over(event, self.timezone):  # most sitemap pages: dropped before their ticket request
             return None
-        return parse_event(details, await self._tickets(link_name, event_id), f"{s.base_url}/{link_name}", self.timezone)
+        page_url = f"{s.base_url}/{link_name}"
+        bare = parse_event(details, {}, page_url, self.timezone)
+        if not is_current(bare.start_at, bare.end_at, RetentionSettings(), self.timezone, time_known=bare.time_known):
+            return None  # began days ago, still open (a season's subscription sale, "בדיקה" test pages): never stored
+        tickets = await self._tickets(link_name, event_id) if event.get("status") in s.ticket_statuses else {}
+        return parse_event(details, tickets, page_url, self.timezone)
 
     async def _tickets(self, link_name: str, event_id: str) -> dict[str, Any]:
         """Ticket endpoint down -> the event is still saved, without tiers. Refused (403) for every event

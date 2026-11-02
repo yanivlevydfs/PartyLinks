@@ -26,6 +26,8 @@ def test_screenings_grouped_per_movie_and_day() -> None:
     loves = events["האהבות-שלנו:telaviv:2026-10-22"]
     assert loves.start_at is not None and loves.start_at.isoformat() == "2026-10-22T11:00:00+03:00"
     assert loves.extra["showtimes"][-1] == "2026-10-22T21:15:00+03:00"
+    # Listed until its last screening ends (no runtime known: 120 min), not 3 h after the first.
+    assert loves.end_at is not None and loves.end_at.isoformat() == "2026-10-22T23:15:00+03:00"
     assert loves.description == "הקרנות: 11:00, 13:30, 16:00, 18:30, 21:15"
     assert (loves.venue_name, loves.city, loves.source_genres) == ("לב דיזנגוף", "תל אביב", ["קולנוע"])
     assert loves.extra["purchase_url"] == "https://www.lev.co.il/order/?pcode=608691&loc=5"
@@ -40,6 +42,7 @@ def test_movie_page_adds_poster_synopsis_and_rating() -> None:
     loves = next(e for e in build_events(SHOWTIMES, "telaviv", TLV, date(2026, 10, 22), {OUR_LOVES: MOVIE}, TZ)
                  if e.extra["movie_id"] == "האהבות-שלנו")  # fmt: skip
     assert loves.title == "האהבות שלנו" and loves.min_age == 12
+    assert loves.end_at is not None and loves.end_at.isoformat() == "2026-10-22T23:12:00+03:00"  # 21:15 + 117 min
     assert loves.image_url == "https://www.lev.co.il/wp-content/uploads/2026/10/4999.jpg"
     assert loves.description is not None and loves.description.startswith('ה"האהבות שלנו" – סרטו החדש של אבי נשר')
     assert loves.description.endswith("\n\nהקרנות: 11:00, 13:30, 16:00, 18:30, 21:15")

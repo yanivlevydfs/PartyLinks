@@ -18,7 +18,7 @@ from collections.abc import AsyncIterator
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from pydantic import Field, ValidationError
+from pydantic import Field
 
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, html_to_text
@@ -69,7 +69,7 @@ def parse_page(page_html: str, page_url: str, timezone: str, today: date, skip_w
     for event_id, card in cards.items():
         try:
             event = parse_card(event_id, card, page_url, timezone, today)
-        except (ParseError, ValidationError) as exc:  # one bad submission must not hide the rest
+        except Exception as exc:  # noqa: BLE001 - one bad submission (31.11, "24:00") must not hide the rest
             log.warning("geektime card %s skipped: %s", event_id, " ".join(str(exc).split())[:200])
             continue
         if event and not any(w.casefold() in event.title.casefold() for w in skip_words):

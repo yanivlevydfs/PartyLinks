@@ -354,3 +354,16 @@ def test_ogo_follows_a_next_redirect_in_the_body() -> None:
     except ParseError:
         pass  # the empty page has no event; what matters is that the new URL was fetched
     assert seen == ["/he/event/old", "/he/event/new"]
+
+
+def test_a_doubled_location_header_is_followed_once() -> None:
+    """OGO's uncached 308s send Location twice; httpx would follow "a, a" to a 404."""
+    import asyncio
+
+    import httpx
+
+    from partylinks.scrapers.base import _one_location
+
+    response = httpx.Response(308, headers=[("location", "/he/x"), ("location", "/he/x")])
+    asyncio.run(_one_location(response))
+    assert response.headers.get_list("location") == ["/he/x"]

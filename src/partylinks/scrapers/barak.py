@@ -41,8 +41,9 @@ class BarakScraper(BaseScraper[BarakSettings]):
     settings_model = BarakSettings
 
     def is_blocked(self, response: httpx.Response) -> bool:
-        """Akamai (as on eventim.co.il) answers 403 / 429 once it rate-limits us."""
-        return response.status_code in (403, 429)
+        """Akamai (as on eventim.co.il) answers 403 / 429 once it rate-limits us, or 200 with its
+        behavioural challenge (2.7 kB, "sec-if-cpt") after ~3 event pages (Nov 2026: 120 such pages a run)."""
+        return response.status_code in (403, 429) or b"sec-if-cpt" in response.content[:4000]
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         urls: dict[str, str] = {}  # event id -> url; regions overlap

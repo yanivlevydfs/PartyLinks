@@ -11,7 +11,7 @@ it to the seller's own listing.
 Cards under ``/events/rg-events/web-site-event-<id>/`` are the municipal Smarticket box office
 mirrored (``ramat-gan`` / ``mbe-rg`` hosts, read by the smarticket source), so they are skipped
 without a detail request. The rest (free municipal events, sales elsewhere) are what this adds.
-A series is listed once, on its first day.
+A series is listed once, on its next date (the card's).
 """
 
 from __future__ import annotations
@@ -61,8 +61,11 @@ def parse_listing(payload: dict[str, Any]) -> list[dict[str, Any]]:
     content = payload.get("content") or {}
     rails = [content.get("closeEvents"), content.get("sliderEvents")]
     rails += [cat.get("events") for cat in content.get("eventLobbyCategories") or []]
+    listed = [c for rail in rails for c in rail or []]
+    if not listed:
+        raise ParseError("event lobby has no cards")
     cards: dict[str, dict[str, Any]] = {}
-    for card in (c for rail in rails for c in rail or []):
+    for card in listed:
         path = clean_str((card.get("detailsLink") or {}).get("url"))
         if path and _MIRRORED not in path:
             cards.setdefault(path, card)
@@ -75,11 +78,13 @@ def parse_event(
     path = card["detailsLink"]["url"]
     d = payload.get("content") or {}
     title = clean_str(d.get("title")) or clean_str(card.get("title"))
-    day = str(d.get("date") or card.get("date") or "")[:10]
+    # The card has the next date of a series; the detail its first day (months back): the card wins.
+    day = str(card.get("date") or d.get("date") or "")[:10]
     if not title or not day:
         raise ParseError(f"{path}: no title or date")
     hh, _, mm = str(d.get("hour") or "").partition(":")
-    clock = time(int(hh) % 24, int(mm)) if hh.isdigit() and mm.isdigit() else time()
+    known = hh.isdigit() and mm.isdigit()
+    clock = time(int(hh) % 24, int(mm)) if known else time()
     start = datetime.combine(date.fromisoformat(day), clock, zone(timezone))
 
     tiers = [
@@ -101,6 +106,7 @@ def parse_event(
         title=title,
         description=html_to_text(d.get("description")),
         start_at=start,
+        time_known=known,
         venue_name=clean_str(place.get("name")) or clean_str(card.get("location")),
         address=clean_str(place.get("address")),
         city=city,

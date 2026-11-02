@@ -91,7 +91,15 @@ class EasytixScraper(BaseScraper[EasytixSettings]):
             if isinstance(e, dict) and e.get("_id") and e["_id"] not in found:
                 found[e["_id"]] = (e, by_id.get(_marketplace_id(e) or ""))
         now = datetime.now().astimezone()
-        events = [ev for e, m in found.values() if (ev := parse_event(e, m, s, self.timezone)) and _upcoming(ev, now)]
+        events: list[ScrapedEvent] = []
+        for event_id, (e, m) in found.items():
+            try:
+                ev = parse_event(e, m, s, self.timezone)
+            except Exception as exc:  # noqa: BLE001 - one odd event never drops the others
+                self.record_failure(f"event {event_id}", exc)
+                continue
+            if ev and _upcoming(ev, now):
+                events.append(ev)
         self.log.debug("%d events listed, %d coming and public", len(found), len(events))
 
         async def with_tickets(event: ScrapedEvent) -> ScrapedEvent:

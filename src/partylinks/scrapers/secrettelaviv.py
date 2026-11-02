@@ -90,17 +90,23 @@ class SecretTelAvivScraper(BaseScraper[SecretTelAvivSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         feed = parse_feed(await self.get_text(s.site_url + s.feed_path), s, self.timezone)
+        if not feed:
+            raise ParseError("no events in the iCal feed")
         self.log.debug("listed %d events", len(feed))
         done: set[str] = set()
 
         async def detail(event: ScrapedEvent) -> ScrapedEvent | None:
             try:
-                return await self._fetch_event(str(event.url))
+                page = await self._fetch_event(str(event.url))
             except SourceBlockedError:
                 raise
             except Exception as exc:  # noqa: BLE001 - fall back to the feed's fields
                 self.record_failure(str(event.url), exc)
                 return self._feed_only(event)
+            # The page's date line or title missing: the feed's, never an undated / untitled event.
+            if page.start_at is None:
+                page = page.model_copy(update={"start_at": event.start_at, "end_at": event.end_at})
+            return page if page.title else page.model_copy(update={"title": event.title})
 
         try:
             async for event in self.stream_isolated(feed, detail, label=lambda e: str(e.url)):

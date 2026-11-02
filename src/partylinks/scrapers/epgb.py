@@ -43,6 +43,8 @@ class EpgbSettings(SourceSettings):
     venue_name: str
     address: str
     city: str
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class EpgbScraper(BaseScraper[EpgbSettings]):
@@ -100,6 +102,8 @@ def parse_event(row: dict[str, Any], s: EpgbSettings, timezone: str) -> ScrapedE
         venue_name=s.venue_name,
         address=s.address,
         city=s.city,
+        latitude=s.latitude,
+        longitude=s.longitude,
         source_genres=[g for g in _NAMES.split(genre) if g] if genre else [],
         artists=lineup(row),
         min_age=to_int(row.get("min_age")),

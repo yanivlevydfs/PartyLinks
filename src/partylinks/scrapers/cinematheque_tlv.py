@@ -46,6 +46,7 @@ class TelAvivCinemathequeSettings(SourceSettings):
     ticket_groups_path: str  # formatted with ``id`` (a presentation id)
     order_url: str  # formatted with ``id``
     days_ahead: int = Field(7, ge=1)
+    default_runtime_minutes: int = Field(120, ge=1)  # a screening without durationInMinutes
     branch_id: str = "tlv"
     venue_name: str = "סינמטק תל אביב"
     address: str | None = "הארבעה 5"
@@ -148,6 +149,8 @@ def build_event(
         title=title,
         description="\n\n".join(line for line in lines if line),
         start_at=times[0],
+        # Until the last screening ends: with no end, the day's listing is over 3 h after its first one.
+        end_at=times[-1] + timedelta(minutes=to_int(first.get("durationInMinutes")) or s.default_runtime_minutes),
         venue_name=s.venue_name,
         address=s.address,
         city=s.city,

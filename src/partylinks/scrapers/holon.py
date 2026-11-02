@@ -21,8 +21,10 @@ from zoneinfo import ZoneInfo
 
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, html_to_text
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _DATE = re.compile(r"(\d{2}/\d{2}/\d{2,4})")
@@ -49,10 +51,13 @@ class HolonScraper(BaseScraper[HolonSettings]):
         self.log.debug("listed %d events", len(rows))
         for row in rows:
             try:
-                if event := parse_row(row, tree, s, self.timezone):
-                    yield event
+                event = parse_row(row, tree, s, self.timezone)
             except (ParseError, ValueError) as exc:
                 self.record_failure(f"item {row.attributes.get('itemid')}", exc)
+                continue
+            # Series and exhibitions keep their first date (2024 and on): over by the site's own rule.
+            if event and is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
+                yield event
 
 
 def _text(node: LexborNode | None) -> str:

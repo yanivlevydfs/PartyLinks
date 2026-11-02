@@ -22,8 +22,10 @@ from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import clean_str, html_to_text, parse_iso, to_int
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.matnasnet import covered_smarticket_hosts
 
@@ -58,7 +60,9 @@ class OneCityScraper(BaseScraper[OneCitySettings]):
             except SourceBlockedError as exc:  # one site's firewall never stops the others
                 self.record_failure(site.url, exc)
                 continue
-            events = parse_rows(rows or [], site, self.timezone, skip)
+            # A recurring post lists its past dates too: drop them first, so the next date is the one kept.
+            rows = [r for r in rows or [] if is_current(*_dates(r, self.timezone), RetentionSettings(), self.timezone)]
+            events = parse_rows(rows, site, self.timezone, skip)
             self.log.debug("%s: %d events", site.city, len(events))
             for event in events:
                 yield event
@@ -80,6 +84,11 @@ def _raw(row: dict[str, Any], key: str) -> str | None:
     """A field given as {"raw": ..., "rendered": ...} or as a plain string."""
     value = row.get(key)
     return clean_str((value.get("raw") or value.get("rendered")) if isinstance(value, dict) else value)
+
+
+def _dates(row: dict[str, Any], timezone: str) -> tuple[Any, Any]:
+    start, end = parse_iso(_raw(row, "start_datetime"), timezone), parse_iso(_raw(row, "end_datetime"), timezone)
+    return start, end if start and end and end.date() == start.date() else None  # as build_event keeps it
 
 
 def _split_place(place: str | None) -> tuple[str | None, str | None]:

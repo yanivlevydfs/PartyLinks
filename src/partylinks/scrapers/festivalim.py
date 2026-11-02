@@ -66,7 +66,9 @@ class FestivalimScraper(BaseScraper[FestivalimSettings]):
         events: list[ScrapedEvent] = []
         for index in range(s.max_pages):
             path = f"/page/{index + 1}/" if index else "/"
-            listed = parse_listing(await self.get_text(s.site_url + path, params=params), self.timezone)
+            fetch = self.get_text(s.site_url + path, params=params)  # the first page must load
+            page = await (self.optional(f"search page {index + 1}", fetch) if index else fetch)
+            listed = parse_listing(page, self.timezone) if page else []
             events += listed
             if not listed:  # undated entries only from here on
                 break
@@ -124,6 +126,7 @@ def parse_listing(page_html: str, timezone: str) -> list[ScrapedEvent]:
                 title=clean_str(link.text()) or "",
                 description=html_to_text(excerpt.html) if excerpt else None,
                 start_at=start,
+                time_known=False,  # days only
                 end_at=end,
                 city=cities[0] if cities else None,
                 source_genres=categories,

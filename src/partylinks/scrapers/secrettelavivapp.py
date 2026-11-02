@@ -26,7 +26,7 @@ from pydantic import Field
 
 from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import clean_str, to_float, zone
+from partylinks.parsing import ParseError, clean_str, to_float, zone
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
@@ -66,7 +66,9 @@ class SecretTelAvivAppScraper(BaseScraper[SecretTelAvivAppSettings]):
             params["q"] = json.dumps(query)
         url = s.site_url + s.entities_path.format(app_id=s.app_id, entity=entity)
         rows = await self.get_json(url, params=params)
-        return [r for r in rows if isinstance(r, dict)] if isinstance(rows, list) else []
+        if not isinstance(rows, list):
+            raise ParseError(f"{entity}: expected a list, got {str(rows)[:120]}")
+        return [r for r in rows if isinstance(r, dict)]
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
