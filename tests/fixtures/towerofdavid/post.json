@@ -1,0 +1,26 @@
+{
+ "id": 1343,
+ "link": "https://www.tod.org.il/event/the-night-spectacular/",
+ "title": {
+  "rendered": "החיזיון הלילי"
+ },
+ "events-categories": [
+  15
+ ],
+ "acf": {
+  "summary": "האבנים העתיקות של מצודת מגדל דוד מתעוררות לחיים, מקבלות אור, צבע ומוזיקה, ומספרות את סיפורה של ירושלים",
+  "location": [
+   "on-site"
+  ],
+  "image": 29833
+ },
+ "_links": {
+  "acf:term": [
+   {
+    "embeddable": true,
+    "taxonomy": "events-categories",
+    "href": "https://www.tod.org.il/wp-json/wp/v2/events-categories/15"
+   }
+  ]
+ }
+}

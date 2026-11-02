@@ -21,7 +21,7 @@ const KINDS: Record<Kind, Record<Lang, string>> = {
 // Store home page and kind; a source missing here still shows, without a link.
 const STORES: Record<string, [string | null, Kind]> = {
   goout: ["https://www.go-out.co", "tickets"], eventer: ["https://www.eventer.co.il", "tickets"],
-  zygo: ["https://zygo.co.il", "tickets"], goshow: ["https://www.goshow.co.il", "tickets"], tzkrti: ["https://tzkrti.com", "tickets"], fever: ["https://feverup.com/en/tel-aviv-israel", "tickets"], tickchak: ["https://live.tickchak.co.il", "tickets"],
+  zygo: ["https://zygo.co.il", "tickets"], goshow: ["https://www.goshow.co.il", "tickets"], tzkrti: ["https://tzkrti.com", "tickets"], fever: ["https://feverup.com/en/tel-aviv-israel", "tickets"], towerofdavid: ["https://www.tod.org.il", "tickets"], tickchak: ["https://live.tickchak.co.il", "tickets"],
   selector: ["https://selector.org.il", "tickets"], chillz: ["https://chillz.com", "tickets"],
   mevalim: ["https://www.mevalim.co.il", "tickets"], megatickets: ["https://www.megatickets.co.il", "tickets"],
   eventbuzz: ["https://eventbuzz.co.il", "tickets"], popit: ["https://popit.events", "tickets"],

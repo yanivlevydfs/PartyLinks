@@ -425,7 +425,7 @@ enrichment:
     # Secret Tel Aviv's categories (its parties are told apart by their music genres), widened with the
     # category names other sources declare: municipal calendars (Tel Aviv, Holon, Haifa, Bina cities),
     # box offices, guides (OGO tags, some in Russian), viagogo / abroad sellers.
-    live_show: ["live music", "livemusic", "international artists", "concert", "concerts", "other concerts",
+    live_show: ["live music", "livemusic", "international artists", "concert", "concerts", "other concerts", "מופעי לילה",
                 "show", "shows", "performances", "music", "הופעות", "הופעה", "הופעות מוזיקה", "מופע", "מופעים",
                 "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki"]  # concets: Eventer's spelling of its concerts category
     festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele"]
@@ -512,6 +512,7 @@ enrichment:
     gagarin: [nightclubs]  # club nights the API leaves uncategorised ("INSOMNIA #25")
     tzkrti: [culture]  # "evenings" and "social events" (a Christmas market, a conference) name no genre
     jaffatheatre: [theatre]
+    towerofdavid: [culture]
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
     telaviv: [culture]  # municipal programme tagged by audience or "קהילה"
@@ -2774,6 +2775,22 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 1.0
+
+  towerofdavid:
+    # Tower of David Museum, Jerusalem: Night Spectacular and King David shows, gallery talks, exhibition
+    # and Old City tours, holiday tours, concerts. The museum's ticketing API: packages -> dated slots,
+    # prices; each package's post gives page, summary, categories, artwork. ~140 requests a run.
+    enabled: true
+    cron: "47 7,19 * * *"
+    venue_name: מגדל דוד - מוזיאון ירושלים
+    address: "שער יפו, העיר העתיקה"
+    city: ירושלים
+    latitude: 31.7760391   # Nominatim: the citadel (castle)
+    longitude: 35.2283025
+    http:
+      impersonate: chrome   # Cloudflare refuses Python's TLS handshake (403); curl and Chrome get 200
+      concurrency: 2
+      request_delay_seconds: 0.5
 
   jaffatheatre:
     # Jaffa Theatre: the Arab-Hebrew stage at Mifratz Shlomo. The home page links every upcoming

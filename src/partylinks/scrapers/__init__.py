@@ -91,6 +91,7 @@ from partylinks.scrapers.ticketmaster import TicketmasterScraper
 from partylinks.scrapers.ticketplace import TicketPlaceScraper
 from partylinks.scrapers.tiktik import TiktikScraper
 from partylinks.scrapers.tiuli import TiuliScraper
+from partylinks.scrapers.towerofdavid import TowerOfDavidScraper
 from partylinks.scrapers.tribe import BabeBarScraper, GagarinScraper
 from partylinks.scrapers.tzkrti import TzkrtiScraper
 from partylinks.scrapers.viagogo import ViagogoScraper
@@ -192,6 +193,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         GoShowScraper,
         TzkrtiScraper,
         FeverScraper,
+        TowerOfDavidScraper,
         JaffaTheatreScraper,
         Reading3Scraper,
         ZoaTlvScraper,

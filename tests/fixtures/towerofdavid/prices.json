@@ -1,0 +1,62 @@
+{
+ "status": true,
+ "prices": {
+  "336": {
+   "id": 336,
+   "price": 69,
+   "title": "מבוגר/ת",
+   "amountSelected": 0,
+   "VisitorId": 1,
+   "maxQuantity": 0
+  },
+  "337": {
+   "id": 337,
+   "price": 59,
+   "title": "ילד/ה",
+   "amountSelected": 0,
+   "VisitorId": 2,
+   "maxQuantity": 0
+  },
+  "338": {
+   "id": 338,
+   "price": 64,
+   "title": "סטודנט/ית",
+   "amountSelected": 0,
+   "VisitorId": 3,
+   "maxQuantity": 0
+  },
+  "340": {
+   "id": 340,
+   "price": 43,
+   "title": "נכה",
+   "amountSelected": 0,
+   "VisitorId": 4,
+   "maxQuantity": 100
+  },
+  "1497": {
+   "id": 1497,
+   "price": 43,
+   "title": "חייל/ת",
+   "amountSelected": 0,
+   "VisitorId": 6,
+   "maxQuantity": 80
+  },
+  "339": {
+   "id": 339,
+   "price": 64,
+   "title": "אזרח/ית ותיק/ה",
+   "amountSelected": 0,
+   "VisitorId": 5,
+   "maxQuantity": 0
+  },
+  "3059": {
+   "id": 3059,
+   "price": 43,
+   "title": "מלווה נכה",
+   "amountSelected": 0,
+   "VisitorId": 313,
+   "maxQuantity": 40
+  }
+ },
+ "tickets_include_free_child": ""
+}
