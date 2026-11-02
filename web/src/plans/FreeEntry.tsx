@@ -39,7 +39,7 @@ export function FreeEntry({ events, planUrl }: { events: PlanEvent[]; planUrl: s
         const hours = (at - Date.now()) / 3.6e6;
         const time = freeTime(e, at, t);
         const left = p.left(hours);
-        const remind = `https://wa.me/?text=${encodeURIComponent(`${p.remindMessage(e.title, time, left)}\n${planUrl}`)}`;
+        const remind = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${p.remindMessage(e.title, time, left)}\n${planUrl}`)}`;
         const cal = "https://calendar.google.com/calendar/render?" + new URLSearchParams({
           action: "TEMPLATE", text: p.calTitle(e.title), details: planUrl, dates: `${utc(at - 30 * 60e3)}/${utc(at)}`,
         });

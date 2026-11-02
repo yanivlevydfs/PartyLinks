@@ -439,7 +439,7 @@ export function Share({ path, title }: { path: string; title: string }) {
   const url = encodeURIComponent(window.location.origin + path);
   const text = encodeURIComponent(title);
   const targets = [
-    ["whatsapp", "WhatsApp", `https://wa.me/?text=${text}%20${url}`],
+    ["whatsapp", "WhatsApp", `https://api.whatsapp.com/send?text=${text}%20${url}`],
     ["facebook", "Facebook", `https://www.facebook.com/sharer/sharer.php?u=${url}`],
     ["x", "X", `https://x.com/intent/post?text=${text}&url=${url}`],
   ];

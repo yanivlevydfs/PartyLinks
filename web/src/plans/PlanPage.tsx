@@ -36,7 +36,8 @@ const newVoter = () => {
 const remember = (name: string) => { try { localStorage.setItem("plan-name", name); } catch { /* off */ } };
 
 const ANSWERS: Answer[] = ["yes", "maybe", "no"];
-const wa = (text: string) => `https://wa.me/?text=${encodeURIComponent(text)}`;
+// api.whatsapp.com, not wa.me: wa.me's redirect turns emoji into U+FFFD.
+const wa = (text: string) => `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
 const LONG = { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" } as const;
 
 // One page per plan: going from one plan to another starts fresh (its form, the one-time sign-in link).
