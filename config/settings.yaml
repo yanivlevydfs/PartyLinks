@@ -415,7 +415,7 @@ enrichment:
     work_spaces: ["work spaces"]
     volunteering: ["volunteering"]
     team_activities: ["team activities"]
-    nightclubs: ["nightclubs", "parties", "party", "מסיבה"]  # parties: Secret Tel Aviv's category
+    nightclubs: ["nightclubs", "parties", "party", "מסיבה", "מועדוני לילה", "חיי-לילה", "חיי לילה"]  # parties: Secret Tel Aviv's category
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
@@ -522,6 +522,24 @@ enrichment:
     telaviv: [culture]  # municipal programme tagged by audience or "קהילה"
     munievents: [culture]  # municipal programme tagged by audience or "קהילה"
     haifamuni: [culture]  # municipal programme tagged by audience or "קהילה"
+    # Nov 2026 audit: sources whose uncategorised events had no genre at all.
+    chillz: [nightclubs]    # party ticketing ("Sauna Club Tel Aviv", DJ nights): no categories
+    zygo: [nightclubs]      # party and club-night ticketing, no categories
+    drop: [nightclubs]      # party promoters' box office ("ACIDANCE", birthday raves)
+    goout: [nightclubs]     # club nights ("Thursday | John Doe") whose type is only "מועדוני לילה"
+    grayclub: [nightclubs]
+    ogo: [culture]          # city guide: talks, circles, community events
+    makore: [culture]
+    eventer: [culture]
+    eventbrite: [culture]
+    popit: [culture]
+    eventim: [live_show]    # box office: shows and concerts
+    mevalim: [live_show]
+    muzi: [live_show]       # music listings
+    jerusalemtheatre: [theatre]
+    comy: [stand_up]        # comedy box office
+    luma: [meetups]
+    meetup: [meetups]
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
