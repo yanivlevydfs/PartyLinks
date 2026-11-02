@@ -137,3 +137,15 @@
 .group-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
 .group-row .plan-option-link { flex: 1; min-width: 0; }
 .group-row small { display: block; color: var(--muted); }
+
+/* A friend answered while the page is open (NewVotes.tsx): a note at the bottom, the name lit in the list. */
+.plan-toast {
+  position: fixed; inset-inline: 16px; bottom: 16px; z-index: 70; margin-inline: auto; max-width: 420px;
+  display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-radius: 16px; cursor: pointer;
+  font: inherit; color: var(--text); text-align: start; background: var(--panel-solid); border: 1px solid var(--green);
+  box-shadow: 0 8px 30px rgb(0 0 0 / .5); animation: plan-toast-in .25s ease-out;
+}
+.plan-group li.fresh { animation: plan-fresh 2.5s ease-out 3; border-color: var(--green); }
+@keyframes plan-toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes plan-fresh { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 4px rgb(43 245 160 / .35); } }
+@media (prefers-reduced-motion: reduce) { .plan-toast, .plan-group li.fresh { animation: none; } }

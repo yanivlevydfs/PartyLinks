@@ -12,6 +12,7 @@ import { forecastAt, Weather } from "../Weather";
 import { AddOption } from "./AddOption";
 import { FreeEntry, freeTime, freeUntil } from "./FreeEntry";
 import { GroupName } from "./GroupName";
+import { NewVotesToast, useNewVotes } from "./NewVotes";
 import { usePlanText } from "./i18n";
 import "./plans.css";
 import { WRITE_HEADERS, type Answer, type Gender, type Plan, type Ride, type Vote } from "./types";
@@ -66,6 +67,7 @@ function PlanView() {
     staleTime: 0,
     retry: false,
   });
+  const news = useNewVotes(data?.votes);
   const mine = data?.votes.find((v) => v.mine);
   const accounts = useAccountsOn();
   const me = useMe().data;
@@ -174,6 +176,7 @@ function PlanView() {
 
   return (
     <main className="wrap plan">
+      <NewVotesToast news={news} listId="plan-list" />
       <GroupName plan={data} onSaved={(plan) => client.setQueryData<Plan>(key, plan)} />
       {many ? (
         <section className="plan-which" aria-labelledby="plan-which-h">
@@ -268,12 +271,12 @@ function PlanView() {
         {me && data.in_groups && <p className="plan-keep"><Link to="/groups">{p.inGroups} ›</Link></p>}
       </section>
 
-      <section className="plan-list" aria-live="polite">
+      <section className="plan-list" id="plan-list" aria-live="polite">
         <p className="plan-count"><b>{p.going(by("yes").length)}</b> · {p.maybes(by("maybe").length)} · {p.nos(by("no").length)}{(men > 0 || women > 0) && ` · ${p.mix(men, women)}`}</p>
         {data.votes.length === 0 ? <p className="msg">{p.nobody}</p> : ANSWERS.map((a) => by(a).length > 0 && (
           <div key={a} className={`plan-group ${a}`}>
             <h3>{p[a]}</h3>
-            <ul>{by(a).map((v, i) => <VoteChip key={i} v={v} options={data.options} many={many} you={p.you} />)}</ul>
+            <ul>{by(a).map((v, i) => <VoteChip key={i} v={v} options={data.options} many={many} you={p.you} fresh={news.includes(v)} />)}</ul>
           </div>
         ))}
         {(drivers.length > 0 || riders.length > 0) && (
@@ -323,10 +326,10 @@ function Option({ o, votes, leading }: { o: EventSummary; votes: number; leading
   );
 }
 
-function VoteChip({ v, options, many, you }: { v: Vote; options: EventSummary[]; many: boolean; you: string }) {
+function VoteChip({ v, options, many, you, fresh }: { v: Vote; options: EventSummary[]; many: boolean; you: string; fresh: boolean }) {
   const where = many ? v.picks.map((id) => options.findIndex((o) => o.id === id) + 1).filter((n) => n > 0).sort().join(",") : "";
   return (
-    <li dir="auto">
+    <li dir="auto" className={fresh ? "fresh" : undefined}>
       {v.name}{where && <small> · {where}</small>}{v.ride === "drive" && " 🚗"}{v.ride === "need" && " 🙋"} {v.mine && <small>{you}</small>}
     </li>
   );
