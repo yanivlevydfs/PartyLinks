@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, literal, select
 from sqlalchemy.orm import Session, defer, selectinload
 
 from partylinks.bot.core import refs, understand
@@ -65,16 +65,30 @@ def search(
         flat = dy * dy + scale * dx * dx
         filters.append(flat <= dlat * dlat)
         order.append(flat)
-    if not (cheap or near) and query and (rank := relevance(query, cfg)) is not None:
+    rank = relevance(query, cfg) if query else None
+    if not (cheap or near) and rank is not None:
         order.append(rank)  # the site's search order: title and genre matches first
     # Dated events by day; a place "open today" (a club's every-day listing) after the day's real events.
     order += [EventRow.local_date.asc().nulls_last(), _IS_PLACE, EventRow.start_at.asc().nulls_last(), EventRow.id]
     total = session.scalar(select(func.count()).select_from(EventRow).where(*filters)) or 0
-    rows = list(session.scalars(
-        select(EventRow).where(*filters).order_by(*order).offset(offset).limit(limit)
+    pairs = session.execute(
+        select(EventRow, rank if rank is not None else literal(0)).where(*filters).order_by(*order).offset(offset).limit(limit)
         .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
-    ))  # fmt: skip
-    return Found(rows, total, refs.extras(session, rows), query)
+    ).all()  # fmt: skip
+    rows = [row for row, _ in pairs]
+    extras = refs.extras(session, rows)
+    if _free_text(query, cfg):
+        for row, r in pairs:
+            if r == 2:  # the words are only in the description (or address): say so, it may not be the event's own
+                extras.setdefault(row.id, {})["in_text"] = True
+    return Found(rows, total, extras, query)
+
+
+def _free_text(query: str, cfg: Settings) -> bool:
+    """A search of names only (an artist, a word): no place, date, price or free-entry words, whose
+    matches in the address or the date are what was asked for.
+    ponytail: a city name not in the place list still counts as free text; add it to the cities if it shows."""
+    return bool(query) and not any(understand.kinds(query, cfg, understand.today_in(cfg)).values())
 
 
 def search_or_widen(

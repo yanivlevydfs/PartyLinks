@@ -81,6 +81,17 @@ def test_a_search_answers_with_cards_links_and_weather(tmp_path: Path) -> None:
     assert [b.action for b in reply.buttons[0]] == [MORE, ALERT]  # 3 found, 2 shown
 
 
+def test_a_name_found_only_in_a_description_says_so(tmp_path: Path) -> None:
+    talk, _, _ = _talk(tmp_path, [
+        event("u", SOON, title="Utopia Koh Phangan", artists=["Astrix"]),
+        event("r", SOON + timedelta(hours=1), title="20 Years of Ritmo", description="Ritmo played with Astrix and Ace Ventura"),
+    ])  # fmt: skip
+    reply = _run(talk.text(CHAT, "astrix", "en"))
+    found = {c.title: any("description" in line for line in c.lines) for c in reply.cards}
+    assert found == {"Utopia Koh Phangan": False, "20 Years of Ritmo": True}
+    assert reply.cards[0].title == "Utopia Koh Phangan"  # the lineup match first
+
+
 def test_more_continues_and_ends(tmp_path: Path) -> None:
     talk, _, _ = _talk(tmp_path, _events())
     first = _run(talk.text(CHAT, "techno", "en"))

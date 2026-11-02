@@ -107,6 +107,8 @@ async def card(
         km = distance_km(near[0], near[1], row.latitude, row.longitude)
         lines.append(label("km", lang, km=f"{km:.1f}"))
     lines += [(await forecast.line(cfg, row, lang) if with_weather else None) or "", price(row, lang, extra)]
+    if extra.get("in_text"):
+        lines.append(label("in_text", lang))
     return Card(row.id, row.title, tuple(x for x in lines if x), photo(extra, cfg), links(row, extra, cfg, lang), actions(extra, lang))
 
 

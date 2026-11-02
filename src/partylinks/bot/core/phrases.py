@@ -309,6 +309,7 @@ LABELS: dict[str, dict[str, str]] = {
     "sold_out": {"he": "❌ אזל", "en": "❌ Sold out"},
     "discount": {"he": "🔥 יש הנחה", "en": "🔥 On sale"},
     "km": {"he": "📍 {km} ק״מ ממך", "en": "📍 {km} km away"},
+    "in_text": {"he": "🔍 נמצא רק בתיאור האירוע", "en": "🔍 Found only in the event's description"},
     "remind": {"he": "⏰ תזכורת", "en": "⏰ Remind"},
     "watch": {"he": "👁 מעקב", "en": "👁 Watch"},
     "similar": {"he": "🔁 דומים", "en": "🔁 Similar"},
