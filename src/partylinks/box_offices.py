@@ -1,9 +1,10 @@
-"""Box offices inside a ticketing platform: each Smarticket tenant (a city's culture hall, a council, a
-theatre) is its own store to the people buying there, though one source reads them all.
+"""Box offices inside a multi-store source: each Smarticket or PRES tenant (a city's culture hall, a
+theatre, a museum), each municipal / community-centre site, is its own store to the people buying
+there, though one source reads them all.
 
-The stores page lists sources; this adds a row per tenant: its name (the tenant's ``venue_name`` in
-config), its site, and how many upcoming events it sells. Events are told apart by the host of their
-URL (``<tenant>.smarticket.co.il/event/<id>``), so no column or table is needed.
+The stores page lists sources; this adds a row per configured host: its name (from config), its site,
+and how many upcoming events it sells. Events are told apart by the host of their URL, so no column or
+table is needed.
 """
 
 from __future__ import annotations
@@ -16,14 +17,16 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from partylinks.db import EventRow, upcoming_filter
+from partylinks.scrapers.matnasnet import MatnasnetSettings
+from partylinks.scrapers.munievents import MuniEventsSettings
+from partylinks.scrapers.onecity import OneCitySettings
+from partylinks.scrapers.pres import PresSettings
 from partylinks.scrapers.smarticket import SmarticketSettings, tenant_host
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
     from partylinks.scrapers.base import SourceSettings
-
-SOURCES = ("smarticket", "smarticket_il")  # smarticket_il: the box offices behind our VPN
 
 
 class BoxOfficeOut(BaseModel):
@@ -34,24 +37,39 @@ class BoxOfficeOut(BaseModel):
     events: int  # upcoming events it sells (each event group once)
 
 
+def _hosts(settings: SourceSettings) -> list[tuple[str, str, str | None]]:
+    """(host, name, city) of every store a multi-store source reads; [] for a one-site source."""
+    if isinstance(settings, SmarticketSettings):
+        return [
+            (h, t.venue_name or h, t.city)
+            for t in settings.tenants
+            if (h := tenant_host(t.host, settings.tenant_domain))
+        ]
+    if isinstance(settings, PresSettings):
+        return [(h, x.venue or h, x.city) for x in settings.hosts if (h := urlsplit(x.url).hostname)]
+    if isinstance(settings, MuniEventsSettings):
+        return [
+            (h, x.organizer or f"עיריית {x.city}", x.city) for x in settings.sites if (h := urlsplit(x.url).hostname)
+        ]
+    if isinstance(settings, MatnasnetSettings):
+        return [(h, f'מתנ"ס {x.city}', x.city) for x in settings.sites if (h := urlsplit(x.url).hostname)]
+    if isinstance(settings, OneCitySettings):
+        return [(h, f"עיריית {x.city}", x.city) for x in settings.sites if (h := urlsplit(x.url).hostname)]
+    return []
+
+
 def box_offices(session: Session, sources: dict[str, SourceSettings]) -> list[BoxOfficeOut]:
-    """Every configured tenant of an enabled Smarticket source, most upcoming events first."""
+    """Every configured store of every enabled multi-store source, most upcoming events first."""
     offices: dict[str, BoxOfficeOut] = {}
-    for source in SOURCES:
-        settings = sources.get(source)
-        if not isinstance(settings, SmarticketSettings) or not settings.enabled:
+    for source, settings in sources.items():
+        if not settings.enabled or not (hosts := _hosts(settings)):
             continue
         rows = session.execute(
             select(EventRow.group_id, EventRow.url).where(EventRow.source == source, upcoming_filter()).distinct()
         ).all()
         counts = Counter(host for _, host in {(group, urlsplit(url).hostname) for group, url in rows})
-        for t in settings.tenants:
-            if host := tenant_host(t.host, settings.tenant_domain):
-                offices[host] = BoxOfficeOut(
-                    source=source,
-                    name=t.venue_name or host,
-                    city=t.city,
-                    url=f"https://{host}",
-                    events=counts.get(host, 0),
-                )
+        for host, name, city in hosts:
+            offices[host] = BoxOfficeOut(
+                source=source, name=name, city=city, url=f"https://{host}", events=counts.get(host, 0)
+            )
     return sorted(offices.values(), key=lambda o: (-o.events, o.name))

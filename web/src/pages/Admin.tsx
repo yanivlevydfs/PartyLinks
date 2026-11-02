@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Loader, TZ } from "../ui";
+import { useTicketSites } from "../api";
 import { Sponsored } from "../ads/AdminSponsored";
 import { Overrides } from "../config_store/AdminOverrides";
 import { SignInButton } from "../accounts/AccountSlot";
@@ -234,7 +235,28 @@ function Overview({ data }: { data: any }) {
           </tbody>
         </table>
       </Card>
+      <BoxOffices />
     </div>
+  );
+}
+
+/** The stores inside multi-store sources (each Smarticket / PRES tenant, each city site), as on the stores page. */
+function BoxOffices() {
+  const offices = useTicketSites().data?.box_offices ?? [];
+  return (
+    <Card title={`Events per box office (${offices.length})`} wide>
+      <table className="adm-table">
+        <thead><tr><th>Box office</th><th>Source</th><th>City</th><th>Upcoming</th></tr></thead>
+        <tbody>
+          {offices.map((o) => (
+            <tr key={o.url}>
+              <td dir="auto"><a href={o.url} target="_blank" rel="noopener noreferrer">{o.name}</a></td>
+              <td>{o.source}</td><td dir="auto">{o.city ?? ""}</td><td>{o.events}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
   );
 }
 

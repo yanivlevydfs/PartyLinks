@@ -53,3 +53,24 @@ def test_no_smarticket_source_no_offices() -> None:
     assert box_offices(_Session([]), {}) == []  # type: ignore[arg-type]
     off = SETTINGS.model_copy(update={"enabled": False})
     assert box_offices(_Session([]), {"smarticket": off}) == []  # type: ignore[arg-type]
+
+
+def test_pres_hosts_and_city_sites_are_stores_too() -> None:
+    from partylinks.scrapers.munievents import MuniEventsSettings, MuniSite
+    from partylinks.scrapers.pres import PresHost, PresSettings
+
+    pres = PresSettings(
+        cron="1 * * * *",
+        presentations_path="/api/presentations/",
+        features_path="/api/features/",
+        ticket_groups_path="/api/presentations/{id}/ticketGroups",
+        event_page_path="/order/{id}",
+        hosts=[PresHost(key="muza", url="https://muza.pres.global", venue="מוזיאון ארץ ישראל", city="תל אביב")],
+    )
+    muni = MuniEventsSettings(cron="2 * * * *", sites=[MuniSite(url="https://www.eilat.muni.il", city="אילת")])
+    rows = [("g1", "https://muza.pres.global/order/7")]
+    offices = box_offices(_Session(rows), {"pres": pres, "munievents": muni})  # type: ignore[arg-type]
+    assert [(o.source, o.name, o.city, o.url, o.events) for o in offices] == [
+        ("pres", "מוזיאון ארץ ישראל", "תל אביב", "https://muza.pres.global", 1),
+        ("munievents", "עיריית אילת", "אילת", "https://www.eilat.muni.il", 0),  # MUZA's event is not Eilat's
+    ]
