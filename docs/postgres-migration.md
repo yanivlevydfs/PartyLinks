@@ -23,7 +23,7 @@
 - **למה:** כל המקורות (74 ומעלה) כותבים דרך נעילת כתיבה אחת. כבר הייתה הרעבה של writers (`service.py:84-88`, אוקטובר 2026). יש גם retries על "database is locked" (`db.py:56-66`), חלונות VACUUM, ותפעול מוגבל: אי אפשר לשאול את ה-DB בלי להיכנס לקונטיינר.
 - **למי:** האתר spotx.fun, ה-admin וה-scheduler. תהליך אחד, replica אחת.
 - **אילוצים:** כ-28k אירועים. יש passes על כל הטבלה אחרי כל scrape (regroup, geocode, areas, retention). פעם O(n²) הפיל את prod, אז ביצועים בגודל prod הם תנאי. ה-Docker מתקין את `requirements.lock` (`Dockerfile:31`). sessions אחרים דוחפים ל-master במקביל, ו-Railway עושה auto-deploy. אסור לשמור אירועי עבר. גודל DB ורוחב פס לא מגבילים. ב-localhost ה-scheduler תמיד כבוי.
-- **Non-goals:** לא multi-replica (ה-scheduler, ה-`ResponseCache` (`api.py:410-454`), ה-bans (`security.py:130`) וה-`Database.changes` (`db.py:415-418`) כולם בזיכרון של התהליך). לא Alembic. לא PostGIS. לא async. לא להזיז את `artists.db` (קובץ SQLite נפרד, `artists.py:1,16,70-74`), את `weather_cache.json`, את `chillz_past.json` או את `geonames-<version>.json` (מטמון הערים, 2026-10-28). כולם נשארים על ה-volume.
+- **Non-goals:** לא multi-replica (ה-scheduler, ה-`ResponseCache` (`api.py:410-454`), ה-bans (`security.py:130`) וה-`Database.changes` (`db.py:415-418`) כולם בזיכרון של התהליך). לא Alembic. לא PostGIS. לא async. לא להזיז את `artists.db` (קובץ SQLite נפרד, `artists.py:1,16,70-74`), את `weather_cache.json` או את `geonames-<version>.json` (מטמון הערים, 2026-10-28). כולם נשארים על ה-volume.
 
 ### Non-functional (הנחות)
 | נושא | הנחה |
@@ -168,7 +168,7 @@
 ### 6.9 מצב מקומי שנקשר ל-path של SQLite
 - `geonames.py` `cache_file()` (נוסף 2026-10-28): ‏`project_path("data")/geonames-<version>.json`, קובץ JSON ולא DB. לא תלוי ב-URL של ה-DB, ולא משתנה במעבר.
 - `weather.py:53-61` `cache_file`: עם URL של PG נופל ל-`project_path("data")`, שזה `/app/data`, אותו מקום כמו היום. תקין.
-- `scrapers/chillz.py:199-200`: `data/chillz_past.json` קבוע ועצמאי. תקין.
+- `scrapers/chillz.py`: `data/chillz_past.json` הוסר (2026-11-02): אסור לשמור רשימת כתובות של אירועי עבר; הדילוג הוא לפי `<lastmod>` של ה-sitemap ותאריך הדף.
 - `artists.py`: קובץ SQLite משלו ומחוץ לתחום. נשאר על ה-volume.
 - `admin.py:101`, `admin.py:348`, `status.py:82`: מציגים את ה-URL עם `hide_password=True`. תקין.
 

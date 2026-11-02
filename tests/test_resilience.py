@@ -687,15 +687,14 @@ def test_throttled_proxy_ip_moves_to_the_next_proxy() -> None:
     assert asyncio.run(run()) == 200 and scraper._proxy == "http://b:2"
 
 
-def test_chillz_never_fetches_a_page_of_a_past_event_twice(tmp_path, monkeypatch) -> None:
+def test_chillz_drops_a_past_event_and_keeps_no_list_of_them(monkeypatch) -> None:
+    """The never-past-events rule: an event that is over is dropped from its page's date, and no
+    file of past URLs is kept (pages are skipped by the sitemap's <lastmod> instead)."""
     from partylinks.scrapers import chillz
 
-    monkeypatch.setattr(chillz, "PAST_FILE", str(tmp_path / "past.json"))
-    chillz._save_past({"https://chillz.com/en/old"})
-    assert chillz._load_past() == {"https://chillz.com/en/old"}
-
+    assert not hasattr(chillz, "PAST_FILE")
     scraper = chillz.ChillzScraper.__new__(chillz.ChillzScraper)
-    scraper._past, scraper.timezone = set(), "Asia/Jerusalem"
+    scraper.timezone = "Asia/Jerusalem"
     old = datetime.now(UTC) - timedelta(days=5)
     monkeypatch.setattr(chillz, "parse_page", lambda html, url, tz: ScrapedEvent(
         source="chillz", source_event_id="x", url=url, title="t", start_at=old))
@@ -705,7 +704,6 @@ def test_chillz_never_fetches_a_page_of_a_past_event_twice(tmp_path, monkeypatch
 
     scraper.get_text = text  # type: ignore[method-assign]
     assert asyncio.run(scraper._fetch_event("https://chillz.com/en/gone")) is None
-    assert scraper._past == {"https://chillz.com/en/gone"}
 
 
 def test_tickchak_reads_every_configured_category_and_tags_its_events() -> None:

@@ -22,8 +22,6 @@ from __future__ import annotations
 
 import asyncio
 import html as html_lib
-import json
-import logging
 import re
 import xml.etree.ElementTree as ET
 from collections.abc import AsyncIterator
@@ -82,10 +80,6 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
     name = "chillz"
     settings_model = ChillzSettings
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._past: set[str] = set()  # pages of events already over (PAST_FILE)
-
     def is_blocked(self, response: httpx.Response) -> bool:
         head = response.content[:200_000].decode("utf-8", errors="ignore").lower()
         return any(marker.lower() in head for marker in self.settings.checkpoint_markers)
@@ -96,19 +90,14 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
         if not self.settings.live:
             return
         pages = await self._discover(self.settings.site_url + self.settings.sitemap_path, set())
-        # Pages of events already over stay over: never fetched again (~1,860 of ~1,960 a run, Oct 2026).
-        self._past = await asyncio.to_thread(_load_past)
-        urls = [url for url, _ in pages if url not in self._past][: self.settings.max_pages]
-        self.log.debug("discovered %d candidate pages (%d known past events skipped)", len(urls), len(pages) - len(urls))
+        # Past events are left out by the sitemap's <lastmod> (recent_days) and by their page's date;
+        # no list of past URLs is kept (the never-past-events rule).
+        urls = [url for url, _ in pages][: self.settings.max_pages]
+        self.log.debug("discovered %d candidate pages", len(urls))
         if not urls:
             return
-        try:
-            async for event in self._fetch_all(urls):
-                yield event
-        finally:
-            # Direct, not to_thread: on shutdown the thread pool is already closed (a run cut short
-            # still keeps what it learned). ~2k URLs, a few ms.
-            _save_past(self._past)
+        async for event in self._fetch_all(urls):
+            yield event
 
     async def _fetch_all(self, urls: list[str]) -> AsyncIterator[ScrapedEvent]:
         # Probe one page first: a checkpoint stops the run here (SourceBlockedError);
@@ -192,30 +181,8 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
         event = parse_page(await self.get_text(url), url, self.timezone)
         if event is not None and (event.end_at or event.start_at) < datetime.now(UTC) - timedelta(days=1):
-            self._past.add(url)  # over: skipped from now on (the service never stores it either)
-            return None
+            return None  # over (the service never stores it either)
         return event
-
-
-# ponytail: on the data volume (data/, Railway's /app/data); a JSON set, ~2k URLs.
-PAST_FILE = "data/chillz_past.json"
-
-
-def _load_past() -> set[str]:
-    try:
-        return set(json.loads(project_path(PAST_FILE).read_text("utf-8")))
-    except (OSError, ValueError):
-        return set()
-
-
-def _save_past(urls: set[str]) -> None:
-    path = project_path(PAST_FILE)
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.with_suffix(".tmp").write_text(json.dumps(sorted(urls)), "utf-8")
-        path.with_suffix(".tmp").replace(path)
-    except OSError as exc:
-        logging.getLogger(__name__).warning("chillz past pages not saved: %s", exc)
 
 
 _SAVED_FROM = re.compile(r"<!--\s*saved from url=\(\d+\)(\S+?)\s*-->", re.IGNORECASE)

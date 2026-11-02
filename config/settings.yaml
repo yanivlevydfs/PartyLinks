@@ -821,6 +821,7 @@ geocoding:
     # The Khan's (Jerusalem) road shows there kept the tenant's city: Nominatim answered in Jerusalem (Nov 2026).
     "בית ציוני אמריקה": [32.0746, 34.7822]              # Beit Zionei America, Daniel Frisch 1, Tel Aviv
     "מדיטק": [32.0118153, 34.7774368]                  # Holon Mediatheque, Golda Meir 6 (all its halls)
+    "אודיטוריום הכט": [32.763218, 35.018062]            # Hecht Auditorium, University of Haifa (the Hecht Museum's building)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
