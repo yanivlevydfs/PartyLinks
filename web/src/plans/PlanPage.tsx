@@ -60,7 +60,10 @@ function PlanView() {
       if (!res.ok) throw new Error(String(res.status));
       return (await res.json()) as Plan;
     },
-    refetchInterval: 20_000, // friends answer while it is open; 3 requests a minute, well under the rate limit
+    // Friends answer while it is open: every 10 s (6 requests a minute, well under the rate limit), and at once
+    // on coming back to the tab (staleTime 0: the app-wide 60 s kept a fresh-looking list on return).
+    refetchInterval: 10_000,
+    staleTime: 0,
     retry: false,
   });
   const mine = data?.votes.find((v) => v.mine);
