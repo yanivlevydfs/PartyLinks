@@ -1646,6 +1646,7 @@ sources:
       - {host: brener, venue_name: מועצה אזורית ברנר}
       - {host: hanadiv-farm, venue_name: חוות הנדיב, city: זכרון יעקב, skip_titles: ["כניסה לחווה"]}
       - {host: papi, venue_name: פאפי כרטיסים, category: הצגות ילדים}   # kids' shows producer, halls nationwide
+      - {host: matnas-arad, rooms: true, venue_name: היכל התרבות ע"ש בייגה שוחט ערד, city: ערד, category: מופעים}
       - {host: htbeithaam, venue_name: היכל התרבות בית העם ירושלים, city: ירושלים}
       - {host: isb7, venue_name: הסינפונייטה הישראלית באר שבע}
       - {host: gderot, venue_name: בית העם גדרות}
