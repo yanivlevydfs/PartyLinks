@@ -803,6 +803,11 @@ geocoding:
   # checked by hand; venues OSM does not know precisely are left off the map, not guessed.
   #   "venue or address keyword": [lat, lon]
   venues:
+    "מוזיאון הטבע התנ\"כי": [31.7545650, 34.9954937]      # Biblical Natural History Museum, Beit Shemesh
+    "מוזיאון האדם והחי": [32.0465660, 34.8239377]        # Man and the Living World Museum, Ramat Gan National Park
+    "פלנתניה": [32.3109065, 34.8479787]                  # Planetanya, Ben Gurion 1, Netanya
+    "בית ביאליק": [32.0729157, 34.7710657]               # Beit Bialik, Bialik St, Tel Aviv
+    "מדעטק": [32.8099659, 34.9961893]                    # MadaTech, Hadar HaCarmel, Haifa
     "מוזיאון העם היהודי": [32.1139956, 34.8053575]       # ANU, Tel Aviv University campus
     "מוזיאון ארץ ישראל": [32.1021160, 34.7960141]        # Eretz Israel Museum (MUZA), Haim Levanon 2
     "הספרייה הלאומית": [31.7766154, 35.2032665]          # National Library of Israel, Rupin 36, Jerusalem
@@ -1588,6 +1593,16 @@ sources:
       - {host: tickets.anumuseum.org.il, rooms: true, venue_name: אנו - מוזיאון העם היהודי, city: תל אביב-יפו,
          skip_titles: ["כניסה למוזיאון"], skip_title_words: ["השתלמויות", "דיגיטף", "תערוכה לילדים"]}
       - {host: tickets.negev-museum.org.il, rooms: true, venue_name: מוזיאון הנגב לאמנות, city: באר שבע}
+      - {host: tickets.madatech.org.il, rooms: true, venue_name: מדעטק - המוזיאון הלאומי למדע, city: חיפה}
+      - {host: chazon-ish, rooms: true, venue_name: חזון לדורות - בית החזון איש, city: בני ברק, skip_titles: ["סיור פרטי"]}
+      - {host: biblicalnaturalhistory, rooms: true, venue_name: מוזיאון הטבע התנ"כי, city: בית שמש, skip_categories: ["סיור עצמאי"]}
+      - {host: adamvechai, rooms: true, venue_name: מוזיאון האדם והחי, city: רמת גן, skip_titles: ["תערוכת 'אופנה חיה'"]}
+      - {host: planetanya, rooms: true, venue_name: פלנתניה - מרכז מדע וחלל, city: נתניה, skip_categories: ["חוגי"],
+         skip_title_words: ["קייטנת", "תוכנית בין דורית"]}
+      - {host: antiquities, rooms: true, venue_name: הקריה הלאומית לארכיאולוגיה של ארץ ישראל, city: ירושלים}
+      - {host: tlv-bialik, rooms: true, venue_name: בית ביאליק, city: תל אביב-יפו, skip_title_words: ["כרטיס כניסה", "בזום"]}
+      - {host: moby, rooms: true, venue_name: מוזיאוני בת ים - MOBY, city: בת ים}
+      - {host: herzliyamuseum, rooms: true, venue_name: מוזיאון הרצליה לאמנות עכשווית, city: הרצליה}
       - {host: htbeithaam, venue_name: היכל התרבות בית העם ירושלים, city: ירושלים}
       - {host: isb7, venue_name: הסינפונייטה הישראלית באר שבע}
       - {host: gderot, venue_name: בית העם גדרות}
