@@ -43,6 +43,7 @@ from partylinks.artwork import service as artwork
 from partylinks.artwork.routes import router as artwork_router
 from partylinks.bot import install as install_bot
 from partylinks.bot.telegram.webhook import username as telegram_username
+from partylinks.box_offices import BoxOfficeOut, box_offices
 from partylinks.config import Settings, get_settings
 from partylinks.config_store import store as config_overrides
 from partylinks.db import (
@@ -351,6 +352,7 @@ class StoreOut(BaseModel):
 class Stores(BaseModel):
     stores: list[StoreOut]
     total: int  # upcoming real events across all stores, each once (one sold on three sites counts 1, not 3)
+    box_offices: list[BoxOfficeOut] = []  # each Smarticket tenant (a city's hall, a council) as its own store
 
 
 class FacetValue(BaseModel):
@@ -1464,7 +1466,9 @@ def _register_routes(app: FastAPI) -> None:
                 if cfg.enabled:
                     counts.setdefault(name, 0)
             stores = [StoreOut(name=s, events=n, updated_at=done.get(s)) for s, n in counts.most_common()]
-            return Stores(stores=stores, total=len({group for group, _ in listings}))
+            sources = configured_sources(request.app.state.settings)
+            offices = box_offices(session, sources)
+            return Stores(stores=stores, total=len({group for group, _ in listings}), box_offices=offices)
 
         return _cached(request, build)
 

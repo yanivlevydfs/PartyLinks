@@ -87,10 +87,12 @@ export const useSponsored = () => useKept<SponsoredRails>("sponsored", "/events/
 export const useRails = () => useKept<{ rails: Record<string, EventSummary[]> }>("rails", "/events/rails");
 
 export interface TicketSite { name: string; events: number; updated_at: string | null }
+/** A box office inside a platform (a Smarticket tenant: a city's culture hall, a council, a theatre). */
+export interface BoxOffice { source: string; name: string; city: string | null; url: string; events: number }
 
 /** The stores page: upcoming events per ticket site, with its last scrape. */
 export const useTicketSites = () =>
-  useQuery({ queryKey: ["ticket-sites"], queryFn: () => getJSON<{ stores: TicketSite[]; total?: number }>("/ticket-sites"), staleTime: 5 * 60_000 });
+  useQuery({ queryKey: ["ticket-sites"], queryFn: () => getJSON<{ stores: TicketSite[]; total?: number; box_offices?: BoxOffice[] }>("/ticket-sites"), staleTime: 5 * 60_000 });
 
 export const usePost = (slug: string, lang: string) =>
   useQuery({ queryKey: ["post", slug, lang], queryFn: () => getJSON<Post>(`/posts/${encodeURIComponent(slug)}?lang=${lang}`) });

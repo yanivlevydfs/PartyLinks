@@ -74,6 +74,8 @@ const TEXT = {
     site: "לאתר",
     browse: "לאירועים שלהם",
     updated: "עודכן",
+    offices: "קופות של ערים, מועצות ואולמות",
+    officesIntro: "קופות הכרטיסים של היכלות תרבות, מתנ\"סים, מועצות ותיאטראות שאנחנו קוראים דרך Smarticket.",
   },
   en: {
     title: "Ticket stores",
@@ -83,6 +85,8 @@ const TEXT = {
     site: "Website",
     browse: "Their events",
     updated: "Updated",
+    offices: "City, council and venue box offices",
+    officesIntro: "The box offices of culture halls, community centres, councils and theatres we read through Smarticket.",
   },
 };
 
@@ -156,6 +160,20 @@ export default function StoresPage() {
             );
           })}
         </ol>
+        {!!sites.data?.box_offices?.length && (
+          <section className="box-offices">
+            <h4 className="section-title">{t.offices}</h4>
+            <p className="msg">{t.officesIntro}</p>
+            <div className="facet-grid">
+              {sites.data.box_offices.map((o) => (
+                <a key={o.url} className="facet" href={o.url} target="_blank" rel="noopener noreferrer">
+                  <b dir="auto">{o.name}</b>
+                  <small>{strings.events(o.events)}{o.city ? ` · ${o.city}` : ""} · <span dir="ltr">{domain(o.url)}</span> ↗</small>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </>
   );
