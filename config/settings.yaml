@@ -415,7 +415,7 @@ enrichment:
     work_spaces: ["work spaces"]
     volunteering: ["volunteering"]
     team_activities: ["team activities"]
-    nightclubs: ["nightclubs"]
+    nightclubs: ["nightclubs", "parties"]  # parties: Secret Tel Aviv's category
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
@@ -440,7 +440,9 @@ enrichment:
     food: ["food events", "food", "אוכל", "מזון", "מפגשים קולינריים", "טעימות יין", "טעימות בירה", "tastings"]
     environment: ["environmental", "סביבה", "איכות הסביבה", "קיימות", "טבע", "גינות"]
     religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат", "chassidic", "religion"]
-    holidays: ["holidays", "halloween", "חגים", "חג", "праздник"]
+    holidays: ["holidays", "halloween", "חגים", "חג", "праздник", "hanukkah", "chanukah", "christmas", "new year",
+               "thanksgiving", "חנוכה", "פורים", "סילבסטר"]
+    lgbt: ["pride"]
     sport: ["sport", "sports", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
             "מרוץ", "אופניים", "אימוני כושר", "קבוצת הליכה", "פוצ'יוולי", "footvolley", "urheilu"]
     yoga_wellness: ["wellness", "health", "בריאות", "פילאטיס"]
@@ -2358,6 +2360,7 @@ sources:
     run_timeout_seconds: 3600
     http:
       concurrency: 3   # 8 at once drew 429s from rehovot.muni.il (Cloudflare), 4 event pages lost a run (Nov 2026)
+      request_delay_seconds: 0.3
     cron: "3 6,18 * * *"
     sites:
       - {url: https://www.rosh-haayin.muni.il, city: ראש העין}
@@ -2464,9 +2467,6 @@ sources:
       - {url: https://www.alfe-menashe.muni.il, city: אלפי מנשה, organizer: מועצה מקומית אלפי מנשה}
       - {url: https://www.ramat-yishay.com, city: רמת ישי, organizer: מועצה מקומית רמת ישי}
       - {url: https://www.efrat.muni.il/he, city: אפרת, organizer: מועצה מקומית אפרת, feed: false}
-    http:
-      concurrency: 8  # 4 took longer than the 30-min run limit
-      request_delay_seconds: 0.3
 
   haifamuni:
     # Haifa municipality city-events (WordPress; REST API closed): one listing page (~60 events),
