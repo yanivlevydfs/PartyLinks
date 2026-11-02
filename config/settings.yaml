@@ -509,6 +509,7 @@ enrichment:
     arenas: [culture]
     gagarin: [nightclubs]  # club nights the API leaves uncategorised ("INSOMNIA #25")
     tzkrti: [culture]  # "evenings" and "social events" (a Christmas market, a conference) name no genre
+    jaffatheatre: [theatre]
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
     telaviv: [culture]  # municipal programme tagged by audience or "קהילה"
@@ -2706,6 +2707,41 @@ sources:
     enabled: true
     cron: "27 7,19 * * *"
     site_url: https://tzkrti.com
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
+
+  fever:
+    # Fever (feverup.com) in Israel: Candlelight concerts at the Tel Aviv Museum of Art, the Eretz Israel
+    # Museum, the Jerusalem Theatre and the Rappaport Center. 3 city pages + ~60 plan pages; only plans
+    # with a dated Event JSON-LD (its next session, place coordinates, ILS offers) are events.
+    enabled: true
+    cron: "13 7,19 * * *"
+    site_url: https://feverup.com
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+
+  jaffatheatre:
+    # Jaffa Theatre: the Arab-Hebrew stage at Mifratz Shlomo. The home page links every upcoming
+    # performance to TicketTool (~40); each TicketTool page's title holds the show and date. One venue.
+    enabled: true
+    cron: "18 7,19 * * *"
+    site_url: https://www.jaffatheatre.org.il
+    source_genres: []   # plays and concerts alike: the section names the genre, else theatre (source_default_genres)
+    section_genres:     # the site's section of each show page
+      shows: [תיאטרון]
+      libi-bamizrach: [פסטיבל, מוזיקה מזרחית]     # "Libi BaMizrach", its Mizrahi and Arab music festival
+      children-festival: [פסטיבל, הצגות ילדים]
+      womens-festival: [פסטיבל]
+      yafa-festival: [פסטיבל]
+      literature: [ספרות]
+      arabic-literature: [ספרות]
+    venue_name: תיאטרון יפו - במה לתרבות ערבית-עברית
+    address: "מפרץ שלמה 10, יפו"
+    city: תל אביב-יפו
+    latitude: 32.0548894   # Nominatim: the theatre itself (amenity=theatre)
+    longitude: 34.7539944
     http:
       concurrency: 2
       request_delay_seconds: 0.5

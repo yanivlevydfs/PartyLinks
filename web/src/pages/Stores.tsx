@@ -21,7 +21,7 @@ const KINDS: Record<Kind, Record<Lang, string>> = {
 // Store home page and kind; a source missing here still shows, without a link.
 const STORES: Record<string, [string | null, Kind]> = {
   goout: ["https://www.go-out.co", "tickets"], eventer: ["https://www.eventer.co.il", "tickets"],
-  zygo: ["https://zygo.co.il", "tickets"], goshow: ["https://www.goshow.co.il", "tickets"], tzkrti: ["https://tzkrti.com", "tickets"], tickchak: ["https://live.tickchak.co.il", "tickets"],
+  zygo: ["https://zygo.co.il", "tickets"], goshow: ["https://www.goshow.co.il", "tickets"], tzkrti: ["https://tzkrti.com", "tickets"], fever: ["https://feverup.com/en/tel-aviv-israel", "tickets"], tickchak: ["https://live.tickchak.co.il", "tickets"],
   selector: ["https://selector.org.il", "tickets"], chillz: ["https://chillz.com", "tickets"],
   mevalim: ["https://www.mevalim.co.il", "tickets"], megatickets: ["https://www.megatickets.co.il", "tickets"],
   eventbuzz: ["https://eventbuzz.co.il", "tickets"], popit: ["https://popit.events", "tickets"],
@@ -40,7 +40,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   yellowsubmarine: ["https://yellowsubmarine.org.il", "venue"], halutz: ["https://www.halutz.co.il", "venue"],
   haezor: ["https://haezor.com", "venue"], levontin7: ["https://levontin7.com", "venue"], reading3: ["https://www.reading3.co.il", "venue"], babebar: ["https://babebar.co.il", "venue"],
   bargiyora: ["https://bar-giyora.co.il", "venue"],
-  makore: ["https://www.makore.co.il", "culture"], jerusalemtheatre: ["https://www.jerusalem-theatre.co.il", "culture"],
+  makore: ["https://www.makore.co.il", "culture"], jaffatheatre: ["https://www.jaffatheatre.org.il", "culture"], jerusalemtheatre: ["https://www.jerusalem-theatre.co.il", "culture"],
   beershevatheatre: ["https://b7t.co.il", "culture"], hatarbut: ["https://www.hatarbut.co.il", "culture"], zoatlv: ["https://zoatlv.co.il", "culture"],
   habama: ["https://www.habama.co.il", "culture"], friendshist: ["https://friends-hist.co.il", "culture"],
   hamenagen: ["https://hamenagen.net", "culture"], poalimatarim: ["https://poalimatarim.com", "culture"],
