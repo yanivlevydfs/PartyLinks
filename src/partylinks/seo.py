@@ -398,28 +398,33 @@ _NOT_PLACE = ~func.coalesce(EventRow.extra[PLACE_LISTING].as_boolean(), False)
 
 
 def _website(cfg: Settings, lang: str) -> list[dict[str, Any]]:
-    org = {
-        "@context": "https://schema.org",
+    """The home page's Organization and WebSite nodes (Google: on the home page only), for its @graph."""
+    base = cfg.site.base_url
+    org: dict[str, Any] = {
         "@type": "Organization",
-        "@id": cfg.site.base_url + "/#org",
+        "@id": base + "/#org",
         "name": cfg.site.name,
-        "url": cfg.site.base_url + "/",
-        "alternateName": urlsplit(cfg.site.base_url).hostname,
+        "alternateName": urlsplit(base).hostname,
+        "url": base + "/",
         "description": TEXT[lang]["site_desc"],
-        "logo": cfg.site.base_url + "/icon-512.png?v=spotx2",
+        "logo": {"@type": "ImageObject", "url": base + "/icon-512.png?v=spotx2", "width": 512, "height": 512},
         "areaServed": {"@type": "Country", "name": "Israel"},
-    }
+        # No address in the markup: the contact page hides it from harvesters.
+        "contactPoint": {"@type": "ContactPoint", "contactType": "customer support", "url": base + "/contact",
+                         "availableLanguage": ["he", "en"]},
+    }  # fmt: skip
+    if cfg.site.same_as:
+        org["sameAs"] = cfg.site.same_as
     site = {
-        "@context": "https://schema.org",
         "@type": "WebSite",
-        "@id": cfg.site.base_url + "/#website",
+        "@id": base + "/#website",
         "name": cfg.site.name,
         # Google's site name: the domain as the last fallback name ("spotx.fun").
-        "alternateName": urlsplit(cfg.site.base_url).hostname,
-        "url": cfg.site.base_url + "/",
+        "alternateName": urlsplit(base).hostname,
+        "url": base + "/",
         "description": TEXT[lang]["site_desc"],
         "inLanguage": ["he", "en"],
-        "publisher": {"@id": cfg.site.base_url + "/#org"},
+        "publisher": {"@id": base + "/#org"},
     }
     return [org, site]
 
@@ -451,22 +456,45 @@ def _where_to(session: Session, cfg: Settings, lang: str) -> list[tuple[str, str
     return qa
 
 
+def _home_graph(cfg: Settings, lang: str, t: dict[str, str], rows: list[EventRow], faq: list[tuple[str, str]]) -> dict[str, Any]:
+    """One linked @graph: the organization, the site, this page, its list of events and its questions."""
+    base = cfg.site.base_url
+    events = {**_item_list(rows, cfg, t["upcoming"]), "@id": base + "/#upcoming"}
+    events.pop("@context")
+    page = {
+        "@type": "WebPage",
+        "@id": base + "/#webpage",
+        "url": base + "/",
+        "name": t["site_title"],
+        "description": t["site_desc"],
+        "inLanguage": lang,
+        "isPartOf": {"@id": base + "/#website"},
+        "about": {"@id": base + "/#org"},
+        "primaryImageOfPage": base + "/og-default.png?v=spotx2",
+        "mainEntity": {"@id": base + "/#upcoming"},
+    }
+    graph = [*_website(cfg, lang), page, events]
+    if faq:
+        graph.append({
+            "@type": "FAQPage",
+            "@id": base + "/#faq",
+            "isPartOf": {"@id": base + "/#website"},
+            "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq],
+        })  # fmt: skip
+    return {"@context": "https://schema.org", "@graph": graph}
+
+
 def home_page(session: Session, cfg: Settings, lang: str) -> Page:
     t = TEXT[lang]
     rows = _upcoming(session, _NOT_PLACE)
     faq = _where_to(session, cfg, lang)
-    faq_ld = {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq],
-    }
     faq_html = "".join(f"<h2>{escape(q)}</h2><p>{escape(a)}</p>" for q, a in faq)
     return Page(
         title=t["site_title"],
         description=t["site_desc"],
         path="/",
         lang=lang,
-        jsonld=[*_website(cfg, lang), _item_list(rows, cfg, t["upcoming"]), *([faq_ld] if faq else [])],
+        jsonld=[_home_graph(cfg, lang, t, rows, faq)],
         body=f"<h1>{escape(t['site_title'])}</h1><p>{escape(t['site_desc'])}</p>{faq_html}{_landing_links(session, cfg, lang)}"
         f"<h2>{escape(t['upcoming'])}</h2>" + _event_list_html(rows, cfg, lang),
     )

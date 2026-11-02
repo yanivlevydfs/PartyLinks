@@ -489,6 +489,8 @@ class SiteSettings(BaseModel):
     name: str = "SPOTX"
     # Contact and partnerships address shown on /contact and /partners (falls back to privacy.email).
     email: str = ""
+    # The site's own profiles elsewhere (its Telegram bot, social pages): Organization.sameAs in the home's JSON-LD.
+    same_as: list[str] = Field(default_factory=list)
     accessibility: AccessibilitySettings = Field(default_factory=AccessibilitySettings)
     privacy: PrivacySettings = Field(default_factory=PrivacySettings)
     indexnow: IndexNowSettings = Field(default_factory=IndexNowSettings)
