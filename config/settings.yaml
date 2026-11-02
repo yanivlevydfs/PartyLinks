@@ -499,6 +499,7 @@ enrichment:
     pres: [theatre]
     # Municipal culture halls (shows the title alone doesn't name), concert trips abroad, party sites.
     smarticket: [culture]
+    smarticket_il: [culture]
     ticketplace: [live_show]
     happytlv: [nightclubs]
     shotgun: [nightclubs]
@@ -1475,6 +1476,25 @@ sources:
       concurrency: 1
       request_delay_seconds: 1.5
 
+  smarticket_il:
+    # Smarticket box offices that answer our Israeli VPN only (403 to Railway's and evomi's IPs, Nov 2026):
+    # same API as `smarticket`, their own source so only they go through the VPN.
+    enabled: true
+    vpn: true  # our Israeli VPN only (Railway production)
+    cron: "48 6,18 * * *"
+    tenant_domain: smarticket.co.il
+    shows_path: /api/shows
+    event_page_path: /event/{id}
+    uploads_path: /uploads/
+    calendar_path: /api/show_theater/get_events_calendar
+    calendar_windows: 2
+    http:
+      concurrency: 2
+      user_agent: "SPOTX/1.0 (event aggregator; contact via site owner)"
+    tenants:
+      # FRIENDS culture club's box office: theatre, kids' shows, stand-up, concerts, films, talks in halls nationwide.
+      - {host: friends, venue_name: FRIENDS}
+
   smarticket:
     # Smarticket white-label box offices: one GET /api/shows per tenant (prices inline).
     # The vendor's main site disallows /api/ (tenant hosts have no robots.txt), so stay gentle:
@@ -1629,8 +1649,6 @@ sources:
       - {host: moby, rooms: true, venue_name: מוזיאוני בת ים - MOBY, city: בת ים}
       - {host: herzliyamuseum, rooms: true, venue_name: מוזיאון הרצליה לאמנות עכשווית, city: הרצליה}
       # Found in the Wayback Machine's index of *.smarticket.co.il (Nov 2026).
-      # FRIENDS culture club's box office: theatre, kids' shows, stand-up, concerts, films, talks in halls nationwide.
-      - {host: friends, venue_name: FRIENDS}
       - {host: beit-zvi, rooms: true, venue_name: בית צבי - בית הספר לאמנויות הבמה, city: רמת גן}
       - {host: evenyehuda-community, venue_name: מרכז קהילתי אבן יהודה, city: אבן יהודה, skip_title_words: ["חוג", "קורס", "ג׳ימבורי", "ג'ימבורי"]}
       - {host: eilatmatnasim, venue_name: רשת המתנ"סים אילת, city: אילת, skip_title_words: ["חוג", "קורס"]}

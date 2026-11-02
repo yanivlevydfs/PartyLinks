@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 99 configured sources, all on. Each one has its own module in
+SPOTX collects from 100 configured sources, all on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -57,6 +57,7 @@ pagination and what the listing and the event page provide.
 | `zappa` | Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni, on the Eventim platform (`eventim.py`) | 09:47, 21:47 | yes |
 | `pres` | PRES ticketing platform (pres.global): Kupat Tel Aviv, Cameri, Habima, the Israeli Opera, the Khan and more | 06:28, 18:28 | yes |
 | `pres_il` | PRES box offices that answer Israeli IPs only: Beit Lessin, the Israel Philharmonic (`pres.py`, through the Israeli proxies) | 06:34, 18:34 | yes |
+| `smarticket_il` | Smarticket box offices that answer our Israeli VPN only: FRIENDS (`smarticket.py`, through the VPN) | 06:48, 18:48 | yes |
 | `kupatbravo` | Kupat Bravo (kupatbravo.co.il): nationwide box office (theatre, concerts, opera, dance, kids) | 06:41, 18:41 | yes |
 | `smarticket` | Smarticket - white-label box office used by theatres and municipal culture halls | 06:14, 18:14 | yes |
 | `leaan` | Leaan (leaan.co.il): ticketing site for shows, stand-up, kids' shows and sport (Next.js) | 07:17, 19:17 | yes |

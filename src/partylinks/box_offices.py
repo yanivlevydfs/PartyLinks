@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from partylinks.scrapers.base import SourceSettings
 
-SOURCE = "smarticket"
+SOURCES = ("smarticket", "smarticket_il")  # smarticket_il: the box offices behind our VPN
 
 
 class BoxOfficeOut(BaseModel):
@@ -36,18 +36,22 @@ class BoxOfficeOut(BaseModel):
 
 def box_offices(session: Session, sources: dict[str, SourceSettings]) -> list[BoxOfficeOut]:
     """Every configured tenant of an enabled Smarticket source, most upcoming events first."""
-    settings = sources.get(SOURCE)
-    if not isinstance(settings, SmarticketSettings) or not settings.enabled:
-        return []
-    rows = session.execute(
-        select(EventRow.group_id, EventRow.url).where(EventRow.source == SOURCE, upcoming_filter()).distinct()
-    ).all()
-    counts = Counter(host for _, host in {(group, urlsplit(url).hostname) for group, url in rows})
-    offices = {
-        host: BoxOfficeOut(
-            source=SOURCE, name=t.venue_name or host, city=t.city, url=f"https://{host}", events=counts.get(host, 0)
-        )
-        for t in settings.tenants
-        if (host := tenant_host(t.host, settings.tenant_domain))
-    }
+    offices: dict[str, BoxOfficeOut] = {}
+    for source in SOURCES:
+        settings = sources.get(source)
+        if not isinstance(settings, SmarticketSettings) or not settings.enabled:
+            continue
+        rows = session.execute(
+            select(EventRow.group_id, EventRow.url).where(EventRow.source == source, upcoming_filter()).distinct()
+        ).all()
+        counts = Counter(host for _, host in {(group, urlsplit(url).hostname) for group, url in rows})
+        for t in settings.tenants:
+            if host := tenant_host(t.host, settings.tenant_domain):
+                offices[host] = BoxOfficeOut(
+                    source=source,
+                    name=t.venue_name or host,
+                    city=t.city,
+                    url=f"https://{host}",
+                    events=counts.get(host, 0),
+                )
     return sorted(offices.values(), key=lambda o: (-o.events, o.name))

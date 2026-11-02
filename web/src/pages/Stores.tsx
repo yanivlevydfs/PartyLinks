@@ -28,7 +28,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   leaan: ["https://www.leaan.co.il", "tickets"], ticketmaster: ["https://www.ticketmaster.co.il", "tickets"],
   kupatbravo: ["https://kupatbravo.co.il", "tickets"], tiktik: ["https://www.tiktik-online.co.il", "tickets"],
   eventim: ["https://www.eventim.co.il", "tickets"], smarticket: ["https://smarticket.co.il", "tickets"],
-  pres: ["https://pres.global", "tickets"], pres_il: ["https://pres.global", "tickets"], drop: ["https://tdrop.net", "tickets"], vibez: ["https://web.vibez.io", "tickets"],
+  pres: ["https://pres.global", "tickets"], pres_il: ["https://pres.global", "tickets"], smarticket_il: ["https://www.smarticket.co.il", "tickets"], drop: ["https://tdrop.net", "tickets"], vibez: ["https://web.vibez.io", "tickets"],
   shotgun: ["https://shotgun.live", "tickets"], luma: ["https://luma.com", "tickets"], meetup: ["https://www.meetup.com", "tickets"],
   arenas: ["https://live.tickchak.co.il", "tickets"], barak: ["https://www.barak-tickets.co.il", "tickets"],
   comy: ["https://comy.co.il", "tickets"], eventbrite: ["https://www.eventbrite.com", "tickets"],

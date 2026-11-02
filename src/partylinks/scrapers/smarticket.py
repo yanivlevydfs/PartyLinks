@@ -273,3 +273,15 @@ def _local(day: Any, time: Any, timezone: str) -> datetime | None:
     if not day_s or not time_s:
         return None
     return datetime.strptime(f"{day_s} {time_s[:5]}", "%Y-%m-%d %H:%M").replace(tzinfo=ZoneInfo(timezone))
+
+
+class SmarticketIsraelScraper(SmarticketScraper):
+    """Smarticket box offices that answer our Israeli VPN only (FRIENDS: 403 to Railway's and the proxy's
+    IPs, Nov 2026): same API, their own source so only they go through the VPN."""
+
+    name = "smarticket_il"
+
+    async def scrape(self) -> AsyncIterator[ScrapedEvent]:
+        async for event in super().scrape():
+            event.source = self.name
+            yield event
