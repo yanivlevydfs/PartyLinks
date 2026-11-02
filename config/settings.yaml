@@ -230,7 +230,7 @@ enrichment:
     name: Tel Aviv
     # Events whose city/address matches none of these are flagged out-of-city.
     aliases: &tel_aviv ["tel aviv", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "tlv", "jaffa", "yafo",
-              "תל אביב", "תל-אביב", "תל אביב-יפו", "תל אביב יפו", "ת\"א", "ת״א", "יפו"]
+              "תל אביב", "תל-אביב", "תל אביב-יפו", "תל אביב יפו", "ת\"א", "ת״א", "תא", "יפו"]
     # false = every city in Israel is imported (in_target_city only flags Tel Aviv events for
     # the area filter). true = Tel Aviv only: other cities are not imported and are purged.
     drop_other_cities: false

@@ -24,6 +24,8 @@ export const STRINGS = {
     venuesTitle: "מקומות",
     searchList: "חיפוש לפי שם…",
     noMatch: (q: string) => `לא נמצא "${q}".`,
+    widened: (q: string, kind: string, wider: string) =>
+      kind === "date" ? `אין "${q}" בתאריך הזה. הנה "${wider}" בתאריכים אחרים:` : `אין "${q}" במקום הזה. הנה "${wider}" בכל מקום:`,
     closest: (q: string) => `לא נמצא "${q}". אולי התכוונתם:`,
     accessibility: "הצהרת נגישות",
     isNew: "חדש",
@@ -224,6 +226,8 @@ export const STRINGS = {
     venuesTitle: "Venues",
     searchList: "Search by name…",
     noMatch: (q: string) => `No match for "${q}".`,
+    widened: (q: string, kind: string, wider: string) =>
+      kind === "date" ? `Nothing for "${q}" on that date. Here is "${wider}" on other dates:` : `Nothing for "${q}" there. Here is "${wider}" everywhere:`,
     closest: (q: string) => `No match for "${q}". Did you mean:`,
     accessibility: "Accessibility statement",
     isNew: "New",

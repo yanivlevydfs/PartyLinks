@@ -539,13 +539,15 @@ export function EventGrid({ params, empty }: { params: Params; empty?: (page?: E
   const { t } = useT();
   const q = useEvents({ ...params, sponsored: "true" });
   const items = q.data?.pages.flatMap((p) => p.items) ?? [];
-  const total = q.data?.pages[0]?.total ?? 0;
+  const first = q.data?.pages[0];
+  const total = first?.total ?? 0;
 
   if (q.isError) return <p className="msg">{t.error}</p>;
   if (q.isPending) return <GridLoading />;
   return (
     <>
       <p className="count">{t.results(total)}</p>
+      {first?.widened && first.widened_q && <p className="msg widened">{t.widened(String(params.q ?? ""), first.widened, first.widened_q)}</p>}
       {items.length === 0 && (empty?.(q.data?.pages[0]) ?? <p className="msg">{t.empty}</p>)}
       <div className={"grid" + (q.isPlaceholderData ? " stale" : "")} aria-busy={q.isPlaceholderData}>{items.map((e) => <Card key={e.id} e={e} />)}</div>
       {q.hasNextPage && (

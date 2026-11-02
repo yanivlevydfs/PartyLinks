@@ -42,6 +42,7 @@ from partylinks.ads import service as ads
 from partylinks.artwork import service as artwork
 from partylinks.artwork.routes import router as artwork_router
 from partylinks.bot import install as install_bot
+from partylinks.bot.core import understand
 from partylinks.bot.core.find import free_text
 from partylinks.bot.telegram.webhook import username as telegram_username
 from partylinks.box_offices import BoxOfficeOut, box_offices
@@ -289,6 +290,10 @@ class EventPage(BaseModel):
     items: list[EventSummaryOut]
     # A search that found nothing: the closest known name that finds something ("did you mean").
     did_you_mean: str | None = None
+    # A search that found nothing, widened as the bot does: "date" or "place" was dropped, and these
+    # events are what ``widened_q`` finds (the other filters kept).
+    widened: str | None = None
+    widened_q: str | None = None
 
 
 class RailsOut(BaseModel):
@@ -1191,7 +1196,8 @@ def _register_routes(app: FastAPI) -> None:
             where = [*filters, EventRow.id.not_in(drop)] if drop else filters
             start, stop = max((page - 1) * size - len(drop), 0), page * size - len(drop)
             weak: set[str] = set()
-            if rank is None:
+
+            def by_date(where: list[ColumnElement[bool]]) -> tuple[int, Sequence[EventRow]]:
                 total = session.scalar(select(func.count()).select_from(EventRow).where(*where)) or 0
                 # By date: a day's events first, then its place listings (a club or café "open today",
                 # thousands of them at 00:00, which would otherwise bury every real event).
@@ -1208,6 +1214,10 @@ def _register_routes(app: FastAPI) -> None:
                     .offset(start)
                     .limit(stop - start)
                 ).all()
+                return total, rows
+
+            if rank is None:
+                total, rows = by_date(where)
             else:
                 # Ranking reads every match anyway, so one pass gives both the order and the total
                 # (measured at 35k events: as fast as the count + page it replaces).
@@ -1219,7 +1229,17 @@ def _register_routes(app: FastAPI) -> None:
             total += len(drop)
             promoted = {r.id: pick for r, pick in first}
             rows = [r for r, _ in first] + list(rows)
-            suggestion = None
+            suggestion = widened = widened_q = None
+            if q and not total and not drop and smart_filters(q, cfg):  # the search is the last filter
+                # As the bot does: without the date words ("היום"), then without the place, keeping the rest.
+                text = understand.clean(q, MAX_TEXT_PARAM)
+                named = understand.kinds(text, cfg, understand.today_in(cfg))
+                for kind in ("date", "place"):
+                    if named[kind] and (wider := understand.without(text, named[kind])):
+                        total, rows = by_date([*filters[:-1], *smart_filters(wider, cfg)])
+                        if total:
+                            widened, widened_q = kind, wider
+                            break
             if q and not total:  # what people look for and we lack; once per cached answer
                 log.info("search miss: %r", q[:100])
                 names = (n for names in _sound_index(request).values() for n in names)
@@ -1233,7 +1253,9 @@ def _register_routes(app: FastAPI) -> None:
                 EventSummaryOut.model_validate(r).model_copy(update=extras[r.id] | {"sponsored": promoted.get(r.id), "in_text": r.id in weak})
                 for r in rows
             ]
-            return EventPage(total=total, page=page, page_size=size, items=items, did_you_mean=suggestion)
+            return EventPage(
+                total=total, page=page, page_size=size, items=items, did_you_mean=suggestion, widened=widened, widened_q=widened_q
+            )
 
         response = _cached(request, build)
         # A visitor's search, counted once: the site's results grid (sponsored=true), not the side counts

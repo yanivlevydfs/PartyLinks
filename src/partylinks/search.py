@@ -47,6 +47,23 @@ WEEKEND = {
     "סוף השבוע",
 }
 
+# Chat words that are not what an event's text holds ("בא לי", "find me"): left in, each would have to match and
+# find nothing. Dropped from the free words only, after known names and dates are taken.
+FILLER = {
+    "מה", "יש", "לי", "לנו", "תמצא", "תמצאי", "תחפש", "תחפשי", "תביא", "תביאי", "תראה", "תראי", "תן", "תני",
+    "אני", "אנחנו", "רוצה", "רוצים", "מחפש", "מחפשת", "מחפשים", "בא", "באלי", "משהו", "איזה", "איזשהו",
+    "אירוע", "אירועים", "דברים", "של", "את", "גם", "אולי", "בבקשה", "פליז", "טוב", "טובים", "טובה", "כל", "הכל",
+    "איפה", "מתי", "לצאת", "לבלות", "בילוי", "בילויים", "שווה", "שווים", "מומלץ", "מומלצים", "כיף", "כיפי", "נחמד",
+    "אפשר", "צריך", "יודע", "תגיד", "תגידי", "ומה", "עם", "קורה", "הולך", "ללכת", "נלך", "לאן",
+    "please", "pls", "what", "whats", "what's", "is", "are", "there", "any", "anything", "some", "something",
+    "find", "me", "show", "i", "want", "wanna", "looking", "for", "events", "event", "things", "to", "do", "go",
+    "on", "the", "a", "an", "at", "good", "best", "fun", "happening", "can", "you", "get", "us", "we", "and",
+    "about", "how", "in", "of", "with", "this", "near",
+    # "ביום שישי הקרוב", "מסיבה עד 100 שקל", "מה יש לעשות": words around a date, price or wish
+    "הקרוב", "הקרובה", "הקרובים", "הקרובות", "הזה", "הזו", "הזאת", "coming", "upcoming", "next",
+    "שקל", "שקלים", "לעשות", "לראות", "לשמוע", "שאפשר", "מעניין", "מעניינים", "פעילות", "פעילויות", "activity", "activities",
+}  # fmt: skip
+
 HOLIDAY_NAMES = {
     "hanukkah": ("חנוכה", "hanukkah", "chanukah", "hanukah"), "purim": ("פורים", "purim"),
     "passover": ("פסח", "passover", "pesach"), "shavuot": ("שבועות", "shavuot"),
@@ -116,6 +133,26 @@ def _next_holiday(today: date, key: str) -> tuple[date, date]:
     raise AssertionError(key)
 
 
+# A day by number, Israeli order (day first): "7.11", "ב-7/11", "7.11.26", "07/11/2026".
+EXACT_DATE = re.compile(r"(?<!\S)(?:[בלמ]-?)?(\d{1,2})[./](\d{1,2})(?:[./](\d{4}|\d{2}))?(?!\S)")
+
+
+def exact_dates(text: str, today: date) -> dict[str, date]:
+    """Each "7.11"-style phrase in ``text`` -> its date; no year: the next one (a date passed this year is next year's)."""
+    out = {}
+    for m in EXACT_DATE.finditer(text):
+        day, month, year = int(m[1]), int(m[2]), m[3]
+        y = (2000 + int(year) if len(year) == 2 else int(year)) if year else today.year
+        try:
+            d = date(y, month, day)
+            if not year and d < today:
+                d = date(y + 1, month, day)
+        except ValueError:
+            continue  # not a date ("40.5", "31.2"): left as a word
+        out[m[0]] = d
+    return out
+
+
 @lru_cache(maxsize=4)
 def date_ranges(today: date) -> dict[str, tuple[date, date]]:
     """Search phrase -> the dates it means from ``today``: "השבוע", "בדצמבר", "ביום שישי", "חנוכה"."""
@@ -170,6 +207,50 @@ SYNONYMS: dict[str, tuple[str, ...]] = {
     "הפי אוור": ("happy_hour",), "יוגה": ("yoga_wellness",), "אופרה": ("classical_opera",), "קלאסית": ("classical_opera",),
     "רוק": ("rock_indie",), "אינדי": ("rock_indie",), "דיסקו": ("disco_funk",), "רגאטון": ("reggaeton_latin",), "לטיני": ("reggaeton_latin",),
 }  # fmt: skip
+# Every kind of event by the words people use for it (singular, plural, slang, English), on top of the
+# category labels themselves (_genre_names): a search names a category in many ways. Only words that name
+# the category itself: a sub-kind ("מרתון", "יין", "מטאל") is matched as a word, not as its whole category.
+SYNONYMS.update({
+    "קולנוע": ("cinema",), "הקרנה": ("cinema",), "הקרנות": ("cinema",), "הקרנת": ("cinema",), "בכורה": ("cinema",),
+    "movie": ("cinema",), "movies": ("cinema",), "film": ("cinema",), "films": ("cinema",), "screening": ("cinema",),
+    "תיאטרון": ("theatre",), "מחזה": ("theatre",), "מחזות": ("theatre",), "מחזות זמר": ("theatre",), "הצגת": ("theatre",),
+    "play": ("theatre",), "plays": ("theatre",), "theater": ("theatre",), "musical": ("theatre",), "musicals": ("theatre",),
+    "סטנדאפ": ("stand_up",), "סטנד-אפ": ("stand_up",), "סטנדאפיסט": ("stand_up",), "קומי": ("stand_up",),
+    "comedy": ("stand_up",), "standup": ("stand_up",), "stand-up": ("stand_up",), "קומדיות": ("stand_up",),
+    "הרצאות": ("lectures",), "שיחה": ("lectures",), "lecture": ("lectures",), "lectures": ("lectures",), "talk": ("lectures",), "talks": ("lectures",),
+    "סדנת": ("workshops",), "קורס": ("workshops",), "קורסים": ("workshops",), "workshop": ("workshops",), "workshops": ("workshops",),
+    "תערוכה": ("exhibitions",), "תערוכות": ("exhibitions",), "גלריה": ("exhibitions",), "גלריות": ("exhibitions",), "מוזיאון": ("exhibitions",),
+    "מוזיאונים": ("exhibitions",), "אמנות": ("exhibitions",), "exhibition": ("exhibitions",), "museum": ("exhibitions",),
+    "museums": ("exhibitions",), "gallery": ("exhibitions",), "art": ("exhibitions",),
+    "לילדים": ("kids",), "משפחות": ("kids",), "לכל המשפחה": ("kids",), "פעוטות": ("kids",), "תינוקות": ("kids",),
+    "kids": ("kids",), "children": ("kids",), "family": ("kids",), "families": ("kids",),
+    "סיור": ("tours",), "סיורים": ("tours",), "טיול": ("tours",), "טיולים": ("tours",), "סיור מודרך": ("tours",),
+    "tour": ("tours",), "tours": ("tours",), "trip": ("tours",), "hike": ("tours",),
+    "ספורט": ("sport",),
+    "sport": ("sport",), "sports": ("sport",),
+    "טעימות": ("food",), "טעימת": ("food",), "קולינריה": ("food",),
+    "food": ("food",), "tasting": ("food",),
+    "מסעדה": ("fine_dining",), "ארוחת שף": ("fine_dining",), "dinner": ("fine_dining",),
+    "שוק": ("markets",), "יריד": ("markets",), "ירידים": ("markets",), "פשפשים": ("markets",), "market": ("markets",), "fair": ("markets",),
+    "ריקוד": ("dance",), "ריקודים": ("dance",), "בלט": ("dance",), "dance": ("dance",), "ballet": ("dance",),
+    "בצ'אטה": ("latin_dance",), "בצאטה": ("latin_dance",), "bachata": ("latin_dance",), "קיזומבה": ("latin_dance",), "kizomba": ("latin_dance",),
+    "salsa": ("salsa",), "ריקודים סלוניים": ("ballroom",), "סלוני": ("ballroom",),
+    "מדיטציה": ("yoga_wellness",), "רוחניות": ("yoga_wellness",), "ריטריט": ("yoga_wellness",), "yoga": ("yoga_wellness",),
+    "meditation": ("yoga_wellness",), "wellness": ("yoga_wellness",), "retreat": ("yoga_wellness",),
+    "festival": ("festival",), "festivals": ("festival",), "קונצרטים": ("live_show", "classical_opera"), "concerts": ("live_show",), "gig": ("live_show",),
+    "קלאסי": ("classical_opera",), "מוזיקה קלאסית": ("classical_opera",), "תזמורת": ("classical_opera",), "פילהרמונית": ("classical_opera",),
+    "classical": ("classical_opera",), "opera": ("classical_opera",), "orchestra": ("classical_opera",), "symphony": ("classical_opera",),
+    "מזרחי": ("mizrahi",), "קריוקי": ("karaoke",), "karaoke": ("karaoke",), "כנס": ("conference",), "conference": ("conference",),
+    "מפגש": ("meetups",), "meetup": ("meetups",), "meetups": ("meetups",), "גיימינג": ("gaming",), "gaming": ("gaming",), "esports": ("gaming",),
+    "התנדבות": ("volunteering",), "volunteering": ("volunteering",), "אטרקציה": ("attractions",), "attractions": ("attractions",),
+    "האפי האוור": ("happy_hour",), "happy hour": ("happy_hour",), "גייז": ("lgbt",), "גיי": ("lgbt",), "קוויר": ("lgbt",), "גאווה": ("lgbt",),
+    "gay": ("lgbt",), "queer": ("lgbt",), "lgbt": ("lgbt",), "pride": ("lgbt",), "teen": ("youth",), "teens": ("youth",),
+    "ארבעים פלוס": ("over_40",), "פופ": ("pop",), "pop": ("pop",), "rock": ("rock_indie",), "indie": ("rock_indie",),
+    "היפ הופ": ("hip_hop",), "hip hop": ("hip_hop",), "trap": ("hip_hop",), "טראפ": ("hip_hop",), "אפרוביטס": ("afro",), "afrobeats": ("afro",),
+    "אלקטרונית": ("electronic",), "אלקטרוני": ("electronic",), "electronic": ("electronic",), "electro": ("electronic",),
+    "רטרו": ("throwback",), "retro": ("throwback",), "שנות ה-90": ("throwback",), "שנות ה90": ("throwback",), "90s": ("throwback",), "80s": ("throwback",),
+    "קפה": ("coffee_carts",), "עגלת קפה": ("coffee_carts",), "הייטק": ("hi_tech",), "hitech": ("hi_tech",), "סטארטאפ": ("startups",), "startup": ("startups",),
+})  # fmt: skip
 REGION_ALIASES = {
     "gush_dan": ("גוש דן", "מרכז", "המרכז", "center"), "haifa": ("קריות", "הקריות", "krayot"),
     "galilee": ("צפון", "הצפון", "גליל", "הגליל", "north"), "negev": ("דרום", "הדרום", "נגב", "הנגב", "south"),
@@ -379,6 +460,9 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
         filters += [EventRow.is_weekend.is_(True), EventRow.local_date <= today + timedelta(days=7)]
     for word in take(DAYS):
         filters.append(EventRow.local_date == today + timedelta(days=DAYS[word]))
+    exact = exact_dates(text.strip(), today)
+    for phrase in take(exact):
+        filters.append(EventRow.local_date == exact[phrase])
     ranges = date_ranges(today)
     for phrase in take(ranges):
         filters.append(EventRow.local_date.between(*ranges[phrase]))
@@ -398,7 +482,7 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
                     filters.append(or_(*(text_match(n.casefold()) for n in city[1])))
                     break
     long_names = [n for n in vocab if len(n) >= 4 and " " not in n]
-    for w in (w for w in text.split() if len(w) >= 2):
+    for w in (w for w in text.split() if len(w) >= 2 and w not in FILLER):
         # "ברומא" is "רומא" with "in": a Hebrew one-letter prefix may be dropped.
         match = or_(text_match(w), text_match(w[1:])) if len(w) > 3 and w[0] in "בלמהו" else text_match(w)
         # A typo of a known name ("טכנוו", "פסטבל") also finds what the name finds.

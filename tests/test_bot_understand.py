@@ -87,3 +87,21 @@ def test_language_follows_the_letters() -> None:
     assert lang_of("טכנו", "en") == "he"
     assert lang_of("techno", "he") == "en"
     assert lang_of("100 🎉", "en") == "en"
+
+
+def test_exact_dates_and_chat_words_around_them() -> None:
+    from partylinks.search import exact_dates
+
+    today = date(2026, 11, 2)
+    assert exact_dates("טכנו ב-7.11", today) == {"ב-7.11": date(2026, 11, 7)}
+    assert exact_dates("7/11/27 1.1 31.2", today) == {"7/11/27": date(2027, 11, 7), "1.1": date(2027, 1, 1)}
+    assert clean("טכנו ב-7.11!", 200) == "טכנו ב-7.11"
+
+
+def test_every_kind_of_event_is_a_known_name(cfg: Settings) -> None:
+    from partylinks.search import FILLER, _vocabulary
+
+    vocab = _vocabulary(cfg)
+    for word in ("סרט", "קולנוע", "הצגה", "תיאטרון", "סטנדאפ", "הרצאה", "סדנה", "תערוכה", "מוזיאון", "סיור", "ילדים", "movie", "museum"):
+        assert word in vocab, word
+    assert {"הקרוב", "שקל", "לעשות"} <= FILLER

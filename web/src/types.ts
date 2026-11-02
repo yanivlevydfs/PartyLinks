@@ -108,6 +108,8 @@ export interface EventPage {
   items: EventSummary[];
   /** A search that found nothing: the closest known name that finds something. */
   did_you_mean?: string | null;
+  widened?: "date" | "place" | null; // nothing found: the search without its date / place words
+  widened_q?: string | null;
 }
 
 /** GET /events/sponsored: paid placements per physical side, in the admin's order. */

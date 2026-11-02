@@ -13,7 +13,19 @@ from zoneinfo import ZoneInfo
 
 from partylinks import countries, seo
 from partylinks.config import Settings
-from partylinks.search import ABROAD, DAYS, FREE, HE_PREFIXES, PRICE, REGION_ALIASES, WEEKEND, _vocabulary, date_ranges
+from partylinks.search import (
+    ABROAD,
+    DAYS,
+    FILLER,
+    FREE,
+    HE_PREFIXES,
+    PRICE,
+    REGION_ALIASES,
+    WEEKEND,
+    _vocabulary,
+    date_ranges,
+    exact_dates,
+)
 
 # Whole messages the bot answers itself (casefolded, punctuation and emoji gone).
 GREETINGS = {
@@ -27,20 +39,9 @@ ALERTS = {"התראות", "ההתראות שלי", "ההתראות", "my alerts"
 # Inside a search: options of the bot, not words to find.
 NEAR = ("קרוב אליי", "קרוב אלי", "קרוב לידי", "לידי", "בסביבה", "בסביבתי", "באזור שלי", "near me", "nearby", "around me", "close to me")  # fmt: skip
 CHEAP = ("הכי זול", "הכי זולים", "הכי זולות", "זולים", "זולות", "זול", "בזול", "cheapest", "cheap")
-# Chat words that are not what an event's text holds: left in, each would have to match and find nothing.
-FILLER = {
-    "מה", "יש", "לי", "לנו", "תמצא", "תמצאי", "תחפש", "תחפשי", "תביא", "תביאי", "תראה", "תראי", "תן", "תני",
-    "אני", "אנחנו", "רוצה", "רוצים", "מחפש", "מחפשת", "מחפשים", "בא", "באלי", "משהו", "איזה", "איזשהו",
-    "אירוע", "אירועים", "דברים", "של", "את", "גם", "אולי", "בבקשה", "פליז", "טוב", "טובים", "טובה", "כל", "הכל",
-    "איפה", "מתי", "לצאת", "לבלות", "בילוי", "בילויים", "שווה", "שווים", "מומלץ", "מומלצים", "כיף", "כיפי", "נחמד",
-    "אפשר", "צריך", "יודע", "תגיד", "תגידי", "ומה", "עם", "קורה", "הולך", "ללכת", "נלך", "לאן",
-    "please", "pls", "what", "whats", "what's", "is", "are", "there", "any", "anything", "some", "something",
-    "find", "me", "show", "i", "want", "wanna", "looking", "for", "events", "event", "things", "to", "do", "go",
-    "on", "the", "a", "an", "at", "good", "best", "fun", "happening", "can", "you", "get", "us", "we", "and",
-    "about", "how", "in", "of", "with", "this", "near",
-}  # fmt: skip
 FOLLOW_MARKERS = ("ומה עם ", "ומה לגבי ", "מה עם ", "מה לגבי ", "and what about ", "what about ", "how about ", "and ")
-_NOT_TEXT = re.compile(r"[^\w\s'\"״׳₪+<\-]")  # emoji and punctuation; keeps ג'אז, סופ"ש, 40+, עד 100 ₪
+# Emoji and punctuation; keeps ג'אז, סופ"ש, 40+, עד 100 ₪, and a date's dot or slash ("7.11", "7/11").
+_NOT_TEXT = re.compile(r"(?!(?<=\d)[./](?=\d))[^\w\s'\"״׳₪+<\-]")
 
 
 @dataclass(frozen=True)
@@ -121,7 +122,7 @@ def without(text: str, phrases: list[str]) -> str:
 def kinds(text: str, cfg: Settings, today: date) -> dict[str, list[str]]:
     """The parts of a search a follow-up can replace: its dates, places, price and free-entry words."""
     return {
-        "date": _found(text, _dates(today)),
+        "date": _found(text, _dates(today)) + list(exact_dates(text, today)),
         "place": _found(text, _places(cfg)),
         "price": [m[0] for m in PRICE.finditer(text)],
         "free": _found(text, FREE),
