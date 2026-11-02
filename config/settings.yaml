@@ -456,7 +456,7 @@ enrichment:
     kids: ["kids", "children", "גילי 3-18", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
            "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך"]
     lectures: ["lecture", "lectures", "עונת תרבות", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "foredrag"]
-    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "rundvisning", "visita guiada", "touristik", "viajes y aire libre"]
+    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre"]
     dance: ["dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט"]
     conference: ["conferences"]  # Eventer's category (the text genre matches "conference" alone)
   # Last resort, for an event no category, title word or source default placed: words a show's text uses
@@ -557,7 +557,8 @@ enrichment:
                 "החברה הישראלית", "בחברה הישראלית", "לחברה הישראלית", "והחברה הישראלית",  # society, not music
                 "conference centre", "conference center", "jungle joy",  # venues abroad (Malta), not a conference / jungle music
                 "eastern standard time", "eastern daylight time", "eastern time",  # US time zones, not mizrahi
-                "non-commercial", "commercial or non", "potter forest", "organic choir"]  # photo terms, a park, a choir
+                "non-commercial", "commercial or non", "potter forest", "organic choir",  # photo terms, a park, a choir
+                "תרגום סימולטני לאנגלית, ערבית", "בשפה הערבית", "בשפה הרוסית", "english, russian, arabic"]  # a tour's language, not Arabic music
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
   # talks: their text is read only for these genres.
@@ -800,6 +801,22 @@ geocoding:
   # checked by hand; venues OSM does not know precisely are left off the map, not guessed.
   #   "venue or address keyword": [lat, lon]
   venues:
+    "הספרייה הלאומית": [31.7766154, 35.2032665]          # National Library of Israel, Rupin 36, Jerusalem
+    "מרכז מורשת מנחם בגין": [31.7692694, 35.2254383]     # Begin Heritage Center, Nachon 6, Jerusalem
+    "מוזיאון ידידי ציון": [31.7801337, 35.2201839]       # Friends of Zion Museum, Yosef Rivlin, Jerusalem
+    "מוזיאון לאמנות האסלאם": [31.7686041, 35.2130238]    # Museum for Islamic Art, HaPalmach, Jerusalem
+    "מוזיאון המדע בלומפילד": [31.7783803, 35.2002324]    # Bloomfield Science Museum, Rupin, Jerusalem
+    "יד ושם": [31.7741570, 35.1772740]                   # Yad Vashem, Har HaZikaron, Jerusalem
+    "מוזיאון הטבע ע\"ש שטיינהרדט": [32.1137609, 34.8078801]  # Steinhardt Museum of Natural History, Klausner 12, Tel Aviv
+    "מוזיאון נחום גוטמן": [32.0610063, 34.7665146]       # Nahum Gutman Museum, Neve Tzedek
+    "מוזיאון ראובן רובין": [32.0720867, 34.7707364]      # Rubin Museum, Bialik 14, Tel Aviv
+    "מוזיאון העיר תל אביב-יפו": [32.0734915, 34.7710702] # Beit Ha'ir, Bialik 27, Tel Aviv
+    "מוזיאון העיצוב חולון": [32.0109043, 34.7777856]     # Design Museum Holon, Pinhas Eilon
+    "גן המדע ע\"ש קלור": [31.9103193, 34.8128814]        # Clore Garden of Science, Weizmann Institute, Rehovot
+    "מוזיאון יעקב אגם": [31.9680623, 34.7822385]         # Yaacov Agam Museum, Mishar 1, Rishon LeZion
+    "מוזיאון מורשת החשמונאים": [31.9078625, 35.0071423]  # Hasmonean Heritage Museum, Dam HaMaccabim 24, Modi'in
+    "משכן לאמנות עין חרוד": [32.5610011, 35.3932473]     # Mishkan Museum of Art, Ein Harod
+    "בית אהרונסון": [32.5723773, 34.9542018]             # Beit Aaronsohn (NILI Museum), HaMeyasdim 40, Zikhron Ya'akov
     "מוזיאון הסובלנות": [31.7791314, 35.2200716]         # Museum of Tolerance Jerusalem, Hillel 32
     "shittim": [30.1767437, 35.0165285]                  # Shittim festival site, Arava; secrettelavivapp sent 34.66 (Sinai), Nov 2026
     "הוואנה מיוזיק קלאב": [32.0743385, 34.7957614]     # Havana Music Club, Yigal Alon
@@ -1534,7 +1551,33 @@ sources:
       - {host: castilia, venue_name: קסטיליה הפקות}
       # Museum of Tolerance Jerusalem's box office (tickets.motj.org.il): concerts and the dated guided tours
       # of its exhibitions and of Jerusalem (~170 dates). No categories: genres come from title and text.
-      - {host: motj, venue_name: מוזיאון הסובלנות ירושלים, city: ירושלים}
+      - {host: motj, rooms: true, venue_name: מוזיאון הסובלנות ירושלים, city: ירושלים}
+      # Museums (Nov 2026 sweep): concerts, shows, lectures, workshops and dated guided tours. Left out:
+      # plain admission (dated entry slots), courses, guide / teacher training, school classes, Zoom copies.
+      # imj (Israel Museum) and tamuseum: their Smarticket robots.txt disallows everything.
+      - {host: nli, rooms: true, venue_name: הספרייה הלאומית, city: ירושלים, skip_categories: ["השתלמויות", "קורסים", "Online", "יום שיא", "חווית הספרייה"],
+         skip_title_words: ["השתלמות"]}
+      - {host: begincenter, rooms: true, venue_name: מרכז מורשת מנחם בגין, city: ירושלים, skip_title_words: ["קורס", "השתלמ"]}
+      - {host: fozmuseum, rooms: true, venue_name: מוזיאון ידידי ציון, city: ירושלים}
+      - {host: islamicart, rooms: true, venue_name: מוזיאון לאמנות האסלאם, city: ירושלים, skip_title_words: ["כניסה למוזיאון", "השתלמויות"]}
+      - {host: mada, rooms: true, venue_name: מוזיאון המדע בלומפילד, city: ירושלים, skip_titles: ["כניסה למוזיאון"]}
+      - {host: yadvashem, rooms: true, venue_name: יד ושם, city: ירושלים, skip_title_words: ["| גבעתיים"]}
+      - {host: smnh, rooms: true, venue_name: מוזיאון הטבע ע"ש שטיינהרדט, city: תל אביב-יפו,
+         skip_title_words: ["ביקור במוזיאון (בשעה", "כניסה לגן הבוטני", "דיגיטף"]}
+      - {host: gutmanmuseum, rooms: true, venue_name: מוזיאון נחום גוטמן, city: תל אביב-יפו, skip_categories: ["כרטיס כניסה", "בית היוצרים"]}
+      - {host: rubinmuseum, rooms: true, venue_name: מוזיאון ראובן רובין, city: תל אביב-יפו, skip_title_words: ["ידידי"]}
+      - {host: tlv-citymuseum, rooms: true, venue_name: מוזיאון העיר תל אביב-יפו, city: תל אביב-יפו,
+         skip_title_words: ["כרטיס כניסה", "הכשרה", "דיגיטף"]}
+      - {host: mediatheque-dmh, rooms: true, venue_name: מוזיאון העיצוב חולון, city: חולון, skip_titles: ["המעגל", "שישי חופשי לתושבי חולון -המעגל"]}
+      - {host: mediatheque-cartoon, rooms: true, venue_name: המוזיאון הישראלי לקריקטורה וקומיקס, city: חולון, skip_categories: ["כניסה למוזיאון"]}
+      - {host: davidson-weizmann, rooms: true, venue_name: גן המדע ע"ש קלור, city: רחובות, skip_titles: ["ביקור בגן המדע"]}
+      - {host: elicohen-museum, rooms: true, venue_name: מוזיאון למורשת אלי כהן, city: הרצליה, skip_title_words: ["כרטיס כניסה"]}
+      - {host: yama, rooms: true, venue_name: מוזיאון יעקב אגם, city: ראשון לציון, skip_titles: ["כרטיסי כניסה"], skip_title_words: ["תושבי ראשון"]}
+      - {host: modiinmuseum, rooms: true, venue_name: מוזיאון מורשת החשמונאים, city: מודיעין-מכבים-רעות, skip_titles: ["כרטיס כניסה"]}
+      - {host: hms, venue_name: מוזיאוני חיפה, city: חיפה, skip_categories: ["כניסה למוזיאון", "קורסים", "קייטנות"],
+         skip_title_words: ["בזום"]}
+      - {host: ehm, rooms: true, venue_name: משכן לאמנות עין חרוד, city: עין חרוד מאוחד}
+      - {host: nili-museum, rooms: true, venue_name: בית אהרונסון - מוזיאון ניל"י, city: זכרון יעקב, skip_titles: ["ארכיון"]}
       - {host: htbeithaam, venue_name: היכל התרבות בית העם ירושלים, city: ירושלים}
       - {host: isb7, venue_name: הסינפונייטה הישראלית באר שבע}
       - {host: gderot, venue_name: בית העם גדרות}
