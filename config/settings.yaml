@@ -478,7 +478,7 @@ enrichment:
     workshops: ["סדנה", "סדנת", "סדנאות", "workshop", "חוג", "קורס"]
     tours: ["סיור", "סיורים", "סיורי", "guided tour", "führung", "stadtführung"]
     dance: ["מחול", "להקת מחול", "בלט", "ballet"]
-    exhibitions: ["תערוכה", "תערוכת", "exhibition", "museum"]
+    exhibitions: ["תערוכה", "תערוכת", "exhibition", "museum", "שיח גלריה", "בתערוכה", "תערוכות", "במוזיאון", "אוצרת"]
     sport: ["קבוצת ריצה", "אימוני", "כדורסל", "כדורגל", "פורמולה 1", "גרנד פרי", "nfl", "grand prix", "סופר קאפ", "super cup", "גביע", "ליגת האלופות"]
     food: ["kochkurs", "grillkurs", "tasting", "verkostung", "whiskytasting", "brunch", "frühstück", "dinner", "bbq",
            "küche", "ארוחת", "טעימות"]
@@ -802,6 +802,8 @@ geocoding:
   # checked by hand; venues OSM does not know precisely are left off the map, not guessed.
   #   "venue or address keyword": [lat, lon]
   venues:
+    "מוזיאון העם היהודי": [32.1139956, 34.8053575]       # ANU, Tel Aviv University campus
+    "מוזיאון ארץ ישראל": [32.1021160, 34.7960141]        # Eretz Israel Museum (MUZA), Haim Levanon 2
     "הספרייה הלאומית": [31.7766154, 35.2032665]          # National Library of Israel, Rupin 36, Jerusalem
     "מרכז מורשת מנחם בגין": [31.7692694, 35.2254383]     # Begin Heritage Center, Nachon 6, Jerusalem
     "מוזיאון ידידי ציון": [31.7801337, 35.2201839]       # Friends of Zion Museum, Yosef Rivlin, Jerusalem
@@ -1209,11 +1211,13 @@ sources:
     features_path: /api/features/
     ticket_groups_path: /api/presentations/{id}/ticketGroups
     event_page_path: /order/{id}
-    skip_titles: ["בדיקה", "שוברים", "תשלום בקופה"]
+    skip_titles: ["בדיקה", "שוברים", "תשלום בקופה", "כרטיס כניסה למוזיאון", "כוכבים במוזא", "מצוינות במוז", "מוזות: מפגשים לנוער"]
     hosts:
       - {key: kupat, url: "https://tickets.kupat.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
       - {key: comy, url: "https://tickets.comy.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
       # Hosts without artwork in the API read it from the theatre's site (exact by presentation id).
+      # Eretz Israel Museum (MUZA): gallery talks, guided tours, family workshops (admission and school programmes: skip_titles).
+      - {key: muza, url: "https://muza.pres.global", venue: מוזיאון ארץ ישראל, city: "תל אביב", source_genres: [מוזיאון]}
       - {key: cameri, url: "https://tickets.cameri.co.il", city: "תל אביב",
          # Guest shows and talks (cameri-more) have no og:image: their poster is the page's hero image.
          artwork_index: ["https://www.cameri.co.il/wp-json/wp/v2/show?per_page=100&_fields=link",
@@ -1579,6 +1583,10 @@ sources:
          skip_title_words: ["בזום"]}
       - {host: ehm, rooms: true, venue_name: משכן לאמנות עין חרוד, city: עין חרוד מאוחד}
       - {host: nili-museum, rooms: true, venue_name: בית אהרונסון - מוזיאון ניל"י, city: זכרון יעקב, skip_titles: ["ארכיון"]}
+      # White-label box offices on the museum's own domain.
+      - {host: tickets.anumuseum.org.il, rooms: true, venue_name: אנו - מוזיאון העם היהודי, city: תל אביב-יפו,
+         skip_titles: ["כניסה למוזיאון"], skip_title_words: ["השתלמויות", "דיגיטף", "תערוכה לילדים"]}
+      - {host: tickets.negev-museum.org.il, rooms: true, venue_name: מוזיאון הנגב לאמנות, city: באר שבע}
       - {host: htbeithaam, venue_name: היכל התרבות בית העם ירושלים, city: ירושלים}
       - {host: isb7, venue_name: הסינפונייטה הישראלית באר שבע}
       - {host: gderot, venue_name: בית העם גדרות}

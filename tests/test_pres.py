@@ -47,6 +47,7 @@ def _scrape(monkeypatch, cls: Any = pres.PresScraper) -> tuple[dict[str, Any], l
                 venue="תיאטרון בית ליסין",
                 city="תל אביב",
                 address="שדרות שאול המלך 34, תל אביב",
+                source_genres=["סיורים"],  # a host's own genre, added to every show of it
             ),
         ],
     )
@@ -128,6 +129,7 @@ def test_scrape_hosts(monkeypatch) -> None:
         "שדרות שאול המלך 34, תל אביב",
     )
     assert tour.extra["hall"] == "פואיה בית ליסין"
+    assert tour.source_genres[-1] == "סיורים" and "סיורים" not in boaz.source_genres
     assert tour.image_url and tour.image_url.startswith("https://cdn.presglobal.pro/lessin/feature/")
     assert [(t.name, t.price) for t in tour.tickets] == [("אולם", Decimal(50))]
     assert tour_sold.is_sold_out and tour_sold.tickets[0].price == Decimal(50)

@@ -84,6 +84,8 @@ class PresHost(BaseModel):
     artwork_page_link: str | None = None  # show-page links in an HTML ``artwork_index``
     # Poster ``src`` on show pages without an ``og:image`` (Cameri's guest shows).
     artwork_image: str | None = None
+    # Added to every show's categories: a museum host's shows are not the source's default (theatre).
+    source_genres: list[str] = Field(default_factory=list)
 
 
 class PresSettings(SourceSettings):
@@ -308,7 +310,10 @@ def parse_event(
         city=_one_line(p.get("venueCity")) or host.city,
         latitude=lat,
         longitude=lon,
-        source_genres=[c for raw in str(categories).split(",") if (c := _INACTIVE.sub("", raw).strip())],
+        source_genres=[
+            *(c for raw in str(categories).split(",") if (c := _INACTIVE.sub("", raw).strip())),
+            *host.source_genres,
+        ],
         images=[image] if image else [],
         min_price=min(priced, default=None),
         max_price=max(priced, default=None),
