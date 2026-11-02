@@ -13,6 +13,7 @@ import re
 from collections.abc import Callable, Iterable
 from datetime import datetime, time
 from decimal import Decimal
+from difflib import SequenceMatcher
 from zoneinfo import ZoneInfo
 
 from partylinks.config import AreaSettings, CitySettings, EnrichmentSettings, RegionSettings
@@ -73,6 +74,13 @@ def meters(a: tuple[float, float], b: tuple[float, float]) -> float:
     dy = math.radians(b[0] - a[0])
     return 6_371_000 * math.hypot(dx, dy)
 
+
+
+def _same_act(a: str, b: str) -> bool:
+    """One event's lineup naming one act twice in two spellings ("Yamaguchi" / "YAMAGUCCI"): long names,
+    same start, one or two letters apart. Two different artists of one lineup are never this close."""
+    a, b = a.casefold(), b.casefold()
+    return a == b or (min(len(a), len(b)) >= 6 and a[:3] == b[:3] and SequenceMatcher(None, a, b).ratio() >= 0.88)
 
 class AreaMatcher:
     """Area of the target city, or region of the country outside it, for an event
@@ -352,8 +360,9 @@ class Enricher:
         for raw in names:
             for part in (p for piece in _COLLAB.split(raw) for p in self._unglue(piece)):
                 name = self._as_name(part)
-                if name is not None and name.casefold() not in venue:  # "Haoman 17" is the venue, not a DJ
-                    unique.setdefault(name.casefold(), name)
+                # "Haoman 17" is the venue, not a DJ; one act in two spellings is kept once.
+                if name is not None and name.casefold() not in venue and not any(_same_act(name, k) for k in unique.values()):
+                    unique[name.casefold()] = name
         return list(unique.values())[: self.settings.lineup.max_names]
 
     def learn_artists(self, known: Iterable[str], blocked: Iterable[str] = (), featured: Iterable[str] = ()) -> None:

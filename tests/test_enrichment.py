@@ -402,3 +402,8 @@ def test_a_catch_all_source_category_adds_no_genres() -> None:
 
 def test_a_ticket_management_page_is_not_an_event() -> None:
     assert ENRICHER.enrich(make(title="MAKE SENSE | Ticket Management")) is None
+
+
+def test_a_lineup_has_no_placeholders_or_one_act_twice() -> None:
+    event = ENRICHER.enrich(make(title="MAKE SENSE", description="", artists=["Adam Ten", "Yamaguchi", "Special Guest", "YAMAGUCCI", "Draco", "Dor Danino"]))
+    assert event is not None and event.lineup == ["Adam Ten", "Yamaguchi", "Draco", "Dor Danino"]

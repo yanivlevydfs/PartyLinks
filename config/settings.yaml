@@ -613,7 +613,9 @@ enrichment:
     max_name_words: 5
     max_hebrew_name_words: 3
     # Lines that look like names but are placeholders ("and" / "more": leftovers of "...AND MORE TBA").
-    ignore: ["to be announced", "tba", "tbd", "soon", "בקרוב", "יוכרז בהמשך", "main stage", "stage", "and", "more"]
+    ignore: ["to be announced", "tba", "tbd", "soon", "בקרוב", "יוכרז בהמשך", "main stage", "stage", "and", "more",
+             "special guest", "special guests", "surprise guest", "secret guest", "guest", "guests", "and friends",
+             "אורח מיוחד", "אורחת מיוחדת", "אורחים מיוחדים", "אורח מפתיע", "אורח סודי", "אמן אורח", "ועוד"]
     header_filler: ["ה", "ו", "וה", "שלנו", "המלא", "הרזידנט", "resident", "the", "our", "full", "official",
                     "-", "–", "—", "|"]
     not_name_words: ["stage", "zone", "market", "bar", "area", "room", "floor", "tent",
