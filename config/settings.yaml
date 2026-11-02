@@ -1244,15 +1244,15 @@ sources:
     event_page_path: /order/{id}
     skip_titles: ["בדיקה", "שוברים", "תשלום בקופה", "כרטיס כניסה למוזיאון", "כוכבים במוזא", "מצוינות במוז", "מוזות: מפגשים לנוער", "משחקיה", "גן עם אמא"]
     hosts:
-      - {key: kupat, url: "https://tickets.kupat.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
-      - {key: comy, url: "https://tickets.comy.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
+      - {key: kupat, name: "קופת תל אביב", url: "https://tickets.kupat.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
+      - {key: comy, name: "קומדי בר - Comy", url: "https://tickets.comy.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
       # Hosts without artwork in the API read it from the theatre's site (exact by presentation id).
       # Eretz Israel Museum (MUZA): gallery talks, guided tours, family workshops (admission and school programmes: skip_titles).
       - {key: muza, url: "https://muza.pres.global", venue: מוזיאון ארץ ישראל, city: "תל אביב", source_genres: [מוזיאון]}
       # Found in the Wayback Machine's index of *.pres.global (Nov 2026).
-      - {key: jmc, url: "https://jmc.pres.global", city: "ירושלים", source_genres: [קונצרט]}   # Jerusalem Music Centre
-      - {key: givshmu, url: "https://givshmu.pres.global", city: "גבעת שמואל"}   # Givat Shmuel community centre
-      - {key: cameri, url: "https://tickets.cameri.co.il", city: "תל אביב",
+      - {key: jmc, name: "המרכז למוסיקה ירושלים", url: "https://jmc.pres.global", city: "ירושלים", source_genres: [קונצרט]}   # Jerusalem Music Centre
+      - {key: givshmu, name: "מתנ\"ס מרחב גבעת שמואל", url: "https://givshmu.pres.global", city: "גבעת שמואל"}   # Givat Shmuel community centre
+      - {key: cameri, name: "תיאטרון הקאמרי", url: "https://tickets.cameri.co.il", city: "תל אביב",
          # Guest shows and talks (cameri-more) have no og:image: their poster is the page's hero image.
          artwork_index: ["https://www.cameri.co.il/wp-json/wp/v2/show?per_page=100&_fields=link",
                          "https://www.cameri.co.il/wp-json/wp/v2/cameri-more?per_page=100&_fields=link",
@@ -1280,7 +1280,7 @@ sources:
     skip_titles: ["בדיקה", "שוברים", "תשלום בקופה"]
     hosts:
       - {key: lessin, url: "https://lessin.presglobal.store", venue: "תיאטרון בית ליסין", city: "תל אביב"}
-      - {key: ipo, url: "https://ipo.presglobal.store", city: "תל אביב"}
+      - {key: ipo, name: "התזמורת הפילהרמונית הישראלית", url: "https://ipo.presglobal.store", city: "תל אביב"}
 
   kupatbravo:
     # Kupat Bravo box office (nationwide; own platform, no API). Sitemap lists every show page

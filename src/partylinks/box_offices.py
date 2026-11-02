@@ -46,7 +46,7 @@ def _hosts(settings: SourceSettings) -> list[tuple[str, str, str | None]]:
             if (h := tenant_host(t.host, settings.tenant_domain))
         ]
     if isinstance(settings, PresSettings):
-        return [(h, x.venue or h, x.city) for x in settings.hosts if (h := urlsplit(x.url).hostname)]
+        return [(h, x.name or x.venue or h, x.city) for x in settings.hosts if (h := urlsplit(x.url).hostname)]
     if isinstance(settings, MuniEventsSettings):
         return [
             (h, x.organizer or f"עיריית {x.city}", x.city) for x in settings.sites if (h := urlsplit(x.url).hostname)

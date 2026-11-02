@@ -69,6 +69,8 @@ class PresHost(BaseModel):
 
     key: str
     url: str
+    # The box office's name on the stores page (default: ``venue``, else its host).
+    name: str | None = None
     # Fallbacks for hosts whose rows only name the hall ("אולם 2") or omit the city.
     venue: str | None = None
     city: str | None = None
