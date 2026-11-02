@@ -298,6 +298,9 @@ class EnrichmentSettings(BaseModel):
     fallback_genres: dict[str, list[str]] = Field(default_factory=dict)
     # Phrases removed from title + description before genres are read ("הכרטיס האלקטרוני").
     text_ignore: list[str] = Field(default_factory=list)
+    # A source category that lumps kinds together ("מחול אמנות ומוזיקה (קלאסית, ג'ז)"): not read for genres,
+    # its words would each add one. Any declared category starting with one of these is skipped.
+    declared_ignore: list[str] = Field(default_factory=list)
     # A title with one of these is a talk, not a party: genres it describes ("the birth of house and
     # techno") are its subject, so only the genres its source declares are kept.
     talk_keywords: list[str] = Field(default_factory=list)

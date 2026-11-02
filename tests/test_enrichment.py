@@ -392,3 +392,9 @@ def test_a_sources_usual_kind_only_when_its_words_name_none() -> None:
     assert ENRICHER._detect_genres(hall) == ["culture"]  # a culture hall's show, title alone
     concert = make(source="smarticket", title="תזמורת ירושלים - איציק קלה", description="")
     assert ENRICHER._detect_genres(concert) == ["live_show"]  # its own word beats the hall's default
+
+
+def test_a_catch_all_source_category_adds_no_genres() -> None:
+    # Tel Aviv municipality: "אמנות" / "מוזיקה" / "קלאסית" in the catch-all's name are not the class's kinds.
+    event = make(title="מחול עכשווי עם רוני חדש", description="", source_genres=["מחול אמנות ומוזיקה (קלאסית, ג'ז)", "מחול"])
+    assert ENRICHER._detect_genres(event) == ["dance"]

@@ -302,7 +302,8 @@ class Enricher:
 
     # ------------------------------------------------------------------ genres
     def _detect_genres(self, event: ScrapedEvent) -> list[str]:
-        declared = " | ".join([*event.source_genres, *event.event_types]).lower()
+        ignore = tuple(p.lower() for p in self.settings.declared_ignore)
+        declared = " | ".join(d for d in (x.lower() for x in [*event.source_genres, *event.event_types]) if not d.startswith(ignore))
         talk = self._talk is not None and self._talk.search(event.title.lower())
         read_text = self.settings.detect_genres_from_text and event.source not in self.settings.declared_genres_only
         # A talk's description names its subject, not its kind: only its title is read, for the talk genres.

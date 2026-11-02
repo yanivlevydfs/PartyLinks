@@ -568,6 +568,9 @@ enrichment:
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
   declared_genres_only: [funzing, ticketeams]
+  # Tel Aviv municipality's catch-all category: "אמנות", "מוזיקה", "קלאסית" in its name made every dance class
+  # an exhibition, a concert and classical music too. Its events also carry the real category ("מחול").
+  declared_ignore: ["מחול אמנות ומוזיקה"]
   # Small print that names a genre word in passing, removed from the text before genres are read.
   text_ignore: ["כרטיס אלקטרוני", "כרטיסים אלקטרוניים", "הכרטיס האלקטרוני", "הכרטיסים האלקטרוניים",
                 "בכרטיס האלקטרוני", "דואר אלקטרוני", "בדואר אלקטרוני", "הדואר האלקטרוני", "בדואר האלקטרוני",
