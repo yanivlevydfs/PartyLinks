@@ -1318,3 +1318,12 @@ def test_search_by_area_does_not_rank_titles_holding_its_words(tmp_path: Path) -
     assert relevance("גוש דן", cfg) is None
     assert relevance("zygo", cfg) is None
     assert relevance("טכנו בגוש דן", cfg) is not None
+
+
+def test_a_served_page_has_one_title() -> None:
+    from partylinks.seo import _strip_title
+
+    # The template's static title says what the home's injected one says: still only one stays.
+    for static in ("<title>SPOTX · כל האירועים בישראל</title>", "<title>old</title>"):
+        html = _strip_title(f"<head>{static}\n<title>SPOTX · כל האירועים בישראל</title></head>", "")
+        assert html.count("<title>") == 1 and "כל האירועים בישראל" in html

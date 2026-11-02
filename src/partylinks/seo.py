@@ -1285,10 +1285,11 @@ def render(template: str, page: Page, cfg: Settings, alt: Page | None = None) ->
 
 
 def _strip_title(html: str, keep: str) -> str:
-    """Drop the template's static <title>, keeping the one injected for this page."""
+    """Drop the template's static <title> (the first one, before <!--seo-->), keeping the one injected for
+    this page; also when both say the same (the home page's), or the page would have two."""
     start = html.find("<title>")
     end = html.find("</title>", start)
-    if start != -1 and html[start : end + 8] != keep:
+    if start != -1 and html.count("<title>") > 1:
         html = html[:start] + html[end + 8 :].lstrip()
     return html
 
