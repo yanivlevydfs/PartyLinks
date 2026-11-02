@@ -45,7 +45,7 @@ Google sign-in works on localhost when `.env` has `PARTYLINKS_ACCOUNTS__GOOGLE_C
 `PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_SECRET` and `PARTYLINKS_ACCOUNTS__SESSION_SECRET` (and
 `PARTYLINKS_ACCOUNTS__ADMIN_EMAILS` to sign in to `/admin` with Google). The OAuth client allows
 `http://localhost:8000/auth/google/callback`, so use port 8000. Without those variables sign-in is off: the
-site shows no account UI, and the save bell keeps saved events on the device (localStorage `spotx-saved`).
+site shows no account UI, and the save heart keeps saved events on the device (localStorage `spotx-saved`).
 
 The alert matcher and the welcome, instant and digest emails are scheduler jobs, so with the scheduler off
 they never run locally, even with `PARTYLINKS_MAIL__RESEND_API_KEY` set (only the admin's test send would go). To time a matcher pass at production size, on its own throwaway

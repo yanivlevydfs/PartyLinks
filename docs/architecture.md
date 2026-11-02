@@ -202,7 +202,7 @@ removes saved events and alert matches with their event, `logs.py` adds the `Red
 address or sign-in / unsubscribe token in any log line, tracebacks too), and `seo.py` serves `/account`,
 `/saved`, `/alerts` as `noindex` pages.
 
-- **Saving** an event (the 🔔 save bell on every card, the home page's rows, the event page and map pins)
+- **Saving** an event (the ♡ save heart on every card, the home page's rows, the event page and map pins)
   and **saving an alert** need an account; a signed-out visitor gets a sign-in popup, and the event or alert
   is saved on the way back from Google.
 - **The matcher** (`alerts/matcher.py`) takes the new duplicate groups (first seen since the last pass, at
@@ -283,7 +283,7 @@ web/src/plans/                the plan page, the 👥 button, which-party, rides
 web/src/ads/                  the paid side rails, the results' Sponsored label, their CSS and the admin's sponsored tab
 web/src/accounts/             header account corner and menu, sign-in popup (SignInSheet), welcome sheet,
                               /account, the admin's users and email tabs
-web/src/saved/                the save bell (SaveButton), the header's "Saved" button with the count, /saved
+web/src/saved/                the save heart (SaveButton), the header's "Saved" button with the count, /saved
 web/src/alerts/               "Save as alert", the header's alert-news bell, /alerts, the "For you" row
 scripts/time_matcher.py       times a matcher pass at production size on a throwaway local database
 tests/                        pytest, with real-page fixtures under tests/fixtures/

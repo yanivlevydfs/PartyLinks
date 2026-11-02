@@ -1,4 +1,4 @@
-/* Saved events: the save bell on cards and event pages, the header link, /saved. */
+/* Saved events: the save heart on cards and event pages, the header link, /saved. */
 .save-btn {
   display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; cursor: pointer;
   border-radius: 50%; border: 1px solid rgb(255 255 255 / .25); background: rgb(6 4 11 / .7); backdrop-filter: blur(8px);
@@ -33,7 +33,7 @@
 .saved-note { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-bottom: 20px; color: var(--muted); }
 .saved-note p { margin: 0; }
 
-/* In a map pin's list: a small save bell after each event. */
+/* In a map pin's list: a small save heart after each event. */
 .pop li:has(> .save-btn) { display: flex; align-items: center; gap: 6px; }
 .pop li > a { flex: 1; min-width: 0; }
 .pop li > .save-btn { flex: none; width: 28px; height: 28px; backdrop-filter: none; }

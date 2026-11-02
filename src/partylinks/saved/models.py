@@ -12,7 +12,7 @@ from partylinks.db import Base, UTCDateTime, utcnow
 
 
 class SavedEventRow(Base):
-    """A saved event (the save bell). No foreign key to events (like plans): ``delete_saved`` removes it with its event."""
+    """A saved event (the save heart). No foreign key to events (like plans): ``delete_saved`` removes it with its event."""
 
     __tablename__ = "saved_events"
 

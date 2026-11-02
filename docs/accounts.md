@@ -33,10 +33,10 @@ to it goes with it (`ON DELETE CASCADE`).
 Logs carry the user id only. A filter on every log handler (`accounts/redact.py`) replaces any email
 address and any `code=`, `state=`, `t=` or `token=` value as a safety net.
 
-## Saved events (the save bell)
+## Saved events (the save heart)
 
 Every event card (the grid and the home page's scrolling rows), the event page and the map pins have a save
-bell (🔔). Saving needs an account: a signed-out visitor who presses it gets a sign-in popup
+heart (♡, filled when saved; the bell 🔔 is only for alerts). Saving needs an account: a signed-out visitor who presses it gets a sign-in popup
 (`accounts/SignInSheet.tsx`), and Google brings them back to the same page with `?save_event=<id>`, where the
 header's "Saved" button (`saved/SavedLink.tsx`) saves it and says so. That button, with the count, opens
 `/saved`; the header's plain bell is alert news. Saved events live in `saved_events`, are removed with their
@@ -52,7 +52,7 @@ An alert is a saved search: the site's own filters (genres, regions, neighbourho
 free only, discount only, when as "any time / weekend / 7 days / 30 days" or a date range, and a word such
 as an artist or venue). "🔔 Save as alert" appears in the filter bar (home, landing pages, map) whenever a
 filter or search is set, on the quiz's last step, and on an event page for its first artist. Signed out, it
-opens the same sign-in popup as the save bell and saves the alert on the way back: the criteria travel in the
+opens the same sign-in popup as the save heart and saves the alert on the way back: the criteria travel in the
 address as `?save_alert=<criteria as JSON>` (the page's filters don't survive the trip to Google), and the
 header bell saves them on arrival. A one-letter word is no filter (the site searches 2+ letters); an alert with
 nothing else set is refused. `/alerts` lists them

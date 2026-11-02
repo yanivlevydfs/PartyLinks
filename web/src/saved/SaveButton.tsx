@@ -1,4 +1,4 @@
-// The bell on an event: save it, or take it back. A signed-out visitor gets the sign-in popup, and the
+// The heart on an event: save it, or take it back. A signed-out visitor gets the sign-in popup, and the
 // event is saved when they come back from Google (?save_event=<id>, handled by the header's SavedLink).
 import { useState } from "react";
 import { SignInSheet, returnTo } from "../accounts/SignInSheet";
@@ -31,7 +31,7 @@ export function SaveButton({ eventId, large = false }: { eventId: string; large?
         onClick={(ev) => { ev.preventDefault(); ev.stopPropagation(); press(); }}
       >
         <svg viewBox="0 0 24 24" aria-hidden width="18" height="18">
-          <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16zM10 20a2 2 0 0 0 4 0" />
+          <path d="M12 20s-7.5-4.6-9.3-9.1C1.5 7.8 3.6 4.5 7 4.5c2 0 3.5 1.1 5 3 1.5-1.9 3-3 5-3 3.4 0 5.5 3.3 4.3 6.4C19.5 15.4 12 20 12 20z" />
         </svg>
       </button>
       {ask && <SignInSheet title={t.signInTitle} text={t.signInText} next={returnTo(SAVE_EVENT, eventId)} onClose={() => setAsk(false)} />}

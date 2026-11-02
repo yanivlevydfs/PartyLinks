@@ -43,7 +43,7 @@ TEXT: dict[str, dict[str, Any]] = {
         "welcome_title": "ברוכים הבאים, {name}!",
         "welcome_body": ["החשבון שלך מוכן. ככה מוציאים ממנו את המקסימום:"],
         "welcome_steps": [
-            ("🔔", "שומרים אירועים", "לוחצים על הפעמון בכל אירוע, והוא מחכה לכם ב\"שמורים\" בכל מכשיר."),
+            ("❤️", "שומרים אירועים", "לוחצים על הלב בכל אירוע, והוא מחכה לכם ב\"שמורים\" בכל מכשיר."),
             ("✨", "מקבלים התראות", "בוחרים סינון (ז׳אנר, אזור, מתי) ולוחצים \"שמירה כהתראה\": כל אירוע חדש שמתאים יופיע אצלכם."),
             ("📬", "עדכון שבועי במייל", "בחשבון אפשר להפעיל מייל קצר כל חמישי בבוקר, עם מה ששמרתם ומה חדש לסופ״ש."),
         ],
@@ -71,7 +71,7 @@ TEXT: dict[str, dict[str, Any]] = {
         "welcome_title": "Welcome, {name}!",
         "welcome_body": ["Your account is ready. Here's how to get the most out of it:"],
         "welcome_steps": [
-            ("🔔", "Save events", "Tap the bell on any event and it waits for you under \"Saved\" on every device."),
+            ("❤️", "Save events", "Tap the heart on any event and it waits for you under \"Saved\" on every device."),
             ("✨", "Get alerts", "Pick filters (genre, area, when) and press \"Save as alert\": every new event that matches shows up for you."),
             ("📬", "A weekly email", "Turn on a short email every Thursday morning in your account: what you saved and what's new this weekend."),
         ],

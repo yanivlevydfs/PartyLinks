@@ -1,5 +1,5 @@
 // The header's saved events: "Saved" with the count, linking to /saved. Words, not a second bell: the
-// header's bell is alert news, and the 🔔 on an event is what saves it. Signed in, the link lives in the
+// header's bell is alert news, and the heart on an event is what saves it. Signed in, the link lives in the
 // avatar menu (SavedMenuItem) and the header keeps only the toast; a guest sees it only with events
 // saved on this device (saving asks to sign in), so the phone header fits.
 import { useQueryClient } from "@tanstack/react-query";

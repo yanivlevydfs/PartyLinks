@@ -15,7 +15,7 @@ text below says so and [section 21](#21-changes-after-implementation) lists the 
   - an optional **instant email** per alert;
   - an in-site **notification bell**.
   Signed-in users also get a **"For you" row** on the home page.
-- **Saved events:** a 🔔 save bell (not a heart, as first designed) on every event card, the home page's rows, the event page and map pins, with a `/saved` page. Saving **needs an account** (changed after implementation): a signed-out visitor gets a sign-in popup and the event is saved on the way back from Google. Only where Google sign-in is not configured (localhost) are saved ids kept in the browser, merged into the account at sign-in. Saved events coming up that week lead the digest.
+- **Saved events:** a ♡ save heart (a bell until 2026-11-02, changed back to a heart: two bells, save and alerts, confused visitors) on every event card, the home page's rows, the event page and map pins, with a `/saved` page. Saving **needs an account** (changed after implementation): a signed-out visitor gets a sign-in popup and the event is saved on the way back from Google. Only where Google sign-in is not configured (localhost) are saved ids kept in the browser, merged into the account at sign-in. Saved events coming up that week lead the digest.
 
 - **Why:** personalised events and a weekly reason to come back. This is the same retention loop CheapFlights runs for flights.
 
@@ -166,7 +166,7 @@ Limit: 20 alerts per user (`accounts.max_alerts`).
 
 The primary key `(alert_id, event_id)` is what guarantees an event is never notified twice for the same alert. This is the events version of CheapFlights' ratchet.
 
-### `saved_events` (the save bell)
+### `saved_events` (the save heart)
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -291,7 +291,7 @@ web/src/accounts/
   useMe.ts            react-query: /api/me (null when signed out); sign-in URL, sign out
   AccountSlot.tsx     Header corner: "Continue with Google" (a plain link, no Google script) or the avatar
                       menu (my account, "⚙️ Site admin" for admins, sign out)
-  SignInSheet.tsx     The sign-in popup shared by the save bell and "Save as alert", drawn at the page root
+  SignInSheet.tsx     The sign-in popup shared by the save heart and "Save as alert", drawn at the page root
   AccountPage.tsx     /account: name, email language, digest checkbox, delete account
   WelcomeSheet.tsx    After the first sign-in: digest opt-in and a first alert; ?signin=... errors
   AdminUsers.tsx      Admin tab "users"
@@ -307,7 +307,7 @@ web/src/alerts/
 web/src/saved/
   useSaved.ts         Signed in: react-query /api/me/saved with an optimistic toggle. localStorage
                       "spotx-saved" only where sign-in is not configured; merged once at sign-in.
-  SaveButton.tsx      The save bell (aria-pressed); signed out: the sign-in popup, back with ?save_event=<id>
+  SaveButton.tsx      The save heart (aria-pressed); signed out: the sign-in popup, back with ?save_event=<id>
   SavedLink.tsx       Header "שמורים / Saved" button with the count, to /saved; saves ?save_event=<id>
   SavedPage.tsx       /saved: upcoming saved events
   saved.css, i18n.ts
@@ -339,7 +339,7 @@ web/src/saved/
 
 - [x] i18n: every string in HE and EN
 
-- [x] The save bell on every surface that shows an event: home and its rows, browse, abroad, map pins, event page, "For you", landing pages (the React version)
+- [x] The save heart on every surface that shows an event: home and its rows, browse, abroad, map pins, event page, "For you", landing pages (the React version)
 
 - [x] `robots.txt`: disallow `/account`, `/alerts`, `/saved`, `/auth/`, `/api/me`; these pages answer 200 `noindex` and are not in the sitemap
 

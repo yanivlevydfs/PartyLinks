@@ -1,4 +1,4 @@
-// "Sign in to save": the popup a signed-out visitor gets on a personal action (the save bell on an event,
+// "Sign in to save": the popup a signed-out visitor gets on a personal action (the save heart on an event,
 // "Save as alert"), and the header's "Sign in". Continue with Google / Facebook comes back to ``next``,
 // where the action completes.
 // Drawn at the page's root (a portal): a card moves on hover, which would drag a popup inside it.
