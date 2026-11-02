@@ -164,7 +164,8 @@ in through the same `finish` as Google. Unversioned Graph URLs: the app's own AP
   (`users.google_sub` and `users.facebook_id` on one row). A second Facebook (or Google) account with
   that address is refused (`?signin=taken`).
 - **Data deletion callback** `POST /auth/facebook/deletion` (Meta's `signed_request`, HMAC-SHA256 with the
-  app secret): deletes the user with that `facebook_id` and answers `{url, confirmation_code}`; the url is
+  app secret): deletes the user with that `facebook_id` (or, when they also sign in with Google, only
+  unlinks Facebook) and answers `{url, confirmation_code}`; the url is
   `/privacy?deletion=<code>`, which shows that the request was handled.
 
 Meta app settings: Valid OAuth Redirect URIs `https://spotx.fun/auth/facebook/callback`; App domains

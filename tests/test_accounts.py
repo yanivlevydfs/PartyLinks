@@ -334,8 +334,12 @@ def test_facebook_sign_in_links_by_email_and_deletes(tmp_path: Path, fake: FakeG
         assert c.post("/auth/facebook/deletion", data={"signed_request": _signed({"user_id": "f-3", "algorithm": "HMAC-SHA256"}, "x")}).status_code == 400
         ok = c.post("/auth/facebook/deletion", data={"signed_request": _signed({"user_id": "f-3", "algorithm": "HMAC-SHA256"})})
         assert ok.status_code == 200 and ok.json()["url"].endswith(f"/privacy?deletion={ok.json()['confirmation_code']}")
+        # Dana also signs in with Google: only her Facebook link goes, the account stays.
+        assert c.post("/auth/facebook/deletion", data={"signed_request": _signed({"user_id": "f-1", "algorithm": "HMAC-SHA256"})}).status_code == 200
         with db.session() as s:
             assert s.scalar(select(func.count()).select_from(UserRow).where(UserRow.facebook_id == "f-3")) == 0
+            dana = s.scalar(select(UserRow).where(UserRow.email == "dana@example.com"))
+            assert (dana.google_sub, dana.facebook_id) == ("g-1", None)
 
 
 def test_parse_signed_request() -> None:

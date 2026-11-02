@@ -255,7 +255,7 @@ export default function PrivacyPage() {
       <Hero title={t.title} />
       <main className="wrap statement">
         {deletion && (
-          <p role="status"><b>{lang === "en" ? "Your Facebook data deletion request was received: the account linked to it has been deleted." : "בקשת מחיקת הנתונים מ-Facebook התקבלה: החשבון שקשור אליה נמחק."}</b>{" "}
+          <p role="status"><b>{lang === "en" ? "Your Facebook data deletion request was received: the Facebook data linked to it has been deleted." : "בקשת מחיקת הנתונים מ-Facebook התקבלה: הנתונים מ-Facebook שקשורים אליה נמחקו."}</b>{" "}
             <code dir="ltr">{deletion.slice(0, 32)}</code></p>
         )}
         <p>{t.intro(site?.name ?? "SPOTX")}</p>

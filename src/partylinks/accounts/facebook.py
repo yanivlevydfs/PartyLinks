@@ -97,10 +97,15 @@ def parse_signed_request(signed: str, secret: str) -> dict[str, Any] | None:
 
 def _delete(request: Request, facebook_id: str) -> None:
     with request.app.state.db.session() as session:
-        user_id = session.scalar(select(UserRow.id).where(UserRow.facebook_id == facebook_id))
-        if user_id is not None:
-            delete_user(session, user_id)
-            log.info("facebook data deletion: user %s deleted", user_id)
+        user = session.scalar(select(UserRow).where(UserRow.facebook_id == facebook_id))
+        if user is None:
+            return
+        if user.google_sub:  # also signs in with Google: only the Facebook link goes
+            user.facebook_id = None
+            log.info("facebook data deletion: user %s unlinked from Facebook", user.id)
+        else:
+            delete_user(session, user.id)
+            log.info("facebook data deletion: user %s deleted", user.id)
 
 
 @router.post("/auth/facebook/deletion", dependencies=[limited("fb-deletion", 30)])  # Meta's servers
