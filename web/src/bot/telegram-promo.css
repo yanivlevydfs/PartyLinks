@@ -64,7 +64,7 @@
 .tg-actions { margin-top: 10px; }
 .tg-cta { padding: 8px 18px; font-size: 14px; }
 .tg-close { top: 8px; width: 28px; height: 28px; font-size: 17px; }
-.tg-phone { width: 190px; margin: 0; padding: 9px; gap: 5px; border-radius: 18px; }
+.tg-phone { width: 190px; margin: 0; margin-inline-end: 30px; /* clear of the close button */ padding: 9px; gap: 5px; border-radius: 18px; }
 .tg-bubble { padding: 5px 9px; font-size: 11px; border-radius: 12px; }
 .tg-card { padding: 6px; font-size: 11px; border-radius: 10px; }
 .tg-card-img { height: 30px; border-radius: 7px; }
