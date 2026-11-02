@@ -77,14 +77,14 @@ def search(
     ).all()  # fmt: skip
     rows = [row for row, _ in pairs]
     extras = refs.extras(session, rows)
-    if _free_text(query, cfg):
+    if free_text(query, cfg):
         for row, r in pairs:
             if r == 2:  # the words are only in the description (or address): say so, it may not be the event's own
                 extras.setdefault(row.id, {})["in_text"] = True
     return Found(rows, total, extras, query)
 
 
-def _free_text(query: str, cfg: Settings) -> bool:
+def free_text(query: str, cfg: Settings) -> bool:
     """A search of names only (an artist, a word): no place, date, price or free-entry words, whose
     matches in the address or the date are what was asked for.
     ponytail: a city name not in the place list still counts as free text; add it to the cities if it shows."""

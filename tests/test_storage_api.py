@@ -83,6 +83,20 @@ def test_retention_keeps_today_onwards_and_parties_still_in_progress(tmp_path: P
     assert remaining == {"test:still-partying", "test:today", "test:future"}
 
 
+def test_a_name_found_only_in_a_description_is_marked(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    seed(settings, [
+        event("u", future, title="Utopia Koh Phangan", artists=["Astrix"]),
+        event("r", future, title="20 Years of Ritmo", description="Ritmo played with Astrix and Ace Ventura"),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        items = client.get("/events", params={"q": "astrix"}).json()["items"]
+        assert [(e["title"], e["in_text"]) for e in items] == [("Utopia Koh Phangan", False), ("20 Years of Ritmo", True)]
+        items = client.get("/events", params={"q": "astrix tel aviv"}).json()["items"]
+        assert not any(e["in_text"] for e in items)  # a place asked: its address match is what was asked
+
+
 def test_api_filters_categories_and_stored_image(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     future = datetime.now(UTC) + timedelta(days=2)

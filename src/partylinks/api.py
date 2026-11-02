@@ -42,6 +42,7 @@ from partylinks.ads import service as ads
 from partylinks.artwork import service as artwork
 from partylinks.artwork.routes import router as artwork_router
 from partylinks.bot import install as install_bot
+from partylinks.bot.core.find import free_text
 from partylinks.bot.telegram.webhook import username as telegram_username
 from partylinks.box_offices import BoxOfficeOut, box_offices
 from partylinks.config import Settings, get_settings
@@ -197,6 +198,8 @@ class EventSummaryOut(_Out):
     # Set only on a paid card at the top of the results (GET /events?sponsored=true, see partylinks.ads):
     # the placement's event id, for /events/sponsored/hit. Such a card must say "Sponsored" (by law).
     sponsored: str | None = None
+    # A search of names found it only in the description (or address), e.g. an artist named in a bio.
+    in_text: bool = False
     last_seen_at: datetime
     first_seen_at: datetime
     # False when the source stopped listing it (cancelled / pulled); hidden from upcoming lists.
@@ -1173,6 +1176,7 @@ def _register_routes(app: FastAPI) -> None:
         # A search in the default date order puts title matches first, then lineup / venue, then the rest.
         q = request.query_params.get("q")
         rank = relevance(q, cfg, _sounds_like(request, q)) if q and sort is EventSort.start_asc else None
+        names_only = bool(rank is not None and free_text(q or "", cfg))
 
         def build(session: Session) -> EventPage:
             # Cards never show the long text columns.
@@ -1183,6 +1187,7 @@ def _register_routes(app: FastAPI) -> None:
             first, drop = paid if paid else ([], [])
             where = [*filters, EventRow.id.not_in(drop)] if drop else filters
             start, stop = max((page - 1) * size - len(drop), 0), page * size - len(drop)
+            weak: set[str] = set()
             if rank is None:
                 total = session.scalar(select(func.count()).select_from(EventRow).where(*where)) or 0
                 # By date: a day's events first, then its place listings (a club or café "open today",
@@ -1203,8 +1208,9 @@ def _register_routes(app: FastAPI) -> None:
             else:
                 # Ranking reads every match anyway, so one pass gives both the order and the total
                 # (measured at 35k events: as fast as the count + page it replaces).
-                ids = session.scalars(select(EventRow.id).where(*where).order_by(rank, _START, EventRow.id)).all()
-                total, wanted = len(ids), ids[start:stop]
+                ranked = session.execute(select(EventRow.id, rank).where(*where).order_by(rank, _START, EventRow.id)).all()
+                total, wanted = len(ranked), [i for i, _ in ranked[start:stop]]
+                weak = {i for i, r in ranked[start:stop] if r == 2} if names_only else set()
                 found = {r.id: r for r in session.scalars(card.where(EventRow.id.in_(wanted)))}
                 rows = [found[i] for i in wanted if i in found]
             total += len(drop)
@@ -1221,7 +1227,7 @@ def _register_routes(app: FastAPI) -> None:
                     suggestion = near
             extras = _summary_extras(session, rows)
             items = [
-                EventSummaryOut.model_validate(r).model_copy(update=extras[r.id] | {"sponsored": promoted.get(r.id)})
+                EventSummaryOut.model_validate(r).model_copy(update=extras[r.id] | {"sponsored": promoted.get(r.id), "in_text": r.id in weak})
                 for r in rows
             ]
             return EventPage(total=total, page=page, page_size=size, items=items, did_you_mean=suggestion)

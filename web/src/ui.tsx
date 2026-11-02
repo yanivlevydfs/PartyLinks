@@ -314,6 +314,7 @@ export function Card({ e }: { e: EventSummary }) {
           <p className="meta">📍 {[e.venue_name, e.area && label(t.areas, e.area)].filter(Boolean).join(" · ")}</p>
         )}
         {e.lineup.length > 0 && <p className="meta">🎧 {e.lineup.slice(0, 4).join(" · ")}</p>}
+        {e.in_text && <p className="meta">🔍 {t.inText}</p>}
         <div className="tags">
           {e.free_sold_out && !e.is_sold_out && !(e.group_has_free_entry ?? e.has_free_entry) && (
             <span className="tag sold">{t.freeSoldOut}</span>

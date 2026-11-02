@@ -39,6 +39,8 @@ export interface EventSummary {
   has_discount?: boolean;
   /** Set on a paid card at the top of the results (GET /events?sponsored=true): the placement's event id. */
   sponsored?: string | null;
+  /** A search of names found it only in the description (an artist named in a bio, say). */
+  in_text?: boolean;
   last_seen_at: string;
   first_seen_at: string;
   is_listed: boolean;
