@@ -8,7 +8,7 @@ import { send, useMe } from "../accounts/useMe";
 import { eventPath, Img, sized, useT, when } from "../ui";
 import { useAlertText } from "./i18n";
 import { pendingCriteria, SAVE_PARAM, takePending } from "./SaveAlertButton";
-import { isEmpty, useAlertActions, useBell, useCriteriaName } from "./useAlerts";
+import { isEmpty, useAlertActions, useAlerts, useBell, useCriteriaName } from "./useAlerts";
 import "./alerts.css";
 
 /** Whether the bell's panel is open: shared, so the avatar menu's row can open it. */
@@ -61,6 +61,15 @@ function usePendingAlert(setSaved: (s: Saved) => void) {
       }).catch(() => setSaved({ ok: false }));
     }
   }, [me?.id]);
+}
+
+// Empty bell: "no alerts yet" only when there are none; with alerts saved, nothing new has matched yet.
+// Its own component, so the alerts list is fetched only when the open bell is empty.
+function BellEmpty() {
+  const t = useAlertText();
+  const alerts = useAlerts().data?.items;
+  if (!alerts) return null;
+  return <p className="muted">{alerts.length ? t.bellWaiting(alerts.length) : t.bellEmpty}</p>;
 }
 
 export function Bell() {
@@ -118,7 +127,7 @@ export function Bell() {
             </span>
           </div>
           {!bell.data?.items.length ? (
-            <p className="muted">{t.bellEmpty}</p>
+            <BellEmpty />
           ) : (
             <ul>
               {bell.data.items.map((h) => (
