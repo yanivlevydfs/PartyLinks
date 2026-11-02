@@ -67,7 +67,7 @@ from partylinks.places import city_abroad, city_name
 from partylinks.saved.routes import router as saved_router
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
-from partylinks.search import by_skeleton, did_you_mean, relevance, smart_filters, sounds_like
+from partylinks.search import by_skeleton, did_you_mean, relevance, smart_filters, sounds_like, tier
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
 from partylinks.venue_profiles import VenueProfile
@@ -1223,7 +1223,7 @@ def _register_routes(app: FastAPI) -> None:
                 # (measured at 35k events: as fast as the count + page it replaces).
                 ranked = session.execute(select(EventRow.id, rank).where(*where).order_by(rank, _START, EventRow.id)).all()
                 total, wanted = len(ranked), [i for i, _ in ranked[start:stop]]
-                weak = {i for i, r in ranked[start:stop] if r == 2} if names_only else set()
+                weak = {i for i, r in ranked[start:stop] if tier(r) == 2} if names_only else set()
                 found = {r.id: r for r in session.scalars(card.where(EventRow.id.in_(wanted)))}
                 rows = [found[i] for i in wanted if i in found]
             total += len(drop)

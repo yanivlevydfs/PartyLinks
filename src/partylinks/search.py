@@ -15,7 +15,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from convertdate import hebrew, holidays
-from sqlalchemy import ColumnElement, SQLColumnExpression, String, and_, case, cast, or_, select
+from sqlalchemy import ColumnElement, SQLColumnExpression, String, and_, case, cast, func, literal, or_, select
 from sqlalchemy.orm import aliased
 
 from partylinks import countries, seo
@@ -192,7 +192,7 @@ def date_ranges(today: date) -> dict[str, tuple[date, date]]:
 PARTY = ("techno", "house", "trance", "mainstream", "hip_hop", "electronic", "nightclubs", "reggaeton_latin", "afro",
          "disco_funk", "drum_and_bass", "bass_dubstep", "hardstyle", "edm", "throwback", "mizrahi", "rnb", "dancehall_reggae", "dark_wave")
 SYNONYMS: dict[str, tuple[str, ...]] = {
-    "מסיבה": PARTY, "מסיבות": PARTY, "party": PARTY, "parties": PARTY, "ליין": PARTY, "רייב": PARTY, "rave": PARTY,
+    "מסיבה": PARTY, "מסיבות": PARTY, "מסיבת": PARTY, "party": PARTY, "parties": PARTY, "ליין": PARTY, "רייב": PARTY, "rave": PARTY,
     "מסיבת טבע": ("nature_party", "trance"), "מסיבות טבע": ("nature_party", "trance"), "פסיכדלי": ("trance",), "psytrance": ("trance",), "פסי טראנס": ("trance",),
     "הופעה": ("live_show",), "הופעות": ("live_show",), "הופעה חיה": ("live_show",), "קונצרט": ("live_show", "classical_opera"),
     "concert": ("live_show",), "live": ("live_show",), "מועדון": ("nightclubs",), "מועדונים": ("nightclubs",), "קלאב": ("nightclubs",),
@@ -351,14 +351,30 @@ def by_skeleton(names: Iterable[str]) -> dict[str, list[str]]:
     return out
 
 
+TIER = 1000  # relevance(): tier * TIER - parts matched
+UMBRELLA_GENRES = 4  # more genres than this: a mixed listing, one part less in relevance()
+
+
+def tier(rank: int) -> int:
+    """0 / 1 / 2 of a ``relevance`` value (2: the words are only in the description, address...)."""
+    return (rank + TIER - 1) // TIER
+
+
 def relevance(q: str, cfg: Settings, artists: Iterable[str] = ()) -> ColumnElement[int] | None:
-    """0: the event is of a searched genre / kind ("טכנו", "מסיבה") or a searched word is a whole word of
+    """Tier 0: the event is of a searched genre / kind ("טכנו", "מסיבה") or a searched word is a whole word of
     its title; 1: a word is inside the title, lineup or venue; 2: only elsewhere (description, city...).
-    Sorts search results before the date, so "טכנו" lists techno parties before "טכנודע"."""
+    Within a tier, events matching more of the search come first: for "סרט לילדים" a children's film
+    before a kids' workshop that only mentions film. Sorts search results before the date, so "טכנו"
+    lists techno parties before "טכנודע". The value is tier * TIER - parts matched (smaller first)."""
     text = " " + " ".join(q.casefold().split()) + " "
-    for name in sorted(_area_and_site_names(cfg), key=len, reverse=True):  # "גוש דן" is a place, not title words
+    for name in sorted(_area_and_site_names(cfg), key=len, reverse=True):  # "גוש דן", "בתל אביב": places, not title words
         text = text.replace(f" {name} ", " ")
-    words = [w for w in re.findall(r"\w{2,}", text) if not w.isdigit()]
+    # Dates, prices and "free" are filters, not title words ("הלילה" is no reason to list "מטבח לילה" first).
+    today = datetime.now(ZoneInfo(cfg.timezone)).date()
+    text = " " + " ".join(PRICE.sub(" ", text).split()) + " "
+    for name in sorted({*FREE, *WEEKEND, *DAYS, *date_ranges(today), *exact_dates(text.strip(), today)}, key=len, reverse=True):
+        text = text.replace(f" {name.casefold()} ", " ")
+    words = [w for w in re.findall(r"\w{2,}", text) if not w.isdigit() and w not in FILLER]  # "מה יש" is in "ישראל"
     artists = list(artists)
     if not words and not artists:
         return None
@@ -370,13 +386,23 @@ def relevance(q: str, cfg: Settings, artists: Iterable[str] = ()) -> ColumnEleme
         EventRow.title.ilike(_pattern(f), escape="\\") | lineup_contains(f) | EventRow.venue_name.ilike(_pattern(f), escape="\\")
         for f in forms
     ]
-    return case((or_(*top), 0), (or_(*inside), 1), else_=2)
+    # Each kind searched and each other word: one part. Words of a kind's own name count with the kind.
+    named = {name for name in _genre_names(cfg) if f" {name} " in text}
+    kinds = [or_(*(_genre(cfg, g) for g in _genre_names(cfg)[name])) for name in named]
+    loose = [w for w in words if not any(w in name.split() for name in named)]
+    parts = kinds + [or_(*(_whole_word(EventRow.title, f) for f in (w, w[1:]) if len(f) >= 2)) for w in loose]
+    matched = sum((case((p, 1), else_=0) for p in parts), literal(0)) if parts else literal(0)
+    if kinds:  # a listing filed under many kinds ("אירועי נובמבר": 9 genres) is less likely the kind asked for
+        matched = matched - case((func.jsonb_array_length(EventRow.genres) > UMBRELLA_GENRES, 1), else_=0)
+    return case((or_(*top), 0), (or_(*inside), TIER), else_=2 * TIER) - matched
 
 
 def _area_and_site_names(cfg: Settings) -> set[str]:
     names = {n for key, (he, _, en) in seo.REGION_NAMES.items() for n in (he, en, *REGION_ALIASES.get(key, ()))}
     names |= {n for key in cfg.sources for n in (key, *SOURCE_ALIASES.get(key, ()))}
-    return {n.casefold() for n in names}
+    # A city in Israel too: the search already keeps only its events, so "תל אביב" in a title is no merit.
+    names |= {n for c in cfg.enrichment.cities for n in (c.he, c.en, *c.aliases)}
+    return {p + n.casefold() for n in names for p in (HE_PREFIXES if re.match(r"[֐-׿]", n) else ("",))}
 
 
 def _genre(cfg: Settings, genre: str) -> Cond:

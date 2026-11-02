@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session, defer, selectinload
 from partylinks.bot.core import refs, understand
 from partylinks.config import Settings
 from partylinks.db import EventRow
-from partylinks.search import did_you_mean, relevance
+from partylinks.search import did_you_mean, relevance, tier
 
 KM_PER_DEGREE = 111.32
 
@@ -79,7 +79,7 @@ def search(
     extras = refs.extras(session, rows)
     if free_text(query, cfg):
         for row, r in pairs:
-            if r == 2:  # the words are only in the description (or address): say so, it may not be the event's own
+            if tier(r) == 2:  # the words are only in the description (or address): say so, it may not be the event's own
                 extras.setdefault(row.id, {})["in_text"] = True
     return Found(rows, total, extras, query)
 
