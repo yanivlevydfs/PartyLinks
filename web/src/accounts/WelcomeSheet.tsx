@@ -1,4 +1,4 @@
-// After Google: "?welcome=1" (first sign-in) says hello, "?signin=..." says why it didn't work.
+// After Google / Facebook: "?welcome=1" (first sign-in) says hello, "?signin=..." says why it didn't work.
 // Closing drops the parameter from the address.
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";

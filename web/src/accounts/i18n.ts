@@ -3,6 +3,8 @@ import { useT } from "../ui";
 
 const he = {
   google: "המשך עם Google",
+  facebook: "המשך עם Facebook",
+  signInTitle: "כניסה ל-SPOTX",
   signIn: "כניסה",
   menu: "החשבון שלי",
   account: "החשבון שלי",
@@ -35,15 +37,18 @@ const he = {
   close: "סגירה",
   failed: "משהו השתבש, נסו שוב",
   signin: {
-    failed: "הכניסה עם Google בוטלה או נכשלה.",
+    failed: "הכניסה בוטלה או נכשלה.",
     unverified: "חשבון ה-Google לא אומת. נסו חשבון אחר.",
     blocked: "החשבון הזה חסום. לפרטים כתבו לנו דרך עמוד צור קשר.",
     taken: "כתובת הדוא״ל הזו כבר מחוברת לחשבון אחר. כתבו לנו דרך עמוד צור קשר.",
+    noemail: "לחשבון ה-Facebook אין כתובת דוא״ל מאושרת (או שלא אישרתם לשתף אותה). התראות ועדכונים נשלחים במייל, אז נסו שוב עם אישור הדוא״ל, או המשיכו עם Google.",
   } as Record<string, string>,
 };
 
 const en: typeof he = {
   google: "Continue with Google",
+  facebook: "Continue with Facebook",
+  signInTitle: "Sign in to SPOTX",
   signIn: "Sign in",
   menu: "My account",
   account: "My account",
@@ -76,10 +81,11 @@ const en: typeof he = {
   close: "Close",
   failed: "Something went wrong, try again",
   signin: {
-    failed: "Signing in with Google was cancelled or failed.",
+    failed: "Signing in was cancelled or failed.",
     unverified: "That Google account isn't verified. Try another one.",
     blocked: "This account is blocked. Write to us through the contact page.",
     taken: "That email is already linked to another account. Write to us through the contact page.",
+    noemail: "That Facebook account has no confirmed email (or you chose not to share it). Alerts and updates come by email, so try again and allow the email, or continue with Google.",
   },
 };
 

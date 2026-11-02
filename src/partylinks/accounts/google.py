@@ -13,7 +13,7 @@ from starlette.concurrency import run_in_threadpool
 
 from partylinks.accounts import sessions
 from partylinks.accounts.guard import limited
-from partylinks.accounts.service import Blocked, EmailTaken, sign_in
+from partylinks.accounts.service import Blocked, EmailTaken, Provider, sign_in
 
 log = logging.getLogger(__name__)
 router = APIRouter(tags=["accounts"], include_in_schema=False, dependencies=[limited("auth", 10)])
@@ -53,12 +53,13 @@ async def login(request: Request, next: str | None = None) -> Response:
     return await client(request).authorize_redirect(request, f"{base}/auth/google/callback")
 
 
-def _finish(request: Request, info: dict[str, Any], target: str) -> Response:
+def finish(request: Request, provider: Provider, info: dict[str, Any], target: str) -> Response:
+    """Sign the user in (or say why not) and go back to ``target``. Shared with the Facebook sign-in."""
     cfg = request.app.state.settings
     with request.app.state.db.session() as session:
         try:
             user, is_new = sign_in(
-                session, sub=info["sub"], email=info["email"], name=info.get("name") or "",
+                session, provider=provider, sub=info["sub"], email=info["email"], name=info.get("name") or "",
                 picture=info.get("picture"), locale=(info.get("locale") or "he")[:2],
                 admin_emails=cfg.accounts.admin_emails,
             )  # fmt: skip
@@ -68,7 +69,7 @@ def _finish(request: Request, info: dict[str, Any], target: str) -> Response:
             return RedirectResponse(_with(target, "signin=taken"), 303)
         response = RedirectResponse(_with(target, "welcome=1") if is_new else target, 303)
         sessions.start(session, response, user.id, cfg.accounts.session_days, cfg.site.base_url.startswith("https://"))
-        log.info("sign-in: user %s%s", user.id, " (new)" if is_new else "")
+        log.info("sign-in (%s): user %s%s", provider, user.id, " (new)" if is_new else "")
     return response
 
 
@@ -83,4 +84,4 @@ async def callback(request: Request) -> Response:
     info = token.get("userinfo") or {}
     if not info.get("sub") or not info.get("email") or not info.get("email_verified"):
         return RedirectResponse(_with(target, "signin=unverified"), 303)
-    return await run_in_threadpool(_finish, request, dict(info), target)
+    return await run_in_threadpool(finish, request, "google", dict(info), target)

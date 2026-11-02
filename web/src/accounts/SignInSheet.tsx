@@ -1,5 +1,6 @@
 // "Sign in to save": the popup a signed-out visitor gets on a personal action (the save bell on an event,
-// "Save as alert"). Continue with Google comes back to ``next``, where the action completes.
+// "Save as alert"), and the header's "Sign in". Continue with Google / Facebook comes back to ``next``,
+// where the action completes.
 // Drawn at the page's root (a portal): a card moves on hover, which would drag a popup inside it.
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -18,7 +19,7 @@ export function SignInSheet({ title, text, next, onClose }: { title: string; tex
     <div className="sheet-back" onClick={(e) => { e.stopPropagation(); onClose(); }}>
       <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="signin-title" onClick={(e) => e.stopPropagation()}>
         <h2 id="signin-title">{title}</h2>
-        <p>{text}</p>
+        {text && <p>{text}</p>}
         <SignInButton next={next} />
         <p className="muted sheet-small">{t.why}</p>
         <button type="button" className="link-btn" onClick={onClose} autoFocus>{t.close}</button>
@@ -28,7 +29,7 @@ export function SignInSheet({ title, text, next, onClose }: { title: string; tex
   );
 }
 
-/** This page's address with ``param=value`` added: where Google sends the visitor back. */
+/** This page's address with ``param=value`` added: where Google / Facebook send the visitor back. */
 export function returnTo(param: string, value: string) {
   const url = new URL(location.href);
   url.searchParams.set(param, value);

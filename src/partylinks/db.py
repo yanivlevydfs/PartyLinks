@@ -528,9 +528,12 @@ class Database:
             dialect = self.engine.dialect
             with self.engine.begin() as conn:
                 for table in Base.metadata.sorted_tables:
-                    present = {c["name"] for c in existing.get_columns(table.name)}
+                    present = {c["name"]: c for c in existing.get_columns(table.name)}
                     for column in table.columns:
                         if column.name in present:
+                            if column.nullable and not present[column.name]["nullable"]:  # made optional since
+                                conn.execute(text(f'ALTER TABLE {table.name} ALTER COLUMN "{column.name}" DROP NOT NULL'))
+                                log.info("schema: %s.%s may now be NULL", table.name, column.name)
                             continue
                         ddl = column.type.compile(dialect=dialect)
                         default = _literal_default(column, dialect)

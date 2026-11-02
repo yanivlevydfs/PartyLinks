@@ -24,9 +24,20 @@ export async function send<T = unknown>(url: string, method: string, body?: unkn
   return res.status === 204 ? null : res.json();
 }
 
-/** Google sign-in is configured on the server (GET /site): otherwise no account UI at all. */
+export type Provider = "google" | "facebook";
+
+function useSite() {
+  return useQuery({ queryKey: ["site"], queryFn: () => fetch("/site").then((r) => r.json()) }).data;
+}
+
+/** Google or Facebook sign-in is configured on the server (GET /site): otherwise no account UI at all. */
 export function useAccountsOn() {
-  return useQuery({ queryKey: ["site"], queryFn: () => fetch("/site").then((r) => r.json()) }).data?.accounts === true;
+  return useSite()?.accounts === true;
+}
+
+/** The "Continue with ..." buttons to show, in order. */
+export function useProviders(): Provider[] {
+  return useSite()?.providers ?? [];
 }
 
 export function useMe() {
@@ -42,8 +53,9 @@ export function useMe() {
   });
 }
 
-/** Where "Continue with Google" goes: back to this page afterwards. */
-export const signInUrl = (next = location.pathname + location.search) => `/auth/google/login?next=${encodeURIComponent(next)}`;
+/** Where "Continue with Google / Facebook" goes: back to this page afterwards. */
+export const signInUrl = (next = location.pathname + location.search, provider: Provider = "google") =>
+  `/auth/${provider}/login?next=${encodeURIComponent(next)}`;
 
 export function useSignOut() {
   const qc = useQueryClient();

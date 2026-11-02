@@ -15,13 +15,14 @@ Gender = Literal["male", "female", "none"]  # "none": would rather not say
 
 
 class UserRow(Base):
-    """A Google account. ``id`` is ours (random) and the only one logs carry; ``google_sub`` and
-    ``email`` are never logged."""
+    """A Google and/or Facebook account (linked by their verified email). ``id`` is ours (random) and
+    the only one logs carry; ``google_sub``, ``facebook_id`` and ``email`` are never logged."""
 
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True)  # secrets.token_hex(16)
-    google_sub: Mapped[str] = mapped_column(Text, unique=True)
+    google_sub: Mapped[str | None] = mapped_column(Text, unique=True)
+    facebook_id: Mapped[str | None] = mapped_column(Text, unique=True, index=True)  # app-scoped user id
     email: Mapped[str] = mapped_column(Text, unique=True)  # lowercased
     name: Mapped[str] = mapped_column(Text)
     picture: Mapped[str | None] = mapped_column(Text)

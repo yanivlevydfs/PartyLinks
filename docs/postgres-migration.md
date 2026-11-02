@@ -841,3 +841,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **עמודות חדשות ב-`bot_chats`** (נוספות ב-`create_schema`): ‏`consent_at` (לחיצה על "אישור והמשך"; בלעדיו אין שורה כלל), ‏`seen_at` (ההודעה האחרונה, מתעדכן בכל הודעה).
 - **שאילתות:** בכל הודעה `SELECT consent_at FROM bot_chats WHERE channel = ? AND chat_id = ?` (על ה-UNIQUE הקיים). בכל סבב של ה-job: ‏`DELETE FROM bot_chats WHERE coalesce(seen_at, created_at) < now - bot.inactive_days` (התראות, תזכורות ומעקבים נמחקים ב-CASCADE). "ביטול" במסך הכניסה: ‏`DELETE` של שורת הצ'אט ו-`UPDATE bot_usage SET chat = NULL`.
 - **Tests:** ‏`tests/test_bot_menu.py`.
+
+### 2026-11-02 (כניסה עם Facebook)
+- **עמודה חדשה:** `users.facebook_id` (Text, nullable, אינדקס UNIQUE `ix_users_facebook_id`), נוספת ב-`ADD COLUMN` של `create_schema` והאינדקס אחריה. מזהה המשתמש של Facebook לאפליקציה שלנו (app-scoped); לא נכתב ללוגים.
+- **שינוי עמודה:** `users.google_sub` נעשית nullable (משתמש שנכנס רק עם Facebook). `create_schema` מריץ עכשיו `ALTER TABLE ... ALTER COLUMN ... DROP NOT NULL` לכל עמודה שה-ORM מגדיר nullable וב-DB היא NOT NULL (הקלה בלבד, אף פעם לא ההפך). ה-UNIQUE על `google_sub` נשאר (ב-PostgreSQL כמה NULL לא מתנגשים).
+- **שאילתות:** כניסה: ‏`SELECT users WHERE facebook_id = ?` (או `google_sub = ?`), ואם אין: ‏`SELECT users WHERE email = ?` (UNIQUE) כדי לחבר את החשבון השני לאותו משתמש. ‏`POST /auth/facebook/deletion`: ‏`SELECT id FROM users WHERE facebook_id = ?` ואז `delete_user` הקיים.
+- **Tests:** ‏`tests/test_accounts.py` (‏`test_facebook_sign_in_links_by_email_and_deletes`, ‏`test_parse_signed_request`).

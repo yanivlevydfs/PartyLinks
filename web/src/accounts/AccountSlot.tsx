@@ -1,5 +1,6 @@
-// The header's account corner: "Continue with Google" when signed out, the avatar menu when signed in,
-// nothing when sign-in is off. A plain link to our server, which redirects to Google: no Google script.
+// The header's account corner: "Sign in" (the Google / Facebook choice) when signed out, the avatar menu
+// when signed in, nothing when sign-in is off. Plain links to our server, which redirects to Google or
+// Facebook: no Google or Facebook script.
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BellMenuItem } from "../alerts/Bell";
@@ -7,7 +8,8 @@ import { useBell } from "../alerts/useAlerts";
 import { SavedMenuItem } from "../saved/SavedLink";
 import { useStore } from "../store";
 import { useAccountText } from "./i18n";
-import { signInUrl, useAccountsOn, useMe, useSignOut } from "./useMe";
+import { SignInSheet } from "./SignInSheet";
+import { signInUrl, useAccountsOn, useMe, useProviders, useSignOut } from "./useMe";
 import { WelcomeSheet } from "./WelcomeSheet";
 import "./accounts.css";
 
@@ -23,12 +25,32 @@ export function GoogleG() {
   );
 }
 
+/** Facebook's "f", drawn inline (Facebook's login button branding). */
+function FacebookF() {
+  return (
+    <svg className="g-logo" viewBox="0 0 24 24" aria-hidden width="20" height="20">
+      <path fill="#fff" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z" />
+    </svg>
+  );
+}
+
+/** One button per configured provider ("Continue with Google", "Continue with Facebook"). */
 export function SignInButton({ next, label }: { next?: string; label?: string }) {
   const t = useAccountText();
+  const providers = useProviders();
   return (
-    <a className="google-btn" href={signInUrl(next)} rel="nofollow">
-      <GoogleG /> <span>{label ?? t.google}</span>
-    </a>
+    <div className="signin-btns">
+      {providers.includes("google") && (
+        <a className="google-btn" href={signInUrl(next)} rel="nofollow">
+          <GoogleG /> <span>{label ?? t.google}</span>
+        </a>
+      )}
+      {providers.includes("facebook") && (
+        <a className="google-btn fb-btn" href={signInUrl(next, "facebook")} rel="nofollow">
+          <FacebookF /> <span>{t.facebook}</span>
+        </a>
+      )}
+    </div>
   );
 }
 
@@ -85,13 +107,20 @@ export function AccountSlot() {
   const on = useAccountsOn();
   const me = useMe();
   const t = useAccountText();
+  const [choosing, setChoosing] = useState(false);
   if (!on || me.isLoading) return null;
   return (
     <>
       {me.data ? <UserMenu /> : (
-        <a className="sign-in" href={signInUrl()} rel="nofollow" aria-label={t.google}>
-          <GoogleG /><span>{t.signIn}</span>
-        </a>
+        <button type="button" className="sign-in" aria-haspopup="dialog" aria-label={t.signInTitle} onClick={() => setChoosing(true)}>
+          <svg className="g-logo" viewBox="0 0 24 24" aria-hidden width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
+          </svg>
+          <span>{t.signIn}</span>
+        </button>
+      )}
+      {choosing && (
+        <SignInSheet title={t.signInTitle} text="" next={location.pathname + location.search} onClose={() => setChoosing(false)} />
       )}
       <WelcomeSheet />
     </>

@@ -656,7 +656,7 @@ def privacy_page(session: Session, cfg: Settings, lang: str) -> Page:
         "(מפה) נטענים רק בהסכמה."
         if he
         else f"{cfg.site.name} follows the Israeli Privacy Protection Law, 1981 (including Amendment 13). Using the site "
-        "needs no sign-up (a Google account is optional) and there are no advertising cookies; only necessary items are stored in the browser, and usage statistics "
+        "needs no sign-up (a Google or Facebook account is optional) and there are no advertising cookies; only necessary items are stored in the browser, and usage statistics "
         "(Google Analytics) and third-party content (the map) load only with consent."
     )
     contact = ""  # the address is revealed on the page by a click, never in the HTML (harvesters)

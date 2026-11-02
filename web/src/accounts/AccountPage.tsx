@@ -1,4 +1,4 @@
-// /account: name, email language, delete account. Signed out: what an account adds, and the Google button.
+// /account: name, email language, delete account. Signed out: what an account adds, and the Google / Facebook buttons.
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";

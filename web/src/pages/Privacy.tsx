@@ -22,7 +22,7 @@ const TEXT = {
       {
         title: "המידע שאנחנו אוספים",
         body: [
-          "השימוש באתר אינו מחייב הרשמה: כל האירועים, החיפוש והמפה פתוחים לכולם בלי חשבון. מי שבוחר להתחבר עם Google מוסר לנו את המידע המפורט בסעיף \"חשבון משתמש (רשות)\". מעבר לכך אין באתר טפסים, רכישות או פרסומות.",
+          "השימוש באתר אינו מחייב הרשמה: כל האירועים, החיפוש והמפה פתוחים לכולם בלי חשבון. מי שבוחר להתחבר עם Google או Facebook מוסר לנו את המידע המפורט בסעיף \"חשבון משתמש (רשות)\". מעבר לכך אין באתר טפסים, רכישות או פרסומות.",
           "כמו בכל אתר, השרת מקבל בכל בקשה מידע טכני: כתובת IP, סוג הדפדפן ומערכת ההפעלה (User-Agent), הכתובת המבוקשת ושעת הבקשה. המידע משמש אך ורק להפעלת האתר ולאבטחתו:",
         ],
         list: [
@@ -32,9 +32,9 @@ const TEXT = {
       },
       {
         title: "חשבון משתמש (רשות)",
-        body: ["אפשר, אך לא חובה, להתחבר עם חשבון Google כדי לשמור אירועים בכל מכשיר, לקבל התראות על מסיבות ואירועים שמתאימים לכם ועדכון שבועי. במקרה כזה:"],
+        body: ["אפשר, אך לא חובה, להתחבר עם חשבון Google או Facebook כדי לשמור אירועים בכל מכשיר, לקבל התראות על מסיבות ואירועים שמתאימים לכם ועדכון שבועי. במקרה כזה:"],
         list: [
-          "בכניסה עם Google אנחנו מקבלים ושומרים את מזהה חשבון ה-Google, כתובת הדוא\"ל, השם וכתובת תמונת הפרופיל. איננו מקבלים את הסיסמה שלכם.",
+          "בכניסה עם Google אנחנו מקבלים ושומרים את מזהה חשבון ה-Google, כתובת הדוא\"ל, השם וכתובת תמונת הפרופיל. בכניסה עם Facebook: מזהה המשתמש של Facebook לאתר שלנו, כתובת הדוא\"ל, השם ותמונת הפרופיל, ולא את רשימת החברים, הפוסטים או כל מידע אחר. כתובת דוא\"ל זהה ב-Google וב-Facebook מחברת את שתיהן לאותו חשבון. איננו מקבלים את הסיסמה שלכם.",
           "נשמר גם מה שאתם יוצרים: אירועים ששמרתם, התראות (סוגי אירועים, אזורים, זמנים ומילות חיפוש שבחרתם), אילו אירועים התאימו להן ונשלחו אליכם, ושפת המיילים.",
           "העדכון השבועי בדוא\"ל נשלח רק למי שביקש אותו במפורש. אנחנו שומרים אם ביקשתם ומתי (חוק התקשורת, סעיף 30א), וכל מייל כולל קישור להסרה בלחיצה אחת.",
           "התחברות: תאריך יצירת החשבון והכניסה האחרונה, ועוגיית התחברות שרק טביעת ה-SHA-256 שלה נשמרת אצלנו. איננו שומרים כתובת IP או סוג דפדפן לצד החשבון.",
@@ -78,7 +78,7 @@ const TEXT = {
           "האתר מתארח אצל ספק תשתית ענן (Railway, ארה\"ב), שמעבד עבורנו את התעבורה ואת יומני השרת. ספקי התשתית, ו-jsDelivr, Google ו-OpenFreeMap המפורטים בטבלה, נמצאים מחוץ לישראל; ההעברה נעשית בהתאם לתקנות הגנת הפרטיות (העברת מידע אל מאגרי מידע שמחוץ לגבולות המדינה), התשס\"א-2001, ולמדיניות הפרטיות של כל ספק.",
           "הגופנים באתר מאוחסנים בשרת שלנו, כך שלא נשלחת בקשה ל-Google Fonts. כרזות האירועים נשמרות ברובן בשרת שלנו; כשכרזה טרם נשמרה, היא נטענת ישירות מאתר הכרטיסים שפרסם אותה, בלי לשלוח לו את כתובת העמוד שממנו הגעתם.",
           "לחיצה על קישור לרכישת כרטיסים מעבירה אתכם לאתר חיצוני (כמו Go-Out, Eventer וכו'). אתרים אלה אינם בשליטתנו, וחלה עליהם מדיניות הפרטיות שלהם.",
-          "כניסה עם Google מתבצעת בעמוד של Google (Google LLC, ארה\"ב), שמעביר לנו רק את פרטי החשבון שאישרתם. מיילים נשלחים דרך ספק הדיוור Resend (ארה\"ב), שמקבל לשם כך את כתובת הדוא\"ל ואת תוכן המייל בלבד.",
+          "כניסה עם Google מתבצעת בעמוד של Google (Google LLC, ארה\"ב), וכניסה עם Facebook בעמוד של Meta (Meta Platforms, Inc., ארה\"ב); כל אחד מהם מעביר לנו רק את פרטי החשבון שאישרתם. הסרת האפליקציה SPOTX מהגדרות Facebook מוחקת את החשבון אצלנו מיד. מיילים נשלחים דרך ספק הדיוור Resend (ארה\"ב), שמקבל לשם כך את כתובת הדוא\"ל ואת תוכן המייל בלבד.",
         ],
       },
       {
@@ -129,7 +129,7 @@ const TEXT = {
       {
         title: "What we collect",
         body: [
-          "Using the site needs no sign-up: every event, the search and the map are open to everyone without an account. If you choose to sign in with Google, you give us the data listed under \"User account (optional)\". Beyond that the site has no forms, purchases or ads.",
+          "Using the site needs no sign-up: every event, the search and the map are open to everyone without an account. If you choose to sign in with Google or Facebook, you give us the data listed under \"User account (optional)\". Beyond that the site has no forms, purchases or ads.",
           "Like every website, the server receives technical data with each request: IP address, browser and operating system (User-Agent), the requested address and the time. It is used only to run and protect the site:",
         ],
         list: [
@@ -139,9 +139,9 @@ const TEXT = {
       },
       {
         title: "User account (optional)",
-        body: ["You may, but don't have to, sign in with a Google account to keep saved events on every device, get alerts for parties and events that suit you, and a weekly update. If you do:"],
+        body: ["You may, but don't have to, sign in with a Google or Facebook account to keep saved events on every device, get alerts for parties and events that suit you, and a weekly update. If you do:"],
         list: [
-          "When you sign in with Google we receive and store your Google account ID, email address, name and profile picture URL. We never receive your password.",
+          "When you sign in with Google we receive and store your Google account ID, email address, name and profile picture URL. With Facebook: your Facebook user ID for our app, email address, name and profile picture, and not your friends, posts or anything else. The same email on Google and Facebook links both to one account. We never receive your password.",
           "We also keep what you create: saved events, alerts (the event types, areas, times and search words you chose), which events matched them and were sent to you, and your email language.",
           "The weekly email update goes only to people who asked for it. We keep whether and when you asked (Communications Law, section 30A), and every email has a one-click unsubscribe link.",
           "Sign-in: when the account was created and last used, and a sign-in cookie of which we keep only a SHA-256 fingerprint. We store no IP address or browser type with the account.",
@@ -185,7 +185,7 @@ const TEXT = {
           "The site is hosted by a cloud infrastructure provider (Railway, USA), which processes traffic and server logs on our behalf. The hosting provider, and jsDelivr, Google and OpenFreeMap listed above, are outside Israel; transfers follow the Privacy Protection (Transfer of Data to Databases Abroad) Regulations, 2001, and each provider's privacy policy.",
           "Our fonts are served from our own server, so nothing is sent to Google Fonts. Event posters are mostly stored on our server; a poster not yet stored loads directly from the ticketing site that published it, without telling it which page you came from.",
           "Ticket links take you to external sites (Go-Out, Eventer, etc.). They are not under our control and their own privacy policies apply.",
-          "Signing in with Google happens on Google's own page (Google LLC, USA), which passes us only the account details you approve. Emails are sent through the email provider Resend (USA), which receives only your email address and the email's content for that purpose.",
+          "Signing in with Google happens on Google's own page (Google LLC, USA), and with Facebook on Meta's (Meta Platforms, Inc., USA); each passes us only the account details you approve. Removing the SPOTX app in your Facebook settings deletes your account here at once. Emails are sent through the email provider Resend (USA), which receives only your email address and the email's content for that purpose.",
         ],
       },
       {
@@ -247,12 +247,17 @@ export default function PrivacyPage() {
   const { consent, openSettings } = useConsent();
   const site = useQuery({ queryKey: ["site"], queryFn: () => fetch("/site").then((r) => r.json() as Promise<SiteInfo>) }).data;
   const p = site?.privacy;
+  const deletion = new URLSearchParams(location.search).get("deletion"); // Meta's data deletion status link
   const updated = p?.updated && new Date(p.updated + "T12:00:00Z").toLocaleDateString(ui.locale, { dateStyle: "long", timeZone: "UTC" });
 
   return (
     <>
       <Hero title={t.title} />
       <main className="wrap statement">
+        {deletion && (
+          <p role="status"><b>{lang === "en" ? "Your Facebook data deletion request was received: the account linked to it has been deleted." : "בקשת מחיקת הנתונים מ-Facebook התקבלה: החשבון שקשור אליה נמחק."}</b>{" "}
+            <code dir="ltr">{deletion.slice(0, 32)}</code></p>
+        )}
         <p>{t.intro(site?.name ?? "SPOTX")}</p>
         <Sections list={t.sections} />
         <StorageTable />

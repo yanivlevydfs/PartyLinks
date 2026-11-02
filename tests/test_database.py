@@ -35,6 +35,18 @@ def test_columns_added_to_an_old_table_get_their_default(tmp_path: Path) -> None
     db.create_schema()  # a second start changes nothing
 
 
+def test_a_column_made_optional_drops_not_null(tmp_path: Path) -> None:
+    """users.google_sub became optional (Facebook-only users): an old NOT NULL is dropped at start."""
+    from sqlalchemy import inspect
+
+    db = Database(os.environ["PARTYLINKS_DATABASE__URL"])
+    with db.engine.begin() as conn:
+        conn.execute(text("CREATE TABLE users (id VARCHAR(32) PRIMARY KEY, google_sub TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL)"))
+    db.create_schema()
+    columns = {c["name"]: c for c in inspect(db.engine).get_columns("users")}
+    assert columns["google_sub"]["nullable"] and not columns["email"]["nullable"] and "facebook_id" in columns
+
+
 def test_a_long_id_and_a_nul_character_never_cost_an_event(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     start = datetime.now(UTC) + timedelta(days=1)

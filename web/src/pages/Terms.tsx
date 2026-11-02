@@ -49,7 +49,7 @@ const TEXT = {
       {
         title: "חשבון משתמש, התראות ומיילים",
         body: [
-          "החשבון אינו חובה: כל האתר פתוח לשימוש בלי הרשמה. מי שמתחבר עם Google יכול לשמור אירועים, ליצור התראות ולבקש עדכון שבועי בדוא\"ל.",
+          "החשבון אינו חובה: כל האתר פתוח לשימוש בלי הרשמה. מי שמתחבר עם Google או Facebook יכול לשמור אירועים, ליצור התראות ולבקש עדכון שבועי בדוא\"ל.",
         ],
         list: [
           "החשבון מיועד לבני 16 ומעלה, חשבון אחד לכל אדם, ולשימוש אישי בלבד.",
@@ -130,7 +130,7 @@ const TEXT = {
       {
         title: "Accounts, alerts and emails",
         body: [
-          "An account is optional: the whole site works without signing up. If you sign in with Google you can save events, create alerts and ask for a weekly email update.",
+          "An account is optional: the whole site works without signing up. If you sign in with Google or Facebook you can save events, create alerts and ask for a weekly email update.",
         ],
         list: [
           "Accounts are for people aged 16 and over, one account per person, for personal use only.",

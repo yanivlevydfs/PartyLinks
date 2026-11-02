@@ -259,3 +259,98 @@ def test_authlib_has_httpx2() -> None:
     import importlib.util
 
     assert importlib.util.find_spec("httpx2") is not None
+
+
+class FakeFacebook:
+    """Facebook's side of the redirect and the Graph API's /me: who signs in next."""
+
+    def __init__(self) -> None:
+        self.me: dict[str, Any] = {}
+
+    async def authorize_redirect(self, request: Any, redirect_uri: str) -> RedirectResponse:
+        return RedirectResponse("https://www.facebook.com/dialog/oauth?fake=1", 302)
+
+    async def authorize_access_token(self, request: Any) -> dict[str, Any]:
+        return {"access_token": "t"}
+
+    async def get(self, url: str, **kwargs: Any) -> Any:
+        me = self.me
+
+        class Reply:
+            def json(self) -> dict[str, Any]:
+                return me
+
+        return Reply()
+
+
+FB = {"facebook_app_id": "fb-app", "facebook_app_secret": "fb-secret"}
+
+
+def fb_sign_in(c: TestClient, fb: FakeFacebook, me: dict[str, Any], nxt: str = "/") -> Any:
+    fb.me = me
+    c.get("/auth/facebook/login", params={"next": nxt}, follow_redirects=False)
+    return c.get("/auth/facebook/callback", follow_redirects=False)
+
+
+def _signed(data: dict[str, Any], secret: str = "fb-secret") -> str:
+    import base64
+    import hashlib
+    import hmac
+    import json
+
+    payload = base64.urlsafe_b64encode(json.dumps(data).encode()).rstrip(b"=").decode()
+    sig = hmac.new(secret.encode(), payload.encode(), hashlib.sha256).digest()
+    return base64.urlsafe_b64encode(sig).rstrip(b"=").decode() + "." + payload
+
+
+def test_facebook_sign_in_links_by_email_and_deletes(tmp_path: Path, fake: FakeGoogle, monkeypatch: Any) -> None:
+    from partylinks.accounts import facebook
+
+    fb = FakeFacebook()
+    monkeypatch.setattr(facebook, "client", lambda request: fb)
+    app, db = _app(tmp_path, **FB)
+    with TestClient(app) as c:
+        assert c.get("/site").json()["providers"] == ["google", "facebook"]
+        # No email (a phone-number account): refused, nothing stored.
+        assert fb_sign_in(c, fb, {"id": "f-0", "name": "P"}).headers["location"] == "/?signin=noemail"
+        sign_in(c, fake, email="dana@example.com", sub="g-1")
+        c.cookies.clear()
+        # The same verified address on Facebook: the Google user, now with Facebook too.
+        me = {"id": "f-1", "name": "Dana F", "email": "Dana@example.com",
+              "picture": {"data": {"url": "https://fb.test/p.jpg", "is_silhouette": False}}}  # fmt: skip
+        assert fb_sign_in(c, fb, me, nxt="/events").headers["location"] == "/events"
+        assert c.get("/api/me").json()["picture"] == "https://fb.test/p.jpg"
+        c.cookies.clear()
+        # Another Facebook account with that address: never merged.
+        assert fb_sign_in(c, fb, me | {"id": "f-2"}).headers["location"] == "/?signin=taken"
+        # A new Facebook-only user.
+        assert fb_sign_in(c, fb, {"id": "f-3", "name": "Noa", "email": "noa@example.com"}).headers["location"] == "/?welcome=1"
+        with db.session() as s:
+            assert s.scalar(select(func.count()).select_from(UserRow)) == 2
+            dana = s.scalar(select(UserRow).where(UserRow.email == "dana@example.com"))
+            assert (dana.google_sub, dana.facebook_id) == ("g-1", "f-1")
+            assert s.scalar(select(UserRow.google_sub).where(UserRow.facebook_id == "f-3")) is None
+        # Meta's data deletion callback: forged refused, signed deletes that user.
+        assert c.post("/auth/facebook/deletion", data={"signed_request": _signed({"user_id": "f-3", "algorithm": "HMAC-SHA256"}, "x")}).status_code == 400
+        ok = c.post("/auth/facebook/deletion", data={"signed_request": _signed({"user_id": "f-3", "algorithm": "HMAC-SHA256"})})
+        assert ok.status_code == 200 and ok.json()["url"].endswith(f"/privacy?deletion={ok.json()['confirmation_code']}")
+        with db.session() as s:
+            assert s.scalar(select(func.count()).select_from(UserRow).where(UserRow.facebook_id == "f-3")) == 0
+
+
+def test_parse_signed_request() -> None:
+    from partylinks.accounts.facebook import parse_signed_request
+
+    good = _signed({"user_id": "1", "algorithm": "HMAC-SHA256"})
+    assert parse_signed_request(good, "fb-secret") == {"user_id": "1", "algorithm": "HMAC-SHA256"}
+    assert parse_signed_request(good, "other") is None
+    assert parse_signed_request(_signed({"user_id": "1", "algorithm": "none"}), "fb-secret") is None
+    for junk in ("", "abc", "a.b", "!!.!!"):
+        assert parse_signed_request(junk, "fb-secret") is None
+
+
+def test_facebook_routes_only_when_configured(tmp_path: Path) -> None:
+    app, _ = _app(tmp_path)
+    with TestClient(app) as c:
+        assert c.get("/site").json()["providers"] == ["google"]
+        assert c.get("/auth/facebook/login", follow_redirects=False).status_code >= 400  # no such route

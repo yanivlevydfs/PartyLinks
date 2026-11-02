@@ -34,6 +34,8 @@
 }
 .google-btn:hover { color: #1f1f1f; box-shadow: 0 0 18px rgb(25 227 255 / .35); text-shadow: none; }
 .g-logo { flex: none; }
+.fb-btn, .fb-btn:hover { background: #1877f2; color: #fff; border-color: #1877f2; }
+.signin-btns { display: grid; gap: 10px; justify-items: start; }
 
 .sheet-back { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / .6); }
 .sheet {

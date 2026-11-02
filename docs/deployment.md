@@ -57,6 +57,8 @@ Each process has its own pool (`database.pool_size` + `max_overflow`, 40 each, 8
 | `PARTYLINKS_HTTP__ISRAEL_VPN` | Our Israeli VPN, `http://vpn.railway.internal:8888` (the `vpn` service, `vpn/`). Sources with `vpn: true` go out through it and nothing else. Production only: unset on localhost, where `vpn: true` sources take their usual path. See [Israeli VPN](vpn.md) |
 | `PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_ID` | The Google OAuth client id |
 | `PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_SECRET` | Its secret |
+| `PARTYLINKS_ACCOUNTS__FACEBOOK_APP_ID` | The Meta app id (Facebook Login; see [accounts](accounts.md#facebook-login)) |
+| `PARTYLINKS_ACCOUNTS__FACEBOOK_APP_SECRET` | Its secret |
 | `PARTYLINKS_ACCOUNTS__SESSION_SECRET` | A long random string: signs the sign-in state cookie and the unsubscribe links (changing it breaks every unsubscribe link already sent) |
 | `PARTYLINKS_ACCOUNTS__ADMIN_EMAILS` | JSON list of emails made admins on sign-in; they also get the run manager's "source paused" emails |
 | `PARTYLINKS_MAIL__RESEND_API_KEY` | Resend API key; without it no email is sent |

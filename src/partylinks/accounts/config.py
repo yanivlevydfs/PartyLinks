@@ -9,6 +9,8 @@ class AccountsSettings(BaseModel):
     enabled: bool = True  # false: no account UI, /auth answers 404, the account jobs idle
     google_client_id: str = ""
     google_client_secret: SecretStr | None = None
+    facebook_app_id: str = ""
+    facebook_app_secret: SecretStr | None = None
     session_secret: SecretStr | None = None  # signs the sign-in state cookie and the unsubscribe links
     session_days: int = Field(30, ge=1, le=365)
     max_alerts: int = Field(20, ge=1)
@@ -20,6 +22,19 @@ class AccountsSettings(BaseModel):
     admin_emails: list[str] = Field(default_factory=list)  # promoted to admin on sign-in
 
     @property
+    def google_ready(self) -> bool:
+        return bool(self.enabled and self.session_secret and self.google_client_id and self.google_client_secret)
+
+    @property
+    def facebook_ready(self) -> bool:
+        return bool(self.enabled and self.session_secret and self.facebook_app_id and self.facebook_app_secret)
+
+    @property
     def ready(self) -> bool:
-        """Sign-in works: switched on and every Google / session secret set."""
-        return bool(self.enabled and self.google_client_id and self.google_client_secret and self.session_secret)
+        """Sign-in works: switched on, the session secret set, and Google or Facebook fully set."""
+        return self.google_ready or self.facebook_ready
+
+    @property
+    def providers(self) -> list[str]:
+        """The sign-in buttons the site shows, in order."""
+        return [name for name, on in (("google", self.google_ready), ("facebook", self.facebook_ready)) if on]

@@ -142,9 +142,32 @@ environment only:
 | --- | --- |
 | `PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_ID` | The OAuth client (Google Cloud project `spotx-513112`, "SPOTX web") |
 | `PARTYLINKS_ACCOUNTS__GOOGLE_CLIENT_SECRET` | Its secret |
+| `PARTYLINKS_ACCOUNTS__FACEBOOK_APP_ID` | The Meta app "SPOTX" (developers.facebook.com, app id 3919551428187761) |
+| `PARTYLINKS_ACCOUNTS__FACEBOOK_APP_SECRET` | Its secret |
 | `PARTYLINKS_ACCOUNTS__SESSION_SECRET` | A long random string: signs the sign-in state cookie and unsubscribe links |
 | `PARTYLINKS_ACCOUNTS__ADMIN_EMAILS` | JSON list of emails promoted to admin on sign-in |
 
-Without all of the first three, sign-in is off: `/site` reports `"accounts": false` and the site shows no
-account UI. The OAuth client's redirect URIs are `https://spotx.fun/auth/google/callback` and
-`http://localhost:8000/auth/google/callback`.
+Sign-in is on with the session secret and Google's two values, Facebook's two, or both. Without any,
+`/site` reports `"accounts": false` and the site shows no account UI; `/site`'s `providers` lists the
+buttons shown (`["google", "facebook"]`). The Google OAuth client's redirect URIs are
+`https://spotx.fun/auth/google/callback` and `http://localhost:8000/auth/google/callback`.
+
+### Facebook Login
+
+`accounts/facebook.py`: `/auth/facebook/login` -> Facebook's dialog (scope `email public_profile`) ->
+`/auth/facebook/callback`, which reads Graph API `/me?fields=id,name,email,picture.type(large)` and signs
+in through the same `finish` as Google. Unversioned Graph URLs: the app's own API version.
+
+- **No email** (an account opened with a phone number, or the permission declined): refused with
+  `?signin=noemail`; alerts and updates go by email.
+- **One account, two providers:** a first sign-in whose verified email we already know links to that user
+  (`users.google_sub` and `users.facebook_id` on one row). A second Facebook (or Google) account with
+  that address is refused (`?signin=taken`).
+- **Data deletion callback** `POST /auth/facebook/deletion` (Meta's `signed_request`, HMAC-SHA256 with the
+  app secret): deletes the user with that `facebook_id` and answers `{url, confirmation_code}`; the url is
+  `/privacy?deletion=<code>`, which shows that the request was handled.
+
+Meta app settings: Valid OAuth Redirect URIs `https://spotx.fun/auth/facebook/callback`; App domains
+`spotx.fun`; Privacy `https://spotx.fun/privacy`; Terms `https://spotx.fun/terms`; User data deletion
+"Data deletion callback URL" `https://spotx.fun/auth/facebook/deletion`. Until the app is switched to
+Live, only its admins / testers can sign in with Facebook.
