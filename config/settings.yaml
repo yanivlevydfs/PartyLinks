@@ -798,6 +798,7 @@ geocoding:
   # checked by hand; venues OSM does not know precisely are left off the map, not guessed.
   #   "venue or address keyword": [lat, lon]
   venues:
+    "מוזיאון הסובלנות": [31.7791314, 35.2200716]         # Museum of Tolerance Jerusalem, Hillel 32
     "shittim": [30.1767437, 35.0165285]                  # Shittim festival site, Arava; secrettelavivapp sent 34.66 (Sinai), Nov 2026
     "הוואנה מיוזיק קלאב": [32.0743385, 34.7957614]     # Havana Music Club, Yigal Alon
     "מוזיאון תל אביב": [32.0775956, 34.7866422]        # Tel Aviv Museum of Art, Shaul HaMelech 27 (all halls)
@@ -1529,6 +1530,9 @@ sources:
       - {host: pardesia, venue_name: מרכז קהילתי פרדסיה, city: פרדסיה}
       - {host: hhn, venue_name: היכל התרבות נהריה, city: נהריה}
       - {host: castilia, venue_name: קסטיליה הפקות}
+      # Museum of Tolerance Jerusalem's box office (tickets.motj.org.il): concerts and the dated guided tours
+      # of its exhibitions and of Jerusalem (~170 dates). No categories: genres come from title and text.
+      - {host: motj, venue_name: מוזיאון הסובלנות ירושלים, city: ירושלים}
       - {host: htbeithaam, venue_name: היכל התרבות בית העם ירושלים, city: ירושלים}
       - {host: isb7, venue_name: הסינפונייטה הישראלית באר שבע}
       - {host: gderot, venue_name: בית העם גדרות}

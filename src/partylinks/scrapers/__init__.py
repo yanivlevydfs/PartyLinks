@@ -27,10 +27,12 @@ from partylinks.scrapers.eventer import EventerScraper
 from partylinks.scrapers.eventim import EventimScraper, ZappaScraper
 from partylinks.scrapers.eventimlight import EventimLightScraper
 from partylinks.scrapers.festivalim import FestivalimScraper
+from partylinks.scrapers.fever import FeverScraper
 from partylinks.scrapers.friendshist import FriendsHistScraper
 from partylinks.scrapers.funzing import FunzingScraper
 from partylinks.scrapers.geektime import GeektimeScraper
 from partylinks.scrapers.goout import GoOutScraper
+from partylinks.scrapers.goshow import GoShowScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
 from partylinks.scrapers.habama import HabamaScraper
 from partylinks.scrapers.haezor import HaEzorScraper
@@ -43,16 +45,13 @@ from partylinks.scrapers.holon import HolonScraper
 from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
 from partylinks.scrapers.issta import IsstaScraper
+from partylinks.scrapers.jaffatheatre import JaffaTheatreScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
 from partylinks.scrapers.kikarhamusica import KikarHamusicaScraper
 from partylinks.scrapers.kishreyteufa import KishreyTeufaScraper
 from partylinks.scrapers.kupatbravo import KupatbravoScraper
 from partylinks.scrapers.leaan import LeaanScraper
 from partylinks.scrapers.lev import LevScraper
-from partylinks.scrapers.fever import FeverScraper
-from partylinks.scrapers.goshow import GoShowScraper
-from partylinks.scrapers.jaffatheatre import JaffaTheatreScraper
-from partylinks.scrapers.tzkrti import TzkrtiScraper
 from partylinks.scrapers.levontin7 import Levontin7Scraper
 from partylinks.scrapers.livetickets import LiveTicketsScraper
 from partylinks.scrapers.livevents import LiveventsScraper
@@ -93,6 +92,7 @@ from partylinks.scrapers.ticketplace import TicketPlaceScraper
 from partylinks.scrapers.tiktik import TiktikScraper
 from partylinks.scrapers.tiuli import TiuliScraper
 from partylinks.scrapers.tribe import BabeBarScraper, GagarinScraper
+from partylinks.scrapers.tzkrti import TzkrtiScraper
 from partylinks.scrapers.viagogo import ViagogoScraper
 from partylinks.scrapers.vibez import VibezScraper
 from partylinks.scrapers.xplorer import XplorerScraper
