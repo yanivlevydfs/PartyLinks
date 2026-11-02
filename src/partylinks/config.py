@@ -301,6 +301,9 @@ class EnrichmentSettings(BaseModel):
     # A source category that lumps kinds together ("מחול אמנות ומוזיקה (קלאסית, ג'ז)"): not read for genres,
     # its words would each add one. Any declared category starting with one of these is skipped.
     declared_ignore: list[str] = Field(default_factory=list)
+    # Pages that are not an event, from any source ("MAKE SENSE | Ticket Management": a promoter's page of
+    # passes to several parties, past ones included). Case-insensitive, anywhere in the title: dropped.
+    skip_titles: list[str] = Field(default_factory=list)
     # A title with one of these is a talk, not a party: genres it describes ("the birth of house and
     # techno") are its subject, so only the genres its source declares are kept.
     talk_keywords: list[str] = Field(default_factory=list)

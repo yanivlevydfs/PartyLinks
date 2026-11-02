@@ -260,6 +260,9 @@ class Enricher:
 
     def enrich(self, event: ScrapedEvent) -> ScrapedEvent | None:
         """Return the enriched event, or ``None`` if config says to drop it."""
+        title = event.title.casefold()
+        if any(skip.casefold() in title for skip in self.settings.skip_titles):
+            return None
         self._slugs(event)
         event.genres = self._detect_genres(event)
         event.lineup = self._lineup(event)

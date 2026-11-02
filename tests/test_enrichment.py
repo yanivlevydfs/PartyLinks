@@ -398,3 +398,7 @@ def test_a_catch_all_source_category_adds_no_genres() -> None:
     # Tel Aviv municipality: "אמנות" / "מוזיקה" / "קלאסית" in the catch-all's name are not the class's kinds.
     event = make(title="מחול עכשווי עם רוני חדש", description="", source_genres=["מחול אמנות ומוזיקה (קלאסית, ג'ז)", "מחול"])
     assert ENRICHER._detect_genres(event) == ["dance"]
+
+
+def test_a_ticket_management_page_is_not_an_event() -> None:
+    assert ENRICHER.enrich(make(title="MAKE SENSE | Ticket Management")) is None
