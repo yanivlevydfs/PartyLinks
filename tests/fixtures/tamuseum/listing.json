@@ -1,0 +1,115 @@
+{
+ "meta": {
+  "total_count": 5
+ },
+ "items": {
+  "2026-11-03": [
+   {
+    "id": 4210,
+    "title": "בדיאלוג: צליל וצבע / על הפיגורטיבי במוזיקה ואמנות",
+    "event_series": {
+     "title": "בדיאלוג: צליל וצבע / 2027-2026",
+     "id": 4209
+    },
+    "url": "/he/series/dialogue-sound-and-color-2026-2027/#dialogue-sound-and-color-figurative-representation-body-image-and-gesture",
+    "type": "Event",
+    "date": "2026-11-03T17:00:00",
+    "category": "קונצרט"
+   }
+  ],
+  "2026-11-06": [
+   {
+    "id": 4257,
+    "title": "מפגש בתערוכה <i>אלכס ליבק: קופסא שחורה</i>",
+    "event_series": null,
+    "url": "/he/event/encounter-exhibition-alex-levac-black-box-sk/2026-11-06/",
+    "type": "Event",
+    "date": "2026-11-06T10:30:00",
+    "category": "מפגש"
+   },
+   {
+    "id": 4133,
+    "title": "סיור מודרך בתערוכה <i>חזון העצמות החדשות: דמיונות וחזיונות יהודיים אחרי 1940</i>",
+    "event_series": null,
+    "url": "/he/event/guided-tour-exhibition-vision-of-the-new-bones/2026-11-06/",
+    "type": "Event",
+    "date": "2026-11-06T12:00:00",
+    "category": "סיור בתערוכה"
+   }
+  ],
+  "2026-11-07": [
+   {
+    "id": 4221,
+    "title": "<i>בין פוזיטיב לנגטיב</i>: סדנה בעקבות התערוכה <i>נומה בר: מצד שני</i> / פעילות להורים וילדים מגיל 8",
+    "event_series": null,
+    "url": "/he/event/between-positive-and-negative-noma-bar-workshop/2026-11-07/",
+    "type": "Event",
+    "date": "2026-11-07T10:30:00",
+    "category": "פעילות"
+   },
+   {
+    "id": 4221,
+    "title": "<i>בין פוזיטיב לנגטיב</i>: סדנה בעקבות התערוכה <i>נומה בר: מצד שני</i> / פעילות להורים וילדים מגיל 8",
+    "event_series": null,
+    "url": "/he/event/between-positive-and-negative-noma-bar-workshop/2026-11-07/",
+    "type": "Event",
+    "date": "2026-11-07T12:00:00",
+    "category": "פעילות"
+   },
+   {
+    "id": 4222,
+    "title": "פעילות משפחתית בהשראת התערוכה <i>נומה בר: מצד שני</i> / פעילות להורים וילדים מגיל 5",
+    "event_series": null,
+    "url": "/he/event/family-tour-noma-bar-look-again/2026-11-07/",
+    "type": "Event",
+    "date": "2026-11-07T10:30:00",
+    "category": "פעילות"
+   },
+   {
+    "id": 4222,
+    "title": "פעילות משפחתית בהשראת התערוכה <i>נומה בר: מצד שני</i> / פעילות להורים וילדים מגיל 5",
+    "event_series": null,
+    "url": "/he/event/family-tour-noma-bar-look-again/2026-11-07/",
+    "type": "Event",
+    "date": "2026-11-07T12:00:00",
+    "category": "פעילות"
+   },
+   {
+    "id": 4221,
+    "title": "<i>בין פוזיטיב לנגטיב</i>: סדנה בעקבות התערוכה <i>נומה בר: מצד שני</i> / פעילות להורים וילדים מגיל 8",
+    "event_series": null,
+    "url": "/he/event/between-positive-and-negative-noma-bar-workshop/2026-11-07/",
+    "type": "Event",
+    "date": "2026-11-07T10:30:00",
+    "category": "פעילות"
+   },
+   {
+    "id": 4221,
+    "title": "<i>בין פוזיטיב לנגטיב</i>: סדנה בעקבות התערוכה <i>נומה בר: מצד שני</i> / פעילות להורים וילדים מגיל 8",
+    "event_series": null,
+    "url": "/he/event/between-positive-and-negative-noma-bar-workshop/2026-11-07/",
+    "type": "Event",
+    "date": "2026-11-07T12:00:00",
+    "category": "פעילות"
+   },
+   {
+    "id": 4222,
+    "title": "פעילות משפחתית בהשראת התערוכה <i>נומה בר: מצד שני</i> / פעילות להורים וילדים מגיל 5",
+    "event_series": null,
+    "url": "/he/event/family-tour-noma-bar-look-again/2026-11-07/",
+    "type": "Event",
+    "date": "2026-11-07T10:30:00",
+    "category": "פעילות"
+   },
+   {
+    "id": 4222,
+    "title": "פעילות משפחתית בהשראת התערוכה <i>נומה בר: מצד שני</i> / פעילות להורים וילדים מגיל 5",
+    "event_series": null,
+    "url": "/he/event/family-tour-noma-bar-look-again/2026-11-07/",
+    "type": "Event",
+    "date": "2026-11-07T12:00:00",
+    "category": "פעילות"
+   }
+  ]
+ }
+}

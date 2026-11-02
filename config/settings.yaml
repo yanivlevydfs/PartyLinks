@@ -513,6 +513,7 @@ enrichment:
     tzkrti: [culture]  # "evenings" and "social events" (a Christmas market, a conference) name no genre
     jaffatheatre: [theatre]
     towerofdavid: [culture]
+    tamuseum: [exhibitions]
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
     telaviv: [culture]  # municipal programme tagged by audience or "קהילה"
@@ -2783,6 +2784,20 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 1.0
+
+  tamuseum:
+    # Tel Aviv Museum of Art: concerts, gallery talks, exhibition tours, lectures, films, family workshops.
+    # The site's events API (upcoming, 32 a page) + one page per event for artwork and its ticket link.
+    enabled: true
+    cron: "53 7,19 * * *"
+    venue_name: מוזיאון תל אביב לאמנות
+    address: "שדרות שאול המלך 27"
+    city: תל אביב-יפו
+    latitude: 32.0775956   # the geocoding pin "מוזיאון תל אביב"
+    longitude: 34.7866422
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
 
   towerofdavid:
     # Tower of David Museum, Jerusalem: Night Spectacular and King David shows, gallery talks, exhibition
