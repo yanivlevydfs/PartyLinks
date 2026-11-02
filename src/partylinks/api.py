@@ -769,11 +769,14 @@ def build_event_filters(
 
 
 def create_app(
-    settings: Settings | None = None, start_scheduler: bool | None = None, worker_process: bool = False
+    settings: Settings | None = None, start_scheduler: bool | None = None, worker_process: bool = False,
+    overrides: bool = False,
 ) -> FastAPI:
     """``worker_process``: the scheduler and sources run in the worker process (partylinks/worker);
     this one serves, and reads the worker's state / sends it the admin's commands."""
-    from_config = settings is None  # the app's own settings (not a test's): the admin's overrides apply
+    # The app's own settings (not a test's): the admin's overrides apply. `serve` passes the file's settings
+    # and overrides=True; without it the web process ignored the overrides until an admin "apply".
+    from_config = settings is None or overrides
     settings = settings or get_settings()
     setup_logging(settings.logging)  # also for `serve --reload` workers, which never run cli.main()
 

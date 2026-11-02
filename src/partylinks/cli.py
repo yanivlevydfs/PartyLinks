@@ -78,7 +78,7 @@ def _serve(reload: bool = False) -> int:
     else:
         # Scraping in a worker process of its own, so it never slows the site (partylinks/worker).
         separate = settings.scheduler.enabled and settings.scheduler.separate_process
-        app = create_app(settings, start_scheduler=False if separate else None, worker_process=separate)
+        app = create_app(settings, start_scheduler=False if separate else None, worker_process=separate, overrides=True)
         # The worker's heartbeat, once the app has started (app.state.worker): a hung worker is restarted.
         state = lambda: app.state.worker.state() if getattr(app.state, "worker", None) else None
         supervisor = WorkerProcess(settings.scheduler, state) if separate else None
