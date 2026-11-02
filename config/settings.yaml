@@ -408,14 +408,14 @@ enrichment:
   declared_genres:
     happy_hour: ["happy hour", "happy-hour", "happyhour", "האפי האוור", "האפי אוור", "הפי האוור"]
     # HappyTLV's place sections (see happytlv.places): one word each, declared by the scraper.
-    escape_rooms: ["escape rooms"]
+    escape_rooms: ["escape rooms", "מרחב בריחה"]
     attractions: ["attractions"]
     coffee_carts: ["coffee carts"]
     fine_dining: ["fine dining"]
     work_spaces: ["work spaces"]
     volunteering: ["volunteering"]
     team_activities: ["team activities"]
-    nightclubs: ["nightclubs", "parties"]  # parties: Secret Tel Aviv's category
+    nightclubs: ["nightclubs", "parties", "party", "מסיבה"]  # parties: Secret Tel Aviv's category
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
@@ -427,41 +427,44 @@ enrichment:
     # box offices, guides (OGO tags, some in Russian), viagogo / abroad sellers.
     live_show: ["live music", "livemusic", "international artists", "concert", "concerts", "other concerts", "מופעי לילה",
                 "show", "shows", "performances", "music", "הופעות", "הופעה", "הופעות מוזיקה", "מופע", "מופעים",
-                "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki"]  # concets: Eventer's spelling of its concerts category
-    festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele"]
+                "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki", "קונצרטים", "מופעי מבוגרים", "קסמים וקרקס", "שובו של הקרקס", "موسيقى", "אנסמבל", "תזמורת המהפכה", "candlelight", "הפעלה מוזיקאלית"]  # concets: Eventer's spelling of its concerts category
+    festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele", "חשיפה בינלאומית"]
     # Not "קהילה" / "קהילתי": community centres tag every event so (kids' shows, workshops), a place, not a meetup.
-    meetups: ["meetups", "community", "meeting", "פעילות חברתית", "языковой клуб", "משחקי קופסא", "ברים פאבים"]
-    culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית"]
-    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum"]
-    workshops: ["workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест", "course", "courses", "craft", "baking"]
-    cinema: ["sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב"]
+    meetups: ["meetups", "community", "meeting", "פעילות חברתית", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות"]
+    culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית", "תרבות", "קהילה", "קהילות", "אירועים קהילתיים", "מרכזים קהילתיים", "אירועי מרכזים קהילתיים", "פעילות קהילתית", "המרכז לאומנויות", "אירוע", "אירועים", "תרבות מבוגרים", "שבת תרבות", "מפגשי שכונות", "הבוטיק מועדון תרבות", "החיים הטובים", "לא שיגרתי"]
+    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum", "יום המוזיאונים", "אירועי קומיקס"]
+    workshops: ["workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест", "course", "courses", "craft", "baking", "יצירה ומלאכה", "תחביבים", "ציור וצביעה", "עיצוב", "טיפוח וקוסמטיקה", "אופנה ולייף סטייל", "תכשיטים וצורפות", "פיסול ונגרות", "צילום", "סריגה ותפירה", "כתיבה ושירה", "גינון", "מייקרס", "סטודיו פתוח", "אומנות", "בישול ואפייה"]
+    cinema: ["sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב", "מזרח אסיה על המסך הגדול"]
     stand_up: ["comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ", "comy", "סאטירה", "קומדי בר", "סטנד-אפ", "סטנדאפ", "stand-up", "kleinkunst", "monólogo", "comédie"]
     markets: ["shopping", "יריד", "ירידים", "שוק", "שווקים", "ярмарка"]
-    food: ["food events", "food", "אוכל", "מזון", "מפגשים קולינריים", "טעימות יין", "טעימות בירה", "tastings"]
+    food: ["food events", "food", "אוכל", "מזון", "מפגשים קולינריים", "טעימות יין", "טעימות בירה", "tastings", "בישול ואפייה", "אלכוהול", "מאכלי עדות", "צמחוני וטבעוני", "מתוקים", "מטבח אסייתי", "ארוחה משותפת"]
     environment: ["environmental", "סביבה", "איכות הסביבה", "קיימות", "טבע", "גינות"]
     religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат", "chassidic", "religion"]
     holidays: ["holidays", "halloween", "חגים", "חג", "праздник", "hanukkah", "chanukah", "christmas", "new year",
                "thanksgiving", "חנוכה", "פורים", "סילבסטר"]
-    lgbt: ["pride"]
+    lgbt: ["pride", "הקהילה הגאה"]
     sport: ["sport", "sports", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
-            "מרוץ", "אופניים", "אימוני כושר", "קבוצת הליכה", "פוצ'יוולי", "footvolley", "urheilu"]
-    yoga_wellness: ["wellness", "health", "בריאות", "פילאטיס"]
+            "מרוץ", "אופניים", "אימוני כושר", "קבוצת הליכה", "פוצ'יוולי", "footvolley", "urheilu", "אקסטרים"]
+    yoga_wellness: ["wellness", "health", "בריאות", "פילאטיס", "עיסוי"]
     classical_opera: ["classical", "קלאסי", "música clásica", "opéra", "opérette"]
     # Muzi's genre slugs.
-    israeli: ["hebrew"]
+    israeli: ["hebrew", "אמנים ישראלים"]
     mizrahi: ["yam_tichoni"]
     rock_indie: ["rocknroll"]
     world_balkan: ["world", "música del mundo"]
-    theatre: ["theater", "theatre", "גילי 3-18", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus"]
+    theatre: ["theater", "theatre", "גילי 3-18", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus", "תיאטראות", "مسرح"]
     kids: ["kids", "children", "גילי 3-18", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
-           "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך"]
-    lectures: ["lecture", "lectures", "עונת תרבות", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "foredrag"]
-    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre"]
+           "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך", "רמתגנצ'יק", "שבת משפחתי", "שנה עד שנתיים", "זחילה עד שנה", "שלוש עד ארבע", "לידה עד זחילה", "שנתיים עד שלוש", "ארבע עד חמש", "אחר-צהריים ר\"גוע"]
+    lectures: ["lecture", "lectures", "עונת תרבות", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "foredrag", "העצמה אישית", "אנתרופולוגיה", "יחסים ואהבה", "קריירה", "מנטורינג וקואוצ׳ינג", "עסקים וכלכלה", "סמינר", "אסכולות", "מיניות", "הערים המרתקות", "עניין"]
+    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre", "חווית המבקר", "סיורי חנוכיות", "אדריכלות"]
     dance: ["dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט"]
     conference: ["conferences"]  # Eventer's category (the text genre matches "conference" alone)
   # Last resort, for an event no category, title word or source default placed: words a show's text uses
   # for what it is ("ההצגה", "שחקנים", "המופע", "מרצה"). Read in the title and description, only when
   # nothing else matched, so a party that mentions "סדנה" keeps its music genres alone.
+    # Box offices' own category names (Nov 2026 category audit).
+    youth: ["נוער", "סטודנטים", "צעירים"]
+    jazz: ["ג׳אז חם", "ג'אז חם"]
   fallback_genres:
     theatre: ["הצגה", "ההצגה", "בהצגה", "שחקנים", "בימוי", "ובימוי", "מחזה", "תפאורה", "תלבושות", "תיאטרון",
               "תאטרון", "דרמה", "קומדיה", "theatre", "theater", "play",
@@ -2446,6 +2449,7 @@ sources:
     # Nov 2026: ~25 sites (rehovot, kfar-saba, herzliya, eilat, bat-yam...) answer evomi with 403 and our
     # VPN with 200. rosh-haayin, nahariya: no answer from any datacenter IP, VPN included (home IPs only).
     vpn: true  # our Israeli VPN only (Railway production)
+    skip_title_words: ["קורס", "חוג ", "חוגי", "סדנאות שבועיות", "מחזור ", "תנועה עם", "זחילה", "משחק מודרך"]
     # Dozens of municipal sites a run: longer than the 30-min default (Oct 2026).
     run_timeout_seconds: 3600
     http:

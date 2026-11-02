@@ -101,6 +101,7 @@ class SmarticketScraper(BaseScraper[SmarticketSettings]):
         shows = [sh for sh in shows if not any(w in str(sh.get("category") or "") for w in tenant.skip_categories)]
         shows = [sh for sh in shows if clean_str(sh.get("title")) not in tenant.skip_titles]
         shows = [sh for sh in shows if not any(w in str(sh.get("title") or "") for w in tenant.skip_title_words)]
+        shows = [sh for sh in shows if not _ONLINE.search(str(sh.get("title") or ""))]  # "מפגש ב-Zoom": online
         if tenant.keep_categories:
             shows = [sh for sh in shows if any(w in str(sh.get("category") or "") for w in tenant.keep_categories)]
         events: list[ScrapedEvent] = []

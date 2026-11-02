@@ -66,6 +66,8 @@ class MuniSite(BaseModel):
 
 class MuniEventsSettings(SourceSettings):
     sites: list[MuniSite] = Field(min_length=1)
+    # Not events: a course or a weekly class listed on the city's calendar ("קורס NLP / ימי ד'").
+    skip_title_words: list[str] = Field(default_factory=list)
 
 
 @dataclass
@@ -108,6 +110,7 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
                     card.tags = list(dict.fromkeys([*card.tags, *tags.get(card.url, [])]))
             else:
                 cards = listed
+            cards = [c for c in cards if not any(w in c.title for w in self.settings.skip_title_words)]
             self.log.debug("%s: %d upcoming events (%s)", site.url, len(cards), "feed" if feed else "listing")
 
             async def fetch(card: Card, site: MuniSite = site) -> ScrapedEvent | None:
