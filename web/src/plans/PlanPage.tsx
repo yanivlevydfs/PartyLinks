@@ -193,10 +193,8 @@ function PlanView() {
           </div>
         </Link>
       )}
-      <FreeEntry events={data.options} planUrl={url} />
-      <AddOption plan={data} onAdded={(plan) => client.setQueryData<Plan>(key, plan)} />
-
-      <section className="plan-share">
+      <section className="plan-share" aria-labelledby="plan-share-h">
+        <h2 id="plan-share-h">{p.invite}</h2>
         <p>{p.intro}</p>
         <a className="plan-wa" href={wa(`${message}\n${url}`)} target="_blank" rel="noopener noreferrer">{p.sendWhatsapp}</a>
         <div className="plan-more">
@@ -206,6 +204,8 @@ function PlanView() {
           <button type="button" className="f-pill" onClick={copy}>{copied ? p.copied : p.copy}</button>
         </div>
       </section>
+      <FreeEntry events={data.options} planUrl={url} />
+      <AddOption plan={data} onAdded={(plan) => client.setQueryData<Plan>(key, plan)} />
 
       <section className="plan-vote" aria-labelledby="plan-vote-h">
         <h2 id="plan-vote-h">{mine ? p.change : p.yourName}</h2>
