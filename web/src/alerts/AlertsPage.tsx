@@ -56,6 +56,7 @@ function AlertCard({ a }: { a: Alert }) {
       <div className="alert-head">
         <h3 dir="auto">{a.name}</h3>
         {a.unseen > 0 && <span className="alert-new">{t.unseen(a.unseen)}</span>}
+        <small className="alert-id" title="ID">#{a.id}</small>
       </div>
       <div className="alert-tags">{criteriaWords(a.criteria, ui, lang).map((w) => <span key={w} className="tag" dir="auto">{w}</span>)}</div>
       {!a.active && <p className="alert-note">{t.pausedNote}</p>}
