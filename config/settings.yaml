@@ -1462,6 +1462,8 @@ sources:
       - {host: haulam-phk, venue_name: האולם - בית תרבות מקומי פרדס חנה כרכור, city: פרדס חנה-כרכור, rooms: true}
       - {host: dolev, venue_name: "מתנ\"ס קריית אונו", city: קריית אונו}
       - {host: fringeb7, venue_name: תיאטרון הפרינג' באר שבע, city: באר שבע, rooms: true}
+      - {host: htk, venue_name: היכל התרבות כרמיאל, city: כרמיאל}
+      - {host: mifgashim-mb, venue_name: "מתנ\"ס מפגשים מזכרת בתיה", city: מזכרת בתיה, keep_categories: ["מופעים ואירועים"]}
       # Kivunim, Be'er Sheva's culture company (kivunim7.co.il): shows, Katedra, youth and seniors.
       - {host: kivunimb7, venue_name: כיוונים באר שבע, city: באר שבע, skip_categories: ["מוזאונים"],
          # Youth counselling, open "until 2027-12-31 00:00": services, not events.
