@@ -60,7 +60,7 @@ nothing else set is refused. `/alerts` lists them
 `accounts.max_alerts` (20) per user; the same search saved twice is one alert.
 
 The worker matches new events every `mail.matcher_interval_minutes` (15) (`alerts/matcher.py`, job
-`alerts:match`), against every active alert of a user who is not blocked, through
+`alerts:match`) (first pass a minute after the worker starts, so deploys don't delay it), against every active alert of a user who is not blocked, through
 `api.build_event_filters`, the same function `/events` uses, so an alert finds exactly what the same
 filters show on the site.
 

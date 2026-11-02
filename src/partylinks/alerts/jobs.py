@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from apscheduler.triggers.cron import CronTrigger
@@ -49,6 +50,9 @@ def schedule(scheduler: AsyncIOScheduler, settings: Settings, service: ScrapeSer
         args=(service,),
         id=MATCH_JOB_ID,
         name="alerts:match",
+        # A minute after start, not a full interval: every deploy restarts the clock, and a busy day of
+        # deploys kept the matcher from running for an hour. The cursor makes an extra pass harmless.
+        next_run_time=datetime.now(UTC) + timedelta(minutes=1),
         max_instances=1,
         coalesce=True,
         misfire_grace_time=settings.scheduler.misfire_grace_seconds,
