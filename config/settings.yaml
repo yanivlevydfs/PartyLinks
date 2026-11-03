@@ -232,7 +232,7 @@ enrichment:
     name: Tel Aviv
     # Events whose city/address matches none of these are flagged out-of-city.
     aliases: &tel_aviv ["tel aviv", "tel-aviv", "tel aviv-yafo", "tel aviv yafo", "tlv", "jaffa", "yafo",
-              "תל אביב", "תל-אביב", "תל אביב-יפו", "תל אביב יפו", "ת\"א", "ת״א", "תא", "יפו"]
+              "תל אביב", "תל-אביב", "תל אביב-יפו", "תל אביב יפו", "ת\"א", "ת״א", "תא", "יפו", "תלאביב"]
     # false = every city in Israel is imported (in_target_city only flags Tel Aviv events for
     # the area filter). true = Tel Aviv only: other cities are not imported and are purged.
     drop_other_cities: false
@@ -324,7 +324,7 @@ enrichment:
     dark_wave: ["dark wave", "darkwave", "new wave", "post punk", "post-punk", "synthwave", "synth wave", "dark synth",
                 "ebm", "dark electro", "goth", "דארק ווייב", "ניו ווייב", "פוסט פאנק"]  # not "gothic": costumes
     jazz: ["jazz", "swing", "blues", "ג'אז", "גאז", "סווינג", "בלוז"]
-    world_balkan: ["balkan", "world music", "ethnic", "gypsy", "folk", "בלקן", "אתני", "מוזיקת עולם", "פולק"]
+    world_balkan: ["balkan", "world music", "ethnic", "gypsy", "folk", "בלקן", "אתני", "מוזיקת עולם", "פולק", "קאנטרי"]
     # Not "concert": Selector labels every party "Concert".
     live_show: ["live show", "liveshow", "live shows", "live band", "הופעה חיה", "מופע חי", "מופעי לייב"]
     lgbt: ["lgbt", "lgbtq", "gay", "queer", "pride", "drag", "להט\"ב", "גאווה", "דראג"]
@@ -2659,6 +2659,18 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 0.3
+
+  mugics:
+    # Mugics (mugics.com): a live-music board where musicians and venues post their shows (all of Israel).
+    # The pages read their pins from the API host d.mugics.com; POST /api/map-pins with type liveMusic and a
+    # date window gives full rows (date + time, coordinates, venue, price, artwork, ticket link, category and
+    # styles). At most 200 pins a call, so 30-day windows from today (halved when full): ~25 requests a run.
+    # robots.txt on www disallows /api/; read anyway by the owner's choice (Nov 2026).
+    enabled: true
+    cron: "13 9,21 * * *"
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
 
   muzi:
     # Muzi: community guide to concerts and shows across Israel (all cities). The event post type is not in

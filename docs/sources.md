@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 100 configured sources, all on. Each one has its own module in
+SPOTX collects from 101 configured sources, all on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -119,6 +119,7 @@ many of them free.
 | `onecity` | OneCity municipal sites (WordPress + GeoDirectory: Karmiel, Even Yehuda, ...) | 04:17, 16:17 | yes |
 | `ogo` | OGO (ogo.co.il): a human-moderated guide to cultural events across Israel | 06:27, 18:27 | yes |
 | `muzi` | Muzi (muzi.co.il): community-run guide to concerts and shows across Israel | 05:29, 17:29 | yes |
+| `mugics` | Mugics (mugics.com): live-music board where musicians and venues post shows; read from the map-pins API its pages call (30-day windows, ~25 requests, ~390 shows, coordinates on all); ticket links merge with the venues' own listings. robots.txt disallows `/api/` on www, read anyway by the owner's choice | 09:13, 21:13 | yes |
 | `tiuli` | Tiuli (tiuli.com): trips and leisure guide, its events section | 04:39, 16:39 | yes |
 | `festivalim` | Festivalim (festivalim.co.il): festivals, carnivals and street celebrations | 04:26, 16:26 | yes |
 | `poalimatarim` | Poalim Atarim (poalimatarim.com): Bank Hapoalim's free entry to ~50 museums, parks, heritage sites (seasonal) | 09:54, 21:54 | yes |

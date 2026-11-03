@@ -89,11 +89,15 @@ def run_with(handler: httpx.MockTransport) -> list:  # type: ignore[type-arg]
     return asyncio.run(go())
 
 
+# The scrape drops past events, so the run test needs a party that never ends up in the past.
+UPCOMING_LD = EVENT_LD | {"startDate": "2099-11-01T23:00:00+02:00", "endDate": "2099-11-02T05:00:00+02:00"}
+
+
 def test_collects_recent_locale_pages_when_access_is_allowed() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/sitemap.xml":
             return httpx.Response(200, text=SITEMAP)
-        return httpx.Response(200, text=page(EVENT_LD))
+        return httpx.Response(200, text=page(UPCOMING_LD))
 
     events = run_with(httpx.MockTransport(handler))
     assert [e.url.path for e in events] == ["/en/deep-sunday"]
