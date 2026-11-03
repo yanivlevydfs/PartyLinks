@@ -173,7 +173,7 @@ def parse_event(
         description=html_to_text(event.get("Description")),
         start_at=parse_iso(event.get("StartingDate"), tz),
         end_at=parse_iso(event.get("EndingDate"), tz),
-        venue_name=_venue_from_address(event.get("Adress")),
+        venue_name=_venue_from_address(event.get("Adress"), event.get("EnglishAddress")),
         address=clean_str(event.get("EnglishAddress")) or clean_str(event.get("Adress")),
         city=clean_str(location.get("city")),
         latitude=to_float(location.get("lat")),
@@ -264,7 +264,22 @@ def _as_list(value: Any) -> list[Any]:
     return value if isinstance(value, list) else [value]
 
 
-def _venue_from_address(address: str | None) -> str | None:
-    """GO-OUT prefixes the street address with the venue name: "Venue, street, city"."""
+def _venue_from_address(address: str | None, geocoded: str | None = None) -> str | None:
+    """GO-OUT prefixes the street address with the venue name: "Venue, street, city, country".
+
+    A short "Venue, city, country" counts too when the venue part has no house number while the
+    geocoded ``EnglishAddress`` starts with a numbered one ("Moonchild, Tel Aviv-Yafo, Israel" vs
+    "Post box 6371 Hangar 23, ..."); "Bareket, Petah Tikva, Israel" geocodes to "Bareket St" and stays a street.
+    """
     parts = [p.strip() for p in (address or "").split(",") if p.strip()]
-    return parts[0] if len(parts) >= 4 else None
+    if len(parts) >= 4:
+        # "2819 Nicollet Avenue, ..." / "Corso d'Italia, 96b, ..." is a street, not a venue.
+        return None if parts[0][0].isdigit() or parts[1][0].isdigit() else parts[0]
+    first_geocoded = (geocoded or "").split(",")[0]
+    if len(parts) == 3 and not _has_digit(parts[0]) and _has_digit(first_geocoded):
+        return parts[0]
+    return None
+
+
+def _has_digit(text: str) -> bool:
+    return any(c.isdigit() for c in text)

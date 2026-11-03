@@ -42,6 +42,20 @@ def test_goout_reads_every_ticket_tier_with_rounds_fee_and_status() -> None:
     assert event.image_url == "https://images.go-out.co/events/6ad5d9db4b18d81c2451751b1792403787340_coverImage.jpg"
 
 
+def test_goout_venue_from_short_address_only_when_geocoded_to_a_numbered_street() -> None:
+    venue = goout._venue_from_address
+    assert venue("Moonchild - מון צ'ילד, Tel Aviv-Yafo, ישראל", "Post box 6371 Hangar 23, Tel Aviv port, Israel") == (
+        "Moonchild - מון צ'ילד"
+    )
+    assert venue("GOAT TLV, שדרות רוטשילד, תל אביב-יפו, ישראל", "Rothschild Blvd 24, Tel Aviv, Israel") == "GOAT TLV"
+    assert venue("ברקת, פתח תקווה, ישראל", "Bareket St, Petah Tikva, Israel") is None
+    assert venue("Theaterplein 1, Anvers, Belgique", "Theaterplein 1, 2000 Antwerpen, Belgium") is None
+    assert venue("Tulum, Quintana Roo, Mexico", "Tulum, Quintana Roo, Mexico") is None
+    assert venue("שדרות רוטשילד 33, תל אביב-יפו, ישראל", None) is None
+    assert venue("Corso d'Italia, 96b, Rome, Italy", "Corso d'Italia, 96b, 00198 Roma RM, Italy") is None
+    assert venue("2819 Nicollet Avenue, Minneapolis, MN, USA", "2819 Nicollet Ave, Minneapolis, USA") is None
+
+
 def test_goout_falls_back_to_schema_offers_without_ticket_api() -> None:
     event = goout.parse_event(load("goout_event"), "https://www.go-out.co/event/1792399854329", TZ, {"status": False})
     assert event.tickets and all(t.price is not None for t in event.tickets)
