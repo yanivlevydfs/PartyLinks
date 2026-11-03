@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from partylinks.db import EventRow, upcoming_filter
+from partylinks.scrapers.eventpro import EventProSettings
 from partylinks.scrapers.matnasnet import MatnasnetSettings
 from partylinks.scrapers.munievents import MuniEventsSettings
 from partylinks.scrapers.onecity import OneCitySettings
@@ -53,6 +54,8 @@ def _hosts(settings: SourceSettings) -> list[tuple[str, str, str | None]]:
         ]
     if isinstance(settings, MatnasnetSettings):
         return [(h, f'מתנ"ס {x.city}', x.city) for x in settings.sites if (h := urlsplit(x.url).hostname)]
+    if isinstance(settings, EventProSettings):
+        return [(h, x.name, x.city) for x in settings.sites if (h := urlsplit(x.url).hostname)]
     if isinstance(settings, OneCitySettings):
         return [(h, f"עיריית {x.city}", x.city) for x in settings.sites if (h := urlsplit(x.url).hostname)]
     return []

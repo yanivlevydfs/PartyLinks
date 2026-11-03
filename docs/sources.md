@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 104 configured sources, all on. Each one has its own module in
+SPOTX collects from 105 configured sources, all on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -82,6 +82,7 @@ pagination and what the listing and the event page provide.
 | `tzkrti` | Tzkrti (tzkrti.com): the Arab sector's ticketing site: Nazareth, Haifa, Akka, Tarshiha | 07:27, 19:27 | yes |
 | `fever` | Fever (feverup.com): Candlelight concerts in Tel Aviv, Jerusalem and Haifa | 07:13, 19:13 | yes |
 | `towerofdavid` | Tower of David Museum, Jerusalem: night shows, gallery talks, tours, concerts | 07:47, 19:47 | yes |
+| `eventpro` | EventPro (Interdeal) community-centre box offices, 13 sites (Emek Hefer, South Netanya, Even Yehuda, Kadima, Kfar Yona, Modiin, Jerusalem...): shows, kids' plays, stand-up, lectures, films, trips | 06:37, 18:37 | yes |
 | `tamuseum` | Tel Aviv Museum of Art: concerts, gallery talks, tours, lectures, films, workshops | 07:53, 19:53 | yes |
 | `jaffatheatre` | Jaffa Theatre (jaffatheatre.org.il): the Arab-Hebrew stage in Jaffa, via its TicketTool box office | 07:18, 19:18 | yes |
 | `levontin7` | Levontin 7 (levontin7.com): live-music club in Tel Aviv | 06:46, 18:46 | yes |

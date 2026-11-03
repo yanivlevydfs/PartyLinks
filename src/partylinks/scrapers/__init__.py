@@ -27,6 +27,7 @@ from partylinks.scrapers.eventbuzz import EventbuzzScraper
 from partylinks.scrapers.eventer import EventerScraper
 from partylinks.scrapers.eventim import EventimScraper, ZappaScraper
 from partylinks.scrapers.eventimlight import EventimLightScraper
+from partylinks.scrapers.eventpro import EventProScraper
 from partylinks.scrapers.festivalim import FestivalimScraper
 from partylinks.scrapers.fever import FeverScraper
 from partylinks.scrapers.friendshist import FriendsHistScraper
@@ -202,6 +203,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         TowerOfDavidScraper,
         TaMuseumScraper,
         SwapTixScraper,
+        EventProScraper,
         JaffaTheatreScraper,
         Reading3Scraper,
         ZoaTlvScraper,

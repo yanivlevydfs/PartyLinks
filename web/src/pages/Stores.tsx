@@ -63,7 +63,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   airdrop: ["https://airdrop.co.il", "guide"], yotzim: ["https://yotzim.com", "guide"],
   telaviv: ["https://www.tel-aviv.gov.il", "city"], haifamuni: ["https://www.haifa.muni.il", "city"],
   ramatganmuni: ["https://www.ramat-gan.muni.il", "city"], holon: ["https://www.holon.muni.il", "city"],
-  munievents: [null, "city"], matnasnet: [null, "city"], onecity: [null, "city"],
+  munievents: [null, "city"], matnasnet: [null, "city"], eventpro: [null, "city"], onecity: [null, "city"],
 };
 
 const TEXT = {

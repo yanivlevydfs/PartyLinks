@@ -528,6 +528,7 @@ enrichment:
     jaffatheatre: [theatre]
     towerofdavid: [culture]
     tamuseum: [exhibitions]
+    eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
     telaviv: [culture]  # municipal programme tagged by audience or "קהילה"
@@ -585,7 +586,7 @@ enrichment:
   # (a past Rosh Hashana one "on sale"), listed by Beat Radar as one festival.
   skip_titles: ["ticket management"]
   # Small print that names a genre word in passing, removed from the text before genres are read.
-  text_ignore: ["כרטיס אלקטרוני", "כרטיסים אלקטרוניים", "הכרטיס האלקטרוני", "הכרטיסים האלקטרוניים",
+  text_ignore: ["הורים וילדים יוצרים", "כרטיס אלקטרוני", "כרטיסים אלקטרוניים", "הכרטיס האלקטרוני", "הכרטיסים האלקטרוניים",
                 "בכרטיס האלקטרוני", "דואר אלקטרוני", "בדואר אלקטרוני", "הדואר האלקטרוני", "בדואר האלקטרוני",
                 "כתובת דואר אלקטרוני", "תשלום אלקטרוני", "חתימה אלקטרונית", "ארנק אלקטרוני",
                 "נוצרה בבינה מלאכותית", "נוצרה באמצעות בינה מלאכותית", "נוצר בבינה מלאכותית",
@@ -849,6 +850,7 @@ geocoding:
     "טיקטין": [32.8093487, 34.9853850]                   # same hall as Haifa Museums spell it ("אודיטוריום טיקטין")
     "מוזיאון הטבע התנ\"כי": [31.7545650, 34.9954937]      # Biblical Natural History Museum, Beit Shemesh
     "מוזיאון האדם והחי": [32.0465660, 34.8239377]        # Man and the Living World Museum, Ramat Gan National Park
+    "בית הראשונים, ביתן אהרון": [32.4033105, 34.8966634]  # Emek Hefer heritage house (eventpro), not the Pardes Hanna one
     "פלנתניה": [32.3109065, 34.8479787]                  # Planetanya, Ben Gurion 1, Netanya
     "בית ביאליק": [32.0729157, 34.7710657]               # Beit Bialik, Bialik St, Tel Aviv
     "מדעטק": [32.8099659, 34.9961893]                    # MadaTech, Hadar HaCarmel, Haifa
@@ -2988,6 +2990,37 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 1.0
+
+  eventpro:
+    # EventPro (Interdeal) community-centre box offices: shows, children's plays, stand-up, lectures,
+    # films and trips. Listing cards (16 a page) + one page per event (place, description, tickets left).
+    # Courses, clubs, season tickets and job ads share the listing: skipped by title words.
+    enabled: true
+    cron: "37 6,18 * * *"
+    sites:
+      - url: https://www.mk-hefer.org.il
+        did: 4547
+        listing_id: 13396
+        name: מרכז קהילתי עמק חפר
+        city: עמק חפר
+        categories: {13391: ילדים}
+        localities: [אביחיל, אחיטוב, אמץ, אלישיב, בארותיים, בורגתה, בחן, בית הלוי, בית חירות, בית ינאי, בית יצחק, בת חפר, גאולי תימן, גבעת חיים איחוד, גבעת חיים מאוחד, גבעת שפירא, גן יאשיה, הדר עם, העוגן, מעפיל, חבצלת השרון, חגלה, חיבת ציון, חניאל, חרב לאת, יד חנה, כפר הרא"ה, כפר ויתקין, כפר חיים, כפר מונש, כפר ידידיה, מכמורת, מעברות, משמר השרון, עולש, עין החורש, שושנת העמקים, צוקי ים, אומץ]
+      - {url: https://www.matnasdn.co.il, did: 4451, listing_id: 14066, name: 'מתנ"ס דרום נתניה', city: נתניה}
+      - {url: https://www.evenyehuda.org.il, did: 4467, listing_id: 10359, name: מרכז קהילתי אבן יהודה, city: אבן יהודה}
+      - {url: https://www.matnas-kz.co.il, did: 4460, listing_id: 10135, name: 'מתנ"ס קדימה צורן', city: קדימה-צורן}
+      - {url: https://www.levhamakom.co.il, did: 4454, listing_id: 13841, name: לב המקום כוכב יאיר צור יגאל, city: כוכב יאיר - צור יגאל}
+      - {url: https://www.mky.org.il, did: 4466, listing_id: 10942, name: מרכז קהילתי כפר יונה, city: כפר יונה}
+      - {url: https://www.matnasmodiin.org.il, did: 4497, listing_id: 11503, name: 'סחלבים - מתנ"ס מודיעין', city: מודיעין-מכבים-רעות}
+      - {url: https://www.matnasmrl.co.il, did: 4445, listing_id: 14587, name: 'מתנ"ס שיכוני המזרח ראשון לציון', city: ראשון לציון}
+      - {url: https://www.matnasoa.org.il, did: 4689, listing_id: 14785, name: מרכז קהילתי אור עקיבא, city: אור עקיבא}
+      - {url: https://www.eshkolbagiva.org.il, did: 4545, listing_id: 13197, name: מינהל קהילתי הגבעה הצרפתית, city: ירושלים}
+      - {url: https://www.yovalim.org.il, did: 4542, listing_id: 14067, name: מנהל קהילתי יובלים, city: ירושלים}
+      - {url: https://www.efratmatnas.com, did: 4463, listing_id: 9965, name: מרכז קהילתי אפרת, city: אפרת}
+      - {url: https://hasifriya.hod-hasharon.muni.il, did: 1123, listing_id: 14314, name: הספרייה העירונית הוד השרון, city: הוד השרון}
+    skip_title_words: ["קורס", "קתדרה", "מכון ", "מנוי", "מועדון קריאה", "תכנית ל", "COACH CLUB", "מפגשי אימהות", "בוקר אמאבא", "הגנה עצמית", "מסע ביג", "מספרי עדות", "הסתבכתם", "כנס ", "סדנת כלבנות", "סדנת איור", "דרוש", "חוגים", "אירועי תרבות 20", "צהרונים", "ערב גיבוש", "מועדון יולדות", "משחק הורה וילד", "בייבי דייט", "עיסוי תינוקות", "פיצי כיצי", "פילאטיס", "יום פתוח", "ימים פתוחים", "ישיבת", "סמינר", "קהילה מטיילת", "מתחם עסקים", "שביל ישראל", "סדרת סדנאות", "סדרת הרצאות", "חוג ", "שיעורי כושר", "קבוצת אומנות", "קול קורא", "חמישי שלנו", "ליווי התפתחותי", "בחופשת לידה", "מסע לפולין", "writing series", "כלים לדייט"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
 
   tamuseum:
     # Tel Aviv Museum of Art: concerts, gallery talks, exhibition tours, lectures, films, family workshops.
