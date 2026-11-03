@@ -16,6 +16,26 @@ the cookie banner needs no extra category.
 On the first sign-in the user lands on the page they came from with `?welcome=1`. Errors come back as
 `?signin=failed|unverified|blocked|taken`.
 
+### Fingerprint / face (passkeys)
+
+A signed-in user can add a passkey on `/account` ("Add this device"). After that, "Sign in with
+fingerprint / face" beside the Google button signs them in on that device: the phone checks the
+fingerprint, face or screen lock and signs our challenge with a private key that never leaves it. It
+works in the browser and in the installed PWA (Android, iOS 16+), and on a computer through Windows
+Hello, Touch ID or a phone's QR code.
+
+- Code: `src/partylinks/passkeys/` (WebAuthn through `py_webauthn`) and `web/src/passkeys/`
+  (`@simplewebauthn/browser`). The routes exist only when Google or Facebook sign-in is configured.
+- A passkey signs in to an existing account only. New accounts still start with Google or Facebook,
+  because the account needs their verified email.
+- The relying party is the host of `site.base_url` (`spotx.fun`): a passkey made there works only
+  there. User verification is required both when adding and when signing in. Keys are discoverable,
+  so no email is typed.
+- The challenge goes in the signed `spotx_signin` cookie (10 minutes) and is used once. A signature
+  counter that does not move forward is refused (a cloned key).
+- An unknown passkey (removed, or its account deleted) answers 401, and the page says to sign in with
+  Google and add the device again. A blocked user gets 403.
+
 ## Sessions
 
 The `spotx_session` cookie (HttpOnly, Secure on https, SameSite=Lax) holds a random token. The database
@@ -129,6 +149,10 @@ A Resend account problem (key, quota, billing) stops the run and shows in the ad
 | POST | `/api/me/bell/seen` | Mark all as seen |
 | DELETE | `/api/me/bell?event_id=` | Remove one notification, or all of them without `event_id` (never re-sent: the matcher only looks at new events) |
 | GET | `/api/me/for-you` | Up to 12 upcoming events matching any active alert |
+| GET | `/api/passkeys` | The user's passkeys: `[{id, name, created_at, last_used_at}]` |
+| POST | `/api/passkeys/register/options` · `/register/verify` | Add this device's passkey (`{credential, name}`; 400 not verified, 409 already added) |
+| DELETE | `/api/passkeys/{id}` | Remove one of the user's passkeys |
+| POST | `/api/passkeys/login/options` · `/login/verify` | Sign in with a passkey (`{credential}`; 204 + session cookie, 401 unknown, 403 blocked) |
 
 Writes need the header `X-Requested-With: spotx` and, when the browser sends one, an `Origin` matching
 `site.base_url`. Sign-in is limited to 10 requests a minute per IP, and account writes to 30.

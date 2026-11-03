@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { PasskeyList } from "../passkeys/PasskeyList";
 import { Hero, Loader, useTitle } from "../ui";
 import { SignInButton } from "./AccountSlot";
 import { useAccountText } from "./i18n";
@@ -92,6 +93,7 @@ function Profile({ me }: { me: Me }) {
         </label>
         <p className="muted">{t.digestNote}</p>
       </section>
+      <PasskeyList />
       <section className="acc-danger">
         <h2>{t.deleteTitle}</h2>
         <p>{t.deleteText}</p>

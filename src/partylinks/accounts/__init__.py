@@ -9,6 +9,8 @@ account only adds saved events across devices, alerts, the bell and email.
 - ``facebook``: the same with Facebook, and Meta's data deletion callback.
 - ``routes``: ``/api/me`` (profile, digest consent, sign out, delete).
 - ``admin_routes``: the admin's users tab.
+
+Passkeys (fingerprint / face sign-in for an existing account) live in their own package, ``partylinks.passkeys``.
 """
 
 from __future__ import annotations
@@ -49,6 +51,10 @@ def install(app: FastAPI, settings: Settings) -> None:
         app.include_router(google_router)
     if settings.accounts.facebook_ready:
         app.include_router(facebook_router)
+    if settings.accounts.ready:  # passkeys sign in to accounts made with Google / Facebook (partylinks.passkeys)
+        from partylinks.passkeys.routes import router as passkeys_router
+
+        app.include_router(passkeys_router)
     app.include_router(me_router)  # /api/me answers 401 when nobody can sign in
     app.include_router(admin_router)
 

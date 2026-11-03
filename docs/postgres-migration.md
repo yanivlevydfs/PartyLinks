@@ -847,3 +847,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **שינוי עמודה:** `users.google_sub` נעשית nullable (משתמש שנכנס רק עם Facebook). `create_schema` מריץ עכשיו `ALTER TABLE ... ALTER COLUMN ... DROP NOT NULL` לכל עמודה שה-ORM מגדיר nullable וב-DB היא NOT NULL (הקלה בלבד, אף פעם לא ההפך). ה-UNIQUE על `google_sub` נשאר (ב-PostgreSQL כמה NULL לא מתנגשים).
 - **שאילתות:** כניסה: ‏`SELECT users WHERE facebook_id = ?` (או `google_sub = ?`), ואם אין: ‏`SELECT users WHERE email = ?` (UNIQUE) כדי לחבר את החשבון השני לאותו משתמש. ‏`POST /auth/facebook/deletion`: ‏`SELECT id FROM users WHERE facebook_id = ?` ואז `delete_user` הקיים.
 - **Tests:** ‏`tests/test_accounts.py` (‏`test_facebook_sign_in_links_by_email_and_deletes`, ‏`test_parse_signed_request`).
+
+### 2026-11-03 (כניסה עם טביעת אצבע / פנים: passkeys)
+- **טבלה חדשה:** `user_passkeys` (‏`partylinks/passkeys/models.py`), נוצרת ב-`create_all` של `create_schema`: ‏`id` PK, ‏`user_id` ‏FK ל-`users` עם `ON DELETE CASCADE` (אינדקס), ‏`credential_id` ‏`VARCHAR(1400)` ‏UNIQUE (base64url של מזהה המפתח), ‏`public_key` ‏`BYTEA` (COSE), ‏`sign_count` ‏`BIGINT`, ‏`transports` ‏Text, ‏`name` ‏`VARCHAR(60)` ("iPhone", "Android"), ‏`created_at`, ‏`last_used_at` (nullable). המפתח הפרטי לא נשמר אצלנו אף פעם.
+- **שאילתות:** כניסה: ‏`SELECT user_passkeys JOIN users WHERE credential_id = ?` (על ה-UNIQUE), ואז `UPDATE` של `sign_count`, ‏`last_used_at` ו-`users.last_login_at` ו-`INSERT` ל-`user_sessions`. הוספה: ‏`SELECT credential_id FROM user_passkeys WHERE user_id = ?` (רשימת ההחרגה) ו-`INSERT`. ‏`/account`: ‏`SELECT ... WHERE user_id = ? ORDER BY id`. הסרה: ‏`DELETE ... WHERE id = ? AND user_id = ?`. מחיקת משתמש מוחקת את המפתחות ב-CASCADE.
+- **Tests:** ‏`tests/test_passkeys.py`.

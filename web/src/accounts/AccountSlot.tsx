@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BellMenuItem } from "../alerts/Bell";
 import { useBell } from "../alerts/useAlerts";
+import { PasskeySignIn } from "../passkeys/PasskeySignIn";
 import { SavedMenuItem } from "../saved/SavedLink";
 import { useStore } from "../store";
 import { useAccountText } from "./i18n";
@@ -50,6 +51,7 @@ export function SignInButton({ next, label }: { next?: string; label?: string })
           <FacebookF /> <span>{t.facebook}</span>
         </a>
       )}
+      <PasskeySignIn next={next} />
     </div>
   );
 }

@@ -940,6 +940,7 @@ import partylinks.artwork.models
 import partylinks.bot.models
 import partylinks.config_store.models
 import partylinks.mail.models
+import partylinks.passkeys.models
 import partylinks.plans.models
 import partylinks.saved.models
 import partylinks.venue_profiles
