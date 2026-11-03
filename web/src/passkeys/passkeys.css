@@ -1,5 +1,5 @@
-/* Passkeys: the sign-in button beside Google / Facebook, and the devices list on /account. */
-.pk-btn, .pk-btn:hover { background: var(--panel-2); color: var(--text); border-color: var(--line-hot); }
+/* Passkeys: the sign-in button beside Google / Facebook (styled as .google-btn in every state: a dark
+   hover here once left dark text on a dark button), and the devices list on /account. */
 .pk-btn[disabled] { opacity: .7; cursor: progress; }
 .pk-error { margin: 0; color: var(--red); font-size: .9em; max-width: 340px; }
 
