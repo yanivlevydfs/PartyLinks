@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 101 configured sources, all on. Each one has its own module in
+SPOTX collects from 102 configured sources, all on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -47,6 +47,7 @@ pagination and what the listing and the event page provide.
 | `eventimlight` | Eventim Light (eventim-light.com): CTS Eventim's self-service box office, a shop per organizer in every market (de, at, ch, uk, nl, es, dk, fi, fr, no, se; ~11,800 events from ~2,000 of ~5,300 known shops, Oct 2026, ~90% on the map). Artwork is fetched as Chrome too (Akamai). No catalogue: shops come from the Common Crawl URL index and are kept in `data/eventimlight_shops.json`, growing run by run; one request per shop (its upcoming events as JSON, with venue, country and coordinates). Israeli venues to Israel, the rest abroad | 04:33, 16:33 | yes |
 | `vibez` | Vibez (vibez.io): ticketing for communities and party producers: raves, ecstatic dance, club nights | 08:36, 20:36 | yes |
 | `babebar` | Babe Bar (babebar.co.il): club site on WordPress + The Events Calendar (`tribe.py`) | 09:06, 21:06 | yes |
+| `plusparty` | Plus Party (plusparty.co.il, "מסיבות פלוס"): guide to parties, shows and festivals across Israel; one request, the `/events` page's embedded query cache (every upcoming event, ~160, with kind, venue, street, city, price, age). No seller link (behind its sign-up); nature parties with a secret place get no venue | 09:19, 21:19 | yes |
 
 ## Concerts, theatre, stand-up and shows
 

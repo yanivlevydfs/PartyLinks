@@ -2675,6 +2675,17 @@ sources:
       concurrency: 1
       request_delay_seconds: 1.0
 
+  plusparty:
+    # Plus Party (plusparty.co.il, "מסיבות פלוס"): guide to parties, shows and festivals across Israel.
+    # One request: /events embeds its query cache (queryClientState), whose "events" query is every upcoming
+    # event (~160) with kind, venue, street, city, price, age and poster. The seller link sits behind a
+    # sign-up, so none is kept. robots.txt disallows /api/, /auth and /account: not read.
+    enabled: true
+    cron: "19 9,21 * * *"
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
+
   muzi:
     # Muzi: community guide to concerts and shows across Israel (all cities). The event post type is not in
     # wp-json, so the Yoast event sitemaps list every published event (~1,200; past ones are removed). Each

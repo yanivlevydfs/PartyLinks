@@ -71,6 +71,7 @@ from partylinks.scrapers.ogo import OgoScraper
 from partylinks.scrapers.onecity import OneCityScraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
 from partylinks.scrapers.planet import PlanetScraper, RavHenScraper
+from partylinks.scrapers.plusparty import PlusPartyScraper
 from partylinks.scrapers.poalimatarim import PoalimAtarimScraper
 from partylinks.scrapers.popit import PopitScraper
 from partylinks.scrapers.posh import PoshScraper
@@ -211,6 +212,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         BabeBarScraper,
         EventimLightScraper,
         MugicsScraper,
+        PlusPartyScraper,
     )
 }
 
