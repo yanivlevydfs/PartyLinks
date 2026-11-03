@@ -1,0 +1,9 @@
+/* Footer "Share SPOTX": reuses .share / .share-btn from styles.css. */
+.site-share { display: grid; justify-items: center; gap: 10px; margin: 0 auto 22px; }
+.site-share-label { margin: 0; color: var(--text); font: 600 14px/1.4 "Heebo", system-ui, sans-serif; letter-spacing: 0; }
+.site-share .share { flex-wrap: wrap; justify-content: center; }
+.site-share .share-btn { cursor: pointer; text-decoration: none; }
+.site-share .share-btn:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
+.share-btn.telegram:hover, .share-btn.telegram:focus-visible { background: #229ed9; border-color: #229ed9; }
+.share-btn.native:hover, .share-btn.native:focus-visible,
+.share-btn.copy:hover, .share-btn.copy:focus-visible { background: var(--pink); border-color: var(--pink); }

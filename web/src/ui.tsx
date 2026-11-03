@@ -15,6 +15,7 @@ import { SaveButton } from "./saved/SaveButton";
 import { SavedLink } from "./saved/SavedLink";
 import { EventStats } from "./popularity/EventStats";
 import { useMe } from "./accounts/useMe";
+import { SiteShare } from "./share/SiteShare";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";
 
@@ -148,6 +149,7 @@ export function Layout() {
             <Link key={g.value} to={`/genre/${g.value}`}>{genreLabel(lang, g.value)}</Link>
           ))}
         </nav>
+        <SiteShare />
         {lang === "he" ? "SPOTX · ישראל" : "SPOTX · Israel"}
         {INFO_LINKS.map((l) => <Fragment key={l.path}>{" · "}<Link to={l.path}>{l.label[lang]}</Link></Fragment>)}
         {" · "}<Link to="/accessibility">{t.accessibility}</Link>
