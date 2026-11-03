@@ -1,0 +1,49 @@
+{
+ "item": {
+  "id": "evt_is_אביבגפן",
+  "name": "Aviv Geffen Live in Tel Aviv",
+  "nameHe": "אביב גפן ",
+  "category": "Music",
+  "venue": "Charles Bronfman Auditorium / Heichal HaTarbut Tel Aviv, Tel Aviv",
+  "venueHe": "היכל התרבות תל אביב, תל אביב",
+  "city": "Tel Aviv",
+  "cityHe": "תל אביב",
+  "description": "Aviv Geffen is an Israeli rock musician, singer, and songwriter who emerged in the early 1990s with his debut album Ze Rak Or Hayareach. This indoor winter theater concert presents his core catalog and classic rock hits.",
+  "descriptionHe": "אביב גפן הוא מוזיקאי רוק, זמר ויוצר ישראלי שפרץ בתחילת שנות ה-90 עם אלבום הבכורה שלו \"זה רק אור הירח\". מופע חורף זה באולם סגור מציג את השירים המרכזיים ולהיטי הרוק הקלאסיים שלו.",
+  "imageUrl": "https://storage.googleapis.com/swaptix-prod-event-images/events/aviv-geffen-live-in-tel-aviv-1793517619502.jpg",
+  "dateISO": "2026-12-30"
+ },
+ "listings": [
+  {
+   "id": "93f932d0-de75-41ac-9ec4-664e43bc196e",
+   "eventId": "evt_is_אביבגפן",
+   "priceCredits": 199,
+   "totalCredits": 398,
+   "section": "ה' עליון",
+   "row": "32",
+   "seats": "89, 88",
+   "quantity": 2,
+   "quantityAvailable": 2,
+   "divisible": false,
+   "units": [
+    {
+     "key": "0-1",
+     "fileIndexes": [
+      1,
+      0
+     ],
+     "quantity": 2,
+     "seats": [
+      "88",
+      "89"
+     ],
+     "state": "available"
+    }
+   ],
+   "eventDateISO": "2026-12-30",
+   "eventStartsAt": "2026-12-30T19:00:00.000Z",
+   "venue": "Charles Bronfman Auditorium / Heichal HaTarbut Tel Aviv, Tel Aviv",
+   "venueHe": "היכל התרבות תל אביב, תל אביב"
+  }
+ ]
+}

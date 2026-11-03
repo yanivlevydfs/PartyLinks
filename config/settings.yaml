@@ -2345,6 +2345,15 @@ sources:
     event_page_path: /order/{event_id}
     # package_fee: 175  # USD the site adds to every package; a price-mismatch warning means it changed
 
+  swaptix:
+    # SwapTix: Israeli ticket resale marketplace. The catalogue API + each event's listings; only events
+    # with tickets on sale, one per date, the listings as tickets. ~160 requests a run.
+    enabled: true
+    cron: "9 7,19 * * *"
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
+
   viagogo:
     # viagogo (international resale): event pages answer a captcha (403), so events come from the
     # explore page's public JSON feed: every event within radius_m of central Israel, Israel only.

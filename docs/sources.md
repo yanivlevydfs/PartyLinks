@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 103 configured sources, all on. Each one has its own module in
+SPOTX collects from 104 configured sources, all on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -90,6 +90,7 @@ pagination and what the listing and the event page provide.
 | `yellowsubmarine` | Yellow Submarine (yellowsubmarine.org.il): live-music club in Jerusalem | 06:58, 18:58 | yes |
 | `halutz` | HaHalutz 33 (halutz.co.il): culture bar in Be'er Sheva's Old City, second stage in Sderot | 07:16, 19:16 | yes |
 | `viagogo` | viagogo (viagogo.com/il): international ticket resale, events in Israel | 06:44, 18:44 | yes |
+| `swaptix` | SwapTix (swaptix.co.il): Israeli ticket resale; events with tickets on sale | 07:09, 19:09 | yes |
 
 ## Cinema
 
