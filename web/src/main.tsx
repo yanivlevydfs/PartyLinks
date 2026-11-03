@@ -52,7 +52,7 @@ if (urlLang === "he" || urlLang === "en") useStore.getState().setLang(urlLang);
 // the server answered 404, which it marks noindex (landing pages never are). Show the 404 page for
 // that URL instead of an empty listing.
 const serverMissing = document.querySelector('meta[name="robots"][content^="noindex"]') ? location.pathname : null;
-type LandingKind = "tonight" | "weekend" | "genre" | "city" | "region";
+type LandingKind = "tonight" | "weekend" | "genre" | "city" | "region" | "price";
 // The home page is a Landing too: picking a filter moves "/" to "/genre/x" (and back) without remounting
 // the page, so an open filter drawer stays open.
 function Landing({ landing }: { landing?: LandingKind }) {
@@ -71,6 +71,7 @@ const router = createBrowserRouter([
       { path: "/city/:city", element: <Landing landing="city" /> },
       { path: "/city/:city/:sub", element: <Landing landing="city" /> },
       { path: "/region/:region", element: <Landing landing="region" /> },
+      { path: "/price/:band", element: <Landing landing="price" /> },
       { path: "/event/:id", element: <EventPage /> },
       { path: "/plan/:id", element: <Suspense fallback={<Loader />}><PlanPage /></Suspense> },
       { path: "/groups", element: <Suspense fallback={<Loader />}><GroupsPage /></Suspense> },

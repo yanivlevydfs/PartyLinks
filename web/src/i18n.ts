@@ -74,8 +74,8 @@ export const STRINGS = {
     month: "30 יום קרובים",
     quiz: {
       title: "לאן יוצאים?",
-      steps: ["מתי?", "איפה?", "מה בא לכם?", "באיזו שעה?"],
-      hints: ["נתחיל מהתאריך", "אפשר כמה אזורים", "אפשר כמה קטגוריות", "לא חובה"],
+      steps: ["מתי?", "איפה?", "מה בא לכם?", "באיזו שעה?", "מה התקציב?"],
+      hints: ["נתחיל מהתאריך", "אפשר כמה אזורים", "אפשר כמה קטגוריות", "לא חובה", "מחיר כרטיס, לא חובה"],
       today: "היום",
       calendar: "תאריך אחר",
       near: "לידי",
@@ -278,8 +278,8 @@ export const STRINGS = {
     month: "Next 30 days",
     quiz: {
       title: "Where to tonight?",
-      steps: ["When?", "Where?", "What's your vibe?", "What time?"],
-      hints: ["Start with the date", "Pick as many areas as you like", "Pick as many as you like", "Optional"],
+      steps: ["When?", "Where?", "What's your vibe?", "What time?", "What's your budget?"],
+      hints: ["Start with the date", "Pick as many areas as you like", "Pick as many as you like", "Optional", "Ticket price, optional"],
       today: "Today",
       calendar: "Another date",
       near: "Near me",

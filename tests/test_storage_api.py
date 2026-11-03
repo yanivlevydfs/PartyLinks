@@ -214,6 +214,11 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
             and client.get("/city/nowhere/techno").status_code == 410
         )
         assert client.get("/region/sharon").status_code == 410 and client.get("/abroad/greece").status_code == 410
+        cheap = client.get("/price/under-50")  # the free events: a ticket up to 50
+        assert (
+            cheap.status_code == 200 and "אירועים עד ₪50" in cheap.text and 'href="/price/300-plus"' not in cheap.text
+        )
+        assert client.get("/price/300-plus").status_code == 410 and client.get("/price/cheap").status_code == 410
         key = settings.site.indexnow.key
         assert key and client.get(f"/{key}.txt").text == key and client.get("/llms.txt").status_code == 200
         info = client.get("/landing-info", params={"path": "/city/tel-aviv/techno", "lang": "en"}).json()

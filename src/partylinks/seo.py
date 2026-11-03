@@ -31,6 +31,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlalchemy import ColumnElement, String, cast, func, or_, select
 from sqlalchemy.orm import Session, object_session, selectinload
 
+from partylinks.alerts.criteria import PRICE_BANDS
 from partylinks.artist_bio import bio as artist_bio
 from partylinks.artwork.service import urls as artwork_urls
 from partylinks.config import CitySettings, Settings, get_settings
@@ -781,6 +782,26 @@ def info_page(path: str) -> Any:
 # kind: "tonight" | "weekend" | "genre" | "city", or "genre_tonight" / "genre_weekend" for one genre
 # tonight or this weekend ("טכנו הערב", "סטנדאפ בסופ״ש"). Every page needs GENRE_PAGE_MIN events.
 WHENS = ("tonight", "weekend")
+# /price/<slug>: the price filter's bands (PRICE_BANDS), as PRICE_PAGES in web/src/pages/Home.tsx.
+PRICE_PAGES = {"under-50": "u50", "50-150": "50_150", "150-300": "150_300", "300-plus": "300p"}
+PRICE_LABELS = {"u50": ("עד ₪50", "up to ₪50"), "50_150": ("ב־₪50–150", "for ₪50–150"),
+                "150_300": ("ב־₪150–300", "for ₪150–300"), "300p": ("ב־₪300 ומעלה", "for ₪300 and up")}  # fmt: skip
+
+
+def _price_where(band: str) -> list[ColumnElement[bool]]:
+    """Any ticket in the band, as the API's min_price / max_price."""
+    low, high = PRICE_BANDS[band]
+    return ([EventRow.group_max_price >= low] if low is not None else []) + (
+        [EventRow.group_min_price <= high] if high is not None else []
+    )
+
+
+def price_pages(session: Session) -> dict[str, str]:
+    """{slug: band} of the price pages with enough upcoming events."""
+    return _facet(("price",), lambda: {
+        slug: band for slug, band in PRICE_PAGES.items()
+        if (session.scalar(select(func.count()).select_from(EventRow).where(upcoming_filter(), *_price_where(band))) or 0) >= GENRE_PAGE_MIN
+    })  # fmt: skip
 
 
 def _genre_filter(genre: str, cfg: Settings) -> ColumnElement[bool]:
@@ -932,6 +953,7 @@ def _landing_paths(session: Session, cfg: Settings) -> list[tuple[str, str, str]
             for c in cities for g in by_city.get(c.he, {})]  # fmt: skip
     out += [(f"/region/{k.replace('_', '-')}", f"אירועים {REGION_NAMES[k][1]}", f"Events in {REGION_NAMES[k][2]}") for k in region_pages(session)]
     out += [(f"/abroad/{slug}", country_name(code, "he"), country_name(code, "en")) for slug, code in abroad_countries(session).items()]
+    out += [(f"/price/{slug}", f"אירועים {PRICE_LABELS[b][0]}", f"Events {PRICE_LABELS[b][1]}") for slug, b in price_pages(session).items()]
     return out
 
 
@@ -974,6 +996,9 @@ def _landing_text(kind: str, lang: str, label: str, place: str = "") -> tuple[st
             "abroad_country": (f"אירועים {p}: הופעות ופסטיבלים {p}",
                                f"כרטיסים וחבילות להופעות, מסיבות ופסטיבלים {p}: תאריכים, מקומות ומחירים.",
                                f"כל ההופעות והפסטיבלים הקרובים {p}.", p),
+            "price": (f"אירועים {g}: הופעות, מסיבות והצגות",
+                      f"כל האירועים הקרובים בישראל עם כרטיס {g}: הופעות, מסיבות, סטנדאפ והצגות, עם תאריכים, מקומות וכרטיסים.",
+                      f"כל האירועים הקרובים שיש בהם כרטיס {g}, מכל אתרי הכרטיסים במקום אחד.", g),
         }[kind]  # fmt: skip
     return {
         "tonight": ("What's on tonight in Israel",
@@ -1009,6 +1034,9 @@ def _landing_text(kind: str, lang: str, label: str, place: str = "") -> tuple[st
         "abroad_country": (f"Events {p}: concerts and festivals",
                            f"Tickets and packages for concerts, parties and festivals {p}: dates, venues and prices.",
                            f"Every upcoming concert and festival {p}.", p),
+        "price": (f"Events {g} in Israel: concerts, parties and shows",
+                  f"Upcoming events in Israel with a ticket {g}: concerts, parties, stand-up and shows, with dates, venues and tickets.",
+                  f"Every upcoming event with a ticket {g}, from every ticketing site in one place.", g),
     }[kind]  # fmt: skip
 
 
@@ -1104,6 +1132,9 @@ def resolve_landing(session: Session, cfg: Settings, lang: str, path: str) -> La
             return None
         name = country_name(code, lang)
         land = Landing("abroad_country", path, name, f"ב{name}" if he else f"in {name}", [EventRow.country == code], abroad=True)
+    elif head == "price" and len(rest) == 1 and rest[0] in price_pages(session):
+        band = PRICE_PAGES[rest[0]]
+        land = Landing("price", path, PRICE_LABELS[band][0 if he else 1], where=_price_where(band))
     else:
         return None
     land.where = _when_where(when, cfg) + land.where
@@ -1148,6 +1179,8 @@ def _related(session: Session, cfg: Settings, lang: str, path: str) -> list[tupl
             city_links(c)
     elif head == "abroad":
         out += [(f"/abroad/{slug}", country_name(code, lang)) for slug, code in abroad_countries(session).items()]
+    elif head == "price":
+        out += [(f"/price/{slug}", ("אירועים " if he else "Events ") + PRICE_LABELS[b][0 if he else 1]) for slug, b in price_pages(session).items()]
     if head in ("city", "genre", "region", "tonight", "weekend"):
         out += [(f"/region/{k.replace('_', '-')}", REGION_NAMES[k][0] if he else REGION_NAMES[k][2].removeprefix("the ").capitalize()) for k in region_pages(session)]
     return [x for x in dict.fromkeys(out) if x[0] != path]
@@ -1575,7 +1608,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
         return page(request, lambda s, c, lang: landing_page(s, c, lang, request.url.path.rstrip("/")))
 
     for path in ("/tonight", "/weekend", "/genre/{genre}", "/genre/{genre}/{when}", "/city/{city}", "/city/{city}/{sub}",
-                 "/region/{region}", "/abroad/{country}"):  # fmt: skip
+                 "/region/{region}", "/abroad/{country}", "/price/{band}"):  # fmt: skip
         app.get(path, include_in_schema=False)(landing)
 
     def _own_page(path: str, he: str, en: str) -> Callable[[Request], HTMLResponse]:

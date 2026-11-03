@@ -12,11 +12,18 @@ import { TelegramPromo } from "../bot/TelegramPromo";
 
 // Regions with a /region/<key> page (seo.py REGION_NAMES); Tel Aviv and Eilat are city pages.
 const REGION_PAGES = ["gush_dan", "sharon", "jerusalem", "haifa", "galilee", "negev"];
+// /price/<slug> pages of the price bands (seo.py PRICE_PAGES).
+const PRICE_PAGES: Record<string, string> = { "under-50": "u50", "50-150": "50_150", "150-300": "150_300", "300-plus": "300p" };
 
 /** The landing URL that shows exactly these filters (/genre/techno, /city/tel-aviv/tonight, /region/sharon...), else "/". */
 export function landingPath(f: FilterState): string {
-  const rest = { ...f, q: "", sort: DEFAULT_FILTERS.sort, when: "all", genres: [], regions: [], areas: [], city: null };
+  const rest = { ...f, q: "", sort: DEFAULT_FILTERS.sort, when: "all", genres: [], regions: [], areas: [], city: null, price: "" };
   if (JSON.stringify(rest) !== JSON.stringify(DEFAULT_FILTERS)) return "/";
+  if (f.price) {
+    const slug = Object.keys(PRICE_PAGES).find((k) => PRICE_PAGES[k] === f.price);
+    const alone = f.when === "all" && !f.genres.length && !f.regions.length && !f.areas.length && !f.city;
+    return slug && alone ? `/price/${slug}` : "/";
+  }
   if (f.regions.length === 1 && REGION_PAGES.includes(f.regions[0]) && !f.city && !f.areas.length && !f.genres.length && f.when === "all")
     return `/region/${f.regions[0].replace("_", "-")}`;
   const where = f.regions.length > 1 || f.areas.length ? undefined
@@ -31,12 +38,12 @@ export function landingPath(f: FilterState): string {
 
 // Landing routes (/tonight, /weekend, /genre/:genre[/tonight|weekend], /city/:city) are the home page with its filters preset;
 // the server renders the same URLs with their own title, description and FAQ for crawlers.
-export default function Home({ landing }: { landing?: "tonight" | "weekend" | "genre" | "city" | "region" }) {
+export default function Home({ landing }: { landing?: "tonight" | "weekend" | "genre" | "city" | "region" | "price" }) {
   const { t, lang } = useT();
   const set = useStore((s) => s.setFilters);
   const f = useStore((s) => s.filters);
   const cats = useCategories().data;
-  const { genre, when, city, sub, region } = useParams();
+  const { genre, when, city, sub, region, band } = useParams();
   const cityWhen = sub === "tonight" || sub === "weekend" ? sub : undefined;
   // Info from the server: title, intro, related links, and the names of a town that is not in CITIES.
   const info = useLandingInfo(useLocation().pathname, lang).data;
@@ -61,8 +68,9 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
       when: landing === "tonight" || landing === "weekend" ? landing : landing === "genre" && (when === "tonight" || when === "weekend") ? when : cityWhen ?? "all",
       genres: landing === "genre" && genre ? [genre] : sub && !cityWhen ? [sub] : [],
       regions: landing === "region" && region ? [region.replace("-", "_")] : [],
+      price: landing === "price" && band ? PRICE_PAGES[band] ?? "" : "",
     });
-  }, [landing, genre, when, city, sub, region, set]);
+  }, [landing, genre, when, city, sub, region, band, set]);
   // /city/:city: the city's region comes with the categories (Tel Aviv's is known: the target city, as landingPath).
   const cityRegion = cityName && (city === "tel-aviv" ? "tel_aviv" : cats?.cities.find((c) => c.value === cityName.he)?.area);
   // The list waits for the city's whole filter (its name, its region): a list fetched for half of it would be
@@ -89,6 +97,7 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
     landing === "genre" ? (when === "tonight" ? t.landing.genreTonight(g) : when === "weekend" ? t.landing.genreWeekend(g) : t.landing.genre(g))
     : landing === "city" ? t.landing.city(cityName?.[lang] ?? city ?? "")
     : landing === "region" ? t.landing.city(t.areas[region?.replace("-", "_") ?? ""] ?? "")
+    : landing === "price" ? t.prices[PRICE_PAGES[band ?? ""] as keyof typeof t.prices] ?? ""
     : landing ? t.landing[landing] : t.tagline;
   const heading = (landing && info?.title) || title;
   useTitle(landing ? heading : undefined);

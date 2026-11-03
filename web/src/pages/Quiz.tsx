@@ -9,7 +9,7 @@ import { byName, eventPath, label, today, tomorrow, TZ, useT } from "../ui";
 import { Weather } from "../Weather";
 
 const SLOT_ICONS: Record<string, string> = { morning: "☀️", afternoon: "🌤️", evening: "🌆", night: "🌙" };
-const STEPS = 4;
+const STEPS = 5;
 
 /** The query of a draft, without the sort (facets don't care, so their cache stays shared). */
 function query(f: Filters) {
@@ -18,7 +18,7 @@ function query(f: Filters) {
 }
 
 /**
- * "Where to?": when, where, vibe, time. Each question only offers what the earlier answers left
+ * "Where to?": when, where, vibe, time, budget. Each question only offers what the earlier answers left
  * (its options are the facets of the matching events, busiest first, with counts), and the button
  * says how many events the answers so far add up to. The last answer opens that list.
  */
@@ -151,6 +151,15 @@ export function Quiz() {
 
         {step === 2 && <GenrePicker quiz cats={cats} value={d.genres} onChange={(genres) => patch({ genres })} />}
 
+        {step === 4 && (
+          <div className="quiz-chips">
+            <Opt on={!d.price} onClick={() => patch({ price: "" })}>{q.anywhere}</Opt>
+            {Object.entries(t.prices).map(([k, name]) => (
+              <Opt key={k} on={d.price === k} onClick={() => patch({ price: d.price === k ? "" : k })}>{name}</Opt>
+            ))}
+          </div>
+        )}
+
         {step === 3 && (
           <div className="quiz-tiles">
             {slots.map((k) => (
@@ -196,7 +205,8 @@ function friday(): string {
 }
 const tileWeather = (start: string) => <Weather lat={TLV.lat} lng={TLV.lng} start={start} />;
 
-const picked = (step: number, d: Filters) => (step === 1 ? d.regions.length : step === 2 ? d.genres.length : d.slots.length) > 0;
+const picked = (step: number, d: Filters) =>
+  (step === 1 ? d.regions.length : step === 2 ? d.genres.length : step === 3 ? d.slots.length : d.price.length) > 0;
 
 function Tile({ icon, title, sub, n, on, onClick, wx }: { icon: string; title: string; sub?: string; n?: number; on: boolean; onClick: () => void; wx?: ReactNode }) {
   return (
