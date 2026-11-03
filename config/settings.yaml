@@ -889,6 +889,65 @@ geocoding:
     "בית ציוני אמריקה": [32.0746, 34.7822]              # Beit Zionei America, Daniel Frisch 1, Tel Aviv
     "מדיטק": [32.0118153, 34.7774368]                  # Holon Mediatheque, Golda Meir 6 (all its halls)
     "אודיטוריום הכט": [32.763218, 35.018062]            # Hecht Auditorium, University of Haifa (the Hecht Museum's building)
+    # Recurring venues of upcoming events still off the map (OSM POI / numbered-building points, Nov 2026).
+    # Generic hall names ("אולם ראשי", "היכל התרבות" alone) are left out: the city is not part of the match.
+    "היכל התרבות | עמק דותן 49": [31.8991635, 35.0148195]  # Modi'in culture hall as Smarticket writes it (same point as above)
+    "מוזיאון ת\"א": [32.0775956, 34.7866422]            # Tel Aviv Museum of Art halls (Recanati...), as Smarticket abbreviates it
+    "מוזיאון ת״א": [32.0775956, 34.7866422]             # the same, with gershayim (Kaufmann, Shidlovsky halls)
+    "תיאטרון מחול ענבל": [32.0602817, 34.7643775]       # Inbal Dance Theatre, in the Suzanne Dellal Centre
+    "רב תחומי ענבל": [32.0602817, 34.7643775]           # Inbal multidisciplinary ethnic centre, same compound
+    "תיאטרון הצפון": [32.8218116, 35.0740132]           # HaTzafon Theatre (Beit HaAm), Beilinson, Kiryat Haim, Haifa
+    "היכל התרבות כפר סבא": [32.1766984, 34.9052622]     # Kfar Saba culture hall (Yad Lebanim), Yerushalayim 33
+    "אודיטוריום יד לבנים - חדש": [32.1805221, 34.8711198]  # Beit Yad Lebanim, HaBanim, Ra'anana
+    "יד-לבנים רעננה": [32.1805221, 34.8711198]          # the same hall
+    "תאטרון גבעתיים": [32.0672791, 34.8041665]          # Givatayim Theatre, Lea Koenig Stolper St
+    "תיאטרון גבעתיים": [32.0672791, 34.8041665]         # the same, full spelling
+    "היכל התרבות נס ציונה": [31.9307476, 34.7962655]    # Nes Ziona culture hall, Bilu / HaShiryon
+    "היכל התרבות ראשון לציון": [31.9627740, 34.8005569]  # Rishon LeZion culture hall, Jabotinsky 16
+    "נווה עמל": [32.1636250, 34.8581485]                # Neve Amal community centre, Foster 2, Herzliya
+    "מרכז הבמה גני תקווה": [32.0589649, 34.8800730]     # Merkaz HaBama, HaCarmel, Ganei Tikva
+    "דיונה אשדוד": [31.7782192, 34.6494647]             # Diuna community centre (hall), Ben Ami Blvd, Ashdod
+    "ראש ציפור": [32.0985848, 34.8057304]               # Rosh Tzipor (birding centre), Yarkon Park, Tel Aviv
+    "היכל התרבות נתניה": [32.3281532, 34.8624359]       # Netanya culture hall, Eliyahu HaGiladi
+    "היכל התרבות לוד": [31.9431810, 34.8869670]         # Lod culture hall, Eliezer Kaplan 2
+    "אודיטוריום חיפה": [32.8034907, 34.9850623]         # Haifa Auditorium, Carmel centre
+    "אודטורים חיפה": [32.8034907, 34.9850623]           # the same, misspelt by its seller
+    "zappa herzliya": [32.1668998, 34.8107969]          # Zappa club, Medinat HaYehudim, Herzliya Pituach
+    "היכל התרבות יבנה": [31.8743987, 34.7348735]        # Yavne culture hall, Jabotinsky Blvd
+    "תיאטרון ירושלים": [31.7689181, 35.2155172]         # Jerusalem Theatre, Marcus 20, Talbiya
+    "מרכז קהילתי יבור": [32.1640555, 34.8325994]        # Marcus Yavor community centre, Ben Saruk 12, Herzliya
+    "marcus yavor": [32.1640555, 34.8325994]            # the same, as Ogo writes it
+    "סינמה סיטי באר שבע": [31.2341780, 34.7993077]      # Cinema City Beersheba, Hita 1
+    "expo tel aviv": [32.1054141, 34.8084224]           # Expo Tel Aviv (fairgrounds), Rokach Blvd
+    "היכל בעיר": [32.1662366, 34.8429788]               # Heichal BaIr (Beit HaEzrach), Sirkin, Herzliya
+    "בית העם גדרות": [31.8259927, 34.7469573]           # Beit HaAm Aseret, HaShikma (Gderot council), by HaRimon 8
+    "קמפוס קרית אונו": [32.0364337, 34.8654131]         # Ono Academic College, HaSdera HaAkademit 1, Kiryat Ono
+    "קמפוס גבעת רם": [31.7729398, 35.1979950]           # Hebrew University Givat Ram (Safra) campus, Jerusalem
+    "יהודה הנשיא 92": [32.1513963, 34.8484483]          # Eshkol Pais, Yehuda HaNasi 92, Herzliya (OSM building)
+    "זאפה מידטאון": [32.0776320, 34.7930410]            # Zappa Midtown, Menachem Begin 144, Tel Aviv (OSM house point)
+    "babu bar": [32.0751750, 34.7820500]                # Babu Bar, Ibn Gabirol 30, Tel Aviv (OSM house point)
+    "מוזיאון קסטל": [31.7853612, 35.2982627]            # Moshe Castel Museum, Ma'ale Adumim
+    "מוזיאון למורשת אלי כהן": [32.1675209, 34.8406416]  # Eli Cohen Museum, HaNadiv 2, Herzliya
+    "אנזו – המקום": [32.1669082, 34.8391310]            # Enzo youth centre, Sokolov 5, Herzliya (OSM house point)
+    "בית אריאלה": [32.0766841, 34.7862804]              # Beit Ariela library, Shaul HaMelech, Tel Aviv
+    "מרינה הרצליה": [32.1621420, 34.7950030]            # Herzliya Marina, HaTzedef 1
+    "דוהל": [32.0494956, 34.7891323]                    # Dohl community centre (hall), HaTikva 76, Tel Aviv
+    "הנצי״ב 29": [32.0704710, 34.7901850]               # Israel AIDS Task Force, HaNatziv 29, Tel Aviv (OSM house point)
+    "בית האופרה": [32.0763543, 34.7847576]              # Israeli Opera, Tel Aviv Performing Arts Center
+    "יד למגינים - יגור": [32.7429373, 35.0739470]       # Yad LaMeginim hall, Kibbutz Yagur
+    "beit tarbut yad lameginim": [32.7429373, 35.0739470]  # the same, as Ogo writes it
+    "בית התיאטרון כרמיאל": [32.9151303, 35.3032382]     # Karmiel theatre house (Narkin hall), Nesi'ei Israel 33
+    "בית נגלר": [32.8190337, 35.0664230]                # Beit Nagler community centre, Kiryat Haim, Haifa
+    "מרכז הכנסים הבינלאומי": [31.7862562, 35.2026399]   # International Convention Center (Binyanei HaUma), Jerusalem
+    "yisahar st 3, jerusalem": [31.7576837, 35.2190446]  # Greater Baka community council, Yissachar 3 (OSM house point)
+    "yerushalayim st 29, haifa": [32.8075851, 34.9992689]  # Hadar community centre, Yerushalayim 29, Haifa
+    "itzhak artzi st 12": [32.1189750, 34.7830720]      # Yitzhak Artzi 12, Tel Aviv (OSM house point)
+    "sokolov st 56, herzliya": [32.1669662, 34.8463788]  # Herzliya municipal library, Sokolov 56 (OSM house point)
+    "אולם עינן": [31.8998193, 35.0080601]               # Einan hall, Azrieli Mall Modi'in, Lev HaIr
+    "הכנסייה הסליזיאנית": [32.7069311, 35.2945490]      # Salesian (Don Bosco) church, Nazareth
+    "הכנסייה האנגליקנית, נצרת": [32.7025866, 35.2962425]  # Christ Church (Anglican), Nazareth
+    "קלרמונט": [32.1125884, 34.8025429]                 # Clairmont Concert Hall, Buchmann-Mehta School, Tel Aviv University
+    "תיאטרון דימונה": [31.0619717, 35.0371103]          # Dimona Theatre, Kovshei Eilat
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
