@@ -75,6 +75,11 @@ class RunHealth:
             return f"{result.status}: {result.error or 'no error text'}"
         if result.events_found == 0:
             return "no events found"
+        # The site changed its markup: items stop parsing (each is skipped, never saved half-read) and the run
+        # still "finds" the rest. Too many skipped is a bad run: retried, then the source is paused.
+        failed, seen = result.events_failed, result.events_found + result.events_failed
+        if failed >= cfg.failure_min and failed > cfg.max_failure_ratio * seen:
+            return f"{failed} of {seen} items failed (over {cfg.max_failure_ratio:.0%})"
         with self.db.session(write=False) as session:
             found = session.scalars(
                 select(ScrapeRunRow.events_found)

@@ -32,7 +32,10 @@ neither configured, the console works only from the same machine.
 At most `scheduler.max_parallel_runs` (6) sources run at once; the rest wait in a queue. After every
 scheduled run or retry the run manager judges it. A bad run is `failed`, `blocked`, found no events, or found
 under `low_count_ratio` (30%) of the usual count (the median of the last 5 good runs, for sources usually
-finding `low_count_min_usual` (10) or more). A bad run is run again after each of
+finding `low_count_min_usual` (10) or more), or had more than `max_failure_ratio` (15%) of its items fail
+(at least `failure_min`, 5): the site's markup changed and items stop parsing (schema drift). Every item
+passes `ScrapedEvent` validation (pydantic) before it is saved, so a malformed item is skipped, never
+stored half-read. A bad run is run again after each of
 `scheduler.retry_after_minutes` (15 min, 1 h, 3 h). Still bad after the last retry, the source is paused
 (`paused:<source>` in the `flags` table, so it survives deploys) and the admins in
 `PARTYLINKS_ACCOUNTS__ADMIN_EMAILS` get an email (when Resend is set up). An admin's own "run now" never

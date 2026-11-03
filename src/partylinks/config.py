@@ -148,6 +148,10 @@ class SchedulerSettings(BaseModel):
     low_count_ratio: float = Field(0.3, ge=0, le=1)
     email_on_pause: bool = False  # also email the admins when a source is paused (the owner asked for none)
     low_count_min_usual: int = Field(10, ge=1)  # sources usually finding fewer are not judged by count
+    # Schema drift: a run where more than this share of items failed (parse / validation / save / fetch,
+    # the run's failures list) is bad too, once it has at least failure_min failures.
+    max_failure_ratio: float = Field(0.15, ge=0, le=1)
+    failure_min: int = Field(5, ge=1)
 
 
 def validate_cron(value: str) -> str:

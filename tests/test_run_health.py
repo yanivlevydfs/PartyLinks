@@ -32,12 +32,12 @@ def _health(monkeypatch, retries: list) -> RunHealth:
     return RunHealth(settings, db, lambda source, trigger: None, threading.Event())
 
 
-def _run(db: Database, found: int, status: str = "success") -> RunResult:
+def _run(db: Database, found: int, status: str = "success", failed: int = 0) -> RunResult:
     with db.session() as session:
         row = ScrapeRunRow(source="goout", trigger="schedule", status=status, events_found=found)
         session.add(row)
         session.flush()
-        return RunResult(row.id, "goout", status, found, found, 0, None if status == "success" else "boom")
+        return RunResult(row.id, "goout", status, found, found, failed, None if status == "success" else "boom")
 
 
 def test_bad_runs_retry_then_pause_and_a_healthy_run_unpauses(monkeypatch) -> None:
@@ -48,6 +48,9 @@ def test_bad_runs_retry_then_pause_and_a_healthy_run_unpauses(monkeypatch) -> No
     assert retries == [] and h.problem(_run(h.db, 50)) is None
     assert "usually 100" in (h.problem(_run(h.db, 20)) or "")  # under 30% of usual
     assert h.problem(_run(h.db, 0)) == "no events found"
+    assert "20 of 100 items failed" in (h.problem(_run(h.db, 80, "partial", failed=20)) or "")  # schema drift
+    assert h.problem(_run(h.db, 95, "partial", failed=5)) is None  # 5%: a few odd items
+    assert "items failed" not in (h.problem(_run(h.db, 30, "partial", failed=4)) or "")  # under failure_min
     for _ in range(3):
         h.after_run(_run(h.db, 0, "failed"), "retry")
     assert retries == [15, 60, 180] and not h.paused("goout")
