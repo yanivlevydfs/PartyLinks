@@ -58,7 +58,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   beatradar: ["https://beatradar.co.il", "guide"],
   happytlv: ["https://www.happytlv.com", "guide"], tiuli: ["https://www.tiuli.com", "guide"], meety: ["https://meety.co.il", "guide"],
   funzing: ["https://il.funzing.com", "tickets"], easytix: ["https://easytix.co.il", "tickets"], ticketeams: ["https://ticketeams.co.il", "abroad"],
-  festivalim: ["https://www.festivalim.co.il", "guide"], ogo: ["https://www.ogo.co.il", "guide"], muzi: ["https://muzi.co.il", "guide"], mugics: ["https://mugics.com", "guide"],
+  festivalim: ["https://www.festivalim.co.il", "guide"], ogo: ["https://www.ogo.co.il", "guide"], muzi: ["https://muzi.co.il", "guide"], mugics: ["https://mugics.com", "guide"], efokulam: ["https://efokulam.co.il", "guide"],
   plusparty: ["https://plusparty.co.il", "guide"],
   airdrop: ["https://airdrop.co.il", "guide"], yotzim: ["https://yotzim.com", "guide"],
   telaviv: ["https://www.tel-aviv.gov.il", "city"], haifamuni: ["https://www.haifa.muni.il", "city"],

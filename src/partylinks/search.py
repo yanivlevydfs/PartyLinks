@@ -259,7 +259,7 @@ SOURCE_ALIASES = {
     "goout": ("go out", "go-out", "גו אאוט", "גואאוט"), "eventer": ("אוונטר", "איוונטר"), "zygo": ("זייגו",),
     "tickchak": ("טיקצ'אק", "טיקצאק"), "goshow": ("גו שואו", "גושואו", "go show"), "tzkrti": ("תזכרתי", "tazkarti", "تذكرتي"), "fever": ("פיבר", "candlelight", "קנדללייט"), "towerofdavid": ("מגדל דוד", "tower of david", "החיזיון הלילי"), "tamuseum": ("מוזיאון תל אביב", "tel aviv museum of art"), "jaffatheatre": ("תיאטרון יפו", "jaffa theatre", "סראיא"), "smarticket": ("סמרטיקט",), "smarticket_il": ("פריינדס", "friends"), "barby": ("בארבי",), "reading3": ("רידינג", "רידינג 3", "רדינג", "רדינג 3", "reading 3", "reading"), "kupatbravo": ("קופת ברבו", "kupat bravo"), "easytix": ("איזיטיקס", "easy tix"),
     "ticketmaster": ("טיקטמאסטר",), "mevalim": ("מבלים",), "hulyo": ("הוליו",), "popit": ("פופיט",), "beatradar": ("beat radar", "ביט ראדר"),
-    "happytlv": ("happy tlv", "הפי תל אביב"), "secrettelaviv": ("secret tel aviv",), "secrettelavivapp": ("secret tel aviv app",), "mugics": ("mugics", "מיוזיקס", "מוגיקס"), "plusparty": ("plus party", "plusparty", "מסיבות פלוס", "פלוס פארטי"), "cinemacity": ("cinema city", "סינמה סיטי"),
+    "happytlv": ("happy tlv", "הפי תל אביב"), "secrettelaviv": ("secret tel aviv",), "secrettelavivapp": ("secret tel aviv app",), "mugics": ("mugics", "מיוזיקס", "מוגיקס"), "efokulam": ("efokulam", "efo kulam", "אפו כולם", "איפה כולם"), "plusparty": ("plus party", "plusparty", "מסיבות פלוס", "פלוס פארטי"), "cinemacity": ("cinema city", "סינמה סיטי"),
     "hotcinema": ("hot cinema", "הוט סינמה"), "ravhen": ("rav hen", "רב חן"), "lev": ("סינמה לב",), "zappa": ("זאפה",),
     "zoatlv": ("zoa tlv", "zoa house"), "eventimlight": ("eventim light", "eventim-light"),
 }  # fmt: skip

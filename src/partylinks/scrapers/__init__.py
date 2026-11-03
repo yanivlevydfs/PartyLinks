@@ -20,6 +20,7 @@ from partylinks.scrapers.cinematheque_tlv import JerusalemCinemathequeScraper, T
 from partylinks.scrapers.comy import ComyScraper
 from partylinks.scrapers.drop import DropScraper
 from partylinks.scrapers.easytix import EasytixScraper
+from partylinks.scrapers.efokulam import EfoKulamScraper
 from partylinks.scrapers.epgb import EpgbScraper
 from partylinks.scrapers.eventbrite import EventbriteScraper
 from partylinks.scrapers.eventbuzz import EventbuzzScraper
@@ -213,6 +214,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         EventimLightScraper,
         MugicsScraper,
         PlusPartyScraper,
+        EfoKulamScraper,
     )
 }
 

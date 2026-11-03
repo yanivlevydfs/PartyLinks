@@ -2686,6 +2686,17 @@ sources:
       concurrency: 1
       request_delay_seconds: 1.0
 
+  efokulam:
+    # EfoKulam (efokulam.co.il, "איפה כולם"): a nightlife guide (club nights, parties, festivals; mostly Tel Aviv).
+    # WordPress: /wp-json/wp/v2/event-type (1 request) names the categories; /wp-json/wp/v2/events in pages of
+    # 100 with the image embedded (~5 requests, ~460 rows) gives date, gate time, address and the seller link
+    # (Go-Out, Eventer), kept as extra.purchase_url. Past rows dropped by their event-date. robots.txt: /wp-admin/ only.
+    enabled: true
+    cron: "43 8,20 * * *"
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+
   muzi:
     # Muzi: community guide to concerts and shows across Israel (all cities). The event post type is not in
     # wp-json, so the Yoast event sitemaps list every published event (~1,200; past ones are removed). Each
