@@ -141,7 +141,7 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
         </div>
       </Hero>
       <main className="wrap">
-        {/* Right under the search box: the quiz first, then "For you". */}
+        {/* "For you" always sits under the quiz or the filters, never above them. */}
         {quiz ? (
           <>
             <Quiz />
@@ -153,9 +153,10 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
           <>
             {!landing && !f.q && <button className="quiz-again" onClick={again}>✨ {t.quiz.again}</button>}
             {landing && info?.intro && <p className="landing-intro">{info.intro}</p>}
-            <ForYouRow />
             {!f.q && <TelegramPromo />}
             <Filters />
+            {/* A search keeps its results right under the filters. */}
+            {!f.q && <ForYouRow />}
             {/* Nothing found: a close name to try, and what is hot meanwhile instead of an empty page. */}
             {cityPending ? <GridLoading />
               : <EventGrid params={filterParams(f)} empty={(page) => <><Relax didYouMean={page?.did_you_mean} />{f.q && <Trending />}</>} />}
