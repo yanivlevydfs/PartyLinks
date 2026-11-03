@@ -209,7 +209,13 @@ address or sign-in / unsubscribe token in any log line, tracebacks too), and `se
   least 30 minutes old) and matches them through `api.build_event_filters`, the function `/events` uses, so
   an alert finds what the same filters show on the site.
 - **Email** goes through Resend from the worker: welcome, instant (at most hourly per user) and the weekly
-  digest (only for users who ticked it). The web process sends only the admin's test.
+  digest (only for users who ticked it). The web process sends only the admin's test. Emails with events
+  carry them as schema.org Event JSON-LD and one `.ics` attachment (`mail/events.py`).
+- **Popularity** (`popularity/`, `web/src/popularity/`): every event shows how many liked it (saved hearts),
+  viewed it (one per visitor per day, recorded inside `GET /events/{id}`, crawlers left out, a salted hash of
+  IP + user agent, nothing else kept) and are watching now (distinct visitors in the last
+  `popularity.watching_minutes`). No extra request per page; table `event_views`, pruned after
+  `popularity.keep_days`.
 
 Details, tables and endpoints: [accounts](accounts.md); the design record: [accounts-alerts-design.md](accounts-alerts-design.md).
 
@@ -271,10 +277,12 @@ src/partylinks/
                               (/api/me), guard.py (rate limits, same-origin writes), admin_routes.py
                               (users tab), redact.py (log scrubbing)
   saved/                      saved events: models.py (saved_events), routes.py (/api/me/saved, /events/cards)
+  popularity/                 likes / views / watching now: config.py, models.py (event_views, counts, prune)
   alerts/                     alerts: criteria.py, models.py (event_alerts, alert_hits, alert_state),
                               matcher.py, routes.py (/api/me/alerts, bell, for-you), jobs.py (worker jobs)
   mail/                       email through Resend: config.py, models.py (email_runs, mail_switches),
                               send.py, render.py + templates/ (Jinja2), jobs.py (welcome, instant, digest),
+                              events.py (event JSON-LD + .ics attachment),
                               tokens.py + routes.py (unsubscribe), admin_routes.py (email tab)
   logs.py                     one logging setup for every process
   cli.py                      command line

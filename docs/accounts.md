@@ -114,6 +114,8 @@ the site's contact address, `contact@spotx.fun` (`site.contact_email`). Nothing 
 | Instant | After each matcher pass | Alerts set to "email me at once"; at most one email per user per `mail.instant_min_interval_minutes` (60), up to 10 events |
 | Weekly digest | `mail.digest_cron` (Thursday 10:00, Israel time) | Only users who ticked it (off by default: it carries ticket links, so it is advertising under the Communications Law §30A; the tick's time is kept). Saved events this week first, then new matches (next 10 days), then this weekend's free events and highlights in a quiet week. Once a week. |
 
+Every email with events (digest, instant) also carries them as schema.org `Event` JSON-LD in its head (Gmail's event markup) and as one calendar attachment (`spotx-week.ics` / `spotx-events.ics`, one VEVENT per event, built by `bot/core/calendar.ics_many`). Resend's batch endpoint takes no attachments, so these emails go one request each (`resend.Emails.send`, idempotency key `<run>:<user>`, ≤2 a second: ~10 minutes for 1,000 users); `mail.calendar_attachment: false` goes back to 100-per-batch without the file.
+
 Every email (Hebrew right to left or English, by the account's email language) has its events as cards
 with picture, day and time, place, weather (from the site's forecast cache) and price, links tagged
 `utm_source=email`, a footer with why it came (manage alerts, settings, unsubscribe, contact), and an unsubscribe

@@ -15,7 +15,7 @@ FastAPI, served by the same process as the website.
 | POST | `/events/sponsored/hit` | One `view` or `click` of a paid placement, `where` = `rails` (default) or `results`, for the advertiser report. Only placements on show count |
 | GET | `/events/map` | Every matching event with coordinates at once (same filters, no paging), plus a count of events without a place |
 | GET | `/events/cards?ids=` | Cards for up to 100 event ids (upcoming only; each group's primary). The save heart's list on the device when Google sign-in is not configured |
-| GET | `/events/{id}` | One event by id (`<source>:<source_event_id>`) or slug: tickets with live status, images, other listings (`alternatives`), the latest deal changes |
+| GET | `/events/{id}` | One event by id (`<source>:<source_event_id>`) or slug: tickets with live status, images, other listings (`alternatives`), the latest deal changes, `likes` / `views` / `watching` (opening it counts a view; cards in every list carry `likes` / `views`) |
 | GET | `/go/{id}` | Redirect (302) to the seller's page, UTM-tagged and counted. `?at=` is where on our page it was clicked. Rate-limited per IP (see [ticket links](ticket-links.md)) |
 | GET | `/changes` | Deal-change feed, newest first: `since` (default last 24 hours), `kind` (e.g. `price_down`), `source`, `limit` |
 | GET | `/categories` | Counts per genre, date, weekday, time slot, entry type, venue, city, lineup, event type, source |

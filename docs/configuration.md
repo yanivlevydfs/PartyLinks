@@ -37,7 +37,7 @@ the Resend key, the Telegram bot token and webhook secret) belong in variables o
 | `site` | `base_url`, brand name (`SPOTX`), the contact address (`email`; empty: `privacy.email`, now contact@spotx.fun), accessibility and privacy contacts |
 | `utm` | UTM tags on ticket links: `enabled`, `source`, `medium` (see [ticket links](ticket-links.md)) |
 | `accounts` | Optional Google / Facebook accounts: `enabled`, `session_days`, `max_alerts`, `max_saved`; secrets (`google_client_id`, `google_client_secret`, `facebook_app_id`, `facebook_app_secret`, `session_secret`, `admin_emails`) from the environment only (see [accounts](accounts.md)) |
-| `mail` | Email through Resend: `from_address` (`SPOTX <events@spotx.fun>`, sender only; replies go to the site's contact address), `digest_cron` (Thursday 10:00), `digest_max_events`, `instant_min_interval_minutes`, `matcher_interval_minutes`; `PARTYLINKS_MAIL__RESEND_API_KEY` from the environment only |
+| `mail` | Email through Resend: `from_address` (`SPOTX <events@spotx.fun>`, sender only; replies go to the site's contact address), `digest_cron` (Thursday 10:00), `digest_max_events`, `instant_min_interval_minutes`, `matcher_interval_minutes`, `calendar_attachment` (the events' `.ics` on every email with events; on); `PARTYLINKS_MAIL__RESEND_API_KEY` from the environment only |
 | `bot` | The Telegram bot: `enabled`, `webhook_url` (default `site.base_url` + `/bot/telegram`), `results`, `inline_results`, `max_text_length`, `messages_per_minute`, `inline_per_minute`, `memory_minutes`, `near_km`, `max_alerts`, `alert_interval_minutes`, `alert_max_events`, `alert_max_per_day`, `reminder_hours`, `max_reminders`, `max_watches`, `watch_min_drop_percent`, `similar_results`, `digest_weekday`, `digest_hour`, `digest_results`, `channel_id`, `channel_hour`,  `PARTYLINKS_BOT__TELEGRAM_TOKEN` and `PARTYLINKS_BOT__TELEGRAM_WEBHOOK_SECRET` from the environment only (see [bot](bot.md)) |
 | `security` | Trusted proxies, allowed hosts, rate limits (site, admin, `/go/`), bans, blocked bots, API docs |
 | `api` | Host, port, page sizes, page cache freshness |
@@ -45,8 +45,9 @@ the Resend key, the Telegram bot token and webhook secret) belong in variables o
 | `http` | Default transport for every source: timeout, retries, delay, concurrency, user agent, proxy (`source_proxy`; `israel_proxy` and `israel_proxy_feed` for sources with `israel_proxy: true`; `israel_vpn` for sources with `vpn: true`), `impersonate` (speak as a browser, e.g. `chrome`, through curl_cffi) |
 | `enrichment` | Genre keywords, lineup parsing, time slots, weekend days, free-entry words, cities, areas |
 | `dedup` | Rules for grouping duplicate listings |
-| `geocoding` | Nominatim settings and manual venue pins |
-| `retention` | Purge schedule, in-progress window, run-history age |
+| `geocoding` | Nominatim settings and manual venue pins (`venues`: keyword matched inside "venue \| address" -> [lat, lon], from OSM only; ~110 pins, for halls OSM doesn't know by the sellers' names) |
+| `retention` | Purge schedule, in-progress window, run-history age, `max_future_days` (730: a start further ahead is a broken date, never imported, hidden, purged) |
+| `popularity` | Likes / views / watching now: `watching_minutes` (5), `min_watching` (2: the reader counts too), `keep_days` (365, view rows) |
 | `media` | Download artwork or not, store in the DB or on disk, size and type limits, WebP copies (`webp_quality`, default 78; `variant_threads`, default 2, 0 = no backfill of older files) |
 | `sources` | One block per source (see below) |
 
