@@ -64,6 +64,7 @@ from partylinks.media import VARIANT_WIDTHS, variant_path
 from partylinks.models import EntryType
 from partylinks.parsing import TidyText
 from partylinks.places import city_abroad, city_name
+from partylinks.popularity import models as popularity
 from partylinks.saved.routes import router as saved_router
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
@@ -219,6 +220,8 @@ class EventSummaryOut(_Out):
     best_deal: DealOut | None = None
     # Every ticket site selling this event (this listing's first, then the rest of its group).
     sources: list[str] = []
+    likes: int = 0  # saved hearts (partylinks.popularity)
+    views: int = 0  # visitors who opened its page, once a day each
 
     @model_validator(mode="after")
     def _go(self) -> EventSummaryOut:
@@ -281,6 +284,7 @@ class EventOut(EventSummaryOut):
     alternatives: list[AlternativeOut] = []
     # Recent deal changes (newest first): price moves, free entry ending, tiers added...
     changes: list[DealChangeOut] = []
+    watching: int = 0  # visitors on its page in the last few minutes (0 below popularity.min_watching)
 
 
 class EventPage(BaseModel):
@@ -970,8 +974,10 @@ def _summary_extras(session: Session, rows: Sequence[EventRow]) -> dict[str, dic
     covers = _group_covers(session, rows)
     # Only with no picture of its own or its group's: a real picture always wins (artwork package).
     drawn = artwork.urls(session, [r.id for r in rows if not (r.cover_url or covers.get(r.group_id or ""))])
+    liked = popularity.counts(session, [r.id for r in rows])  # likes and views
     return {
         r.id: {
+            **liked[r.id],
             "best_deal": deals.get(r.best_listing_id) if r.best_listing_id else None,
             "sources": sources[r.id],
             "cover_url": r.cover_url or covers.get(r.group_id or "") or drawn.get(r.id),
@@ -1347,8 +1353,8 @@ def _register_routes(app: FastAPI) -> None:
         return _cached(request, build)
 
     @app.get("/events/{event_ref}", response_model=EventOut, tags=["events"])
-    def get_event(event_ref: str, session: SessionDep) -> EventOut:
-        """Look an event up by id (``source:source_event_id``) or by slug."""
+    def get_event(event_ref: str, session: SessionDep, request: Request) -> EventOut:
+        """Look an event up by id (``source:source_event_id``) or by slug. Opening it counts a view."""
         row = session.scalar(
             select(EventRow)
             .where(or_(EventRow.id == event_ref, EventRow.slug == event_ref))
@@ -1356,6 +1362,9 @@ def _register_routes(app: FastAPI) -> None:
         )
         if row is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "event not found")
+        cfg: Settings = request.app.state.settings
+        if who := popularity.visitor(request.client and request.client.host, request.headers.get("user-agent", "")):
+            popularity.record(request.app.state.db, row.id, who, cfg.timezone)
         alternatives = (
             session.scalars(
                 select(EventRow)
@@ -1378,6 +1387,7 @@ def _register_routes(app: FastAPI) -> None:
                 "alternatives": [AlternativeOut.model_validate(a) for a in alternatives],
                 "changes": [DealChangeOut.model_validate(c) for c in changes],
                 **_summary_extras(session, [row])[row.id],
+                "watching": popularity.watching(session, row.id, cfg.popularity),
             }
         )
 

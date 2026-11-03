@@ -142,6 +142,13 @@ bot:
   inactive_days: 365          # a chat silent this long is deleted, alerts with it (the entry screen says 12 months)
   banner_url: null            # the banner, {lang} for he / en; empty: site.base_url + /bot-banner-{lang}.png
 
+# Likes / views / watching now on every event (src/partylinks/popularity). Likes = saved hearts; a view =
+# one visitor (hash of IP + user agent, crawlers left out) opening the event's page, once a day.
+popularity:
+  watching_minutes: 5   # a view this recent counts as "watching now"
+  min_watching: 2       # "watching now" shows from this many (the visitor reading it is one)
+  keep_days: 365        # view rows older than this are deleted with the hourly retention
+
 # Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
 # https, no framing), vulnerability-scanner and data-harvester blocking, per-IP rate limits and
 # temporary bans (probes such as /.env or /wp-login.php, wrong admin tokens, rate-limit hits).

@@ -1,0 +1,4 @@
+.pop { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); }
+.pop-large { margin: 8px 0 0; font-size: 14px; }
+.pop-live { color: #ff5a7a; font-weight: 600; }
+.pop-live::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-inline-end: 6px; border-radius: 50%; background: currentColor; vertical-align: middle; }

@@ -13,6 +13,7 @@ import { AccountSlot } from "./accounts/AccountSlot";
 import { Bell } from "./alerts/Bell";
 import { SaveButton } from "./saved/SaveButton";
 import { SavedLink } from "./saved/SavedLink";
+import { EventStats } from "./popularity/EventStats";
 import { useMe } from "./accounts/useMe";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";
@@ -315,6 +316,7 @@ export function Card({ e }: { e: EventSummary }) {
         )}
         {e.lineup.length > 0 && <p className="meta">🎧 {e.lineup.slice(0, 4).join(" · ")}</p>}
         {e.in_text && <p className="meta">🔍 {t.inText}</p>}
+        <EventStats e={e} compact />
         <div className="tags">
           {e.free_sold_out && !e.is_sold_out && !(e.group_has_free_entry ?? e.has_free_entry) && (
             <span className="tag sold">{t.freeSoldOut}</span>

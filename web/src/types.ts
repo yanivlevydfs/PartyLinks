@@ -51,6 +51,9 @@ export interface EventSummary {
   group_min_price?: number | null;
   group_has_free_entry?: boolean;
   group_entry_type?: EventSummary["entry_type"];
+  /** Saved hearts and page views (one per visitor a day), see web/src/popularity. */
+  likes?: number;
+  views?: number;
 }
 
 export interface Ticket {
@@ -87,6 +90,8 @@ export interface EventDetail extends EventSummary {
   tickets: Ticket[];
   images: EventImage[];
   alternatives?: Alternative[];
+  /** Visitors on its page in the last few minutes (0 below the admin's minimum). */
+  watching?: number;
 }
 
 /** Another store selling the same event. */

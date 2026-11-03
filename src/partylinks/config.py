@@ -27,6 +27,7 @@ from partylinks.accounts.config import AccountsSettings
 from partylinks.bot.config import BotSettings
 from partylinks.config_store.source import OverridesSource
 from partylinks.mail.config import MailSettings
+from partylinks.popularity.config import PopularitySettings
 
 CONFIG_ENV_VAR = "PARTYLINKS_CONFIG"
 LOG_FORMAT = "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
@@ -606,6 +607,7 @@ class Settings(BaseSettings):
     mail: MailSettings = Field(default_factory=MailSettings)
     weather: WeatherSettings = Field(default_factory=WeatherSettings)
     bot: BotSettings = Field(default_factory=BotSettings)  # the chat bot (partylinks.bot)
+    popularity: PopularitySettings = Field(default_factory=PopularitySettings)  # likes / views / watching now
     # Raw per-source blocks; each scraper validates its own block with its own model.
     # None = a block whose keys are all commented out (reported as invalid, not a crash).
     sources: dict[str, dict[str, Any] | None] = Field(default_factory=dict)

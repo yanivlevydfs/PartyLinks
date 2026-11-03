@@ -8,6 +8,7 @@ import type { Ticket } from "../types";
 import { forecastAt, Weather } from "../Weather";
 import { PlanButton } from "../plans/PlanButton";
 import { SaveButton } from "../saved/SaveButton";
+import { EventStats } from "../popularity/EventStats";
 import { AddToCalendar, artistPath, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
 
 // URLs in scraped description text become links; trailing punctuation stays text.
@@ -70,6 +71,7 @@ export default function EventPage() {
             </div>
             <h1 dir="auto">{e.title}</h1>
             <Sources e={e} />
+            <EventStats e={e} />
 
             <ul className="facts">
               <li><i>📅</i>{when(e, t, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</li>

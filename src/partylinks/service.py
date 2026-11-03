@@ -58,6 +58,7 @@ from partylinks.geo import Geocoder
 from partylinks.media import MediaStore
 from partylinks.models import ScrapedEvent
 from partylinks.places import all_cities
+from partylinks.popularity import models as popularity
 from partylinks.retention import is_current, purge_expired
 from partylinks.runs.health import RunHealth
 from partylinks.scrapers import SCRAPERS, build_scraper, source_settings
@@ -349,6 +350,7 @@ class ScrapeService:
                         drop_other_cities=self.settings.enrichment.target_city.drop_other_cities,
                     ),
                 )
+                popularity.prune(self.db, self.settings.popularity, self.settings.timezone)  # old view rows
             except Exception as exc:
                 state.last_error = f"{type(exc).__name__}: {exc}"[:500]
                 log.exception("retention failed")
