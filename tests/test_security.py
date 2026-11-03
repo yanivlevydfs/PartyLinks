@@ -164,7 +164,7 @@ PUBLIC_WRITES = {"/events/sponsored/hit", "/plans", "/plans/{plan_id}/votes", "/
                  "/api/email/unsubscribe",  # a signed token, from the mail client (RFC 8058)
                  "/bot/telegram"}  # Telegram's webhook: its own secret header (tests/test_bot_telegram.py)
 # A signed-in user's own writes: refused without a session cookie (403 first when not from our pages).
-USER_WRITES = ("/api/me", "/api/auth/", "/plans/{plan_id}")  # the last: a group's rename, by its creator
+USER_WRITES = ("/api/me", "/api/auth/", "/api/passkeys/", "/plans/{plan_id}")  # the last: a group's rename, by its creator
 
 
 def _open_app(tmp_path: Path) -> Any:
