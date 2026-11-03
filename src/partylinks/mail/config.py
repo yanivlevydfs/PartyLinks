@@ -14,6 +14,9 @@ class MailSettings(BaseModel):
     instant_min_interval_minutes: int = Field(60, ge=5)
     instant_max_age_minutes: int = Field(180, ge=5)  # older matches are never emailed, only shown in the bell
     matcher_interval_minutes: int = Field(15, ge=1)
+    # The events of a digest / instant alert as one .ics attachment. Resend's batch endpoint takes no
+    # attachments, so with this on those emails go one request each (2 a second), not 100 a request.
+    calendar_attachment: bool = True
     # Signs new unsubscribe links (else accounts.session_secret). Links never expire, so when rotating a
     # secret keep the old one in unsubscribe_old_secrets: refusals must keep working from every email sent.
     unsubscribe_secret: SecretStr | None = None

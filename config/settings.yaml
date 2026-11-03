@@ -107,6 +107,7 @@ mail:
   instant_min_interval_minutes: 60  # at most one instant alert email per user per hour
   instant_max_age_minutes: 180      # matches older than this are never emailed (turning instant on sends no backlog)
   matcher_interval_minutes: 15      # how often new events are matched against alerts
+  calendar_attachment: true         # digest / instant emails carry their events as one .ics (sent one by one: Resend's batch takes no attachments)
 
 # The Telegram bot (src/partylinks/bot, docs/bot.md): search in chat, event cards with ticket links, alerts.
 # Off until both secrets are set, in the environment only: PARTYLINKS_BOT__TELEGRAM_TOKEN (from @BotFather)

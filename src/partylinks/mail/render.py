@@ -15,6 +15,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from partylinks import weather
 from partylinks.config import Settings
+from partylinks.mail.events import jsonld
 from partylinks.mail.images import HERO, THUMB, mail_image
 from partylinks.utm import tag_url
 
@@ -234,6 +235,6 @@ def render(
         "home": link(settings, "/", kind, lang), "site": settings.site.name,
         "logo": settings.site.base_url.rstrip("/") + "/icon-192.png", "steps": steps or [],
         "kicker": t.get(f"{kind}_kicker", ""), "label": t.get(f"{kind}_label", "").format(date=_today(settings, kind)),
-        "preheader": t.get(f"{kind}_preheader") or _preheader(sections),
+        "preheader": t.get(f"{kind}_preheader") or _preheader(sections), "events_ld": jsonld(sections),
     }  # fmt: skip
     return subject, _env.get_template("email.html").render(context), _env.get_template("email.txt").render(context)

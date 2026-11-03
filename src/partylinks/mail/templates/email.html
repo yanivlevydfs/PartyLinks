@@ -34,6 +34,10 @@
     .h1 { font-size:24px !important; }
   }
 </style>
+{#- The events as schema.org Event (Gmail's email markup); tojson escapes <, > and & for a <script>. #}
+{%- if events_ld %}
+<script type="application/ld+json">{{ events_ld|tojson }}</script>
+{%- endif %}
 </head>
 <body style="margin:0;padding:0;background:#0b0814;" bgcolor="#0b0814">
 {#- The line mail apps show beside the subject; padded so the rest of the email doesn't follow it. #}

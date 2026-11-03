@@ -1,5 +1,7 @@
 """Sending through Resend's batch API: 100 messages a request, an idempotency key per request, and at
-most two requests a second (Resend's default limit)."""
+most two requests a second (Resend's default limit). A message with attachments (the events' .ics) goes on
+its own through /emails: the batch endpoint takes none ("The attachments field is not supported yet",
+https://resend.com/docs/api-reference/emails/send-batch-emails)."""
 
 from __future__ import annotations
 
@@ -43,6 +45,8 @@ class Message:
     unsubscribe_url: str
     reply_to: str = ""
     tags: dict[str, str] = field(default_factory=dict)
+    # Resend's {filename, content (base64), content_type}
+    attachments: list[dict[str, str]] = field(default_factory=list)
 
 
 def ready(settings: Settings) -> bool:
@@ -73,6 +77,8 @@ def _params(settings: Settings, m: Message) -> dict[str, Any]:
     }
     if m.reply_to:
         params["reply_to"] = m.reply_to
+    if m.attachments:
+        params["attachments"] = m.attachments
     return params
 
 
@@ -84,21 +90,25 @@ def send(settings: Settings, messages: list[Message], key: str) -> tuple[list[Me
     sent: list[Message] = []
     failed: list[Message] = []
     error: str | None = None
-    for start in range(0, len(messages), BATCH):
-        chunk = messages[start : start + BATCH]
-        users = ",".join(m.user_id for m in chunk)
-        idem = f"{key}:{hashlib.sha256(users.encode()).hexdigest()[:32]}"  # the same chunk again: sent once
+    plain = [m for m in messages if not m.attachments]
+    requests = [plain[i : i + BATCH] for i in range(0, len(plain), BATCH)] + [[m] for m in messages if m.attachments]
+    for n, chunk in enumerate(requests):
         try:
-            resend.Batch.send([_params(settings, m) for m in chunk], {"idempotency_key": idem})  # type: ignore[arg-type,typeddict-item]
+            if chunk[0].attachments:  # one message, its own key: the same user again in this run is sent once
+                resend.Emails.send(_params(settings, chunk[0]), {"idempotency_key": f"{key}:{chunk[0].user_id}"})  # type: ignore[arg-type,typeddict-item]
+            else:
+                users = ",".join(m.user_id for m in chunk)
+                idem = f"{key}:{hashlib.sha256(users.encode()).hexdigest()[:32]}"  # the same chunk again: sent once
+                resend.Batch.send([_params(settings, m) for m in chunk], {"idempotency_key": idem})  # type: ignore[arg-type,typeddict-item]
             sent += chunk
         except ResendError as exc:
             message = scrub(f"{exc.code} {exc.error_type}: {exc.message}")
             if _account_error(exc):
                 log.warning("mail %s stopped: Resend account problem: %s", key, message)
                 raise MailAccountError(message) from exc
-            log.error("mail %s: a batch of %d failed: %s", key, len(chunk), message)
+            log.error("mail %s: a request of %d failed: %s", key, len(chunk), message)
             failed += chunk
             error = error or message
-        if start + BATCH < len(messages):
+        if n + 1 < len(requests):
             time.sleep(PAUSE)
     return sent, failed, error

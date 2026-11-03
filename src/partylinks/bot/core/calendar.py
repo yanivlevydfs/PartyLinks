@@ -26,21 +26,27 @@ def _where(row: EventRow) -> str:
 
 
 def ics(row: EventRow, url: str, site: str) -> bytes:
-    start, end = _span(row)
-    entry = Event()
-    entry.add("uid", f"{row.id}@{site}")
-    entry.add("dtstamp", utcnow())
-    entry.add("dtstart", start)
-    entry.add("dtend", end)
-    entry.add("summary", row.title)
-    if where := _where(row):
-        entry.add("location", where)
-    entry.add("url", url)
-    entry.add("description", url)
+    return ics_many([(row, url)], site)
+
+
+def ics_many(entries: list[tuple[EventRow, str]], site: str, by: str = "bot") -> bytes:
+    """One calendar file of these (event, page url): one VEVENT each (the weekly email's attachment)."""
     cal = Calendar()
-    cal.add("prodid", f"-//{site}//bot//EN")
+    cal.add("prodid", f"-//{site}//{by}//EN")
     cal.add("version", "2.0")
-    cal.add_component(entry)
+    for row, url in entries:
+        start, end = _span(row)
+        entry = Event()
+        entry.add("uid", f"{row.id}@{site}")
+        entry.add("dtstamp", utcnow())
+        entry.add("dtstart", start)
+        entry.add("dtend", end)
+        entry.add("summary", row.title)
+        if where := _where(row):
+            entry.add("location", where)
+        entry.add("url", url)
+        entry.add("description", url)
+        cal.add_component(entry)
     return cal.to_ical()
 
 

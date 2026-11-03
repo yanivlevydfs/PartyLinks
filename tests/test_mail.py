@@ -3,7 +3,10 @@ week, saved events first; unsubscribe links; switches; no address in the logs.""
 
 from __future__ import annotations
 
+import base64
+import json
 import logging
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -11,6 +14,7 @@ from typing import Any
 import pytest
 import resend
 from fastapi.testclient import TestClient
+from icalendar import Calendar
 from resend.exceptions import ResendError
 from sqlalchemy import select, update
 
@@ -38,6 +42,11 @@ class Outbox:
         self.calls.append((params, options or {}))
         return {"data": [{"id": str(i)} for i in range(len(params))]}
 
+    def send_one(self, params: dict[str, Any], options: dict[str, Any] | None = None) -> dict[str, Any]:
+        """resend.Emails.send: a message with attachments, alone."""
+        self.send([params], options)
+        return {"id": "0"}
+
     @property
     def messages(self) -> list[dict[str, Any]]:
         return [m for params, _ in self.calls for m in params]
@@ -47,6 +56,7 @@ class Outbox:
 def outbox(monkeypatch: pytest.MonkeyPatch) -> Outbox:
     box = Outbox()
     monkeypatch.setattr(resend.Batch, "send", box.send)
+    monkeypatch.setattr(resend.Emails, "send", box.send_one)
     monkeypatch.setattr("partylinks.mail.send.PAUSE", 0)
     monkeypatch.setattr("partylinks.mail.render._forecasts", lambda settings, cards: {c["id"]: "☀️ 24°" for c in cards})
     return box
@@ -114,6 +124,35 @@ def test_digest_only_for_opted_in_once_a_week_saved_first(tmp_path: Path, fake: 
     assert 'dir="ltr"' in html and "Your saved events this week" in html and "☀️ 24°" in html
     assert html.index("Techno night b") < html.index("Techno night a")  # the saved one leads
     assert outbox.calls[0][1]["idempotency_key"].startswith("digest:")
+
+
+def test_digest_carries_its_events_as_json_ld_and_one_ics(tmp_path: Path, fake: FakeGoogle, outbox: Outbox,
+                                                          monkeypatch: pytest.MonkeyPatch) -> None:  # fmt: skip
+    app, db, settings = _app(tmp_path)
+    batched: list[Any] = []
+    monkeypatch.setattr(resend.Batch, "send", lambda *a, **k: batched.append(a))
+    with TestClient(app) as c:
+        sign_in(c, fake)
+        c.patch("/api/me", json={"digest_opt_in": True}, headers=OURS)
+        c.put("/api/me/saved/test:b", headers=OURS)
+    jobs.digest(settings, db)
+    assert batched == [] and len(outbox.calls) == 1  # attachments: through /emails, not the batch endpoint
+    m, options = outbox.calls[0][0][0], outbox.calls[0][1]
+    assert options["idempotency_key"].startswith("digest:") and m["headers"]["List-Unsubscribe"]
+    ld = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', m["html"], re.DOTALL)[1])  # type: ignore[index]
+    assert {e["name"] for e in ld} == {"Techno night a", "Techno night b", "Techno night c"}
+    assert all(e["@type"] == "Event" and e["startDate"] and "utm_campaign=digest" in e["url"] for e in ld)
+    (ics,) = m["attachments"]
+    assert ics["filename"] == "spotx-week.ics" and ics["content_type"] == "text/calendar"
+    events = Calendar.from_ical(base64.b64decode(ics["content"])).walk("VEVENT")
+    assert sorted(str(e["summary"]) for e in events) == sorted(e["name"] for e in ld)
+    assert all("utm_campaign=digest" in str(e["url"]) for e in events)
+
+    settings.mail = settings.mail.model_copy(update={"calendar_attachment": False})
+    with db.session() as s:
+        s.execute(update(UserRow).values(last_digest_at=None))
+    jobs.digest(settings, db)
+    assert len(batched) == 1  # switched off: the batch again, no attachment
 
 
 def test_instant_is_capped_hourly(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> None:

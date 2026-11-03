@@ -18,6 +18,7 @@ from partylinks.config import Settings
 from partylinks.db import Database, EventRow, upcoming_filter, utcnow
 from partylinks.mail import send as mailer
 from partylinks.mail import tokens
+from partylinks.mail.events import attachment as calendar_attachment
 from partylinks.mail.models import EmailRunRow, MailSwitchesRow
 from partylinks.mail.render import TEXT, Section, link, render
 from partylinks.saved.models import SavedEventRow
@@ -56,7 +57,9 @@ def _message(settings: Settings, user: UserRow, kind: str, stop: str, **parts: A
     url = unsubscribe_url(settings, user.id, stop)
     subject, html, text = render(settings, kind=kind, lang=user.locale, name=user.name, unsubscribe_url=url, **parts)
     reply = settings.site.contact_email
-    return mailer.Message(user.id, user.email, subject, html, text, url, reply_to=reply, tags={"kind": kind})
+    ics = calendar_attachment(settings, kind, parts.get("sections") or [])  # after render: cards carry _url
+    return mailer.Message(user.id, user.email, subject, html, text, url, reply_to=reply, tags={"kind": kind},
+                          attachments=[ics] if ics else [])  # fmt: skip
 
 
 def _record(
