@@ -70,7 +70,7 @@ class _Sets:
         for key in LISTS:
             if values := params.get(key):
                 found &= frozenset().union(*(self.ids(anywhere=True, **{key: [v]}) for v in values))
-        for key in ("city", "free_entry", "discount"):
+        for key in ("city", "free_entry", "discount", "min_price", "max_price"):
             if key in params:
                 found &= self.ids(anywhere=True, **{key: params[key]})
         if window := {k: params[k] for k in WHEN if k in params}:

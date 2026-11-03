@@ -12,7 +12,14 @@ from pydantic import BaseModel, Field, field_validator
 
 from partylinks.config import Settings
 
-WHEN = ("all", "weekend", "week", "month")  # "tonight" and single days are not ongoing: an alert keeps looking
+WHEN = ("all", "weekend", "week", "month")
+# Price bands (₪), as PRICE_BANDS in web/src/Filters.tsx: an event matches with any ticket in the band.
+PRICE_BANDS: dict[str, tuple[int | None, int | None]] = {
+    "u50": (None, 50),
+    "50_150": (50, 150),
+    "150_300": (150, 300),
+    "300p": (300, None),
+}  # "tonight" and single days are not ongoing: an alert keeps looking
 
 
 class Criteria(BaseModel):
@@ -24,6 +31,7 @@ class Criteria(BaseModel):
     slots: list[str] = Field(default_factory=list, max_length=4)
     freeOnly: bool = False
     discountOnly: bool = False
+    price: str = ""  # "" or a key of PRICE_BANDS
     when: str = "all"  # a preset, or YYYY-MM-DD~YYYY-MM-DD
 
     @field_validator("q")
@@ -31,6 +39,13 @@ class Criteria(BaseModel):
     def _q(cls, v: str) -> str:
         v = " ".join(v.split())
         return v if len(v) >= 2 else ""  # the site searches 2+ letters: one letter is no word (else: every event)
+
+    @field_validator("price")
+    @classmethod
+    def _price(cls, v: str) -> str:
+        if v and v not in PRICE_BANDS:
+            raise ValueError(f"price: one of {', '.join(PRICE_BANDS)}")
+        return v
 
     @field_validator("when")
     @classmethod
@@ -50,6 +65,8 @@ class Criteria(BaseModel):
         data = self.model_dump()
         for key in ("genres", "regions", "areas", "slots"):
             data[key] = sorted(data[key])
+        if not data["price"]:
+            del data["price"]  # alerts saved before price bands keep their digest
         return hashlib.sha256(json.dumps(data, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
     def params(self, today: date) -> dict[str, Any]:
@@ -64,6 +81,8 @@ class Criteria(BaseModel):
             "free_entry": True if self.freeOnly else None,
             "discount": True if self.discountOnly else None,
         }
+        if self.price:
+            p["min_price"], p["max_price"] = PRICE_BANDS[self.price]
 
         def end(days: int) -> datetime:
             return datetime.combine(today + timedelta(days=days), time(23, 59, 59))

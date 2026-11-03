@@ -106,6 +106,8 @@ SEARCHES = [
     {"slots": ["night"]},
     {"freeOnly": True, "when": "month"},
     {"genres": ["jazz", "stand_up"], "slots": ["evening", "night"]},
+    {"price": "u50"},
+    {"price": "50_150", "regions": ["tel_aviv"]},
 ]
 
 
@@ -200,7 +202,9 @@ def test_ended_events_leave_the_bell_and_users_can_remove_notifications(tmp_path
         # Event a ends: gone from the count and the list at once, and the next pass deletes its row.
         with db.session() as s:
             past = datetime.now(UTC) - timedelta(days=2)
-            s.execute(update(EventRow).where(EventRow.id == "test:a").values(start_at=past, end_at=past + timedelta(hours=2)))
+            s.execute(
+                update(EventRow).where(EventRow.id == "test:a").values(start_at=past, end_at=past + timedelta(hours=2))
+            )
         bell = c.get("/api/me/bell").json()
         assert bell["unseen"] == 2 and {i["event"]["id"] for i in bell["items"]} == {"test:b", "test:c"}
         assert c.get("/api/me/alerts").json()["items"][0]["unseen"] == 2
@@ -244,8 +248,20 @@ def test_cleared_notifications_leave_for_you_and_are_not_emailed(
         assert ids() == [] and c.get("/api/me/bell").json() == {"unseen": 0, "items": []}
         assert c.get("/api/me/alerts").json()["items"][0]["unseen"] == 0
         with db.session() as s:  # kept, stamped: the key keeps the matcher from adding them back
-            assert s.scalar(select(func.count()).select_from(AlertHitRow).where(AlertHitRow.cleared_at.is_not(None))) == 3
+            assert (
+                s.scalar(select(func.count()).select_from(AlertHitRow).where(AlertHitRow.cleared_at.is_not(None))) == 3
+            )
         matcher.run(settings, db)
         assert ids() == [] and c.get("/api/me/bell").json()["items"] == []
     jobs.instant(settings, db)
     assert sent == []  # cleared before the email went: not sent
+
+
+def test_price_band_criteria() -> None:
+    today = datetime.now(ZoneInfo("Asia/Jerusalem")).date()
+    assert Criteria(price="50_150").params(today) == {"min_price": 50, "max_price": 150}
+    assert Criteria(price="u50").params(today) == {"max_price": 50}
+    assert not Criteria(price="300p").is_empty()
+    assert Criteria(q="techno").digest() == Criteria(q="techno", price="").digest()
+    with pytest.raises(ValueError):
+        Criteria(price="cheap")

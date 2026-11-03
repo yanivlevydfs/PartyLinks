@@ -11,6 +11,7 @@ export interface Filters {
   areas: string[]; // Tel Aviv neighbourhoods, when Tel Aviv is the only region
   city: string | null; // a city of the region, when one other region is the only one
   shops: string[]; // ticket sites (API ?source=)
+  price: string; // "" or a band of PRICE_BANDS: an event with a ticket in it
   freeOnly: boolean;
   discountOnly: boolean;
   hideSoldOut: boolean;
@@ -18,7 +19,7 @@ export interface Filters {
 }
 
 export const DEFAULT_FILTERS: Filters = {
-  q: "", when: "all", genres: [], slots: [], regions: [], areas: [], city: null, shops: [], freeOnly: false, discountOnly: false, hideSoldOut: false, sort: "start_at",
+  q: "", when: "all", genres: [], slots: [], regions: [], areas: [], city: null, shops: [], price: "", freeOnly: false, discountOnly: false, hideSoldOut: false, sort: "start_at",
 };
 
 interface State {

@@ -15,6 +15,7 @@ export interface Criteria {
   slots: string[];
   freeOnly: boolean;
   discountOnly: boolean;
+  price?: string; // a band of PRICE_BANDS; older alerts have none
   when: string;
 }
 
@@ -35,13 +36,13 @@ export function toCriteria(f: Filters): Criteria {
   return {
     q: f.q.trim().length >= 2 ? f.q.trim() : "",
     genres: f.genres, regions: f.regions, areas: f.areas, city: f.city, slots: f.slots,
-    freeOnly: f.freeOnly, discountOnly: f.discountOnly,
+    freeOnly: f.freeOnly, discountOnly: f.discountOnly, price: f.price ?? "",
     when: ONGOING.includes(f.when) || range ? f.when : "all",
   };
 }
 
 export const isEmpty = (c: Criteria) =>
-  c.q.trim().length < 2 && !c.genres.length && !c.regions.length && !c.areas.length && !c.city && !c.slots.length && !c.freeOnly && !c.discountOnly;
+  c.q.trim().length < 2 && !c.genres.length && !c.regions.length && !c.areas.length && !c.city && !c.slots.length && !c.freeOnly && !c.discountOnly && !c.price;
 
 /** A short name from the criteria, in the page's language ("Techno · Tel Aviv · Weekend"). */
 export function useCriteriaName() {
@@ -58,6 +59,7 @@ export function criteriaWords(c: Criteria, t: ReturnType<typeof useT>["t"], lang
     ...c.areas.map((a) => label(t.areas, a)),
     c.city ?? "",
     ...c.slots.map((s) => label(t.slots, s)),
+    c.price ? label(t.prices, c.price) : "",
     c.freeOnly ? t.freeOnly : "",
     c.discountOnly ? t.discountOnly : "",
     when ?? "",

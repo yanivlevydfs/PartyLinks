@@ -13,7 +13,7 @@ import "./alerts.css";
 
 export const SAVE_PARAM = "save_alert";
 export const EMPTY: Criteria = {
-  q: "", genres: [], regions: [], areas: [], city: null, slots: [], freeOnly: false, discountOnly: false, when: "all",
+  q: "", genres: [], regions: [], areas: [], city: null, slots: [], freeOnly: false, discountOnly: false, price: "", when: "all",
 };
 
 /** Where to come back after Google: this page, with the alert itself in the address (the page's filters

@@ -25,8 +25,19 @@ export function filterParams(f: FilterState): Params {
     free_entry: f.freeOnly ? "true" : undefined,
     discount: f.discountOnly ? "true" : undefined,
     sold_out: f.hideSoldOut ? "false" : undefined,
+    ...priceParams(f.price),
     ...whenParams(f.when),
   };
+}
+
+/** Price bands (₪): an event matches with any ticket in the band. Same bands as PRICE_BANDS in alerts/criteria.py. */
+export const PRICE_BANDS: Record<string, [number | null, number | null]> = {
+  u50: [null, 50], "50_150": [50, 150], "150_300": [150, 300], "300p": [300, null],
+};
+
+function priceParams(band: string): Params {
+  const [min, max] = PRICE_BANDS[band] ?? [null, null];
+  return { min_price: min != null ? String(min) : undefined, max_price: max != null ? String(max) : undefined };
 }
 
 function whenParams(when: string): Params {
@@ -65,7 +76,7 @@ const useDrawer = create<{
   panel: null, family: null, sheet: false,
   setPanel: (panel) => set({ panel }), setFamily: (family) => set({ family }), setSheet: (sheet) => set({ sheet }),
 }));
-type Panel = "area" | "genre" | "shop" | "slot";
+type Panel = "area" | "genre" | "shop" | "slot" | "price";
 
 function useMedia(query: string) {
   const [on, setOn] = useState(() => matchMedia(query).matches);
@@ -97,7 +108,7 @@ export function Filters() {
   // Same query as the grid below: shares its cache, so the sheet's "Show N" costs no request.
   const total = useEvents({ ...filterParams(f), sponsored: "true" }).data?.pages[0]?.total;
 
-  const extras = f.regions.length + f.areas.length + (f.city ? 1 : 0) + f.genres.length + f.shops.length + f.slots.length + (f.hideSoldOut ? 1 : 0) + (f.discountOnly ? 1 : 0);
+  const extras = f.regions.length + f.areas.length + (f.city ? 1 : 0) + f.genres.length + f.shops.length + f.slots.length + (f.price ? 1 : 0) + (f.hideSoldOut ? 1 : 0) + (f.discountOnly ? 1 : 0);
   const dirty = extras > 0 || f.freeOnly || f.when !== "all";
   const clear = () => set({ ...DEFAULT_FILTERS, q: f.q, sort: f.sort });
 
@@ -146,6 +157,7 @@ export function Filters() {
       {f.genres.map((g) => <Pill key={g} onClear={() => set({ genres: f.genres.filter((x) => x !== g) })}>{genreLabel(lang, g)}</Pill>)}
       {f.shops.map((s) => <Pill key={s} onClear={() => set({ shops: f.shops.filter((x) => x !== s) })}>{sourceName(s)}</Pill>)}
       {f.slots.map((s) => <Pill key={s} onClear={() => set({ slots: f.slots.filter((x) => x !== s) })}>{label(t.slots, s)}</Pill>)}
+      {f.price && <Pill onClear={() => set({ price: "" })}>{label(t.prices, f.price)}</Pill>}
       {f.freeOnly && <Pill onClear={() => set({ freeOnly: false })}>{t.freeOnly}</Pill>}
       {f.discountOnly && <Pill onClear={() => set({ discountOnly: false })}>{t.discountOnly}</Pill>}
       {f.hideSoldOut && <Pill onClear={() => set({ hideSoldOut: false })}>{t.hideSoldOut}</Pill>}
@@ -158,6 +170,7 @@ export function Filters() {
     ["genre", t.genres, f.genres.length],
     ["shop", t.shop, f.shops.length],
     ["slot", t.slot, f.slots.length],
+    ["price", t.price, f.price ? 1 : 0],
   ];
 
   return (
@@ -265,6 +278,7 @@ export function Relax({ didYouMean }: { didYouMean?: string | null }) {
     ...f.slots.map((s) => [label(t.slots, s), { slots: f.slots.filter((x) => x !== s) }] as [string, Partial<FilterState>]),
     ...f.regions.map((r) => [label(t.areas, r), { regions: f.regions.filter((x) => x !== r), areas: [], city: null }] as [string, Partial<FilterState>]),
     ...f.shops.map((s) => [sourceName(s), { shops: f.shops.filter((x) => x !== s) }] as [string, Partial<FilterState>]),
+    ...(f.price ? [[label(t.prices, f.price), { price: "" }] as [string, Partial<FilterState>]] : []),
     ...(f.discountOnly ? [[t.discountOnly, { discountOnly: false }] as [string, Partial<FilterState>]] : []),
     ...(f.hideSoldOut ? [[t.hideSoldOut, { hideSoldOut: false }] as [string, Partial<FilterState>]] : []),
   ];
@@ -357,6 +371,15 @@ function Rows({ only }: { only?: Panel }) {
         <FilterRow label={t.slot}>
           {Object.entries(t.slots).map(([k, name]) => (
             <Chip key={k} on={f.slots.includes(k)} onClick={() => set({ slots: toggle(f.slots, k) })}>{name}</Chip>
+          ))}
+        </FilterRow>
+      )}
+
+      {show("price") && (
+        <FilterRow label={t.price}>
+          <Chip on={!f.price} onClick={() => set({ price: "" })}>{t.all}</Chip>
+          {Object.entries(t.prices).map(([k, name]) => (
+            <Chip key={k} on={f.price === k} onClick={() => set({ price: f.price === k ? "" : k })}>{name}</Chip>
           ))}
         </FilterRow>
       )}

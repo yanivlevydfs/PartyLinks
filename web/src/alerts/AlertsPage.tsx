@@ -167,6 +167,9 @@ function AlertForm({ alert, onDone }: { alert?: Alert; onDone?: () => void }) {
           {Object.entries(ui.slots).map(([k, n]) => <Chip key={k} on={c.slots.includes(k)} onClick={() => patch({ slots: toggle(c.slots, k) })}>{n}</Chip>)}
         </Group>
         <Group title={t.price}>
+          {Object.entries(ui.prices).map(([k, n]) => (
+            <Chip key={k} on={c.price === k} onClick={() => patch({ price: c.price === k ? "" : k })}>{n}</Chip>
+          ))}
           <Chip className="toggle free" on={c.freeOnly} onClick={() => patch({ freeOnly: !c.freeOnly })}>
             <span className="tick" aria-hidden /> {ui.freeOnly}
           </Chip>
