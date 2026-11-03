@@ -16,6 +16,7 @@ import argparse
 import asyncio
 import sys
 from collections import Counter
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
@@ -72,7 +73,7 @@ async def check(name: str, show: int) -> int:
     for e in no_genre[:15]:
         print(f"  NO GENRE {e.title!r} declared={e.source_genres}")
     for e in past[:5]:
-        print(f"  PAST     {e.title!r} {e.start_at} - {e.end_at}")
+        print(f"  {'PAST' if e.start_at and e.start_at < datetime.now(UTC) else 'TOO FAR'}  {e.title!r} {e.start_at} - {e.end_at}")
     if clash:
         print(f"  CRON CLASH {crons.get(name)} shares a minute and hour with {clash}")
     for e in kept[:show]:
@@ -80,7 +81,7 @@ async def check(name: str, show: int) -> int:
             f"  - {e.title} | {e.start_at} | {e.venue_name} | {e.city} | {e.latitude},{e.longitude} | {e.genres} | {e.url}"
         )
 
-    hard = [m for m, bad in (("no events", not total), ("past events", past), ("events without a genre", no_genre),
+    hard = [m for m, bad in (("no events", not total), ("past or broken-date events", past), ("events without a genre", no_genre),
                              ("cron clash", clash)) if bad]  # fmt: skip
     print("FAIL: " + ", ".join(hard) if hard else "OK: every hard rule holds; read the coverage lines above")
     return 1 if hard else 0

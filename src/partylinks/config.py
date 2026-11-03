@@ -388,6 +388,9 @@ class RetentionSettings(BaseModel):
     # An event with no end time is over this many hours after it starts (nobody arrives later). An all-day
     # listing (no hour: time_known false, or a 00:00 start) stays until the day ends instead.
     assumed_duration_hours: float = Field(3, gt=0)
+    # A start further ahead than this is a source's broken date (2038-01-19 03:14:07 is the 32-bit clock's end,
+    # "EXIT FESTIVAL 2025" sent as 2032): never imported, never shown, purged. Real tours sell ~1.5 years ahead.
+    max_future_days: int = Field(730, ge=1)
 
     @field_validator("cron")
     @classmethod

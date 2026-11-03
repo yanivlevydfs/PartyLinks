@@ -33,7 +33,7 @@ def retention_cutoff(settings: RetentionSettings, timezone: str, now: datetime |
 # that began last night and is still going). An event with no end time ends
 # `assumed_duration_hours` after its start (nobody arrives three hours late); an all-day listing
 # (no hour: `time_known` false, or a 00:00 start) ends at midnight. Everything else is over: never
-# imported, never shown, and purged. Used by import (service), display (db.upcoming_filter) and
+# imported, never shown, and purged. So is a start more than `max_future_days` ahead (a broken date). Used by import (service), display (db.upcoming_filter) and
 # purge (below) so the three can never disagree.
 
 
@@ -48,6 +48,8 @@ def is_current(
     if start is None:
         return True  # undated: kept until the source stops listing it (see purge_expired)
     now = now or datetime.now(UTC)
+    if start > now + timedelta(days=settings.max_future_days):
+        return False  # a broken date, not an event years ahead
     today = start >= retention_cutoff(settings, timezone, now)
     if settings.keep_days_back > 0:
         return today or bool(end and _in_progress(start, end, settings, now))
@@ -65,6 +67,12 @@ def _in_progress(start: datetime, end: datetime, settings: RetentionSettings, no
 def current_clause(settings: RetentionSettings, timezone: str, now: datetime | None = None) -> ColumnElement[bool]:
     """SQL form of :func:`is_current` for dated events."""
     now = now or datetime.now(UTC)
+    return and_(
+        EventRow.start_at <= now + timedelta(days=settings.max_future_days), _current_until(settings, timezone, now)
+    )
+
+
+def _current_until(settings: RetentionSettings, timezone: str, now: datetime) -> ColumnElement[bool]:
     today = EventRow.start_at >= retention_cutoff(settings, timezone, now)
     # end_at IS NOT NULL is explicit: without it a NULL end makes the whole clause NULL
     # (SQL three-valued logic), and NOT(NULL) would keep undated-end events forever.

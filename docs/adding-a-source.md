@@ -260,7 +260,7 @@ Other sessions commit to `master` at the same time:
 
 - [ ] Data read from the site's own API / feed / JSON-LD; `robots.txt` respected
 - [ ] Own module with a docstring; settings model with no hard-coded constants
-- [ ] No past event fetched or yielded (`is_current`), no past-URL file
+- [ ] No past event fetched or yielded (`is_current`), no past-URL file; no start more than `retention.max_future_days` ahead (`check_source.py` prints `TOO FAR`: a broken date the site sends)
 - [ ] Every event on the map (coordinates or a geocodable address; venue coords for single-venue sites)
 - [ ] Every event has a site genre (`check_source.py` shows no `NO GENRE`)
 - [ ] Purchase links kept, social profiles dropped; artwork URLs passed

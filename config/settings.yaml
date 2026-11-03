@@ -902,6 +902,9 @@ retention:
   # No end time: over (hidden and purged) this many hours after the start. All-day listings (no hour, or a 00:00
   # start) stay until midnight.
   assumed_duration_hours: 3
+  # A start further ahead than this many days is a broken date (2038-01-19, a 2025 festival sent as 2032):
+  # never imported, never shown, purged. Real tours sell ~1.5 years ahead.
+  max_future_days: 730
   # Scrape run history (scrape_runs) older than this many days is deleted as well.
   keep_runs_days: 30
 

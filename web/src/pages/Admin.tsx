@@ -588,6 +588,7 @@ function Maintenance({ data }: { data: any }) {
           <li>Status: <b>{r.enabled ? "enabled" : "disabled"}</b> · schedule <code>{r.cron}</code> ({data.timezone})</li>
           <li>Deletes events that ended before <b>{r.keep_days_back === 0 ? "today" : `${r.keep_days_back} day(s) ago`}</b> (Israel time), with their tickets and artwork</li>
           <li>No end time: hidden and deleted <b>{r.assumed_duration_hours} h</b> after the start (all-day listings at midnight) · change it under <b>config</b>: <code>retention.assumed_duration_hours</code></li>
+          <li>Starts more than <b>{r.max_future_days} days</b> ahead are broken dates: never imported, hidden and deleted · <code>retention.max_future_days</code></li>
           <li>Deletes run history older than <b>{r.keep_runs_days} days</b></li>
           <li>Next run: <b>{when(r.next_run_at)}</b></li>
         </ul>
