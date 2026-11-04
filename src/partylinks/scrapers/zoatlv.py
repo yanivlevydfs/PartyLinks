@@ -8,8 +8,10 @@ count runs past the last real page, which redirects to page 1: a page that adds 
 Each event's page adds the text and the seller's link ("לאתר האירוע": Comy, Comedy Bar, Smarticket box
 offices, Leaan, ZOA's own EASYTIX box office, course sign-ups on tinyurl...), kept as
 ``extra["purchase_url"]`` in the encoding the model gives every URL (Leaan's own listing URL is
-``/events/<Hebrew slug, percent-encoded>/<id>``), so dedup ties the two. The site shows no prices: the
-seller's copy brings them to the group. Exhibitions (``/exhibition/``) are not read.
+``/events/<Hebrew slug, percent-encoded>/<id>``), so dedup ties the two. The site shows no prices: a seller
+in ``price_hosts`` (Comedy Bar and other Smarticket box offices, Tickchak, Tarbuta) is read once more for its
+JSON-LD ``offers``; else a price the text writes out ("עלות: 999 ₪") is used (text_prices). The other
+sellers' own sources bring theirs to the group. Exhibitions (``/exhibition/``) are not read.
 """
 
 from __future__ import annotations
@@ -22,9 +24,10 @@ from urllib.parse import unquote, urlsplit
 from pydantic import Field, HttpUrl
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
-from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, html_to_text, read_clock, zone
+from partylinks.models import ScrapedEvent, TicketTier, TierStatus
+from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, read_clock, to_decimal, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.text_prices import text_tickets
 from partylinks.search import MONTHS
 
 _MONTH_YEAR = re.compile(r"(\S+)\s+(\d{4})")
@@ -39,6 +42,10 @@ class ZoaTlvSettings(SourceSettings):
     # The seller's white-label host -> the host its listing (another source) is read from:
     # tickets.zoatlv.co.il is ZOA's own EASYTIX box office, listed at easytix.co.il/event/<account>/<event>.
     seller_hosts: dict[str, str] = Field(default_factory=dict)
+    # Sellers whose event page has JSON-LD ``offers`` (host or parent domain): one extra request per event.
+    price_hosts: list[str] = Field(
+        default_factory=lambda: ["tickets.comedybar.net", "smarticket.co.il", "tickchak.co.il", "tarbuta.com"]
+    )
     venue_name: str
     address: str
     city: str
@@ -82,6 +89,14 @@ class ZoaTlvScraper(BaseScraper[ZoaTlvSettings]):
             page = await self.optional(f"page {unquote(str(event.url))}", self.get_text(str(event.url)))
             if page:
                 add_page(event, page, s.seller_hosts)
+            seller = (event.extra or {}).get("purchase_url")
+            host = urlsplit(seller or "").hostname or ""
+            if seller and any(host == h or host.endswith("." + h) for h in s.price_hosts):
+                try:
+                    event.tickets = seller_tickets(await self.get_text(seller))
+                except Exception as exc:  # noqa: BLE001 - the seller's price is a bonus, never the event's failure
+                    self.log.debug("no price from %s: %s", seller, exc)
+            event.tickets = event.tickets or text_tickets(event.description)
             return event
 
         async for event in self.stream_isolated(events, detail, label=lambda e: unquote(str(e.url))):
@@ -173,3 +188,21 @@ def add_page(event: ScrapedEvent, page_html: str, seller_hosts: dict[str, str] |
             event.extra = {**(event.extra or {}), "purchase_url": str(HttpUrl(href))}
         except ValueError:
             pass  # a malformed link is no seller; the event stands on its own page
+
+
+def seller_tickets(page_html: str) -> list[TicketTier]:
+    """The seller page's JSON-LD ``offers`` -> one tier per priced offer."""
+    tiers = []
+    for node in jsonld_nodes(page_html):
+        offers = node.get("offers")
+        for offer in offers if isinstance(offers, list) else [offers]:
+            if not isinstance(offer, dict):
+                continue
+            sold_out = "soldout" in str(offer.get("availability") or "").lower().replace("_", "")
+            for key in ("price", "lowPrice", "highPrice"):
+                if (price := to_decimal(offer.get(key))) is not None:
+                    tiers.append(TicketTier(
+                        name=clean_str(offer.get("name")) or "כרטיס", price=price,
+                        status=TierStatus.SOLD_OUT if sold_out else TierStatus.ON_SALE,
+                    ))  # fmt: skip
+    return list({(t.name, t.price): t for t in tiers}.values())

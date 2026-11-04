@@ -4,28 +4,32 @@ family workshops and special nights at the museum's main building and the Helena
 The site's own JSON: ``/api/v2/he/events/filter/?offset=N`` (upcoming events only, 32 a page,
 ``meta.total_count``), grouped by day; each item has its title (with ``<i>`` tags), local start, category
 (קונצרט / מפגש / סיור בתערוכה / פעילות / סרט / אירוע מיוחד) and page. A page per event (dated pages
-repeat per day, read once) gives the artwork (og:image) and its own ticket link on the museum's
-Smarticket box office (``tickets.tamuseum.org.il/show/<id>``; show 1366 is plain admission). That box
-office's robots.txt disallows everything and its API lists only admission, so it is linked, never read:
-no prices. One venue: the main building (address and point in the config). The site has no robots.txt.
+repeat per day, read once) gives the artwork (og:image), its own ticket link on the museum's
+Smarticket box office (``tickets.tamuseum.org.il/show/<id>``; show 1366 is plain admission) and its
+price: the "מחיר" row of the page's details table ("₪55", or one line per ticket "<name>: ₪70"); a
+series page (concerts, ``#<event>`` in the URL) has that row in each event's ``li#<event>``. The box
+office's robots.txt disallows everything, so it is linked, never read. One venue: the main building (address and point in the config). The site has no robots.txt.
 """
 
 from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
+from decimal import Decimal
 from typing import Any
 
 from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.config import RetentionSettings
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import clean_str, html_to_text, parse_iso
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _TICKETS = re.compile(r"https://tickets\.tamuseum\.org\.il/show/(\d+)")
+_SHEKELS = re.compile(r"₪\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*₪")
+_PRICE_ROW = "מחיר"
 
 
 class TaMuseumSettings(SourceSettings):
@@ -64,14 +68,15 @@ class TaMuseumScraper(BaseScraper[TaMuseumSettings]):
         events = [e for e in events if is_current(e.start_at, e.end_at, RetentionSettings(), self.timezone)]
         self.log.debug("listed %d upcoming events", len(events))
 
-        pages: dict[str, dict[str, Any]] = {}  # one request per page, shared by its dates
+        pages: dict[str, str] = {}  # one request per page, shared by its dates (and a series' events)
 
         async def read(event: ScrapedEvent) -> ScrapedEvent:
-            page_url = str(event.url).split("#")[0]
+            page_url, _, fragment = str(event.url).partition("#")
             if page_url not in pages:
-                pages[page_url] = page_details(await self.get_text(page_url), s.admission_shows)
-            details = pages[page_url]
+                pages[page_url] = await self.get_text(page_url)
+            details = page_details(pages[page_url], s.admission_shows, fragment or None)
             event.images = details["images"]
+            event.tickets = details["prices"]
             if details["tickets"]:
                 event.extra = {**(event.extra or {}), "purchase_url": details["tickets"]}
             return event
@@ -103,8 +108,9 @@ def listing_event(item: dict[str, Any], s: TaMuseumSettings, timezone: str) -> S
     )
 
 
-def page_details(page_html: str, admission_shows: list[str]) -> dict[str, Any]:
-    """An event page: its artwork and its own box-office link (not the admission show)."""
+def page_details(page_html: str, admission_shows: list[str], fragment: str | None = None) -> dict[str, Any]:
+    """An event page: its artwork, its own box-office link (not the admission show) and its prices
+    (on a series page, those of the event ``li#<fragment>``)."""
     tree = LexborHTMLParser(page_html)
     image = tree.css_first('meta[property="og:image"]')
     src = clean_str(image.attributes.get("content")) if image else None
@@ -112,4 +118,26 @@ def page_details(page_html: str, admission_shows: list[str]) -> dict[str, Any]:
     return {
         "images": [src] if src and src.startswith("http") else [],
         "tickets": shows[0].group(0) if shows else None,
+        "prices": prices(tree, fragment),
     }
+
+
+def prices(tree: LexborHTMLParser, fragment: str | None) -> list[TicketTier]:
+    """The details table's "מחיר" row: "₪55", "140 ₪", or a line per ticket "<name>: ₪70"."""
+    scope = tree.css_first(f'li[id="{fragment}"]') if fragment else tree.root
+    tiers: list[TicketTier] = []
+    for row in scope.css(".metadata_table__metadata") if scope else []:
+        name = row.css_first(".metadata_table__metadata_name")
+        content = row.css_first(".metadata_table__metadata_content")
+        if not name or not content or name.text(strip=True) != _PRICE_ROW:
+            continue
+        lines = content.css(".metadata_table__metadata-content-inner") or [content]
+        for line in lines:
+            text = line.text(separator=" ", strip=True)
+            if not (m := _SHEKELS.search(text)):
+                continue
+            price = Decimal(m.group(1) or m.group(2))
+            label = clean_str(text[: m.start()].rstrip(" :")) if len(lines) > 1 else None
+            tiers.append(TicketTier(name=label or "כרטיס", price=price, is_free=price == 0))
+        break
+    return tiers

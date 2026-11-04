@@ -7,8 +7,9 @@ event with one POST to the site's own service
 Each item is a list of ``{InternalName, Value}`` fields: title, summary, full text (``Comments``,
 plain text), start / end ("17.10.26, 10:00", local), place name, street address, picture
 (``<img>``), fields of interest, the organising centre, paid / free ("בתשלום" / "לא בתשלום" /
-"חלק בתשלום") and the cost as free text ("35-60 ש\"ח"). A recurring item gives its next
-occurrence; a run (exhibition, festival) its first and last day, so a started one stays current.
+"חלק בתשלום") and the cost as free text ("35-60 ש\"ח", "25 ש''ח", "360-540"); when it only says
+"כמפורט בידיעה" / "אירוע בתשלום", the text's labelled amounts ("מחיר: 35 ש\"ח") are the price.
+A recurring item gives its next occurrence; a run (exhibition, festival) its first and last day, so a started one stays current.
 Seller links (Eventer, GoShow, Coing...) sit in the text and are kept as ``extra["purchase_url"]``.
 Coordinates are on the Israeli grid (ITM) and are not used: the address is geocoded.
 robots.txt disallows /Lists/, /Search/ and a few asset paths, not /_vti_bin/.
@@ -31,7 +32,13 @@ from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _IMG = re.compile(r'src="([^"]+)"')
-_NUMBER = re.compile(r"\d+")
+# "1,600" is one amount; ש"ח is also written ש''ח, ש״ח, שח, ₪ or שקלים.
+_NUMBER = re.compile(r"\d{1,3}(?:,\d{3})+|\d+")
+_SHEKEL = re.compile(r"ש[\"״']{1,2}ח|שח(?!\w)|₪|שקל")
+# A labelled amount in the text: "מחיר: 35 ש\"ח", "מחיר הקורס: 1,200 ש\"ח" (not the "100 ₪" of a refund rule).
+_LABELLED = re.compile(rf"מחיר[^\d\n]{{0,40}}?({_NUMBER.pattern})\s*(?:{_SHEKEL.pattern})")
+_AMOUNTS_ONLY = re.compile(r"[\d\s,./-]+")
+_NO_COST = "ללא עלות"
 # Links to a ticket seller in the item's text (bit.ly and social links are not followed).
 _SELLER = re.compile(
     r"https?://(?:www\.)?(?:eventer\.co\.il|goshow\.co\.il/show|coing\.co|tickchak\.co\.il|smarticket\.co\.il)/[^\s\"<>]+"
@@ -54,7 +61,6 @@ class TelAvivSettings(SourceSettings):
 class TelAvivScraper(BaseScraper[TelAvivSettings]):
     name = "telaviv"
     settings_model = TelAvivSettings
-
 
     def default_headers(self) -> dict[str, str]:
         return {"Accept": "application/json", "Referer": self.settings.site_url + "/Visitors/Events/Pages/Events.aspx"}
@@ -118,9 +124,16 @@ def _date(value: str, timezone: str) -> datetime | None:
         return None
 
 
-def _prices(cost: str) -> list[Decimal]:
-    """Shekel amounts of the free-text cost ("35-60 ש\"ח", "100/200 ש\"ח"); [] for "כמפורט באירוע"."""
-    return sorted({Decimal(n) for n in _NUMBER.findall(cost)}) if 'ש"ח' in cost else []
+def _amounts(text: str) -> list[Decimal]:
+    return sorted({Decimal(n.replace(",", "")) for n in _NUMBER.findall(text)})
+
+
+def _prices(cost: str, text: str = "") -> list[Decimal]:
+    """Shekel amounts of the free-text cost ("35-60 ש\"ח", "100/200 שח", "360-540"); when the cost
+    names none ("כמפורט באירוע"), the text's labelled ones ("מחיר: 35 ש\"ח")."""
+    if _SHEKEL.search(cost) or _AMOUNTS_ONLY.fullmatch(cost.strip() or "x"):
+        return _amounts(cost)
+    return sorted({Decimal(n.replace(",", "")) for n in _LABELLED.findall(text)})
 
 
 def parse_item(v: dict[str, str], s: TelAvivSettings, timezone: str) -> ScrapedEvent | None:
@@ -129,12 +142,13 @@ def parse_item(v: dict[str, str], s: TelAvivSettings, timezone: str) -> ScrapedE
     if not item_id or not list_id or not title or not start:
         return None
     payment = clean_str(v.get("TlvPaymentRequired"))
-    prices = _prices(v.get("TlvPaymentCost", ""))
-    tickets = [TicketTier(name="כרטיס", price=p) for p in prices] if payment != FREE else []
-    if payment in (FREE, PARTLY_PAID):
+    cost = v.get("TlvPaymentCost", "")
+    text = v.get("Comments", "")
+    prices = _prices(cost, html_to_text(text) or "") if payment != FREE else []
+    tickets = [TicketTier(name="כרטיס", price=p) for p in prices if p]
+    if payment in (FREE, PARTLY_PAID) or (not tickets and _NO_COST in cost):
         tickets.insert(0, TicketTier(name="כניסה חופשית", price=0, is_free=True))
     image = _IMG.search(v.get("TlvMainPicture", ""))
-    text = v.get("Comments", "")
     seller = _SELLER.search(text)
     place = clean_str(v.get("TlvCityLocation"))
     summary = clean_str(v.get("TlvSummary"))

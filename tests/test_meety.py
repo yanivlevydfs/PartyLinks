@@ -29,3 +29,14 @@ def test_listing_and_event_page() -> None:
     genres = Enricher(Settings().enrichment, "Asia/Jerusalem")._detect_genres(event)
     assert {"latin_dance", "salsa"} <= set(genres)
     assert parse_event("1", "https://meety.co.il/events/1", "<div></div>", [], "https://meety.co.il", "UTC") is None
+    assert event.tickets == []  # no price in its text
+
+
+def test_price_written_in_the_text() -> None:
+    # meety.co.il/events/3083 (November 2026): entry price, a cheaper one for students / soldiers.
+    page = PAGE.replace(
+        "<p>הדרכות למתחילים - בצ'אטה וסלסה</p>",
+        '<p>אין צורך בבן/בת זוג פשוט להגיע ✅ 50 ש"ח עלות כניסה   סטודנטים וחיילים ב 40 ש"ח</p>',
+    )
+    event = parse_event("3083", "https://meety.co.il/events/3083", page, [], "https://meety.co.il", "Asia/Jerusalem")
+    assert event is not None and sorted(t.price for t in event.tickets) == [40, 50]

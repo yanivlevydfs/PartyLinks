@@ -6,7 +6,7 @@ Laravel, server-rendered. ``/events`` lists the coming week (about 150 cards: li
 them current. The page's "תחום עניין" select (``i``) names the categories; each ``/events?i=<value>``
 listing tags its events with that category's Hebrew label (``salsa`` "סלסה- ריקודים לטיניים", ``folk dances``
 "ריקודי עם"). The event page adds the text and the address (the "נווט לאירוע" Google Maps link, the city
-last). No prices on the site.
+last). No price field: prices the text writes out ("עלות: 35 ₪", "הכניסה חופשית") become tiers (text_prices).
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ from selectolax.lexbor import LexborHTMLParser
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, html_to_text, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.text_prices import text_tickets
 
 _STAMP = re.compile(r"(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})")
 _ID = re.compile(r"^/events/(\d+)$")
@@ -93,12 +94,14 @@ def parse_event(
     if maps := _MAPS.search(page_html):
         address = clean_str(parse_qs(urlsplit(html.unescape(maps.group(0))).query).get("q", [""])[0])
         city = clean_str(address.rsplit(",", 1)[-1]) if address and "," in address else None
+    text = html_to_text(body.html) if body else None
     return ScrapedEvent(
         source=MeetyScraper.name,
         source_event_id=event_id,
         url=url,
         title=title,
-        description=html_to_text(body.html) if body else None,
+        description=text,
+        tickets=text_tickets(text),
         start_at=datetime(y, mo, d, h, mi, tzinfo=zone(timezone)),
         address=address,
         city=city,

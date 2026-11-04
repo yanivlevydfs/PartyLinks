@@ -9,6 +9,8 @@ the site's advanced search is read instead: ``/?s=&search_country=116`` (Israel)
 ("לא נמצא מידע", "שנתי באוגוסט") follow the dated ones, so paging stops at the first page
 without a date. Each festival page adds the full description, the full-size image and the
 festival's own site ("מידע נוסף הקשור לאירוע" > "קישורים:"), kept as ``extra["purchase_url"]``.
+No page lists ticket prices (they point to the festival's site); a description saying the entry
+is free ("הכניסה חופשית למופעים") with nothing "בתשלום" becomes a price-0 tier.
 
 A festival runs over days: it starts at local midnight of its first day and, when it lasts more
 than one, ends at the midnight closing its last day. Posts are reused year after year (same post,
@@ -26,7 +28,7 @@ from urllib.parse import unquote
 from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import clean_str, html_to_text, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
@@ -40,6 +42,7 @@ _MONTHS = {
     )
 } | {"מרס": 3}
 _THUMB_SIZE = re.compile(r"-\d+x\d+(?=\.\w+$)")
+_FREE = re.compile(r"כניסה (?:חופשית|חינם|ללא תשלום)")
 
 
 class FestivalimSettings(SourceSettings):
@@ -155,11 +158,14 @@ def with_details(event: ScrapedEvent, page_html: str) -> ScrapedEvent:
         ),
         None,
     )
+    description = (html_to_text(content.html) if content else None) or event.description
+    free = bool(description and _FREE.search(description) and "בתשלום" not in description)
     # Validated again so ``images`` is rebuilt around the full-size image.
     return ScrapedEvent.model_validate(
         event.model_dump()
         | {
-            "description": (html_to_text(content.html) if content else None) or event.description,
+            "description": description,
+            "tickets": [TicketTier(name="כניסה חופשית", price=0, is_free=True)] if free else event.tickets,
             "image_url": (image.attributes.get("src") if image else None) or event.image_url,
             "images": [],
             "extra": {**event.extra, "purchase_url": site},

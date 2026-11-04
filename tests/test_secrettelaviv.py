@@ -107,3 +107,12 @@ def test_end_after_midnight_rolls_to_next_day() -> None:
     start, end = secrettelaviv.parse_when("Fri 30 October 2026 | 11:00 pm - 5:00 am", "11:55 pm", ZoneInfo(TZ))
     assert start == datetime(2026, 10, 30, 23, 0, tzinfo=ZoneInfo(TZ))
     assert end == datetime(2026, 10, 31, 5, 0, tzinfo=ZoneInfo(TZ))
+
+
+def test_price_written_in_the_description() -> None:
+    url = f"{SITE}/tickets/a-goofy-movie-matmon"
+    event = secrettelaviv.parse_event(_page("event_goofy.html"), url, CFG, TZ)
+    assert event.title == "A Goofy Movie"
+    assert [(t.name, t.price) for t in event.tickets] == [("כרטיס", 40)]
+    gagarin = secrettelaviv.parse_event(_page("event_gagarin.html"), url, CFG, TZ)
+    assert gagarin.tickets == []  # no price in its text

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from decimal import Decimal
+from pathlib import Path
 
 import httpx
 import pytest
@@ -59,6 +60,15 @@ def test_parses_event_with_all_offers() -> None:
     assert (event.min_price, event.max_price) == (Decimal(0), Decimal(90))
     assert event.images == ["https://cdn.chillz.example/flyer.jpg", "https://cdn.chillz.example/wide.jpg"]
     assert event.artists == ["DJ ONE"] and event.organizer == "Deep Crew"
+
+
+def test_event_without_offers_saying_free_entry_gets_a_free_tier() -> None:
+    """Callas karaoke night (real page, trimmed): no Offer, the description says "כניסה עלינו"."""
+    html = (Path(__file__).parent / "fixtures/chillz/karaoke_free.html").read_text("utf-8")
+    event = parse_page(html, "https://chillz.com/en/karaoke-night-ExqP", TZ)
+    assert event is not None and [(t.kind, t.price) for t in event.tickets] == [(TicketKind.FREE, Decimal(0))]
+    assert event.min_price == 0
+    assert parse_page(page({**EVENT_LD, "offers": []}), "https://chillz.com/en/x", TZ).tickets == []  # type: ignore[union-attr]
 
 
 def test_non_event_page_is_skipped() -> None:

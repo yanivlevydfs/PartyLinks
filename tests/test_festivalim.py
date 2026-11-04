@@ -76,3 +76,11 @@ def test_scrape_stops_at_first_undated_page() -> None:
     assert set(events) == {"15706-2026", "16923-2026"}  # a failed festival page keeps the listed event
     assert events["15706-2026"].extra["purchase_url"] == "http://redseajazz.co.il"
     assert "/page/3/" not in requested
+
+
+def test_details_free_entry_text_is_a_free_tier() -> None:
+    """Mousrara Mix 2026: "הכניסה חופשית למופעים ולתערוכות." -> price 0; the jazz page names no price."""
+    listed = festivalim.parse_listing(_page("listing.html"), TZ)[0]
+    free = festivalim.with_details(listed, _page("event_free.html")).tickets
+    assert len(free) == 1 and free[0].is_free and free[0].price == 0
+    assert festivalim.with_details(listed, _page("event.html")).tickets == []

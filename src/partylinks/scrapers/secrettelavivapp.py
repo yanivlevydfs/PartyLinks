@@ -10,7 +10,8 @@ entities API (``/api/apps/<app id>/entities/<Entity>``), which this source reads
 - ``Location`` for those ids (one request): venue name and Hebrew address.
 - ``EventCategory`` (one request): category id -> English name, the same names as secrettelaviv.com,
   so the ``enrichment.genres`` keywords already map them.
-The site shows no price. Events the .com feed also lists are merged by dedup (same seller link and time).
+The site has no price field: prices the descriptions write out become tiers (text_prices).
+Events the .com feed also lists are merged by dedup (same seller link and time).
 """
 
 from __future__ import annotations
@@ -29,6 +30,7 @@ from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, to_float, zone
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.text_prices import text_tickets
 
 # ponytail: retention's defaults (config/settings.yaml uses the same); pass Settings.retention in if they ever differ.
 _RETENTION = RetentionSettings()
@@ -161,12 +163,15 @@ def parse_event(
         or to_float(location.get("location_long"))
     )
     image = clean_str(row.get("image_url"))
+    # Prices are only in the text; the Hebrew and English ones each write some the other leaves out.
+    priced = "\n".join(clean_str(row.get(k)) or "" for k in ("description_he", "description_en"))
     return ScrapedEvent(
         source=SecretTelAvivAppScraper.name,
         source_event_id=str(row["id"]),
         url=s.site_url + s.event_path.format(slug=slug),
         title=title,
         description=_pick(row, "description_he", "description_en") or _pick(row, "event_summary_he", "event_summary"),
+        tickets=text_tickets(priced),
         start_at=start,
         end_at=end if end and end > start else None,
         time_known=bool(_CLOCK.fullmatch(str(row.get("event_start_time") or "").strip())),

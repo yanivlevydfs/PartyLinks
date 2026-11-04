@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from decimal import Decimal
 from pathlib import Path
 
 from partylinks.scrapers.tamuseum import TaMuseumSettings, listing_event, page_details
@@ -34,3 +35,25 @@ def test_page_gives_artwork_and_the_event_ticket_not_admission() -> None:
     details = page_details((FIXTURES / "event.html").read_text(encoding="utf-8"), ["1366"])
     assert details["images"] and details["images"][0].startswith("https://storage.googleapis.com/tama-static/")
     assert details["tickets"] == "https://tickets.tamuseum.org.il/show/9197"
+
+
+def _prices(name: str, fragment: str | None = None) -> list[tuple[str, Decimal]]:
+    details = page_details((FIXTURES / name).read_text(encoding="utf-8"), ["1366"], fragment)
+    return [(t.name, t.price) for t in details["prices"]]
+
+
+def test_price_row_of_the_details_table() -> None:
+    assert _prices("event.html") == [("כרטיס", Decimal(55))]
+
+
+def test_one_tier_per_price_line_free_entry_included() -> None:
+    assert _prices("event_several_prices.html") == [
+        ("12/11 - כניסה למוזיאון", Decimal(0)),
+        ('אירוע לקראת נעילת התערוכה "עולמות זעירים: מיניאטורות באמנות עכשווית"', Decimal(70)),
+        ('סיור מודרך בתערוכה "אלכס ליבק: קופסא שחורה"', Decimal(55)),
+    ]
+
+
+def test_series_page_price_of_the_linked_event_only() -> None:
+    assert _prices("series.html", "talk-art-music-avi-nesher-tom-oren") == [("כרטיס", Decimal(140))]
+    assert _prices("series.html", "nope") == []

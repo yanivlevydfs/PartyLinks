@@ -4,8 +4,10 @@ Arabic and Hebrew, Arab music concerts and its music festival.
 The theatre's home page links every upcoming performance to its TicketTool box office
 (``new1.tickettool.net/web/event/event_id/<id>``, ~40). TicketTool has no API or JSON-LD; each
 performance's page title holds the show and its date: "<theatre> | ...: <show> - 3 דצמבר 2026 20:30".
-The artwork is ``/images/event/<id>.jpg`` there. One venue: its place comes from the config. No prices
-in the pages. robots.txt of both sites allows these pages.
+The artwork is ``/images/event/<id>.jpg`` there. Prices are in the same page: a seated show's price
+legend (``.carus2 [data-zone-id]``, "קטגוריה 1" 110.00) or an unseated one's ticket counters
+(``input.tickets-count[data-price]``), in ILS. One venue: its place comes from the config.
+robots.txt of both sites allows these pages.
 """
 
 from __future__ import annotations
@@ -13,12 +15,14 @@ from __future__ import annotations
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import Field
+from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.config import RetentionSettings
-from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, zone
+from partylinks.models import ScrapedEvent, TicketTier
+from partylinks.parsing import ParseError, clean_str, to_decimal, zone
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
@@ -115,5 +119,22 @@ def parse_page(page_html: str, event_id: str, url: str, s: JaffaTheatreSettings,
         longitude=s.longitude,
         source_genres=list(s.source_genres),
         images=[s.box_office_url + s.image_path.format(id=event_id)],
+        tickets=tickets(page_html),
         extra={"purchase_url": url},
     )
+
+
+def tickets(page_html: str) -> list[TicketTier]:
+    """The page's price categories: a seated hall's legend, or an unseated show's ticket counters."""
+    tree = LexborHTMLParser(page_html)
+    found: dict[tuple[str, Decimal], TicketTier] = {}
+    zones = [(n.attributes.get("data-name"), n.text(strip=True)) for n in tree.css(".carus2 [data-zone-id]")]
+    counters = [
+        (n.attributes.get("data-name"), n.attributes.get("data-price")) for n in tree.css("input.tickets-count")
+    ]
+    for name, raw in zones + counters:
+        price = to_decimal(raw)
+        if price is not None:
+            label = clean_str(name) or "כרטיס"
+            found.setdefault((label, price), TicketTier(name=label, price=price, is_free=price == 0))
+    return list(found.values())

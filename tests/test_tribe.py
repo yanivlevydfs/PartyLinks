@@ -6,7 +6,7 @@ import json
 from decimal import Decimal
 from pathlib import Path
 
-from partylinks.scrapers.tribe import TribeSettings, parse_event
+from partylinks.scrapers.tribe import TribeSettings, _on_hosts, parse_event, seller_tickets
 
 TZ = "Asia/Jerusalem"
 EVENTS = {e["id"]: e for e in json.loads((Path(__file__).parent / "fixtures/gagarin_events.json").read_text("utf-8"))["events"]}
@@ -41,3 +41,16 @@ def test_seller_link_in_description_becomes_purchase_url() -> None:
 
 def test_hidden_events_are_skipped() -> None:
     assert parse_event({**EVENTS[35033], "hide_from_listings": True}, SETTINGS, "gagarin", TZ) is None
+
+
+def test_seller_page_prices() -> None:
+    """BaBe Bar's stand-up nights have no API cost: Standupist's ticket box / Tickchak's JSON-LD Offer."""
+    fixtures = Path(__file__).parent / "fixtures/babebar"
+    standup = seller_tickets((fixtures / "standupist.html").read_text("utf-8"))
+    assert [(t.name, t.price) for t in standup] == [("כרטיס", Decimal(25))]
+    magic = seller_tickets((fixtures / "tickchak.html").read_text("utf-8"))
+    assert [(t.name, t.price) for t in magic] == [("כרטיס הכניסה למופע של רון הולנדר", Decimal(60))]
+    assert seller_tickets("<html><body>no price</body></html>") == []
+    hosts = SETTINGS.price_hosts
+    assert _on_hosts("https://standupist.co.il/events/081126/", hosts)
+    assert not _on_hosts("https://go-out.co/event/1", hosts)

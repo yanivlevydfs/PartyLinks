@@ -7,7 +7,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from partylinks.models import ScrapedEvent
-from partylinks.scrapers.telaviv import TelAvivSettings, parse_items, search
+from partylinks.scrapers.telaviv import TelAvivSettings, _prices, parse_items, search
 
 TZ = "Asia/Jerusalem"
 ITEMS = json.loads((Path(__file__).parent / "fixtures/telaviv/events.json").read_text("utf-8"))
@@ -62,3 +62,17 @@ def test_search_window_is_utc_like_the_widget() -> None:
     body = search(SETTINGS, TZ)
     assert body["srch_dateStart"].endswith("T21:00:00.000Z") or body["srch_dateStart"].endswith("T22:00:00.000Z")
     assert body["srch_totalItemsLoad"] == 3000 and body["srch_free"] is False
+
+
+def test_cost_spellings_text_price_and_no_cost() -> None:
+    items = json.loads((Path(__file__).parent / "fixtures/telaviv/events_prices.json").read_text("utf-8"))
+    by_id = {e.source_event_id.split("-")[1]: e for e in parse_items(items, SETTINGS, TZ)}
+    assert [t.price for t in by_id["41849"].tickets] == [Decimal(25)]  # "25 ש''ח"
+    assert [t.price for t in by_id["40243"].tickets] == [Decimal(360), Decimal(540)]  # "360-540"
+    assert [t.price for t in by_id["48917"].tickets] == [Decimal(35)]  # "כמפורט בידיעה", text "מחיר: 35 ש"ח"
+    assert [(t.price, t.is_free) for t in by_id["41074"].tickets] == [(Decimal(0), True)]  # "ללא עלות בהרשמה מראש"
+
+
+def test_thousands_are_one_amount_and_unlabelled_text_amounts_are_not_prices() -> None:
+    assert _prices('1,600-2,000 ש"ח') == [Decimal(1600), Decimal(2000)]
+    assert _prices("כמפורט בידיעה", "ההחזר יתבצע בקיזוז 5% או 100 ₪ הנמוך מבינהם") == []

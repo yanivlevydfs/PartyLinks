@@ -5,7 +5,10 @@ The plugin serves every upcoming event as JSON at ``/wp-json/tribe/events/v1/eve
 and an HTML description. These club sites rarely fill in the venue, so name, address and
 city come from the config. The description usually links to the real ticket seller
 (GO-OUT, Eventbuzz...); that link is kept as ``purchase_url`` so dedup merges this listing
-with the seller's own. Each club is a one-line subclass, so it shows under its own name.
+with the seller's own. An event without a price whose seller is one of ``price_hosts`` gets the
+price from that seller's page (one request): a JSON-LD Offer (Tickchak) or the ticket box's
+``itemprop="price"`` (Standupist's EventON tickets; BaBe Bar's stand-up nights).
+Each club is a one-line subclass, so it shows under its own name.
 """
 
 from __future__ import annotations
@@ -19,9 +22,10 @@ from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 from pydantic import Field
+from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.models import ScrapedEvent, TicketTier
-from partylinks.parsing import ParseError, clean_str, html_to_text, to_decimal
+from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, schema_types, to_decimal
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _HREF = re.compile(r'href="(https?://[^"]+)"')
@@ -42,6 +46,8 @@ class TribeSettings(SourceSettings):
     ticket_hosts: list[str] = Field(default_factory=list)
     # Site categories that are status labels ("coming soon"), not event types.
     skip_categories: list[str] = Field(default_factory=list)
+    # Sellers whose event page states the price: read when the API gives none.
+    price_hosts: list[str] = Field(default_factory=lambda: ["standupist.co.il", "tickchak.co.il"])
 
 
 class TribeScraper(BaseScraper[TribeSettings]):
@@ -63,6 +69,10 @@ class TribeScraper(BaseScraper[TribeSettings]):
         for item in items:
             try:
                 if event := parse_event(item, s, self.name, self.timezone):
+                    purchase = event.extra.get("purchase_url")
+                    if not event.tickets and purchase and _on_hosts(purchase, s.price_hosts):
+                        seller = await self.optional(f"{purchase} price", self.get_text(purchase))
+                        event.tickets = seller_tickets(seller) if seller else []
                     yield event
             except (ParseError, ValueError) as exc:
                 self.record_failure(str(item.get("url") or item.get("id")), exc)
@@ -107,12 +117,28 @@ def parse_event(e: dict[str, Any], s: TribeSettings, source: str, timezone: str)
     )
 
 
+def _on_hosts(url: str, hosts: list[str]) -> bool:
+    host = urlparse(url).netloc.removeprefix("www.")
+    return any(host == h or host.endswith("." + h) for h in hosts)
+
+
 def _ticket_link(description: str, hosts: list[str]) -> str | None:
-    for url in map(html.unescape, _HREF.findall(description)):
-        host = urlparse(url).netloc.removeprefix("www.")
-        if any(host == h or host.endswith("." + h) for h in hosts):
-            return url
-    return None
+    return next((url for url in map(html.unescape, _HREF.findall(description)) if _on_hosts(url, hosts)), None)
+
+
+def seller_tickets(page_html: str) -> list[TicketTier]:
+    """The seller page's prices: JSON-LD Offers, else microdata ``itemprop="price" content="25"``."""
+    offers = [
+        (clean_str(str(n.get("name") or "")), to_decimal(str(n.get("price") or "")))
+        for n in jsonld_nodes(page_html)
+        if "offer" in schema_types(n)
+    ] or [
+        (None, to_decimal(node.attributes.get("content") or ""))
+        for node in LexborHTMLParser(page_html).css('[itemprop="price"][content]')
+    ]
+    return [
+        TicketTier(name=name or "כרטיס", price=price, is_free=price == 0) for name, price in offers if price is not None
+    ]
 
 
 class GagarinScraper(TribeScraper):

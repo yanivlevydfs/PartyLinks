@@ -6,7 +6,8 @@ Hebrew weekday letter and "HH:MM - HH:MM", categories ("{AI}", "{סטארטאפ 
 (offline / online / hybrid), the description and a registration link (often Luma or Eventbrite,
 so cross-source duplicates are expected). The year is the one, of this year and next, whose date
 falls on the card's weekday. Online-only events are skipped. Anyone can submit an event, so
-titles with a configured spam word are skipped.
+titles with a configured spam word are skipped. The card's "מחיר כניסה: החל מ - 60 ש\"ח" line
+(or "... - חינם") is the cheapest ticket; an empty one ("החל מ - ש\"ח") means no price given.
 """
 
 from __future__ import annotations
@@ -16,11 +17,12 @@ import logging
 import re
 from collections.abc import AsyncIterator
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from pydantic import Field
 
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
@@ -34,6 +36,7 @@ _WEEKDAYS = {"א": 6, "ב": 0, "ג": 1, "ד": 2, "ה": 3, "ו": 4, "ש": 5}  # H
 log = logging.getLogger(__name__)
 _CARD = re.compile(r'<article id="accordion-(\d+)"')
 _TIMES = re.compile(r"(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})")
+_PRICE = re.compile(r"מחיר כניסה:[^<]*?-\s*(חינם|\d[\d,.]*)")
 
 
 class GeektimeSettings(SourceSettings):
@@ -107,6 +110,12 @@ def parse_card(event_id: str, card: str, page_url: str, timezone: str, today: da
     link = f"https://{link}" if link and not link.startswith(("http://", "https://")) else link
     if link and (" " in link.strip() or "." not in link):  # the button's href holds text, not an address
         link = None
+    price = _PRICE.search(card)
+    tickets = []
+    if price and price[1] == "חינם":
+        tickets = [TicketTier(name="כניסה חופשית", price=Decimal(0), is_free=True)]
+    elif price:
+        tickets = [TicketTier(name="כרטיס", price=Decimal(price[1].replace(",", "")))]
     return ScrapedEvent(
         source=GeektimeScraper.name,
         source_event_id=event_id,
@@ -119,6 +128,7 @@ def parse_card(event_id: str, card: str, page_url: str, timezone: str, today: da
         source_genres=["hi-tech"],
         event_types=list(dict.fromkeys(c.strip("{}") for c in re.findall(r'<div class="cat">([^<]*)', card))),
         images=images,
+        tickets=tickets,
     )
 
 

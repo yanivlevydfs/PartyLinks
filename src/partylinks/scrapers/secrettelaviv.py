@@ -8,7 +8,8 @@ Details: each event page gives the date line ("Sat 24 October 2026 | 11:00 pm - 
 local time; "Tue 24 November 2026 - Sat 28 November 2026 | ..." for a run), the full
 description, a "Location:" line (venue name), a "Check out the event:" link to the original
 event / seller (kept as ``extra["purchase_url"]``), ``og:image`` and the event's categories
-(``event-categories-<slug>`` classes, as ``source_genres``). The site shows no price.
+(``event-categories-<slug>`` classes, as ``source_genres``). The site has no price field: prices the
+description writes out ("כרטיס: 40 ₪", "הכניסה חופשית", about a quarter of the events) become tiers (text_prices).
 Cloudflare answers some clients with a challenge (``cf-mitigated: challenge``): the run stops as
 blocked, but events new to us are first saved as the feed gives them (stored ones keep their details).
 """
@@ -28,6 +29,7 @@ from selectolax.lexbor import LexborHTMLParser, LexborNode
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, html_to_text
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
+from partylinks.scrapers.text_prices import text_tickets
 
 _DATE = re.compile(r"(\d{1,2}) ([A-Za-z]+) (\d{4})")
 _TIME = re.compile(r"(\d{1,2}):(\d{2})\s*([ap]m)", re.IGNORECASE)
@@ -186,6 +188,7 @@ def parse_feed(ics: str, s: SecretTelAvivSettings, timezone: str) -> list[Scrape
                 url=url,
                 title=title,
                 description=clean_str(props.get("DESCRIPTION")),
+                tickets=text_tickets(props.get("DESCRIPTION")),
                 start_at=start,
                 end_at=end if end and start and end > start else None,
                 venue_name=clean_str(venue),
@@ -241,12 +244,14 @@ def parse_event(page_html: str, url: str, s: SecretTelAvivSettings, timezone: st
     title_node = tree.css_first(sel.title)
     og_image = tree.css_first('meta[property="og:image"]')
     image = og_image.attributes.get("content") if og_image else None
+    text = html_to_text("".join(description))
     return ScrapedEvent(
         source=SecretTelAvivScraper.name,
         source_event_id=event_slug(url, s),
         url=url,
         title=_without_venue(clean_str(title_node.text()) if title_node else None) or "",
-        description=html_to_text("".join(description)),
+        description=text,
+        tickets=text_tickets(text),
         start_at=start_at,
         end_at=end_at,
         venue_name=em_venue or venue,

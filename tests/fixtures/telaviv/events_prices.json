@@ -1,0 +1,268 @@
+[
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "48917"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "סדנת אמנות עם יוליה איזנשטיין"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "מועדון גמלאים נוה שרת"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "04.11.26, 10:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "04.11.26, 11:15"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "969f7de3-0ac9-4a30-88f0-2e1a7281f3d0"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Comments",
+    "Type": "String",
+    "Value": "   נפגשים מדי יום רביעי בשעה 10:00 במועדון גמלאים נווה שרת, לזמן של יצירה.     נלמד טכניקות שונות ונעבוד עם חומרים מפתיעים.  אחת הטכניקות הנלמדות - הדפסה בוטנית. נשתמש בפרחים וצמחים מהשדה, עפרונות וצבעים., הדפסת נייר.​  יוליה איזנשטיין היא אמנית רב תחומית ומנחה סדנאות אמנות שונות.       מחיר:     35 ש\"ח לחודש (4 מפגשים)  או 25 ש\"ח לסדנה     "
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "רמה 5"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "String",
+    "Value": "כמפורט בידיעה"
+   }
+  ]
+ },
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "41849"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "כשהתנועה הציונית ניצחה - הרצאה"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "מרכז רייך"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "05.11.26, 11:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "05.11.26, 12:15"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "d7edbd99-5ed2-48be-b4cd-990641ad5f1e"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "ארלוזורוב 106"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "String",
+    "Value": "25 ש''ח"
+   }
+  ]
+ },
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "41074"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "קרוב - מפגשי כתיבה לחברים שכולים"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "בית הצעירים הרצל 107"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "15.11.26, 19:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "15.11.26, 21:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "d7edbd99-5ed2-48be-b4cd-990641ad5f1e"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "הרצל 107"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "String",
+    "Value": "ללא עלות בהרשמה מראש"
+   }
+  ]
+ },
+ {
+  "Attachments": null,
+  "Fields": [
+   {
+    "Caption": null,
+    "InternalName": "ListItemID",
+    "Type": "String",
+    "Value": "40243"
+   },
+   {
+    "Caption": null,
+    "InternalName": "Title",
+    "Type": "String",
+    "Value": "קבוצת הורים להורי כתות ז-עירוני ד 2026"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvCityLocation",
+    "Type": "String",
+    "Value": "עירוני ד חטיבת הביניים"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvStartDate",
+    "Type": "DateTime",
+    "Value": "17.11.26, 19:00"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvEndDate",
+    "Type": "DateTime",
+    "Value": "17.11.26, 20:45"
+   },
+   {
+    "Caption": null,
+    "InternalName": "WebID",
+    "Type": "String",
+    "Value": "3af57d92-807c-43c5-8d5f-6fd455eb2776"
+   },
+   {
+    "Caption": null,
+    "InternalName": "ListID",
+    "Type": "String",
+    "Value": "d7edbd99-5ed2-48be-b4cd-990641ad5f1e"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvAddress1",
+    "Type": "String",
+    "Value": "ועידת קטוביץ 47"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentRequired",
+    "Type": "String",
+    "Value": "בתשלום"
+   },
+   {
+    "Caption": null,
+    "InternalName": "TlvPaymentCost",
+    "Type": "String",
+    "Value": "360-540"
+   }
+  ]
+ }
+]

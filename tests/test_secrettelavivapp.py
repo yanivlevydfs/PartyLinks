@@ -47,3 +47,21 @@ def test_placeholder_end_social_link_and_missing_slug() -> None:
     event = parse_event(row, LOOKUPS, S, TZ)
     assert event is not None and event.end_at is None and event.extra["purchase_url"] is None
     assert parse_event(ROW | {"slug": None}, LOOKUPS, S, TZ) is None
+
+
+def test_price_and_free_entry_from_the_descriptions() -> None:
+    # Real descriptions (November 2026): the Hebrew one writes the price, the English one repeats it.
+    row = ROW | {
+        "description_he": "ראשון| 29.11 | 21:00 | כרטיס: 40 ₪\n\nמספר המקומות מוגבל | 18+",
+        "description_en": "21:00. Tickets: 40 ₪. Limited spots available. 18+.",
+    }
+    event = parse_event(row, LOOKUPS, S, TZ)
+    assert event is not None and [(t.name, t.price) for t in event.tickets] == [("כרטיס", 40)]
+    row = ROW | {
+        "description_he": "רביעי | 4.11 | 20:00 דלתות | כניסה חופשית | רבי עקיבא 3, כרם התימנים",
+        "description_en": "Doors at 20:00, entry is free.",
+    }
+    event = parse_event(row, LOOKUPS, S, TZ)
+    assert event is not None and [(t.price, t.is_free) for t in event.tickets] == [(0, True)]
+    plain = parse_event(ROW, LOOKUPS, S, TZ)
+    assert plain is not None and plain.tickets == []

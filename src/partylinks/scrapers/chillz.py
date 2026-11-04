@@ -4,7 +4,9 @@ Discovery: the public ``sitemap.xml`` (sitemap indexes supported), filtered to
 the configured locale path and to pages modified within ``recent_days``.
 Details: each page's schema.org ``Event`` JSON-LD (name, dates, venue, artwork,
 performers and every ``Offer`` -> ticket tiers); pages without an Event are
-profiles/venues and are skipped.
+profiles/venues and are skipped. An event with no Offer (no ticketing on Chillz, e.g. Callas
+bar nights) whose page description (``.prose``) says "כניסה חופשית" / "Free Entrance!" /
+"כניסה עלינו" gets a price-0 tier.
 
 Inbox: event pages a person opened in a browser and saved (Ctrl+S) into
 ``inbox_dir`` are imported first, through the same parser. Saved pages carry
@@ -57,6 +59,7 @@ _AVAILABILITY = {
     "presale": TierStatus.COMING_SOON,
     "discontinued": TierStatus.CLOSED,
 }
+_FREE_ENTRY = re.compile(r"כניסה (?:חופשית|חינם|ללא תשלום|עלינו)|\bfree (?:entrance|entry|admission)\b", re.IGNORECASE)
 
 
 class ChillzSettings(SourceSettings):
@@ -210,8 +213,11 @@ def parse_page(page_html: str, url: str, default_tz: str) -> ScrapedEvent | None
     geo = location.get("geo") if isinstance(location, dict) else None
     currency_default = "ILS"
     tickets = [_tier(o, currency_default, default_tz) for o in _offers(event.get("offers"))]
+    tree = LexborHTMLParser(page_html)
+    if not tickets and any(_FREE_ENTRY.search(node.text(separator=" ")) for node in tree.css(".prose")):
+        tickets = [TicketTier(name="כניסה חופשית", price=0, is_free=True)]
     priced = [t.price for t in tickets if t.price is not None and t.is_active]
-    og_node = LexborHTMLParser(page_html).css_first('meta[property="og:image"]')
+    og_node = tree.css_first('meta[property="og:image"]')
     og_image = og_node.attributes.get("content") if og_node else None
 
     return ScrapedEvent(

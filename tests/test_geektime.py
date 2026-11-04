@@ -53,3 +53,13 @@ def test_geektime_button_with_text_for_href_falls_back_to_the_card() -> None:
     events = parse_page(page, "https://www.geektime.co.il/event/", TZ, TODAY, ["gold bar"])
     seed = next(e for e in events if e.source_event_id == "594130")
     assert seed.url.unicode_string() == "https://www.geektime.co.il/event/?accordion-594130"
+
+
+def test_geektime_card_price_line() -> None:
+    """Price line: "מחיר כניסה: החל מ - חינם" is free entry, "... - 123 ש"ח" a ticket, an empty one no price."""
+    page = (FIXTURES / "geektime/event.html").read_text("utf-8")
+    events = {e.source_event_id: e for e in parse_page(page, "https://www.geektime.co.il/event/", TZ, TODAY, [])}
+    free = events["593649"].tickets
+    assert len(free) == 1 and free[0].is_free and free[0].price == 0
+    assert events["594130"].tickets == []
+    assert [t.price for t in events["586262"].tickets] == [123]
