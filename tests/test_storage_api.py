@@ -185,7 +185,9 @@ def test_seo_landing_pages_with_live_faq(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     tz = ZoneInfo(settings.timezone)
     tonight = datetime.combine(datetime.now(tz).date(), time(23, 30), tzinfo=tz)
-    seed(settings, [event(str(i), tonight + timedelta(days=i)) for i in range(3)])
+    # Free entry only (every ticket free): a 0 tier beside a paid one is "free + paid", not free (15f415d).
+    free = [TicketTier(name="Free entry", price=Decimal(0))]
+    seed(settings, [event(str(i), tonight + timedelta(days=i), tickets=free) for i in range(3)])
 
     app = create_app(settings, start_scheduler=False)
     with TestClient(app) as client:
