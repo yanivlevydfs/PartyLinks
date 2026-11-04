@@ -16,7 +16,6 @@ from sqlalchemy import Boolean, Text, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from partylinks.artist_links.config import ArtistLinksSettings
-from partylinks.artistdb import ArtistProfileRow
 from partylinks.db import Base, NullableJSON, UTCDateTime, utcnow
 
 Link = dict[str, str]  # {"service": "spotify", "url": "https://open.spotify.com/artist/..."}
@@ -90,6 +89,9 @@ _cache_lock = threading.Lock()
 
 def _load(session: Session, cfg: ArtistLinksSettings) -> dict[str, list[Link]]:
     """Every name with links: ticket-site profiles first (curated), then MusicBrainz, merged by service."""
+    # Here, not at the top: db imports this module, and artistdb imports db (`python -m partylinks` loads artistdb first).
+    from partylinks.artistdb import ArtistProfileRow
+
     urls: dict[str, list[tuple[str, bool]]] = {}
     for name, spotify, links in session.execute(
         select(ArtistProfileRow.name, ArtistProfileRow.spotify_url, ArtistProfileRow.links)
