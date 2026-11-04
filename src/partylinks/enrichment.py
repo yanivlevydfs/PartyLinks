@@ -446,8 +446,9 @@ class Enricher:
                 candidate = _strip_decor(lines[i])
                 if not candidate:
                     # Lists spaced by blank lines ("🔥 OSHI\n\n🔥 ORIGAMI") go on while the next line is a Latin name.
+                    # A separator line ("~", "---") ends it: what follows is the next block ("Jeudi 12 novembre").
                     nxt = _strip_decor(lines[i + 1]) if i + 1 < len(lines) else ""
-                    if collected and not (re.search(r"[a-z]", nxt, re.IGNORECASE) and self._as_name(nxt)):
+                    if collected and (lines[i].strip() or not (re.search(r"[a-z]", nxt, re.IGNORECASE) and self._as_name(nxt))):
                         break
                 elif lines[i].strip().endswith(":") or (
                     (candidate.startswith("(") and candidate.endswith(")"))  # "(MAINSTREAM, EDM, HARDSTYLE)"

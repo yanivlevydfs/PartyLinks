@@ -641,7 +641,8 @@ enrichment:
   # starts a lineup block; following short lines are taken as names.
   lineup:
     header_keywords: ["line up", "lineup", "line-up", "full line up", "ליינאפ", "ליין אפ", "על העמדה",
-                      "djs", "dj's", "דיג'יים", "דיג׳יים", "תקלוט", "מתקלטים", "artists", "אמנים"]
+                      "djs", "dj's", "דיג'יים", "דיג׳יים", "תקלוט", "מתקלטים", "artists", "אמנים",
+                      "main room", "secret room", "second room", "back room", "room 1", "room 2"]
     max_names: 20
     max_name_length: 40
     max_name_words: 5

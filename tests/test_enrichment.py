@@ -70,6 +70,16 @@ def test_lineup_names_are_cleaned_and_split() -> None:
                             "DJ Orel Amos", "DJ PERLMAN"]  # fmt: skip
 
 
+def test_lineup_under_room_headers() -> None:
+    text = (
+        "One night. Two rooms.\n\nTHE CEREMONY | 5.11\n\nMAIN ROOM | TEMPLE\n(Hosting A-Z)\nASSAF MICHAEL X ROY HEYMAN\n"
+        "EMMA EL SHIR-(LIVE)\nSECRET ROOM | MAINSTREAM\nBENOR\n\nאל תקראו לזה מסיבה.\n~\nCappella\n"
+    )
+    event = ENRICHER.enrich(make(description=text, venue_name="Cappella"))
+    assert event is not None
+    assert event.lineup == ["ASSAF MICHAEL", "ROY HEYMAN", "EMMA EL SHIR", "BENOR"]
+
+
 def test_glued_names_split_on_known_artists() -> None:
     enricher = Enricher(SETTINGS.enrichment, SETTINGS.timezone)
     enricher.learn_artists(["MILLERO", "DALI", "Jackie", "MISSTAKEN", "MOSKOMILLEROADARU", "DJ SHAY"])
