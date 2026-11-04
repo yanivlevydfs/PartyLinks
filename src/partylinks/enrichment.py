@@ -519,10 +519,6 @@ class Enricher:
         priced = [t.price for t in event.tickets if t.price is not None and t.is_active]
         if priced:
             event.min_price, event.max_price = min(priced), max(priced)
-        elif not event.tickets and event.min_price is not None and not event.min_price and not (self._free and self._free.search((event.description or "").lower())):
-            # Tierless 0 is how box offices say "no price known" (Makore, Eventim Light, Tickchak, Leaan): free
-            # only when the page says so. ponytail: description keywords only; the title "Free Jazz" is a band.
-            event.min_price = None
 
     @staticmethod
     def _entry_type(event: ScrapedEvent) -> EntryType:
