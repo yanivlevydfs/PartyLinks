@@ -32,6 +32,10 @@ export function useT(): { t: Strings; lang: Lang } {
 export const label = (map: object, key: string | null | undefined) =>
   key ? ((map as Record<string, string>)[key] ?? key) : "";
 
+/** An event abroad's country in the page's language ("ארצות הברית"); "" in Israel (null) or unknown ("ZZ"). */
+export const countryName = (code: string | null | undefined, lang: string) =>
+  code && code !== "ZZ" ? new Intl.DisplayNames([lang], { type: "region" }).of(code) ?? code : "";
+
 /** Facets in the order of the names their chips show: א-ת / A-Z (each keeps its count). */
 export const byName = <T extends { value: string }>(xs: readonly T[] | undefined, name: (v: string) => string, lang: string) =>
   [...(xs ?? [])].sort((a, b) => name(a.value).localeCompare(name(b.value), lang));
@@ -315,8 +319,10 @@ export function Card({ e }: { e: EventSummary }) {
       <div className="card-body">
         <h3 dir="auto">{e.title}</h3>
         <p className="meta">{when(e, t, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
-        {(e.venue_name || e.area) && (
-          <p className="meta">📍 {[e.venue_name, e.area && label(t.areas, e.area)].filter(Boolean).join(" · ")}</p>
+        {(e.venue_name || e.area || e.country) && (
+          // Abroad: city and country, so "Madarae" alone does not read as a place in Israel.
+          <p className="meta">📍 {[e.venue_name, e.country ? [e.city, countryName(e.country, lang)].filter(Boolean).join(", ")
+            : e.area && label(t.areas, e.area)].filter(Boolean).join(" · ")}</p>
         )}
         {e.lineup.length > 0 && <p className="meta">🎧 {e.lineup.slice(0, 4).join(" · ")}</p>}
         {e.in_text && <p className="meta">🔍 {t.inText}</p>}

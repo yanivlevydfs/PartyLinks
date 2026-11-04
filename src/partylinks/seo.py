@@ -576,7 +576,8 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     if profile and profile.links:
         place["sameAs"] = profile.links
     return Page(
-        title=f"{name} · {t['upcoming']} · {cfg.site.name}",
+        # Abroad: the venue's city, not "upcoming events in Israel" (Madarae is in San Francisco).
+        title=f"{name} · {rows[0].city if rows and rows[0].country and rows[0].city else t['upcoming']} · {cfg.site.name}",
         description=about[:300],
         path=path,
         lang=lang,
