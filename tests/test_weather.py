@@ -72,6 +72,41 @@ def test_one_fetch_per_place_kept_across_restarts(tmp_path: Path, calls: list[di
     assert asyncio.run(weather.forecast(32.08, 34.78, "test", path)) == first and len(calls) == 1
 
 
+def test_met_hiccup_is_retried_and_a_stale_forecast_survives_a_restart(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # MET's edge answers 502 or cuts the JSON off in bursts (Nov 2026): retried; when it stays down, the stale one is served.
+    replies: list[Any] = []
+
+    class Broken(FakeResponse):
+        def json(self) -> dict[str, Any]:
+            raise ValueError("Unterminated string")
+
+    class FlakyClient:
+        def __init__(self, **_: Any) -> None: ...
+        async def __aenter__(self) -> Self:
+            return self
+        async def __aexit__(self, *_: object) -> None: ...
+        async def get(self, url: str, params: dict[str, Any]) -> FakeResponse:
+            return replies.pop(0)
+
+    monkeypatch.setattr(weather.httpx, "AsyncClient", FlakyClient)
+    monkeypatch.setattr(weather, "_cache", {})
+    monkeypatch.setattr(weather, "_fetched_at", [])
+    monkeypatch.setattr(weather, "_loaded_from", None)
+    cfg = weather.WeatherSettings(retry_seconds=0, max_days=3650)
+    path = tmp_path / "weather_cache.json"
+    replies[:] = [Broken(), FakeResponse()]
+    first = asyncio.run(weather.forecast(32.08, 34.78, "test", path, cfg))
+    assert len(first) == 2 and not replies  # the cut-off reply was retried
+
+    weather._cache.clear()  # a restart two hours on, the forecast expired, MET still down: the stale one is served
+    weather._loaded_from = None
+    monkeypatch.setattr(weather, "get_settings", lambda: type("S", (), {"weather": cfg})())
+    later = weather.time.time() + 7200
+    monkeypatch.setattr(weather.time, "time", lambda: later)
+    replies[:] = [Broken()] * cfg.attempts
+    assert asyncio.run(weather.forecast(32.08, 34.78, "test", path, cfg)) == first and not replies
+
+
 def test_fetches_are_capped(tmp_path: Path, calls: list[dict[str, Any]]) -> None:
     cfg = WeatherSettings(max_fetches=2)
     for lat in (31.0, 32.0, 33.0):

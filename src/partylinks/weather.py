@@ -23,6 +23,7 @@ from weakref import WeakKeyDictionary
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request, Response
+from tenacity import AsyncRetrying, retry_if_exception, stop_after_attempt, wait_exponential
 
 from partylinks.config import Settings, WeatherSettings, get_settings, project_path
 from partylinks.places import PlaceIndex, all_cities
@@ -70,10 +71,34 @@ def _load(path: Path) -> None:
     try:
         rows = json.loads(path.read_text("utf-8"))
         now = time.time()
-        _cache.update({(lat, lng): (expires, slots) for lat, lng, expires, slots in rows if expires > now})
+        # Expired ones too (up to max_days): refetched on first use, still there to fall back on when MET is down.
+        keep = now - get_settings().weather.max_days * 86400
+        _cache.update({(lat, lng): (expires, slots) for lat, lng, expires, slots in rows if slots and expires > keep})
     except (OSError, ValueError, TypeError) as exc:
         if path.exists():
             log.warning("weather cache %s unreadable: %s", path, exc)
+
+
+def _retryable(exc: BaseException) -> bool:
+    """MET's edge answers 502/503 or cuts the body off in bursts: worth another try. A 4xx is not."""
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code >= 500 or exc.response.status_code == 429
+    return isinstance(exc, (httpx.TransportError, ValueError))  # ValueError: cut-off JSON
+
+
+async def _get_met(cell: tuple[float, float], user_agent: str, cfg: WeatherSettings) -> httpx.Response:
+    async with httpx.AsyncClient(timeout=cfg.timeout_seconds, headers={"User-Agent": user_agent}) as client:
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(cfg.attempts),
+            wait=wait_exponential(multiplier=cfg.retry_seconds, max=8),
+            retry=retry_if_exception(_retryable),
+            reraise=True,
+        ):
+            with attempt:
+                response = await client.get(cfg.url, params={"lat": cell[0], "lon": cell[1]})
+                response.raise_for_status()
+                response.json()  # a cut-off body raises here, inside the retry
+    return response
 
 
 def _save(path: Path) -> None:
@@ -125,9 +150,7 @@ async def _fetch(lat: float, lng: float, user_agent: str, path: Path, cfg: Weath
             log.warning("weather: %d MET fetches in %.0f min, %s waits", cfg.max_fetches, cfg.fetch_window_seconds / 60, cell)
             return cached[1] if cached else []
         try:
-            async with httpx.AsyncClient(timeout=cfg.timeout_seconds, headers={"User-Agent": user_agent}) as client:
-                response = await client.get(cfg.url, params={"lat": cell[0], "lon": cell[1]})
-                response.raise_for_status()
+            response = await _get_met(cell, user_agent, cfg)
             slots, ttl = parse_forecast(response.json()), _ttl(response.headers.get("expires"), cfg.min_ttl_seconds)
         except (httpx.HTTPError, ValueError, AttributeError) as exc:  # AttributeError: JSON that is not MET's shape
             log.warning("weather for %s failed: %s", cell, exc)

@@ -577,6 +577,9 @@ class WeatherSettings(BaseModel):
     timeout_seconds: float = Field(10, gt=0)
     min_ttl_seconds: float = Field(3600, gt=0)  # never refetch a place sooner, whatever MET's Expires says
     failure_ttl_seconds: float = Field(300, gt=0)  # a failed fetch / lookup is not retried for every card
+    # Tries per MET fetch on a 5xx / network error / cut-off JSON (MET's edge does that in bursts).
+    attempts: int = Field(3, ge=1, le=6)
+    retry_seconds: float = Field(1, ge=0)
     # Whatever callers ask (the endpoint is public), at most this many upstream fetches per window.
     max_fetches: int = Field(120, ge=1)
     fetch_window_seconds: float = Field(600, gt=0)
