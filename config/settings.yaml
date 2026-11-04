@@ -1497,6 +1497,7 @@ sources:
     latitude: 32.1302   # Nominatim: HaNagar St. (no house number in OSM)
     longitude: 34.8934
     ticket_hosts: [standupist.co.il, go-out.co, eventbuzz.co.il, eventer.co.il, smarticket.co.il, tickchak.co.il]
+    price_hosts: [standupist.co.il, tickchak.co.il]   # no price in the API: read the seller's page once (JSON-LD / microdata)
 
   eventimlight:
     # Eventim Light (eventim-light.com): CTS Eventim's self-service box office, a shop per organizer and
@@ -3168,6 +3169,7 @@ sources:
     page_path: /event/page/{page}/
     max_pages: 30
     seller_hosts: {tickets.zoatlv.co.il: easytix.co.il}   # ZOA's EASYTIX box office, listed by easytix
+    price_hosts: [tickets.comedybar.net, smarticket.co.il, tickchak.co.il, tarbuta.com]   # sellers whose page has JSON-LD prices
     venue_name: בית ציוני אמריקה
     address: דניאל פריש 1
     city: תל אביב-יפו
