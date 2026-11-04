@@ -581,6 +581,8 @@ class WeatherSettings(BaseModel):
     fetch_window_seconds: float = Field(600, gt=0)
     browser_cache_seconds: int = Field(900, ge=0)  # Cache-Control on a forecast
     unknown_place_cache_seconds: int = Field(86400, ge=0)  # ...and on "no such place" (looked up, not found)
+    # Slots farther ahead are dropped: past about a week a forecast is a guess, so no weather beats a wrong one.
+    max_days: float = Field(7, gt=0)
 
 
 class Settings(BaseSettings):

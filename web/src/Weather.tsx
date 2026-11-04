@@ -3,7 +3,7 @@ import { useT } from "./ui";
 
 /**
  * The forecast at an event's start: an animated Meteocons icon and the temperature, from the
- * server's /weather (MET Norway, ~10 days ahead). Every event within ~10 km shares one request.
+ * server's /weather (MET Norway, up to weather.max_days, 7, ahead). Every event within ~10 km shares one request.
  * Nothing shows for past events, events too far ahead, or places without coordinates.
  */
 

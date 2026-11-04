@@ -1,7 +1,7 @@
 """Weather forecast for events: ``GET /weather?lat=..&lng=..``.
 
 Source: MET Norway's Locationforecast (api.met.no), free for any use with an identifying
-User-Agent: hourly for the next ~2.5 days, then every 6 hours up to ~10 days. Positions are
+User-Agent: hourly for the next ~2.5 days, then every 6 hours up to ~10 days, cut at weather.max_days. Positions are
 rounded to 0.1° (~10 km), so every event of a city shares one forecast. A forecast is kept at
 least an hour (longer if MET's ``Expires`` says so; MET updates about hourly), one fetch per
 place at a time, and saved to ``weather_cache.json`` beside the database so a deploy or restart
@@ -15,6 +15,7 @@ import json
 import logging
 import re
 import time
+from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Annotated, Any
@@ -107,7 +108,13 @@ def parse_forecast(payload: dict[str, Any]) -> list[list[Any]]:
 async def forecast(
     lat: float, lng: float, user_agent: str, path: Path, cfg: WeatherSettings | None = None
 ) -> list[list[Any]]:
+    """The cell's slots up to ``weather.max_days`` ahead (the site, emails and the bot all read these)."""
     cfg = cfg or get_settings().weather
+    cutoff = datetime.now(UTC) + timedelta(days=cfg.max_days)
+    return [s for s in await _fetch(lat, lng, user_agent, path, cfg) if datetime.fromisoformat(s[0]) < cutoff]
+
+
+async def _fetch(lat: float, lng: float, user_agent: str, path: Path, cfg: WeatherSettings) -> list[list[Any]]:
     _load(path)
     cell = (round(lat, 1), round(lng, 1))
     async with _lock(cell):

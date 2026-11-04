@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, ClassVar, Self
 
@@ -99,3 +100,15 @@ def test_a_failed_place_lookup_backs_off(tmp_path: Path, monkeypatch: pytest.Mon
     assert asyncio.run(weather._looked_up(settings, "כפר נידח", path)) is None
     assert asyncio.run(weather._looked_up(settings, "עוד כפר", path)) is None
     assert tried == ["כפר נידח"] and "כפר נידח" not in weather._found  # asked again once the back-off is over
+
+
+def test_slots_past_max_days_are_dropped(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    now = datetime.now(UTC)
+    slots = [[(now + timedelta(days=d)).strftime("%Y-%m-%dT%H:00:00Z"), "clearsky_day", 20.0, 0, 6] for d in (1, 6, 8, 25)]
+
+    async def fetch(*_: Any) -> list[list[Any]]:
+        return slots
+
+    monkeypatch.setattr(weather, "_fetch", fetch)
+    kept = asyncio.run(weather.forecast(32.0, 34.8, "test", tmp_path / "w.json", WeatherSettings(max_days=7)))
+    assert kept == slots[:2]
