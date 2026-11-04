@@ -41,11 +41,16 @@ export default function EventPage() {
   // ponytail: size heuristic, not a content match; perceptual-hash dedup at download if real extras get dropped.
   const gallery = e.images.slice(1).filter((i) => !i.size_bytes || i.size_bytes > 40_000).map((i) => i.stored_url ?? i.url);
   const mapQuery = e.latitude != null ? `${e.latitude},${e.longitude}` : [e.venue_name, e.address, e.city].filter(Boolean).join(", ");
-  const price = priceLabel(e, t);
+  const price = priceLabel(e, t, e.tickets);
   // The other ticket site with the lowest price, when it beats the main listing's: badged "Cheapest".
+  // One card per site (a party often has several promoter links on the same site): its cheapest priced one.
   // Second-hand marketplaces (viagogo, SwapTix...) apart from the box offices; "Cheapest" only among box offices.
-  const firsthand = (e.alternatives ?? []).filter((a) => !a.resale);
-  const secondhand = (e.alternatives ?? []).filter((a) => a.resale && !a.is_sold_out); // viagogo often has no seller at all
+  const perSite = [...(e.alternatives ?? [])]
+    .filter((a) => a.source !== e.source)
+    .sort((a, b) => Number(a.is_sold_out) - Number(b.is_sold_out) || (a.min_price ?? Infinity) - (b.min_price ?? Infinity))
+    .filter((a, i, all) => all.findIndex((b) => b.source === a.source) === i);
+  const firsthand = perSite.filter((a) => !a.resale);
+  const secondhand = perSite.filter((a) => a.resale && !a.is_sold_out); // viagogo often has no seller at all
   const cheapest = firsthand.filter((a) => !a.is_sold_out && a.min_price != null && (e.min_price == null || a.min_price < e.min_price))
     .sort((a, b) => a.min_price! - b.min_price!)[0]?.id;
   const time = { hour: "2-digit", minute: "2-digit" } as const;
@@ -121,7 +126,7 @@ export default function EventPage() {
                 {alts.map((a) => (
                   <a key={a.id} className={"alt" + (a.id === cheapest ? " cheap" : "")} href={`${a.url}?at=alt`} target="_blank" rel="noopener noreferrer">
                     <b>{sourceName(a.source)}</b>
-                    <small>{a.is_sold_out ? t.soldOut : priceLabel({ ...a, currency: e.currency }, t) || "—"}</small>
+                    <small>{a.is_sold_out ? t.soldOut : priceLabel({ ...a, currency: e.currency }, t, a.tickets) || t.priceOnSite}</small>
                     {a.id === cheapest && <em>{t.cheapest}</em>} ↗
                   </a>
                 ))}

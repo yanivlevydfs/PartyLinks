@@ -61,9 +61,13 @@ export function when(e: Pick<EventSummary, "start_at" | "time_known" | "time_zon
   return new Date(iso).toLocaleString(t.locale, { timeZone: e.time_zone ?? TZ, ...opts });
 }
 
-export function priceLabel(e: Pick<EventSummary, "entry_type" | "min_price" | "has_free_entry" | "currency">, t: Strings) {
+/** ``tickets``: the listing's tiers, when known, so "Free + paid" names the cheapest paid ticket ("Free · from 60 ₪"). */
+export function priceLabel(e: Pick<EventSummary, "entry_type" | "min_price" | "has_free_entry" | "currency">, t: Strings, tickets?: { price: number | null }[]) {
   // A 0 ₪ RSVP tier beside paid tickets makes min_price 0: still a paid event, not "Free".
-  if (e.entry_type === "free_and_paid") return t.entry.free_and_paid;
+  if (e.entry_type === "free_and_paid") {
+    const paid = Math.min(...(tickets ?? []).map((k) => k.price ?? 0).filter((p) => p > 0));
+    return Number.isFinite(paid) ? `${t.free} · ${t.from}${money(paid, e.currency, t.locale)}` : t.entry.free_and_paid;
+  }
   if (e.entry_type === "free" || e.min_price === 0) return t.free;
   if (e.min_price == null) return e.has_free_entry ? t.free : "";
   return t.from + money(e.min_price, e.currency, t.locale);

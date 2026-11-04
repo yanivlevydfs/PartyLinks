@@ -110,6 +110,7 @@ export interface Alternative {
   is_sold_out: boolean;
   /** A second-hand marketplace (viagogo, SwapTix, Ticket Place). */
   resale?: boolean;
+  tickets?: Ticket[];
 }
 
 export interface EventPage {
