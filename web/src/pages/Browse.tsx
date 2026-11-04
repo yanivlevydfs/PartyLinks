@@ -144,7 +144,7 @@ export function ArtistPage() {
       </Hero>
       <main className="wrap">
         {about && <p className="landing-intro">{about}</p>}
-        <ArtistPlayer names={[profile?.value ?? name]} links={info?.artist_links && { [profile?.value ?? name]: info.artist_links }} />
+        <ArtistPlayer name={profile?.value ?? name} links={info?.artist_links} />
         <h4 className="section-title">{t.upcomingAt}</h4>
         <EventGrid params={{ artist: name }} />
       </main>

@@ -1,6 +1,8 @@
-// "Hear the lineup": a SoundCloud / Spotify / YouTube player for the lineup's artists, from their artist_links.
-// Nothing third-party loads until a name is clicked (privacy, page weight); one player at a time.
-import { useState } from "react";
+// Play an artist's SoundCloud / Spotify / YouTube in an embedded player, from their artist_links.
+// Nothing third-party loads until a play button is clicked (privacy, page weight); one player at a time.
+import { useState, type ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { artistPath } from "../ui";
 import type { ArtistLink } from "./ArtistLinks";
 import { useArtistLinksText } from "./i18n";
 import "./artist_links.css";
@@ -22,28 +24,59 @@ function embedOf(links: ArtistLink[] = []): Embed | null {
   return null;
 }
 
-/** Names with a playable link as buttons; the clicked one's player below. Nothing when no name has one. */
-export function ArtistPlayer({ names, links }: { names: string[]; links?: Record<string, ArtistLink[]> }) {
+function PlayButton({ name, embed, on, toggle }: { name: string; embed: Embed; on: boolean; toggle: () => void }) {
   const t = useArtistLinksText();
+  const label = t.on(name, t.services[embed.service]);
+  return (
+    <button type="button" className={"ap-play al-" + embed.service + (on ? " on" : "")} aria-pressed={on} aria-label={label} title={label} onClick={toggle}>
+      {on ? "■" : "▶"}
+    </button>
+  );
+}
+
+function Frame({ name, embed }: { name: string; embed: Embed }) {
+  const t = useArtistLinksText();
+  return (
+    <iframe key={embed.src} className="ap-frame" src={embed.src} height={embed.height} title={t.on(name, t.services[embed.service])}
+      allow="autoplay; encrypted-media; clipboard-write; picture-in-picture" loading="lazy" />
+  );
+}
+
+/** The event's lineup: each name links to its artist page, with a ▶ when it has something to play; the player opens below. */
+export function LineupPlayer({ names, links, children }: { names: string[]; links?: Record<string, ArtistLink[]>; children?: ReactNode }) {
   const [open, setOpen] = useState<string | null>(null);
-  const playable = names.map((n) => [n, embedOf(links?.[n])] as const).filter((p): p is [string, Embed] => !!p[1]);
-  if (!playable.length) return null;
-  const current = playable.find(([n]) => n === open)?.[1];
+  const playing = open ? embedOf(links?.[open]) : null;
+  return (
+    <>
+      <div className="lineup-list">
+        {names.map((a) => {
+          const embed = embedOf(links?.[a]);
+          return (
+            <span key={a} className="lineup-item">
+              <Link to={artistPath(a)}>{a}</Link>
+              {embed && <PlayButton name={a} embed={embed} on={a === open} toggle={() => setOpen(a === open ? null : a)} />}
+            </span>
+          );
+        })}
+        {children}
+      </div>
+      {open && playing && <Frame name={open} embed={playing} />}
+    </>
+  );
+}
+
+/** The artist page: one "▶ Listen on SoundCloud" button and its player. Nothing when there is nothing to play. */
+export function ArtistPlayer({ name, links }: { name: string; links?: ArtistLink[] }) {
+  const t = useArtistLinksText();
+  const [on, setOn] = useState(false);
+  const embed = embedOf(links);
+  if (!embed) return null;
   return (
     <section className="artist-player">
-      <h4>🎧 {t.listen}</h4>
-      <div className="ap-names">
-        {playable.map(([n, e]) => (
-          <button key={n} type="button" className={"ap-name al-" + e.service + (n === open ? " on" : "")} aria-pressed={n === open}
-            onClick={() => setOpen(n === open ? null : n)}>
-            {n === open ? "■" : "▶"} {n} <small>{t.services[e.service]}</small>
-          </button>
-        ))}
-      </div>
-      {current && (
-        <iframe key={current.src} className="ap-frame" src={current.src} height={current.height} title={t.on(open!, t.services[current.service])}
-          allow="autoplay; encrypted-media; clipboard-write; picture-in-picture" loading="lazy" />
-      )}
+      <button type="button" className={"ap-listen al-" + embed.service + (on ? " on" : "")} aria-pressed={on} onClick={() => setOn(!on)}>
+        {on ? "■" : "▶"} {t.listen} · {t.services[embed.service]}
+      </button>
+      {on && <Frame name={name} embed={embed} />}
     </section>
   );
 }

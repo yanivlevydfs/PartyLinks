@@ -9,9 +9,8 @@ import { forecastAt, Weather } from "../Weather";
 import { PlanButton } from "../plans/PlanButton";
 import { SaveButton } from "../saved/SaveButton";
 import { EventStats } from "../popularity/EventStats";
-import { ArtistLinks } from "../artist_links/ArtistLinks";
-import { ArtistPlayer } from "../artist_links/ArtistPlayer";
-import { AddToCalendar, artistPath, countryName, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
+import { LineupPlayer } from "../artist_links/ArtistPlayer";
+import { AddToCalendar, countryName, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
 
 // URLs in scraped description text become links; trailing punctuation stays text.
 function linkify(text: string) {
@@ -134,15 +133,11 @@ export default function EventPage() {
         {e.lineup.length > 0 && (
           <section>
             <h4>{t.lineup}</h4>
-            <div className="lineup-list">
-              {e.lineup.map((a) => (
-                <span key={a} className="lineup-item"><Link to={artistPath(a)}>{a}</Link><ArtistLinks links={e.lineup_links?.[a]} name={a} small /></span>
-              ))}
+            <LineupPlayer names={e.lineup} links={e.lineup_links}>
               <SaveAlertButton q={e.lineup[0]} label={alertText.artist(e.lineup[0])} />
-            </div>
+            </LineupPlayer>
           </section>
         )}
-        <ArtistPlayer names={e.lineup} links={e.lineup_links} />
 
         {e.tickets.length > 0 && (
           <section>
