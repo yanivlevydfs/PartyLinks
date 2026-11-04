@@ -1392,7 +1392,11 @@ def _register_routes(app: FastAPI) -> None:
         return EventOut.model_validate(row).model_copy(
             update={
                 "alternatives": [
-                    AlternativeOut.model_validate(a).model_copy(update={"resale": bool((a.extra or {}).get("resale"))})
+                    AlternativeOut.model_validate(a).model_copy(update={
+                        "resale": bool((a.extra or {}).get("resale")),
+                        # viagogo rows its feed dropped are never re-read (unlist_missing off): no seller then, none now.
+                        "is_sold_out": a.is_sold_out or (a.extra or {}).get("has_listings") is False,
+                    })
                     for a in alternatives
                 ],
                 "changes": [DealChangeOut.model_validate(c) for c in changes],

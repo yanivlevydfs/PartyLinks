@@ -263,11 +263,12 @@ def test_resale_alternative_is_flagged(tmp_path: Path) -> None:
     settings, _ = grouped(tmp_path, [
         listing("goout", "a", "WHITE THURSDAY - MAOR BUZAGLO"),
         listing("viagogo", "b", "WHITE THURSDAY - MAOR BUZAGLO", extra={"resale": True}),
+        listing("viagogo", "c", "WHITE THURSDAY - MAOR BUZAGLO", extra={"resale": True, "has_listings": False}),
     ])  # fmt: skip
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         primary = next(e for e in client.get("/events", params={"include_duplicates": True}).json()["items"] if e["source"] == "goout")
         detail = client.get(f"/events/{primary['id']}").json()
-        assert [(a["source"], a["resale"]) for a in detail["alternatives"]] == [("viagogo", True)]
+        assert sorted((a["resale"], a["is_sold_out"]) for a in detail["alternatives"]) == [(True, False), (True, True)]  # no seller: sold out
 
 
 def test_unlisted_copy_never_hides_the_listed_one(tmp_path: Path) -> None:
