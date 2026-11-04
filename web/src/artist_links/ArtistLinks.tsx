@@ -26,6 +26,11 @@ const ICONS: Record<string, ReactNode> = {
     <path d="M10 8.2c.6-.3 1.4-.5 2.2-.5a5 5 0 0 1 5 4.3 3 3 0 1 1 .8 5.9H10zM8.2 9.2h1v8.7h-1zM6.4 10.2h1v7.7h-1zM4.6 11.4h1v6.5h-1zM2.8 13h1v4.9h-1z" />
   ),
   deezer: <path d="M2 16h4v2H2zM7 16h4v2H7zM12 16h4v2h-4zM17 16h5v2h-5zM12 12.5h4v2h-4zM17 12.5h5v2h-5zM17 9h5v2h-5zM7 12.5h4v2H7zM17 5.5h5v2h-5z" />,
+  beatport: (
+    <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <circle cx="12" cy="14.5" r="5.5" /><path d="M6.5 14.5V3" />
+    </g>
+  ),
   bandcamp: <path d="M2 18 8.5 6H22l-6.5 12z" />,
   tiktok: <path d="M14 3h3a4 4 0 0 0 4 4v3a7.2 7.2 0 0 1-4-1.2V15a6 6 0 1 1-6-6v3.1a3 3 0 1 0 3 2.9z" />,
 };

@@ -16,7 +16,7 @@ from partylinks.api import create_app
 from partylinks.artist_links import models
 from partylinks.artist_links.config import ArtistLinksSettings
 from partylinks.artist_links.lookup import MusicBrainz, pick, run_pass
-from partylinks.artist_links.models import ArtistLinkRow, name_key
+from partylinks.artist_links.models import ArtistLinkRow, name_key, service_of
 from partylinks.artistdb import ArtistBook
 from partylinks.artists import ArtistProfile
 from partylinks.db import Database, EventRow
@@ -44,6 +44,11 @@ def test_name_key_ignores_case_accents_niqqud_and_punctuation() -> None:
     assert name_key("Dalí!") == name_key("DALI") == "dali"
     assert name_key("שָׁלוֹם") == name_key("שלום")
     assert name_key("A-Trak") == name_key("a trak")
+
+
+def test_service_of_knows_dj_stores_not_databases() -> None:
+    assert service_of("https://www.beatport.com/artist/roy-heyman/978493") == "beatport"  # many DJs have only this
+    assert service_of("https://www.discogs.com/artist/1", homepage=True) is None
 
 
 def test_pick_accepts_only_one_exact_candidate() -> None:

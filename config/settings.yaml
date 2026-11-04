@@ -170,7 +170,7 @@ artist_links:
   min_name_length: 3
   search_limit: 10
   cache_seconds: 600           # the site re-reads the links from the database this often
-  services: [spotify, youtube, apple_music, soundcloud, deezer, bandcamp, instagram, tiktok, facebook, x, website]
+  services: [spotify, youtube, apple_music, soundcloud, deezer, beatport, bandcamp, instagram, tiktok, facebook, x, website]
 
 # Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
 # https, no framing), vulnerability-scanner and data-harvester blocking, per-IP rate limits and

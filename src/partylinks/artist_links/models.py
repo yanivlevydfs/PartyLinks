@@ -48,12 +48,12 @@ def name_key(name: str) -> str:
 _HOSTS = {
     "spotify.com": "spotify", "youtube.com": "youtube", "youtu.be": "youtube", "music.youtube.com": "youtube",
     "music.apple.com": "apple_music", "itunes.apple.com": "apple_music", "soundcloud.com": "soundcloud",
-    "deezer.com": "deezer", "bandcamp.com": "bandcamp", "instagram.com": "instagram", "tiktok.com": "tiktok",
+    "deezer.com": "deezer", "bandcamp.com": "bandcamp", "beatport.com": "beatport", "instagram.com": "instagram", "tiktok.com": "tiktok",
     "facebook.com": "facebook", "twitter.com": "x", "x.com": "x",
 }  # fmt: skip
 # Hosts that are databases about the artist, not the artist's own page: never shown as "website".
 _NOT_WEBSITE = ("wikidata.org", "wikipedia.org", "discogs.com", "allmusic.com", "last.fm", "musicbrainz.org",
-                "songkick.com", "setlist.fm", "residentadvisor.net", "ra.co", "beatport.com", "imdb.com", "genius.com")  # fmt: skip
+                "songkick.com", "setlist.fm", "residentadvisor.net", "ra.co", "imdb.com", "genius.com")  # fmt: skip
 
 
 def service_of(url: str, homepage: bool = False) -> str | None:

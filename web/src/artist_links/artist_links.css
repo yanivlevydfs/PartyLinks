@@ -10,6 +10,7 @@
 .share-btn.al-apple_music:hover, .share-btn.al-apple_music:focus-visible { background: #fa2d48; border-color: #fa2d48; }
 .share-btn.al-soundcloud:hover, .share-btn.al-soundcloud:focus-visible { background: #f50; border-color: #f50; }
 .share-btn.al-deezer:hover, .share-btn.al-deezer:focus-visible { background: #a238ff; border-color: #a238ff; }
+.share-btn.al-beatport:hover, .share-btn.al-beatport:focus-visible { background: #01ff95; border-color: #01ff95; color: #000; }
 .share-btn.al-bandcamp:hover, .share-btn.al-bandcamp:focus-visible { background: #1da0c3; border-color: #1da0c3; }
 .share-btn.al-tiktok:hover, .share-btn.al-tiktok:focus-visible { background: #000; border-color: #fff; }
 .share-btn.al-instagram:hover, .share-btn.al-instagram:focus-visible { background: #e1306c; border-color: #e1306c; }

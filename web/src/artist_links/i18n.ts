@@ -3,7 +3,7 @@ import { useT } from "../ui";
 
 const services = {
   spotify: "Spotify", youtube: "YouTube", apple_music: "Apple Music", soundcloud: "SoundCloud", deezer: "Deezer",
-  bandcamp: "Bandcamp", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook", x: "X",
+  beatport: "Beatport", bandcamp: "Bandcamp", instagram: "Instagram", tiktok: "TikTok", facebook: "Facebook", x: "X",
 };
 
 const he = {

@@ -32,5 +32,5 @@ class ArtistLinksSettings(BaseModel):
     cache_seconds: int = Field(600, ge=0)
     # Services shown, in this order; a link to anything else is not shown.
     services: list[str] = Field(default_factory=lambda: [
-        "spotify", "youtube", "apple_music", "soundcloud", "deezer", "bandcamp", "instagram", "tiktok", "facebook", "x", "website",
+        "spotify", "youtube", "apple_music", "soundcloud", "deezer", "beatport", "bandcamp", "instagram", "tiktok", "facebook", "x", "website",
     ])  # fmt: skip
