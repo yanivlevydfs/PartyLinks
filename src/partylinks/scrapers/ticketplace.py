@@ -139,4 +139,5 @@ def parse_product(page_html: str, url: str, timezone: str, *, festival: bool = F
         min_price=min(prices) if prices else None,
         max_price=max(prices) if prices else None,
         is_sold_out=bool(prices) and "בחר כמות" not in page_html,
+        extra={"resale": True},  # second-hand tickets (shown apart on the event page)
     )

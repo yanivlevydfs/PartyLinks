@@ -43,7 +43,10 @@ export default function EventPage() {
   const mapQuery = e.latitude != null ? `${e.latitude},${e.longitude}` : [e.venue_name, e.address, e.city].filter(Boolean).join(", ");
   const price = priceLabel(e, t);
   // The other ticket site with the lowest price, when it beats the main listing's: badged "Cheapest".
-  const cheapest = (e.alternatives ?? []).filter((a) => !a.is_sold_out && a.min_price != null && (e.min_price == null || a.min_price < e.min_price))
+  // Second-hand marketplaces (viagogo, SwapTix...) apart from the box offices; "Cheapest" only among box offices.
+  const firsthand = (e.alternatives ?? []).filter((a) => !a.resale);
+  const secondhand = (e.alternatives ?? []).filter((a) => a.resale);
+  const cheapest = firsthand.filter((a) => !a.is_sold_out && a.min_price != null && (e.min_price == null || a.min_price < e.min_price))
     .sort((a, b) => a.min_price! - b.min_price!)[0]?.id;
   const time = { hour: "2-digit", minute: "2-digit" } as const;
   const long = (e.description?.length ?? 0) > 400;
@@ -110,12 +113,12 @@ export default function EventPage() {
             </ul>
 
             <a className="buy" href={`${e.url}?at=buy`} target="_blank" rel="noopener noreferrer">
-              {t.buy} ↗ <small>{sourceName(e.source)}</small>
+              {t.buy} ↗ <small>{sourceName(e.source)}{e.extra?.resale ? ` · ${t.resaleTag}` : ""}</small>
             </a>
-            {!!e.alternatives?.length && (
-              <div className="alts">
-                <span>{t.alsoAt}</span>
-                {e.alternatives.map((a) => (
+            {([[t.alsoAt, firsthand, ""], [t.resale, secondhand, " used"]] as const).map(([title, alts, kind]) => !!alts.length && (
+              <div key={kind} className={"alts" + kind}>
+                <span>{title}</span>
+                {alts.map((a) => (
                   <a key={a.id} className={"alt" + (a.id === cheapest ? " cheap" : "")} href={`${a.url}?at=alt`} target="_blank" rel="noopener noreferrer">
                     <b>{sourceName(a.source)}</b>
                     <small>{a.is_sold_out ? t.soldOut : priceLabel({ ...a, currency: e.currency }, t) || "—"}</small>
@@ -123,7 +126,7 @@ export default function EventPage() {
                   </a>
                 ))}
               </div>
-            )}
+            ))}
             <p className="buy-note">{t.buyNote} <Link to="/terms">{t.terms}</Link></p>
             <div className="e-actions">
               <Share path={eventPath(e)} title={e.title} />

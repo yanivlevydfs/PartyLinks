@@ -261,6 +261,7 @@ class AlternativeOut(_Out):
     has_free_entry: bool
     is_sold_out: bool
     tickets: list[TicketOut]
+    resale: bool = False  # second-hand marketplace (viagogo, SwapTix, Ticket Place): extra.resale
 
     @model_validator(mode="after")
     def _go(self) -> AlternativeOut:
@@ -1390,7 +1391,10 @@ def _register_routes(app: FastAPI) -> None:
         ).all()
         return EventOut.model_validate(row).model_copy(
             update={
-                "alternatives": [AlternativeOut.model_validate(a) for a in alternatives],
+                "alternatives": [
+                    AlternativeOut.model_validate(a).model_copy(update={"resale": bool((a.extra or {}).get("resale"))})
+                    for a in alternatives
+                ],
                 "changes": [DealChangeOut.model_validate(c) for c in changes],
                 **_summary_extras(session, [row])[row.id],
                 "watching": popularity.watching(session, row.id, cfg.popularity),

@@ -646,6 +646,8 @@ select option { background: var(--panel-solid); color: var(--text); }
 .alt small { color: var(--muted); }
 .alt em { font-style: normal; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #19c37d; color: #04130c; }
 .alt.cheap { border-color: #19c37d; }
+.alts.used .alt { border-color: rgb(25 227 255 / .45); }
+.alts.used .alt:hover { border-color: var(--cyan); box-shadow: 0 0 22px rgb(25 227 255 / .3); }
 .buy small { font-weight: 400; opacity: .8; font-size: 13px; }
 .buy-note { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 8px 0 0; }
 .buy-note a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }

@@ -88,6 +88,8 @@ export interface EventDetail extends EventSummary {
   lineup_links?: Record<string, { service: string; url: string }[]>;
   description: string | null;
   organizer: string | null;
+  /** extra.resale: this listing itself is second-hand. */
+  extra?: { resale?: boolean };
   artists: string[];
   tickets: Ticket[];
   images: EventImage[];
@@ -106,6 +108,8 @@ export interface Alternative {
   entry_type: EventSummary["entry_type"];
   has_free_entry: boolean;
   is_sold_out: boolean;
+  /** A second-hand marketplace (viagogo, SwapTix, Ticket Place). */
+  resale?: boolean;
 }
 
 export interface EventPage {

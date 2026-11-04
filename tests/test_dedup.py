@@ -254,7 +254,20 @@ def test_api_returns_one_event_with_alternatives(tmp_path: Path) -> None:
         assert page["total"] == 1 and page["items"][0]["listings"] == 2
         detail = client.get(f"/events/{page['items'][0]['id']}").json()
         assert [(a["source"], a["min_price"]) for a in detail["alternatives"]] == [("selector", 70.0)]
+        assert detail["alternatives"][0]["resale"] is False
         assert client.get("/events", params={"include_duplicates": True}).json()["total"] == 2
+
+
+def test_resale_alternative_is_flagged(tmp_path: Path) -> None:
+    # The event page shows second-hand marketplaces (viagogo, SwapTix) apart from the box offices.
+    settings, _ = grouped(tmp_path, [
+        listing("goout", "a", "WHITE THURSDAY - MAOR BUZAGLO"),
+        listing("viagogo", "b", "WHITE THURSDAY - MAOR BUZAGLO", extra={"resale": True}),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        primary = next(e for e in client.get("/events", params={"include_duplicates": True}).json()["items"] if e["source"] == "goout")
+        detail = client.get(f"/events/{primary['id']}").json()
+        assert [(a["source"], a["resale"]) for a in detail["alternatives"]] == [("viagogo", True)]
 
 
 def test_unlisted_copy_never_hides_the_listed_one(tmp_path: Path) -> None:
