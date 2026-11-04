@@ -124,10 +124,14 @@ def new_event_ids(session: Session, since: datetime, upto: datetime) -> list[str
     # New = a group whose first listing was first seen in this window (a second listing of a party
     # already announced is not news), shown by its primary listing.
     group = func.coalesce(EventRow.group_id, EventRow.id)
-    new_groups = (
+    # Its own query, not a subquery: inside one, Postgres guessed one row for the outer side and re-ran
+    # this GROUP BY for every upcoming event (105 s a pass at 80k events, measured 2026-11-04).
+    new_groups = session.scalars(
         select(group).group_by(group)
         .having(func.min(EventRow.first_seen_at) > since, func.min(EventRow.first_seen_at) <= upto)
-    )  # fmt: skip
+    ).all()  # fmt: skip
+    if not new_groups:
+        return []
     # A show the source already listed before this window is not news, at any date: a re-listing under
     # a new id, or one more date of it (a daily tour adds a slot every day, a play adds shows). Without
     # this, those dates came back to the bell every pass, even after the user cleared them.
