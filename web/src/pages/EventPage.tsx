@@ -42,6 +42,9 @@ export default function EventPage() {
   const gallery = e.images.slice(1).filter((i) => !i.size_bytes || i.size_bytes > 40_000).map((i) => i.stored_url ?? i.url);
   const mapQuery = e.latitude != null ? `${e.latitude},${e.longitude}` : [e.venue_name, e.address, e.city].filter(Boolean).join(", ");
   const price = priceLabel(e, t);
+  // The other ticket site with the lowest price, when it beats the main listing's: badged "Cheapest".
+  const cheapest = (e.alternatives ?? []).filter((a) => !a.is_sold_out && a.min_price != null && (e.min_price == null || a.min_price < e.min_price))
+    .sort((a, b) => a.min_price! - b.min_price!)[0]?.id;
   const time = { hour: "2-digit", minute: "2-digit" } as const;
   const long = (e.description?.length ?? 0) > 400;
 
@@ -109,6 +112,18 @@ export default function EventPage() {
             <a className="buy" href={`${e.url}?at=buy`} target="_blank" rel="noopener noreferrer">
               {t.buy} ↗ <small>{sourceName(e.source)}</small>
             </a>
+            {!!e.alternatives?.length && (
+              <div className="alts">
+                <span>{t.alsoAt}</span>
+                {e.alternatives.map((a) => (
+                  <a key={a.id} className={"alt" + (a.id === cheapest ? " cheap" : "")} href={`${a.url}?at=alt`} target="_blank" rel="noopener noreferrer">
+                    <b>{sourceName(a.source)}</b>
+                    <small>{a.is_sold_out ? t.soldOut : priceLabel({ ...a, currency: e.currency }, t) || "—"}</small>
+                    {a.id === cheapest && <em>{t.cheapest}</em>} ↗
+                  </a>
+                ))}
+              </div>
+            )}
             <p className="buy-note">{t.buyNote} <Link to="/terms">{t.terms}</Link></p>
             <div className="e-actions">
               <Share path={eventPath(e)} title={e.title} />
@@ -116,17 +131,6 @@ export default function EventPage() {
               <PlanButton eventId={e.id} />
               <SaveButton eventId={e.id} large />
             </div>
-            {!!e.alternatives?.length && (
-              <div className="alts">
-                <span>{t.alsoAt}</span>
-                {e.alternatives.map((a) => (
-                  <a key={a.id} className="alt" href={`${a.url}?at=alt`} target="_blank" rel="noopener noreferrer">
-                    <b>{sourceName(a.source)}</b>
-                    <small>{a.is_sold_out ? t.soldOut : priceLabel({ ...a, currency: e.currency }, t) || "—"}</small> ↗
-                  </a>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 

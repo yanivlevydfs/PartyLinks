@@ -635,13 +635,17 @@ select option { background: var(--panel-solid); color: var(--text); }
 .share-btn.whatsapp:hover, .share-btn.whatsapp:focus-visible { background: #25d366; border-color: #25d366; }
 .share-btn.facebook:hover, .share-btn.facebook:focus-visible { background: #1877f2; border-color: #1877f2; }
 .share-btn.x:hover, .share-btn.x:focus-visible { background: #000; border-color: #fff; }
-.alts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; color: var(--muted); font-size: 14px; }
+.alts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; color: var(--muted); font-size: 14px; }
+.alts > span { flex-basis: 100%; font-weight: 600; color: var(--text); }
 .alt {
-  display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px;
-  background: var(--panel); border: 1px solid var(--line); color: var(--text); text-decoration: none;
+  display: inline-flex; align-items: center; gap: 10px; padding: 11px 18px; border-radius: 14px; font-size: 15px;
+  background: var(--panel); border: 1px solid var(--line-hot); color: var(--text); text-decoration: none;
+  transition: border-color .2s, box-shadow .2s;
 }
-.alt:hover { border-color: var(--line-hot); }
+.alt:hover { border-color: var(--pink, #ff2e93); box-shadow: 0 0 22px rgb(255 46 147 / .35); }
 .alt small { color: var(--muted); }
+.alt em { font-style: normal; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #19c37d; color: #04130c; }
+.alt.cheap { border-color: #19c37d; }
 .buy small { font-weight: 400; opacity: .8; font-size: 13px; }
 .buy-note { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 8px 0 0; }
 .buy-note a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
