@@ -39,6 +39,7 @@ from partylinks.accounts import sign_in_state
 from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.ads import service as ads
+from partylinks.artist_links.models import links_for as artist_links_for
 from partylinks.artwork import service as artwork
 from partylinks.artwork.routes import router as artwork_router
 from partylinks.bot import install as install_bot
@@ -285,6 +286,8 @@ class EventOut(EventSummaryOut):
     # Recent deal changes (newest first): price moves, free entry ending, tiers added...
     changes: list[DealChangeOut] = []
     watching: int = 0  # visitors on its page in the last few minutes (0 below popularity.min_watching)
+    # Lineup name -> its music / social links [{service, url}] (partylinks.artist_links); names without links left out.
+    lineup_links: dict[str, list[dict[str, str]]] = {}
 
 
 class EventPage(BaseModel):
@@ -902,6 +905,9 @@ def create_app(
     app.include_router(mail_images_router)  # JPEG crops of the pictures, for emails
     _register_routes(app)
     app.include_router(admin_router)
+    from partylinks.artist_links.routes import router as artist_links_admin  # local: it imports partylinks.admin
+
+    app.include_router(artist_links_admin)  # the maintenance tab's artist-links counts
     app.include_router(weather_router)
     install_accounts(app, settings)  # optional Google accounts: /auth, /api/me, the admin users tab
     install_bot(app)  # the Telegram bot's webhook (partylinks.bot); off until its secrets are set
@@ -1388,6 +1394,7 @@ def _register_routes(app: FastAPI) -> None:
                 "changes": [DealChangeOut.model_validate(c) for c in changes],
                 **_summary_extras(session, [row])[row.id],
                 "watching": popularity.watching(session, row.id, cfg.popularity),
+                "lineup_links": artist_links_for(session, cfg.artist_links, row.lineup or []),
             }
         )
 

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo } from "../api";
 import type { Facet } from "../types";
+import { ArtistLinks } from "../artist_links/ArtistLinks";
 import { artistPath, Chip, EventGrid, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
 const PAGE = 60;
@@ -122,7 +123,8 @@ export function ArtistPage() {
   const { name = "" } = useParams();
   const { t, lang } = useT();
   useTitle(name);
-  const about = useLandingInfo(useLocation().pathname, lang).data?.intro; // written from our listings (artist_bio.py)
+  const info = useLandingInfo(useLocation().pathname, lang).data;
+  const about = info?.intro; // written from our listings (artist_bio.py)
   // Same query cache as the artists index: no extra request.
   const profile = useCategories({ anywhere: "true" }).data?.lineup.find((f) => f.verified && f.value.toLowerCase() === name.toLowerCase());
   return (
@@ -133,9 +135,11 @@ export function ArtistPage() {
           🎧 {[profile?.kind?.toUpperCase(), profile?.genre].filter(Boolean).join(" · ") || t.lineup}
           {profile?.verified && <Verified />}
         </p>
-        {[profile?.spotify_url, ...(profile?.links ?? []), profile?.profile_url].filter((u): u is string => !!u && /^https?:\/\//i.test(u)).map((u) => (
-          <a key={u} className="sub" href={u} target="_blank" rel="noopener noreferrer">{siteName(u)} ↗</a>
-        ))}
+        {/* Spotify, YouTube, Instagram... merged from the ticket sites' profile and MusicBrainz (artist_links) */}
+        <ArtistLinks links={info?.artist_links} name={profile?.value ?? name} />
+        {profile?.profile_url && /^https?:\/\//i.test(profile.profile_url) && (
+          <a className="sub" href={profile.profile_url} target="_blank" rel="noopener noreferrer">{siteName(profile.profile_url)} ↗</a>
+        )}
       </Hero>
       <main className="wrap">
         {about && <p className="landing-intro">{about}</p>}

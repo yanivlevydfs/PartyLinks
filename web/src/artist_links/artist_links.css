@@ -1,0 +1,17 @@
+/* Artist links: the site's round share buttons, in each service's colour on hover. */
+.artist-links { flex-wrap: wrap; }
+.artist-links.al-small { display: inline-flex; gap: 4px; align-items: center; }
+.al-small .share-btn { width: 26px; height: 26px; }
+.al-small .share-btn svg { width: 14px; height: 14px; }
+.lineup-item { display: inline-flex; align-items: center; gap: 6px; }
+.lineup-list .share-btn { padding: 0; border-radius: 50%; font: inherit; backdrop-filter: none; } /* not the name chips' style */
+.share-btn.al-spotify:hover, .share-btn.al-spotify:focus-visible { background: #1db954; border-color: #1db954; }
+.share-btn.al-youtube:hover, .share-btn.al-youtube:focus-visible { background: #f00; border-color: #f00; }
+.share-btn.al-apple_music:hover, .share-btn.al-apple_music:focus-visible { background: #fa2d48; border-color: #fa2d48; }
+.share-btn.al-soundcloud:hover, .share-btn.al-soundcloud:focus-visible { background: #f50; border-color: #f50; }
+.share-btn.al-deezer:hover, .share-btn.al-deezer:focus-visible { background: #a238ff; border-color: #a238ff; }
+.share-btn.al-bandcamp:hover, .share-btn.al-bandcamp:focus-visible { background: #1da0c3; border-color: #1da0c3; }
+.share-btn.al-tiktok:hover, .share-btn.al-tiktok:focus-visible { background: #000; border-color: #fff; }
+.share-btn.al-instagram:hover, .share-btn.al-instagram:focus-visible { background: #e1306c; border-color: #e1306c; }
+.share-btn.al-facebook:hover, .share-btn.al-facebook:focus-visible { background: #1877f2; border-color: #1877f2; }
+.share-btn.al-x:hover, .share-btn.al-x:focus-visible { background: #000; border-color: #fff; }

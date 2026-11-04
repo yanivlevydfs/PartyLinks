@@ -607,6 +607,13 @@ function Maintenance({ data }: { data: any }) {
         </p>
         <Action label="Locate missing events" run={() => post("/admin/api/maintenance/geocode")} render={(x) => `Located ${x.located} of ${x.missing} (${x.lookups} new lookups)`} />
       </Card>
+      <Card title="Artist links">
+        <p className="adm-note">
+          Spotify / YouTube / Instagram... of lineup artists, found on MusicBrainz by the worker every <code>artist_links.interval_minutes</code>
+          (at most <code>max_lookups_per_run</code> requests, 1 a second; hits and misses cached). Each pass logs one summary line.
+        </p>
+        <Action label="Count artist links" run={() => post("/admin/api/maintenance/artist-links")} render={(x) => `${x.found} of ${x.upcoming_artists} upcoming artists matched · ${x.not_found} not found · ${x.not_asked} not asked yet`} />
+      </Card>
       <Card title="Areas">
         <p className="adm-note">Re-derive every event's area of the city from <code>enrichment.areas</code> (also runs on start and config apply).</p>
         <Action label="Recompute areas" run={() => post("/admin/api/maintenance/areas")} render={(x) => `${x.updated} events updated`} />

@@ -24,6 +24,7 @@ from pydantic_settings import (
 )
 
 from partylinks.accounts.config import AccountsSettings
+from partylinks.artist_links.config import ArtistLinksSettings
 from partylinks.bot.config import BotSettings
 from partylinks.config_store.source import OverridesSource
 from partylinks.mail.config import MailSettings
@@ -614,6 +615,7 @@ class Settings(BaseSettings):
     weather: WeatherSettings = Field(default_factory=WeatherSettings)
     bot: BotSettings = Field(default_factory=BotSettings)  # the chat bot (partylinks.bot)
     popularity: PopularitySettings = Field(default_factory=PopularitySettings)  # likes / views / watching now
+    artist_links: ArtistLinksSettings = Field(default_factory=ArtistLinksSettings)  # artists' Spotify / YouTube... (MusicBrainz)
     # Raw per-source blocks; each scraper validates its own block with its own model.
     # None = a block whose keys are all commented out (reported as invalid, not a crash).
     sources: dict[str, dict[str, Any] | None] = Field(default_factory=dict)

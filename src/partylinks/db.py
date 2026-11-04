@@ -936,6 +936,7 @@ def start_run(session: Session, source: str, trigger: str) -> ScrapeRunRow:
 import partylinks.accounts.models
 import partylinks.ads.models
 import partylinks.alerts.models
+import partylinks.artist_links.models
 import partylinks.artistdb
 import partylinks.artwork.models
 import partylinks.bot.models

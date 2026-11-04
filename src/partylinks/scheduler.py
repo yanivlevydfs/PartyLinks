@@ -109,6 +109,9 @@ def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOSchedu
     from partylinks.artwork.jobs import schedule as schedule_artwork
 
     schedule_artwork(scheduler, settings, service)  # drawn cards for events with no picture
+    from partylinks.artist_links.jobs import schedule as schedule_artist_links
+
+    schedule_artist_links(scheduler, settings, service)  # artists' music / social links from MusicBrainz
     from partylinks.bot.telegram.jobs import schedule as schedule_bot
 
     schedule_bot(scheduler, settings, service)  # the Telegram bot's alerts

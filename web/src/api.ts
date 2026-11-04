@@ -97,7 +97,9 @@ export const useTicketSites = () =>
 export const usePost = (slug: string, lang: string) =>
   useQuery({ queryKey: ["post", slug, lang], queryFn: () => getJSON<Post>(`/posts/${encodeURIComponent(slug)}?lang=${lang}`) });
 
-export interface LandingInfo { title: string | null; intro: string | null; links: { path: string; label: string }[]; country: string | null; city: { he: string; en: string } | null }
+export interface LandingInfo { title: string | null; intro: string | null; links: { path: string; label: string }[]; country: string | null; city: { he: string; en: string } | null;
+  /** /artist/ pages: the artist's Spotify, YouTube, Instagram... (artist_links) */
+  artist_links?: { service: string; url: string }[] }
 
 // The page the server rendered (div.ssr, replaced by the app) already has this address's title, intro and related
 // links: shown until /landing-info answers, so the heading does not grow a line and the links do not pop in (layout shift).

@@ -84,6 +84,8 @@ export interface EventImage {
 }
 
 export interface EventDetail extends EventSummary {
+  /** Lineup name -> its music / social links (artist_links); names without links left out. */
+  lineup_links?: Record<string, { service: string; url: string }[]>;
   description: string | null;
   organizer: string | null;
   artists: string[];

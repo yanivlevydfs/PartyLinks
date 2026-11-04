@@ -149,6 +149,29 @@ popularity:
   min_watching: 2       # "watching now" shows from this many (the visitor reading it is one)
   keep_days: 365        # view rows older than this are deleted with the hourly retention
 
+# Artists' music / social links (src/partylinks/artist_links), found automatically on MusicBrainz for
+# lineup artists with upcoming shows (most shows first) and shown on the artist and event pages, merged with
+# the ticket sites' artist profiles. Only an exact name / alias match that is the only one counts.
+# Every answer is kept in artist_links (hits and misses); no web request ever calls MusicBrainz.
+artist_links:
+  enabled: true
+  url: https://musicbrainz.org/ws/2
+  user_agent: "SPOTX/0.1 ( contact@spotx.fun )"   # MusicBrainz policy: app name + contact
+  min_interval_seconds: 1.1    # MusicBrainz allows 1 request/second
+  timeout_seconds: 20
+  attempts: 3                  # tries per request on 429 / 5xx / network errors (Retry-After honoured)
+  backoff_seconds: 2
+  max_consecutive_failures: 3  # requests failed in a row that end the pass (MusicBrainz down)
+  interval_minutes: 30         # the worker's pass
+  max_lookups_per_run: 200     # MusicBrainz requests per pass (~4 min)
+  refresh_days: 90             # a found artist's links re-read (one request by its MBID)
+  retry_failed_days: 14        # a name not found is searched again
+  min_score: 90                # MusicBrainz search score needed (with an exact name / alias match)
+  min_name_length: 3
+  search_limit: 10
+  cache_seconds: 600           # the site re-reads the links from the database this often
+  services: [spotify, youtube, apple_music, soundcloud, deezer, bandcamp, instagram, tiktok, facebook, x, website]
+
 # Protection of the site and API (src/partylinks/security.py): security headers (CSP, HSTS on
 # https, no framing), vulnerability-scanner and data-harvester blocking, per-IP rate limits and
 # temporary bans (probes such as /.env or /wp-login.php, wrong admin tokens, rate-limit hits).

@@ -33,6 +33,7 @@ from sqlalchemy.orm import Session, object_session, selectinload
 
 from partylinks.alerts.criteria import PRICE_BANDS
 from partylinks.artist_bio import bio as artist_bio
+from partylinks.artist_links.models import links_for as artist_links_for
 from partylinks.artwork.service import urls as artwork_urls
 from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
@@ -345,7 +346,9 @@ def _end(row: EventRow, cfg: Settings) -> str | None:
     return _iso(row.end_at, cfg, row) or (row.local_date.isoformat() if row.local_date else None)
 
 
-def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
+def event_jsonld(row: EventRow, cfg: Settings, same_as: dict[str, list[dict[str, str]]] | None = None) -> dict[str, Any]:
+    """``same_as``: lineup name -> its links (partylinks.artist_links), each performer's sameAs."""
+    same_as = same_as or {}
     data: dict[str, Any] = {
         "@context": "https://schema.org",
         "@type": "MusicEvent" if row.lineup or row.genres else "Event",
@@ -365,7 +368,11 @@ def event_jsonld(row: EventRow, cfg: Settings) -> dict[str, Any]:
         "typicalAgeRange": f"{row.min_age}-" if row.min_age else None,
         "keywords": ", ".join(row.genres) or None,
         # The lineup; without one, whoever puts the event on (a theatre's own show, a club night).
-        "performer": [{"@type": "Person", "name": n, "url": _url(cfg, f"/artist/{quote(n, safe='')}")} for n in row.lineup]
+        "performer": [
+            {"@type": "Person", "name": n, "url": _url(cfg, f"/artist/{quote(n, safe='')}")}
+            | ({"sameAs": [link["url"] for link in same_as[n]]} if n in same_as else {})
+            for n in row.lineup
+        ]
         or [o for o in [_organizer(row, cfg)] if o]
         or None,
         "organizer": _organizer(row, cfg),
@@ -532,7 +539,7 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
         lang=lang,
         image=_cover(cfg, row),
         og_type="event",
-        jsonld=[event_jsonld(row, cfg), _breadcrumbs(cfg, lang, *crumbs, (row.title, event_path(row)))],
+        jsonld=[event_jsonld(row, cfg, artist_links_for(session, cfg.artist_links, row.lineup or [])), _breadcrumbs(cfg, lang, *crumbs, (row.title, event_path(row)))],
         body=(
             f"<article><h1>{escape(row.title)}</h1><p>{escape(_when(row, cfg, lang))}</p>"
             f"<p>{venue_link} {escape(where)}</p><p>{escape(_price(row, lang))}</p>{lineup}"
@@ -594,6 +601,8 @@ def artist_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     }
     about = (artist_bio(session, cfg, lang, name) if rows else None) or t["artist_desc"].format(name=name)
     person["description"] = about
+    if links := artist_links_for(session, cfg.artist_links, [name]).get(name):
+        person["sameAs"] = [link["url"] for link in links]  # Spotify, YouTube, Instagram... (partylinks.artist_links)
     return Page(
         title=f"{name} · {t['artists']} · {cfg.site.name}",
         description=about,
@@ -1206,7 +1215,11 @@ def landing_info(session: Session, cfg: Settings, lang: str, path: str) -> dict[
         if path.startswith("/venue/"):
             profile = venue_profile_for(session, load_venue_profiles(session), unquote(path[len("/venue/"):]))
             intro = profile.about if profile else None
-        return {"title": None, "intro": intro, "links": links, "country": None, "city": None}
+        info: dict[str, Any] = {"title": None, "intro": intro, "links": links, "country": None, "city": None}
+        if path.startswith("/artist/"):  # the artist's Spotify / YouTube... (partylinks.artist_links), on the page's own request
+            name = unquote(path[len("/artist/"):])
+            info["artist_links"] = artist_links_for(session, cfg.artist_links, [name]).get(name, [])
+        return info
     title, _, intro, _ = _landing_text(land.kind, lang, land.label, land.place)
     country = abroad_countries(session).get(path.rsplit("/", 1)[-1]) if land.abroad else None
     city = {"he": land.city.he, "en": land.city.en} if land.city else None
