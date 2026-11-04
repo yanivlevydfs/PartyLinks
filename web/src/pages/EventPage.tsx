@@ -45,7 +45,7 @@ export default function EventPage() {
   // The other ticket site with the lowest price, when it beats the main listing's: badged "Cheapest".
   // Second-hand marketplaces (viagogo, SwapTix...) apart from the box offices; "Cheapest" only among box offices.
   const firsthand = (e.alternatives ?? []).filter((a) => !a.resale);
-  const secondhand = (e.alternatives ?? []).filter((a) => a.resale);
+  const secondhand = (e.alternatives ?? []).filter((a) => a.resale && !a.is_sold_out); // viagogo often has no seller at all
   const cheapest = firsthand.filter((a) => !a.is_sold_out && a.min_price != null && (e.min_price == null || a.min_price < e.min_price))
     .sort((a, b) => a.min_price! - b.min_price!)[0]?.id;
   const time = { hour: "2-digit", minute: "2-digit" } as const;

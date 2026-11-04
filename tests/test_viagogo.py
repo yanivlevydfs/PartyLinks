@@ -36,6 +36,7 @@ def test_parse_concert() -> None:
     assert event.event_types == ["Concert"] and event.source_genres == ["Other Concerts"]
     assert event.image_url and "categories/54350" in event.image_url
     assert event.extra["time_confirmed"] is True
+    assert event.is_sold_out is not event.extra["has_listings"]  # no seller's tickets up: nothing to buy here
 
 
 def test_sports_and_abroad_are_skipped() -> None:

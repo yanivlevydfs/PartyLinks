@@ -8,7 +8,7 @@ page sorted by date with ``total``/``remaining`` counts (a page may come back on
 paging follows ``total``). Each row has the name, the event page URL, venue name and
 "City, [Region,] Country", category id and artwork, but the date only as ``"Oct 24"`` +
 ``"8:50 PM"`` + weekday - the year is the next one whose weekday matches. No prices or
-addresses. The circle around Israel also catches neighbouring countries: only rows whose
+addresses; ``hasActiveListings`` false (no seller has tickets up) is sold out here. The circle around Israel also catches neighbouring countries: only rows whose
 location ends in ", Israel" are kept. The feed is always English; URLs are rewritten to the
 Hebrew site (``/il``).
 """
@@ -139,6 +139,8 @@ def parse_event(row: dict[str, Any], s: ViagogoSettings, timezone: str, today: d
         source_genres=[genre] if genre else [],
         event_types=[category] if category else [],
         images=[image] if image else [],
+        # No seller has tickets up (most Israeli events, 2026-11): nothing to buy there, never shown as second-hand tickets.
+        is_sold_out=not row.get("hasActiveListings"),
         extra={
             "venue_id": clean_str(row.get("venueId")),
             "category_id": clean_str(row.get("categoryId")),
