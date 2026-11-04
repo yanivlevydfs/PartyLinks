@@ -58,6 +58,8 @@ export function when(e: Pick<EventSummary, "start_at" | "time_known" | "time_zon
 }
 
 export function priceLabel(e: Pick<EventSummary, "entry_type" | "min_price" | "has_free_entry" | "currency">, t: Strings) {
+  // A 0 ₪ RSVP tier beside paid tickets makes min_price 0: still a paid event, not "Free".
+  if (e.entry_type === "free_and_paid") return t.entry.free_and_paid;
   if (e.entry_type === "free" || e.min_price === 0) return t.free;
   if (e.min_price == null) return e.has_free_entry ? t.free : "";
   return t.from + money(e.min_price, e.currency, t.locale);

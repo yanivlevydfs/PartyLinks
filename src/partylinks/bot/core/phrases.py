@@ -305,6 +305,7 @@ LABELS: dict[str, dict[str, str]] = {
     "my_alerts": {"he": "🔔 ההתראות שלי", "en": "🔔 My alerts"},
     "help": {"he": "❓ עזרה", "en": "❓ Help"},
     "free_entry": {"he": "🆓 כניסה חופשית", "en": "🆓 Free entry"},
+    "free_and_paid": {"he": "🆓 חינם + בתשלום", "en": "🆓 Free + paid"},
     "from_price": {"he": "💸 החל מ-{p}", "en": "💸 From {p}"},
     "sold_out": {"he": "❌ אזל", "en": "❌ Sold out"},
     "discount": {"he": "🔥 יש הנחה", "en": "🔥 On sale"},

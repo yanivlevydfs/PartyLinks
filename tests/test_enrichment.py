@@ -131,6 +131,13 @@ def test_entry_type_free_and_paid() -> None:
     assert event.entry_type is EntryType.FREE_AND_PAID and event.has_free_entry
 
 
+def test_tierless_zero_price_is_free_only_when_the_page_says_so() -> None:
+    paid = ENRICHER.enrich(make(tickets=[], min_price=Decimal(0), description="Stand-up show"))
+    assert paid is not None and paid.min_price is None and paid.entry_type is EntryType.UNKNOWN
+    free = ENRICHER.enrich(make(tickets=[], min_price=Decimal(0), description="הכניסה חינם"))
+    assert free is not None and free.entry_type is EntryType.FREE
+
+
 def test_sold_out_free_tier_is_not_free_entry() -> None:
     tiers = [
         TicketTier(name="להרשמה חינם עד השעה 00:00", price=Decimal(0), is_sold_out=True),

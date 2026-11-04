@@ -37,7 +37,7 @@ SKY = (  # MET Norway symbol codes, by prefix
 
 TEXT: dict[str, dict[str, Any]] = {
     "he": {
-        "dir": "rtl", "free": "כניסה חופשית", "from": "החל מ-", "soldOut": "אזל", "open": "לכרטיסים", "tickets": "לפרטים",
+        "dir": "rtl", "free": "כניסה חופשית", "free_and_paid": "חינם + בתשלום", "from": "החל מ-", "soldOut": "אזל", "open": "לכרטיסים", "tickets": "לפרטים",
         "why": "קיבלת את המייל כי ביקשת אותו בחשבון שלך ב-SPOTX.",
         "stop": "הסרה מרשימת התפוצה", "settings": "הגדרות החשבון", "contact": "יצירת קשר", "alerts": "ניהול ההתראות",
         "welcome_subject": "ברוכים הבאים ל-SPOTX 🎉",
@@ -65,7 +65,7 @@ TEXT: dict[str, dict[str, Any]] = {
         "alerts_button": "להתראות שלי",
     },
     "en": {
-        "dir": "ltr", "free": "Free entry", "from": "From ", "soldOut": "Sold out", "open": "Tickets", "tickets": "Details",
+        "dir": "ltr", "free": "Free entry", "free_and_paid": "Free + paid", "from": "From ", "soldOut": "Sold out", "open": "Tickets", "tickets": "Details",
         "why": "You're getting this email because you asked for it in your SPOTX account.",
         "stop": "Unsubscribe", "settings": "Account settings", "contact": "Contact", "alerts": "Manage alerts",
         "welcome_subject": "Welcome to SPOTX 🎉",
@@ -159,7 +159,10 @@ def _price(card: dict[str, Any], t: dict[str, Any]) -> str:
         return t["soldOut"]
     low = card.get("group_min_price") if card.get("group_min_price") is not None else card.get("min_price")
     free = card.get("group_has_free_entry") or card.get("has_free_entry")
-    if card.get("entry_type") == "free" or low == 0 or (low is None and free):
+    kind = card.get("group_entry_type") or card.get("entry_type")
+    if kind == "free_and_paid":  # a 0 RSVP tier beside paid tickets: not a free event
+        return t["free_and_paid"]
+    if kind == "free" or low == 0 or (low is None and free):
         return t["free"]
     if low is None:
         return ""

@@ -74,6 +74,7 @@ TEXT: dict[str, dict[str, str]] = {
         "venue_desc": "אירועים קרובים ב{name}: תאריכים, ליינאפ וכרטיסים.",
         "artist_desc": "האירועים וההופעות הקרובים של {name}: תאריכים, מקומות וכרטיסים.",
         "free": "כניסה חופשית",
+        "free_and_paid": "חינם + בתשלום",
         "from": "החל מ־{p}",
         "lineup": "ליינאפ",
         "tickets": "לכרטיסים",
@@ -92,6 +93,7 @@ TEXT: dict[str, dict[str, str]] = {
         "venue_desc": "Upcoming events at {name}: dates, lineups and tickets.",
         "artist_desc": "{name}'s upcoming events and shows in Israel: dates, venues and tickets.",
         "free": "Free entry",
+        "free_and_paid": "Free + paid",
         "from": "From {p}",
         "lineup": "Lineup",
         "tickets": "Tickets",
@@ -206,6 +208,8 @@ def _when(row: EventRow, cfg: Settings, lang: str) -> str:
 
 
 def _price(row: EventRow, lang: str) -> str:
+    if row.entry_type == "free_and_paid":  # a 0 RSVP tier beside paid tickets: not a free event
+        return TEXT[lang]["free_and_paid"]
     if row.entry_type == "free" or row.min_price == 0:
         return TEXT[lang]["free"]
     if row.min_price is None:
@@ -1044,7 +1048,7 @@ def _faq(rows: list[EventRow], lang: str, scope: str, site: str, tonight: list[E
     """Questions people ask, answered from the live listings (what AI answer engines quote).
     ``tonight``: the place's events tonight, for "where to go out tonight in <place>?"."""
     he = lang == "he"
-    free = [r for r in rows if r.entry_type == "free" or r.min_price == 0]
+    free = [r for r in rows if r.entry_type == "free"]  # every ticket free, not a 0 RSVP tier beside paid ones
     priced = sorted((r for r in rows if r.min_price), key=lambda r: r.min_price or 0)
     venues = [v for v, _ in Counter(r.venue_name for r in rows if r.venue_name).most_common(3)]
     qa = [(

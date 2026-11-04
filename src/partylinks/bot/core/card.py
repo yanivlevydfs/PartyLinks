@@ -64,6 +64,8 @@ def price(row: EventRow, lang: str, extra: dict[str, Any]) -> str:
     deal = extra.get("best_deal")
     if row.is_sold_out and not (deal and deal.id != row.id):  # sold out here, but not at another seller
         return label("sold_out", lang)
+    if row.group_entry_type == "free_and_paid":  # a 0 RSVP tier beside paid tickets: not a free event
+        return label("free_and_paid", lang)
     if row.group_has_free_entry:
         return label("free_entry", lang)
     text = label("from_price", lang, p=money(row.group_min_price, row.currency)) if row.group_min_price else ""
