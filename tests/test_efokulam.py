@@ -1,3 +1,7 @@
+import json
+from decimal import Decimal
+from pathlib import Path
+
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
 from partylinks.scrapers.efokulam import EfoKulamSettings, parse_event, split_address
@@ -68,3 +72,22 @@ def test_address_venue_city_and_abroad() -> None:
     )  # fmt: skip
     assert abroad is not None and abroad.country == "BG" and abroad.time_zone == "Europe/Sofia"
     assert abroad.start_at.isoformat() == "2027-04-29T22:00:00+03:00"
+
+
+def test_price_chips_become_ticket_tiers() -> None:
+    rows = json.loads((Path(__file__).parent / "fixtures" / "efokulam" / "events.json").read_text(encoding="utf-8"))
+    tiers = {}
+    for row in rows:
+        event = parse_event(row, TYPES, S, TZ)
+        assert event is not None
+        tiers[row["id"]] = [(t.name, t.price, t.is_free) for t in event.tickets]
+    # FRIDAY GOAT: "החל מ-₪0" (free registration, Go-Out sells free / 60 / 100).
+    assert tiers[11164] == [("כרטיס", Decimal(0), True)]
+    assert tiers[11229] == [("מוקדמות", Decimal(60), False), ("רגיל", Decimal(70), False)]
+    # Two highlighted chips: free on the list, then 60 after midnight.
+    assert tiers[11223] == [("כניסה חינם עד 00:00 ברשימה", Decimal(0), True), ("כרטיס", Decimal(60), False)]
+    # "בקבוק אבסולוט 99 ₪" is a drink deal, not the entry.
+    assert tiers[11186] == []
+    settings = Settings()
+    enriched = Enricher(settings.enrichment, settings.timezone).enrich(parse_event(rows[1], TYPES, S, TZ))
+    assert enriched is not None and (enriched.min_price, enriched.max_price) == (Decimal(60), Decimal(70))

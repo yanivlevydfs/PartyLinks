@@ -10,9 +10,11 @@ own REST links do:
   (``ticket_link``: Go-Out, Eventer...), kept as ``extra["purchase_url"]`` so dedup merges the event with
   that seller's own listing. REST has no date filter, so past rows are dropped from the listing by their
   ``event-date`` and ``is_current`` (~50 current events); no event page is fetched.
-The site has no venue field and no price (its "החל מ-₪0" chip is the free-entry-before-midnight line): the
-venue is the address's first part only when the address reads "<place>, <street>, <city>"; else the
-venue pass names it from its spot. The address is geocoded (no coordinates on the site).
+Prices: the article (``content``) opens with a row of chips; the highlighted ones (``price_chip_selector``)
+state the entry: "החל מ-₪80", "מוקדמות 60 ₪ · רגיל 70 ₪", "הרשמה חינם עד 00:00" (a free tier), or a drink deal
+("בקבוק אבסולוט 99 ₪", skipped by ``drink_words``). Each "·" / "/" part is one tier; ~2/3 of current events have one.
+The site has no venue field: the venue is the address's first part only when the address reads
+"<place>, <street>, <city>"; else the venue pass names it from its spot. The address is geocoded (no coordinates on the site).
 robots.txt disallows only /wp-admin/.
 """
 
@@ -25,12 +27,13 @@ from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import Field
+from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.config import RetentionSettings
 from partylinks.countries import country_code
 from partylinks.enrichment import UNKNOWN_COUNTRY
-from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, html_to_text, to_int, zone
+from partylinks.models import ScrapedEvent, TicketTier
+from partylinks.parsing import ParseError, clean_str, html_to_text, to_decimal, to_int, zone
 from partylinks.retention import is_current
 from partylinks.scrapers.abroad import local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -38,6 +41,10 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 # ponytail: retention's defaults (config/settings.yaml uses the same); pass Settings.retention in if they ever differ.
 _RETENTION = RetentionSettings()
 _CLOCK = re.compile(r"^(\d{1,2}):(\d{2})")
+# "80 ₪", "₪80", "80–120 ₪"; a number right after ":" or a digit is a clock ("00:00 – 60 ₪" is 60).
+_PRICE = re.compile(r"(?<![\d:.])(\d+(?:\.\d+)?)(?:[–-](\d+(?:\.\d+)?))?\s*₪|₪\s*(\d+(?:\.\d+)?)")
+# What is left of "מחיר: החל מ-₪80" / "כרטיסים מ-60 ₪" once the price is cut out.
+_FROM = re.compile(r"^מחיר:?|(?:^|\s)(?:החל\s*)?מ[-־‑]?$")
 
 
 class EfoKulamSettings(SourceSettings):
@@ -55,6 +62,13 @@ class EfoKulamSettings(SourceSettings):
         default_factory=lambda: ["רחוב", "רח'", "שדרות", "שד'", "דרך", "כיכר", "ת.ד", "מחוז", "צומת"]
     )
     po_box: str = "ת.ד"
+    # The highlighted chips at the top of an article: the entry price.
+    price_chip_selector: str = 'span[style*="#FFB550"]'
+    # A highlighted chip part with one of these is a drink deal, not an entry price.
+    drink_words: list[str] = Field(
+        default_factory=lambda: ["בקבוק", "אלכוהול", "שתייה", "ייסר", "קוקטייל", "דרינק", "טקילה"]
+    )
+    free_word: str = "חינם"
 
 
 class EfoKulamScraper(BaseScraper[EfoKulamSettings]):
@@ -132,6 +146,26 @@ def _image(row: dict[str, Any]) -> list[str]:
     return [url] if url and url.startswith("http") else []
 
 
+def parse_tickets(content: str | None, s: EfoKulamSettings) -> list[TicketTier]:
+    """Ticket tiers stated by the article's highlighted chips."""
+    if not content:
+        return []
+    tiers: list[TicketTier] = []
+    for chip in LexborHTMLParser(content).css(s.price_chip_selector):
+        for part in re.split(r"[·/]", chip.text()):
+            part = " ".join(part.split())
+            if not part or any(w in part for w in s.drink_words):
+                continue
+            prices = [to_decimal(v) for m in _PRICE.finditer(part) for v in m.groups() if v]
+            label = _FROM.sub("", " ".join(_PRICE.sub("", part).split()).strip(" :-־‑–")).strip(" :")
+            name = label or "כרטיס"
+            if prices:
+                tiers += [TicketTier(name=name, price=p, is_free=p == 0) for p in prices if p is not None]
+            elif s.free_word in part:
+                tiers.append(TicketTier(name=part, price=0, is_free=True))
+    return tiers
+
+
 def parse_event(row: dict[str, Any], types: dict[int, str], s: EfoKulamSettings, timezone: str) -> ScrapedEvent | None:
     """One REST row -> event; None without an id, title or date."""
     meta = row.get("meta") if isinstance(row.get("meta"), dict) else {}
@@ -149,13 +183,13 @@ def parse_event(row: dict[str, Any], types: dict[int, str], s: EfoKulamSettings,
         start = start.replace(hour=int(clock.group(1)) % 24, minute=int(clock.group(2)))
     genres = [types[t] for t in row.get("event-type") or [] if t in types] or [s.base_genre]
     link = clean_str(meta.get("ticket_link"))
+    content = (row.get("content") or {}).get("rendered")
     return ScrapedEvent(
         source=EfoKulamScraper.name,
         source_event_id=str(row["id"]),
         url=str(row.get("link") or ""),
         title=title,
-        description=html_to_text(meta.get("short_description"))
-        or html_to_text((row.get("content") or {}).get("rendered")),
+        description=html_to_text(meta.get("short_description")) or html_to_text(content),
         start_at=start,
         time_known=clock is not None,
         venue_name=venue,
@@ -164,5 +198,6 @@ def parse_event(row: dict[str, Any], types: dict[int, str], s: EfoKulamSettings,
         time_zone=tz_name if country else None,
         source_genres=list(dict.fromkeys(g.lower() for g in genres)),
         images=_image(row),
+        tickets=parse_tickets(content, s),
         extra={"purchase_url": link} if link and link.startswith("http") else {},
     )
