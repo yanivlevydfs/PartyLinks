@@ -47,3 +47,9 @@ def test_free_season_kept_as_first_day() -> None:
 def test_undated_page_gives_nothing() -> None:
     page = '<div id="top_content"><h1>סטנדאפ</h1><div class="dates-wrapper"> </div></div>'
     assert parse_event(page, "1", URL, "חיפה", TZ) == []
+
+
+def test_price_from_the_description_when_no_price_line() -> None:
+    page = (FIXTURES / "event_desc_price.html").read_text("utf-8")  # "מחיר כרטיס: ₪130 למשתתפ.ת"
+    [e] = parse_event(page, "1", URL, "חיפה", TZ)
+    assert (e.min_price, e.max_price) == (Decimal(130), Decimal(130)) and e.tickets[0].price == 130

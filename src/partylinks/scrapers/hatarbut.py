@@ -8,7 +8,9 @@ rows, one per day, whose time is in the description's date list. ``category`` na
 server-side to one site category (``הופעות-ומוזיקה``, which almost every show carries). Prices are not listed;
 each show page has a "לרכישת כרטיסים" button to the real seller (Eventer, Ticketmaster, Kupat,
 Tickchak...), kept as ``purchase_url`` so dedup merges this listing with the seller's, and an
-``og:image``. One page request per show, not per performance.
+``og:image``. One page request per show, not per performance. Sellers whose page carries
+schema.org ``offers`` (``price_hosts``: Ticketmaster, Tickchak) cost one more request per show
+for its price list; the others (Eventer, Kupat, GoShow, to-mix...) show none in their HTML.
 """
 
 from __future__ import annotations
@@ -22,8 +24,17 @@ from typing import Any
 
 from pydantic import Field
 
-from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, html_to_text, og_image, parse_iso, zone
+from partylinks.models import ScrapedEvent, TicketTier, TierStatus
+from partylinks.parsing import (
+    ParseError,
+    clean_str,
+    html_to_text,
+    jsonld_nodes,
+    og_image,
+    parse_iso,
+    to_decimal,
+    zone,
+)
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 # The Elementor button whose label is "לרכישת כרטיסים" (buy tickets).
@@ -46,6 +57,8 @@ class HatarbutSettings(SourceSettings):
     venue_name: str
     address: str | None = None
     city: str | None = None
+    # Sellers whose pages list schema.org offers: fetched once per show for its prices.
+    price_hosts: list[str] = Field(default_factory=lambda: ["ticketmaster.co.il", "tickchak.co.il"])
 
 
 class HatarbutScraper(BaseScraper[HatarbutSettings]):
@@ -75,11 +88,50 @@ class HatarbutScraper(BaseScraper[HatarbutSettings]):
                     events.append(parse_row(row, page, s, self.name, self.timezone))
                 except (ParseError, ValueError) as exc:
                     self.record_failure(url or str(row.get("title")), exc)
+            seller = events[0].extra.get("purchase_url") if events else None
+            if seller and any(h in seller.split("/")[2] for h in s.price_hosts):
+                try:
+                    tiers = seller_tiers(await self.get_text(seller))
+                except Exception as exc:  # noqa: BLE001 - a seller refusing us (even blocked) only loses the price
+                    self.record_failure(f"prices {seller}", exc)
+                    tiers = []
+                for event in events if tiers else []:
+                    event.tickets = [t.model_copy() for t in tiers]
+                    prices = [t.price for t in tiers if t.price is not None]
+                    event.min_price, event.max_price = min(prices), max(prices)
             return events
 
         async for events in self.stream_isolated(by_page, show, label=lambda u: u):
             for event in events:
                 yield event
+
+
+def seller_tiers(page_html: str) -> list[TicketTier]:
+    """The ticket types of a seller's page (schema.org ``offers``). A 0 next to paid tickets is a
+    subscription seat ("כרטיס במנוי"), not free entry, so it is left out."""
+    offers = [
+        o
+        for node in jsonld_nodes(page_html)
+        for o in (node.get("offers") if isinstance(node.get("offers"), list) else [node.get("offers")])
+        if isinstance(o, dict) and to_decimal(o.get("price")) is not None
+    ]
+    paid = any(to_decimal(o.get("price")) for o in offers)
+    tiers = []
+    for o in offers:
+        price = to_decimal(o.get("price"))
+        if paid and not price:
+            continue
+        sold_out = "outofstock" in str(o.get("availability") or "").lower().replace("_", "")
+        tiers.append(
+            TicketTier(
+                name=clean_str(o.get("name")) or "כרטיס",
+                price=price,
+                currency=clean_str(o.get("priceCurrency")) or "ILS",
+                is_free=price == 0,
+                status=TierStatus.SOLD_OUT if sold_out else TierStatus.ON_SALE,
+            )
+        )
+    return tiers
 
 
 def parse_row(row: dict[str, Any], page: str | None, s: HatarbutSettings, source: str, timezone: str) -> ScrapedEvent:

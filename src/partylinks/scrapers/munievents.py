@@ -12,7 +12,8 @@ instead: whatever the layout (``a.event-promo`` grid, ``.events-list``, council 
 month calendar), each link to ``./events/<id>/`` is a card, read for title, date, time, place and
 tags. Each event's page ``/events/<id>/`` adds the description, the full-size image, the place
 when the listing lacks it and, when the site sells tickets itself, a tickets row
-("40 ₪ • אירוע בתשלום"). Events linking off the site (a Smarticket hall, Tickchak, a news item) are
+("40 ₪ • אירוע בתשלום"); without one, the price or free entry its text states
+("מחיר לתושב 15 ש\"ח", "הכניסה חופשית", "ללא עלות"). Events linking off the site (a Smarticket hall, Tickchak, a news item) are
 skipped: their seller has its own source. Undated events ("ללא תאריך", "עד ...") and cancelled ones
 are skipped. Mostly no robots.txt (404); where there is one it allows ``/events/``. A bare user
 agent is redirected to the host's abuse page (abuse.spd.co.il).
@@ -46,6 +47,9 @@ _MONTHS = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יו
 _HEB_DATE = re.compile(r"(\d{1,2})\s+ב?(" + "|".join([*_MONTHS, "מרס"]) + r")(?:\s+(\d{4}))?")
 _CLOCK = re.compile(r"(?<![\d:])(\d{1,2}):(\d{2})(?![\d:])")
 _PRICE = re.compile(r"(\d+(?:\.\d+)?)\s*₪")
+# Prices and free entry written in the text ("מחיר לתושב 15 ש\"ח", "הכניסה חופשית"); "50 ש\"ח הנחה" is no price.
+_TEXT_PRICE = re.compile(r"(\d+(?:\.\d+)?)\s*(?:₪|ש[\"״]ח|שקלים)(?!\s*הנחה)")
+_FREE = re.compile(r"כניסה (?:חופשית|חינם)|ללא (?:עלות|תשלום)")
 _LEFT = re.compile(r"נותרו רק (\d+)")
 _EVENT_ID = re.compile(r"/events/(\d+)/?$")
 _HEBREW = re.compile(r"[א-ת]")
@@ -364,7 +368,14 @@ def build_event(card: Card, detail_html: str | None, site: MuniSite, timezone: s
     tiers = [
         TicketTier(name="כרטיס", price=p, status=status, remaining=int(left.group(1)) if left else None) for p in prices
     ]
-    if not prices and price_text:  # "אירוע בהרשמה מראש": registration, price not stated
+    if not prices:  # the site sells no tickets itself: its text may say "מחיר 15 ש\"ח" or "הכניסה חופשית"
+        # ponytail: any price-like number in the text counts (a prize in ש"ח too); per-line tier names if it misleads.
+        text = extra.get("description") or ""
+        prices = sorted({Decimal(p) for p in _TEXT_PRICE.findall(text)} | ({Decimal(0)} if _FREE.search(text) else set()))
+        tiers = [
+            TicketTier(name="כניסה חופשית" if p == 0 else "כרטיס", price=p, is_free=p == 0, status=status) for p in prices
+        ]
+    if not tiers and price_text:  # "אירוע בהרשמה מראש": registration, price not stated
         tiers = [TicketTier(name="הרשמה", status=status)]
     place = card.place or extra.get("place")
     venue, address = _split_place(place)

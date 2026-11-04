@@ -96,6 +96,60 @@
    ],
    "venue": [],
    "organizer": []
+  },
+  {
+   "id": 10004,
+   "status": "publish",
+   "url": "https://kikar-hamusica.com/shows/he/event/%d7%a9%d7%91%d7%aa/",
+   "title": "שבת",
+   "description": "<p>אין הופעות</p>",
+   "image": {
+    "url": "https://kikar-hamusica.com/shows/he/wp-content/uploads/2025/02/chabath-kikar-hamusica.webp",
+    "id": 5995,
+    "extension": "webp",
+    "width": 900,
+    "height": 675,
+    "filesize": 27746,
+    "sizes": {
+     "medium": {
+      "width": 300,
+      "height": 225,
+      "mime-type": "image/webp",
+      "filesize": 7446,
+      "url": "https://kikar-hamusica.com/shows/he/wp-content/uploads/2025/02/chabath-kikar-hamusica-300x225.webp"
+     },
+     "thumbnail": {
+      "width": 150,
+      "height": 150,
+      "mime-type": "image/webp",
+      "filesize": 3132,
+      "url": "https://kikar-hamusica.com/shows/he/wp-content/uploads/2025/02/chabath-kikar-hamusica-150x150.webp"
+     },
+     "medium_large": {
+      "width": 768,
+      "height": 576,
+      "mime-type": "image/webp",
+      "filesize": 27644,
+      "url": "https://kikar-hamusica.com/shows/he/wp-content/uploads/2025/02/chabath-kikar-hamusica-768x576.webp"
+     }
+    }
+   },
+   "all_day": false,
+   "start_date": "2026-11-07 20:00:00",
+   "end_date": "2026-11-07 22:00:00",
+   "timezone": "Asia/Jerusalem",
+   "cost": "",
+   "cost_details": {
+    "currency_symbol": "",
+    "currency_code": "",
+    "currency_position": "prefix",
+    "values": []
+   },
+   "website": "",
+   "hide_from_listings": false,
+   "categories": [],
+   "venue": [],
+   "organizer": []
   }
  ],
  "total": 3,

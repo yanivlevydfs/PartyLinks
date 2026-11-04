@@ -37,3 +37,19 @@ def test_free_show_and_skipped_genre() -> None:
         "יאסו – האהבה היוונית שלי",
         "סטודנטים מהאקדמיה למוסיקה ולמחול בירושלים: מחווה לזמרות ולזמרי הג'אז הגדולים של אמריקה",
     }
+
+
+def test_box_office_price_levels() -> None:
+    from partylinks.scrapers.jerusalemtheatre import apply_prices
+    from partylinks.scrapers.pres import parse_ticket_groups
+
+    groups = json.loads((Path(__file__).parent / "fixtures/jerusalemtheatre/ticket_groups.json").read_text("utf-8"))
+    events = parse_board(BOARD, SETTINGS, TZ)
+    free = next(e for e in events if e.min_price == 0)
+    paid = [e for e in events if e.min_price is None]
+    apply_prices([*paid, free], parse_ticket_groups(groups))
+    # Two price levels at 42 (regular); the 34 senior discount is left out.
+    assert all((e.min_price, e.max_price) == (Decimal(42), Decimal(42)) for e in paid)
+    assert [(t.name, t.price) for t in paid[0].tickets] == [("רמה1", Decimal(42)), ("רמה2", Decimal(42))]
+    assert free.min_price == 0 and [t.price for t in free.tickets] == [Decimal(0)]
+    assert paid[0].extra["ticket"] == paid[0].source_event_id

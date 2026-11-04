@@ -17,7 +17,7 @@ EVENTS = {e.source_event_id: e for e in (parse_row(row, PAGE, SETTINGS, TZ) for 
 
 
 def test_one_off_show_with_panel_details() -> None:
-    assert len(EVENTS) == 6
+    assert len(EVENTS) == 9
     story = EVENTS["9206"]  # library story hour, on no ticket site
     assert story.title == "הדייג ודג הזהב" and story.venue_name == "ספריית נבון" and story.city == "חולון"
     assert story.start_at is not None and story.start_at.isoformat() == "2026-10-28T17:00:00+02:00"
@@ -38,3 +38,13 @@ def test_series_keep_first_date_without_their_last_end() -> None:
     assert lectures.start_at is not None and lectures.start_at.isoformat() == "2026-12-03T11:00:00+02:00"
     assert museum.end_at is None and lectures.end_at is None
     assert EVENTS["6096"].venue_name is None  # online class: no place
+
+
+def test_prices_from_the_cost_section() -> None:
+    show = EVENTS["9245"]  # "מחיר רגיל: 180 ש"ח לתושבי חולון: 140 ש"ח בהצגת ת"ז. לאזרחים ותיקים: 140 ש"ח"
+    assert [(t.name, t.price) for t in show.tickets] == [("רגיל", 180), ("לתושבי חולון", 140), ("לאזרחים ותיקים", 140)]
+    assert (show.min_price, show.max_price) == (140, 180)
+    assert [(t.name, t.price) for t in EVENTS["9251"].tickets] == [("כרטיס", 10)]  # "מלווה בחינם" is no free entry
+    free = EVENTS["9259"]  # "הכניסה חופשית."
+    assert [(t.price, t.is_free) for t in free.tickets] == [(0, True)] and free.min_price == 0
+    assert not EVENTS["7426"].tickets and EVENTS["7426"].min_price is None  # museum: "prices on its site >>"

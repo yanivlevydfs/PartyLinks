@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from partylinks.scrapers.kikarhamusica import KikarHamusicaScraper
+from partylinks.scrapers.kikarhamusica import KikarHamusicaScraper, free_entry
 from partylinks.scrapers.tribe import TribeSettings, parse_event
 
 TZ = "Asia/Jerusalem"
@@ -32,3 +32,10 @@ def test_show_with_local_times_and_configured_venue() -> None:
 def test_every_genre_kept() -> None:
     e = parse_event(EVENTS[9904], SETTINGS, KikarHamusicaScraper.name, TZ)
     assert e is not None and len(e.event_types) == 2 and "R&B" in e.event_types[0]  # entity decoded
+
+
+def test_free_entry_and_saturday_placeholder_dropped() -> None:
+    e = free_entry(parse_event(EVENTS[9892], SETTINGS, KikarHamusicaScraper.name, TZ))
+    assert e is not None and e.min_price == e.max_price == 0
+    assert [(t.name, t.price, t.is_free) for t in e.tickets] == [("כניסה חופשית", 0, True)]
+    assert free_entry(parse_event(EVENTS[10004], SETTINGS, KikarHamusicaScraper.name, TZ)) is None  # "אין הופעות"

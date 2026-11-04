@@ -4,8 +4,11 @@ Its own box office, on no other ticket site. One request: the site's board feed
 (``na_ajax.php?action=getBoard``) lists every upcoming show (``items``) with title, subtitle,
 length, image, page link, genre (``parent-group``, titled in ``groups``), a free flag and
 ``dates[]``: one entry per performance with a unix time, hall id, ticket id and status. The
-times are the Israeli wall clock written as UTC (a 20:00 show reads 20:00Z). Prices are only in
-the box office, so none are given. robots.txt allows everything but the admin paths.
+times are the Israeli wall clock written as UTC (a 20:00 show reads 20:00Z). Prices: the box office
+is a PRES host (the "buy" button opens ``jtheater.pres.global/order/<ticket id>``), whose
+``/api/presentations/<ticket id>/ticketGroups`` gives each price level; one request per show, from
+its first listed performance, applied to all of them (as the pres scraper does). robots.txt
+allows everything but the admin paths.
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ from pydantic import Field
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, to_int
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.pres import parse_ticket_groups
 
 
 class JerusalemTheatreSettings(SourceSettings):
@@ -30,6 +34,8 @@ class JerusalemTheatreSettings(SourceSettings):
     city: str
     # Genres (parent-group ids) left out, e.g. eventGrp_cinema (film screenings).
     skip_groups: list[str] = Field(default_factory=list)
+    # The PRES box office's price levels of one performance (``{id}``: the board's ticket id).
+    ticket_groups_url: str = "https://jtheater.pres.global/api/presentations/{id}/ticketGroups"
 
 
 class JerusalemTheatreScraper(BaseScraper[JerusalemTheatreSettings]):
@@ -41,8 +47,31 @@ class JerusalemTheatreScraper(BaseScraper[JerusalemTheatreSettings]):
         board = await self.get_json(s.site_url + s.board_path, params={"action": "getBoard"}, expect=dict)
         events = parse_board(board, s, self.timezone, self.record_failure)
         self.log.debug("listed %d performances", len(events))
+        shows: dict[str, list[ScrapedEvent]] = {}
         for event in events:
-            yield event
+            shows.setdefault(str(event.extra.get("show_id")), []).append(event)
+
+        async def priced(show: list[ScrapedEvent]) -> list[ScrapedEvent]:
+            # Free performances keep their price 0; the rest share the first paid one's levels.
+            ticket = next((e.extra["ticket"] for e in show if e.min_price is None and e.extra.get("ticket")), None)
+            if ticket:
+                url = s.ticket_groups_url.format(id=ticket)
+                payload = await self.optional(f"prices {ticket}", self.get_json(url, expect=dict))
+                apply_prices(show, parse_ticket_groups(payload) if payload else [])
+            return show
+
+        async for show in self.stream_isolated(shows.values(), priced, label=lambda show: show[0].title):
+            for event in show:
+                yield event
+
+
+def apply_prices(events: list[ScrapedEvent], tiers: list[TicketTier]) -> None:
+    """The show's price levels on each of its (not free) performances."""
+    prices = [t.price for t in tiers if t.price is not None]
+    for event in events:
+        if event.min_price is None and prices:
+            event.tickets = [t.model_copy() for t in tiers]
+            event.min_price, event.max_price = min(prices), max(prices)
 
 
 def parse_board(
@@ -100,5 +129,5 @@ def parse_performance(
         tickets=[TicketTier(name="כניסה חופשית", price=0, is_free=True)] if free else [],
         min_price=0 if free else None,
         max_price=0 if free else None,
-        extra={"show_id": clean_str(show.get("id")), "hall_id": clean_str(performance.get("hall"))},
+        extra={"show_id": clean_str(show.get("id")), "hall_id": clean_str(performance.get("hall")), "ticket": ticket},
     )

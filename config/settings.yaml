@@ -1910,12 +1910,14 @@ sources:
 
   jerusalemtheatre:
     # Jerusalem Theatre: its own box office. One request to the site's board feed lists every
-    # upcoming performance (~145) with genre, image and page link; no prices (box office only).
+    # upcoming performance (~145) with genre, image and page link. Prices: the PRES box office's ticket
+    # groups, one request per show (ticket_groups_url).
     # Film screenings included (category cinema). robots.txt allows everything but the admin paths.
     enabled: true
     cron: "33 7,19 * * *"
     site_url: https://www.jerusalem-theatre.co.il
     board_path: /na_ajax.php
+    ticket_groups_url: "https://jtheater.pres.global/api/presentations/{id}/ticketGroups"
     venue_name: תיאטרון ירושלים
     address: דוד מרכוס 20
     city: ירושלים
@@ -2511,6 +2513,7 @@ sources:
     cron: "7 5,17 * * *"
     site_url: https://www.hatarbut.co.il
     category: הופעות-ומוזיקה
+    price_hosts: [ticketmaster.co.il, tickchak.co.il]   # sellers whose page has JSON-LD prices: read once per show
     venue_name: "היכל התרבות תל אביב"
     address: "הוברמן 1, תל אביב-יפו"
     city: תל אביב-יפו
@@ -2533,8 +2536,9 @@ sources:
 
   kikarhamusica:
     # Kikar HaMusica, Jerusalem's music square: WordPress + The Events Calendar, whose JSON API lists every
-    # upcoming live set (~90 over two months) with genre and artwork. No price or seller link (on no ticket
-    # site) and no venue in the feed, so venue and address are set here. robots.txt allows everything.
+    # upcoming live set (~90 over two months) with genre and artwork. The square's sets are free ("הופעות
+    # חינם"): a price-0 tier; the weekly "שבת" placeholder ("אין הופעות") is dropped. No seller link and no
+    # venue in the feed, so venue and address are set here. robots.txt allows everything.
     enabled: true
     cron: "33 3,15 * * *"
     site_url: https://kikar-hamusica.com/shows/he

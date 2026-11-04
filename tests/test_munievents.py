@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 
 from partylinks.models import TierStatus
+from partylinks.parsing import zone
 from partylinks.scrapers.munievents import Card, MuniSite, build_event, parse_categories, parse_feed, parse_listing
 
 TZ = "Asia/Jerusalem"
@@ -61,7 +62,8 @@ def test_kfar_saba_same_engine() -> None:
     card = parse_listing(_read("kfar_saba_events.html"), KFAR.url, TZ, TODAY)[0]
     e = build_event(card, _read("kfar_saba_detail.html"), KFAR, TZ)
     assert e is not None and e.source_event_id == "kfar-saba:6923" and e.city == "כפר סבא"
-    assert (e.venue_name, e.address) == ("ארט קיימא", 'רחוב אז"ר 45') and e.tickets == []
+    assert (e.venue_name, e.address) == ("ארט קיימא", 'רחוב אז"ר 45')
+    assert [t.name for t in e.tickets] == ["כניסה חופשית"]  # "להרשמה ללא עלות" in its text
     assert e.start_at is not None and e.start_at.isoformat() == "2026-10-23T09:30:00+03:00"
     assert e.description and "פוטותרפיה" in e.description
 
@@ -161,3 +163,18 @@ def test_regional_council_city_is_the_named_locality() -> None:
     card.start = _feed("arava_feed.json", arava)["2470"].start
     e = build_event(card, None, arava, TZ)
     assert e is not None and (e.venue_name, e.address, e.city) == ("מרכז קהילה", "עין יהב", "עין יהב")
+
+
+def test_prices_and_free_entry_from_the_text() -> None:
+    """No tickets row: the price ("מחיר לתושב גבעתיים 15 ש\"ח") or free entry ("ללא עלות") the text states."""
+    start = datetime(2026, 11, 4, 9, 30, tzinfo=zone(TZ))
+    givatayim = MuniSite(url="https://www.givatayim.muni.il", city="גבעתיים")
+    card = Card(url=givatayim.url + "/events/10800/", event_id="10800", title="בייבי צ'יל", start=start, end=None)
+    e = build_event(card, _read("givatayim_detail.html"), givatayim, TZ)
+    assert e is not None and (e.min_price, e.max_price) == (Decimal(15), Decimal(25))
+    assert [t.price for t in e.tickets] == [Decimal(15), Decimal(25)] and not e.tickets[0].is_free
+
+    card = Card(url=KFAR.url + "/events/6908/", event_id="6908", title="סדרת מפגשי פרישה", start=start, end=None)
+    e = build_event(card, _read("kfar_saba_free_detail.html"), KFAR, TZ)
+    assert e is not None and e.min_price == e.max_price == Decimal(0)
+    assert len(e.tickets) == 1 and e.tickets[0].is_free and e.tickets[0].name == "כניסה חופשית"

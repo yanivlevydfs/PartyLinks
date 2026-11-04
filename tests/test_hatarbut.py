@@ -37,3 +37,15 @@ def test_all_day_row_takes_its_time_from_the_date_list() -> None:
 def test_performances_of_one_show_get_distinct_ids() -> None:
     a, b = (parse_row(r, None, SETTINGS, "hatarbut", TZ) for r in ROWS[2:4])
     assert a.url == b.url and a.source_event_id != b.source_event_id
+
+
+def test_seller_offers_give_the_price_list() -> None:
+    from decimal import Decimal
+
+    from partylinks.scrapers.hatarbut import seller_tiers
+
+    tickchak = seller_tiers((FIXTURES / "seller_tickchak.html").read_text("utf-8"))
+    # The 0 "subscription" seat is not free entry: only the paid tickets.
+    assert [(t.name, t.price) for t in tickchak] == [("כרטיס רגיל", Decimal(145)), ("כרטיס גמלאי", Decimal(125))]
+    tm = seller_tiers((FIXTURES / "seller_ticketmaster.html").read_text("utf-8"))
+    assert [(t.name, t.price, t.currency) for t in tm] == [("General admission", Decimal(210), "ILS")]

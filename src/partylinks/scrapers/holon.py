@@ -8,7 +8,9 @@ hidden panel with title, description, phone and artwork. Libraries' story hours,
 centres and La Park shows are on no ticket site; Holon Theatre's shows are also on its Smarticket
 tenant (``hth``) and dedup merges them. Recurring series and exhibitions (pilates every week,
 museum shows until 2030) give only their first date and last end, so they start in the past and
-fall out by retention; a multi-day series keeps its first session's date.
+fall out by retention; a multi-day series keeps its first session's date. The panel's "עלות" (cost)
+section gives the price as text: "מחיר רגיל: 180 ש"ח לתושבי חולון: 140 ש"ח ...", "מחיר כרטיס 10 ש"ח",
+"הכניסה חופשית" / "ללא תשלום" (free), or a link to the seller (museum shows: no price kept).
 """
 
 from __future__ import annotations
@@ -16,13 +18,14 @@ from __future__ import annotations
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime
+from decimal import Decimal
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.config import RetentionSettings
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -31,6 +34,10 @@ _DATE = re.compile(r"(\d{2}/\d{2}/\d{2,4})")
 _TIME = re.compile(r"(\d{1,2}:\d{2})")
 # Site categories that say nothing about the event ("general", "has a photo", the war-time label).
 _NOISE_CATEGORIES = frozenset({"כללי", "תצוגת תמונות", "מלחמת חרבות ברזל"})
+_PRICE = re.compile(r"(\d+(?:\.\d+)?)\s*(?:₪|ש[\"״]ח)")
+# Words around a price that are no tier name ("מחיר כרטיס 10", "בהצגת ת.ז." after a resident's price).
+_LABEL_NOISE = re.compile(r"ההשתתפות בעלות|מחיר כרטיס|מחיר|לתרבות ודעת|בהצגת ת[.\"״]?ז\.?|[:|*-]")
+_FREE = ("חופשית", "ללא תשלום", "ללא עלות", "חינם", "אינה כרוכה בתשלום")
 
 
 class HolonSettings(SourceSettings):
@@ -71,6 +78,19 @@ def _when(day: str, clock: str | None, timezone: str) -> datetime:
     return datetime.strptime(f"{day} {clock or '00:00'}", f"%d/%m/{year} %H:%M").replace(tzinfo=ZoneInfo(timezone))
 
 
+def parse_cost(text: str) -> list[TicketTier]:
+    """Tiers of the "עלות" section: each price named by the words before it; free entry when unpriced."""
+    # ponytail: label = text since the previous price minus filler words; odd phrasings give odd names.
+    tiers, last = [], 0
+    for m in _PRICE.finditer(text):
+        name = " ".join(_LABEL_NOISE.sub(" ", text[last : m.start()]).split())
+        tiers.append(TicketTier(name=name or "כרטיס", price=Decimal(m[1])))
+        last = m.end()
+    if not tiers and any(word in text for word in _FREE):
+        tiers = [TicketTier(name="כניסה חופשית", price=Decimal(0), is_free=True)]
+    return tiers
+
+
 def parse_row(row: LexborNode, tree: LexborHTMLParser, s: HolonSettings, timezone: str) -> ScrapedEvent | None:
     """One board row plus its hidden detail panel (``aria-controls``)."""
     item_id = row.attributes.get("itemid")
@@ -93,6 +113,9 @@ def parse_row(row: LexborNode, tree: LexborHTMLParser, s: HolonSettings, timezon
     if description is not None and (heading := description.css_first("h2")):  # "תיאור"
         heading.decompose()
     image = panel.css_first("div.realImg img")
+    cost = next((h.next for h in panel.css("h2") if h.text(strip=True) == "עלות"), None)
+    tiers = parse_cost(_text(cost)) if cost is not None else []
+    prices = [t.price for t in tiers if t.price is not None]
     phone = (_text(panel.css_first("div.phone")).split(":", 1) + [""])[1].strip()
     return ScrapedEvent(
         source=HolonScraper.name,
@@ -113,6 +136,9 @@ def parse_row(row: LexborNode, tree: LexborHTMLParser, s: HolonSettings, timezon
         images=[urljoin(s.listing_url, image.attributes["src"])]
         if image is not None and image.attributes.get("src")
         else [],
+        tickets=tiers,
+        min_price=min(prices) if prices else None,
+        max_price=max(prices) if prices else None,
         extra={
             "audience": clean_str(_text(row.css_first("td.kahalFilter span:last-child"))),
             "phone": phone or None,

@@ -5,10 +5,12 @@ holds every current event as ``div.place-archive-item`` cards (~95, some repeate
 rails; ``data-id`` is the post id) with title, link, image and a "חינם" badge. Each event page
 (``/event/<slug>/``) gives, inside ``#top_content``: one line per performance ("יום א' 25/10/2026,
 שעה 20:30") or a season ("בין תאריכים: 01/09/2026 - 31/10/2026", kept as its first day, no time),
-the price ("55 ₪", "חברי ההסתדרות 59 ₪ | מחיר רגיל 89 ₪", "הכניסה חופשית"), venue and street
+the price ("55 ₪", "₪130", "חברי ההסתדרות 59 ₪ | מחיר רגיל 89 ₪", "הכניסה חופשית"), venue and street
 address, categories, description and the seller's button (Haifa Theatre, Smarticket, Eventer...),
-kept as ``extra["purchase_url"]`` so dedup ties it to that seller's own listing. Many events are
-free and sold nowhere else. One event per performance.
+kept as ``extra["purchase_url"]`` so dedup ties it to that seller's own listing. Without a price
+line, a description that names a price ("מחיר כרטיס: 45 ₪") gives it; about half the events have
+neither (only the seller's button: Haifa Theatre, Zappa, PRES, did.li...), so they stay unpriced.
+Many events are free and sold nowhere else. One event per performance.
 """
 
 from __future__ import annotations
@@ -27,7 +29,7 @@ from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _SHOW = re.compile(r"(\d{1,2})/(\d{1,2})/(\d{4})(?:,?\s*שעה\s*(\d{1,2}):(\d{2}))?")
-_PRICE = re.compile(r"(\d+(?:\.\d+)?)\s*(?:₪|ש\"ח)")
+_PRICE = re.compile(r"₪\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:₪|ש[\"״]ח)")  # "55 ₪", "₪130", "60 ש"ח"
 _FREE = ("חופשית", "ללא עלות", "חינם")
 
 
@@ -87,7 +89,11 @@ def parse_event(page_html: str, post_id: str, url: str, city: str, timezone: str
     if not shows:  # undated (date-wrapper left empty)
         return []
     price_text = _text(top.css_first(".price-description"))
-    prices = sorted({Decimal(p) for p in _PRICE.findall(price_text)})
+    description = top.css_first(".event-short-desc")
+    # No price line: some pages give it in the text ("מחיר כרטיס: 45 ₪ - במכירה מוקדמת. 55 ₪ ביום המופע").
+    desc_text = _text(description) if not price_text else ""
+    found = _PRICE.findall(price_text or (desc_text if "מחיר" in desc_text else ""))
+    prices = sorted({Decimal(a or b) for a, b in found})
     free = not prices and any(word in price_text for word in _FREE)
     if free:
         tiers = [TicketTier(name="כניסה חופשית", price=0, is_free=True)]
@@ -100,7 +106,6 @@ def parse_event(page_html: str, post_id: str, url: str, city: str, timezone: str
     button = top.css_first("a.event-order-button")
     purchase = clean_str(button.attributes.get("href")) if button else None
     img = top.css_first(".wrap_img img")
-    description = top.css_first(".event-short-desc")
     first = ScrapedEvent(
         source=HaifaMuniScraper.name,
         source_event_id=f"{post_id}:{shows[0]:%Y%m%d%H%M}",
