@@ -1918,6 +1918,7 @@ sources:
     site_url: https://www.jerusalem-theatre.co.il
     board_path: /na_ajax.php
     ticket_groups_url: "https://jtheater.pres.global/api/presentations/{id}/ticketGroups"
+    vpn: true  # jertheatre.presglobal.store answers Railway with 403, our Israeli VPN with 200 (as pres, Nov 2026)
     venue_name: תיאטרון ירושלים
     address: דוד מרכוס 20
     city: ירושלים
