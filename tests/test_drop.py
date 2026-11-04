@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
+from decimal import Decimal
 from pathlib import Path
 
-from partylinks.models import TicketKind
-from partylinks.scrapers.drop import parse_event, upcoming_urls
+from partylinks.models import TicketKind, TierStatus
+from partylinks.scrapers.drop import _api_tier, parse_event, upcoming_urls, with_api_tickets
 
 TZ = "Asia/Jerusalem"
 FIXTURES = Path(__file__).parent / "fixtures/drop"
@@ -32,3 +34,23 @@ def test_event_page_without_trusting_the_zero_price() -> None:
     # Every offer reads price "0": unknown, not free.
     assert e.tickets[0].price is None and e.tickets[0].kind is TicketKind.UNKNOWN and e.min_price is None
     assert e.images[0].startswith("https://aykrrozfnlzuvrqovvlx.supabase.co/storage/")
+
+
+def test_api_tiers_give_prices_and_sold_out_rounds() -> None:
+    url = "https://tdrop.net/events/edb2b19a0dd34733"
+    page = parse_event((FIXTURES / "event_edb2b19a0dd34733.html").read_text("utf-8"), url, TZ)
+    assert page is not None
+    api = json.loads((FIXTURES / "api_3fecd685ed0449f5.json").read_text("utf-8"))
+    e = with_api_tickets(page, api)
+    assert [(t.name, t.price, t.status) for t in e.tickets] == [
+        ("Sof Heznek 26.11", Decimal(70), TierStatus.SOLD_OUT),
+        ("Sof Heznek סבב ב׳", Decimal(85), TierStatus.ON_SALE),
+    ]
+    assert e.tickets[1].remaining == 25 and not e.is_sold_out
+    assert with_api_tickets(page, {}) is page  # API down or empty: JSON-LD tiers kept
+
+
+def test_api_discount_counts_only_below_price() -> None:
+    tier = {"name": "x", "price": 100, "discountedPrice": 80, "status": "current"}
+    assert _api_tier(tier).price == 80 and _api_tier(tier).original_price == 100
+    assert _api_tier({**tier, "discountedPrice": 0}).price == 100

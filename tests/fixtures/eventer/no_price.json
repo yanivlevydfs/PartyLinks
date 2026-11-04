@@ -1,0 +1,112 @@
+{
+ "sold_out": {
+  "details": {
+   "event": {
+    "_id": "6ae205394ffa0b4b98443e11",
+    "status": 1,
+    "name": "סאונד הילינג I שרה שטרן",
+    "linkName": "sdz2f",
+    "schedule": {
+     "start": "2026-11-09 19:30",
+     "end": "2026-11-09 20:30",
+     "openDoors": "19:30",
+     "cancellationDeadline": "2026-10-28 13:00"
+    },
+    "location": {
+     "latitude": 32.080713,
+     "longitude": 34.7725026,
+     "timezone": "Asia/Jerusalem",
+     "streetNumber": "16",
+     "streetName": "דב הוז",
+     "addressLocality": "תל אביב יפו",
+     "addressRegion": "מחוז תל אביב",
+     "addressCountry": "IL",
+     "streetAddress": "16 דב הוז"
+    },
+    "locationDescription": "דב הוז 16, תל אביב יפו, ישראל",
+    "defaultCurrency": "ILS",
+    "eventCategories": {
+     "topEventCategoryRef": "5b4c5aa4d32f5100b76ea88d",
+     "topEventCategoryString": "children",
+     "subEventCategoryRefs": [
+      "5a91320d44082445f88ff2fa"
+     ],
+     "subEventCategoryStrings": [
+      "Other"
+     ]
+    },
+    "ageLimit": 1
+   },
+   "jsonLdData": {
+    "@type": "Event",
+    "name": "סאונד הילינג I שרה שטרן",
+    "startDate": "2026-11-09T17:30:00.000Z",
+    "endDate": "2026-11-09T18:30:00.000Z",
+    "url": "https://www.eventer.co.il/sdz2f",
+    "eventStatus": "http://schema.org/EventScheduled"
+   }
+  },
+  "tickets": {
+   "ticketTypes": [
+    {
+     "_id": "6ae205394ffa0b4b98443e12",
+     "name": "רגיל",
+     "price": -1,
+     "originalPrice": 30,
+     "remaining": -1,
+     "toDate": "2026-11-09T18:30:00.000Z"
+    }
+   ],
+   "totalRemaining": -1
+  }
+ },
+ "sales_ended": {
+  "details": {
+   "event": {
+    "_id": "6ac0ccdcc366d3551397d587",
+    "status": 4,
+    "name": "ITAY GALO // FRIDAY GOAT 6.11",
+    "linkName": "m012f",
+    "schedule": {
+     "start": "2026-11-06 22:30",
+     "end": "2026-11-07 04:30",
+     "openDoors": "22:30",
+     "cancellationDeadline": "2026-08-17 17:00"
+    },
+    "location": {
+     "latitude": 32.0629419,
+     "longitude": 34.7719619,
+     "timezone": "Asia/Jerusalem",
+     "streetNumber": "24",
+     "streetName": "Rothschild Boulevard",
+     "addressLocality": "Tel Aviv-Yafo",
+     "addressRegion": "Tel Aviv District",
+     "addressCountry": "IL",
+     "streetAddress": "24 Rothschild Boulevard"
+    },
+    "locationDescription": "GOAT TLV, שדרות רוטשילד, תל אביב-יפו, ישראל",
+    "defaultCurrency": "ILS",
+    "eventCategories": {
+     "topEventCategoryRef": "5a8d37184deef10015cfba81",
+     "topEventCategoryString": "Parties",
+     "subEventCategoryRefs": [
+      "5a91320d44082445f88ff2fa"
+     ],
+     "subEventCategoryStrings": [
+      "אחר"
+     ]
+    },
+    "ageLimit": 1
+   },
+   "jsonLdData": {
+    "@type": "Event",
+    "name": "ITAY GALO // FRIDAY GOAT 6.11",
+    "startDate": "2026-11-06T20:30:00.000Z",
+    "endDate": "2026-11-07T02:30:00.000Z",
+    "url": "https://www.eventer.co.il/m012f",
+    "eventStatus": "http://schema.org/EventCancelled"
+   }
+  },
+  "tickets": {}
+ }
+}

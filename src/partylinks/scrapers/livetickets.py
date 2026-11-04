@@ -6,7 +6,9 @@ performer page (``/performers/``, ``/DT_performers/``) and the city and venue pa
 Each of those lists its events 15 a page, next pages by the "next page" link (``PageNum=``).
 A row gives the event's date and local time (Hebrew month), name, venue, Hebrew city and
 country, the "from" price with its currency sign and the event id (``events.aspx?eid=``).
-No detail requests: the event page adds only the seat categories. ~700 requests per run.
+No detail requests: the event page adds only the seat categories. A row with an empty price box
+is out of stock (its event page has no seats, only a "leave your details" form): sold out.
+~700 requests per run.
 robots.txt disallows only ``/bin/``, ``/nrereco/`` and ``/search/`` (the "all events" links).
 """
 
@@ -153,6 +155,7 @@ def parse_rows(page_html: str, event_url: str, timezone: str, listing: str = "")
         time = _TIME.search(row[day.end() :])
         price = _PRICE.search(row)
         sign = price.group(1).strip() if price else ""
+        amount = to_decimal(price.group(2).replace(",", "").strip()) if price else None
         events.append(
             ScrapedEvent(
                 source=LiveTicketsScraper.name,
@@ -171,7 +174,10 @@ def parse_rows(page_html: str, event_url: str, timezone: str, listing: str = "")
                 city=city,
                 country=country,
                 currency=CURRENCY_SIGNS.get(sign, "EUR"),
-                min_price=to_decimal(price.group(2).replace(",", "").strip()) if price else None,
+                min_price=amount,
+                # An empty price box: the event page has no seat rows, only "סיימנו את מלאי הכרטיסים"
+                # (out of stock, leave your details) - nothing on sale here.
+                is_sold_out=bool(price) and amount is None,
                 extra=({"listing": listing} if listing else {})
                 | ({"date_not_final": True} if "מועד לא סופי" in row else {}),
             )

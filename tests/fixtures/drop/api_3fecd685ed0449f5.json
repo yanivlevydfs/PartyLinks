@@ -1,0 +1,35 @@
+{
+ "id": 1348,
+ "shareIdentifier": "3fecd685ed0449f5",
+ "eventStartDate": "2026-11-26",
+ "eventTicketTypes": [
+  {
+   "currency": "ILS",
+   "discountedPrice": 0,
+   "id": 4178,
+   "name": "Sof Heznek 26.11",
+   "ticketType": "regular",
+   "sellStartDateTimeWithTimezone": "2026-11-01T19:00:00.000Z",
+   "sellEndDateTimeWithTimezone": "2026-11-04T19:00:00.000Z",
+   "price": 70,
+   "quantity": 15,
+   "soldQuantity": 15,
+   "roundStatus": "active",
+   "status": "soldout"
+  },
+  {
+   "currency": "ILS",
+   "discountedPrice": 0,
+   "id": 4189,
+   "name": "Sof Heznek סבב ב׳",
+   "ticketType": "regular",
+   "sellStartDateTimeWithTimezone": "2026-11-02T17:00:00.000Z",
+   "sellEndDateTimeWithTimezone": "2026-11-05T17:00:00.000Z",
+   "price": 85,
+   "quantity": 35,
+   "soldQuantity": 10,
+   "roundStatus": "active",
+   "status": "current"
+  }
+ ]
+}

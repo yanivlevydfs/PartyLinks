@@ -39,6 +39,9 @@ from partylinks.venue_profiles import VENUE_PROFILE
 from partylinks.venue_profiles.eventer import eventer_venues
 
 UNLIMITED = -1
+# Event statuses the page answers "ticket sales for the event have ended" for (EVENT_CLOSED_MESSAGE in
+# purchase.min.js; 2 is "sales currently closed", 1 on sale). Their JSON-LD says EventCancelled regardless.
+SALES_ENDED = {3, 4}
 CATEGORIES_SLIDER = 6  # sliderType of the home page's category tiles
 EVENT_SLIDE = 5  # slideType of an event (1 artist, 2 venue, 3 production, 8 article...)
 
@@ -235,7 +238,8 @@ def parse_event(details: dict[str, Any], tickets_payload: dict[str, Any], page_u
     location_description = clean_str(event.get("locationDescription"))
 
     tickets = [_parse_ticket(t, currency) for t in tickets_payload.get("ticketTypes") or [] if isinstance(t, dict)]
-    priced = [t.price for t in tickets if t.price is not None and t.is_active]
+    # Every tier sold out: the face values still say what the event costs.
+    priced = [t.price for t in tickets if t.price is not None and t.is_active] or [t.price for t in tickets if t.price is not None]
 
     return ScrapedEvent(
         source=EventerScraper.name,
@@ -259,7 +263,9 @@ def parse_event(details: dict[str, Any], tickets_payload: dict[str, Any], page_u
         currency=currency,
         min_price=min(priced, default=None),
         max_price=max(priced, default=None),
-        is_sold_out=tickets_payload.get("totalRemaining") == 0,
+        is_sold_out=tickets_payload.get("totalRemaining") == 0
+        or event.get("status") in SALES_ENDED
+        or (bool(tickets) and all(t.is_sold_out for t in tickets)),
         tickets=tickets,
         extra={
             "link_name": event.get("linkName"),
@@ -274,8 +280,10 @@ def parse_event(details: dict[str, Any], tickets_payload: dict[str, Any], page_u
 
 def _parse_ticket(ticket: dict[str, Any], currency: str) -> TicketTier:
     price = to_decimal(ticket.get("price"))
-    closed = price is not None and price < 0  # -1 = tier not on sale (originalPrice keeps the face value)
-    price = None if closed else price
+    # -1: this tier is sold out (the page: "הכרטיסים מסוג זה אזלו"); originalPrice keeps the face value.
+    sold_out = price is not None and price < 0
+    if sold_out:
+        price = to_decimal(ticket.get("originalPrice"))
     remaining = to_int(ticket.get("remaining"))
     remaining = None if remaining in (None, UNLIMITED) else remaining
     return TicketTier(
@@ -286,8 +294,8 @@ def _parse_ticket(ticket: dict[str, Any], currency: str) -> TicketTier:
         original_price=to_decimal(ticket.get("originalPrice")),
         currency=currency,
         is_free=price == 0,
-        is_active=not (closed or ticket.get("isPurchaseWithCouponOnly", False)),
-        is_sold_out=remaining == 0,
+        is_active=not ticket.get("isPurchaseWithCouponOnly", False),
+        is_sold_out=sold_out or remaining == 0,
         remaining=remaining,
         sale_end=parse_iso(ticket.get("toDate")),
     )

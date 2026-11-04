@@ -72,12 +72,12 @@ def test_eventer_free_and_paid_tiers() -> None:
     assert len(event.images) >= 2
 
 
-def test_eventer_closed_tier_has_no_price() -> None:
+def test_eventer_sold_out_tier_keeps_face_value() -> None:
     tickets = {"ticketTypes": [{"_id": "a", "name": "רמה 1", "price": 399}, {"_id": "b", "name": "יציע", "price": -1, "originalPrice": 199}]}
     event = eventer.parse_event(load("eventer_event"), tickets, "https://www.eventer.co.il/vlf2f", TZ)
 
-    closed = event.tickets[1]
-    assert closed.price is None and not closed.is_active
+    sold_out = event.tickets[1]  # price -1 = this tier sold out
+    assert sold_out.price == Decimal(199) and sold_out.status is TierStatus.SOLD_OUT
     assert event.min_price == event.max_price == Decimal(399)
 
 

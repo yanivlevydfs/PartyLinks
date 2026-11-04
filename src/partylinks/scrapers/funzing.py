@@ -6,7 +6,8 @@ The site's pages are an Angular app fed by a JSON API (``api-il.funzing.com/api/
   (``number_of_upcoming_dates``); about 30 pages have dates, the other ~400 none, so the listing stops at
   the first page without one;
 * ``/funz/<id>`` - the experience: text, ``category_slug``, ``funz_interests`` (keys), the map pin
-  (``latitude`` / ``longitude``), ``displayed_address``, adult / kids price ("₪100") and its ``events``
+  (``latitude`` / ``longitude``), ``displayed_address``, adult / kids price ("₪100"; "₪0" for a priced-by-
+  package experience such as a couple workshop, whose "from" price is ``starting_price``) and its ``events``
   (``date_start`` with the zone, ``end_time`` "20:00", ``sold_out``);
 * ``/categories`` - each category's interests, key -> Hebrew name.
 Each date is one event; online experiences are skipped.
@@ -92,6 +93,7 @@ def parse_funz(funz: dict[str, Any], interests: dict[str, str]) -> list[ScrapedE
     if funz.get("intended_for_children") or funz.get("funz_on_kids_category"):  # for_kids: kids may join
         genres.append("ילדים ומשפחה")
     prices = [p for p in (_price(funz.get("adult_price")), _price(funz.get("kids_price"))) if p]
+    prices = prices or [p for p in (_price(funz.get("starting_price")),) if p]  # adult / kids both "₪0"
     city = clean_str(funz.get("city"))
     address = clean_str(funz.get("displayed_address"))
     cover = funz.get("cover_url")

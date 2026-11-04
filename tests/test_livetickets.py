@@ -40,7 +40,9 @@ def test_livetickets_festival_rows_dollar_and_no_price() -> None:
         "USD",
         Decimal(690),
     )
-    assert (sziget.country, sziget.min_price) == ("HU", None)
+    assert not tomorrowland.is_sold_out
+    # Empty price box = out of stock (the event page shows only a "leave your details" form).
+    assert (sziget.country, sziget.min_price, sziget.is_sold_out) == ("HU", None, True)
 
 
 def test_livetickets_listing_links() -> None:

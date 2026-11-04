@@ -4,9 +4,10 @@ Next.js on Supabase; robots.txt allows everything. Listing: the sitemap lists ev
 (``/events/<16 hex>``, ~850 all-time) with ``lastmod`` set to the event's date, so only pages
 dated from yesterday on are read (~50). Details: each page's schema.org ``Event`` JSON-LD gives
 name, start/end, image, place, organizer and one ``Offer`` per ticket tier. Every offer's price
-reads "0" whatever the tier costs (tiers load client-side), so prices are left unknown rather
-than shown as free; tier names and availability are kept. Many raves name only a region
-("מרכז הארץ", "השרון") until the location is sent to ticket holders.
+reads "0" whatever the tier costs, so the tiers come from the JSON the page itself loads
+(``/api/event/general/<id>``: ``eventTicketTypes`` with price, discount and round status
+current / soon / soldout / expired); the JSON-LD offers stay as a fallback, price unknown.
+Many raves name only a region ("מרכז הארץ", "השרון") until the location is sent to ticket holders.
 """
 
 from __future__ import annotations
@@ -19,7 +20,17 @@ from typing import Any
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
-from partylinks.parsing import ParseError, clean_str, has_time, html_to_text, jsonld_nodes, parse_iso, schema_types
+from partylinks.parsing import (
+    ParseError,
+    clean_str,
+    has_time,
+    html_to_text,
+    jsonld_nodes,
+    parse_iso,
+    schema_types,
+    to_decimal,
+    to_int,
+)
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _URL = re.compile(r"<url>\s*<loc>\s*(https://[^<\s]+/events/([0-9a-f]{8,}))\s*</loc>\s*(?:<lastmod>\s*([^<\s]+))?")
@@ -49,7 +60,12 @@ class DropScraper(BaseScraper[DropSettings]):
             yield event
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
-        return parse_event(await self.get_text(url), url, self.timezone)
+        event = parse_event(await self.get_text(url), url, self.timezone)
+        if event is None:
+            return None
+        api = f"{self.settings.site_url}/api/event/general/{event.source_event_id}"
+        data = await self.optional(f"tickets {event.source_event_id}", self.get_json(api, expect=dict))
+        return with_api_tickets(event, data or {})
 
 
 def upcoming_urls(sitemap: str, since: datetime) -> list[str]:
@@ -109,6 +125,36 @@ def _tier(offer: dict[str, Any]) -> TicketTier:
         status=TierStatus.SOLD_OUT if sold_out else TierStatus.ON_SALE,
         sale_start=parse_iso(offer.get("validFrom")),
         sale_end=parse_iso(offer.get("validThrough")),
+    )
+
+
+_STATUS = {"soon": TierStatus.COMING_SOON, "soldout": TierStatus.SOLD_OUT, "expired": TierStatus.CLOSED}
+
+
+def with_api_tickets(event: ScrapedEvent, data: dict[str, Any]) -> ScrapedEvent:
+    """``event`` with its priced tiers from the event API; unchanged when the API lists none."""
+    tickets = [_api_tier(t) for t in _list(data.get("eventTicketTypes")) if isinstance(t, dict)]
+    if not tickets:
+        return event
+    sold_out = all(t.status is TierStatus.SOLD_OUT for t in tickets)
+    return event.model_copy(update={"tickets": tickets, "is_sold_out": sold_out})
+
+
+def _api_tier(t: dict[str, Any]) -> TicketTier:
+    # The page's own rule: a discount counts only when it is above 0 and below the price.
+    price, discount = to_decimal(t.get("price")), to_decimal(t.get("discountedPrice"))
+    discounted = price is not None and discount is not None and 0 < discount < price
+    quantity, sold = to_int(t.get("quantity")), to_int(t.get("soldQuantity")) or 0
+    return TicketTier(
+        source_ticket_id=clean_str(t.get("id")),
+        name=clean_str(t.get("name")) or "כרטיס",
+        price=discount if discounted else price,
+        original_price=price if discounted else None,
+        currency=clean_str(t.get("currency")) or "ILS",
+        status=_STATUS.get(str(t.get("status")), TierStatus.ON_SALE),
+        remaining=max(quantity - sold, 0) if quantity is not None else None,
+        sale_start=parse_iso(t.get("sellStartDateTimeWithTimezone")),
+        sale_end=parse_iso(t.get("sellEndDateTimeWithTimezone")),
     )
 
 

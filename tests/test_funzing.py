@@ -37,3 +37,11 @@ def test_experience_per_date() -> None:
     assert "tours" in Enricher(Settings().enrichment, "Asia/Jerusalem")._detect_genres(first)
     assert parse_funz({"id": 1}, {}) == []
     assert parse_funz({**FUNZ, "city": "אונליין"}, interests) == []
+
+
+def test_package_priced_experience_reads_starting_price() -> None:
+    # Funz 38332 (couple painting workshop, Caesarea): adult and kids price "₪0", the site's "from" price 650.
+    funz = {**FUNZ, "id": 38332, "adult_price": "₪0", "kids_price": "₪0", "starting_price": "₪650"}
+    first = parse_funz(funz, {})[0]
+    assert (first.min_price, first.max_price) == (650, 650)
+    assert parse_funz({**funz, "starting_price": None}, {})[0].min_price is None

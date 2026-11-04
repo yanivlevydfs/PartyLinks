@@ -5,6 +5,8 @@ Snippets trimmed from real pages (Wayback captures, June / November 2025)."""
 from __future__ import annotations
 
 import json
+from decimal import Decimal
+from pathlib import Path
 
 from partylinks.scrapers.barak import last_page, parse_city
 from partylinks.scrapers.eventim import parse_event
@@ -70,3 +72,16 @@ def test_event_page_reads_as_eventim() -> None:
     assert event.source_genres == ["הופעות חיות", "אמנים ישראלים", "מוסיקה"]
     assert event.image_url and event.image_url.endswith("uzitribute-artwork.png")
     assert (event.tickets, event.is_sold_out, event.extra["booking_type"]) == ([], False, "seatmap")
+
+
+def test_seat_map_page_prices_from_jsonld_offers() -> None:
+    # Live page, Nov 2026 (pageMeta + JSON-LD kept): a seat-map event has no ticket rows, its price
+    # categories are the AggregateOffer's itemOffered.offers.
+    page = (Path(__file__).parent / "fixtures/barak/seatmap_21325690.html").read_text("utf-8")
+    event = parse_event(page, f"{SITE}/event/the-beatles-symphony-מרכז-הקונגרסים-חיפה-21325690/", TZ, "barak")
+    assert event is not None and event.title == "THE BEATLES SYMPHONY"
+    assert [(t.name, t.price) for t in event.tickets][:2] == [
+        ("רמה 1", Decimal("349.00")),
+        ("רמה 2", Decimal("299.00")),
+    ]
+    assert (event.min_price, event.max_price) == (Decimal("189.00"), Decimal("349.00")) and not event.is_sold_out

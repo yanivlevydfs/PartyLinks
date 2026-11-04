@@ -6,7 +6,9 @@ as ``/event/<slug>-<id>/``. Details, all from the event page:
 
 * ``window.dataLayer.push({... "event":"pageMeta" ...})`` - on every page: name, start/end,
   venue, city, genre / sub-genre, availability (``event_tickets_available`` "1|0").
-* ticket rows (``[data-qa=tickettype]``): name (``data-tt-name``) and price.
+* ticket rows (``[data-qa=tickettype]``): name (``data-tt-name``) and price. A seat-map page has
+  none; its tiers come from the JSON-LD ``AggregateOffer`` -> ``itemOffered.offers`` (one ``Offer``
+  per price category: ``category``, ``price``, ``availability``).
 * ``og:image``: the artwork.
 * schema.org event JSON-LD - on some pages only: street address, performer and
   ``eventStatus`` (``EventCancelled`` events are dropped). A page without pageMeta is read
@@ -192,7 +194,7 @@ def parse_event(page_html: str, url: str, timezone: str, source: str = "eventim"
     start = parse_iso(meta.get("event_date"), timezone)
     if start is None:
         raise ParseError(f"{url}: no event date")
-    tickets = parse_tickets(page_html)
+    tickets = parse_tickets(page_html) or ld_tickets(ld)
     available = str(meta.get("event_tickets_available") or "").startswith("1")
     if not available:
         tickets = [t.model_copy(update={"status": TierStatus.SOLD_OUT}) for t in tickets]
@@ -256,6 +258,27 @@ def parse_tickets(page_html: str) -> list[TicketTier]:
         seen.setdefault(
             (name, price), TicketTier(name=name, price=price, is_free=price == 0, status=TierStatus.ON_SALE)
         )
+    return list(seen.values())
+
+
+def ld_tickets(ld: dict[str, Any]) -> list[TicketTier]:
+    """One tier per price category of the Event's offers (an AggregateOffer nests them in
+    ``itemOffered.offers``), identical ones merged."""
+    seen: dict[tuple[str, Decimal | None], TicketTier] = {}
+    pending = [o for o in _list(ld.get("offers")) if isinstance(o, dict)]
+    while pending:
+        offer = pending.pop(0)
+        item = offer.get("itemOffered") if isinstance(offer.get("itemOffered"), dict) else {}
+        nested = [o for o in _list(offer.get("offers")) + _list(item.get("offers")) if isinstance(o, dict)]
+        pending.extend(nested)
+        price = to_decimal(offer.get("price"))
+        if nested or price is None:
+            continue
+        name = clean_str(offer.get("category")) or clean_str(offer.get("name")) or "כרטיס"
+        sold_out = str(offer.get("availability") or "").endswith("SoldOut")
+        seen.setdefault((name, price), TicketTier(
+            name=name, price=price, is_free=price == 0, status=TierStatus.SOLD_OUT if sold_out else TierStatus.ON_SALE,
+        ))  # fmt: skip
     return list(seen.values())
 
 
