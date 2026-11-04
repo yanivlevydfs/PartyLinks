@@ -15,3 +15,12 @@
 .share-btn.al-instagram:hover, .share-btn.al-instagram:focus-visible { background: #e1306c; border-color: #e1306c; }
 .share-btn.al-facebook:hover, .share-btn.al-facebook:focus-visible { background: #1877f2; border-color: #1877f2; }
 .share-btn.al-x:hover, .share-btn.al-x:focus-visible { background: #000; border-color: #fff; }
+/* The lineup player (ArtistPlayer): one button per artist with a SoundCloud / Spotify / YouTube link. */
+.ap-names { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.ap-name { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line, #333);
+  background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.ap-name small { opacity: .6; font-size: .75em; }
+.ap-name.al-soundcloud:hover, .ap-name.al-soundcloud.on { border-color: #f50; }
+.ap-name.al-spotify:hover, .ap-name.al-spotify.on { border-color: #1db954; }
+.ap-name.al-youtube:hover, .ap-name.al-youtube.on { border-color: #f00; }
+.ap-frame { display: block; width: 100%; border: 0; border-radius: 12px; }

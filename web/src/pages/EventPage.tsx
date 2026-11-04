@@ -10,7 +10,8 @@ import { PlanButton } from "../plans/PlanButton";
 import { SaveButton } from "../saved/SaveButton";
 import { EventStats } from "../popularity/EventStats";
 import { ArtistLinks } from "../artist_links/ArtistLinks";
-import { AddToCalendar, artistPath, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
+import { ArtistPlayer } from "../artist_links/ArtistPlayer";
+import { AddToCalendar, artistPath, countryName, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
 
 // URLs in scraped description text become links; trailing punctuation stays text.
 function linkify(text: string) {
@@ -91,7 +92,7 @@ export default function EventPage() {
                   <i>📍</i>
                   <span>
                     {e.venue_name ? <Link to={venuePath(e.venue_name)}>{e.venue_name}</Link> : null}
-                    {[e.venue_name ? "" : null, e.address, e.city].filter((x) => x != null && x !== undefined).join(" · ")}{" "}
+                    {[e.venue_name ? "" : null, e.address, e.city, countryName(e.country, lang) || null].filter((x) => x != null && x !== undefined).join(" · ")}{" "}
                     {mapQuery && (
                       <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} target="_blank" rel="noopener noreferrer">
                         {t.map} ↗
@@ -141,6 +142,7 @@ export default function EventPage() {
             </div>
           </section>
         )}
+        <ArtistPlayer names={e.lineup} links={e.lineup_links} />
 
         {e.tickets.length > 0 && (
           <section>

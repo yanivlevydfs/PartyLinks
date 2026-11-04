@@ -63,6 +63,8 @@ CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "worker-src 'self' blob:",  # the map's vector-tile workers
     ("connect-src 'self' https://tiles.openfreemap.org https://cdn.jsdelivr.net/npm/sienna-accessibility/ https://*.google-analytics.com "
     "https://*.analytics.google.com https://*.googletagmanager.com https://cloudflareinsights.com"),
+    # The lineup player (artist_links/ArtistPlayer.tsx), loaded only when a visitor clicks an artist.
+    "frame-src https://w.soundcloud.com https://open.spotify.com https://www.youtube-nocookie.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

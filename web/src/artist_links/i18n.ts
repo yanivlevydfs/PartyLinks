@@ -9,11 +9,13 @@ const services = {
 const he = {
   services: { ...services, website: "האתר הרשמי" } as Record<string, string>,
   on: (artist: string, service: string) => `${artist} ב-${service}`,
+  listen: "האזינו לליינאפ",
 };
 
 const en: typeof he = {
   services: { ...services, website: "Official website" },
   on: (artist, service) => `${artist} on ${service}`,
+  listen: "Hear the lineup",
 };
 
 export function useArtistLinksText() {

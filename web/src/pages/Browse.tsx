@@ -4,7 +4,8 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo } from "../api";
 import type { Facet } from "../types";
 import { ArtistLinks } from "../artist_links/ArtistLinks";
-import { artistPath, Chip, EventGrid, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
+import { ArtistPlayer } from "../artist_links/ArtistPlayer";
+import { artistPath, Chip, countryName, EventGrid, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
 const PAGE = 60;
 // A to Z: English (abc) then Hebrew (אבג), case and accents ignored, "2" before "10".
@@ -85,7 +86,7 @@ export function VenuePage() {
   const profile = useCategories({ anywhere: "true" }).data?.venues.find((f) => f.verified && f.value.toLowerCase() === name.toLowerCase());
   // Shares the query cache with the grid below, so this costs no extra request.
   const first = useEvents({ venue: name }).data?.pages[0]?.items[0];
-  const where = first && [first.address, first.city].filter(Boolean).join(" · ");
+  const where = first && [first.address, first.city, countryName(first.country, lang)].filter(Boolean).join(" · ");
   const mapQuery = first && (first.latitude != null ? `${first.latitude},${first.longitude}` : [name, where].join(", "));
   return (
     <>
@@ -143,6 +144,7 @@ export function ArtistPage() {
       </Hero>
       <main className="wrap">
         {about && <p className="landing-intro">{about}</p>}
+        <ArtistPlayer names={[profile?.value ?? name]} links={info?.artist_links && { [profile?.value ?? name]: info.artist_links }} />
         <h4 className="section-title">{t.upcomingAt}</h4>
         <EventGrid params={{ artist: name }} />
       </main>
