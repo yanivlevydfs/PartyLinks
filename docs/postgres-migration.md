@@ -861,7 +861,7 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **התיקון:** ה-`GROUP BY` רץ כשאילתה משלו, והתוצאה (בדרך כלל כמה קבוצות) נכנסת ל-`IN` כרשימה. בלי קבוצות חדשות: אין שאילתה שנייה.
 - **נמדד ב-production (קריאה בלבד, 80k אירועים):** חלון של 30 דק' ‏0.16 ש', יום ‏0.26 ש', שבוע (35k קבוצות) ‏0.91 ש'.
 - **לא נוסף:** PostGIS ואינדקס feed מורכב. ‏`ix_events_feed` כבר מכסה את הרשימה הראשית, ושאילתות ה-feed (‏~38ms) לא בין היקרות. "קרוב אליי" של הבוט הוא bounding box על lat/lng, בלי שאילתת רדיוס באתר.
-### 2026-11-04 (הסרת 4 אינדקסים שלא נוצלו)
-- **הוסרו:** `ix_events_venue_slug`, ‏`ix_deal_changes_kind`, ‏`ix_deal_changes_source`, ‏`ix_clicks_event_id`. נבדקו ב-production ב-2026-10-28 וב-2026-11-04: ‏0 סריקות בשתי הבדיקות (שלב 5 ב-`postgres-performance.md`). ל-`clicks` אין FK ל-`events`, כך שמחיקת אירוע לא נשענה על `ix_clicks_event_id`.
-- **איך:** הוסר `index=True` מהמודל ב-`db.py`, וב-production `DROP INDEX CONCURRENTLY IF EXISTS` לכל אחד (‏`create_schema` לא מוחק אינדקסים). DB חדש (localhost, tests) נוצר בלעדיהם.
-- **Rollback:** להחזיר `index=True`. ‏`create_schema` יוצר אותם מחדש ב-deploy הבא.
+### 2026-11-04 (4 אינדקסים עם 0 סריקות: נשארים)
+- **נבדק:** `ix_events_venue_slug`, ‏`ix_deal_changes_kind`, ‏`ix_deal_changes_source`, ‏`ix_clicks_event_id` עם 0 סריקות ב-2026-10-28 וב-2026-11-04.
+- **החלטה: נשארים.** יש שאילתות שיכולות להשתמש בהם (דף מקום לפי `venue_slug`, פיד שינויי המחיר לפי `kind` / `source`, ‏"המומלצים" של הבוט לפי קליקים). כרגע ה-planner בוחר אינדקס אחר, אבל זה עלול להשתנות כשהטבלאות יגדלו. החיסכון בהסרה (~5MB) לא שווה את הסיכון.
+- **production:** ניסיון `DROP INDEX CONCURRENTLY` שנקטע (lock timeout) השאיר את `ix_events_venue_slug` כ-invalid (‏`indisvalid = false`). התיקון: `REINDEX INDEX CONCURRENTLY ix_events_venue_slug`.

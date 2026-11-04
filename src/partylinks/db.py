@@ -137,7 +137,7 @@ class EventRow(Base):
     time_known: Mapped[bool] = mapped_column(Boolean, default=True)
     time_zone: Mapped[str | None] = mapped_column(String(48))
     venue_name: Mapped[str | None] = mapped_column(Text)
-    venue_slug: Mapped[str | None] = mapped_column(Text)
+    venue_slug: Mapped[str | None] = mapped_column(Text, index=True)
     address: Mapped[str | None] = mapped_column(Text)
     city: Mapped[str | None] = mapped_column(Text, index=True)
     latitude: Mapped[float | None] = mapped_column(Float)
@@ -297,11 +297,11 @@ class DealChangeRow(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
-    source: Mapped[str] = mapped_column(String(32))
+    source: Mapped[str] = mapped_column(String(32), index=True)
     at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
     # new | price_down | price_up | free_entry_started | free_entry_ended | sold_out |
     # back_on_sale | tiers_changed | delisted | relisted
-    kind: Mapped[str] = mapped_column(String(32))
+    kind: Mapped[str] = mapped_column(String(32), index=True)
     old: Mapped[str | None] = mapped_column(Text)
     new: Mapped[str | None] = mapped_column(Text)
     detail: Mapped[str | None] = mapped_column(Text)
@@ -315,7 +315,7 @@ class ClickRow(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
-    event_id: Mapped[str] = mapped_column(Text)
+    event_id: Mapped[str] = mapped_column(Text, index=True)
     source: Mapped[str] = mapped_column(String(32), index=True)
     title: Mapped[str] = mapped_column(Text)
     city: Mapped[str | None] = mapped_column(Text)
