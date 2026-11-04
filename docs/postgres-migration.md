@@ -871,3 +871,7 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **שאילתות (worker, כל `artist_links.interval_minutes`):** ‏`SELECT lineup FROM events WHERE <upcoming> AND lineup IS NOT NULL` (עמודה אחת), ‏`SELECT key FROM artists WHERE blocked`, ‏`SELECT * FROM artist_links` (כולה); אחרי כל תשובה `INSERT ... ON CONFLICT (key) DO UPDATE` של שורה אחת. בקשה שנכשלה לא נכתבת.
 - **שאילתות (web):** ‏`SELECT name, spotify_url, links FROM artist_profiles` ו-`SELECT key, links FROM artist_links WHERE found` - פעם ב-`artist_links.cache_seconds` (600) לכל process, לזיכרון; ‏`GET /events/{ref}` (‏`lineup_links`), ‏`/landing-info?path=/artist/...` (‏`artist_links`) ודפי `/event`, ‏`/artist` של השרת (JSON-LD ‏`sameAs`) קוראים מהזיכרון, בלי שאילתה נוספת. אדמין (‏`POST /admin/api/maintenance/artist-links`): ‏`SELECT key, found FROM artist_links` ושאילתת ה-lineup של ה-worker.
 - **Tests:** ‏`tests/test_artist_links.py`.
+
+### 2026-11-04 (התראות: "מחיקת הכל")
+- **שאילתה חדשה:** ‏`DELETE /api/me/alerts` (‏`partylinks/alerts/routes.py`, ‏`delete_all_alerts`): ‏`DELETE FROM event_alerts WHERE user_id = :me`. ה-hits נמחקים איתן ב-FK ‏`alert_hits.alert_id ... ON DELETE CASCADE` (קיים). בלי שינוי סכימה; האינדקס על `event_alerts.user_id` מכסה.
+- **Tests:** ‏`tests/test_alerts.py::test_alerts_api`.

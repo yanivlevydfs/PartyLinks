@@ -82,6 +82,13 @@ def test_alerts_api(tmp_path: Path, fake: FakeGoogle) -> None:
         c.cookies.clear()
         sign_in(c, fake, email="other@example.com", sub="g-other")
         mine = c.get("/api/me/alerts").json()["items"]
+        c.post("/api/me/alerts", json={"criteria": {"q": "salsa"}}, headers=OURS)
+        assert c.delete("/api/me/alerts").status_code == 403  # "Delete all" only from our pages
+        assert c.delete("/api/me/alerts", headers=OURS).status_code == 204
+        assert c.get("/api/me/alerts").json()["items"] == []
+        c.cookies.clear()
+        sign_in(c, fake)
+        assert [a["name"] for a in c.get("/api/me/alerts").json()["items"]] == ["night"]  # another user's "Delete all" left these
         assert mine == [] and c.get("/api/me/alerts/999/preview").status_code == 410
 
 

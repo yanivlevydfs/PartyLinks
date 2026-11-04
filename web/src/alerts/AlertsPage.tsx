@@ -81,6 +81,22 @@ function AlertCard({ a }: { a: Alert }) {
   );
 }
 
+/** "Delete all", asked once more before it goes. */
+function RemoveAll({ n }: { n: number }) {
+  const t = useAlertText();
+  const { removeAll } = useAlertActions();
+  const [confirm, setConfirm] = useState(false);
+  return confirm ? (
+    <div className="alert-actions" role="group" aria-label={t.confirmRemoveAll(n)}>
+      <b>{t.confirmRemoveAll(n)}</b>
+      <button type="button" className="c-btn danger" onClick={() => removeAll()}>{t.yesRemove}</button>
+      <button type="button" className="c-btn ghost" onClick={() => setConfirm(false)} autoFocus>{t.cancel}</button>
+    </div>
+  ) : (
+    <div className="alert-actions"><button type="button" className="c-btn ghost" onClick={() => setConfirm(true)}>{t.removeAll}</button></div>
+  );
+}
+
 /** A new alert (no ``alert``) or an edit of one. */
 function AlertForm({ alert, onDone }: { alert?: Alert; onDone?: () => void }) {
   const t = useAlertText();
@@ -229,6 +245,7 @@ export default function AlertsPage() {
               <h2>{t.listTitle} <small>{t.limit(items.length, max)}</small></h2>
               {!adding && items.length < max && <button type="button" className="c-btn" onClick={() => setAdding(true)}>{t.add}</button>}
             </div>
+            <RemoveAll n={items.length} />
             {adding && <AlertForm onDone={() => setAdding(false)} />}
             {items.length >= max && <p className="alert-note">{t.tooMany}</p>}
             <ul className="alert-list">{items.map((a) => <AlertCard key={a.id} a={a} />)}</ul>

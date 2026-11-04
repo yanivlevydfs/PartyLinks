@@ -93,6 +93,10 @@ export function useAlertActions() {
       await send(`/api/me/alerts/${id}`, "DELETE");
       await refresh();
     },
+    removeAll: async () => {
+      await send("/api/me/alerts", "DELETE");
+      await refresh();
+    },
     /** Remove one notification, or all of them (no id): "For you" stops showing them too. */
     clear: async (eventId?: string) => {
       await send(`/api/me/bell${eventId ? `?event_id=${encodeURIComponent(eventId)}` : ""}`, "DELETE");

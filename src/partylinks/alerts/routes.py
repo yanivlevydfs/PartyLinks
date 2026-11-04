@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from cachetools import TTLCache
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from partylinks.accounts.guard import SameOrigin, limited
@@ -152,6 +152,15 @@ def edit_alert(alert_id: int, body: AlertPatch, user: UserDep, request: Request,
 def delete_alert(alert_id: int, user: UserDep, request: Request) -> Response:
     with request.app.state.db.session() as session:
         session.delete(_mine(session, user.id, alert_id))
+    _for_you.pop(user.id, None)
+    return Response(status_code=204)
+
+
+@router.delete("/alerts", status_code=204, dependencies=WRITE)
+def delete_all_alerts(user: UserDep, request: Request) -> Response:
+    """Every alert of this user ("Delete all" on the alerts page); their hits go with them (FK cascade)."""
+    with request.app.state.db.session() as session:
+        session.execute(delete(AlertRow).where(AlertRow.user_id == user.id))
     _for_you.pop(user.id, None)
     return Response(status_code=204)
 
