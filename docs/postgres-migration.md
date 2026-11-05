@@ -875,3 +875,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 ### 2026-11-04 (התראות: "מחיקת הכל")
 - **שאילתה חדשה:** ‏`DELETE /api/me/alerts` (‏`partylinks/alerts/routes.py`, ‏`delete_all_alerts`): ‏`DELETE FROM event_alerts WHERE user_id = :me`. ה-hits נמחקים איתן ב-FK ‏`alert_hits.alert_id ... ON DELETE CASCADE` (קיים). בלי שינוי סכימה; האינדקס על `event_alerts.user_id` מכסה.
 - **Tests:** ‏`tests/test_alerts.py::test_alerts_api`.
+
+### 2026-11-05 (השלמת חוסרים מחנויות אחרות של אותו אירוע: `group_fill`)
+- **אין טבלה או עמודה חדשה.** מודול חדש `partylinks/group_fill.py`, רץ ב-`Service._regroup_once` מיד אחרי ה-dedup.
+- **שאילתה (session קריאה):** ‏`SELECT id, group_id, is_primary, venue_slug, latitude, longitude, venue_name, address, city, genres, lineup, min_age FROM events WHERE is_listed` (כל הטבלה, ~78k שורות: 2.3 שניות ב-prod, 2026-11-05). הקיבוץ וההשלמה בפייתון.
+- **כתיבה (session כתיבה קצר):** ‏`bulk_update_by_id` רק על שורות שהשתנו (~4,300 במעבר הראשון, אחר כך מעט): ‏`UPDATE events SET latitude, longitude, venue_name, address, city, genres, lineup, min_age WHERE id = :id`, ממוינות לפי id (בלי deadlocks).
+- **Tests:** ‏`tests/test_dedup.py::test_a_listing_takes_what_it_lacks_from_the_other_stores_of_its_event`.
