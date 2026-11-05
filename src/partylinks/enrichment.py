@@ -51,7 +51,7 @@ _NUMBERING = re.compile(r"^\s*\d{1,2}\s*[\])]\s*")
 # Not a name at all: underscores ("______ BLACK", "_music"), "???", a postal code or a street ("16 Rue Saglio
 # 67100 Strasbourg", "6 Impasse Philippe Lebon").
 _NOT_A_NAME = re.compile(
-    r"__|^_|\?\?|\b\d{5}\b|\b\d{1,2}h\b|\b(?:rue|impasse|avenue|boulevard|chemin|allée|straße|strasse|calle|via)\b", re.IGNORECASE
+    r"__|^_|\?\?|\b\d{5}\b|\b\d{1,2}h\b|\b\d{1,2}[h:]\d{2}\b|\b(?:rue|impasse|avenue|boulevard|chemin|allée|straße|strasse|calle|via)\b", re.IGNORECASE
 )
 _DJ_DASH = re.compile(r"^dj\s*[-–—:]\s*", re.IGNORECASE)
 _HEBREW = re.compile(r"[֐-׿].*$")
