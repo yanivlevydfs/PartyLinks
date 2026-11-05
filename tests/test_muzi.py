@@ -83,3 +83,14 @@ def test_unescaped_quotes_outside_the_description() -> None:
     assert '"ויצ"ו' in page
     event = parse_event(page, URL, TZ)
     assert event is not None and event.title == "Bayz Rooftop The Last Dance"
+
+
+def test_placeholder_place_takes_the_visible_where_row() -> None:
+    page = _page("event_free.html")
+    event = parse_event(page, URL, TZ)
+    assert event is not None and event.venue_name
+    placeholder = page.replace(f'"name": "{event.venue_name}"', '"name": "Hall"', 1)
+    assert placeholder != page
+    fixed = parse_event(placeholder, URL, TZ, placeholders=["Hall"])
+    # The page's own "איפה?" row: "<p>קמפוס הטכניון <span>חיפה</span></p>".
+    assert fixed is not None and (fixed.venue_name, fixed.city) == ("קמפוס הטכניון", "חיפה")

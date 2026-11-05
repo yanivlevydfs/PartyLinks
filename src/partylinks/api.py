@@ -1582,7 +1582,7 @@ def _register_routes(app: FastAPI) -> None:
                         value=p.name, events=n, verified=True, image_url=p.image_url, kind=p.kind, genre=p.genre,
                         spotify_url=p.spotify_url, profile_url=p.profile_url, links=p.links or None,
                     ))  # fmt: skip
-                else:
+                elif not request.app.state.settings.site.artists_verified_only:
                     out.append(FacetValue(value=name, events=n))
             return out
 

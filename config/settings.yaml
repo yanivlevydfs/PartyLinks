@@ -53,6 +53,7 @@ logging:
 site:
   base_url: http://localhost:8000
   name: SPOTX
+  artists_verified_only: true  # /artists and the sitemap list profiled artists only (quality over quantity)
   email: ""                # contact + partnerships address on /contact and /partners (empty: privacy.email)
   # The site's profiles elsewhere, in the home page's Organization JSON-LD (sameAs). Add social pages here.
   same_as: ["https://t.me/spotxilbot"]
@@ -658,11 +659,15 @@ enrichment:
     # Lines that look like names but are placeholders ("and" / "more": leftovers of "...AND MORE TBA").
     ignore: ["to be announced", "tba", "tbd", "soon", "בקרוב", "יוכרז בהמשך", "main stage", "stage", "and", "more",
              "special guest", "special guests", "surprise guest", "secret guest", "guest", "guests", "and friends",
-             "אורח מיוחד", "אורחת מיוחדת", "אורחים מיוחדים", "אורח מפתיע", "אורח סודי", "אמן אורח", "ועוד", "guest list", "tickets & tables", "tickets & entry", "secret nature location", "central israel"]
+             "אורח מיוחד", "אורחת מיוחדת", "אורחים מיוחדים", "אורח מפתיע", "אורח סודי", "אמן אורח", "ועוד", "guest list", "tickets & tables", "tickets & entry", "secret nature location", "central israel",
+             "à découvrir", "à découvrir prochainement", "prochainement", "à venir", "bientôt", "coming soon",
+             "music", "dj", "djs", "dj contest", "dj all night", "dj club", "dj mr", "dj dr", "dj f", "infos", "info", "list", "code",
+             "the", "before & after", "after trance", "guest list, tickets & tables", "lineup", "line up"]
     header_filler: ["ה", "ו", "וה", "שלנו", "המלא", "הרזידנט", "מוזיקלי", "הערב", "resident", "the", "our", "full", "official",
                     "-", "–", "—", "|"]
     # "bar" alone is a first / last name (OMER BAR, BAR TAL): only bar phrases mark a non-name.
-    not_name_words: ["stage", "zone", "market", "area", "room", "floor", "tent",
+    not_name_words: ["stage", "zone", "market", "area", "room", "floor", "tent", "4pass", "dress code", "cancellation",
+                     "refund", "refunds",
                      "open bar", "free bar", "bar mitzvah", "bar mitzva", "cocktail bar", "wine bar", "beach bar",
                      "rooftop bar", "sushi bar", "vip bar", "main bar", "sky bar", "pool bar", "bar & grill", "on the bar",
                      "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",

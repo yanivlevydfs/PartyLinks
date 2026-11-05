@@ -403,3 +403,16 @@ def test_a_listing_takes_what_it_lacks_from_the_other_stores_of_its_event(tmp_pa
     filled = fills[0]
     assert (filled["latitude"], filled["longitude"]) == MOON
     assert filled["lineup"] == ["DOR HADAD"] and filled["min_age"] == 21
+
+
+def test_stored_lineups_are_cleaned_by_the_current_name_rule(tmp_path: Path) -> None:
+    from partylinks import group_fill
+
+    settings, _ = grouped(tmp_path, [listing("shotgun", "a", "NUIT NOIRE")])
+    db = Database(settings.database.url)
+    with db.session() as session:
+        session.get_one(EventRow, "shotgun:a").lineup = ["01] DJ IAGO", "00h00 — 06h30", "______ BLACK", "DJ IAGO", "ANSTY"]
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    with db.session() as session:
+        fills = group_fill.plan(session, enricher.clean_name)
+    assert [f["lineup"] for f in fills] == [["DJ IAGO", "ANSTY"]]

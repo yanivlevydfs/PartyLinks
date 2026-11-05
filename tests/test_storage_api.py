@@ -971,6 +971,7 @@ def test_artist_page_is_the_whole_name_any_case_once_per_event(tmp_path: Path) -
     from partylinks.seo import _names, artist_page
 
     settings = settings_for(tmp_path)
+    settings.site.artists_verified_only = False  # these names have no profile: the count is what is checked
     future = datetime.now(UTC) + timedelta(days=2)
     lineups = {"adam": ["Adam"], "upper": ["ADAM", "Noa"], "ten": ["Adam Ten"], "omer": ["Omer Adam"],
                "quote": ['DJ "Q"'], "copy": ["Adam"]}  # fmt: skip

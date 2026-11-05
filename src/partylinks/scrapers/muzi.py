@@ -59,6 +59,9 @@ class MuziSettings(SourceSettings):
     event_sitemap_prefix: str  # the index's event sitemaps: /event-sitemap
     event_path: str  # /event/
     max_events: int = Field(3000, ge=1)
+    # JSON-LD place names that are the theme's placeholder, not a venue: the page's "איפה?" row names it then
+    # ("Hall" for המשכן לאמנות עין חרוד, Nov 2026).
+    placeholder_venues: list[str] = Field(default_factory=lambda: ["Hall"])
 
 
 class MuziScraper(BaseScraper[MuziSettings]):
@@ -80,7 +83,7 @@ class MuziScraper(BaseScraper[MuziSettings]):
         today = datetime.now(zone(self.timezone)).date()
 
         async def fetch(url: str) -> ScrapedEvent | None:
-            return parse_event(await self.get_text(url), url, self.timezone, today)
+            return parse_event(await self.get_text(url), url, self.timezone, today, s.placeholder_venues)
 
         async for event in self.stream_isolated(pages[: s.max_events], fetch, label=unquote):
             yield event
@@ -118,6 +121,9 @@ def _jsonld_objects(page_html: str) -> list[dict[str, Any]]:
     return [n for n in found if isinstance(n, dict)]
 
 
+_WHERE = re.compile(r"<p>\s*([^<]+?)\s*(?:<span>\s*([^<]*?)\s*</span>)?\s*</p>")
+
+
 def _row(page_html: str, label: str) -> str:
     """The value cell of the details-table row whose label is ``label`` ("באיזו שעה?")."""
     start = page_html.find(label)
@@ -127,7 +133,9 @@ def _row(page_html: str, label: str) -> str:
     return page_html[start : end if end > 0 else start + 2000]
 
 
-def parse_event(page_html: str, url: str, timezone: str, today: date | None = None) -> ScrapedEvent | None:
+def parse_event(
+    page_html: str, url: str, timezone: str, today: date | None = None, placeholders: list[str] | None = None
+) -> ScrapedEvent | None:
     """The page's event; None when cancelled or already over."""
     objects = _jsonld_objects(page_html)
     node = next((n for n in objects if schema_types(n) & {"musicevent", "event"}), None)
@@ -161,6 +169,13 @@ def parse_event(page_html: str, url: str, timezone: str, today: date | None = No
     address = _dict(place.get("address"))
     venue = clean_str(html.unescape(str(place.get("name") or "")))
     street = clean_str(address.get("streetAddress"))
+    city = clean_str(address.get("addressLocality"))
+    if venue and venue.casefold() in {p.casefold() for p in placeholders or ["Hall"]}:
+        # The visible "איפה?" row: "<p>המשכן לאמנות עין חרוד <span>עין חרוד</span></p>".
+        where = _WHERE.search(_row(page_html, "איפה?"))
+        venue = clean_str(html.unescape(where.group(1))) if where else None
+        city = (clean_str(html.unescape(where.group(2))) if where and where.group(2) else None) or city
+        street = None if street and street.casefold() in {p.casefold() for p in placeholders or ["Hall"]} else street
     country = clean_str(address.get("addressCountry"))
     post_id = _POST_ID.search(page_html)
     page_classes = _PAGE_CLASSES.search(page_html)
@@ -179,7 +194,7 @@ def parse_event(page_html: str, url: str, timezone: str, today: date | None = No
         time_known=clock is not None,
         venue_name=venue,
         address=street if street != venue else None,
-        city=clean_str(address.get("addressLocality")),
+        city=city,
         country=country if country and country != "IL" else None,
         source_genres=_GENRE.findall(page_classes.group(1)) if page_classes else [],
         artists=[

@@ -37,7 +37,22 @@ _COLLAB = re.compile(r"\s+(?:b2b|f2f|vs\.?|x|×)\s+|\s+b2b(?=[A-Z])", re.IGNOREC
 _ANNOTATION = re.compile(r"\s*[(\[{].*$")
 _TBA = re.compile(r"(?:\s+and)?\s*more\s+tba\b.*$|\s*\b(?:tba|t\.b\.a\.?)(?:\s.*)?$", re.IGNORECASE)
 # A timetable slot before a name: "23:00 - 00:00 VICTORIA", "20:00 - זיו יחזקאל", "17:30-18:30SEAN KEE".
-_SLOT = re.compile(r"^\W*\d{1,2}[:.]\d{2}(?:\s*[-–—]\s*\d{1,2}[:.]\d{2})?\s*[-–—:|]?\s*")
+# A clock in any of the sellers' ways: "23:00", "21h45", "21H00", "12AM", "10PM", "1:30am".
+# A bare hour ("2AM", "21h") is a clock only in a range ("1AM–2AM"): "2AM CLUB" is a band.
+_CLOCK_FULL = r"\d{1,2}[:.h]\d{2}\s*(?:[ap]\.?m\.?)?"
+_CLOCK_SHORT = r"\d{1,2}(?:h|\s*[ap]\.?m\.?)"
+_CLOCK_ANY = rf"(?:{_CLOCK_FULL}|{_CLOCK_SHORT})"
+_SLOT = re.compile(
+    rf"^\W*(?:{_CLOCK_FULL}(?:\s*[-–—~]\s*{_CLOCK_ANY})?|{_CLOCK_SHORT}\s*[-–—~]\s*{_CLOCK_ANY})(?!\d)\s*[-–—:|]?\s*",
+    re.IGNORECASE,
+)
+# List numbering before a name: "01] DJ IAGO", "3) NOA".
+_NUMBERING = re.compile(r"^\s*\d{1,2}\s*[\])]\s*")
+# Not a name at all: underscores ("______ BLACK", "_music"), "???", a postal code or a street ("16 Rue Saglio
+# 67100 Strasbourg", "6 Impasse Philippe Lebon").
+_NOT_A_NAME = re.compile(
+    r"__|^_|\?\?|\b\d{5}\b|\b\d{1,2}h\b|\b(?:rue|impasse|avenue|boulevard|chemin|allée|straße|strasse|calle|via)\b", re.IGNORECASE
+)
 _DJ_DASH = re.compile(r"^dj\s*[-–—:]\s*", re.IGNORECASE)
 _HEBREW = re.compile(r"[֐-׿].*$")
 _SENTENCE_END = (".", "!", "?", "…")
@@ -451,7 +466,9 @@ class Enricher:
 
     def _split_word(self, word: str) -> list[str]:
         low = word.casefold()
-        if len(low) < self.settings.lineup.min_glued_length or len(low) != len(word):
+        # Glued names are capitals run together ("MOSKOMILLEROADARU"); "Moonlight" / "Protokseed" are one word
+        # (they came out as "Moon" + "light" on 114 events, Nov 2026).
+        if len(low) < self.settings.lineup.min_glued_length or len(low) != len(word) or not word.isupper():
             return [word]
         for known in sorted(self._known, key=len, reverse=True):
             at = low.find(known) if len(known) < len(low) else -1  # a glued word was often recorded as known itself
@@ -535,16 +552,25 @@ class Enricher:
         # Promo bullets are Hebrew prose ("ליינאפ מטורף"); "LINEUP — LIVE PERFORMANCES" is still a header.
         return not rest or (len(rest) <= 2 and all(w.isascii() for w in rest)) or raw.rstrip().endswith(":")
 
+    def clean_name(self, value: str) -> str | None:
+        """A stored lineup name under the current name rule: cleaned, or None (group_fill applies it to stored rows)."""
+        return self._as_name(value)
+
     def _as_name(self, value: str) -> str | None:
         cfg = self.settings.lineup
-        name = _DJ_DASH.sub("DJ ", _LEADING_WITH.sub("", _strip_decor(value)))
+        if "??" in value:  # "04] ??? — corrompido": a slot not announced yet
+            return None
+        name = _DJ_DASH.sub("DJ ", _LEADING_WITH.sub("", _strip_decor(_NUMBERING.sub("", _SLOT.sub("", value.strip())))))
         if re.match(r"[a-z]", name, re.IGNORECASE):
             name = _HEBREW.sub("", name)  # "YAARA RONמיינסטרים עד הבוקר" (source glued the next line)
         for pattern in (_ANNOTATION, _TBA, self._set_suffix):
             name = pattern.sub("", name)
         name = name.strip(" +-–—,.")
+        if name and name[0] in "'\"" and name.count(name[0]) == 1:  # "'Seun Kuti & Egypt 80": a quote left open
+            name = name[1:].strip()
         if (
-            len(name) < 2
+            _NOT_A_NAME.search(name)
+            or len(name) < 2
             or ":" in name  # "DRESS CODE: SHREK"
             or len(name) > cfg.max_name_length
             or len(name.split()) > cfg.max_name_words

@@ -7,12 +7,14 @@ and one store knows what another leaves out. After each regroup, a listed event 
 - genres, lineup or minimum age takes them from a member of its group.
 Only empty fields are filled; what a source states is never overwritten. The next scrape of a source
 writes its own (empty) value again, and the next regroup fills it again.
-Pictures are shared at read time (``api._group_covers``), not copied here.
+Pictures are shared at read time (``api._group_covers``), not copied here. Stored lineups are also passed
+through the current name rule, so junk saved before a rule was tightened leaves every event at once.
 """
 
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from typing import Any
 
 from sqlalchemy import select
@@ -29,8 +31,10 @@ def _empty(value: Any) -> bool:
     return value is None or value == [] or value == ""
 
 
-def plan(session: Session) -> list[dict[str, Any]]:
-    """Rows to update (id + every fill column): reads only, so it can run outside the write lock."""
+def plan(session: Session, clean_name: Callable[[str], str | None] | None = None) -> list[dict[str, Any]]:
+    """Rows to update (id + every fill column): reads only, so it can run outside the write lock. ``clean_name``
+    (the enrichment's name rule) cleans what stored lineups hold from before a rule was tightened: "01] DJ IAGO"
+    -> "DJ IAGO", "00h00 - 06h30" dropped."""
     rows = session.execute(
         select(
             EventRow.id,
@@ -52,6 +56,10 @@ def plan(session: Session) -> list[dict[str, Any]]:
             spots[(r.venue_slug, r.city)][(r.latitude, r.longitude)] += 1
 
     filled = {i: dict(v) for i, v in current.items()}
+    if clean_name is not None:
+        for row in filled.values():
+            if row["lineup"]:
+                row["lineup"] = list(dict.fromkeys(c for n in row["lineup"] if (c := clean_name(n))))
     for members in groups.values():
         if len(members) < 2:
             continue

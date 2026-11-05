@@ -616,7 +616,7 @@ def artist_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     )
 
 
-def _names(session: Session, kind: str) -> list[str]:
+def _names(session: Session, kind: str, verified_only: bool = False) -> list[str]:
     """Venue / artist names, most events first. Only the one column (not ~28k whole rows); "PETTRA" and
     "Pettra" are one name (one page, one sitemap URL), spelled the most used way, as /categories does."""
     column = EventRow.venue_name if kind == "venues" else EventRow.lineup
@@ -628,12 +628,17 @@ def _names(session: Session, kind: str) -> list[str]:
     for name, n in spellings.most_common():
         shown, total = merged.get(name.casefold(), (name, 0))
         merged[name.casefold()] = (shown, total + n)
+    if kind == "artists" and verified_only:
+        from partylinks.artistdb import ArtistProfileRow  # lazily: artistdb imports db (see artist_links)
+
+        profiled = set(session.scalars(select(ArtistProfileRow.key)))
+        merged = {k: v for k, v in merged.items() if k in profiled}
     return [name for name, _ in sorted(merged.values(), key=lambda item: (-item[1], item[0]))]
 
 
 def index_page(session: Session, cfg: Settings, lang: str, kind: str) -> Page:
     t = TEXT[lang]
-    names = _names(session, kind)[:300]
+    names = _names(session, kind, cfg.site.artists_verified_only)[:300]
     prefix = "/venue/" if kind == "venues" else "/artist/"
     links = "".join(f'<li><a href="{prefix}{quote(n, safe="")}">{escape(n)}</a></li>' for n in names)
     return Page(
@@ -1359,7 +1364,7 @@ def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
     paths += [(p, today) for p, _, _ in _landing_paths(session, cfg)]
     paths += [(event_path(r), r.last_seen_at.astimezone(today.tzinfo)) for r in rows]  # Israel's day, not UTC's
     paths += [(f"/venue/{quote(n, safe='')}", None) for n in _names(session, "venues")]
-    paths += [(f"/artist/{quote(n, safe='')}", None) for n in _names(session, "artists")]
+    paths += [(f"/artist/{quote(n, safe='')}", None) for n in _names(session, "artists", cfg.site.artists_verified_only)]
     urls = []
     for path, modified in paths:
         he, en = escape(_url(cfg, path, "he")), escape(_url(cfg, path, "en"))

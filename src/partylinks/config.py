@@ -501,6 +501,10 @@ class SiteSettings(BaseModel):
     # Public address of the website (no trailing slash): canonical links, sitemap, JSON-LD, share previews.
     base_url: str = "http://localhost:8000"
     name: str = "SPOTX"
+    # The artists index (/artists, the filter's artist list) and the sitemap's /artist/ pages list verified
+    # artists only: names with a profile in the artist book (sellers' artist pages). Names read from free text
+    # ("00h00 - 06h30", "16 Rue Saglio 67100") stay on their events but are not listed as artists.
+    artists_verified_only: bool = True
     # Contact and partnerships address shown on /contact and /partners (falls back to privacy.email).
     email: str = ""
     # The site's own profiles elsewhere (its Telegram bot, social pages): Organization.sameAs in the home's JSON-LD.
