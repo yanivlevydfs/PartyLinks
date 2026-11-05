@@ -85,3 +85,24 @@ def test_seat_map_page_prices_from_jsonld_offers() -> None:
         ("רמה 2", Decimal("299.00")),
     ]
     assert (event.min_price, event.max_price) == (Decimal("189.00"), Decimal("349.00")) and not event.is_sold_out
+
+
+def test_refused_page_falls_back_to_the_listing_item() -> None:
+    from partylinks.scrapers.barak import BarakSettings
+    from partylinks.scrapers.eventim_listing import listing_event
+
+    item = {
+        "@type": "ChildrensEvent", "name": "קרקס הובה קובה", "startDate": "2026-11-05T17:00:00.000+02:00",
+        "endDate": "2026-11-05T18:00:00.000+02:00",
+        "location": {"@type": "Place", "name": "אוהל הקרקס הגדול", "address": {"addressLocality": "באר שבע"}},
+        "offers": {"@type": "AggregateOffer", "lowPrice": "0.0", "availability": "https://schema.org/InStock"},
+    }  # fmt: skip
+    genres = BarakSettings(cron="0 0 * * *", site_url=SITE, city_paths=[]).type_genres
+    event = listing_event("21884752", f"{SITE}/event/קרקס-21884752/", item, TZ, "barak", genres)
+    assert event is not None and event.source_event_id == "21884752"
+    assert (event.title, event.venue_name, event.city) == ("קרקס הובה קובה", "אוהל הקרקס הגדול", "באר שבע")
+    assert event.start_at is not None and event.start_at.isoformat() == "2026-11-05T17:00:00+02:00"
+    assert event.end_at is not None
+    assert event.min_price is None and not event.is_sold_out  # "0.0" is the listing's blank
+    assert event.source_genres == ["ילדים"]
+    assert listing_event("1", SITE, {"name": "x"}, TZ, "barak", genres) is None  # no date

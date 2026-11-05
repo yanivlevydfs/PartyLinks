@@ -21,6 +21,7 @@ robots.txt of www allows everything but /wp-admin; the PRES host has none.
 
 from __future__ import annotations
 
+import asyncio
 import re
 from collections import defaultdict
 from collections.abc import AsyncIterator
@@ -30,13 +31,15 @@ from typing import Any
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent, TicketTier
-from partylinks.parsing import ParseError, clean_str, html_to_text, parse_iso, to_int, zone
+from partylinks.parsing import ParseError, clean_str, html_to_text, og_image, parse_iso, to_int, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.pres import parse_ticket_groups
 
 # A lecture course: a numbered meeting, or a season category ("... 2026-2027", truncated "2026-20").
 _COURSE_TITLE = re.compile(r"מפגש\s*\d+")
 _COURSE_CATEGORY = re.compile(r"\b20\d\d-20")
+# jer-cin.org.il's calendar: <button ... data-event-id="43087" data-event-node="99048">.
+_FILM_BUTTON = re.compile(r'data-event-id="(\d+)"\s+data-event-node="(\d+)"')
 
 
 class TelAvivCinemathequeSettings(SourceSettings):
@@ -80,13 +83,67 @@ class TelAvivCinemathequeScraper(BaseScraper[TelAvivCinemathequeSettings]):
             yield build_event(movie, day, shows, by_id.get(movie) or {}, tiers.get(movie, []), s, self.name)
 
 
+class JerusalemCinemathequeSettings(TelAvivCinemathequeSettings):
+    # The cinematheque's own site: its films' pictures (PRES gives a poster for ~1 feature in 150).
+    site_url: str = "https://www.jer-cin.org.il"
+    calendar_path: str = "/he"  # buttons "data-event-id" (a PRES screening) + "data-event-node" (its film page)
+    film_path: str = "/he/event/{node}"  # og:image: a still of the film
+    # robots.txt asks for Crawl-delay 180: one site request every this many seconds, this source only.
+    crawl_delay_seconds: float = Field(180, ge=0)
+    # Films whose picture is fetched per run (each waits crawl_delay_seconds); the rest follow next runs.
+    max_pictures_per_run: int = Field(15, ge=0)
+
+
 class JerusalemCinemathequeScraper(TelAvivCinemathequeScraper):
     """Jerusalem Cinematheque (jer-cin.org.il): its box office is PRES too (jer-cin.pres.global).
 
-    Its own site asks for a 180-second crawl delay, so it is not crawled; venue in settings.
+    PRES has almost no posters, so each film's picture comes from the cinematheque's own film page, at the
+    site's Crawl-delay (180 s): every event is saved first, then up to ``max_pictures_per_run`` films get their
+    picture (re-yielded with it); a film with a stored picture is never fetched again. Venue in settings.
     """
 
     name = "cinematheque_jlm"
+    settings_model = JerusalemCinemathequeSettings  # type: ignore[assignment]
+
+    async def scrape(self) -> AsyncIterator[ScrapedEvent]:
+        s = self.settings
+        assert isinstance(s, JerusalemCinemathequeSettings)
+        events = [event async for event in super().scrape()]
+        stored: dict[str, list[str]] = {}  # movie id -> its stored picture (event ids are "movie:branch:day")
+        for event_id, images in self.known_images.items():
+            stored.setdefault(event_id.split(":", 1)[0], images)
+        missing: dict[str, list[ScrapedEvent]] = defaultdict(list)
+        for event in events:
+            movie = str(event.extra.get("movie_id") or "")
+            if not event.image_url and (known := stored.get(movie)):
+                event.image_url, event.images = known[0], known
+            if not event.image_url and movie:
+                missing[movie].append(event)
+            yield event
+        if not missing or not s.max_pictures_per_run:
+            return
+        calendar = await self.optional("calendar", self.get_text(s.site_url + s.calendar_path)) or ""
+        nodes = film_nodes(calendar)
+        fetched = 0
+        for movie, movie_events in missing.items():
+            screenings = [str(i) for e in movie_events for i in e.extra.get("screening_ids") or []]
+            node = next((nodes[i] for i in screenings if i in nodes), None)
+            if node is None:
+                continue  # not on the calendar page yet: a later run
+            if fetched >= s.max_pictures_per_run:
+                break
+            await asyncio.sleep(s.crawl_delay_seconds)  # robots.txt: Crawl-delay 180, after the calendar too
+            page = await self.optional(f"film {node}", self.get_text(s.site_url + s.film_path.format(node=node)))
+            fetched += 1
+            if image := og_image(page or ""):
+                for event in movie_events:
+                    event.image_url, event.images = image, [image]
+                    yield event  # saved again, now with its picture
+
+
+def film_nodes(calendar_html: str) -> dict[str, str]:
+    """The calendar's buttons: PRES screening id -> the film page's node id."""
+    return dict(_FILM_BUTTON.findall(calendar_html))
 
 
 def group_screenings(

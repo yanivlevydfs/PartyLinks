@@ -54,8 +54,8 @@ pagination and what the listing and the event page provide.
 | Source | Site | Runs daily at | On |
 | --- | --- | --- | --- |
 | `ticketmaster` | Ticketmaster Israel (ticketmaster.co.il): concerts, shows and festivals nationwide | 06:49, 18:49 | yes |
-| `eventim` | Eventim Israel (eventim.co.il): concerts, theatre, shows and sport | 08:13, 20:13 | yes |
-| `zappa` | Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni, on the Eventim platform (`eventim.py`) | 09:47, 21:47 | yes |
+| `eventim` | Eventim Israel (eventim.co.il): concerts, theatre, shows and sport; Akamai refuses event pages after ~13: those events come from the city pages' ItemList (`eventim_listing.py`), the run then partial | 08:13, 20:13 | yes |
+| `zappa` | Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni, on the Eventim platform (`eventim.py`); Akamai refuses event pages after ~13: those events come from the city pages' ItemList (`eventim_listing.py`), the run then partial | 09:47, 21:47 | yes |
 | `pres` | PRES ticketing platform (pres.global): Kupat Tel Aviv, Cameri, Habima, the Israeli Opera, the Khan and more | 06:28, 18:28 | yes |
 | `pres_il` | PRES box offices that answer Israeli IPs only: Beit Lessin, the Israel Philharmonic (`pres.py`, through the Israeli proxies) | 06:34, 18:34 | yes |
 | `smarticket_il` | Smarticket box offices that answer our Israeli VPN only: FRIENDS (`smarticket.py`, through the VPN) | 06:48, 18:48 | yes |
@@ -74,7 +74,7 @@ pagination and what the listing and the event page provide.
 | `hatarbut` | Heichal HaTarbut Tel Aviv (hatarbut.co.il): the Charles Bronfman Auditorium's show calendar | 05:07, 17:07 | yes |
 | `habama` | Habama (habama.co.il): performing-arts portal: theatre, dance, classical, kids, comedy | 06:11, 18:11 | yes |
 | `friendshist` | FRIENDS (friends-hist.co.il): the Histadrut's culture club, shows and plays in halls nationwide | 07:34, 19:34 | yes |
-| `barak` | Barak Tickets (barak-tickets.co.il): Haifa box office: concerts, theatre, stand-up, kids | 07:04, 19:04 | yes |
+| `barak` | Barak Tickets (barak-tickets.co.il): Haifa box office: concerts, theatre, stand-up, kids; Akamai refuses event pages after ~13: those events come from the city pages' ItemList (`eventim_listing.py`), the run then partial | 07:04, 19:04 | yes |
 | `kikarhamusica` | Kikar HaMusica (kikar-hamusica.com): Jerusalem's music square, daily live sets | 03:33, 15:33 | yes |
 | `bargiyora` | Bar Giyora (bar-giyora.co.il): live-show bar in Tel Aviv: music, stand-up, lectures | 06:26, 18:26 | yes |
 | `haezor` | HaEzor / The Zone (haezor.com): live-music club in Tel Aviv | 06:36, 18:36 | yes |
@@ -104,7 +104,7 @@ pagination and what the listing and the event page provide.
 | `lev` | Lev cinemas (lev.co.il, "קולנוע לב"): the art-house chain's own box office | 06:59, 18:59 | yes |
 | `movieland` | Movieland (movieland.co.il): cinema screenings of the chain's six branches | 08:02, 20:02 | yes |
 | `cinematheque_tlv` | Tel Aviv Cinematheque (cinema.co.il, "סינמטק תל אביב"): its PRES box office | 10:05, 22:05 | yes |
-| `cinematheque_jlm` | Jerusalem Cinematheque (jer-cin.org.il), its PRES box office (`cinematheque_tlv.py`) | 10:17, 22:17 | yes |
+| `cinematheque_jlm` | Jerusalem Cinematheque (jer-cin.org.il), its PRES box office (`cinematheque_tlv.py`); films' pictures from the cinematheque's own film pages at its robots.txt Crawl-delay 180 (up to 15 a run, each film once) | 10:17, 22:17 | yes |
 
 ## Cities, community and guides
 

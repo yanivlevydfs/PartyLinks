@@ -49,6 +49,7 @@ from partylinks.parsing import (
 )
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.chillz import EVENT_TYPES, parse_page
+from partylinks.scrapers.eventim_listing import TYPE_GENRES, Listed, details_or_listing, last_page, parse_listing
 
 _EVENT_ID = re.compile(r"-(\d+)/?$")
 _LOC = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>")
@@ -70,6 +71,11 @@ class EventimSettings(SourceSettings):
     diagnostic_markers: list[str] = Field(default_factory=list)
     # This many event pages in a row without event data: the site is serving us something else, stop as blocked.
     max_empty_streak: int = Field(20, ge=1)
+    # City pages (/city/<slug>-<id>/, Akamai never challenges them): the events Akamai refused the pages of
+    # come from their ItemList item instead (eventim_listing). Empty: no fallback.
+    city_paths: list[str] = Field(default_factory=list)
+    max_city_pages: int = Field(20, ge=1)
+    type_genres: dict[str, str] = Field(default_factory=lambda: dict(TYPE_GENRES))
 
 
 class EventimScraper(BaseScraper[EventimSettings]):
@@ -94,8 +100,21 @@ class EventimScraper(BaseScraper[EventimSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         urls = await self._list_urls()
         self.log.debug("listed %d events", len(urls))
-        async for event in self.stream_isolated(urls, self._fetch_event, label=lambda u: u):
+        listed: Listed = {}
+        for path in self.settings.city_paths:
+            listed.update(await self.optional(f"city {path}", self._list_city(path)) or {})
+        async for event in details_or_listing(self, urls, self._fetch_event, listed, self.settings.type_genres):
             yield event
+
+    async def _list_city(self, path: str) -> Listed:
+        s = self.settings
+        url = urllib.parse.urljoin(s.site_url, path)
+        page_html = await self.get_text(url)
+        found, last = parse_listing(page_html, s.site_url), last_page(page_html)
+        for page in range(2, min(last, s.max_city_pages) + 1):
+            more = await self.optional(f"city {path} page {page}", self.get_text(url, params={"page": page}))
+            found.update(parse_listing(more or "", s.site_url))
+        return found
 
     async def _list_urls(self) -> list[str]:
         s = self.settings

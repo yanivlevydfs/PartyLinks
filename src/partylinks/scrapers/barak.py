@@ -6,26 +6,24 @@ from ``/api/exploration/v1``, which robots.txt disallows. Listing: the city/regi
 (``/city/<slug>-<id>/``, ``?page=N``) render their events server-side as a schema.org
 ``ItemList`` (``<script id="eventMarkup">``), each item's ``offers.url`` the event page
 ``/event/<slug>-<id>/``; page links carry ``data-page``. Details: every event page is an Eventim
-page (``dataLayer`` pageMeta, ticket rows, og:image), read with the Eventim parser.
+page (``dataLayer`` pageMeta, ticket rows, og:image), read with the Eventim parser. Pages Akamai refuses
+are built from their listing item (``eventim_listing``), so no event is lost to the block.
 """
 
 from __future__ import annotations
 
-import json
-import re
 from collections.abc import AsyncIterator
 from urllib.parse import urljoin
 
 import httpx
 from pydantic import Field
-from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.models import ScrapedEvent
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.eventim import parse_event
+from partylinks.scrapers.eventim_listing import TYPE_GENRES, Listed, details_or_listing, last_page, parse_listing
 
-_EVENT_ID = re.compile(r"/event/[^/?#]*-(\d+)/?$")
-_PAGE = re.compile(r'data-page="(\d+)"')
+__all__ = ["BarakScraper", "BarakSettings", "last_page", "parse_city"]
 
 
 class BarakSettings(SourceSettings):
@@ -34,6 +32,8 @@ class BarakSettings(SourceSettings):
     city_paths: list[str]
     max_pages: int = Field(20, ge=1)  # per city
     max_events: int = Field(800, ge=1)
+    # A listing item's schema.org kind -> a declared genre, for events built from the listing.
+    type_genres: dict[str, str] = Field(default_factory=lambda: dict(TYPE_GENRES))
 
 
 class BarakScraper(BaseScraper[BarakSettings]):
@@ -46,29 +46,27 @@ class BarakScraper(BaseScraper[BarakSettings]):
         return response.status_code in (403, 429) or b"sec-if-cpt" in response.content[:4000]
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
-        urls: dict[str, str] = {}  # event id -> url; regions overlap
+        listed: Listed = {}  # regions overlap
         for path in self.settings.city_paths:
-            urls.update(await self.optional(f"city {path}", self._list_city(path)) or {})
-        if not urls and self.failures:
+            listed.update(await self.optional(f"city {path}", self._list_city(path)) or {})
+        if not listed and self.failures:
             raise RuntimeError(f"{self.name}: every city page failed")
-        found = list(urls.values())
-        if len(found) > self.settings.max_events:
-            self.log.warning("listing truncated at max_events=%d (%d found)", self.settings.max_events, len(found))
-        self.log.debug("listed %d events", len(found))
-        async for event in self.stream_isolated(
-            found[: self.settings.max_events], self._fetch_event, label=lambda u: u
-        ):
+        urls = [url for url, _ in listed.values()][: self.settings.max_events]
+        if len(listed) > self.settings.max_events:
+            self.log.warning("listing truncated at max_events=%d (%d found)", self.settings.max_events, len(listed))
+        self.log.debug("listed %d events", len(listed))
+        async for event in details_or_listing(self, urls, self._fetch_event, listed, self.settings.type_genres):
             yield event
 
-    async def _list_city(self, path: str) -> dict[str, str]:
+    async def _list_city(self, path: str) -> Listed:
         s = self.settings
         url = urljoin(s.site_url, path)
         page_html = await self.get_text(url)
-        urls, last = parse_city(page_html, s.site_url), last_page(page_html)
+        found, last = parse_listing(page_html, s.site_url), last_page(page_html)
         for page in range(2, min(last, s.max_pages) + 1):
             more = await self.optional(f"city {path} page {page}", self.get_text(url, params={"page": page}))
-            urls.update(parse_city(more or "", s.site_url))
-        return urls
+            found.update(parse_listing(more or "", s.site_url))
+        return found
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
         return parse_event(await self.get_text(url), url, self.timezone, self.name)
@@ -76,27 +74,4 @@ class BarakScraper(BaseScraper[BarakSettings]):
 
 def parse_city(page_html: str, site_url: str) -> dict[str, str]:
     """Event pages of one city listing page, by event id, from its ``eventMarkup`` ItemList."""
-    found: dict[str, str] = {}
-    for script in LexborHTMLParser(page_html).css('script[type="application/ld+json"]'):
-        try:
-            node = json.loads(script.text())
-        except json.JSONDecodeError:
-            continue
-        if not isinstance(node, dict) or node.get("@type") != "ItemList":
-            continue
-        for entry in node.get("itemListElement") or []:
-            item = entry.get("item") if isinstance(entry, dict) else None
-            offers = item.get("offers") if isinstance(item, dict) else None
-            # item.url is often the artist page; offers.url is the event itself.
-            for raw in (
-                offers.get("url") if isinstance(offers, dict) else None,
-                item.get("url") if isinstance(item, dict) else None,
-            ):
-                if isinstance(raw, str) and (m := _EVENT_ID.search(raw.split("?")[0])):
-                    found.setdefault(m.group(1), urljoin(site_url, raw.split("?")[0]))
-                    break
-    return found
-
-
-def last_page(page_html: str) -> int:
-    return max((int(n) for n in _PAGE.findall(page_html)), default=1)
+    return {event_id: url for event_id, (url, _) in parse_listing(page_html, site_url).items()}

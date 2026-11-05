@@ -160,3 +160,38 @@ def test_challenge_page_stops_the_run_as_blocked() -> None:
 def test_empty_pages_in_a_row_stop_the_run_as_blocked() -> None:
     with pytest.raises(SourceBlockedError, match="in a row"):
         _run({f"e-{i}": _html("<title>אירועים</title>") for i in range(5)})
+
+
+def test_refused_event_pages_come_from_the_city_listing_and_the_run_is_partial() -> None:
+
+
+    item = {"@type": "ListItem", "item": {
+        "@type": "MusicEvent", "name": "שלמה ארצי", "startDate": "2027-01-10T21:00:00+02:00",
+        "location": {"@type": "Place", "name": "היכל מנורה", "address": {"addressLocality": "תל אביב"}},
+        "offers": {"@type": "AggregateOffer", "lowPrice": "199.0", "url": "https://www.eventim.co.il/event/a-1/"},
+    }}  # fmt: skip
+    city = f'<script type="application/ld+json">{json.dumps({"@type": "ItemList", "itemListElement": [item]})}</script>'
+    scraper = build_scraper("eventim", Settings())
+    assert isinstance(scraper, EventimScraper)
+    scraper.http.request_delay_seconds = 0
+    scraper.http.backoff_seconds = 0
+    scraper.settings.city_paths = ["/city/x-1/"]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith(".xml.gz"):
+            loc = "<url><loc>https://www.eventim.co.il/event/a-1/</loc></url><url><loc>https://www.eventim.co.il/event/b-2/</loc></url>"
+            return httpx.Response(200, text=f"<urlset>{loc}</urlset>", headers={"content-type": "application/xml"})
+        if request.url.path.startswith("/city/"):
+            return _html(city)
+        return _html(CHALLENGE)  # Akamai refuses every event page
+
+    async def go() -> list[ScrapedEvent]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.scrape()]
+
+    events = asyncio.run(go())
+    assert [(e.source_event_id, e.title, e.venue_name, e.min_price) for e in events] == [
+        ("1", "שלמה ארצי", "היכל מנורה", Decimal("199.0"))
+    ]  # b-2 is in the sitemap only: not invented, and the run is partial so it is not unlisted either
+    assert scraper.failures and "event pages" in scraper.failures[0]
