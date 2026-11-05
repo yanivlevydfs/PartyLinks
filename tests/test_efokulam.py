@@ -91,3 +91,24 @@ def test_price_chips_become_ticket_tiers() -> None:
     settings = Settings()
     enriched = Enricher(settings.enrichment, settings.timezone).enrich(parse_event(rows[1], TYPES, S, TZ))
     assert enriched is not None and (enriched.min_price, enriched.max_price) == (Decimal(60), Decimal(70))
+
+
+def test_lineup_block_gives_artists() -> None:
+    chip = '<span style="font-weight:bold;">{}</span><br />'
+    content = (
+        '<div><div style="color:#D5FF00;">ליינאפ</div><h3>מי מנגן אתם שואלים?</h3><p>ליינאפ מקומי עמוס:</p>'
+        f'<div style="display:flex;">{"".join(chip.format(n) for n in ["JOS&amp;EL", "DAV B2B ORMIK", "LARA"])}</div></div>'
+        "<div><div>מתי</div><p>יום חמישי</p></div>"
+    )
+    event = parse_event(ROW | {"content": {"rendered": content}}, TYPES, S, TZ)
+    assert event is not None and event.artists == ["JOS&EL", "DAV B2B ORMIK", "LARA"]
+    ticks = "<div>ליינאפ</div><ul><li>✓ DARCO</li><li>✓ לפני ואחרי: IMRI, NASGI • TOLED</li><li>✓ אורח מיוחד</li></ul>"
+    assert parse_event(ROW | {"content": {"rendered": ticks}}, TYPES, S, TZ).artists == [
+        "DARCO",
+        "IMRI",
+        "NASGI",
+        "TOLED",
+    ]
+    settings = Settings()
+    enriched = Enricher(settings.enrichment, settings.timezone).enrich(event)
+    assert enriched is not None and {"DAV", "ORMIK", "LARA"} <= set(enriched.lineup)

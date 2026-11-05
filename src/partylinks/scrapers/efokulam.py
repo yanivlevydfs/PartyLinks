@@ -13,6 +13,8 @@ own REST links do:
 Prices: the article (``content``) opens with a row of chips; the highlighted ones (``price_chip_selector``)
 state the entry: "החל מ-₪80", "מוקדמות 60 ₪ · רגיל 70 ₪", "הרשמה חינם עד 00:00" (a free tier), or a drink deal
 ("בקבוק אבסולוט 99 ₪", skipped by ``drink_words``). Each "·" / "/" part is one tier; ~2/3 of current events have one.
+Artists: a "ליינאפ" label box (``lineup_labels``) opens the lineup; its first chip row or list (and name-only <h3>
+headings before it) gives the names, "לפני ואחרי: A, B" split, placeholders (``lineup_skip``) dropped; ~1/3 of events.
 The site has no venue field: the venue is the address's first part only when the address reads
 "<place>, <street>, <city>"; else the venue pass names it from its spot. The address is geocoded (no coordinates on the site).
 robots.txt disallows only /wp-admin/.
@@ -69,6 +71,13 @@ class EfoKulamSettings(SourceSettings):
         default_factory=lambda: ["בקבוק", "אלכוהול", "שתייה", "ייסר", "קוקטייל", "דרינק", "טקילה"]
     )
     free_word: str = "חינם"
+    # A short label box that opens the article's lineup block ("ליינאפ"); the first chip row / list after it
+    # (and any name-only <h3> before it) is the lineup.
+    lineup_labels: list[str] = Field(default_factory=lambda: ["ליינאפ", "הליינאפ", "ליינאפ מלא", "lineup", "line up"])
+    # Lineup chips that are no one: a placeholder guest or a vague "live shows" item.
+    lineup_skip: list[str] = Field(
+        default_factory=lambda: ["אורח מיוחד", "אורחת מיוחדת", "הופעות חיות מיוחדות", "ועוד", "ועוד אורחים"]
+    )
 
 
 class EfoKulamScraper(BaseScraper[EfoKulamSettings]):
@@ -166,6 +175,44 @@ def parse_tickets(content: str | None, s: EfoKulamSettings) -> list[TicketTier]:
     return tiers
 
 
+def _lineup_names(item: str, s: EfoKulamSettings) -> list[str]:
+    """One chip -> names: "✓ לפני ואחרי: IMRI, NASGI • TOLED" -> IMRI, NASGI, TOLED (B2B is split by enrichment)."""
+    text = " ".join(item.replace("✓", " ").split())
+    text = text.rpartition(":")[2].strip()  # "אורחת מיוחדת: אן לואיז", "אפטר טראנס: ØFEK"
+    if not re.search(r"[^\W\d_]", text) or text.casefold() in {w.casefold() for w in s.lineup_skip}:
+        return []  # a time slot ("17:30-18:30") or a placeholder
+    parts = [p.strip() for p in re.split(r"[,•]", text) if p.strip()]
+    # "עידן אסולין, בגלמה / כינור": after a Hebrew name the comma starts a note, not a second name.
+    return parts[:1] if re.search(r"[א-ת]", parts[0]) else parts
+
+
+def parse_artists(content: str | None, s: EfoKulamSettings) -> list[str]:
+    """Names of the article's lineup block: the chips / list after its "ליינאפ" label."""
+    if not content:
+        return []
+    labels = {w.casefold() for w in s.lineup_labels}
+    names: list[str] = []
+    for label in LexborHTMLParser(content).css("div"):
+        if label.text(strip=True).casefold() not in labels:
+            continue
+        node = label.next
+        while node is not None:
+            # Leaf chips only (a node's css() matches the node itself too): "17:30-18:30" + name inside one slot.
+            items = [n for n in node.css("span, li") if len(n.css("span, li")) == 1] if node.tag != "-text" else []
+            if items:  # the chip row / list: the lineup, and the block ends here
+                names += [name for n in items for name in _lineup_names(n.text(strip=True), s)]
+                break
+            text = node.text(strip=True) if node.tag != "-text" else ""
+            if node.tag == "div" and text:
+                break  # the next label box ("הלוקיישן", "מתי"): no list in this block
+            if node.tag == "h3" and text and not text.endswith("?"):
+                names += _lineup_names(text, s)  # a name per heading, each followed by its bio
+            node = node.next
+        if names:
+            break
+    return list(dict.fromkeys(names))
+
+
 def parse_event(row: dict[str, Any], types: dict[int, str], s: EfoKulamSettings, timezone: str) -> ScrapedEvent | None:
     """One REST row -> event; None without an id, title or date."""
     meta = row.get("meta") if isinstance(row.get("meta"), dict) else {}
@@ -199,5 +246,6 @@ def parse_event(row: dict[str, Any], types: dict[int, str], s: EfoKulamSettings,
         source_genres=list(dict.fromkeys(g.lower() for g in genres)),
         images=_image(row),
         tickets=parse_tickets(content, s),
+        artists=parse_artists(content, s),
         extra={"purchase_url": link} if link and link.startswith("http") else {},
     )
