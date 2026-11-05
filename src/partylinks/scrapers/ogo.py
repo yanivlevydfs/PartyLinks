@@ -84,13 +84,23 @@ class OgoScraper(BaseScraper[OgoSettings]):
         s = self.settings
         today = datetime.now(zone(self.timezone)).date()
         index = await self.get_text(s.site_url + s.sitemap_path)
-        sitemaps = [await self.get_text(url) for url in _locs(index)]
+        sitemaps = [xml for url in _locs(index) if (xml := await self._sitemap(url)) is not None]
         urls = upcoming_event_urls(sitemaps, s.locale, today, today + timedelta(days=s.days_ahead))
         if len(urls) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
         self.log.debug("listed %d upcoming events", len(urls))
         async for event in self.stream_isolated(urls[: s.max_events], self._fetch_event, label=lambda u: u):
             yield event
+
+    async def _sitemap(self, url: str) -> str | None:
+        """One sitemap of the index; None when the index lists one the site has dropped (404, Nov 2026)."""
+        try:
+            return await self.get_text(url)
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code != 404:
+                raise
+            self.log.info("sitemap gone: %s", url)
+            return None
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
         try:
