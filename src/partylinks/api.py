@@ -1370,7 +1370,9 @@ def _register_routes(app: FastAPI) -> None:
         if row is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "event not found")
         cfg: Settings = request.app.state.settings
-        if who := popularity.visitor(request.client and request.client.host, request.headers.get("user-agent", "")):
+        if who := popularity.visitor(
+            request.client.host if request.client else None, request.headers.get("user-agent", "")
+        ):
             popularity.record(request.app.state.db, row.id, who, cfg.timezone)
         alternatives = (
             session.scalars(

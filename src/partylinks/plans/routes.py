@@ -121,7 +121,7 @@ def _plan_out(session: Session, plan: PlanRow, voter: str | None, user: UserRow 
         options=options,
         votes=[
             VoteOut(
-                name=v.name, answer=v.answer, gender=v.gender,  # type: ignore[arg-type]
+                name=v.name, answer=v.answer, gender=v.gender,  # type: ignore[arg-type]  (answer: str column, Literal API)
                 # By the browser's key only while the answer is anonymous: on a shared browser, someone
                 # else's signed-in answer is not "mine" after they sign out.
                 mine=(voter is not None and v.voter == voter and v.user_id in (None, uid)) or (uid is not None and v.user_id == uid),

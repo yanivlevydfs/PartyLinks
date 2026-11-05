@@ -22,6 +22,7 @@ def test_listing_items_become_events_with_category_and_series() -> None:
     assert len(events) == len(items)
     concert = events[0]
     assert concert.title == "בדיאלוג: צליל וצבע / על הפיגורטיבי במוזיקה ואמנות"
+    assert concert.start_at is not None
     assert concert.start_at.isoformat() == "2026-11-03T17:00:00+02:00"
     assert concert.source_genres == ["קונצרט", "בדיאלוג: צליל וצבע / 2027-2026"]
     assert str(concert.url).startswith("https://www.tamuseum.org.il/he/series/dialogue-sound-and-color-2026-2027/")

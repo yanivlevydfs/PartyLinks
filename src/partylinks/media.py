@@ -65,7 +65,7 @@ MAX_PIXELS = 50_000_000  # bigger pictures are not resized (the decode alone is 
 Image.MAX_IMAGE_PIXELS = None
 # A JPEG missing its last few bytes (movieland's end 1-93 bytes short) shows fine in a browser: decode it
 # the same way. Only a file that isn't a picture at all is refused (see readable()).
-ImageFile.LOAD_TRUNCATED_IMAGES = True
+ImageFile.LOAD_TRUNCATED_IMAGES = True  # pyrefly: ignore[bad-assignment]  (Pillow's stub types it Literal[False])
 _ALPHA_MODES = ("RGBA", "LA", "PA")
 
 

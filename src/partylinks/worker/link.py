@@ -31,7 +31,7 @@ class WorkerLink:
             row = conn.execute(select(WorkerStateRow).where(WorkerStateRow.id == STATE_ID)).first()
         if row is None:
             return None
-        state = dict(row._mapping)
+        state: dict[str, Any] = dict(row._mapping)
         age = (utcnow() - state["heartbeat_at"]).total_seconds()
         state["heartbeat_age_seconds"] = round(age, 1)
         state["alive"] = age < self.settings.worker_stale_seconds and state["scheduler"] != "stopped"

@@ -144,7 +144,7 @@ def test_digest_carries_its_events_as_json_ld_and_one_ics(tmp_path: Path, fake: 
     assert all(e["@type"] == "Event" and e["startDate"] and "utm_campaign=digest" in e["url"] for e in ld)
     (ics,) = m["attachments"]
     assert ics["filename"] == "spotx-week.ics" and ics["content_type"] == "text/calendar"
-    events = Calendar.from_ical(base64.b64decode(ics["content"])).walk("VEVENT")
+    events = Calendar.from_ical(base64.b64decode(ics["content"]).decode()).walk("VEVENT")
     assert sorted(str(e["summary"]) for e in events) == sorted(e["name"] for e in ld)
     assert all("utm_campaign=digest" in str(e["url"]) for e in events)
 
@@ -208,14 +208,14 @@ def test_unsubscribe_link(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> N
         assert c.post("/api/email/unsubscribe", params={"t": "junk"}).status_code == 400
         assert c.get("/api/email/unsubscribe", params={"t": token}).status_code == 200  # a GET changes nothing
         with db.session() as s:
-            assert s.get(UserRow, uid).digest_opt_in
+            assert s.get_one(UserRow, uid).digest_opt_in
         assert c.post("/api/email/unsubscribe", params={"t": token}).status_code == 200  # one-click
         with db.session() as s:
-            refused = s.get(UserRow, uid).digest_opt_out_at
+            refused = s.get_one(UserRow, uid).digest_opt_out_at
             assert refused is not None
         assert c.post("/api/email/unsubscribe", params={"t": token}).status_code == 200  # again: the first refusal stays
         with db.session() as s:
-            assert s.get(UserRow, uid).digest_opt_out_at == refused
+            assert s.get_one(UserRow, uid).digest_opt_out_at == refused
         sign_in(c, fake)
         assert not c.get("/api/me").json()["digest_opt_in"]
         assert not c.get("/api/me/alerts").json()["items"][0]["instant"]
@@ -230,6 +230,7 @@ def test_unsubscribe_links_survive_a_secret_rotation(tmp_path: Path) -> None:
     new = tokens.make(settings, "u1", "digest")
     assert new != old and tokens.read(settings, old) == tokens.read(settings, new) == ("u1", "digest")
     # The session secret rotated too: the links signed with it still work from the old list.
+    assert settings.accounts.session_secret is not None
     settings.mail.unsubscribe_old_secrets = [settings.accounts.session_secret]
     settings.accounts.session_secret = SecretStr("rotated-" + "r" * 32)
     assert tokens.read(settings, old) == tokens.read(settings, new) == ("u1", "digest")
@@ -245,14 +246,14 @@ def test_opt_out_time_is_kept_and_shown_to_the_admin(tmp_path: Path, fake: FakeG
         uid = c.get("/api/me").json()["id"]
         c.patch("/api/me", json={"digest_opt_in": True}, headers=OURS)
         with db.session() as s:
-            assert s.get(UserRow, uid).digest_opt_out_at is None
+            assert s.get_one(UserRow, uid).digest_opt_out_at is None
         c.patch("/api/me", json={"digest_opt_in": False}, headers=OURS)
         with db.session() as s:
-            assert s.get(UserRow, uid).digest_opt_out_at is not None
+            assert s.get_one(UserRow, uid).digest_opt_out_at is not None
         assert c.get(f"/admin/api/users/{uid}").json()["digest_opt_out_at"]
         c.patch("/api/me", json={"digest_opt_in": True}, headers=OURS)
         with db.session() as s:
-            assert s.get(UserRow, uid).digest_opt_out_at is None and s.get(UserRow, uid).digest_opt_in_at is not None
+            assert s.get_one(UserRow, uid).digest_opt_out_at is None and s.get_one(UserRow, uid).digest_opt_in_at is not None
 
 
 def test_switches_account_errors_and_admin(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> None:

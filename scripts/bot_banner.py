@@ -8,7 +8,7 @@ change of the wording:
 import sys
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright  # pyrefly: ignore[missing-import]  (a local tool; playwright is not a project dependency)
 
 web = Path(sys.argv[1]).resolve()
 fonts = web / "node_modules/@fontsource"

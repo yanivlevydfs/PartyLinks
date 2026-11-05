@@ -90,8 +90,11 @@ def distinct_venues(keys: set[str]) -> int:
     return len({root(i) for i in range(len(names))}) + ("" in keys)
 
 
+_LEADING_PAREN = re.compile(r"^\s*\([^)]*\)\s*")  # OGO: "(Nagler House) Ben-Zvi Yitzchak St 14, Haifa"
+
+
 def clean(text: str | None) -> str:
-    text = _FLOOR.sub(" ", text or "")
+    text = _FLOOR.sub(" ", _LEADING_PAREN.sub("", text or ""))
     text = _NOT_TEXT.sub(" ", text)
     return re.sub(r"\s+", " ", text).strip(" ,-")
 
@@ -146,8 +149,12 @@ def candidates(row: Place) -> list[str]:
     """Queries to try, most specific first."""
     address, venue, city = clean(row.address), clean(row.venue_name), clean(row.city)
     out: list[str] = []
-    if address:
+    if address and _city_key(address) not in {"israel", "ישראל"}:  # "(...) Israel" was answered with a village
         out.append(f"{address}, {city}" if city and _city_key(city) not in _city_key(address) else address)
+        # "Rothschild St 64, Rishon LeZion": the English city is in it already, and a Hebrew one appended
+        # ("..., ראשון לציון") makes Nominatim miss.
+        if "," in address:
+            out.append(address)
         parts = [p.strip() for p in address.split(",")]
         # "CALLAS TLV, Menakhem Begin Rd 37, Tel Aviv" -> drop the leading venue name.
         if len(parts) > 1 and not re.search(r"\d", parts[0]) and any(re.search(r"\d", p) for p in parts[1:]):
@@ -161,6 +168,8 @@ def candidates(row: Place) -> list[str]:
         # שמואל, תל אביב" was answered with Tel Aviv's culture hall (~210 smarticket events a pass, Oct 2026).
         town = city or ("תל אביב" if row.in_target_city else "")
         out += [f"{v}, {town}".rstrip(", ") for v in venue_variants(venue)]
+        if not street_key(address):  # munievents: the street sits in the venue ("ויצו רחוב ראש פינה 12"), no address
+            out += [f"{k}, {town}".rstrip(", ") for k in street_variants(venue)]
         # "מועדון גגרין" -> "גגרין, תל אביב" (OSM names the place without "club" / "מועדון").
         if (bare := re.sub(r"\s+", " ", _GENERIC_VENUE_WORDS.sub(" ", venue)).strip(" -,")) and len(bare) >= 3:
             out.append(f"{bare}, {town}".rstrip(", "))
@@ -516,10 +525,15 @@ class Geocoder:
                 for row in session.scalars(
                     select(EventRow).where(upcoming_filter(), EventRow.latitude.is_(None), EventRow.country.is_(None))
                 )
-                if not (
-                    self._pin(row)
-                    or _venue_match(known_venue, row.venue_name, row.city)
-                    or _in_city(known_street.get(street_key(row.address) or ""), row.city)
+                # A known point _bad() rejects is no point: asking Nominatim is the only way left (65 of
+                # Movieland Afula's shows waited forever behind one, Nov 2026).
+                if not any(
+                    p and self._bad(row, p) is None
+                    for p in (
+                        self._pin(row),
+                        _venue_match(known_venue, row.venue_name, row.city),
+                        _in_city(known_street.get(street_key(row.address) or ""), row.city),
+                    )
                 )
             ]
             session.expunge_all()

@@ -36,7 +36,7 @@ def record(
     session: Session, channel: str, chat_id: str | None, kind: str, q: str | None = None, results: int | None = None
 ) -> None:  # fmt: skip
     session.add(BotUsageRow(
-        channel=channel, chat=tag(chat_id) if chat_id else None, kind=kind, q=(q or None) and q[:Q_MAX], results=results,
+        channel=channel, chat=tag(chat_id) if chat_id else None, kind=kind, q=q[:Q_MAX] if q else None, results=results,
     ))  # fmt: skip
 
 

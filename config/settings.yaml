@@ -259,6 +259,9 @@ http:
 # Post-scrape normalization. Runs after a scraper has finished and never
 # influences how any source is fetched.
 enrichment:
+  # A "purchase link" on these hosts is a profile or a post, not a seller: dropped for every source.
+  social_hosts: [instagram.com, facebook.com, fb.com, fb.me, linktr.ee, wa.me, whatsapp.com, chat.whatsapp.com, t.me,
+                 youtube.com, youtu.be, tiktok.com, x.com, twitter.com]
   target_city:
     name: Tel Aviv
     # Events whose city/address matches none of these are flagged out-of-city.
@@ -439,6 +442,8 @@ enrichment:
     lectures: ["הרצאה", "הרצאת"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
+    reggaeton_latin: ["música latina"]
+    electronic: ["música electrónica"]
     happy_hour: ["happy hour", "happy-hour", "happyhour", "האפי האוור", "האפי אוור", "הפי האוור"]
     # HappyTLV's place sections (see happytlv.places): one word each, declared by the scraper.
     escape_rooms: ["escape rooms", "מרחב בריחה"]
@@ -448,7 +453,7 @@ enrichment:
     work_spaces: ["work spaces"]
     volunteering: ["volunteering"]
     team_activities: ["team activities"]
-    nightclubs: ["nightclubs", "parties", "party", "מסיבה", "מועדוני לילה", "חיי-לילה", "חיי לילה"]  # parties: Secret Tel Aviv's category
+    nightclubs: ["nightclubs", "parties", "party", "מסיבה", "מועדוני לילה", "חיי-לילה", "חיי לילה", "gala & ball"]  # parties: Secret Tel Aviv's category
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
@@ -460,12 +465,12 @@ enrichment:
     # box offices, guides (OGO tags, some in Russian), viagogo / abroad sellers.
     live_show: ["live music", "livemusic", "international artists", "concert", "concerts", "other concerts", "מופעי לילה",
                 "show", "shows", "performances", "music", "הופעות", "הופעה", "הופעות מוזיקה", "מופע", "מופעים",
-                "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki", "קונצרטים", "מופעי מבוגרים", "קסמים וקרקס", "שובו של הקרקס", "موسيقى", "אנסמבל", "תזמורת המהפכה", "candlelight", "הפעלה מוזיקאלית"]  # concets: Eventer's spelling of its concerts category
+                "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki", "קונצרטים", "מופעי מבוגרים", "קסמים וקרקס", "שובו של הקרקס", "موسيقى", "אנסמבל", "תזמורת המהפכה", "candlelight", "הפעלה מוזיקאלית", "magia", "cabaret"]  # concets: Eventer's spelling of its concerts category
     festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele", "חשיפה בינלאומית"]
     # Not "קהילה" / "קהילתי": community centres tag every event so (kids' shows, workshops), a place, not a meetup.
     meetups: ["meetups", "community", "meeting", "פעילות חברתית", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות"]
     culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית", "תרבות", "קהילה", "קהילות", "אירועים קהילתיים", "מרכזים קהילתיים", "אירועי מרכזים קהילתיים", "פעילות קהילתית", "המרכז לאומנויות", "אירוע", "אירועים", "תרבות מבוגרים", "שבת תרבות", "מפגשי שכונות", "הבוטיק מועדון תרבות", "החיים הטובים", "לא שיגרתי"]
-    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum", "יום המוזיאונים", "אירועי קומיקס"]
+    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum", "יום המוזיאונים", "אירועי קומיקס", "tentoonstellingen"]
     workshops: ["workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест", "course", "courses", "craft", "baking", "יצירה ומלאכה", "תחביבים", "ציור וצביעה", "עיצוב", "טיפוח וקוסמטיקה", "אופנה ולייף סטייל", "תכשיטים וצורפות", "פיסול ונגרות", "צילום", "סריגה ותפירה", "כתיבה ושירה", "גינון", "מייקרס", "סטודיו פתוח", "אומנות", "בישול ואפייה"]
     cinema: ["sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב", "מזרח אסיה על המסך הגדול"]
     stand_up: ["comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ", "comy", "סאטירה", "קומדי בר", "סטנד-אפ", "סטנדאפ", "stand-up", "kleinkunst", "monólogo", "comédie"]
@@ -483,14 +488,14 @@ enrichment:
     # Muzi's genre slugs.
     israeli: ["hebrew", "אמנים ישראלים"]
     mizrahi: ["yam_tichoni"]
-    rock_indie: ["rocknroll"]
+    rock_indie: ["rocknroll", "música alternativa"]
     world_balkan: ["world", "música del mundo"]
-    theatre: ["theater", "theatre", "גילי 3-18", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus", "תיאטראות", "مسرح"]
+    theatre: ["theater", "theatre", "גילי 3-18", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus", "תיאטראות", "مسرح", "teatteri", "kulttuuri: teatteri", "drama", "improvisation"]
     kids: ["kids", "children", "גילי 3-18", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
            "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך", "רמתגנצ'יק", "שבת משפחתי", "שנה עד שנתיים", "זחילה עד שנה", "שלוש עד ארבע", "לידה עד זחילה", "שנתיים עד שלוש", "ארבע עד חמש", "אחר-צהריים ר\"גוע"]
     lectures: ["lecture", "lectures", "עונת תרבות", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "foredrag", "העצמה אישית", "אנתרופולוגיה", "יחסים ואהבה", "קריירה", "מנטורינג וקואוצ׳ינג", "עסקים וכלכלה", "סמינר", "אסכולות", "מיניות", "הערים המרתקות", "עניין"]
     tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre", "חווית המבקר", "סיורי חנוכיות", "אדריכלות"]
-    dance: ["dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט"]
+    dance: ["dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט", "tanssi"]
     conference: ["conferences"]  # Eventer's category (the text genre matches "conference" alone)
   # Last resort, for an event no category, title word or source default placed: words a show's text uses
   # for what it is ("ההצגה", "שחקנים", "המופע", "מרצה"). Read in the title and description, only when
@@ -526,6 +531,9 @@ enrichment:
   # Sources that sell one kind of event: its genre when neither their category nor the text names one
   # (TikTik / LiveEvents / TicketHouse list concerts abroad by artist name; Pres the Cameri and Habima).
   source_default_genres:
+    eventimlight: [culture]  # small organisers; most declare only "sonstiges" / "freizeit"
+    issta: [live_show]  # concert trips abroad
+    tickchak: [nightclubs]  # the /parties/ box office
     tiktik: [live_show]
     livevents: [live_show]
     tickethouse: [live_show]
@@ -650,13 +658,19 @@ enrichment:
     # Lines that look like names but are placeholders ("and" / "more": leftovers of "...AND MORE TBA").
     ignore: ["to be announced", "tba", "tbd", "soon", "בקרוב", "יוכרז בהמשך", "main stage", "stage", "and", "more",
              "special guest", "special guests", "surprise guest", "secret guest", "guest", "guests", "and friends",
-             "אורח מיוחד", "אורחת מיוחדת", "אורחים מיוחדים", "אורח מפתיע", "אורח סודי", "אמן אורח", "ועוד"]
-    header_filler: ["ה", "ו", "וה", "שלנו", "המלא", "הרזידנט", "resident", "the", "our", "full", "official",
+             "אורח מיוחד", "אורחת מיוחדת", "אורחים מיוחדים", "אורח מפתיע", "אורח סודי", "אמן אורח", "ועוד", "guest list", "tickets & tables", "tickets & entry", "secret nature location", "central israel"]
+    header_filler: ["ה", "ו", "וה", "שלנו", "המלא", "הרזידנט", "מוזיקלי", "הערב", "resident", "the", "our", "full", "official",
                     "-", "–", "—", "|"]
-    not_name_words: ["stage", "zone", "market", "bar", "area", "room", "floor", "tent",
+    # "bar" alone is a first / last name (OMER BAR, BAR TAL): only bar phrases mark a non-name.
+    not_name_words: ["stage", "zone", "market", "area", "room", "floor", "tent",
+                     "open bar", "free bar", "bar mitzvah", "bar mitzva", "cocktail bar", "wine bar", "beach bar",
+                     "rooftop bar", "sushi bar", "vip bar", "main bar", "sky bar", "pool bar", "bar & grill", "on the bar",
                      "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday",
                      "january", "february", "march", "april", "june", "july", "august", "september",
                      "october", "november", "december"]
+    past_guest_words: ["כבר ניגנו", "ניגנו אצלם", "ניגנו אצלנו", "אירחו", "אירחנו", "התארחו אצלנו", "הופיעו אצלנו",
+                       "האירועים הקודמים", "past guests", "previous guests", "have hosted", "has hosted",
+                       "previously hosted", "past editions", "past lineups"]
     inline_dj_stopwords: ["mag", "night", "party", "set", "sets", "latino", "broadcast", "booth", "stage",
                           "line", "lineup"]
     set_words: ["set", "show", "event", "performance"]
@@ -1451,6 +1465,7 @@ sources:
     # cards are read and each /events/<id> page parsed. Most nights are free and on no
     # ticket site. robots.txt is absent (404).
     enabled: true
+    may_be_empty: true  # nothing listed between seasons (the events fragment is empty, Nov 2026)
     cron: "27 8,20 * * *"
     site_url: https://www.teder.fm
     listing_path: /?f=_get_content&section=events
@@ -2529,7 +2544,7 @@ sources:
     # Recurring series show only their first date and fall out by retention. robots.txt allows the page.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
-    vpn: true  # our Israeli VPN only (Railway production)
+    # vpn off (Nov 2026): the VPN's exit gets 502 here; the free Israeli proxies are the only route that worked.
     cron: "9 4,16 * * *"
     listing_url: https://www.holon.muni.il/Havingfun/Pages/allevents.aspx
     city: חולון
@@ -2789,6 +2804,7 @@ sources:
     # so the sitemap lists the event pages (date in the path) and each page's JSON-LD is read in
     # Hebrew. One request per event and 429 above ~3 req/s: days_ahead 10 (~2.6k pages, ~14 min).
     enabled: true
+    proxied: false  # Cloudflare 403s the evomi pool's IPs; Railway's own IP gets 200 (Nov 2026)
     # ~2,450 events with a page each: past the 30-min default (saved them all, then "timed out", Oct 2026).
     run_timeout_seconds: 3600
     cron: "27 6,18 * * *"
@@ -2832,6 +2848,18 @@ sources:
     enabled: true
     cron: "43 8,20 * * *"
     http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+
+  liveisrael:
+    # LiveIsrael (liveisrael.co): a party guide (club nights, trance / nature parties, festivals), all of Israel.
+    # WordPress: /wp-json/wp/v2/event_tags (1 request) names the tags; /wp-json/wp/v2/party_events in pages of
+    # 100 with the image embedded (~5 requests, ~440 rows) gives date, seller link (Zygo, Go-Out), lineup.
+    # Past rows dropped by their event_date. Mod_Security refuses plain clients (406): Chrome TLS. robots.txt: open.
+    enabled: true
+    cron: "53 9,21 * * *"
+    http:
+      impersonate: chrome
       concurrency: 2
       request_delay_seconds: 1.0
 
@@ -2939,6 +2967,7 @@ sources:
     # Bank Hapoalim "פועלים ישראלי": free entry (registration) to ~50 museums, parks and heritage sites on
     # holiday weekends; a Tickchak hub, dates read from each site's Tickchak page. Seasonal: empty between campaigns.
     enabled: true
+    may_be_empty: true  # one campaign a year (May): empty the rest of the year
     cron: "54 9,21 * * *"
     site_url: https://poalimatarim.com/
     event_url_template: https://tickchak.co.il/{eid}

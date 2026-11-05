@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 from sqlalchemy import delete
@@ -25,6 +26,7 @@ def test_overrides_merge_over_the_file_and_survive_a_reload(tmp_path: Path) -> N
     settings = settings_for(tmp_path)
     settings.admin.token = SecretStr("s3cret")
     with TestClient(create_app(settings, start_scheduler=False)) as client:
+        assert isinstance(client.app, FastAPI)
         db = client.app.state.db
         _clean(db)
         try:
@@ -38,6 +40,7 @@ def test_overrides_merge_over_the_file_and_survive_a_reload(tmp_path: Path) -> N
             # Deep merge: the rest of each block still comes from the file.
             live = get_settings()
             assert live.retention.assumed_duration_hours == 4 and live.retention.cron == base.retention.cron
+            assert live.sources["meety"] is not None and base.sources["meety"] is not None
             assert (
                 live.sources["meety"]["enabled"] is False
                 and live.sources["meety"]["cron"] == base.sources["meety"]["cron"]
@@ -60,6 +63,7 @@ def test_bad_or_locked_overrides_are_refused(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     settings.admin.token = SecretStr("s3cret")
     with TestClient(create_app(settings, start_scheduler=False)) as client:
+        assert isinstance(client.app, FastAPI)
         db = client.app.state.db
         _clean(db)
         try:

@@ -34,8 +34,9 @@ def test_description_tidied_on_the_model() -> None:
 
 
 def test_city_with_extras() -> None:
-    assert city_abroad("לונדון, אנגליה", "GB")[1][0] == "London"
-    assert city_abroad("Saint-Denis (Paris)", "FR")[1][0] == "Paris"
+    london, paris = city_abroad("לונדון, אנגליה", "GB"), city_abroad("Saint-Denis (Paris)", "FR")
+    assert london is not None and london[1][0] == "London"
+    assert paris is not None and paris[1][0] == "Paris"
     assert city_zone("ניו יורק", "US") == "America/New_York"
     assert city_zone("Los Angeles", "US") == "America/Los_Angeles"
     assert city_name("ברלין, גרמניה", "DE") == "ברלין"
@@ -51,14 +52,19 @@ def test_venue_time_and_date_alone() -> None:
     enricher = Enricher(settings.enrichment, settings.timezone)
     base = {"source": "x", "url": "https://a.b", "title": "t", "country": "DE", "city": "ברלין"}
     party = enricher.enrich(ScrapedEvent(**base, source_event_id="1", start_at=datetime(2026, 11, 6, 22, tzinfo=UTC)))
+    assert party is not None
     assert party.time_zone == "Europe/Berlin"
+    assert party.local_date is not None
     assert party.local_date.isoformat() == "2026-11-06"  # 23:00 in Berlin, already the 7th in Israel
     assert party.time_slot is not None
     day = datetime.fromisoformat("2026-11-06T00:00:00+02:00")  # a date alone, read as Israel's midnight
     show = enricher.enrich(ScrapedEvent(**base, source_event_id="2", start_at=day, time_known=False))
+    assert show is not None
+    assert show.local_date is not None
     assert show.local_date.isoformat() == "2026-11-06" and show.time_slot is None
     assert not has_time("2026-11-06") and has_time("2026-11-06T20:00:00")
     hour = enricher.enrich(ScrapedEvent(**base, source_event_id="3", start_at=day.replace(hour=21), time_known=False))
+    assert hour is not None
     assert hour.time_known  # an hour is there: never turned into an all-day event
 
 

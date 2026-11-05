@@ -27,6 +27,7 @@ def test_title_gives_show_and_date() -> None:
     url = "https://new1.tickettool.net/web/event/event_id/887"
     event = parse_page((FIXTURES / "event_887.html").read_text(encoding="utf-8"), "887", url, SETTINGS, TZ)
     assert event.title == "תמונות מחיי המתים"
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-12-03T20:30:00+02:00"
     assert (event.venue_name, event.latitude) == ("תיאטרון יפו", 32.0548894)
     assert event.images == ["https://new1.tickettool.net/images/event/887.jpg"]

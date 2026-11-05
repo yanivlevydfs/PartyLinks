@@ -56,7 +56,7 @@ def _font(size: int, weight: str) -> ImageFont.FreeTypeFont:
 
 def _visual(text: str) -> str:
     """Hebrew in drawing order (Pillow here draws left to right, without a bidi engine)."""
-    return get_display(text) if HEBREW.search(text) else text
+    return str(get_display(text)) if HEBREW.search(text) else text
 
 
 def _wrap(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont, width: int, lines: int) -> list[str]:

@@ -14,6 +14,7 @@ from collections.abc import Callable, Iterable
 from datetime import datetime, time
 from decimal import Decimal
 from difflib import SequenceMatcher
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from partylinks.config import AreaSettings, CitySettings, EnrichmentSettings, RegionSettings
@@ -25,6 +26,8 @@ _EDGE_DECOR = re.compile(r"^[^\w'\"(]+|[^\w'\")]+$")
 _LEADING_WITH = re.compile(r"^(?:w/|with|feat\.?|ft\.?)\s+", re.IGNORECASE)
 _DATE_OR_TIME = re.compile(r"\d{1,2}\s*[./:]\s*\d{1,2}")
 _LIST_SPLIT = re.compile(r"\s*(?:,|\||•|/|·)\s*")
+# Names on one lineup line ("Remat Siaq · Tina · Orabi"); not "/", which joins a name and its handle.
+_LINE_SPLIT = re.compile(r"\s*(?:,|\||•|·)\s*")
 # "DJ NAME" written inline in running text: upper-case words on the same line ("DJ Mag" / "DJ Night" are not names).
 _DJ_WORD = r"[A-ZÀ-Þ0-9](?:[\w&'’-]|\.(?=\w))*"  # "MR.BLACK" keeps its dot; "Mag." ends the name
 _INLINE_DJ = re.compile(rf"\bDJ[^\S\n]+({_DJ_WORD}(?:[^\S\n]+{_DJ_WORD}){{0,2}})")
@@ -33,6 +36,8 @@ _COLLAB = re.compile(r"\s+(?:b2b|f2f|vs\.?|x|×)\s+|\s+b2b(?=[A-Z])", re.IGNOREC
 # Notes after a name: "rotemx {Q}", "Ravid Polianski (Birthday)", "distørpya {GERMANY" (closer already stripped).
 _ANNOTATION = re.compile(r"\s*[(\[{].*$")
 _TBA = re.compile(r"(?:\s+and)?\s*more\s+tba\b.*$|\s*\b(?:tba|t\.b\.a\.?)(?:\s.*)?$", re.IGNORECASE)
+# A timetable slot before a name: "23:00 - 00:00 VICTORIA", "20:00 - זיו יחזקאל", "17:30-18:30SEAN KEE".
+_SLOT = re.compile(r"^\W*\d{1,2}[:.]\d{2}(?:\s*[-–—]\s*\d{1,2}[:.]\d{2})?\s*[-–—:|]?\s*")
 _DJ_DASH = re.compile(r"^dj\s*[-–—:]\s*", re.IGNORECASE)
 _HEBREW = re.compile(r"[֐-׿].*$")
 _SENTENCE_END = (".", "!", "?", "…")
@@ -238,6 +243,8 @@ class Enricher:
         self._genre_words = {w.casefold() for words in settings.genres.values() for w in words}
         lineup = settings.lineup
         self._header_filler = {w.casefold() for w in lineup.header_filler}
+        past = _keyword_pattern(lineup.past_guest_words)  # matched on the text as written: IGNORECASE
+        self._past_guests = re.compile(past.pattern, re.IGNORECASE) if past else None
         self._inline_dj_stop = {w.casefold() for w in lineup.inline_dj_stopwords}
         self._not_a_name = re.compile(_words_pattern(lineup.not_name_words), re.IGNORECASE)
         # "AZVELOS - Birthday Set", "KOSTA retro set", "NARDO WICK — MAIN EVENT", "EPIPHONY LIVE SHOW"
@@ -272,6 +279,7 @@ class Enricher:
         if any(skip.casefold() in title for skip in self.settings.skip_titles):
             return None
         self._slugs(event)
+        self._drop_social_purchase(event)
         event.genres = self._detect_genres(event)
         event.lineup = self._lineup(event)
         self._mark_free_tiers(event)
@@ -394,8 +402,37 @@ class Enricher:
         if pattern is None:
             return []
         text = f"{event.title}\n{event.description or ''}"
+        if self._past_guests:
+            text = self._drop_past_guests(text)
         # (?i) also equates i / ı / İ, whose casefolds differ ("YILDIRIM" for "Yıldırım"): keep it as written.
         return [spelling.get(m.group(0).casefold(), m.group(0)) for m in pattern.finditer(text)]
+
+    def _drop_social_purchase(self, event: ScrapedEvent) -> None:
+        """An Instagram post or a Facebook event is no place to buy: purchase links keep real sellers only."""
+        link = event.extra.get("purchase_url")
+        host = (urlsplit(link).hostname or "").lower() if isinstance(link, str) else ""
+        if host and any(host == h or host.endswith("." + h) for h in self.settings.social_hosts):
+            event.extra.pop("purchase_url")
+
+    def _drop_past_guests(self, text: str) -> str:
+        """Cut the sentences on the promoter's history ("לאורך השנים אירחו את Seth Troxler, Lee Burridge"),
+        and the list after one that ends in ":" ("במהלך השנים אירחנו את:\\nMiss Monique, Korolova") up to the
+        next blank line: those names are not tonight's."""
+        assert self._past_guests is not None
+        kept: list[str] = []
+        in_list = False
+        for line in text.split("\n"):
+            if not line.strip():
+                in_list = False
+            elif in_list:
+                continue
+            elif hit := self._past_guests.search(line):
+                start = max(line.rfind(c, 0, hit.start()) for c in ".!?…") + 1
+                ends = [i for c in ".!?…" if (i := line.find(c, hit.end())) >= 0]
+                in_list = not ends and line.rstrip().endswith(":")
+                line = line[:start] + (line[min(ends) + 1 :] if ends else "")
+            kept.append(line)
+        return "\n".join(kept)
 
     def _unglue(self, name: str) -> list[str]:
         """"MOSKOMILLEROADARU" -> MOSKO, MILLERO, ADARU when MILLERO is a known artist.
@@ -450,15 +487,19 @@ class Enricher:
                     nxt = _strip_decor(lines[i + 1]) if i + 1 < len(lines) else ""
                     if collected and (lines[i].strip() or not (re.search(r"[a-z]", nxt, re.IGNORECASE) and self._as_name(nxt))):
                         break
-                elif lines[i].strip().endswith(":") or (
-                    (candidate.startswith("(") and candidate.endswith(")"))  # "(MAINSTREAM, EDM, HARDSTYLE)"
-                    or not _TBA.sub("", candidate).strip()  # "TBA LINE UP"
-                    or candidate.casefold() in self._genre_words  # "HIP HOP" stage header
-                    or self._not_a_name.search(candidate)  # "2ND STAGE – HIP HOP"
+                elif (
+                    lines[i].strip().endswith(":")
+                    or (
+                        (candidate.startswith("(") and candidate.endswith(")"))  # "(MAINSTREAM, EDM, HARDSTYLE)"
+                        or not _TBA.sub("", candidate).strip()  # "TBA LINE UP"
+                        or candidate.casefold() in self._genre_words  # "HIP HOP" stage header
+                        or self._not_a_name.search(candidate)  # "2ND STAGE – HIP HOP"
+                    )
+                    or not re.search(r"[^\W\d_]", candidate)
                 ):  # stage / sub-header, e.g. "MAIN STAGE:"
                     collected = False
-                elif name := self._as_name(candidate):
-                    names.append(name)
+                elif line_names := self._line_names(candidate):
+                    names += line_names
                     collected = True
                 else:
                     break
@@ -467,6 +508,22 @@ class Enricher:
             f"DJ {m.group(1)}" for m in _INLINE_DJ.finditer(text) if m.group(1).split()[0].casefold() not in self._inline_dj_stop
         ]
         return names
+
+    def _line_names(self, line: str) -> list[str]:
+        """One lineup line -> names: "23:00 - 00:30 Cosmic Flow" (a timetable slot), "Remat Siaq · Tina · Orabi"
+        and "Pretty Pink, Nat SuPrise, D´Joy und Anija" (a list on one line)."""
+        line = _LEADING_WITH.sub("", _strip_decor(_SLOT.sub("", line)))  # "w/ SEAN ALONI" is not a list
+        parts = [p for p in _LINE_SPLIT.split(line) if p.strip()]
+        if len(parts) > 1 and re.search(r"\d", line):  # "4 quai Claude, 54000 Nancy", "10 € en prévente, 15 €"
+            return []
+        if len(parts) > 1:
+            parts[-1:] = re.split(r"\s+(?:and|und|et|y)\s+", parts[-1], flags=re.IGNORECASE)
+        names = [n for p in parts if (n := self._as_name(p))]
+        if len(parts) > 1 and len(names) == len(parts):
+            return names
+        # Not a clean list ("TAL AVIV - מייסד ליין נויז, האיש ש...", "Nocapz (Hot Creations | House, Tech)"):
+        # the line is one name with its note, as before.
+        return [n] if (n := self._as_name(line)) else []
 
     def _is_lineup_header(self, raw: str, header: str) -> bool:
         """"LINE UP" / "🎧 הליינאפ" / "Lineup tonight:" - not a promo bullet like "🎶 ליינאפ מטורף"."""
@@ -494,7 +551,9 @@ class Enricher:
             or (not re.search(r"[a-z]", name, re.IGNORECASE) and len(name.split()) > cfg.max_hebrew_name_words)
             or name.endswith(_SENTENCE_END)
             or "http" in name.lower()
+            or re.search(r"\.(?:com|net|org|io|co|il)\b", name.lower())  # "soundcloud.com"
             or _DATE_OR_TIME.search(name)
+            or re.search(r"\d{6,}|\w\.\w+/", name)  # a phone number, "shotgun.live/fr/venues/..."
             or re.search(r"\b(?:19|20)\d\d\b", name)  # "22 OCTOBER 2026"
             or self._not_a_name.search(name)
             or name.casefold() in self._lineup_ignore

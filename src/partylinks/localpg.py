@@ -30,7 +30,7 @@ def local_url(options: DatabaseSettings) -> str:
 @lru_cache(maxsize=8)
 def _start(directory: str, database: str) -> str:
     try:
-        import pgserver
+        import pgserver  # pyrefly: ignore[missing-import]  (dev dependency, absent in production)
     except ImportError as exc:  # production image: no local server, the URL must be set
         raise RuntimeError(
             "no database URL: set PARTYLINKS_DATABASE__URL, or install the dev dependencies (pgserver) "

@@ -183,7 +183,8 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
         event = parse_page(await self.get_text(url), url, self.timezone)
-        if event is not None and (event.end_at or event.start_at) < datetime.now(UTC) - timedelta(days=1):
+        when = (event.end_at or event.start_at) if event is not None else None
+        if when is not None and when < datetime.now(UTC) - timedelta(days=1):
             return None  # over (the service never stores it either)
         return event
 

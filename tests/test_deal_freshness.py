@@ -122,7 +122,9 @@ def test_every_source_scans_twice_a_day_at_its_own_time() -> None:
     for name, source in configured_sources(settings).items():
         trigger = CronTrigger.from_crontab(source.cron, timezone="UTC")
         first = trigger.get_next_fire_time(None, start)
+        assert first is not None
         second = trigger.get_next_fire_time(first, first + timedelta(seconds=1))
+        assert second is not None
         assert second - first == timedelta(hours=12), f"{name} runs every {second - first}"
         firsts[name] = first
     assert len(set(firsts.values())) == len(firsts), "two sources share a start time"

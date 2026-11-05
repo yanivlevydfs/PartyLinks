@@ -35,7 +35,11 @@ def test_every_genre_kept() -> None:
 
 
 def test_free_entry_and_saturday_placeholder_dropped() -> None:
-    e = free_entry(parse_event(EVENTS[9892], SETTINGS, KikarHamusicaScraper.name, TZ))
+    parsed = parse_event(EVENTS[9892], SETTINGS, KikarHamusicaScraper.name, TZ)
+    assert parsed is not None
+    e = free_entry(parsed)
     assert e is not None and e.min_price == e.max_price == 0
     assert [(t.name, t.price, t.is_free) for t in e.tickets] == [("כניסה חופשית", 0, True)]
-    assert free_entry(parse_event(EVENTS[10004], SETTINGS, KikarHamusicaScraper.name, TZ)) is None  # "אין הופעות"
+    saturday = parse_event(EVENTS[10004], SETTINGS, KikarHamusicaScraper.name, TZ)
+    assert saturday is not None
+    assert free_entry(saturday) is None  # "אין הופעות"

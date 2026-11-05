@@ -40,6 +40,7 @@ def test_show_page_gives_time_place_price_and_seller() -> None:
     url = "https://www.reading3.co.il/he/shows/a/view/?ContentID=4591"
     [event] = parse_show(SHOW, "4591", url, "https://www.reading3.co.il/x_B.jpeg", SETTINGS, "Asia/Jerusalem")
     assert event.title == "אורפנד לנד" and event.source_event_id == "4591"
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-12-09T21:00:00+02:00" and event.time_known
     assert (event.latitude, event.longitude, event.venue_name) == (32.1018, 34.7761, "רידינג 3")
     assert event.min_price == Decimal(124)

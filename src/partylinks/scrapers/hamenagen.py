@@ -67,8 +67,8 @@ def parse_item(item: dict[str, Any], events_url: str, timezone: str) -> ScrapedE
     start_time, known = clock or time(), clock is not None  # no time in the label: date only
     venue, city = _split_location(clean_str(item.get("location")))
     ticket_url = clean_str(item.get("ticketUrl"))
-    artists = [a for a in item.get("artists") or [] if isinstance(a, dict) and clean_str(a.get("name"))]
-    names = [clean_str(a["name"]) for a in artists] or [
+    artists = [(n, a) for a in item.get("artists") or [] if isinstance(a, dict) and (n := clean_str(a.get("name")))]
+    names = [n for n, _ in artists] or [
         n for n in (clean_str(p) for p in str(item.get("singerName") or "").split(",")) if n
     ]
     return ScrapedEvent(
@@ -84,13 +84,13 @@ def parse_item(item: dict[str, Any], events_url: str, timezone: str) -> ScrapedE
         artists=names,
         artist_profiles=[
             ArtistProfile(
-                name=clean_str(a["name"]),
+                name=n,
                 source=HamenagenScraper.name,
                 kind="singer",
                 image_url=clean_str(a.get("image")),
                 profile_url=clean_str(a.get("url")),
             )
-            for a in artists
+            for n, a in artists
         ],
         image_url=clean_str(item.get("flyerFull")) or clean_str(item.get("flyer")),
         extra={"purchase_url": ticket_url} if ticket_url else {},

@@ -37,3 +37,13 @@ def test_livevents_rows() -> None:
     assert len({e.source_event_id for e in oasis}) == 11 and {(e.currency, e.min_price) for e in oasis} == {
         ("GBP", Decimal(1449))
     }
+
+
+def test_artist_card_gives_the_picture() -> None:
+    first = livevents.parse_table(TABLE, CALENDAR, "Asia/Jerusalem")[0]
+    cards = livevents.artist_images(
+        f'<a class="sitem" href="/a"><img class="bimg" src="https://livevents.co.il/u/a.png">'
+        f'<div class="artist">{first.title}</div></a>'
+    )
+    event = livevents.parse_table(TABLE, CALENDAR, "Asia/Jerusalem", cards)[0]
+    assert event.images == ["https://livevents.co.il/u/a.png"]

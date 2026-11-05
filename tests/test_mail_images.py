@@ -14,6 +14,7 @@ from partylinks.api import create_app
 from partylinks.config import Settings
 from partylinks.mail import render as render_module
 from partylinks.mail.render import Section, render
+from tests.test_accounts import FakeGoogle
 from tests.test_mail import Outbox, outbox  # noqa: F401 - outbox: the fixture
 from tests.test_media_variants import picture, stored
 
@@ -66,7 +67,7 @@ def test_route_cuts_a_stored_picture_to_jpeg_at_the_asked_size(tmp_path: Path) -
 
 def test_digest_footer_unsubscribes_in_one_click_and_resubscribing_brings_it_back(
     tmp_path: Path,
-    fake: object,
+    fake: FakeGoogle,
     outbox: Outbox,  # noqa: F811 - the fixture
 ) -> None:
     """The redesigned footer keeps every way out: the token link, the RFC 8058 headers, /alerts and /account."""
@@ -105,10 +106,10 @@ def test_digest_footer_unsubscribes_in_one_click_and_resubscribing_brings_it_bac
         page = c.get(path)
         assert page.status_code == 200 and "text/html" in page.headers["content-type"]
         with db.session() as s:
-            assert s.get(UserRow, uid).digest_opt_in  # a GET (link scanners) changes nothing
+            assert s.get_one(UserRow, uid).digest_opt_in  # a GET (link scanners) changes nothing
         assert c.post(path, headers={"user-agent": ""}).status_code == 200  # the mail app's one-click POST
         with db.session() as s:
-            user = s.get(UserRow, uid)
+            user = s.get_one(UserRow, uid)
             assert not user.digest_opt_in and user.digest_opt_out_at is not None
 
         sign_in(c, fake)

@@ -50,7 +50,7 @@ async def choose(conv: Conversation, chat_id: str, lang_hint: str, choice: str) 
             usage.record(session, conv.channel, chat_id, "digest_off")
             return chat.lang, say("digest_off", chat.lang)
         query = conv._recent(chat) if choice == "last" else None
-        chat.digest_on, chat.digest_query = True, (query or None) and query[:DIGEST_QUERY_MAX]
+        chat.digest_on, chat.digest_query = True, query[:DIGEST_QUERY_MAX] if query else None
         usage.record(session, conv.channel, chat_id, "digest_on", q=chat.digest_query)
         return chat.lang, say("digest_on", chat.lang, q=chat.digest_query or label("everything", chat.lang))
 

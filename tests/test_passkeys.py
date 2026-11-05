@@ -106,6 +106,7 @@ def test_add_a_passkey_then_sign_in_with_it(tmp_path: Path, fake: FakeGoogle) ->
         assert c.get("/api/me").json()["email"] == "dana@example.com"
     with db.session() as s:
         row = s.scalar(select(PasskeyRow))
+        assert row is not None
         assert row.sign_count == 1 and row.last_used_at is not None and row.transports == "internal,hybrid"
 
 
@@ -137,7 +138,9 @@ def test_refused_passkey_answers(tmp_path: Path, fake: FakeGoogle) -> None:
         assert c.post("/api/passkeys/login/verify", json=answer, headers=OURS).status_code == 400  # challenge used once
 
         with db.session() as s:
-            s.scalar(select(UserRow)).blocked_at = utcnow()
+            user = s.scalar(select(UserRow))
+            assert user is not None
+            user.blocked_at = utcnow()
         assert _login(c, phone).status_code == 403
 
 

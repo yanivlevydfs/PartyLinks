@@ -80,7 +80,7 @@ def listing(session: Session, chat: BotChatRow) -> list[tuple[str, str, str]]:
     ).all()  # fmt: skip
     rows = [("reminder", *r) for r in reminded] + [("watch", *r) for r in watched]
     rows.sort(key=lambda r: (r[3] or datetime.max.replace(tzinfo=utcnow().tzinfo), r[0]))
-    return [(kind, event_id, title) for kind, event_id, title, _ in rows]
+    return [(kind, str(event_id), str(title)) for kind, event_id, title, _ in rows]
 
 
 def forget(session: Session, chat: BotChatRow, kind: str, event_id: str) -> None:
@@ -112,7 +112,7 @@ def due_reminders(db: Database) -> list[Note]:
         session.execute(update(BotReminderRow).where(BotReminderRow.id.in_([r[4] for r in rows])).values(sent_at=now))
     notes: dict[tuple[int, str], Note] = {}
     for chat_ref, channel, chat_id, lang, _, event_id, _at, start_at in rows:
-        hours = (start_at - now).total_seconds() / 3600  # what is left (a late pass says so truly)
+        hours = (start_at - now).total_seconds() / 3600 if start_at else 0.0  # what is left (a late pass says so truly)
         notes[(chat_ref, event_id)] = Note(chat_ref, channel, chat_id, lang, event_id, "reminder", hours=hours)
     return list(notes.values())
 

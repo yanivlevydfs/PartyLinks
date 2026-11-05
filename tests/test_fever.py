@@ -18,8 +18,10 @@ def test_parse_plan() -> None:
     event = parse_plan(PAGE, "436641", URL, TZ)
     assert event is not None
     assert (event.source_event_id, event.title) == ("436641", "Candlelight: Vivaldi's Four Seasons")
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-12-01T19:00:00+02:00"
     assert (event.venue_name, event.city) == ("Eretz Israel Museum", "Tel Aviv")
+    assert event.latitude is not None and event.longitude is not None
     assert (round(event.latitude, 3), round(event.longitude, 3)) == (32.103, 34.796)
     assert event.min_price == Decimal("75.5") and event.tickets
     assert event.images and event.images[0].startswith("https://applications-media.feverup.com/")

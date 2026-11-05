@@ -53,6 +53,7 @@ def test_listing_state_row_parses_to_a_mapped_party() -> None:
     assert event is not None
     assert str(event.url) == "https://plusparty.co.il/events/thursday-moon-mainstream-moonchild-tlv-05-11"
     assert event.source_event_id == ROW["id"] and event.title == ROW["title"]
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-11-05T22:30:00+02:00" and event.time_known
     assert event.end_at and event.end_at.isoformat() == "2026-11-06T05:30:00+02:00"
     assert (event.venue_name, event.address, event.city) == (
@@ -92,16 +93,19 @@ def test_secret_place_town_venue_no_city_and_skips() -> None:
     town = parse_event(ROW | {"venue_name": "כפר שיטים", "city": "כפר שיטים", "street_address": None}, S, TZ)
     assert town is not None and town.venue_name is None
     area = ROW | {"venue_name": "עמק יזרעאל", "city": None, "street_address": None, "location": "עמק יזרעאל"}
-    assert parse_event(area, S, TZ).venue_name is None
+    in_area = parse_event(area, S, TZ)
+    assert in_area is not None and in_area.venue_name is None
     no_city = ROW | {
         "venue_name": None,
         "city": None,
         "street_address": "אלטלנה 8",
         "location": "אלטלנה 8, ראשון לציון",
     }
-    assert parse_event(no_city, S, TZ).address == "אלטלנה 8, ראשון לציון"
+    cityless = parse_event(no_city, S, TZ)
+    assert cityless is not None and cityless.address == "אלטלנה 8, ראשון לציון"
     hall = ROW | {"venue_name": "מרכז הקונגרסים חיפה", "city": "חיפה", "location": "מרכז הקונגרסים חיפה"}
-    assert parse_event(hall, S, TZ).venue_name == "מרכז הקונגרסים חיפה"
+    in_hall = parse_event(hall, S, TZ)
+    assert in_hall is not None and in_hall.venue_name == "מרכז הקונגרסים חיפה"
     sold = parse_event(ROW | {"ticket_status": "sold_out", "end_at": None}, S, TZ)
     assert sold is not None and sold.is_sold_out and sold.end_at is None
     assert parse_event(ROW | {"event_date": None}, S, TZ) is None

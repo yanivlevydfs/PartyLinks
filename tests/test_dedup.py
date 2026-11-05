@@ -386,3 +386,20 @@ def test_date_only_listing_joins_its_show_by_name_and_place(tmp_path: Path) -> N
         listing("goout", "3", "שחר חסון", where=ZOA, start=midnight, time_known=False),
     ])  # fmt: skip
     assert groups["tickchak:1"][0] == groups["mevalim:2"][0] != groups["goout:3"][0]
+
+
+def test_a_listing_takes_what_it_lacks_from_the_other_stores_of_its_event(tmp_path: Path) -> None:
+    from partylinks import group_fill
+
+    settings, groups = grouped(tmp_path, [
+        listing("goout", "a", "THURSDAY MOON | MAINSTREAM", artists=["DOR HADAD"], min_age=21),
+        listing("tickchak", "d", "THURSDAY MOON", where=None, extra={"purchase_url": "https://goout.example/a"}),
+    ])  # fmt: skip
+    assert groups["goout:a"][0] == groups["tickchak:d"][0]
+    db = Database(settings.database.url)
+    with db.session() as session:
+        fills = group_fill.plan(session)
+    assert [f["id"] for f in fills] == ["tickchak:d"]
+    filled = fills[0]
+    assert (filled["latitude"], filled["longitude"]) == MOON
+    assert filled["lineup"] == ["DOR HADAD"] and filled["min_age"] == 21

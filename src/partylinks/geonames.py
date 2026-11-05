@@ -37,7 +37,7 @@ def cache_file() -> Path:
     return project_path("data") / f"geonames-{importlib.metadata.version('geonamescache')}.json"
 
 
-def _keep(city: dict[str, Any], latin: bool) -> dict[str, Any]:
+def _keep(city: Any, latin: bool) -> dict[str, Any]:
     """A city with only the fields and names the app reads (Hebrew names; Latin ones for Israel)."""
     names = [a for a in city["alternatenames"] if _HEBREW.search(a) or (latin and a.isascii() and len(a) > 2)]
     return {k: city[k] for k in ("geonameid", "name", "countrycode", "population", "latitude", "longitude", "timezone")} | {

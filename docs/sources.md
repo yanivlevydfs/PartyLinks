@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 105 configured sources, all on. Each one has its own module in
+SPOTX collects from 106 configured sources, all on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -124,6 +124,7 @@ many of them free.
 | `muzi` | Muzi (muzi.co.il): community-run guide to concerts and shows across Israel | 05:29, 17:29 | yes |
 | `mugics` | Mugics (mugics.com): live-music board where musicians and venues post shows; read from the map-pins API its pages call (30-day windows, ~25 requests, ~390 shows, coordinates on all); ticket links merge with the venues' own listings. robots.txt disallows `/api/` on www, read anyway by the owner's choice | 09:13, 21:13 | yes |
 | `efokulam` | EfoKulam (efokulam.co.il, "איפה כולם"): nightlife guide (club nights, parties, festivals, mostly Tel Aviv); read from its wp-json `events` post type (~6 requests, ~50 current events of ~460 rows); no coordinates (addresses geocoded), no venue field; prices from the article's highlighted chips, artists from its "ליינאפ" block (chips / ✓ list); seller links (Go-Out, Eventer) merge with those sources | 08:43, 20:43 | yes |
+| `liveisrael` | LiveIsrael (liveisrael.co): party guide (club nights, trance / nature parties, festivals, all of Israel); read from its wp-json `party_events` post type (~6 requests, ~45 current events of ~440 rows), Chrome TLS (Mod_Security refuses plain clients); lineup from its `lineup_artists` field, time / place / age from the article's details list; secret spots keep only the tag city; no price; seller links (Zygo, bit.ly) merge with Zygo | 09:53, 21:53 | yes |
 | `tiuli` | Tiuli (tiuli.com): trips and leisure guide, its events section | 04:39, 16:39 | yes |
 | `festivalim` | Festivalim (festivalim.co.il): festivals, carnivals and street celebrations | 04:26, 16:26 | yes |
 | `poalimatarim` | Poalim Atarim (poalimatarim.com): Bank Hapoalim's free entry to ~50 museums, parks, heritage sites (seasonal) | 09:54, 21:54 | yes |

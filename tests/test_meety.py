@@ -39,4 +39,4 @@ def test_price_written_in_the_text() -> None:
         '<p>אין צורך בבן/בת זוג פשוט להגיע ✅ 50 ש"ח עלות כניסה   סטודנטים וחיילים ב 40 ש"ח</p>',
     )
     event = parse_event("3083", "https://meety.co.il/events/3083", page, [], "https://meety.co.il", "Asia/Jerusalem")
-    assert event is not None and sorted(t.price for t in event.tickets) == [40, 50]
+    assert event is not None and sorted(t.price or -1 for t in event.tickets) == [40, 50]

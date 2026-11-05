@@ -101,7 +101,7 @@ VARIED = [  # (id, title, city, free, days ahead, hour)
     ("j2", "Trance festival morning", "Jerusalem", True, 20, 10),
     ("b1", "Reggae beach party", "Eilat", False, 6, 18),
 ]
-SEARCHES = [
+SEARCHES: list[dict[str, Any]] = [
     {"q": "techno"},
     {"q": "party", "freeOnly": True},
     {"q": "zzzz-nothing"},
@@ -178,7 +178,7 @@ def test_blocked_and_paused_alerts_get_nothing(tmp_path: Path, fake: FakeGoogle)
         sign_in(c, fake, email="blocked@example.com", sub="g-blocked")
         c.post("/api/me/alerts", json={"criteria": {"q": "night"}}, headers=OURS)
     with db.session() as s:
-        s.scalar(select(UserRow).where(UserRow.google_sub == "g-blocked")).blocked_at = utcnow()
+        s.scalars(select(UserRow).where(UserRow.google_sub == "g-blocked")).one().blocked_at = utcnow()
     seed(settings, [event("x", SOON)])
     assert matcher.run(settings, db) == 0
 

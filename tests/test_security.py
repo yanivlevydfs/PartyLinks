@@ -202,7 +202,7 @@ def test_every_write_and_admin_route_needs_the_token(tmp_path: Path) -> None:
             if not isinstance(route, APIRoute) or route.path in PUBLIC_WRITES:
                 continue
             path = re.sub(r"\{[^}]+\}", "x", route.path)
-            for method in route.methods - {"HEAD"}:
+            for method in (route.methods or set()) - {"HEAD"}:
                 if method == "GET" and not route.path.startswith("/admin/api"):
                     continue
                 got = outsider.request(method, path, json={})
@@ -254,7 +254,7 @@ def test_ticket_redirect_only_goes_to_web_pages(tmp_path: Path) -> None:
     soon = datetime.now(UTC) + timedelta(days=2)
     db = seed(settings, [event("ok", soon), event("bad", soon)])
     with db.session() as session:
-        session.get(EventRow, "test:bad").url = "javascript:alert(document.cookie)"
+        session.get_one(EventRow, "test:bad").url = "javascript:alert(document.cookie)"
     app = create_app(settings, start_scheduler=False)
     with TestClient(app, follow_redirects=False) as c:
         ok = c.get("/go/test:ok")

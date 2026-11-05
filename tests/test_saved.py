@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
@@ -15,7 +16,7 @@ from tests.test_accounts import OURS, FakeGoogle, _settings, sign_in
 from tests.test_storage_api import event, seed
 
 
-def _app(tmp_path: Path, **extra: object) -> tuple[object, Database]:
+def _app(tmp_path: Path, **extra: object) -> tuple[FastAPI, Database]:
     settings = _settings(tmp_path, **extra)
     soon = datetime.now(UTC) + timedelta(days=2)
     db = seed(settings, [event(k, soon + timedelta(hours=i)) for i, k in enumerate("abcd")])

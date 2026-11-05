@@ -23,7 +23,7 @@ def test_yellowsubmarine_archive_and_show_page() -> None:
     assert len(cards) == 36
     events = [yellowsubmarine.parse_card(c, cfg, TZ, today=date(2026, 10, 25)) for c in cards]
     assert all(events)
-    piazzolla = next(e for e in events if e and e.url.path.endswith("/piazzolla/"))
+    piazzolla = next(e for e in events if e and (e.url.path or "").endswith("/piazzolla/"))
     # The show starts at 21:30 Israeli time (doors 20:30); the page's JSON-LD calls that "21:30Z".
     assert piazzolla.start_at == datetime(2026, 10, 28, 21, 30, tzinfo=ZoneInfo(TZ))
     assert (piazzolla.extra or {})["doors_open"] == "20:30"
@@ -39,7 +39,7 @@ def test_yellowsubmarine_archive_and_show_page() -> None:
     assert "פיאצולה" in (piazzolla.description or "")
     assert piazzolla.start_at == datetime(2026, 10, 28, 21, 30, tzinfo=ZoneInfo(TZ))
 
-    festival = next(e for e in events if e and e.url.path.endswith("/imsf26-3/"))
+    festival = next(e for e in events if e and (e.url.path or "").endswith("/imsf26-3/"))
     yellowsubmarine.add_page(festival, (FIXTURES / "yellowsubmarine" / "event_free.html").read_text(encoding="utf-8"))
     assert festival.min_price == 0 and festival.tickets[0].is_free  # "כניסה חופשית"
     assert festival.start_at == datetime(2026, 11, 17, 23, 10, tzinfo=ZoneInfo(TZ))

@@ -144,6 +144,7 @@ def test_a_rescan_of_an_unchanged_event_only_marks_it_seen(tmp_path: Path) -> No
     with db.session() as session:
         session.execute(update(EventRow).values(organizer="marker", is_listed=False))
         seen_before = session.scalar(select(EventRow.last_seen_at))
+    assert seen_before is not None
     seed(settings, [event("a", start)])
     with db.session(write=False) as session:
         row = session.scalars(select(EventRow)).one()

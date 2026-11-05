@@ -52,14 +52,14 @@ def test_service_of_knows_dj_stores_not_databases() -> None:
 
 
 def test_pick_accepts_only_one_exact_candidate() -> None:
-    assert pick([cand("Infected Mushroom"), cand("Infected", mbid="x")], "INFECTED MUSHROOM", 90)["id"] == MBID
+    assert (pick([cand("Infected Mushroom"), cand("Infected", mbid="x")], "INFECTED MUSHROOM", 90) or {}).get("id") == MBID
     assert pick([cand("Someone", aliases=[{"name": "Skazi"}])], "skazi", 90) is not None  # an alias counts
     assert pick([cand("Adam Ten")], "Adam", 90) is None  # not the same name
     assert pick([cand("Adam", score=80)], "Adam", 90) is None  # score too low
     assert pick([cand("Adam", mbid="a"), cand("Adam", mbid="b")], "Adam", 90) is None  # ambiguous
     # Ambiguous, but a Hebrew name and only one of them is Israeli.
     two = [cand("נועה", mbid="il", country="IL"), cand("נועה", mbid="us", country="US")]
-    assert pick(two, "נועה", 90)["id"] == "il"
+    assert (pick(two, "נועה", 90) or {}).get("id") == "il"
     assert (
         pick([cand("Noa", mbid="il", country="IL"), cand("Noa", mbid="us")], "Noa", 90) is None
     )  # Latin name: no guess
@@ -104,7 +104,7 @@ def _db(tmp_path: Path, lineups: dict[str, list[str]]) -> Database:
 
 
 def _run(db: Database, fake: FakeMB, **cfg: Any) -> Any:
-    settings = ArtistLinksSettings(**({"backoff_seconds": 0} | cfg))
+    settings = ArtistLinksSettings.model_validate({"backoff_seconds": 0} | cfg)
     client = MusicBrainz(
         settings,
         httpx.Client(
@@ -129,6 +129,7 @@ def test_pass_budget_cache_windows_and_mbid_refresh(tmp_path: Path, sleeps: list
     assert (stats.asked, stats.hits, stats.pending) == (2, 1, 1)  # "DJ" is too short to ask
     row = _rows(db)["infected mushroom"]
     assert row.found and row.mbid == MBID
+    assert row.links is not None
     assert [link["service"] for link in row.links] == [
         "spotify",
         "youtube",

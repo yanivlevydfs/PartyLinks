@@ -8,7 +8,7 @@ import asyncio
 from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -99,7 +99,7 @@ def test_every_card_has_its_buttons_within_telegrams_limit(tmp_path: Path) -> No
     assert [b.action.split(":")[0] for b in card.actions] == ["rem", "wat", "sim", "opt"]
     assert all(len(b.action.encode()) <= MAX_ACTION_BYTES for b in card.actions)
     bot = FakeBot()
-    _run(render.send_card(bot, CHAT, card))
+    _run(render.send_card(cast(Any, bot), CHAT, card))
     assert len(bot.sent[0][1]["reply_markup"].inline_keyboard) == 2  # links, then the actions
 
 
@@ -124,9 +124,9 @@ def test_a_reminder_is_sent_once_when_its_time_comes(tmp_path: Path) -> None:
         s.execute(update(BotReminderRow).where(BotReminderRow.remind_at < SOON - timedelta(hours=3))
                   .values(remind_at=datetime.now(ZoneInfo("UTC")) - timedelta(minutes=1)))  # fmt: skip
     bot = FakeBot()
-    assert _run(jobs.send_reminders(settings, db, bot)) == 1
+    assert _run(jobs.send_reminders(settings, db, cast(Any, bot))) == 1
     assert "Techno Bunker" in bot.sent[0][1]["text"] and "3 days" in bot.sent[0][1]["text"]  # what is left
-    assert _run(jobs.send_reminders(settings, db, FakeBot())) == 0  # never twice
+    assert _run(jobs.send_reminders(settings, db, cast(Any, FakeBot()))) == 0  # never twice
 
 
 def test_a_watch_tells_of_a_price_drop_once_and_of_a_sell_out(tmp_path: Path) -> None:
@@ -137,9 +137,9 @@ def test_a_watch_tells_of_a_price_drop_once_and_of_a_sell_out(tmp_path: Path) ->
     with db.session() as s:
         s.execute(update(EventRow).where(EventRow.title == "Techno Bunker").values(group_min_price=Decimal(90)))
     bot = FakeBot()
-    assert _run(jobs.send_watches(settings, db, bot)) == 1
+    assert _run(jobs.send_watches(settings, db, cast(Any, bot))) == 1
     assert "120" in bot.sent[0][1]["text"] and "90" in bot.sent[0][1]["text"]
-    assert _run(jobs.send_watches(settings, db, FakeBot())) == 0
+    assert _run(jobs.send_watches(settings, db, cast(Any, FakeBot()))) == 0
     with db.session() as s:
         s.execute(update(EventRow).where(EventRow.title == "Techno Bunker").values(is_sold_out=True))
     assert [n.kind for n in remind.due_watches(db, settings.bot.watch_min_drop_percent)] == ["sold_out"]
@@ -239,5 +239,5 @@ def test_usage_is_counted_for_the_admin_and_stop_unlinks_it(tmp_path: Path) -> N
 
 def test_a_reply_with_a_file_sends_it() -> None:
     bot = FakeBot()
-    _run(render.send(bot, CHAT, Reply("📅", document=("event.ics", b"BEGIN:VCALENDAR")), "en"))
+    _run(render.send(cast(Any, bot), CHAT, Reply("📅", document=("event.ics", b"BEGIN:VCALENDAR")), "en"))
     assert [kind for kind, _ in bot.sent] == ["text", "document"]

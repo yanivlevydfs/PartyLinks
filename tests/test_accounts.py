@@ -100,7 +100,7 @@ def test_refused_sign_ins(tmp_path: Path, fake: FakeGoogle) -> None:
         taken = sign_in(c, fake, email="same@example.com", sub="g-4", nxt="/")
         assert taken.headers["location"] == "/?signin=taken"
         with db.session() as s:
-            s.scalar(select(UserRow).where(UserRow.google_sub == "g-3")).blocked_at = utcnow()
+            s.scalars(select(UserRow).where(UserRow.google_sub == "g-3")).one().blocked_at = utcnow()
         assert sign_in(c, fake, email="same@example.com", sub="g-3", nxt="/").headers["location"] == "/?signin=blocked"
 
 
@@ -143,11 +143,15 @@ def test_expired_and_blocked_sessions(tmp_path: Path, fake: FakeGoogle) -> None:
     with TestClient(app) as c:
         sign_in(c, fake)
         with db.session() as s:
-            s.scalar(select(SessionRow)).expires_at = utcnow() - timedelta(seconds=1)
+            session_row = s.scalar(select(SessionRow))
+            assert session_row is not None
+            session_row.expires_at = utcnow() - timedelta(seconds=1)
         assert c.get("/api/me").status_code == 401
         sign_in(c, fake)
         with db.session() as s:
-            s.scalar(select(UserRow)).blocked_at = utcnow()
+            user = s.scalar(select(UserRow))
+            assert user is not None
+            user.blocked_at = utcnow()
         assert c.get("/api/me").status_code == 401  # a block signs the user out at once
 
 
@@ -328,6 +332,7 @@ def test_facebook_sign_in_links_by_email_and_deletes(tmp_path: Path, fake: FakeG
         with db.session() as s:
             assert s.scalar(select(func.count()).select_from(UserRow)) == 2
             dana = s.scalar(select(UserRow).where(UserRow.email == "dana@example.com"))
+            assert dana is not None
             assert (dana.google_sub, dana.facebook_id) == ("g-1", "f-1")
             assert s.scalar(select(UserRow.google_sub).where(UserRow.facebook_id == "f-3")) is None
         # Meta's data deletion callback: forged refused, signed deletes that user.
@@ -339,6 +344,7 @@ def test_facebook_sign_in_links_by_email_and_deletes(tmp_path: Path, fake: FakeG
         with db.session() as s:
             assert s.scalar(select(func.count()).select_from(UserRow).where(UserRow.facebook_id == "f-3")) == 0
             dana = s.scalar(select(UserRow).where(UserRow.email == "dana@example.com"))
+            assert dana is not None
             assert (dana.google_sub, dana.facebook_id) == ("g-1", None)
 
 

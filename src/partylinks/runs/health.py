@@ -73,7 +73,8 @@ class RunHealth:
         cfg = self.settings.scheduler
         if result.status in ("failed", "blocked"):
             return f"{result.status}: {result.error or 'no error text'}"
-        if result.events_found == 0:
+        own = self.settings.sources.get(result.source)
+        if result.events_found == 0 and not (isinstance(own, dict) and own.get("may_be_empty")):
             return "no events found"
         # The site changed its markup: items stop parsing (each is skipped, never saved half-read) and the run
         # still "finds" the rest. Too many skipped is a bad run: retried, then the source is paused.

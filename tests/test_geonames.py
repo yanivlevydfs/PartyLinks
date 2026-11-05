@@ -39,5 +39,6 @@ def test_places_answer_as_before() -> None:
     places._world_cities.cache_clear()
     towns = {p.he for p in places.israeli_places(2000)}
     assert {"תל אביב-יפו", "באר שבע", "יהוד"} & towns  # Hebrew names from the cache
-    assert places.city_abroad("פריז", "FR")[1][0] == "Paris" and places.city_zone("ניו יורק", "US") == "America/New_York"
+    paris = places.city_abroad("פריז", "FR")
+    assert paris is not None and paris[1][0] == "Paris" and places.city_zone("ניו יורק", "US") == "America/New_York"
     assert places.city_abroad("Vaduz", "LI") is not None  # a capital under 15,000: in cities15000, kept

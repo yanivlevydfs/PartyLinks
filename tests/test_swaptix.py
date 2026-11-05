@@ -21,6 +21,7 @@ def test_listings_become_one_resale_event_per_start() -> None:
     data = _load()
     (event,) = resale_events(data["item"], data["listings"], SETTINGS, TZ)
     assert event.title == "אביב גפן"
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-12-30T21:00:00+02:00"  # 19:00 UTC
     assert (event.venue_name, event.city) == ("היכל התרבות תל אביב, תל אביב", "תל אביב")
     assert [(t.name, t.price) for t in event.tickets] == [("ה' עליון שורה 32", Decimal(199))]

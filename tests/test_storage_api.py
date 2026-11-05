@@ -761,7 +761,7 @@ def test_geocoder_places_events_abroad_at_their_city(tmp_path: Path) -> None:
     geo.locate_missing(network=False)
     geo.locate_missing(network=False)
     with db.session() as session:
-        assert {round(r.latitude, 1) for r in session.query(EventRow)} == {52.5}  # one city point (GeoNames' Berlin)
+        assert {r.latitude and round(r.latitude, 1) for r in session.query(EventRow)} == {52.5}  # one city point (GeoNames' Berlin)
 
 
 def test_city_abroad_is_the_geonames_city_not_a_village_of_that_name(tmp_path: Path) -> None:
@@ -789,8 +789,8 @@ def test_city_abroad_is_the_geonames_city_not_a_village_of_that_name(tmp_path: P
                 looked_up_at=utcnow(),
             )
         )
-        session.get(EventRow, "test:old").latitude, session.get(EventRow, "test:old").longitude = 53.825248, 9.28872
-        session.get(EventRow, "test:venue").latitude, session.get(EventRow, "test:venue").longitude = (
+        session.get_one(EventRow, "test:old").latitude, session.get_one(EventRow, "test:old").longitude = 53.825248, 9.28872
+        session.get_one(EventRow, "test:venue").latitude, session.get_one(EventRow, "test:venue").longitude = (
             47.9947988,
             7.8404909,
         )
@@ -800,10 +800,10 @@ def test_city_abroad_is_the_geonames_city_not_a_village_of_that_name(tmp_path: P
     )
     geo.locate_missing(network=False)
     with db.session() as session:
-        point = lambda i: (round(session.get(EventRow, i).latitude, 2), round(session.get(EventRow, i).longitude, 2))
+        point = lambda i: (round(session.get_one(EventRow, i).latitude or 0, 2), round(session.get_one(EventRow, i).longitude or 0, 2))
         assert point("test:old") == point("test:new") == (48.0, 7.85)  # moved / placed at Freiburg im Breisgau
         assert point("test:venue") == (47.99, 7.84)  # the seller's venue point: untouched
-        assert round(session.get(GeoCacheRow, "Freiburg @DE").latitude, 1) == 48.0  # the cache says so too
+        assert round(session.get_one(GeoCacheRow, "Freiburg @DE").latitude or 0, 1) == 48.0  # the cache says so too
 
 
 def test_small_namesake_city_abroad_stays_with_nominatim(tmp_path: Path) -> None:
@@ -829,14 +829,14 @@ def test_small_namesake_city_abroad_stays_with_nominatim(tmp_path: Path) -> None
                 looked_up_at=utcnow(),
             )
         )
-        session.get(EventRow, "test:r").latitude, session.get(EventRow, "test:r").longitude = 38.55185, -121.36467
+        session.get_one(EventRow, "test:r").latitude, session.get_one(EventRow, "test:r").longitude = 38.55185, -121.36467
     enricher = Enricher(settings.enrichment, settings.timezone)
     geo = Geocoder(
         settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
     )
     geo.locate_missing(network=False)
     with db.session() as session:
-        assert session.get(EventRow, "test:r").latitude is None  # unplaced: Nominatim's turn on the next pass
+        assert session.get_one(EventRow, "test:r").latitude is None  # unplaced: Nominatim's turn on the next pass
         assert session.get(GeoCacheRow, "Rosemont @US") is None
 
 
@@ -1199,7 +1199,7 @@ def test_one_complex_under_many_names_is_not_a_placeholder_point() -> None:
 def test_a_generic_hall_name_never_lends_its_point_to_another_city_s_hall() -> None:
     from partylinks.geo import _venue_match, venue_key
 
-    known = {venue_key("היכל התרבות"): {"תל אביב": (32.073, 34.78)}, venue_key("הקאמרי"): {"תל אביב": (32.077, 34.784)}}
+    known: dict[Any, dict[str, tuple[float, float]]] = {venue_key("היכל התרבות"): {"תל אביב": (32.073, 34.78)}, venue_key("הקאמרי"): {"תל אביב": (32.077, 34.784)}}
     assert _venue_match(known, "היכל התרבות מנשה בגן שמואל", None) is None  # took Tel Aviv's hall before
     assert _venue_match(known, "תיאטרון הקאמרי אולם 1", "תל אביב") == (32.077, 34.784)  # a real name still matches
 

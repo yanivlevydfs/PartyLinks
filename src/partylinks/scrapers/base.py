@@ -85,6 +85,8 @@ class SourceSettings(BaseModel):
     israel_proxy: bool = False
     # Go out only through our Israeli VPN (http.israel_vpn, Railway production): no free proxies, no pool.
     vpn: bool = False
+    # A seasonal / small site with nothing listed now: a run with 0 events is healthy (no retries, no pause).
+    may_be_empty: bool = False
     # This source's run limit when it needs longer than scheduler.run_timeout_seconds.
     run_timeout_seconds: float | None = Field(None, gt=0)
 
@@ -572,7 +574,7 @@ class _ImpersonatingTransport(httpx.AsyncBaseTransport):
         except curl_requests.RequestsError as exc:
             # Connect/timeout/proxy failures alike: a ConnectError is retried and moves to the next proxy.
             raise httpx.ConnectError(str(exc), request=request) from exc
-        kept = [(k, v) for k, v in r.headers.multi_items() if k.lower() not in self._DROP_RESPONSE]
+        kept = [(k, v) for k, v in r.headers.multi_items() if v is not None and k.lower() not in self._DROP_RESPONSE]
         return httpx.Response(r.status_code, headers=kept, content=r.content, request=request)
 
     async def aclose(self) -> None:

@@ -152,7 +152,7 @@ def parse_card(
 def add_page(event: ScrapedEvent, page_html: str) -> None:
     """The show's page: the dated day (with its year), prices, text, full artwork and the Eventer link."""
     tree = LexborHTMLParser(page_html)
-    today = datetime.now(event.start_at and event.start_at.tzinfo).date()  # Israel's today, not the server's
+    today = datetime.now(event.start_at.tzinfo if event.start_at else None).date()  # Israel's today, not the server's
     if (info := tree.css_first(".b-event-info")) and (day := show_day(_stat(info, "icon-calendar"), today)):
         event.start_at = event.start_at.replace(year=day.year, month=day.month, day=day.day) if event.start_at else None
     if price := tree.css_first(".b-event-info__price"):

@@ -28,6 +28,7 @@ def test_one_event_per_slot_with_prices_and_place() -> None:
     assert [e.source_event_id for e in events] == ["18088", "18090"]
     first = events[0]
     assert first.title == "החיזיון הלילי"
+    assert first.start_at is not None
     assert first.start_at.isoformat() == "2026-11-02T19:00:00+02:00"
     assert str(first.url) == "https://www.tod.org.il/event/the-night-spectacular/"
     assert (first.venue_name, first.latitude) == ("מגדל דוד", 31.776)

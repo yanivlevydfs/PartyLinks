@@ -19,6 +19,7 @@ from datetime import datetime
 
 import httpx
 from pydantic import Field
+from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.enrichment import UNKNOWN_COUNTRY
 from partylinks.models import ScrapedEvent
@@ -93,6 +94,7 @@ class LiveventsSettings(SourceSettings):
     ajax_action: str  # the calendar's month table
     calendar_path: str  # the calendar page (link of rows without an offer)
     months_ahead: int = Field(24, ge=1)
+    artists_path: str = "/artists/"  # the artist cards: name + an 800x800 picture (one request)
 
 
 class LiveventsScraper(BaseScraper[LiveventsSettings]):
@@ -112,10 +114,13 @@ class LiveventsScraper(BaseScraper[LiveventsSettings]):
             for i in range(s.months_ahead)
         ]
 
+        # The calendar rows carry no picture; the artist's card does (every artist without a show page too).
+        cards = artist_images(await self.optional("artist cards", self.get_text(s.site_url + s.artists_path)) or "")
+
         async def month_table(month: str) -> list[ScrapedEvent]:
             data = {"action": s.ajax_action, "month": month, "count": 10}
             table = (await self.request("POST", s.site_url + s.ajax_path, data=data)).text
-            return parse_table(table, s.site_url + s.calendar_path, self.timezone)
+            return parse_table(table, s.site_url + s.calendar_path, self.timezone, cards)
 
         seen: set[str] = set()  # a row spanning two months is in both tables
         async for events in self.stream_isolated(months, month_table, label=lambda m: f"month {m}"):
@@ -129,7 +134,20 @@ def _text(fragment: str) -> str | None:
     return clean_str(re.sub(r"\s+", " ", htmllib.unescape(re.sub(r"<[^>]+>", " ", fragment))))
 
 
-def parse_table(table_html: str, calendar_url: str, timezone: str) -> list[ScrapedEvent]:
+def artist_images(page_html: str) -> dict[str, str]:
+    """The /artists/ page's cards: artist name (as the calendar writes it) -> picture URL."""
+    found: dict[str, str] = {}
+    for card in LexborHTMLParser(page_html).css("a.sitem"):
+        name, img = card.css_first(".artist"), card.css_first("img.bimg")
+        src = clean_str(img.attributes.get("src")) if img is not None else None
+        if name is not None and src and src.startswith("http"):
+            found.setdefault(name.text(strip=True), src)
+    return found
+
+
+def parse_table(
+    table_html: str, calendar_url: str, timezone: str, images: dict[str, str] | None = None
+) -> list[ScrapedEvent]:
     """One event per row and date of a month's table."""
     events = []
     for cells_html, link_html in _ROW.findall(table_html):
@@ -153,6 +171,7 @@ def parse_table(table_html: str, calendar_url: str, timezone: str) -> list[Scrap
                     city=city,
                     country=CITY_COUNTRY.get(city or "", UNKNOWN_COUNTRY),
                     artists=[artist],
+                    images=[img] if (img := (images or {}).get(artist)) else [],
                     currency=CURRENCY_SIGNS.get(price.group(2).strip(), "EUR") if price else "EUR",
                     min_price=to_decimal(price.group(1).replace(",", "")) if price else None,
                     extra={

@@ -40,6 +40,7 @@ def test_suggested_events_are_not_tagged() -> None:
 def test_city_only_night_has_no_venue() -> None:
     e = _event("radio-berlin-face-off.html", "radio-berlin-face-off", ["techno", "hard techno"])
     assert e is not None and e.source_event_id == "radio-berlin-face-off"
+    assert e.start_at is not None
     assert e.start_at.isoformat() == "2026-10-29T23:59:00+02:00" and e.time_known
     assert e.end_at is not None and e.end_at.isoformat() == "2026-10-30T08:00:00+02:00"
     assert e.venue_name is None and e.city == "תל אביב" and e.country is None
@@ -57,4 +58,5 @@ def test_free_night_with_venue_and_site_as_organizer() -> None:
 def test_koh_phangan_in_local_time_with_age() -> None:
     e = _event("utopia-koh-phangan.html", "utopia-events-31-12-2026-new-year-rave-koh-phangan")
     assert e is not None and e.country == "TH" and e.venue_name == "Than Sadet"
+    assert e.start_at is not None
     assert e.start_at.isoformat() == "2026-12-31T21:00:00+07:00" and e.min_age == 18

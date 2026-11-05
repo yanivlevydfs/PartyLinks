@@ -29,6 +29,7 @@ def test_livetickets_city_rows() -> None:
     assert (match.venue_name, match.city, match.country) == ("האצטדיון האולימפי ברלין", "ברלין", "DE")
     assert (match.currency, match.min_price, match.extra) == ("EUR", Decimal(85), {})
     assert tentative.extra == {"date_not_final": True}
+    assert concert.start_at is not None
     assert (concert.title, concert.start_at.month, concert.min_price) == ("Aespa", 1, Decimal(300))
 
 

@@ -59,7 +59,7 @@ class MegaeventsScraper(BaseScraper[MegaeventsSettings]):
                 continue
             if event is None:
                 continue
-            shown = featured.get((raw.get("name"), raw.get("date")))
+            shown = featured.get((raw.get("name"), raw.get("date")))  # type: ignore[arg-type]
             if shown is not None and event.min_price is not None and shown != event.min_price:
                 self.log.warning(
                     "event %s: computed price %s, site shows %s (package_fee changed?)",

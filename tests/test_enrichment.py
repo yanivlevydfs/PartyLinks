@@ -112,6 +112,29 @@ def test_featured_artists_spotted_in_text() -> None:
     assert event is not None and event.lineup == ["Adam Ten", "Dali", "עדן בן זקן"]
 
 
+def test_lineup_timetables_and_one_line_lists() -> None:
+    cases = {
+        "🎧 LINE UP\n\n23:00 - 00:00 VICTORIA\n00:00 - 01:30 LiniXz\n17:30-18:30SEAN KEE\n\n🫗צייסרים ברחבה": [
+            "VICTORIA", "LiniXz", "SEAN KEE"],
+        "ליינאפ:\n▰ 11/11\n18:00 - יהונתן בן ארוש (טרב)\n▰ 12/11\n20:00 - רוח אל חליג' (גג)\nכניסה חופשית!": [
+            "יהונתן בן ארוש", "רוח אל חליג'"],
+        "LINEUP\nRemat Siaq · Tina · Orabi\nTICKETS & ENTRY\nLimited tickets available.": ["Remat Siaq", "Tina", "Orabi"],
+        "Line Up:\nPretty Pink, Nat SuPrise, D´Joy und Anija": ["Pretty Pink", "Nat SuPrise", "D´Joy", "Anija"],
+        "ליינאפ מוזיקלי 🎶\nGILKO\nDICHTER\n\nנהלים אחרונים:": ["GILKO", "DICHTER"],
+    }  # fmt: skip
+    for text, lineup in cases.items():
+        event = ENRICHER.enrich(make(title="Night", description=text, artists=[]))
+        assert event is not None and event.lineup[: len(lineup)] == lineup, (text, event and event.lineup)
+
+
+def test_past_guests_and_bar_names() -> None:
+    enricher = Enricher(SETTINGS.enrichment, SETTINGS.timezone)
+    enricher.learn_artists([], featured=["Adam Ten", "Seth Troxler"])
+    text = "הערב: ADAM TEN. לאורך השנים אירחו אצלם את Seth Troxler ועוד."
+    event = enricher.enrich(make(title="Night", description=text, artists=["OMER BAR", "OPEN BAR"]))
+    assert event is not None and event.lineup == ["OMER BAR", "Adam Ten"]
+
+
 def test_time_categories_in_local_timezone() -> None:
     event = ENRICHER.enrich(make())
     assert event is not None
@@ -417,3 +440,10 @@ def test_a_ticket_management_page_is_not_an_event() -> None:
 def test_a_lineup_has_no_placeholders_or_one_act_twice() -> None:
     event = ENRICHER.enrich(make(title="MAKE SENSE", description="", artists=["Adam Ten", "Yamaguchi", "Special Guest", "YAMAGUCCI", "Draco", "Dor Danino"]))
     assert event is not None and event.lineup == ["Adam Ten", "Yamaguchi", "Draco", "Dor Danino"]
+
+
+def test_social_profile_is_never_a_purchase_link() -> None:
+    post = ENRICHER.enrich(make(extra={"purchase_url": "https://www.instagram.com/p/abc/"}))
+    seller = ENRICHER.enrich(make(extra={"purchase_url": "https://live.tickchak.co.il/e/1"}))
+    assert post is not None and "purchase_url" not in post.extra
+    assert seller is not None and seller.extra["purchase_url"] == "https://live.tickchak.co.il/e/1"

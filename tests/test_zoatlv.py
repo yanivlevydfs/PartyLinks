@@ -44,6 +44,7 @@ def test_zoatlv_listing_pages_and_sellers() -> None:
     assert "בבקשה לא להגיע" in (keren.description or "")
     # The seller's link reads as Leaan's own listing URL, so dedup ties the two.
     leaan = settings.sources["leaan"]
+    assert leaan is not None
     leaan_url = leaan["site_url"] + leaan["event_page_path"].format(slug=slugify("דרור קרן"), event_id=6998)
     assert url_key((keren.extra or {})["purchase_url"]) == url_key(str(type(keren.url)(leaan_url)))
 

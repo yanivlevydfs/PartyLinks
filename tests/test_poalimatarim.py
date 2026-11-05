@@ -47,6 +47,7 @@ def test_one_event_per_opening_day() -> None:
         "41203-20260530",
     ]
     e = events[1]
+    assert e.start_at is not None and e.end_at is not None
     assert (e.start_at.isoformat(), e.end_at.isoformat()) == ("2026-05-09T10:00:00+03:00", "2026-05-09T17:00:00+03:00")
     assert e.venue_name == "אנו – מוזיאון העם היהודי"
     assert e.address == "קמפוס אוניברסיטת תל-אביב, רחוב קלאוזנר 15, רמת אביב"
@@ -58,7 +59,8 @@ def test_one_event_per_opening_day() -> None:
 
 def test_ticket_types_from_offers() -> None:
     events = parse_site(_page("site_100820.html"), _sites()[100820], SETTINGS, TZ, BEFORE_CAMPAIGN)
-    assert len(events) == 3 and events[0].start_at.isoformat() == "2026-05-08T09:00:00+03:00"
+    assert len(events) == 3 and events[0].start_at is not None
+    assert events[0].start_at.isoformat() == "2026-05-08T09:00:00+03:00"
     assert [t.is_sold_out for t in events[0].tickets] == [True, True, False]
     assert not events[0].is_sold_out and events[0].min_price == 0
 

@@ -234,6 +234,9 @@ class LineupSettings(BaseModel):
     header_filler: list[str] = Field(default_factory=list)
     # A line with one of these words is a stage / area / date sub-header, never a name ("HIP HOP STAGE").
     not_name_words: list[str] = Field(default_factory=list)
+    # A sentence with one of these speaks of past guests ("כבר ניגנו אצלם: Seth Troxler"): its known artists
+    # are not spotted as this event's lineup.
+    past_guest_words: list[str] = Field(default_factory=list)
     # "DJ <word>" in running text that is not a name ("DJ Mag", "DJ Night").
     inline_dj_stopwords: list[str] = Field(default_factory=list)
     # Set descriptions cut from a name: "<qualifier> <word>" ("AZVELOS - Birthday Set", "NARDO WICK — MAIN EVENT").
@@ -275,6 +278,8 @@ class RegionSettings(BaseModel):
 
 
 class EnrichmentSettings(BaseModel):
+    # Hosts of profiles and posts, not sellers: an extra.purchase_url there is dropped, any source.
+    social_hosts: list[str] = Field(default_factory=list)
     target_city: TargetCitySettings = Field(default_factory=TargetCitySettings)
     cities: list[CitySettings] = Field(default_factory=list)
     # Every other Israeli locality of at least this many people (GeoNames, places.py) is known too:

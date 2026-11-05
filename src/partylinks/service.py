@@ -35,6 +35,7 @@ from typing import Any
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import DataError, IntegrityError
 
+from partylinks import group_fill
 from partylinks.artistdb import ArtistBook
 from partylinks.config import Settings
 from partylinks.db import (
@@ -309,6 +310,12 @@ class ScrapeService:
         if changed:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, changed)
+        with self.db.session(write=False) as session:
+            fills = group_fill.plan(session)  # what one store lacks, from the event's other stores / its venue
+        if fills:
+            with self.db.session() as session:
+                bulk_update_by_id(session, EventRow, fills)
+        log.debug("group fill: %d events", len(fills))
         return merged
 
     async def purge_expired(self) -> int:

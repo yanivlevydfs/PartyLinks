@@ -58,7 +58,7 @@ def test_free_range_social_link_city_venue_and_skips() -> None:
     town = parse_event(ROW | {"location": ROW["location"] | {"revenueName": "פרדס-חנה"}}, S, TZ)
     assert town is not None and town.venue_name is None
     no_time = parse_event(ROW | {"time": None}, S, TZ)
-    assert no_time is not None and not no_time.time_known and no_time.start_at.hour == 0
+    assert no_time is not None and not no_time.time_known and no_time.start_at is not None and no_time.start_at.hour == 0
     assert parse_event(ROW | {"type": "band"}, S, TZ) is None
     assert parse_event(ROW | {"date": None}, S, TZ) is None
     assert parse_event(ROW | {"location": ROW["location"] | {"country": "Greece"}}, S, TZ) is None

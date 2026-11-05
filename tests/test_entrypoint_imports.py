@@ -9,5 +9,5 @@ import sys
 
 def test_cli_imports_in_a_fresh_interpreter() -> None:
     for module in ("partylinks.cli", "partylinks.artistdb", "partylinks.worker.runner"):
-        done = subprocess.run([sys.executable, "-c", f"import {module}"], capture_output=True, text=True)
+        done = subprocess.run([sys.executable, "-c", f"import {module}"], capture_output=True, text=True, check=False)
         assert done.returncode == 0, f"{module}: {done.stderr.strip().splitlines()[-1:]}"

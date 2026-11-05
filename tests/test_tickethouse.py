@@ -25,6 +25,7 @@ def _items() -> list[dict]:
 
 def test_tickethouse_parse_event() -> None:
     concert, contact, thessaloniki, festival, match = (tickethouse.parse_event(i, EVENT_URL) for i in _items())
+    assert concert is not None and thessaloniki is not None and festival is not None
     assert (concert.source_event_id, concert.title, str(concert.url)) == (
         "53ec242b-3451-4a65-a135-348dfa4d2685",
         "איל וולוו בברלין 11.7.2027",

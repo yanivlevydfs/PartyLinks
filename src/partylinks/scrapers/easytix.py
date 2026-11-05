@@ -70,13 +70,13 @@ class EasytixScraper(BaseScraper[EasytixSettings]):
             if not mid:
                 continue
             by_id[mid] = market
-            events = await self.optional(
+            listed = await self.optional(
                 f"events of {market.domain}",
                 self.get_json(
                     f"{api}/event/public-events/marketplace/{mid}", params={"timezone": self.timezone}, expect=list
                 ),
             )
-            for e in events or []:
+            for e in listed or []:
                 if isinstance(e, dict) and e.get("_id"):
                     found[e["_id"]] = (e, market)
         featured = await self.optional(

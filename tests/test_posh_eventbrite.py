@@ -19,10 +19,12 @@ POSH_PAGE = (
 
 def test_posh_event_keeps_venue_zone_and_place():
     e = posh.parse_event(POSH_LISTED, posh.rsc_text(POSH_PAGE), "https://posh.vip/e/end-of-the-world")
+    assert e is not None
     assert (e.country, e.city, e.time_zone, e.currency) == ("CA", "Montréal", "America/Toronto", "CAD")
     assert (e.latitude, e.longitude, e.description) == (45.4976672, -73.5771263, "Biggest party")
     s = Settings()
     enriched = Enricher(s.enrichment, s.timezone).enrich(e)
+    assert enriched is not None
     assert enriched.time_zone == "America/Toronto"  # the source's zone, not the country's guess
     assert {"nightclubs", "holidays"} <= set(enriched.genres)
 
@@ -41,5 +43,7 @@ def test_eventbrite_categories_and_price():
         "tags": [{"prefix": "EventbriteCategory", "tag": "EventbriteCategory/101"}, {"prefix": "EventbriteFormat", "tag": "EventbriteFormat/10"}],
     }
     e = eventbrite.parse_event(listed, {"lowPrice": "42.0", "highPrice": "42.0", "priceCurrency": "ILS", "availability": "InStock"})
+    assert e is not None
     assert (e.country, e.min_price, e.max_price, e.source_genres) == (None, 42, None, ["meetups"])
+    assert e.start_at is not None
     assert e.start_at.isoformat() == "2026-11-21T17:00:00+02:00"

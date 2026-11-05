@@ -30,6 +30,7 @@ def test_listing_cards_become_events_courses_dropped() -> None:
     assert len(events) == 15  # 16 cards, the "קתדרה" course dropped
     show = next(e for e in events if e.source_event_id == "4547:46711")
     assert show.title.startswith("תעלול")
+    assert show.start_at is not None
     assert show.start_at.date().isoformat() == "2026-11-05"
     assert show.min_price == Decimal(30)
     assert str(show.images[0]).startswith("https://www.mk-hefer.org.il/html5/web/4547/46711")
@@ -42,6 +43,7 @@ def test_home_page_listing_skips_job_ads() -> None:
     assert any("Elton John" in t for t in titles)
     assert not any("דרוש" in t or "חוגים" in t for t in titles)
     sigd = next(e for e in events if e.source_event_id == "4451:46142")
+    assert sigd.start_at is not None
     assert sigd.start_at.isoformat() == "2026-11-08T17:00:00+02:00" and sigd.time_known
     assert sigd.venue_name == "קפה לנוער קריית נורדאו" and sigd.city == "נתניה"
 

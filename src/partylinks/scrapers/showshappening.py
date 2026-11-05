@@ -5,8 +5,9 @@ Listing: each country's home page (``/?country=mt|gb|de|es``) is a calendar of e
 one link per date with the event's path, the date, its categories and tags, the flyer and title.
 Details: the event page's own HTML (``og:description``, ``og:image``, the hidden ``showdate`` with
 the next show's day and time, ``eventid``). One event per listed date; a recurring event's other
-dates take the next show's time of day. Venue, address and prices are loaded by the page's
-JavaScript from a private API and are not read, so these events carry their country only.
+dates take the next show's time of day. Venue, address and its Google point come from the page's hidden
+fields (``EventVenueName``, ``EventVenueAddress``, ``EventVenueGoogleLocation``); prices are loaded by
+the page's JavaScript from a private API and are not read.
 robots.txt allows everything.
 """
 
@@ -31,6 +32,9 @@ _CARD = re.compile(
     r'data-category="([^"]*)" data-tags="([^"]*)">\s*<img src="([^"]*)"[^>]*>\s*<p>(.*?)</p>', re.DOTALL)
 _META = re.compile(r'<meta property="(og:[a-z]+|description)" content="([^"]*)"')
 _SHOWDATE = re.compile(r'class="showdate" value="[A-Za-z]+ (\d{1,2}-[A-Za-z]{3}-\d{4}) (\d{1,2}:\d{2})"')
+# The page's hidden fields: venue, its address and its Google point "(35.91,14.49)".
+_HIDDEN = re.compile(r'id="(EventVenueName|EventVenueAddress|EventVenueGoogleLocation)" value="([^"]*)"')
+_POINT = re.compile(r"^\(?\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)?$")
 _EVENTID = re.compile(r'id="eventid" value="([0-9a-f-]+)"')
 _CITY = re.compile(r'<input type="hidden" name="city" value="([^"]+)"')
 
@@ -112,6 +116,9 @@ def parse_event(listed: dict[str, Any], page_html: str, site_url: str, default_t
         raise ParseError(f"{listed['path']}: event without title")
     country = listed["country"]
     zone = ZoneInfo(local_zone("GB" if country == "UK" else country, default_tz))
+    hidden = {k: clean_str(html_lib.unescape(v)) for k, v in _HIDDEN.findall(page_html)}
+    point = _POINT.match(hidden.get("EventVenueGoogleLocation") or "")
+    lat, lng = (float(point.group(1)), float(point.group(2))) if point else (None, None)
     show = _SHOWDATE.search(page_html)
     clock: time | None = datetime.strptime(show.group(2), "%H:%M").time() if show else None
     image = clean_str(meta.get("og:image")) or clean_str(listed["image"])
@@ -129,6 +136,10 @@ def parse_event(listed: dict[str, Any], page_html: str, site_url: str, default_t
             title=title,
             description=clean_str(meta.get("og:description") or meta.get("description")),
             city=city,
+            venue_name=hidden.get("EventVenueName"),
+            address=hidden.get("EventVenueAddress"),
+            latitude=lat if lat and lng else None,
+            longitude=lng if lat and lng else None,
             start_at=start,
             time_known=clock is not None,
             country=country,

@@ -593,7 +593,7 @@ def artist_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     t = TEXT[lang]
     rows = _upcoming(session, lineup_has(name), abroad=None)  # the whole name, abroad too: as /events?artist=
     path = f"/artist/{quote(name, safe='')}"
-    person = {
+    person: dict[str, Any] = {
         "@context": "https://schema.org",
         "@type": "Person",
         "name": name,

@@ -32,6 +32,7 @@ def test_page_item_parses_like_a_slider_item() -> None:
     assert event.source_event_id == "ePLdPWRaL"
     assert str(event.url) == url
     assert event.title == "כוכבים לנצח"
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-11-01T18:30:00+00:00"
     assert event.venue_name == "היכל התרבות קריית אתא"
     assert event.city == "קרית אתא"

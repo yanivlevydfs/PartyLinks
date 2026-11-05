@@ -31,6 +31,7 @@ def test_row_parses_to_a_club_night() -> None:
     assert event is not None
     assert event.source_event_id == "11173" and str(event.url) == ROW["link"]
     assert event.title == "Wednesday – John Doe"
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-11-04T23:00:00+02:00" and event.time_known
     assert event.end_at is None
     assert (event.venue_name, event.address, event.country) == ("שלוותה", "שלוותה, התערוכה, תל אביב-יפו, ישראל", None)
@@ -71,6 +72,7 @@ def test_address_venue_city_and_abroad() -> None:
         TZ,
     )  # fmt: skip
     assert abroad is not None and abroad.country == "BG" and abroad.time_zone == "Europe/Sofia"
+    assert abroad.start_at is not None
     assert abroad.start_at.isoformat() == "2027-04-29T22:00:00+03:00"
 
 
@@ -89,7 +91,9 @@ def test_price_chips_become_ticket_tiers() -> None:
     # "בקבוק אבסולוט 99 ₪" is a drink deal, not the entry.
     assert tiers[11186] == []
     settings = Settings()
-    enriched = Enricher(settings.enrichment, settings.timezone).enrich(parse_event(rows[1], TYPES, S, TZ))
+    parsed = parse_event(rows[1], TYPES, S, TZ)
+    assert parsed is not None
+    enriched = Enricher(settings.enrichment, settings.timezone).enrich(parsed)
     assert enriched is not None and (enriched.min_price, enriched.max_price) == (Decimal(60), Decimal(70))
 
 
@@ -103,7 +107,9 @@ def test_lineup_block_gives_artists() -> None:
     event = parse_event(ROW | {"content": {"rendered": content}}, TYPES, S, TZ)
     assert event is not None and event.artists == ["JOS&EL", "DAV B2B ORMIK", "LARA"]
     ticks = "<div>ליינאפ</div><ul><li>✓ DARCO</li><li>✓ לפני ואחרי: IMRI, NASGI • TOLED</li><li>✓ אורח מיוחד</li></ul>"
-    assert parse_event(ROW | {"content": {"rendered": ticks}}, TYPES, S, TZ).artists == [
+    ticked = parse_event(ROW | {"content": {"rendered": ticks}}, TYPES, S, TZ)
+    assert ticked is not None
+    assert ticked.artists == [
         "DARCO",
         "IMRI",
         "NASGI",
