@@ -17,6 +17,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 from urllib.parse import unquote
 
+import httpx
 from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser
 
@@ -81,7 +82,13 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
         url = s.site_url + path
 
         async def page(index: int) -> tuple[list[dict[str, Any]], int | None]:
-            page_html = await self.get_text(url, params={"pages": index + 1} if index else None)
+            try:
+                page_html = await self.get_text(url, params={"pages": index + 1} if index else None)
+            except httpx.HTTPStatusError as exc:
+                # The stated total counts more than the pages hold: a page past the last is a 404.
+                if index and exc.response.status_code == 404:
+                    return [], None
+                raise
             return parse_listing(page_html), listing_total(page_html)
 
         return await self.paginate(page, s.page_size, s.max_pages)
