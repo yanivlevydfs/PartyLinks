@@ -21,19 +21,29 @@ def _rows(name: str) -> list[dict[str, Any]]:
 
 def test_karmiel_free_event_with_categories_and_place() -> None:
     events = {e.source_event_id: e for e in parse_rows(_rows("karmiel_events.json"), KARMIEL, TZ, SKIP)}
-    assert list(events) == ["karmiel:17669", "karmiel:17629", "karmiel:16989"]  # recurring 16989 kept once
-    e = events["karmiel:17669"]
+    # The recurring post 16989 (one row per date): one event per date.
+    assert list(events) == [
+        "karmiel:17669:202610231100",
+        "karmiel:17629:202610251800",
+        "karmiel:16989:202611252000",
+        "karmiel:16989:202612162000",
+    ]
+    e = events["karmiel:17669:202610231100"]
     assert e.title == 'פסטיבל סלסה ובצאטה קהילתי במתנ"ס רבין' and e.source_genres == ["כללי", "חינמי"]
     assert e.start_at is not None and e.start_at.isoformat() == "2026-10-23T11:00:00+03:00"
     assert e.end_at is not None and e.end_at.isoformat() == "2026-10-23T16:00:00+03:00"
     assert (e.venue_name, e.city, e.organizer) == ('מתנ"ס רבין', "כרמיאל", "רשת המתנסים כרמיאל")
     assert e.tickets[0].is_free and e.extra == {}  # a Facebook page is not a seller
     assert e.image_url and e.image_url.endswith(".jpeg") and e.description and "סלסה" in e.description
-    assert (events["karmiel:17629"].venue_name, events["karmiel:17629"].address) == (
+    assert (events["karmiel:17629:202610251800"].venue_name, events["karmiel:17629:202610251800"].address) == (
         "בית האומנים",
         "רח' משעול נורית 12",
     )
-    assert events["karmiel:16989"].start_at.isoformat().startswith("2026-11-25")  # type: ignore[union-attr]
+    second = events["karmiel:16989:202612162000"]
+    assert (
+        second.start_at.isoformat() == "2026-12-16T20:00:00+02:00"
+        and second.title == events["karmiel:16989:202611252000"].title
+    )
 
 
 def test_even_yehuda_address_fields_links_and_course_end() -> None:

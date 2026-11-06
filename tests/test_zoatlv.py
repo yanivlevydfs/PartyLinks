@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -15,6 +15,7 @@ from partylinks.enrichment import Enricher
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import slugify
 from partylinks.scrapers import zoatlv
+from partylinks.search import MONTHS
 
 FIXTURES = Path(__file__).parent / "fixtures" / "zoatlv"
 TZ = "Asia/Jerusalem"
@@ -89,3 +90,57 @@ def test_zoatlv_price_from_the_sellers_json_ld() -> None:
 
     [event] = asyncio.run(run())
     assert [t.price for t in event.tickets] == [85]
+
+
+def test_zoatlv_sitemap_pages_the_archive_lacks() -> None:
+    # The archive stops at page 6; the event sitemap lists the rest (one future, one past, one stale).
+    card = """<a class="event-loop" href="https://zoatlv.co.il/event/listed/"><div class="event-date">
+        <span class="day">5</span><span class="my">נובמבר 2099</span></div><div class="event-titles"><h3>בכרטיס</h3></div></a>"""
+
+    def page(day: str, month: str) -> str:
+        return f"""<h1 class="title1 stroke">יוגה שבועית</h1><div class="event-details row"><div class="event-info">
+            <div class="event-date"><span class="day">{day}</span><span class="my">{month}</span></div>
+            <h4 class="hall-name">מרתה</h4><h4 class="event-time"><label>שעת התחלה:</label>19:30</h4></div>
+            <div class="event-img"><img src="https://zoatlv.co.il/wp-content/uploads/y.jpg"></div></div>
+            <div class="more-events"><a class="more-event" href="x"><div class="event-date">
+            <span class="day">1</span><span class="my">ינואר 2000</span></div></a></div>"""
+
+    fresh = datetime.now(ZoneInfo(TZ)).isoformat()
+    soon = datetime.now(ZoneInfo(TZ)) + timedelta(days=60)  # within retention.max_future_days
+    month = next(name for name, number in MONTHS.items() if number == soon.month)
+    pages = {
+        "/event/": card,
+        "/sitemap_index.xml": f"<sitemap><loc>https://zoatlv.co.il/event-sitemap4.xml</loc><lastmod>{fresh}</lastmod></sitemap>"
+        "<sitemap><loc>https://zoatlv.co.il/post-sitemap.xml</loc><lastmod>{fresh}</lastmod></sitemap>",
+        "/event-sitemap4.xml": "".join(
+            f"<url><loc>https://zoatlv.co.il{path}</loc><lastmod>{when}</lastmod></url>"
+            for path, when in [
+                ("/event/", fresh),  # the archive itself
+                ("/event/listed/", fresh),  # already on the archive
+                ("/event/yoga/", fresh),
+                ("/event/old/", fresh),
+                ("/event/stale/", "2019-01-01T00:00:00+00:00"),
+            ]
+        ),
+        "/event/yoga/": page(str(soon.day), f"{month} {soon.year}"),
+        "/event/old/": page("3", "מרץ 2020"),
+    }
+    asked: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        asked.append(request.url.path)
+        return httpx.Response(200, text=pages.get(request.url.path, ""))
+
+    cfg = zoatlv.ZoaTlvSettings.model_validate(Settings().sources["zoatlv"])
+    scraper = zoatlv.ZoaTlvScraper(cfg, HttpSettings(request_delay_seconds=0, backoff_seconds=0), TZ)
+    scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+    async def run() -> list[ScrapedEvent]:
+        return [e async for e in scraper.scrape()]
+
+    events = {e.source_event_id: e for e in asyncio.run(run())}
+    assert set(events) == {"listed", "yoga"}  # the past page dropped, the stale one never read
+    assert "/event/stale/" not in asked and "/post-sitemap.xml" not in asked
+    yoga = events["yoga"]
+    assert yoga.start_at == soon.replace(hour=19, minute=30, second=0, microsecond=0) and yoga.title == "יוגה שבועית"
+    assert (yoga.extra or {})["hall"] == "מרתה" and yoga.images == ["https://zoatlv.co.il/wp-content/uploads/y.jpg"]

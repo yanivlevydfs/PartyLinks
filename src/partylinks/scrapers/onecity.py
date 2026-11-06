@@ -6,8 +6,9 @@ title, content, featured image, categories and tags (the site's own: "הגיל �
 start / end date-time and the site's custom fields: the place (``gd_event_mikum``, or the
 location fields ``street`` / ``city``), the organiser (``gd_event_irgun``) and the ticket or
 registration link (``gd_event_buyticket`` / ``gd_evevnt_rishum``, kept as
-``extra["purchase_url"]``; chat-group links are not a seller). A recurring event comes once per
-date; it is kept once, at its next date. An event sold by a Smarticket box office the smarticket
+``extra["purchase_url"]``; chat-group links are not a seller). A recurring event (weekly yoga, a
+chess club) comes once per date, each row the same post: each future date is its own event (the id
+carries the date). An event sold by a Smarticket box office the smarticket
 source already reads (its link, or one in its text) is skipped. Mostly free community events.
 robots.txt allows everything but WPForms uploads.
 """
@@ -60,7 +61,7 @@ class OneCityScraper(BaseScraper[OneCitySettings]):
             except SourceBlockedError as exc:  # one site's firewall never stops the others
                 self.record_failure(site.url, exc)
                 continue
-            # A recurring post lists its past dates too: drop them first, so the next date is the one kept.
+            # A recurring post lists its past dates too: never past events.
             rows = [r for r in rows or [] if is_current(*_dates(r, self.timezone), RetentionSettings(), self.timezone)]
             events = parse_rows(rows, site, self.timezone, skip)
             self.log.debug("%s: %d events", site.city, len(events))
@@ -102,12 +103,11 @@ def _split_place(place: str | None) -> tuple[str | None, str | None]:
 def parse_rows(
     rows: list[dict[str, Any]], site: OneCitySite, timezone: str, skip_hosts: frozenset[str]
 ) -> list[ScrapedEvent]:
-    """One event per post (a recurring one at its first listed date, the API's next one)."""
+    """One event per post and date (a recurring post has one row per date)."""
     events: dict[str, ScrapedEvent] = {}
     for row in rows:
-        post_id = str(to_int(row.get("id")) or "")
-        if post_id and post_id not in events and (event := build_event(row, site, timezone, skip_hosts)):
-            events[post_id] = event
+        if to_int(row.get("id")) and (event := build_event(row, site, timezone, skip_hosts)):
+            events.setdefault(event.source_event_id, event)
     return list(events.values())
 
 
@@ -136,7 +136,7 @@ def build_event(
     host = (urlsplit(site.url).hostname or "").removeprefix("www.").split(".")[0]  # karmiel
     return ScrapedEvent(
         source=OneCityScraper.name,
-        source_event_id=f"{host}:{row['id']}",
+        source_event_id=f"{host}:{row['id']}:{start:%Y%m%d%H%M}",  # a recurring post: one per date
         url=link,
         title=title,
         description=html_to_text(content),

@@ -12,26 +12,44 @@ offices, Leaan, ZOA's own EASYTIX box office, course sign-ups on tinyurl...), ke
 in ``price_hosts`` (Comedy Bar and other Smarticket box offices, Tickchak, Tarbuta) is read once more for its
 JSON-LD ``offers``; else a price the text writes out ("עלות: 999 ₪") is used (text_prices). The other
 sellers' own sources bring theirs to the group. Exhibitions (``/exhibition/``) are not read.
+
+The archive stops short: its pagination links pages that redirect to ``/event/`` (6 real pages, ~180
+cards, November 2026), so later events (a weekly series into 2027) are missing. So the Yoast
+``event-sitemap*.xml`` files changed lately are read too, and each event page they list (``lastmod`` within
+``sitemap_max_age_days``) that the archive lacks is read on its own: its page carries the same date, hall,
+time and artwork as a card (no categories). Past ones are dropped.
 """
 
 from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from urllib.parse import unquote, urlsplit
 
 from pydantic import Field, HttpUrl
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
-from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, read_clock, to_decimal, zone
+from partylinks.parsing import (
+    ParseError,
+    clean_str,
+    html_to_text,
+    jsonld_nodes,
+    parse_iso,
+    read_clock,
+    to_decimal,
+    zone,
+)
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.text_prices import text_tickets
 from partylinks.search import MONTHS
 
 _MONTH_YEAR = re.compile(r"(\S+)\s+(\d{4})")
 _PAGE = re.compile(r"/page/(\d+)/?$")
+_LOC = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>\s*(?:<lastmod>\s*([^<\s]+)\s*</lastmod>)?")
 
 
 class ZoaTlvSettings(SourceSettings):
@@ -39,6 +57,11 @@ class ZoaTlvSettings(SourceSettings):
     listing_path: str = "/event/"
     page_path: str = "/event/page/{page}/"
     max_pages: int = Field(30, ge=1)
+    # The Yoast sitemap index; its event-sitemap*.xml files list every event page (the archive stops short).
+    sitemap_path: str = "/sitemap_index.xml"
+    sitemap_prefix: str = "event-sitemap"
+    # Sitemap files and event pages changed within this many days are read (older ones are past events).
+    sitemap_max_age_days: int = Field(120, ge=1)
     # The seller's white-label host -> the host its listing (another source) is read from:
     # tickets.zoatlv.co.il is ZOA's own EASYTIX box office, listed at easytix.co.il/event/<account>/<event>.
     seller_hosts: dict[str, str] = Field(default_factory=dict)
@@ -72,6 +95,8 @@ class ZoaTlvScraper(BaseScraper[ZoaTlvSettings]):
                 break  # past the last real page (it redirects to page 1)
             cards.update((c["url"], c) for c in new)
         self.log.debug("listed %d events", len(cards))
+        unlisted = [u for u in await self._sitemap_urls() if u not in cards]
+        self.log.debug("%d more event pages in the sitemap", len(unlisted))
         events = []
         for card in cards.values():
             try:
@@ -85,8 +110,15 @@ class ZoaTlvScraper(BaseScraper[ZoaTlvSettings]):
                 problem = ParseError(f"no date or title: {card['day']} {card['month']}")
                 self.record_failure(f"event {unquote(card['url'])}", problem)
 
-        async def detail(event: ScrapedEvent) -> ScrapedEvent:
-            page = await self.optional(f"page {unquote(str(event.url))}", self.get_text(str(event.url)))
+        async def detail(item: ScrapedEvent | str) -> ScrapedEvent | None:
+            if isinstance(item, str):  # a sitemap page the archive lacks: the page is the card
+                page = await self.get_text(item)
+                event = parse_card(page_card(page, item), s, self.timezone)
+                if event is None or not is_current(event.start_at, None, RetentionSettings(), self.timezone):
+                    return None  # past, or no event page (no date block)
+            else:
+                event = item
+                page = await self.optional(f"page {unquote(str(event.url))}", self.get_text(str(event.url)))
             if page:
                 add_page(event, page, s.seller_hosts)
             seller = (event.extra or {}).get("purchase_url")
@@ -99,8 +131,23 @@ class ZoaTlvScraper(BaseScraper[ZoaTlvSettings]):
             event.tickets = event.tickets or text_tickets(event.description)
             return event
 
-        async for event in self.stream_isolated(events, detail, label=lambda e: unquote(str(e.url))):
+        items: list[ScrapedEvent | str] = [*events, *unlisted]
+        label = lambda i: unquote(i if isinstance(i, str) else str(i.url))
+        async for event in self.stream_isolated(items, detail, label=label):
             yield event
+
+    async def _sitemap_urls(self) -> list[str]:
+        """Event pages in the event sitemaps changed within ``sitemap_max_age_days``."""
+        s = self.settings
+        since = datetime.now(UTC) - timedelta(days=s.sitemap_max_age_days)
+        index = await self.optional("sitemap index", self.get_text(s.site_url + s.sitemap_path))
+        urls: list[str] = []
+        for sitemap in recent_locs(index or "", since):
+            if urlsplit(sitemap).path.rsplit("/", 1)[-1].startswith(s.sitemap_prefix):
+                xml = await self.optional(f"sitemap {sitemap}", self.get_text(sitemap))
+                urls += recent_locs(xml or "", since)
+        listing = urlsplit(s.site_url + s.listing_path).path
+        return list(dict.fromkeys(u for u in urls if (p := urlsplit(u).path).startswith(listing) and p != listing))
 
 
 def last_page(page_html: str) -> int:
@@ -111,6 +158,31 @@ def last_page(page_html: str) -> int:
         if (m := _PAGE.search(a.attributes.get("href") or ""))
     ]
     return max(numbers, default=1)
+
+
+def recent_locs(xml: str, since: datetime) -> list[str]:
+    """A sitemap's (or index's) URLs whose ``lastmod`` is ``since`` or later."""
+    return [
+        url for url, lastmod in _LOC.findall(xml) if (day := parse_iso(lastmod, "UTC")) is not None and day >= since
+    ]
+
+
+def page_card(page_html: str, url: str) -> dict[str, str]:
+    """An event's own page -> the dict ``parse_listing`` gives (no categories on the page)."""
+    tree = LexborHTMLParser(page_html)
+    info = tree.css_first(".event-details .event-info")
+    image = tree.css_first(".event-img img")
+    return {
+        "url": url,
+        "title": _text(tree.root, "h1.title1") if tree.root else "",
+        "subtitle": "",
+        "day": _text(info, ".event-date .day") if info else "",
+        "month": _text(info, ".event-date .my") if info else "",
+        "time": _text(info, ".event-time") if info else "",
+        "hall": _text(info, ".hall-name") if info else "",
+        "tags": "",
+        "image": (image.attributes.get("src") or "") if image else "",
+    }
 
 
 def _text(node: LexborNode, selector: str) -> str:

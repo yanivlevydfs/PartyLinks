@@ -53,3 +53,26 @@ def test_box_office_price_levels() -> None:
     assert [(t.name, t.price) for t in paid[0].tickets] == [("רמה1", Decimal(42)), ("רמה2", Decimal(42))]
     assert free.min_price == 0 and [t.price for t in free.tickets] == [Decimal(0)]
     assert paid[0].extra["ticket"] == paid[0].source_event_id
+
+
+def test_box_office_listing_adds_and_enriches() -> None:
+    from partylinks.scrapers.jerusalemtheatre import add_presentations, parse_presentation
+
+    events = parse_board(BOARD, SETTINGS, TZ)
+    board = events[0]
+    rows = [  # PRES /api/presentations/ rows (November 2026): one the board has, one it lacks
+        {"id": int(board.source_event_id), "venueName": "עוזי וכסלר ", "durationInMinutes": 120, "soldout": 1},
+        {
+            "id": 35152, "dateTime": "2027-05-20 20:30", "featureId": 8406,
+            "featureName": "להקת המחול הקיבוצית | בכורה 26-27 עולמית", "featureCategoryName": "מחול",
+            "venueName": "תיאטרון שרובר", "durationInMinutes": 70, "soldout": 0,
+        },
+    ]  # fmt: skip
+    [missing] = add_presentations(events, rows)
+    assert board.is_sold_out and board.extra["hall"] == "עוזי וכסלר" and board.extra["duration_minutes"] == 120
+    feature = {"id": 8406, "synopsis": "<p>בכורה עולמית</p>", "imageData": "https://cdn.presglobal.pro/f/1"}
+    e = parse_presentation(missing, feature, SETTINGS, TZ)
+    assert (e.source_event_id, str(e.url)) == ("35152", "https://jtheater.pres.global/order/35152")
+    assert e.start_at is not None and e.start_at.isoformat() == "2027-05-20T20:30:00+03:00"
+    assert (e.source_genres, e.description, e.images) == (["מחול"], "בכורה עולמית", ["https://cdn.presglobal.pro/f/1"])
+    assert e.extra["ticket"] == "35152" and e.extra["show_id"] == "pres:8406" and e.venue_name == "תיאטרון ירושלים"
