@@ -1958,6 +1958,7 @@ sources:
     enabled: true
     cron: "22 9,21 * * *"
     site_url: https://iwant.co.il
+    proxied: false  # its image host (hcdn) 403s the evomi pool's IPs; Railway's own IP gets 200 (Nov 2026)
     http:
       concurrency: 1
       request_delay_seconds: 1.0
