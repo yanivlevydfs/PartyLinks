@@ -6,6 +6,12 @@ artwork, start / end, the venue's IANA zone, venue name, lowest price, organizer
 Details: each event page ``/e/<slug>`` is a Next.js page whose data rides in the RSC payload
 (``self.__next_f.push`` strings): venue address, coordinates, description and currency. Times are
 kept in the venue's own zone (the listing's ``timezone``), so New York events show New York time.
+
+The endpoint gives only events starting today plus running multi-day ones (~1,600, ~230 today,
+none later; ``when`` / date / city params are ignored). So every page of the recent events
+sitemap (``/sitemap-events-recent.xml``, 50k URLs) whose ``<lastmod>`` is within
+``sitemap_max_age_days`` is read too (~24k: those with a lastmod are upcoming, those without are
+past), each page giving its own listing fields in the payload's ``eventData``; past ones dropped.
 """
 
 from __future__ import annotations
@@ -13,24 +19,34 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from pydantic import Field
 
+from partylinks.config import RetentionSettings
 from partylinks.countries import country_code
 from partylinks.enrichment import UNKNOWN_COUNTRY
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, parse_iso, to_decimal, to_float
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _PUSH = re.compile(r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)')
+_SITEMAP_URL = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>\s*<lastmod>\s*([^<\s]+)\s*</lastmod>")
+_EVENT_DATA = '"eventData":'
 _US = {"usa", "us", "united states", "united states of america"}
 # Posh has no categories: everything is a night out (the site's "nightclubs" category) unless the
 # title says otherwise; these title words add the matching category word the enrichment knows.
 # Music genres come from the title / description as for every source.
 _KINDS = [
-    (re.compile(r"halloween|thanksgiving|christmas|new year|nye\b|friendsgiving|valentine|cinco de mayo|juneteenth", re.IGNORECASE), "holidays"),
+    (
+        re.compile(
+            r"halloween|thanksgiving|christmas|new year|nye\b|friendsgiving|valentine|cinco de mayo|juneteenth",
+            re.IGNORECASE,
+        ),
+        "holidays",
+    ),
     (re.compile(r"\bmarket\b|\bvendors?\b|pop[- ]?up shop|\bbazaar\b|\bflea\b", re.IGNORECASE), "shopping"),
     (re.compile(r"\bbrunch|\bfood\b|tasting|\bwine\b|dinner", re.IGNORECASE), "food"),
     (re.compile(r"comedy|comedian|stand[- ]?up", re.IGNORECASE), "comedy"),
@@ -58,6 +74,10 @@ class PoshSettings(SourceSettings):
     site_url: str
     page_size: int = Field(100, ge=1, le=100)
     max_pages: int = Field(60, ge=1)
+    # Upcoming events beyond today's listing; None = the listing alone.
+    sitemap_path: str | None = "/sitemap-events-recent.xml"
+    # Sitemap pages last modified longer ago are skipped (no lastmod = a past event, skipped too).
+    sitemap_max_age_days: int = Field(60, ge=1)
 
 
 class PoshScraper(BaseScraper[PoshSettings]):
@@ -67,8 +87,21 @@ class PoshScraper(BaseScraper[PoshSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         listed = await self._list()
         self.log.debug("listed %d upcoming events", len(listed))
+        retention = RetentionSettings()
         async for event in self.stream_isolated(listed, self._fetch_event, label=lambda e: e.get("url", "")):
-            yield event
+            if is_current(event.start_at, event.end_at, retention, self.timezone):  # a multi-day one past its window
+                yield event
+        s = self.settings
+        if not s.sitemap_path:
+            return
+        xml = await self.get_text(s.site_url + s.sitemap_path)
+        since = datetime.now(UTC) - timedelta(days=s.sitemap_max_age_days)
+        known = {f"{s.site_url}/e/{e['url']}" for e in listed}
+        urls = [u for u in sitemap_urls(xml, since) if u not in known]
+        self.log.debug("sitemap: %d more upcoming event pages", len(urls))
+        async for event in self.stream_isolated(urls, self._fetch_page, label=lambda u: u):
+            if is_current(event.start_at, event.end_at, retention, self.timezone):  # never past events
+                yield event
 
     async def _list(self) -> list[dict[str, Any]]:
         s, events, cursor = self.settings, {}, None
@@ -92,6 +125,46 @@ class PoshScraper(BaseScraper[PoshSettings]):
         url = f"{self.settings.site_url}/e/{listed['url']}"
         page = await self.optional(url, self.get_text(url))
         return parse_event(listed, rsc_text(page or ""), url)
+
+    async def _fetch_page(self, url: str) -> ScrapedEvent | None:
+        text = rsc_text(await self.get_text(url))
+        listed = page_listing(text)
+        return parse_event(listed, text, url) if listed else None  # none: a not-found page sent as 200 (deleted)
+
+
+def sitemap_urls(xml: str, since: datetime) -> list[str]:
+    """Event pages (``/e/``) of the sitemap last modified at or after ``since``, once each."""
+    return list(
+        dict.fromkeys(
+            url
+            for url, lastmod in _SITEMAP_URL.findall(xml)
+            if "/e/" in url and (when := parse_iso(lastmod)) is not None and when >= since
+        )
+    )
+
+
+def page_listing(text: str) -> dict[str, Any] | None:
+    """The listing fields of an event page's own ``eventData`` (as the explore endpoint names them)."""
+    at = text.find(_EVENT_DATA)
+    try:
+        data = json.JSONDecoder().raw_decode(text, at + len(_EVENT_DATA))[0] if at >= 0 else None
+    except ValueError:
+        data = None
+    if not isinstance(data, dict) or not data.get("eventId"):
+        return None
+    return {
+        "id": data["eventId"],
+        "url": data.get("url"),
+        "title": data.get("name"),
+        "startDate": data.get("startUtc"),  # "start" is the wall time marked Z
+        "endDate": data.get("endUtc"),
+        "timezone": data.get("timezone"),
+        "venueName": data.get("venueName"),
+        "imageUrl": data.get("flyer"),
+        "lineup": data.get("lineup"),
+        "minTicketPrice": data.get("minPriceWithFees"),
+        "groupName": _field(text, "groupName"),
+    }
 
 
 def rsc_text(page_html: str) -> str:
@@ -139,6 +212,8 @@ def parse_event(listed: dict[str, Any], text: str, url: str) -> ScrapedEvent | N
         raise ParseError(f"{listed.get('id')}: event without title or start")
     address = _field(text, "venueAddress")
     point = re.search(r'"location":\{"lat":(-?[\d.]+),"lng":(-?[\d.]+)\}', text)
+    if point and not (to_float(point.group(1)) or to_float(point.group(2))):
+        point = None  # 0, 0: the place is revealed later, not the Gulf of Guinea
     currency = re.search(r'"currency":"([A-Z]{3})","isAttendee"', text) or re.search(r'"currency":"([A-Z]{3})"', text)
     price = to_decimal(listed.get("minTicketPrice"))
     artists = [n for a in listed.get("lineup") or [] if (n := clean_str(a.get("name") if isinstance(a, dict) else a))]

@@ -1,7 +1,9 @@
 """Eventbrite (eventbrite.com) - conferences, meetups, workshops, parties and community events.
 
-Listing: the Israel discovery pages ``/d/israel/all-events/?page=N`` (~75 events, 20 a page). Each
-page carries its results in ``window.__SERVER_DATA__``: name, local start / end with the venue's
+Listing: the Israel discovery pages ``/d/israel/all-events/?page=N`` (20 a page) and the city searches
+(``/d/israel--haifa/all-events/``...): the Israel page alone shows ~40 events, the union ~65 (November
+2026). A city search covers a radius, so Jordanian and Lebanese venues are dropped (``countries``); an
+event on several listings is kept once (its id). Each page carries its results in ``window.__SERVER_DATA__``: name, local start / end with the venue's
 zone, venue with address and coordinates, categories (``tags``), artwork, organizer and the full
 description. Details: the event page's schema.org ``AggregateOffer`` gives the price range,
 currency and whether it is sold out. Online events are skipped. robots.txt allows these pages.
@@ -68,6 +70,19 @@ _TITLE_WORDS = [
 class EventbriteSettings(SourceSettings):
     site_url: str
     listing_path: str  # /d/israel/all-events/
+    # The city searches read besides listing_path: each lists events the Israel page misses.
+    listing_paths: list[str] = Field(
+        default_factory=lambda: [
+            "/d/israel--tel-aviv/all-events/",
+            "/d/israel--jerusalem/all-events/",
+            "/d/israel--haifa/all-events/",
+            "/d/israel--beersheba/all-events/",
+            "/d/israel--netanya/all-events/",
+            "/d/israel--eilat/all-events/",
+        ]
+    )
+    # Venue countries kept: a city search covers a radius that reaches Jordan and Lebanon.
+    countries: list[str] = Field(default_factory=lambda: ["IL"])
     max_pages: int = Field(30, ge=1)
 
 
@@ -82,22 +97,31 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
             yield event
 
     async def _list(self) -> list[dict[str, Any]]:
-        s, events, now = self.settings, {}, datetime.now(UTC)
+        s, events = self.settings, {}
+        await self._list_path(s.listing_path, events)  # the Israel page must answer
+        for path in dict.fromkeys(s.listing_paths):
+            if path != s.listing_path:
+                await self.optional(f"listing {path}", self._list_path(path, events))
+        return list(events.values())
+
+    async def _list_path(self, path: str, events: dict[str, dict[str, Any]]) -> None:
+        """Every page of one discovery listing into ``events`` (by id: one event, many listings)."""
+        s, now = self.settings, datetime.now(UTC)
         pages = 1
         page = 1
         while page <= min(pages, s.max_pages):
-            data = server_data(await self.get_text(s.site_url + s.listing_path, params={"page": page}))
+            data = server_data(await self.get_text(s.site_url + path, params={"page": page}))
             found = ((data.get("search_data") or {}).get("events") or {})
             pages = int((found.get("pagination") or {}).get("page_count") or 1)
             for e in found.get("results") or []:
                 end = _when(e, "end") or _when(e, "start")
+                country = ((e.get("primary_venue") or {}).get("address") or {}).get("country") or "IL"
                 if e.get("id") and e.get("url") and not e.get("is_online_event") and not e.get("is_cancelled") \
-                        and (end is None or end > now):  # never past events
+                        and country in s.countries and (end is None or end > now):  # never past events
                     events[e["id"]] = e
             page += 1
         if pages > s.max_pages:
-            self.log.warning("listing truncated at max_pages=%d (%d pages)", s.max_pages, pages)
-        return list(events.values())
+            self.log.warning("%s truncated at max_pages=%d (%d pages)", path, s.max_pages, pages)
 
     async def _fetch_event(self, listed: dict[str, Any]) -> ScrapedEvent | None:
         page = await self.optional(listed["url"], self.get_text(listed["url"]))

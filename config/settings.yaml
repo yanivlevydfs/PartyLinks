@@ -2100,27 +2100,31 @@ sources:
   shotgun:
     # Shotgun (shotgun.live): electronic music ticketing. Every city page of its cities sitemap
     # (240, mostly France, Brazil, the US; ~14 events each) plus the Israeli pages (none yet: 404 is
-    # an empty listing), then each event's schema.org JSON-LD: ~3,500 requests a run (~15 min).
-    # Events abroad go to the abroad section. robots.txt allows everything.
+    # an empty listing), then the newest event sitemaps (pages changed in the last 14 days, in the
+    # countries the city pages cover), then each event's schema.org JSON-LD: ~13,000 requests a run
+    # (~7,000 events, ~40 min). Events abroad go to the abroad section. robots.txt allows everything.
     enabled: true
     cron: "52 8,20 * * *"
     site_url: https://shotgun.live
     country_path: /en/venues/-/israel
     city_paths: ["/en/cities/tel-aviv", "/en/cities/jerusalem", "/en/cities/haifa", "/en/cities/eilat"]
     cities_sitemap_path: /api/sitemaps/cities/sitemap/0.xml
+    run_timeout_seconds: 5400
     http:
       concurrency: 4
 
   posh:
     # Posh (posh.vip): party and nightlife ticketing, almost all in the US. The explore page's JSON
-    # endpoint lists every upcoming event (~1,600, 100 a page), then each event page's RSC payload
-    # gives address, coordinates, description and currency: ~1,620 requests a run. Times stay in
-    # each venue's own zone. Events abroad go to the abroad section.
+    # endpoint lists ~1,600 upcoming events (100 a page); /sitemap-events-recent.xml adds the rest
+    # (entries with a lastmod are upcoming), each event page's RSC payload gives address,
+    # coordinates, description and currency: ~24,000 requests a run (~21,000 events, ~1-2 h).
+    # Times stay in each venue's own zone. Events abroad go to the abroad section.
     enabled: true
     cron: "17 9,21 * * *"
     site_url: https://posh.vip
+    run_timeout_seconds: 9000
     http:
-      concurrency: 4
+      concurrency: 6
 
   eventbrite:
     # Eventbrite (eventbrite.com): conferences, meetups, workshops, tours and parties in Israel. The
