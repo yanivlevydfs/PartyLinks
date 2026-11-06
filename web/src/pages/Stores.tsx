@@ -23,7 +23,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   goout: ["https://www.go-out.co", "tickets"], eventer: ["https://www.eventer.co.il", "tickets"],
   zygo: ["https://zygo.co.il", "tickets"], goshow: ["https://www.goshow.co.il", "tickets"], tzkrti: ["https://tzkrti.com", "tickets"], fever: ["https://feverup.com/en/tel-aviv-israel", "tickets"], towerofdavid: ["https://www.tod.org.il", "tickets"], tamuseum: ["https://www.tamuseum.org.il", "tickets"], tickchak: ["https://live.tickchak.co.il", "tickets"],
   selector: ["https://selector.org.il", "tickets"], chillz: ["https://chillz.com", "tickets"],
-  mevalim: ["https://www.mevalim.co.il", "tickets"], megatickets: ["https://www.megatickets.co.il", "tickets"],
+  mevalim: ["https://www.mevalim.co.il", "tickets"], megatickets: ["https://www.megatickets.co.il", "tickets"], iwant: ["https://iwant.co.il", "tickets"], music80s: ["https://80smusic.co.il/pages/parties", "guide"],
   eventbuzz: ["https://eventbuzz.co.il", "tickets"], popit: ["https://popit.events", "tickets"],
   leaan: ["https://www.leaan.co.il", "tickets"], ticketmaster: ["https://www.ticketmaster.co.il", "tickets"],
   kupatbravo: ["https://kupatbravo.co.il", "tickets"], tiktik: ["https://www.tiktik-online.co.il", "tickets"],

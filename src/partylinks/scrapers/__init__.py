@@ -59,7 +59,9 @@ from partylinks.scrapers.liveisrael import LiveIsraelScraper
 from partylinks.scrapers.livetickets import LiveTicketsScraper
 from partylinks.scrapers.livevents import LiveventsScraper
 from partylinks.scrapers.luma import LumaScraper
+from partylinks.scrapers.iwant import IwantScraper
 from partylinks.scrapers.makore import MakoreScraper
+from partylinks.scrapers.music80s import Music80sScraper
 from partylinks.scrapers.matnasnet import MatnasnetScraper
 from partylinks.scrapers.meetup import MeetupScraper
 from partylinks.scrapers.meety import MeetyScraper
@@ -148,6 +150,8 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         GagarinScraper,
         TederScraper,
         MakoreScraper,
+        IwantScraper,
+        Music80sScraper,
         JerusalemTheatreScraper,
         DropScraper,
         AirdropScraper,

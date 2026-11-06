@@ -329,7 +329,7 @@ enrichment:
     house: ["house", "deep house", "tech house", "progressive house", "melodic house", "organic house",
             "afro house", "minimal", "האוס", "דיפ האוס", "טק האוס"]
     trance: ["trance", "psytrance", "psy trance", "psy", "goa", "full on", "fullon", "progressive trance",
-             "forest", "טראנס", "פסיכדלי", "פסיכדלית", "גואה"]
+             "forest", "טראנס", "טרנס", "פסיכדלי", "פסיכדלית", "גואה"]
     hip_hop: ["hip hop", "hiphop", "hip-hop", "rap", "trap", "drill", "היפ הופ", "היפהופ", "ראפ", "טראפ"]
     rnb: ["r&b", "rnb", "r'n'b", "soul", "neo soul", "ר&ב", "מוזיקת סול"]  # not "סול": a first name
     mainstream: ["mainstream", "commercial", "top 40", "top40", "hits", "מיינסטרים", "להיטים", "קומרשיאל"]
@@ -352,7 +352,7 @@ enrichment:
     electronic: ["electronic", "electronica", "electro", "underground", "dj-set", "dj set", "rave", "אלקטרונית",
                  "אלקטרוני", "אנדרגראונד", "רייב"]
     downtempo_chill: ["downtempo", "chill", "chillout", "ambient", "lounge", "organic", "צ'יל", "לאונג'"]
-    throwback: ["80s", "90s", "2000s", "00s", "throwback", "retro", "nostalgia", "שנות ה-90", "שנות ה90",
+    throwback: ["70s", "80s", "90s", "2000s", "00s", "throwback", "retro", "nostalgia", "שנות ה-90", "שנות ה90",
                 "שנות ה-80", "שנות ה80", "נוסטלגיה", "רטרו"]
     # Decade pages (/genre/eighties, /genre/nineties): sub-genres of throwback (genre_families), which keeps
     # their keywords too, so an 80s party is still a throwback one.
@@ -361,7 +361,8 @@ enrichment:
     rock_indie: ["rock", "indie", "alternative", "metal", "metalcore", "punk", "grunge", "רוק", "אינדי", "אלטרנטיבי",
                  "מטאל", "פאנק רוק", "גראנג'"]
     dark_wave: ["dark wave", "darkwave", "new wave", "post punk", "post-punk", "synthwave", "synth wave", "dark synth",
-                "ebm", "dark electro", "goth", "דארק ווייב", "ניו ווייב", "פוסט פאנק"]  # not "gothic": costumes
+                "ebm", "dark electro", "goth", "דארק ווייב", "ניו ווייב", "פוסט פאנק", "גל חדש", "דארק אייטיז", "dark 80s",
+                "dark eighties", "synth pop", "synthpop", "synth-pop", "סינת'-פופ", "סינת' פופ", "סינת פופ"]  # not "gothic": costumes
     jazz: ["jazz", "swing", "blues", "ג'אז", "גאז", "סווינג", "בלוז"]
     world_balkan: ["balkan", "world music", "ethnic", "gypsy", "folk", "בלקן", "אתני", "מוזיקת עולם", "פולק", "קאנטרי"]
     # Not "concert": Selector labels every party "Concert".
@@ -578,6 +579,8 @@ enrichment:
     grayclub: [nightclubs]
     ogo: [culture]          # city guide: talks, circles, community events
     makore: [culture]
+    music80s: [throwback]   # 80s / 90s party guide
+    iwant: [nightclubs]     # party box office; some events have no genre ("אחר" or empty)
     eventer: [culture]
     eventbrite: [culture]
     popit: [culture]
@@ -1946,6 +1949,29 @@ sources:
     categories: ["/browse/category/חיי-לילה", "/browse/category/הופעות-חיות"]
     http:
       concurrency: 4
+
+  iwant:
+    # IWANT (iwant.co.il): small Tel Aviv party box office (80s / new wave / dark eighties, grunge,
+    # trance). One request to the home page's feed (/events_public.php, read with the owner's OK though
+    # robots.txt disallows it) gives every event with its music genres; then one /event.php?id=N per
+    # current event for the ticket tiers (~10 requests a run).
+    enabled: true
+    cron: "22 9,21 * * *"
+    site_url: https://iwant.co.il
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
+
+  music80s:
+    # 80sMusic (80smusic.co.il): guide to 80s / 90s / new wave / dark 80s parties in Tel Aviv. One request:
+    # the parties page's JSON-LD MusicEvents (genres, DJs, poster, IWANT ticket link); IWANT short links
+    # are read once each for their canonical event URL, so the listings merge. robots.txt allows it.
+    enabled: true
+    cron: "15 10,22 * * *"
+    site_url: https://80smusic.co.il
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
 
   jerusalemtheatre:
     # Jerusalem Theatre: its own box office. One request to the site's board feed lists every
