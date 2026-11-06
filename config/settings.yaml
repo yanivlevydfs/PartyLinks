@@ -1958,8 +1958,11 @@ sources:
     enabled: true
     cron: "22 9,21 * * *"
     site_url: https://iwant.co.il
-    proxied: false  # its image host (hcdn) 403s the evomi pool's IPs; Railway's own IP gets 200 (Nov 2026)
+    proxied: false
     http:
+      # Its host (hcdn) answers 403 to a Chrome User-Agent that does not come with a browser's handshake
+      # (the artwork, then the pages too); a plain client name gets 200 (Nov 2026).
+      user_agent: "SPOTX/1.0 (event aggregator; contact via site owner)"
       concurrency: 1
       request_delay_seconds: 1.0
 
