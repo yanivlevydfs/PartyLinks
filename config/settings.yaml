@@ -2014,6 +2014,10 @@ sources:
     cron: "25 6,18 * * *"
     site_url: https://airdrop.co.il
     listing_path: /events?when=upcoming
+    # The listing misses festival / club nights, holiday parties and trips reached from artist, club and
+    # holiday pages: every sitemap page is read too, and their JSON-LD event links followed (~350 pages).
+    sitemap_path: /sitemap-main.xml
+    max_link_rounds: 3
     http:
       concurrency: 4
 

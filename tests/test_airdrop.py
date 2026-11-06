@@ -5,7 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
-from partylinks.scrapers.airdrop import listing_urls, parse_event
+from partylinks.scrapers.airdrop import listing_urls, parse_event, parse_page, sitemap_urls
 
 TZ = "Asia/Jerusalem"
 SITE = "https://airdrop.co.il"
@@ -48,3 +48,21 @@ def test_trip_abroad_gets_its_country() -> None:
     assert e.extra["purchase_url"] == "https://takebreaktravel.com/events/anyma-athens-31-10"
     # The page stamps Israel's +02:00 on Athens' wall time; read it in Athens' zone.
     assert e.start_at is not None and e.start_at.hour == 16 and str(e.start_at.tzinfo) == "Europe/Athens"
+
+
+def test_artist_page_gives_profile_and_event_links_not_an_event() -> None:
+    page = (
+        '<script type="application/ld+json">{"@context": "https://schema.org", "@type": "MusicArtist",'
+        ' "name": "ARTBAT", "url": "https://airdrop.co.il/artbat", "image": "https://airdrop.co.il/a.jpg",'
+        ' "subjectOf": [{"@type": "MusicEvent", "name": "ZAMNA", "url": "https://airdrop.co.il/zamna-montreal",'
+        ' "startDate": "2026-11-21T19:00:00+02:00"}]}</script>'
+    )
+    event, profile, links = parse_page(page, f"{SITE}/artbat", TZ)
+    assert event is None
+    assert profile is not None and (profile.name, profile.image_url) == ("ARTBAT", "https://airdrop.co.il/a.jpg")
+    assert links == [f"{SITE}/zamna-montreal"]
+
+
+def test_sitemap_pages_without_home() -> None:
+    xml = f"<urlset><url><loc>{SITE}/</loc></url><url><loc>{SITE}/utopia</loc></url><url><loc>{SITE}/utopia</loc></url></urlset>"
+    assert sitemap_urls(xml, SITE) == [f"{SITE}/utopia"]
