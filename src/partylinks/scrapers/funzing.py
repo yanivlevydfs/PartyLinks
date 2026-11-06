@@ -8,7 +8,9 @@ The site's pages are an Angular app fed by a JSON API (``api-il.funzing.com/api/
 * ``/funz/<id>`` - the experience: text, ``category_slug``, ``funz_interests`` (keys), the map pin
   (``latitude`` / ``longitude``), ``displayed_address``, adult / kids price ("₪100"; "₪0" for a priced-by-
   package experience such as a couple workshop, whose "from" price is ``starting_price``) and its ``events``
-  (``date_start`` with the zone, ``end_time`` "20:00", ``sold_out``);
+  (``date_start`` with the zone, ``end_time`` "20:00", ``sold_out``) - the first 10 only;
+* ``/funz/<id>/events`` - every date, same shape; read only when the listing's count is past the page's
+  (bookable-slot workshops run to 1,000+ slots, so dates past ``days_ahead`` are dropped);
 * ``/categories`` - each category's interests, key -> Hebrew name.
 Each date is one event; online experiences are skipped.
 """
@@ -20,6 +22,8 @@ from collections.abc import AsyncIterator
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
+
+from pydantic import Field
 
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import clean_str, html_to_text
@@ -43,6 +47,7 @@ ONLINE = {"אונליין", "online", "Online", "זום"}
 class FunzingSettings(SourceSettings):
     api_url: str = "https://api-il.funzing.com/api/v2"
     max_pages: int = 100
+    days_ahead: int = Field(120, ge=1)  # dates kept up to this many days ahead
 
 
 class FunzingScraper(BaseScraper[FunzingSettings]):
@@ -52,21 +57,31 @@ class FunzingScraper(BaseScraper[FunzingSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         api = self.settings.api_url
         interests = parse_interests(await self.optional("categories", self.get_json(f"{api}/categories")) or {})
-        ids: list[int] = []
+        ids: dict[int, int] = {}  # funz id -> number_of_upcoming_dates
         for page in range(1, self.settings.max_pages + 1):
-            found = (await self.get_json(f"{api}/funz/search.json", params={"all": "true", "page": page})).get("funzes") or []
-            dated = [f["id"] for f in found if isinstance(f, dict) and f.get("number_of_upcoming_dates") and f.get("id")]
-            ids.extend(dated)
+            listing = await self.get_json(f"{api}/funz/search.json", params={"all": "true", "page": page})
+            found = listing.get("funzes") or []
+            dated = {
+                f["id"]: int(f["number_of_upcoming_dates"])
+                for f in found
+                if isinstance(f, dict) and f.get("number_of_upcoming_dates") and f.get("id")
+            }
+            ids.update(dated)
             if not dated:
                 break
         self.log.debug("listed %d experiences with dates", len(ids))
         now = datetime.now().astimezone()
+        until = now + timedelta(days=self.settings.days_ahead)
 
         async def detail(funz_id: int) -> list[ScrapedEvent]:
             funz = (await self.get_json(f"{api}/funz/{funz_id}")).get("funz") or {}
-            return [e for e in parse_funz(funz, interests) if e.start_at and e.start_at > now]
+            if ids[funz_id] > len(funz.get("events") or []):  # the page holds the first 10 dates only
+                more = await self.optional(f"funz {funz_id} dates", self.get_json(f"{api}/funz/{funz_id}/events"))
+                if isinstance(more, dict) and more.get("events"):
+                    funz = {**funz, "events": more["events"]}
+            return [e for e in parse_funz(funz, interests) if e.start_at and now < e.start_at <= until]
 
-        async for events in self.stream_isolated(dict.fromkeys(ids), detail, lambda funz_id: f"funz {funz_id}"):
+        async for events in self.stream_isolated(ids, detail, lambda funz_id: f"funz {funz_id}"):
             for event in events:
                 yield event
 
@@ -98,7 +113,9 @@ def parse_funz(funz: dict[str, Any], interests: dict[str, str]) -> list[ScrapedE
     address = clean_str(funz.get("displayed_address"))
     cover = funz.get("cover_url")
     owner = funz.get("owner") if isinstance(funz.get("owner"), dict) else {}
-    text = "\n\n".join(t for part in (funz.get("description"), funz.get("what_you_get")) if part and (t := html_to_text(part)))
+    text = "\n\n".join(
+        t for part in (funz.get("description"), funz.get("what_you_get")) if part and (t := html_to_text(part))
+    )
     url = funz.get("canonical_url") or f"https://il.funzing.com/funz/{funz.get('slug') or funz_id}"
     events: list[ScrapedEvent] = []
     for e in funz.get("events") or []:
@@ -134,6 +151,6 @@ def parse_funz(funz: dict[str, Any], interests: dict[str, str]) -> list[ScrapedE
 
 
 def _price(value: object) -> Decimal | None:
-    """"₪100" -> 100; "₪0" or nothing -> None."""
+    """ "₪100" -> 100; "₪0" or nothing -> None."""
     m = _PRICE.search(str(value or "").replace(",", ""))
     return Decimal(m.group(0)) if m and Decimal(m.group(0)) > 0 else None

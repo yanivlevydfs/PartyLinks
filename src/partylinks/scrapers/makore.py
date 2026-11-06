@@ -20,6 +20,7 @@ from urllib.parse import unquote
 from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import (
     ParseError,
@@ -31,6 +32,7 @@ from partylinks.parsing import (
     schema_types,
     to_decimal,
 )
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _EVENT_ID = re.compile(r"(?:--|/event/)([0-9a-f]{6,})/?$")
@@ -51,6 +53,7 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         seen: set[str] = set()
+        retention = RetentionSettings()
         for category in self.settings.categories:
             items = await self.optional(category, self._category(category))
             for item in items or []:
@@ -63,7 +66,12 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
                 except Exception as exc:  # noqa: BLE001 - isolate per-item failures
                     self.record_failure(str(item.get("url")), exc)
                     continue
-                if event is not None and event.source_event_id not in seen:
+                # Past and broken far dates (a category tile stamped 2031-06-30, a 2038-01-19 epoch) are left out.
+                if event is None or not is_current(
+                    event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known
+                ):
+                    continue
+                if event.source_event_id not in seen:
                     seen.add(event.source_event_id)
                     yield event
         self.log.debug("listed %d events", len(seen))

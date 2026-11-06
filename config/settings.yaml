@@ -1075,6 +1075,8 @@ media:
 sources:
   goout:
     enabled: true
+    # The by-type API filters by the caller's IP: an Israeli IP gets ~350 events, Railway's ~40 (Nov 2026).
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "35 6,18 * * *"
     base_url: https://www.go-out.co
     list_endpoint: /endOne/getEventsByTypeNew
@@ -1085,7 +1087,7 @@ sources:
       - "https://images.go-out.co/events/{event_id}{cover_timestamp}_coverImage.jpg"
       - "https://images.go-out.co/events/{event_id}{cover_timestamp}_whatsappImage.jpg"
     # go-out.co category chips: nightlife = אירועים + מועדוני לילה, "פסטיבלים והופעות" = פסטיבל.
-    event_types: ["אירועים", "מועדוני לילה", "פסטיבל"]
+    event_types: ["אירועים", "מועדוני לילה", "פסטיבל", "הופעה"]
     location: IL
     page_size: 8
     max_pages: 500
@@ -1258,6 +1260,10 @@ sources:
       - {path: /south/, table_id: 40298}
       - {path: /beer-sheva/, table_id: 43956}
       - {path: /shows/, table_id: 39747}     # nationwide "upcoming live shows"
+      # Category pages with shows no region lists (kids ~20+, films, dance; Nov 2026).
+      - {path: /kids-shows/, table_id: 210695}
+      - {path: /movies/, table_id: 639535}
+      - {path: /dance/, table_id: 505881}
     ajax_path: /wp-admin/admin-ajax.php
     ajax_action: mevalim_load_more_events
     # Artist pages (WordPress children of /shows/ and /stand-up/): name, photo, page link.
@@ -1946,7 +1952,12 @@ sources:
     enabled: true
     cron: "41 9,21 * * *"
     site_url: https://www.makore.co.il
-    categories: ["/browse/category/חיי-לילה", "/browse/category/הופעות-חיות"]
+    # Every category but sport (Nov 2026: 2 of 13 read, ~16k events left out).
+    categories: ["/browse/category/חיי-לילה", "/browse/category/הופעות-חיות", "/browse/category/תיאטרון",
+                 "/browse/category/סטנדאפ", "/browse/category/מחול", "/browse/category/קולנוע",
+                 "/browse/category/ילדים-ומשפחה", "/browse/category/אירועי-תוכן", "/browse/category/סדנה",
+                 "/browse/category/סיור-מודרך", "/browse/category/קולינריה", "/browse/category/תערוכה"]
+    run_timeout_seconds: 5400
     http:
       concurrency: 4
 
@@ -2325,7 +2336,7 @@ sources:
     site_url: https://www.planetcinema.co.il
     api_path: /il/data-api-service
     tenant_id: "10100"
-    days_ahead: 3
+    days_ahead: 14  # the feed lists more days than 3/7 (audit, Nov 2026)
 
   ravhen:
     # Rav-Hen (rav-hen.co.il, קולנוע חן; Theaters Israel): same platform as planet, its own tenant.
@@ -2337,7 +2348,7 @@ sources:
     site_url: https://www.rav-hen.co.il
     api_path: /rh/data-api-service
     tenant_id: "10104"
-    days_ahead: 3
+    days_ahead: 14  # the feed lists more days than 3/7 (audit, Nov 2026)
 
   cinemacity:
     # Cinema City: the chain's 8 multiplexes. The Wix site reads showtimes from its PRES ticketing
@@ -2350,7 +2361,7 @@ sources:
     presentations_path: /api/presentations/
     features_path: /api/features/
     movie_url: https://www.cinema-city.co.il/movie/{id}
-    days_ahead: 3
+    days_ahead: 45  # the feed lists more days than 3/7 (audit, Nov 2026)
     branches:
       "1170": {address: "בניין הרב מכר, צומת גלילות", city: רמת השרון}
       "1173": {address: "שדרות משה דיין 32", city: ראשון לציון}
@@ -2369,7 +2380,7 @@ sources:
     cron: "35 9,21 * * *"
     site_url: https://www.hotcinema.co.il
     events_path: /tickets/TheaterEvents
-    days_ahead: 3
+    days_ahead: 10  # the feed lists more days than 3/7 (audit, Nov 2026)
     branches:
       1: {name: מודיעין, address: "שדרות המלאכה 121, מרכז ישפרו", city: מודיעין, latitude: 31.889012, longitude: 34.963161}
       2: {name: קריון, address: "דרך עכו 192", city: קרית ביאליק, latitude: 32.842737, longitude: 35.089856}
@@ -2394,7 +2405,7 @@ sources:
     cron: "59 6,18 * * *"
     site_url: https://www.lev.co.il
     showtimes_path: /wp-content/themes/lev/ajax_data.php
-    days_ahead: 3
+    days_ahead: 7  # the feed lists more days than 3/7 (audit, Nov 2026)
     http:
       concurrency: 4
     branches:
@@ -2421,7 +2432,7 @@ sources:
     features_path: /api/features/
     ticket_groups_path: /api/presentations/{id}/ticketGroups
     order_url: https://cintlv.presglobal.store/order/{id}
-    days_ahead: 7
+    days_ahead: 14  # the feed lists more days than 3/7 (audit, Nov 2026)
 
   cinematheque_jlm:
     # Jerusalem Cinematheque (jer-cin.org.il, דרך חברון 11): the same PRES reader as
@@ -2439,7 +2450,7 @@ sources:
     features_path: /api/features/
     ticket_groups_path: /api/presentations/{id}/ticketGroups
     order_url: https://jer-cin.pres.global/order/{id}
-    days_ahead: 7
+    days_ahead: 120  # the feed lists more days than 3/7 (audit, Nov 2026)
     branch_id: jlm
     venue_name: סינמטק ירושלים
     address: דרך חברון 11
@@ -2456,7 +2467,7 @@ sources:
     vpn: true  # our Israeli VPN only (Railway production)
     cron: "2 8,20 * * *"
     site_url: https://movieland.co.il
-    days_ahead: 3
+    days_ahead: 30  # the feed carries ~5 days of screenings plus pre-sales weeks ahead; 3 cut both
     branches:
       "1291": {venue_name: מובילנד חיפה, address: "משה פלימן 4, קניון עזריאלי", city: חיפה}
       "1293": {venue_name: מובילנד הצוק, address: "יוניצמן 21", city: תל אביב}
@@ -2874,17 +2885,18 @@ sources:
     # upcoming events linking to ~40 sellers we mostly don't read (municipal halls, matnasim...);
     # extra.purchase_url lets dedup merge the rest. robots.txt disallows query strings and /filtered,
     # so the sitemap lists the event pages (date in the path) and each page's JSON-LD is read in
-    # Hebrew. One request per event and 429 above ~3 req/s: days_ahead 10 (~2.6k pages, ~14 min).
+    # Hebrew. One request per event and 429 above ~3 req/s. The whole horizon is read (~15k future
+    # pages, ~80 min): days_ahead 10 left ~11k events out (Nov 2026).
     enabled: true
     proxied: false  # Cloudflare 403s the evomi pool's IPs; Railway's own IP gets 200 (Nov 2026)
     # ~2,450 events with a page each: past the 30-min default (saved them all, then "timed out", Oct 2026).
-    run_timeout_seconds: 3600
+    run_timeout_seconds: 9000
     cron: "27 6,18 * * *"
     site_url: https://www.ogo.co.il
     sitemap_path: /sitemap.xml
     locale: he
-    days_ahead: 10
-    max_events: 5000
+    days_ahead: 730
+    max_events: 30000
     http:
       concurrency: 2
       request_delay_seconds: 0.3
@@ -3009,7 +3021,8 @@ sources:
     cron: "11 6,18 * * *"
     site_url: https://www.habama.co.il
     day_path: /Pages/EventAllforDay.aspx
-    days: 21
+    days: 80  # the site lists ~2.5 months; pages answer in 1-8 s now (Nov 2026)
+    run_timeout_seconds: 5400
     http:
       concurrency: 2
       timeout_seconds: 120

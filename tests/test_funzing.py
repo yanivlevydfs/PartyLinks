@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from partylinks.config import Settings
+import asyncio
+from datetime import datetime, timedelta
+from typing import Any
+
+from partylinks.config import HttpSettings, Settings
 from partylinks.enrichment import Enricher
-from partylinks.scrapers.funzing import parse_funz, parse_interests
+from partylinks.scrapers.funzing import FunzingScraper, FunzingSettings, parse_funz, parse_interests
 
 CATEGORIES = {"category_boxes": [{"slug": "tours", "interests": [{"key": "history", "display_name": "היסטוריה"}]}]}
 
@@ -45,3 +49,36 @@ def test_package_priced_experience_reads_starting_price() -> None:
     first = parse_funz(funz, {})[0]
     assert (first.min_price, first.max_price) == (650, 650)
     assert parse_funz({**funz, "starting_price": None}, {})[0].min_price is None
+
+
+def test_all_dates_read_when_page_holds_fewer_within_horizon() -> None:
+    # The page gives the first 10 dates; /funz/<id>/events gives all. Funz 1037 has 20, the page 10.
+    now = datetime.now().astimezone()
+
+    def ev(i: int, days: int) -> dict[str, Any]:
+        return {"id": i, "date_start": (now + timedelta(days=days)).isoformat(), "end_time": "23:00"}
+
+    api = "https://api-il.funzing.com/api/v2"
+    bodies: dict[str, Any] = {
+        f"{api}/categories": {},
+        f"{api}/funz/1037": {"funz": {**FUNZ, "id": 1037, "events": [ev(1, 5)]}},
+        f"{api}/funz/1037/events": {"events": [ev(0, -1), ev(1, 5), ev(2, 10), ev(3, 200)]},
+        f"{api}/funz/2": {"funz": {**FUNZ, "id": 2, "events": [ev(9, 3)]}},
+    }
+    listing = [{"id": 1037, "number_of_upcoming_dates": 3}, {"id": 2, "number_of_upcoming_dates": 1}, {"id": 3}]
+    asked: list[str] = []
+
+    async def fake_get_json(url: str, *, params: dict[str, Any] | None = None, **_: object) -> Any:
+        asked.append(url)
+        if url.endswith("search.json"):
+            return {"funzes": listing if params and params["page"] == 1 else []}
+        return bodies[url]
+
+    scraper = FunzingScraper(FunzingSettings(cron="0 4 * * *", days_ahead=120), HttpSettings(), "Asia/Jerusalem")
+    scraper.get_json = fake_get_json  # type: ignore[method-assign]
+
+    async def collect() -> list[str]:
+        return [e.source_event_id async for e in scraper.scrape()]
+
+    assert sorted(asyncio.run(collect())) == ["1", "2", "9"]  # not the past one, not 200 days ahead
+    assert f"{api}/funz/2/events" not in asked  # the page held every date: no extra request
