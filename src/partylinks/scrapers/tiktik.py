@@ -1,7 +1,9 @@
 """TikTik Online (tiktik-online.co.il) - tickets and packages for concerts, festivals and sport abroad.
 
-WooCommerce shop. Listing: the public Store API (``/wp-json/wc/store/v1/products``) filtered
-to each configured category (music, sport), 100 products a page in id order, total in ``X-WP-Total``. Its prices
+WooCommerce shop. Listing: the public Store API (``/wp-json/wc/store/v1/products``), the whole
+catalogue (~2,900 products; Nov 2026: 52 Bundesliga matches sit in that league's category alone, in
+neither music nor sport), 100 products a page in id order, total in ``X-WP-Total``; ``whole_catalogue:
+false`` reads the configured categories only. Gift cards and merch have no event and are dropped. Its prices
 are labelled ILS but are euros, and it has no date or venue. Details: each product page carries
 a schema.org ``MusicEvent`` or, for a match, a ``SportsEvent`` (start, venue, city, country,
 performer, low/high price in EUR); a match is tagged "ספורט".
@@ -18,6 +20,7 @@ from typing import Any
 
 from pydantic import Field
 
+from partylinks.config import RetentionSettings
 from partylinks.enrichment import UNKNOWN_COUNTRY
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import (
@@ -31,6 +34,7 @@ from partylinks.parsing import (
     to_decimal,
     to_int,
 )
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 PAGE_SIZE = 100
@@ -39,7 +43,9 @@ PAGE_SIZE = 100
 class TiktikSettings(SourceSettings):
     site_url: str
     products_path: str  # Store API products endpoint
-    category_ids: list[int]  # WooCommerce product categories (music, sport)
+    category_ids: list[int] = Field(default_factory=list)  # WooCommerce product categories (music, sport)
+    # Every product, not the categories alone: matches sit in league categories outside music and sport too.
+    whole_catalogue: bool = True
     max_pages: int = Field(40, ge=1)
 
 
@@ -51,17 +57,24 @@ class TiktikScraper(BaseScraper[TiktikSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         by_url: dict[str, Any] = {}
-        for category in s.category_ids:
+        categories: list[int | None] = [None] if s.whole_catalogue or not s.category_ids else list(s.category_ids)
+        for category in categories:
             products = await self.paginate(lambda index: self._listing_page(category, index), PAGE_SIZE, s.max_pages)  # noqa: B023 - awaited here
             by_url.update((p["permalink"], p) for p in products if isinstance(p, dict) and p.get("permalink"))
         self.log.debug("listed %d products", len(by_url))
         async for event in self.stream_isolated(by_url.values(), self._fetch_product, label=lambda p: p["permalink"]):
-            yield event
+            # Past dates, and the far placeholders some products carry ("20.5.32"): retention's rule.
+            if is_current(
+                event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known
+            ):
+                yield event
 
-    async def _listing_page(self, category: int, index: int) -> tuple[list[Any], int | None]:
+    async def _listing_page(self, category: int | None, index: int) -> tuple[list[Any], int | None]:
         s = self.settings
         # The default order (by date) drops ~2% of products across pages; by id every one is listed.
-        params = {"category": category, "per_page": PAGE_SIZE, "page": index + 1, "orderby": "id", "order": "asc"}
+        params: dict[str, Any] = {"per_page": PAGE_SIZE, "page": index + 1, "orderby": "id", "order": "asc"}
+        if category is not None:
+            params["category"] = category
         response = await self.request("GET", s.site_url + s.products_path, params=params)
         try:
             items = response.json()
@@ -90,7 +103,9 @@ def parse_product(page_html: str, url: str, timezone: str, listed: dict[str, Any
     start_at = parse_iso(event.get("startDate"), timezone)  # a date alone: the venue's time is unknown
     if not title or not start_at:
         raise ParseError(f"{url}: event without name or start")
-    product = next((n for n in nodes if "product" in schema_types(n) and str(n.get("sku", "")).startswith("TIKTIK-")), {})
+    product = next(
+        (n for n in nodes if "product" in schema_types(n) and str(n.get("sku", "")).startswith("TIKTIK-")), {}
+    )
     listed = listed or {}
     product_id = str(product.get("sku", "")).removeprefix("TIKTIK-") or str(listed.get("id") or "") or None
     location = event.get("location") if isinstance(event.get("location"), dict) else {}

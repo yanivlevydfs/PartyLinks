@@ -163,8 +163,6 @@ def test_empty_pages_in_a_row_stop_the_run_as_blocked() -> None:
 
 
 def test_refused_event_pages_come_from_the_city_listing_and_the_run_is_partial() -> None:
-
-
     item = {"@type": "ListItem", "item": {
         "@type": "MusicEvent", "name": "שלמה ארצי", "startDate": "2027-01-10T21:00:00+02:00",
         "location": {"@type": "Place", "name": "היכל מנורה", "address": {"addressLocality": "תל אביב"}},
@@ -195,3 +193,30 @@ def test_refused_event_pages_come_from_the_city_listing_and_the_run_is_partial()
         ("1", "שלמה ארצי", "היכל מנורה", Decimal("199.0"))
     ]  # b-2 is in the sitemap only: not invented, and the run is partial so it is not unlisted either
     assert scraper.failures and "event pages" in scraper.failures[0]
+
+
+def test_zappa_reads_the_zappa_club_sitemap_too() -> None:
+    from partylinks.scrapers.eventim import ZappaScraper
+
+    eventim = ["https://www.eventim.co.il/event/נונו-זאפה-ירושלים-1/", "https://www.eventim.co.il/event/מופע-היכל-2/"]
+    club = [
+        "https://www.zappa-club.co.il/event/נונו-זאפה-ירושלים-1/",
+        "https://www.zappa-club.co.il/event/חנוכה-היכל-3/",
+    ]
+    scraper = build_scraper("zappa", Settings())
+    assert isinstance(scraper, ZappaScraper)
+    scraper.http.request_delay_seconds = 0
+    scraper.settings.url_words = ["זאפה"]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        urls = club if request.url.host == "www.zappa-club.co.il" else eventim
+        locs = "".join(f"<url><loc>{u}</loc></url>" for u in urls)
+        return httpx.Response(200, text=f"<urlset>{locs}</urlset>", headers={"content-type": "application/xml"})
+
+    async def go() -> list[str]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return await scraper._list_urls()
+
+    # Eventim's pages named for Zappa, and every show the Zappa site sells; one page per event id (the club's).
+    assert asyncio.run(go()) == club

@@ -36,6 +36,7 @@ import httpx
 from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import (
     ParseError,
@@ -47,6 +48,7 @@ from partylinks.parsing import (
     schema_types,
     to_decimal,
 )
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.chillz import EVENT_TYPES, parse_page
 from partylinks.scrapers.eventim_listing import TYPE_GENRES, Listed, details_or_listing, last_page, parse_listing
@@ -104,7 +106,10 @@ class EventimScraper(BaseScraper[EventimSettings]):
         for path in self.settings.city_paths:
             listed.update(await self.optional(f"city {path}", self._list_city(path)) or {})
         async for event in details_or_listing(self, urls, self._fetch_event, listed, self.settings.type_genres):
-            yield event
+            if is_current(
+                event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known
+            ):
+                yield event
 
     async def _list_city(self, path: str) -> Listed:
         s = self.settings
@@ -118,12 +123,14 @@ class EventimScraper(BaseScraper[EventimSettings]):
 
     async def _list_urls(self) -> list[str]:
         s = self.settings
-        body = (await self.request("GET", s.site_url + s.sitemap_path)).content
-        urls = sitemap_event_urls(gzip.decompress(body) if body[:2] == b"\x1f\x8b" else body)
-        urls = pick_urls(urls, s.url_words, s.skip_url_words)
+        urls = pick_urls(await self._sitemap(s.site_url + s.sitemap_path), s.url_words, s.skip_url_words)
         if len(urls) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
         return urls[: s.max_events]
+
+    async def _sitemap(self, url: str) -> list[str]:
+        body = (await self.request("GET", url)).content
+        return sitemap_event_urls(gzip.decompress(body) if body[:2] == b"\x1f\x8b" else body)
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
         response = await self.request("GET", url)
@@ -143,15 +150,39 @@ class EventimScraper(BaseScraper[EventimSettings]):
         raise ParseError(f"{url}: no pageMeta or Event JSON-LD on the page")
 
 
+class ZappaSettings(EventimSettings):
+    # zappa-club.co.il's own events sitemap: every show the Zappa site sells, at its clubs and elsewhere
+    # (~600, Nov 2026; the Eventim sitemap's pages named for Zappa are ~170 of them). Empty: those alone.
+    club_sitemap_url: str = "https://www.zappa-club.co.il/staticsite/sitemap/ZPE/events1_he.xml.gz"
+
+
 class ZappaScraper(EventimScraper):
-    """Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni.
+    """Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa), Amphi Shuni and the shows zappa-club.co.il sells.
 
     Zappa belongs to Eventim: zappa-club.co.il is served by Eventim's Akamai and its shows are
-    Eventim event pages, so this reads the Eventim sitemap's pages named for Zappa (``url_words``)
-    with the Eventim parser and stores them as their own source.
+    Eventim event pages (same ids, same templates), so this reads the Zappa site's own events sitemap
+    (``club_sitemap_url``, every show it sells) and the Eventim sitemap's pages named for Zappa
+    (``url_words``), with the Eventim parser, and stores them as their own source.
     """
 
     name = "zappa"
+    settings_model = ZappaSettings  # type: ignore[assignment]
+
+    async def _list_urls(self) -> list[str]:
+        s = self.settings
+        assert isinstance(s, ZappaSettings)
+        urls = await super()._list_urls()
+        if not s.club_sitemap_url:
+            return urls
+        club = await self._sitemap(s.club_sitemap_url)
+        by_id = {_event_id(url): url for url in urls} | {_event_id(url): url for url in club}  # the club's page wins
+        if len(by_id) > s.max_events:
+            self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(by_id))
+        return list(by_id.values())[: s.max_events]
+
+
+def _event_id(url: str) -> str:
+    return m.group(1) if (m := _EVENT_ID.search(urllib.parse.urlsplit(url).path)) else url
 
 
 def pick_urls(urls: list[str], words: list[str], skip: list[str]) -> list[str]:

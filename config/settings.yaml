@@ -1465,7 +1465,8 @@ sources:
 
   tiktik:
     # TikTik Online: tickets and packages for concerts, festivals and sport abroad (WooCommerce). The
-    # Store API lists the music (~2,000) and sport (~1,400) categories; each product page's MusicEvent /
+    # Store API lists the whole catalogue (~2,900 products, Bundesliga and other categories outside
+    # music and sport too); each product page's MusicEvent /
     # SportsEvent JSON-LD gives date, venue, city and country. Events abroad live in the /abroad section.
     enabled: true
     # ~3,400 pages a run through the proxy: longer than the 30-min default (Oct 2026).
@@ -1473,7 +1474,7 @@ sources:
     cron: "27 4,16 * * *"
     site_url: https://www.tiktik-online.co.il
     products_path: /wp-json/wc/store/v1/products
-    category_ids: [8, 7]  # music, sport
+    category_ids: [8, 7]  # music, sport: read only when whole_catalogue is false
     http:
       concurrency: 10  # 4 took longer than the 30-min run limit
       request_delay_seconds: 0.2
@@ -2191,8 +2192,8 @@ sources:
 
   zappa:
     # Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni. Zappa belongs to
-    # Eventim (zappa-club.co.il is Eventim's Akamai), so this reads the Eventim sitemap's Zappa
-    # pages (~180) with the Eventim parser; the eventim source skips them. Same Akamai limits.
+    # Eventim (zappa-club.co.il is Eventim's Akamai), so this reads zappa-club's own events sitemap
+    # (~600 pages) and the Eventim sitemap's Zappa pages with the Eventim parser. Same Akamai limits.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
     vpn: true  # our Israeli VPN only (Railway production)

@@ -14,7 +14,9 @@ SITE = "https://www.tiktik-online.co.il/product/"
 
 
 def _parse(name: str, slug: str) -> tiktik.ScrapedEvent:
-    event = tiktik.parse_product((FIXTURES / f"{name}.html").read_text(encoding="utf-8"), SITE + slug + "/", "Asia/Jerusalem")
+    event = tiktik.parse_product(
+        (FIXTURES / f"{name}.html").read_text(encoding="utf-8"), SITE + slug + "/", "Asia/Jerusalem"
+    )
     assert event is not None
     return event
 
@@ -65,3 +67,34 @@ def test_tiktik_match_is_sport() -> None:
     from partylinks.enrichment import Enricher
 
     assert "sport" in Enricher(Settings().enrichment, "Asia/Jerusalem")._detect_genres(e)
+
+
+def test_tiktik_lists_the_whole_catalogue() -> None:
+    # 52 Bundesliga matches sit in that league's category alone, in neither music nor sport (Nov 2026).
+    import asyncio
+
+    import httpx
+
+    from partylinks.config import Settings
+    from partylinks.scrapers import build_scraper
+
+    scraper = build_scraper("tiktik", Settings())
+    assert isinstance(scraper, tiktik.TiktikScraper)
+    scraper.http.request_delay_seconds = 0
+    seen: list[dict[str, str]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.startswith("/wp-json/"):
+            seen.append(dict(request.url.params))
+            return httpx.Response(
+                200, json=[{"id": 1, "permalink": "https://x.example/gift-card/"}], headers={"X-WP-Total": "1"}
+            )
+        return httpx.Response(200, text="<p>a gift card: no event</p>")
+
+    async def go() -> list[tiktik.ScrapedEvent]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.scrape()]
+
+    assert asyncio.run(go()) == []
+    assert len(seen) == 1 and "category" not in seen[0]  # one listing, not one per category
