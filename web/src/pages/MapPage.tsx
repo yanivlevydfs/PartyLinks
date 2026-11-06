@@ -100,7 +100,7 @@ export default function MapPage() {
 
 const ICON: Record<string, string> = {
   techno: "🎛️", house: "🏠", trance: "🌀", hip_hop: "🎤", rnb: "🎶", mainstream: "🪩", pop: "🎵", reggaeton_latin: "💃",
-  afro: "🥁", mizrahi: "🪕", israeli: "🇮🇱", greek: "🏛️", electronic: "⚡", edm: "🔊", throwback: "📼", rock_indie: "🎸",
+  afro: "🥁", mizrahi: "🪕", israeli: "🇮🇱", greek: "🏛️", electronic: "⚡", edm: "🔊", throwback: "📼", eighties: "📻", nineties: "💿", rock_indie: "🎸",
   jazz: "🎷", live_show: "🎙️", lgbt: "🏳️‍🌈", stand_up: "😂", karaoke: "🎤", hi_tech: "💻", conference: "🧑‍💼", ai: "🤖",
   festival: "🎪", meetups: "🤝", culture: "🎭", exhibitions: "🖼️", workshops: "🛠️", cinema: "🎬", markets: "🛍️", food: "🍽️",
   sport: "⚽", happy_hour: "🥂", theatre: "🎭", kids: "🧸", lectures: "📚", tours: "🗺️", dance: "🩰", yoga_wellness: "🧘",

@@ -115,7 +115,7 @@ GENRES_HE = {
     "pop": "פופ", "reggaeton_latin": "רגאטון / לטיני", "afro": "אפרו", "dancehall_reggae": "דאנסהול / רגאיי",
     "mizrahi": "מזרחית", "israeli": "מוזיקה ישראלית", "greek": "יוונית", "arabic": "ערבית", "disco_funk": "דיסקו / פאנק",
     "drum_and_bass": "דראם אנד בייס", "bass_dubstep": "בייס / דאבסטפ", "hardstyle": "הארדסטייל", "edm": "EDM",
-    "electronic": "מוזיקה אלקטרונית", "downtempo_chill": "צ׳יל", "throwback": "נוסטלגיה", "rock_indie": "רוק / אינדי",
+    "electronic": "מוזיקה אלקטרונית", "downtempo_chill": "צ׳יל", "throwback": "נוסטלגיה", "eighties": "אייטיז / שנות ה־80", "nineties": "ניינטיז / שנות ה־90", "rock_indie": "רוק / אינדי",
     "jazz": "ג׳אז", "world_balkan": "בלקן / וורלד", "live_show": "הופעות חיות", "lgbt": "גאווה", "stand_up": "סטנדאפ",
     "karaoke": "קריוקי", "hi_tech": "הייטק", "conference": "כנסים", "classical_opera": "קלאסית / אופרה",
     "ai": "AI ובינה מלאכותית", "cyber": "סייבר", "software_dev": "פיתוח תוכנה", "data": "דאטה", "cloud_devops": "ענן ו-DevOps",
@@ -135,7 +135,7 @@ GENRES_HE = {
     "g_community": "קהילה ו-LGBTQ+",
 }  # fmt: skip
 GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
-                 "stand_up": "Stand-up comedy", "live_show": "Live music",
+                 "stand_up": "Stand-up comedy", "eighties": "80s", "nineties": "90s", "live_show": "Live music",
                  "hi_tech": "Hi-tech", "classical_opera": "Classical / Opera", "ai": "AI", "cinema": "Cinema & Movies",
                  "software_dev": "Software development", "cloud_devops": "Cloud & DevOps", "web3": "Web3 & Blockchain",
                  "happy_hour": "Happy hour", "dark_wave": "Dark Wave / Synth", "yoga_wellness": "Yoga & Wellness",
@@ -1188,6 +1188,10 @@ def _related(session: Session, cfg: Settings, lang: str, path: str) -> list[tupl
         counts = Counter(session.scalars(select(EventRow.city).where(upcoming_filter(), EventRow.area == region)))
         out += sorted(((f"/city/{c.key}", c.he if he else c.en) for c in cities if counts[c.he]), key=lambda x: x[1].casefold())  # א-ת / A-Z
     elif head == "genre" and rest:
+        # Its sub-genres' pages (nostalgia: the 80s, the 90s) and its umbrella's.
+        fams = cfg.enrichment.genre_families
+        pages = genre_counts(session, cfg)
+        out += [(f"/genre/{g}", genre_label(g, lang)) for g in dict.fromkeys([*fams.get(rest[0], []), *(p for p, s in fams.items() if rest[0] in s)]) if g in pages]
         by_city = city_genre_counts(session, cfg)
         out += [(f"/city/{c.key}/{rest[0]}", f"{genre_label(rest[0], lang)} {'ב' + c.he if he else 'in ' + c.en}")
                 for c in sorted(cities, key=lambda c: (c.he if he else c.en).casefold()) if rest[0] in by_city.get(c.he, {})]

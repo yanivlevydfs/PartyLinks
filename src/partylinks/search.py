@@ -248,7 +248,8 @@ SYNONYMS.update({
     "ארבעים פלוס": ("over_40",), "פופ": ("pop",), "pop": ("pop",), "rock": ("rock_indie",), "indie": ("rock_indie",),
     "היפ הופ": ("hip_hop",), "hip hop": ("hip_hop",), "trap": ("hip_hop",), "טראפ": ("hip_hop",), "אפרוביטס": ("afro",), "afrobeats": ("afro",),
     "אלקטרונית": ("electronic",), "אלקטרוני": ("electronic",), "electronic": ("electronic",), "electro": ("electronic",),
-    "רטרו": ("throwback",), "retro": ("throwback",), "שנות ה-90": ("throwback",), "שנות ה90": ("throwback",), "90s": ("throwback",), "80s": ("throwback",),
+    "רטרו": ("throwback",), "retro": ("throwback",), "שנות ה-90": ("nineties",), "שנות ה90": ("nineties",), "90s": ("nineties",), "ניינטיז": ("nineties",),
+    "שנות ה-80": ("eighties",), "שנות ה80": ("eighties",), "80s": ("eighties",), "אייטיז": ("eighties",),
     "קפה": ("coffee_carts",), "עגלת קפה": ("coffee_carts",), "הייטק": ("hi_tech",), "hitech": ("hi_tech",), "סטארטאפ": ("startups",), "startup": ("startups",),
 })  # fmt: skip
 REGION_ALIASES = {
