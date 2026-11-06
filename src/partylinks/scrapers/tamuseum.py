@@ -1,8 +1,10 @@
 """Tel Aviv Museum of Art (tamuseum.org.il) - concerts, gallery talks, exhibition tours, lectures, films,
 family workshops and special nights at the museum's main building and the Helena Rubinstein Pavilion.
 
-The site's own JSON: ``/api/v2/he/events/filter/?offset=N`` (upcoming events only, 32 a page,
-``meta.total_count``), grouped by day; each item has its title (with ``<i>`` tags), local start, category
+The site's own JSON: ``/api/v2/he/events/filter/?offset=N`` (upcoming events only), grouped by day.
+Its ``meta.total_count`` (~74) is short of the real count and its pages overlap (an offset counts
+items, a page ends on a whole day): the offset steps by 16 until a page is empty or adds no new id
+and start (~11 pages, ~150 dates). Each item has its title (with ``<i>`` tags), local start, category
 (קונצרט / מפגש / סיור בתערוכה / פעילות / סרט / אירוע מיוחד) and page. A page per event (dated pages
 repeat per day, read once) gives the artwork (og:image), its own ticket link on the museum's
 Smarticket box office (``tickets.tamuseum.org.il/show/<id>``; show 1366 is plain admission) and its
@@ -35,8 +37,8 @@ _PRICE_ROW = "מחיר"
 class TaMuseumSettings(SourceSettings):
     site_url: str = "https://www.tamuseum.org.il"
     listing_path: str = "/api/v2/he/events/filter/"
-    page_size: int = Field(32, ge=1)
-    max_pages: int = Field(20, ge=1)
+    page_size: int = Field(16, ge=1)  # the offset's step
+    max_pages: int = Field(50, ge=1)  # a guard only: the walk stops on an empty or all-seen page
     # The box office's admission show, linked from every page: not the event's own ticket.
     admission_shows: list[str] = Field(default_factory=lambda: ["1366"])
     venue_name: str
@@ -52,18 +54,16 @@ class TaMuseumScraper(BaseScraper[TaMuseumSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        items: list[dict[str, Any]] = []
+        unique: dict[str, ScrapedEvent] = {}  # pages overlap: one event per id and start
         for page in range(s.max_pages):
             payload = await self.get_json(
                 s.site_url + s.listing_path, params={"offset": page * s.page_size}, expect=dict
             )
             found = [i for day in (payload.get("items") or {}).values() for i in day or [] if isinstance(i, dict)]
-            items += found
-            total = (payload.get("meta") or {}).get("total_count") or 0
-            if not found or len(items) >= total:
+            seen = len(unique)
+            unique.update((e.source_event_id, e) for i in found if (e := listing_event(i, s, self.timezone)))
+            if not found or len(unique) == seen:
                 break
-        # Pages overlap (an offset counts items, a page ends on a whole day): one event per id and start.
-        unique = {e.source_event_id: e for i in items if (e := listing_event(i, s, self.timezone))}
         events = list(unique.values())
         events = [e for e in events if is_current(e.start_at, e.end_at, RetentionSettings(), self.timezone)]
         self.log.debug("listed %d upcoming events", len(events))

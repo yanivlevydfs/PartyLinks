@@ -3134,8 +3134,9 @@ sources:
 
   goshow:
     # GoShow: box office of Tel Aviv's small stages (AMAMA, Stand Up Factory, Comedy Bar, Bar Giora,
-    # Enav) and pubs nationwide. The home page lists every upcoming date (~270, 1 request); each
-    # date's page adds full title, artwork, text, prices and producer (~270 requests). No categories.
+    # Enav) and pubs nationwide. The home page lists every show's next date (~280); each show page
+    # (~280 requests) adds title, artwork, text, prices and the producer's other dates (~500 dates in
+    # all); 6 category pages give the site's categories.
     enabled: true
     cron: "21 7,19 * * *"
     site_url: https://www.goshow.co.il
@@ -3157,7 +3158,8 @@ sources:
   fever:
     # Fever (feverup.com) in Israel: Candlelight concerts at the Tel Aviv Museum of Art, the Eretz Israel
     # Museum, the Jerusalem Theatre and the Rappaport Center. 3 city pages + ~60 plan pages; only plans
-    # with a dated Event JSON-LD (its next session, place coordinates, ILS offers) are events.
+    # with a dated Event JSON-LD (place coordinates, ILS offers) are events, one per session of the
+    # plan's ticket selector (~55).
     enabled: true
     cron: "13 7,19 * * *"
     site_url: https://feverup.com
@@ -3198,7 +3200,8 @@ sources:
 
   tamuseum:
     # Tel Aviv Museum of Art: concerts, gallery talks, exhibition tours, lectures, films, family workshops.
-    # The site's events API (upcoming, 32 a page) + one page per event for artwork and its ticket link.
+    # The site's events API (upcoming, offset steps of 16 until a page adds nothing, ~150 dates) + one
+    # page per event for artwork and its ticket link.
     enabled: true
     cron: "53 7,19 * * *"
     venue_name: מוזיאון תל אביב לאמנות
