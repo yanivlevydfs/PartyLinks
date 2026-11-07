@@ -369,6 +369,14 @@ class Enricher:
             from_text &= talk_genres | title_only
         elif (found | from_text) & talk_genres:
             from_text &= talk_genres
+        # "hard techno, neo-rave, hardcore" is hardstyle; "punk hardcore" is not.
+        for genre, rule in self.settings.declared_genres_beside.items():
+            near = found | from_text
+            without = self.settings.expand_genres(rule.get("without", []))
+            if (genre in self._declared and self._declared[genre].search(text)
+                    and near & set(self.settings.expand_genres(rule.get("with", [])))
+                    and not any(p.search(text) for g in without for p in (self._genres.get(g), self._declared.get(g)) if p)):
+                from_text.add(genre)
         if found | from_text:
             return sorted(found | from_text)
         whole = _LINKS.sub(" ", f"{event.title}\n{event.description or ''}".lower()).translate(_QUOTES)

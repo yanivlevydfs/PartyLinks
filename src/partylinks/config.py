@@ -337,6 +337,8 @@ class EnrichmentSettings(BaseModel):
     talk_genres: list[str] = Field(default_factory=list)
     # Genres (and their sub-genres) read from the text only when the source declares one of them.
     declared_text_genres: list[str] = Field(default_factory=list)
+    # A source-only word (declared_genres) read from the text too, beside genres of "with" and none of "without".
+    declared_genres_beside: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
     # Genres read from the title only, never the description.
     title_genres: list[str] = Field(default_factory=list)
     lineup: LineupSettings = Field(default_factory=LineupSettings)

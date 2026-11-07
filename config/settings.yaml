@@ -859,6 +859,11 @@ enrichment:
   # hi-tech (elsewhere "יזמים" are a show's producers and "בינה מלאכותית" made the artwork); other
   # events take them from the title alone ("בינה מלאכותית | היכרות עם מודל שפה").
   # Pools likewise take the title alone.
+  # A source-only word also read from the text when the text names a genre of "with" and nothing
+  # (words or source-only words) of "without": "hard techno, neo-rave, hardcore" is hardstyle,
+  # "punk hardcore" and "post-hardcore e math rock" are not.
+  declared_genres_beside:
+    hardstyle: {with: [electronic], without: [rock_indie]}
   declared_text_genres: [hi_tech, pools]
   # Genres read from the title only, never the description ("סדנאות יוגה" at a festival is no workshop).
   title_genres: [workshops, kids, theatre, lectures]
