@@ -104,6 +104,17 @@ def test_the_artist_dictionary_counts_and_merges(tmp_path: Path) -> None:
                                                     links=["https://instagram.com/dali"])  # fmt: skip
 
 
+def test_more_artists_than_one_statement_takes_are_saved(tmp_path: Path) -> None:
+    """Shotgun sends ~7,000 lineup names a run: 7,000 x 10 columns is over PostgreSQL's 65,535 parameters."""
+    db = Database(os.environ["PARTYLINKS_DATABASE__URL"])
+    db.create_schema()
+    book = ArtistBook(db)
+    names = [f"Artist {i}" for i in range(7000)]
+    assert book.save_profiles([ArtistProfile(n, "shotgun") for n in names]) == 7000
+    book.record(names)
+    assert {f"artist {i}" for i in (0, 6999)} <= set(book.profiles()) and len(book.load()[0]) >= 7000
+
+
 def test_a_rescan_writes_only_the_ticket_tiers_that_changed(tmp_path: Path) -> None:
     """Unchanged tiers keep their row version (no dead row per scan), a changed one is updated,
     a tier gone from the site is deleted. An extension the server lacks (pgserver has no

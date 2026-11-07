@@ -16,6 +16,7 @@ import logging
 from collections import Counter
 from collections.abc import Iterable
 from datetime import datetime
+from itertools import batched
 
 from sqlalchemy import Boolean, Integer, Text, func, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -88,14 +89,15 @@ class ArtistBook:
 
         def save() -> None:
             with self.db.session() as session:
-                stmt = dialect_insert(session, ArtistProfileRow).values(rows)
                 table = ArtistProfileRow.__table__.c
                 # Another source's photo / links survive a sparser profile of the same artist.
                 keep = {"name", "source", "updated_at"}
-                session.execute(stmt.on_conflict_do_update(index_elements=["key"], set_={
-                    c: stmt.excluded[c] if c in keep else func.coalesce(stmt.excluded[c], table[c])
-                    for c in (*_PROFILE_COLUMNS, "updated_at")
-                }))  # fmt: skip
+                for chunk in batched(rows, 2000):  # PostgreSQL takes at most 65,535 parameters a statement
+                    stmt = dialect_insert(session, ArtistProfileRow).values(list(chunk))
+                    session.execute(stmt.on_conflict_do_update(index_elements=["key"], set_={
+                        c: stmt.excluded[c] if c in keep else func.coalesce(stmt.excluded[c], table[c])
+                        for c in (*_PROFILE_COLUMNS, "updated_at")
+                    }))  # fmt: skip
 
         with_db_retry("artist profiles", save)
         return len(rows)
@@ -135,10 +137,11 @@ class ArtistBook:
                 for k in sorted(seen)]  # key order: concurrent writers lock rows in the same order
 
         def write(session: Session) -> None:
-            stmt = dialect_insert(session, ArtistRow).values(rows)
-            session.execute(stmt.on_conflict_do_update(
-                index_elements=["key"], set_={"seen": ArtistRow.seen + stmt.excluded.seen, "last_seen": stmt.excluded.last_seen}
-            ))  # fmt: skip
+            for chunk in batched(rows, 2000):  # PostgreSQL takes at most 65,535 parameters a statement
+                stmt = dialect_insert(session, ArtistRow).values(list(chunk))
+                session.execute(stmt.on_conflict_do_update(
+                    index_elements=["key"], set_={"seen": ArtistRow.seen + stmt.excluded.seen, "last_seen": stmt.excluded.last_seen}
+                ))  # fmt: skip
 
         if session is not None:
             write(session)
