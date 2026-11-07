@@ -230,7 +230,7 @@ class Enricher:
         self.settings = settings
         self.tz = ZoneInfo(timezone)
         self._genres = {
-            genre: pattern for genre, words in settings.genres.items() if (pattern := _place_pattern(words, prefixes=2))
+            genre: pattern for genre, words in settings.genres.items() if (pattern := _genre_pattern(words))
         }
         self._declared = {
             genre: pattern
@@ -696,14 +696,26 @@ def _in_boxes(region: RegionSettings, latitude: float, longitude: float) -> bool
 NOT_A_PLACE_IN_NAMES = frozenset({"צפון", "הצפון", "גולן", "אילת", "שדרות", "אשכול", "גלילות"})
 
 
-def _place_pattern(names: list[str], prefixes: int = 1) -> re.Pattern[str] | None:
+# A word before "house" names a house sub-genre: "organic house", "chill house" are house only.
+_HOUSE_NEXT = r"(?!\s+(?:house|האוס))"
+
+
+def _genre_pattern(words: list[str]) -> re.Pattern[str] | None:
+    """Genre keywords as _place_pattern; a keyword that is not a house one never matches before "house"."""
+    plain = [w for w in words if "house" in w.lower() or "האוס" in w]
+    guarded = [w for w in words if w not in plain]
+    parts = [p.pattern for p in (_place_pattern(plain, 2), _place_pattern(guarded, 2, _HOUSE_NEXT)) if p]
+    return re.compile("|".join(parts)) if parts else None
+
+
+def _place_pattern(names: list[str], prefixes: int = 1, after: str = "") -> re.Pattern[str] | None:
     """Whole-word place names (and genre words). Hebrew names must not match inside other
     words ("יפו" inside "פטיפון" made a Rishon LeZion bar count as Tel Aviv, "טכנו" inside
     "טכנולוגיים" made a lecture techno), but may carry attached Hebrew prefix letters
     ("ביפו", "מתל אביב", "והטכנו")."""
     parts = [
-        rf"(?<![\w]){re.escape(n.lower())}(?![\w])" if n.isascii()
-        else rf"(?<![\w])[ובהלמשכ]{{0,{prefixes}}}{re.escape(n.lower())}(?![\w])"
+        rf"(?<![\w]){re.escape(n.lower())}(?![\w]){after}" if n.isascii()
+        else rf"(?<![\w])[ובהלמשכ]{{0,{prefixes}}}{re.escape(n.lower())}(?![\w]){after}"
         for n in names
         if n.strip()
     ]

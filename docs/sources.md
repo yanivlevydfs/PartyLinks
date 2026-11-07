@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 108 configured sources, all on. Each one has its own module in
+SPOTX collects from 109 configured sources, all on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -27,6 +27,7 @@ pagination and what the listing and the event page provide.
 | `tickchak` | Tickchak LIVE (live.tickchak.co.il): an aggregator across ticketing providers; events on no category page (municipal halls, museums) from its event sitemap (`tickchak_sitemap.py`) | 07:45, 19:45 | yes |
 | `selector` | Selector (selector.org.il) | 08:06, 20:06 | yes |
 | `drop` | Drop (tdrop.net): self-serve ticketing for party producers: raves, house parties, festivals | 08:17, 20:17 | yes |
+| `agol` | AGOL (agol-join.vercel.app): organic & progressive house collective; its one-page sign-up site names the next party (guest list, no price) | 09:37, 21:37 | yes |
 | `airdrop` | Airdrop (airdrop.co.il): party guide for clubs, festivals and party trips abroad; listing + sitemap pages + their event links, artist catalog | 06:25, 18:25 | yes |
 | `popit` | Popit (popit.events): party board that aggregates events from ticketing sites | 07:03, 19:03 | yes |
 | `chillz` | Chillz (chillz.com) | 07:31, 19:31 | yes |

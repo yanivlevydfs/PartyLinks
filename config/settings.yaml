@@ -3319,6 +3319,20 @@ sources:
       concurrency: 2
       request_delay_seconds: 0.5
 
+  agol:
+    # AGOL: organic & progressive house collective (parties at Art Club, Tel Aviv). A one-page Next.js
+    # sign-up site naming the next party: title, when, where, flyer (lineup in its alt). One request a run.
+    enabled: true
+    cron: "37 9,21 * * *"
+    site_url: https://agol-join.vercel.app
+    listing_path: /
+    city: תל אביב-יפו
+    latitude: 32.0506   # Nominatim: Hazerem 9 (Art Club)
+    longitude: 34.7661
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
+
   levontin7:
     # Levontin 7: live-music club, Tel Aviv. WordPress + FAT Event: the home page carries every upcoming
     # show (start / end, artwork); each show's page adds full title, text, prices and the Eventer link.

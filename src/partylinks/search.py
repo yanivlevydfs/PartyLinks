@@ -267,7 +267,7 @@ SOURCE_ALIASES = {
     "megatickets": ("mega tickets", "מגה טיקטס"), "eventbuzz": ("event buzz", "איוונט באז"), "epgb": ("radio epgb",),
     "tiktik": ("tik tik", "טיק טיק", "טיקטיק"), "gagarin": ("גגארין",), "babebar": ("babe bar", "בייב בר"), "comy": ("קומי",),
     "eventim": ("אוונטים", "איוונטים"), "jerusalemtheatre": ("jerusalem theatre", "תיאטרון ירושלים"),
-    "airdrop": ("air drop", "אירדרופ", "אייר דרופ"), "vibez": ("וייבז",), "shotgun": ("שוטגאן",),
+    "agol": ("עגול", "אגול"), "airdrop": ("air drop", "אירדרופ", "אייר דרופ"), "vibez": ("וייבז",), "shotgun": ("שוטגאן",),
     "eventbrite": ("איוונטברייט",), "showshappening": ("shows happening", "שואוז הפנינג"), "luma": ("לומה",),
     "geektime": ("גיקטיים",), "peoplecomputers": ("people and computers", "אנשים ומחשבים"), "meetup": ("מיטאפ",),
     "beershevatheatre": ("תיאטרון באר שבע",), "planet": ("yes planet", "יס פלאנט"),

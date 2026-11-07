@@ -60,7 +60,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   funzing: ["https://il.funzing.com", "tickets"], easytix: ["https://easytix.co.il", "tickets"], ticketeams: ["https://ticketeams.co.il", "abroad"],
   festivalim: ["https://www.festivalim.co.il", "guide"], ogo: ["https://www.ogo.co.il", "guide"], muzi: ["https://muzi.co.il", "guide"], mugics: ["https://mugics.com", "guide"], efokulam: ["https://efokulam.co.il", "guide"], liveisrael: ["https://liveisrael.co", "guide"],
   plusparty: ["https://plusparty.co.il", "guide"],
-  airdrop: ["https://airdrop.co.il", "guide"], yotzim: ["https://yotzim.com", "guide"],
+  agol: ["https://agol-join.vercel.app", "venue"], airdrop: ["https://airdrop.co.il", "guide"], yotzim: ["https://yotzim.com", "guide"],
   telaviv: ["https://www.tel-aviv.gov.il", "city"], haifamuni: ["https://www.haifa.muni.il", "city"],
   ramatganmuni: ["https://www.ramat-gan.muni.il", "city"], holon: ["https://www.holon.muni.il", "city"],
   munievents: [null, "city"], matnasnet: [null, "city"], eventpro: [null, "city"], onecity: [null, "city"],

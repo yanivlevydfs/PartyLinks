@@ -4,7 +4,7 @@ import type { MouseEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEvents, usePost, usePosts } from "../api";
 import type { PostBlock, PostSummary } from "../types";
-import { Card, Hero, Img, Loader, useT, useTitle } from "../ui";
+import { Card, Hero, Img, Loader, sized, useT, useTitle } from "../ui";
 import NotFound from "./NotFound";
 
 // A post's date is a calendar day ("2026-10-20", parsed as UTC midnight): shown in UTC, or a reader west
@@ -15,7 +15,7 @@ function PostCard({ p, featured }: { p: PostSummary; featured?: boolean }) {
   const { t, lang } = useT();
   return (
     <Link className={"post-card" + (featured ? " featured" : "")} to={`/blog/${p.slug}`}>
-      <Img src={p.image} alt="" className="post-img" />
+      <Img src={sized(p.image, 640)} alt="" className="post-img" />
       <div className="post-card-body" lang={p.lang} dir={p.lang === "he" ? "rtl" : "ltr"}>
         <span className="post-cat">{p.category[lang]}</span>
         <h3>{p.title}</h3>

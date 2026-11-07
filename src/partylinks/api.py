@@ -1531,7 +1531,9 @@ def _register_routes(app: FastAPI) -> None:
         if meta is None or meta.downloaded_at is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "image not stored")
         etag = f'"{image_id}-{int(meta.downloaded_at.timestamp())}"'
-        headers = {"Cache-Control": "public, max-age=86400", "ETag": etag}
+        # An id's picture never changes (a new URL is a new row): the edge keeps it for good (blog covers,
+        # og:image, JSON-LD all point at the full size).
+        headers = {"Cache-Control": "public, max-age=31536000, immutable", "ETag": etag}
         if width is not None:
             copy = request.app.state.service.media.path_for(variant_path(meta.local_path, width)) if meta.local_path else None
             if copy is not None and copy.is_file():

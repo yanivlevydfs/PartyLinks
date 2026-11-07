@@ -279,7 +279,9 @@ export function Chip({ on, onClick, children, className }: { on: boolean; onClic
  *  the sellers' own image URLs pass through. og:image keeps the original (server side). */
 export function sized<T extends string | null | undefined>(src: T, width: 640 | 1280): T | string {
   // Stored pictures and drawn cards (events with no picture) both come in 640 and 1280 WebP.
-  return src && /^\/(images|artwork)\/\d+$/.test(src) ? `${src}/${width}.webp` : src;
+  // Blog posts send them absolute ("https://spotx.fun/images/123", kept for their JSON-LD).
+  const path = src?.startsWith(location.origin + "/") ? src.slice(location.origin.length) : src;
+  return path && /^\/(images|artwork)\/\d+$/.test(path) ? `${path}/${width}.webp` : src;
 }
 
 /** Without artwork: ``text`` (the event title) set large on the gradient, else a note. */

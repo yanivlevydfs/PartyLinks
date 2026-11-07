@@ -7,6 +7,7 @@ import logging
 from pydantic import ValidationError
 
 from partylinks.config import Settings
+from partylinks.scrapers.agol import AgolScraper
 from partylinks.scrapers.airdrop import AirdropScraper
 from partylinks.scrapers.barak import BarakScraper
 from partylinks.scrapers.barby import BarbyScraper
@@ -155,6 +156,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         JerusalemTheatreScraper,
         DropScraper,
         AirdropScraper,
+        AgolScraper,
         YotzimScraper,
         LumaScraper,
         GeektimeScraper,
