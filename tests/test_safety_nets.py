@@ -261,3 +261,23 @@ def test_event_without_artwork_keeps_or_borrows_one() -> None:
     unknown = event("3", "Something else")
     fill_artwork(unknown, {}, by_title)
     assert unknown.images == [] and unknown.image_url is None
+
+
+class _StuckSource(_SlowSource):
+    """Yields one event, then hangs without ever finding another."""
+
+    async def scrape(self) -> AsyncIterator[ScrapedEvent]:
+        yield event("before-stall")
+        await asyncio.sleep(3600)
+
+
+def test_a_source_that_stops_finding_events_is_closed_by_the_stall_limit(tmp_path: Path, monkeypatch: Any) -> None:
+    service, db = make_service(tmp_path)
+    service.settings.scheduler.stall_timeout_seconds = 0.5  # long before its own 30-min limit
+    monkeypatch.setattr(service_module, "build_scraper", lambda name, settings: _StuckSource(service._stopping))
+
+    result = service.start_source("goout", trigger="test").result(timeout=30)
+
+    assert (result.status, result.error) == ("failed", "no new event for 0.5s")
+    with db.session() as session:
+        assert [e.source_event_id for e in session.query(EventRow)] == ["before-stall"]  # kept

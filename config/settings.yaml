@@ -295,6 +295,9 @@ scheduler:
   misfire_grace_seconds: 600
   # Each source runs on its own thread; a run exceeding this is stopped and recorded as failed.
   run_timeout_seconds: 1800
+  # A run with no new event for this long is stuck: closed and recorded as failed, whatever its own
+  # limit. The big sources' long limits (posh, ogo: hours) hold only while events keep coming.
+  stall_timeout_seconds: 900
   # Scheduler and sources in a worker process of their own (partylinks/worker): scraping never slows the
   # site. The web process starts it, restarts it if it exits, and talks to it through the database.
   separate_process: true

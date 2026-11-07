@@ -132,6 +132,9 @@ class SchedulerSettings(BaseModel):
     stale_after_hours: float = Field(12, gt=0)
     # Hard limit for one source run; a hung site is stopped and recorded as failed.
     run_timeout_seconds: float = Field(1800, gt=0)
+    # A run that brings no new event for this long is stuck: stopped and recorded as failed, however
+    # long its own limit. Big sources run for hours only while they keep finding events.
+    stall_timeout_seconds: float = Field(900, gt=0)
     # The scheduler and the sources in a worker process of their own (partylinks/worker), so scraping
     # never slows the site; false keeps them in the web process.
     separate_process: bool = True

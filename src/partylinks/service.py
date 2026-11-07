@@ -385,7 +385,10 @@ class ScrapeService:
                 batch.clear()
                 saved += await self._blocking(self._save, events, failures)
 
-        deadline = asyncio.timeout(timeout)
+        stall = self.settings.scheduler.stall_timeout_seconds
+        loop = asyncio.get_running_loop()
+        hard_end = loop.time() + timeout
+        deadline = asyncio.timeout(min(hard_end, loop.time() + stall))
         try:
             async with deadline:
                 # Inside the try: a failure here is recorded as this run's, not left "running" until a restart.
@@ -405,6 +408,7 @@ class ScrapeService:
                             if self._stopping.is_set():
                                 raise _StopRequested
                             found += 1
+                            deadline.reschedule(min(hard_end, loop.time() + stall))  # progress: not stuck
                             scraper.artist_profiles += event.artist_profiles
                             if _finished_before(event, self.settings):  # already over; never stored
                                 continue
@@ -424,7 +428,8 @@ class ScrapeService:
                         log.warning("source %s blocked: %s", source, exc)
         except TimeoutError:
             if deadline.expired():
-                status, error = "failed", f"timed out after {timeout}s"
+                stalled = loop.time() < hard_end
+                status, error = "failed", f"no new event for {stall}s" if stalled else f"timed out after {timeout}s"
             else:  # a TimeoutError raised by the scraper itself
                 status, error = "failed", "TimeoutError inside the scraper"
             log.error("source %s %s", source, error)
