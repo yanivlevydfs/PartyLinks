@@ -398,12 +398,14 @@ def test_artwork_in_the_database_moves_to_files_and_is_still_served(tmp_path: Pa
 
 
 
-def test_a_source_can_have_a_longer_run_limit() -> None:
-    from partylinks.scrapers import source_settings
+def test_one_run_limit_for_every_source() -> None:
+    import yaml
 
-    settings = Settings()
-    assert source_settings("tiktik", settings).run_timeout_seconds == 5400
-    assert source_settings("goout", settings).run_timeout_seconds is None  # the scheduler's default
+    from partylinks.scrapers.base import SourceSettings
+
+    assert "run_timeout_seconds" not in SourceSettings.model_fields  # no source sets its own
+    raw = yaml.safe_load(open("config/settings.yaml", encoding="utf-8"))
+    assert not [name for name, block in raw["sources"].items() if "run_timeout_seconds" in (block or {})]
 
 
 def test_a_timeout_is_retried_the_usual_times_not_pool_size_more() -> None:

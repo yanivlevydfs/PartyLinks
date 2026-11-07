@@ -177,6 +177,7 @@ evening:
   assumed_hours: 5        # an event with no end lasts this long (the "after" steps start then)
   venue_days: 7           # "this week at the place": that many days ahead
   venue_items: 6
+  budget_max_level: 2     # "a budget evening": places up to ₪₪ (₪ = 1 ... ₪₪₪₪ = 4); unpriced places stay
   steps:                  # key: its name on the page (web/src/evening); genres: place genres that fit
     - {key: drinks, genres: [happy_hour], when: before, hours: 5}
     - {key: dinner, genres: [fine_dining, food], when: before, hours: 5}
@@ -293,10 +294,11 @@ scheduler:
   # Run every enabled source once when the API process starts.
   run_on_startup: false
   misfire_grace_seconds: 600
-  # Each source runs on its own thread; a run exceeding this is stopped and recorded as failed.
-  run_timeout_seconds: 1800
-  # A run with no new event for this long is stuck: closed and recorded as failed, whatever its own
-  # limit. The big sources' long limits (posh, ogo: hours) hold only while events keep coming.
+  # One limit for every source, no per-source overrides. Each source runs on its own thread; a run
+  # (scrape, then its images, regroup and geocode) past this is stopped, keeps what it saved, and is
+  # recorded as failed. Images left over load on the next run.
+  run_timeout_seconds: 3600
+  # A run with no new event for this long is stuck: closed and recorded as failed at once.
   stall_timeout_seconds: 900
   # Scheduler and sources in a worker process of their own (partylinks/worker): scraping never slows the
   # site. The web process starts it, restarts it if it exits, and talks to it through the database.
@@ -1192,7 +1194,6 @@ sources:
     # time, 1 s apart.
     sitemap_path: /sitemap.xml
     sitemap_newest: 6000
-    run_timeout_seconds: 5400
     http:
       concurrency: 3
       request_delay_seconds: 1.0
@@ -1227,7 +1228,6 @@ sources:
     # (matches are not events here), each tagged so its events land in the site's category.
     enabled: true
     cron: "45 7,19 * * *"
-    run_timeout_seconds: 3600  # ~1,800 events over 11 categories, plus artwork from the sellers' pages
     site_url: https://live.tickchak.co.il
     api_url: https://api-live.tickchak.co.il
     categories:  # slug -> label the declared_genres map to a site category ("" = genres from the music)
@@ -1369,7 +1369,6 @@ sources:
     # Its 429s came from the Vercel checkpoint, not the IP: speaking as Chrome passes it, so the
     # usual proxy. Every sitemap page (~3,350, the oldest from April), ~770 KB each.
     cron: "31 7,19 * * *"
-    run_timeout_seconds: 3600
     site_url: https://chillz.com
     sitemap_path: /sitemap.xml
     include_path_prefix: /en/
@@ -1543,8 +1542,6 @@ sources:
     # music and sport too); each product page's MusicEvent /
     # SportsEvent JSON-LD gives date, venue, city and country. Events abroad live in the /abroad section.
     enabled: true
-    # ~3,400 pages a run through the proxy: longer than the 30-min default (Oct 2026).
-    run_timeout_seconds: 5400
     cron: "27 4,16 * * *"
     site_url: https://www.tiktik-online.co.il
     products_path: /wp-json/wc/store/v1/products
@@ -1618,7 +1615,6 @@ sources:
     # price, sold out). Israeli venues to Israel, the rest abroad. Akamai + Queue-it pass as Chrome.
     enabled: true
     cron: "33 4,16 * * *"
-    run_timeout_seconds: 10800
     site_url: https://www.eventim-light.com
     shop_path: "/{country}/a/{shop}/"
     event_path: "/{country}/a/{shop}/e/{event}"
@@ -2032,7 +2028,6 @@ sources:
                  "/browse/category/סטנדאפ", "/browse/category/מחול", "/browse/category/קולנוע",
                  "/browse/category/ילדים-ומשפחה", "/browse/category/אירועי-תוכן", "/browse/category/סדנה",
                  "/browse/category/סיור-מודרך", "/browse/category/קולינריה", "/browse/category/תערוכה"]
-    run_timeout_seconds: 5400
     http:
       concurrency: 4
 
@@ -2184,7 +2179,6 @@ sources:
     country_path: /en/venues/-/israel
     city_paths: ["/en/cities/tel-aviv", "/en/cities/jerusalem", "/en/cities/haifa", "/en/cities/eilat"]
     cities_sitemap_path: /api/sitemaps/cities/sitemap/0.xml
-    run_timeout_seconds: 5400
     http:
       concurrency: 4
 
@@ -2197,7 +2191,6 @@ sources:
     enabled: true
     cron: "17 9,21 * * *"
     site_url: https://posh.vip
-    run_timeout_seconds: 9000
     http:
       concurrency: 6
 
@@ -2520,7 +2513,6 @@ sources:
     # every event is saved first, then up to max_pictures_per_run films (one page / 180 s) get theirs.
     enabled: true
     cron: "17 10,22 * * *"
-    run_timeout_seconds: 3600  # 15 film pages x 180 s, after the PRES calls
     crawl_delay_seconds: 180
     max_pictures_per_run: 15
     http: {concurrency: 3}
@@ -2710,8 +2702,6 @@ sources:
     cron: "9 4,16 * * *"
     listing_url: https://www.holon.muni.il/Havingfun/Pages/allevents.aspx
     city: חולון
-    # One ~800 KB page through a free Israeli proxy: 30 s ran out on every run (ReadTimeout), Oct 2026.
-    run_timeout_seconds: 3600
     http:
       timeout_seconds: 120
 
@@ -2818,8 +2808,6 @@ sources:
     # VPN with 200. rosh-haayin, nahariya: no answer from any datacenter IP, VPN included (home IPs only).
     vpn: true  # our Israeli VPN only (Railway production)
     skip_title_words: ["קורס", "חוג ", "חוגי", "סדנאות שבועיות", "מחזור ", "תנועה עם", "זחילה", "משחק מודרך"]
-    # Dozens of municipal sites a run: longer than the 30-min default (Oct 2026).
-    run_timeout_seconds: 3600
     http:
       concurrency: 3   # 8 at once drew 429s from rehovot.muni.il (Cloudflare), 4 event pages lost a run (Nov 2026)
       request_delay_seconds: 0.3
@@ -2968,8 +2956,6 @@ sources:
     # pages, ~80 min): days_ahead 10 left ~11k events out (Nov 2026).
     enabled: true
     proxied: false  # Cloudflare 403s the evomi pool's IPs; Railway's own IP gets 200 (Nov 2026)
-    # ~2,450 events with a page each: past the 30-min default (saved them all, then "timed out", Oct 2026).
-    run_timeout_seconds: 9000
     cron: "27 6,18 * * *"
     site_url: https://www.ogo.co.il
     sitemap_path: /sitemap.xml
@@ -3101,7 +3087,6 @@ sources:
     site_url: https://www.habama.co.il
     day_path: /Pages/EventAllforDay.aspx
     days: 80  # the site lists ~2.5 months; pages answer in 1-8 s now (Nov 2026)
-    run_timeout_seconds: 5400
     http:
       concurrency: 2
       timeout_seconds: 120

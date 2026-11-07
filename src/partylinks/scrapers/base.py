@@ -87,8 +87,6 @@ class SourceSettings(BaseModel):
     vpn: bool = False
     # A seasonal / small site with nothing listed now: a run with 0 events is healthy (no retries, no pause).
     may_be_empty: bool = False
-    # This source's run limit when it needs longer than scheduler.run_timeout_seconds.
-    run_timeout_seconds: float | None = Field(None, gt=0)
 
     @field_validator("cron")
     @classmethod

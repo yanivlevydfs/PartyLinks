@@ -372,11 +372,7 @@ class ScrapeService:
         scraper = None
         failures: list[str] = []
         batch: dict[str, ScrapedEvent] = {}
-        try:
-            own = source_settings(source, self.settings).run_timeout_seconds
-        except Exception:  # noqa: BLE001 - an unknown or broken source fails below, with its own error
-            own = None
-        timeout = own or self.settings.scheduler.run_timeout_seconds
+        timeout = self.settings.scheduler.run_timeout_seconds  # the same for every source
 
         async def flush() -> None:
             nonlocal saved
@@ -388,7 +384,7 @@ class ScrapeService:
         stall = self.settings.scheduler.stall_timeout_seconds
         loop = asyncio.get_running_loop()
         hard_end = loop.time() + timeout
-        deadline = asyncio.timeout(min(hard_end, loop.time() + stall))
+        deadline = asyncio.timeout_at(min(hard_end, loop.time() + stall))
         try:
             async with deadline:
                 # Inside the try: a failure here is recorded as this run's, not left "running" until a restart.
@@ -448,20 +444,15 @@ class ScrapeService:
                 log.exception("source %s: final save failed", source)
                 status, error = "failed", f"save failed: {type(exc).__name__}: {exc}"[:500]
 
-        # Post-processing: outside the scrape timeout; failures only downgrade to partial.
-        if saved > 0 and scraper is not None and not self._stopping.is_set():
-            if self.settings.media.download:
-                await self._post_step(source, "artwork", failures, self.media.download_pending(source, scraper.working_http))
-            if self.settings.dedup.enabled:
-                await self._post_step(source, "regroup", failures, asyncio.to_thread(self._regroup_soon))
-            # Saving overwrote coordinates with what the source sent; restore / look up the rest.
-            await self._post_step(source, "geocode", failures, asyncio.to_thread(self._geocode_soon))
-        if scraper is not None and scraper.artist_profiles and not self._stopping.is_set():  # lineups, next run on
-            await self._post_step(
-                source, "artist profiles", failures, asyncio.to_thread(self.artists.save_profiles, scraper.artist_profiles)
-            )
-        if scraper is not None and scraper.venue_profiles and not self._stopping.is_set():
-            await self._post_step(source, "venue profiles", failures, asyncio.to_thread(self.venues.save, scraper.venue_profiles))
+        # Post-processing: within what is left of the run limit; failures only downgrade to partial.
+        post_deadline = asyncio.timeout_at(max(hard_end, loop.time() + 60))  # at least a minute to finish up
+        try:
+            async with post_deadline:
+                await self._post_process(source, scraper, saved, failures)
+        except TimeoutError:
+            if not post_deadline.expired():
+                raise
+            failures.append(f"post-processing stopped at the {timeout}s run limit")
         if status == "success" and failures:
             status = "partial"
 
@@ -478,6 +469,22 @@ class ScrapeService:
             log.exception("source %s: could not record run %s", source, run_id)
         log.info("source %s finished: %s", source, result)
         return result
+
+    async def _post_process(self, source: str, scraper: Any, saved: int, failures: list[str]) -> None:
+        """After the scrape: the new events' images, regroup, geocode, and the artist and venue profiles."""
+        if saved > 0 and scraper is not None and not self._stopping.is_set():
+            if self.settings.media.download:
+                await self._post_step(source, "artwork", failures, self.media.download_pending(source, scraper.working_http))
+            if self.settings.dedup.enabled:
+                await self._post_step(source, "regroup", failures, asyncio.to_thread(self._regroup_soon))
+            # Saving overwrote coordinates with what the source sent; restore / look up the rest.
+            await self._post_step(source, "geocode", failures, asyncio.to_thread(self._geocode_soon))
+        if scraper is not None and scraper.artist_profiles and not self._stopping.is_set():  # lineups, next run on
+            await self._post_step(
+                source, "artist profiles", failures, asyncio.to_thread(self.artists.save_profiles, scraper.artist_profiles)
+            )
+        if scraper is not None and scraper.venue_profiles and not self._stopping.is_set():
+            await self._post_step(source, "venue profiles", failures, asyncio.to_thread(self.venues.save, scraper.venue_profiles))
 
     @staticmethod
     async def _post_step(source: str, what: str, failures: list[str], step: Any) -> None:
