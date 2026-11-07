@@ -153,6 +153,8 @@ def test_scrapers_are_slowed_and_scripts_refused(tmp_path: Path) -> None:
     with TestClient(create_app(settings, start_scheduler=False), client=("198.51.100.4", 1)) as c:
         assert c.get("/llms.txt", headers={"user-agent": "curl/8.5"}).status_code == 200
         assert c.get("/events", headers={"user-agent": "curl/8.5"}).status_code == 403
+        for data in ("/places/categories", "/holidays/list", "/top/list", "/artists/similar?name=x", "/events/x/evening"):
+            assert c.get(data, headers={"user-agent": "curl/8.5"}).status_code == 403, data
         assert c.post("/plans", json={"event_id": "x"}, headers={"user-agent": "curl/8.5"}).status_code == 403
         assert c.get("/api/me/groups", headers={"user-agent": "curl/8.5"}).status_code == 403
         assert c.get("/plan/x", headers={"user-agent": "curl/8.5"}).status_code != 403  # the preview page stays open
