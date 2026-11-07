@@ -11,14 +11,22 @@ An event carries its title, HTML description, poster (``design.image``), free-te
 ("venue, street, city"), the day (``start_date``) and the time (``start_hour``), both UTC instants.
 Disabled, password, members-only and test events are skipped, and so are season passes and admission
 tickets that run for months (``max_span_days``). robots.txt allows everything.
+
+An organiser can keep an event out of every listing (``isPublic: false``) and sell it through a link
+it posts (BLACKOUT HALLOWEEN at Gagarin, Nov 2026). The event pages other sources link to
+(``linked_urls``) are read too: ``/user/account/getByHandler/<account>`` gives the account,
+``/event/getEventByHandler/<account id>/<event>`` the event. A published link makes it public;
+``event_pages`` adds links found elsewhere (an organiser's Facebook ad).
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import AsyncIterator
 from datetime import datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -28,6 +36,7 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 # nimi's event ``type`` -> words the enrichment reads as site genres. "electronic-party" is the form's
 # default (Camel's stand-up nights carry it), so it says nothing; a marketplace's own genres say more.
+_PAGE = re.compile(r"^/event/([^/?#]+)/([^/?#]+)/?$")
 TYPES = {"wellness": "wellness", "music": "הופעות", "culture": "תרבות", "education": "הרצאות"}
 
 
@@ -48,6 +57,8 @@ class EasytixSettings(SourceSettings):
     max_span_days: int = 31
     # Accounts (handlers) that sell no events: test accounts, punch cards.
     skip_accounts: list[str] = Field(default_factory=list)
+    # Event pages read even when no listing has them: unlisted events organisers sell through a posted link.
+    event_pages: list[str] = Field(default_factory=list)
 
 
 class EasytixScraper(BaseScraper[EasytixSettings]):
@@ -90,6 +101,29 @@ class EasytixScraper(BaseScraper[EasytixSettings]):
         for e in featured or []:
             if isinstance(e, dict) and e.get("_id") and e["_id"] not in found:
                 found[e["_id"]] = (e, by_id.get(_marketplace_id(e) or ""))
+        hosts = {_host(s.site_url), *(_host("https://" + m.domain) for m in s.marketplaces)}
+        listed_pages = {
+            (str((e.get("account") or {}).get("handler")), str(e.get("handler"))) for e, _ in found.values()
+        }
+        pages = [p for p in linked_pages([*s.event_pages, *self.linked_urls], hosts) if p not in listed_pages]
+        accounts: dict[str, dict[str, Any] | None] = {}
+        for acc, handler in pages:
+            if acc not in accounts:
+                accounts[acc] = await self.optional(
+                    f"account {acc}", self.get_json(f"{api}/user/account/getByHandler/{acc}", expect=dict)
+                )
+            account = accounts[acc]
+            if not account or not account.get("_id"):
+                continue
+            e = await self.optional(
+                f"linked event {acc}/{handler}",
+                self.get_json(f"{api}/event/getEventByHandler/{account['_id']}/{handler}", expect=dict),
+            )
+            if e and e.get("_id") and e["_id"] not in found:
+                # Unlisted (isPublic false) but sold through the link someone published: public.
+                e = {**e, "account": account, "isPublic": True}
+                found[e["_id"]] = (e, by_id.get(_marketplace_id(e) or ""))
+        self.log.debug("%d event pages linked from other sources and not listed", len(pages))
         now = datetime.now().astimezone()
         events: list[ScrapedEvent] = []
         for event_id, (e, m) in found.items():
@@ -113,6 +147,16 @@ class EasytixScraper(BaseScraper[EasytixSettings]):
 
         async for event in self.stream_isolated(events, with_tickets, lambda e: e.source_event_id):
             yield event
+
+
+def _host(url: str) -> str:
+    return (urlsplit(url).hostname or "").removeprefix("www.")
+
+
+def linked_pages(urls: list[str], hosts: set[str]) -> list[tuple[str, str]]:
+    """(account, event) handlers of the event pages among ``urls`` on these box offices, once each."""
+    found = (_PAGE.match(urlsplit(u).path) for u in urls if _host(u) in hosts)
+    return list(dict.fromkeys((m.group(1), m.group(2)) for m in found if m))
 
 
 def _marketplace_id(event: dict[str, Any]) -> str | None:
