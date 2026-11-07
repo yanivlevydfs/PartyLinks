@@ -273,7 +273,7 @@ class _StuckSource(_SlowSource):
 
 def test_a_source_that_stops_finding_events_is_closed_by_the_stall_limit(tmp_path: Path, monkeypatch: Any) -> None:
     service, db = make_service(tmp_path)
-    service.settings.scheduler.stall_timeout_seconds = 0.5  # long before its own 30-min limit
+    service.settings.scheduler.stall_timeout_seconds = 0.5  # long before the run limit
     monkeypatch.setattr(service_module, "build_scraper", lambda name, settings: _StuckSource(service._stopping))
 
     result = service.start_source("goout", trigger="test").result(timeout=30)

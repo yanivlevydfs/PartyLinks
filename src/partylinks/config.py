@@ -132,7 +132,7 @@ class SchedulerSettings(BaseModel):
     stale_after_hours: float = Field(12, gt=0)
     # The one limit for every source's run, scrape and post-processing (images, regroup, geocode)
     # together; no source has its own. A run past it is stopped and recorded as failed.
-    run_timeout_seconds: float = Field(3600, gt=0)
+    run_timeout_seconds: float = Field(10800, gt=0)
     # A run that brings no new event for this long is stuck: stopped and recorded as failed, however
     # long its own limit. Big sources run for hours only while they keep finding events.
     stall_timeout_seconds: float = Field(900, gt=0)

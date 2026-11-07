@@ -294,11 +294,12 @@ scheduler:
   # Run every enabled source once when the API process starts.
   run_on_startup: false
   misfire_grace_seconds: 600
-  # One limit for every source, no per-source overrides. Each source runs on its own thread; a run
-  # (scrape, then its images, regroup and geocode) past this is stopped, keeps what it saved, and is
+  # One limit for every source, no per-source overrides: a safety net for the biggest sources
+  # (makore, funzing, ogo, posh: 20-30k events). Each source runs on its own thread; a run (scrape,
+  # then its images, regroup and geocode) past this is stopped, keeps what it saved, and is
   # recorded as failed. Images left over load on the next run.
-  run_timeout_seconds: 3600
-  # A run with no new event for this long is stuck: closed and recorded as failed at once.
+  run_timeout_seconds: 10800
+  # What closes a broken source: a run with no new event for this long is stuck, closed at once.
   stall_timeout_seconds: 900
   # Scheduler and sources in a worker process of their own (partylinks/worker): scraping never slows the
   # site. The web process starts it, restarts it if it exits, and talks to it through the database.
