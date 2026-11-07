@@ -11,9 +11,13 @@ Dates carry a ``Z`` but are the wall clock in Israel ("2026-11-07T21:00:00Z" is 
 Placeholder ends (equal to the start, or on a later day: a course's last meeting) are dropped.
 
 Most rows (``sourceSystem`` makefet / smartticket, ~555) mirror the municipal Smarticket box
-offices (``makefet`` and ``petah-tikva`` hosts, read by the smarticket source), so they are
-skipped. The rest are what this adds: the municipal market (WooCommerce), Tickchak, Na'amat,
-registration forms and free events. Zoom lectures are skipped (online).
+offices (``makefet`` and ``petah-tikva`` hosts). The smarticket source reads those, but keeps only
+three of makefet's categories, so ~30 shows and workshops a month (Beit Yehudi Teiman, Beit
+HaMuza, Ofra Haza hall) exist only here. They are kept, their link rewritten to the Smarticket
+event page (the site writes ``/event//event/<id>``), so dedup joins the copies smarticket has.
+Weekly classes (``skip_title_words``: "קבוצה ראשונה", "חוג", baby groups) and Zoom lectures are
+skipped. The other rows are the municipal market (WooCommerce), Tickchak, Na'amat, registration
+forms and free events.
 """
 
 from __future__ import annotations
@@ -39,8 +43,8 @@ class PetahTikvaMuniSettings(SourceSettings):
     api_url: str  # https://api.petah-tikva.muni.il  (the proxy, media under /media/)
     city: str
     page_size: int = 5000
-    # Rows copied from Smarticket box offices the smarticket source reads.
-    mirror_systems: list[str] = Field(default_factory=lambda: ["makefet", "smartticket"])
+    # Weekly classes and groups the box offices sell (not events).
+    skip_title_words: list[str] = Field(default_factory=list)
     # Halls the market rows name without an address (substring of the venue -> street, from the
     # site's own event texts), so geocoding can place them.
     venue_addresses: dict[str, str] = Field(default_factory=dict)
@@ -105,14 +109,14 @@ def _genres(categories: Any, groups: list[str]) -> list[str]:
 
 
 def parse_event(item: dict[str, Any], s: PetahTikvaMuniSettings, timezone: str) -> ScrapedEvent | None:
-    """One delivery-API row; None for a Smarticket mirror or an online event."""
+    """One delivery-API row; None for a weekly class or an online event."""
     p = item.get("properties") or {}
-    if p.get("sourceSystem") in s.mirror_systems:
-        return None
     place = clean_str(p.get("location")) or ""
     if p.get("onlineEvent") or place.casefold() in s.online_places:
         return None
     title = clean_str(p.get("title")) or clean_str(item.get("name"))
+    if title and any(w in title for w in s.skip_title_words):
+        return None
     start = _wall_clock(p.get("startDate"), timezone)
     path = (item.get("route") or {}).get("path")
     if not title or not start or not path:
@@ -139,6 +143,8 @@ def parse_event(item: dict[str, Any], s: PetahTikvaMuniSettings, timezone: str) 
         else []
     )
     link = next((clean_str(r.get("url")) for r in p.get("registerLink") or [] if clean_str(r.get("url"))), None)
+    if link:
+        link = link.replace("/event//event/", "/event/")  # = the smarticket source's event url
     media = next((m.get("url") for m in p.get("image") or [] if m.get("url")), None)
     image = clean_str(p.get("imageLink")) or (s.api_url + quote(media) if media else None)
     return ScrapedEvent(

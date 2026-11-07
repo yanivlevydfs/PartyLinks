@@ -26,9 +26,18 @@ S = PetahTikvaMuniSettings(
 )
 
 
-def test_smarticket_mirror_and_zoom_lecture_are_skipped() -> None:
-    assert parse_event(ROWS["5472"], S, TZ) is None  # makefet.smarticket.co.il, read by smarticket
+def test_zoom_lecture_and_weekly_class_are_skipped() -> None:
     assert parse_event(ROWS["how-to-plan-a-city-10-11-2026"], S, TZ) is None  # ZOOM
+    weekly = S.model_copy(update={"skip_title_words": ["סינטרה"]})
+    assert parse_event(ROWS["5472"], weekly, TZ) is None
+
+
+def test_smarticket_mirror_links_to_the_smarticket_event() -> None:
+    e = parse_event(ROWS["5472"], S, TZ)  # makefet's copy: dedup joins it to smarticket's row by this link
+    assert e is not None
+    assert e.extra["purchase_url"] == "https://makefet.smarticket.co.il/event/5472"
+    assert e.start_at == datetime(2026, 11, 7, 21, 0, tzinfo=zone(TZ))
+    assert (e.venue_name, e.address) == ("תיאטרון המסילה", "האחים בכר 3 פתח תקווה")
 
 
 def test_hall_with_its_address_under_it() -> None:

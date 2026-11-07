@@ -3096,8 +3096,9 @@ sources:
   petahtikvamuni:
     # Petah Tikva municipality (Next.js over headless Umbraco): one Delivery API request through
     # api.petah-tikva.muni.il lists every coming event (~580). Rows mirroring the makefet /
-    # petah-tikva Smarticket box offices (~555, read by smarticket) and Zoom lectures are skipped;
-    # the rest (~15: municipal market, Tickchak, forms, free events) keep their link as purchase_url.
+    # petah-tikva Smarticket box offices are kept with the Smarticket event as purchase_url (dedup
+    # joins smarticket's copies; smarticket keeps 3 makefet categories only); weekly classes and
+    # Zoom lectures are skipped.
     enabled: true
     # The market's images (market.petah-tikva.muni.il) answer Railway's IP and the proxy with 403, an
     # Israeli IP with 200; artwork goes out on the run's own route (Nov 2026).
@@ -3106,6 +3107,9 @@ sources:
     site_url: https://www.petah-tikva.muni.il
     api_url: https://api.petah-tikva.muni.il
     city: פתח תקווה
+    skip_title_words: ["קבוצה ראשונה", "קבוצה שניה", "קבוצה שנייה", "קבוצה שלישית", "קבוצת הורים", "חוג", "קורס",
+                       "מפגש בוקר", "בחופשת לידה", "משחקיה", "מפגשים", "ימי ראשון", "ימי שני", "ימי שלישי",
+                       "ימי רביעי", "ימי חמישי", "לגילי"]
     venue_addresses:   # streets the event texts give; Nominatim knows these, not the hall names
       "ספריית מנגינות": "מבצע דקל 3"
       "מרכז למשפחות": "שם טוב 26"
