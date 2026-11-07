@@ -3000,6 +3000,7 @@ sources:
       - {url: https://www.beer-tuvia.org.il, city: מועצה אזורית באר טוביה, regional: true}
       # The council site (golan.org.il) lists the same events, linking to its matnas's pages.
       - {url: https://www.mkgolan.co.il, city: מועצה אזורית גולן, regional: true, organizer: המרכז הקהילתי גולן}
+      - {url: https://www.menashe.co.il, city: מועצה אזורית מנשה, regional: true}  # its Smarticket hall rows are skipped
       - {url: https://www.bns.org.il, city: מועצה אזורית בני שמעון, regional: true}
       - {url: https://www.ganrave.org.il, city: מועצה אזורית גן רווה, regional: true}
       - {url: https://www.dsharon.org.il, city: מועצה אזורית דרום השרון, regional: true}
@@ -3218,6 +3219,7 @@ sources:
       - {url: https://www.elkana.org.il, city: אלקנה, months: 2}
       - {url: https://www.givatzeev.org.il, city: גבעת זאב}
       - {url: https://www.yeruham.org.il, city: ירוחם}
+      - {url: https://www.atlit.org.il, city: עתלית}
       - {url: https://www.m-sdotnegev.org.il, city: שדות נגב, localities: [בית הגדי, זמרת, שובה, כפר מימון, תושיה, תקומה, שוקדה, יושיביה, שיבולים, סעד, עלומים]}
       - {url: https://www.mka.org.il, city: אזור}
       - {url: https://www.hof-hasharon.atarix.co.il, city: חוף השרון, localities: [שפיים, געש, יקום, רשפון, בני ציון, חרוצים, תל יצחק, אודים, כפר נטר, גליל ים, נוף ים, ארסוף, בצרה, בית יהושע]}
