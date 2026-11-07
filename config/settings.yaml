@@ -3093,6 +3093,9 @@ sources:
     # petah-tikva Smarticket box offices (~555, read by smarticket) and Zoom lectures are skipped;
     # the rest (~15: municipal market, Tickchak, forms, free events) keep their link as purchase_url.
     enabled: true
+    # The market's images (market.petah-tikva.muni.il) answer Railway's IP and the proxy with 403, an
+    # Israeli IP with 200; artwork goes out on the run's own route (Nov 2026).
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "16 5,17 * * *"
     site_url: https://www.petah-tikva.muni.il
     api_url: https://api.petah-tikva.muni.il
