@@ -84,6 +84,11 @@ class DatabaseSettings(BaseModel):
     statement_timeout_ms: int = Field(120_000, ge=0)
     idle_in_transaction_timeout_ms: int = Field(300_000, ge=0)
     lock_timeout_ms: int = Field(60_000, ge=0)
+    # Parallel workers per query (PostgreSQL's max_parallel_workers_per_gather). 0: each query runs in one
+    # process. Parallel plans share data through /dev/shm, which is small on Railway's Postgres; with
+    # several sources saving at once it ran out ("could not resize shared memory segment ... No space
+    # left on device") and the run failed. Serial, the whole-table artwork join takes 0.4 s, not 0.3 s.
+    max_parallel_workers_per_gather: int = Field(0, ge=0)
     # TCP keepalives (seconds idle before the first probe, between probes, probes before giving up):
     # a connection whose peer vanished is dropped in about a minute instead of hanging.
     keepalive_idle: int = Field(30, ge=1)

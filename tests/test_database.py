@@ -47,6 +47,13 @@ def test_a_column_made_optional_drops_not_null(tmp_path: Path) -> None:
     assert columns["google_sub"]["nullable"] and not columns["email"]["nullable"] and "facebook_id" in columns
 
 
+def test_queries_run_without_parallel_workers(tmp_path: Path) -> None:
+    # Parallel plans filled Railway Postgres' small /dev/shm ("could not resize shared memory segment").
+    db = seed(settings_for(tmp_path), [])
+    with db.session(write=False) as session:
+        assert session.scalar(text("SHOW max_parallel_workers_per_gather")) == "0"
+
+
 def test_a_long_id_and_a_nul_character_never_cost_an_event(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     start = datetime.now(UTC) + timedelta(days=1)

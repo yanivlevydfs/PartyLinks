@@ -478,6 +478,7 @@ def _postgres_connect_args(options: DatabaseSettings) -> dict[str, Any]:
         "statement_timeout": options.statement_timeout_ms,
         "idle_in_transaction_session_timeout": options.idle_in_transaction_timeout_ms,
         "lock_timeout": options.lock_timeout_ms,
+        "max_parallel_workers_per_gather": options.max_parallel_workers_per_gather,
     }
     return {
         "connect_timeout": options.connect_timeout,

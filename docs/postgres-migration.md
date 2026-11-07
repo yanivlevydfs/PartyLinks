@@ -904,3 +904,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **אמנים דומים (`GET /artists/similar`):** ‏`SELECT lineup, genres, venue_slug FROM events WHERE <upcoming> AND is_primary AND lineup IS NOT NULL`, פעם ב-`similar.ttl_seconds` לכל process (אינדקס בזיכרון).
 - **הכי מבוקשים (`/top`, ‏`GET /top/list`):** ‏`SELECT events.* FROM events LEFT JOIN (SELECT event_id, count(*) FROM saved_events GROUP BY event_id) LEFT JOIN (SELECT event_id, count(*) FROM event_views WHERE day >= :since GROUP BY event_id) WHERE <upcoming, 7 ימים> ORDER BY <ציון> LIMIT :limit`; ז'אנרים עולים: ‏`SELECT genres FROM events WHERE <upcoming> AND first_seen_at >= :since`.
 - **Tests:** ‏`tests/test_evening.py`, ‏`tests/test_holiday_pages.py`, ‏`tests/test_discovery.py`.
+
+### 2026-11-07 (שאילתות בלי workers מקבילים: `max_parallel_workers_per_gather`)
+- **הבעיה:** ריצת goout נכשלה ב-`DiskFull: could not resize shared memory segment "/PostgreSQL..." to 8388608 bytes: No space left on device`. תוכנית מקבילית (Parallel Hash Join) מעבירה נתונים בין ה-workers דרך `/dev/shm`, שקטן ב-Postgres של Railway; כשכמה מקורות שמרו יחד הוא התמלא.
+- **התיקון:** הגדרה חדשה `database.max_parallel_workers_per_gather` (ברירת מחדל 0), נשלחת ב-`options` של כל חיבור (`db._postgres_connect_args`) כמו ה-timeouts. כל שאילתה רצה בתהליך אחד.
+- **מדידה בפרודקשן** (`_artwork_by_title`: `SELECT events.source, events.title, event_images.url FROM events JOIN event_images ... WHERE position = 0 AND downloaded_at IS NOT NULL`, ‏119,919 שורות, 5,060 קריאות): 0.31 ש' עם 2 workers, 0.40 ש' בלי.

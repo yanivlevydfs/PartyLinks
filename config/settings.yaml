@@ -24,6 +24,7 @@ database:
   statement_timeout_ms: 120000
   idle_in_transaction_timeout_ms: 300000
   lock_timeout_ms: 60000
+  max_parallel_workers_per_gather: 0   # serial queries: parallel ones filled Railway Postgres' /dev/shm (DiskFull)
   keepalive_idle: 30
   keepalive_interval: 10
   keepalive_count: 3
