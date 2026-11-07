@@ -2955,8 +2955,10 @@ sources:
     # upcoming events linking to ~40 sellers we mostly don't read (municipal halls, matnasim...);
     # extra.purchase_url lets dedup merge the rest. robots.txt disallows query strings and /filtered,
     # so the sitemap lists the event pages (date in the path) and each page's JSON-LD is read in
-    # Hebrew. One request per event and 429 above ~3 req/s. The whole horizon is read (~15k future
-    # pages, ~80 min): days_ahead 10 left ~11k events out (Nov 2026).
+    # Hebrew. One request per event. The whole horizon is read (~15k future pages): days_ahead 10 left
+    # ~11k events out (Nov 2026). At 2 at once with a 0.3 s delay a run read ~1 page/s and stopped at
+    # the 3 h limit with 11,141; from Railway the site answered 600 pages at 4 at once (5.4/s) and 8 at
+    # once (6.3/s) without a 429 (Nov 2026), so 4 at once, no delay: ~1 h.
     enabled: true
     proxied: false  # Cloudflare 403s the evomi pool's IPs; Railway's own IP gets 200 (Nov 2026)
     cron: "27 6,18 * * *"
@@ -2966,8 +2968,7 @@ sources:
     days_ahead: 730
     max_events: 30000
     http:
-      concurrency: 2
-      request_delay_seconds: 0.3
+      concurrency: 4
 
   mugics:
     # Mugics (mugics.com): a live-music board where musicians and venues post their shows (all of Israel).
