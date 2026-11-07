@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from decimal import Decimal
 from pathlib import Path
 
@@ -37,3 +38,16 @@ def test_place_without_address_and_cancelled_event() -> None:
     e = parse_item(items[0], "חיי-לילה", TZ)
     assert e is not None and e.source_event_id == "25f6fc42" and e.city is None and e.min_price is None
     assert parse_item(items[3], "חיי-לילה", TZ) is None  # EventCancelled, URL without a slug
+
+
+def test_series_page_lists_its_dates() -> None:
+    from partylinks.scrapers.makore import series_links
+
+    item = {"@type": "ListItem", "position": "1", "url": "https://www.makore.co.il/event/flute--c6064335"}
+    page = (
+        '<script type="application/ld+json">'
+        + json.dumps({"@type": "ItemList", "itemListElement": [item, item | {"position": "2"}]})
+        + "</script>"
+    )
+    assert series_links(page) == ["https://www.makore.co.il/event/flute--c6064335"]
+    assert series_links("<html></html>") == []

@@ -55,17 +55,19 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         seen: set[str] = set()
         retention = RetentionSettings()
+        series: dict[str, str] = {}  # series page -> category name
         for category in self.settings.categories:
             items = await self.optional(category, self._category(category))
+            name = unquote(category.rstrip("/").rsplit("/", 1)[-1])
             for item in items or []:
+                url = str(item.get("url") or "")
+                if "/series/" in url:  # one show's many dates: a tile with no date of its own
+                    series.setdefault(url, name)
+                    continue
                 try:
-                    event = parse_item(
-                        item,
-                        unquote(category.rstrip("/").rsplit("/", 1)[-1]),
-                        self.timezone,
-                    )
+                    event = parse_item(item, name, self.timezone)
                 except Exception as exc:  # noqa: BLE001 - isolate per-item failures
-                    self.record_failure(str(item.get("url")), exc)
+                    self.record_failure(url, exc)
                     continue
                 # Past and broken far dates (a category tile stamped 2031-06-30, a 2038-01-19 epoch) are left out.
                 if event is None or not is_current(
@@ -75,7 +77,34 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
                 if event.source_event_id not in seen:
                     seen.add(event.source_event_id)
                     yield event
-        self.log.debug("listed %d events", len(seen))
+        # A series page lists its dates' event pages; each page's JSON-LD Event is one listing item.
+        dated: dict[str, str] = {}
+        async for links in self.stream_isolated(list(series.items()), self._series_links, label=lambda p: p[0]):
+            for link, name in links:
+                found = _EVENT_ID.search(link)
+                if found and found.group(1) not in seen:
+                    dated.setdefault(link, name)
+        async for event in self.stream_isolated(list(dated.items()), self._event_page, label=lambda p: p[0]):
+            if (
+                event is None
+                or event.source_event_id in seen
+                or not is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known)
+            ):
+                continue
+            seen.add(event.source_event_id)
+            yield event
+        self.log.debug("listed %d events (%d series, %d series dates)", len(seen), len(series), len(dated))
+
+    async def _series_links(self, page: tuple[str, str]) -> list[tuple[str, str]]:
+        url, name = page
+        return [(link, name) for link in series_links(await self.get_text(url))]
+
+    async def _event_page(self, page: tuple[str, str]) -> ScrapedEvent | None:
+        url, name = page
+        nodes = [n for n in jsonld_nodes(await self.get_text(url)) if "event" in schema_types(n)]
+        if not nodes:
+            raise ParseError(f"{url}: no Event JSON-LD")
+        return parse_item(nodes[0], name, self.timezone)
 
     async def _category(self, path: str) -> list[dict[str, Any]]:
         s = self.settings
@@ -99,7 +128,18 @@ def parse_listing(page_html: str) -> list[dict[str, Any]]:
     lists = [n for n in jsonld_nodes(page_html) if "itemlist" in schema_types(n)]
     if not lists:
         raise ParseError("no ItemList on the category page")
-    return [e["item"] for e in lists[0].get("itemListElement") or [] if isinstance(e, dict) and isinstance(e.get("item"), dict)]
+    return [
+        e["item"]
+        for e in lists[0].get("itemListElement") or []
+        if isinstance(e, dict) and isinstance(e.get("item"), dict)
+    ]
+
+
+def series_links(page_html: str) -> list[str]:
+    """The event pages a series page lists (its ``ItemList``), once each."""
+    lists = [n for n in jsonld_nodes(page_html) if "itemlist" in schema_types(n)]
+    items = lists[0].get("itemListElement") or [] if lists else []
+    return list(dict.fromkeys(u for e in items if isinstance(e, dict) and (u := clean_str(e.get("url")))))
 
 
 def listing_total(page_html: str) -> int | None:
