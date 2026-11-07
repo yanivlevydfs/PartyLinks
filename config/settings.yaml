@@ -2298,7 +2298,8 @@ sources:
     # Vibez (vibez.io): ticketing for communities and party producers (raves, ecstatic dance, club
     # nights). Public JSON API: 5 pages of 20 upcoming events, then each event's description and
     # ticket tiers (2 requests an event, ~90 events). No categories: genres come from the text.
-    # robots.txt is absent.
+    # Unlisted events too: each producer's catalogue (/projects/{id}/events, ~40 requests) adds the
+    # coming events it sells by link only (Dopamine's Sunday Sauna, Nov 2026). robots.txt is absent.
     enabled: true
     cron: "36 8,20 * * *"
     site_url: https://web.vibez.io

@@ -5,6 +5,11 @@ Listing: ``/events?page=N`` gives 20 upcoming events a page (5 pages, ~90): name
 cover and producer. Details: ``/events/{id}`` adds the description (HTML), and
 ``/events/{id}/products`` the ticket tiers with price, stock and sale window. The site has no
 categories (``tags`` is always empty), so genres come from the name and description.
+
+Unlisted events (a producer's event out of the public listing, sold through a link it posts, e.g. a
+Facebook ad) are read too: ``/projects/{id}/events`` gives each producer's whole catalogue, past ones
+included, so every producer seen in the listing (~40) adds its coming events (one request each;
+past ones are left out before any detail request).
 """
 
 from __future__ import annotations
@@ -62,10 +67,27 @@ class VibezScraper(BaseScraper[VibezSettings]):
                 raise
             if not items:
                 break
-            listed.update((i["id"], i) for i in items if isinstance(i, dict) and i.get("id"))
+            # The listing keeps an event its producer never closed (a September date in November).
+            listed.update(
+                (i["id"], i) for i in items if isinstance(i, dict) and i.get("id") and _coming(i, self.timezone)
+            )
         if not listed:
             raise ParseError("the event listing is empty")
         self.log.debug("listed %d events", len(listed))
+        projects = {pid for i in listed.values() if (pid := clean_str((i.get("project") or {}).get("id")))}
+        for pid in sorted(projects):
+            payload = await self.optional(
+                f"project {pid}", self.get_json(f"{s.api_url}/projects/{pid}/events", expect=dict)
+            )
+            for item in (payload or {}).get("events") or []:
+                if (
+                    isinstance(item, dict)
+                    and item.get("id")
+                    and item["id"] not in listed
+                    and _coming(item, self.timezone)
+                ):
+                    listed[item["id"]] = item
+        self.log.debug("%d events with the producers' unlisted ones", len(listed))
         async for event in self.stream_isolated(list(listed), self._fetch_event, label=lambda i: i):
             yield event
 
@@ -74,6 +96,16 @@ class VibezScraper(BaseScraper[VibezSettings]):
         detail = (await self.get_json(f"{s.api_url}/events/{event_id}")).get("event") or {}
         products = (await self.get_json(f"{s.api_url}/events/{event_id}/products")).get("products") or []
         return parse_event(detail, products, s.site_url, self.timezone)
+
+
+def _coming(item: dict[str, Any], timezone: str) -> bool:
+    """Not over yet (its end, else its start, is ahead): past catalogue rows get no detail request."""
+    zone = item.get("timezone") or timezone
+    start, end = parse_iso(item.get("start_time"), zone), parse_iso(item.get("end_time"), zone)
+    if start and end and end - start > MAX_SPAN:  # a placeholder end weeks on (parse_event drops it too)
+        end = None
+    when = end or start
+    return bool(when and when > datetime.now(when.tzinfo))
 
 
 def parse_event(

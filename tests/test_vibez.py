@@ -64,7 +64,9 @@ def test_country_of_an_event_abroad() -> None:
     item = {"id": "x", "name": "Full Moon", "start_time": "2026-11-05T20:00:00Z", "status": "active"}
 
     def country(zone: str, place: str, currency: str = "ILS") -> str | None:
-        event = vibez.parse_event({**item, "timezone": zone, "location": place, "project": {"currency": currency}}, [], SITE, TZ)
+        event = vibez.parse_event(
+            {**item, "timezone": zone, "location": place, "project": {"currency": currency}}, [], SITE, TZ
+        )
         assert event is not None
         return event.country
 
@@ -74,3 +76,13 @@ def test_country_of_an_event_abroad() -> None:
     assert country("Europe/Moscow", "Greece", "EUR") == "GR"  # the place wins over a wrong zone
     assert country("Indian/Mahe", "YEHUDA HALEVI 19") is None  # shekels: a wrong zone, in Israel
     assert country("Asia/Hebron", "מצפה") is None and country("Asia/Jerusalem", "Duplex Club") is None
+
+
+def test_coming_leaves_out_past_catalogue_rows_and_placeholder_ends() -> None:
+    from partylinks.scrapers.vibez import _coming
+
+    tz = "Asia/Jerusalem"
+    assert _coming({"start_time": "2099-11-08T19:00:00.000Z", "end_time": "2099-11-09T00:00:00.000Z"}, tz)
+    assert not _coming({"start_time": "2025-03-14T11:30:00.000Z", "end_time": "2025-03-14T20:00:00.000Z"}, tz)
+    # Sabaya: a September start with an end months on is over, not still running.
+    assert not _coming({"start_time": "2026-09-15T12:00:00.000Z", "end_time": "2099-01-01T00:00:00.000Z"}, tz)
