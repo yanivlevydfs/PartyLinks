@@ -2189,13 +2189,16 @@ sources:
     # endpoint lists ~1,600 upcoming events (100 a page); /sitemap-events-recent.xml adds the rest
     # (entries with a lastmod are upcoming), each event page's RSC payload gives address,
     # coordinates, description and currency: ~24,000 requests a run (~21,000 events). Through the
-    # proxy each request takes ~4 s: at 6 at once the run read 16,881 in the 3 h limit (Nov 2026).
-    # Times stay in each venue's own zone. Events abroad go to the abroad section.
+    # proxy each request took ~4 s: the run stopped at the 3 h limit with 16,881 at 6 at once and
+    # 13,622 at 16. From Railway's own IP a page takes 0.25 s (300 pages, all 200, 30-87/s; Nov
+    # 2026): no proxy, 8 at once, ~15 min. Times stay in each venue's own zone. Events abroad go to
+    # the abroad section.
     enabled: true
+    proxied: false
     cron: "17 9,21 * * *"
     site_url: https://posh.vip
     http:
-      concurrency: 16
+      concurrency: 8
 
   eventbrite:
     # Eventbrite (eventbrite.com): conferences, meetups, workshops, tours and parties in Israel. The
