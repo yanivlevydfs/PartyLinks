@@ -7,4 +7,5 @@ export const GENRE_ICON: Record<string, string> = {
   sport: "⚽", happy_hour: "🥂", theatre: "🎭", kids: "🧸", lectures: "📚", tours: "🗺️", dance: "🩰", yoga_wellness: "🧘",
   escape_rooms: "🔐", attractions: "🎡", coffee_carts: "☕", fine_dining: "🍷", kosher: "✡️", work_spaces: "💼", volunteering: "🤲",
   team_activities: "🧩", nightclubs: "🪩", pools: "🏊", pool_party: "🏖️", nature_party: "🌲", open_bar: "🍸", over_40: "🕺", youth: "🎒",
+  psytrance: "🍄", metal: "🤘", blues: "🎺", kpop: "💜", country: "🤠", flamenco: "💃", jewish_music: "🕎", klezmer: "🎻", singalong: "🎶",
 };

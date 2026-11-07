@@ -230,17 +230,20 @@ class Enricher:
         self.settings = settings
         self.tz = ZoneInfo(timezone)
         self._genres = {
-            genre: pattern for genre, words in settings.genres.items() if (pattern := _genre_pattern(words))
+            genre: pattern for genre, words in settings.genres.items() if (pattern := _genre_pattern(_unquoted(words)))
         }
         self._declared = {
             genre: pattern
             for genre, words in settings.declared_genres.items()
-            if (pattern := _place_pattern(words, prefixes=2))
+            if (pattern := _genre_pattern(_unquoted(words)))  # a declared "organic house" is no "organic" chill
         }
-        self._talk = _place_pattern(settings.talk_keywords, prefixes=2)
+        self._talk = _place_pattern(_unquoted(settings.talk_keywords), prefixes=2)
         self._fallback = {
-            genre: pattern for genre, words in settings.fallback_genres.items() if (pattern := _place_pattern(words, prefixes=2))
+            genre: pattern
+            for genre, words in settings.fallback_genres.items()
+            if (pattern := _place_pattern(_unquoted(words), prefixes=2))
         }
+        self._text_ignore = _unquoted([p.lower() for p in settings.text_ignore])
         self._free = _keyword_pattern(settings.free_entry_keywords)
         self._pay_at_door = _keyword_pattern(settings.pay_at_door_keywords)
         self._coupon = _keyword_pattern(settings.coupon_keywords)
@@ -338,28 +341,29 @@ class Enricher:
     def _detect_genres(self, event: ScrapedEvent) -> list[str]:
         ignore = tuple(p.lower() for p in self.settings.declared_ignore)
         declared = " | ".join(d for d in (x.lower() for x in [*event.source_genres, *event.event_types]) if not d.startswith(ignore))
-        talk = self._talk is not None and self._talk.search(event.title.lower())
+        declared = declared.translate(_QUOTES)
+        talk = self._talk is not None and self._talk.search(event.title.lower().translate(_QUOTES))
         read_text = self.settings.detect_genres_from_text and event.source not in self.settings.declared_genres_only
         # A talk's description names its subject, not its kind: only its title is read, for the talk genres.
         text = (event.title if talk else f"{event.title}\n{event.description or ''}").lower() if read_text else ""
-        text = _LINKS.sub(" ", text)  # "info@bg-house.org" is not house music
-        for phrase in self.settings.text_ignore:
-            text = text.replace(phrase.lower(), " ")
+        text = _LINKS.sub(" ", text).translate(_QUOTES)  # "info@bg-house.org" is not house music
+        for phrase in self._text_ignore:
+            text = text.replace(phrase, " ")
         found = {genre for genre, pattern in self._genres.items() if pattern.search(declared)}
         # "tech house" is music, not the declared category "tech".
         found |= {genre for genre, pattern in self._declared.items() if pattern.search(declared.replace("tech house", ""))}
         from_text = {genre for genre, pattern in self._genres.items() if pattern.search(text)}
         declared_only = set(self.settings.expand_genres(self.settings.declared_text_genres))
         if not found & declared_only:
-            title = event.title.lower()
-            for phrase in self.settings.text_ignore:
-                title = title.replace(phrase.lower(), " ")
+            title = event.title.lower().translate(_QUOTES)
+            for phrase in self._text_ignore:
+                title = title.replace(phrase, " ")
             from_text -= {g for g in declared_only if g not in self._genres or not self._genres[g].search(title)}
         # A tech talk or conference ("Israeli startups", "the music industry's AI") has a subject, not a
         # music genre: its text is read only for the talk genres.
         talk_genres = set(self.settings.expand_genres(self.settings.talk_genres))
         title_only = set(self.settings.title_genres)
-        title = event.title.lower()
+        title = event.title.lower().translate(_QUOTES)
         from_text -= {g for g in title_only if g in self._genres and not self._genres[g].search(title)}
         if talk:  # its title: the talk genres and the title-only ones ("סדנת בישול", "הרצאה על...")
             from_text &= talk_genres | title_only
@@ -367,9 +371,9 @@ class Enricher:
             from_text &= talk_genres
         if found | from_text:
             return sorted(found | from_text)
-        whole = _LINKS.sub(" ", f"{event.title}\n{event.description or ''}".lower())
-        for phrase in self.settings.text_ignore:
-            whole = whole.replace(phrase.lower(), " ")
+        whole = _LINKS.sub(" ", f"{event.title}\n{event.description or ''}".lower()).translate(_QUOTES)
+        for phrase in self._text_ignore:
+            whole = whole.replace(phrase, " ")
         # The show's own words first ("תזמורת" at a culture hall is a concert), then the source's usual kind.
         if fallback := sorted(g for g, pattern in self._fallback.items() if pattern.search(whole)):
             return fallback
@@ -696,6 +700,14 @@ def _in_boxes(region: RegionSettings, latitude: float, longitude: float) -> bool
 NOT_A_PLACE_IN_NAMES = frozenset({"צפון", "הצפון", "גולן", "אילת", "שדרות", "אשכול", "גלילות"})
 
 
+# Hebrew geresh / gershayim and curly quotes read as the ASCII ones: "ג׳אז", "ג’אז" and "ג'אז" are one word.
+_QUOTES = str.maketrans({"׳": "'", "’": "'", "‘": "'", "`": "'", "״": '"', "“": '"', "”": '"'})
+
+
+def _unquoted(words: list[str]) -> list[str]:
+    return [w.translate(_QUOTES) for w in words]
+
+
 # A word before "house" names a house sub-genre: "organic house", "chill house" are house only.
 _HOUSE_NEXT = r"(?!\s+(?:house|האוס))"
 
@@ -713,13 +725,20 @@ def _place_pattern(names: list[str], prefixes: int = 1, after: str = "") -> re.P
     words ("יפו" inside "פטיפון" made a Rishon LeZion bar count as Tel Aviv, "טכנו" inside
     "טכנולוגיים" made a lecture techno), but may carry attached Hebrew prefix letters
     ("ביפו", "מתל אביב", "והטכנו")."""
+    # One boundary around all the names of a kind, not one per name: a genre has dozens of words and
+    # every event's text is searched for each genre.
+    latin = "|".join(_spaced(n) for n in names if n.strip() and n.isascii())
+    other = "|".join(_spaced(n) for n in names if n.strip() and not n.isascii())
     parts = [
-        rf"(?<![\w]){re.escape(n.lower())}(?![\w]){after}" if n.isascii()
-        else rf"(?<![\w])[ובהלמשכ]{{0,{prefixes}}}{re.escape(n.lower())}(?![\w]){after}"
-        for n in names
-        if n.strip()
+        *([rf"(?<![\w])(?:{latin})(?![\w]){after}"] if latin else []),
+        *([rf"(?<![\w])[ובהלמשכ]{{0,{prefixes}}}(?:{other})(?![\w]){after}"] if other else []),
     ]
     return re.compile("|".join(parts)) if parts else None
+
+
+def _spaced(name: str) -> str:
+    """A name's spaces and hyphens match a space, hyphen or maqaf: "hip hop" finds "hip-hop", "תל אביב" "תל-אביב"."""
+    return re.sub(r"(?:\\ |\\-)+", lambda _: r"[\s\-־]+", re.escape(name.lower()))
 
 
 def _free_entry_until(event: ScrapedEvent) -> datetime | None:

@@ -399,47 +399,140 @@ enrichment:
   # Canonical genre -> keywords, matched case-insensitively against the genres and
   # event types each source declares and (if detect_genres_from_text) title + description.
   genres:
-    techno: ["techno", "melodic techno", "hard techno", "peak time", "industrial techno", "acid techno",
-             "minimal techno", "טכנו", "מלודיק טכנו"]
-    house: ["house", "deep house", "tech house", "progressive house", "melodic house", "organic house",
-            "afro house", "minimal", "האוס", "דיפ האוס", "טק האוס"]
-    trance: ["trance", "psytrance", "psy trance", "psy", "goa", "full on", "fullon", "progressive trance",
-             "forest", "טראנס", "טרנס", "פסיכדלי", "פסיכדלית", "גואה"]
-    hip_hop: ["hip hop", "hiphop", "hip-hop", "rap", "trap", "drill", "היפ הופ", "היפהופ", "ראפ", "טראפ"]
-    rnb: ["r&b", "rnb", "r'n'b", "soul", "neo soul", "ר&ב", "מוזיקת סול"]  # not "סול": a first name
-    mainstream: ["mainstream", "commercial", "top 40", "top40", "hits", "מיינסטרים", "להיטים", "קומרשיאל"]
-    pop: ["pop", "k-pop", "kpop", "פופ"]
-    reggaeton_latin: ["reggaeton", "latin", "latino", "salsa", "bachata", "kizomba", "cumbia", "dembow",
-                      "רגאטון", "לטינית", "לטיני", "סלסה", "בצ'אטה", "בצאטה"]
-    afro: ["afrobeats", "afrobeat", "afro beats", "amapiano", "afro", "אפרו", "אמאפיאנו"]
-    dancehall_reggae: ["dancehall", "reggae", "dub", "דאנסהול", "רגאיי", "רגאי"]
-    mizrahi: ["mizrahi", "eastern", "מזרחית", "מזרחי", "ים תיכוני", "ים תיכונית"]
-    # Not "עברית": Secret Tel Aviv marks the language of every event with it.
-    israeli: ["israeli", "israeli artists", "ישראלית", "ישראלי", "שירי ארץ ישראל"]
-    greek: ["greek", "יוונית", "יווני", "בוזוקי"]
-    arabic: ["arabic", "arab", "ערבית", "מוזיקה ערבית"]  # not "ערבי": also "evenings of" ("ערבי אלכוהול חופשי")
-    disco_funk: ["disco", "nu disco", "nu-disco", "funk", "boogie", "דיסקו", "פאנק"]
-    drum_and_bass: ["drum and bass", "drum & bass", "drum n bass", "dnb", "d&b", "jungle", "דראם אנד בייס"]
-    bass_dubstep: ["dubstep", "bass music", "riddim", "breakbeat", "breaks", "uk garage", "garage", "דאבסטפ"]
-    hardstyle: ["hardstyle", "hard dance", "hardcore", "gabber", "frenchcore", "uptempo", "breakcore", "הארדסטייל",
-                "פרנצ'קור"]
-    edm: ["edm", "big room", "electro house", "festival anthems"]
-    electronic: ["electronic", "electronica", "electro", "underground", "dj-set", "dj set", "rave", "אלקטרונית",
-                 "אלקטרוני", "אנדרגראונד", "רייב"]
-    downtempo_chill: ["downtempo", "chill", "chillout", "ambient", "lounge", "organic", "צ'יל", "לאונג'"]
+    # Sub-genres (genre_families) have keys of their own; a parent keeps its words, so an event named
+    # "deep house" is house and deep house. Bare words that are also plain words ("indie" games, "folk"
+    # tales, "metal" sculpture, "הקאנטרי" the sports club, "ישראלי" any adjective) are trusted only as a
+    # source's own category (declared_genres).
+    techno: ["techno", "melodic techno", "hard techno", "peak time", "peak time techno", "industrial techno", "acid techno",
+             "minimal techno", "detroit techno", "dub techno", "hypnotic techno", "deep techno", "dark techno", "raw techno",
+             "driving techno", "schranz", "hardgroove", "טכנו", "מלודיק טכנו", "טכנו מלודי", "הארד טכנו", "דיפ טכנו",
+             "אסיד טכנו", "מינימל טכנו", "טכנו אינדסטריאלי"]
+    hard_techno: ["hard techno", "hardtechno", "hardgroove", "schranz", "industrial techno", "הארד טכנו", "טכנו אינדסטריאלי"]
+    melodic_techno: ["melodic techno", "melodic house", "melodic house & techno", "melodic house and techno", "מלודיק טכנו",
+                     "מלודיק האוס", "טכנו מלודי"]
+    minimal_deep_tech: ["minimal deep tech", "deep tech", "minimal house", "minimal techno", "microhouse", "rominimal",
+                        "דיפ טק", "מינימל טכנו"]
+    # Any "X house" is house only (enrichment._genre_pattern): "organic house" is no chill, "afro house" no afro.
+    house: ["house", "deep house", "tech house", "progressive house", "melodic house", "organic house", "afro house",
+            "minimal house", "deep tech", "minimal deep tech", "האוס", "דיפ האוס", "טק האוס", "דיפ טק", "פרוגרסיב האוס",
+            "מלודיק האוס", "אפרו האוס", "אורגניק האוס", "האוס אורגני", "ג'קין האוס", "באס האוס", "פאנקי האוס"]
+    deep_house: ["deep house", "דיפ האוס"]
+    tech_house: ["tech house", "טק האוס"]
+    progressive_house: ["progressive house", "פרוגרסיב האוס"]
+    organic_house: ["organic house", "אורגניק האוס", "האוס אורגני"]
+    afro_house: ["afro house", "afro tech", "אפרו האוס", "אפרו טק"]
+    trance: ["trance", "psytrance", "psy trance", "psychedelic trance", "goa trance", "full on", "fullon",
+             "progressive trance", "progressive psy", "dark psy", "darkpsy", "forest psy", "uplifting trance", "vocal trance",
+             "tech trance", "hard trance", "acid trance", "eurotrance", "dream trance", "nitzhonot", "טראנס", "טרנס", "פסיי",
+             "פסי טראנס", "פסיי טראנס", "פסייטראנס", "פול און", "דארק פסיי", "פרוגרסיב טראנס", "פרוגרסיב פסיי",
+             "טראנס פסיכדלי", "מסיבה פסיכדלית", "מסיבות פסיכדליות"]
+    psytrance: ["psytrance", "psy trance", "psychedelic trance", "goa trance", "full on", "fullon", "dark psy", "darkpsy",
+                "forest psy", "progressive psy", "psyprog", "hard psy", "פסיי", "פסי טראנס", "פסיי טראנס", "פסייטראנס", "פול און",
+                "דארק פסיי", "פרוגרסיב פסיי", "טראנס פסיכדלי", "מסיבה פסיכדלית", "מסיבות פסיכדליות"]
+    hip_hop: ["hip hop", "hiphop", "rap", "boom bap", "gangsta rap", "conscious rap", "uk drill", "grime", "phonk",
+              "cloud rap", "crunk", "emo rap", "trap music", "היפ הופ", "היפהופ", "ראפ", "טראפ", "ראפ ישראלי", "בום באפ"]
+    rnb: ["r&b", "rnb", "r'n'b", "neo soul", "soul music", "northern soul", "rhythm and blues", "rhythm & blues",
+          "contemporary r&b", "motown", "new jack swing", "gospel", "ר&ב", "ר'נ'ב", "אר אנד בי", "מוזיקת סול", "ניו סול",
+          "גוספל", "מוטאון"]  # not "סול": a first name
+    mainstream: ["mainstream", "commercial", "top 40", "top40", "hits", "chart hits", "radio hits", "open format",
+                 "multi genre", "מיינסטרים", "להיטים", "קומרשיאל", "קומרשל", "טופ 40", "להיטי רדיו", "מולטי ז'אנר",
+                 "להיטים לועזיים", "מוזיקה לועזית"]
+    pop: ["pop", "k-pop", "kpop", "dance pop", "electropop", "europop", "eurodance", "hyperpop", "teen pop", "pop music",
+          "eurovision", "פופ", "אירוויזיון", "פופ ישראלי", "מוזיקת פופ"]
+    kpop: ["k-pop", "kpop", "j-pop", "jpop", "קיי פופ", "קי פופ", "ג'יי פופ"]
+    reggaeton_latin: ["reggaeton", "latin", "latino", "salsa", "bachata", "kizomba", "cumbia", "dembow", "latin trap",
+                      "urbano", "perreo", "moombahton", "merengue", "son cubano", "timba", "mambo", "zouk", "kompa",
+                      "regional mexicano", "mariachi", "corridos", "latin pop", "רגאטון", "רגטון", "לטינית", "לטיני",
+                      "לטינו", "סלסה", "בצ'אטה", "בצאטה", "פריאו", "קומביה", "מריאצ'י", "מרנגה"]
+    brazilian: ["samba", "bossa nova", "mpb", "forró", "forro", "pagode", "baile funk", "funk carioca", "brazilian funk",
+                "brazilian music", "סמבה", "בוסה נובה", "פורו", "מוזיקה ברזילאית"]
+    afro: ["afrobeats", "afrobeat", "afro beats", "afro beat", "amapiano", "afro", "afropop", "afroswing", "gqom",
+           "kwaito", "highlife", "afro fusion", "afrofusion", "אפרו", "אמאפיאנו", "אמפיאנו", "אפרוביט", "אפרוביטס",
+           "אפרו ביטס"]
+    amapiano: ["amapiano", "אמאפיאנו", "אמפיאנו"]
+    dancehall_reggae: ["dancehall", "reggae", "dub", "roots reggae", "ska", "rocksteady", "dub reggae", "lovers rock",
+                       "ragga", "soca", "calypso", "reggae fusion", "דאנסהול", "רגאיי", "רגאי", "רגיי", "ראגיי", "סקא"]
+    mizrahi: ["mizrahi", "mizrahit", "mizrahi music", "mediterranean music", "מזרחית", "מזרחי", "ים תיכוני",
+              "ים תיכונית", "מוזיקה מזרחית", "זמר מזרחי", "זמרת מזרחית", "פופ מזרחי", "רוק מזרחי", "מסיבה מזרחית",
+              "ערב מזרחי", "מוזיקה ים תיכונית", "חפלה", "חאפלה", "חפלות"]
+    # Not "עברית": Secret Tel Aviv marks the language of every event with it. Not bare "ישראלי" / "israeli"
+    # ("הפילהרמונית הישראלית", "Israeli cuisine"): declared only.
+    israeli: ["israeli artists", "israeli music", "hebrew music", "hebrew songs", "מוזיקה ישראלית", "מוזיקה עברית",
+              "זמר עברי", "שירים עבריים", "רוק ישראלי", "זמר ישראלי", "זמרת ישראלית", "שירים ישראליים",
+              "שירי ארץ ישראל", "מסיבה ישראלית", "מסיבות ישראליות", "להיטים ישראליים", "שירים ישראלים", "אמנים ישראלים",
+              "זמרים ישראלים", "ישראלית ומזרחית", "ישראלי ומזרחי", "ישראלית ולועזית", "ערב ישראלי",
+              "מוסיקה ישראלית", "המוזיקה הישראלית", "המוסיקה הישראלית", "הזמר הישראלי", "הזמרת הישראלית", "הפופ הישראלי",
+              "פופ ישראלי", "הרוק הישראלי", "הפסקול הישראלי", "השירים הישראליים", "קלאסיקה ישראלית", "חגיגה ישראלית",
+              "הזמר העברי", "השירים העבריים"]
+    singalong: ["שירה בציבור", "ערב שירה", "שירי ארץ ישראל", "קומזיץ", "singalong night", "sing along night"]
+    greek: ["greek music", "rebetiko", "laiko", "bouzouki", "sirtaki", "בוזוקי", "רבטיקו", "לאיקו", "ערב יווני",
+            "מוזיקה יוונית", "סירטאקי"]
+    arabic: ["arabic", "arab", "arabic music", "tarab", "dabke", "maqam", "shaabi", "mahraganat", "umm kulthum",
+             "fairuz", "ערבית", "מוזיקה ערבית", "טאראב", "דבקה", "מקאם", "אום כולתום", "פיירוז"]  # not "ערבי": also "evenings of" ("ערבי אלכוהול חופשי")
+    disco_funk: ["disco", "nu disco", "funk", "boogie", "italo disco", "space disco", "cosmic disco", "eurodisco",
+                 "hi-nrg", "post-disco", "jazz funk", "funky", "דיסקו", "פאנק", "ניו דיסקו", "נו דיסקו", "איטלו דיסקו",
+                 "פאנקי"]
+    drum_and_bass: ["drum and bass", "drum & bass", "drum n bass", "drum'n'bass", "drum n' bass", "dnb", "d&b", "d'n'b",
+                    "liquid dnb", "liquid funk", "neurofunk", "techstep", "darkstep", "ragga jungle", "דראם אנד בייס",
+                    "דראם אנד בס", "דראמנבייס"]
+    bass_dubstep: ["dubstep", "bass music", "riddim", "breakbeat", "uk garage", "brostep", "future bass", "midtempo",
+                   "uk bass", "2-step", "speed garage", "future garage", "jersey club", "glitch hop", "big beat", "דאבסטפ",
+                   "דאב סטפ", "בייס מיוזיק", "ברייקביט"]
+    hardstyle: ["hardstyle", "hard dance", "gabber", "frenchcore", "breakcore", "rawstyle", "euphoric hardstyle",
+                "happy hardcore", "uk hardcore", "speedcore", "terrorcore", "jumpstyle", "hardcore techno", "הארדסטייל",
+                "פרנצ'קור", "הארד דאנס", "גאבר"]
+    edm: ["edm", "big room", "electro house", "festival anthems", "mainstage", "future house", "complextro", "dutch house",
+          "melbourne bounce", "ביג רום"]
+    electronic: ["electronic", "electronica", "electro", "underground", "dj-set", "dj set", "rave", "electronic music",
+                 "idm", "live electronic", "electroclash", "אלקטרונית", "אלקטרוני", "אנדרגראונד", "רייב", "מוזיקה אלקטרונית",
+                 "די ג'יי סט", "דיג'יי סט"]
+    indie_dance: ["indie dance", "אינדי דאנס"]
+    downtempo_chill: ["downtempo", "chill", "chillout", "chill out", "ambient music", "trip hop", "lo-fi", "lofi",
+                      "chillhop", "psybient", "psychill", "psydub", "balearic", "chillwave", "צ'יל", "לאונג'", "טריפ הופ",
+                      "אמביינט", "אמביאנט", "דאונטמפו", "צ'יל אאוט"]
+    ambient: ["ambient music", "dark ambient", "drone music", "ambient set", "אמביינט", "אמביאנט"]
     throwback: ["70s", "80s", "90s", "2000s", "00s", "throwback", "retro", "nostalgia", "שנות ה-90", "שנות ה90",
                 "שנות ה-80", "שנות ה80", "נוסטלגיה", "רטרו"]
     # Decade pages (/genre/eighties, /genre/nineties): sub-genres of throwback (genre_families), which keeps
     # their keywords too, so an 80s party is still a throwback one.
     eighties: ["80s", "80's", "eighties", "שנות ה-80", "שנות ה80", "שנות ה 80", "שנות השמונים", "אייטיז"]
     nineties: ["90s", "90's", "nineties", "שנות ה-90", "שנות ה90", "שנות ה 90", "שנות התשעים", "ניינטיז"]
-    rock_indie: ["rock", "indie", "alternative", "metal", "metalcore", "punk", "grunge", "רוק", "אינדי", "אלטרנטיבי",
-                 "מטאל", "פאנק רוק", "גראנג'"]
-    dark_wave: ["dark wave", "darkwave", "new wave", "post punk", "post-punk", "synthwave", "synth wave", "dark synth",
-                "ebm", "dark electro", "goth", "דארק ווייב", "ניו ווייב", "פוסט פאנק", "גל חדש", "דארק אייטיז", "dark 80s",
-                "dark eighties", "synth pop", "synthpop", "synth-pop", "סינת'-פופ", "סינת' פופ", "סינת פופ"]  # not "gothic": costumes
-    jazz: ["jazz", "swing", "blues", "ג'אז", "גאז", "סווינג", "בלוז"]
-    world_balkan: ["balkan", "world music", "ethnic", "gypsy", "folk", "בלקן", "אתני", "מוזיקת עולם", "פולק", "קאנטרי"]
+    rock_indie: ["rock", "metalcore", "punk", "grunge", "rock n roll", "rock'n'roll", "rock and roll", "rockabilly",
+                 "classic rock", "hard rock", "prog rock", "progressive rock", "psychedelic rock", "stoner rock",
+                 "garage rock", "indie rock", "indie pop", "britpop", "shoegaze", "post-rock", "math rock", "alt rock",
+                 "alternative rock", "surf rock", "folk rock", "רוק", "אינדי", "מטאל", "פאנק רוק", "גראנג'", "רוקנרול",
+                 "רוק אנד רול", "רוק כבד", "רוק קלאסי", "רוק מתקדם", "רוק פסיכדלי", "רוק אלטרנטיבי", "בריטפופ",
+                 "פוסט רוק", "אינדי רוק", "אינדי פופ"]
+    metal: ["heavy metal", "thrash metal", "death metal", "black metal", "doom metal", "power metal", "progressive metal",
+            "prog metal", "nu metal", "metalcore", "deathcore", "symphonic metal", "folk metal", "metal night", "מטאל",
+            "הבי מטאל", "דת' מטאל", "בלאק מטאל", "מטאלקור", "ערב מטאל"]
+    # Not bare "punk" in text: "post punk" is dark wave (declared only). Not Hebrew "פאנק": also funk.
+    punk: ["punk rock", "pop punk", "hardcore punk", "post-hardcore", "ska punk", "פאנק רוק", "פופ פאנק", "פוסט הארדקור"]
+    dark_wave: ["dark wave", "darkwave", "new wave", "post punk", "synthwave", "synth wave", "dark synth", "ebm",
+                "dark electro", "goth", "coldwave", "cold wave", "minimal wave", "aggrotech", "futurepop", "gothic rock",
+                "goth rock", "deathrock", "new romantic", "darksynth", "retrowave", "דארק ווייב", "ניו ווייב", "פוסט פאנק",
+                "דארק אייטיז", "dark 80s", "dark eighties", "synth pop", "synthpop", "סינת' פופ", "סינת פופ", "קולד ווייב",
+                "סינתווייב"]  # not "gothic": costumes; not "גל חדש": "a new wave of..."
+    jazz: ["jazz", "swing", "bebop", "hard bop", "cool jazz", "free jazz", "modal jazz", "jazz fusion", "smooth jazz",
+           "acid jazz", "nu jazz", "latin jazz", "big band", "gypsy jazz", "jazz manouche", "manouche", "dixieland",
+           "ragtime", "ethio jazz", "ג'אז", "ג'ז", "גאז", "סווינג", "ביג בנד"]
+    blues: ["blues", "delta blues", "chicago blues", "electric blues", "blues rock", "blues night", "בלוז", "ערב בלוז"]
+    world_balkan: ["balkan", "world music", "gypsy", "balkan beats", "world beat", "worldbeat", "romani", "celtic",
+                   "irish folk", "bollywood", "persian music", "turkish music", "kurdish music", "ethiopian music",
+                   "african music", "folk music", "indie folk", "בלקן", "מוזיקת עולם", "בלקן ביטס", "מוזיקה בלקנית",
+                   "סלטית", "מוזיקה אירית", "בוליווד", "מוזיקה הודית", "מוזיקה פרסית", "מוזיקה טורקית", "מוזיקה כורדית",
+                   "מוזיקה אתיופית", "מוזיקה אפריקאית", "מוזיקת פולק"]
+    country: ["country music", "country night", "bluegrass", "honky tonk", "line dance", "line dancing", "מוזיקת קאנטרי",
+              "ערב קאנטרי", "קאנטרי אמריקאי", "ליין דאנס"]
+    flamenco: ["flamenco", "פלמנקו"]
+    chanson: ["chanson", "french chanson", "шансон", "שאנסון", "שנסון", "שאנסון רוסי"]
+    jewish_music: ["jewish music", "chazanut", "cantorial", "ladino songs", "yiddish songs", "מוזיקה יהודית", "חזנות",
+                   "קונצרט חזנות", "שירי לדינו", "שירי יידיש", "קבלת שבת מוזיקלית", "קונצרט סליחות"]
+    hasidic: ["hasidic music", "chassidic music", "niggunim", "מוזיקה חסידית", "שירה חסידית", "ניגונים חסידיים",
+              "ניגוני חסידים", "ניגוני ברסלב"]
+    piyut: ["piyut", "piyyut", "andalusian orchestra", "פיוט", "פיוטים", "שירת הבקשות", "התזמורת האנדלוסית",
+            "מוזיקה אנדלוסית", "שירה תימנית", "שירת תימן"]
+    klezmer: ["klezmer", "כליזמר", "קלזמר", "כליזמרים"]
     # Not "concert": Selector labels every party "Concert".
     live_show: ["live show", "liveshow", "live shows", "live band", "הופעה חיה", "מופע חי", "מופעי לייב"]
     lgbt: ["lgbt", "lgbtq", "gay", "queer", "pride", "drag", "להט\"ב", "גאווה", "דראג"]
@@ -485,10 +578,16 @@ enrichment:
     gaming: ["game dev", "gamedev", "game development", "פיתוח משחקים", "esports", "גיימינג"]
     web3: ["web3", "blockchain", "בלוקצ'יין", "בלוקצ׳יין", "crypto", "קריפטו", "defi"]
     conference: ["conference", "summit", "expo", "כנס", "כנסים", "ועידה", "ועידת"]
-    # Not "קאמרי": that is the Cameri Theatre.
-    classical_opera: ["opera", "אופרה", "אופרות", "classical music", "chamber music", "מוזיקה קלאסית", "קלאסית",
-                      "קאמרית", "מוזיקה קאמרית", "symphony", "סימפונית", "philharmonic", "פילהרמונית",
-                      "recital", "רסיטל", "string quartet", "רביעיית מיתרים", "mozart", "מוצרט", "beethoven", "בטהובן"]
+    # Not "קאמרי": that is the Cameri Theatre. Not bare "קלאסית" / "קאמרית" ("גרסה קלאסית", "הצגה קאמרית"):
+    # declared only. Not "בך" ("in you"), "ברוק" (ב+רוק), "ורדי".
+    classical_opera: ["opera", "אופרה", "אופרות", "classical music", "chamber music", "מוזיקה קלאסית", "מוזיקה קאמרית",
+                      "symphony", "סימפונית", "philharmonic", "פילהרמונית", "recital", "רסיטל", "string quartet",
+                      "רביעיית מיתרים", "mozart", "מוצרט", "beethoven", "בטהובן", "baroque", "בארוק", "symphony orchestra",
+                      "sonata", "oratorio", "requiem", "operetta", "early music", "piano recital", "neoclassical",
+                      "contemporary classical", "תזמורת סימפונית", "קונצ'רטו", "סונטה", "אורטוריה", "רקוויאם", "אופרטה",
+                      "מוזיקה עתיקה", "רסיטל פסנתר", "קונצרט קלאסי", "vivaldi", "ויוואלדי", "chopin", "שופן",
+                      "tchaikovsky", "brahms", "ברהמס", "schubert", "שוברט", "haydn", "handel", "puccini",
+                      "פוצ'יני", "rachmaninoff", "רחמנינוב", "mahler", "מאהלר", "bach", "verdi"]
     # Films and screenings. Not plain "סרט" / "film" (mentioned in passing) or "cinema" / "סינמה" (Cinema
     # City also hosts shows).
     # Not plain "קולנוע" in text ("מסכי הטלוויזיה והקולנוע"): cinema sources declare it (below).
@@ -568,12 +667,27 @@ enrichment:
     sport: ["sport", "sports", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
             "מרוץ", "אופניים", "אימוני כושר", "קבוצת הליכה", "פוצ'יוולי", "footvolley", "urheilu", "אקסטרים"]
     yoga_wellness: ["wellness", "health", "בריאות", "פילאטיס", "עיסוי"]
-    classical_opera: ["classical", "קלאסי", "música clásica", "opéra", "opérette"]
+    classical_opera: ["classical", "קלאסי", "música clásica", "opéra", "opérette", "קלאסית", "קאמרית"]
+    # Genres only as a source's own category: in text these are plain words ("folk tales", "organic wine",
+    # "VIP lounge", "garage sale", "tourist trap", "hardcore fans", "Jungle Book", "Greek salad").
+    psytrance: ["psy", "goa", "forest", "psychedelic"]
+    minimal_deep_tech: ["minimal"]
+    downtempo_chill: ["organic", "lounge"]
+    ambient: ["ambient"]
+    rnb: ["soul", "סול"]
+    hip_hop: ["trap", "drill"]
+    bass_dubstep: ["garage", "breaks"]
+    hardstyle: ["hardcore", "uptempo"]
+    drum_and_bass: ["jungle"]
+    greek: ["greek", "יווני", "יוונית"]
+    metal: ["metal"]
+    punk: ["punk"]
+    country: ["country", "קאנטרי"]
     # Muzi's genre slugs.
-    israeli: ["hebrew", "אמנים ישראלים"]
-    mizrahi: ["yam_tichoni"]
-    rock_indie: ["rocknroll", "música alternativa"]
-    world_balkan: ["world", "música del mundo"]
+    israeli: ["hebrew", "אמנים ישראלים", "ישראלית", "ישראלי", "israeli"]
+    mizrahi: ["yam_tichoni", "eastern"]
+    rock_indie: ["rocknroll", "música alternativa", "alternative", "indie", "metal"]
+    world_balkan: ["world", "música del mundo", "folk", "ethnic", "אתני"]
     theatre: ["theater", "theatre", "גילי 3-18", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus", "תיאטראות", "مسرح", "teatteri", "kulttuuri: teatteri", "drama", "improvisation"]
     kids: ["kids", "children", "גילי 3-18", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
            "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך", "רמתגנצ'יק", "שבת משפחתי", "שנה עד שנתיים", "זחילה עד שנה", "שלוש עד ארבע", "לידה עד זחילה", "שנתיים עד שלוש", "ארבע עד חמש", "אחר-צהריים ר\"גוע"]
@@ -631,6 +745,7 @@ enrichment:
     kikarhamusica: [live_show]  # a music stage; Saturday-night sets come with no category ("שבת")
     ramatganmuni: [culture]  # municipal programme: seniors' month, aliyah club...
     petahtikvamuni: [culture]  # municipal market rows tagged only by audience or hall
+    sharepointmuni: [culture]  # municipal lists: "תרבות ואומנות", seniors' month, untyped rows
     vibez: [culture]  # no categories; 7 of 88 (Nov 2026) name no genre in their text (performance, community night)
     tiuli: [attractions]  # trips guide; its one category is "מיוחד"
     pres_il: [culture]  # IPO chamber series ("מיוחד קאמרי") and Lessin specials name no genre
@@ -673,8 +788,20 @@ enrichment:
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
-    electronic: [techno, house, trance, afro, drum_and_bass, bass_dubstep, hardstyle, edm, downtempo_chill]
-    israeli: [mizrahi]
+    electronic: [techno, house, trance, afro, drum_and_bass, bass_dubstep, hardstyle, edm, downtempo_chill, indie_dance, amapiano]
+    israeli: [mizrahi, singalong]
+    # Sub-genres, counted under every family above them (psytrance -> trance -> electronic).
+    trance: [psytrance]
+    techno: [hard_techno, melodic_techno, minimal_deep_tech]
+    house: [deep_house, tech_house, progressive_house, organic_house, afro_house, melodic_techno, minimal_deep_tech, amapiano]
+    afro: [amapiano]
+    downtempo_chill: [ambient]
+    rock_indie: [metal, punk]
+    jazz: [blues]
+    pop: [kpop]
+    reggaeton_latin: [brazilian]
+    world_balkan: [country, flamenco, chanson]
+    jewish_music: [hasidic, piyut, klezmer]
     dance: [ballroom, folk_dance, latin_dance]
     latin_dance: [salsa]
     throwback: [eighties, nineties]
@@ -686,9 +813,9 @@ enrichment:
   genre_groups:
     g_parties: [electronic, mainstream, pop, hip_hop, rnb, reggaeton_latin, dancehall_reggae, disco_funk, dark_wave,
                 throwback, nightclubs, pool_party, karaoke, festival, nature_party, open_bar, over_40, youth]
-    g_live: [live_show, israeli, rock_indie, jazz, classical_opera, world_balkan, greek, arabic]
+    g_live: [live_show, israeli, rock_indie, jazz, classical_opera, world_balkan, greek, arabic, jewish_music]
     g_stage: [theatre, stand_up, cinema, dance]
-    g_culture: [culture, exhibitions, lectures, workshops, tours, religious, holidays, markets]
+    g_culture: [culture, exhibitions, lectures, workshops, tours, religious, holidays, markets, jewish_music]
     g_kids: [kids, attractions, pools, escape_rooms]
     g_food: [food, happy_hour, fine_dining, kosher, coffee_carts, open_bar]
     g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, environment, volunteering, team_activities]
@@ -705,7 +832,10 @@ enrichment:
   # (a past Rosh Hashana one "on sale"), listed by Beat Radar as one festival.
   skip_titles: ["ticket management"]
   # Small print that names a genre word in passing, removed from the text before genres are read.
-  text_ignore: ["הורים וילדים יוצרים", "כרטיס אלקטרוני", "כרטיסים אלקטרוניים", "הכרטיס האלקטרוני", "הכרטיסים האלקטרוניים",
+  # Nov 2026 genre audit: phrases whose words are no genre ("open house", "pop art", the evening prayer,
+  # "the eastern gate", a Mediterranean menu).
+  text_ignore: ["pop art", "pop culture", "פופ ארט", "open house", "full house", "opera house", "guest house", "coffee house", "in-house", "house of blues", "house of", "רוטב סלסה", "salsa verde", "hi-tech psy", "hitech psy", "מגדל האופרה", "opera tower", "soap opera", "תפילת ערבית", "הכניסה המזרחית", "בכניסה המזרחית", "ירושלים המזרחית", "השער המזרחי", "החוף המזרחי", "מטבח ים תיכוני", "המטבח הים תיכוני", "ארוחה ים תיכונית", "מסעדה ים תיכונית", "אוכל ים תיכוני",
+                "הורים וילדים יוצרים", "כרטיס אלקטרוני", "כרטיסים אלקטרוניים", "הכרטיס האלקטרוני", "הכרטיסים האלקטרוניים",
                 "בכרטיס האלקטרוני", "דואר אלקטרוני", "בדואר אלקטרוני", "הדואר האלקטרוני", "בדואר האלקטרוני",
                 "כתובת דואר אלקטרוני", "תשלום אלקטרוני", "חתימה אלקטרונית", "ארנק אלקטרוני",
                 "נוצרה בבינה מלאכותית", "נוצרה באמצעות בינה מלאכותית", "נוצר בבינה מלאכותית",

@@ -193,7 +193,8 @@ PARTY = ("techno", "house", "trance", "mainstream", "hip_hop", "electronic", "ni
          "disco_funk", "drum_and_bass", "bass_dubstep", "hardstyle", "edm", "throwback", "mizrahi", "rnb", "dancehall_reggae", "dark_wave")
 SYNONYMS: dict[str, tuple[str, ...]] = {
     "מסיבה": PARTY, "מסיבות": PARTY, "מסיבת": PARTY, "party": PARTY, "parties": PARTY, "ליין": PARTY, "רייב": PARTY, "rave": PARTY,
-    "מסיבת טבע": ("nature_party", "trance"), "מסיבות טבע": ("nature_party", "trance"), "פסיכדלי": ("trance",), "psytrance": ("trance",), "פסי טראנס": ("trance",),
+    "מסיבת טבע": ("nature_party", "trance"), "מסיבות טבע": ("nature_party", "trance"), "פסיכדלי": ("psytrance",), "psytrance": ("psytrance",), "פסי טראנס": ("psytrance",), "פסיי": ("psytrance",), "psy": ("psytrance",),
+    "קיי פופ": ("kpop",), "kpop": ("kpop",), "חסידי": ("hasidic",), "חסידית": ("hasidic",), "חזנות": ("jewish_music",), "מלודיק": ("melodic_techno",), "melodic": ("melodic_techno",),
     "הופעה": ("live_show",), "הופעות": ("live_show",), "הופעה חיה": ("live_show",), "קונצרט": ("live_show", "classical_opera"),
     "concert": ("live_show",), "live": ("live_show",), "מועדון": ("nightclubs",), "מועדונים": ("nightclubs",), "קלאב": ("nightclubs",),
     "הצגה": ("theatre",), "הצגות": ("theatre",), "תאטרון": ("theatre",), "מחזמר": ("theatre",), "סרט": ("cinema",), "סרטים": ("cinema",),

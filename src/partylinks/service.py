@@ -215,7 +215,7 @@ class ScrapeService:
         to settings.yaml (or a keyword changed) reaches events scraped before it. The config's
         fingerprint is kept in the flags table; an unchanged config costs one lookup. Returns rows changed.
 
-        ponytail: ~9 ms an event (~4 min at 28k), read outside the write lock; a scrape that saves an
+        ponytail: ~3 ms an event (~7 min at 144k rows, Nov 2026), read outside the write lock; a scrape that saves an
         event meanwhile may be overwritten with its older text's genres until its next run.
         """
         fields = {"genres", "declared_genres", "genre_families", "detect_genres_from_text", "text_ignore",

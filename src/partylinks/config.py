@@ -362,7 +362,13 @@ class EnrichmentSettings(BaseModel):
 
     def with_parents(self, genres: list[str]) -> list[str]:
         """An event's genres plus the umbrella genres and filter families they fall under (for counts)."""
-        parents = [p for p, subs in self.genre_families.items() if p not in genres and any(g in subs for g in genres)]
+        # All the way up: psytrance -> trance -> electronic.
+        parents: list[str] = []
+        while new := [
+            p for p, subs in self.genre_families.items()
+            if p not in genres and p not in parents and any(g in subs for g in (*genres, *parents))
+        ]:  # fmt: skip
+            parents += new
         known = {*genres, *parents}
         groups = [k for k, members in self.genre_groups.items() if k not in known and not known.isdisjoint(members)]
         return [*genres, *parents, *groups]

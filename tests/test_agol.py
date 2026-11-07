@@ -35,11 +35,14 @@ def test_house_sub_genres_are_house_only() -> None:
     settings = Settings()
     enricher = Enricher(settings.enrichment, settings.timezone)
     event = agol.parse_page(PAGE, URL, S, TZ)
-    assert event is not None and enricher._detect_genres(event) == ["house"]  # organic house is no chill
+    # organic house is no chill: house and its own sub-genres only
+    assert event is not None and enricher._detect_genres(event) == ["house", "organic_house", "progressive_house"]
     for declared, genres in [
         (["chill house"], ["house"]),
-        (["צ'יל האוס"], ["house"]),
+        (["צ׳יל האוס"], ["house"]),  # geresh as Hebrew writes it
         (["chill"], ["downtempo_chill"]),
+        (["organic"], ["downtempo_chill"]),  # a declared category alone
+        (["afro house"], ["afro_house", "house"]),
     ]:
         assert enricher._detect_genres(event.model_copy(update={"source_genres": declared})) == genres
 

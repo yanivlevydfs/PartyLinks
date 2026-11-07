@@ -49,7 +49,7 @@ def test_new_genres_and_tech_house_is_not_hi_tech() -> None:
     found = enricher._detect_genres(
         event.model_copy(update={"source_genres": ["tech house", "dark wave", "yoga"], "event_types": []})
     )
-    assert found == ["dark_wave", "house", "yoga_wellness"]
+    assert found == ["dark_wave", "house", "tech_house", "yoga_wellness"]
 
 
 def test_cloudflare_403_is_a_blocked_run() -> None:

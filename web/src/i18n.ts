@@ -230,6 +230,7 @@ export const STRINGS = {
       g_parties: "מסיבות ומועדונים", g_live: "הופעות ומוזיקה חיה", g_stage: "במה ומסך", g_culture: "תרבות והעשרה",
       g_kids: "ילדים ומשפחה", g_food: "אוכל ושתייה", g_leisure: "פנאי וספורט", g_tech: "הייטק ועסקים", g_community: "קהילה ו-LGBTQ+",
       theatre: "תיאטרון", kids: "ילדים ומשפחה", lectures: "הרצאות והעשרה", tours: "סיורים וטיולים", dance: "מחול", ballroom: "ריקודים סלוניים", folk_dance: "ריקודי עם", latin_dance: "ריקודים לטיניים", salsa: "סלסה",
+      psytrance: "פסיי טראנס", hard_techno: "הארד טכנו", melodic_techno: "מלודיק טכנו / האוס", minimal_deep_tech: "מינימל / דיפ טק", deep_house: "דיפ האוס", tech_house: "טק האוס", progressive_house: "פרוגרסיב האוס", organic_house: "אורגניק האוס", afro_house: "אפרו האוס", indie_dance: "אינדי דאנס", ambient: "אמביינט", metal: "מטאל", punk: "פאנק רוק", blues: "בלוז", kpop: "K-Pop", brazilian: "מוזיקה ברזילאית", amapiano: "אמאפיאנו", country: "קאנטרי", flamenco: "פלמנקו", chanson: "שאנסון", singalong: "שירה בציבור", jewish_music: "מוזיקה יהודית", hasidic: "מוזיקה חסידית", piyut: "פיוט", klezmer: "כליזמר",
     },
   },
   en: {
@@ -452,7 +453,8 @@ const EN_GENRE_FIX: Record<string, string> = { eighties: "80s", nineties: "90s",
   team_activities: "Team Activities", nightclubs: "Clubs", pools: "Pools & Water Parks", pool_party: "Pool Parties", nature_party: "Nature Parties", open_bar: "Open Bar", over_40: "40+ Parties", youth: "Teen Parties",
   g_parties: "Parties & Clubs", g_live: "Live Music", g_stage: "Stage & Screen", g_culture: "Culture & Learning",
   g_kids: "Kids & Family", g_food: "Food & Drinks", g_leisure: "Leisure & Sport", g_tech: "Tech & Business",
-  g_community: "Community & LGBTQ+" };
+  g_community: "Community & LGBTQ+",
+  melodic_techno: "Melodic House & Techno", minimal_deep_tech: "Minimal / Deep Tech", kpop: "K-Pop", singalong: "Sing-along", hasidic: "Hasidic Music", brazilian: "Brazilian", punk: "Punk" };
 export function genreLabel(lang: Lang, g: string): string {
   if (lang === "he") return STRINGS.he.genre[g] ?? g;
   return EN_GENRE_FIX[g] ?? g.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
