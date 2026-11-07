@@ -20,6 +20,7 @@ from __future__ import annotations
 import re
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
+from itertools import batched
 from typing import Any
 
 import httpx
@@ -55,6 +56,8 @@ class ShotgunSettings(SourceSettings):
     event_sitemaps: int = Field(300, ge=0)
     # Sitemap pages last modified longer ago are skipped: nearly all past.
     sitemap_max_age_days: int = Field(14, ge=1)
+    # Event sitemaps read before their event pages are fetched.
+    sitemaps_per_batch: int = Field(20, ge=1)
 
 
 class ShotgunScraper(BaseScraper[ShotgunSettings]):
@@ -84,23 +87,23 @@ class ShotgunScraper(BaseScraper[ShotgunSettings]):
                 yield event  # never past events (a weekend pass that began two days ago included)
         if not countries:
             return  # no country to keep sitemap events in
-        listed = {_slug(u) for u in urls}
-        more = [u for u in await self._sitemap_urls() if _slug(u) not in listed]
-        self.log.debug("sitemaps: %d more recent event pages", len(more))
-        async for event in self.stream_isolated(more, self._fetch_event, label=lambda u: u):
-            current = is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known)
-            if event.country in countries and current:
-                yield event
-
-    async def _sitemap_urls(self) -> list[str]:
-        """Event pages of the newest event sitemaps, last modified within the max age."""
-        s = self.settings
         if not s.sitemap_index_path or not s.event_sitemaps:
-            return []
+            return
+        listed = {_slug(u) for u in urls}
         maps = sorted(_EVENT_SITEMAP.findall(await self._page(s.sitemap_index_path)), key=lambda m: -int(m[1]))
-        pages = await self.gather_pages([path for path, _ in maps[: s.event_sitemaps]])
         since = datetime.now(UTC) - timedelta(days=s.sitemap_max_age_days)
-        return list(dict.fromkeys(u for xml in pages for u in sitemap_urls(xml, since)))
+        # A slice of sitemaps, then its event pages: events keep coming, so the stall limit never
+        # closes a run that is reading 300 sitemaps that yield no event themselves.
+        for chunk in batched([path for path, _ in maps[: s.event_sitemaps]], s.sitemaps_per_batch):
+            pages = await self.gather_pages(list(chunk))
+            more = [u for xml in pages for u in sitemap_urls(xml, since) if _slug(u) not in listed]
+            listed.update(_slug(u) for u in more)
+            async for event in self.stream_isolated(more, self._fetch_event, label=lambda u: u):
+                current = is_current(
+                    event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known
+                )
+                if event.country in countries and current:
+                    yield event
 
     async def gather_pages(self, paths: list[str]) -> list[str]:
         """Listing pages in parallel (the client's concurrency); a failing page lists nothing."""

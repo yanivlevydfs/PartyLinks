@@ -121,6 +121,35 @@ def test_sitemap_events_in_the_city_pages_countries_newest_maps_first() -> None:
     assert asked.count("/en/events/intrance-24-10") == 1  # listed already: not fetched again
 
 
+def test_sitemaps_read_in_batches_each_event_page_once() -> None:
+    soon = (datetime.now(UTC) + timedelta(days=3)).date().isoformat()
+    future = PAGE.replace("2026-10-24", soon).replace("2026-10-25", soon)
+    today = datetime.now(UTC).date().isoformat()
+    asked: list[str] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        asked.append(path)
+        if path == "/en/cities/manaus":
+            return httpx.Response(200, text='<a href="/en/events/intrance-24-10">x</a>')
+        if path == "/sitemap.xml":
+            maps = "".join(
+                f"<sitemap><loc>{SITE}/api/sitemaps/events/sitemap/{n}.xml</loc></sitemap>" for n in range(3)
+            )
+            return httpx.Response(200, text=f"<sitemapindex>{maps}</sitemapindex>")
+        if path.startswith("/api/sitemaps/events/sitemap/"):  # every sitemap lists the same new page
+            body = f"<url><loc>{SITE}/en/events/in-brazil</loc><lastmod>{today}</lastmod></url>"
+            return httpx.Response(200, text=f"<urlset>{body}</urlset>")
+        if path.startswith("/en/events/"):
+            return httpx.Response(200, text=future)
+        return httpx.Response(404)
+
+    events = _run(_scraper(answer, city_paths=["/en/cities/manaus"], event_sitemaps=3, sitemaps_per_batch=1))
+    assert sorted(e.source_event_id for e in events) == ["in-brazil", "intrance-24-10"]  # type: ignore[attr-defined]
+    assert sum(p.startswith("/api/sitemaps/events/") for p in asked) == 3
+    assert asked.count("/en/events/in-brazil") == 1  # one batch read it: the next ones skip it
+
+
 def test_still_429_stops_the_run_cleanly() -> None:
     def answer(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/en/cities/a":
