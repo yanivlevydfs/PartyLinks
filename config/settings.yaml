@@ -3118,7 +3118,9 @@ sources:
     # Municipal event lists on SharePoint: per site one GetJsonItems call (the page's own) lists the
     # coming programme, then one display-form request per event (address, description, payment link).
     # Rows paid through a box office another source reads (skip_hosts) are skipped.
-    enabled: true
+    # Off: rishonlezion.muni.il answers home Israeli IPs only; from Railway it times out, the proxy gets
+    # 500 and our VPN 502 (Nov 2026, like rosh-haayin). Needs a paid Israeli residential IP.
+    enabled: false
     cron: "22 5,17 * * *"
     skip_hosts: [htrl.co.il, smarticket.co.il]
     skip_title_words: ["חוג ", "קורס"]
