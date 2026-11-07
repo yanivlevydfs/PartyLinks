@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 110 configured sources, all on. Each one has its own module in
+SPOTX collects from 111 configured sources, all on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -120,6 +120,7 @@ many of them free.
 | `haifamuni` | Haifa municipality (haifa.muni.il): culture, sport, community | 04:57, 16:57 | yes |
 | `ramatganmuni` | Ramat Gan municipality (ramat-gan.muni.il): culture, community, seniors | 05:38, 17:38 | yes |
 | `petahtikvamuni` | Petah Tikva municipality (petah-tikva.muni.il): its Umbraco events API; Smarticket mirrors left to `smarticket` | 05:16, 17:16 | yes |
+| `sharepointmuni` | Municipal event lists on SharePoint (Rishon LeZion); rows sold by the culture hall / Smarticket left to `smarticket` | 05:22, 17:22 | yes |
 | `holon` | Holon municipality (holon.muni.il): free and paid events across the city | 04:09, 16:09 | yes |
 | `munievents` | Municipal and council calendars on the A.S. Bina CMS: ~90 cities, councils, community centres | 06:03, 18:03 | yes |
 | `matnasnet` | Matnasnet (also `*.atarix.co.il`): the CMS of most community centres and some councils | 05:41, 17:41 | yes |

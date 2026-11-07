@@ -88,6 +88,7 @@ from partylinks.scrapers.reading3 import Reading3Scraper
 from partylinks.scrapers.secrettelaviv import SecretTelAvivScraper
 from partylinks.scrapers.secrettelavivapp import SecretTelAvivAppScraper
 from partylinks.scrapers.selector import SelectorScraper
+from partylinks.scrapers.sharepointmuni import SharePointMuniScraper
 from partylinks.scrapers.shotgun import ShotgunScraper
 from partylinks.scrapers.showshappening import ShowsHappeningScraper
 from partylinks.scrapers.smarticket import SmarticketIsraelScraper, SmarticketScraper
@@ -194,6 +195,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         HaifaMuniScraper,
         RamatGanMuniScraper,
         PetahTikvaMuniScraper,
+        SharePointMuniScraper,
         OgoScraper,
         MuziScraper,
         MatnasnetScraper,

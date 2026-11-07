@@ -1,0 +1,254 @@
+{
+ "Root": {
+  "ListTitle": "אירועים",
+  "ViewTitle": "דף אירועים ומופעים (חיפוש)",
+  "TotalItems": "3",
+  "Items": {
+   "Item": [
+    {
+     "ID": "7342",
+     "Title": "המכבים – חנוכה 2026",
+     "URL": "http://www.rishonlezion.muni.il/Lists/List3/CustomDispForm.aspx?ID=7342",
+     "Fields": {
+      "Field": [
+       {
+        "Caption": "כותרת",
+        "Value": "המכבים – חנוכה 2026",
+        "Type": "Text",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מועד התחלה",
+        "Value": "08/11/2026 17:30:00",
+        "Type": "DateTime",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "סוג עלות",
+        "Value": "בתשלום",
+        "Type": "Choice",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "סוג האירוע",
+        "Value": "הצגות וסרטים, חנוכה",
+        "Type": "MultiChoice",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "תמונה",
+        "Value": "<img alt=\"\" src=\"http://www.rishonlezion.muni.il/DocLib1/היכל%20התרבות/1250_750%20אתר%20העירייה2%20המכבים.jpg\" style=\"BORDER: 0px solid; \">",
+        "Type": "Image",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "תאריך-מחושב",
+        "Value": "08/11/2026",
+        "Type": "Calculated",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "חוף",
+        "Value": "",
+        "Type": "FilteredLookup",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מיקום לקישור",
+        "Value": "היכל התרבות מאיר ניצן ראשון לציון",
+        "Type": "Lookup",
+        "LookUpUrl": "http://www.rishonlezion.muni.il/Lists/List17/CustomDispForm.aspx?ID=599"
+       },
+       {
+        "Caption": "קהלי יעד לקישור",
+        "Value": "אחר,ילדים",
+        "Type": "LookupMulti",
+        "LookUpUrl": "http://www.rishonlezion.muni.il/Lists/List12/DispForm.aspx?ID=8,http://www.rishonlezion.muni.il/Lists/List12/DispForm.aspx?ID=2"
+       },
+       {
+        "Caption": "מועד סיום",
+        "Value": "08/11/2026 18:30:00",
+        "Type": "DateTime",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מצב אישור",
+        "Value": "אושר",
+        "Type": "ModStat",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מזהה",
+        "Value": "7342",
+        "Type": "Counter",
+        "LookUpUrl": ""
+       }
+      ]
+     }
+    },
+    {
+     "ID": "7309",
+     "Title": "בואו להתחדש בלי להתרושש- הסטנד אפ הסביבתי הראשון מגיע לפאב הרוטצ'",
+     "URL": "http://www.rishonlezion.muni.il/Lists/List3/CustomDispForm.aspx?ID=7309",
+     "Fields": {
+      "Field": [
+       {
+        "Caption": "כותרת",
+        "Value": "בואו להתחדש בלי להתרושש- הסטנד אפ הסביבתי הראשון מגיע לפאב הרוטצ&#39;",
+        "Type": "Text",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מועד התחלה",
+        "Value": "09/11/2026 19:00:00",
+        "Type": "DateTime",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "סוג עלות",
+        "Value": "בחינם",
+        "Type": "Choice",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "סוג האירוע",
+        "Value": "סביבה וטבע",
+        "Type": "MultiChoice",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "תמונה",
+        "Value": "<img alt=\"\" src=\"http://www.rishonlezion.muni.il/DocLib1/איכות%20הסביבה/ad%20november%20kniyot%2026%20(003).jpg\" style=\"BORDER: 0px solid; \">",
+        "Type": "Image",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "תאריך-מחושב",
+        "Value": "09/11/2026",
+        "Type": "Calculated",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "חוף",
+        "Value": "",
+        "Type": "FilteredLookup",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מיקום לקישור",
+        "Value": "",
+        "Type": "Lookup",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "קהלי יעד לקישור",
+        "Value": "",
+        "Type": "LookupMulti",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מועד סיום",
+        "Value": "09/11/2026 20:30:00",
+        "Type": "DateTime",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מצב אישור",
+        "Value": "אושר",
+        "Type": "ModStat",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מזהה",
+        "Value": "7309",
+        "Type": "Counter",
+        "LookUpUrl": ""
+       }
+      ]
+     }
+    },
+    {
+     "ID": "7318",
+     "Title": "שלישי חופשי לגיל השלישי - מופע מוזיקלי",
+     "URL": "http://www.rishonlezion.muni.il/Lists/List3/CustomDispForm.aspx?ID=7318",
+     "Fields": {
+      "Field": [
+       {
+        "Caption": "כותרת",
+        "Value": "שלישי חופשי לגיל השלישי - מופע מוזיקלי",
+        "Type": "Text",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מועד התחלה",
+        "Value": "10/11/2026 11:00:00",
+        "Type": "DateTime",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "סוג עלות",
+        "Value": "בחינם",
+        "Type": "Choice",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "סוג האירוע",
+        "Value": "מוזיקה",
+        "Type": "MultiChoice",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "תמונה",
+        "Value": "<img alt=\"\" src=\"http://www.rishonlezion.muni.il/DocLib1/לגלות%20תרבות/2025באנר%20לאתר%20שלישי%20חופשי.jpg\" style=\"BORDER: 0px solid; \">",
+        "Type": "Image",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "תאריך-מחושב",
+        "Value": "10/11/2026",
+        "Type": "Calculated",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "חוף",
+        "Value": "",
+        "Type": "FilteredLookup",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מיקום לקישור",
+        "Value": "היכל התרבות מאיר ניצן ראשון לציון",
+        "Type": "Lookup",
+        "LookUpUrl": "http://www.rishonlezion.muni.il/Lists/List17/CustomDispForm.aspx?ID=599"
+       },
+       {
+        "Caption": "קהלי יעד לקישור",
+        "Value": "",
+        "Type": "LookupMulti",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מועד סיום",
+        "Value": "10/11/2026 12:30:00",
+        "Type": "DateTime",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מצב אישור",
+        "Value": "אושר",
+        "Type": "ModStat",
+        "LookUpUrl": ""
+       },
+       {
+        "Caption": "מזהה",
+        "Value": "7318",
+        "Type": "Counter",
+        "LookUpUrl": ""
+       }
+      ]
+     }
+    }
+   ]
+  }
+ }
+}
