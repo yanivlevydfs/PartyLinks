@@ -630,6 +630,7 @@ enrichment:
     shotgun: [nightclubs]
     kikarhamusica: [live_show]  # a music stage; Saturday-night sets come with no category ("שבת")
     ramatganmuni: [culture]  # municipal programme: seniors' month, aliyah club...
+    petahtikvamuni: [culture]  # municipal market rows tagged only by audience or hall
     vibez: [culture]  # no categories; 7 of 88 (Nov 2026) name no genre in their text (performance, community night)
     tiuli: [attractions]  # trips guide; its one category is "מיוחד"
     pres_il: [culture]  # IPO chamber series ("מיוחד קאמרי") and Lessin specials name no genre
@@ -2952,6 +2953,24 @@ sources:
     media_url: https://cms-media.ramat-gan.muni.il
     listing_path: /EventLobby/he/event-lobby
     city: רמת גן
+
+  petahtikvamuni:
+    # Petah Tikva municipality (Next.js over headless Umbraco): one Delivery API request through
+    # api.petah-tikva.muni.il lists every coming event (~580). Rows mirroring the makefet /
+    # petah-tikva Smarticket box offices (~555, read by smarticket) and Zoom lectures are skipped;
+    # the rest (~15: municipal market, Tickchak, forms, free events) keep their link as purchase_url.
+    enabled: true
+    cron: "16 5,17 * * *"
+    site_url: https://www.petah-tikva.muni.il
+    api_url: https://api.petah-tikva.muni.il
+    city: פתח תקווה
+    venue_addresses:   # streets the event texts give; Nominatim knows these, not the hall names
+      "ספריית מנגינות": "מבצע דקל 3"
+      "מרכז למשפחות": "שם טוב 26"
+      "אולם מופת": "ההסתדרות 19"
+      "עמישב": "קהילת שיקגו 1"
+    http:
+      impersonate: chrome
 
   ogo:
     # OGO (ogo.co.il, formerly makore.app; not makore.co.il): moderated guide to all of Israel, ~10k

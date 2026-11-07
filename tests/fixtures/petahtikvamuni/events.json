@@ -1,0 +1,843 @@
+{
+ "total": 6,
+ "items": [
+  {
+   "contentType": "eventPage",
+   "name": "5472",
+   "createDate": "2026-09-09T18:01:07.2Z",
+   "updateDate": "2026-09-23T02:20:35.95Z",
+   "route": {
+    "path": "/events/all-events/5472/",
+    "startItem": {
+     "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+     "path": "events"
+    }
+   },
+   "id": "5d4b929c-d558-434d-bcf2-e5fb97ffa12c",
+   "properties": {
+    "title": "ג'וקבוקס-מאלביס ועד סינטרה בתאטרון המסילה",
+    "showDateUpdate": null,
+    "showCounter": null,
+    "showAnchors": null,
+    "pageImage": null,
+    "pageIcon": null,
+    "showDigitalButton": null,
+    "summary": null,
+    "hideSummary": null,
+    "showFeedback": null,
+    "showClosedComponent": null,
+    "hideInSearch": null,
+    "ogtitle": "ג'וקבוקס-מאלביס ועד סינטרה בתאטרון המסילה",
+    "ogdescription": "להקת ג׳וקבוקס מציגים מופע סוחף: מאלביס ועד סינטרה - מחווה סוחפת לשירי האהבה הגדולים של שנות ה־60 💕\n\nמופע נוסטלגי מרהיב עם הקלאסיקות הבלתי נשכחות של אלביס, פול אנקה, טום ג׳ונס, הביטלס, קליף ריצ׳ארד, בראיין איילנד, הצלליות, דין מרטין, פרנק סינטרה ועוד.\n\nחו",
+    "ogimage": "https://makefet.smarticket.co.il/uploads/upld6aa8f3c1d2022173151341.jpg",
+    "oglink": "https://makefet.smarticket.co.il/event//event/5472",
+    "imageLink": "https://makefet.smarticket.co.il/uploads/upld6aa8f3c1d2022173151341.jpg",
+    "image": null,
+    "details": null,
+    "moreDetails": null,
+    "startDate": "2026-11-07T21:00:00Z",
+    "endDate": "2026-11-07T22:00:00Z",
+    "price": "49",
+    "prePurchasePrice": null,
+    "accesabillity": null,
+    "recursive": null,
+    "dayInWeek": 7,
+    "foodOptions": null,
+    "location": "תיאטרון המסילה",
+    "locationDescription": {
+     "markup": "האחים בכר 3 פתח תקווה",
+     "blocks": []
+    },
+    "area": null,
+    "imageDescription": null,
+    "preSaleLink": null,
+    "registerLink": [
+     {
+      "url": "https://makefet.smarticket.co.il/event//event/5472",
+      "queryString": null,
+      "title": "להרשמה",
+      "target": "_blank",
+      "destinationId": null,
+      "destinationType": null,
+      "route": null,
+      "linkType": "External"
+     }
+    ],
+    "accessibilityType": null,
+    "showInHomePage": null,
+    "imageAlt": "ג'וקבוקס-מאלביס ועד סינטרה בתאטרון המסילה",
+    "brief": {
+     "markup": "<p>להקת ג׳וקבוקס מציגים מופע סוחף: מאלביס ועד סינטרה - מחווה סוחפת לשירי האהבה הגדולים של שנות ה־60 💕</p>\n\n<p>מופע נוסטלגי מרהיב עם הקלאסיקות הבלתי נשכחות של אלביס, פול אנקה, טום ג׳ונס, הביטלס, קליף ריצ׳ארד, בראיין איילנד, הצלליות, דין מרטין, פרנק סינטרה ועוד.</p>\n\n<p>חוויה מוזיקלית מרגשת, מלאה באווירה של פעם ובשירים שכולנו אוהבים 🎶</p>\n",
+     "blocks": []
+    },
+    "eventId": "5472",
+    "show": 3003,
+    "isStuck": null,
+    "showRelatedEvents": null,
+    "iframeSrc": "https://makefet.smarticket.co.il/iframe/event/5472",
+    "wholeDay": null,
+    "isSmartTicket": null,
+    "dynamicContent": null,
+    "isEnglishContent": null,
+    "showContactForm": null,
+    "mailContactForm": null,
+    "relatedForm": null,
+    "relevantDocuments": null,
+    "liveBroadcast": null,
+    "ticketsSoldOut": null,
+    "registrationEnded": null,
+    "specialShow": null,
+    "onlineEvent": null,
+    "repeatShow": null,
+    "festival": null,
+    "happening": null,
+    "running": null,
+    "sourceSystem": "makefet",
+    "linkToLive": null,
+    "categories": {
+     "items": [
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "01f06c3d-ccce-4092-a58d-cfa063d81cc4",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"91f3767c-1c5e-4b09-9b58-376a264b6afd\",\r\n  \"firstText\": \"אירועים ומפגשים\",\r\n  \"secondValue\": [\r\n    \"0037e608-0406-4e8b-939b-b5a5adc6f83e\",\"0c5009fb-e561-46dd-b5be-fdb455758c2b\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"תיאטרון\",\"מופעים ובידור\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      },
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "704ff7c7-fd1d-4f6c-8dd1-6bb65cee9adb",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"b6e9b7ad-11fc-49db-b223-82d512961609\",\r\n  \"firstText\": \"אולמות ואתרים\",\r\n  \"secondValue\": [\r\n    \"0384c395-25e5-4be9-a064-65bb6e865cf5\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"המסילה\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      }
+     ]
+    },
+    "componentsList": null
+   },
+   "cultures": {
+    "he": {
+     "path": "/events/all-events/5472/",
+     "startItem": {
+      "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+      "path": "events"
+     }
+    }
+   }
+  },
+  {
+   "contentType": "eventPage",
+   "name": "289350",
+   "createDate": "2026-01-21T13:48:55.933Z",
+   "updateDate": "2026-11-06T19:23:07.503Z",
+   "route": {
+    "path": "/events/all-events/289350/",
+    "startItem": {
+     "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+     "path": "events"
+    }
+   },
+   "id": "ec2a3751-b2f2-45ae-9edb-74f0e98a732a",
+   "properties": {
+    "title": "50 שנה לרוקי סילבסטר סטאלון",
+    "showDateUpdate": null,
+    "showCounter": null,
+    "showAnchors": null,
+    "pageImage": null,
+    "pageIcon": null,
+    "showDigitalButton": null,
+    "summary": null,
+    "hideSummary": null,
+    "showFeedback": null,
+    "showClosedComponent": null,
+    "hideInSearch": null,
+    "ogtitle": "50 שנה לרוקי סילבסטר סטאלון",
+    "ogdescription": "במפגש נציג את האיש והאגדה ונראה כי הוא יוצר מוכשר מאין כמונו\n",
+    "ogimage": "https://market.petah-tikva.muni.il/wp-content/uploads/2025/12/IMG-20251215-WA0010.jpg",
+    "oglink": "https://market.petah-tikva.muni.il/product/50-%d7%a9%d7%a0%d7%94-%d7%9c%d7%a8%d7%95%d7%a7%d7%99-%d7%a1%d7%99%d7%9c%d7%91%d7%a1%d7%98%d7%a8-%d7%a1%d7%98%d7%90%d7%9c%d7%95%d7%9f/",
+    "imageLink": "https://market.petah-tikva.muni.il/wp-content/uploads/2025/12/IMG-20251215-WA0010.jpg",
+    "image": null,
+    "details": null,
+    "moreDetails": null,
+    "startDate": "2026-11-08T20:00:00Z",
+    "endDate": "2026-11-08T20:00:00Z",
+    "price": "19",
+    "prePurchasePrice": null,
+    "accesabillity": null,
+    "recursive": null,
+    "dayInWeek": 1,
+    "foodOptions": null,
+    "location": "ספריית מנגינות",
+    "locationDescription": null,
+    "area": null,
+    "imageDescription": null,
+    "preSaleLink": null,
+    "registerLink": [
+     {
+      "url": "https://market.petah-tikva.muni.il/product/50-%d7%a9%d7%a0%d7%94-%d7%9c%d7%a8%d7%95%d7%a7%d7%99-%d7%a1%d7%99%d7%9c%d7%91%d7%a1%d7%98%d7%a8-%d7%a1%d7%98%d7%90%d7%9c%d7%95%d7%9f/",
+      "queryString": null,
+      "title": "להרשמה",
+      "target": "_blank",
+      "destinationId": null,
+      "destinationType": null,
+      "route": null,
+      "linkType": "External"
+     }
+    ],
+    "accessibilityType": null,
+    "showInHomePage": null,
+    "imageAlt": "רון פוגל",
+    "brief": {
+     "markup": "<p><span data-olk-copy-source=\"MessageBody\">במפגש נציג את האיש והאגדה ונראה כי הוא יוצר מוכשר מאין כמונו</span></p>\n",
+     "blocks": []
+    },
+    "eventId": "289350",
+    "show": 0,
+    "isStuck": null,
+    "showRelatedEvents": null,
+    "iframeSrc": null,
+    "wholeDay": null,
+    "isSmartTicket": null,
+    "dynamicContent": null,
+    "isEnglishContent": null,
+    "showContactForm": null,
+    "mailContactForm": null,
+    "relatedForm": null,
+    "relevantDocuments": null,
+    "liveBroadcast": null,
+    "ticketsSoldOut": null,
+    "registrationEnded": null,
+    "specialShow": null,
+    "onlineEvent": null,
+    "repeatShow": null,
+    "festival": null,
+    "happening": null,
+    "running": null,
+    "sourceSystem": "electronic",
+    "linkToLive": null,
+    "categories": {
+     "items": [
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "8f346fee-f6e3-4d12-923a-e2e799e82904",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"91f3767c-1c5e-4b09-9b58-376a264b6afd\",\r\n  \"firstText\": \"אירועים ומפגשים\",\r\n  \"secondValue\": [\r\n    \"67c1b9eb-b6c6-4773-be0d-089dea3d202f\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"הרצאות והעשרה\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      },
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "8faa419c-acc8-4f86-a8c3-7ba986f693f8",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"4e389972-fb6b-4aba-854f-a6355aa49e69\",\r\n  \"firstText\": \"העשרה\",\r\n  \"secondValue\": [\r\n    \"74c102b5-e2f6-4933-9427-7a78d5cf6559\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"הרצאות והעשרה\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      },
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "4a231073-81a1-4ed6-b4a7-b1854b206ad1",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"1598ebf6-ab93-435e-9c93-0f86b5b0d991\",\r\n  \"firstText\": \"ספריות\",\r\n  \"secondValue\": [\r\n    \"24111f33-583e-4ea3-9782-698788861a51\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"ספריית מנגינות\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      }
+     ]
+    },
+    "componentsList": null
+   },
+   "cultures": {
+    "he": {
+     "path": "/events/all-events/289350/",
+     "startItem": {
+      "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+      "path": "events"
+     }
+    }
+   }
+  },
+  {
+   "contentType": "eventPage",
+   "name": "holhim-badereh",
+   "createDate": "2026-10-21T14:33:32.643Z",
+   "updateDate": "2026-10-21T14:34:41.62Z",
+   "route": {
+    "path": "/events/all-events/holhim-badereh/",
+    "startItem": {
+     "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+     "path": "events"
+    }
+   },
+   "id": "6d5c177d-b14f-4d4b-b7e9-cc41d441460b",
+   "properties": {
+    "title": "ההולכים בדרך- הצגה חברתית מרגשת של תיאטרון הכרכרה",
+    "showDateUpdate": false,
+    "showCounter": false,
+    "showAnchors": false,
+    "pageImage": null,
+    "pageIcon": null,
+    "showDigitalButton": true,
+    "summary": null,
+    "hideSummary": false,
+    "showFeedback": false,
+    "showClosedComponent": false,
+    "hideInSearch": false,
+    "ogtitle": null,
+    "ogdescription": null,
+    "ogimage": null,
+    "oglink": null,
+    "imageLink": null,
+    "image": [
+     {
+      "focalPoint": null,
+      "crops": [],
+      "id": "9664eba1-c527-4185-9ec2-aca1d26b7542",
+      "name": "Dc07ad64 776B 444C Af4b Ab32bb789200",
+      "mediaType": "Image",
+      "url": "/media/u5vhjfrh/dc07ad64-776b-444c-af4b-ab32bb789200.jpg",
+      "extension": "jpg",
+      "width": 600,
+      "height": 800,
+      "bytes": 145478,
+      "properties": {}
+     }
+    ],
+    "details": null,
+    "moreDetails": null,
+    "startDate": "2026-11-10T18:00:00Z",
+    "endDate": "2026-11-10T20:00:00Z",
+    "price": "10",
+    "prePurchasePrice": null,
+    "accesabillity": null,
+    "recursive": false,
+    "dayInWeek": 3,
+    "foodOptions": null,
+    "location": "אולם מופת",
+    "locationDescription": {
+     "markup": "<p>הסתדרות 19</p>",
+     "blocks": []
+    },
+    "area": "[]",
+    "imageDescription": "ההולכים בדרך- הצגה חברתית מרגשת של תיאטרון הכרכרה",
+    "preSaleLink": null,
+    "registerLink": [
+     {
+      "url": "https://goactive.naamat.org.il/cart/3531",
+      "queryString": null,
+      "title": "לרכישה",
+      "target": "_blank",
+      "destinationId": null,
+      "destinationType": null,
+      "route": null,
+      "linkType": "External"
+     }
+    ],
+    "accessibilityType": "[]",
+    "showInHomePage": false,
+    "imageAlt": "ההולכים בדרך- הצגה חברתית מרגשת של תיאטרון הכרכרה",
+    "brief": null,
+    "eventId": null,
+    "show": null,
+    "isStuck": false,
+    "showRelatedEvents": true,
+    "iframeSrc": null,
+    "wholeDay": false,
+    "isSmartTicket": false,
+    "dynamicContent": null,
+    "isEnglishContent": false,
+    "showContactForm": false,
+    "mailContactForm": null,
+    "relatedForm": null,
+    "relevantDocuments": null,
+    "liveBroadcast": false,
+    "ticketsSoldOut": false,
+    "registrationEnded": false,
+    "specialShow": false,
+    "onlineEvent": false,
+    "repeatShow": false,
+    "festival": false,
+    "happening": false,
+    "running": false,
+    "sourceSystem": null,
+    "linkToLive": null,
+    "categories": {
+     "items": [
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "6de96f20-d6b1-4e9e-8d63-55e7c45ffdae",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"91f3767c-1c5e-4b09-9b58-376a264b6afd\",\r\n  \"firstText\": \"אירועים ומפגשים\",\r\n  \"secondValue\": [\r\n    \"0037e608-0406-4e8b-939b-b5a5adc6f83e\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"תיאטרון\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      }
+     ]
+    },
+    "componentsList": null
+   },
+   "cultures": {
+    "he": {
+     "path": "/events/all-events/holhim-badereh/",
+     "startItem": {
+      "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+      "path": "events"
+     }
+    }
+   }
+  },
+  {
+   "contentType": "eventPage",
+   "name": "How to plan a city 10-11-2026",
+   "createDate": "2026-10-28T14:31:31.68Z",
+   "updateDate": "2026-10-28T15:30:31.983Z",
+   "route": {
+    "path": "/events/all-events/how-to-plan-a-city-10-11-2026/",
+    "startItem": {
+     "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+     "path": "events"
+    }
+   },
+   "id": "80305817-9c4c-4715-acc7-0ee5acd3f96d",
+   "properties": {
+    "title": "איך מתכננים עיר? אדר' נעה אפל",
+    "showDateUpdate": false,
+    "showCounter": false,
+    "showAnchors": false,
+    "pageImage": null,
+    "pageIcon": null,
+    "showDigitalButton": true,
+    "summary": null,
+    "hideSummary": false,
+    "showFeedback": false,
+    "showClosedComponent": false,
+    "hideInSearch": false,
+    "ogtitle": null,
+    "ogdescription": null,
+    "ogimage": null,
+    "oglink": null,
+    "imageLink": null,
+    "image": [
+     {
+      "focalPoint": null,
+      "crops": [],
+      "id": "d079be9f-ca4b-469d-bdf0-dd479c019ca9",
+      "name": "הרצאות זום 2026 01",
+      "mediaType": "Image",
+      "url": "/media/tg5htucl/הרצאות-זום-2026-01.jpg",
+      "extension": "jpg",
+      "width": 4501,
+      "height": 4501,
+      "bytes": 3964588,
+      "properties": {}
+     }
+    ],
+    "details": null,
+    "moreDetails": null,
+    "startDate": "2026-11-10T19:00:00Z",
+    "endDate": "2026-11-10T20:45:00Z",
+    "price": null,
+    "prePurchasePrice": null,
+    "accesabillity": null,
+    "recursive": true,
+    "dayInWeek": 3,
+    "foodOptions": null,
+    "location": "ZOOM",
+    "locationDescription": {
+     "markup": "<p>אירוע מקוון ב- ZOOM קישור יישלח לנרשמים</p>",
+     "blocks": []
+    },
+    "area": "[]",
+    "imageDescription": "איך מתכננים עיר? אדר' נעה אפל",
+    "preSaleLink": null,
+    "registerLink": [
+     {
+      "url": "https://www.petah-tikva.muni.il/forms/how-to-plan-a-city",
+      "queryString": null,
+      "title": "להרשמה",
+      "target": "_blank",
+      "destinationId": null,
+      "destinationType": null,
+      "route": null,
+      "linkType": "External"
+     }
+    ],
+    "accessibilityType": "[]",
+    "showInHomePage": false,
+    "imageAlt": "איך מתכננים עיר? אדר' נעה אפל",
+    "brief": null,
+    "eventId": null,
+    "show": null,
+    "isStuck": false,
+    "showRelatedEvents": true,
+    "iframeSrc": null,
+    "wholeDay": false,
+    "isSmartTicket": false,
+    "dynamicContent": null,
+    "isEnglishContent": false,
+    "showContactForm": false,
+    "mailContactForm": null,
+    "relatedForm": null,
+    "relevantDocuments": null,
+    "liveBroadcast": false,
+    "ticketsSoldOut": false,
+    "registrationEnded": false,
+    "specialShow": false,
+    "onlineEvent": true,
+    "repeatShow": false,
+    "festival": false,
+    "happening": false,
+    "running": false,
+    "sourceSystem": null,
+    "linkToLive": null,
+    "categories": {
+     "items": [
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "f92ff429-f855-4e2d-a35e-48cff7ed7713",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"74db8acb-c32b-4643-9128-6c5242a5c048\",\r\n  \"firstText\": \"על סדר היום\",\r\n  \"secondValue\": [\r\n    \"43debc45-98ec-4b27-b690-4fe364a352dc\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"התחדשות עירונית\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      }
+     ]
+    },
+    "componentsList": null
+   },
+   "cultures": {
+    "he": {
+     "path": "/events/all-events/how-to-plan-a-city-10-11-2026/",
+     "startItem": {
+      "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+      "path": "events"
+     }
+    }
+   }
+  },
+  {
+   "contentType": "eventPage",
+   "name": "Wine Tasting Workshop 12-11-26",
+   "createDate": "2026-10-20T14:15:49.037Z",
+   "updateDate": "2026-10-20T14:16:59.333Z",
+   "route": {
+    "path": "/events/all-events/wine-tasting-workshop-12-11-26/",
+    "startItem": {
+     "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+     "path": "events"
+    }
+   },
+   "id": "9fc66ec6-cb9e-4df4-8916-e565c0c04cbb",
+   "properties": {
+    "title": "סדנת יין בחממה",
+    "showDateUpdate": false,
+    "showCounter": false,
+    "showAnchors": false,
+    "pageImage": null,
+    "pageIcon": null,
+    "showDigitalButton": true,
+    "summary": null,
+    "hideSummary": true,
+    "showFeedback": false,
+    "showClosedComponent": false,
+    "hideInSearch": false,
+    "ogtitle": null,
+    "ogdescription": null,
+    "ogimage": null,
+    "oglink": null,
+    "imageLink": null,
+    "image": [
+     {
+      "focalPoint": null,
+      "crops": [],
+      "id": "b6c819f0-ac0e-437c-aba3-84974d5ae400",
+      "name": "5678 Wine Workshop 2",
+      "mediaType": "Image",
+      "url": "/media/4ymnrnqo/5678-wine-workshop-2.jpg",
+      "extension": "jpg",
+      "width": 3600,
+      "height": 4500,
+      "bytes": 2077454,
+      "properties": {}
+     }
+    ],
+    "details": null,
+    "moreDetails": null,
+    "startDate": "2026-11-12T19:30:00Z",
+    "endDate": "2026-11-12T22:30:00Z",
+    "price": "50",
+    "prePurchasePrice": null,
+    "accesabillity": null,
+    "recursive": false,
+    "dayInWeek": 5,
+    "foodOptions": "נשנושים",
+    "location": "אוסישקין 1, פתח תקווה",
+    "locationDescription": {
+     "markup": "<p>החממה מרכז צעירים</p>",
+     "blocks": []
+    },
+    "area": "[\r\n  \"710b61e8-ceba-43bb-98b4-d32c8bcf496b\"\r\n]",
+    "imageDescription": null,
+    "preSaleLink": null,
+    "registerLink": [
+     {
+      "url": "https://tickchak.co.il/114609",
+      "queryString": null,
+      "title": "לכרטיסים",
+      "target": null,
+      "destinationId": null,
+      "destinationType": null,
+      "route": null,
+      "linkType": "External"
+     }
+    ],
+    "accessibilityType": "[\r\n  \"9f5d5da6-a3b6-4d3e-bdd1-d6c68d43f9c0\",\r\n  \"1222c8c9-9be5-4f6f-bca8-13345d37fc83\"\r\n]",
+    "showInHomePage": false,
+    "imageAlt": null,
+    "brief": null,
+    "eventId": null,
+    "show": null,
+    "isStuck": false,
+    "showRelatedEvents": true,
+    "iframeSrc": null,
+    "wholeDay": false,
+    "isSmartTicket": false,
+    "dynamicContent": null,
+    "isEnglishContent": false,
+    "showContactForm": false,
+    "mailContactForm": null,
+    "relatedForm": null,
+    "relevantDocuments": null,
+    "liveBroadcast": false,
+    "ticketsSoldOut": false,
+    "registrationEnded": false,
+    "specialShow": false,
+    "onlineEvent": false,
+    "repeatShow": false,
+    "festival": false,
+    "happening": false,
+    "running": false,
+    "sourceSystem": null,
+    "linkToLive": null,
+    "categories": {
+     "items": [
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "a22f76aa-b231-4f1c-9284-131b7f2e078c",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"91f3767c-1c5e-4b09-9b58-376a264b6afd\",\r\n  \"firstText\": \"אירועים ומפגשים\",\r\n  \"secondValue\": [\r\n    \"5fc1d55d-9459-4ebe-8d93-9faec83c4c5e\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"סדנאות\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      },
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "80b5e0b7-8976-470e-8ed3-886a1a8c6b65",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"c03e0a68-e4ae-46bc-acbd-fadf8ae76777\",\r\n  \"firstText\": \"גילאים\",\r\n  \"secondValue\": [\r\n    \"a3876c18-54ad-4286-9a96-39cb2f3e584b\",\r\n    \"1aff1baf-a56b-4fda-b054-92556ce03512\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"18 ומעלה\",\r\n    \"צעירים (18-25)\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      },
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "f9440b32-abd6-46fe-be6a-eb61169fbb80",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"7c416083-5145-4172-b43b-fda599ed8c99\",\r\n  \"firstText\": \"קהלים\",\r\n  \"secondValue\": [\r\n    \"c4f5ee0b-2ba9-4f21-9064-dbaa822abc73\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"סטודנטים\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      }
+     ]
+    },
+    "componentsList": null
+   },
+   "cultures": {
+    "he": {
+     "path": "/events/all-events/wine-tasting-workshop-12-11-26/",
+     "startItem": {
+      "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+      "path": "events"
+     }
+    }
+   }
+  },
+  {
+   "contentType": "eventPage",
+   "name": "Arabic Course 18-11-26",
+   "createDate": "2026-11-03T08:50:36.7Z",
+   "updateDate": "2026-11-03T08:50:36.7Z",
+   "route": {
+    "path": "/events/all-events/arabic-course-18-11-26/",
+    "startItem": {
+     "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+     "path": "events"
+    }
+   },
+   "id": "7d0c5149-1b66-49c7-bfde-30d1645d00e2",
+   "properties": {
+    "title": "קורס ערבית עם נדב יעיש (פאודה)",
+    "showDateUpdate": false,
+    "showCounter": false,
+    "showAnchors": false,
+    "pageImage": null,
+    "pageIcon": null,
+    "showDigitalButton": true,
+    "summary": null,
+    "hideSummary": true,
+    "showFeedback": false,
+    "showClosedComponent": false,
+    "hideInSearch": false,
+    "ogtitle": null,
+    "ogdescription": null,
+    "ogimage": null,
+    "oglink": null,
+    "imageLink": null,
+    "image": [
+     {
+      "focalPoint": null,
+      "crops": [],
+      "id": "99030f67-812f-4706-9cfd-c42194133856",
+      "name": "קורס ערבית",
+      "mediaType": "Image",
+      "url": "/media/mehbhgjp/קורס-ערבית.jpg",
+      "extension": "jpg",
+      "width": 3600,
+      "height": 4500,
+      "bytes": 2847592,
+      "properties": {}
+     }
+    ],
+    "details": null,
+    "moreDetails": null,
+    "startDate": "2026-11-18T10:30:00Z",
+    "endDate": "2027-01-20T12:30:00Z",
+    "price": "1000",
+    "prePurchasePrice": null,
+    "accesabillity": {
+     "markup": "<p>חניית נכים, שירותים נגישים</p>",
+     "blocks": []
+    },
+    "recursive": false,
+    "dayInWeek": 4,
+    "foodOptions": "פינת קפה ותה",
+    "location": "אוסישקין 1, פתח תקווה",
+    "locationDescription": {
+     "markup": "<p>החממה מרכז צעירים</p>",
+     "blocks": []
+    },
+    "area": "[\r\n  \"710b61e8-ceba-43bb-98b4-d32c8bcf496b\"\r\n]",
+    "imageDescription": null,
+    "preSaleLink": null,
+    "registerLink": [
+     {
+      "url": "https://tickchak.co.il/116018",
+      "queryString": null,
+      "title": "לרכישה",
+      "target": null,
+      "destinationId": null,
+      "destinationType": null,
+      "route": null,
+      "linkType": "External"
+     }
+    ],
+    "accessibilityType": "[\r\n  \"9f5d5da6-a3b6-4d3e-bdd1-d6c68d43f9c0\",\r\n  \"1222c8c9-9be5-4f6f-bca8-13345d37fc83\"\r\n]",
+    "showInHomePage": false,
+    "imageAlt": null,
+    "brief": null,
+    "eventId": null,
+    "show": null,
+    "isStuck": false,
+    "showRelatedEvents": true,
+    "iframeSrc": null,
+    "wholeDay": false,
+    "isSmartTicket": false,
+    "dynamicContent": null,
+    "isEnglishContent": false,
+    "showContactForm": false,
+    "mailContactForm": null,
+    "relatedForm": null,
+    "relevantDocuments": null,
+    "liveBroadcast": false,
+    "ticketsSoldOut": false,
+    "registrationEnded": false,
+    "specialShow": false,
+    "onlineEvent": false,
+    "repeatShow": false,
+    "festival": false,
+    "happening": false,
+    "running": false,
+    "sourceSystem": null,
+    "linkToLive": null,
+    "categories": {
+     "items": [
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "8c13f83f-a2ef-4dd9-8db0-c9a7fb701937",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"c03e0a68-e4ae-46bc-acbd-fadf8ae76777\",\r\n  \"firstText\": \"גילאים\",\r\n  \"secondValue\": [\r\n    \"a3876c18-54ad-4286-9a96-39cb2f3e584b\",\r\n    \"d76be5ad-0dd4-4c53-a65d-e087557feb74\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"18 ומעלה\",\r\n    \"בוגרים (25-64)\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      },
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "5021cfc3-161b-4807-b901-abfd7322a8f3",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"4e389972-fb6b-4aba-854f-a6355aa49e69\",\r\n  \"firstText\": \"העשרה\",\r\n  \"secondValue\": [\r\n    \"919d8ea1-1ba8-4709-bc24-51e170b18b82\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"קורסים\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      },
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "8a5e1e70-7c95-41d7-92db-f95df1ec4074",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"7c416083-5145-4172-b43b-fda599ed8c99\",\r\n  \"firstText\": \"קהלים\",\r\n  \"secondValue\": [\r\n    \"c4f5ee0b-2ba9-4f21-9064-dbaa822abc73\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"סטודנטים\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      },
+      {
+       "content": {
+        "contentType": "eventTags",
+        "id": "932e9e38-ac26-4a6b-a59c-b0d5832ed43b",
+        "properties": {
+         "category": "{\r\n  \"firstValue\": \"7c416083-5145-4172-b43b-fda599ed8c99\",\r\n  \"firstText\": \"קהלים\",\r\n  \"secondValue\": [\r\n    \"1f2a1886-a4be-464c-9e62-3bcab3fce5b4\"\r\n  ],\r\n  \"secondValueText\": [\r\n    \"מילואים\"\r\n  ]\r\n}"
+        }
+       },
+       "settings": null
+      }
+     ]
+    },
+    "componentsList": null
+   },
+   "cultures": {
+    "he": {
+     "path": "/events/all-events/arabic-course-18-11-26/",
+     "startItem": {
+      "id": "85ac13f6-5fcf-4133-a983-0b0eaf3fe30e",
+      "path": "events"
+     }
+    }
+   }
+  }
+ ]
+}
