@@ -6,7 +6,7 @@ among the rows a filter matched (``first_opening``), so a week of a bar's happy 
 /genre/happy_hour, the map and the SEO pages, and still the right one on a single day.
 
 ``card_extras`` adds what a place card shows beside an event card's fields: the deal ("1+1 על
-שתייה"), read from the listing's ``extra`` (which the card query leaves out).
+שתייה") and the price level (₪ to ₪₪₪₪), read from the listing's ``extra`` (which the card query leaves out).
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ from partylinks.db import EventRow
 from partylinks.venues import PLACE_LISTING
 
 IS_PLACE = func.coalesce(EventRow.extra[PLACE_LISTING].as_boolean(), False)
+PRICE_LEVEL = EventRow.extra["price_level"].as_integer()  # ₪ to ₪₪₪₪ as 1-4 (scrapers/happytlv.price_level)
 
 
 def first_opening(where: Sequence[ColumnElement[bool]]) -> ColumnElement[bool]:
@@ -41,9 +42,9 @@ def card_extras(session: Session, rows: Sequence[Any]) -> dict[str, dict[str, An
     if not ids:
         return {}
     found = session.execute(
-        select(EventRow.id, EventRow.extra["deal"].as_string()).where(EventRow.id.in_(ids), IS_PLACE)
+        select(EventRow.id, EventRow.extra["deal"].as_string(), PRICE_LEVEL).where(EventRow.id.in_(ids), IS_PLACE)
     ).all()
-    return {i: {"place": True, "deal": deal} for i, deal in found}
+    return {i: {"place": True, "deal": deal, "price_level": level} for i, deal, level in found}
 
 
-__all__ = ["IS_PLACE", "card_extras", "first_opening"]
+__all__ = ["IS_PLACE", "PRICE_LEVEL", "card_extras", "first_opening"]

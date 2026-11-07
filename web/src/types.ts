@@ -58,6 +58,8 @@ export interface EventSummary {
   place?: boolean;
   /** The place's offer: "1+1 על שתייה". */
   deal?: string | null;
+  /** The place's prices, ₪ to ₪₪₪₪ as 1-4. */
+  price_level?: number | null;
   /** The price before a drop in the last few days (partylinks.smartrails): shown struck through. */
   was_price?: number | null;
   /** A weekly line (partylinks.lines): its weekday, "thursday". */

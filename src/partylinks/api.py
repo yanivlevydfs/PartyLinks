@@ -232,6 +232,7 @@ class EventSummaryOut(_Out):
     # A place's listing (a bar's happy hour, an escape room), one card per place: partylinks.placecards.
     place: bool = False
     deal: str | None = None  # the place's offer: "1+1 על שתייה"
+    price_level: int | None = None  # the place's prices, ₪ to ₪₪₪₪ as 1-4
     was_price: float | None = None  # the price before a recent drop (partylinks.smartrails)
     weekly: str | None = None  # a weekly line's weekday, "thursday" (partylinks.lines)
 

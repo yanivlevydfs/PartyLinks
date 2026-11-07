@@ -24,4 +24,6 @@ class EveningSettings(BaseModel):
     # "This week at the place": the venue's other listings this many days ahead.
     venue_days: int = Field(7, ge=1, le=60)
     venue_items: int = Field(6, ge=0, le=20)
+    # "A budget evening": places at this price level at most (₪ = 1 ... ₪₪₪₪ = 4); unpriced places stay.
+    budget_max_level: int = Field(2, ge=1, le=4)
     steps: list[EveningStep] = Field(default_factory=list)

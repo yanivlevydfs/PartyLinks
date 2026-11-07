@@ -14,13 +14,13 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import ColumnElement, Interval, func, literal, select
+from sqlalchemy import ColumnElement, Interval, func, literal, or_, select
 from sqlalchemy.orm import Session, defer, selectinload
 
 from partylinks.config import Settings
 from partylinks.db import EventRow
 from partylinks.enrichment import meters
-from partylinks.placecards import IS_PLACE
+from partylinks.placecards import IS_PLACE, PRICE_LEVEL
 
 # The API's event filters (api.build_event_filters with its settings bound): keyword arguments -> clauses.
 Filters = Callable[..., list[ColumnElement[bool]]]
@@ -54,8 +54,10 @@ def _near(row: EventRow, walk_m: int) -> list[ColumnElement[bool]]:
     ]
 
 
-def plan(session: Session, cfg: Settings, row: EventRow, filters: Filters) -> Evening:
+def plan(session: Session, cfg: Settings, row: EventRow, filters: Filters, budget: bool = False) -> Evening:
+    """``budget``: only places up to ``evening.budget_max_level`` (₪₪) and those with no price given."""
     s = cfg.evening
+    cheap = [or_(PRICE_LEVEL.is_(None), PRICE_LEVEL <= s.budget_max_level)] if budget else []
     venue = _venue(session, cfg, row, filters)
     if not s.enabled or row.start_at is None or row.latitude is None or row.longitude is None:
         return Evening([], venue)
@@ -72,7 +74,7 @@ def plan(session: Session, cfg: Settings, row: EventRow, filters: Filters) -> Ev
         rows = session.scalars(_card(
             select(EventRow)
             .where(*filters(genre=step.genres), IS_PLACE, EventRow.start_at < hi, closes > lo,
-                   EventRow.url != row.url, *_near(row, s.walk_m))
+                   EventRow.url != row.url, *_near(row, s.walk_m), *cheap)
             .order_by(EventRow.start_at, EventRow.id)
         )).all()  # fmt: skip
         nearest: dict[str, tuple[EventRow, int]] = {}

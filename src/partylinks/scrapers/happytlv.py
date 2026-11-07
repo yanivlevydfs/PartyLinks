@@ -174,6 +174,12 @@ def parse_party(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
     )
 
 
+def price_level(place: dict[str, Any]) -> int | None:
+    """schema.org ``priceRange`` as a level: "₪₪" -> 2 (1 to 4); None when not given."""
+    signs = sum(str(place.get("priceRange") or "").count(c) for c in "₪$")
+    return min(signs, 4) or None
+
+
 def is_kosher(page_html: str) -> bool:
     """The page's own FAQ: "האם קומראן כשר?" answered "כן, ..." or "כשרה לפי המסעדה" ("לא כשרה" is
     not). Bars and restaurants only ask it when they know; a page without the question is not kosher."""
@@ -239,6 +245,7 @@ def parse_happy_hours(page_html: str, url: str, timezone: str, today: date, days
             extra={
                 PLACE_LISTING: True,
                 **({"deal": deal} if deal else {}),
+                **({"price_level": level} if (level := price_level(place)) else {}),
                 **({"phone": p} if (p := clean_str(place.get("telephone"))) else {}),
             },
         )
@@ -299,6 +306,7 @@ def parse_place(page_html: str, url: str, timezone: str, today: date, days: int,
                 PLACE_LISTING: True,
                 **({"phone": p} if (p := clean_str(place.get("telephone"))) else {}),
                 **({"website": website} if website else {}),
+                **({"price_level": level} if (level := price_level(place)) else {}),
             },
         )
         for start, end in openings

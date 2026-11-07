@@ -145,3 +145,9 @@ def test_kosher_from_the_place_faq() -> None:
     events = happytlv.parse_happy_hours(bar, BAR, "Asia/Jerusalem", date(2026, 10, 22), 7)
     assert events and all(e.source_genres == ["happy hour", "kosher"] for e in events)
     assert "kosher" in Enricher(Settings().enrichment, "Asia/Jerusalem").enrich(events[0]).genres
+
+
+def test_price_level() -> None:
+    assert happytlv.price_level({"priceRange": "₪₪₪₪"}) == 4 and happytlv.price_level({}) is None
+    events = happytlv.parse_happy_hours(page("bar.html"), BAR, "Asia/Jerusalem", date(2026, 10, 22), 7)
+    assert events[0].extra["price_level"] == 2  # the bar's page: "priceRange": "₪₪"
