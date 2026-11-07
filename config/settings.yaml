@@ -150,6 +150,74 @@ popularity:
   min_watching: 2       # "watching now" shows from this many (the visitor reading it is one)
   keep_days: 365        # view rows older than this are deleted with the hourly retention
 
+# Home rows only we can make (src/partylinks/smartrails), after the `after` row: open now, free if you come
+# now, price dropped, revealed today, last tickets, and tonight's weather. A card also shows its price before
+# a drop in the last price_down_days ("₪120 → ₪90"). The weather rows read the cached forecast only.
+smart_rails:
+  enabled: true
+  after: tonight          # an /events/rails key (api.HOME_RAILS)
+  pool: 30                # cards per row's pool (the page shows a random dozen)
+  free_now_hours: 4       # "free if you come now": free entry that ends within this many hours
+  new_hours: 24           # "revealed today": first seen this recently
+  price_down_days: 3      # "price dropped": a drop this recent
+  weather_city: tel-aviv  # enrichment.cities key whose forecast decides the weather row
+  weather_hour: 20        # tonight's slot covering this local hour
+  rain_mm: 0.5            # this much rain in that slot: "rainy day" (indoor genres tonight)
+  indoor_genres: [cinema, theatre, stand_up, escape_rooms, exhibitions, lectures, workshops, classical_opera, jazz, karaoke]
+  outdoor_min_c: 18       # dry and between these: "perfect evening outside" (outdoor genres tonight)
+  outdoor_max_c: 32
+  outdoor_genres: [nature_party, pool_party, pools, festival, markets, tours, happy_hour, food]
+
+# Plan the evening on an event's page (src/partylinks/evening): places within walk_m of the event open in each
+# step's window (before it starts / after it ends), nearest first, and the place's other listings this week.
+evening:
+  enabled: true
+  walk_m: 1500            # places this far from the event at most
+  per_step: 3             # nearest places per step
+  assumed_hours: 5        # an event with no end lasts this long (the "after" steps start then)
+  venue_days: 7           # "this week at the place": that many days ahead
+  venue_items: 6
+  steps:                  # key: its name on the page (web/src/evening); genres: place genres that fit
+    - {key: drinks, genres: [happy_hour], when: before, hours: 5}
+    - {key: dinner, genres: [fine_dining, food], when: before, hours: 5}
+    - {key: morning, genres: [coffee_carts], when: after, hours: 6}
+
+# Israeli holiday pages (src/partylinks/holiday_pages): /holiday/<key> lists the events from a holiday's eve to
+# its last day (dates: search.HOLIDAY_NAMES), /holidays the coming ones; a home row shows the next one.
+holiday_pages:
+  enabled: true
+  ahead_days: 365         # holidays starting within this many days
+  min_events: 3           # fewer events on its dates: no page yet (thin content)
+  rail_days: 21           # the home row of the next holiday from this many days before it
+
+# Weekly lines (src/partylinks/lines): the same title at the same place on the same weekday, on at least
+# min_dates upcoming dates; its card says "🔁 every Thursday".
+lines:
+  enabled: true
+  min_dates: 2
+
+# "If you liked X" on artist pages (src/partylinks/similar): artists sharing its lineups, genres and venues.
+similar:
+  enabled: true
+  ttl_seconds: 600        # the in-memory index of upcoming lineups is rebuilt this often
+  limit: 8
+  lineup_weight: 3.0      # per shared lineup
+  genre_weight: 2.0       # x genre overlap (cosine, 0-1)
+  venue_weight: 1.0       # x shared venues (Jaccard, 0-1)
+  min_score: 0.5
+
+# This week's top (/top, src/partylinks/weekly_top): saves, page views and ticket sites selling it; rising genres.
+weekly_top:
+  enabled: true
+  days: 7                 # events in the next this many days
+  views_days: 7           # views counted over the last this many days
+  limit: 10
+  like_weight: 3.0
+  view_weight: 1.0
+  listing_weight: 2.0     # per ticket site beyond the first
+  rising_days: 7          # rising genres: events first listed this recently
+  rising_limit: 6
+
 # Artists' music / social links (src/partylinks/artist_links), found automatically on MusicBrainz for
 # lineup artists with upcoming shows (most shows first) and shown on the artist and event pages, merged with
 # the ticket sites' artist profiles. Only an exact name / alias match that is the only one counts.
@@ -459,6 +527,9 @@ enrichment:
     work_spaces: ["work spaces"]
     volunteering: ["volunteering"]
     team_activities: ["team activities"]
+    # Kosher bars and restaurants: HappyTLV's own FAQ answer on the place's page (happytlv.is_kosher),
+    # declared with the place's category. Never read from text ("לא כשר" would match).
+    kosher: ["kosher"]
     nightclubs: ["nightclubs", "parties", "party", "מסיבה", "מועדוני לילה", "חיי-לילה", "חיי לילה", "gala & ball"]  # parties: Secret Tel Aviv's category
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
@@ -611,7 +682,7 @@ enrichment:
     g_stage: [theatre, stand_up, cinema, dance]
     g_culture: [culture, exhibitions, lectures, workshops, tours, religious, holidays, markets]
     g_kids: [kids, attractions, pools, escape_rooms]
-    g_food: [food, happy_hour, fine_dining, coffee_carts, open_bar]
+    g_food: [food, happy_hour, fine_dining, kosher, coffee_carts, open_bar]
     g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, environment, volunteering, team_activities]
     g_tech: [hi_tech, conference, work_spaces, meetups]
     g_community: [lgbt, liberal, kink, sensual, gender_balance, meetups]

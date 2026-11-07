@@ -83,8 +83,16 @@ function useKept<T>(key: string, url: string) {
 /** The home page's paid side rails (picked in the admin). */
 export const useSponsored = () => useKept<SponsoredRails>("sponsored", "/events/sponsored");
 
-/** The home page's rows under "Trending": a pool of the busiest events per row (server-side HOME_RAILS). */
-export const useRails = () => useKept<{ rails: Record<string, EventSummary[]> }>("rails", "/events/rails");
+/** An Israeli holiday's next dates (GET /holidays/list, partylinks.holiday_pages): eve to last day, local dates. */
+export interface Holiday { key: string; he: string; en: string; start: string; end: string; events: number; page: boolean }
+export const useHolidays = () =>
+  useQuery({ queryKey: ["holidays"], queryFn: () => getJSON<{ holidays: Holiday[] }>("/holidays/list"), staleTime: 10 * 60_000 });
+/** A holiday's dates as the filter's `when` range. */
+export const holidayWhen = (h: Pick<Holiday, "start" | "end">) => `${h.start}~${h.end}`;
+
+/** The home page's rows under "Trending": a pool of the busiest events per row (server-side HOME_RAILS);
+ *  `holiday`: the coming holiday its "holiday" row is about. */
+export const useRails = () => useKept<{ rails: Record<string, EventSummary[]>; holiday?: Holiday | null }>("rails", "/events/rails");
 
 export interface TicketSite { name: string; events: number; updated_at: string | null }
 /** A box office inside a platform (a Smarticket tenant: a city's culture hall, a council, a theatre). */

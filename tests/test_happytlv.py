@@ -126,3 +126,22 @@ def test_place_without_its_own_image_takes_its_first_party_poster() -> None:
     club = happytlv.parse_place(place + others + poster, url, "Asia/Jerusalem", date(2026, 10, 22), 1, "nightclubs")
     assert club[0].images == [f"{SITE}/img/parties/1783590637808.webp"]
     assert happytlv.parse_place(place + others, url, "Asia/Jerusalem", date(2026, 10, 22), 1, "nightclubs")[0].images == []
+
+
+def _faq(question: str, answer: str) -> str:
+    node = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": question, "acceptedAnswer": {"@type": "Answer", "text": answer}}]}  # fmt: skip
+    return f'<script type="application/ld+json">{json.dumps(node, ensure_ascii=False)}</script>'
+
+
+def test_kosher_from_the_place_faq() -> None:
+    assert happytlv.is_kosher(_faq("האם קומראן כשר?", "כן, לפי המידע שלנו המקום כשר."))
+    assert happytlv.is_kosher(_faq("האם דריה כשרה?", "כשרה לפי המסעדה; את פרטי ההשגחה כדאי לוודא."))
+    assert not happytlv.is_kosher(_faq("האם היבה כשרה?", "לא כשרה."))
+    assert not happytlv.is_kosher(_faq("אילו מסעדות שף כשרות יש בתל אביב?", "כן, 5 ברשימה שלנו"))  # a hub's question
+    assert not happytlv.is_kosher(page("bar.html"))  # no question at all
+    # Declared with the place's category, so it lands in the "kosher" genre.
+    bar = page("bar.html") + _faq("האם פועה כשר?", "כן.")
+    events = happytlv.parse_happy_hours(bar, BAR, "Asia/Jerusalem", date(2026, 10, 22), 7)
+    assert events and all(e.source_genres == ["happy hour", "kosher"] for e in events)
+    assert "kosher" in Enricher(Settings().enrichment, "Asia/Jerusalem").enrich(events[0]).genres

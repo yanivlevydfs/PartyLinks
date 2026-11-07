@@ -27,8 +27,14 @@ from partylinks.accounts.config import AccountsSettings
 from partylinks.artist_links.config import ArtistLinksSettings
 from partylinks.bot.config import BotSettings
 from partylinks.config_store.source import OverridesSource
+from partylinks.evening.config import EveningSettings
+from partylinks.holiday_pages.config import HolidayPagesSettings
+from partylinks.lines.config import LinesSettings
 from partylinks.mail.config import MailSettings
 from partylinks.popularity.config import PopularitySettings
+from partylinks.similar.config import SimilarSettings
+from partylinks.smartrails.config import SmartRailsSettings
+from partylinks.weekly_top.config import WeeklyTopSettings
 
 CONFIG_ENV_VAR = "PARTYLINKS_CONFIG"
 LOG_FORMAT = "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
@@ -627,6 +633,12 @@ class Settings(BaseSettings):
     weather: WeatherSettings = Field(default_factory=WeatherSettings)
     bot: BotSettings = Field(default_factory=BotSettings)  # the chat bot (partylinks.bot)
     popularity: PopularitySettings = Field(default_factory=PopularitySettings)  # likes / views / watching now
+    smart_rails: SmartRailsSettings = Field(default_factory=SmartRailsSettings)  # home rows (partylinks.smartrails)
+    evening: EveningSettings = Field(default_factory=EveningSettings)  # plan the evening (partylinks.evening)
+    holiday_pages: HolidayPagesSettings = Field(default_factory=HolidayPagesSettings)  # partylinks.holiday_pages
+    lines: LinesSettings = Field(default_factory=LinesSettings)  # weekly lines (partylinks.lines)
+    similar: SimilarSettings = Field(default_factory=SimilarSettings)  # artists like an artist (partylinks.similar)
+    weekly_top: WeeklyTopSettings = Field(default_factory=WeeklyTopSettings)  # this week's top (partylinks.weekly_top)
     artist_links: ArtistLinksSettings = Field(default_factory=ArtistLinksSettings)  # artists' Spotify / YouTube... (MusicBrainz)
     # Raw per-source blocks; each scraper validates its own block with its own model.
     # None = a block whose keys are all commented out (reported as invalid, not a crash).

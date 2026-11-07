@@ -37,7 +37,8 @@ from partylinks.artist_links.models import links_for as artist_links_for
 from partylinks.artwork.service import urls as artwork_urls
 from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
-from partylinks.db import EventRow, lineup_has, upcoming_filter
+from partylinks.db import EventRow, lineup_has, open_now_filters, upcoming_filter
+from partylinks.placecards import first_opening
 from partylinks.places import all_cities
 from partylinks.retention import is_current
 from partylinks.venue_profiles import load_profiles as load_venue_profiles
@@ -126,7 +127,7 @@ GENRES_HE = {
     "markets": "שווקים וקניות", "food": "אוכל", "environment": "סביבה", "religious": "דת ומסורת", "holidays": "חגים",
     "sport": "ספורט", "theatre": "תיאטרון", "kids": "ילדים ומשפחה", "lectures": "הרצאות והעשרה", "tours": "סיורים וטיולים",
     "dance": "מחול", "ballroom": "ריקודים סלוניים", "folk_dance": "ריקודי עם", "latin_dance": "ריקודים לטיניים", "salsa": "סלסה",
-    "escape_rooms": "חדרי בריחה", "attractions": "אטרקציות", "coffee_carts": "עגלות קפה", "fine_dining": "מסעדות שף",
+    "escape_rooms": "חדרי בריחה", "attractions": "אטרקציות", "coffee_carts": "עגלות קפה", "fine_dining": "מסעדות שף", "kosher": "מקומות כשרים",
     "work_spaces": "חללי עבודה", "volunteering": "התנדבות", "team_activities": "פעילויות לצוות", "nightclubs": "מועדונים",
     "pools": "בריכות ופארקי מים", "pool_party": "מסיבות בריכה",
     "nature_party": "מסיבות טבע", "open_bar": "אלכוהול חופשי", "over_40": "מסיבות 40 פלוס", "youth": "מסיבות נוער",
@@ -244,10 +245,11 @@ def _upcoming(session: Session, *where: Any, limit: int = LIST_LIMIT, abroad: bo
     (the primary): the same party sold on four sites is listed once."""
     if abroad is not None:
         where = (EventRow.country.is_not(None) if abroad else EventRow.country.is_(None), *where)
+    where = (upcoming_filter(), EventRow.is_primary.is_(True), *where)
     return list(
         session.scalars(
             select(EventRow)
-            .where(upcoming_filter(), EventRow.is_primary.is_(True), *where)
+            .where(*where, first_opening(where))  # a place once (its next opening), not once a day
             .order_by(EventRow.start_at.asc().nulls_first())
             .limit(limit)
             .options(selectinload(EventRow.images))
@@ -830,6 +832,8 @@ def _genre_filter(genre: str, cfg: Settings) -> ColumnElement[bool]:
 
 def _when_where(when: str | None, cfg: Settings) -> list[ColumnElement[bool]]:
     today = datetime.now(ZoneInfo(cfg.timezone)).date()
+    if when == "now":  # /now: open at this hour (a bar's happy hour, a party in progress)
+        return open_now_filters(ZoneInfo(cfg.timezone))
     if when == "tonight":
         return [EventRow.local_date == today]
     if when == "weekend":
@@ -959,7 +963,7 @@ def _city_intros(path: Path = CONTENT_DIR / "city_intros.yaml") -> dict[str, dic
 
 def _landing_paths(session: Session, cfg: Settings) -> list[tuple[str, str, str]]:
     """(path, Hebrew name, English name) of every landing page that currently has enough events."""
-    out = [("/tonight", "מה עושים הערב", "Tonight"), ("/weekend", "סוף השבוע", "This weekend")]
+    out = [("/places", "מקומות", "Places"), ("/now", "מה פתוח עכשיו", "Open now"), ("/tonight", "מה עושים הערב", "Tonight"), ("/weekend", "סוף השבוע", "This weekend")]
     cities = city_pages(session, cfg)
     out += [(f"/city/{c.key}", c.he, c.en) for c in cities]
     out += [(f"/genre/{g}", genre_label(g, "he"), genre_label(g, "en")) for g in genre_counts(session, cfg)]
@@ -973,6 +977,9 @@ def _landing_paths(session: Session, cfg: Settings) -> list[tuple[str, str, str]
     out += [(f"/region/{k.replace('_', '-')}", f"אירועים {REGION_NAMES[k][1]}", f"Events in {REGION_NAMES[k][2]}") for k in region_pages(session)]
     out += [(f"/abroad/{slug}", country_name(code, "he"), country_name(code, "en")) for slug, code in abroad_countries(session).items()]
     out += [(f"/price/{slug}", f"אירועים {PRICE_LABELS[b][0]}", f"Events {PRICE_LABELS[b][1]}") for slug, b in price_pages(session).items()]
+    from partylinks.holiday_pages.pages import paths as holiday_paths  # local: it imports this module
+
+    out += [("/top", "הכי מבוקשים השבוע", "Most wanted this week"), *holiday_paths(session, cfg)]
     return out
 
 
@@ -982,6 +989,9 @@ def _landing_text(kind: str, lang: str, label: str, place: str = "") -> tuple[st
     g, p = label, place
     if lang == "he":
         return {
+            "now": ("מה פתוח עכשיו? האפי האוור, מסיבות ואירועים ברגע זה",
+                    "מה פתוח עכשיו: האפי האוורים, מסעדות, מסיבות, הופעות ומקומות שפתוחים ברגע זה בישראל, עם שעות, מחירים וכרטיסים.",
+                    "כל מה שפתוח ומתקיים עכשיו, לפי השעות של כל מקום ואירוע. מתעדכן כל דקה.", "עכשיו"),
             "tonight": ("מה עושים הערב? כל האירועים הערב בישראל",
                         "מה עושים הערב: כל המסיבות, ההופעות, הסטנדאפ וההצגות של הערב בישראל, עם שעות, מחירים, כניסה חופשית וכרטיסים.",
                         "כל האירועים שמתקיימים הערב, מעודכן כמה פעמים ביום מאתרי הכרטיסים בישראל.", "הערב"),
@@ -1020,6 +1030,9 @@ def _landing_text(kind: str, lang: str, label: str, place: str = "") -> tuple[st
                       f"כל האירועים הקרובים שיש בהם כרטיס {g}, מכל אתרי הכרטיסים במקום אחד.", g),
         }[kind]  # fmt: skip
     return {
+        "now": ("What's open now in Israel: happy hours, parties and events",
+                "What's open right now in Israel: happy hours, restaurants, parties, live music and places open at this hour, with times, prices and tickets.",
+                "Everything open and happening right now, by each place's and event's own hours. Refreshed every minute.", "right now"),
         "tonight": ("What's on tonight in Israel",
                     "Everything happening tonight in Israel: parties, live music, stand-up and shows, with times, prices, free entry and tickets.",
                     "Every event happening tonight, refreshed several times a day from Israeli ticketing sites.", "tonight"),
@@ -1113,7 +1126,7 @@ def resolve_landing(session: Session, cfg: Settings, lang: str, path: str) -> La
     he = lang == "he"
     head, *rest = path.strip("/").split("/")
     when: str | None = None
-    if head in WHENS and not rest:
+    if (head in WHENS or head == "now") and not rest:
         land = Landing(head, path)
         when = head
     elif head == "genre" and len(rest) in (1, 2):
@@ -1204,7 +1217,7 @@ def _related(session: Session, cfg: Settings, lang: str, path: str) -> list[tupl
         out += [(f"/abroad/{slug}", country_name(code, lang)) for slug, code in abroad_countries(session).items()]
     elif head == "price":
         out += [(f"/price/{slug}", ("אירועים " if he else "Events ") + PRICE_LABELS[b][0 if he else 1]) for slug, b in price_pages(session).items()]
-    if head in ("city", "genre", "region", "tonight", "weekend"):
+    if head in ("city", "genre", "region", "now", "tonight", "weekend"):
         out += [(f"/region/{k.replace('_', '-')}", REGION_NAMES[k][0] if he else REGION_NAMES[k][2].removeprefix("the ").capitalize()) for k in region_pages(session)]
     return [x for x in dict.fromkeys(out) if x[0] != path]
 
@@ -1631,10 +1644,35 @@ def register(app: FastAPI, site_dir: Path) -> None:
     def abroad(request: Request) -> HTMLResponse:
         return page(request, abroad_page)
 
+    @app.get("/places", include_in_schema=False)
+    def places(request: Request) -> HTMLResponse:
+        from partylinks.placecards.pages import places_page  # local: placecards.pages imports this module
+
+        return page(request, places_page)
+
+    # Feature pages whose modules import this one: imported when a page is asked for.
+    @app.get("/holidays", include_in_schema=False)
+    def holidays_index(request: Request) -> HTMLResponse:
+        from partylinks.holiday_pages.pages import holidays_page
+
+        return page(request, holidays_page)
+
+    @app.get("/holiday/{key}", include_in_schema=False)
+    def holiday(key: str, request: Request) -> HTMLResponse:
+        from partylinks.holiday_pages.pages import holiday_page
+
+        return page(request, lambda s, c, lang: holiday_page(s, c, lang, key))
+
+    @app.get("/top", include_in_schema=False)
+    def top_week(request: Request) -> HTMLResponse:
+        from partylinks.weekly_top.pages import top_page
+
+        return page(request, top_page)
+
     def landing(request: Request) -> HTMLResponse:
         return page(request, lambda s, c, lang: landing_page(s, c, lang, request.url.path.rstrip("/")))
 
-    for path in ("/tonight", "/weekend", "/genre/{genre}", "/genre/{genre}/{when}", "/city/{city}", "/city/{city}/{sub}",
+    for path in ("/now", "/tonight", "/weekend", "/genre/{genre}", "/genre/{genre}/{when}", "/city/{city}", "/city/{city}/{sub}",
                  "/region/{region}", "/abroad/{country}", "/price/{band}"):  # fmt: skip
         app.get(path, include_in_schema=False)(landing)
 

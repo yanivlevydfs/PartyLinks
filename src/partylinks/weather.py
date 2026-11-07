@@ -79,6 +79,14 @@ def _load(path: Path) -> None:
             log.warning("weather cache %s unreadable: %s", path, exc)
 
 
+def cached_slots(settings: Settings, lat: float, lng: float) -> list[list[Any]]:
+    """The place's last forecast, from the cache only (never fetches): for code that cannot wait on MET,
+    such as the home rows (partylinks.smartrails). [] when no visitor asked for that place yet."""
+    _load(cache_file(settings))
+    hit = _cache.get((round(lat, 1), round(lng, 1)))
+    return hit[1] if hit else []
+
+
 def _retryable(exc: BaseException) -> bool:
     """MET's edge answers 502/503 or cuts the body off in bursts: worth another try. A 4xx is not."""
     if isinstance(exc, httpx.HTTPStatusError):

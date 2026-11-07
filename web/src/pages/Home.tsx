@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ForYouRow } from "../alerts/ForYouRow";
-import { useCategories, useEvents, useLandingInfo, useRails } from "../api";
+import { holidayWhen, useCategories, useEvents, useHolidays, useLandingInfo, useRails, type Holiday } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
@@ -16,14 +16,19 @@ const REGION_PAGES = ["gush_dan", "sharon", "jerusalem", "haifa", "galilee", "ne
 const PRICE_PAGES: Record<string, string> = { "under-50": "u50", "50-150": "50_150", "150-300": "150_300", "300-plus": "300p" };
 
 /** The landing URL that shows exactly these filters (/genre/techno, /city/tel-aviv/tonight, /region/sharon...), else "/". */
-export function landingPath(f: FilterState): string {
+export function landingPath(f: FilterState, holidays: Holiday[] = []): string {
   const rest = { ...f, q: "", sort: DEFAULT_FILTERS.sort, when: "all", genres: [], regions: [], areas: [], city: null, price: "" };
   if (JSON.stringify(rest) !== JSON.stringify(DEFAULT_FILTERS)) return "/";
+  // A holiday's dates alone: its page (/holiday/hanukkah).
+  const holiday = holidays.find((h) => h.page && holidayWhen(h) === f.when);
+  if (holiday) return !f.genres.length && !f.regions.length && !f.areas.length && !f.city && !f.price ? `/holiday/${holiday.key}` : "/";
   if (f.price) {
     const slug = Object.keys(PRICE_PAGES).find((k) => PRICE_PAGES[k] === f.price);
     const alone = f.when === "all" && !f.genres.length && !f.regions.length && !f.areas.length && !f.city;
     return slug && alone ? `/price/${slug}` : "/";
   }
+  // "Open now" has one page of its own (/now), not one per genre or city.
+  if (f.when === "now") return !f.genres.length && !f.regions.length && !f.areas.length && !f.city ? "/now" : "/";
   if (f.regions.length === 1 && REGION_PAGES.includes(f.regions[0]) && !f.city && !f.areas.length && !f.genres.length && f.when === "all")
     return `/region/${f.regions[0].replace("_", "-")}`;
   const where = f.regions.length > 1 || f.areas.length ? undefined
@@ -38,12 +43,14 @@ export function landingPath(f: FilterState): string {
 
 // Landing routes (/tonight, /weekend, /genre/:genre[/tonight|weekend], /city/:city) are the home page with its filters preset;
 // the server renders the same URLs with their own title, description and FAQ for crawlers.
-export default function Home({ landing }: { landing?: "tonight" | "weekend" | "genre" | "city" | "region" | "price" }) {
+export default function Home({ landing }: { landing?: "now" | "tonight" | "weekend" | "genre" | "city" | "region" | "price" | "holiday" }) {
   const { t, lang } = useT();
   const set = useStore((s) => s.setFilters);
   const f = useStore((s) => s.filters);
   const cats = useCategories().data;
-  const { genre, when, city, sub, region, band } = useParams();
+  const { genre, when, city, sub, region, band, holiday: holidayKey } = useParams();
+  const holidays = useHolidays().data?.holidays;
+  const holiday = landing === "holiday" ? holidays?.find((h) => h.key === holidayKey) : undefined;
   const cityWhen = sub === "tonight" || sub === "weekend" ? sub : undefined;
   // Info from the server: title, intro, related links, and the names of a town that is not in CITIES.
   const info = useLandingInfo(useLocation().pathname, lang).data;
@@ -65,7 +72,7 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
       ...DEFAULT_FILTERS,
       q: filters.q,
       sort: filters.sort,
-      when: landing === "tonight" || landing === "weekend" ? landing : landing === "genre" && (when === "tonight" || when === "weekend") ? when : cityWhen ?? "all",
+      when: landing === "now" || landing === "tonight" || landing === "weekend" ? landing : landing === "genre" && (when === "tonight" || when === "weekend") ? when : cityWhen ?? "all",
       genres: landing === "genre" && genre ? [genre] : sub && !cityWhen ? [sub] : [],
       regions: landing === "region" && region ? [region.replace("-", "_")] : [],
       price: landing === "price" && band ? PRICE_PAGES[band] ?? "" : "",
@@ -75,10 +82,15 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   const cityRegion = cityName && (city === "tel-aviv" ? "tel_aviv" : cats?.cities.find((c) => c.value === cityName.he)?.area);
   // The list waits for the city's whole filter (its name, its region): a list fetched for half of it would be
   // replaced under the reader a moment later (a big layout shift).
-  const cityPending = landing === "city" && (!cityName || (!cityRegion && !cats));
+  const cityPending = (landing === "city" && (!cityName || (!cityRegion && !cats)))
+    || (landing === "holiday" && !holiday && !holidays); // a holiday's list waits for its dates too
   useEffect(() => {
     if (cityName) set({ regions: cityRegion ? [cityRegion] : [], areas: [], city: cityRegion === "tel_aviv" ? null : cityName.he });
   }, [cityName, cityRegion, set]);
+  // /holiday/:key: its dates come with the holiday list.
+  useEffect(() => {
+    if (holiday) set({ when: holidayWhen(holiday) });
+  }, [holiday, set]);
   // Filters picked here move the address to their landing URL (techno: /genre/techno), so it can be shared.
   // Not on mount: a remount (back from an event) keeps the route it came with.
   const navigate = useNavigate();
@@ -86,7 +98,8 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
   const mounted = useRef(f);
   useEffect(() => {
     if (f === mounted.current) return;
-    const path = landingPath(f);
+    if (landing === "holiday" && !holiday) return; // its dates are still on their way: not a filter change
+    const path = landingPath(f, holidays);
     if (path === pathname) return;
     useStore.getState().setPreset(false); // the target page keeps these filters instead of resetting them
     navigate(path + search, { replace: true });
@@ -98,6 +111,7 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
     : landing === "city" ? t.landing.city(cityName?.[lang] ?? city ?? "")
     : landing === "region" ? t.landing.city(t.areas[region?.replace("-", "_") ?? ""] ?? "")
     : landing === "price" ? t.prices[PRICE_PAGES[band ?? ""] as keyof typeof t.prices] ?? ""
+    : landing === "holiday" ? t.landing.holiday(holiday?.[lang] ?? "")
     : landing ? t.landing[landing] : t.tagline;
   const heading = (landing && info?.title) || title;
   useTitle(landing ? heading : undefined);
@@ -180,12 +194,14 @@ export default function Home({ landing }: { landing?: "tonight" | "weekend" | "g
 /** "Trending" (sold on the most ticket sites in two weeks), then a row per audience for the month ahead:
  *  all from one cached request (/events/rails), drawn from the visitor's last copy until it arrives. */
 function Trending() {
-  const { t } = useT();
+  const { t, lang } = useT();
   const q = useRails();
   const rails = Object.entries(q.data?.rails ?? {});
   if (q.isPending) return <Rail title={t.trending} sub={t.trendingSub} pool={undefined} />;
+  const holiday = q.data?.holiday;
   return <>{rails.map(([key, pool]) => key === "trending"
     ? <Rail key={key} title={t.trending} sub={t.trendingSub} pool={pool} />
+    : key === "holiday" ? holiday && <Rail key={key} title={t.holidayRail(holiday[lang])} sub={t.holidayRailSub} pool={pool} />
     : t.rails[key] && <Rail key={key} title={t.rails[key][0]} sub={t.rails[key][1]} pool={pool} />)}</>;
 }
 

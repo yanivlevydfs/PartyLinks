@@ -41,6 +41,9 @@ const AdminPage = lazy(() => import("./pages/Admin"));
 const AccountPage = lazy(() => import("./accounts/AccountPage")); // optional Google account (its own files: accounts/)
 const AlertsPage = lazy(() => import("./alerts/AlertsPage")); // alerts (its own files: alerts/)
 const SavedPage = lazy(() => import("./saved/SavedPage")); // saved events (its own files: saved/)
+const HolidaysPage = lazy(() => import("./holidays/HolidaysPage")); // Israeli holidays (its own files: holidays/)
+const TopPage = lazy(() => import("./top/TopPage")); // this week's most wanted (its own files: top/)
+const PlacesPage = lazy(() => import("./places/PlacesPage")); // the places hub (its own files: places/)
 const PlanPage = lazy(() => import("./plans/PlanPage")); // "who's coming with me?" (its own files: plans/)
 const GroupsPage = lazy(() => import("./plans/GroupsPage")); // the account's event groups (plans/)
 
@@ -52,7 +55,7 @@ if (urlLang === "he" || urlLang === "en") useStore.getState().setLang(urlLang);
 // the server answered 404, which it marks noindex (landing pages never are). Show the 404 page for
 // that URL instead of an empty listing.
 const serverMissing = document.querySelector('meta[name="robots"][content^="noindex"]') ? location.pathname : null;
-type LandingKind = "tonight" | "weekend" | "genre" | "city" | "region" | "price";
+type LandingKind = "holiday" | "now" | "tonight" | "weekend" | "genre" | "city" | "region" | "price";
 // The home page is a Landing too: picking a filter moves "/" to "/genre/x" (and back) without remounting
 // the page, so an open filter drawer stays open.
 function Landing({ landing }: { landing?: LandingKind }) {
@@ -64,6 +67,9 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { path: "/", element: <Landing /> },
+      { path: "/now", element: <Landing landing="now" /> },
+      { path: "/holiday/:holiday", element: <Landing landing="holiday" /> },
+      { path: "/holidays", element: <Suspense fallback={<Loader />}><HolidaysPage /></Suspense> },
       { path: "/tonight", element: <Landing landing="tonight" /> },
       { path: "/weekend", element: <Landing landing="weekend" /> },
       { path: "/genre/:genre", element: <Landing landing="genre" /> },
@@ -76,6 +82,8 @@ const router = createBrowserRouter([
       { path: "/plan/:id", element: <Suspense fallback={<Loader />}><PlanPage /></Suspense> },
       { path: "/groups", element: <Suspense fallback={<Loader />}><GroupsPage /></Suspense> },
       { path: "/map", element: <Suspense fallback={<Loader />}><MapPage /></Suspense> },
+      { path: "/places", element: <Suspense fallback={<Loader />}><PlacesPage /></Suspense> },
+      { path: "/top", element: <Suspense fallback={<Loader />}><TopPage /></Suspense> },
       { path: "/abroad", element: <Abroad /> },
       { path: "/abroad/:country", element: <Abroad /> },
       { path: "/venues", element: <VenuesIndex /> },

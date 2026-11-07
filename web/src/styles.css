@@ -587,6 +587,18 @@ select option { background: var(--panel-solid); color: var(--text); }
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .meta { margin: 0; color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A place's card: open now, and its deal ("1+1 על שתייה"). */
+.meta.now { color: var(--green); font-weight: 600; }
+.meta.deal { color: var(--lime); }
+.meta.free-until { color: var(--green); }
+.flag .was { opacity: .7; margin-inline-end: .35em; font-weight: 400; }
+/* Plan the evening (web/src/evening): a step's nearby places as compact links. */
+.evening ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.evening h5 { margin: 14px 0 8px; font-size: 15px; color: var(--muted); }
+.evening li a { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); text-decoration: none; }
+.evening li a:hover { border-color: var(--line-hot); }
+.evening small { color: var(--muted); }
+.evening small.deal { color: var(--lime); }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .tag {
   font-size: 12px; padding: 3px 11px; border-radius: 999px; font-weight: 500; white-space: nowrap;

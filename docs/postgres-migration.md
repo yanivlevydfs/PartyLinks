@@ -881,3 +881,26 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **שאילתה (session קריאה):** ‏`SELECT id, group_id, is_primary, venue_slug, latitude, longitude, venue_name, address, city, genres, lineup, min_age FROM events WHERE is_listed` (כל הטבלה, ~78k שורות: 2.3 שניות ב-prod, 2026-11-05). הקיבוץ וההשלמה בפייתון.
 - **כתיבה (session כתיבה קצר):** ‏`bulk_update_by_id` רק על שורות שהשתנו (~4,300 במעבר הראשון, אחר כך מעט): ‏`UPDATE events SET latitude, longitude, venue_name, address, city, genres, lineup, min_age WHERE id = :id`, ממוינות לפי id (בלי deadlocks).
 - **Tests:** ‏`tests/test_dedup.py::test_a_listing_takes_what_it_lacks_from_the_other_stores_of_its_event`.
+
+### 2026-11-06 (מקום = כרטיס אחד, "פתוח עכשיו", תגית כשר, דף `/places`)
+- **אין טבלה או עמודה חדשה.** מודול חדש `partylinks/placecards/`. כשר הוא ז'אנר (`genres` JSON, ‏`kosher`) מה-FAQ של HappyTLV.
+- **מקום פעם אחת (`placecards.first_opening`):** לכל רשימה (`GET /events`, ‏`/events/map`, ‏`seo._upcoming`) נוסף `AND (NOT is_place OR id IN (SELECT DISTINCT ON (url) id FROM events WHERE <אותם פילטרים> AND is_place ORDER BY url, start_at, id))`, כש-`is_place` = ‏`coalesce((extra->>'happy_hour')::boolean, false)`. נמדד ב-production (קריאה בלבד, 83,120 אירועים, 6,777 מהם מקומות): ה-count של הרשימה הראשית עלה מ-49ms ל-111ms, ורק כשה-cache (60 ש') מתחלף. בלי אינדקס חדש.
+- **פתוח עכשיו (`db.open_now_filters`, ‏`?open_now=true`, ‏`/now`):** ‏`start_at <= now AND (end_at IS NOT NULL OR (time_known AND start_at <> <חצות של היום>))`, יחד עם `upcoming_filter`.
+- **כרטיס מקום (`placecards.card_extras`):** ‏`SELECT id, extra->>'deal' FROM events WHERE id IN (<הכרטיסים בעמוד>) AND is_place` (על ה-PK).
+- **`GET /places/categories` ו-`/places`:** ‏`SELECT url, genres, <open now> FROM events WHERE <upcoming> AND is_primary AND country IS NULL AND is_place`, מקובץ בפייתון (~7k שורות).
+- **Tests:** ‏`tests/test_placecards.py`, ‏`tests/test_open_now.py`, ‏`tests/test_happytlv.py::test_kosher_from_the_place_faq`.
+
+### 2026-11-06 (שורות בית חכמות: `partylinks/smartrails`)
+- **אין טבלה או עמודה חדשה.** ההגדרות ב-`smart_rails` (admin, ‏config_overrides).
+- **`GET /events/rails`** (cache, ‏`api.cache_ttl_seconds`): עוד עד 7 שאילתות כמו כל שורה (פילטרי האירועים, ‏`ORDER BY` trending, ‏`LIMIT smart_rails.pool`), כל אחת עם תנאי משלה: פתוח עכשיו (`db.open_now_filters`); חינם עכשיו (`group_free_entry_until <= now + free_now_hours`); נחשף היום (`first_seen_at >= now - new_hours`); אחרוני כרטיסים (`free_sold_out OR group_id IN (SELECT group_id FROM events WHERE is_sold_out)`); המחיר ירד (`coalesce(group_id, id) IN (SELECT coalesce(l.group_id, l.id) FROM events l JOIN deal_changes d ON d.event_id = l.id WHERE d.kind = 'price_down' AND d.at >= since)`, על `ix_deal_changes_kind` / ‏`at`); מזג אוויר (ז'אנרים של הערב, רק כשיש תחזית ב-cache).
+- **כל רשימת כרטיסים (`smartrails.rails.was_prices`):** ‏`SELECT coalesce(l.group_id, l.id), d.old FROM events l JOIN deal_changes d ON d.event_id = l.id WHERE d.kind = 'price_down' AND d.at >= since AND coalesce(l.group_id, l.id) IN (<הקבוצות בעמוד>)`.
+- **Tests:** ‏`tests/test_smartrails.py`.
+
+### 2026-11-06 (תכנון ערב, חגים, ליינים קבועים, אמנים דומים, הכי מבוקשים)
+- **אין טבלה או עמודה חדשה.** חבילות `partylinks/evening`, ‏`holiday_pages`, ‏`lines`, ‏`similar`, ‏`weekly_top`; ההגדרות ב-settings.yaml (admin, ‏config_overrides).
+- **`GET /events/{ref}/evening`** (cache): לכל שלב ב-`evening.steps`: ‏`SELECT ... FROM events WHERE <פילטרי האירועים, ז'אנרים> AND is_place AND start_at < :hi AND coalesce(end_at, start_at + interval '1 day') > :lo AND url <> :url AND latitude BETWEEN .. AND longitude BETWEEN ..` (קופסה סביב האירוע; המרחק המדויק בפייתון). ‏"השבוע במקום": ‏`WHERE venue_slug = :slug AND start_at <= :until` (על `ix_events_venue_slug`).
+- **חגים (`/holiday/<key>`, ‏`/holidays`, ‏`GET /holidays/list`, שורת הבית):** ‏`SELECT local_date, count(*) FROM events WHERE <upcoming> AND is_primary AND country IS NULL AND NOT is_place AND local_date BETWEEN :first AND :last GROUP BY local_date` (שאילתה אחת לכל החגים); דף החג: ‏`seo._upcoming` עם `local_date BETWEEN :start AND :end AND NOT is_place`. התאריכים מ-`search.HOLIDAY_NAMES` (‏convertdate), בלי טבלה.
+- **ליין קבוע (`lines.weekly`, כל רשימת כרטיסים):** ‏`SELECT venue_slug, title, day_of_week FROM events WHERE <upcoming> AND is_primary AND NOT is_place AND (venue_slug, title, day_of_week) IN (<הכרטיסים בעמוד>) GROUP BY 1, 2, 3 HAVING count(DISTINCT local_date) >= :min_dates`.
+- **אמנים דומים (`GET /artists/similar`):** ‏`SELECT lineup, genres, venue_slug FROM events WHERE <upcoming> AND is_primary AND lineup IS NOT NULL`, פעם ב-`similar.ttl_seconds` לכל process (אינדקס בזיכרון).
+- **הכי מבוקשים (`/top`, ‏`GET /top/list`):** ‏`SELECT events.* FROM events LEFT JOIN (SELECT event_id, count(*) FROM saved_events GROUP BY event_id) LEFT JOIN (SELECT event_id, count(*) FROM event_views WHERE day >= :since GROUP BY event_id) WHERE <upcoming, 7 ימים> ORDER BY <ציון> LIMIT :limit`; ז'אנרים עולים: ‏`SELECT genres FROM events WHERE <upcoming> AND first_seen_at >= :since`.
+- **Tests:** ‏`tests/test_evening.py`, ‏`tests/test_holiday_pages.py`, ‏`tests/test_discovery.py`.

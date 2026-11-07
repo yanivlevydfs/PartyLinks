@@ -61,6 +61,22 @@ export function when(e: Pick<EventSummary, "start_at" | "time_known" | "time_zon
   return new Date(iso).toLocaleString(t.locale, { timeZone: e.time_zone ?? TZ, ...opts });
 }
 
+/** "Free until 23:30 · 40 min left": free entry (any listing) that has not ended; the time left within a day. */
+export function freeUntilLabel(e: Pick<EventSummary, "group_free_entry_until" | "group_has_free_entry" | "has_free_entry" | "start_at" | "time_known" | "time_zone" | "local_date">,
+  t: Strings, now = Date.now()) {
+  const until = e.group_free_entry_until;
+  if (!until || !(e.group_has_free_entry ?? e.has_free_entry)) return null;
+  const left = Date.parse(until) - now;
+  if (!(left > 0)) return null;
+  const time = when(e, t, { hour: "2-digit", minute: "2-digit" }, until);
+  return time ? t.freeUntil(time, left < DAY_MS ? t.minutes(Math.ceil(left / 60_000)) : "") : null;
+}
+
+/** Started and not over yet (known hours only): "open now" / "on now" on its card. */
+export function isOn(e: Pick<EventSummary, "start_at" | "end_at" | "time_known">, now = Date.now()) {
+  return e.time_known !== false && !!e.start_at && !!e.end_at && Date.parse(e.start_at) <= now && now < Date.parse(e.end_at);
+}
+
 /** ``tickets``: the listing's tiers, when known, so "Free + paid" names the cheapest paid ticket ("Free · from 60 ₪"). */
 export function priceLabel(e: Pick<EventSummary, "entry_type" | "min_price" | "has_free_entry" | "currency">, t: Strings, tickets?: { price: number | null }[]) {
   // A 0 ₪ RSVP tier beside paid tickets makes min_price 0: still a paid event, not "Free".
@@ -101,7 +117,7 @@ export function useTitle(title: string | undefined) {
 
 // --------------------------------------------------------------------------- layout
 // The home page and its filter pages (/genre/x, /tonight...) are one page: picking a filter keeps the scroll.
-const LANDING = /^\/(tonight|weekend|genre|city|region)?(\/|$)/;
+const LANDING = /^\/(now|holiday|tonight|weekend|genre|city|region)?(\/|$)/;
 
 export function Layout() {
   const { t, lang } = useT();
@@ -149,6 +165,10 @@ export function Layout() {
       <SponsoredStrip />
       <footer className="foot wrap">
         <nav className="foot-links" aria-label={t.genres}>
+          <Link to="/top">{t.top}</Link>
+          <Link to="/places">{t.places}</Link>
+          <Link to="/holidays">{t.holidays}</Link>
+          <Link to="/now">{t.now}</Link>
           <Link to="/tonight">{t.tonight}</Link>
           <Link to="/weekend">{t.weekend}</Link>
           <Link to="/blog">{t.nav.blog}</Link>
@@ -288,6 +308,7 @@ export function freshness(e: EventSummary): "new" | "updated" | null {
 export function Card({ e }: { e: EventSummary }) {
   const { t, lang } = useT();
   const fresh = freshness(e);
+  const freeLabel = freeUntilLabel(e, t);
   const ad = useAdView<HTMLAnchorElement>(e.sponsored, true, "results");
   // Cards show the best offer across duplicate listings, matching the free-entry filter.
   const price = priceLabel(
@@ -316,13 +337,21 @@ export function Card({ e }: { e: EventSummary }) {
         {e.is_sold_out ? (
           <span className="flag sold">{t.soldOut}</span>
         ) : (
-          price && <span className={"flag" + (price === t.free ? " free" : "")}>{price}</span>
+          price && <span className={"flag" + (price === t.free ? " free" : "")}>
+            {/* The price before a recent drop, struck through ("₪120 → ₪90"). */}
+            {e.was_price != null && <s className="was">{money(e.was_price, e.currency, t.locale)}</s>}{price}
+          </span>
         )}
         <Sources e={e} className="on-img" />
       </div>
       <div className="card-body">
         <h3 dir="auto">{e.title}</h3>
-        <p className="meta">{when(e, t, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+        <p className="meta">{when(e, t, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}
+          {/* A place's opening: until when ("18:00–20:00"). */}
+          {e.place && e.end_at && e.time_known !== false && `–${when(e, t, { hour: "2-digit", minute: "2-digit" }, e.end_at)}`}</p>
+        {isOn(e) && <p className="meta now">{e.place ? t.now : t.happeningNow}</p>}
+        {e.deal && <p className="meta deal" dir="auto">🥂 {e.deal}</p>}
+        {!e.is_sold_out && freeLabel && <p className="meta free-until">{freeLabel}</p>}
         {(e.venue_name || e.area || e.country) && (
           // Abroad: city and country, so "Madarae" alone does not read as a place in Israel.
           <p className="meta">📍 {[e.venue_name, e.country ? [e.city, countryName(e.country, lang)].filter(Boolean).join(", ")
@@ -336,7 +365,9 @@ export function Card({ e }: { e: EventSummary }) {
             <span className="tag sold">{t.freeSoldOut}</span>
           )}
           {e.has_discount && !e.is_sold_out && <span className="tag deal">{t.discountOnly}</span>}
-          {e.genres.slice(0, 3).map((g) => <span key={g} className="tag">{genreLabel(lang, g)}</span>)}
+          {e.weekly && <span className="tag line">{t.weekly(label(t.days, e.weekly))}</span>}
+          {/* Kosher always shows on a place's card, whatever its other genres. */}
+          {[...new Set([...e.genres.filter((g) => g === "kosher"), ...e.genres])].slice(0, 3).map((g) => <span key={g} className="tag">{genreLabel(lang, g)}</span>)}
           {!!e.min_age && <span className="tag age">{t.age(e.min_age)}</span>}
         </div>
       </div>

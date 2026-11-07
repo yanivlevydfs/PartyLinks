@@ -54,6 +54,16 @@ export interface EventSummary {
   /** Saved hearts and page views (one per visitor a day), see web/src/popularity. */
   likes?: number;
   views?: number;
+  /** A place's listing (a bar's happy hour, an escape room): one card per place, see partylinks.placecards. */
+  place?: boolean;
+  /** The place's offer: "1+1 על שתייה". */
+  deal?: string | null;
+  /** The price before a drop in the last few days (partylinks.smartrails): shown struck through. */
+  was_price?: number | null;
+  /** A weekly line (partylinks.lines): its weekday, "thursday". */
+  weekly?: string | null;
+  /** Free entry until then (any listing of the event). */
+  group_free_entry_until?: string | null;
 }
 
 export interface Ticket {

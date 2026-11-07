@@ -17,6 +17,7 @@ import { useStore } from "../store";
 import type { MapEvent } from "../types";
 import { eventPath, Loader, Sources, useT, useTitle, venuePath, when } from "../ui";
 import type { Lang } from "../i18n";
+import { GENRE_ICON as ICON } from "../genreIcons";
 
 const ISRAEL: [number, number] = [31.9, 34.95];
 
@@ -64,6 +65,7 @@ export default function MapPage() {
   }
   const placed = data?.items.length ?? 0;
   const unplaced = data?.unplaced ?? 0;
+  const [heat, setHeat] = useState(false);
 
   return (
     <main className="map-page">
@@ -74,6 +76,7 @@ export default function MapPage() {
           <>
             <span>{t.onMap(placed)}</span>
             {unplaced > 0 && <small>{t.noLocation(unplaced)}</small>}
+            <button className={"chip" + (heat ? " on" : "")} aria-pressed={heat} onClick={() => setHeat(!heat)}>{t.heatMap}</button>
           </>
         )}
       </div>
@@ -81,7 +84,7 @@ export default function MapPage() {
       <MapContainer center={ISRAEL} zoom={8} className="map" scrollWheelZoom>
         {showTiles && <Tiles lang={lang} />}
         <FitTo filter={toQuery(params)} points={[...spots.values()].map((l) => [l[0].latitude, l[0].longitude] as [number, number])} />
-        <Pins spots={[...spots.values()]} />
+        {heat ? <Heat items={data?.items ?? []} /> : <Pins spots={[...spots.values()]} />}
       </MapContainer>
       </div>
       {!showTiles && (
@@ -98,15 +101,34 @@ export default function MapPage() {
   );
 }
 
-const ICON: Record<string, string> = {
-  techno: "🎛️", house: "🏠", trance: "🌀", hip_hop: "🎤", rnb: "🎶", mainstream: "🪩", pop: "🎵", reggaeton_latin: "💃",
-  afro: "🥁", mizrahi: "🪕", israeli: "🇮🇱", greek: "🏛️", electronic: "⚡", edm: "🔊", throwback: "📼", eighties: "📻", nineties: "💿", rock_indie: "🎸",
-  jazz: "🎷", live_show: "🎙️", lgbt: "🏳️‍🌈", stand_up: "😂", karaoke: "🎤", hi_tech: "💻", conference: "🧑‍💼", ai: "🤖",
-  festival: "🎪", meetups: "🤝", culture: "🎭", exhibitions: "🖼️", workshops: "🛠️", cinema: "🎬", markets: "🛍️", food: "🍽️",
-  sport: "⚽", happy_hour: "🥂", theatre: "🎭", kids: "🧸", lectures: "📚", tours: "🗺️", dance: "🩰", yoga_wellness: "🧘",
-  escape_rooms: "🔐", attractions: "🎡", coffee_carts: "☕", fine_dining: "🍷", work_spaces: "💼", volunteering: "🤲",
-  team_activities: "🧩", nightclubs: "🪩", pools: "🏊", pool_party: "🏖️", nature_party: "🌲", open_bar: "🍸", over_40: "🕺", youth: "🎒",
-};
+// The heat view: events counted per ~1 km cell (0.01°), a circle per cell, bigger and hotter where more is on.
+const HEAT_CELL = 0.01;
+const HEAT_MAX_RADIUS = 34;
+
+function Heat({ items }: { items: MapEvent[] }) {
+  const { t } = useT();
+  const cells = useMemo(() => {
+    const out = new Map<string, { lat: number; lng: number; n: number }>();
+    for (const e of items) {
+      const lat = Math.round(e.latitude / HEAT_CELL) * HEAT_CELL, lng = Math.round(e.longitude / HEAT_CELL) * HEAT_CELL;
+      const key = `${lat.toFixed(2)},${lng.toFixed(2)}`;
+      const c = out.get(key) ?? { lat, lng, n: 0 };
+      c.n += 1;
+      out.set(key, c);
+    }
+    return [...out.values()].sort((a, b) => a.n - b.n); // the hottest drawn last, on top
+  }, [items]);
+  const most = Math.max(1, ...cells.map((c) => c.n));
+  return <>{cells.map((c) => {
+    const share = c.n / most;
+    return (
+      <CircleMarker key={`${c.lat},${c.lng}`} center={[c.lat, c.lng]} radius={6 + Math.sqrt(share) * HEAT_MAX_RADIUS} stroke={false}
+        pathOptions={{ fillColor: `hsl(${Math.round(50 - share * 50)} 100% 55%)`, fillOpacity: 0.25 + share * 0.5 }}>
+        <Popup>{t.results(c.n)}</Popup>
+      </CircleMarker>
+    );
+  })}</>;
+}
 
 /** Big category buttons over the map: one family at a time (the full filter below opens each one and takes several). */
 function Cats() {

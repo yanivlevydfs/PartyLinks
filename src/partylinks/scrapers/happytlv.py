@@ -61,6 +61,7 @@ _NOT_A_PLACE = {"itemlist", "breadcrumblist", "faqpage", "question", "webpage", 
 # on a place page those are other places ("more like this").
 _POSTERS = re.compile(r'<img[^>]+src="(/img/parties/[^"]+)"')
 HAPPY_HOUR = "happy hour"
+KOSHER = "kosher"  # declared genre word (enrichment.declared_genres.kosher)
 
 
 class HappyTlvSettings(SourceSettings):
@@ -173,6 +174,17 @@ def parse_party(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
     )
 
 
+def is_kosher(page_html: str) -> bool:
+    """The page's own FAQ: "האם קומראן כשר?" answered "כן, ..." or "כשרה לפי המסעדה" ("לא כשרה" is
+    not). Bars and restaurants only ask it when they know; a page without the question is not kosher."""
+    for node in jsonld_nodes(page_html):
+        name = str(node.get("name") or "")
+        if "question" in schema_types(node) and name.startswith("האם") and "כשר" in name:
+            answer = clean_str(_dict(node.get("acceptedAnswer")).get("text")) or ""
+            return answer.startswith(("כן", "כשר"))
+    return False
+
+
 def _clock(value: Any) -> time | None:
     match = re.match(r"\s*(\d{1,2}):(\d{2})", str(value or ""))
     return time(int(match.group(1)) % 24, int(match.group(2))) if match else None
@@ -205,6 +217,7 @@ def parse_happy_hours(page_html: str, url: str, timezone: str, today: date, days
         return []
     address, geo = _dict(place.get("address")), _dict(place.get("geo"))
     deal = clean_str(offer.get("description"))
+    kosher = [KOSHER] if is_kosher(page_html) else []
     key = hashlib.sha1(url.encode()).hexdigest()[:10]
     return [
         ScrapedEvent(
@@ -221,7 +234,7 @@ def parse_happy_hours(page_html: str, url: str, timezone: str, today: date, days
             latitude=to_float(geo.get("latitude")),
             longitude=to_float(geo.get("longitude")),
             images=[i for i in _list(place.get("image")) if isinstance(i, str)],
-            source_genres=[HAPPY_HOUR],
+            source_genres=[HAPPY_HOUR, *kosher],
             event_types=[HAPPY_HOUR],
             extra={
                 PLACE_LISTING: True,
@@ -264,6 +277,7 @@ def parse_place(page_html: str, url: str, timezone: str, today: date, days: int,
         urljoin(url, src) for src in _POSTERS.findall(page_html)[:1]
     ]
     website = next((u for u in _list(place.get("sameAs")) if isinstance(u, str) and u.startswith("http")), None)
+    kosher = [KOSHER] if is_kosher(page_html) else []
     return [
         ScrapedEvent(
             source=HappyTlvScraper.name,
@@ -279,7 +293,7 @@ def parse_place(page_html: str, url: str, timezone: str, today: date, days: int,
             latitude=to_float(geo.get("latitude")),
             longitude=to_float(geo.get("longitude")),
             images=images,
-            source_genres=[category],
+            source_genres=[category, *kosher],
             event_types=[category],
             extra={
                 PLACE_LISTING: True,

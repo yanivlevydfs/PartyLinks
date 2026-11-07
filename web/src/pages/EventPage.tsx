@@ -7,6 +7,7 @@ import { genreLabel, type Strings } from "../i18n";
 import type { Ticket } from "../types";
 import { forecastAt, Weather } from "../Weather";
 import { PlanButton } from "../plans/PlanButton";
+import { EveningPlan } from "../evening/EveningPlan";
 import { SaveButton } from "../saved/SaveButton";
 import { EventStats } from "../popularity/EventStats";
 import { LineupPlayer } from "../artist_links/ArtistPlayer";
@@ -159,6 +160,8 @@ export default function EventPage() {
             </ul>
           </section>
         )}
+
+        <EveningPlan eventId={e.id} />
 
         {e.description && (
           <section>

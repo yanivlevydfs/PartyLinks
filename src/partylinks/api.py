@@ -32,7 +32,7 @@ from sqlalchemy.exc import DataError
 from sqlalchemy.orm import Session, aliased, defer, load_only, selectinload, undefer
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from partylinks import clicks, searches, seo, utm
+from partylinks import clicks, placecards, searches, seo, utm
 from partylinks import status as server_status
 from partylinks.accounts import install as install_accounts
 from partylinks.accounts import sign_in_state
@@ -56,9 +56,13 @@ from partylinks.db import (
     ImageRow,
     ScrapeRunRow,
     lineup_has,
+    open_now_filters,
     upcoming_filter,
 )
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
+from partylinks.holiday_pages import core as holiday_pages
+from partylinks.holiday_pages.routes import HolidayOut
+from partylinks.lines.weekly import weekly as lines_weekly
 from partylinks.logs import setup_logging
 from partylinks.mail.images import router as mail_images_router
 from partylinks.media import VARIANT_WIDTHS, variant_path
@@ -72,12 +76,14 @@ from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
 from partylinks.search import by_skeleton, did_you_mean, relevance, smart_filters, sounds_like, tier
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
+from partylinks.smartrails import rails as smartrails
 from partylinks.venue_profiles import VenueProfile
 from partylinks.venue_profiles import linked_names as linked_venue_names
 from partylinks.venue_profiles import load_profiles as load_venue_profiles
 from partylinks.venue_profiles import logo_path as venue_logo_path
 from partylinks.venue_profiles import match as match_venue_profiles
 from partylinks.venues import PLACE_LISTING
+from partylinks.weather import cached_slots
 from partylinks.weather import router as weather_router
 from partylinks.worker.link import WorkerLink
 
@@ -223,6 +229,11 @@ class EventSummaryOut(_Out):
     sources: list[str] = []
     likes: int = 0  # saved hearts (partylinks.popularity)
     views: int = 0  # visitors who opened its page, once a day each
+    # A place's listing (a bar's happy hour, an escape room), one card per place: partylinks.placecards.
+    place: bool = False
+    deal: str | None = None  # the place's offer: "1+1 על שתייה"
+    was_price: float | None = None  # the price before a recent drop (partylinks.smartrails)
+    weekly: str | None = None  # a weekly line's weekday, "thursday" (partylinks.lines)
 
     @model_validator(mode="after")
     def _go(self) -> EventSummaryOut:
@@ -308,6 +319,7 @@ class RailsOut(BaseModel):
     """The home page's rows under "Trending": a pool per row (the page shows a random dozen)."""
 
     rails: dict[str, list[EventSummaryOut]] = {}
+    holiday: HolidayOut | None = None  # the coming holiday its "holiday" row is about (partylinks.holiday_pages)
 
 
 class MapEventOut(_Out):
@@ -696,6 +708,7 @@ def build_event_filters(
     region: list[str] | None = None,
     weekend: bool | None = None,
     on_date: date | None = None,
+    open_now: bool | None = None,
     upcoming: bool = True,
     include_duplicates: bool = False,
     date_from: datetime | None = None,
@@ -764,6 +777,8 @@ def build_event_filters(
         filters.append(EventRow.is_weekend.is_(weekend))
     if on_date:
         filters.append(EventRow.local_date == on_date)
+    if open_now:
+        filters += open_now_filters(tz)
     if upcoming:
         filters.append(upcoming_filter())
     if not include_duplicates:
@@ -975,16 +990,23 @@ def _group_covers(session: Session, rows: Sequence[EventRow]) -> dict[str, str]:
     return found
 
 
-def _summary_extras(session: Session, rows: Sequence[EventRow]) -> dict[str, dict[str, Any]]:
+def _summary_extras(session: Session, rows: Sequence[EventRow], cfg: Settings | None = None) -> dict[str, dict[str, Any]]:
+    cfg = cfg or get_settings()
     deals = _best_deals(session, rows)
     sources = _group_sources(session, rows)
     covers = _group_covers(session, rows)
     # Only with no picture of its own or its group's: a real picture always wins (artwork package).
     drawn = artwork.urls(session, [r.id for r in rows if not (r.cover_url or covers.get(r.group_id or ""))])
     liked = popularity.counts(session, [r.id for r in rows])  # likes and views
+    places = placecards.card_extras(session, rows)
+    was = smartrails.was_prices(session, cfg, rows, datetime.now(UTC))
+    weekly = lines_weekly(session, cfg, rows)
     return {
         r.id: {
             **liked[r.id],
+            **places.get(r.id, {}),
+            "was_price": was.get(r.id),
+            "weekly": weekly.get(r.id),
             "best_deal": deals.get(r.best_listing_id) if r.best_listing_id else None,
             "sources": sources[r.id],
             "cover_url": r.cover_url or covers.get(r.group_id or "") or drawn.get(r.id),
@@ -1156,6 +1178,9 @@ def _register_routes(app: FastAPI) -> None:
         ] = None,
         weekend: bool | None = None,
         on_date: Annotated[date | None, Query(alias="date", description="Local start date")] = None,
+        open_now: Annotated[
+            bool | None, Query(description="Started and not over yet (a bar's happy hour, a party in progress)")
+        ] = None,
         upcoming: Annotated[bool, Query(description="Hide events that already ended")] = True,
         include_duplicates: Annotated[
             bool, Query(description="Also return non-primary listings of the same event")
@@ -1207,6 +1232,7 @@ def _register_routes(app: FastAPI) -> None:
             paid = ads.promoted_for(session, card, filters, page, min(cfg.api.sponsored_results, size)) if sponsored else None
             first, drop = paid if paid else ([], [])
             where = [*filters, EventRow.id.not_in(drop)] if drop else filters
+            where = [*where, placecards.first_opening(where)]  # a place is one card, not one per day
             start, stop = max((page - 1) * size - len(drop), 0), page * size - len(drop)
             weak: set[str] = set()
 
@@ -1261,7 +1287,7 @@ def _register_routes(app: FastAPI) -> None:
                     select(EventRow.id).where(*filters[:-1], *smart_filters(near, cfg)).limit(1)
                 ):
                     suggestion = near
-            extras = _summary_extras(session, rows)
+            extras = _summary_extras(session, rows, cfg)
             items = [
                 EventSummaryOut.model_validate(r).model_copy(update=extras[r.id] | {"sponsored": promoted.get(r.id), "in_text": r.id in weak})
                 for r in rows
@@ -1290,7 +1316,7 @@ def _register_routes(app: FastAPI) -> None:
                     EventRow.local_date, EventRow.venue_name,
                     EventRow.latitude, EventRow.longitude, EventRow.source, EventRow.group_id,
                 )
-                .where(*filters, located)
+                .where(*filters, located, placecards.first_opening(filters))  # a place: one pin
                 .order_by(_START, EventRow.id)
             ).all()  # fmt: skip
             unplaced = session.scalar(select(func.count()).select_from(EventRow).where(*filters, not_(located))) or 0
@@ -1323,6 +1349,18 @@ def _register_routes(app: FastAPI) -> None:
     from partylinks.plans.routes import router as plans_router
 
     app.include_router(plans_router)
+    from partylinks.placecards.routes import router as places_router
+
+    app.include_router(places_router)
+    from partylinks.evening.routes import router as evening_router
+    from partylinks.holiday_pages.routes import router as holidays_router
+    from partylinks.similar.routes import router as similar_router
+    from partylinks.weekly_top.routes import router as top_router
+
+    app.include_router(evening_router)
+    app.include_router(holidays_router)
+    app.include_router(similar_router)
+    app.include_router(top_router)
     app.include_router(ads_admin_router)
     from partylinks.config_store.routes import router as config_overrides_router
 
@@ -1337,6 +1375,34 @@ def _register_routes(app: FastAPI) -> None:
         def build(session: Session) -> RailsOut:
             now = datetime.now(ZoneInfo(cfg.timezone))
             out = RailsOut()
+
+            def load(filters: list[ColumnElement[bool]], pool: int) -> list[EventSummaryOut]:
+                where = [*filters, placecards.first_opening(filters)]  # a place is one card
+                rows = session.scalars(
+                    select(EventRow)
+                    .where(*where)
+                    .order_by(_SORT_COLUMNS[EventSort.trending], _START, EventRow.id)
+                    .limit(pool)
+                    .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
+                ).all()
+                extras = _summary_extras(session, rows, cfg)
+                return [EventSummaryOut.model_validate(r).model_copy(update=extras[r.id]) for r in rows]
+
+            # Rows only we can make (open now, price dropped, the weather...): after smart_rails.after.
+            city = next((c for c in cfg.enrichment.cities if c.key == cfg.smart_rails.weather_city and c.center), None)
+            slots = cached_slots(cfg, *city.center) if city and city.center else []
+            smart = smartrails.rail_filters(cfg, now, lambda **kw: event_filters(request, **kw), slots)
+            # The coming holiday's row, from rail_days before it (partylinks.holiday_pages).
+            soon = now.date() + timedelta(days=cfg.holiday_pages.rail_days)
+            coming = next(((h, n) for h, n in holiday_pages.with_pages(session, cfg, now.date()) if h.start <= soon), None)
+            if coming:
+                holiday, n = coming
+                out.holiday = HolidayOut(key=holiday.key, he=holiday.he, en=holiday.en, start=holiday.start, end=holiday.end,
+                                         events=n, page=True)  # fmt: skip
+                smart = {"holiday": [*event_filters(request, date_to=now + timedelta(days=cfg.holiday_pages.ahead_days)),
+                                     *holiday_pages.where(holiday)], **smart}  # fmt: skip
+            if cfg.smart_rails.after not in HOME_RAILS:
+                out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
             for key, spec in HOME_RAILS.items():
                 kw = {k: v for k, v in spec.items() if k not in ("days", "multi", "today", "exclude")}
                 if spec.get("today"):
@@ -1346,15 +1412,9 @@ def _register_routes(app: FastAPI) -> None:
                     filters.append(EventRow.group_size > 1)
                 if spec.get("exclude"):
                     filters.append(not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec["exclude"]))))
-                rows = session.scalars(
-                    select(EventRow)
-                    .where(*filters)
-                    .order_by(_SORT_COLUMNS[EventSort.trending], _START, EventRow.id)
-                    .limit(RAIL_POOL)
-                    .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
-                ).all()
-                extras = _summary_extras(session, rows)
-                out.rails[key] = [EventSummaryOut.model_validate(r).model_copy(update=extras[r.id]) for r in rows]
+                out.rails[key] = load(filters, RAIL_POOL)
+                if key == cfg.smart_rails.after:
+                    out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
             return out
 
         return _cached(request, build)

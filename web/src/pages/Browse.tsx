@@ -5,6 +5,7 @@ import { useCategories, useEvents, useLandingInfo } from "../api";
 import type { Facet } from "../types";
 import { ArtistLinks } from "../artist_links/ArtistLinks";
 import { ArtistPlayer } from "../artist_links/ArtistPlayer";
+import { SimilarArtists } from "../similar/SimilarArtists";
 import { artistPath, Chip, countryName, EventGrid, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
 const PAGE = 60;
@@ -147,6 +148,7 @@ export function ArtistPage() {
         <ArtistPlayer name={profile?.value ?? name} links={info?.artist_links} />
         <h4 className="section-title">{t.upcomingAt}</h4>
         <EventGrid params={{ artist: name }} />
+        <SimilarArtists name={profile?.value ?? name} />
       </main>
     </>
   );

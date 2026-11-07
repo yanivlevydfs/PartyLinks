@@ -17,7 +17,7 @@ export default defineConfig({
       [
         "/events", "/images", "/categories", "/sources", "/runs", "/maintenance", "/admin/api", "/site",
         "/weather", "/locate", "/posts", "/ticket-sites", "/landing-info", "/go", "/health",
-        "/plans", "/api", "/auth", "/artwork",
+        "/plans", "/api", "/auth", "/artwork", "/places/categories", "/holidays/list", "/artists/similar", "/top/list",
       ].map((p) => [p, api]),
     ),
   },

@@ -41,6 +41,8 @@ function priceParams(band: string): Params {
 }
 
 function whenParams(when: string): Params {
+  // Started and not over yet; places listed all day (no hours) are left out (api.py open_now).
+  if (when === "now") return { open_now: "true" };
   if (when === "tonight") return { date: today() };
   // "Weekend" is this weekend (as the server's /weekend page), not every weekend ahead.
   if (when === "weekend") return { weekend: "true", date_to: ahead(7) };
@@ -53,11 +55,11 @@ function whenParams(when: string): Params {
 
 /** The end of the day `days` after today (local dates, read in the server's timezone). */
 const ahead = (days: number) => new Date(Date.parse(today() + "T12:00:00Z") + days * 864e5).toISOString().slice(0, 10) + "T23:59:59";
-const PRESETS = ["all", "tonight", "weekend", "week", "month"];
+const PRESETS = ["all", "now", "tonight", "weekend", "week", "month"];
 
 /** Short name of a `when` value: a preset, a day, or a range of days. */
 export function whenText(t: ReturnType<typeof useT>["t"], when: string) {
-  if (when === "tonight" || when === "weekend" || when === "week" || when === "month") return t[when];
+  if (when === "now" || when === "tonight" || when === "weekend" || when === "week" || when === "month") return t[when];
   if (when === tomorrow()) return t.tomorrow;
   const day = (v: string) => new Date(v + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, weekday: "short", day: "numeric", month: "numeric" });
   return when.split("~").map(day).join(" – ");
@@ -177,6 +179,7 @@ export function Filters() {
     <div className="filters">
       <FilterRow label={t.when} scroll>
         <Chip on={f.when === "all"} onClick={() => pickWhen("all")}>{t.all}</Chip>
+        <Chip on={f.when === "now"} onClick={() => pickWhen("now")}>{t.now}</Chip>
         <Chip on={f.when === "tonight"} onClick={() => pickWhen("tonight")}>{t.tonight}</Chip>
         <Chip on={f.when === tomorrow()} onClick={() => pickWhen(tomorrow())}>{t.tomorrow}</Chip>
         <Chip on={f.when === "weekend"} onClick={() => pickWhen("weekend")}>{t.weekend}</Chip>

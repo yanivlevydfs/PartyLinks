@@ -10,7 +10,8 @@ import time
 from collections import defaultdict
 from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import contextmanager
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, tzinfo
+from datetime import time as dt_time
 from decimal import Decimal
 from typing import Any, ClassVar, cast
 
@@ -416,6 +417,16 @@ def upcoming_filter() -> ColumnElement[bool]:
     settings = get_settings()
     # ...and still listed by its source (see EventRow.is_listed).
     return EventRow.is_listed.is_not(False) & current_clause(settings.retention, settings.timezone)
+
+
+def open_now_filters(tz: tzinfo, now: datetime | None = None) -> list[ColumnElement[bool]]:
+    """Started and not over yet, with ``upcoming_filter`` (which knows when an event is over): /now and
+    the "open now" filter. A listing with no hours (a place open "all day", a 00:00 start with no end) is
+    not known to be open at this hour, so it is left out."""
+    now = now or datetime.now(UTC)
+    midnight = datetime.combine(now.astimezone(tz).date(), dt_time(), tz)
+    timed = EventRow.time_known.is_(True) & (EventRow.start_at != midnight)
+    return [EventRow.start_at <= now, EventRow.end_at.is_not(None) | timed]
 
 
 def offers_hash(event: ScrapedEvent) -> str:

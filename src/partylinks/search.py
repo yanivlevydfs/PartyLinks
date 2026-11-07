@@ -250,7 +250,7 @@ SYNONYMS.update({
     "אלקטרונית": ("electronic",), "אלקטרוני": ("electronic",), "electronic": ("electronic",), "electro": ("electronic",),
     "רטרו": ("throwback",), "retro": ("throwback",), "שנות ה-90": ("nineties",), "שנות ה90": ("nineties",), "90s": ("nineties",), "ניינטיז": ("nineties",),
     "שנות ה-80": ("eighties",), "שנות ה80": ("eighties",), "80s": ("eighties",), "אייטיז": ("eighties",),
-    "קפה": ("coffee_carts",), "עגלת קפה": ("coffee_carts",), "הייטק": ("hi_tech",), "hitech": ("hi_tech",), "סטארטאפ": ("startups",), "startup": ("startups",),
+    "כשר": ("kosher",), "כשרה": ("kosher",), "כשרים": ("kosher",), "kosher": ("kosher",), "קפה": ("coffee_carts",), "עגלת קפה": ("coffee_carts",), "הייטק": ("hi_tech",), "hitech": ("hi_tech",), "סטארטאפ": ("startups",), "startup": ("startups",),
 })  # fmt: skip
 REGION_ALIASES = {
     "gush_dan": ("גוש דן", "מרכז", "המרכז", "center"), "haifa": ("קריות", "הקריות", "krayot"),
