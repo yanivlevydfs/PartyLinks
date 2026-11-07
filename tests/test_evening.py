@@ -33,6 +33,10 @@ def test_the_evening_around_a_party(tmp_path: Path) -> None:
         event("next", party + timedelta(days=2), title="Club X Saturday", venue_name="Club X", latitude=CLUB[0], longitude=CLUB[1]),
         _place("near-bar", datetime.combine(day, time(19), tz), 2, "happy hour", (32.0820, 34.7810), 2),  # ~250 m
         _place("chef", datetime.combine(day, time(18), tz), 4, "fine dining", (32.0805, 34.7805), 4),  # ₪₪₪₪
+        # The same restaurant from a second HappyTLV section (another page): listed once.
+        event("chef-again", datetime.combine(day, time(18), tz), title="chef", url="https://www.happytlv.com/y/chef",
+              end_at=datetime.combine(day, time(22), tz), latitude=32.0805, longitude=34.7805,
+              source_genres=["fine dining"], extra={PLACE_LISTING: True, "price_level": 4}),
         _place("far-bar", datetime.combine(day, time(19), tz), 2, "happy hour", (32.1300, 34.7800)),  # ~5.5 km
         _place("late-bar", datetime.combine(day + timedelta(days=1), time(19), tz), 2, "happy hour", (32.0810, 34.7800)),
         _place("coffee", datetime.combine(day + timedelta(days=1), time(7), tz), 5, "coffee carts", (32.0790, 34.7790)),

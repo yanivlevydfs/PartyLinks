@@ -54,6 +54,11 @@ def _near(row: EventRow, walk_m: int) -> list[ColumnElement[bool]]:
     ]
 
 
+def _place_key(r: EventRow) -> str:
+    """One place, whatever page it was listed from: its name, else its page."""
+    return (r.venue_name or r.title or r.url).casefold().strip()
+
+
 def plan(session: Session, cfg: Settings, row: EventRow, filters: Filters, budget: bool = False) -> Evening:
     """``budget``: only places up to ``evening.budget_max_level`` (₪₪) and those with no price given."""
     s = cfg.evening
@@ -64,6 +69,9 @@ def plan(session: Session, cfg: Settings, row: EventRow, filters: Filters, budge
     here = (row.latitude, row.longitude)
     end = row.end_at or row.start_at + timedelta(hours=s.assumed_hours)
     steps = []
+    # A place once in the whole plan: HappyTLV lists one restaurant under two sections (two pages, two
+    # URLs), and a bar with a happy hour is also a dinner place.
+    used: set[str] = set()
     for step in s.steps:
         lo, hi = (
             (row.start_at - timedelta(hours=step.hours), row.start_at) if step.when == "before"
@@ -79,11 +87,13 @@ def plan(session: Session, cfg: Settings, row: EventRow, filters: Filters, budge
         )).all()  # fmt: skip
         nearest: dict[str, tuple[EventRow, int]] = {}
         for r in rows:  # earliest opening of each place
-            if r.url in nearest or r.latitude is None or r.longitude is None:
+            key = _place_key(r)
+            if key in nearest or key in used or r.latitude is None or r.longitude is None:
                 continue
             if (d := round(meters(here, (r.latitude, r.longitude)))) <= s.walk_m:
-                nearest[r.url] = (r, d)
+                nearest[key] = (r, d)
         picked = sorted(nearest.values(), key=lambda x: x[1])[: s.per_step]
+        used.update(_place_key(r) for r, _ in picked)
         if picked:
             steps.append(Step(step.key, picked))
     return Evening(steps, venue)
