@@ -785,6 +785,7 @@ enrichment:
     muzi: [live_show]       # music listings
     jerusalemtheatre: [theatre]
     comy: [stand_up]        # comedy box office
+    standupist: [stand_up]  # stand-up portal: its types are formats ("full show", "marathon")
     luma: [meetups]
     meetup: [meetups]
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
@@ -826,7 +827,7 @@ enrichment:
   detect_genres_from_text: true
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
-  declared_genres_only: [funzing, ticketeams]
+  declared_genres_only: [funzing, ticketeams, standupist]
   # Tel Aviv municipality's catch-all category: "אמנות", "מוזיקה", "קלאסית" in its name made every dance class
   # an exhibition, a concert and classical music too. Its events also carry the real category ("מחול").
   declared_ignore: ["מחול אמנות ומוזיקה"]
@@ -3119,6 +3120,23 @@ sources:
       "עמישב": "קהילת שיקגו 1"
     http:
       impersonate: chrome
+
+  standupist:
+    # Standupist (standupist.co.il): stand-up portal and box office on WordPress + EventON. One call to
+    # /wp-json/eventon/events gives every show (~48, Nov 2026, more than the listing shows): dates, weekly
+    # repeats, venue pin, prices. Two more name the artists (post tags), one listing page marks sold out.
+    enabled: true
+    cron: "47 5,17 * * *"
+    venue_names:
+      "בא BE הוד השרון": "הבאBE בר"   # BaBe Bar's own source; its stand-up nights link to these pages
+      "אוזן תל אביב": "אוזן בר"
+      "קאמל קומדי": "קאמל קומדי קלאב"
+      "השכנה ירושלים": "השכנה"
+      "הפינה - חמדיה": "פאב הפינה"
+      "המקום של אבא - אריאל": "המקום של אבא"
+    http:
+      concurrency: 1
+      request_delay_seconds: 0.5
 
   jerusalemmuni:
     # Jerusalem municipality calendar (jerusalem.muni.il/he/experience/lobbyevents, Umbraco behind

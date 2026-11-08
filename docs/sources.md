@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 112 configured sources, 111 on. Each one has its own module in
+SPOTX collects from 113 configured sources, 112 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -69,6 +69,7 @@ pagination and what the listing and the event page provide.
 | `music80s` | 80sMusic (80smusic.co.il): guide to 80s / 90s / new wave / dark 80s parties; tickets on IWANT | 10:15, 22:15 | yes |
 | `iwant` | IWANT (iwant.co.il): Tel Aviv party box office (80s / new wave / dark eighties, grunge, trance) | 09:22, 21:22 | yes |
 | `eventbuzz` | Eventbuzz (eventbuzz.co.il): independent productions and community events | 07:10, 19:10 | yes |
+| `standupist` | Standupist (standupist.co.il), stand-up portal and box office: its EventON API in one call (repeats, pin, prices), post tags name the artists, the listing page marks sold out | 05:47, 17:47 | yes |
 | `comy` | Comy (comy.co.il), stand-up box office. On beside the `comy` host under `pres` (prices, tickets left); dedup merges the two | 06:33, 18:33 | yes |
 | `jerusalemtheatre` | Jerusalem Theatre (jerusalem-theatre.co.il): theatre, music, dance, festivals and children's shows | 07:33, 19:33 | yes |
 | `beershevatheatre` | Be'er Sheva Theatre (b7t.co.il): repertoire, guest shows and children's theatre | 06:53, 18:53 | yes |
