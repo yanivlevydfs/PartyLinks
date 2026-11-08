@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { SaveAlertButton } from "../alerts/SaveAlertButton";
 import { useAlertText } from "../alerts/i18n";
-import { useEvent } from "../api";
+import { isGone, useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { Ticket } from "../types";
 import { forecastAt, Weather } from "../Weather";
@@ -27,12 +27,22 @@ export default function EventPage() {
   const { id = "" } = useParams();
   const { t, lang } = useT();
   const navigate = useNavigate();
-  const { data: e, isError, isPending } = useEvent(id);
+  const { data: e, error, isError, isPending } = useEvent(id);
   useTitle(e?.title);
   const back = () => (history.state?.idx > 0 ? navigate(-1) : navigate("/"));
   const [more, setMore] = useState(false);
   const alertText = useAlertText();
 
+  if (isError && isGone(error)) {
+    // 410: the event is over (past events are purged); 404: no such event.
+    const ended = error.message.startsWith("410");
+    return (
+      <main className="wrap">
+        <p className="msg">{ended ? t.eventEnded : t.eventMissing}</p>
+        <Link className="f-pill" to="/">{t.eventGoneCta}</Link>
+      </main>
+    );
+  }
   if (isError) return <p className="msg wrap">{t.error}</p>;
   if (isPending) return <Loader />;
 

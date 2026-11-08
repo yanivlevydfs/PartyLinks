@@ -37,8 +37,15 @@ export function useMapEvents(params: Params = {}) {
   return useQuery({ queryKey: ["events", "map", qs], queryFn: () => getJSON<MapPins>(`/events/map?${qs}`) });
 }
 
+/** An event page's request answered 410 (the event is over) or 404 (no such event). */
+export const isGone = (error: Error | null) => /^(404|410) /.test(error?.message ?? "");
+
 export const useEvent = (id: string) =>
-  useQuery({ queryKey: ["event", id], queryFn: () => getJSON<EventDetail>(`/events/${encodeURIComponent(id)}`) });
+  useQuery({
+    queryKey: ["event", id],
+    queryFn: () => getJSON<EventDetail>(`/events/${encodeURIComponent(id)}`),
+    retry: (count, error) => !isGone(error) && count < 1, // an ended event will not come back on a retry
+  });
 
 /** Facet counts, of every upcoming event or (params) of those matching a filter. */
 export function useCategories(params: Params = {}) {
