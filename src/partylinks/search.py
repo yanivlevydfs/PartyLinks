@@ -277,7 +277,7 @@ SOURCE_ALIASES = {
     "livevents": ("live events", "לייב איוונטס"), "issta": ("איסתא",), "megaevents": ("mega events", "מגה איוונטס"),
     "viagogo": ("ויאגוגו",), "hamenagen": ("המנגן",), "hatarbut": ("היכל התרבות",), "kikarhamusica": ("כיכר המוזיקה",),
     "xplorer": ("אקספלורר",), "livetickets": ("live tickets", "לייב טיקטס"), "tiuli": ("טיולי",), "ogo": ("אוגו",),
-    "muzi": ("מוזי",), "onecity": ("one city", "וואן סיטי"), "petahtikvamuni": ("עיריית פתח תקווה", "עיריית פתח תקוה"), "sharepointmuni": ("עיריית ראשון לציון", "עיריית ראשל\"צ"), "tickethouse": ("ticket house", "טיקט האוס"),
+    "muzi": ("מוזי",), "onecity": ("one city", "וואן סיטי"), "petahtikvamuni": ("עיריית פתח תקווה", "עיריית פתח תקוה"), "jerusalemmuni": ("עיריית ירושלים",), "sharepointmuni": ("עיריית ראשון לציון", "עיריית ראשל\"צ"), "tickethouse": ("ticket house", "טיקט האוס"),
     "barak": ("barak tickets", "ברק כרטיסים"), "bargiyora": ("bar giyora", "בר גיורא"), "levontin7": ("levontin 7", "לבונטין 7"),
     "yellowsubmarine": ("yellow submarine", "הצוללת הצהובה"), "halutz": ("hahalutz 33", "החלוץ 33"), "meety": ("מיטי",),
     "funzing": ("פאנזינג",), "ticketeams": ("טיקטימס",),

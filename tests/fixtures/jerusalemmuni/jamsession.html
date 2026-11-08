@@ -1,0 +1,1646 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+
+<head>
+    <script>
+    // Google Consent Mode: Google tags (GA4, Google Ads, and Google tags inside GTM) start as denied - no cookies,
+    // cookieless pings only - unless the visitor already accepted in the cookie banner (the Silktide choice stored
+    // in localStorage). SliktideCookieManager sends the update when the visitor accepts or rejects.
+    // Tags without Consent Mode (Facebook Pixel, Hotjar) are wrapped in jerConsent.whenAccepted(fn): they run right
+    // away for a visitor who accepted, otherwise only after Accept.
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    (function () {
+        var accepted = false;
+        try { accepted = accepted || localStorage.getItem('silktideCookieChoice_analytics') === 'true'; } catch (e) { }
+        var state = accepted ? 'granted' : 'denied';
+        gtag('consent', 'default', {
+            analytics_storage: state,
+            ad_storage: state,
+            ad_user_data: state,
+            ad_personalization: state
+        });
+
+        var waiting = [];
+        window.jerConsent = {
+            accepted: accepted,
+            whenAccepted: function (fn) { if (window.jerConsent.accepted) fn(); else waiting.push(fn); },
+            grant: function () {
+                window.jerConsent.accepted = true;
+                while (waiting.length) waiting.shift()();
+            },
+            deny: function () {
+                window.jerConsent.accepted = false;
+                // Consent Mode stops new tracking cookies but does not remove existing ones (an earlier visit,
+                // a tag that ran before the choice) - delete the first-party ones on this host and its parents.
+                var names = document.cookie.split(';').map(function (c) { return c.split('=')[0].trim(); })
+                    .filter(function (n) { return /^(_ga|_gid|_gat|_gcl|_fbp|_fbc|_hj)/.test(n); });
+                var parts = location.hostname.split('.'), domains = [''];
+                for (var i = 0; i < parts.length - 1; i++) domains.push('; domain=.' + parts.slice(i).join('.'));
+                names.forEach(function (n) {
+                    domains.forEach(function (d) { document.cookie = n + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/' + d; });
+                });
+            }
+        };
+    })();
+</script>
+
+    <!-- 245375 -->
+    <title id="cTitle">ג'אם סשן ירושלמי | עיריית ירושלים</title>
+<meta name="description" content="&#x5D1;&#x5DE;&#x5D4; &#x5E4;&#x5EA;&#x5D5;&#x5D7;&#x5D4; &#x5DC;&#x5DE;&#x5D5;&#x5D6;&#x5D9;&#x5E7;&#x5D0;&#x5D9;&#x5DD; &#x5DE;&#x5DB;&#x5DC; &#x5D4;&#x5E8;&#x5DE;&#x5D5;&#x5EA; &#x5D5;&#x5DE;&#x5DB;&#x5DC; &#x5D4;&#x5E1;&#x5D2;&#x5E0;&#x5D5;&#x5E0;&#x5D5;&#x5EA; &#x5D4;&#x5DE;&#x5D5;&#x5D6;&#x5D9;&#x5E7;&#x5DC;&#x5D9;&#x5D9;&#x5DD; - &#x5E1;&#x5D0;&#x5D5;&#x5E0;&#x5D3; &#x5D0;&#x5D9;&#x5DB;&#x5D5;&#x5EA;&#x5D9;, &#x5D0;&#x5D5;&#x5D5;&#x5D9;&#x5E8;&#x5D4; &#x5D1;&#x5D9;&#x5EA;&#x5D9;&#x5EA;, &#x5DE;&#x5D7;&#x5D9;&#x5E8;&#x5D9;&#x5DD; &#x5E0;&#x5D5;&#x5D7;&#x5D9;&#x5DD; &#x5D1;&#x5D1;&#x5E8; &#x5D5;&#x5E7;&#x5D4;&#x5DC; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5DE;&#x5D9; &#x5E0;&#x5E4;&#x5DC;&#x5D0;" />
+<meta name="keywords" content="" />
+
+    <meta property="og:title" content="&#x5D2;&#x27;&#x5D0;&#x5DD; &#x5E1;&#x5E9;&#x5DF; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5DE;&#x5D9;" />
+    <meta property="og:description" content="&#x5D1;&#x5DE;&#x5D4; &#x5E4;&#x5EA;&#x5D5;&#x5D7;&#x5D4; &#x5DC;&#x5DE;&#x5D5;&#x5D6;&#x5D9;&#x5E7;&#x5D0;&#x5D9;&#x5DD; &#x5DE;&#x5DB;&#x5DC; &#x5D4;&#x5E8;&#x5DE;&#x5D5;&#x5EA; &#x5D5;&#x5DE;&#x5DB;&#x5DC; &#x5D4;&#x5E1;&#x5D2;&#x5E0;&#x5D5;&#x5E0;&#x5D5;&#x5EA; &#x5D4;&#x5DE;&#x5D5;&#x5D6;&#x5D9;&#x5E7;&#x5DC;&#x5D9;&#x5D9;&#x5DD; - &#x5E1;&#x5D0;&#x5D5;&#x5E0;&#x5D3; &#x5D0;&#x5D9;&#x5DB;&#x5D5;&#x5EA;&#x5D9;, &#x5D0;&#x5D5;&#x5D5;&#x5D9;&#x5E8;&#x5D4; &#x5D1;&#x5D9;&#x5EA;&#x5D9;&#x5EA;, &#x5DE;&#x5D7;&#x5D9;&#x5E8;&#x5D9;&#x5DD; &#x5E0;&#x5D5;&#x5D7;&#x5D9;&#x5DD; &#x5D1;&#x5D1;&#x5E8; &#x5D5;&#x5E7;&#x5D4;&#x5DC; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5DE;&#x5D9; &#x5E0;&#x5E4;&#x5DC;&#x5D0;" />
+    <meta property="og:type" content="article" />
+    <meta property="og:image" content="https://www.jerusalem.muni.il/media/qh4k2r5s/feaa607e-9288-49ca-8dd6-eb2c0565d6ac.jpg" />
+    <meta property="og:url" content="https://www.jerusalem.muni.il/he/experience/allevents/jamsession/" />
+<link rel="canonical" href="/he/experience/allevents/jamsession/" />
+<meta charset="utf-8">
+<meta name="google-site-verification" content="_13GgeoqtvsxKJmCB1_Z4NmEkE1seK9bRS6l7pQwbQQ" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="referrer" content="origin">
+<link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+
+<link rel="stylesheet" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css">
+<link crossorigin="anonymous" href="/sb/mono-css-style-bundle.css.v7836977b95c3dc0457f5415bb4e20e25ca8ee3db" rel="stylesheet" />
+<script src="https://butterfly-button.web.app/cdn/butterfly-plugin.js"></script>
+
+
+<!-- Google Tag Manager -->
+<script>
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-MNXGN7X');</script>
+
+    <!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+
+<script src="/scripts/jquery.3.7.1.min.js"></script>
+<script src="/scripts/popper.min.js"></script>
+<script src="/scripts/bootstrap.4.6.2.bundle.min.js"></script>
+<script src="/scripts/smartmenus.js"></script>
+<script src="/scripts/navScroll.js"></script>
+<script src="/scripts/slick.js"></script>
+<script src="/sb/main-js-bundle.js.v7836977b95c3dc0457f5415bb4e20e25ca8ee3db"></script>
+<script src="/scripts/ekko-lightbox.min.js"></script>
+<script src="/scripts/moment-with-locales.js"></script>
+<script src="/scripts/jquery.autocomplete.js"></script>
+<script src="/scripts/hashset.js"></script>
+<script src="/scripts/hashtable.js"></script>
+<script src="/scripts/he.min.js"></script>
+<script src="/scripts/datepicker.js"></script>
+<script src="/scripts/dropzone.js"></script>
+<script src="/scripts/player.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $(document).on('click', '[data-toggle="lightbox"]', function (event) {
+            event.preventDefault();
+            return $(this).ekkoLightbox({
+                alwaysShowClose: true,
+            });
+        });
+            });
+</script>
+
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YGZ6DKG79P"></script>
+    <script>
+        window.dataLayer = window.dataLayer || []; 
+                window.dataLayer.push({
+                    "devision_name": "מוסדות תרבות",
+                    "department_name": ""
+                });             function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-YGZ6DKG79P');
+    </script>
+
+    <script type="text/javascript">
+        window.membitEP = window.membitEP || {};
+        window.membitEP.p4 = document.documentElement.lang;
+        (function () { var sc = document.createElement('script'); sc.src = 'https://chat.membitbot.com/scripts/embedding-jerusalem-test.js?' + Math.random(); var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(sc, s); })();
+    </script>
+
+
+
+            <link rel="stylesheet" href="/css/silktide-consent-manager.css?v=fR6bN16TuJKB6KMAnJncEDRYLztR2TEfNWSI7hvefbM">
+        <script src="/scripts/silktide-consent-manager.js?v=ozKmH8ONuglP8atiEkLRkxh9yRbam4wrpqLMhgY_RSU"></script>
+        <script type="text/javascript">
+            silktideCookieBannerManager.updateCookieBannerConfig({
+            background: { showBackground: true },
+
+            cookieTypes: [
+                {
+                    id: "necessary",
+                    name: "חיוניות",
+                    description: "<p>עוגיות אלו חיוניות לתפקוד התקין של האתר ולא ניתן לכבות אותן. הן מסייעות בפעולות כמו התחברות לאתר והגדרת העדפות הפרטיות שלך.</p>",
+                    required: true,
+                    onAccept: function () {
+                       // console.log('Add logic for the required Necessary here');
+                    }
+                },
+                {
+                    id: "analytics",
+                    name: "אנליטיקה",
+                    description: "<p>עוגיות אלו מסייעות לנו לשפר את האתר באמצעות מעקב אחר אילו דפים הם הפופולריים ביותר וכיצד משתמשים נעים באתר.</p>",
+                            defaultValue: true,
+                            onAccept: function () {
+                                // #56666 - "Accept all" is the only non-essential choice: Google tags (Consent Mode) and the
+                                // tags waiting in jerConsent (Facebook Pixel, Hotjar) - see ConsentMode.cshtml
+                                if (window.jerConsent) jerConsent.grant();
+                                gtag('consent', 'update', {
+                                    analytics_storage: 'granted',
+                                    ad_storage: 'granted',
+                                    ad_user_data: 'granted',
+                                    ad_personalization: 'granted',
+                                });
+                                dataLayer.push({
+                                    'event': 'consent_accepted_analytics',
+                                });
+                            },
+                            onReject: function () {
+                                if (window.jerConsent) jerConsent.deny();
+                                gtag('consent', 'update', {
+                                    analytics_storage: 'denied',
+                                    ad_storage: 'denied',
+                                    ad_user_data: 'denied',
+                                    ad_personalization: 'denied',
+                                });
+                            }
+                        }
+                    ],
+                    text: {
+                        banner: {
+                            description: "<p>אנו משתמשים בעוגיות באתר שלנו כדי לשפר את חוויית המשתמש שלך, לספק <a href='/he/city/info/'>מדיניות עוגיות</a>, להציע תוכן מותאם אישית ולנתח את תנועת המשתמשים באתר.</p>",
+                            acceptAllButtonText: "קבל את כל העוגיות",
+                            acceptAllButtonAccessibleLabel: "קבל את כל העוגיות",
+                            rejectNonEssentialButtonText: "דחה עוגיות שאינן חיוניות",
+                            rejectNonEssentialButtonAccessibleLabel: "דחה עוגיות שאינן חיוניות",
+                            preferencesButtonText: "העדפות",
+                            preferencesButtonAccessibleLabel: "Toggle preferences"
+                },
+                preferences: {
+                    title: "התאמת העדפות העוגיות שלך",
+                            description: "העדפות",
+                            creditLinkText: "",
+                            creditLinkAccessibleLabel: ""
+                        }
+                    }
+                });
+
+        </script>
+ 
+
+    <style>
+        .wait {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            opacity: 0.5;
+            background: rgba( 255, 255, 255, .4 ) url('/images/ajax-loader.gif') 50% 50% no-repeat;
+        }
+
+        body.loading {
+            overflow: hidden;
+        }
+
+            body.loading .wait {
+                display: block;
+                z-index: 99999;
+            }
+    </style>
+
+                                <script>!function(e){var n="https://s.go-mpulse.net/boomerang/";if("False"=="True")e.BOOMR_config=e.BOOMR_config||{},e.BOOMR_config.PageParams=e.BOOMR_config.PageParams||{},e.BOOMR_config.PageParams.pci=!0,n="https://s2.go-mpulse.net/boomerang/";if(window.BOOMR_API_key="JKETT-86NSG-XW3CD-4QYYK-GSVMD",function(){function e(){if(!i){var e=document.createElement("script");e.id="boomr-scr-as",e.src=window.BOOMR.url,e.async=!0,o.parentNode.appendChild(e),i=!0}}function t(e){i=!0;var n,t,a,r,d=document,O=window;if(window.BOOMR.snippetMethod=e?"if":"i",t=function(e,n){var t=d.createElement("script");t.id=n||"boomr-if-as",t.src=window.BOOMR.url,BOOMR_lstart=(new Date).getTime(),e=e||d.body,e.appendChild(t)},!window.addEventListener&&window.attachEvent&&navigator.userAgent.match(/MSIE [67]\./))return window.BOOMR.snippetMethod="s",void t(o.parentNode,"boomr-async");a=document.createElement("IFRAME"),a.src="about:blank",a.title="",a.role="presentation",a.loading="eager",r=(a.frameElement||a).style,r.width=0,r.height=0,r.border=0,r.display="none",o.parentNode.appendChild(a);try{O=a.contentWindow,d=O.document.open()}catch(_){n=document.domain,a.src="javascript:var d=document.open();d.domain='"+n+"';void(0);",O=a.contentWindow,d=O.document.open()}if(n)d._boomrl=function(){this.domain=n,t()},d.write("<bo"+"dy onload='document._boomrl();'>");else if(O._boomrl=function(){t()},O.addEventListener)O.addEventListener("load",O._boomrl,!1);else if(O.attachEvent)O.attachEvent("onload",O._boomrl);d.close()}function a(e){window.BOOMR_onload=e&&e.timeStamp||(new Date).getTime()}if(!window.BOOMR||!window.BOOMR.version&&!window.BOOMR.snippetExecuted){window.BOOMR=window.BOOMR||{},window.BOOMR.snippetStart=(new Date).getTime(),window.BOOMR.snippetExecuted=!0,window.BOOMR.snippetVersion=12,window.BOOMR.url=n+"JKETT-86NSG-XW3CD-4QYYK-GSVMD";var o=document.currentScript||document.getElementsByTagName("script")[0],i=!1,r=document.createElement("link");if(r.relList&&"function"==typeof r.relList.supports&&r.relList.supports("preload")&&"as"in r)window.BOOMR.snippetMethod="p",r.href=window.BOOMR.url,r.rel="preload",r.as="script",r.addEventListener("load",e),r.addEventListener("error",function(){t(!0)}),setTimeout(function(){if(!i)t(!0)},3e3),BOOMR_lstart=(new Date).getTime(),o.parentNode.appendChild(r);else t(!1);if(window.addEventListener)window.addEventListener("load",a,!1);else if(window.attachEvent)window.attachEvent("onload",a)}}(),"".length>0)if(e&&"performance"in e&&e.performance&&"function"==typeof e.performance.setResourceTimingBufferSize)e.performance.setResourceTimingBufferSize();!function(){if(BOOMR=e.BOOMR||{},BOOMR.plugins=BOOMR.plugins||{},!BOOMR.plugins.AK){var n=""=="true"?1:0,t="",a="k5dzvb2sm2mnw2xpyltq-f-1c48e8a07-clientnsv4-s.akamaihd.net",o="false"=="true"?2:1,i={"ak.v":"41","ak.cp":"1225619","ak.ai":parseInt("734695",10),"ak.ol":"0","ak.cr":1,"ak.ipv":4,"ak.proto":"h2","ak.rid":"361c4d1","ak.r":43412,"ak.a2":n,"ak.m":"dscb","ak.n":"essl","ak.cport":61415,"ak.gh":"212.199.202.60","ak.quicv":"","ak.tlsv":"tls1.3","ak.0rtt":"","ak.0rtt.ed":"","ak.csrc":"-","ak.acc":"","ak.t":"1794097895","ak.ak":"hOBiQwZUYzCg5VSAfCLimQ==r7HQJSGoYQZxn2KJSgaKK+ANpgrQG6eYJgccl22lvqngS/LQ2xJckb98jGVgfEC5wrreq0YJszB8xP7p7wa822qvWbb4mB2Wde5AmMXKDlYTVoXwQ9wDjXL4slIyh3OxHC+UGey/A95M1TQV/5NKl7YQlIlaql43SC0+wCIzWgiwaec6hQrTol+RKbJwnr+EBKNLKBA9jjyZY4a029bRkP5XBce93PDWjD3cNv0ADCrHqXNAqvmDC1tenvdfiDicvlbDJ1P+EfGSM4E/L8q5m8hnvoTk6GzSQofeJ+cY8HMxOTRvwWO8qfbL8ZbOh8mPzk6MR1LBucvFz5a9BL1YHjFqpFUpzsyPlmGxs1n23blKALSOocImzP03jCu43ekF0h998HVQLVlH8khWqjmPVeOplvfcoy4M2DpWNjHBiiI=","ak.pv":"104","ak.dpoabenc":"","ak.tf":o};if(""!==t)i["ak.ruds"]=t;var r={i:!1,av:function(n){var t="http.initiator";if(n&&(!n[t]||"spa_hard"===n[t]))i["ak.feo"]=void 0!==e.aFeoApplied?1:0,BOOMR.addVar(i)},rv:function(){var e=["ak.cport","ak.cr","ak.csrc","ak.gh","ak.ipv","ak.m","ak.n","ak.ol","ak.proto","ak.quicv","ak.tlsv","ak.0rtt","ak.0rtt.ed","ak.r","ak.acc","ak.t","ak.tf"];BOOMR.removeVar(e)}};BOOMR.plugins.AK={akVars:i,akDNSPreFetchDomain:a,init:function(){if(!r.i){var e=BOOMR.subscribe;e("before_beacon",r.av,null,null),e("onbeacon",r.rv,null,null),r.i=!0}return this},is_complete:function(){return!0}}}}()}(window);</script></head>
+<body class="stickyContent">
+   
+        
+
+
+
+
+<!-- Google Tag Manager (noscript) -->
+<noscript>
+    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MNXGN7X"
+            height="0" width="0" style="display:none;visibility:hidden"></iframe>
+</noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+
+<script>
+                function goSearch() {
+                    var srch = $("#cMainSearch").val();
+                    if (srch.length < 2) {
+                      alert(decodeHtmlEntities("&#x5E0;&#x5D0; &#x5DC;&#x5D4;&#x5D6;&#x5D9;&#x5DF; &#x5E9;&#x5E0;&#x5D9; &#x5EA;&#x5D5;&#x5D5;&#x5D9;&#x5DD; &#x5DC;&#x5E4;&#x5D7;&#x5D5;&#x5EA;"));
+                      return false;
+                    }
+
+                    var searchResultUrl = '/he/search/';
+                    if (searchResultUrl) {
+                        window.location.href = searchResultUrl + '?q=' + srch;
+                    }
+                }
+                $(document).ready(function () {
+                // Handle click event on language selection
+                $('.dropdown-menu a').on('click', function (e) {
+                e.preventDefault(); // Prevent default anchor behavior
+                var selectedLanguageUrl = $(this).attr('href');
+                window.location.href = selectedLanguageUrl; // Redirect to the selected language URL
+                });
+
+
+  $('.promos').each(function() {
+                    // Check if the current .promos element is empty, excluding comments and whitespace
+                    if (!$(this).children().length && !$.trim($(this).text())) {
+                        $(this).remove();
+                    }
+                });
+
+                    document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
+                    dropdown.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                });
+
+                });
+                function goLang(x) {
+                    $.ajax({
+                    url: '/umbraco/api/referral/getreferralurl',
+                    type: 'GET',
+                    data: {
+                        pageId: '245375', // Replace with the referer value
+                        cultureName: x, // Replace with the culture name
+                        qs:window.location.search
+                    },
+                    success: function(response) {
+                        // Redirect to the returned URL
+                        window.location.href = response;
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', xhr.responseText || error);
+                        alert('No matching page found or an error occurred.');
+                    }
+                });
+                }
+</script>
+<a id="skippy" class="sr-only sr-only-focusable" href="#main"><span>דלג לתוכן העמוד</span></a>
+<header class="fixed-top">
+    <nav class="navbar navbar-expand-lg" id="mainNavigation">
+        <button id="nav-trigger" class="navbar-toggler" type="button" data-toggle="collapse" data-target="#main-nav" aria-controls="main-nav" aria-expanded="false" aria-label="Toggle navigation">
+            <i></i>
+            <span class="navbar-toggler-text">&#x5EA;&#x5E4;&#x5E8;&#x5D9;&#x5D8;</span>
+        </button>
+        <!-- temporary fix for prod. should be /lang-->
+        <a class="navbar-brand" href="https://www.jerusalem.muni.il/he">
+            <img src="/images/logo-60-years-mobile.svg" alt="&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5EA; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;" title="&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5EA; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;" class="mobile">
+            <img src="/images/logo-60-years-desktop.svg" alt="&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5EA; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;" title="&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5EA; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;" class="desktop">
+        </a>
+            <a href="https://my.jerusalem.muni.il/Bonuses.aspx" target="_blank" class="jerpersonalUser"><span>&#x5D0;&#x5D6;&#x5D5;&#x5E8; &#x5D0;&#x5D9;&#x5E9;&#x5D9;</span></a>
+        <div class="lang dropdown">
+            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="&#x5D1;&#x5D7;&#x5E8; &#x5E9;&#x5E4;&#x5D4;">Lang</a>
+
+            <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+
+
+                    <li><a href="#" onclick="goLang('he');" class="dropdown-item" aria-label="&#x5E2;&#x5D1;&#x5E8;&#x5D9;&#x5EA; (&#x5D9;&#x5E9;&#x5E8;&#x5D0;&#x5DC;)" title="&#x5E2;&#x5D1;&#x5E8;&#x5D9;&#x5EA; (&#x5D9;&#x5E9;&#x5E8;&#x5D0;&#x5DC;)">&#x5E2;&#x5D1;&#x5E8;&#x5D9;&#x5EA;</a></li>
+                    <li><a href="#" onclick="goLang('en');" class="dropdown-item" aria-label="&#x5D0;&#x5E0;&#x5D2;&#x5DC;&#x5D9;&#x5EA; (&#x5D0;&#x5E8;&#x5E6;&#x5D5;&#x5EA; &#x5D4;&#x5D1;&#x5E8;&#x5D9;&#x5EA;)" title="&#x5D0;&#x5E0;&#x5D2;&#x5DC;&#x5D9;&#x5EA; (&#x5D0;&#x5E8;&#x5E6;&#x5D5;&#x5EA; &#x5D4;&#x5D1;&#x5E8;&#x5D9;&#x5EA;)">English</a></li>
+                    <li><a href="#" onclick="goLang('ar');" class="dropdown-item" aria-label="&#x5E2;&#x5E8;&#x5D1;&#x5D9;&#x5EA;" title="&#x5E2;&#x5E8;&#x5D1;&#x5D9;&#x5EA;">&#x627;&#x644;&#x639;&#x631;&#x628;&#x64A;&#x629;</a></li>
+                    <li><a href="#" onclick="goLang('fr');" class="dropdown-item" aria-label="&#x5E6;&#x5E8;&#x5E4;&#x5EA;&#x5D9;&#x5EA;" title="&#x5E6;&#x5E8;&#x5E4;&#x5EA;&#x5D9;&#x5EA;">Fran&#xE7;ais</a></li>
+                    <li><a href="#" onclick="goLang('ru');" class="dropdown-item" aria-label="&#x5E8;&#x5D5;&#x5E1;&#x5D9;&#x5EA; (&#x5E8;&#x5D5;&#x5E1;&#x5D9;&#x5D4;)" title="&#x5E8;&#x5D5;&#x5E1;&#x5D9;&#x5EA; (&#x5E8;&#x5D5;&#x5E1;&#x5D9;&#x5D4;)">&#x420;&#x443;&#x441;&#x441;&#x43A;&#x438;&#x439;</a></li>
+                <li>
+                    <div id="google_translate_element"></div>
+                    <script type="text/javascript">
+                        function googleTranslateElementInit() {
+                            new google.translate.TranslateElement({ pageLanguage: 'iw', autoDisplay: false }, 'google_translate_element');                        }
+                    </script>
+                    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+
+                </li>
+            </ul>
+        </div>
+        <button class="want-to-but" type="button" data-target="#want-to-modal" data-toggle="modal">&#x5D0;&#x5E0;&#x5D9;  &#x5E8;&#x5D5;&#x5E6;&#x5D4;...</button>
+        <div class="collapse navbar-collapse mobileBlue" id="main-nav" data-parent="#mainNavigation">
+            <ul class="sm sm-clean sm-menu">
+                <li class="mobileNavToggler">
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#main-nav" aria-controls="main-nav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5EA; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;
+                </li>
+                            <li>
+                                    <a href="/he/residents/">&#x5EA;&#x5D5;&#x5E9;&#x5D1;&#x5D9;&#x5DD;</a>
+                                    <ul>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/residents/arnona/property-tax-payment/">&#x5EA;&#x5E9;&#x5DC;&#x5D5;&#x5DD; &#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/arnona/">&#x5DE;&#x5D7;&#x5DC;&#x5E7;&#x5EA; &#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4;</a></li>
+                                                                <li><a href="/he/online-services/arnona/">&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9;&#x5DD; &#x5DE;&#x5E7;&#x5D5;&#x5D5;&#x5E0;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/arnona/direct-contact/">&#x5D0;&#x5D2;&#x5E3; &#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4; &#x5D5;&#x5D2;&#x5D1;&#x5D9;&#x5D9;&#x5D4; &#x5DC;&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5DA;</a></li>
+                                                                <li><a href="/he/residents/arnona/arnonadiscounts/">&#x5E7;&#x5E8;&#x5D9;&#x5D8;&#x5E8;&#x5D9;&#x5D5;&#x5E0;&#x5D9;&#x5DD; &#x5DC;&#x5D4;&#x5E0;&#x5D7;&#x5D5;&#x5EA; &#x5D5;&#x5E4;&#x5D8;&#x5D5;&#x5E8;&#x5D9;&#x5DD; &#x5D1;&#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/arnona/transferownershipoftheproperty/">&#x5E9;&#x5D9;&#x5E0;&#x5D5;&#x5D9; &#x5DE;&#x5D7;&#x5D6;&#x5D9;&#x5E7;&#x5D9;&#x5DD; &#x5D1;&#x5E0;&#x5DB;&#x5E1;</a></li>
+                                                                <li><a href="https://jeronlineforms.jerusalem.muni.il/FindingAsset" target="_blank">&#x5D0;&#x5D9;&#x5EA;&#x5D5;&#x5E8; &#x5DE;&#x5E1;&#x5E4;&#x5E8; &#x5D6;&#x5D9;&#x5D4;&#x5D5;&#x5D9; &#x5E0;&#x5DB;&#x5E1; &#x5D1;&#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4;</a></li>
+                                                                <li><a href="/he/online-services/arnona/discounts-business/" target="_blank">&#x5D4;&#x5E0;&#x5D7;&#x5D5;&#x5EA; &#x5DC;&#x5D1;&#x5E2;&#x5DC;&#x5D9; &#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/arnona/">&#x5E0;&#x5D5;&#x5E9;&#x5D0;&#x5D9;&#x5DD; &#x5E0;&#x5D5;&#x5E1;&#x5E4;&#x5D9;&#x5DD; &#x5D1;&#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5EA;&#x5DB;&#x5E0;&#x5D5;&#x5DF; &#x5D5;&#x5D1;&#x5E0;&#x5D9;&#x5D9;&#x5D4; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/residents/planningandbuilding/">&#x5DE;&#x5D9;&#x5E0;&#x5D4;&#x5DC; &#x5EA;&#x5DB;&#x5E0;&#x5D5;&#x5DF;</a></li>
+                                                                <li><a href="/he/residents/planningandbuilding/licensingconstruction/">&#x5E8;&#x5D9;&#x5E9;&#x5D5;&#x5D9; &#x5D5;&#x5D1;&#x5E0;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/planningandbuilding/cityplanning/">&#x5EA;&#x5DB;&#x5E0;&#x5D5;&#x5DF; &#x5E2;&#x5D9;&#x5E8;</a></li>
+                                                                <li><a href="/he/residents/planningandbuilding/bettermenttaxes/">&#x5D4;&#x5D9;&#x5D8;&#x5DC; &#x5D4;&#x5E9;&#x5D1;&#x5D7;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/planningandbuilding/curbs/">&#x5D4;&#x5D9;&#x5D8;&#x5DC;&#x5D9; &#x5E1;&#x5DC;&#x5D9;&#x5DC;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/planningandbuilding/planninginformation/">&#x5DE;&#x5D9;&#x5D3;&#x5E2; &#x5EA;&#x5DB;&#x5E0;&#x5D5;&#x5E0;&#x5D9;</a></li>
+                                                                <li><a href="/he/residents/planningandbuilding/constructionsupervision/">&#x5E4;&#x5D9;&#x5E7;&#x5D5;&#x5D7; &#x5E2;&#x5DC; &#x5D4;&#x5D1;&#x5E0;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/planningandbuilding/infrastructure/">&#x5EA;&#x5D9;&#x5D0;&#x5D5;&#x5DD; &#x5EA;&#x5E9;&#x5EA;&#x5D9;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/residents/planningandbuilding/accessibility/">&#x5E0;&#x5D2;&#x5D9;&#x5E9;&#x5D5;&#x5EA; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5D7;&#x5E0;&#x5D9;&#x5D4; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/residents/parking/">&#x5D7;&#x5E0;&#x5D9;&#x5D4; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/parking/regulated-parking/">&#x5D7;&#x5E0;&#x5D9;&#x5D4; &#x5D1;&#x5DB;&#x5D7;&#x5D5;&#x5DC; &#x5DC;&#x5D1;&#x5DF;</a></li>
+                                                                <li><a href="/he/residents/parking/parking-reports/">&#x5D3;&#x5D5;&#x5D7;&#x5D5;&#x5EA; &#x5D7;&#x5E0;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/parking/parking-enforcementt/">&#x5D0;&#x5DB;&#x5D9;&#x5E4;&#x5EA; &#x5D7;&#x5E0;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/parking/disabledparking/">&#x5D7;&#x5E0;&#x5D9;&#x5D9;&#x5EA; &#x5E0;&#x5DB;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/parking/carparks/">&#x5D7;&#x5E0;&#x5D9;&#x5D5;&#x5E0;&#x5D9;&#x5DD; &#x5D1;&#x5E2;&#x5D9;&#x5E8;</a></li>
+                                                                <li><a href="/he/residents/enforcementpolicing/">&#x5D0;&#x5DB;&#x5D9;&#x5E4;&#x5D4; &#x5D5;&#x5E9;&#x5D9;&#x5D8;&#x5D5;&#x5E8; &#x5E2;&#x5D9;&#x5E8;&#x5D5;&#x5E0;&#x5D9;</a></li>
+                                                                <li><a href="/he/residents/parking/messeges/shared-car/">&#x5E8;&#x5DB;&#x5D1; &#x5E9;&#x5D9;&#x5EA;&#x5D5;&#x5E4;&#x5D9; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5D7;&#x5D9;&#x5E0;&#x5D5;&#x5DA; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/residents/education/">&#x5D7;&#x5D9;&#x5E0;&#x5D5;&#x5DA; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/education/general-sector/">&#x5DE;&#x5D2;&#x5D6;&#x5E8; &#x5DE;&#x5DE;&#x5DC;&#x5DB;&#x5EA;&#x5D9; &#x5D5;&#x5D3;&#x5EA;&#x5D9;</a></li>
+                                                                <li><a href="/he/residents/education/religiouseducation/">&#x5DE;&#x5D2;&#x5D6;&#x5E8; &#x5D7;&#x5E8;&#x5D3;&#x5D9;</a></li>
+                                                                <li><a href="/he/residents/education/special-education/">&#x5D7;&#x5D9;&#x5E0;&#x5D5;&#x5DA; &#x5DE;&#x5D9;&#x5D5;&#x5D7;&#x5D3;</a></li>
+                                                                <li><a href="/he/residents/education/the-afternoon-zaharon/">&#x5E6;&#x5D4;&#x5E8;&#x5D5;&#x5E0;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/earlychildhood/">&#x5D4;&#x5D2;&#x5D9;&#x5DC; &#x5D4;&#x5E8;&#x5DA;</a></li>
+                                                                <li><a href="/he/residents/students/">&#x5E1;&#x5D8;&#x5D5;&#x5D3;&#x5E0;&#x5D8;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/youth/youth-department/">&#x5E0;&#x5D5;&#x5E2;&#x5E8; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5DE;&#x5D9;</a></li>
+                                                                <li><a href="/he/educational-institutions-search/">&#x5D7;&#x5D9;&#x5E4;&#x5D5;&#x5E9; &#x5DE;&#x5D5;&#x5E1;&#x5D3;&#x5D5;&#x5EA; &#x5D7;&#x5D9;&#x5E0;&#x5D5;&#x5DA;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E7;&#x5D4;&#x5D9;&#x5DC;&#x5D4; &#x5D5;&#x5D7;&#x5D1;&#x5E8;&#x5D4; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/residents/society/">&#x5D7;&#x5D1;&#x5E8;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/promoting-women/">&#x5E7;&#x5D9;&#x5D3;&#x5D5;&#x5DD; &#x5E0;&#x5E9;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/senior-citizens/">&#x5D2;&#x5D9;&#x5DC; &#x5E9;&#x5DC;&#x5D9;&#x5E9;&#x5D9; &#x5D5;&#x5EA;&#x5D5;&#x5E9;&#x5D1;&#x5D9;&#x5DD; &#x5D5;&#x5EA;&#x5D9;&#x5E7;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/employment/">&#x5D4;&#x5E8;&#x5E9;&#x5D5;&#x5EA; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D5;&#x5E0;&#x5D9;&#x5EA; &#x5DC;&#x5EA;&#x5E2;&#x5E1;&#x5D5;&#x5E7;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/specialpopulations/">&#x5D0;&#x5D5;&#x5DB;&#x5DC;&#x5D5;&#x5E1;&#x5D9;&#x5D5;&#x5EA; &#x5DE;&#x5D9;&#x5D5;&#x5D7;&#x5D3;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/residents/welfare/">&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9;&#x5DD; &#x5D7;&#x5D1;&#x5E8;&#x5EA;&#x5D9;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/volunteering/">&#x5DE;&#x5EA;&#x5E0;&#x5D3;&#x5D1;&#x5D9;&#x5DD; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/aliyah/">&#x5E2;&#x5D5;&#x5DC;&#x5D9;&#x5DD; &#x5D7;&#x5D3;&#x5E9;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/community-in-jerusalem/miluim/">&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD; &#x5D0;&#x5D5;&#x5DE;&#x5E8;&#x5EA; &#x5EA;&#x5D5;&#x5D3;&#x5D4;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5D1;&#x5E8;&#x5D9;&#x5D0;&#x5D5;&#x5EA; &#x5D5;&#x5E1;&#x5E4;&#x5D5;&#x5E8;&#x5D8; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/residents/sports/">&#x5E1;&#x5E4;&#x5D5;&#x5E8;&#x5D8; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/sports/lightedsports/">&#x5DE;&#x5EA;&#x5E7;&#x5E0;&#x5D9; &#x5E1;&#x5E4;&#x5D5;&#x5E8;&#x5D8; &#x5D1;&#x5E9;&#x5DB;&#x5D5;&#x5E0;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="https://www.jerusalem.muni.il/he/residents/bicycle/" target="_blank">&#x5E8;&#x5D5;&#x5DB;&#x5D1;&#x5D9;&#x5DD; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/earlychildhood/tipotchalav/">&#x5D8;&#x5D9;&#x5E4;&#x5D5;&#x5EA; &#x5D7;&#x5DC;&#x5D1;</a></li>
+                                                                <li><a href="/he/residents/pharmacies/">&#x5EA;&#x5D5;&#x5E8;&#x5E0;&#x5D5;&#x5EA; &#x5D1;&#x5EA;&#x5D9; &#x5DE;&#x5E8;&#x5E7;&#x5D7;&#x5EA;</a></li>
+                                                                <li><a href="/he/residents/veterinary-service/">&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA; &#x5D5;&#x5D8;&#x5E8;&#x5D9;&#x5E0;&#x5E8;&#x5D9;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5D1;&#x5E9;&#x5DB;&#x5D5;&#x5E0;&#x5D4; &#x5E9;&#x5DC;&#x5D9; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/residents/new_resident/">&#x5EA;&#x5D5;&#x5E9;&#x5D1; &#x5D7;&#x5D3;&#x5E9;</a></li>
+                                                                <li><a href="/he/residents/community-in-jerusalem/">&#x5E9;&#x5DB;&#x5D5;&#x5E0;&#x5D4; &#x5D5;&#x5E7;&#x5D4;&#x5D9;&#x5DC;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/map/">&#x5D4;&#x5E9;&#x5DB;&#x5D5;&#x5E0;&#x5D4; &#x5E2;&#x5DC; &#x5D4;&#x5DE;&#x5E4;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/clean-city/">&#x5E1;&#x5D1;&#x5D9;&#x5D1;&#x5D4; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5DE;&#x5D9;&#x5EA;</a></li>
+                                                                <li><a href="/he/residents/community-in-jerusalem/communitycenters/">&#x5DE;&#x5D9;&#x5E0;&#x5D4;&#x5DC;&#x5D9;&#x5DD; &#x5E7;&#x5D4;&#x5D9;&#x5DC;&#x5EA;&#x5D9;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/clean-city/improvingcity/parksandganrdens/">&#x5E4;&#x5D0;&#x5E8;&#x5E7;&#x5D9;&#x5DD; &#x5D5;&#x5D2;&#x5D9;&#x5E0;&#x5D5;&#x5EA; &#x5E6;&#x5D9;&#x5D1;&#x5D5;&#x5E8;&#x5D9;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/residents/clean-city/orange_bins/" target="">&#x5E4;&#x5D7;&#x5D9;&#x5DD; &#x5DB;&#x5EA;&#x5D5;&#x5DE;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/social-sustainability/" target="">&#x5E7;&#x5D9;&#x5D9;&#x5DE;&#x5D5;&#x5EA; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/clean-city/improvingcity/recycling/">&#x5DE;&#x5D9;&#x5D7;&#x5D6;&#x5D5;&#x5E8; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li class="promos">
+                                                        <a href="/he/residents/blue-line/" class="promoItem">
+                                                                <figure><img src="/media/ec4ocyfz/&#x5E7;&#x5D5;-&#x5DB;&#x5D7;&#x5D5;&#x5DC;-2.jpeg" alt="" title=""></figure>
+                                                            <h4>&#x5D4;&#x5EA;&#x5D5;&#x5D5;&#x5D0;&#x5D9; &#x5D4;&#x5DB;&#x5D7;&#x5D5;&#x5DC; &#x5E9;&#x5DC; &#x5D4;&#x5E8;&#x5DB;&#x5D1;&#x5EA; &#x5D4;&#x5E7;&#x5DC;&#x5D4;</h4>
+                                                            <div class="more">&#x5D4;&#x5D9;&#x5DB;&#x5E0;&#x5E1;&#x5D5; &#x5DC;&#x5DE;&#x5E4;&#x5EA; &#x5DE;&#x5E7;&#x5D8;&#x5E2;&#x5D9; &#x5D4;&#x5E7;&#x5D5; &#x5D4;&#x5DB;&#x5D7;&#x5D5;&#x5DC; - &#x5DE;&#x5D4; &#x5E9;&#x5DB;&#x5D1;&#x5E8; &#x5E0;&#x5D5;&#x5E1;&#x5E2; &#x5D5;&#x5DE;&#x5D4; &#x5E9;&#x5E2;&#x5D5;&#x5D3; &#x5D1;&#x5D3;&#x5E8;&#x5DA;!</div>
+                                                        </a>
+                                                        <a href="/he/residents/blue-line/sections/emek-refaim/" class="promoItem">
+                                                                <figure><img src="/media/kgolwt0e/changes_emekrefaim_msg.jpg" alt="" title=""></figure>
+                                                            <h4>&#x5E2;&#x5D1;&#x5D5;&#x5D3;&#x5D5;&#x5EA; &#x5DC;&#x5D4;&#x5E7;&#x5DE;&#x5EA; &#x5D4;&#x5EA;&#x5D5;&#x5D5;&#x5D0;&#x5D9; &#x5D4;&#x5DB;&#x5D7;&#x5D5;&#x5DC; &#x5D1;&#x5E8;&#x5D7;&#x5D5;&#x5D1; &#x5E2;&#x5DE;&#x5E7; &#x5E8;&#x5E4;&#x5D0;&#x5D9;&#x5DD;</h4>
+                                                            <div class="more">&#x5E9;&#x5D9;&#x5DE;&#x5D5; &#x5DC;&#x5D1;! &#x5E9;&#x5D9;&#x5E0;&#x5D5;&#x5D9;&#x5D9;&#x5DD; &#x5D6;&#x5DE;&#x5E0;&#x5D9;&#x5D9;&#x5DD; &#x5D1;&#x5EA;&#x5E0;&#x5D5;&#x5E2;&#x5D4; &#x5D5;&#x5D1;&#x5EA;&#x5D7;&#x5D1;&#x5D5;&#x5E8;&#x5D4; &#x5D4;&#x5E6;&#x5D9;&#x5D1;&#x5D5;&#x5E8;&#x5D9;&#x5EA;</div>
+                                                        </a>
+                                            </@(onlyMob?"div":"li")>
+                                    </ul>
+                            </li>
+                            <li>
+                                    <a href="/he/city/">&#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4;</a>
+                                    <ul>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5D7;&#x5D3;&#x5E9;&#x5D5;&#x5EA; &#x5D5;&#x5E2;&#x5D3;&#x5DB;&#x5D5;&#x5E0;&#x5D9;&#x5DD; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/municipalitymessages/">&#x5D4;&#x5D5;&#x5D3;&#x5E2;&#x5D5;&#x5EA; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/residents/parking/trafficarrangements/">&#x5D4;&#x5D5;&#x5D3;&#x5E2;&#x5D5;&#x5EA; &#x5D4;&#x5E1;&#x5D3;&#x5E8;&#x5D9; &#x5EA;&#x5E0;&#x5D5;&#x5E2;&#x5D4;</a></li>
+                                                                <li><a href="https://jerteumtashtiotinf.jerusalem.muni.il/main.html" target="_blank">&#x5E2;&#x5D1;&#x5D5;&#x5D3;&#x5D5;&#x5EA; &#x5EA;&#x5E9;&#x5EA;&#x5D9;&#x5EA; &#x5D1;&#x5E9;&#x5DB;&#x5D5;&#x5E0;&#x5D5;&#x5EA;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E9;&#x5E7;&#x5D9;&#x5E4;&#x5D5;&#x5EA; &#x5D5;&#x5D3;&#x5D5;&#x5D7;&#x5D5;&#x5EA; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/city/freedomofinformation/">&#x5D7;&#x5D5;&#x5E4;&#x5E9; &#x5D4;&#x5DE;&#x5D9;&#x5D3;&#x5E2;</a></li>
+                                                                <li><a href="/he/city/accessibility/">&#x5E9;&#x5E7;&#x5D9;&#x5E4;&#x5D5;&#x5EA; &#x5D5;&#x5E9;&#x5D9;&#x5EA;&#x5D5;&#x5E3; &#x5E6;&#x5D9;&#x5D1;&#x5D5;&#x5E8;</a></li>
+                                                                <li><a href="/he/city/financial-statements/">&#x5D3;&#x5D5;&#x5D7;&#x5D5;&#x5EA; &#x5DB;&#x5E1;&#x5E4;&#x5D9;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/city/budget/">&#x5EA;&#x5E7;&#x5E6;&#x5D9;&#x5D1; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/city/corporationssubsidies/">&#x5EA;&#x5DE;&#x5D9;&#x5DB;&#x5D5;&#x5EA; &#x5D1;&#x5D2;&#x5D5;&#x5E4;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/city/corporations/">&#x5D4;&#x5EA;&#x5D0;&#x5D2;&#x5D9;&#x5D3;&#x5D9;&#x5DD; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D5;&#x5E0;&#x5D9;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/sla/">&#x5D0;&#x5DE;&#x5E0;&#x5EA; &#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA; &#x5E2;&#x5D9;&#x5E8;&#x5D5;&#x5E0;&#x5D9;&#x5EA;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5D7;&#x5E7;&#x5D9;&#x5E7;&#x5D4; &#x5D1;&#x5D9;&#x5E7;&#x5D5;&#x5E8;&#x5EA; &#x5D5;&#x5DE;&#x5E9;&#x5E4;&#x5D8; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/city/legalconsultant/">&#x5D4;&#x5D9;&#x5D5;&#x5E2;&#x5E5; &#x5D4;&#x5DE;&#x5E9;&#x5E4;&#x5D8;&#x5D9; &#x5DC;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/city/mevakert/">&#x5DE;&#x5D1;&#x5E7;&#x5E8;&#x5EA; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/city/court-for-local-affairs/">&#x5D1;&#x5D9;&#x5EA; &#x5DE;&#x5E9;&#x5E4;&#x5D8; &#x5DC;&#x5E2;&#x5E0;&#x5D9;&#x5D9;&#x5E0;&#x5D9;&#x5DD; &#x5DE;&#x5E7;&#x5D5;&#x5DE;&#x5D9;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/city/moorshe/">&#x5D4;&#x5DE;&#x5DE;&#x5D5;&#x5E0;&#x5D4; &#x5E2;&#x5DC; &#x5EA;&#x5DC;&#x5D5;&#x5E0;&#x5D5;&#x5EA; &#x5D5;&#x5E4;&#x5E0;&#x5D9;&#x5D5;&#x5EA; &#x5D4;&#x5E6;&#x5D9;&#x5D1;&#x5D5;&#x5E8;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5DE;&#x5D5;&#x5E2;&#x5E6;&#x5EA; &#x5D4;&#x5E2;&#x5D9;&#x5E8; &#x5D5;&#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/city/mayor/">&#x5D3;&#x5D1;&#x5E8; &#x5E8;&#x5D0;&#x5E9; &#x5D4;&#x5E2;&#x5D9;&#x5E8;</a></li>
+                                                                <li><a href="/he/city/council/">&#x5DE;&#x5D5;&#x5E2;&#x5E6;&#x5EA; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/city/mayors/">&#x5E8;&#x5D0;&#x5E9;&#x5D9; &#x5E2;&#x5D9;&#x5E8;</a></li>
+                                                                <li><a href="/he/city/organizationalstructure/">&#x5DE;&#x5D1;&#x5E0;&#x5D4; &#x5D0;&#x5E8;&#x5D2;&#x5D5;&#x5E0;&#x5D9;</a></li>
+                                                                <li><a href="/he/city/project-ventures/">&#x5DE;&#x5D9;&#x5D6;&#x5DE;&#x5D9;&#x5DD; &#x5D5;&#x5E4;&#x5E2;&#x5D5;&#x5DC;&#x5D5;&#x5EA; &#x5DE;&#x5E9;&#x5D5;&#x5EA;&#x5E4;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/city/winner-pool/" target="">&#x5D3;&#x5D5;&#x5D7; &#x5E9;&#x5E0;&#x5EA;&#x5D9; &#x5D4;&#x5EA;&#x5E7;&#x5E9;&#x5E8;&#x5D5;&#x5EA; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4; &#x5E2;&#x5DD; &#x5E1;&#x5E4;&#x5E7;&#x5D9;&#x5DD;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5DE;&#x5DB;&#x5E8;&#x5D6;&#x5D9;&#x5DD; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/city/tenders/">&#x5DE;&#x5DB;&#x5E8;&#x5D6;&#x5D9;&#x5DD;, &#x5D3;&#x5E8;&#x5D5;&#x5E9;&#x5D9;&#x5DD; &#x5D5;&#x5E7;&#x5D5;&#x5DC;&#x5D5;&#x5EA; &#x5E7;&#x5D5;&#x5E8;&#x5D0;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/city/tenders/contractorstenders/">&#x5DE;&#x5DB;&#x5E8;&#x5D6;&#x5D9; &#x5E7;&#x5D1;&#x5DC;&#x5E0;&#x5D9;&#x5DD;, &#x5E1;&#x5E4;&#x5E7;&#x5D9;&#x5DD;, &#x5E0;&#x5D5;&#x5EA;&#x5E0;&#x5D9; &#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9;&#x5DD; &#x5D5;&#x5DE;&#x5E7;&#x5E8;&#x5E7;&#x5E2;&#x5D9;&#x5DF;</a></li>
+                                                                <li><a href="/he/city/tenders/hrtenders/jobswithouttender/">&#x5DE;&#x5E9;&#x5E8;&#x5D5;&#x5EA; &#x5DC;&#x5DC;&#x5D0; &#x5D7;&#x5D5;&#x5D1;&#x5EA; &#x5DE;&#x5DB;&#x5E8;&#x5D6;</a></li>
+                                                                <li><a href="/he/city/tenders/kolkore/">&#x5E7;&#x5D5;&#x5DC; &#x5E7;&#x5D5;&#x5E8;&#x5D0;</a></li>
+                                                                <li><a href="/he/city/tenders/advertisingresultss/">&#x5DE;&#x5D0;&#x5D2;&#x5E8; &#x5D9;&#x5D5;&#x5E2;&#x5E6;&#x5D9;&#x5DD; &#x5DC;&#x5DE;&#x5EA;&#x5DF; &#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9;&#x5DD;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5D4;&#x5E2;&#x5D9;&#x5E8; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/residents/security/">&#x5D7;&#x5D9;&#x5E8;&#x5D5;&#x5DD; &#x5D5;&#x5D1;&#x5D9;&#x5D8;&#x5D7;&#x5D5;&#x5DF;</a></li>
+                                                                <li><a href="/he/city/yakir/">&#x5D9;&#x5E7;&#x5D9;&#x5E8;&#x5D5;&#x5EA; &#x5D5;&#x5D9;&#x5E7;&#x5D9;&#x5E8;&#x5D9; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/city/streetnames/">&#x5E9;&#x5DE;&#x5D5;&#x5EA; &#x5E8;&#x5D7;&#x5D5;&#x5D1;&#x5D5;&#x5EA; &#x5D5;&#x5D4;&#x5E0;&#x5E6;&#x5D7;&#x5D4;</a></li>
+                                                                <li><a href="/he/city/cityarchives/">&#x5D0;&#x5E8;&#x5DB;&#x5D9;&#x5D5;&#x5DF; &#x5D4;&#x5E2;&#x5D9;&#x5E8;</a></li>
+                                                                <li><a href="/he/city/municipalityassets/">&#x5E0;&#x5DB;&#x5E1;&#x5D9; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/city/statistical/">&#x5E0;&#x5EA;&#x5D5;&#x5E0;&#x5D9;&#x5DD; &#x5E1;&#x5D8;&#x5D8;&#x5D9;&#x5E1;&#x5D8;&#x5D9;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/residents/planningandbuilding/accessibility/">&#x5E0;&#x5D2;&#x5D9;&#x5E9;&#x5D5;&#x5EA; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/city/minhelet/">&#x5DE;&#x5E0;&#x5D4;&#x5DC;&#x5EA; &#x5E7;&#x5D5;&#x5DC;&#x5E0;&#x5D5;&#x5E2; &#x5D5;&#x5D8;&#x5DC;&#x5D5;&#x5D5;&#x5D9;&#x5D6;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/city/insurance/">&#x5DE;&#x5D7;&#x5DC;&#x5E7;&#x5EA; &#x5D1;&#x5D9;&#x5D8;&#x5D5;&#x5D7;&#x5D9;&#x5DD;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li class="promos">
+                                                        <a href="https://jerusalem.datacity.org.il/" target="_blank" class="promoItem">
+                                                                <figure><img src="/media/ebgahmiv/datdctiy-msg.jpg" alt="" title=""></figure>
+                                                            <h4>Data City Jerusalem</h4>
+                                                            <div class="more">&#x5E4;&#x5D5;&#x5E8;&#x5D8;&#x5DC; &#x5D4;&#x5DE;&#x5D9;&#x5D3;&#x5E2; &#x5D4;&#x5E4;&#x5EA;&#x5D5;&#x5D7; &#x5E9;&#x5DC; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</div>
+                                                        </a>
+                                                        <a href="/he/monuments/" class="promoItem">
+                                                                <figure><img src="/media/m2lnjex1/jeru_remember_msg.jpg" alt="" title=""></figure>
+                                                            <h4>&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD; &#x5D6;&#x5D5;&#x5DB;&#x5E8;&#x5EA;</h4>
+                                                            <div class="more">&#x5E8;&#x5E9;&#x5D9;&#x5DE;&#x5EA; &#x5D4;&#x5D0;&#x5E0;&#x5D3;&#x5E8;&#x5D8;&#x5D0;&#x5D5;&#x5EA; &#x5D5;&#x5D4;&#x5D7;&#x5DC;&#x5DC;&#x5D9;&#x5DD; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD; - &#x5D1;&#x5D0;&#x5EA;&#x5E8; &#x5EA;&#x5D5;&#x5DB;&#x5DC;&#x5D5; &#x5DC;&#x5E7;&#x5E8;&#x5D5;&#x5D0; &#x5E2;&#x5DC; &#x5D4;&#x5E0;&#x5D5;&#x5E4;&#x5DC;&#x5D9;&#x5DD; &#x5D5;&#x5D4;&#x5E0;&#x5E8;&#x5E6;&#x5D7;&#x5D9;&#x5DD; &#x5D4;&#x5DE;&#x5D5;&#x5E0;&#x5E6;&#x5D7;&#x5D9;&#x5DD; &#x5D1;&#x5E2;&#x5D9;&#x5E8;</div>
+                                                        </a>
+                                            </@(onlyMob?"div":"li")>
+                                    </ul>
+                            </li>
+                            <li>
+                                    <a href="/he/experience/">&#x5DE;&#x5D4; &#x5E7;&#x5D5;&#x5E8;&#x5D4; &#x5D1;&#x5E2;&#x5D9;&#x5E8;</a>
+                                    <ul>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5D0;&#x5D9;&#x5E8;&#x5D5;&#x5E2;&#x5D9;&#x5DD; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/experience/events/hanukkah/">&#x5D7;&#x5E0;&#x5D5;&#x5DB;&#x5D4; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/experience/publiclibrary/events/">&#x5D0;&#x5D9;&#x5E8;&#x5D5;&#x5E2;&#x5D9;&#x5DD; &#x5D1;&#x5E1;&#x5E4;&#x5E8;&#x5D9;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/experience/events/zappaevents/">&#x5D4;&#x5D5;&#x5E4;&#x5E2;&#x5D5;&#x5EA; &#x5D1;&#x5D6;&#x5D0;&#x5E4;&#x5D4; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/experience/events/museum-of-tolerance/">&#x5D4;&#x5D5;&#x5E4;&#x5E2;&#x5D5;&#x5EA; &#x5D1;&#x5DE;&#x5D5;&#x5D6;&#x5D9;&#x5D0;&#x5D5;&#x5DF; &#x5D4;&#x5E1;&#x5D5;&#x5D1;&#x5DC;&#x5E0;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/experience/events/kon-house/">&#x5D0;&#x5D9;&#x5E8;&#x5D5;&#x5E2;&#x5D9;&#x5DD; &#x5D1;&#x5D1;&#x5D9;&#x5EA; &#x5D4;&#x5E7;&#x5D5;&#x5E0;&#x5E4;&#x5D3;&#x5E8;&#x5E6;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/experience/lobbyevents/?bonus=1">&#x5D0;&#x5D9;&#x5E8;&#x5D5;&#x5E2;&#x5D9;&#x5DD; &#x5E2;&#x5DD; &#x5D4;&#x5D8;&#x5D1;&#x5EA; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5DE;&#x5D9;</a></li>
+                                                                <li><a href="/he/experience/lobbyevents/">&#x5DB;&#x5DC; &#x5D4;&#x5D0;&#x5D9;&#x5E8;&#x5D5;&#x5E2;&#x5D9;&#x5DD;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5EA;&#x5E8;&#x5D1;&#x5D5;&#x5EA; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/experience/culture/">&#x5DE;&#x5D5;&#x5E1;&#x5D3;&#x5D5;&#x5EA; &#x5EA;&#x5E8;&#x5D1;&#x5D5;&#x5EA;, &#x5DE;&#x5D5;&#x5D6;&#x5D9;&#x5D0;&#x5D5;&#x5E0;&#x5D9;&#x5DD; &#x5D5;&#x5D0;&#x5EA;&#x5E8;&#x5D9;&#x5DD; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/experience/museums/">&#x5DE;&#x5D5;&#x5D6;&#x5D9;&#x5D0;&#x5D5;&#x5E0;&#x5D9;&#x5DD; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/experience/cinema/">&#x5D1;&#x5EA;&#x5D9; &#x5E7;&#x5D5;&#x5DC;&#x5E0;&#x5D5;&#x5E2;</a></li>
+                                                                <li><a href="/he/experience/attractions/">&#x5D0;&#x5D8;&#x5E8;&#x5E7;&#x5E6;&#x5D9;&#x5D5;&#x5EA; &#x5D1;&#x5E2;&#x5D9;&#x5E8;</a></li>
+                                                                <li><a href="/he/experience/theaters/">&#x5EA;&#x5D9;&#x5D0;&#x5D8;&#x5E8;&#x5D5;&#x5DF;</a></li>
+                                                                <li><a href="/he/experience/music/">&#x5DE;&#x5E8;&#x5DB;&#x5D6;&#x5D9; &#x5DE;&#x5D5;&#x5D6;&#x5D9;&#x5E7;&#x5D4;</a></li>
+                                                                <li><a href="/he/experience/performancedance/">&#x5DE;&#x5D0;&#x5D2;&#x5E8; &#x5D4;&#x5DE;&#x5D7;&#x5D5;&#x5DC; &#x5D5;&#x5D4;&#x5E4;&#x5E8;&#x5E4;&#x5D5;&#x5E8;&#x5DE;&#x5E0;&#x5E1; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/experience/events/coursesworkshops/">&#x5E7;&#x5D5;&#x5E8;&#x5E1;&#x5D9;&#x5DD; &#x5D5;&#x5E1;&#x5D3;&#x5E0;&#x5D0;&#x5D5;&#x5EA;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5D0;&#x5D5;&#x5DE;&#x5E0;&#x5D5;&#x5EA; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/experience/outdoorsculpture/">&#x5EA;&#x5E8;&#x5D1;&#x5D5;&#x5EA; &#x5D5;&#x5D0;&#x5DE;&#x5E0;&#x5D5;&#x5EA; &#x5D1;&#x5DE;&#x5E8;&#x5D7;&#x5D1; &#x5D4;&#x5E6;&#x5D9;&#x5D1;&#x5D5;&#x5E8;&#x5D9;</a></li>
+                                                                <li><a href="/he/experience/galleries/">&#x5D2;&#x5DC;&#x5E8;&#x5D9;&#x5D5;&#x5EA; &#x5D1;&#x5E2;&#x5D9;&#x5E8;</a></li>
+                                                                <li><a href="/he/experience/street-art/">&#x5DE;&#x5D9;&#x5E6;&#x5D1;&#x5D9; &#x5E8;&#x5D7;&#x5D5;&#x5D1;</a></li>
+                                                                <li><a href="/he/experience/street-pianos/">&#x5E4;&#x5E1;&#x5E0;&#x5EA;&#x5E8;&#x5D9; &#x5E8;&#x5D7;&#x5D5;&#x5D1;</a></li>
+                                                                <li><a href="/he/experience/arts/">&#x5DE;&#x5E8;&#x5DB;&#x5D6;&#x5D9; &#x5D0;&#x5DE;&#x5E0;&#x5D5;&#x5D9;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/experience/artists-at-home/">&#x5D9;&#x5D5;&#x5E6;&#x5E8;&#x5D9;&#x5DD; &#x5D1;&#x5D1;&#x5D9;&#x5EA;</a></li>
+                                                                <li><a href="/he/residents/aliyah/harmony-center/artists/">&#x5D0;&#x5D5;&#x5DE;&#x5E0;&#x5D9;&#x5DD; &#x5E2;&#x5D5;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/experience/events/exhibitions/">&#x5D0;&#x5DE;&#x5E0;&#x5D5;&#x5EA; &#x5D5;&#x5EA;&#x5E2;&#x5E8;&#x5D5;&#x5DB;&#x5D5;&#x5EA;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5DE;&#x5E8;&#x5DB;&#x5D6;&#x5D9;&#x5DD; &#x5E2;&#x5D9;&#x5E8;&#x5D5;&#x5E0;&#x5D9;&#x5D9;&#x5DD; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/experience/visitorscenter/">&#x5DE;&#x5E8;&#x5DB;&#x5D6; &#x5D4;&#x5DE;&#x5D1;&#x5E7;&#x5E8;&#x5D9;&#x5DD; &#x5E9;&#x5DC; &#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5EA; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/experience/nurit-katzir/">&#x5D4;&#x5DE;&#x5E8;&#x5DB;&#x5D6; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D5;&#x5E0;&#x5D9; &#x5DC;&#x5EA;&#x5D9;&#x5D0;&#x5D8;&#x5E8;&#x5D5;&#x5DF; &#x5E2;&#x27;&#x27;&#x5E9; &#x5E0;&#x5D5;&#x5E8;&#x5D9;&#x5EA; &#x5E7;&#x5E6;&#x5D9;&#x5E8;</a></li>
+                                                                <li><a href="/he/experience/music-center/">&#x5DE;&#x5E8;&#x5DB;&#x5D6; &#x5D4;&#x5DE;&#x5D5;&#x5E1;&#x5D9;&#x5E7;&#x5D4; &#x5E2;&quot;&#x5E9; &#x5D0;&#x5DC;&#x5E4;&#x5E8;&#x5D8;</a></li>
+                                                                <li><a href="https://htjer.smarticket.co.il/" target="_blank">&#x5D4;&#x5D9;&#x5DB;&#x5DC; &#x5D4;&#x5E4;&#x5D9;&#x5E1; &#x5DC;&#x5EA;&#x5E8;&#x5D1;&#x5D5;&#x5EA; &#x5D5;&#x5DC;&#x5D0;&#x5DE;&#x5E0;&#x5D5;&#x5D9;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/experience/ginogly-center/">&#x5DE;&#x5E8;&#x5DB;&#x5D6; &#x5D0;&#x5DE;&#x5E0;&#x5D5;&#x5EA; &#x5D2;&#x27;&#x5D9;&#x5E0;&#x5D5;&#x5D2;&#x5DC;&#x5D9;</a></li>
+                                                                <li><a href="https://htbeithaam.smarticket.co.il/" target="_blank">&#x5D4;&#x5D9;&#x5DB;&#x5DC; &#x5EA;&#x5E8;&#x5D1;&#x5D5;&#x5EA; &#x5D1;&#x5D9;&#x5EA; &#x5D4;&#x5E2;&#x5DD;</a></li>
+                                                                <li><a href="/he/experience/tarbut-ramot/">&#x5D4;&#x5D9;&#x5DB;&#x5DC; &#x5EA;&#x5E8;&#x5D1;&#x5D5;&#x5EA; &#x5E8;&#x5DE;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/experience/youth-centers/">&#x5DE;&#x5E8;&#x5DB;&#x5D6;&#x5D9; &#x5E6;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5DD;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E1;&#x5E4;&#x5E8;&#x5D9;&#x5D5;&#x5EA; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/experience/publiclibrary/">&#x5E1;&#x5E4;&#x5E8;&#x5D9;&#x5D5;&#x5EA; &#x5E2;&#x5D9;&#x5E8;&#x5D5;&#x5E0;&#x5D9;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/experience/publiclibrary/lists/religious-libraries/">&#x5E1;&#x5E4;&#x5E8;&#x5D9;&#x5D5;&#x5EA; &#x5EA;&#x5D5;&#x5E8;&#x5E0;&#x5D9;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/residents/social-sustainability/street-libraries/">&#x5E1;&#x5E4;&#x5E8;&#x5D9;&#x5D5;&#x5EA; &#x5E8;&#x5D7;&#x5D5;&#x5D1;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li class="promos">
+                                                        <a href="https://www.jerusalem.muni.il/he/city/tenders/kolkore/record?id=160918" class="promoItem">
+                                                                <figure><img src="/media/xzbjwm2u/&#x5E7;&#x5D5;&#x5DC;-&#x5E7;&#x5D5;&#x5E8;-&#x5D1;&#x5DE;&#x5D5;&#x5EA;-&#x5D7;&#x5D5;&#x5E4;&#x5E9;&#x5D9;&#x5D5;&#x5EA;27g.png" alt="" title=""></figure>
+                                                            <h4>&#x5D1;&#x5DE;&#x5D5;&#x5EA; &#x5D7;&#x5D5;&#x5E4;&#x5E9;&#x5D9;&#x5D5;&#x5EA; 2027</h4>
+                                                            <div class="more"> &#x5DE;&#x5E4;&#x5D2;&#x5E9; &#x5DC;&#x5D4;&#x5E7;&#x5D5;&#x5EA; &#x5D5;&#x5E7;&#x5D1;&#x5D5;&#x5E6;&#x5D5;&#x5EA; &#x5DE;&#x5D7;&#x5D5;&#x5DC;</div>
+                                                        </a>
+                                                        <a href="https://www.itraveljerusalem.com/he" target="_blank" class="promoItem">
+                                                                <figure><img src="/media/ljodhukp/itravel_m.jpg" alt="" title=""></figure>
+                                                            <h4>iTravel Jerusalem</h4>
+                                                            <div class="more">&#x5D0;&#x5EA;&#x5E8; &#x5D4;&#x5EA;&#x5D9;&#x5D9;&#x5E8;&#x5D5;&#x5EA; &#x5D4;&#x5E8;&#x5E9;&#x5DE;&#x5D9; &#x5E9;&#x5DC; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</div>
+                                                        </a>
+                                            </@(onlyMob?"div":"li")>
+                                    </ul>
+                            </li>
+                            <li>
+                                    <a href="/he/business/">&#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD;</a>
+                                    <ul>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA; &#x5DC;&#x5E7;&#x5D5;&#x5D7;&#x5D5;&#x5EA; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/business/customer-relations/">&#x5E4;&#x5E0;&#x5D9;&#x5D9;&#x5D4; &#x5D9;&#x5E9;&#x5D9;&#x5E8;&#x5D4; &#x5E7;&#x5E9;&#x5E8;&#x5D9; &#x5DC;&#x5E7;&#x5D5;&#x5D7;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="https://jeronlineforms.jerusalem.muni.il/DirectContactToAssessment?MainDepName=BusinessAdministration&amp;Dep=25" target="_blank">&#x5E4;&#x5E0;&#x5D9;&#x5D9;&#x5D4; &#x5D9;&#x5E9;&#x5D9;&#x5E8;&#x5D4; &#x5DC;&#x5DE;&#x5D7;&#x5DC;&#x5E7;&#x5EA; &#x5E9;&#x5D9;&#x5DC;&#x5D5;&#x5D8;</a></li>
+                                                                <li><a href="https://tor.jerusalem.muni.il/Department.aspx?Id=520" target="_blank">&#x5D6;&#x5D9;&#x5DE;&#x5D5;&#x5DF; &#x5EA;&#x5D5;&#x5E8;</a></li>
+                                                                <li><a href="/he/online-services/business/">&#x5D8;&#x5E4;&#x5E1;&#x5D9;&#x5DD; &#x5DE;&#x5E7;&#x5D5;&#x5D5;&#x5E0;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/business/businesmessages/">&#x5D4;&#x5D5;&#x5D3;&#x5E2;&#x5D5;&#x5EA; &#x5D0;&#x5D2;&#x5E3; &#x5E7;&#x5D9;&#x5D3;&#x5D5;&#x5DD; &#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/business/tax_businesses/">&#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4; &#x5DC;&#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E8;&#x5D9;&#x5E9;&#x5D5;&#x5D9; &#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/business/licenses/business-license/">&#x5D4;&#x5D2;&#x5E9;&#x5EA; &#x5D1;&#x5E7;&#x5E9;&#x5D4; &#x5DC;&#x5E8;&#x5D9;&#x5E9;&#x5D9;&#x5D5;&#x5DF; &#x5E2;&#x5E1;&#x5E7;</a></li>
+                                                                <li><a href="/he/business/licenses/usiness-facilities/">&#x5DE;&#x5EA;&#x5E7;&#x5E0;&#x5D9;&#x5DD; &#x5DE;&#x5D7;&#x5D5;&#x5E5; &#x5DC;&#x5D1;&#x5EA;&#x5D9; &#x5E2;&#x5E1;&#x5E7;</a></li>
+                                                                <li><a href="/he/business/licenses/winter_closure/">&#x5E1;&#x5D2;&#x5D9;&#x5E8;&#x5EA; &#x5D7;&#x5D5;&#x5E8;&#x5E3;</a></li>
+                                                                <li><a href="/he/business/licenses/excessive-use/">&#x5EA;&#x5DB;&#x5E0;&#x5D5;&#x5DF; &#x5D5;&#x5D1;&#x5E0;&#x5D9;&#x5D4; &#x5DC;&#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/business/licenses/service-disabilities/">&#x5E0;&#x5D2;&#x5D9;&#x5E9;&#x5D5;&#x5EA; &#x5D1;&#x5D9;&#x5EA; &#x5D4;&#x5E2;&#x5E1;&#x5E7;</a></li>
+                                                                <li><a href="/he/business/guide_starting_business/">&#x5DE;&#x5D3;&#x5E8;&#x5D9;&#x5DA; &#x5DC;&#x5E4;&#x5EA;&#x5D9;&#x5D7;&#x5EA; &#x5E2;&#x5E1;&#x5E7;</a></li>
+                                                                <li><a href="/he/business/licenses/rate/">&#x5D0;&#x5D2;&#x5E8;&#x5D5;&#x5EA; &#x5D5;&#x5EA;&#x5E2;&#x5E8;&#x5D9;&#x5E4;&#x5D9; &#x5E8;&#x5D9;&#x5E9;&#x5D5;&#x5D9; &#x5D4;&#x5E2;&#x5E1;&#x5E7;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E9;&#x5DC;&#x5D5;&#x5D8; &#x5D5;&#x5E4;&#x5E8;&#x5E1;&#x5D5;&#x5DD; &#x5D7;&#x5D5;&#x5E6;&#x5D5;&#x5EA; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/business/signageandadvertising/outdoor-advertising/">&#x5E4;&#x5E8;&#x5E1;&#x5D5;&#x5DD; &#x5D7;&#x5D5;&#x5E6;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/business/signageandadvertising/signage-law/">&#x5D7;&#x5D5;&#x5E7; &#x5E9;&#x5D9;&#x5DC;&#x5D5;&#x5D8;</a></li>
+                                                                <li><a href="/he/business/signageandadvertising/signs-committee/">&#x5D5;&#x5E2;&#x5D3;&#x5EA; &#x5E9;&#x5D9;&#x5DC;&#x5D5;&#x5D8;</a></li>
+                                                                <li><a href="/he/business/signageandadvertising/signboard-requestt/">&#x5D1;&#x5E7;&#x5E9;&#x5D4; &#x5DC;&#x5E8;&#x5D9;&#x5E9;&#x5D9;&#x5D5;&#x5DF; &#x5E9;&#x5D9;&#x5DC;&#x5D5;&#x5D8;</a></li>
+                                                                <li><a href="/he/business/signageandadvertising/signage-rates/">&#x5D0;&#x5D2;&#x5E8;&#x5D5;&#x5EA; &#x5E4;&#x5D8;&#x5D5;&#x5E8;&#x5D9;&#x5DD; &#x5D5;&#x5D4;&#x5E0;&#x5D7;&#x5D5;&#x5EA;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E4;&#x5EA;&#x5D5;&#x5D7; &#x5E2;&#x5E1;&#x5E7;&#x5D9; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/business/business-development/funding/">&#x5E7;&#x5D9;&#x5D3;&#x5D5;&#x5DD; &#x5D4;&#x5EA;&#x5D7;&#x5D3;&#x5E9;&#x5D5;&#x5EA; &#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5EA; &#x5D5;&#x5EA;&#x5E8;&#x5D1;&#x5D5;&#x5EA;&#x5D9;&#x5EA; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/business/business-development/upgrading-business-centers/">&#x5E9;&#x5D3;&#x5E8;&#x5D5;&#x5D2; &#x5DE;&#x5E8;&#x5DB;&#x5D6;&#x5D9;&#x5DD; &#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/business/business-development/projects_strengthen_city/">&#x5E4;&#x5E8;&#x5D5;&#x5D9;&#x5E7;&#x5D8;&#x5D9;&#x5DD; &#x5DC;&#x5D7;&#x5D9;&#x5D6;&#x5D5;&#x5E7; &#x5DE;&#x5E8;&#x5DB;&#x5D6; &#x5D4;&#x5E2;&#x5D9;&#x5E8;</a></li>
+                                                                <li><a href="/he/business/business-development/courses-workshops/">&#x5D4;&#x5DB;&#x5E9;&#x5E8;&#x5D4; &#x5D5;&#x5DB;&#x5DC;&#x5D9;&#x5DD; &#x5DC;&#x5E4;&#x5D9;&#x5EA;&#x5D5;&#x5D7; &#x5E2;&#x5E1;&#x5E7;&#x5D9;</a></li>
+                                                                <li><a href="/he/business/business-development/home-busines/">&#x5E2;&#x5D5;&#x5E1;&#x5E7;&#x5D9;&#x5DD; &#x5DE;&#x5D4;&#x5D1;&#x5D9;&#x5EA;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li class="promos">
+                                                        <a href="/he/business/business-communities/" class="promoItem">
+                                                                <figure><img src="/media/0xgb0vrf/&#x5E7;&#x5D4;&#x5D9;&#x5DC;&#x5EA;-&#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD;-&#x5D1;&#x5D5;&#x5D5;&#x5D8;&#x5E1;&#x5D0;&#x5E4;.jpg" alt="" title=""></figure>
+                                                            <h4>&#x5E7;&#x5D4;&#x5D9;&#x5DC;&#x5D5;&#x5EA; &#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD;</h4>
+                                                            <div class="more">&#x5D1;&#x5E2;&#x5DC;&#x5D9; &#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;? &#x5D4;&#x5E6;&#x5D8;&#x5E8;&#x5E4;&#x5D5; &#x5DC;&#x27;&#x5E7;&#x5D4;&#x5D9;&#x5DC;&#x5EA; &#x5D4;&#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD; &#x5D4;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5DE;&#x5D9;&#x5EA;&#x27; &#x5D5;&#x5EA;&#x5D9;&#x5E9;&#x5D0;&#x5E8;&#x5D5; &#x5EA;&#x5DE;&#x5D9;&#x5D3; &#x5DE;&#x5E2;&#x5D5;&#x5D3;&#x5DB;&#x5E0;&#x5D9;&#x5DD;</div>
+                                                        </a>
+                                            </@(onlyMob?"div":"li")>
+                                    </ul>
+                            </li>
+                            <li>
+                                    <a href="https://tor.jerusalem.muni.il/" target="_blank">&#x5E6;&#x5D5;&#x5E8; &#x5E7;&#x5E9;&#x5E8;</a>
+                                    <ul>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E7;&#x5D1;&#x5DC;&#x5EA; &#x5E7;&#x5D4;&#x5DC; &#x5D1;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/contactus/reception-hours/">&#x5E9;&#x5E2;&#x5D5;&#x5EA; &#x5E7;&#x5D1;&#x5DC;&#x5EA; &#x5E7;&#x5D4;&#x5DC; &#x5D5;&#x5DE;&#x5E1;&#x5E4;&#x5E8;&#x5D9; &#x5D8;&#x5DC;&#x5E4;&#x5D5;&#x5DF; &#x5D1;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="https://tor.jerusalem.muni.il/" target="_blank">&#x5D6;&#x5D9;&#x5DE;&#x5D5;&#x5DF; &#x5EA;&#x5D5;&#x5E8;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/contactus/digital-hub-safra/">&#x5DE;&#x5E8;&#x5D7;&#x5D1; &#x5D4;&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA; &#x5D4;&#x5D3;&#x5D9;&#x5D2;&#x5D9;&#x5D8;&#x5DC;&#x5D9;</a></li>
+                                                                <li><a href="/he/contactus/hub-abu-tor/">&#x5DE;&#x5E8;&#x5DB;&#x5D6; &#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA; &#x5D5;&#x5D7;&#x5D3;&#x5E9;&#x5E0;&#x5D5;&#x5EA; &#x2013; &#x5D0;&#x5D1;&#x5D5; &#x5EA;&#x5D5;&#x5E8;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E4;&#x5E0;&#x5D9;&#x5D5;&#x5EA; &#x5E6;&#x5D9;&#x5D1;&#x5D5;&#x5E8; &#x5DC;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="/he/residents/arnona/direct-contact/">&#x5D0;&#x5D2;&#x5E3; &#x5E9;&#x5D5;&#x5DE;&#x5D4; &#x5D5;&#x5D2;&#x5D1;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/contactus/inquiry/?formtype=168">&#x5D0;&#x5D2;&#x5E3; &#x5DC;&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9; &#x5D7;&#x5E0;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="https://tor.jerusalem.muni.il/" target="_blank">&#x5E4;&#x5E0;&#x5D9;&#x5D5;&#x5EA; &#x5E6;&#x5D9;&#x5D1;&#x5D5;&#x5E8; &#x5DC;&#x5DB;&#x5DC;&#x5DC; &#x5D9;&#x5D7;&#x5D9;&#x5D3;&#x5D5;&#x5EA; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E1;&#x5D8;&#x5D8;&#x5D5;&#x5E1; &#x5E4;&#x5E0;&#x5D9;&#x5D5;&#x5EA; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="https://jerequestatusapi.jerusalem.muni.il/JerSiteStatusApp/#/status/1" target="_blank">&#x5E1;&#x5D8;&#x5D8;&#x5D5;&#x5E1; &#x5EA;&#x5D9;&#x5E7; &#x5E8;&#x5D9;&#x5E9;&#x5D5;&#x5D9; &#x5D1;&#x5E0;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="https://jerequestatusapi.jerusalem.muni.il/JerSiteStatusApp/#/status/2" target="_blank">&#x5E1;&#x5D8;&#x5D8;&#x5D5;&#x5E1; &#x5EA;&#x5D9;&#x5E7; &#x5DE;&#x5D9;&#x5D3;&#x5E2; &#x5DC;&#x5D4;&#x5D9;&#x5EA;&#x5E8;</a></li>
+                                                                <li><a href="https://jerdigistatusapi.jerusalem.muni.il/Client/#/statusDigital/login" target="_blank">&#x5E1;&#x5D8;&#x5D8;&#x5D5;&#x5E1; &#x5D1;&#x5E7;&#x5E9;&#x5D5;&#x5EA;</a></li>
+                                                                <li><a href="/he/contactus/checkinquiry/">&#x5D0;&#x5D9;&#x5EA;&#x5D5;&#x5E8; &#x5E4;&#x5E0;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9;&#x5DD; &#x5DE;&#x5E7;&#x5D5;&#x5D5;&#x5E0;&#x5D9;&#x5DD; </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="https://pay.jerusalem.muni.il/PaymentsApp/#/" target="_blank">&#x5DE;&#x5E2;&#x5E8;&#x5DB;&#x5EA; &#x5EA;&#x5E9;&#x5DC;&#x5D5;&#x5DE;&#x5D9;&#x5DD;</a></li>
+                                                                <li><a href="/he/online-services/arnona/">&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9;&#x5DD; &#x5DE;&#x5E7;&#x5D5;&#x5D5;&#x5E0;&#x5D9;&#x5DD; &#x5D1;&#x5E0;&#x5D5;&#x5E9;&#x5D0; &#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4;</a></li>
+                                                                <li><a href="/he/online-services/parking/">&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9;&#x5DD; &#x5DE;&#x5E7;&#x5D5;&#x5D5;&#x5E0;&#x5D9;&#x5DD; &#x5D1;&#x5E0;&#x5D5;&#x5E9;&#x5D0; &#x5D7;&#x5E0;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/online-services/">&#x5DC;&#x5DB;&#x5DC; &#x5D4;&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9;&#x5DD; &#x5D4;&#x5DE;&#x5E7;&#x5D5;&#x5D5;&#x5E0;&#x5D9;&#x5DD;</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a href="#" onclick="return false;">&#x5DE;&#x5D5;&#x5E7;&#x5D3; 106 </a>
+                                                    <ul class="menu-secondary">
+                                                                <li><a href="https://jeronlineforms.jerusalem.muni.il/106" target="_blank">&#x5E4;&#x5E0;&#x5D9;&#x5D4; &#x5DE;&#x5E7;&#x5D5;&#x5D5;&#x5E0;&#x5EA; &#x5DC;&#x5DE;&#x5D5;&#x5E7;&#x5D3; 106</a></li>
+                                                                <li><a href="/he/contactus/app-106/">&#x5D0;&#x5E4;&#x5DC;&#x5D9;&#x5E7;&#x5E6;&#x5D9;&#x5D9;&#x5EA; 106</a></li>
+                                                                <li><a href="/he/contactus/checkinquiry/">&#x5D0;&#x5D9;&#x5EA;&#x5D5;&#x5E8; &#x5E4;&#x5E0;&#x5D9;&#x5D9;&#x5D4;</a></li>
+                                                                <li><a href="/he/contactus/sms/">SMS</a></li>
+                                                    </ul>
+                                            </li>
+                                            <li class="promos">
+                                                        <a href="https://jerdigistatusapi.jerusalem.muni.il/Client/#/statusDigital/login" target="_blank" class="promoItem">
+                                                                <figure><img src="/media/awvnt04f/site_msg_home.jpg" alt="" title=""></figure>
+                                                            <h4>&#x5E1;&#x5D8;&#x5D8;&#x5D5;&#x5E1; &#x5D4;&#x5D2;&#x5E9;&#x5EA; &#x5D1;&#x5E7;&#x5E9;&#x5D5;&#x5EA;</h4>
+                                                            <div class="more">&#x5D1;&#x5D0;&#x5D6;&#x5D5;&#x5E8; &#x5D6;&#x5D4; &#x5EA;&#x5D5;&#x5DB;&#x5DC;&#x5D5; &#x5DC;&#x5E6;&#x5E4;&#x5D5;&#x5EA; &#x5D1;&#x5E1;&#x5D8;&#x5D8;&#x5D5;&#x5E1; &#x5D4;&#x5E4;&#x5E0;&#x5D9;&#x5D5;&#x5EA; &#x5E9;&#x5DC;&#x5DB;&#x5DD; &#x5DC;&#x5D2;&#x5D5;&#x5E8;&#x5DE;&#x5D9; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D9;&#x5D4;</div>
+                                                        </a>
+                                                        <a href="/he/residents/community-in-jerusalem/whatsapp-groups/" class="promoItem">
+                                                                <figure><img src="/media/s5ca55ez/y_msg.jpg" alt="" title=""></figure>
+                                                            <h4>&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5DE;&#x5D9;&#x5DD; &#x5EA;&#x5DE;&#x5D9;&#x5D3; &#x5DE;&#x5D7;&#x5D5;&#x5D1;&#x5E8;&#x5D9;&#x5DD;!</h4>
+                                                            <div class="more">&#x5E8;&#x5D5;&#x5E6;&#x5D9;&#x5DD; &#x5DC;&#x5E7;&#x5D1;&#x5DC; &#x5DE;&#x5D0;&#x5D9;&#x5EA;&#x5E0;&#x5D5; &#x5E2;&#x5D3;&#x5DB;&#x5D5;&#x5E0;&#x5D9;&#x5DD; &#x5D9;&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA; &#x5DC;&#x5D5;&#x5D5;&#x5D0;&#x5D8;&#x5E1;&#x5D0;&#x5E4;? &#x5D4;&#x5E6;&#x5D8;&#x5E8;&#x5E4;&#x5D5; &#x5DC;&#x5E7;&#x5D1;&#x5D5;&#x5E6;&#x5D5;&#x5EA; &#x5D4;&#x5D5;&#x5D5;&#x5D0;&#x5D8;&#x5E1;&#x5D0;&#x5E4; &#x5D4;&#x5E9;&#x5DB;&#x5D5;&#x5E0;&#x5EA;&#x5D9;&#x5D5;&#x5EA; &#x5E9;&#x5DC; &#x5D4;&#x5E2;&#x5D9;&#x5E8;&#x5D9;&#x5D4;.</div>
+                                                        </a>
+                                            </@(onlyMob?"div":"li")>
+                                    </ul>
+                            </li>
+                    <li>
+                        <a href="https://my.jerusalem.muni.il/BonusesOpen.aspx" target="_blank">
+                            <div class="sr-only">ירושלמי</div>
+                            <i aria-hidden="true" class="yerushalmi"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/he/neighborhoods/" target="">
+                            &#x5E9;&#x5DB;&#x5D5;&#x5E0;&#x5D5;&#x5EA; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;
+                            <i aria-hidden="true" class="neighborhoodsIcon"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="javascript:bf_ReporterPlugin.toggleButterflyReporter('2f590ee8-d67f-45cb-ae0f-b2f75471303d', null, 'he')" class="butterflyBtn">
+                            <img src="https://butterfly-button.web.app/img/butterfly-logo-200.png" alt="The Butterfly Button">
+                            <span>&#x5DE;&#x5E0;&#x5D9;&#x5E2;&#x5EA; &#x5D0;&#x5DC;&#x5D9;&#x5DE;&#x5D5;&#x5EA; &#x5D1;&#x5DE;&#x5E9;&#x5E4;&#x5D7;&#x5D4;</span>
+                        </a>
+                    </li>
+            </ul>
+        </div>
+        <div class="search-collapse" id="navbarSearchCollapse" data-parent="#mainNavigation">
+            <form class="navbar-form">
+                <input type="search" id="cMainSearch" placeholder="&#x5D4;&#x5E7;&#x5DC;&#x5D9;&#x5D3;&#x5D5; &#x5DE;&#x5D9;&#x5DC;&#x5EA; &#x5D7;&#x5D9;&#x5E4;&#x5D5;&#x5E9;" aria-label="&#x5D4;&#x5E7;&#x5DC;&#x5D9;&#x5D3;&#x5D5; &#x5DE;&#x5D9;&#x5DC;&#x5EA; &#x5D7;&#x5D9;&#x5E4;&#x5D5;&#x5E9;">
+                <button type="submit" onclick="goSearch();return false;">
+                    <span class="sr-only">&#x5D7;&#x5E4;&#x5E9;</span>
+                </button>
+            </form>
+        </div>
+    </nav>
+</header>
+
+<div id="want-to-modal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">&#x5D0;&#x5E0;&#x5D9;  &#x5E8;&#x5D5;&#x5E6;&#x5D4;...</h2>
+                <button type="button" class="close" data-dismiss="modal" aria-label="סגור חלון">
+                    <span aria-hidden="true"></span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-12 col-md-9 quickies">
+                            <dl>
+                                <dt role="heading">&#x5DE;&#x5D9;&#x5D3;&#x5E2; &#x5D1;&#x5D7;&#x5D9;&#x5E8;&#x5D5;&#x5DD;</dt>
+                                            <dd>
+                                                <a href="/he/residents/emergency/" target="_blank">&#x5E4;&#x5D5;&#x5E8;&#x5D8;&#x5DC; &#x5D7;&#x5D9;&#x5E8;&#x5D5;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/security/emergency-booklet/">&#x5EA;&#x5D4;&#x5D9;&#x5D5; &#x5D1;&#x5D8;&#x5D5;&#x5D7;&#x5D9;&#x5DD; &#x5E9;&#x5D0;&#x5EA;&#x5DD; &#x5DE;&#x5D5;&#x5DB;&#x5E0;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/security/spaces/list/" target="">&#x5DE;&#x5E8;&#x5D7;&#x5D1;&#x5D9;&#x5DD; &#x5DE;&#x5D5;&#x5D2;&#x5E0;&#x5D9;&#x5DD; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://www.oref.org.il/heb/articles/info/iron-swords/1100" target="_blank">&#x5D4;&#x5E0;&#x5D7;&#x5D9;&#x5D5;&#x5EA; &#x5E4;&#x5D9;&#x5E7;&#x5D5;&#x5D3; &#x5D4;&#x5E2;&#x5D5;&#x5E8;&#x5E3; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/welfare/mental_community_assistance/" target="_blank">&#x5DE;&#x5D5;&#x5E7;&#x5D3;&#x5D9; &#x5E1;&#x5D9;&#x5D5;&#x5E2; &#x5DC;&#x5EA;&#x5D5;&#x5E9;&#x5D1;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/security/notebook/" target="_blank">&#x5D7;&#x5D5;&#x5D1;&#x5E8;&#x5EA; &#x5D4;&#x5E0;&#x5D7;&#x5D9;&#x5D5;&#x5EA; &#x5DC;&#x5E9;&#x5E2;&#x5EA; &#x5D7;&#x5D9;&#x5E8;&#x5D5;&#x5DD; &#x5DC;&#x5D4;&#x5D5;&#x5E8;&#x5D3;&#x5D4;</a>
+                                            </dd>
+                            </dl>
+                            <dl>
+                                <dt role="heading">&#x5DC;&#x5D1;&#x5E6;&#x5E2; &#x5E4;&#x5E2;&#x5D5;&#x5DC;&#x5D5;&#x5EA;</dt>
+                                            <dd>
+                                                <a href="https://pay.jerusalem.muni.il/PaymentsApp/" target="_blank">&#x5EA;&#x5E9;&#x5DC;&#x5D5;&#x5DE;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://tor.jerusalem.muni.il/" target="_blank">&#x5D6;&#x5D9;&#x5DE;&#x5D5;&#x5DF; &#x5EA;&#x5D5;&#x5E8;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://jeronlineforms.jerusalem.muni.il/Parking?rqstType=1" target="_blank">&#x5E2;&#x5E8;&#x5E2;&#x5D5;&#x5E8; &#x5E2;&#x5DC; &#x5D3;&#x5D5;&#x5D7; &#x5D7;&#x5E0;&#x5D9;&#x5D4;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://jerrishuybniyaonline.jerusalem.muni.il/" target="_blank">&#x5D4;&#x5D2;&#x5E9;&#x5EA; &#x5D1;&#x5E7;&#x5E9;&#x5D4; &#x5DC;&#x5D4;&#x5D9;&#x5EA;&#x5E8; &#x5D1;&#x5E0;&#x5D9;&#x5D9;&#x5D4;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://jeronlineforms.jerusalem.muni.il/AssetApproval" target="_blank">&#x5D1;&#x5E7;&#x5E9;&#x5D4; &#x5DC;&#x5D0;&#x5D9;&#x5E9;&#x5D5;&#x5E8; &#x5D4;&#x5D7;&#x5D6;&#x5E7;&#x5EA; &#x5E0;&#x5DB;&#x5E1; (&#x5D0;&#x5D9;&#x5E9;&#x5D5;&#x5E8; &#x5EA;&#x5D5;&#x5E9;&#x5D1;&#x5D5;&#x5EA;)</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/arnona/refund/" target="">&#x5D4;&#x5D7;&#x5D6;&#x5E8; &#x5DB;&#x5E1;&#x5E4;&#x5D9; &#x5D1;&#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://jerdigistatusapi.jerusalem.muni.il/Client/#/educatinPersonalArea/login" target="_blank">&#x5D0;&#x5D9;&#x5D6;&#x5D5;&#x5E8; &#x5D0;&#x5D9;&#x5E9;&#x5D9; &#x5D7;&#x5D9;&#x5E0;&#x5D5;&#x5DA;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://jerbussstatus.jerusalem.muni.il/Client/#/login" target="_blank">&#x5D0;&#x5D9;&#x5D6;&#x5D5;&#x5E8; &#x5D0;&#x5D9;&#x5E9;&#x5D9; &#x5DC;&#x5E2;&#x5E1;&#x5E7;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/education/messages/munibox/">Munibox</a>
+                                            </dd>
+                            </dl>
+                            <dl>
+                                <dt role="heading">&#x5DC;&#x5D7;&#x5E4;&#x5E9;</dt>
+                                            <dd>
+                                                <a href="/he/residents/pharmacies/emergency-pharmacies/" target="_blank">&#x5D1;&#x5EA;&#x5D9; &#x5DE;&#x5E8;&#x5E7;&#x5D7;&#x5EA; &#x5D1;&#x5EA;&#x5D5;&#x5E8;&#x5E0;&#x5D5;&#x5EA;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/parking/trafficarrangements/">&#x5D4;&#x5E1;&#x5D3;&#x5E8;&#x5D9; &#x5EA;&#x5E0;&#x5D5;&#x5E2;&#x5D4;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/parking/carparks/">&#x5D7;&#x5E0;&#x5D9;&#x5D5;&#x5E0;&#x5D9;&#x5DD; &#x5D1;&#x5E2;&#x5D9;&#x5E8;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/parking/parking-reports/find-parking-reports/">&#x5D0;&#x5D9;&#x5EA;&#x5D5;&#x5E8; &#x5D3;&#x5D5;&#x5D7;&#x5D5;&#x5EA; &#x5D7;&#x5E0;&#x5D9;&#x5D4;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/clean-city/improvingcity/recycling/" target="_blank">&#x5DE;&#x5EA;&#x5E7;&#x5E0;&#x5D9; &#x5DE;&#x5D9;&#x5D7;&#x5D6;&#x5D5;&#x5E8; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/bicycle/" target="_blank">&#x5DE;&#x5E1;&#x5DC;&#x5D5;&#x5DC;&#x5D9;&#x5DD;, &#x5D4;&#x5E9;&#x5DB;&#x5E8;&#x5EA; &#x5D0;&#x5D5;&#x5E4;&#x5E0;&#x5D9;&#x5D9;&#x5DD; &#x5D5;&#x5E2;&#x5D5;&#x5D3; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/experience/lobbyevents/">&#x5D0;&#x5D9;&#x5E8;&#x5D5;&#x5E2;&#x5D9;&#x5DD; &#x5D1;&#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                            </dl>
+                            <dl>
+                                <dt role="heading">&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9;&#x5DD; &#x5E4;&#x5D5;&#x5E4;&#x5D5;&#x5DC;&#x5E8;&#x5D9;&#x5DD;</dt>
+                                            <dd>
+                                                <a href="/he/online-services/">&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA;&#x5D9;&#x5DD; &#x5DE;&#x5E7;&#x5D5;&#x5D5;&#x5E0;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/residents/arnona/arnonadiscounts/income/">&#x5D4;&#x5E0;&#x5D7;&#x5D4; &#x5D1;&#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4; &#x5DE;&#x5D8;&#x5E2;&#x5DE;&#x5D9; &#x5D4;&#x5DB;&#x5E0;&#x5E1;&#x5D4;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://ykpubdata.jerusalem.muni.il/#/?SystemCode=26400046" target="_blank">&#x5EA;&#x5D9;&#x5E7;&#x5D9; &#x5E8;&#x5D9;&#x5E9;&#x5D5;&#x5D9; &#x5D1;&#x5E0;&#x5D9;&#x5D9;&#x5D4;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://jergisng.jerusalem.muni.il/baseWab/?config=../gisviewerngsupport/api/InjectingConfig&amp;locale=he" target="_blank">&#x5DE;&#x5E2;&#x5E8;&#x5DB;&#x5EA; gis &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5D9;&#x5DD;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://jeronlineforms.jerusalem.muni.il/SmartDiscounts" target="_blank">&#x5DE;&#x5D7;&#x5E9;&#x5D1;&#x5D5;&#x5DF; &#x5DC;&#x5D1;&#x5D3;&#x5D9;&#x5E7;&#x5EA; &#x5D6;&#x5DB;&#x5D0;&#x5D5;&#x5EA; &#x5D4;&#x5E0;&#x5D7;&#x5D5;&#x5EA; &#x5D1;&#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="/he/contactus/digital-hub-safra/">&#x5DE;&#x5E8;&#x5D7;&#x5D1; &#x5D4;&#x5E9;&#x5D9;&#x5E8;&#x5D5;&#x5EA; &#x5D4;&#x5D3;&#x5D9;&#x5D2;&#x5D9;&#x5D8;&#x5DC;&#x5D9; &#x5D1;&#x5DB;&#x5D9;&#x5DB;&#x5E8; &#x5E1;&#x5E4;&#x5E8;&#x5D0;</a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://jeronlineforms.jerusalem.muni.il/HoldersExchange" target="_blank">&#x5D4;&#x5D7;&#x5DC;&#x5E4;&#x5EA; &#x5DE;&#x5D7;&#x5D6;&#x5D9;&#x5E7; &#x5D1;&#x5D0;&#x5E8;&#x5E0;&#x5D5;&#x5E0;&#x5D4;</a>
+                                            </dd>
+                            </dl>
+                        <dl class="stat">
+                            <dt class="heading">&#x5E1;&#x5D8;&#x5D0;&#x5D8;&#x5D5;&#x5E1; &#x5D1;&#x5E7;&#x5E9;&#x5D5;&#x5EA;</dt>
+                                            <dd>
+                                                <a href="https://ykpubdata.jerusalem.muni.il/#/?SystemCode=26400046" target="_blank">
+                                                        <figure><img src="/media/qqjcwncu/status_icon-06.png" /></figure>
+                                                    &#x5EA;&#x5D9;&#x5E7; &#x5E8;&#x5D9;&#x5E9;&#x5D5;&#x5D9; &#x5D1;&#x5E0;&#x5D9;&#x5D9;&#x5D4;
+                                                </a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://ykpubdata.jerusalem.muni.il/#/?SystemCode=26400046" target="_blank">
+                                                        <figure><img src="/media/5ksluppn/status_icon-05.png" /></figure>
+                                                    &#x5EA;&#x5D9;&#x5E7; &#x5DE;&#x5D9;&#x5D3;&#x5E2; &#x5DC;&#x5D4;&#x5D9;&#x5EA;&#x5E8;
+                                                </a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://jerdigistatusapi.jerusalem.muni.il/Client/#/statusDigital/login" target="_blank">
+                                                        <figure><img src="/media/ns2b3cq4/status_icon-04.png" /></figure>
+                                                    &#x5D8;&#x5E4;&#x5E1;&#x5D9;&#x5DD; &#x5DE;&#x5E7;&#x5D5;&#x5D5;&#x5E0;&#x5D9;&#x5DD;
+                                                </a>
+                                            </dd>
+                                            <dd>
+                                                <a href="https://www.jerusalem.muni.il/he/contactus/checkinquiry/" target="_blank">
+                                                        <figure><img src="/media/421nvtfo/status_icon-03.png" /></figure>
+                                                    &#x5D0;&#x5D9;&#x5EA;&#x5D5;&#x5E8; &#x5E4;&#x5E0;&#x5D9;&#x5D9;&#x5EA; &#x5E6;&#x5D9;&#x5D1;&#x5D5;&#x5E8; / 106
+                                                </a>
+                                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+        <section id="main">
+            
+
+<style>
+    .moreEventsCollapse button:after {
+        transition: all 0.3s ease-in;
+        content: attr(data-more-label);
+    }
+
+    .ticketsOrder,
+    .event-fixed-btns .ticketsOrder,
+    .eventMobileFixed .eventShare .ticketsOrder {
+        background: #fe46b6 !important;
+        color: #000002 !important;
+    }
+
+        .ticketsOrder:hover, .ticketsOrder:focus,
+        .event-fixed-btns .ticketsOrder:hover, .event-fixed-btns .ticketsOrder:focus,
+        .eventMobileFixed .eventShare .ticketsOrder:hover, .eventMobileFixed .eventShare .ticketsOrder:focus {
+            background: #000002 !important;
+            color: #fe46b6 !important;
+        }
+
+</style>
+<script type="text/javascript">
+    var CLIENT_ID = '587643043990-g10r96mkrsu6cu0mmdhad6d6i7c8ccu4.apps.googleusercontent.com';
+    var API_KEY = 'AIzaSyCDORN9qGWhCX9VDbDrwurSnrlbpwapE9I';
+    var GoogleAuth;
+    var DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
+    var SCOPES = "https://www.googleapis.com/auth/calendar";
+    function handleClientLoad() {   
+        gapi.load('client:auth2', initClient);
+    }
+    function initClient() {
+        gapi.client.init({
+            apiKey: API_KEY,
+            clientId: CLIENT_ID,
+            discoveryDocs: DISCOVERY_DOCS,
+            scope: SCOPES
+        }).then(function () {
+            GoogleAuth = gapi.auth2.getAuthInstance();
+            GoogleAuth.isSignedIn.listen(updateSigninStatus);
+        }, function (error) {
+        });
+    }
+    function updateSigninStatus(isSignedIn) {
+        if (isSignedIn) {
+            exp(1);
+        }
+    }
+</script>
+<script async onload="this.onload=function(){};handleClientLoad()" onreadystatechange="if (this.readyState === 'complete') this.onload()" src="https://apis.google.com/js/api.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        if ($('.eventMobileFixed .eventShare > *:not(.dropdown-menu)').length >= 4) {
+            $('.eventShare [data-toggle=dropdown]').hide();
+        };
+    });
+
+    function exp(x) {
+
+        var summary = 'ג\'אם סשן ירושלמי';
+        var location = 'Besarabia';
+        var desc = 'במה פתוחה למוזיקאים מכל הרמות ומכל הסגנונות המוזיקליים - סאונד איכותי, אווירה ביתית, מחירים נוחים בבר וקהל ירושלמי נפלא'
+            + '<br>' +'https://www.jerusalem.muni.il/he/experience/allevents/jamsession/';
+        var start = '';
+        var end = '';
+
+
+                start = '2026-11-09T22:00:00';
+                end = '2026-11-09T02:00:00';
+
+        var event = {
+            'summary': summary,
+            'location': location,
+            'description': desc,
+            'start': {
+                'dateTime': start,
+                'timeZone': 'Asia/Jerusalem'
+            }
+        };
+        event.end = { 'dateTime': end, 'timeZone': 'Asia/Jerusalem' };
+
+        if (GoogleAuth) {
+            var user = GoogleAuth.currentUser.get();
+            var isAuthorized = user.hasGrantedScopes(SCOPES);
+            if (!isAuthorized) {
+                gapi.auth2.getAuthInstance().signIn();
+                return;
+            } else {
+                var request = gapi.client.calendar.events.insert({
+                    'calendarId': 'primary',
+                    'resource': event
+                });
+                request.execute(function (event) {
+                    //alertPopup("יצוא ליומן", "נשלח בהצלחה");
+                    $(".popover").addClass("show");
+                    setTimeout('$(".popover").removeClass("show")', 3000)
+                });
+            }
+        }
+    }
+</script>
+
+<div class="eventHead" style="background-color: #000002;">
+        <figure class="mainImg" style="background-image: url(/media/kgmn04ri/fb614371-a998-4de3-897c-dcc1548c1e20.jpg);" title="Jam Session Cover"></figure>
+        <figure class="mainImgMobile" style="background-image: url(/media/qh4k2r5s/feaa607e-9288-49ca-8dd6-eb2c0565d6ac.jpg);" title="Jam Session cover small"></figure>
+</div>
+
+<div class="eventMobileFixed no_hatava no_tickets">
+    <div class="eventShare">
+
+            <button type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <img src="/images/share.png" alt="share">
+            </button>
+            <div class="dropdown-menu">
+                    <a class="dropdown-item print" href="#" onclick="window.print(); return false;">הדפסה</a>
+                <a class="dropdown-item facebook facebookshare" href="#">facebook</a>
+                <a onclick="sendEmail();return false;" class="dropdown-item email" href="#">email</a>
+                <a class="dropdown-item whatsapp whatsapshare" href="#">whatsapp</a>
+            </div>
+    </div>
+</div>
+
+
+
+<div class="eventStikyNav" style="background-color: ; color:;">
+    <nav class="jumpNav">
+            <a href="#a1">&#x5DE;&#x5D4; &#x5D1;&#x5D0;&#x5D9;&#x5E8;&#x5D5;&#x5E2;</a>
+            <a href="#a3">&#x5DE;&#x5D9;&#x5E7;&#x5D5;&#x5DD; &#x5D4;&#x5D0;&#x5D9;&#x5E8;&#x5D5;&#x5E2;</a>
+    </nav>
+</div>
+<script>
+    function getTimeRemaining(endtime) {
+        var t = endtime - (new Date()).getTime();
+        if (t <= 0)
+            return {
+                total: 0,
+                days: 0,
+                hours: 0,
+                minutes: 0,
+                seconds: 0
+            }
+        var seconds = Math.floor((t / 1000) % 60);
+        var minutes = Math.floor((t / 60000) % 60);
+        var hours = Math.floor((t / (1000 * 60 * 60)) % 24);
+        var days = Math.floor(t / (1000 * 60 * 60 * 24));
+        return {
+            total: t,
+            days: days,
+            hours: hours,
+            minutes: minutes,
+            seconds: seconds
+        }
+    }
+    function setTime() {
+        var dateObject = new Date($('.brief-timer').attr('data-timeto') * 1000);
+        var timeto = dateObject.getTime();
+        var t = getTimeRemaining(timeto);
+        $('.timer-seconds span').text(t.seconds);
+        $('.timer-minutes span').text(t.minutes);
+        $('.timer-hours span').text(t.hours);
+        $('.timer-days span').text(t.days)
+    }
+    setInterval(setTime, 1000);
+
+</script>
+<main id="main">
+    <div id="a1" class="eventItemAbout" style="background-color: #000002; color:;">
+    <div class="container">
+        <h1>&#x5D2;&#x27;&#x5D0;&#x5DD; &#x5E1;&#x5E9;&#x5DF; &#x5D9;&#x5E8;&#x5D5;&#x5E9;&#x5DC;&#x5DE;&#x5D9;</h1>
+        <h2>במה פתוחה למוזיקאים מכל הרמות ומכל הסגנונות המוזיקליים - סאונד איכותי, אווירה ביתית, מחירים נוחים בבר וקהל ירושלמי נפלא</h2>
+        <div class="eventHeadMeta">
+                <span><img src="/images/icons/eventItem-1.png" alt=""> 9.11.26 <small class="hebDate">כ"ט חשון תשפ"ז</small>
+                        <a href="#a7"><span>&#x5EA;&#x5D0;&#x5E8;&#x5D9;&#x5DB;&#x5D9;&#x5DD; &#x5E0;&#x5D5;&#x5E1;&#x5E4;&#x5D9;&#x5DD; ></span></a>
+                </span>
+                <span><img src="/images/icons/eventItem-6.png" alt=""> &#x5D9;&#x5DE;&#x5D9; &#x5E9;&#x5E0;&#x5D9;</span>
+                <span><img src="/images/icons/eventItem-5.png" alt=""> 22:00 - 02:00</span>
+                <span><img src="/images/icons/eventItem-4.png" alt=""> Besarabia</span>
+                <span><img src="/images/icons/eventItem-3.png" alt=""> &#x5D7;&#x5D9;&#x5E0;&#x5DD;</span>
+        </div>
+        <br />
+        <p>מחכים לכם סאונד חי ואיכותי, גיטרה בס, גיטרה חשמלית, מערכת תופים ומיקרופונים, <br>לצד אווירה ביתית ולא רשמית, מחירים נוחים בבר וקהל ירושלמי נפלא.</p><p>אפשר להביא כלי נגינה מהבית, להצטרף למוזיקאים אחרים, לאלתר, <br>להכיר אנשים חדשים ואולי אפילו להקים הרכב חדש במקום.</p><p>גם מי שלא מנגן מוזמן להגיע וליהנות ממוזיקה חיה, ספונטנית ובלתי צפויה.</p><p>הכניסה חופשית למשתתפים ולקהל.</p>
+            <p><strong>איש קשר: besarabia jerusalem</strong><br /><strong><img src="/images/icons/whatsapp.svg" alt="" style="width:16px; height:16px; vertical-align:middle; margin-inline-end:4px;"> : <a href="https://wa.me/0524319695" target="_blank">0524319695</a>, <img src="/images/icons/mail.svg" alt="" style="width:16px; height:16px; vertical-align:middle; margin-inline-end:4px;"> : <a href="mailto:info.besarabia@gmail.com">info.besarabia@gmail.com</a></strong></p>
+                <h2 id="a7">&#x5EA;&#x5D0;&#x5E8;&#x5D9;&#x5DB;&#x5D9;&#x5DD; &#x5E0;&#x5D5;&#x5E1;&#x5E4;&#x5D9;&#x5DD;:</h2>
+            <ul class="otherDatestList">
+        <li>
+            <div class="dateItem">
+                <strong>
+                    9.11 
+                    <small>&#x5DB;&quot;&#x5D8; &#x5D7;&#x5E9;&#x5D5;&#x5DF; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    16.11 
+                    <small>&#x5D5;&#x27; &#x5DB;&#x5E1;&#x5DC;&#x5D5; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    23.11 
+                    <small>&#x5D9;&quot;&#x5D2; &#x5DB;&#x5E1;&#x5DC;&#x5D5; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    30.11 
+                    <small>&#x5DB;&#x27; &#x5DB;&#x5E1;&#x5DC;&#x5D5; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    7.12 
+                    <small>&#x5DB;&quot;&#x5D6; &#x5DB;&#x5E1;&#x5DC;&#x5D5; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    14.12 
+                    <small>&#x5D3;&#x27; &#x5D8;&#x5D1;&#x5EA; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    21.12 
+                    <small>&#x5D9;&quot;&#x5D0; &#x5D8;&#x5D1;&#x5EA; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    28.12 
+                    <small>&#x5D9;&quot;&#x5D7; &#x5D8;&#x5D1;&#x5EA; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    4.1 
+                    <small>&#x5DB;&quot;&#x5D4; &#x5D8;&#x5D1;&#x5EA; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    11.1 
+                    <small>&#x5D2;&#x27; &#x5E9;&#x5D1;&#x5D8; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    18.1 
+                    <small>&#x5D9;&#x27; &#x5E9;&#x5D1;&#x5D8; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    25.1 
+                    <small>&#x5D9;&quot;&#x5D6; &#x5E9;&#x5D1;&#x5D8; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    1.2 
+                    <small>&#x5DB;&quot;&#x5D3; &#x5E9;&#x5D1;&#x5D8; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    8.2 
+                    <small>&#x5D0;&#x27; &#x5D0;&#x5D3;&#x5E8; &#x5D0;&#x27; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    15.2 
+                    <small>&#x5D7;&#x27; &#x5D0;&#x5D3;&#x5E8; &#x5D0;&#x27; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    22.2 
+                    <small>&#x5D8;&quot;&#x5D5; &#x5D0;&#x5D3;&#x5E8; &#x5D0;&#x27; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    1.3 
+                    <small>&#x5DB;&quot;&#x5D1; &#x5D0;&#x5D3;&#x5E8; &#x5D0;&#x27; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    8.3 
+                    <small>&#x5DB;&quot;&#x5D8; &#x5D0;&#x5D3;&#x5E8; &#x5D0;&#x27; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    15.3 
+                    <small>&#x5D5;&#x27; &#x5D0;&#x5D3;&#x5E8; &#x5D1;&#x27; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    22.3 
+                    <small>&#x5D9;&quot;&#x5D2; &#x5D0;&#x5D3;&#x5E8; &#x5D1;&#x27; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+        <li>
+            <div class="dateItem">
+                <strong>
+                    29.3 
+                    <small>&#x5DB;&#x27; &#x5D0;&#x5D3;&#x5E8; &#x5D1;&#x27; &#x5EA;&#x5E9;&#x5E4;&quot;&#x5D6;</small>
+                </strong>                
+                <span>&#x5D9;&#x5D5;&#x5DD; &#x5E9;&#x5E0;&#x5D9;</span>
+               
+            </div>
+        </li>
+            </ul>
+     
+    </div>
+    <!-- /container -->
+</div>
+
+    <link rel="stylesheet" href="/css/podcast.css" />
+
+<!-- podast player modal -->
+<div class="modal fade" id="podcastPlayerModal" tabindex="-1" role="dialog" aria-labelledby="podcastPlayerModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="pause(1); return false;">
+                <img aria-hidden="true" src="/images/noun_Close_1983616.svg" alt="">
+            </button>
+            <div class="modal-body">
+                <div class="podcast-player">
+                    <div class="playerFrame">
+                        <div class="player-header">
+                            <div class="player-control">
+                                <button class="pause pauseB" type="button" style="display: none;" onclick="pause(0); return false;"><img src="/images/noun_pause.svg" alt=""></button>
+                                <button class="play playB" type="button" onclick="start(); return false;"><img src="/images/noun_play.svg" alt=""></button>
+                            </div>
+                            <div class="player-title">
+                                <p id="t1"></p>
+                                <h3 id="t2"></h3>
+                            </div>
+                        </div>
+                        <div class="player-progress-bar">
+                            <audio id="player1" preload="auto" style="width: 100%;" tabindex="2" aria-label="audio" controlsList="nodownload"></audio>
+                            <div class="player">
+                                <div class="volume">
+                                    <button type="button"><img id="iVol" src="/images/noun_Volume_3408327.svg" alt="" onclick="mute(); return false;"></button>
+                                </div>
+                                <button class="time-back np2" type="button" onclick="go(-10); return false;"><img src="/images/noun_reload_2345571.svg" alt=""></button>
+                                <span class="playtoggle">
+                                    <span id="gutter">
+                                        <span id="handle"></span>
+                                    </span>
+                                </span>
+                                <div class="player-timer">
+                                    <span></span>
+                                </div>
+                                <button class="time-forward np2" type="button" onclick="go(10); return false;"><img src="/images/noun_reload_2345571-1.svg" alt=""></button>
+                            </div>
+                        </div>
+                    </div>
+                    <figure id="fPC"><img id="iPC" src="" alt=""></figure>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var curTime = 0;
+    $(document).ready(function () {
+
+        playerAudio = document.getElementById("player1");
+        player = playerAudio;
+        setListeners(playerAudio);
+        initAudio();
+
+        $('.fakeMap button').on('click', function () {
+            $('.fakeMap').slideUp();
+            $('.theMap').slideDown();
+        });
+       
+    });
+    function initAudio() {
+        var supportsAudio = document.createElement('audio').canPlayType,
+            audio,
+            loadingIndicator,
+            positionIndicator,
+            timeleft,
+            loaded = false,
+            manualSeek = false;
+        positionIndicator = $('.player #handle');
+        timeleft = $('.player #timeleft');
+        $(player).bind('timeupdate', function () {
+            var rem = parseInt(player.duration - player.currentTime, 10),
+                pos = (player.currentTime / player.duration) * 100,
+                mins = Math.floor(rem / 60, 10),
+                secs = rem - mins * 60;
+            timeleft.text('-' + mins + ':' + (secs < 10 ? '0' + secs : secs));
+            if (!manualSeek) { positionIndicator.css({ left: pos + '%' }); }
+            if (!loaded) {
+                loaded = true;            
+            }
+        }).bind('play', function () {
+            console.log("play")
+            $("#playtoggle").addClass('playing');
+        }).bind('pause ended', function () {
+            console.log("pause")
+            $("#playtoggle").removeClass('playing');
+        });
+    };
+    function play(x, t1, t2, url) {
+        $(".np2").hide();
+        $("#t1").text(t1);
+        $("#t2").text(t2);
+        if (url.length > 0) {
+            $("#iPC").attr('src', url);
+            $("#fPC").show();
+        } else {
+            $("#fPC").hide();
+        }
+        $('.playB').hide();
+        $('.pauseB').show().css('display', 'block');
+        $('#podcastPlayerModal').modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+        player.src = x;
+        player.mute = false;
+        setTimeout("$('.pauseB').focus()", 500);
+    }
+
+    function display(time) {
+        // Hours, minutes and seconds
+        var hrs = ~~(time / 3600);
+        var mins = ~~((time % 3600) / 60);
+        var secs = ~~time % 60;
+
+        // Output like "1:01" or "4:03:59" or "123:03:59"
+        var ret = "";
+        if (hrs > 0) {
+            ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
+        }
+        ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+        ret += "" + secs;
+        return ret;
+    }
+
+    function setListeners(player) {
+        player.onloadeddata = function () {
+            //console.log(curTime);
+            player.currentTime = curTime;
+            player.play();
+            $('.pauseB').focus();
+        };
+        player.onloadedmetadata = function () {
+            var total = round(player.duration, 0);
+            $(".player-timer").html('<span>' + display(total) + '</span>');
+        };
+        player.addEventListener("timeupdate", function () {
+            if (player.buffered.length > 0) {
+                if (player.duration <= player.buffered.end(0)) {
+                    $(".np2").show();
+                }
+            }
+            if (player.seekable.length > 0) {
+                if (player.duration <= player.seekable.end(0)) {
+                    $(".np2").show();
+                }
+            }
+        });
+    }
+
+    function pause(x) {
+        if (x == 1) {
+            $('#podcastPlayerModal').modal("hide");
+        }
+        player.pause();
+        player.src = x;
+
+        $('.pauseB').hide();
+        $('.playB').show();
+        setTimeout("$('.playB').focus()", 200);
+    }
+    
+    function start() {
+        player.play();
+        $('.pauseB').show();
+        $('.playB').hide();
+        setTimeout("$('.pauseB').focus()", 200);
+    }
+
+    function mute() {
+        player.muted = !player.muted;
+        if (player.muted) {
+            $("#iVol").attr('src', '/images/noun_Volume_34343.svg');
+        } else {
+            $("#iVol").attr('src', '/images/noun_Volume_3408327.svg');
+        }
+    }
+  
+    function go(x) {
+        player.currentTime = player.currentTime + x;
+    }
+</script>
+    <script>
+function expBen(x) {
+       location.href = '/Umbraco/api/EventChild/GetAddToCal?ids=' + x;
+    }
+</script>
+
+    
+
+    <div id="a3" class="mapContainer" style="background-color: #002456; color:#ffffff;">
+        <div class="fakeMap">
+            <img src="/images/locationFake.png" alt="">
+            <h2>&#x5DE;&#x5D9;&#x5E7;&#x5D5;&#x5DD; &#x5D4;&#x5D0;&#x5D9;&#x5E8;&#x5D5;&#x5E2;</h2>
+            Besarabia
+            <button type="button">&#x5DC;&#x5D4;&#x5E6;&#x5D2;&#x5EA; &#x5D4;&#x5DE;&#x5E4;&#x5D4;, &#x5DC;&#x5D7;&#x5E6;&#x5D5; &#x5DB;&#x5D0;&#x5DF;</button>
+        </div>
+        <div class="theMap" id="map" style="position: relative; overflow: hidden; display: none;">
+            <iframe src="https://www.google.com/maps?q=31.78150031847875,35.215607330609124&hl=iw&z=14&amp;output=embed" frameborder="0" style="border:0; width: 100%; height: 100%;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+        </div>
+    </div>
+
+    <script>
+    var isifr = false
+    $(document).ready(function () {
+
+    $('.newCard-deck .date').each(function (i, e) {
+            calculate(this, '.big');
+            calculate(this, '.holder');
+        });
+    });
+    function calculate(container, element) {
+        let flag = true;
+        const $container = $(container);
+        const $elm = $container.find(element);
+
+        while (flag) {
+            if ($elm.outerWidth() <= $container.outerWidth()) {
+                flag = false;
+            }
+            else {
+                var fzb = parseInt($elm.css('font-size'));
+                $elm.css({ 'font-size': fzb - 1 });
+                flag = true;
+            }
+        }
+    }
+    function goUrl(x) {
+        if (isifr) {
+            window.open(x);
+        } else {
+            location.href = x;
+        }
+    }
+
+</script>
+    
+</main>
+
+
+        </section>
+        <footer>
+    <div class="container">
+        <div class="row">
+            <ul class="col-12 col-md-7 links" role="navigation">
+                        <li class="">
+                            <a href="/he/contactus/" target="_blank">
+                                &#x5E6;&#x5E8;&#x5D5; &#x5E7;&#x5E9;&#x5E8;
+                            </a>
+                        </li>
+                        <li class="">
+                            <a href="/he/city/info/">
+                                &#x5D0;&#x5D1;&#x5D8;&#x5D7;&#x5EA; &#x5DE;&#x5D9;&#x5D3;&#x5E2; &#x5D5;&#x5EA;&#x5E0;&#x5D0;&#x5D9; &#x5E9;&#x5D9;&#x5DE;&#x5D5;&#x5E9;
+                            </a>
+                        </li>
+                        <li class="">
+                            <a href="/he/city/privacy/">
+                                &#x5DE;&#x5D3;&#x5D9;&#x5E0;&#x5D9;&#x5D5;&#x5EA; &#x5E4;&#x5E8;&#x5D8;&#x5D9;&#x5D5;&#x5EA;
+                            </a>
+                        </li>
+                        <li class="">
+                            <a href="https://portal.jerusalem.muni.il/" target="_blank">
+                                &#x5E4;&#x5D5;&#x5E8;&#x5D8;&#x5DC; &#x5E2;&#x5D5;&#x5D1;&#x5D3;&#x5D9;-&#x5DD; &#x5DC;&#x5DE;&#x5E2;&#x5E0;&#x5DB;&#x5DD;
+                            </a>
+                        </li>
+                        <li class="">
+                            <a href="/he/site-map/">
+                                &#x5DE;&#x5E4;&#x5EA; &#x5D0;&#x5EA;&#x5E8;
+                            </a>
+                        </li>
+                        <li class="">
+                            <a href="/he/accessibility/">
+                                &#x5D4;&#x5E6;&#x5D4;&#x5E8;&#x5EA; &#x5E0;&#x5D2;&#x5D9;&#x5E9;&#x5D5;&#x5EA;
+                                    <img src="/media/tgufq2oz/handicapped.png" alt="" title="" />
+                            </a>
+                        </li>
+                        <li class="">
+                            <a href="https://jerusalem.gal-ed.co.il/Web/He/Default.aspx" target="_blank">
+                                &#x5D2;&#x5DC;&#x5E2;&#x5D3; &#x5DC;&#x5D6;&#x5DB;&#x5E8;&#x5DD;
+                                    <img src="/media/pgkblllg/&#x5D2;&#x5DC;&#x5E2;&#x5D3;-&#x5DC;&#x5D6;&#x5DB;&#x5E8;&#x5DD;.png" alt="" title="" />
+                            </a>
+                        </li>
+            </ul>
+            <nav class="col-12 col-md-5 social">
+                <span class="d-md-inline-block d-none">&#x5E2;&#x5E7;&#x5D1;&#x5D5; &#x5D0;&#x5D7;&#x5E8;&#x5D9;&#x5E0;&#x5D5;</span>
+                        <a href="https://www.facebook.com/Jerusalem?fref=t" target="_blank" class="">
+                                <img src="/media/4c0pdd1o/facebook1_icon.png" alt="" title="" />
+                            <span class="sr-only">&#x5E4;&#x5D9;&#x5D9;&#x5E1;&#x5D1;&#x5D5;&#x5E7;</span>
+                        </a>
+                        <a href="https://x.com/Jlm_city" target="_blank" class="">
+                                <img src="/media/x4optk10/twiter1_icon.png" alt="" title="" />
+                            <span class="sr-only">&#x5D8;&#x5D5;&#x5D5;&#x5D9;&#x5D8;&#x5E8;</span>
+                        </a>
+                        <a href="http://instagram.com/jerusalem_city/" target="_blank" class="">
+                                <img src="/media/iupnymdb/untitled-1.png" alt="" title="" />
+                            <span class="sr-only">&#x5D0;&#x5D9;&#x5E0;&#x5E1;&#x5D8;&#x5D2;&#x5E8;&#x5DD;</span>
+                        </a>
+                        <a href="https://t.me/jerusalemtelgram" target="_blank" class="">
+                                <img src="/media/takpfza4/telegram1_icon.png" alt="" title="" />
+                            <span class="sr-only">&#x5D8;&#x5DC;&#x5D2;&#x5E8;&#x5DD;</span>
+                        </a>
+                        <a href="/he/residents/community-in-jerusalem/whatsapp-groups/" class="">
+                                <img src="/media/1iwd5wnk/wp1_icon.png" alt="" title="" />
+                            <span class="sr-only">&#x5D5;&#x5D5;&#x5D0;&#x5D8;&#x5E1;&#x5D0;&#x5E4;</span>
+                        </a>
+                
+                <a href="/he/contactus/app-106/" target="_blank" class="hideOnMobile">
+                    <img src="/images/106.svg" alt="" style="height:50px; width:auto;">
+                </a>
+                <a href="https://jerusalem.onelink.me/Sg7w/js2qzj3l" target="_blank" class="hideOnDesktop">
+                    <img src="/images/106.svg" alt="" style="height:50px; width:auto;">
+                </a>
+                <img src="/images/logoColorsNew.png" aria-hidden="true" alt="שווה לחיות בירושלים" style="height:50px; width:auto;">
+          
+            </nav>
+            <div class="col-12 col-md-7 legal"><p>עיריית ירושלים, כיכר ספרא 1, ירושלים</p></div>
+            <div class="col-12 col-md-5 credits">
+            </div>
+        </div>
+    </div>
+</footer>
+
+        
+ 
+    <script>
+        $(document).on({
+            ajaxStart: function () { $('body').addClass("loading"); },
+            ajaxStop: function () { $('body').removeClass("loading"); }
+        });
+    </script>
+    <div class="wait"></div>
+    
+        <!-- Start of Glassix Chat Widget -->
+        <script>
+            var widgetOptions = {
+                apiKey: "9dacf4aa-017e-445b-abf1-55676698ccc2",
+                snippetId: "wUKggh2XC2UJlRiubSaR"
+            };
+
+            (function (n) { var u = function () { GlassixWidgetClient && typeof GlassixWidgetClient == "function" ? (window.widgetClient = new GlassixWidgetClient(n), widgetClient.attach(), window.glassixWidgetScriptLoaded && window.glassixWidgetScriptLoaded()) : f() }, f = function () { r.onload = u; r.src = "https://cdn.glassix.net/clients/widget.1.2.min.js"; i.parentNode.removeChild(t); i.parentNode.insertBefore(r, i) }, i = document.getElementsByTagName("script")[0], t = document.createElement("script"), r; (t.async = !0, t.type = "text/javascript", t.crossorigin = "anonymous", t.id = "glassix-widget-script", r = t.cloneNode(), t.onload = u, t.src = "https://cdn.glassix.com/clients/widget.1.2.min.js", !document.getElementById(t.id) && document.body) && (i.parentNode.insertBefore(t, i), t.onerror = f) })(widgetOptions)
+        </script>
+        <!-- End of Glassix Chat Widget -->
+
+</body>
+
+</html>

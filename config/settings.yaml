@@ -745,7 +745,7 @@ enrichment:
     kikarhamusica: [live_show]  # a music stage; Saturday-night sets come with no category ("שבת")
     ramatganmuni: [culture]  # municipal programme: seniors' month, aliyah club...
     petahtikvamuni: [culture]  # municipal market rows tagged only by audience or hall
-    sharepointmuni: [culture]  # municipal lists: "תרבות ואומנות", seniors' month, untyped rows
+    jerusalemmuni: [culture]  # municipal calendar dates tagged only by audience or neighbourhood
     sharepointmuni: [culture]  # municipal lists: "תרבות ואומנות", seniors' month, untyped rows
     vibez: [culture]  # no categories; 7 of 88 (Nov 2026) name no genre in their text (performance, community night)
     tiuli: [attractions]  # trips guide; its one category is "מיוחד"
@@ -859,12 +859,12 @@ enrichment:
   # hi-tech (elsewhere "יזמים" are a show's producers and "בינה מלאכותית" made the artwork); other
   # events take them from the title alone ("בינה מלאכותית | היכרות עם מודל שפה").
   # Pools likewise take the title alone.
+  declared_text_genres: [hi_tech, pools]
   # A source-only word also read from the text when the text names a genre of "with" and nothing
   # (words or source-only words) of "without": "hard techno, neo-rave, hardcore" is hardstyle,
   # "punk hardcore" and "post-hardcore e math rock" are not.
   declared_genres_beside:
     hardstyle: {with: [electronic], without: [rock_indie]}
-  declared_text_genres: [hi_tech, pools]
   # Genres read from the title only, never the description ("סדנאות יוגה" at a festival is no workshop).
   title_genres: [workshops, kids, theatre, lectures]
   talk_keywords: ["הרצאה", "הרצאות", "lecture", "סדנה", "סדנת", "workshop", "קפה דעת"]
@@ -3118,6 +3118,29 @@ sources:
       "עמישב": "קהילת שיקגו 1"
     http:
       impersonate: chrome
+
+  jerusalemmuni:
+    # Jerusalem municipality calendar (jerusalem.muni.il/he/experience/lobbyevents, Umbraco behind
+    # Akamai): one GetEventsNew POST for a year lists every date (~1,200 dates of ~420 events, Nov 2026),
+    # then one listing per category below labels the dates it returns; one page per event adds its
+    # text, map pin, prices and ticket link. Online (Zoom) events are skipped.
+    enabled: true
+    vpn: true  # Akamai refuses Railway's IP; our Israeli VPN only (Railway production)
+    cron: "37 4,16 * * *"
+    # Our labels for the site's filters ("תרבות ובידור" would read as stand-up, "יזמות" as startups).
+    categories:
+      eventarea: {exhibitions: "תערוכות", tours: "סיורים", festivals: "פסטיבלים ואירועים גדולים", show: "הצגות וסרטים",
+                  party: "מסיבות ומופעים", lectures: "הרצאות וכנסים", workshops: "קורסים וסדנאות", yards: "ירידים",
+                  Attractions: "attractions", activity: "פעילויות", Stand-up: "סטנדאפ"}
+      interest: {art: "אמנות", music: "מוסיקה", culture: "תרבות", activism: "התנדבות",
+                 neighborhoods: "אירועים בשכונות", career: "תעסוקה וקריירה", education: "חינוך והורות", sport: "ספורט",
+                 dance: "מחול", trbut-toranit: "תרבות תורנית", poetry: "ספרות ושירה", nature: "טבע וסביבה"}
+      tar: {"4119": "נוער", "3128": "לכל המשפחה", "4122": "ילדים", "2696": "הגיל הרך", "2694": "צעירים וסטודנטים",
+            "2697": "הגיל השלישי", "2698": "הורים", "4125": "עולים", "253169": "מילואימניקים"}
+    http:
+      impersonate: chrome
+      concurrency: 2  # 4 at once: Akamai answered ~1 page in 6 with 403
+      request_delay_seconds: 0.5
 
   sharepointmuni:
     # Municipal event lists on SharePoint: per site one GetJsonItems call (the page's own) lists the

@@ -62,7 +62,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   plusparty: ["https://plusparty.co.il", "guide"],
   agol: ["https://agol-join.vercel.app", "venue"], airdrop: ["https://airdrop.co.il", "guide"], yotzim: ["https://yotzim.com", "guide"],
   telaviv: ["https://www.tel-aviv.gov.il", "city"], haifamuni: ["https://www.haifa.muni.il", "city"],
-  ramatganmuni: ["https://www.ramat-gan.muni.il", "city"], petahtikvamuni: ["https://www.petah-tikva.muni.il", "city"], sharepointmuni: ["https://www.rishonlezion.muni.il", "city"], holon: ["https://www.holon.muni.il", "city"],
+  ramatganmuni: ["https://www.ramat-gan.muni.il", "city"], petahtikvamuni: ["https://www.petah-tikva.muni.il", "city"], jerusalemmuni: ["https://www.jerusalem.muni.il", "city"], sharepointmuni: ["https://www.rishonlezion.muni.il", "city"], holon: ["https://www.holon.muni.il", "city"],
   munievents: [null, "city"], matnasnet: [null, "city"], eventpro: [null, "city"], onecity: [null, "city"],
 };
 
