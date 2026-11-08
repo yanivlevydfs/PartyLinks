@@ -60,6 +60,11 @@ export interface EventSummary {
   deal?: string | null;
   /** The place's prices, ₪ to ₪₪₪₪ as 1-4. */
   price_level?: number | null;
+  /** The place's rating and reviews (Google's, via HappyTLV), neighbourhood, and an Ontopo match. */
+  rating?: number | null;
+  reviews?: number | null;
+  hood?: string | null;
+  bookable?: boolean;
   /** The price before a drop in the last few days (partylinks.smartrails): shown struck through. */
   was_price?: number | null;
   /** A weekly line (partylinks.lines): its weekday, "thursday". */

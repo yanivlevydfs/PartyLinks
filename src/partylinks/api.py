@@ -236,6 +236,10 @@ class EventSummaryOut(_Out):
     place: bool = False
     deal: str | None = None  # the place's offer: "1+1 על שתייה"
     price_level: int | None = None  # the place's prices, ₪ to ₪₪₪₪ as 1-4
+    rating: float | None = None  # the place's rating and its reviews, Google's as HappyTLV shows them
+    reviews: int | None = None
+    hood: str | None = None  # its neighbourhood, "הצפון הישן"
+    bookable: bool = False  # matched to an Ontopo venue (partylinks.placeinfo)
     was_price: float | None = None  # the price before a recent drop (partylinks.smartrails)
     weekly: str | None = None  # a weekly line's weekday, "thursday" (partylinks.lines)
 
@@ -1357,6 +1361,9 @@ def _register_routes(app: FastAPI) -> None:
     from partylinks.placecards.routes import router as places_router
 
     app.include_router(places_router)
+    from partylinks.placeinfo.routes import router as place_info_router
+
+    app.include_router(place_info_router)
     from partylinks.evening.routes import router as evening_router
     from partylinks.holiday_pages.routes import router as holidays_router
     from partylinks.similar.routes import router as similar_router

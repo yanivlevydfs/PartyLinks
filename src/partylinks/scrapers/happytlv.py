@@ -46,6 +46,7 @@ from partylinks.parsing import (
     to_float,
     zone,
 )
+from partylinks.placeinfo.pages import happytlv_cards, happytlv_details
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.venues import PLACE_LISTING
 
@@ -87,6 +88,8 @@ class HappyTlvScraper(BaseScraper[HappyTlvSettings]):
         today = datetime.now(zone(self.timezone)).date()
         parties, bars, places = split_sitemap(await self.get_text(s.site_url + s.sitemap_path), s, today)
         pages = [*parties, *bars, *places]
+        # The hub's tags ("דייט", "קוקטיילים"): one request for every bar.
+        cards = happytlv_cards(await self.optional("hub", self.get_text(s.site_url + s.happy_hours_path.rstrip("/"))) or "")
         party_pages = set(parties)
         if len(pages) > s.max_pages:
             self.log.warning("listing truncated at max_pages=%d (%d found)", s.max_pages, len(pages))
@@ -101,7 +104,10 @@ class HappyTlvScraper(BaseScraper[HappyTlvSettings]):
                 return [party] if party else []
             if url in places:
                 return parse_place(page, url, self.timezone, today, s.place_days, places[url])
-            return parse_happy_hours(page, url, self.timezone, today, s.happy_hour_days)
+            events = parse_happy_hours(page, url, self.timezone, today, s.happy_hour_days)
+            for event in events:
+                event.extra |= cards.get(unquote(url).rsplit("/", 1)[-1], {})
+            return events
 
         async for events in self.stream_isolated(pages[: s.max_pages], fetch, label=lambda u: unquote(u)):
             for event in events or []:
@@ -247,6 +253,7 @@ def parse_happy_hours(page_html: str, url: str, timezone: str, today: date, days
                 **({"deal": deal} if deal else {}),
                 **({"price_level": level} if (level := price_level(place)) else {}),
                 **({"phone": p} if (p := clean_str(place.get("telephone"))) else {}),
+                **happytlv_details(place, page_html),
             },
         )
         for start, end in _open_days(_list(service.get("hoursAvailable")), today, days, zone(timezone))
@@ -307,6 +314,7 @@ def parse_place(page_html: str, url: str, timezone: str, today: date, days: int,
                 **({"phone": p} if (p := clean_str(place.get("telephone"))) else {}),
                 **({"website": website} if website else {}),
                 **({"price_level": level} if (level := price_level(place)) else {}),
+                **happytlv_details(place, page_html),
             },
         )
         for start, end in openings

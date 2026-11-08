@@ -1,0 +1,17 @@
+.place-info { display: grid; gap: 12px; margin-block: 16px; }
+.place-info p { margin: 0; }
+.pi-rating { color: var(--muted); }
+.pi-rating b { color: var(--text, inherit); }
+.pi-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pi-actions a:not(.buy) { padding: 8px 12px; border: 1px solid var(--line, currentColor); border-radius: 999px; text-decoration: none; }
+.pi-actions .buy { margin: 0; width: auto; }
+.pi-note { color: var(--lime); }
+.pi-from { color: var(--muted); font-size: 13px; }
+.pi-weeks { display: flex; flex-wrap: wrap; gap: 24px; }
+.pi-weeks h4 { margin: 0 0 6px; }
+.pi-week { border-collapse: collapse; font-size: 14px; }
+.pi-week th, .pi-week td { padding: 3px 0; padding-inline-end: 16px; font-weight: 400; text-align: start; }
+.pi-week .today { font-weight: 700; }
+.pi-week .today th { font-weight: 700; }
+.pi-photos { display: flex; gap: 8px; overflow-x: auto; }
+.pi-photos img { height: 160px; width: auto; max-width: 80vw; border-radius: 10px; object-fit: cover; }

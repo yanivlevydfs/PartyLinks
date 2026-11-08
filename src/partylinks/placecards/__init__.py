@@ -6,7 +6,8 @@ among the rows a filter matched (``first_opening``), so a week of a bar's happy 
 /genre/happy_hour, the map and the SEO pages, and still the right one on a single day.
 
 ``card_extras`` adds what a place card shows beside an event card's fields: the deal ("1+1 על
-שתייה") and the price level (₪ to ₪₪₪₪), read from the listing's ``extra`` (which the card query leaves out).
+שתייה"), the price level (₪ to ₪₪₪₪), rating and neighbourhood, read from the listing's ``extra`` (which
+the card query leaves out), and whether it can be booked (``place_info``, see partylinks.placeinfo).
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session
 
 from partylinks.db import EventRow
+from partylinks.placeinfo.models import PlaceInfoRow
 from partylinks.venues import PLACE_LISTING
 
 IS_PLACE = func.coalesce(EventRow.extra[PLACE_LISTING].as_boolean(), False)
@@ -42,9 +44,17 @@ def card_extras(session: Session, rows: Sequence[Any]) -> dict[str, dict[str, An
     if not ids:
         return {}
     found = session.execute(
-        select(EventRow.id, EventRow.extra["deal"].as_string(), PRICE_LEVEL).where(EventRow.id.in_(ids), IS_PLACE)
+        select(
+            EventRow.id, EventRow.extra["deal"].as_string(), PRICE_LEVEL, EventRow.extra["rating"].as_float(),
+            EventRow.extra["reviews"].as_integer(), EventRow.extra["hood"].as_string(), PlaceInfoRow.ontopo_slug,
+        )
+        .outerjoin(PlaceInfoRow, PlaceInfoRow.url == EventRow.url)
+        .where(EventRow.id.in_(ids), IS_PLACE)
     ).all()
-    return {i: {"place": True, "deal": deal, "price_level": level} for i, deal, level in found}
+    return {
+        i: {"place": True, "deal": deal, "price_level": level, "rating": rating, "reviews": reviews, "hood": hood, "bookable": bool(slug)}
+        for i, deal, level, rating, reviews, hood, slug in found
+    }
 
 
 __all__ = ["IS_PLACE", "PRICE_LEVEL", "card_extras", "first_opening"]

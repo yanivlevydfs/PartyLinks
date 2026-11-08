@@ -8,6 +8,7 @@ import { forecastAt, Weather } from "../Weather";
 import { PlanButton } from "../plans/PlanButton";
 import { EveningPlan } from "../evening/EveningPlan";
 import { EventText } from "../event_text/EventText";
+import { PlaceInfo } from "../places/PlaceInfo";
 import { SaveButton } from "../saved/SaveButton";
 import { EventStats } from "../popularity/EventStats";
 import { LineupPlayer } from "../artist_links/ArtistPlayer";
@@ -140,6 +141,8 @@ export default function EventPage() {
             </div>
           </div>
         </div>
+
+        {e.place && <PlaceInfo id={e.id} />}
 
         {e.lineup.length > 0 && (
           <section>

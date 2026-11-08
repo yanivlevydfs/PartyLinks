@@ -955,6 +955,7 @@ import partylinks.bot.models
 import partylinks.config_store.models
 import partylinks.mail.models
 import partylinks.passkeys.models
+import partylinks.placeinfo.models
 import partylinks.plans.models
 import partylinks.popularity.models
 import partylinks.saved.models

@@ -33,6 +33,7 @@ from partylinks.holiday_pages.config import HolidayPagesSettings
 from partylinks.lines.config import LinesSettings
 from partylinks.mail.config import MailSettings
 from partylinks.popularity.config import PopularitySettings
+from partylinks.placeinfo.config import PlaceInfoSettings
 from partylinks.similar.config import SimilarSettings
 from partylinks.smartrails.config import SmartRailsSettings
 from partylinks.weekly_top.config import WeeklyTopSettings
@@ -662,6 +663,7 @@ class Settings(BaseSettings):
     lines: LinesSettings = Field(default_factory=LinesSettings)  # weekly lines (partylinks.lines)
     similar: SimilarSettings = Field(default_factory=SimilarSettings)  # artists like an artist (partylinks.similar)
     weekly_top: WeeklyTopSettings = Field(default_factory=WeeklyTopSettings)  # this week's top (partylinks.weekly_top)
+    place_info: PlaceInfoSettings = Field(default_factory=PlaceInfoSettings)  # hours, booking, photos of places (partylinks.placeinfo)
     artist_links: ArtistLinksSettings = Field(default_factory=ArtistLinksSettings)  # artists' Spotify / YouTube... (MusicBrainz)
     # Raw per-source blocks; each scraper validates its own block with its own model.
     # None = a block whose keys are all commented out (reported as invalid, not a crash).

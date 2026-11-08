@@ -8,6 +8,7 @@ import { InstallBanner } from "./Install";
 import { INFO_LINKS } from "./pages/Info";
 import { AdLabel, hit, SponsoredFrame, SponsoredStrip, useAdView } from "./ads/Sponsored";
 import { forecastAt, Weather } from "./Weather";
+import { PlaceLine } from "./places/PlaceInfo";
 import { PlanButton } from "./plans/PlanButton";
 import { AccountSlot } from "./accounts/AccountSlot";
 import { Bell } from "./alerts/Bell";
@@ -354,6 +355,7 @@ export function Card({ e }: { e: EventSummary }) {
         {isOn(e) && <p className="meta now">{e.place ? t.now : t.happeningNow}</p>}
         {e.deal && <p className="meta deal" dir="auto">🥂 {e.deal}</p>}
         {e.place && !!e.price_level && <p className="meta">{"₪".repeat(e.price_level)}</p>}
+        {e.place && <PlaceLine e={e} />}
         {!e.is_sold_out && freeLabel && <p className="meta free-until">{freeLabel}</p>}
         {(e.venue_name || e.area || e.country) && (
           // Abroad: city and country, so "Madarae" alone does not read as a place in Israel.

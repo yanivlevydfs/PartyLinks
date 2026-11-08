@@ -41,6 +41,7 @@ from partylinks.db import EventRow, lineup_has, open_now_filters, upcoming_filte
 from partylinks.dedup import agreed_listing
 from partylinks.event_text import blocks_html, description_layout
 from partylinks.placecards import first_opening
+from partylinks.placeinfo.seo import place_seo
 from partylinks.places import all_cities
 from partylinks.retention import is_current
 from partylinks.venue_profiles import load_profiles as load_venue_profiles
@@ -543,6 +544,7 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
     about = f"<h2>{t['about_event']}</h2>{text}" if text else ""
     venue_link = f'<a href="/venue/{quote(row.venue_name, safe="")}">{escape(row.venue_name)}</a>' if row.venue_name else ""
     crumbs = [(row.venue_name, f"/venue/{quote(row.venue_name, safe='')}")] if row.venue_name else []
+    place = place_seo(session, row, cfg.place_info, lang, _url(cfg, event_path(row)), _cover(cfg, row, drawn=False)) if (row.extra or {}).get(PLACE_LISTING) else None
     return Page(
         title=f"{row.title} · {_when(row, cfg, lang)} · {cfg.site.name}",
         description=_clip(f"{summary}. {row.description or ''}", 160),
@@ -550,11 +552,11 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
         lang=lang,
         image=_cover(cfg, row),
         og_type="event",
-        jsonld=[event_jsonld(row, cfg, artist_links_for(session, cfg.artist_links, row.lineup or [])), _breadcrumbs(cfg, lang, *crumbs, (row.title, event_path(row)))],
+        jsonld=[place[0] if place else event_jsonld(row, cfg, artist_links_for(session, cfg.artist_links, row.lineup or [])), _breadcrumbs(cfg, lang, *crumbs, (row.title, event_path(row)))],
         body=(
             f"<article><h1>{escape(row.title)}</h1><p>{escape(_when(row, cfg, lang))}</p>"
             f"<p>{venue_link} {escape(where)}</p><p>{escape(_price(row, lang))}</p>{lineup}"
-            f"{about}"
+            f"{about}{place[1] if place else ''}"
             f'<p><a href="{escape(go_path(row.id))}?at=seo" rel="nofollow noopener">{t["tickets"]} ({escape(row.source)})</a></p></article>'
         ),
     )

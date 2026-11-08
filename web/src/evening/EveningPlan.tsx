@@ -39,7 +39,7 @@ function Stop({ e, distance }: { e: EventSummary; distance?: string }) {
       <Link to={eventPath(e)}>
         <b dir="auto">{e.title}</b>
         <small>
-          {[start && (end ? `${start}–${end}` : start), distance, !!e.price_level && "₪".repeat(e.price_level),
+          {[start && (end ? `${start}–${end}` : start), distance, !!e.price_level && "₪".repeat(e.price_level), !!e.rating && `★ ${e.rating}`,
             isOn(e) && (e.place ? t.now : t.happeningNow)].filter(Boolean).join(" · ")}
         </small>
         {e.deal && <small className="deal" dir="auto">🥂 {e.deal}</small>}

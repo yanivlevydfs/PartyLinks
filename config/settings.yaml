@@ -230,6 +230,22 @@ weekly_top:
   rising_days: 7          # rising genres: events first listed this recently
   rising_limit: 6
 
+# Hours, booking links and photos of places (src/partylinks/placeinfo): a daily worker pass reads Ontopo's
+# venue pages from its public sitemap (new, changed or stale only), ties each place to one venue, stores
+# its photos as WebP, and reads own websites' JSON-LD for places still missing hours or a phone. Defaults
+# in placeinfo/config.py; the admin's config tab overrides any of them.
+place_info:
+  enabled: true
+  interval_hours: 24
+  delay_seconds: 2             # Ontopo's CloudFront refuses an IP after ~1,000 pages at 2-3 a second
+  max_consecutive_failures: 5  # that many in a row end the pass (blocked or down); the next continues
+  refresh_days: 14
+  name_radius_m: 150
+  name_similarity: 0.85
+  phone_radius_m: 300          # a phone also needs a name that sounds alike: restaurateurs share one
+  sound_similarity: 0.7
+  photos: 4
+
 # Artists' music / social links (src/partylinks/artist_links), found automatically on MusicBrainz for
 # lineup artists with upcoming shows (most shows first) and shown on the artist and event pages, merged with
 # the ticket sites' artist profiles. Only an exact name / alias match that is the only one counts.
