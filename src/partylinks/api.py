@@ -70,6 +70,7 @@ from partylinks.models import EntryType
 from partylinks.parsing import TidyText
 from partylinks.places import city_abroad, city_name
 from partylinks.popularity import models as popularity
+from partylinks.railcards import nearest_show
 from partylinks.saved.routes import router as saved_router
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
@@ -1381,7 +1382,7 @@ def _register_routes(app: FastAPI) -> None:
                 where = [*filters, placecards.first_opening(filters)]  # a place is one card
                 rows = session.scalars(
                     select(EventRow)
-                    .where(*where)
+                    .where(*where, nearest_show(where))  # and so is a show, whatever its dates
                     .order_by(_SORT_COLUMNS[EventSort.trending], _START, EventRow.id)
                     .limit(pool)
                     .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))

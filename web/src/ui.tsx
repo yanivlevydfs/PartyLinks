@@ -93,12 +93,12 @@ export function priceLabel(e: Pick<EventSummary, "entry_type" | "min_price" | "h
 const SOURCE_NAMES: Record<string, string> = sourceNames; // web/src/sourceNames.json: the server reads it too (event artwork)
 export const sourceName = (source: string) => SOURCE_NAMES[source] ?? source;
 
-/** Ticket-site tags: every store selling the event (this listing's first). */
+/** Ticket-site tags: every store selling the event (this listing's first), each name once (smarticket and smarticket_il are both "Smarticket"). */
 export function Sources({ e, className = "" }: { e: { source: string; sources?: string[] }; className?: string }) {
-  const list = e.sources?.length ? e.sources : [e.source];
+  const names = [...new Set((e.sources?.length ? e.sources : [e.source]).map(sourceName))];
   return (
     <span className={"sources " + className}>
-      {list.map((s) => <span key={s} className="src">{sourceName(s)}</span>)}
+      {names.map((n) => <span key={n} className="src">{n}</span>)}
     </span>
   );
 }

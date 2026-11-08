@@ -909,3 +909,9 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **הבעיה:** ריצת goout נכשלה ב-`DiskFull: could not resize shared memory segment "/PostgreSQL..." to 8388608 bytes: No space left on device`. תוכנית מקבילית (Parallel Hash Join) מעבירה נתונים בין ה-workers דרך `/dev/shm`, שקטן ב-Postgres של Railway; כשכמה מקורות שמרו יחד הוא התמלא.
 - **התיקון:** הגדרה חדשה `database.max_parallel_workers_per_gather` (ברירת מחדל 0), נשלחת ב-`options` של כל חיבור (`db._postgres_connect_args`) כמו ה-timeouts. כל שאילתה רצה בתהליך אחד.
 - **מדידה בפרודקשן** (`_artwork_by_title`: `SELECT events.source, events.title, event_images.url FROM events JOIN event_images ... WHERE position = 0 AND downloaded_at IS NOT NULL`, ‏119,919 שורות, 5,060 קריאות): 0.31 ש' עם 2 workers, 0.40 ש' בלי.
+
+### 2026-11-09 (שורות דף הבית: הפקה פעם אחת, `railcards.nearest_show`)
+- **אין טבלה, עמודה או אינדקס חדשים.** חבילה `partylinks/railcards`; רק `GET /events/rails` משתמש בה, הרשימות, החיפוש, הפילטרים והמפה ממשיכים להציג כל תאריך.
+- **השאילתה:** לכל שורה נוסף `AND id IN (SELECT DISTINCT ON (lower(btrim(title))) id FROM events WHERE <אותם פילטרים> ORDER BY lower(btrim(title)), start_at, group_size DESC NULLS LAST, id)`: התאריך הקרוב של כל כותרת, ובאותה שעה הרישום שנמכר בהכי הרבה אתרים.
+- **מדידה בפרודקשן** (קריאה בלבד, השורה הרחבה ביותר, 30 יום, 51,141 רישומים ראשיים, כולל `first_opening`): מ-147ms ל-~390ms. התשובה נשמרת ב-cache ומחוממת ברקע, אז גולש לא מחכה לזה. שאר השורות מסוננות לפי ז'אנר ולכן זולות יותר.
+- **Tests:** `tests/test_railcards.py`.
