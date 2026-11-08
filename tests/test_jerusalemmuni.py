@@ -87,3 +87,18 @@ def test_event_crosses_midnight_and_gets_site_genres() -> None:
     # A date at another hall than the page's: no pin, the hall's name goes to geocoding.
     moved = jm.build_event(jm.Card(**{**card.__dict__, "venue": "מרכז אחר"}), page("jamsession"), S, TZ)
     assert moved is not None and moved.latitude is None and moved.venue_name == "מרכז אחר"
+
+
+def test_mizrahi_surname_and_side_are_no_genre() -> None:
+    settings = Settings()
+    detect = Enricher(settings.enrichment, settings.timezone)._detect_genres
+    card = jm.Card(path="/he/experience/allevents/x/?occ=0", title="ההבטחה | תערוכה", day=date(2026, 11, 9),
+                   start="10:00", end=None, venue=None, teaser=None, image=None, free=True)  # fmt: skip
+    plain = jm.Page(description="אוצרות: אסף כהן ויצחק מזרחי. סיור בקרדו המזרחי.", venue=None, latitude=None,
+                    longitude=None, purchase_url=None, tiers=[], free=True)  # fmt: skip
+    event = jm.build_event(card, plain, S, TZ)
+    assert event is not None and "mizrahi" not in detect(event)
+    sung = jm.build_event(card, jm.Page(**{**plain.__dict__, "description": "ערב עם זמר מזרחי ותזמורת מזרחית"}), S, TZ)
+    assert sung is not None and "mizrahi" in detect(sung)
+    declared = jm.build_event(jm.Card(**{**card.__dict__, "genres": ["מזרחי"]}), plain, S, TZ)
+    assert declared is not None and "mizrahi" in detect(declared)

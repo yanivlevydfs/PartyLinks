@@ -452,7 +452,7 @@ enrichment:
     amapiano: ["amapiano", "אמאפיאנו", "אמפיאנו"]
     dancehall_reggae: ["dancehall", "reggae", "dub", "roots reggae", "ska", "rocksteady", "dub reggae", "lovers rock",
                        "ragga", "soca", "calypso", "reggae fusion", "דאנסהול", "רגאיי", "רגאי", "רגיי", "ראגיי", "סקא"]
-    mizrahi: ["mizrahi", "mizrahit", "mizrahi music", "mediterranean music", "מזרחית", "מזרחי", "ים תיכוני",
+    mizrahi: ["mizrahi", "mizrahit", "mizrahi music", "mediterranean music", "מזרחית", "ים תיכוני",
               "ים תיכונית", "מוזיקה מזרחית", "זמר מזרחי", "זמרת מזרחית", "פופ מזרחי", "רוק מזרחי", "מסיבה מזרחית",
               "ערב מזרחי", "מוזיקה ים תיכונית", "חפלה", "חאפלה", "חפלות"]
     # Not "עברית": Secret Tel Aviv marks the language of every event with it. Not bare "ישראלי" / "israeli"
@@ -685,7 +685,8 @@ enrichment:
     country: ["country", "קאנטרי"]
     # Muzi's genre slugs.
     israeli: ["hebrew", "אמנים ישראלים", "ישראלית", "ישראלי", "israeli"]
-    mizrahi: ["yam_tichoni", "eastern"]
+    # Bare "מזרחי" is a surname ("יצחק מזרחי") or a side ("הקרדו המזרחי") in text: trusted as a category only.
+    mizrahi: ["yam_tichoni", "eastern", "מזרחי"]
     rock_indie: ["rocknroll", "música alternativa", "alternative", "indie", "metal"]
     world_balkan: ["world", "música del mundo", "folk", "ethnic", "אתני"]
     theatre: ["theater", "theatre", "גילי 3-18", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus", "תיאטראות", "مسرح", "teatteri", "kulttuuri: teatteri", "drama", "improvisation"]
