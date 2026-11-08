@@ -85,3 +85,13 @@ def test_spellings_alike_but_for_punctuation_are_one_venue() -> None:
         at("g", "The wave club", "חיפה"),  # another city: another place
     ]
     assert infer_venues(rows) == {"c": "בית העם רחובות.", "e": "The Wave Club"}
+
+
+def test_a_name_found_all_over_town_ties_no_halls_together() -> None:
+    rows = [
+        VenueInput("a", "מועדון א", "מועדון א", "הרצל 1", 32.05, 34.77, "תל אביב"),
+        VenueInput("b", "קופה", "קופה", "הרצל 1", 32.05, 34.77, "תל אביב"),
+        VenueInput("c", "קופה", "קופה", "דיזנגוף 9", 32.09, 34.77, "תל אביב"),
+        VenueInput("d", "מועדון ב", "מועדון ב", "דיזנגוף 9", 32.09, 34.77, "תל אביב"),
+    ]
+    assert infer_venues(rows) == {}

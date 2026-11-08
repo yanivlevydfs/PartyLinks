@@ -35,6 +35,7 @@ def test_a_place_is_one_card_with_its_deal(tmp_path: Path) -> None:
         third = (day + timedelta(days=2)).date().isoformat()
         assert [e["local_date"] for e in client.get("/events", params={"date": third}).json()["items"] if e["place"]] == [third]
         assert len(client.get("/events/map").json()["items"]) == 2  # one pin for the bar
+        assert client.get("/ticket-sites").json()["total"] == 2  # the bar once, not once per day it opens
         assert client.get("/genre/happy_hour").text.count("האפי האוור בבר") <= 2  # the list once (+ the title tag's FAQ)
 
 

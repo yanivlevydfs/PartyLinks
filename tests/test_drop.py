@@ -8,7 +8,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from partylinks.models import TicketKind, TierStatus
-from partylinks.scrapers.drop import _api_tier, parse_event, upcoming_urls, with_api_tickets
+from partylinks.scrapers.drop import _abroad, _api_tier, parse_event, upcoming_urls, with_api_tickets
 
 TZ = "Asia/Jerusalem"
 FIXTURES = Path(__file__).parent / "fixtures/drop"
@@ -47,10 +47,20 @@ def test_api_tiers_give_prices_and_sold_out_rounds() -> None:
         ("Sof Heznek סבב ב׳", Decimal(85), TierStatus.ON_SALE),
     ]
     assert e.tickets[1].remaining == 25 and not e.is_sold_out
-    assert with_api_tickets(page, {}) is page  # API down or empty: JSON-LD tiers kept
+    assert with_api_tickets(page, {}).tickets == page.tickets  # API down or empty: JSON-LD tiers kept
+    extras = with_api_tickets(page, {"categories": [{"name": "Trance"}], "minAge": 26})
+    assert extras.source_genres == ["trance"]
+    assert extras.min_age == 26
 
 
 def test_api_discount_counts_only_below_price() -> None:
     tier = {"name": "x", "price": 100, "discountedPrice": 80, "status": "current"}
     assert _api_tier(tier).price == 80 and _api_tier(tier).original_price == 100
     assert _api_tier({**tier, "discountedPrice": 0}).price == 100
+
+
+def test_a_place_named_with_a_foreign_country_last_is_abroad() -> None:
+    assert _abroad("Hilltop - Goa - India") == "IN"
+    assert _abroad("Pushkar , rajastan , India") == "IN"
+    assert _abroad("החרש 8, ישראל") is None
+    assert _abroad("ירדן") is None  # one word: a place, not a country

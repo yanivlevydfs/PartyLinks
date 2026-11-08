@@ -77,6 +77,7 @@ class _Listing:
     sold_out: bool = False
     core: frozenset[str] = frozenset()  # title words without filler ("מופע", "חנוכה")
     timed: bool = True  # False: the source gave only the date
+    abroad: bool = False
 
 
 def title_key(title: str | None, stopwords: set[str]) -> str:
@@ -159,6 +160,8 @@ class Deduplicator:
         """Name, date, hour, place and kind must all agree; in doubt two listings stay apart."""
         if self._contradict(a, b, kinds=False):
             return False
+        if self._night_typo(a, b):
+            return True
         # A page several listings share (a site's generic "central" page) is not one event's page.
         if a.links_to and a.links_to == b.url_key and b.url_key not in shared_urls:
             return True
@@ -213,7 +216,7 @@ class Deduplicator:
             # show's listings hours apart are its sessions.
             gap = abs((a.start - b.start).total_seconds())
             promoter_pages = a.source == b.source and a.source in self._promoter_pages and "music" in a.kinds | b.kinds
-            if gap > s.party_max_start_gap_minutes * 60 or not (promoter_pages or self._party(a, b)):
+            if (gap > s.party_max_start_gap_minutes * 60 or not (promoter_pages or self._party(a, b))) and not self._night_typo(a, b):
                 return True
         if a.numbers and b.numbers and not a.numbers & b.numbers:
             return True
@@ -222,6 +225,18 @@ class Deduplicator:
             if distance is None or distance > s.max_distance_meters:
                 return True
         return kinds and self._other_kind(a, b)
+
+    def _night_typo(self, a: _Listing, b: _Listing) -> bool:
+        """One party on one date, one site at "00:50" and the others at "23:50": only an hour just after
+        midnight and one just before the next can lie this far apart within a date. The name must match."""
+        if a.source == b.source or not (a.timed and b.timed and a.start and b.start) or "music" not in a.kinds | b.kinds:
+            return False
+        if a.abroad or b.abroad:  # "Pub Crawl" and "Pub Crawl in Malta": a tour's names are too loose
+            return False
+        if abs((a.start - b.start).total_seconds()) < self.settings.night_typo_min_gap_hours * 3600:
+            return False
+        small, big = (a.core, b.core) if len(a.core) <= len(b.core) else (b.core, a.core)
+        return self._distinctive(small) and small <= big
 
     def _party(self, a: _Listing, b: _Listing, ratio: float | None = None) -> bool:
         """Music on two sites under a near-identical title: one party whose sites give other entry times."""
@@ -253,7 +268,11 @@ class Deduplicator:
 
     def _group_rows(self, members: list[_Listing]) -> list[dict[str, Any]]:
         """Group id, primary flag and the best deal across all members, written to every member."""
-        primary = min(members, key=self._primary_rank)
+        # The hour most of the sites agree on fronts the event, not one site's typo.
+        hours = Counter(start for _, start in {(m.source, m.start) for m in members if m.timed})
+        top, votes = hours.most_common(1)[0] if hours else (None, 0)
+        agreed = votes > 1 and votes * 2 > hours.total()
+        primary = min(members, key=lambda m: (m.sold_out, not m.timed, agreed and m.start != top, *self._primary_rank(m)))
         # Prices and entry type of what can still be bought; a fully sold-out event keeps its own.
         selling = [m for m in members if not m.sold_out] or members
         priced = [m for m in selling if m.min_price is not None] or [m for m in members if m.min_price is not None]
@@ -299,7 +318,7 @@ class Deduplicator:
                 EventRow.latitude, EventRow.longitude, EventRow.venue_slug, EventRow.city, EventRow.url, EventRow.extra,
                 EventRow.genres, EventRow.first_seen_at, EventRow.min_price, EventRow.max_price, EventRow.entry_type,
                 EventRow.has_free_entry, EventRow.free_entry_until, EventRow.is_listed, EventRow.is_sold_out,
-                EventRow.time_known,
+                EventRow.time_known, EventRow.country,
             )
         ).all(), key=lambda r: r.id)  # fmt: skip
         tier_counts = _tier_counts(session)
@@ -318,7 +337,7 @@ class Deduplicator:
                 tiers=tier_counts.get(r.id, 0), first_seen=r.first_seen_at,
                 min_price=r.min_price, max_price=r.max_price, entry_type=r.entry_type,
                 has_free_entry=r.has_free_entry, free_entry_until=r.free_entry_until, sold_out=bool(r.is_sold_out),
-                core=frozenset(title.split()) - self._filler, timed=r.time_known is not False,
+                core=frozenset(title.split()) - self._filler, timed=r.time_known is not False, abroad=bool(r.country),
             )  # fmt: skip
             # An unlisted row stands alone: as a group's primary it would hide its listed copies.
             if r.local_date is None or r.is_listed is False:

@@ -70,6 +70,10 @@ class PlaceIndex:
                 if key := _norm(name):
                     self._names.setdefault(key, city.he)
 
+    def is_place(self, text: str | None) -> bool:
+        """``text`` is a town's name and nothing else."""
+        return _norm(text or "") in self._names
+
     def find(self, text: str | None) -> list[tuple[int, str]]:
         """(word position, city) of every place named in ``text``; a Hebrew prefix letter is allowed
         ("ביהוד", "מתל אביב")."""

@@ -300,6 +300,8 @@ class EnrichmentSettings(BaseModel):
     # Every other Israeli locality of at least this many people (GeoNames, places.py) is known too:
     # its spelling and its area on the map. Smaller ones are often plain words ("מגדל").
     places_min_population: int = Field(2000, ge=0)
+    # A venue name whose events span more than this (degrees, ~100 m) is no one place: it ties no names together.
+    venue_max_spread_degrees: float = 0.001
     # Words a city field puts before the locality's name ("קיבוץ יגור", "מועצה אזורית גדרות"): dropped.
     city_prefixes: list[str] = Field(default_factory=list)
     # City fields that name no city ("ישראל"): no city.
@@ -386,6 +388,8 @@ class DedupSettings(BaseModel):
     # aggregator that pins "Tel Aviv Port" instead of the club inside it.
     strong_title_similarity: float = Field(0.95, ge=0, le=1)
     strong_max_start_gap_minutes: int = Field(15, ge=0)
+    # One date, hours at least this far apart and the same name: one site's "00:50" for the others' "23:50".
+    night_typo_min_gap_hours: int = Field(18, ge=1)
     strong_max_distance_meters: float = Field(1500, ge=0)
     title_stopwords: list[str] = Field(default_factory=list)
     # Words box offices add to a show's name ("במופע", "סטנדאפ", "חנוכה"): titles equal without them are

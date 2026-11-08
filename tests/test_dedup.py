@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
 
@@ -416,3 +417,28 @@ def test_stored_lineups_are_cleaned_by_the_current_name_rule(tmp_path: Path) -> 
     with db.session() as session:
         fills = group_fill.plan(session, enricher.clean_name)
     assert [f["lineup"] for f in fills] == [["DJ IAGO", "ANSTY"]]
+
+
+def test_one_sites_hour_just_after_midnight_joins_the_others_and_the_agreed_hour_fronts(tmp_path: Path) -> None:
+    tz = ZoneInfo("Asia/Jerusalem")
+    day = datetime.now(tz).date() + timedelta(days=5)
+    night, typo = datetime.combine(day, time(23, 50), tz), datetime.combine(day, time(0, 50), tz)
+    genres = {"source_genres": ["psytrance"]}
+    _, groups = grouped(tmp_path, [
+        listing("goout", "typo", "מסיבת טבע - OKAVANGO DELTA", start=typo, where=None, **genres),
+        listing("zygo", "a", "OKAVANGO DELTA", start=night, where=None, **genres),
+        listing("selector", "b", "OKAVANGO DELTA", start=night, where=None, **genres),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 1
+    assert not groups["goout:typo"][1]  # goout outranks them, but only its hour is the odd one out
+
+
+def test_a_midnight_guess_stays_apart_from_a_longer_name_abroad(tmp_path: Path) -> None:
+    tz = ZoneInfo("Asia/Jerusalem")
+    day = datetime.now(tz).date() + timedelta(days=5)
+    genres = {"source_genres": ["techno"]}
+    _, groups = grouped(tmp_path, [
+        listing("posh", "a", "Pub Crawl in Malta Paceville", start=datetime.combine(day, time(0, 30), tz), where=None, country="MT", **genres),
+        listing("zygo", "b", "Pub Crawl", start=datetime.combine(day, time(23, 30), tz), where=None, **genres),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 2

@@ -1224,7 +1224,7 @@ def _register_routes(app: FastAPI) -> None:
         # A search in the default date order puts title matches first, then lineup / venue, then the rest.
         q = request.query_params.get("q")
         rank = relevance(q, cfg, _sounds_like(request, q)) if q and sort is EventSort.start_asc else None
-        names_only = bool(rank is not None and free_text(q or "", cfg))
+        names_only = rank is not None and free_text(q or "", cfg)
 
         def build(session: Session) -> EventPage:
             # Cards never show the long text columns.
@@ -1574,9 +1574,10 @@ def _register_routes(app: FastAPI) -> None:
         """The ticket sites events come from, with how many upcoming events each sells (the stores page)."""
 
         def build(session: Session) -> Stores:
+            where = [upcoming_filter()]
             listings = session.execute(
-                select(EventRow.group_id, EventRow.source).where(upcoming_filter()).distinct()
-            ).all()
+                select(EventRow.group_id, EventRow.source).where(*where, placecards.first_opening(where)).distinct()
+            ).all()  # a place once, not once per day it opens: the same count as its "their events" list
             counts = Counter(source for _, source in listings)
             last_runs = (
                 select(ScrapeRunRow.source, func.max(ScrapeRunRow.finished_at))
@@ -1651,9 +1652,8 @@ def _register_routes(app: FastAPI) -> None:
             return out
 
         # Per ticket site: real events it sells (every listing of a group counts, once per group).
-        listings = select(EventRow.group_id, EventRow.source).where(EventRow.country.is_(None)).distinct()
-        if upcoming:
-            listings = listings.where(upcoming_filter())
+        where = [EventRow.country.is_(None), *([upcoming_filter()] if upcoming else [])]
+        listings = select(EventRow.group_id, EventRow.source).where(*where, placecards.first_opening(where)).distinct()
         group_sources = Counter(source for _, source in session.execute(listings))
 
         region_keys = request.app.state.service.enricher.areas.region_keys

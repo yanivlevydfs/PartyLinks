@@ -70,7 +70,7 @@ const TEXT = {
   he: {
     title: "חנויות הכרטיסים",
     intro: "SPOTX לא מוכר כרטיסים. כל אירוע באתר מגיע מאחד האתרים האלה, ולחיצה על \"כרטיסים\" מעבירה ישר אליהם. תודה לכולם.",
-    total: (events: string, stores: number) => `${events} אירועים קרובים מ-${stores} מקורות`,
+    total: (events: string, stores: number) => `${events} אירועים קרובים בישראל ובחו״ל מ-${stores} מקורות`,
     events: "אירועים קרובים",
     site: "לאתר",
     browse: "לאירועים שלהם",
@@ -81,7 +81,7 @@ const TEXT = {
   en: {
     title: "Ticket stores",
     intro: "SPOTX doesn't sell tickets. Every event here comes from one of these sites, and \"Tickets\" takes you straight to them. Thank you all.",
-    total: (events: string, stores: number) => `${events} upcoming events from ${stores} sources`,
+    total: (events: string, stores: number) => `${events} upcoming events in Israel and abroad from ${stores} sources`,
     events: "upcoming events",
     site: "Website",
     browse: "Their events",
@@ -114,7 +114,8 @@ export default function StoresPage() {
   // /ticket-sites down (a server without it, a restart): the home filter's counts, Israel only.
   const fallback: TicketSite[] | undefined = sites.isError ? cats.data?.sources.map((s) => ({ name: s.value, events: s.events, updated_at: null })) : undefined;
   const stores = sites.data?.stores ?? fallback;
-  // Each event once: one sold on three sites is one event (the stores' counts would add it three times).
+  // Once per group, a place once: one sold on three sites is one event (the stores' counts would add it three
+  // times). Israel and abroad together; the home page's total is Israel only.
   const total = sites.data?.total ?? stores?.reduce((n, s) => n + s.events, 0) ?? 0;
   const failed = sites.isError && cats.isError;
   const setFilters = useStore((s) => s.setFilters);

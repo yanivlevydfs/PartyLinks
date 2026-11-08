@@ -7,7 +7,9 @@ name, start/end, image, place, organizer and one ``Offer`` per ticket tier. Ever
 reads "0" whatever the tier costs, so the tiers come from the JSON the page itself loads
 (``/api/event/general/<id>``: ``eventTicketTypes`` with price, discount and round status
 current / soon / soldout / expired); the JSON-LD offers stay as a fallback, price unknown.
-Many raves name only a region ("מרכז הארץ", "השרון") until the location is sent to ticket holders.
+The API adds the minimum age and the site's categories (few events have one). Many raves name only a
+region ("מרכז הארץ", "השרון") until the location is sent to ticket holders; the site has no city field, so
+the city comes from the place's name.
 """
 
 from __future__ import annotations
@@ -19,6 +21,8 @@ from typing import Any
 
 from pydantic import Field
 
+from partylinks.config import RetentionSettings
+from partylinks.countries import UNKNOWN_COUNTRY, country_code
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import (
     ParseError,
@@ -31,12 +35,14 @@ from partylinks.parsing import (
     to_decimal,
     to_int,
 )
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.standupist import find_city
 
 _URL = re.compile(r"<url>\s*<loc>\s*(https://[^<\s]+/events/([0-9a-f]{8,}))\s*</loc>\s*(?:<lastmod>\s*([^<\s]+))?")
 _PREFIX = re.compile(r"^\s*\[HTMLDESC\]\s*")
 # A place named only for the country is no place; the site's stand-in artwork is no artwork.
-_NO_PLACE = {"israel", "ישראל"}
+_NO_PLACE = {"israel", "ישראל", "to be announced"}
 _NO_IMAGE = "/defaults/"
 
 
@@ -57,7 +63,8 @@ class DropScraper(BaseScraper[DropSettings]):
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
         self.log.debug("listed %d upcoming events", len(urls))
         async for event in self.stream_isolated(urls[: s.max_events], self._fetch_event, label=lambda u: u):
-            yield event
+            if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
+                yield event
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
         event = parse_event(await self.get_text(url), url, self.timezone)
@@ -108,13 +115,20 @@ def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
         end_at=parse_iso(event.get("endDate"), timezone),
         venue_name=venue,
         address=street if street != venue else None,
-        city=clean_str(address.get("addressLocality")),
-        country=None if country in ("", "IL") else country,
+        city=clean_str(address.get("addressLocality")) or find_city(street, venue),
+        country=_abroad(venue) if country in ("", "IL") else country,
         organizer=clean_str(organizer.get("name")),
         images=[i for i in _list(event.get("image")) if isinstance(i, str) and _NO_IMAGE not in i],
         tickets=tickets,
         is_sold_out=bool(tickets) and all(t.status is TierStatus.SOLD_OUT for t in tickets),
     )
+
+
+def _abroad(venue: str | None) -> str | None:
+    """ "Hilltop - Goa - India": a place named with its country last; the site gives no other sign of abroad."""
+    parts = re.split(r"\s+-\s+|\s*,\s*", venue or "")
+    code = country_code(parts[-1]) if len(parts) > 1 else None
+    return None if code in (None, "IL", UNKNOWN_COUNTRY) else code
 
 
 def _tier(offer: dict[str, Any]) -> TicketTier:
@@ -132,12 +146,17 @@ _STATUS = {"soon": TierStatus.COMING_SOON, "soldout": TierStatus.SOLD_OUT, "expi
 
 
 def with_api_tickets(event: ScrapedEvent, data: dict[str, Any]) -> ScrapedEvent:
-    """``event`` with its priced tiers from the event API; unchanged when the API lists none."""
+    """``event`` with the event API's categories, minimum age and priced tiers (JSON-LD tiers if it lists none)."""
+    update: dict[str, Any] = {
+        "source_genres": [
+            c["name"].lower() for c in _list(data.get("categories")) if isinstance(c, dict) and c.get("name")
+        ],
+        "min_age": to_int(data.get("minAge")),
+    }
     tickets = [_api_tier(t) for t in _list(data.get("eventTicketTypes")) if isinstance(t, dict)]
-    if not tickets:
-        return event
-    sold_out = all(t.status is TierStatus.SOLD_OUT for t in tickets)
-    return event.model_copy(update={"tickets": tickets, "is_sold_out": sold_out})
+    if tickets:
+        update |= {"tickets": tickets, "is_sold_out": all(t.status is TierStatus.SOLD_OUT for t in tickets)}
+    return event.model_copy(update=update)
 
 
 def _api_tier(t: dict[str, Any]) -> TicketTier:

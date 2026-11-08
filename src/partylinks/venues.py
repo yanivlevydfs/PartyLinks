@@ -28,8 +28,10 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from partylinks.config import get_settings
 from partylinks.db import EventRow, bulk_update_by_id
 from partylinks.parsing import slugify
+from partylinks.places import PlaceIndex, all_cities
 
 log = logging.getLogger(__name__)
 
@@ -99,7 +101,7 @@ def _best(votes: Counter[str]) -> str | None:
     return (real or votes).most_common(1)[0][0] if votes else None
 
 
-def infer_venues(rows: list[VenueInput]) -> dict[str, str | None]:
+def infer_venues(rows: list[VenueInput], max_spread: float = 0.001) -> dict[str, str | None]:
     """The venue name each row should have, for the rows where it differs from now."""
     # A row without a city is in the venue's city when that name is known in one city only.
     cities_of: dict[str, set[str]] = {}
@@ -126,10 +128,20 @@ def infer_venues(rows: list[VenueInput]) -> dict[str, str | None]:
     city_of = {c: slugify(c) for c in {r.city or "" for r in rows}}
     node = {r.id: (city_of[r.city or ""], r.source_name or "") for r in rows}
     named = [r for r in rows if r.source_name]
+    # A name found all over town is no one place (a box office, "HaTarbut"): it keeps its name but
+    # ties nothing together, or it would chain every hall it sold for into one venue.
+    pins: dict[Node, list[tuple[float, float]]] = {}
+    for r in named:
+        if (pin := _pin(r)) and located(r):
+            pins.setdefault(node[r.id], []).append(pin)
+    scattered = {
+        n for n, at in pins.items()
+        if max(a[0] for a in at) - min(a[0] for a in at) > max_spread or max(a[1] for a in at) - min(a[1] for a in at) > max_spread
+    }  # fmt: skip
     # Each venue once per spot, bucketed by grid cell: neighbours are looked up, not scanned.
     grid: dict[tuple[int, int], dict[tuple[Node, tuple[float, float]], None]] = {}
     for r in named:
-        if located(r):
+        if located(r) and node[r.id] not in scattered:
             point = (r.lat, r.lng)
             grid.setdefault(_cell(point), {})[(node[r.id], point)] = None  # type: ignore[index]
 
@@ -160,7 +172,7 @@ def infer_venues(rows: list[VenueInput]) -> dict[str, str | None]:
         # Spellings that differ only in case and punctuation ("בית העם - רחובות" / "בית העם רחובות.").
         if slug := slugify(r.source_name):
             union(node[r.id], by_slug.setdefault((node[r.id][0], slug), node[r.id]))
-        if key := street_key(r.address):
+        if (key := street_key(r.address)) and node[r.id] not in scattered:
             union(node[r.id], by_street.setdefault((node[r.id][0], key), node[r.id]))
     for cell in grid.values():
         for here, point in cell:
@@ -207,25 +219,27 @@ def venue_updates(session: Session) -> list[dict[str, Any]]:
         )
     ).all()
     extras: dict[str, dict[str, Any]] = {r.id: dict(r.extra or {}) for r in db_rows}
+    enrichment = get_settings().enrichment
+    places = PlaceIndex(all_cities(enrichment.cities, enrichment.places_min_population))
+    sources = {
+        r.id: None if extras[r.id].get("venue_inferred") else extras[r.id].get(SOURCE_NAME, r.venue_name)
+        for r in db_rows
+    }
+
+    def venue_said(name: str | None, city: str | None) -> str | None:
+        """What the site said, unless it only named the town ("תל אביב"): that is no venue."""
+        return None if name and (places.is_place(name) or slugify(name) == slugify(city)) else name
+
     inputs = [
-        VenueInput(
-            r.id,
-            r.venue_name,
-            None if extras[r.id].get("venue_inferred") else extras[r.id].get(SOURCE_NAME, r.venue_name),
-            r.address,
-            r.latitude,
-            r.longitude,
-            r.city,
-        )
+        VenueInput(r.id, r.venue_name, venue_said(sources[r.id], r.city), r.address, r.latitude, r.longitude, r.city)
         for r in db_rows
         # A bar's own happy hour names its bar exactly: bars 20 m apart on Dizengoff stay apart, and
         # the bar's name never spreads to a club next door.
         if not extras[r.id].get(PLACE_LISTING)
     ]
-    sources = {v.id: v.source_name for v in inputs}
     current = {r.id: (r.venue_name, r.venue_slug, r.extra or {}) for r in db_rows}
     updates = []
-    for event_id, name in infer_venues(inputs).items():
+    for event_id, name in infer_venues(inputs, enrichment.venue_max_spread_degrees).items():
         extra = dict(extras[event_id])
         extra.pop("venue_inferred", None)  # marker of the previous version
         if name == sources[event_id]:

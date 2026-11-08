@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
+from datetime import time
 from typing import Any
 from urllib.parse import unquote
 
@@ -32,6 +33,7 @@ from partylinks.parsing import (
     parse_iso,
     schema_types,
     to_decimal,
+    zone,
 )
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -179,7 +181,8 @@ def parse_item(item: dict[str, Any], category: str, timezone: str) -> ScrapedEve
         title=title,
         description=html_to_text(item.get("description")),
         start_at=start,
-        time_known=has_time(item.get("startDate")),
+        # A workshop at "00:00": the site's way of saying it has the date only (~300 of ~21,000, Nov 2026).
+        time_known=has_time(item.get("startDate")) and start.astimezone(zone(timezone)).time() != time(0),
         end_at=parse_iso(item.get("endDate"), timezone),
         venue_name=venue,
         address=clean_str((address or {}).get("streetAddress")),

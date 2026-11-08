@@ -33,6 +33,14 @@ def test_item_venue_coordinates_and_box_office() -> None:
     assert parse_item(items[2], "חיי-לילה", TZ).end_at is not None  # type: ignore[union-attr]
 
 
+def test_midnight_means_the_site_has_the_date_only() -> None:
+    item = parse_listing(PAGE)[1]
+    guess = parse_item(item | {"startDate": "2026-11-20T22:00:00Z"}, "חיי-לילה", TZ)  # 00:00 in Israel
+    assert guess is not None and guess.time_known is False
+    real = parse_item(item | {"startDate": "2026-11-20T20:00:00Z"}, "חיי-לילה", TZ)
+    assert real is not None and real.time_known is True
+
+
 def test_place_without_address_and_cancelled_event() -> None:
     items = parse_listing(PAGE)
     e = parse_item(items[0], "חיי-לילה", TZ)
