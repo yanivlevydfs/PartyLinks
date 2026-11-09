@@ -1086,6 +1086,9 @@ dedup:
   # Direct sellers before aggregators; first listed wins as the primary listing.
   source_priority: [goout, eventer, zygo, selector, barby, grayclub, chillz, tickchak]
   promoter_page_sources: [goout, zygo, popit, drop]
+  # Venues' own box offices (Smarticket tenants are each a venue's): when one lists a show once on a date,
+  # other sites' copies of it there (same name) take its hour - Mevalim's "14:00" for Shablul's 20:30.
+  box_office_sources: [smarticket, barby, grayclub, nikonitai]
   # Broad kinds of event: two listings whose genres share no kind (a kids' show and a lecture) are
   # different events unless their titles are near-identical (strong_title_similarity; genre tags are
   # noisy). Ambiguous tags (israeli, lgbt, culture...) belong to no kind.

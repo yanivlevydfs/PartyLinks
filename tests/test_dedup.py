@@ -96,10 +96,10 @@ def test_link_to_a_page_many_listings_share_merges_nothing(tmp_path: Path) -> No
 def test_one_hall_by_name_merges_whatever_the_pins_say(tmp_path: Path) -> None:
     _, groups = grouped(tmp_path, [
         listing("tickchak", "a", "אורי חזקיה", venue_name="תרבותא מונגש"),
-        listing("smarticket", "b", "אורי חזקיה", venue_name="תרבותא מונגש", where=(32.25, 34.95)),  # pin ~20 km off
+        listing("eventer", "b", "אורי חזקיה", venue_name="תרבותא מונגש", where=(32.25, 34.95)),  # pin ~20 km off
         listing("pres", "c", "אורי חזקיה", venue_name="תרבותא מונגש", where=(32.25, 34.95), start=START + timedelta(hours=2)),
     ])  # fmt: skip
-    assert groups["tickchak:a"][0] == groups["smarticket:b"][0] != groups["pres:c"][0]  # the later hour is another show
+    assert groups["tickchak:a"][0] == groups["eventer:b"][0] != groups["pres:c"][0]  # the later hour is another show
 
 
 def test_same_title_and_hour_in_another_city_stays_apart(tmp_path: Path) -> None:
@@ -466,3 +466,31 @@ def test_a_page_with_one_sites_wrong_hour_shows_the_agreed_listing(tmp_path: Pat
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         assert client.get("/events/goout:typo").json()["start_at"][11:16] == "21:50"  # 23:50 in Israel, stored in UTC
         assert "00:50" not in client.get("/events/goout:typo").json()["start_at"]
+
+
+def test_guides_linking_one_box_office_page_under_other_names_merge(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("smarticket", "shablul:4833", "ספיישל קלפטון", url="https://shablul.smarticket.co.il/event/4833"),
+        listing("secrettelavivapp", "a", "ספיישל קלפטון",
+                extra={"purchase_url": "https://shablul.smarticket.co.il/%D7%A1?id=4833"}),
+        listing("secrettelaviv", "b", "Eric Clapton Special",
+                extra={"purchase_url": "https://shablul.smarticket.co.il/%D7%A1?id=4833"}),
+        listing("makore", "c", "ספיישל קלפטון", extra={"purchase_url": "https://makore.kartisim.co.il/announce/buy/214002"}),
+        listing("ogo", "d", "מחווה לאריק קלפטון", extra={"purchase_url": "https://ru.kupatbravo.co.il/announce/buy/214002"}),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 1
+
+
+def test_venue_box_office_hour_beats_a_guides_typo(tmp_path: Path) -> None:
+    hall = {"venue_name": "שבלול"}
+    _, groups = grouped(tmp_path, [
+        listing("smarticket", "shablul:4833", "ספיישל קלפטון", **hall),
+        listing("kupatbravo", "214002", "ספיישל קלפטון", **hall),
+        listing("mevalim", "132279", "ספיישל קלפטון", start=START - timedelta(hours=6, minutes=30), **hall),
+        # Two sessions at the box office: a guide's other hour may be either, so it stays apart.
+        listing("smarticket", "shablul:8", "ערב סטנדאפ גדול", start=START - timedelta(hours=6), **hall),
+        listing("smarticket", "shablul:9", "ערב סטנדאפ גדול", **hall),
+        listing("mevalim", "9", "ערב סטנדאפ גדול", start=START - timedelta(hours=3), **hall),
+    ])  # fmt: skip
+    assert groups["mevalim:132279"][0] == groups["smarticket:shablul:4833"][0] == groups["kupatbravo:214002"][0]
+    assert groups["mevalim:9"][0] not in (groups["smarticket:shablul:8"][0], groups["smarticket:shablul:9"][0])

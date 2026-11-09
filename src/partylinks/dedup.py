@@ -51,6 +51,7 @@ _DATE_TOKEN = re.compile(r"\b\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?\b")
 _NON_WORD = re.compile(r"[\W_]+", re.UNICODE)
 _TIME_TOKEN = re.compile(r"\b\d{1,2}:\d{2}\b")
 _YEAR = re.compile(r"^(?:19|20)\d\d$")
+_BRAVO_SEANCE = re.compile(r"^/announce/buy/(\d+)$")
 
 
 @dataclass
@@ -104,7 +105,14 @@ def url_key(url: str | None) -> str:
         if k.lower().endswith("id") and not k.lower().endswith(("clid", "clkid")) and not k.lower().startswith("utm_")
     )  # fmt: skip
     query = "?" + "&".join(ids) if ids else ""
-    return f"{parsed.netloc.lower().removeprefix('www.')}{parsed.path.rstrip('/').lower()}{query}"
+    host, path = parsed.netloc.lower().removeprefix("www."), parsed.path.rstrip("/").lower()
+    # One page under other spellings: a Smarticket show is "/event/4833" and "/<name>?id=4833"; Bravo's
+    # white labels (ru.kupatbravo.co.il, makore.kartisim.co.il) sell one seance id under their own hosts.
+    if host.endswith(".smarticket.co.il") and (show := dict(parse_qsl(parsed.query)).get("id", "")).isdigit():
+        return f"{host}/event/{show}"
+    if bravo := _BRAVO_SEANCE.match(path):
+        return f"kupatbravo.co.il/announce/buy/{bravo.group(1)}"
+    return f"{host}{path}{query}"
 
 
 def _distance_m(a: _Listing, b: _Listing) -> float | None:
@@ -123,6 +131,7 @@ class Deduplicator:
         self._promoter_pages = set(settings.promoter_page_sources)
         self._kind = {g: kind for kind, genres in settings.kinds.items() for g in genres}
         self._filler = {w.lower() for w in settings.title_filler}
+        self._box_offices = set(settings.box_office_sources)
 
     def _distinctive(self, core: frozenset[str]) -> bool:
         """Enough of a name to match on alone: "דרור קרן", not "techno"."""
@@ -166,6 +175,9 @@ class Deduplicator:
         if a.links_to and a.links_to == b.url_key and b.url_key not in shared_urls:
             return True
         if b.links_to and b.links_to == a.url_key and a.url_key not in shared_urls:
+            return True
+        # Two guides sending to one box office page ("Eric Clapton Special" / "מחווה לאריק קלפטון"): one show.
+        if a.links_to and a.links_to == b.links_to and a.source != b.source and a.links_to not in shared_urls:
             return True
         if not a.title_key or not b.title_key:
             return False
@@ -274,6 +286,18 @@ class Deduplicator:
             return False
         return a.title_key != b.title_key or (a.start is not None and b.start is not None and a.start != b.start)
 
+    def _box_office_hours(self, listings: list[_Listing]) -> None:
+        """A venue's own box office with one session of a show that day sets its hour: a guide's "14:00" for
+        Shablul's 20:30 "ספיישל קלפטון" is the guide's typo, not a matinee (the venue would sell it too)."""
+        sessions: dict[tuple[str, frozenset[str]], list[_Listing]] = defaultdict(list)
+        for item in listings:
+            if item.source in self._box_offices and item.venue_slug and item.timed and self._distinctive(item.core):
+                sessions[item.venue_slug, item.core].append(item)
+        for item in listings:
+            own = sessions.get((item.venue_slug or "", item.core)) if item.source not in self._box_offices else None
+            if own and len(own) == 1 and item.timed:
+                item.start = own[0].start  # grouping only: the row keeps the hour its site gives
+
     def _primary_rank(self, item: _Listing) -> tuple[Any, ...]:
         # A sold-out copy never fronts the event while another site still sells it.
         return (item.sold_out, self._priority.get(item.source, len(self._priority)), -item.tiers, item.first_seen, item.id)
@@ -367,6 +391,7 @@ class Deduplicator:
         shared = frozenset(k for k, n in keys.items() if n > 1) | frozenset(k for (k, _), n in linkers.items() if n > 1)
         merged = 0
         for listings in by_day.values():
+            self._box_office_hours(listings)
             parent = {item.id: item.id for item in listings}
             members_of = {item.id: [item] for item in listings}
 

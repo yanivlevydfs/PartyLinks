@@ -413,6 +413,9 @@ class DedupSettings(BaseModel):
     # A party's listings may give entry times this far apart (20:00 doors on one site, 21:30 on another):
     # music only, and across sites only under a near-identical title (strong_title_similarity).
     party_max_start_gap_minutes: int = Field(90, ge=0)
+    # Venues' own box offices: one session of a show there on a date sets the hour other sites' copies of
+    # it (same venue, same name) group by - a guide's "14:00" for the venue's 20:30 is a typo, not a matinee.
+    box_office_sources: list[str] = Field(default_factory=list)
     kinds: dict[str, list[str]] = Field(default_factory=dict)
 
 
