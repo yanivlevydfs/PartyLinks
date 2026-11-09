@@ -48,7 +48,9 @@ from partylinks.scrapers.holon import HolonScraper
 from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
 from partylinks.scrapers.issta import IsstaScraper
+from partylinks.scrapers.iwant import IwantScraper
 from partylinks.scrapers.jaffatheatre import JaffaTheatreScraper
+from partylinks.scrapers.jerusalemmuni import JerusalemMuniScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
 from partylinks.scrapers.kikarhamusica import KikarHamusicaScraper
 from partylinks.scrapers.kishreyteufa import KishreyTeufaScraper
@@ -60,9 +62,7 @@ from partylinks.scrapers.liveisrael import LiveIsraelScraper
 from partylinks.scrapers.livetickets import LiveTicketsScraper
 from partylinks.scrapers.livevents import LiveventsScraper
 from partylinks.scrapers.luma import LumaScraper
-from partylinks.scrapers.iwant import IwantScraper
 from partylinks.scrapers.makore import MakoreScraper
-from partylinks.scrapers.music80s import Music80sScraper
 from partylinks.scrapers.matnasnet import MatnasnetScraper
 from partylinks.scrapers.meetup import MeetupScraper
 from partylinks.scrapers.meety import MeetyScraper
@@ -72,12 +72,11 @@ from partylinks.scrapers.mevalim import MevalimScraper
 from partylinks.scrapers.movieland import MovielandScraper
 from partylinks.scrapers.mugics import MugicsScraper
 from partylinks.scrapers.munievents import MuniEventsScraper
+from partylinks.scrapers.music80s import Music80sScraper
 from partylinks.scrapers.muzi import MuziScraper
 from partylinks.scrapers.ogo import OgoScraper
 from partylinks.scrapers.onecity import OneCityScraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
-from partylinks.scrapers.jerusalemmuni import JerusalemMuniScraper
-from partylinks.scrapers.standupist import StandupistScraper
 from partylinks.scrapers.petahtikvamuni import PetahTikvaMuniScraper
 from partylinks.scrapers.planet import PlanetScraper, RavHenScraper
 from partylinks.scrapers.plusparty import PlusPartyScraper
@@ -94,6 +93,7 @@ from partylinks.scrapers.sharepointmuni import SharePointMuniScraper
 from partylinks.scrapers.shotgun import ShotgunScraper
 from partylinks.scrapers.showshappening import ShowsHappeningScraper
 from partylinks.scrapers.smarticket import SmarticketIsraelScraper, SmarticketScraper
+from partylinks.scrapers.standupist import StandupistScraper
 from partylinks.scrapers.swaptix import SwapTixScraper
 from partylinks.scrapers.tamuseum import TaMuseumScraper
 from partylinks.scrapers.teder import TederScraper

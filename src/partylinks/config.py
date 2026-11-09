@@ -32,8 +32,8 @@ from partylinks.event_text.config import EventTextSettings
 from partylinks.holiday_pages.config import HolidayPagesSettings
 from partylinks.lines.config import LinesSettings
 from partylinks.mail.config import MailSettings
-from partylinks.popularity.config import PopularitySettings
 from partylinks.placeinfo.config import PlaceInfoSettings
+from partylinks.popularity.config import PopularitySettings
 from partylinks.similar.config import SimilarSettings
 from partylinks.smartrails.config import SmartRailsSettings
 from partylinks.weekly_top.config import WeeklyTopSettings
