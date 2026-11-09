@@ -1,5 +1,5 @@
 """The worker's pass, on a thread, one request at a time: read Ontopo's venues (new, changed or stale only),
-match every place to one, store the matched venues' photos as WebP, and read own websites for places
+match every place to one, and read own websites for places
 still missing hours or a phone. Everything is committed as it goes, so a restart continues where it was.
 """
 
@@ -25,9 +25,9 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from partylinks.db import Database, EventRow, dialect_insert, upcoming_filter, utcnow, with_db_retry
 from partylinks.placecards import IS_PLACE
 from partylinks.placeinfo.config import PlaceInfoSettings
-from partylinks.placeinfo.models import OntopoPhotoRow, OntopoVenueRow, PlaceInfoRow
+from partylinks.placeinfo.models import OntopoVenueRow, PlaceInfoRow
 from partylinks.placeinfo.pages import ontopo_page, ontopo_sitemap, phone_key, site_details
-from partylinks.venue_profiles import _distance_m, _joined, to_webp
+from partylinks.venue_profiles import _distance_m, _joined
 
 log = logging.getLogger(__name__)
 
@@ -210,7 +210,7 @@ def read_venues(db: Database, cfg: PlaceInfoSettings, reader: _Reader, extra_slu
             reader.failures += html is not None
             continue
         # A page with no venue is kept as an empty row, so it is not asked again before refresh_days.
-        empty = {"title": None, "latitude": None, "longitude": None, "phone": None, "address": None, "website": None, "tags": None, "hours": None, "photos": None}
+        empty = {"title": None, "latitude": None, "longitude": None, "phone": None, "address": None, "website": None, "tags": None, "hours": None}
         _upsert(db, OntopoVenueRow, [{**empty, **row, "slug": slug, "lastmod": pages[slug], "fetched_at": utcnow()}], ["slug"])
         read += 1
     return read
@@ -247,25 +247,6 @@ def save_matches(db: Database, places: list[Place], cfg: PlaceInfoSettings) -> d
     return matched
 
 
-def read_photos(db: Database, cfg: PlaceInfoSettings, reader: _Reader, webp_quality: int, slugs: set[str]) -> int:
-    """The first ``photos`` photos of each matched venue that has none stored yet."""
-    with db.session(write=False) as session:
-        have = set(session.scalars(select(OntopoPhotoRow.slug).distinct()))
-        wanted = session.execute(
-            select(OntopoVenueRow.slug, OntopoVenueRow.photos).where(OntopoVenueRow.slug.in_(slugs - have))
-        ).all()
-    saved = 0
-    for slug, urls in wanted:
-        for n, url in enumerate((urls or [])[: cfg.photos]):
-            if reader.done():
-                return saved
-            data = reader.get(url)
-            if data and (webp := to_webp(data, webp_quality, cfg.photo_width)):
-                _upsert(db, OntopoPhotoRow, [{"slug": slug, "n": n, "webp": webp, "updated_at": utcnow()}], ["slug", "n"])
-                saved += 1
-    return saved
-
-
 def read_sites(db: Database, cfg: PlaceInfoSettings, stop: threading.Event, places: list[Place], matched: dict[str, tuple[str, str]]) -> int:
     """Own websites' JSON-LD, one page each, every ``refresh_days``: only places with a website that still
     lack hours or a phone (from their own page or their Ontopo venue)."""
@@ -297,13 +278,12 @@ def read_sites(db: Database, cfg: PlaceInfoSettings, stop: threading.Event, plac
     return found
 
 
-def run_pass(db: Database, cfg: PlaceInfoSettings, stop: threading.Event, webp_quality: int) -> None:
+def run_pass(db: Database, cfg: PlaceInfoSettings, stop: threading.Event) -> None:
     reader = _Reader(cfg, stop)
     places = load_places(db, cfg)
     read = read_venues(db, cfg, reader, {p.slug for p in places if p.slug})
     matched = save_matches(db, places, cfg)
-    photos = read_photos(db, cfg, reader, webp_quality, {slug for slug, _ in matched.values()}) if cfg.photos else 0
     sites = read_sites(db, cfg, stop, places, matched)
-    log.info("place info: %d places, %d matched, %d venue pages read, %d photos, %d sites with details",
-             len(places), len(matched), read, photos, sites)  # fmt: skip
+    log.info("place info: %d places, %d matched, %d venue pages read, %d sites with details",
+             len(places), len(matched), read, sites)  # fmt: skip
 

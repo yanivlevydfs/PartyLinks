@@ -923,3 +923,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **`GET /places/info/{id}`:** ‏3 קריאות לפי PK (`events`, ‏`place_info`, ‏`ontopo_venues`) ו-`SELECT n FROM ontopo_photos WHERE slug = :slug`. ‏**`GET /place-photos/{slug}/{n}.webp`:** קריאה אחת לפי PK, ‏cache של שבוע בדפדפן.
 - **דף SEO של מקום:** אותן שאילתות, ‏`LocalBusiness` במקום `Event` ב-JSON-LD.
 - **Tests:** ‏`tests/test_placeinfo.py`.
+### 2026-11-09 (תמונות Ontopo הוסרו: `ontopo_photos`, `ontopo_venues.photos`)
+- **הוסרו:** הטבלה `ontopo_photos` והעמודה `ontopo_venues.photos`, עם `place_info.photos`, `place_info.photo_width` ו-`GET /place-photos/{slug}/{n}.webp`. תנאי השימוש של Ontopo אוסרים העתקה והצגה של התמונות בלי הסכמה בכתב, ובעל האתר ויתר עליהן.
+- **בפרודקשן:** אחרי ה-deploy, פעם אחת ובאופן ידני: `DROP TABLE ontopo_photos; ALTER TABLE ontopo_venues DROP COLUMN photos;`. אין מיגרציה בקוד.
+- **`GET /places/info/{id}`:** השאילתה `SELECT n FROM ontopo_photos` ירדה; נשארו 3 קריאות לפי PK. שעות ופרטי המקום לא השתנו.
+- **Tests:** `tests/test_placeinfo.py`.

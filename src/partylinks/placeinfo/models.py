@@ -1,11 +1,11 @@
-"""Tables of place info: Ontopo's venues, their photos, and what each place (one URL) was matched to."""
+"""Tables of place info: Ontopo's venues and what each place (one URL) was matched to."""
 
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Float, Integer, LargeBinary, Text
+from sqlalchemy import Float, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from partylinks.db import Base, NullableJSON, UTCDateTime, utcnow
@@ -23,18 +23,8 @@ class OntopoVenueRow(Base):
     website: Mapped[str | None] = mapped_column(Text)
     tags: Mapped[list[str] | None] = mapped_column(NullableJSON)  # cuisine: ["סושי", "אסייאתי"]
     hours: Mapped[dict[str, list[str]] | None] = mapped_column(NullableJSON)  # {"Sunday": ["12:00-00:00"]}
-    photos: Mapped[list[str] | None] = mapped_column(NullableJSON)  # Ontopo's photo URLs
     lastmod: Mapped[str | None] = mapped_column(Text)  # the sitemap's, to read a page again when it changed
     fetched_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
-
-
-class OntopoPhotoRow(Base):
-    __tablename__ = "ontopo_photos"
-
-    slug: Mapped[str] = mapped_column(Text, primary_key=True)
-    n: Mapped[int] = mapped_column(Integer, primary_key=True)
-    webp: Mapped[bytes] = mapped_column(LargeBinary)
-    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
 class PlaceInfoRow(Base):

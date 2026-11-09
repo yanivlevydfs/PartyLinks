@@ -1,4 +1,4 @@
-"""Everything we know about a place, beyond one listing's fields: hours, rating, booking, photos, links.
+"""Everything we know about a place, beyond one listing's fields: hours, rating, booking, links.
 
 Three sources, none of them called in a web request:
 
@@ -8,5 +8,5 @@ Three sources, none of them called in a web request:
 * The place's own website, JSON-LD only, when the others leave hours or a phone missing (``refresh``).
 
 - ``details``: merges them, for the place page and its crawler version (``seo``).
-- ``jobs``: the scheduler hook. ``routes``: the page's data and the stored photos.
+- ``jobs``: the scheduler hook. ``routes``: the page's data.
 """

@@ -142,7 +142,6 @@ def ontopo_page(page_html: str) -> dict[str, Any] | None:
         "website": clean_str(page.get("website")),
         "tags": [t for t in (clean_str(page.get("tag1")), clean_str(page.get("tag2"))) if t] or None,
         "hours": _ontopo_hours(hours.get("shifts") or []),
-        "photos": [g["image"] for g in page.get("gallery") or [] if g.get("image")] or None,
     }
 
 

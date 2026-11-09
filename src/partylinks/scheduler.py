@@ -114,7 +114,7 @@ def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOSchedu
     schedule_artist_links(scheduler, settings, service)  # artists' music / social links from MusicBrainz
     from partylinks.placeinfo.jobs import schedule as schedule_place_info
 
-    schedule_place_info(scheduler, settings, service)  # places' Ontopo venues, photos and own websites
+    schedule_place_info(scheduler, settings, service)  # places' Ontopo venues and own websites
     from partylinks.bot.telegram.jobs import schedule as schedule_bot
 
     schedule_bot(scheduler, settings, service)  # the Telegram bot's alerts

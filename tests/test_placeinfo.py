@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from partylinks.api import create_app
 from partylinks.db import Database
 from partylinks.placeinfo.config import PlaceInfoSettings
-from partylinks.placeinfo.models import OntopoPhotoRow, OntopoVenueRow, PlaceInfoRow
+from partylinks.placeinfo.models import OntopoVenueRow, PlaceInfoRow
 from partylinks.placeinfo.pages import (
     happytlv_cards,
     happytlv_details,
@@ -107,7 +107,7 @@ def test_ontopo_page() -> None:
     d = ontopo_page(html)
     assert d is not None
     assert (d["title"], d["latitude"], d["longitude"], d["phone"]) == ("YAN", 32.08, 34.77, "037943529")
-    assert d["tags"] == ["סושי", "אסייאתי"] and d["photos"] == ["https://c/1.jpg"]
+    assert d["tags"] == ["סושי", "אסייאתי"] and "photos" not in d  # Ontopo's terms: no copying its images
     assert d["hours"] == {"Monday": ["12:00-17:00", "19:00-00:00"]}  # a menu change is no closing
     assert ontopo_page("<html></html>") is None
     assert ontopo_page(_ontopo({})) == {}  # a page with no venue
@@ -187,7 +187,6 @@ def test_place_page_card_and_seo(tmp_path: Path) -> None:
     with db.session() as session:
         session.add(PlaceInfoRow(url=BAR, ontopo_slug="20214686", matched_by="link"))
         session.add(OntopoVenueRow(slug="20214686", title="YAN", tags=["סושי"], hours={"Monday": ["10:00-11:00"]}))
-        session.add(OntopoPhotoRow(slug="20214686", n=0, webp=b"RIFF"))
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         card = client.get("/events").json()["items"][0]
         assert (card["rating"], card["reviews"], card["hood"], card["bookable"]) == (4.4, 3184, "הצפון הישן", True)
@@ -198,10 +197,7 @@ def test_place_page_card_and_seo(tmp_path: Path) -> None:
         assert info["ontopo_url"] == "https://ontopo.com/en/il/page/20214686?source=spotx"
         assert info["website"] == "https://www.yan.co.il" and info["instagram"] == "https://www.instagram.com/yan"
         assert info["cuisine"] == ["סושי"] and info["tags"] == ["דייט"]  # deal mechanics are not shown
-        assert info["photos"] == ["/place-photos/20214686/0.webp"]
-        photo = client.get("/place-photos/20214686/0.webp")
-        assert photo.status_code == 200 and photo.headers["content-type"] == "image/webp"
-        assert client.get("/place-photos/20214686/9.webp").status_code == 410  # this site's "nothing here"
+        assert "photos" not in info
         assert client.get("/places/info/nothing").status_code == 410
 
         page = client.get(f"/event/{card['slug']}", headers={"user-agent": "Googlebot"}).text
@@ -225,11 +221,11 @@ def test_pass_reads_matches_and_keeps_going(tmp_path: Path, monkeypatch: object)
 
     def get(self: _Reader, url: str, limit: int | None = None) -> bytes | None:
         asked.append(url)
-        return pages.get(url)  # 777 and the photos fail
+        return pages.get(url)  # 777 fails
 
     monkeypatch.setattr(_Reader, "get", get)  # type: ignore[attr-defined]
     cfg = CFG.model_copy(update={"delay_seconds": 0})
-    run_pass(db, cfg, threading.Event(), 80)
+    run_pass(db, cfg, threading.Event())
     with db.session(write=False) as session:
         assert session.get(OntopoVenueRow, "20214686").lastmod == "2026-01-01"
         assert session.get(OntopoVenueRow, "777") is None
@@ -238,6 +234,6 @@ def test_pass_reads_matches_and_keeps_going(tmp_path: Path, monkeypatch: object)
         assert place.site_checked_at is not None
 
     asked.clear()
-    run_pass(db, cfg, threading.Event(), 80)  # a second pass reads nothing it has: the sitemap, then what failed
+    run_pass(db, cfg, threading.Event())  # a second pass reads nothing it has: the sitemap, then what failed
     assert "https://ontopo.com/he/il/page/20214686" not in asked and "https://own.example" not in asked
     assert "https://ontopo.com/he/il/page/777" in asked

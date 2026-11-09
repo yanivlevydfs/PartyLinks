@@ -29,9 +29,6 @@ class PlaceInfoSettings(BaseModel):
     name_similarity: float = Field(0.85, ge=0, le=1)
     phone_radius_m: float = Field(300, ge=0)
     sound_similarity: float = Field(0.7, ge=0, le=1)
-    # Photos of a matched venue, stored as WebP and shown on the place page.
-    photos: int = Field(4, ge=0, le=10)
-    photo_width: int = Field(960, ge=100)
     # The place's own website: the most bytes read, and hosts that are profiles, not a website.
     website_max_bytes: int = Field(2_000_000, ge=1000)
     social_hosts: list[str] = Field(default_factory=lambda: [

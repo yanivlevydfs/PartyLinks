@@ -22,8 +22,7 @@ log = logging.getLogger(__name__)
 
 async def _run(scrape: ScrapeService) -> None:
     try:
-        cfg = scrape.settings
-        await asyncio.to_thread(run_pass, scrape.db, cfg.place_info, scrape._stopping, cfg.media.webp_quality)
+        await asyncio.to_thread(run_pass, scrape.db, scrape.settings.place_info, scrape._stopping)
     except Exception:
         log.exception("place info pass failed")
 

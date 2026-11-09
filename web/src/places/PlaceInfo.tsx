@@ -1,6 +1,6 @@
 // A place's page: what is known beyond a listing's fields (GET /places/info/<id>, partylinks.placeinfo):
-// hours by weekday, rating, booking, links, amenities, photos. PlaceLine is the same on a card, one line.
-// One request for the page, plus its photos, lazy and at most place_info.photos.
+// hours by weekday, rating, booking, links, amenities. PlaceLine is the same on a card, one line.
+// One request for the page.
 import { useQuery } from "@tanstack/react-query";
 import { useT } from "../ui";
 import type { EventSummary } from "../types";
@@ -25,7 +25,6 @@ interface Details {
   tags?: string[];
   ontopo_url?: string;
   booking_url?: string;
-  photos?: string[];
 }
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -111,11 +110,6 @@ export function PlaceInfo({ id }: { id: string }) {
       </div>
       {d.hours && <p className="pi-from">{d.hours_from && p.from[d.hours_from]}. {p.check}</p>}
       {!!chips.length && <div className="tags">{chips.map((c) => <span key={c} className="tag" dir="auto">{word(c)}</span>)}</div>}
-      {!!d.photos?.length && (
-        <div className="pi-photos">
-          {d.photos.map((src) => <img key={src} src={src} alt="" loading="lazy" decoding="async" />)}
-        </div>
-      )}
     </section>
   );
 }

@@ -5,12 +5,11 @@ from __future__ import annotations
 from typing import Any
 from urllib.parse import urlsplit
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from partylinks.db import EventRow
 from partylinks.placeinfo.config import PlaceInfoSettings
-from partylinks.placeinfo.models import OntopoPhotoRow, OntopoVenueRow, PlaceInfoRow
+from partylinks.placeinfo.models import OntopoVenueRow, PlaceInfoRow
 
 
 def _https(site: str) -> str:
@@ -29,10 +28,6 @@ def place_details(session: Session, row: EventRow, cfg: PlaceInfoSettings, lang:
     )
     links = [*(extra.get("links") or []), *([extra["website"]] if extra.get("website") else [])]
     own_site = next((u for u in links if not any(h in urlsplit(u).netloc for h in cfg.social_hosts)), None)
-    photos = (
-        session.scalars(select(OntopoPhotoRow.n).where(OntopoPhotoRow.slug == venue.slug).order_by(OntopoPhotoRow.n)).all()
-        if venue else []
-    )  # fmt: skip
     found = {
         "hours": hours,
         "hours_from": hours_from,
@@ -53,6 +48,5 @@ def place_details(session: Session, row: EventRow, cfg: PlaceInfoSettings, lang:
         "tags": [t for t in extra.get("tags") or [] if t in cfg.tags],
         "ontopo_url": cfg.ontopo_booking.format(lang=lang, slug=venue.slug) if venue else None,
         "booking_url": extra.get("booking_url"),
-        "photos": [f"/place-photos/{venue.slug}/{n}.webp" for n in photos] if venue else [],
     }
     return {k: v for k, v in found.items() if v}

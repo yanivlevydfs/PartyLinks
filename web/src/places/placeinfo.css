@@ -13,5 +13,3 @@
 .pi-week th, .pi-week td { padding: 3px 0; padding-inline-end: 16px; font-weight: 400; text-align: start; }
 .pi-week .today { font-weight: 700; }
 .pi-week .today th { font-weight: 700; }
-.pi-photos { display: flex; gap: 8px; overflow-x: auto; }
-.pi-photos img { height: 160px; width: auto; max-width: 80vw; border-radius: 10px; object-fit: cover; }
