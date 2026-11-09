@@ -11,6 +11,8 @@ ftfy==6.3.1
 json-repair==0.61.7
 pycountry==26.2.16
 pydantic>=2.9
+pyproj>=3.7
+tzfpy>=1.0
 pydantic-settings[yaml]>=2.6
 selectolax>=1.0
 psycopg[binary]>=3.2

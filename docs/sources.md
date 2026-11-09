@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 113 configured sources, 112 on. Each one has its own module in
+SPOTX collects from 115 configured sources, 114 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -44,6 +44,7 @@ pagination and what the listing and the event page provide.
 | `yotzim` | Yotzim (yotzim.com): party guide (Tel Aviv nights, nature parties, open bar, 40+, teen parties, festivals, Koh Phangan, holidays), read by category page; each event takes the genre words of every category listing it. Only upcoming events are fetched | 09:12, 21:12 | yes |
 | `shotgun` | Shotgun (shotgun.live): electronic music ticketing. Every city page worldwide (240, mostly France, Brazil and the US; ~3,300 events, to the abroad section), plus its Israeli pages, which list nothing yet | 08:52, 20:52 | yes |
 | `posh` | Posh (posh.vip): party and nightlife ticketing, almost all in the US (~1,600 events, to the abroad section, in each venue's own time zone). No categories of its own: night out by default, others from the title | 09:17, 21:17 | yes |
+| `ticketingo` | Ticketingo (ticketingo.co.il), Sportsevents365's Hebrew storefront: concerts, opera, ballet, theatre and musicals abroad (no sport) | 10:16, 22:16 | yes |
 | `showshappening` | ShowsHappening (showshappening.com): ticketing in Malta, the UK, Germany and Spain (~270 events, ~1,000 dates, abroad section) with its own categories and tags. No venue or price (loaded from a private API) | 10:08, 22:08 | yes |
 | `eventimlight` | Eventim Light (eventim-light.com): CTS Eventim's self-service box office, a shop per organizer in every market (de, at, ch, uk, nl, es, dk, fi, fr, no, se; ~11,800 events from ~2,000 of ~5,300 known shops, Oct 2026, ~90% on the map). Artwork is fetched as Chrome too (Akamai). No catalogue: shops come from the Common Crawl URL index and are kept in `data/eventimlight_shops.json`, growing run by run; one request per shop (its upcoming events as JSON, with venue, country and coordinates). Israeli venues to Israel, the rest abroad | 04:33, 16:33 | yes |
 | `vibez` | Vibez (vibez.io): ticketing for communities and party producers: raves, ecstatic dance, club nights | 08:36, 20:36 | yes |
@@ -87,6 +88,7 @@ pagination and what the listing and the event page provide.
 | `fever` | Fever (feverup.com): Candlelight concerts in Tel Aviv, Jerusalem and Haifa | 07:13, 19:13 | yes |
 | `towerofdavid` | Tower of David Museum, Jerusalem: night shows, gallery talks, tours, concerts | 07:47, 19:47 | yes |
 | `eventpro` | EventPro (Interdeal) community-centre box offices, 13 sites (Emek Hefer, South Netanya, Even Yehuda, Kadima, Kfar Yona, Modiin, Jerusalem...): shows, kids' plays, stand-up, lectures, films, trips | 06:37, 18:37 | yes |
+| `parks` | Israel Nature and Parks Authority (parks.org.il): guided tours, family activities and shows in national parks and nature reserves, by date (its Checkfront booking pages) | 10:13, 22:13 | yes |
 | `tamuseum` | Tel Aviv Museum of Art: concerts, gallery talks, tours, lectures, films, workshops | 07:53, 19:53 | yes |
 | `jaffatheatre` | Jaffa Theatre (jaffatheatre.org.il): the Arab-Hebrew stage in Jaffa, via its TicketTool box office | 07:18, 19:18 | yes |
 | `levontin7` | Levontin 7 (levontin7.com): live-music club in Tel Aviv | 06:46, 18:46 | yes |

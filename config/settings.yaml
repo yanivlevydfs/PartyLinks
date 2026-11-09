@@ -1252,6 +1252,8 @@ geocoding:
     "סינמה סיטי באר שבע": [31.2341780, 34.7993077]      # Cinema City Beersheba, Hita 1
     "expo tel aviv": [32.1054141, 34.8084224]           # Expo Tel Aviv (fairgrounds), Rokach Blvd
     "היכל בעיר": [32.1662366, 34.8429788]               # Heichal BaIr (Beit HaEzrach), Sirkin, Herzliya
+    "שמורת טבע נחל חרמון בניאס": [33.2486, 35.6948]        # Banias reserve, Hermon stream (parks: its park has no grid point)
+    "חניון לילה גן לאומי ממשית – החאן הנבטי": [31.0247, 35.0636]  # Mamshit national park, the Nabataean khan
     "בית העם גדרות": [31.8259927, 34.7469573]           # Beit HaAm Aseret, HaShikma (Gderot council), by HaRimon 8
     "קמפוס קרית אונו": [32.0364337, 34.8654131]         # Ono Academic College, HaSdera HaAkademit 1, Kiryat Ono
     "קמפוס גבעת רם": [31.7729398, 35.1979950]           # Hebrew University Givat Ram (Safra) campus, Jerusalem
@@ -2407,6 +2409,16 @@ sources:
     http:
       concurrency: 4
 
+  ticketingo:
+    # Ticketingo (ticketingo.co.il), Sportsevents365's Hebrew storefront: concerts, opera, ballet, theatre
+    # and musicals abroad (type 1023, ~1,000 dates); its sport types are not read. The page's own
+    # /api/events/type/<id>, 100 a page, ~11 requests; robots.txt asks for a 10 s delay. Abroad section.
+    enabled: true
+    cron: "16 10,22 * * *"
+    http:
+      concurrency: 1
+      request_delay_seconds: 10
+
   luma:
     # Luma (luma.com): RSVP pages for tech meetups, hi-tech conferences and startup events.
     # Public JSON API: events near each center (cursor-paged, ~130 across Israel), then one
@@ -2429,6 +2441,18 @@ sources:
     cron: "29 7,19 * * *"
     page_url: https://www.geektime.co.il/event/
     skip_title_words: ["gold bar"]
+
+  parks:
+    # Israel Nature and Parks Authority (parks.org.il): guided tours, family activities and shows in
+    # national parks and reserves. WordPress REST for the board, activities and parks (ITM coordinates),
+    # its public Checkfront booking pages for the open dates and time slots: one calendar request per
+    # activity and month (~490 x months_ahead), one per open date. Defaults in scrapers/parks.py.
+    enabled: true
+    cron: "13 10,22 * * *"
+    months_ahead: 6
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.2
 
   peoplecomputers:
     # People & Computers (anashim umahshevim): hi-tech conferences, all in one RSS feed (~10).

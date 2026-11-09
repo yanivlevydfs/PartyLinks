@@ -19,6 +19,8 @@ dependencies = [
     "pycountry==26.2.16",
     "pillow>=12",
     "pydantic>=2.9",
+    "tzfpy>=1.0",  # a venue abroad's time zone by its coordinates (ticketingo)
+    "pyproj>=3.7",  # the Nature and Parks Authority's parks are in the Israeli grid (ITM)
     "pydantic-settings[yaml]>=2.6",
     "selectolax>=1.0",
     "psycopg[binary]>=3.2",

@@ -76,6 +76,7 @@ from partylinks.scrapers.music80s import Music80sScraper
 from partylinks.scrapers.muzi import MuziScraper
 from partylinks.scrapers.ogo import OgoScraper
 from partylinks.scrapers.onecity import OneCityScraper
+from partylinks.scrapers.parks import ParksScraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
 from partylinks.scrapers.petahtikvamuni import PetahTikvaMuniScraper
 from partylinks.scrapers.planet import PlanetScraper, RavHenScraper
@@ -101,6 +102,7 @@ from partylinks.scrapers.telaviv import TelAvivScraper
 from partylinks.scrapers.tickchak import ArenasScraper, TickchakScraper
 from partylinks.scrapers.ticketeams import TicketeamsScraper
 from partylinks.scrapers.tickethouse import TicketHouseScraper
+from partylinks.scrapers.ticketingo import TicketingoScraper
 from partylinks.scrapers.ticketmaster import TicketmasterScraper
 from partylinks.scrapers.ticketplace import TicketPlaceScraper
 from partylinks.scrapers.tiktik import TiktikScraper
@@ -132,6 +134,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         PoshScraper,
         EventbriteScraper,
         ShowsHappeningScraper,
+        TicketingoScraper,
         BarbyScraper,
         GrayclubScraper,
         ChillzScraper,
@@ -165,6 +168,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         LumaScraper,
         GeektimeScraper,
         PeopleComputersScraper,
+        ParksScraper,
         MeetupScraper,
         ZappaScraper,
         BeerShevaTheatreScraper,

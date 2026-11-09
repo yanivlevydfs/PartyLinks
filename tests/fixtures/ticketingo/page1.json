@@ -1,0 +1,254 @@
+{
+ "data": [
+  {
+   "id": 406514,
+   "name": "Papa Roach-קארדיף, וויילס",
+   "homeTeam": {
+    "id": 6595,
+    "name": "Papa Roach"
+   },
+   "awayTeam": {
+    "id": null,
+    "name": null
+   },
+   "participants": [
+    {
+     "id": 6595,
+     "name": "Papa Roach"
+    }
+   ],
+   "eventType": {
+    "id": 1023,
+    "name": "בידור",
+    "isTeamSport": 0,
+    "concert": 1
+   },
+   "tournament": {
+    "id": 179,
+    "name": "הופעות",
+    "isGroupEvent": false
+   },
+   "dateISO": "2026-11-09T18:00:00+00:00",
+   "dateOfEvent": "שני, 09 נובמבר 2026",
+   "timeOfEvent": "18:00",
+   "finalDate": true,
+   "finalTime": true,
+   "dateTimeBoundaries": "",
+   "country": {
+    "id": 1031,
+    "name": "וויילס"
+   },
+   "city": {
+    "id": 1291,
+    "name": "קארדיף"
+   },
+   "originalSearchCity": null,
+   "venue": {
+    "id": 2779,
+    "name": "קארדיף אינטרנשיונל ארנה",
+    "mapUrl": "https://images-cdn.sportsevents365.com/venues/thumbs/legend.png",
+    "address": "Mary Ann Street \r\nCardiff \r\nSouth Glamorgan \r\nCF10 2EQ",
+    "latitude": 51.4789,
+    "longitude": -3.17167
+   },
+   "eventUrl": "https://ticket.sportsevents365.com/event/406514",
+   "availableCategoriesQuantity": 0,
+   "minTicketPrice": {
+    "price": null,
+    "currency": "ILS",
+    "currencySymbol": "₪"
+   },
+   "needTicketForm": true,
+   "viewingNow": 0
+  },
+  {
+   "id": 396134,
+   "name": "ראש-טמפה, פלורידה, ארה\"ב (ארצות הברית)",
+   "homeTeam": {
+    "id": 3505,
+    "name": "ראש"
+   },
+   "awayTeam": {
+    "id": null,
+    "name": null
+   },
+   "participants": [
+    {
+     "id": 3505,
+     "name": "ראש"
+    }
+   ],
+   "eventType": {
+    "id": 1023,
+    "name": "בידור",
+    "isTeamSport": 0,
+    "concert": 1
+   },
+   "tournament": {
+    "id": 179,
+    "name": "הופעות",
+    "isGroupEvent": false
+   },
+   "dateISO": "2026-11-09T19:30:00+00:00",
+   "dateOfEvent": "שני, 09 נובמבר 2026",
+   "timeOfEvent": "19:30",
+   "finalDate": true,
+   "finalTime": true,
+   "dateTimeBoundaries": "",
+   "country": {
+    "id": 1064,
+    "name": "ארה\"ב (ארצות הברית)"
+   },
+   "city": {
+    "id": 1316,
+    "name": "טמפה, פלורידה"
+   },
+   "originalSearchCity": null,
+   "venue": {
+    "id": 1603,
+    "name": "Amalie Arena",
+    "mapUrl": "https://images-cdn.sportsevents365.com/venues/thumbs/map_will_1.jpg",
+    "address": "401 Channelside Drive\r\nTampa, Florida 33602",
+    "latitude": 27.9428,
+    "longitude": -82.4519
+   },
+   "eventUrl": "https://ticket.sportsevents365.com/event/396134",
+   "availableCategoriesQuantity": 0,
+   "minTicketPrice": {
+    "price": null,
+    "currency": "ILS",
+    "currencySymbol": "₪"
+   },
+   "needTicketForm": true,
+   "viewingNow": 0
+  },
+  {
+   "id": 398656,
+   "name": "דייר סטרייטס  Experience (להקת מחווה)-סארברוקן, גרמניה",
+   "homeTeam": {
+    "id": 8582,
+    "name": "דייר סטרייטס  Experience (להקת מחווה)"
+   },
+   "awayTeam": {
+    "id": null,
+    "name": null
+   },
+   "participants": [
+    {
+     "id": 8582,
+     "name": "דייר סטרייטס  Experience (להקת מחווה)"
+    }
+   ],
+   "eventType": {
+    "id": 1023,
+    "name": "בידור",
+    "isTeamSport": 0,
+    "concert": 1
+   },
+   "tournament": {
+    "id": 179,
+    "name": "הופעות",
+    "isGroupEvent": false
+   },
+   "dateISO": "2026-11-09T20:00:00+00:00",
+   "dateOfEvent": "שני, 09 נובמבר 2026",
+   "timeOfEvent": "20:00",
+   "finalDate": true,
+   "finalTime": true,
+   "dateTimeBoundaries": "",
+   "country": {
+    "id": 1029,
+    "name": "גרמניה"
+   },
+   "city": {
+    "id": 2681,
+    "name": "סארברוקן"
+   },
+   "originalSearchCity": null,
+   "venue": {
+    "id": 0,
+    "name": "To be decided",
+    "mapUrl": "",
+    "address": "",
+    "latitude": "",
+    "longitude": ""
+   },
+   "eventUrl": "https://ticket.sportsevents365.com/event/398656",
+   "availableCategoriesQuantity": 0,
+   "minTicketPrice": {
+    "price": null,
+    "currency": "ILS",
+    "currencySymbol": "₪"
+   },
+   "needTicketForm": true,
+   "viewingNow": 0
+  },
+  {
+   "id": 406295,
+   "name": "Bob Dylan-לובליאנה, סלובניה",
+   "homeTeam": {
+    "id": 3012,
+    "name": "Bob Dylan"
+   },
+   "awayTeam": {
+    "id": null,
+    "name": null
+   },
+   "participants": [
+    {
+     "id": 3012,
+     "name": "Bob Dylan"
+    }
+   ],
+   "eventType": {
+    "id": 1023,
+    "name": "בידור",
+    "isTeamSport": 0,
+    "concert": 1
+   },
+   "tournament": {
+    "id": 179,
+    "name": "הופעות",
+    "isGroupEvent": false
+   },
+   "dateISO": "2026-11-09T20:00:00+00:00",
+   "dateOfEvent": "שני, 09 נובמבר 2026",
+   "timeOfEvent": "20:00",
+   "finalDate": false,
+   "finalTime": false,
+   "dateTimeBoundaries": "",
+   "country": {
+    "id": 1050,
+    "name": "סלובניה"
+   },
+   "city": {
+    "id": 1191,
+    "name": "לובליאנה"
+   },
+   "originalSearchCity": null,
+   "venue": {
+    "id": 2973,
+    "name": "היכל הספורט סטויקה ארנה ",
+    "mapUrl": "https://images-cdn.sportsevents365.com/venues/thumbs/chart.jpg",
+    "address": "",
+    "latitude": 46.0811,
+    "longitude": 14.5214
+   },
+   "eventUrl": "https://ticket.sportsevents365.com/event/406295",
+   "availableCategoriesQuantity": 0,
+   "minTicketPrice": {
+    "price": null,
+    "currency": "ILS",
+    "currencySymbol": "₪"
+   },
+   "needTicketForm": true,
+   "viewingNow": 0
+  }
+ ],
+ "links": {
+  "next": null
+ },
+ "meta": {
+  "total": 4
+ }
+}
