@@ -271,7 +271,7 @@ SOURCE_ALIASES = {
     "agol": ("עגול", "אגול"), "airdrop": ("air drop", "אירדרופ", "אייר דרופ"), "vibez": ("וייבז",), "shotgun": ("שוטגאן",),
     "eventbrite": ("איוונטברייט",), "ticketingo": ("טיקטינגו", "ticketingo", "sportsevents365"), "showshappening": ("shows happening", "שואוז הפנינג"), "luma": ("לומה",),
     "geektime": ("גיקטיים",), "peoplecomputers": ("people and computers", "אנשים ומחשבים"), "parks": ("רשות הטבע והגנים", "רט\"ג", "גנים לאומיים", "שמורות טבע", "parks authority"), "meetup": ("מיטאפ",),
-    "beershevatheatre": ("תיאטרון באר שבע",), "planet": ("yes planet", "יס פלאנט"),
+    "beershevatheatre": ("תיאטרון באר שבע",), "nikonitai": ("ניקו ניתאי", "niko nitai"), "planet": ("yes planet", "יס פלאנט"),
     "cinematheque_tlv": ("סינמטק תל אביב", "tel aviv cinematheque"), "cinematheque_jlm": ("סינמטק ירושלים", "jerusalem cinematheque"),
     "movieland": ("מובילנד",), "kishreyteufa": ("קשרי תעופה",), "ticketplace": ("ticket place", "טיקט פלייס"),
     "livevents": ("live events", "לייב איוונטס"), "issta": ("איסתא",), "megaevents": ("mega events", "מגה איוונטס"),

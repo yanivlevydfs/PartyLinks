@@ -784,6 +784,7 @@ enrichment:
     gagarin: [nightclubs]  # club nights the API leaves uncategorised ("INSOMNIA #25")
     tzkrti: [culture]  # "evenings" and "social events" (a Christmas market, a conference) name no genre
     jaffatheatre: [theatre]
+    nikonitai: [theatre]  # a theatre hall; festival nights and talks name no genre
     towerofdavid: [culture]
     tamuseum: [exhibitions]
     eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
@@ -2010,6 +2011,8 @@ sources:
       # Holon Mediatheque (mediatheque.org.il): library, kids' theatre, comics. Courses and museum entry left out.
       - {host: mediatheque, venue_name: מדיטק חולון, city: חולון, rooms: true, skip_categories: ["קורסי", "מוזיאון", "בדיקה"],
          skip_title_words: ["חוג"]}
+      # The Mediatheque's children's theatre (mediatheque-theater.org.il): its own box office, partly the same shows.
+      - {host: mediatheque-theater, venue_name: תיאטרון המדיטק, city: חולון, rooms: true}
       - {host: mishkan-ashdod, venue_name: המשכן לאמנויות הבמה אשדוד, city: אשדוד}
       - {host: matnasgan, venue_name: מרכז קהילתי מזרח נתניה, city: נתניה}
       - {host: makombalev, venue_name: היכל התרבות ראש העין, city: ראש העין}
@@ -2517,6 +2520,21 @@ sources:
     cron: "53 6,18 * * *"
     listing_urls: ["https://b7t.co.il/", "https://b7t.co.il/לוח-הצגות/"]
     tenant_url: https://b7t.smarticket.co.il
+    http:
+      concurrency: 2
+
+  nikonitai:
+    # Niko Nitai Theatre, Jaffa: its Smarticket tenant answers /api/shows and the calendar empty, so the
+    # performances are the ?id= links on its home page (~35, upcoming only), each read from its
+    # /event/<id> page's Event JSON-LD. Tenant hosts have no robots.txt.
+    enabled: true
+    cron: "39 6,18 * * *"
+    tenant_url: https://nikonitai.smarticket.co.il
+    venue_name: תיאטרון ניקו ניתאי
+    address: תל גיבורים 5, תל אביב-יפו
+    city: תל אביב-יפו
+    latitude: 32.0386   # Nominatim: 5 Tel Giborim
+    longitude: 34.7695
     http:
       concurrency: 2
 

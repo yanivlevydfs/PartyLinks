@@ -41,7 +41,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   haezor: ["https://haezor.com", "venue"], levontin7: ["https://levontin7.com", "venue"], reading3: ["https://www.reading3.co.il", "venue"], babebar: ["https://babebar.co.il", "venue"],
   bargiyora: ["https://bar-giyora.co.il", "venue"],
   makore: ["https://www.makore.co.il", "culture"], jaffatheatre: ["https://www.jaffatheatre.org.il", "culture"], jerusalemtheatre: ["https://www.jerusalem-theatre.co.il", "culture"],
-  beershevatheatre: ["https://b7t.co.il", "culture"], hatarbut: ["https://www.hatarbut.co.il", "culture"], zoatlv: ["https://zoatlv.co.il", "culture"],
+  beershevatheatre: ["https://b7t.co.il", "culture"], nikonitai: ["https://nikonitai.smarticket.co.il", "venue"], hatarbut: ["https://www.hatarbut.co.il", "culture"], zoatlv: ["https://zoatlv.co.il", "culture"],
   habama: ["https://www.habama.co.il", "culture"], friendshist: ["https://friends-hist.co.il", "culture"],
   hamenagen: ["https://hamenagen.net", "culture"], poalimatarim: ["https://poalimatarim.com", "culture"],
   geektime: ["https://www.geektime.co.il/event/", "culture"], peoplecomputers: ["https://events.co.il", "culture"], parks: ["https://www.parks.org.il/activities/", "culture"],

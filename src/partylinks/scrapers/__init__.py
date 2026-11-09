@@ -15,6 +15,7 @@ from partylinks.scrapers.bargiyora import BarGiyoraScraper
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.beatradar import BeatRadarScraper
 from partylinks.scrapers.beershevatheatre import BeerShevaTheatreScraper
+from partylinks.scrapers.nikonitai import NikoNitaiScraper
 from partylinks.scrapers.chillz import ChillzScraper
 from partylinks.scrapers.cinemacity import CinemaCityScraper
 from partylinks.scrapers.cinematheque_tlv import JerusalemCinemathequeScraper, TelAvivCinemathequeScraper
@@ -172,6 +173,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         MeetupScraper,
         ZappaScraper,
         BeerShevaTheatreScraper,
+        NikoNitaiScraper,
         ArenasScraper,
         PlanetScraper,
         RavHenScraper,
