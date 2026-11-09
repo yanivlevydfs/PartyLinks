@@ -11,9 +11,10 @@ class PlaceInfoSettings(BaseModel):
     interval_hours: int = Field(24, ge=1)
     user_agent: str = "Mozilla/5.0 (compatible; SPOTX/0.1; +https://spotx.fun)"
     timeout_seconds: float = Field(20, gt=0)
-    # Between two requests, the pass makes one at a time. Ontopo's CloudFront refuses (403) an IP after ~1,000
-    # pages at 2-3 a second (measured, Nov 2026); a first read of all ~2,750 pages takes ~1.5 hours at this pace.
-    delay_seconds: float = Field(2, ge=0)
+    # Between two requests, the pass makes one at a time. Ontopo's CloudFront refused (403) an IP after ~1,000
+    # pages at 2-3 a second, for a few minutes; 1,691 pages at this pace passed (measured, Nov 2026). A first
+    # read of all ~2,750 pages takes ~2.5 hours.
+    delay_seconds: float = Field(3, ge=0)
     max_consecutive_failures: int = Field(5, ge=1)  # that many in a row end the pass (blocked or down); the next continues
     refresh_days: int = Field(14, ge=1)
     # Ontopo: robots.txt allows the pages and the sitemap, and disallows /api/ and query strings.

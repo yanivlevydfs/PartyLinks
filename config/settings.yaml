@@ -237,7 +237,7 @@ weekly_top:
 place_info:
   enabled: true
   interval_hours: 24
-  delay_seconds: 2             # Ontopo's CloudFront refuses an IP after ~1,000 pages at 2-3 a second
+  delay_seconds: 3             # Ontopo's CloudFront refused an IP after ~1,000 pages at 2-3 a second; 1,691 at this pace passed
   max_consecutive_failures: 5  # that many in a row end the pass (blocked or down); the next continues
   refresh_days: 14
   name_radius_m: 150
