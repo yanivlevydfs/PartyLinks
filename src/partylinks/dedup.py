@@ -174,6 +174,8 @@ class Deduplicator:
             return self._subset(a, b)
         if self._other_kind(a, b, ratio):
             return False
+        if self._same_hall(a, b, ratio):
+            return True
         distance = _distance_m(a, b)
         if distance is not None:
             if distance <= self.settings.max_distance_meters:
@@ -197,6 +199,16 @@ class Deduplicator:
             (bool(a.city and a.city == b.city) or a.source == b.source and a.source in self._promoter_pages)
             and ratio >= s.strong_title_similarity and len(a.title_key.split()) >= 3
             and a.start is not None and b.start is not None
+            and abs((a.start - b.start).total_seconds()) <= s.strong_max_start_gap_minutes * 60
+        )  # fmt: skip
+
+    def _same_hall(self, a: _Listing, b: _Listing, ratio: float) -> bool:
+        """One venue by name, at the same hour, under a near-identical title: one show whatever a site's map
+        pin says (a pin 96 km off kept "דרים סטייג'" in Holon apart from its other sites)."""
+        s = self.settings
+        return (
+            bool(a.venue_slug) and a.venue_slug == b.venue_slug and ratio >= s.strong_title_similarity
+            and a.timed and b.timed and a.start is not None and b.start is not None
             and abs((a.start - b.start).total_seconds()) <= s.strong_max_start_gap_minutes * 60
         )  # fmt: skip
 
@@ -397,12 +409,14 @@ def agreed_listing(session: Session, row: EventRow, settings: DedupSettings) -> 
     if row.is_primary or not row.group_id or row.group_id == row.id:
         return row
     primary = session.get(EventRow, row.group_id)
-    gap = abs((primary.start_at - row.start_at).total_seconds()) if primary else 0
+    start, own = (primary.start_at if primary else None), row.start_at
+    gap = abs((start - own).total_seconds()) if start and own else 0  # an undated listing: no gap, no crash
     return primary if primary and gap >= settings.night_typo_min_gap_hours * 3600 else row
 
 
 def _closeness(a: _Listing, b: _Listing) -> tuple[float, float]:
-    gap = abs((a.start - b.start).total_seconds()) if a.start and b.start else 0.0
+    sa, sb = a.start, b.start  # locals: the type checker narrows these, not attributes
+    gap = abs((sa - sb).total_seconds()) if sa and sb else 0.0
     distance = _distance_m(a, b)
     return gap, distance if distance is not None else 0.0
 

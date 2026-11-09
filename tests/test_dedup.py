@@ -93,6 +93,15 @@ def test_link_to_a_page_many_listings_share_merges_nothing(tmp_path: Path) -> No
     assert len({g for g, _ in groups.values()}) == 3
 
 
+def test_one_hall_by_name_merges_whatever_the_pins_say(tmp_path: Path) -> None:
+    _, groups = grouped(tmp_path, [
+        listing("tickchak", "a", "אורי חזקיה", venue_name="תרבותא מונגש"),
+        listing("smarticket", "b", "אורי חזקיה", venue_name="תרבותא מונגש", where=(32.25, 34.95)),  # pin ~20 km off
+        listing("pres", "c", "אורי חזקיה", venue_name="תרבותא מונגש", where=(32.25, 34.95), start=START + timedelta(hours=2)),
+    ])  # fmt: skip
+    assert groups["tickchak:a"][0] == groups["smarticket:b"][0] != groups["pres:c"][0]  # the later hour is another show
+
+
 def test_same_title_and_hour_in_another_city_stays_apart(tmp_path: Path) -> None:
     _, groups = grouped(tmp_path, [
         listing("telaviv", "1", "שעת סיפור", where=None, city="תל אביב", address=None),
