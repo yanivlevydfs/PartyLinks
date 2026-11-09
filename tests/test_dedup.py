@@ -442,3 +442,18 @@ def test_a_midnight_guess_stays_apart_from_a_longer_name_abroad(tmp_path: Path) 
         listing("zygo", "b", "Pub Crawl", start=datetime.combine(day, time(23, 30), tz), where=None, **genres),
     ])  # fmt: skip
     assert len({g for g, _ in groups.values()}) == 2
+
+
+def test_a_page_with_one_sites_wrong_hour_shows_the_agreed_listing(tmp_path: Path) -> None:
+    tz = ZoneInfo("Asia/Jerusalem")
+    day = datetime.now(tz).date() + timedelta(days=5)
+    night, typo = datetime.combine(day, time(23, 50), tz), datetime.combine(day, time(0, 50), tz)
+    genres = {"source_genres": ["psytrance"]}
+    settings, _ = grouped(tmp_path, [
+        listing("goout", "typo", "מסיבת טבע - OKAVANGO DELTA", start=typo, where=None, **genres),
+        listing("zygo", "a", "OKAVANGO DELTA", start=night, where=None, **genres),
+        listing("selector", "b", "OKAVANGO DELTA", start=night, where=None, **genres),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        assert client.get("/events/goout:typo").json()["start_at"][11:16] == "21:50"  # 23:50 in Israel, stored in UTC
+        assert "00:50" not in client.get("/events/goout:typo").json()["start_at"]

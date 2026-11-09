@@ -391,6 +391,16 @@ class Deduplicator:
         return merged, changed
 
 
+def agreed_listing(session: Session, row: EventRow, settings: DedupSettings) -> EventRow:
+    """The listing an event's page shows: a page whose hour is one site's "00:50" for the group's "23:50"
+    shows the group's own listing, so no link leads to the wrong hour."""
+    if row.is_primary or not row.group_id or row.group_id == row.id:
+        return row
+    primary = session.get(EventRow, row.group_id)
+    gap = abs((primary.start_at - row.start_at).total_seconds()) if primary else 0
+    return primary if primary and gap >= settings.night_typo_min_gap_hours * 3600 else row
+
+
 def _closeness(a: _Listing, b: _Listing) -> tuple[float, float]:
     gap = abs((a.start - b.start).total_seconds()) if a.start and b.start else 0.0
     distance = _distance_m(a, b)

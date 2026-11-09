@@ -38,6 +38,7 @@ from partylinks.artwork.service import urls as artwork_urls
 from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
 from partylinks.db import EventRow, lineup_has, open_now_filters, upcoming_filter
+from partylinks.dedup import agreed_listing
 from partylinks.event_text import blocks_html, description_layout
 from partylinks.placecards import first_opening
 from partylinks.places import all_cities
@@ -525,6 +526,7 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
         .where(or_(EventRow.id == ref, EventRow.slug == ref))
         .options(selectinload(EventRow.tickets), selectinload(EventRow.images))
     )
+    row = row and agreed_listing(session, row, cfg.dedup)
     if row is None or not is_current(row.start_at, row.end_at, cfg.retention, cfg.timezone, time_known=row.time_known):
         return None  # over but not purged yet (the nightly pass): gone all the same, never a past event's page
     t = TEXT[lang]

@@ -59,6 +59,7 @@ from partylinks.db import (
     open_now_filters,
     upcoming_filter,
 )
+from partylinks.dedup import agreed_listing
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.event_text import DescriptionLayout, description_layout
 from partylinks.holiday_pages import core as holiday_pages
@@ -1434,6 +1435,7 @@ def _register_routes(app: FastAPI) -> None:
         if row is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "event not found")
         cfg: Settings = request.app.state.settings
+        row = agreed_listing(session, row, cfg.dedup)
         if who := popularity.visitor(
             request.client.host if request.client else None, request.headers.get("user-agent", "")
         ):
