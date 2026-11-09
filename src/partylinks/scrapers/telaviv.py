@@ -5,7 +5,7 @@ through a seller. SharePoint; the page's Angular widget (EventsAndBenefitsLobby.
 event with one POST to the site's own service
 ``/_vti_bin/TlvSP2013PublicSite/TlvListUtils.svc/GetEvBenList`` (no paging: ~1000 items, ~9 MB).
 Each item is a list of ``{InternalName, Value}`` fields: title, summary, full text (``Comments``,
-plain text), start / end ("17.10.26, 10:00", local), place name, street address, picture
+plain text whose line breaks are runs of spaces), start / end ("17.10.26, 10:00", local), place name, street address, picture
 (``<img>``), fields of interest, the organising centre, paid / free ("בתשלום" / "לא בתשלום" /
 "חלק בתשלום") and the cost as free text ("35-60 ש\"ח", "25 ש''ח", "360-540"); when it only says
 "כמפורט בידיעה" / "אירוע בתשלום", the text's labelled amounts ("מחיר: 35 ש\"ח") are the price.
@@ -38,6 +38,8 @@ _SHEKEL = re.compile(r"ש[\"״']{1,2}ח|שח(?!\w)|₪|שקל")
 # A labelled amount in the text: "מחיר: 35 ש\"ח", "מחיר הקורס: 1,200 ש\"ח" (not the "100 ₪" of a refund rule).
 _LABELLED = re.compile(rf"מחיר[^\d\n]{{0,40}}?({_NUMBER.pattern})\s*(?:{_SHEKEL.pattern})")
 _AMOUNTS_ONLY = re.compile(r"[\d\s,./-]+")
+# The site's plain copy of the text turned each line break into a run of spaces (and zero-width marks).
+_BREAK = re.compile(r"[^\S\n]{3,}")
 _NO_COST = "ללא עלות"
 # Links to a ticket seller in the item's text (bit.ly and social links are not followed).
 _SELLER = re.compile(
@@ -152,8 +154,8 @@ def parse_item(v: dict[str, str], s: TelAvivSettings, timezone: str) -> ScrapedE
     seller = _SELLER.search(text)
     place = clean_str(v.get("TlvCityLocation"))
     summary = clean_str(v.get("TlvSummary"))
-    body = html_to_text(text)
-    genres = (clean_str(g) for part in v.get("TlvFieldsOfInterests", "").split(";") for g in part.split("|"))
+    body = html_to_text(_BREAK.sub("\n", text.replace("\u200b", "")))
+    genres =(clean_str(g) for part in v.get("TlvFieldsOfInterests", "").split(";") for g in part.split("|"))
     return ScrapedEvent(
         source=TelAvivScraper.name,
         # Item ids repeat across the site's two event lists.

@@ -18,6 +18,8 @@ Each page has:
 
 - **Head tags:** `<title>`, description, canonical URL, and hreflang for Hebrew and English
   (`?lang=en`).
+- **Body text:** an event's page holds its whole description in paragraphs, headings and lists
+  (`partylinks.event_text`, the same blocks the app shows); JSON-LD and meta descriptions stay short.
 - **Social previews:** Open Graph and Twitter card tags (the event artwork, or `og-default.png`)
   and local geo tags.
 - **Structured data:** schema.org JSON-LD: `MusicEvent` / `Event` with offers, place, performers

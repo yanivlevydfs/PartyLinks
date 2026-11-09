@@ -28,6 +28,7 @@ from partylinks.artist_links.config import ArtistLinksSettings
 from partylinks.bot.config import BotSettings
 from partylinks.config_store.source import OverridesSource
 from partylinks.evening.config import EveningSettings
+from partylinks.event_text.config import EventTextSettings
 from partylinks.holiday_pages.config import HolidayPagesSettings
 from partylinks.lines.config import LinesSettings
 from partylinks.mail.config import MailSettings
@@ -656,6 +657,7 @@ class Settings(BaseSettings):
     popularity: PopularitySettings = Field(default_factory=PopularitySettings)  # likes / views / watching now
     smart_rails: SmartRailsSettings = Field(default_factory=SmartRailsSettings)  # home rows (partylinks.smartrails)
     evening: EveningSettings = Field(default_factory=EveningSettings)  # plan the evening (partylinks.evening)
+    event_text: EventTextSettings = Field(default_factory=EventTextSettings)  # how a description reads (partylinks.event_text)
     holiday_pages: HolidayPagesSettings = Field(default_factory=HolidayPagesSettings)  # partylinks.holiday_pages
     lines: LinesSettings = Field(default_factory=LinesSettings)  # weekly lines (partylinks.lines)
     similar: SimilarSettings = Field(default_factory=SimilarSettings)  # artists like an artist (partylinks.similar)

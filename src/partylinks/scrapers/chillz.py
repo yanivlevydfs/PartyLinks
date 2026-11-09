@@ -220,13 +220,14 @@ def parse_page(page_html: str, url: str, default_tz: str) -> ScrapedEvent | None
     priced = [t.price for t in tickets if t.price is not None and t.is_active]
     og_node = tree.css_first('meta[property="og:image"]')
     og_image = og_node.attributes.get("content") if og_node else None
+    prose = tree.css_first(".prose")  # the JSON-LD's text stops at 200 characters and has no lines
 
     return ScrapedEvent(
         source=ChillzScraper.name,
         source_event_id=urlparse(url).path.rstrip("/").rsplit("/", 1)[-1],
         url=url,
         title=clean_str(event.get("name")) or "",
-        description=html_to_text(event.get("description")),
+        description=(html_to_text(prose.html) if prose else None) or html_to_text(event.get("description")),
         start_at=parse_iso(event.get("startDate"), default_tz),
         time_known=has_time(event.get("startDate")),
         end_at=parse_iso(event.get("endDate"), default_tz),

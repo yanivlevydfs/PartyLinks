@@ -23,9 +23,10 @@ from urllib.parse import urljoin
 
 import httpx
 from pydantic import Field
+from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, jsonld_nodes, schema_types, zone
+from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, schema_types, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.chillz import EVENT_TYPES, parse_page
 
@@ -153,9 +154,12 @@ def parse_event(page_html: str, url: str, default_tz: str) -> ScrapedEvent | Non
     age_range = clean_str(node.get("typicalAgeRange"))  # "18+", "4+", or a kids' range "2-8"
     min_age = re.fullmatch(r"(\d+)\+", age_range or "")
     data = event.model_dump()
+    # The JSON-LD flattens the text; the page shows it in paragraphs (the longest block in the reading font).
+    texts = LexborHTMLParser(page_html).css(".font-reading")
     data.update(
         source=OgoScraper.name,
         source_event_id=match.group(7),
+        description=(html_to_text(max(texts, key=lambda n: len(n.text())).html) if texts else None) or event.description,
         end_at=end,
         # streetAddress already ends with the city, in English ("(Nagler House) Ben-Zvi Yitzchak St 14, Haifa").
         address=clean_str(address.get("streetAddress")),

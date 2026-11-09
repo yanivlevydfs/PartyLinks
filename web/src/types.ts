@@ -68,6 +68,21 @@ export interface EventSummary {
   group_free_entry_until?: string | null;
 }
 
+export interface TextBlock {
+  kind: "p" | "h" | "ul";
+  dir: "rtl" | "ltr";
+  text: string;
+  items: string[];
+  /** A list whose lines open with their own mark (emoji, a name): no bullets. */
+  plain: boolean;
+}
+
+export interface DescriptionLayout {
+  blocks: TextBlock[];
+  /** Long enough to open behind "read more". */
+  collapse: boolean;
+}
+
 export interface Ticket {
   source_ticket_id: string | null;
   name: string;
@@ -98,6 +113,8 @@ export interface EventImage {
 export interface EventDetail extends EventSummary {
   /** Lineup name -> its music / social links (artist_links); names without links left out. */
   lineup_links?: Record<string, { service: string; url: string }[]>;
+  /** The description in paragraphs, headings and lists (partylinks.event_text). */
+  description_layout?: DescriptionLayout | null;
   description: string | null;
   organizer: string | null;
   /** extra.resale: this listing itself is second-hand. */

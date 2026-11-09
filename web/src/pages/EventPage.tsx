@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { SaveAlertButton } from "../alerts/SaveAlertButton";
 import { useAlertText } from "../alerts/i18n";
@@ -8,20 +7,11 @@ import type { Ticket } from "../types";
 import { forecastAt, Weather } from "../Weather";
 import { PlanButton } from "../plans/PlanButton";
 import { EveningPlan } from "../evening/EveningPlan";
+import { EventText } from "../event_text/EventText";
 import { SaveButton } from "../saved/SaveButton";
 import { EventStats } from "../popularity/EventStats";
 import { LineupPlayer } from "../artist_links/ArtistPlayer";
 import { AddToCalendar, countryName, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
-
-// URLs in scraped description text become links; trailing punctuation stays text.
-function linkify(text: string) {
-  return text.split(/((?:https?:\/\/|www\.)[^\s<>"]+)/g).flatMap((part, i) => {
-    if (i % 2 === 0) return part;
-    const url = part.replace(/[.,;:!?)\]}'"…]+$/, "");
-    const href = url.startsWith("www.") ? `https://${url}` : url;
-    return [<a key={i} href={href} target="_blank" rel="noopener noreferrer nofollow">{url}</a>, part.slice(url.length)];
-  });
-}
 
 export default function EventPage() {
   const { id = "" } = useParams();
@@ -30,7 +20,6 @@ export default function EventPage() {
   const { data: e, error, isError, isPending } = useEvent(id);
   useTitle(e?.title);
   const back = () => (history.state?.idx > 0 ? navigate(-1) : navigate("/"));
-  const [more, setMore] = useState(false);
   const alertText = useAlertText();
 
   if (isError && isGone(error)) {
@@ -65,7 +54,6 @@ export default function EventPage() {
   const cheapest = firsthand.filter((a) => !a.is_sold_out && a.min_price != null && (e.min_price == null || a.min_price < e.min_price))
     .sort((a, b) => a.min_price! - b.min_price!)[0]?.id;
   const time = { hour: "2-digit", minute: "2-digit" } as const;
-  const long = (e.description?.length ?? 0) > 400;
 
   return (
     <article className="event">
@@ -173,12 +161,10 @@ export default function EventPage() {
 
         <EveningPlan eventId={e.id} />
 
-        {e.description && (
+        {e.description_layout && (
           <section>
             <h4>{t.about}</h4>
-            {/* Phones show the opening lines; the rest opens on request. */}
-            <p className={"desc" + (long && !more ? " clamp" : "")}>{linkify(e.description)}</p>
-            {long && !more && <button className="desc-more" onClick={() => setMore(true)}>{t.readMore}</button>}
+            <EventText layout={e.description_layout} />
           </section>
         )}
 

@@ -81,8 +81,11 @@ def html_to_text(value: str | None) -> str | None:
         return None
     markup = html.unescape(value) if "&lt;" in value else value
     tree = LexborHTMLParser(f"<div>{markup}</div>")
+    tree.strip_tags(["script", "style"])  # code, not text (Herzliya's calendar script, easytix's CSS)
     for br in tree.css("br"):
         br.replace_with("\n")
+    for item in tree.css("li"):
+        item.insert_before("• ")  # still a list in plain text (partylinks.event_text lays it out)
     for block in tree.css("p, div, h1, h2, h3, h4, h5, h6, li"):
         block.insert_after("\n")
     return tidy_text(tree.body.text(separator="") if tree.body else markup, markup=False)

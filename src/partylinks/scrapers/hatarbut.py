@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from pydantic import Field
+from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import (
@@ -134,6 +135,16 @@ def seller_tiers(page_html: str) -> list[TicketTier]:
     return tiers
 
 
+def _full_text(page: str, teaser: str) -> str | None:
+    """The calendar cuts the text ("..."); the show page's editor block holding the teaser's end has it all."""
+    end = " ".join(teaser.rstrip(".… ").split())[-40:]
+    for node in LexborHTMLParser(page).css(".elementor-widget-text-editor"):
+        text = html_to_text(node.html)
+        if text and end in " ".join(text.split()):
+            return text
+    return None
+
+
 def parse_row(row: dict[str, Any], page: str | None, s: HatarbutSettings, source: str, timezone: str) -> ScrapedEvent:
     """One performance of the calendar JSON; ``page`` is its show page (seller link, artwork) if fetched."""
     url, start = clean_str(row.get("url")), parse_iso(row.get("start"), timezone)
@@ -149,7 +160,8 @@ def parse_row(row: dict[str, Any], page: str | None, s: HatarbutSettings, source
     hall = _HALL.search(raw)
     body = raw.partition("</br></br>")[2] or raw
     description = html_to_text(_BOILERPLATE_END.split(body, 1)[-1])
-    buy = _BUY.search(page) if page else None
+    description = (_full_text(page, description) if page and description else None) or description
+    buy =_BUY.search(page) if page else None
     image = og_image(page) if page else None
     extra = {
         "purchase_url": html.unescape(buy.group(1)) if buy else None,

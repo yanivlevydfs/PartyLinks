@@ -169,6 +169,16 @@ smart_rails:
   outdoor_max_c: 32
   outdoor_genres: [nature_party, pool_party, pools, festival, markets, tours, happy_hour, food]
 
+# How an event's description is laid out (src/partylinks/event_text): the app's page and the server-rendered one.
+event_text:
+  long_line_chars: 600    # a single line longer than this lost its source's breaks: cut into paragraphs...
+  paragraph_chars: 380    # ...of about this size, always between sentences
+  tight_line_chars: 110   # adjacent lines this short stay stacked in one paragraph (a date, a place)
+  heading_chars: 70       # a line this short ending in ":" or "?" heads the text under it
+  list_min_items: 3       # this many lines in a row opening alike (emoji, "name: ...") read as a list
+  ltr_block_chars: 60     # Latin text this long inside a Hebrew description runs left to right
+  collapse_chars: 1800    # longer descriptions open behind "read more"; all of it stays in the page
+
 # Plan the evening on an event's page (src/partylinks/evening): places within walk_m of the event open in each
 # step's window (before it starts / after it ends), nearest first, and the place's other listings this week.
 evening:

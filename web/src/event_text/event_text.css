@@ -1,0 +1,39 @@
+/* An event's description: a calm reading column on the neon page. */
+.etext-card {
+  max-width: 800px; padding: 24px 28px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); backdrop-filter: blur(8px);
+}
+.etext {
+  color: #ddd3f5; font-size: 17px; line-height: 1.75;
+  overflow-wrap: break-word; text-wrap: pretty;
+}
+.etext > :first-child { margin-top: 0; }
+.etext > :last-child { margin-bottom: 0; }
+.etext p { margin: 0 0 1em; white-space: pre-line; }
+.etext h5 { margin: 1.6em 0 .55em; font: 700 19px/1.35 var(--display); color: var(--text); }
+.etext ul { margin: 0 0 1.1em; padding: 0; list-style: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: .55em; }
+.etext li { position: relative; padding-inline-start: 1.1em; }
+.etext li::before { content: ""; position: absolute; inset-inline-start: .15em; top: .68em; width: 6px; height: 6px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 8px rgb(255 46 147 / .7); }
+.etext ul.plain li { padding-inline-start: 0; }
+.etext ul.plain li::before { content: none; }
+.etext b { color: var(--text); font-weight: 700; }
+.etext a { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.etext-url { display: inline-block; max-width: min(34ch, 85%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.etext.shut {
+  max-height: 26em; overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 72%, transparent); mask-image: linear-gradient(#000 72%, transparent);
+}
+.etext-more {
+  display: inline-block; margin-top: 14px; padding: 8px 18px; cursor: pointer;
+  background: none; border: 1px solid var(--line-hot); border-radius: 999px;
+  color: var(--text); font: 700 14px/1.4 var(--display);
+  transition: box-shadow .2s, border-color .2s;
+}
+.etext-more:hover, .etext-more:focus-visible { border-color: var(--pink); box-shadow: 0 0 18px rgb(255 46 147 / .45); }
+
+@media (max-width: 720px) {
+  .etext-card { padding: 16px; border-radius: 14px; }
+  .etext { font-size: 16px; line-height: 1.7; }
+  .etext h5 { font-size: 17px; }
+  .etext.shut { max-height: 22em; }
+}

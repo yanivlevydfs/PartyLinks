@@ -315,7 +315,8 @@ def _detail(page: LexborHTMLParser, base: str, tz: Any) -> dict[str, Any]:
     """What an event page adds: description, image, place, tickets, and the date when unlisted."""
     content = page.css_first("#event-page-content .rich-content") or page.css_first(".rich-content")
     paragraphs = [] if content else (page.css_first(".page-content-body") or page.css_first("main") or page).css("p")
-    body = content.html if content else "".join(p.html or "" for p in paragraphs if len(_text(p)) > 20)
+    # Not the "add to calendar" paragraph (Herzliya's page: its widget's dates, zone and place).
+    body = content.html if content else "".join(p.html or "" for p in paragraphs if len(_text(p)) > 20 and not p.css_first(".addtocalendar"))
     pic = page.css_first(".event-item-pic img")
     bg = page.css_first(".event-item-pic .pic")
     og = page.css_first('meta[property="og:image"]')

@@ -47,6 +47,7 @@ the Resend key, the Telegram bot token and webhook secret) belong in variables o
 | `dedup` | Rules for grouping duplicate listings |
 | `geocoding` | Nominatim settings and manual venue pins (`venues`: keyword matched inside "venue \| address" -> [lat, lon], from OSM only; ~110 pins, for halls OSM doesn't know by the sellers' names) |
 | `retention` | Purge schedule, in-progress window, run-history age, `max_future_days` (730: a start further ahead is a broken date, never imported, hidden, purged) |
+| `event_text` | How a description is laid out on the event page and the server-rendered page: `long_line_chars`, `paragraph_chars` (a flat text cut into paragraphs, between sentences), `tight_line_chars`, `heading_chars`, `list_min_items`, `ltr_block_chars`, `collapse_chars` (longer opens behind "read more", all of it stays in the page) |
 | `popularity` | Likes / views / watching now: `watching_minutes` (5), `min_watching` (2: the reader counts too), `keep_days` (365, view rows) |
 | `media` | Download artwork or not, store in the DB or on disk, size and type limits, WebP copies (`webp_quality`, default 78; `variant_threads`, default 2, 0 = no backfill of older files) |
 | `sources` | One block per source (see below) |

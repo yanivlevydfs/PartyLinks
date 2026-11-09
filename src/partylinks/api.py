@@ -60,6 +60,7 @@ from partylinks.db import (
     upcoming_filter,
 )
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
+from partylinks.event_text import DescriptionLayout, description_layout
 from partylinks.holiday_pages import core as holiday_pages
 from partylinks.holiday_pages.routes import HolidayOut
 from partylinks.lines.weekly import weekly as lines_weekly
@@ -302,6 +303,7 @@ class EventOut(EventSummaryOut):
     watching: int = 0  # visitors on its page in the last few minutes (0 below popularity.min_watching)
     # Lineup name -> its music / social links [{service, url}] (partylinks.artist_links); names without links left out.
     lineup_links: dict[str, list[dict[str, str]]] = {}
+    description_layout: DescriptionLayout | None = None  # the description in paragraphs, headings, lists
 
 
 class EventPage(BaseModel):
@@ -1467,6 +1469,7 @@ def _register_routes(app: FastAPI) -> None:
                 **_summary_extras(session, [row])[row.id],
                 "watching": popularity.watching(session, row.id, cfg.popularity),
                 "lineup_links": artist_links_for(session, cfg.artist_links, row.lineup or []),
+                "description_layout": description_layout(row.description, cfg.event_text),
             }
         )
 
