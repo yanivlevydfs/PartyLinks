@@ -230,9 +230,9 @@ weekly_top:
   rising_days: 7          # rising genres: events first listed this recently
   rising_limit: 6
 
-# Hours, booking links and photos of places (src/partylinks/placeinfo): a daily worker pass reads Ontopo's
-# venue pages from its public sitemap (new, changed or stale only), ties each place to one venue, stores
-# its photos as WebP, and reads own websites' JSON-LD for places still missing hours or a phone. Defaults
+# Hours and booking links of places (src/partylinks/placeinfo): a daily worker pass reads Ontopo's
+# venue pages from its public sitemap (new, changed or stale only), ties each place to one venue, and
+# reads own websites' JSON-LD for places still missing hours or a phone. Defaults
 # in placeinfo/config.py; the admin's config tab overrides any of them.
 place_info:
   enabled: true
@@ -244,7 +244,6 @@ place_info:
   name_similarity: 0.85
   phone_radius_m: 300          # a phone also needs a name that sounds alike: restaurateurs share one
   sound_similarity: 0.7
-  photos: 4
 
 # Artists' music / social links (src/partylinks/artist_links), found automatically on MusicBrainz for
 # lineup artists with upcoming shows (most shows first) and shown on the artist and event pages, merged with
@@ -1947,6 +1946,7 @@ sources:
       - {host: ksaba, venue_name: היכל התרבות כפר סבא, city: כפר סבא}
       - {host: hoh-herzliya, venue_name: היכל אמנויות הבמה הרצליה, city: הרצליה}
       - {host: herzliya, venue_name: עיריית הרצליה, city: הרצליה}
+      - {host: www.heichalbair.co.il, venue_name: היכל בעיר, city: הרצליה}
       - {host: aluma, venue_name: עלומה הוד השרון, city: הוד השרון}
       - {host: ramathasharon, venue_name: רמת השרון, city: רמת השרון}
       - {host: netanya, venue_name: היכל התרבות נתניה, city: נתניה}
@@ -2159,6 +2159,24 @@ sources:
       - {host: yoav, venue_name: מועצה אזורית יואב, city: מועצה אזורית יואב, category: קהילה}  # shows in the villages: the hall names the village
       - {host: lev-hasharon, venue_name: מועצה אזורית לב השרון, city: מועצה אזורית לב השרון, category: קהילה}
       - {host: rgma, venue_name: מוזיאון רמת גן לאמנות ישראלית, city: רמת גן, rooms: true, skip_categories: ["כרטיסי כניסה"], category: אמנות}
+      # Found Nov 2026 through other sites' ticket links; no city where the site does not say which town.
+      - {host: shows.org.il, venue_name: היכל התרבות מודיעין, city: מודיעין}
+      - {host: htk.co.il, venue_name: היכל התרבות כרמיאל, city: כרמיאל}
+      - {host: mishkan.raanana.muni.il, venue_name: המשכן למוסיקה ואמנויות רעננה, city: רעננה, rooms: true}
+      - {host: tarbutiberias.co.il, venue_name: היכל התרבות טבריה, city: טבריה, skip_title_words: ["תשלום", "קורס"]}
+      - {host: htc, venue_name: היכל התרבות חוף הכרמל, rooms: true}
+      - {host: weilcenter, venue_name: מרכז וייל, city: כפר שמריהו, rooms: true}
+      - {host: matnasbs, venue_name: המרכזים הקהילתיים באר שבע, city: באר שבע, skip_title_words: ["קורס", "חוג", "בדיקות", "דוכנים", "שיעור ניסיון"]}
+      - {host: matnaskazrin, venue_name: היכל התרבות קצרין, city: קצרין, skip_title_words: ["ייעוץ"]}
+      - {host: jaffacinema, venue_name: קולנוע יפו, city: תל אביב-יפו, rooms: true, category: קולנוע}
+      - {host: tickets.nalagaat.org.il, venue_name: מרכז נא לגעת, city: תל אביב-יפו, rooms: true, skip_title_words: ["קורס"]}
+      - {host: psefas-matnasim, venue_name: רשת המרכזים הקהילתיים פסיפס, skip_title_words: ["כרטיסיי", "פעילויות בית לגדול"]}
+      - {host: matnas-ramla.co.il, venue_name: היכל התרבות רמלה, city: רמלה, rooms: true}
+      - {host: shelanu-kids, venue_name: התיאטרון שלנו}
+      - {host: ngvth, venue_name: בית הספר לתיאטרון חזותי}
+      - {host: alumim, venue_name: עלומים סביון, city: סביון, rooms: true, skip_title_words: ["חוג", "ליווי"]}
+      - {host: tzur-hadassa, venue_name: "מתנ\"ס צור הדסה", city: צור הדסה, rooms: true}
+      - {host: matnasky, venue_name: "מתנ\"ס קריית ים", city: קריית ים}
 
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
