@@ -47,6 +47,9 @@ class EventProSite(BaseModel):
     localities: list[str] = Field(default_factory=list)
     # Category pages whose events get the category's name as a genre: {13391: ילדים}.
     categories: dict[int, str] = Field(default_factory=dict)
+    # The hall is the venue and the place its street (libraries). Elsewhere the hall is a room
+    # ("אודיטוריום") and the place names the building.
+    hall_is_venue: bool = False
 
 
 class EventProSettings(SourceSettings):
@@ -187,6 +190,11 @@ def add_details(event: ScrapedEvent, page_html: str, site: EventProSite) -> Scra
     if place:
         event.venue_name = place
         event.city = _place_city(place, site)
+    # "אולם: מדיה-טק העיר", "מיקום: שד' בנימין 60 נתניה" (sifrianet): the hall names the venue, the
+    # place is its street.
+    hall = clean_place(_value(tree, "ProductHall")) if site.hall_is_venue else None
+    if hall and place and hall != place:
+        event.venue_name, event.address = hall, place
     desc = tree.css_first(".productBlock.productShortDes .value")
     if desc:
         # Without the site's own links ("פעילות ילדים בעמק חפר >>"): not this event's words.

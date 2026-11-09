@@ -62,3 +62,29 @@ def test_event_page_gives_place_locality_and_description() -> None:
 def test_listing_url_pages_and_home() -> None:
     assert listing_url(HEFER, 17).endswith("sbs.taf?_id=13396&sm=&g=13396&did=4547&_startPRO4=17")
     assert listing_url(DN, 1) == "https://www.matnasdn.co.il/"
+
+
+SIFRIANET = EventProSite(
+    url="https://www.sifrianet.org.il",
+    did=1124,
+    listing_id=10953,
+    name="רשת הספריות העירוניות נתניה",
+    city="נתניה",
+    hall_is_venue=True,
+)
+
+
+def test_library_hall_is_the_venue_and_place_its_street() -> None:
+    (event,) = [
+        e
+        for e in parse_listing(_read("sifrianet_listing.html"), SIFRIANET, TZ, [])
+        if e.source_event_id == "1124:46584"
+    ]
+    assert event.start_at is not None and event.start_at.isoformat() == "2026-11-12T20:00:00+02:00"
+    assert event.min_price == Decimal(45)
+    event = add_details(event, _read("sifrianet_show.html"), SIFRIANET)
+    assert event.venue_name == "מדיה-טק העיר"
+    assert event.address == "שד' בנימין 60 נתניה" and event.city == "נתניה"
+    # A community centre's hall is a room of the place: the place stays the venue.
+    other = add_details(event.model_copy(update={"address": None}), _read("sifrianet_show.html"), DN)
+    assert other.venue_name == "שד' בנימין 60 נתניה" and other.address is None

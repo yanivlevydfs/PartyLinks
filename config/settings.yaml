@@ -3563,8 +3563,8 @@ sources:
       - {url: https://hasifriya.hod-hasharon.muni.il, did: 1123, listing_id: 14314, name: הספרייה העירונית הוד השרון, city: הוד השרון}
       # Netanya's library network (sifrianet.org.il): adults' lectures and shows, and children's story
       # hours and workshops, are two listings with no event in common, so the site comes twice.
-      - {url: https://www.sifrianet.org.il, did: 1124, listing_id: 10953, name: רשת הספריות העירוניות נתניה, city: נתניה}
-      - {url: https://www.sifrianet.org.il, did: 1124, listing_id: 10955, name: רשת הספריות העירוניות נתניה, city: נתניה, categories: {10955: ילדים}}
+      - {url: https://www.sifrianet.org.il, did: 1124, listing_id: 10953, name: רשת הספריות העירוניות נתניה, city: נתניה, hall_is_venue: true}
+      - {url: https://www.sifrianet.org.il, did: 1124, listing_id: 10955, name: רשת הספריות העירוניות נתניה, city: נתניה, hall_is_venue: true, categories: {10955: ילדים}}
     skip_title_words: ["קורס", "קתדרה", "מכון ", "מנוי", "מועדון קריאה", "תכנית ל", "COACH CLUB", "מפגשי אימהות", "בוקר אמאבא", "הגנה עצמית", "מסע ביג", "מספרי עדות", "הסתבכתם", "כנס ", "סדנת כלבנות", "סדנת איור", "דרוש", "חוגים", "אירועי תרבות 20", "צהרונים", "ערב גיבוש", "מועדון יולדות", "משחק הורה וילד", "בייבי דייט", "עיסוי תינוקות", "פיצי כיצי", "פילאטיס", "יום פתוח", "ימים פתוחים", "ישיבת", "סמינר", "קהילה מטיילת", "מתחם עסקים", "שביל ישראל", "סדרת סדנאות", "סדרת הרצאות", "חוג ", "שיעורי כושר", "קבוצת אומנות", "קול קורא", "חמישי שלנו", "ליווי התפתחותי", "בחופשת לידה", "מסע לפולין", "writing series", "כלים לדייט"]
     http:
       concurrency: 2
