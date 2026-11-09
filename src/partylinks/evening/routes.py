@@ -28,6 +28,8 @@ class StepOut(BaseModel):
 class EveningOut(BaseModel):
     steps: list[StepOut] = []
     venue: list[EventSummaryOut] = []  # the same place's other listings this week
+    # The budget toggle's cap: the page shows it only when a stop costs more (else it changes nothing).
+    budget_max_level: int = 2
 
 
 def evening_for(session: Session, cfg: Settings, ref: str, budget: bool = False) -> EveningOut | None:
@@ -44,6 +46,7 @@ def evening_for(session: Session, cfg: Settings, ref: str, budget: bool = False)
     return EveningOut(
         steps=[StepOut(key=s.key, stops=[StopOut(event=card(r), distance_m=d) for r, d in s.items]) for s in found.steps],
         venue=[card(r) for r in found.venue],
+        budget_max_level=cfg.evening.budget_max_level,
     )
 
 

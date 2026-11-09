@@ -11,19 +11,20 @@ import type { Lang } from "../i18n";
 interface Evening {
   steps: { key: string; stops: { event: EventSummary; distance_m: number }[] }[];
   venue: EventSummary[];
+  budget_max_level: number;
 }
 
-const TEXT: Record<Lang, { title: string; venue: string; budget: string; steps: Record<string, string>; m: (n: number) => string }> = {
+const TEXT: Record<Lang, { title: string; venue: string; budget: (cap: string) => string; steps: Record<string, string>; m: (n: number) => string }> = {
   he: {
     title: "🗺️ תכננו את הערב",
-    budget: "💸 ערב בתקציב",
+    budget: (cap) => `💸 רק מקומות זולים (עד ${cap})`,
     venue: "📅 השבוע במקום",
     steps: { drinks: "🥂 לפני: האפי האוור קרוב", dinner: "🍽️ לפני: ארוחה טובה", morning: "☕ אחרי: קפה של בוקר" },
     m: (n) => (n < 1000 ? `${n} מ׳` : `${(n / 1000).toFixed(1)} ק״מ`),
   },
   en: {
     title: "🗺️ Plan the evening",
-    budget: "💸 On a budget",
+    budget: (cap) => `💸 Cheap places only (up to ${cap})`,
     venue: "📅 This week at the place",
     steps: { drinks: "🥂 Before: a happy hour nearby", dinner: "🍽️ Before: a good dinner", morning: "☕ After: morning coffee" },
     m: (n) => (n < 1000 ? `${n} m` : `${(n / 1000).toFixed(1)} km`),
@@ -63,14 +64,18 @@ export function EveningPlan({ eventId }: { eventId: string }) {
     placeholderData: (prev) => prev, // the toggle keeps the plan on screen while the other one loads
   });
   if (!data || (!data.steps.length && !data.venue.length && !budget)) return null;
+  // Off, the toggle is offered only when a stop costs more than the cap: otherwise it would change nothing.
+  const pricey = data.steps.some((s) => s.stops.some((x) => (x.event.price_level ?? 0) > data.budget_max_level));
   return (
     <>
       {(data.steps.length > 0 || budget) && (
         <section className="evening">
           <h4>{p.title}</h4>
-          <button className={"chip toggle" + (budget ? " on" : "")} aria-pressed={budget} onClick={() => setBudget(!budget)}>
-            <span className="tick" aria-hidden /> {p.budget}
-          </button>
+          {(budget || pricey) && (
+            <button className={"chip toggle" + (budget ? " on" : "")} aria-pressed={budget} onClick={() => setBudget(!budget)}>
+              <span className="tick" aria-hidden /> {p.budget("₪".repeat(data.budget_max_level))}
+            </button>
+          )}
           {data.steps.map((s) => (
             <div key={s.key} className="evening-step">
               <h5>{p.steps[s.key] ?? s.key}</h5>
