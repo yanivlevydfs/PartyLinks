@@ -447,3 +447,20 @@ def test_social_profile_is_never_a_purchase_link() -> None:
     seller = ENRICHER.enrich(make(extra={"purchase_url": "https://live.tickchak.co.il/e/1"}))
     assert post is not None and "purchase_url" not in post.extra
     assert seller is not None and seller.extra["purchase_url"] == "https://live.tickchak.co.il/e/1"
+
+
+def test_a_synopsis_in_the_venue_field_is_no_venue() -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from partylinks.config import Settings
+    from partylinks.enrichment import Enricher
+    from partylinks.models import ScrapedEvent
+
+    settings = Settings(scheduler={"enabled": False})
+    event = ScrapedEvent(
+        source="makore", source_event_id="x", url="https://makore.example/x", title="ראשון + סרט: תרקדי איתי",
+        start_at=datetime.now(UTC) + timedelta(days=2), city="הוד השרון",
+        venue_name="ראשון פלוס סרט: תרקדי איתי " + "טוני הוא נהג הסעות של בית ספר יסודי בפרבר צרפתי מנומנם, " * 4,
+    )
+    enriched = Enricher(settings.enrichment, settings.timezone).enrich(event)
+    assert enriched is not None and enriched.venue_name is None

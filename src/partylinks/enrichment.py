@@ -314,6 +314,8 @@ class Enricher:
             for t in event.tickets
         ) or bool(self._coupon and self._coupon.search((event.description or "").lower()))
         self._categorize_time(event)
+        if event.venue_name and len(event.venue_name) > self.settings.venue_name_max_chars:  # Makore's film synopsis
+            event.venue_name = None
         event.city = self.canonical_city(event.city, event.address, event.venue_name)
         if event.city and event.country and event.country != UNKNOWN_COUNTRY:  # "ברלין, גרמניה" -> "ברלין"
             event.city = city_name(event.city, event.country)

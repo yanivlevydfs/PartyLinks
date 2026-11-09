@@ -304,6 +304,8 @@ class EnrichmentSettings(BaseModel):
     places_min_population: int = Field(2000, ge=0)
     # A venue name whose events span more than this (degrees, ~100 m) is no one place: it ties no names together.
     venue_max_spread_degrees: float = 0.001
+    # A venue name longer than this is a description a site put in the place field: no venue (and no geocoding).
+    venue_name_max_chars: int = Field(130, ge=10)
     # Words a city field puts before the locality's name ("קיבוץ יגור", "מועצה אזורית גדרות"): dropped.
     city_prefixes: list[str] = Field(default_factory=list)
     # City fields that name no city ("ישראל"): no city.
