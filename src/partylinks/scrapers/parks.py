@@ -58,6 +58,8 @@ class ParksSettings(SourceSettings):
     free_price: str = "ללא תשלום"
     # Kinds that are no event: a visit on your own or with an audio guide, open every day (~3,000 dates).
     skip_kinds: list[str] = Field(default_factory=lambda: ["פעילות עצמאית", "מדריך קולי"])
+    # The same visits when the activity names no kind ("המדריך הקולי Trip-Talk"): by the board title.
+    skip_title_words: list[str] = Field(default_factory=lambda: ["מדריך הקולי", "מדריך קולי", "trip-talk", "trip talk"])
 
 
 class ParksScraper(BaseScraper[ParksSettings]):
@@ -73,6 +75,7 @@ class ParksScraper(BaseScraper[ParksSettings]):
             i for i in board.values()
             if isinstance(i, dict) and (cf := clean_str(i.get("chackfront_id")))
             and not set(activities.get(cf, {}).get("kinds", [])) & set(s.skip_kinds)
+            and not any(w in (clean_str(i.get("title")) or "").lower() for w in s.skip_title_words)
         ]  # fmt: skip
         today = datetime.now(zone(self.timezone)).date()
         months = [_month(today, n) for n in range(s.months_ahead)]
