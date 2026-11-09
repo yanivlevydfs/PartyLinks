@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, date
 from decimal import Decimal
 from pathlib import Path
 
+from partylinks.config import Settings
+from partylinks.enrichment import Enricher
 from partylinks.scrapers.makore import listing_total, parse_item, parse_listing
 
 TZ = "Asia/Jerusalem"
@@ -21,7 +24,7 @@ def test_item_venue_coordinates_and_box_office() -> None:
     items = parse_listing(PAGE)
     e = parse_item(items[1], "חיי-לילה", TZ)
     assert e is not None and e.source_event_id == "32f2147b" and e.title == "רייב קריאה"
-    assert e.start_at is not None and e.start_at.isoformat() == "2026-10-21T17:00:00+00:00"
+    assert e.start_at is not None and e.start_at.astimezone(UTC).isoformat() == "2026-10-21T17:00:00+00:00"
     assert (e.venue_name, e.address, e.city) == (
         "בית רדיקל",
         "התחייה 27",
@@ -39,6 +42,13 @@ def test_midnight_means_the_site_has_the_date_only() -> None:
     assert guess is not None and guess.time_known is False
     real = parse_item(item | {"startDate": "2026-11-20T20:00:00Z"}, "חיי-לילה", TZ)
     assert real is not None and real.time_known is True
+    # Enrichment keeps it, on the right day: it reads the hour off start_at as given.
+    settings = Settings()
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    enricher._categorize_time(guess)
+    assert guess.time_known is False and guess.local_date == date(2026, 11, 21)
+    enricher._categorize_time(real)
+    assert real.time_known is True and real.local_date == date(2026, 11, 20)
 
 
 def test_place_without_address_and_cancelled_event() -> None:

@@ -163,6 +163,8 @@ def parse_item(item: dict[str, Any], category: str, timezone: str) -> ScrapedEve
     )
     if not found or not title or not start:
         raise ParseError(f"{url or '?'}: item without id, name or start")
+    # In UTC, "00:00 here" reads 22:00: enrichment would take that for an hour and show 00:00 after all.
+    start = start.astimezone(zone(timezone))
     location = item.get("location") if isinstance(item.get("location"), dict) else {}
     address = location.get("address") if isinstance(location.get("address"), dict) else None
     geo = location.get("geo") if isinstance(location.get("geo"), dict) else {}
@@ -182,7 +184,7 @@ def parse_item(item: dict[str, Any], category: str, timezone: str) -> ScrapedEve
         description=html_to_text(item.get("description")),
         start_at=start,
         # A workshop at "00:00": the site's way of saying it has the date only (~300 of ~21,000, Nov 2026).
-        time_known=has_time(item.get("startDate")) and start.astimezone(zone(timezone)).time() != time(0),
+        time_known=has_time(item.get("startDate")) and start.time() != time(0),
         end_at=parse_iso(item.get("endDate"), timezone),
         venue_name=venue,
         address=clean_str((address or {}).get("streetAddress")),
