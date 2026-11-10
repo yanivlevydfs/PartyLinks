@@ -35,13 +35,14 @@ from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, html_to_text, to_decimal, to_int
 from partylinks.places import PlaceIndex, all_cities
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.text_prices import text_tickets
 
 UNKNOWN_TENANT = "לא נמצאה מערכת"
 # Free-text reasons a venue gives when a performance cannot be booked online.
 _CANCELLED = re.compile(r"לא\s+תתקיים|בוטל|נדחה")
 _SOLD_OUT = re.compile(r"אזל")
 _SOON = re.compile(r"בקרוב|טרם\s+נפתח|תהיה\s+זמינה")
-_FREE = re.compile(r"הכניסה\s+חופשית|ללא\s+עלות")
+_FREE = re.compile(r"כניסה\s+חופשית|ללא\s+(?:עלות|תשלום)|לא\s+בתשלום")  # "האירוע לא בתשלום, ..."
 # A hall named "מפגש ב-ZOOM": an online meeting, skipped like every source's online events.
 _ONLINE = re.compile(r"\bzoom\b|זום", re.IGNORECASE)
 CALENDAR_WINDOW = timedelta(days=182)
@@ -204,8 +205,12 @@ def parse_event(
         for p in performance.get("pricelist") or []
         if isinstance(p, dict)
     ]
-    if not tickets and message and _FREE.search(message):
-        tickets = [TicketTier(name="כניסה חופשית", price=to_decimal(0), is_free=True, status=status)]
+    if not tickets and message:  # no price list: the venue's note may say the price or free entry
+        tickets = text_tickets(message) or (
+            [TicketTier(name="כניסה חופשית", price=to_decimal(0), is_free=True)] if _FREE.search(message) else []
+        )
+        for tier in tickets:
+            tier.status = status
     prices = [t.price for t in tickets if t.price is not None]
 
     host = tenant_host(tenant.host, s.tenant_domain)

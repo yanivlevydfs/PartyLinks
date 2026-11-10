@@ -69,6 +69,19 @@ def test_unbookable_without_tickets_or_message_is_sold_out() -> None:
     assert elsewhere is not None and not elsewhere.is_sold_out
 
 
+def test_venue_note_gives_free_entry_or_price() -> None:
+    """No price list: the venue's note is the price ("כניסה חופשית" - htbeithaam, tcj, ramat-gan, Nov 2026)."""
+    show, performance = iter_performances(parse_shows_body(_body(), "tzavta"))[0]
+    bare = {**performance, "availability": False, "pricelist": []}
+    for note in ("כניסה חופשית", "כניסה חופשית ללא תשלום!", "האירוע לא בתשלום, נדרש ליצור קשר עם המנחה טרם ההגעה לאירוע."):
+        event = parse_event(show, {**bare, "unavailability_msg": note}, TZAVTA, SETTINGS, TZ)
+        assert event is not None and event.min_price == 0 and event.tickets[0].is_free, note
+    priced = parse_event(show, {**bare, "unavailability_msg": "כרטיסים בכניסה: 40 ₪"}, TZAVTA, SETTINGS, TZ)
+    assert priced is not None and priced.min_price == 40
+    unknown = parse_event(show, {**bare, "unavailability_msg": "כרטיסים בבוקר ההרצאה בכניסה לאולם."}, TZAVTA, SETTINGS, TZ)
+    assert unknown is not None and unknown.min_price is None and unknown.tickets == []
+
+
 def test_online_meeting_is_skipped() -> None:
     """"מפגש ב-ZOOM" is a hall name, not a place: never stored, so never geocoded or pinned."""
     show, performance = iter_performances(parse_shows_body(_body(), "tzavta"))[0]

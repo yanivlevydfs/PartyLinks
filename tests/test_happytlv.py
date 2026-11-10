@@ -126,6 +126,12 @@ def test_place_without_its_own_image_takes_its_first_party_poster() -> None:
     club = happytlv.parse_place(place + others + poster, url, "Asia/Jerusalem", date(2026, 10, 22), 1, "nightclubs")
     assert club[0].images == [f"{SITE}/img/parties/1783590637808.webp"]
     assert happytlv.parse_place(place + others, url, "Asia/Jerusalem", date(2026, 10, 22), 1, "nightclubs")[0].images == []
+    # A chef restaurant's menu page: its photo is the og:image alone; the site's og-home.jpg is no one's.
+    own = '<meta property="og:image" content="https://www.happytlv.com/img/dining/bella-1.webp">'
+    menu = happytlv.parse_place(own + place + others, url, "Asia/Jerusalem", date(2026, 10, 22), 1, "fine dining")
+    assert menu[0].images == ["https://www.happytlv.com/img/dining/bella-1.webp"]
+    site = own.replace("img/dining/bella-1.webp", "og-home.jpg")
+    assert happytlv.parse_place(site + place, url, "Asia/Jerusalem", date(2026, 10, 22), 1, "x")[0].images == []
 
 
 def _faq(question: str, answer: str) -> str:

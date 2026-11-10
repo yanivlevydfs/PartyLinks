@@ -40,6 +40,7 @@ from partylinks.parsing import (
     clean_str,
     html_to_text,
     jsonld_nodes,
+    og_image,
     parse_iso,
     schema_types,
     to_decimal,
@@ -61,6 +62,7 @@ _NOT_A_PLACE = {"itemlist", "breadcrumblist", "faqpage", "question", "webpage", 
 # Party posters on a place page (/img/parties/1783590637808.webp): a club's own parties. Not /img/venues/:
 # on a place page those are other places ("more like this").
 _POSTERS = re.compile(r'<img[^>]+src="(/img/parties/[^"]+)"')
+_SITE_IMAGE = re.compile(r"/og-[a-z]+\.(?:jpe?g|png|webp)$")  # og-home.jpg, og-default.jpg
 HAPPY_HOUR = "happy hour"
 KOSHER = "kosher"  # declared genre word (enrichment.declared_genres.kosher)
 
@@ -287,9 +289,12 @@ def parse_place(page_html: str, url: str, timezone: str, today: date, days: int,
     )
     key = hashlib.sha1(url.encode()).hexdigest()[:10]
     # A club's page has no image of its own, only its parties' posters: the first one stands for it.
+    # A chef restaurant's page has its photo as og:image only (/img/dining/bella-1.webp); og-home.jpg and
+    # og-default.jpg are the site's own.
+    own = og_image(page_html)
     images = [i for i in _list(place.get("image")) if isinstance(i, str)] or [
         urljoin(url, src) for src in _POSTERS.findall(page_html)[:1]
-    ]
+    ] or ([own] if own and not _SITE_IMAGE.search(own) else [])
     website = next((u for u in _list(place.get("sameAs")) if isinstance(u, str) and u.startswith("http")), None)
     kosher = [KOSHER] if is_kosher(page_html) else []
     return [

@@ -7,7 +7,8 @@ WooCommerce + JetEngine. Every product is one match / show; the shop unpublishes
 * ``/wp-json/wp/v2/<taxonomy>`` - those terms' names (Hebrew country names -> ISO code; categories with
   their parents, so "ליגה אנגלית" also reads "כדורגל");
 * the product page - the date ("אפריל 16, 2027", a JetEngine field) and the venue's local kick-off time
-  ("20:30") in its header, and a schema.org ``Product`` with low/high price in EUR and stock.
+  ("20:30") in its header, a schema.org ``Product`` with low/high price in EUR and stock, and the picture:
+  the Product's, else the header photo or the stadium's seating map the page shows (``page_picture``).
 The Store API's prices are the same numbers labelled ILS, and it has no venue or date, so it is not read.
 Every event gets ``country`` (ISO; "ZZ" if unknown), which keeps it in the abroad section.
 """
@@ -45,6 +46,8 @@ _MONTHS = {m: i for i, m in enumerate(
 _DATE = re.compile(rf"({'|'.join(_MONTHS)})\s+(\d{{1,2}}),\s*(\d{{4}})")
 _TIME = re.compile(r"(\d{1,2}):(\d{2})")
 SHOWS = "הופעות"  # the one category that is not sport
+_UPLOADS = "/wp-content/uploads/"
+_NOT_A_PICTURE = re.compile(r"רקע|לוגו|logo", re.IGNORECASE)  # the site's background and logos
 
 
 class TicketeamsSettings(SourceSettings):
@@ -126,6 +129,16 @@ def parse_terms(items: list[Any]) -> dict[int, Term]:
     }
 
 
+def page_picture(tree: LexborHTMLParser) -> str | None:
+    """The picture the product page shows when its Product has none (most, Nov 2026): the header's
+    stadium / category photo (the page preloads it: "hero-bernabeu-1920.webp"), else the stadium's
+    seating map (``.seats-prod-img``), which the shop itself shares as og:image when it sets one.
+    Never the site's background or logo."""
+    candidates = [n.attributes.get("href") for n in tree.css('link[rel="preload"][as="image"]')]
+    candidates += [n.attributes.get("src") for n in tree.css(".seats-prod-img img")]
+    return next((u for u in candidates if u and _UPLOADS in u and not _NOT_A_PICTURE.search(unquote(u))), None)
+
+
 def parse_product(page_html: str, product: dict[str, Any], terms: Terms, timezone: str) -> ScrapedEvent | None:
     """One product page -> its event; None when the page shows no date (not a match or a show)."""
     url = product["link"]
@@ -152,6 +165,7 @@ def parse_product(page_html: str, product: dict[str, Any], terms: Terms, timezon
             # the site's background (רקע.png, 936 of 990 products, Oct 2026) or its logo.
             pictures = node.get("image") if isinstance(node.get("image"), list) else [node.get("image")]
             image = next((u for p in pictures if (u := p.get("url") if isinstance(p, dict) else p) and isinstance(u, str)), None)
+    image = image or page_picture(tree)
     low, high = to_decimal(offers.get("lowPrice") or offers.get("price")), to_decimal(offers.get("highPrice"))
     venue = terms.first("stadiums", product.get("stadiums")) or terms.first("halls", product.get("halls"))
     categories = terms.categories(product.get("product_cat"))

@@ -40,6 +40,16 @@ def test_product_page() -> None:
                        '"url":"https://ticketeams.co.il/wp-content/uploads/2026/10/old-trafford-map.jpg"}],')
     pictured = parse_product(own, PRODUCT, TERMS, "Asia/Jerusalem")
     assert pictured is not None and pictured.images == ["https://ticketeams.co.il/wp-content/uploads/2026/10/old-trafford-map.jpg"]
+    # No Product image: the header photo the page preloads, else the seating map it shows; never the background.
+    seats = ('<div class="elementor-element seats-prod-img"><img src="https://ticketeams.co.il/wp-content/uploads/'
+             '2026/10/nba-chase-center-map.jpg"></div></body>')
+    hero = ('<link rel="preload" as="image" href="https://ticketeams.co.il/wp-content/uploads/2024/09/רקע.png">'
+            '<link rel="preload" as="image" href="https://ticketeams.co.il/wp-content/uploads/2026/10/hero-bernabeu-1920.webp"'
+            ' media="(min-width:768px)"></head>')
+    mapped = parse_product(PAGE.replace("</body>", seats), PRODUCT, TERMS, "UTC")
+    assert mapped is not None and mapped.images == ["https://ticketeams.co.il/wp-content/uploads/2026/10/nba-chase-center-map.jpg"]
+    headed = parse_product(PAGE.replace("</body>", seats).replace("</head>", hero), PRODUCT, TERMS, "UTC")
+    assert headed is not None and headed.images == ["https://ticketeams.co.il/wp-content/uploads/2026/10/hero-bernabeu-1920.webp"]
     assert event.source_genres == ["ליגה אנגלית", "כדורגל", "ספורט"]
     assert "sport" in Enricher(Settings().enrichment, "Asia/Jerusalem")._detect_genres(event)
     assert parse_product("<div></div>", PRODUCT, TERMS, "UTC") is None  # no date: not an event
