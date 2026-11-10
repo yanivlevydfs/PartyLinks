@@ -3,14 +3,24 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 
 import httpx
 
 from partylinks.config import HttpSettings
 from partylinks.scrapers.base import SourceBlockedError
-from partylinks.scrapers.shotgun import _EVENT_LINK, ShotgunScraper, ShotgunSettings, links, parse_event, sitemap_urls
+from partylinks.scrapers.shotgun import (
+    _EVENT_LINK,
+    ShotgunScraper,
+    ShotgunSettings,
+    links,
+    page_deals,
+    parse_event,
+    sitemap_urls,
+)
 
 SITE = "https://shotgun.live"
 PAGE = (Path(__file__).parent / "fixtures" / "shotgun" / "event_brazil.html").read_text(encoding="utf-8")
@@ -164,3 +174,18 @@ def test_still_429_stops_the_run_cleanly() -> None:
     else:
         raise AssertionError("a persistent 429 must stop the run")
     assert not any("closed" in f for f in scraper.failures)
+
+
+def test_ticket_types_of_the_page_when_the_json_ld_has_no_offers() -> None:
+    # shotgun.live/en/events/kingfishr, Nov 2026: "offers": null in the JSON-LD; the RSC payload has them.
+    payload = (
+        '{"currency":"eur","isSoldOut":false,"deals":[{"id":"1868660","title":"General Admission Standing",'
+        '"price":41.8,"quantityLeft":20},{"id":"1","title":"Invitations","price":0}]}'
+    )
+    page = f"<script>self.__next_f.push([1,{json.dumps(payload)}])</script>"
+    tiers = page_deals(page)
+    assert [(t.name, t.price, t.currency, t.is_free) for t in tiers] == [
+        ("General Admission Standing", Decimal("41.8"), "EUR", False),
+        ("Invitations", Decimal(0), "EUR", True),
+    ]
+    assert page_deals("<html></html>") == []

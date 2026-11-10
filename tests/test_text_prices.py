@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from partylinks.scrapers.text_prices import text_prices, text_tickets
+from partylinks.scrapers.text_prices import says_free, text_prices, text_tickets
 
 
 def test_ticket_amounts_and_free_entry() -> None:
@@ -28,3 +28,19 @@ def test_ticket_amounts_and_free_entry() -> None:
     assert text_tickets("הכניסה לשוק - ללא תשלום. רכישת החפצים - בתשלום.")[0].price == 0
     # Free drinks or free parking are not free entry.
     assert text_tickets("בופה עשיר ושתיה חופשית. חניה בחינם בחניון רידינג") == []
+
+
+def test_more_ways_to_write_a_price_or_free() -> None:
+    # Jerusalem's calendar: "100 שח", "50 שקלים", "בתשלום של".
+    assert text_prices("בתשלום של 100 שח לכל המפגשים.") == [Decimal(100)]
+    assert text_prices("תשלום לכל המפגשים- 50 שקלים בלבד") == [Decimal(50)]
+    # Meety / Jerusalem / Posh: free without the word "כניסה".
+    assert says_free("ההרקדה מתקיימת כל יום שלישי בין השעות 21:00 ל-23:30, ללא כל עלות.")
+    assert says_free("מיועד לגילאי 3 ומעלה מותנה בהרשמה מראש ללא תשלום")
+    assert says_free("**Free RSVP | Food & drinks available for purchase")
+    assert says_free("Admission is FREE! Attendees are asked to support the vendors")
+    # On top of an entry fee, for one group only, or a free trial class: not a free event.
+    assert not says_free("ללא תשלום נוסף על דמי הכניסה לאתר. חינם למנויי מטמון")
+    assert not says_free("🎟️ ללא עלות לתושבי בת ים")
+    assert not says_free('ההרצאות הינן חינם עבור חברי המועדון, עבור מי שאינו חבר, העלות 20 ש"ח')
+    assert not says_free("לתיאום אימון ניסיון חינם, צרו קשר באתר")

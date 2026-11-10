@@ -10,7 +10,8 @@ more and its label goes to the cards it returns; the "online" filter marks the Z
 
 Each event's page (one per event, not per date) adds the description, the map pin
 (``maps?q=lat,lng``), the full and the Jerusalem-club price and the ticket link (``#a6``: Bimot,
-the theatre's box office). Cards carry no year: a day.month before today is next year's.
+the theatre's box office); without a price row, the price or free entry its text writes (text_prices).
+Cards carry no year: a day.month before today is next year's.
 
 Akamai refuses Railway's IP and plain clients: Chrome TLS through our Israeli VPN.
 """
@@ -32,6 +33,7 @@ from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text, to_decimal, zone
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.text_prices import text_tickets
 
 
 class JerusalemMuniSettings(SourceSettings):
@@ -261,7 +263,10 @@ def build_event(card: Card, page: Page, s: JerusalemMuniSettings, timezone: str)
         end += timedelta(days=1)  # "22:00 - 02:00"
     # The pin is the page's hall; a date at another hall goes by its name.
     same_hall = page.venue is None or card.venue is None or page.venue == card.venue
-    prices = [t.price for t in page.tiers if t.price is not None]
+    # No price row: the price or free entry its text writes ("עלות השתתפות: 37 ש\"ח", "ללא תשלום").
+    free = [TicketTier(name="כניסה חופשית", price=to_decimal(0), is_free=True)] if card.free else []
+    tiers = page.tiers or free or text_tickets(page.description)
+    prices = [t.price for t in tiers if t.price is not None]
     data: dict[str, Any] = {"purchase_url": page.purchase_url} if page.purchase_url else {}
     return ScrapedEvent(
         source=JerusalemMuniScraper.name,
@@ -281,8 +286,6 @@ def build_event(card: Card, page: Page, s: JerusalemMuniSettings, timezone: str)
         image_url=card.image,
         min_price=min(prices) if prices else None,
         max_price=max(prices) if prices else None,
-        tickets=page.tiers
-        if page.tiers or not card.free
-        else [TicketTier(name="כניסה חופשית", price=to_decimal(0), is_free=True)],
+        tickets=tiers,
         extra=data,
     )

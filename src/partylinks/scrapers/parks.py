@@ -7,7 +7,11 @@ robots.txt allows everything read here. The site is WordPress:
   with title, park, description, price text, image and the Checkfront item id.
 * ``/wp/v2/activity`` (100 a page): each activity's page link, park (``acf.rpSelect``), kind
   ("סיור מודרך") and ages, matched to the board by the Checkfront id.
-* ``/wp/v2/rp`` (100 a page): the parks, with coordinates in the Israeli grid (ITM, EPSG:2039).
+* ``/wp/v2/rp`` (100 a page): the parks, with coordinates in the Israeli grid (ITM, EPSG:2039) and
+  the entry fee table (``rp_sales_table``).
+
+Price: the activity's ``act_price`` (kind, own price fields, the text under them). Most activities are
+"ללא / בתשלום נוסף על דמי הכניסה לאתר": they cost the park's entry fee (plus the add-on the text names).
 
 Dates come from the authority's public Checkfront booking pages: ``/reserve/inventory/`` gives one
 month of an item's calendar (``calendar_data``: 1 = open for booking), and ``/reserve/item/`` for
@@ -22,6 +26,7 @@ import json
 import re
 from collections.abc import AsyncIterator
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from functools import cache
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
@@ -30,10 +35,11 @@ from pydantic import Field
 from pyproj import Transformer
 
 from partylinks.config import RetentionSettings
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import clean_str, zone
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.text_prices import text_prices
 
 _SLOT = re.compile(r"cf-timeslot-button ([\w-]+)[^>]*>\s*<input[^>]*>\s*(\d{1,2}:\d{2})")
 _LENGTH = re.compile(r"name='slip' value='[^']*@\d{1,2}:\d{2}X(\d+)")
@@ -127,8 +133,15 @@ class ParksScraper(BaseScraper[ParksSettings]):
         return parse_event(item, day, page, activities, parks, s, self.timezone)
 
 
-_ACTIVITY_FIELDS = "id,link,acf.rpSelect,acf.checkfront_id,acf.activity_type_home,acf.act_important.act_important_age"
-_PARK_FIELDS = "id,title,acf.lat_lng,acf.long_lng"
+_ACTIVITY_FIELDS = (
+    "id,link,acf.rpSelect,acf.checkfront_id,acf.activity_type_home,acf.act_important.act_important_age,acf.act_price"
+)
+_PARK_FIELDS = "id,title,acf.lat_lng,acf.long_lng,acf.rp_sales_table"
+_AMOUNT = re.compile(r"\d+(?:\.\d+)?")
+# The activity's own price fields, beside the text under them.
+_PRICE_FIELDS = {
+    "act_price_one": "כרטיס", "act_adult_price": "מבוגר", "act_child_price": "ילד", "act_discounted_price": "הנחה",
+}  # fmt: skip
 
 
 def _month(today: date, n: int) -> date:
@@ -156,8 +169,10 @@ def parse_activity(row: dict[str, Any]) -> dict[str, Any] | None:
         if isinstance(acf.get("act_important"), dict)
         else None
     )
+    price = acf.get("act_price") if isinstance(acf.get("act_price"), dict) else {}
     return {
         "cf": cf,
+        "price": price,
         "link": clean_str(row.get("link")),
         "park": acf.get("rpSelect") if isinstance(acf.get("rpSelect"), int) else None,
         "kinds": [k for k in [label, *(ages if isinstance(ages, list) else [])] if isinstance(k, str) and "/" not in k],
@@ -173,7 +188,37 @@ def parse_park(row: dict[str, Any], epsg: int) -> dict[str, Any] | None:
     lng, lat = _grid(epsg).transform(x, y)  # the site names the easting "lat_lng"
     if not (29 < lat < 34 and 34 < lng < 36):
         return None
-    return {"id": row.get("id"), "latitude": round(lat, 6), "longitude": round(lng, 6)}
+    return {"id": row.get("id"), "latitude": round(lat, 6), "longitude": round(lng, 6), "entry": entry_fees(acf)}
+
+
+def entry_fees(acf: dict[str, Any]) -> list[TicketTier]:
+    """The park's entry fee table ("דמי כניסה": מבוגר 16.00 ₪, ילד 7.00 ₪, ...); a group's free row
+    (soldiers: "ללא תשלום") is no free entry for everyone, so only priced rows count."""
+    tables = [t for t in acf.get("rp_sales_table") or [] if isinstance(t, dict)]
+    table = next((t for t in tables if "כניסה" in str(t.get("rp_sales_tab_title"))), tables[0] if tables else {})
+    tiers = []
+    for row in table.get("table") or []:
+        amount = _AMOUNT.search(str(row.get("price") or "")) if isinstance(row, dict) else None
+        if amount:
+            name = f"דמי כניסה - {clean_str(row.get('type')) or 'כרטיס'}"
+            tiers.append(TicketTier(name=name, price=Decimal(amount.group())))
+    return tiers
+
+
+def price_tiers(price: dict[str, Any], entry: list[TicketTier], free_price: str) -> list[TicketTier]:
+    """What taking part costs: free; the activity's own price (entry included or not); or the park's
+    entry fee, plus the activity's add-on, when it is "ללא / בתשלום נוסף על דמי הכניסה לאתר"."""
+    kind = clean_str(price.get("act_price_type")) or ""
+    if kind == free_price:
+        return [TicketTier(name="כניסה חופשית", price=Decimal(0), is_free=True)]
+    own = [
+        TicketTier(name=name, price=Decimal(m.group()))
+        for key, name in _PRICE_FIELDS.items()
+        if (m := _AMOUNT.search(str(price.get(key) or "")))
+    ] + [TicketTier(name="כרטיס", price=p) for p in text_prices(clean_str(price.get("act_text_bottom_price")))]
+    if "דמי הכניסה" in kind and "כלולים" not in kind:
+        return [*entry, *(t.model_copy(update={"name": f"תוספת - {t.name}"}) for t in own)] if entry else []
+    return own
 
 
 def open_dates(data: dict[str, Any]) -> list[date]:
@@ -215,6 +260,8 @@ def parse_event(
     else:
         start, end = datetime.combine(day, datetime.min.time(), tz), None
     price = clean_str(item.get("price"))
+    tiers = price_tiers(activity.get("price") or {"act_price_type": price}, park.get("entry") or [], s.free_price)
+    priced = [t.price for t in tiers if t.price is not None]
     link = activity.get("link") or (clean_str(item.get("link")) or "").split("#")[0]
     image = _image(clean_str(item.get("image")))
     return ScrapedEvent(
@@ -231,8 +278,9 @@ def parse_event(
         longitude=park.get("longitude"),
         source_genres=[k.lower() for k in [*activity.get("kinds", []), s.category]],
         images=[image] if image else [],
-        min_price=0 if price == s.free_price else None,
-        max_price=0 if price == s.free_price else None,
+        min_price=min(priced, default=None),
+        max_price=max(priced, default=None),
+        tickets=tiers,
         is_sold_out=bool(slots) and not any("avail" in state for state, _ in slots),
         extra={"purchase_url": s.checkfront_url + s.booking_path.format(id=cf)},
     )

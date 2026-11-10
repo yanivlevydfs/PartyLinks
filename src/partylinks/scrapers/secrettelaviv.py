@@ -9,7 +9,8 @@ local time; "Tue 24 November 2026 - Sat 28 November 2026 | ..." for a run), the 
 description, a "Location:" line (venue name), a "Check out the event:" link to the original
 event / seller (kept as ``extra["purchase_url"]``), ``og:image`` and the event's categories
 (``event-categories-<slug>`` classes, as ``source_genres``). The site has no price field: prices the
-description writes out ("כרטיס: 40 ₪", "הכניסה חופשית", about a quarter of the events) become tiers (text_prices).
+description writes out ("כרטיס: 40 ₪", "הכניסה חופשית", about a quarter of the events) become tiers (text_prices);
+without one, the original event's page may state it (JSON-LD offers: Hameretz2, Go-Out, Chillz; seller_page).
 Cloudflare answers some clients with a challenge (``cf-mitigated: challenge``): the run stops as
 blocked, but events new to us are first saved as the feed gives them (stored ones keep their details).
 """
@@ -29,6 +30,7 @@ from selectolax.lexbor import LexborHTMLParser, LexborNode
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, html_to_text
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
+from partylinks.scrapers.seller_page import fetch_seller_page, seller_tiers
 from partylinks.scrapers.text_prices import text_tickets
 
 _DATE = re.compile(r"(\d{1,2}) ([A-Za-z]+) (\d{4})")
@@ -126,7 +128,12 @@ class SecretTelAvivScraper(BaseScraper[SecretTelAvivSettings]):
         return None if event.source_event_id in self.known_images else event
 
     async def _fetch_event(self, url: str) -> ScrapedEvent:
-        return parse_event(await self.get_text(url), url, self.settings, self.timezone)
+        event = parse_event(await self.get_text(url), url, self.settings, self.timezone)
+        seller = event.extra.get("purchase_url")
+        if not event.tickets and seller:  # no price in the text: the original event's page may state it
+            page = await fetch_seller_page(self, seller)
+            event.tickets = seller_tiers(page, seller) if page else []
+        return event
 
 
 def event_slug(url: str, s: SecretTelAvivSettings) -> str:

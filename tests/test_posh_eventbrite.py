@@ -138,3 +138,22 @@ def test_eventbrite_city_listings_once_each_israel_only():
         return [e async for e in scraper.scrape()]
 
     assert sorted(e.source_event_id for e in asyncio.run(run())) == ["1", "2"]
+
+
+def test_posh_tickets_of_an_event_listed_without_a_price():
+    # events.getEventTickets, Nov 2026: a paid show, an RSVP event, door prices in the names.
+    def answer(*tickets):
+        return {"result": {"data": {"ticketGroups": [{"ungrouped": True, "tickets": list(tickets)}]}}}
+
+    paid = posh.parse_tickets(answer({"name": "Default Ticket", "price": 21.83, "totalPrice": 25}), "USD")
+    assert [(t.name, t.price, t.is_free) for t in paid] == [("Default Ticket", Decimal(25), False)]
+    rsvp = posh.parse_tickets(answer({"name": "RSVP", "price": 0, "totalPrice": 0}), "USD")
+    assert rsvp[0].is_free and rsvp[0].price == 0
+    door = posh.parse_tickets(answer(
+        {"name": "$15 General Admission Ticket ", "price": 0, "totalPrice": 0},
+        {"name": "Ladies Free Till 11:30 ", "price": 0, "totalPrice": 0},
+        {"name": "Comp", "price": 0, "totalPrice": 0, "isHidden": True},
+    ), "USD")  # fmt: skip
+    expected = [(Decimal(15), True, False), (Decimal(0), False, True)]
+    assert [(t.price, t.pay_at_door, t.is_free) for t in door] == expected
+    assert posh.parse_tickets({}, "USD") == []

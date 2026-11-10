@@ -12,7 +12,9 @@ instead: whatever the layout (``a.event-promo`` grid, ``.events-list``, council 
 month calendar), each link to ``./events/<id>/`` is a card, read for title, date, time, place and
 tags. Each event's page ``/events/<id>/`` adds the description, the full-size image, the place
 when the listing lacks it and, when the site sells tickets itself, a tickets row
-("40 ₪ • אירוע בתשלום"); without one, the price or free entry its text states
+("40 ₪ • אירוע בתשלום"); without one, the price its "הזמנת כרטיסים" button's seller page states
+(Coing / Kehilatayim "מחיר" row, JSON-LD offers, Mevalim's buy button: seller_page), else the price or
+free entry its text states
 ("מחיר לתושב 15 ש\"ח", "הכניסה חופשית", "ללא עלות"). Events linking off the site (a Smarticket hall, Tickchak, a news item) are
 skipped: their seller has its own source. Undated events ("ללא תאריך", "עד ...") and cancelled ones
 are skipped. Mostly no robots.txt (404); where there is one it allows ``/events/``. A bare user
@@ -41,6 +43,8 @@ from partylinks.parsing import clean_str, html_to_text, zone
 from partylinks.places import PlaceIndex, israeli_places
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.seller_page import fetch_seller_page, seller_tiers
+from partylinks.scrapers.text_prices import says_free
 
 _DATE = re.compile(r"(\d{1,2})[./](\d{1,2})[./](\d{4})")
 _MONTHS = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"]
@@ -49,7 +53,6 @@ _CLOCK = re.compile(r"(?<![\d:])(\d{1,2}):(\d{2})(?![\d:])")
 _PRICE = re.compile(r"(\d+(?:\.\d+)?)\s*₪")
 # Prices and free entry written in the text ("מחיר לתושב 15 ש\"ח", "הכניסה חופשית"); "50 ש\"ח הנחה" is no price.
 _TEXT_PRICE = re.compile(r"(\d+(?:\.\d+)?)\s*(?:₪|ש[\"״]ח|שקלים)(?!\s*הנחה)")
-_FREE = re.compile(r"כניסה (?:חופשית|חינם)|ללא (?:עלות|תשלום)")
 _LEFT = re.compile(r"נותרו רק (\d+)")
 _EVENT_ID = re.compile(r"/events/(\d+)/?$")
 _HEBREW = re.compile(r"[א-ת]")
@@ -72,6 +75,8 @@ class MuniEventsSettings(SourceSettings):
     sites: list[MuniSite] = Field(min_length=1)
     # Not events: a course or a weekly class listed on the city's calendar ("קורס NLP / ימי ד'").
     skip_title_words: list[str] = Field(default_factory=list)
+    # Ticket sellers whose page states no price before a purchase wizard (Rehovot's info-cloud) or a form.
+    seller_skip_hosts: list[str] = Field(default_factory=lambda: ["info-cloud.co.il", "docs.google.com"])
 
 
 @dataclass
@@ -126,7 +131,10 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
                 if listed_only is not None and not self.wanted(listed_only):
                     return listed_only
                 detail = await self.optional(card.url, self.get_text(card.url))
-                return build_event(card, detail, site, self.timezone)
+                seller = ticket_link(detail, site.url, self.settings.seller_skip_hosts) if detail else None
+                seller_html = await fetch_seller_page(self, seller) if seller else None
+                offers = seller_tiers(seller_html, seller) if seller_html else []
+                return build_event(card, detail, site, self.timezone, offers)
 
             async for event in self.stream_isolated(cards, fetch, label=lambda c: c.url):
                 yield event
@@ -346,7 +354,28 @@ def _detail(page: LexborHTMLParser, base: str, tz: Any) -> dict[str, Any]:
     }
 
 
-def build_event(card: Card, detail_html: str | None, site: MuniSite, timezone: str) -> ScrapedEvent | None:
+def ticket_link(detail_html: str, base: str, skip_hosts: list[str]) -> str | None:
+    """The seller page behind an event page's "הזמנת כרטיסים" / "להרשמה" button, when the page sells no
+    tickets itself (no tickets row): Coing, Kehilatayim, Mevalim, a Tickchak white label."""
+    page = LexborHTMLParser(detail_html)
+    if page.css_first(".event-item-row.tickets"):
+        return None
+    for a in (page.css_first("main") or page.root).css("a.btn[href]"):
+        href = a.attributes.get("href") or ""
+        host = urlsplit(href).hostname or ""
+        if (
+            href.startswith("http")
+            and any(w in _text(a) for w in ("כרטיס", "הרשמה", "להרשמה"))
+            and host != urlsplit(base).hostname
+            and not any(host == h or host.endswith("." + h) for h in skip_hosts)
+        ):
+            return href
+    return None
+
+
+def build_event(
+    card: Card, detail_html: str | None, site: MuniSite, timezone: str, seller_offers: list[TicketTier] | None = None
+) -> ScrapedEvent | None:
     """The card plus what its page adds; None when it has no start date or is cancelled."""
     tz = zone(timezone)
     extra = _detail(LexborHTMLParser(detail_html), site.url, tz) if detail_html else {}
@@ -359,7 +388,8 @@ def build_event(card: Card, detail_html: str | None, site: MuniSite, timezone: s
         start, end = page_start, page_end
     elif start and page_start and start.time() == time() and page_start.date() == start.date():
         start, end = page_start, end or page_end  # listed by day only: the page has the hour
-    if start is None or "בוטל" in (card.ribbon or ""):
+    # Cancelled: the ribbon says so, or the title of a calendar copy (Gderot: "האירוע בוטל: ...").
+    if start is None or "בוטל" in (card.ribbon or "") or card.title.startswith("האירוע בוטל"):
         return None
     sold_out = card.ribbon == "אזל המלאי" or bool(extra.get("sold_out"))
     price_text = extra.get("price_text")
@@ -369,10 +399,13 @@ def build_event(card: Card, detail_html: str | None, site: MuniSite, timezone: s
     tiers = [
         TicketTier(name="כרטיס", price=p, status=status, remaining=int(left.group(1)) if left else None) for p in prices
     ]
-    if not prices:  # the site sells no tickets itself: its text may say "מחיר 15 ש\"ח" or "הכניסה חופשית"
+    if not prices and seller_offers:  # its "הזמנת כרטיסים" seller's page
+        tiers = seller_offers
+        prices = [t.price for t in tiers if t.price is not None]
+    elif not prices:  # the site sells no tickets itself: its text may say "מחיר 15 ש\"ח" or "הכניסה חופשית"
         # ponytail: any price-like number in the text counts (a prize in ש"ח too); per-line tier names if it misleads.
         text = extra.get("description") or ""
-        prices = sorted({Decimal(p) for p in _TEXT_PRICE.findall(text)} | ({Decimal(0)} if _FREE.search(text) else set()))
+        prices = sorted({Decimal(p) for p in _TEXT_PRICE.findall(text)} | ({Decimal(0)} if says_free(text) else set()))
         tiers = [
             TicketTier(name="כניסה חופשית" if p == 0 else "כרטיס", price=p, is_free=p == 0, status=status) for p in prices
         ]

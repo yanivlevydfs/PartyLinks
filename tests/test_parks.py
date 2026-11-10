@@ -4,12 +4,21 @@ from __future__ import annotations
 
 import json
 from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
-from partylinks.scrapers.parks import ParksSettings, _month, open_dates, parse_activity, parse_event, parse_park
+from partylinks.scrapers.parks import (
+    ParksSettings,
+    _month,
+    open_dates,
+    parse_activity,
+    parse_event,
+    parse_park,
+    price_tiers,
+)
 
 TZ = "Asia/Jerusalem"
 FIX = Path(__file__).parent / "fixtures/parks"
@@ -24,7 +33,7 @@ ACTIVITY = parse_activity({
 
 def test_park_coordinates_from_the_israeli_grid() -> None:
     park = parse_park({"id": 1889, "acf": {"lat_lng": "192371", "long_lng": "716948"}}, S.grid_epsg)
-    assert park == {"id": 1889, "latitude": 32.546409, "longitude": 34.916084}  # Nahal Taninim
+    assert park == {"id": 1889, "latitude": 32.546409, "longitude": 34.916084, "entry": []}  # Nahal Taninim
     assert parse_park({"id": 1, "acf": {"lat_lng": "", "long_lng": ""}}, S.grid_epsg) is None
 
 
@@ -57,3 +66,25 @@ def test_event_from_slots_with_park_and_booking() -> None:
 def test_a_date_without_slots_has_no_time() -> None:
     e = parse_event(ITEM, date(2026, 12, 5), "<html></html>", {}, {}, S, TZ)
     assert e is not None and not e.time_known and e.latitude is None
+
+
+def test_price_is_the_parks_entry_fee_plus_the_add_on() -> None:
+    # Tel Be'er Sheva (rp 1969) and its escape game (Checkfront 64), Nov 2026.
+    acf = {"rp_sales_table": [{"rp_sales_tab_title": "דמי כניסה", "table": [
+        {"type": "מבוגר", "price": "16.00 ₪"}, {"type": "ילד", "price": "7.00 ₪"},
+        {"type": "חייל", "price": "ללא תשלום", "note": "חייל בשירות חובה"}]}]}  # fmt: skip
+    park = parse_park({"id": 1969, "acf": {"lat_lng": "180800", "long_lng": "572500", **acf}}, S.grid_epsg)
+    assert park is not None and [(t.name, t.price) for t in park["entry"]] == [
+        ("דמי כניסה - מבוגר", Decimal(16)), ("דמי כניסה - ילד", Decimal(7))
+    ]  # fmt: skip
+    game = {"act_price_type": "בתשלום נוסף על דמי הכניסה לאתר",
+            "act_text_bottom_price": "מחיר ערכת השתתפות במשחק: ₪20 למשפחה (מלבד דמי הכניסה לאתר)"}  # fmt: skip
+    tiers = price_tiers(game, park["entry"], S.free_price)
+    assert [(t.name, t.price) for t in tiers][-1] == ("תוספת - כרטיס", Decimal(20)) and len(tiers) == 3
+    tour = {"act_price_type": "ללא תשלום נוסף על דמי הכניסה לאתר. חינם למנויי מטמון"}
+    assert [t.price for t in price_tiers(tour, park["entry"], S.free_price)] == [Decimal(16), Decimal(7)]
+    assert price_tiers(tour, [], S.free_price) == []  # a park without a fee table: unknown, not free
+    own = {"act_price_type": "הפעילות בתשלום (דמי הכניסה לאתר כלולים במחיר הכרטיס)", "act_price_one": "50",
+           "act_discounted_price": "40"}  # fmt: skip
+    assert [t.price for t in price_tiers(own, park["entry"], S.free_price)] == [Decimal(50), Decimal(40)]
+    assert price_tiers({"act_price_type": "ללא תשלום"}, [], S.free_price)[0].is_free

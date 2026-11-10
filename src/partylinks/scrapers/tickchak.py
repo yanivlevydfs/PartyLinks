@@ -7,7 +7,8 @@ and the breadcrumb hierarchy that scopes them. Each slider is then paginated via
 reported ``count`` is reached, plus ``/customEventsNew``. Nothing about the
 sections is hard-coded; they are discovered from the page every run.
 Slider items already carry venue, artists, price range and provider link, so no
-per-event request is needed. Ticket tiers live on the upstream provider.
+per-event request is needed. Ticket tiers live on the upstream provider; an item without a price
+("0 / 0") gets the tiers its provider's page states, when it does (seller_page).
 Events whose seller set no category are on no category page: the event sitemap adds them
 (``tickchak_sitemap``, one page request each).
 """
@@ -30,6 +31,7 @@ from partylinks.parsing import ParseError, clean_str, from_unix, next_data, og_i
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.matnasnet import covered_smarticket_hosts
+from partylinks.scrapers.seller_page import seller_tiers
 from partylinks.scrapers.tickchak_sitemap import unlisted_items
 
 SLIDER_SECTION = "eventSlider"
@@ -117,21 +119,23 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
                 continue
             event.event_types = sorted({*event.event_types, *labels.get(entity_id, ())})
             events.append(event)
-            if not event.images and (link := clean_str(item.get("link"))):
-                if known := (self.known_images.get(event.source_event_id) or [None])[0]:
-                    event.images, event.image_url = [known], known  # read on an earlier run
-                else:
-                    missing.append((event, link))
+            if not event.images and (known := (self.known_images.get(event.source_event_id) or [None])[0]):
+                event.images, event.image_url = [known], known  # read on an earlier run
+            unpriced = event.min_price is None and not event.is_sold_out
+            if (not event.images or unpriced) and (link := clean_str(item.get("link"))):
+                missing.append((event, link))
         # In parallel (the client's concurrency bounds it), at most max_artwork_lookups new pages a run:
         # one by one, ~1,500 sellers' pages outlasted the 60-min run (Oct 2026). Found artwork is kept,
         # so the rest is read over the next runs. Shuffled: dead seller links (redirect to /404) are
-        # never stored, so in listing order they would take the same slots every run.
+        # never stored, so in listing order they would take the same slots every run. Unpriced ones first
+        # (~100): a price is not remembered between runs as artwork is.
         random.shuffle(missing)
+        missing.sort(key=lambda m: m[0].min_price is not None)
         waiting = {id(e) for e, _ in missing[: s.max_artwork_lookups]}
         for event in events:  # first everything that needs no lookup: a run timeout then keeps them
             if id(event) not in waiting:
                 yield event
-        await asyncio.gather(*(self._provider_artwork(e, link) for e, link in missing[: s.max_artwork_lookups]))
+        await asyncio.gather(*(self._provider_page(e, link) for e, link in missing[: s.max_artwork_lookups]))
         for event, _ in missing[: s.max_artwork_lookups]:
             yield event
 
@@ -162,17 +166,19 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         items.pop(None, None)
         return items
 
-    async def _provider_artwork(self, event: ScrapedEvent, link: str) -> None:
-        """Listings copied from another box office carry no artwork here; its page has it.
-        Read once: stored artwork is reused on later runs."""
-        image = (self.known_images.get(event.source_event_id) or [None])[0]
-        if image is None:
-            try:
-                image = og_image(await self.get_text(link))
-            except Exception as exc:  # noqa: BLE001 - optional artwork: a seller refusing bots never ends the run
-                self.log.debug("no provider artwork for %s: %s", event.source_event_id, exc)
-        if image:
+    async def _provider_page(self, event: ScrapedEvent, link: str) -> None:
+        """Listings copied from another box office carry no artwork, or no price ("0 / 0"), here; its page
+        may have them (og:image; JSON-LD offers on Tickchak's white labels and Go-Out: seller_page).
+        Artwork is read once and reused on later runs; a missing price is looked up every run."""
+        try:
+            page = await self.get_text(link)
+        except Exception as exc:  # noqa: BLE001 - optional: a seller refusing bots never ends the run
+            self.log.debug("no provider page for %s: %s", event.source_event_id, exc)
+            return
+        if not event.images and (image := og_image(page)):
             event.images, event.image_url = [image], image
+        if event.min_price is None and (tiers := seller_tiers(page, link)):
+            event.tickets = tiers
 
     async def _paginate(self, url: str, key: str, params: list[tuple[str, Any]]) -> list[dict[str, Any]]:
         size = self.settings.page_size

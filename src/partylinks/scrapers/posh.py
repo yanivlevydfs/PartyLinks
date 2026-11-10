@@ -12,6 +12,8 @@ none later; ``when`` / date / city params are ignored). So every page of the rec
 sitemap (``/sitemap-events-recent.xml``, 50k URLs) whose ``<lastmod>`` is within
 ``sitemap_max_age_days`` is read too (~24k: those with a lastmod are upcoming, those without are
 past), each page giving its own listing fields in the payload's ``eventData``; past ones dropped.
+An event listed without a lowest price (RSVP events, most of them free) gets its tiers from the event
+page's own tRPC call ``events.getEventTickets`` (name, price, price with fees).
 """
 
 from __future__ import annotations
@@ -27,7 +29,7 @@ from pydantic import Field
 from partylinks.config import RetentionSettings
 from partylinks.countries import country_code
 from partylinks.enrichment import UNKNOWN_COUNTRY
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, parse_iso, to_decimal, to_float
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -78,6 +80,8 @@ class PoshSettings(SourceSettings):
     sitemap_path: str | None = "/sitemap-events-recent.xml"
     # Sitemap pages last modified longer ago are skipped (no lastmod = a past event, skipped too).
     sitemap_max_age_days: int = Field(60, ge=1)
+    # The event page's tRPC call for its tickets (input: {"eventId": ...}), for events listed without a price.
+    tickets_path: str = "/api/web/v2/trpc/events.getEventTickets"
 
 
 class PoshScraper(BaseScraper[PoshSettings]):
@@ -124,12 +128,50 @@ class PoshScraper(BaseScraper[PoshSettings]):
     async def _fetch_event(self, listed: dict[str, Any]) -> ScrapedEvent | None:
         url = f"{self.settings.site_url}/e/{listed['url']}"
         page = await self.optional(url, self.get_text(url))
-        return parse_event(listed, rsc_text(page or ""), url)
+        return await self._priced(parse_event(listed, rsc_text(page or ""), url))
 
     async def _fetch_page(self, url: str) -> ScrapedEvent | None:
         text = rsc_text(await self.get_text(url))
         listed = page_listing(text)
-        return parse_event(listed, text, url) if listed else None  # none: a not-found page sent as 200 (deleted)
+        # None: a not-found page sent as 200 (deleted)
+        return await self._priced(parse_event(listed, text, url)) if listed else None
+
+    async def _priced(self, event: ScrapedEvent | None) -> ScrapedEvent | None:
+        """No lowest price in the listing (RSVP events, hidden prices): the event page's own ticket call."""
+        if event is None or event.min_price is not None:
+            return event
+        s = self.settings
+        params = {"input": json.dumps({"eventId": event.source_event_id})}
+        call = self.get_json(s.site_url + s.tickets_path, params=params, expect=dict)
+        data = await self.optional(f"{event.url} tickets", call)
+        event.tickets = parse_tickets(data or {}, event.currency)
+        return event
+
+
+_NAMED_PRICE = re.compile(r"\$\s*(\d+(?:\.\d{1,2})?)")
+
+
+def parse_tickets(data: dict[str, Any], currency: str) -> list[TicketTier]:
+    """Tiers of ``events.getEventTickets``: what a buyer pays (``totalPrice``, fees included, as the
+    listing's ``minPriceWithFees``). A 0 ticket named "$15 General Admission" is paid at the door."""
+    groups = ((data.get("result") or {}).get("data") or {}).get("ticketGroups") or []
+    tiers = []
+    for ticket in (t for g in groups if isinstance(g, dict) for t in g.get("tickets") or [] if isinstance(t, dict)):
+        name = clean_str(ticket.get("name")) or "Ticket"
+        price = to_decimal(ticket.get("totalPrice") if ticket.get("totalPrice") is not None else ticket.get("price"))
+        if ticket.get("isHidden") or ticket.get("priceHidden") or price is None:
+            continue
+        named = _NAMED_PRICE.search(name) if not price else None
+        tiers.append(
+            TicketTier(
+                name=name,
+                price=to_decimal(named.group(1)) if named else price,
+                currency=currency,
+                is_free=not price and not named,
+                pay_at_door=bool(named),
+            )
+        )
+    return tiers
 
 
 def sitemap_urls(xml: str, since: datetime) -> list[str]:

@@ -4,7 +4,9 @@ Listing: every city page in Shotgun's cities sitemap (240, mostly France, Brazil
 the first screen of each, ~14 events), plus the Israel venue page and the Israeli city pages of
 ``city_paths`` (404 in October 2026: Shotgun lists no Israeli events yet; a missing page is an
 empty listing, not a failure). Details: each event page's schema.org ``MusicEvent`` JSON-LD
-(venue, address with country, coordinates, offers), read by the same parser as Chillz. Events
+(venue, address with country, coordinates, offers), read by the same parser as Chillz; while
+sales run the JSON-LD often has ``"offers": null``, so the page's own ticket types (``"deals"``
+in its RSC payload) give the tiers then. Events
 abroad carry their country and go to the abroad section. robots.txt allows everything.
 
 A city page shows only its first screen, so the newest ``event_sitemaps`` of the sitemap index's
@@ -17,6 +19,7 @@ stops the run cleanly as blocked, with what it had.
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
@@ -28,15 +31,17 @@ from pydantic import Field
 
 from partylinks.config import RetentionSettings
 from partylinks.enrichment import UNKNOWN_COUNTRY
-from partylinks.models import ScrapedEvent
-from partylinks.parsing import clean_str, jsonld_nodes, parse_iso, schema_types
+from partylinks.models import ScrapedEvent, TicketTier
+from partylinks.parsing import clean_str, jsonld_nodes, parse_iso, schema_types, to_decimal
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings, gather_or_cancel
 from partylinks.scrapers.chillz import EVENT_TYPES, parse_page
+from partylinks.scrapers.posh import rsc_text
 
 _LINK = r'href="(?:https://shotgun\.live)?(/(?:[a-z]{{2}}/)?{kind}/[a-z0-9][a-z0-9-]*)"'
 _EVENT_LINK = re.compile(_LINK.format(kind="events"), re.IGNORECASE)
 _VENUE_LINK = re.compile(_LINK.format(kind="venues"), re.IGNORECASE)
+_DEALS = '"deals":'
 _LOC = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>")
 _EVENT_SITEMAP = re.compile(r"<loc>\s*https?://[^<\s/]+(/[^<\s]*/events/sitemap/(\d+)\.xml)\s*</loc>")
 _LASTMOD = re.compile(r"<lastmod>\s*([^<\s]+)\s*</lastmod>")
@@ -160,7 +165,31 @@ def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
         return None
     country = _country(page_html)
     abroad = None if country in _ISRAEL else (country.upper() if len(country) == 2 else UNKNOWN_COUNTRY)
-    return event.model_copy(update={"source": ShotgunScraper.name, "country": abroad})
+    update: dict[str, Any] = {"source": ShotgunScraper.name, "country": abroad}
+    if not event.tickets and event.min_price is None and (tiers := page_deals(page_html)):
+        update |= {"tickets": tiers, "currency": tiers[0].currency}
+    return event.model_copy(update=update)
+
+
+def page_deals(page_html: str) -> list[TicketTier]:
+    """The page's own ticket types (``"deals"`` in its RSC payload: title, price), for events whose JSON-LD
+    has no offers ("offers": null while sales run). Currency: the event's ("eur")."""
+    text = rsc_text(page_html)
+    at = text.find(_DEALS)
+    try:
+        deals = json.JSONDecoder().raw_decode(text, at + len(_DEALS))[0] if at >= 0 else []
+    except ValueError:
+        return []
+    currency = re.search(r'"currency":"([a-z]{3})"', text)
+    return [
+        TicketTier(
+            name=clean_str(d.get("title")) or "Ticket",
+            price=price,
+            currency=currency.group(1).upper() if currency else "EUR",
+            is_free=price == 0,
+        )
+        for d in deals if isinstance(d, dict) and (price := to_decimal(d.get("price"))) is not None
+    ]  # fmt: skip
 
 
 def _country(page_html: str) -> str:
