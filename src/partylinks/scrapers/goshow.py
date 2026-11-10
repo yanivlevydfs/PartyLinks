@@ -5,9 +5,9 @@ Old ASP-style site, no API or JSON-LD. The home page lists every upcoming show (
 (``li.carousel_row``) of its next date only: ``/event/<show id>/<date id>/<slug>``, a shortened title,
 "venue, city" and "יום ... dd-mm-yy בשעה HH:MM". Cards dated before today are skipped there. Each
 date's page (``/show/<show id>/<date id>/``, where /event/ redirects) gives the full title (og:title),
-artwork (og:image), the text (``.showDesc``), the web and box-office prices, the producer ("לאירועים
-נוספים של ...") and the producer's other dates (``.moreShows li``: dd/mm/yyyy, HH:MM, title, "venue ,
-city", price, /event/ link). Those dates (~650 in all) are events too, with their show's page details
+artwork (og:image), the text (``.showDesc``), the web and box-office prices, the venue's map point
+(a Google Maps embed), the producer ("לאירועים נוספים של ...") and the producer's other dates
+(``.moreShows li``: dd/mm/yyyy, HH:MM, title, "venue , city", price, /event/ link). Those dates (~650 in all) are events too, with their show's page details
 when that page was read, at no extra request. The category pages (``/event/category/<slug>``, the
 same cards) give each show its site category. robots.txt is empty.
 """
@@ -34,6 +34,7 @@ _HREF = re.compile(r"/event/(\d+)/(\d+)/")  # relative on the home page, absolut
 _MORE_DATE = re.compile(r"(\d{1,2})/(\d{1,2})/(\d{4})")
 _MORE_TIME = re.compile(r"(\d{1,2}):(\d{2})")
 _PRICE = re.compile(r"(\d+(?:\.\d+)?)")
+_EMBED_POINT = re.compile(r"!2d(-?\d+\.\d+)!3d(-?\d+\.\d+)")  # Google Maps embed: !2d<lon>!3d<lat>
 
 
 class GoShowSettings(SourceSettings):
@@ -152,6 +153,8 @@ def date_event(
         event.title, event.description, event.images = show.title, show.description, list(show.images)
         event.tickets, event.min_price, event.max_price = list(show.tickets), show.min_price, show.max_price
         event.extra = {**(show.extra or {}), **(event.extra or {})}
+        if show.venue_name == event.venue_name:  # the show's map point, at the same venue only
+            event.latitude, event.longitude = show.latitude, show.longitude
     price = card.get("price")
     if price is not None and price not in {t.price for t in event.tickets}:  # this date's own price
         event.tickets, event.min_price, event.max_price = [], price, price
@@ -209,6 +212,14 @@ def add_page(event: ScrapedEvent, page_html: str, site_url: str) -> None:
     if prices:
         event.min_price, event.max_price = prices[0], prices[-1]
         event.tickets = tiers
+    # The venue's map: an embed's point ("!2d<lon>!3d<lat>"). Old "maps?q=<name>" embeds carry no point
+    # of the venue (their sll= is a fixed Tel Aviv one) and are left to geocoding. geo.drop_bad_points
+    # still clears a point outside the event's city.
+    for frame in tree.css("iframe"):
+        src = frame.attributes.get("src") or ""
+        if "/maps/embed" in src and (m := _EMBED_POINT.search(src)):
+            event.longitude, event.latitude = float(m.group(1)), float(m.group(2))
+            break
     producer = tree.css_first(".moreEvents a")
     if producer and (name := clean_str(producer.text())):
         event.extra = {**(event.extra or {}), "producer": name.removeprefix("לאירועים נוספים של").strip()}

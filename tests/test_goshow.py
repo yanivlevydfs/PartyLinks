@@ -41,6 +41,8 @@ def test_date_page_gives_title_artwork_prices_and_producer() -> None:
     assert [(t.name, t.price) for t in event.tickets] == [("רגיל", Decimal(73))]
     assert (event.min_price, event.max_price) == (Decimal(73), Decimal(73))
     assert event.extra["producer"] == "קומדי בר"
+    # The venue's Google Maps embed: "!2d<lon>!3d<lat>".
+    assert (round(event.latitude, 5), round(event.longitude, 5)) == (32.0743, 34.78427)
     enriched = Enricher(get_settings().enrichment, TZ).enrich(event)
     assert enriched is not None and "stand_up" in enriched.genres
 
@@ -68,6 +70,16 @@ MORE = """<div class="moreShows"><ul>
 </ul></div>"""
 
 
+def test_old_map_link_gives_no_point() -> None:
+    """An old "maps?q=<name>" embed names the place only; its sll= is a fixed Tel Aviv point."""
+    event = card_event(_cards()[0], SETTINGS)
+    page = (
+        '<iframe src="https://maps.google.co.il/maps?f=q&q=%D7%92%D7%91%D7%A2%D7%AA&sll=32.065022,34.77349"></iframe>'
+    )
+    add_page(event, page, SETTINGS.site_url)
+    assert (event.latitude, event.longitude) == (None, None)
+
+
 def test_producer_list_gives_the_other_dates() -> None:
     same, other = parse_more_dates(MORE, TZ)
     assert (same["show_id"], same["date_id"], same["title"]) == ("14087", "57389", "נופר סויסה במופע סטנדאפ")
@@ -86,6 +98,7 @@ def test_other_date_reuses_its_show_page_and_keeps_its_own_date_place_and_price(
     assert same.start_at.isoformat() == "2026-11-26T22:00:00+02:00"
     assert same.images == show.images and same.description == show.description and same.tickets == show.tickets
     assert same.extra["producer"] == "קומדי בר" and same.source_genres == ["standup"]
+    assert same.latitude is None  # another venue than the show page's map: geocoding places it
     # A show whose page was not read: the list's own title, place and price, no categories.
     assert (other.title, other.min_price, other.tickets, other.source_genres) == ("נותנים בראש", Decimal(63), [], [])
 

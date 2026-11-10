@@ -1286,6 +1286,15 @@ geocoding:
     "הכנסייה האנגליקנית, נצרת": [32.7025866, 35.2962425]  # Christ Church (Anglican), Nazareth
     "קלרמונט": [32.1125884, 34.8025429]                 # Clairmont Concert Hall, Buchmann-Mehta School, Tel Aviv University
     "תיאטרון דימונה": [31.0619717, 35.0371103]          # Dimona Theatre, Kovshei Eilat
+    # GoShow venues whose page has no map point (most of its pages embed one, read by the scraper).
+    # Small villages: the OSM village point; a hall there is a few hundred metres from it at most.
+    "אולם מופעים, גבעת ברנר": [31.8674, 34.8014]         # Givat Brenner's hall, where ~200 events of other sellers sit
+    "קיבוץ סער": [33.0293646, 35.1093238]                # Kibbutz Sa'ar, Mateh Asher
+    "מעיליא": [33.0280627, 35.2583300]                   # Mi'ilya village point (its Greek Catholic church square is in the old core)
+    "ג׳וליס": [32.9430618, 35.1869431]                   # Julis
+    "ג'וליס": [32.9430618, 35.1869431]                   # Julis, plain apostrophe
+    "גן יעקב (הבימה)": [32.0734349, 34.7793900]          # Gan Yaakov, by Habima, Tel Aviv
+    "גלריה מזל דגים": [32.0533730, 34.7514300]           # Mazal Dagim 4, Old Jaffa (OSM house point)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
