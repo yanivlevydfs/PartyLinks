@@ -117,3 +117,23 @@ def test_cards_are_drawn_concurrently_and_one_failure_spares_the_rest(tmp_path: 
     assert service.run(settings, db)["drawn"] == 5
     monkeypatch.setattr(draw, "draw", real_draw)
     assert service.run(settings, db)["drawn"] == 1  # the failed one, next pass
+
+
+def test_event_data_shows_the_drawn_card_or_a_duplicates_picture(tmp_path: Path) -> None:
+    """Search Console flagged events without "image": every event page shows one (owner's rule)."""
+    from partylinks.seo import event_jsonld
+
+    settings = _settings(tmp_path)
+    db = seed(settings, [event("bare", SOON, images=[]), event("twin", SOON + timedelta(days=1), images=[])])
+    service.run(settings, db)
+    with db.session() as s:
+        bare = s.get(EventRow, "test:bare")
+        assert "/artwork/" in event_jsonld(bare, settings)["image"][0]
+        twin = s.get(EventRow, "test:twin")  # its duplicate on another site has a picture: that one
+        s.add(EventRow(**{c: getattr(twin, c) for c in ("start_at", "title")}, id="other:twin", source="other",
+                       source_event_id="twin", url="https://o.example/twin", group_id=twin.group_id, is_primary=False))  # fmt: skip
+        s.flush()
+        s.add(ImageRow(event_id="other:twin", position=0, url="https://o.example/t.jpg", local_path="t.jpg",
+                       content_type="image/jpeg", downloaded_at=datetime.now(UTC)))  # fmt: skip
+        s.flush()
+        assert "/images/" in event_jsonld(twin, settings)["image"][0]

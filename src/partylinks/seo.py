@@ -202,8 +202,15 @@ def _cover(cfg: Settings, row: EventRow, drawn: bool = True) -> str | None:
     flagged events without "image")."""
     if row.cover_url:
         return cfg.site.base_url + row.cover_url
-    if row.image_url or not drawn or (session := object_session(row)) is None:
+    if row.image_url or (session := object_session(row)) is None:
         return row.image_url
+    # A duplicate listing's picture, as the cards show it (no card is drawn while one exists: 458 events had
+    # no picture at all on their page, 2026-11-10); else the drawn card.
+    from partylinks.api import _group_covers  # local: api imports this module
+
+    found = _group_covers(session, [row]).get(row.group_id or "")
+    if found or not drawn:
+        return cfg.site.base_url + found if found else None
     card = artwork_urls(session, [row.id]).get(row.id)
     return cfg.site.base_url + card if card else None
 
