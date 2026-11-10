@@ -352,6 +352,16 @@ http:
   request_delay_seconds: 0.5
   # Parallel requests per source (listing pages, event details, artwork).
   concurrency: 8
+  # Automatic pace (partylinks/pace.py), per source and per run: a 429 / 503 halves the requests at once
+  # and doubles the pause (one slow-down per burst); up_after answers in a row without one bring the pause
+  # back to request_delay_seconds and then one more request at once, up to max_concurrency (0: the
+  # source's concurrency). A source can set its own under its http: block.
+  pace:
+    enabled: true
+    max_delay_seconds: 10
+    min_delay_seconds: 0.25
+    up_after: 50
+    max_concurrency: 0
   user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
   accept_language: "he-IL,he;q=0.9,en;q=0.8"
   # Outgoing proxy for scraping and image downloads, so source sites see the proxy's IP, not

@@ -47,6 +47,7 @@ from partylinks.artists import ArtistProfile
 from partylinks.config import HttpSettings, validate_cron
 from partylinks.logs import first_line
 from partylinks.models import ScrapedEvent
+from partylinks.pace import Pace
 from partylinks.parsing import ParseError, to_int
 
 T = TypeVar("T")
@@ -227,7 +228,7 @@ class BaseScraper[S: SourceSettings](ABC):
         self.wanted: Callable[[ScrapedEvent], bool] = lambda event: True
         self._client: httpx.AsyncClient | None = None
         self._retired_clients: list[httpx.AsyncClient] = []  # replaced after a proxy failure; closed at exit
-        self._semaphore = asyncio.Semaphore(self.http.concurrency)
+        self._pace = Pace(self.http.concurrency, self.http.request_delay_seconds, self.http.pace, self.log)
         self._probe: asyncio.Task[None] | None = None  # the Israeli pool's one parallel check (see _probe_israeli)
         self._backoff = wait_exponential(multiplier=self.http.backoff_seconds, max=60)
 
@@ -381,9 +382,7 @@ class BaseScraper[S: SourceSettings](ABC):
             reraise=True,
         ):
             with attempt:
-                async with self._semaphore:  # held per attempt, never while backing off
-                    if self.http.request_delay_seconds:
-                        await asyncio.sleep(self.http.request_delay_seconds)
+                async with self._pace:  # a slot and the pause, per attempt, never while backing off
                     client = self._client
                     if client is None:
                         raise RuntimeError(f"{type(self).__name__} must be used as an async context manager")
@@ -399,6 +398,10 @@ class BaseScraper[S: SourceSettings](ABC):
                     except SOCKSError as exc:  # a broken SOCKS proxy ("Malformed reply"): httpx lets it through raw
                         switches[0] += self._next_proxy(client, exc)
                         raise httpx.ProxyError(f"SOCKS: {exc}") from exc
+                if response.status_code in THROTTLED:
+                    self._pace.throttled()
+                else:
+                    self._pace.answered()
                 # Refused (403) or throttled (429 / 503: the site rations this IP): the next proxy, while
                 # the pool lasts; then the usual backoff retries on the last one.
                 refused = response.status_code in (403, *THROTTLED) or _firewall_code(response.status_code)

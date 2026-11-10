@@ -32,6 +32,7 @@ from partylinks.event_text.config import EventTextSettings
 from partylinks.holiday_pages.config import HolidayPagesSettings
 from partylinks.lines.config import LinesSettings
 from partylinks.mail.config import MailSettings
+from partylinks.pace import PaceSettings
 from partylinks.placeinfo.config import PlaceInfoSettings
 from partylinks.popularity.config import PopularitySettings
 from partylinks.similar.config import SimilarSettings
@@ -192,6 +193,8 @@ class HttpSettings(BaseModel):
     backoff_seconds: float = Field(2, ge=0)
     request_delay_seconds: float = Field(0.5, ge=0)
     concurrency: int = Field(4, ge=1)
+    # Slower when the site throttles (429 / 503), faster again when it doesn't (partylinks.pace).
+    pace: PaceSettings = Field(default_factory=PaceSettings)
     user_agent: str = "Mozilla/5.0"
     accept_language: str = "he-IL,he;q=0.9,en;q=0.8"
     # Extra request headers, e.g. a partner access key agreed with a site owner.
