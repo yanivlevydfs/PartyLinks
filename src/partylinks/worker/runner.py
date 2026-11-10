@@ -226,7 +226,9 @@ def _log_failure(task: asyncio.Future[Any]) -> None:
 
 def _report(name: str) -> Callable[[Future[RunResult]], None]:
     def done(future: Future[RunResult]) -> None:
-        if exc := future.exception():
+        # Cancelled by a shutdown (a deploy): exception() would raise CancelledError and log one traceback
+        # per queued run; the run is resumed after the restart.
+        if not future.cancelled() and (exc := future.exception()):
             log.error("worker: admin run of %s failed: %s", name, exc)
 
     return done
