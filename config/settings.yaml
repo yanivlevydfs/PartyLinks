@@ -2383,8 +2383,11 @@ sources:
     country_path: /en/venues/-/israel
     city_paths: ["/en/cities/tel-aviv", "/en/cities/jerusalem", "/en/cities/haifa", "/en/cities/eilat"]
     cities_sitemap_path: /api/sitemaps/cities/sitemap/0.xml
+    # 4 at once with no pause: every run since 2026-11-09 ended "rate limited (429) after backoff" part
+    # way. 2 at once, a quarter second apart: ~13,000 requests in about an hour.
     http:
-      concurrency: 4
+      concurrency: 2
+      request_delay_seconds: 0.25
 
   posh:
     # Posh (posh.vip): party and nightlife ticketing, almost all in the US. The explore page's JSON
