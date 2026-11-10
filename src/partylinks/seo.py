@@ -197,8 +197,9 @@ def go_path(event_id: str) -> str:
 
 
 def _cover(cfg: Settings, row: EventRow, drawn: bool = True) -> str | None:
-    """The event's picture; with ``drawn``, else its drawn card (link previews). Google's event data (JSON-LD)
-    asks drawn=False: a title card is no picture of the event."""
+    """The event's picture; with ``drawn``, else its drawn card (it carries the event's name, date and place).
+    Owner's rule: the drawn card stands in everywhere a picture is missing, JSON-LD too (Search Console
+    flagged events without "image")."""
     if row.cover_url:
         return cfg.site.base_url + row.cover_url
     if row.image_url or not drawn or (session := object_session(row)) is None:
@@ -372,8 +373,8 @@ def event_jsonld(row: EventRow, cfg: Settings, same_as: dict[str, list[dict[str,
         "eventStatus": "https://schema.org/EventScheduled",
         "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
         "location": _place(row),
-        # The event's own artwork only: Google wants images that represent the event, not the site logo.
-        "image": [i for i in [_cover(cfg, row, drawn=False)] if i],
+        # The event's own artwork, else its drawn card (never the site logo).
+        "image": [i for i in [_cover(cfg, row)] if i],
         "description": _clip(row.description) or _clip(_about(row)),
         "inLanguage": "he",
         "isAccessibleForFree": row.entry_type == "free" or None,
@@ -553,7 +554,7 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
     about = f"<h2>{t['about_event']}</h2>{text}" if text else ""
     venue_link = f'<a href="/venue/{quote(row.venue_name, safe="")}">{escape(row.venue_name)}</a>' if row.venue_name else ""
     crumbs = [(row.venue_name, f"/venue/{quote(row.venue_name, safe='')}")] if row.venue_name else []
-    place = place_seo(session, row, cfg.place_info, lang, _url(cfg, event_path(row)), _cover(cfg, row, drawn=False)) if (row.extra or {}).get(PLACE_LISTING) else None
+    place = place_seo(session, row, cfg.place_info, lang, _url(cfg, event_path(row)), _cover(cfg, row)) if (row.extra or {}).get(PLACE_LISTING) else None
     more = "" if place else _more_html(session, cfg, lang, row)
     return Page(
         title=f"{row.title} · {_when(row, cfg, lang)} · {cfg.site.name}",
@@ -610,7 +611,7 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     if rows:
         place["event"] = [_event_ref(r, cfg) for r in rows]
     spot = next((r for r in rows if (r.extra or {}).get(PLACE_LISTING)), None)
-    details = place_seo(session, spot, cfg.place_info, lang, _url(cfg, path), _cover(cfg, spot, drawn=False)) if spot else None
+    details = place_seo(session, spot, cfg.place_info, lang, _url(cfg, path), _cover(cfg, spot)) if spot else None
     profile = venue_profile_for(session, load_venue_profiles(session), name)
     about = (profile.about if profile else None) or t["venue_desc"].format(name=name)
     logo = cfg.site.base_url + logo if profile and (logo := venue_logo_path(profile)) else None
