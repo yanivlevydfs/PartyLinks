@@ -2678,6 +2678,8 @@ sources:
     # Addresses from the site's /locations page. robots.txt allows all but ?lightbox=; the tickets host has none.
     enabled: true
     cron: "23 9,21 * * *"
+    # ~2,250 ticketGroups requests a run: 3 at a time the host refused them (429), proxy after proxy (Nov 2026).
+    http: {concurrency: 1, request_delay_seconds: 0.5}
     api_url: https://tickets.cinema-city.co.il
     presentations_path: /api/presentations/
     features_path: /api/features/
