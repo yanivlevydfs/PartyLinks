@@ -551,6 +551,7 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
     venue_link = f'<a href="/venue/{quote(row.venue_name, safe="")}">{escape(row.venue_name)}</a>' if row.venue_name else ""
     crumbs = [(row.venue_name, f"/venue/{quote(row.venue_name, safe='')}")] if row.venue_name else []
     place = place_seo(session, row, cfg.place_info, lang, _url(cfg, event_path(row)), _cover(cfg, row, drawn=False)) if (row.extra or {}).get(PLACE_LISTING) else None
+    more = "" if place else _more_html(session, cfg, lang, row)
     return Page(
         title=f"{row.title} · {_when(row, cfg, lang)} · {cfg.site.name}",
         description=_clip(f"{summary}. {row.description or ''}", 160),
@@ -564,8 +565,26 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
             f"<p>{venue_link} {escape(where)}</p><p>{escape(_price(row, lang))}</p>{lineup}"
             f"{about}{place[1] if place else ''}"
             f'<p><a href="{escape(go_path(row.id))}?at=seo" rel="nofollow noopener">{t["tickets"]} ({escape(row.source)})</a></p></article>'
+            + more
         ),
     )
+
+
+def _more_html(session: Session, cfg: Settings, lang: str, row: EventRow) -> str:
+    """Other upcoming events at the same venue (else in the same city) and the city's pages: an event page
+    alone is a few lines, which Google crawled and left out of its index ("Crawled - currently not indexed")."""
+    n = cfg.site.related_events
+    if n <= 0:
+        return ""
+    others = (EventRow.id != row.id, _NOT_PLACE)
+    rows, near = [], ""
+    if row.venue_name:
+        rows, near = _upcoming(session, like_contains(EventRow.venue_name, row.venue_name, whole=True), *others, limit=n, abroad=None), row.venue_name
+    if not rows and row.city:
+        rows, near = _upcoming(session, EventRow.city == row.city, *others, limit=n, abroad=None), row.city
+    head = (f"עוד ב{near}" if lang == "he" else f"More at {near}") if rows else ""
+    links = _related(session, cfg, lang, f"/venue/{quote(row.venue_name, safe='')}") if row.venue_name else []
+    return (f"<section><h2>{escape(head)}</h2>{_event_list_html(rows, cfg, lang)}</section>" if rows else "") + _links_html(links, lang)
 
 
 def like_contains(column: Any, value: str, *, whole: bool = False) -> ColumnElement[bool]:

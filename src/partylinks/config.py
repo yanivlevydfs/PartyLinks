@@ -539,6 +539,9 @@ class SiteSettings(BaseModel):
     # artists only: names with a profile in the artist book (sellers' artist pages). Names read from free text
     # ("00h00 - 06h30", "16 Rue Saglio 67100") stay on their events but are not listed as artists.
     artists_verified_only: bool = True
+    # Other upcoming events listed on an event's page (same venue, else same city): Google left thin event
+    # pages "Crawled - currently not indexed"; these give each page context and links. 0: none.
+    related_events: int = 8
     # Contact and partnerships address shown on /contact and /partners (falls back to privacy.email).
     email: str = ""
     # The site's own profiles elsewhere (its Telegram bot, social pages): Organization.sameAs in the home's JSON-LD.

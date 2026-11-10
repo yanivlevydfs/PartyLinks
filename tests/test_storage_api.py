@@ -1337,3 +1337,16 @@ def test_a_served_page_has_one_title() -> None:
     for static in ("<title>SPOTX · כל האירועים בישראל</title>", "<title>old</title>"):
         html = _strip_title(f"<head>{static}\n<title>SPOTX · כל האירועים בישראל</title></head>", "")
         assert html.count("<title>") == 1 and "כל האירועים בישראל" in html
+
+
+def test_event_page_lists_more_at_its_venue(tmp_path: Path) -> None:
+    from partylinks.seo import event_page
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [event(e, future + timedelta(hours=i), venue_name="Barby") for i, e in enumerate("abc")])
+    with db.session() as session:  # a thin event page left out of Google's index: its venue's other events
+        page = event_page(session, settings, "he", "test:a")
+        assert page and "עוד בBarby" in page.body and "Techno night b" in page.body and page.body.count("Techno night a") == 1
+        settings.site.related_events = 0
+        assert "עוד ב" not in event_page(session, settings, "he", "test:a").body  # type: ignore[union-attr]
