@@ -85,6 +85,9 @@ class DatabaseSettings(BaseModel):
     # is cancelled by PostgreSQL instead of holding row locks forever.
     statement_timeout_ms: int = Field(120_000, ge=0)
     idle_in_transaction_timeout_ms: int = Field(300_000, ge=0)
+    # The regroup's whole-table reads (read-only: no row locks) compute in Python between statements; with
+    # many sources running that took over 5 minutes and the timeout above killed every attempt (Nov 2026).
+    regroup_idle_timeout_ms: int = Field(1_800_000, ge=0)
     lock_timeout_ms: int = Field(60_000, ge=0)
     # Parallel workers per query (PostgreSQL's max_parallel_workers_per_gather). 0: each query runs in one
     # process. Parallel plans share data through /dev/shm, which is small on Railway's Postgres; with

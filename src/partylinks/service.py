@@ -26,14 +26,16 @@ import logging
 import re
 import threading
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.exc import DataError, IntegrityError
+from sqlalchemy.orm import Session
 
 from partylinks import group_fill
 from partylinks.artistdb import ArtistBook
@@ -295,22 +297,31 @@ class ScrapeService:
         with self._dedup_lock:
             return _with_db_retry("regroup", self._regroup_once)
 
+    @contextmanager
+    def _planning(self) -> Iterator[Session]:
+        """A read session for the regroup's whole-table planning: it computes between its reads, longer than
+        the idle-in-transaction cut-off allows while many sources run (database.regroup_idle_timeout_ms)."""
+        with self.db.session(write=False) as session:
+            ms = self.settings.database.regroup_idle_timeout_ms
+            session.execute(text(f"SET LOCAL idle_in_transaction_session_timeout = {int(ms)}"))
+            yield session
+
     def _regroup_once(self) -> int:
         # Whole-table passes over ~40k rows: computed in read sessions, the write lock only for the
         # changed rows (it was held for minutes and starved every save, Oct 2026). ponytail: a row
         # saved between a read and its write is regrouped on the next pass.
-        with self.db.session(write=False) as session:
+        with self._planning() as session:
             renames = venue_updates(session)  # before grouping: a shared venue helps match duplicates
         if renames:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, renames)
         log.debug("venues: renamed %d events", len(renames))
-        with self.db.session(write=False) as session:
+        with self._planning() as session:
             merged, changed = self.deduplicator.plan(session)
         if changed:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, changed)
-        with self.db.session(write=False) as session:
+        with self._planning() as session:
             fills = group_fill.plan(session, self.enricher.clean_name)  # what one store lacks, from the event's other stores / its venue
         if fills:
             with self.db.session() as session:
