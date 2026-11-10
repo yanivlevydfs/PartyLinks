@@ -2652,7 +2652,8 @@ sources:
     # robots.txt allows everything but /booking, /club and asset paths.
     enabled: true
     cron: "11 9,21 * * *"
-    http: {concurrency: 3}
+    # ~2,000 ticketGroups requests a run: 3 at a time drew ~1,300 "429 Too Many Requests" (Nov 2026).
+    http: {concurrency: 1, request_delay_seconds: 1.0}
     site_url: https://www.planetcinema.co.il
     api_path: /il/data-api-service
     tenant_id: "10100"
