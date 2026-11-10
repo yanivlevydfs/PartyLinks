@@ -10,7 +10,9 @@ ones included) as ``/ru/event/il/<city>/<yyyy>/<mm>/<dd>/<slug>-<id>``. There is
 (RSS: last 50), so it is one request per event: only dates within ``days_ahead`` are fetched (the date is in the path), in the configured locale (``he``: Hebrew name
 and description). Each page's schema.org ``Event`` JSON-LD is parsed with the generic parser shared
 with Chillz. That JSON-LD is in Russian on every locale for the city, language and tags, so the city
-comes from the URL's English slug and tags / language are translated below.
+comes from the URL's English slug and tags / language are translated below. An event OGO gives
+without a price or picture (~1 in 3, Nov 2026: the page state has ``price_min: null``,
+``is_free: null`` too) is completed from its seller's page (``seller_offers``).
 """
 
 from __future__ import annotations
@@ -29,6 +31,7 @@ from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, schema_types, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.chillz import EVENT_TYPES, parse_page
+from partylinks.scrapers.seller_offers import SellerLookup, SellerLookupSettings
 
 _LOC = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>")
 _NEXT_REDIRECT = re.compile(r'NEXT_REDIRECT;\w+;(/[^;"\\]+);30[178]')
@@ -67,7 +70,7 @@ _LANGUAGES = {
 }
 
 
-class OgoSettings(SourceSettings):
+class OgoSettings(SourceSettings, SellerLookupSettings):
     site_url: str
     sitemap_path: str  # the sitemap index
     locale: str = "he"  # he | ru | en: language of the fetched pages (name, description)
@@ -90,8 +93,10 @@ class OgoScraper(BaseScraper[OgoSettings]):
         if len(urls) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
         self.log.debug("listed %d upcoming events", len(urls))
+        self._sellers = SellerLookup(self, s)
         async for event in self.stream_isolated(urls[: s.max_events], self._fetch_event, label=lambda u: u):
             yield event
+        self.log.info("seller filled %s", dict(self._sellers.filled))
 
     async def _sitemap(self, url: str) -> str | None:
         """One sitemap of the index; None when the index lists one the site has dropped (404, Nov 2026)."""
@@ -114,7 +119,9 @@ class OgoScraper(BaseScraper[OgoSettings]):
                 raise
             url = urljoin(url, moved.group(1))
             page = await self.get_text(url)
-        return parse_event(page, url, self.timezone)
+        event = parse_event(page, url, self.timezone)
+        # Many OGO events give no price or picture: the seller's page has them (seller_offers).
+        return await self._sellers.fill(event) if event is not None else None
 
 
 def _locs(xml: str) -> list[str]:

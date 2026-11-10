@@ -69,3 +69,38 @@ def test_series_page_lists_its_dates() -> None:
     )
     assert series_links(page) == ["https://www.makore.co.il/event/flute--c6064335"]
     assert series_links("<html></html>") == []
+
+
+def test_event_page_price_from_the_page_state() -> None:
+    from partylinks.scrapers.makore import page_tickets
+
+    # Real RSC state (split over two pushes, as the site does) plus a related event's card.
+    page = (Path(__file__).parent / "fixtures/makore/event_page.html").read_text("utf-8")
+    assert [(t.name, t.price) for t in page_tickets(page, "450f305d")] == [
+        ("מבוגר", Decimal(250)),
+        ("ילד", Decimal(220)),
+    ]
+    assert [t.price for t in page_tickets(page, "0d2b1c3a")] == [Decimal(89)]  # each event its own
+    assert page_tickets(page, "ffffffff") == [] and page_tickets("<html></html>", "450f305d") == []
+
+
+def _state_page(event: dict[str, object]) -> str:
+    row = '4a:["$","$L65",null,' + json.dumps({"event": {"id": "abcdef12aa", **event}}, separators=(",", ":")) + "]"
+    return "<script>self.__next_f.push([1," + json.dumps(row) + "])</script>"
+
+
+def test_event_page_price_kinds() -> None:
+    from partylinks.scrapers.makore import page_tickets
+
+    def prices(pricing: object, **more: object) -> list[tuple[Decimal | None, bool]]:
+        return [(t.price, t.is_free) for t in page_tickets(_state_page({"pricing": pricing, **more}), "abcdef12")]
+
+    assert prices({"kind": "fixed", "amount": 60}) == [(Decimal(60), False)]
+    assert prices({"kind": "starting_from", "min": 20}) == [(Decimal(20), False)]
+    assert prices({"kind": "range", "min": 0, "max": 44}) == [(Decimal(0), True), (Decimal(44), False)]
+    assert prices({"kind": "free"}) == [(Decimal(0), True)]
+    assert prices({"kind": "unknown", "rawText": None}, isFree=True) == [(Decimal(0), True)]
+    # The site's reader could not file the seller's words, but they state a ticket price.
+    assert prices({"kind": "unknown", "rawText": 'מחיר כרטיס:\xa090 ש"ח'}) == [(Decimal(90), False)]
+    assert prices({"kind": "unknown", "rawText": None}) == []  # no price anywhere: left unknown
+    assert prices(None) == []

@@ -1,0 +1,209 @@
+{
+ "ID": "ZOw7nVOx",
+ "Name": "האוטובוס האדום סיור העיר החדשה",
+ "MinimalPrice": 80,
+ "CurrencySign": "₪",
+ "ProductMediaItems": [
+  {
+   "LowResolutionLink": "https://bookit-production-public-e4rp73y995.s3.il-central-1.amazonaws.com/4028/images-v2/6fa5df3dad87428d8689f5b13505f365_original.jpeg",
+   "MediumResolutionLink": "https://bookit-production-public-e4rp73y995.s3.il-central-1.amazonaws.com/4028/images-v2/6fa5df3dad87428d8689f5b13505f365_original.jpeg",
+   "HighResolutionLink": "https://bookit-production-public-e4rp73y995.s3.il-central-1.amazonaws.com/4028/images-v2/6fa5df3dad87428d8689f5b13505f365_original.jpeg",
+   "Type": 2,
+   "IsMain": true
+  },
+  {
+   "LowResolutionLink": "https://bookit-production-public-e4rp73y995.s3.il-central-1.amazonaws.com/4028/images-v2/0c399fc3789841fe8d123572b7274505_original.jpeg",
+   "MediumResolutionLink": "https://bookit-production-public-e4rp73y995.s3.il-central-1.amazonaws.com/4028/images-v2/0c399fc3789841fe8d123572b7274505_original.jpeg",
+   "HighResolutionLink": "https://bookit-production-public-e4rp73y995.s3.il-central-1.amazonaws.com/4028/images-v2/0c399fc3789841fe8d123572b7274505_original.jpeg",
+   "Type": 2,
+   "IsMain": false
+  }
+ ],
+ "Availability": [
+  {
+   "date": "2026-12-07",
+   "startTime": "12:00:00",
+   "price": 80,
+   "prices": [
+    {
+     "name": "מבוגר",
+     "customerTypeId": "La3d4jlz",
+     "amount": 80,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "גמלאי / נכה/ נכה צה\"ל/ מלווה",
+     "customerTypeId": "2aA0D9pZ",
+     "amount": 65,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "ילד (גיל 6-15)",
+     "customerTypeId": "eO8BxvaP",
+     "amount": 50,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "משפחה (2+2)",
+     "customerTypeId": "dOnqE9lV",
+     "amount": 220,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "ילד.ה עד גיל 6",
+     "customerTypeId": "4aLyA2ln",
+     "amount": 0,
+     "currencyId": "Belm3pnb"
+    }
+   ]
+  },
+  {
+   "date": "2026-12-08",
+   "startTime": "12:00:00",
+   "price": 80,
+   "prices": [
+    {
+     "name": "מבוגר",
+     "customerTypeId": "La3d4jlz",
+     "amount": 80,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "גמלאי / נכה/ נכה צה\"ל/ מלווה",
+     "customerTypeId": "2aA0D9pZ",
+     "amount": 65,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "ילד (גיל 6-15)",
+     "customerTypeId": "eO8BxvaP",
+     "amount": 50,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "משפחה (2+2)",
+     "customerTypeId": "dOnqE9lV",
+     "amount": 220,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "ילד.ה עד גיל 6",
+     "customerTypeId": "4aLyA2ln",
+     "amount": 0,
+     "currencyId": "Belm3pnb"
+    }
+   ]
+  },
+  {
+   "date": "2026-12-09",
+   "startTime": "12:00:00",
+   "price": 80,
+   "prices": [
+    {
+     "name": "מבוגר",
+     "customerTypeId": "La3d4jlz",
+     "amount": 80,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "גמלאי / נכה/ נכה צה\"ל/ מלווה",
+     "customerTypeId": "2aA0D9pZ",
+     "amount": 65,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "ילד (גיל 6-15)",
+     "customerTypeId": "eO8BxvaP",
+     "amount": 50,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "משפחה (2+2)",
+     "customerTypeId": "dOnqE9lV",
+     "amount": 220,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "ילד.ה עד גיל 6",
+     "customerTypeId": "4aLyA2ln",
+     "amount": 0,
+     "currencyId": "Belm3pnb"
+    }
+   ]
+  },
+  {
+   "date": "2026-12-10",
+   "startTime": "12:00:00",
+   "price": 80,
+   "prices": [
+    {
+     "name": "מבוגר",
+     "customerTypeId": "La3d4jlz",
+     "amount": 80,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "גמלאי / נכה/ נכה צה\"ל/ מלווה",
+     "customerTypeId": "2aA0D9pZ",
+     "amount": 65,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "ילד (גיל 6-15)",
+     "customerTypeId": "eO8BxvaP",
+     "amount": 50,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "משפחה (2+2)",
+     "customerTypeId": "dOnqE9lV",
+     "amount": 220,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "ילד.ה עד גיל 6",
+     "customerTypeId": "4aLyA2ln",
+     "amount": 0,
+     "currencyId": "Belm3pnb"
+    }
+   ]
+  },
+  {
+   "date": "2026-12-11",
+   "startTime": "10:00:00",
+   "price": 80,
+   "prices": [
+    {
+     "name": "מבוגר",
+     "customerTypeId": "La3d4jlz",
+     "amount": 80,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "גמלאי / נכה/ נכה צה\"ל/ מלווה",
+     "customerTypeId": "2aA0D9pZ",
+     "amount": 65,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "ילד (גיל 6-15)",
+     "customerTypeId": "eO8BxvaP",
+     "amount": 50,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "משפחה (2+2)",
+     "customerTypeId": "dOnqE9lV",
+     "amount": 220,
+     "currencyId": "Belm3pnb"
+    },
+    {
+     "name": "ילד.ה עד גיל 6",
+     "customerTypeId": "4aLyA2ln",
+     "amount": 0,
+     "currencyId": "Belm3pnb"
+    }
+   ]
+  }
+ ]
+}

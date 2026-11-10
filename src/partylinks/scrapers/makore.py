@@ -5,13 +5,17 @@ Next.js site; robots.txt allows everything but /admin. Listing: each configured 
 JSON-LD, page N at ``?pages=N``; the meta description states the category total ("239 אירועי
 חיי לילה..."), so every page is fetched in parallel. Items already have name, description,
 start/end, image, venue with street, city and coordinates, and the box office link and price
-(``offers``), so no per-event request is needed. ``source_event_id`` is the short hex id the
+(``offers``). ~3 in 4 items have no price there (Nov 2026): the event's own page holds the site's
+reading of the seller's text in its React Server Components state (``event.pricing``: fixed, from,
+range, ticket types, free, or unknown with the raw text), so that page is read for those; what is
+still missing (price, picture) comes from the seller's page (``seller_offers``). ``source_event_id`` is the short hex id the
 event URL ends with (``/event/<slug>--25f6fc42``, or ``/event/25f6fc42``). Makore aggregates other box offices, so most
 events are also listed by another source; dedup merges them.
 """
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import AsyncIterator
 from datetime import time
@@ -23,7 +27,7 @@ from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.config import RetentionSettings
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import (
     ParseError,
     clean_str,
@@ -37,17 +41,23 @@ from partylinks.parsing import (
 )
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.seller_offers import SellerLookup, SellerLookupSettings, free_tier, priced, with_tickets
+from partylinks.scrapers.text_prices import text_tickets
 
 _EVENT_ID = re.compile(r"(?:--|/event/)([0-9a-f]{6,})/?$")
 _TOTAL = re.compile(r"^\s*([\d,]+)\s")
+# One RSC row: self.__next_f.push([1,"<JSON string>"])
+_FLIGHT = re.compile(r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)')
 
 
-class MakoreSettings(SourceSettings):
+class MakoreSettings(SourceSettings, SellerLookupSettings):
     site_url: str
     # Category pages read, e.g. /browse/category/חיי-לילה (nightlife), /browse/category/הופעות-חיות.
     categories: list[str] = Field(min_length=1)
     page_size: int = Field(28, ge=1)
     max_pages: int = Field(200, ge=1)
+    # Read the event's own page for an item listed without a price (one request each).
+    page_prices: bool = True
 
 
 class MakoreScraper(BaseScraper[MakoreSettings]):
@@ -56,6 +66,8 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         seen: set[str] = set()
+        incomplete: list[ScrapedEvent] = []  # without a price or a picture: completed below
+        self._pages_read: set[str] = set()  # event pages already read (series dates)
         retention = RetentionSettings()
         series: dict[str, str] = {}  # series page -> category name
         for category in self.settings.categories:
@@ -78,7 +90,10 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
                     continue
                 if event.source_event_id not in seen:
                     seen.add(event.source_event_id)
-                    yield event
+                    if priced(event) and event.images:
+                        yield event
+                    else:
+                        incomplete.append(event)
         # A series page lists its dates' event pages; each page's JSON-LD Event is one listing item.
         dated: dict[str, str] = {}
         async for links in self.stream_isolated(list(series.items()), self._series_links, label=lambda p: p[0]):
@@ -94,8 +109,32 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
             ):
                 continue
             seen.add(event.source_event_id)
+            incomplete.append(event)
+        sellers = SellerLookup(self, self.settings)
+        async for event in self.stream_isolated(
+            incomplete, lambda e: self._complete(e, sellers), label=lambda e: str(e.url)
+        ):
             yield event
-        self.log.debug("listed %d events (%d series, %d series dates)", len(seen), len(series), len(dated))
+        self.log.info(
+            "listed %d events (%d series, %d series dates); %d without a price or picture, seller filled %s",
+            len(seen),
+            len(series),
+            len(dated),
+            len(incomplete),
+            dict(sellers.filled),
+        )
+
+    async def _complete(self, event: ScrapedEvent, sellers: SellerLookup) -> ScrapedEvent:
+        """The event's own page for a price, then its seller; the event as listed when both fail."""
+        if self.settings.page_prices and not priced(event) and event.source_event_id not in self._pages_read:
+            try:
+                tickets = page_tickets(await self.get_text(str(event.url)), event.source_event_id)
+            except Exception as exc:  # noqa: BLE001 - the listing's data is saved anyway
+                self.log.debug("event page %s: %s", event.url, exc)
+                tickets = []
+            if tickets:
+                event = with_tickets(event, tickets)
+        return await sellers.fill(event)
 
     async def _series_links(self, page: tuple[str, str]) -> list[tuple[str, str]]:
         url, name = page
@@ -103,10 +142,16 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
 
     async def _event_page(self, page: tuple[str, str]) -> ScrapedEvent | None:
         url, name = page
-        nodes = [n for n in jsonld_nodes(await self.get_text(url)) if "event" in schema_types(n)]
+        page_html = await self.get_text(url)
+        nodes = [n for n in jsonld_nodes(page_html) if "event" in schema_types(n)]
         if not nodes:
             raise ParseError(f"{url}: no Event JSON-LD")
-        return parse_item(nodes[0], name, self.timezone)
+        event = parse_item(nodes[0], name, self.timezone)
+        if event is None or priced(event):
+            return event
+        tickets = page_tickets(page_html, event.source_event_id)
+        self._pages_read.add(event.source_event_id)
+        return with_tickets(event, tickets) if tickets else event
 
     async def _category(self, path: str) -> list[dict[str, Any]]:
         s = self.settings
@@ -149,6 +194,45 @@ def listing_total(page_html: str) -> int | None:
     meta = LexborHTMLParser(page_html).css_first('meta[name="description"]')
     found = _TOTAL.match(meta.attributes.get("content") or "") if meta else None
     return int(found.group(1).replace(",", "")) if found else None
+
+
+def page_state(page_html: str, short_id: str) -> dict[str, Any] | None:
+    """The event object of the page's RSC state (``{"event": {"id": "<full id>", "pricing": ...}}``)."""
+    payload = "".join(json.loads(row) for row in _FLIGHT.findall(page_html))
+    decoder = json.JSONDecoder()
+    for found in re.finditer(r'\{"event":\{"id":"' + re.escape(short_id), payload):
+        try:
+            state = decoder.raw_decode(payload, found.start())[0]["event"]
+        except (ValueError, KeyError, TypeError):
+            continue
+        if isinstance(state, dict):
+            return state
+    return None
+
+
+def page_tickets(page_html: str, short_id: str) -> list[TicketTier]:
+    """The price the event page states (``pricing`` kinds of the site's own price reader)."""
+    state = page_state(page_html, short_id) or {}
+    pricing = state.get("pricing") if isinstance(state.get("pricing"), dict) else {}
+    kind, currency = pricing.get("kind"), clean_str(pricing.get("currency")) or "ILS"
+
+    def tier(name: str, amount: Any) -> list[TicketTier]:
+        price = to_decimal(amount)
+        return [TicketTier(name=name, price=price, currency=currency, is_free=price == 0)] if price is not None else []
+
+    if kind == "free" or state.get("isFree") is True:
+        return [free_tier()]
+    if kind == "fixed":
+        return tier("כרטיס", pricing.get("amount"))
+    if kind == "starting_from":
+        return tier("החל מ", pricing.get("min"))
+    if kind == "range":
+        return tier("כרטיס", pricing.get("min")) + tier("כרטיס", pricing.get("max"))
+    if kind == "ticket_types":
+        rows = [t for t in pricing.get("tickets") or [] if isinstance(t, dict)]
+        return [x for t in rows for x in tier(clean_str(t.get("label")) or "כרטיס", t.get("amount"))]
+    # "unknown": the seller's own words, when the reader could not file them ("מחיר כרטיס: 90 ש\"ח").
+    return text_tickets(clean_str(pricing.get("rawText")))
 
 
 def parse_item(item: dict[str, Any], category: str, timezone: str) -> ScrapedEvent | None:
