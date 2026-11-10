@@ -1350,3 +1350,15 @@ def test_event_page_lists_more_at_its_venue(tmp_path: Path) -> None:
         assert page and "עוד בBarby" in page.body and "Techno night b" in page.body and page.body.count("Techno night a") == 1
         settings.site.related_events = 0
         assert "עוד ב" not in event_page(session, settings, "he", "test:a").body  # type: ignore[union-attr]
+
+
+def test_a_daily_place_is_one_page_its_venue(tmp_path: Path) -> None:
+    from partylinks.seo import event_page, sitemap_urls
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [event("bar", future, venue_name="Radler", extra={"happy_hour": True}), event("gig", future)])
+    with db.session() as session:  # a new listing each day it is open: canonical and sitemap are the venue page
+        assert event_page(session, settings, "he", "test:bar").path == "/venue/Radler"  # type: ignore[union-attr]
+        urls = "".join(sitemap_urls(session, settings))
+        assert "techno-night-gig" in urls and "techno-night-bar" not in urls and "/venue/Radler" in urls

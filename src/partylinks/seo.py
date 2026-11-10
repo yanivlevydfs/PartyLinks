@@ -555,7 +555,8 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
     return Page(
         title=f"{row.title} · {_when(row, cfg, lang)} · {cfg.site.name}",
         description=_clip(f"{summary}. {row.description or ''}", 160),
-        path=event_path(row),
+        # A place open every day is a new listing (and URL) each day: one page for it, its venue page.
+        path=f"/venue/{quote(row.venue_name, safe='')}" if place and row.venue_name else event_path(row),
         lang=lang,
         image=_cover(cfg, row),
         og_type="event",
@@ -605,6 +606,8 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     place["url"] = _url(cfg, path)
     if rows:
         place["event"] = [_event_ref(r, cfg) for r in rows]
+    spot = next((r for r in rows if (r.extra or {}).get(PLACE_LISTING)), None)
+    details = place_seo(session, spot, cfg.place_info, lang, _url(cfg, path), _cover(cfg, spot, drawn=False)) if spot else None
     profile = venue_profile_for(session, load_venue_profiles(session), name)
     about = (profile.about if profile else None) or t["venue_desc"].format(name=name)
     logo = cfg.site.base_url + logo if profile and (logo := venue_logo_path(profile)) else None
@@ -620,8 +623,8 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
         path=path,
         lang=lang,
         image=logo or (_cover(cfg, rows[0]) if rows else None),
-        jsonld=[place, _breadcrumbs(cfg, lang, (t["venues"], "/venues"), (name, path))],
-        body=f"<h1>{escape(name)}</h1><p>{escape(about)}</p>" + _event_list_html(rows, cfg, lang)
+        jsonld=[details[0] if details else place, _breadcrumbs(cfg, lang, (t["venues"], "/venues"), (name, path))],
+        body=f"<h1>{escape(name)}</h1><p>{escape(about)}</p>" + (details[1] if details else "") + _event_list_html(rows, cfg, lang)
         + _links_html(_related(session, cfg, lang, path), lang),
         noindex=not rows,
     )
@@ -1410,7 +1413,7 @@ SITEMAP_PART = 10_000
 
 def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
     """Every public page as a <url> entry (Hebrew and English apart, the blog once)."""
-    rows = session.scalars(select(EventRow).where(upcoming_filter()).order_by(EventRow.start_at.asc().nulls_first())).all()
+    rows = session.scalars(select(EventRow).where(upcoming_filter(), EventRow.is_primary.is_(True), _NOT_PLACE).order_by(EventRow.start_at.asc().nulls_first())).all()
     paths: list[tuple[str, date | None]] = [("/", None), ("/map", None), ("/abroad", None), ("/venues", None), ("/artists", None), ("/accessibility", None), ("/privacy", None), ("/terms", None)]
     paths += [(p, None) for p in INFO_PAGES]
     today = datetime.now(ZoneInfo(cfg.timezone))  # landing pages change every day
