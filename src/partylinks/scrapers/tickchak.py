@@ -31,7 +31,7 @@ from partylinks.parsing import ParseError, clean_str, from_unix, next_data, og_i
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.matnasnet import covered_smarticket_hosts
-from partylinks.scrapers.seller_page import seller_tiers
+from partylinks.scrapers.seller_page import fetch_seller_page, seller_tiers
 from partylinks.scrapers.tickchak_sitemap import unlisted_items
 
 SLIDER_SECTION = "eventSlider"
@@ -135,7 +135,8 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         for event in events:  # first everything that needs no lookup: a run timeout then keeps them
             if id(event) not in waiting:
                 yield event
-        await asyncio.gather(*(self._provider_page(e, link) for e, link in missing[: s.max_artwork_lookups]))
+        gate = asyncio.Semaphore(self.http.concurrency)  # own clients (fetch_seller_page): bound them here
+        await asyncio.gather(*(self._provider_page(e, link, gate) for e, link in missing[: s.max_artwork_lookups]))
         for event, _ in missing[: s.max_artwork_lookups]:
             yield event
 
@@ -166,14 +167,15 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         items.pop(None, None)
         return items
 
-    async def _provider_page(self, event: ScrapedEvent, link: str) -> None:
+    async def _provider_page(self, event: ScrapedEvent, link: str, gate: asyncio.Semaphore) -> None:
         """Listings copied from another box office carry no artwork, or no price ("0 / 0"), here; its page
         may have them (og:image; JSON-LD offers on Tickchak's white labels and Go-Out: seller_page).
         Artwork is read once and reused on later runs; a missing price is looked up every run."""
-        try:
-            page = await self.get_text(link)
-        except Exception as exc:  # noqa: BLE001 - optional: a seller refusing bots never ends the run
-            self.log.debug("no provider page for %s: %s", event.source_event_id, exc)
+        # Through a client of its own: a seller refusing us (429 / 403) moved Tickchak's own API to the next
+        # proxy, three times a minute on 2026-11-10.
+        async with gate:
+            page = await fetch_seller_page(self, link)
+        if page is None:
             return
         if not event.images and (image := og_image(page)):
             event.images, event.image_url = [image], image
