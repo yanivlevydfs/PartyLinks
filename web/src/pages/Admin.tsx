@@ -10,6 +10,7 @@ import { SignInButton } from "../accounts/AccountSlot";
 import { AdminEmail } from "../accounts/AdminEmail";
 import { AdminUsers } from "../accounts/AdminUsers";
 import { AdminBot } from "../bot/AdminBot";
+import { BansCard, Features, JobsCard, OrphansCard, Quality, WorkerCard } from "../admin_insights/AdminInsights";
 
 // --------------------------------------------------------------------------- api
 const TOKEN_KEY = "partylinks-admin-token";
@@ -44,16 +45,16 @@ export const post = <T = any,>(path: string, body?: unknown) =>
   call<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
 
 // --------------------------------------------------------------------------- format
-const when = (iso: string | null | undefined) =>
+export const when = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString("en-GB", { timeZone: TZ, dateStyle: "medium", timeStyle: "short" }) : "—";
-const bytes = (n: number | null | undefined) => {
+export const bytes = (n: number | null | undefined) => {
   if (n == null) return "—";
   const units = ["B", "KB", "MB", "GB"];
   let i = 0;
   for (; n >= 1024 && i < units.length - 1; i++) n /= 1024;
   return `${n.toFixed(i ? 1 : 0)} ${units[i]}`;
 };
-const ago = (iso: string | null | undefined) => {
+export const ago = (iso: string | null | undefined) => {
   if (!iso) return "";
   const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
   return min < 1 ? "just now" : min < 60 ? `${min}m ago` : min < 1440 ? `${Math.round(min / 60)}h ago` : `${Math.round(min / 1440)}d ago`;
@@ -63,7 +64,7 @@ const ago = (iso: string | null | undefined) => {
 const adminClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: true } } });
 
 // --------------------------------------------------------------------------- page
-const TABS = ["overview", "health", "clicks", "searches", "bot", "users", "email", "sponsored", "sources", "runs", "config", "maintenance"] as const;
+const TABS = ["overview", "features", "quality", "health", "clicks", "searches", "bot", "users", "email", "sponsored", "sources", "runs", "config", "maintenance"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage() {
@@ -117,6 +118,8 @@ function Admin() {
       {ov.isError && !authError && <p className="adm-err">{String(ov.error)}</p>}
       {ov.data?.warnings?.map((w: string) => <p key={w} className="adm-warn adm-banner">⚠ {w}</p>)}
       {tab === "overview" && <Overview data={ov.data} />}
+      {tab === "features" && <Features />}
+      {tab === "quality" && <Quality />}
       {tab === "health" && <Health />}
       {tab === "clicks" && <Clicks />}
       {tab === "searches" && <Searches />}
@@ -180,7 +183,7 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
 const Status = ({ s }: { s: string }) => <span className={`adm-status ${s}`}>{s}</span>;
 
 /** Button that runs a mutation, shows its result, and optionally asks for a second click first. */
-function Action({ label, run, confirm, kind = "", render }: {
+export function Action({ label, run, confirm, kind = "", render }: {
   label: string; run: () => Promise<any>; confirm?: string; kind?: string; render?: (r: any) => ReactNode;
 }) {
   const qc = useQueryClient();
@@ -225,6 +228,8 @@ function Overview({ data }: { data: any }) {
           <Stat label="Next retention" value={when(data.retention.next_run_at)} />
         </div>
       </Card>
+      <WorkerCard data={data} />
+      <JobsCard data={data} />
       <Card title="Events per source" wide>
         <table className="adm-table">
           <thead><tr><th>Source</th><th>Upcoming</th><th>Total</th></tr></thead>
@@ -455,7 +460,7 @@ function Sources() {
         <div className="adm-bar">
           <Action label="Pause all schedules" run={() => post("/admin/api/scheduler/pause")} kind="ghost" />
           <Action label="Resume all schedules" run={() => post("/admin/api/scheduler/resume")} kind="ghost" />
-          <small className="adm-note">Pausing lasts until restart or config apply. To disable a source for good, set <code>enabled: false</code> in Config.</small>
+          <small className="adm-note">Pausing all lasts until restart or config apply; one source's pause is kept until resumed. To disable a source for good, set <code>enabled: false</code> in Config.</small>
         </div>
       )}
       <div className="adm-scroll">
@@ -618,6 +623,8 @@ function Maintenance({ data }: { data: any }) {
         <p className="adm-note">Re-derive every event's area of the city from <code>enrichment.areas</code> (also runs on start and config apply).</p>
         <Action label="Recompute areas" run={() => post("/admin/api/maintenance/areas")} render={(x) => `${x.updated} events updated`} />
       </Card>
+      <BansCard />
+      <OrphansCard />
       <DebugCard />
       <Card title="Duplicates">
         <p className="adm-note">Recompute which listings from different sources are the same party.</p>

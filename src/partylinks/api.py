@@ -933,6 +933,9 @@ def create_app(
     from partylinks.artist_links.routes import router as artist_links_admin  # local: it imports partylinks.admin
 
     app.include_router(artist_links_admin)  # the maintenance tab's artist-links counts
+    from partylinks.admin_insights.routes import router as insights_admin  # local: it imports partylinks.admin
+
+    app.include_router(insights_admin)  # the admin's features and quality tabs
     app.include_router(weather_router)
     install_accounts(app, settings)  # optional Google accounts: /auth, /api/me, the admin users tab
     install_bot(app)  # the Telegram bot's webhook (partylinks.bot); off until its secrets are set

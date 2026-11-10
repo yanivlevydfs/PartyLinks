@@ -928,3 +928,8 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **בפרודקשן:** אחרי ה-deploy, פעם אחת ובאופן ידני: `DROP TABLE ontopo_photos; ALTER TABLE ontopo_venues DROP COLUMN photos;`. אין מיגרציה בקוד.
 - **`GET /places/info/{id}`:** השאילתה `SELECT n FROM ontopo_photos` ירדה; נשארו 3 קריאות לפי PK. שעות ופרטי המקום לא השתנו.
 - **Tests:** `tests/test_placeinfo.py`.
+### 2026-11-10 (לשוניות admin: "features" ו-"quality", ‏`partylinks/admin_insights`)
+- **בלי טבלה או עמודה חדשה.** שאילתות קריאה בלבד (`db.session(write=False)`), רק ב-admin.
+- **`GET /admin/api/insights/features?days=N`:** ‏`count(*) FILTER (WHERE ...)` אחד לכל טבלה: ‏`event_alerts`, ‏`alert_hits`, ‏`alert_state`, ‏`saved_events`, ‏`plans`, ‏`plan_votes` (‏`GROUP BY answer`), ‏`users`, ‏`user_passkeys`, ‏`event_artwork` (‏`sum(length(webp_640) + length(webp_1280))`), ‏`ontopo_venues`, ‏`place_info`, ‏`deal_changes` (‏`at >= now - N days`, ‏`GROUP BY kind` / ‏`source`). הכי שמורים והכי נצפים: ‏`saved_events` / ‏`event_views` ‏`JOIN events` על אירועים עתידיים, ‏`GROUP BY title, slug LIMIT 10`; ‏`event_views` מסונן לפי `day` (אינדקס).
+- **`GET /admin/api/insights/quality`:** שאילתה אחת על `events` העתידיים, ‏`GROUP BY source` עם `sum(CASE ...)` לכל שדה חסר (קואורדינטות, ז'אנר, מקום, עיר, תמונה, מחיר, אזור).
+- **Tests:** ‏`tests/test_admin_insights.py`.
