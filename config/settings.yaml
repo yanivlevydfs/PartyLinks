@@ -1894,18 +1894,12 @@ sources:
     vpn: true  # our Israeli VPN only (Railway production)
     cron: "13 8,20 * * *"
     site_url: https://www.eventim.co.il
-    # Akamai refuses event pages after ~13; their events then come from these city pages' ItemList (Nov 2026).
-    city_paths:
-      - /city/באר-שבע-308/
-      - /city/בנימינה-1957/
-      - /city/הרצליה-314/
-      - /city/זכרון-יעקב-1948/
-      - /city/חיפה-והצפון-307/
-      - /city/ירושלים-306/
-      - /city/לטרון-1953/
-      - /city/קיסריה-1573/
-      - /city/ראשון-לציון-1951/
-      - /city/תל-אביב-249/
+    # Akamai challenges the event pages (sec-if-cpt) from our VPN and evomi on the first one and from any IP
+    # after ~20 (Nov 2026): each event it refuses comes from the site's public search API instead (eventim_api:
+    # artwork, lowest price, venue with coordinates, artists; it lists every sitemap event), so the run stays
+    # clean. It replaced the city pages' ItemList (no artwork, no coordinates). Empty api_url: no API.
+    api_url: https://public-api.eventim.com/websearch/search/api/exploration/v1/products
+    api_web_id: web__eventim-co-il
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
     skip_url_words: ["זאפה", "אמפי-שוני"]   # read by the zappa source
     # A page with neither pageMeta nor an Event JSON-LD is logged (status, size, title, markers).

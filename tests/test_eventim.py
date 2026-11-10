@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from decimal import Decimal
+from pathlib import Path
 
 import httpx
 import pytest
@@ -174,6 +175,7 @@ def test_refused_event_pages_come_from_the_city_listing_and_the_run_is_partial()
     scraper.http.request_delay_seconds = 0
     scraper.http.backoff_seconds = 0
     scraper.settings.city_paths = ["/city/x-1/"]
+    scraper.settings.api_url = ""
 
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path.endswith(".xml.gz"):
@@ -220,3 +222,56 @@ def test_zappa_reads_the_zappa_club_sitemap_too() -> None:
 
     # Eventim's pages named for Zappa, and every show the Zappa site sells; one page per event id (the club's).
     assert asyncio.run(go()) == club
+
+
+# Real answers (Nov 2026): the city_names=* seed (its city facet cut to one city) and that city's page, cut to 3 shows.
+API = json.loads((Path(__file__).parent / "fixtures/eventim/api_products.json").read_text("utf-8"))
+
+
+def test_refused_event_pages_come_from_the_search_api_and_the_run_stays_clean() -> None:
+    scraper = build_scraper("eventim", Settings())
+    assert isinstance(scraper, EventimScraper) and scraper.settings.api_url
+    scraper.settings.skip_url_words = []  # the fixture's shows are at Zappa Haifa
+    scraper.http.request_delay_seconds = 0
+    scraper.http.backoff_seconds = 0
+    pages = [p["link"] for p in API["city"]["products"]]
+    asked: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith(".xml.gz"):
+            locs = "".join(f"<url><loc>{u}</loc></url>" for u in pages)
+            return httpx.Response(200, text=f"<urlset>{locs}</urlset>", headers={"content-type": "application/xml"})
+        if request.url.host == "public-api.eventim.com":
+            city = request.url.params["city_names"]
+            asked.append(city)
+            return httpx.Response(200, json=API["seed"] if city == "*" else API["city"])
+        return _html(CHALLENGE)  # Akamai refuses every event page
+
+    async def go() -> list[ScrapedEvent]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.scrape()]
+
+    asyncio.run(go())  # (the fixture's shows pass their dates; the fields are checked below)
+    assert asked == ["*", "חיפה והצפון"]  # the seed's city facet, then each city
+    assert not scraper.failures  # every refused page is in the API: nothing lost, the run is not partial
+
+
+def test_api_product_fields() -> None:
+    from partylinks.scrapers.eventim_api import product_event
+
+    gidi, gevatron, cancelled = [
+        product_event(p["productId"], p["link"], p, TZ, "eventim") for p in API["city"]["products"]
+    ]
+    assert gidi is not None and gevatron is not None and cancelled is None
+    assert (gidi.title, gidi.venue_name, gidi.city, gidi.min_price, gidi.is_sold_out) == (
+        "גידי גוב", "זאפה חיפה", "חיפה והצפון", Decimal("179.0"), False,
+    )  # fmt: skip
+    assert gidi.start_at is not None and gidi.start_at.isoformat() == "2026-12-04T14:00:00+02:00"
+    assert gidi.latitude == pytest.approx(32.7896) and gidi.artists == ["גידי גוב"]
+    assert gidi.source_genres == ["הופעות חיות", "אמנים ישראלים"]
+    assert gidi.images == [
+        "https://www.eventim.co.il/obj/media/IL-eventim/teaser/evo/artwork/2022/gidigovnew-artwork.jpg",
+        "https://www.eventim.co.il/obj/media/IL-eventim/teaser/222x222/2022/gidigovnew-teaser.jpg",
+    ]
+    assert gevatron.is_sold_out and gevatron.min_price is None

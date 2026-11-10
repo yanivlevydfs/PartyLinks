@@ -1,0 +1,761 @@
+{
+ "seed": {
+  "facets": [
+   {
+    "facetItems": [
+     {
+      "count": 135,
+      "info": "חיפה-והצפון-307",
+      "value": "חיפה והצפון"
+     }
+    ],
+    "name": "cities"
+   },
+   {
+    "facetHierarchicalItems": [
+     {
+      "count": 6,
+      "facetItems": [
+       {
+        "count": 54,
+        "info": "תל-אביב-249",
+        "value": "תל אביב"
+       },
+       {
+        "count": 135,
+        "info": "חיפה-והצפון-307",
+        "value": "חיפה והצפון"
+       },
+       {
+        "count": 82,
+        "info": "ירושלים-306",
+        "value": "ירושלים"
+       },
+       {
+        "count": 60,
+        "info": "הרצליה-314",
+        "value": "הרצליה"
+       },
+       {
+        "count": 53,
+        "info": "באר-שבע-308",
+        "value": "באר שבע"
+       },
+       {
+        "count": 40,
+        "info": "ראשון-לציון-1951",
+        "value": "ראשון לציון"
+       }
+      ],
+      "value": "topCities"
+     },
+     {
+      "count": 4,
+      "facetItems": [
+       {
+        "count": 13,
+        "info": "אשדוד-1464",
+        "value": "אשדוד"
+       },
+       {
+        "count": 7,
+        "info": "חולון-313",
+        "value": "חולון"
+       },
+       {
+        "count": 6,
+        "info": "נתניה-309",
+        "value": "נתניה"
+       },
+       {
+        "count": 2,
+        "info": "רמת-גן-312",
+        "value": "רמת גן"
+       }
+      ],
+      "value": "otherCities"
+     }
+    ],
+    "name": "topCities"
+   }
+  ],
+  "page": 1,
+  "products": [],
+  "results": 0,
+  "totalPages": 0,
+  "totalResults": 0
+ },
+ "city": {
+  "facets": [
+   {
+    "facetItems": [
+     {
+      "count": 135,
+      "info": "חיפה-והצפון-307",
+      "value": "חיפה והצפון"
+     },
+     {
+      "count": 82,
+      "info": "ירושלים-306",
+      "value": "ירושלים"
+     },
+     {
+      "count": 60,
+      "info": "הרצליה-314",
+      "value": "הרצליה"
+     },
+     {
+      "count": 54,
+      "info": "תל-אביב-249",
+      "value": "תל אביב"
+     },
+     {
+      "count": 53,
+      "info": "באר-שבע-308",
+      "value": "באר שבע"
+     },
+     {
+      "count": 40,
+      "info": "ראשון-לציון-1951",
+      "value": "ראשון לציון"
+     },
+     {
+      "count": 13,
+      "info": "אשדוד-1464",
+      "value": "אשדוד"
+     },
+     {
+      "count": 12,
+      "value": "פתח תקווה"
+     },
+     {
+      "count": 10,
+      "value": "כפר סבא"
+     },
+     {
+      "count": 9,
+      "value": "עין כרם ירושלים"
+     },
+     {
+      "count": 8,
+      "value": "חיפה"
+     },
+     {
+      "count": 8,
+      "value": "יבנה"
+     },
+     {
+      "count": 7,
+      "value": "גני תקווה"
+     },
+     {
+      "count": 7,
+      "info": "חולון-313",
+      "value": "חולון"
+     },
+     {
+      "count": 6,
+      "value": "מודיעין"
+     },
+     {
+      "count": 6,
+      "value": "נס-ציונה"
+     },
+     {
+      "count": 6,
+      "info": "נתניה-309",
+      "value": "נתניה"
+     },
+     {
+      "count": 6,
+      "value": "צומת גלילות"
+     },
+     {
+      "count": 6,
+      "value": "קיבוץ יפעת"
+     },
+     {
+      "count": 5,
+      "value": "אור עקיבא"
+     },
+     {
+      "count": 5,
+      "value": "קיבוץ גן שמואל"
+     },
+     {
+      "count": 5,
+      "value": "קרית חיים"
+     },
+     {
+      "count": 4,
+      "value": "טבריה"
+     },
+     {
+      "count": 4,
+      "value": "לב החולה"
+     },
+     {
+      "count": 4,
+      "value": "מעלה אדומים"
+     },
+     {
+      "count": 4,
+      "value": "עין חרוד"
+     },
+     {
+      "count": 3,
+      "value": "חוף הכנרת"
+     },
+     {
+      "count": 3,
+      "value": "נען"
+     },
+     {
+      "count": 3,
+      "value": "קרית גת"
+     },
+     {
+      "count": 3,
+      "value": "ראש העין"
+     },
+     {
+      "count": 3,
+      "value": "רחובות"
+     },
+     {
+      "count": 2,
+      "value": "אופקים"
+     },
+     {
+      "count": 2,
+      "value": "אשקלון"
+     },
+     {
+      "count": 2,
+      "value": "בית שמש"
+     },
+     {
+      "count": 2,
+      "value": "כפר יונה"
+     },
+     {
+      "count": 2,
+      "value": "כפר נחום"
+     },
+     {
+      "count": 2,
+      "value": "לוד"
+     },
+     {
+      "count": 2,
+      "value": "נתיבות"
+     },
+     {
+      "count": 2,
+      "value": "עכו"
+     },
+     {
+      "count": 2,
+      "value": "קרית שמונה"
+     },
+     {
+      "count": 2,
+      "info": "רמת-גן-312",
+      "value": "רמת גן"
+     },
+     {
+      "count": 2,
+      "value": "שוהם"
+     },
+     {
+      "count": 2,
+      "value": "תל מונד"
+     },
+     {
+      "count": 1,
+      "value": "אריאל"
+     },
+     {
+      "count": 1,
+      "value": "בית יצחק"
+     },
+     {
+      "count": 1,
+      "value": "בת ים"
+     },
+     {
+      "count": 1,
+      "value": "גבעת ברנר"
+     },
+     {
+      "count": 1,
+      "value": "יקנעם עילית"
+     },
+     {
+      "count": 1,
+      "value": "מזכרת בתיה"
+     },
+     {
+      "count": 1,
+      "value": "פרדסיה"
+     },
+     {
+      "count": 1,
+      "value": "קדימה"
+     },
+     {
+      "count": 1,
+      "value": "קריית מלאכי"
+     },
+     {
+      "count": 1,
+      "value": "קרית שדה התעופה"
+     },
+     {
+      "count": 1,
+      "value": "רמלה"
+     },
+     {
+      "count": 1,
+      "value": "שובר מתנה"
+     }
+    ],
+    "name": "cities"
+   },
+   {
+    "facetItems": [
+     {
+      "count": 135,
+      "value": "LiveEntertainment"
+     }
+    ],
+    "name": "productTypes"
+   },
+   {
+    "facetItems": [
+     {
+      "count": 10,
+      "value": "אולם אודיטוריום חיפה"
+     },
+     {
+      "count": 4,
+      "value": "אולם יגור- יד למגינים"
+     },
+     {
+      "count": 3,
+      "value": "אולם קריגר חיפה"
+     },
+     {
+      "count": 2,
+      "value": "אולם רפפורט"
+     },
+     {
+      "count": 1,
+      "value": "בית הגפן חיפה"
+     },
+     {
+      "count": 1,
+      "value": "בית העם קיבוץ כפר בלום"
+     },
+     {
+      "count": 2,
+      "value": "בית נגלר- קרית חיים"
+     },
+     {
+      "count": 5,
+      "value": "היכל התרבות כרמיאל"
+     },
+     {
+      "count": 3,
+      "value": "היכל התרבות נהריה"
+     },
+     {
+      "count": 6,
+      "value": "היכל התרבות עפולה"
+     },
+     {
+      "count": 17,
+      "value": "היכל תיאטרון מוצקין"
+     },
+     {
+      "count": 3,
+      "value": "הקימרון"
+     },
+     {
+      "count": 60,
+      "value": "זאפה חיפה"
+     },
+     {
+      "count": 2,
+      "value": "חוף הכרמל"
+     },
+     {
+      "count": 4,
+      "value": "מוזיאון טיקוטין לאמנות יפנית"
+     },
+     {
+      "count": 12,
+      "value": "מרכז הקונגרסים חיפה"
+     }
+    ],
+    "name": "venues"
+   },
+   {
+    "facetHierarchicalItems": [
+     {
+      "count": 79,
+      "hierarchicalItems": [
+       {
+        "count": 5,
+        "value": "אמנים בינלאומיים"
+       },
+       {
+        "count": 75,
+        "value": "אמנים ישראלים"
+       },
+       {
+        "count": 14,
+        "value": "מוסיקה"
+       }
+      ],
+      "value": "הופעות חיות"
+     },
+     {
+      "count": 8,
+      "hierarchicalItems": [
+       {
+        "count": 8,
+        "value": "הרצאות"
+       }
+      ],
+      "value": "הרצאות"
+     },
+     {
+      "count": 42,
+      "hierarchicalItems": [
+       {
+        "count": 42,
+        "value": "מופעי ילדים"
+       },
+       {
+        "count": 6,
+        "value": "מופעים לכל המשפחה"
+       }
+      ],
+      "value": "לכל המשפחה"
+     },
+     {
+      "count": 8,
+      "hierarchicalItems": [
+       {
+        "count": 8,
+        "value": "סטנדאפ"
+       }
+      ],
+      "value": "מופעי סטנדאפ"
+     },
+     {
+      "count": 1,
+      "hierarchicalItems": [
+       {
+        "count": 1,
+        "value": "פסטיבלים"
+       }
+      ],
+      "value": "פסטיבלים"
+     },
+     {
+      "count": 9,
+      "hierarchicalItems": [
+       {
+        "count": 9,
+        "value": "מחול"
+       }
+      ],
+      "value": "תיאטרון"
+     }
+    ],
+    "name": "categories"
+   },
+   {
+    "facetRangeItems": [
+     {
+      "name": "priceMin",
+      "value": 69.0
+     },
+     {
+      "name": "priceMax",
+      "value": 564.0
+     }
+    ],
+    "name": "priceRange"
+   },
+   {
+    "facetItems": [
+     {
+      "count": 135,
+      "value": "false"
+     }
+    ],
+    "name": "recommendations"
+   },
+   {
+    "facetHierarchicalItems": [
+     {
+      "count": 6,
+      "facetItems": [
+       {
+        "count": 54,
+        "info": "תל-אביב-249",
+        "value": "תל אביב"
+       },
+       {
+        "count": 135,
+        "info": "חיפה-והצפון-307",
+        "value": "חיפה והצפון"
+       },
+       {
+        "count": 82,
+        "info": "ירושלים-306",
+        "value": "ירושלים"
+       },
+       {
+        "count": 60,
+        "info": "הרצליה-314",
+        "value": "הרצליה"
+       },
+       {
+        "count": 53,
+        "info": "באר-שבע-308",
+        "value": "באר שבע"
+       },
+       {
+        "count": 40,
+        "info": "ראשון-לציון-1951",
+        "value": "ראשון לציון"
+       }
+      ],
+      "value": "topCities"
+     },
+     {
+      "count": 4,
+      "facetItems": [
+       {
+        "count": 13,
+        "info": "אשדוד-1464",
+        "value": "אשדוד"
+       },
+       {
+        "count": 7,
+        "info": "חולון-313",
+        "value": "חולון"
+       },
+       {
+        "count": 6,
+        "info": "נתניה-309",
+        "value": "נתניה"
+       },
+       {
+        "count": 2,
+        "info": "רמת-גן-312",
+        "value": "רמת גן"
+       }
+      ],
+      "value": "otherCities"
+     }
+    ],
+    "name": "topCities"
+   }
+  ],
+  "page": 1,
+  "products": [
+   {
+    "attractions": [
+     {
+      "name": "גידי גוב"
+     }
+    ],
+    "categories": [
+     {
+      "name": "הופעות חיות"
+     },
+     {
+      "name": "אמנים ישראלים",
+      "parentCategory": {
+       "name": "הופעות חיות"
+      }
+     }
+    ],
+    "currency": "ILS",
+    "description": "בהופעה",
+    "hasRecommendation": false,
+    "imageUrl": "https://www.eventim.co.il/obj/media/IL-eventim/teaser/222x222/2022/gidigovnew-teaser.jpg",
+    "inStock": true,
+    "link": "https://www.eventim.co.il/event/גידי-גוב-זאפה-חיפה-22239443/",
+    "name": "גידי גוב",
+    "price": 179.0,
+    "productGroupId": "2632654",
+    "productId": "22239443",
+    "promoter": {
+     "id": "483340",
+     "name": "זאפה חיפה"
+    },
+    "rating": {
+     "average": 0.0,
+     "count": 0
+    },
+    "status": "Available",
+    "tags": [
+     "TICKETDIRECT",
+     "MOBILE_TICKET",
+     "WILL_CALL"
+    ],
+    "type": "LiveEntertainment",
+    "typeAttributes": {
+     "liveEntertainment": {
+      "location": {
+       "city": "חיפה והצפון",
+       "geoLocation": {
+        "latitude": 32.78959345472086,
+        "longitude": 34.96564442157694
+       },
+       "name": "זאפה חיפה",
+       "postalCode": "3508416"
+      },
+      "startDate": "2026-12-04T14:00:00+02:00"
+     }
+    },
+    "url": {
+     "domain": "https://www.eventim.co.il",
+     "path": "/event/גידי-גוב-זאפה-חיפה-22239443/"
+    }
+   },
+   {
+    "attractions": [
+     {
+      "name": "הגבעטרון"
+     },
+     {
+      "name": "דף הטבות Poalim Wonder"
+     },
+     {
+      "name": "הטבה ללקוחות FLYCARD"
+     }
+    ],
+    "categories": [
+     {
+      "name": "הופעות חיות"
+     },
+     {
+      "name": "אמנים ישראלים",
+      "parentCategory": {
+       "name": "הופעות חיות"
+      }
+     }
+    ],
+    "description": "שירי תנועות הנוער ומיטב הלהיטים",
+    "hasRecommendation": false,
+    "imageUrl": "https://www.eventim.co.il/obj/media/IL-eventim/teaser/222x222/2026/gevatron-teaser.jpg",
+    "inStock": false,
+    "link": "https://www.eventim.co.il/event/הגבעטרון-זאפה-חיפה-21335195/",
+    "name": "הגבעטרון",
+    "productGroupId": "4077534",
+    "productId": "21335195",
+    "promoter": {
+     "id": "34394",
+     "name": "Fistuk"
+    },
+    "rating": {
+     "average": 0.0,
+     "count": 0
+    },
+    "status": "Available",
+    "tags": [
+     "TICKETDIRECT",
+     "MOBILE_TICKET",
+     "WILL_CALL"
+    ],
+    "type": "LiveEntertainment",
+    "typeAttributes": {
+     "liveEntertainment": {
+      "location": {
+       "city": "חיפה והצפון",
+       "geoLocation": {
+        "latitude": 32.78959345472086,
+        "longitude": 34.96564442157694
+       },
+       "name": "זאפה חיפה",
+       "postalCode": "3508416"
+      },
+      "startDate": "2026-06-20T14:00:00+03:00"
+     }
+    },
+    "url": {
+     "domain": "https://www.eventim.co.il",
+     "path": "/event/הגבעטרון-זאפה-חיפה-21335195/"
+    }
+   },
+   {
+    "attractions": [
+     {
+      "name": "המכבים"
+     },
+     {
+      "name": "רינת גבאי"
+     }
+    ],
+    "categories": [
+     {
+      "name": "לכל המשפחה"
+     },
+     {
+      "name": "מופעי ילדים",
+      "parentCategory": {
+       "name": "לכל המשפחה"
+      }
+     }
+    ],
+    "description": "בכיכובה של רינת גבאי",
+    "hasRecommendation": false,
+    "imageUrl": "https://www.eventim.co.il/obj/media/IL-eventim/teaser/222x222/2026/macabim26-teaser.jpg",
+    "inStock": false,
+    "link": "https://www.eventim.co.il/event/המכבים-חנוכה-2026-תיאטרון-סינמה-סיטי-22091874/",
+    "name": "המכבים - חנוכה 2026",
+    "productGroupId": "4235556",
+    "productId": "22091874",
+    "promoter": {
+     "id": "1578983",
+     "name": "דורון מור"
+    },
+    "rating": {
+     "average": 0.0,
+     "count": 0
+    },
+    "status": "Cancelled",
+    "tags": [
+     "TICKETDIRECT",
+     "MOBILE_TICKET",
+     "HIDDEN_FOR_RESALE"
+    ],
+    "type": "LiveEntertainment",
+    "typeAttributes": {
+     "liveEntertainment": {
+      "location": {
+       "city": "באר שבע",
+       "name": "תיאטרון סינמה סיטי",
+       "postalCode": "8424617"
+      },
+      "startDate": "2026-12-06T10:00:00+02:00"
+     }
+    },
+    "url": {
+     "domain": "https://www.eventim.co.il",
+     "path": "/event/המכבים-חנוכה-2026-תיאטרון-סינמה-סיטי-22091874/"
+    }
+   }
+  ],
+  "results": 3,
+  "totalPages": 1,
+  "totalResults": 3
+ }
+}

@@ -17,6 +17,8 @@ as ``/event/<slug>-<id>/``. Details, all from the event page:
 A page with neither is logged once with what came back (status, size, title, challenge
 markers); ``max_empty_streak`` such pages in a row stop the run as blocked, and a page with a
 challenge marker (``challenge_markers``, as Chillz's checkpoint markers) moves to the next proxy.
+Once Akamai refuses the pages (Nov 2026: on the first from our VPN, after ~20 from any IP), the rest
+come from the site's public search API (``api_url``, eventim_api), which lists every event.
 
 The homepage refuses non-browser clients and a browser user agent from a non-browser
 client gets its connection dropped; the sitemap and event pages answer an honest agent.
@@ -51,7 +53,15 @@ from partylinks.parsing import (
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.chillz import EVENT_TYPES, parse_page
-from partylinks.scrapers.eventim_listing import TYPE_GENRES, Listed, details_or_listing, last_page, parse_listing
+from partylinks.scrapers.eventim_api import list_products, product_event
+from partylinks.scrapers.eventim_listing import (
+    TYPE_GENRES,
+    Listed,
+    details_or_listing,
+    last_page,
+    listing_event,
+    parse_listing,
+)
 
 _EVENT_ID = re.compile(r"-(\d+)/?$")
 _LOC = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>")
@@ -78,6 +88,12 @@ class EventimSettings(SourceSettings):
     city_paths: list[str] = Field(default_factory=list)
     max_city_pages: int = Field(20, ge=1)
     type_genres: dict[str, str] = Field(default_factory=lambda: dict(TYPE_GENRES))
+    # The site's public search API (eventim_api): every event Akamai refused the page of comes from its
+    # product (artwork, price, venue with coordinates, artists). Empty: no API.
+    api_url: str = ""
+    api_web_id: str = ""
+    api_language: str = "iw"
+    api_page_size: int = Field(100, ge=1, le=100)
 
 
 class EventimScraper(BaseScraper[EventimSettings]):
@@ -103,9 +119,22 @@ class EventimScraper(BaseScraper[EventimSettings]):
         urls = await self._list_urls()
         self.log.debug("listed %d events", len(urls))
         listed: Listed = {}
-        for path in self.settings.city_paths:
+        s = self.settings
+        if s.api_url:
+            api = list_products(self, s.api_url, s.api_web_id, s.api_language, s.api_page_size)
+            products = await self.optional("api", api)
+            listed.update(products or {})
+        for path in s.city_paths:
             listed.update(await self.optional(f"city {path}", self._list_city(path)) or {})
-        async for event in details_or_listing(self, urls, self._fetch_event, listed, self.settings.type_genres):
+
+        def build(event_id: str, url: str, item: dict[str, Any]) -> ScrapedEvent | None:
+            if "productId" in item:
+                return product_event(event_id, url, item, self.timezone, self.name)
+            return listing_event(event_id, url, item, self.timezone, self.name, s.type_genres)
+
+        lost_only = bool(s.api_url)  # the API lists every event: a refused page loses nothing
+        events = details_or_listing(self, urls, self._fetch_event, listed, s.type_genres, build, lost_only=lost_only)
+        async for event in events:
             if is_current(
                 event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known
             ):

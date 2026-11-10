@@ -99,11 +99,15 @@ async def details_or_listing(
     fetch: Callable[[str], Awaitable[ScrapedEvent | None]],
     listed: Listed,
     type_genres: dict[str, str],
+    build: Callable[[str, str, dict[str, Any]], ScrapedEvent | None] | None = None,
+    lost_only: bool = False,
 ) -> AsyncIterator[ScrapedEvent]:
     """Each event page read in full while Akamai lets us; every event it refused (or that failed) from its
     listing item instead, with the artwork a past run stored. The refusal is still recorded: the run is then
     partial, so it never hides the sitemap's events the city pages do not list (only a clean run unlists).
-    With no listing to fall back on, the run stops as blocked, as before."""
+    ``lost_only``: recorded only when a refused page is missing from the listing (Eventim's API lists every
+    event, so a refusal loses nothing and the run stays clean). With no listing to fall back on, the run stops
+    as blocked, as before. ``build`` makes an event of a listing item (default: a city page's ItemList item)."""
     done: set[str] = set()
     try:
         async for event in scraper.stream_isolated(urls, fetch, label=lambda u: u):
@@ -112,14 +116,17 @@ async def details_or_listing(
     except SourceBlockedError as exc:
         if not listed:
             raise
-        scraper.record_failure("event pages", exc)
-        scraper.log.warning("event pages refused (%s): the rest come from the city pages", exc)
+        lost = [u for u in urls if (i := event_id_of(u)) and i not in done and i not in listed]
+        if lost or not lost_only:
+            scraper.record_failure("event pages", exc)
+        scraper.log.warning("event pages refused (%s): the rest come from the listing, %d not in it", exc, len(lost))
+    make = build or (lambda i, u, item: listing_event(i, u, item, scraper.timezone, scraper.name, type_genres))
     for url in urls:
         event_id = event_id_of(url)
         if not event_id or event_id in done or event_id not in listed:
             continue
         page, item = listed[event_id]
-        if event := listing_event(event_id, page, item, scraper.timezone, scraper.name, type_genres):
-            if known := scraper.known_images.get(event_id):
+        if event := make(event_id, page, item):
+            if not event.images and (known := scraper.known_images.get(event_id)):
                 event.image_url, event.images = known[0], known
             yield event
