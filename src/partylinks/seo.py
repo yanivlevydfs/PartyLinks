@@ -390,6 +390,19 @@ def event_jsonld(row: EventRow, cfg: Settings, same_as: dict[str, list[dict[str,
     return {k: v for k, v in data.items() if v not in (None, [], "")}
 
 
+def _event_ref(row: EventRow, cfg: Settings) -> dict[str, Any]:
+    """An event named on a venue / artist page. Google reads each as an Event item of its own, so it
+    carries the required name, startDate and location (Search Console: "Missing field location")."""
+    return {
+        "@type": "MusicEvent" if row.lineup or row.genres else "Event",
+        "@id": _url(cfg, event_path(row)) + "#event",
+        "name": row.title,
+        "url": _url(cfg, event_path(row)),
+        "startDate": _iso(row.start_at, cfg, row),
+        "location": _place(row),
+    }
+
+
 def _breadcrumbs(cfg: Settings, lang: str, *crumbs: tuple[str, str]) -> dict[str, Any]:
     items = [(cfg.site.name, "/"), *crumbs]
     return {
@@ -579,7 +592,7 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     place["@type"] = "MusicVenue"
     place["url"] = _url(cfg, path)
     if rows:
-        place["event"] = [{"@id": _url(cfg, event_path(r)) + "#event", "name": r.title, "startDate": _iso(r.start_at, cfg, r)} for r in rows]
+        place["event"] = [_event_ref(r, cfg) for r in rows]
     profile = venue_profile_for(session, load_venue_profiles(session), name)
     about = (profile.about if profile else None) or t["venue_desc"].format(name=name)
     logo = cfg.site.base_url + logo if profile and (logo := venue_logo_path(profile)) else None
@@ -611,7 +624,7 @@ def artist_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
         "@type": "Person",
         "name": name,
         "url": _url(cfg, path),
-        "performerIn": [{"@id": _url(cfg, event_path(r)) + "#event", "name": r.title, "startDate": _iso(r.start_at, cfg, r)} for r in rows],
+        "performerIn": [_event_ref(r, cfg) for r in rows],
     }
     about = (artist_bio(session, cfg, lang, name) if rows else None) or t["artist_desc"].format(name=name)
     person["description"] = about
