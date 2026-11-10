@@ -391,16 +391,9 @@ def event_jsonld(row: EventRow, cfg: Settings, same_as: dict[str, list[dict[str,
 
 
 def _event_ref(row: EventRow, cfg: Settings) -> dict[str, Any]:
-    """An event named on a venue / artist page. Google reads each as an Event item of its own, so it
-    carries the required name, startDate and location (Search Console: "Missing field location")."""
-    return {
-        "@type": "MusicEvent" if row.lineup or row.genres else "Event",
-        "@id": _url(cfg, event_path(row)) + "#event",
-        "name": row.title,
-        "url": _url(cfg, event_path(row)),
-        "startDate": _iso(row.start_at, cfg, row),
-        "location": _place(row),
-    }
+    """An event named on a venue / artist page. Google reads each as an Event item of its own and checks
+    it like the event page (location, description, image, offers...): the same data, minus @context."""
+    return {k: v for k, v in event_jsonld(row, cfg).items() if k != "@context"}
 
 
 def _breadcrumbs(cfg: Settings, lang: str, *crumbs: tuple[str, str]) -> dict[str, Any]:

@@ -966,7 +966,7 @@ def test_artist_page_lists_their_shows_abroad_too(tmp_path: Path) -> None:
         page = artist_page(session, settings, "he", "flashcookie")
         assert page.body.count("<li>") == 1 and not page.noindex
         # Google reads each listed show as an Event of its own: it needs a location (Search Console).
-        assert all(e["location"]["name"] and e["@type"] for e in page.jsonld[0]["performerIn"])
+        assert all(e["location"]["name"] and e["description"] for e in page.jsonld[0]["performerIn"])
 
 
 def test_artist_page_is_the_whole_name_any_case_once_per_event(tmp_path: Path) -> None:
