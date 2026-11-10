@@ -226,6 +226,9 @@ class BaseScraper[S: SourceSettings](ABC):
         # Whether an event will be kept (e.g. it is in the target city). Set by the service; a
         # source spends extra per-event requests (artwork) only on events that pass it.
         self.wanted: Callable[[ScrapedEvent], bool] = lambda event: True
+        # Called on every answer from the site (set by the service): a run still getting answers is not
+        # stuck, though a slowed-down one may read for minutes without yielding an event (pace.py).
+        self.progress: Callable[[], None] = lambda: None
         self._client: httpx.AsyncClient | None = None
         self._retired_clients: list[httpx.AsyncClient] = []  # replaced after a proxy failure; closed at exit
         self._pace = Pace(self.http.concurrency, self.http.request_delay_seconds, self.http.pace, self.log)
@@ -398,6 +401,7 @@ class BaseScraper[S: SourceSettings](ABC):
                     except SOCKSError as exc:  # a broken SOCKS proxy ("Malformed reply"): httpx lets it through raw
                         switches[0] += self._next_proxy(client, exc)
                         raise httpx.ProxyError(f"SOCKS: {exc}") from exc
+                self.progress()
                 if response.status_code in THROTTLED:
                     self._pace.throttled()
                 else:

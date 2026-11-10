@@ -408,6 +408,9 @@ class ScrapeService:
                 artwork = await asyncio.to_thread(self._artwork_by_title, source)
                 scraper.known_artists = {key: p for key, p in profiles.items() if p.source == source}
                 scraper.wanted = lambda event: not self.enricher.is_dropped(event)
+                # Shotgun, slowed by its pace, read sitemaps whose events were all filtered out for over 15
+                # minutes and was stopped as stuck (2026-11-10): any answer from the site is progress too.
+                scraper.progress = lambda: deadline.reschedule(min(hard_end, loop.time() + stall))
                 failures = scraper.failures
                 async with scraper:
                     try:
@@ -435,7 +438,9 @@ class ScrapeService:
                         log.warning("source %s blocked: %s", source, exc)
         except TimeoutError:
             if deadline.expired():
-                stalled = loop.time() < hard_end
+                # asyncio fires a timer up to its clock resolution early (~15 ms on Windows): at the run
+                # limit, "now" can read a hair before it.
+                stalled = loop.time() < hard_end - 0.5
                 status, error = "failed", f"no new event for {stall}s" if stalled else f"timed out after {timeout}s"
             else:  # a TimeoutError raised by the scraper itself
                 status, error = "failed", "TimeoutError inside the scraper"

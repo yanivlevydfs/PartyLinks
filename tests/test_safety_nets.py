@@ -283,6 +283,30 @@ def test_a_source_that_stops_finding_events_is_closed_by_the_stall_limit(tmp_pat
         assert [e.source_event_id for e in session.query(EventRow)] == ["before-stall"]  # kept
 
 
+class _ReadingSource(_SlowSource):
+    """Yields one event, then reads the site for a while (answers, but no event), then one more."""
+
+    async def scrape(self) -> AsyncIterator[ScrapedEvent]:
+        yield event("first")
+        for _ in range(12):  # 1.2 s of answers, past a 0.5 s stall limit
+            await asyncio.sleep(0.1)
+            self.progress()
+        yield event("after-reading")
+
+
+def test_a_source_still_getting_answers_is_not_stuck(tmp_path: Path, monkeypatch: Any) -> None:
+    """A slowed-down source reading pages it yields nothing from (shotgun's sitemaps, 2026-11-10)."""
+    service, db = make_service(tmp_path)
+    service.settings.scheduler.stall_timeout_seconds = 0.5
+    monkeypatch.setattr(service_module, "build_scraper", lambda name, settings: _ReadingSource(service._stopping))
+
+    result = service.start_source("goout", trigger="test").result(timeout=30)
+
+    assert result.status == "success", result.error
+    with db.session() as session:
+        assert sorted(e.source_event_id for e in session.query(EventRow)) == ["after-reading", "first"]
+
+
 class _SilentSource(_SlowSource):
     """Hangs before its first event."""
 
