@@ -47,3 +47,17 @@ def test_artist_card_gives_the_picture() -> None:
     )
     event = livevents.parse_table(TABLE, CALENDAR, "Asia/Jerusalem", cards)[0]
     assert event.images == ["https://livevents.co.il/u/a.png"]
+
+
+def test_sold_out_status() -> None:
+    """Oasis's rows (its tour page, the calendar's markup, Nov 2026): "SOLD OUT" in the status cell is sold out."""
+    tour = (Path(__file__).parent / "fixtures" / "livevents" / "tour_oasis.html").read_text(encoding="utf-8")
+    events = livevents.parse_table(tour, CALENDAR, "Asia/Jerusalem")
+    munich = next(e for e in events if e.city == "מינכן")
+    assert (str(munich.url), munich.currency, munich.min_price) == (
+        "https://livevents.co.il/package/oasis-muc-gold/", "EUR", Decimal(1299)
+    )
+    rome = [e for e in events if e.city == "רומא"]
+    assert rome and all(e.is_sold_out and e.min_price is None for e in rome)
+    assert not munich.is_sold_out
+

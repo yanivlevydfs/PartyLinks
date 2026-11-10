@@ -6,8 +6,11 @@ one link per date with the event's path, the date, its categories and tags, the 
 Details: the event page's own HTML (``og:description``, ``og:image``, the hidden ``showdate`` with
 the next show's day and time, ``eventid``). One event per listed date; a recurring event's other
 dates take the next show's time of day. Venue, address and its Google point come from the page's hidden
-fields (``EventVenueName``, ``EventVenueAddress``, ``EventVenueGoogleLocation``); prices are loaded by
-the page's JavaScript from a private API and are not read.
+fields (``EventVenueName``, ``EventVenueAddress``, ``EventVenueGoogleLocation``). Prices: the page names
+its next show (the ``SelectEventShowsToBuyTicket`` option, or the newer page's hidden ``showid``) and the
+site's own ``/MyEvents/GetAvailableTicketTypesWithPrices?id=<show>`` returns its ticket types (name,
+"€20.00", booking fee, ``DisabledType`` 2 = sold out); one request per event. Newer pages that name no
+show load their shows from apicore.showshappening.com (app key) only: no price then.
 robots.txt allows everything.
 """
 
@@ -22,8 +25,8 @@ from zoneinfo import ZoneInfo
 
 from pydantic import Field
 
-from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str
+from partylinks.models import ScrapedEvent, TicketTier, TierStatus
+from partylinks.parsing import ParseError, clean_str, to_decimal
 from partylinks.scrapers.abroad import local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
@@ -36,6 +39,10 @@ _SHOWDATE = re.compile(r'class="showdate" value="[A-Za-z]+ (\d{1,2}-[A-Za-z]{3}-
 _HIDDEN = re.compile(r'id="(EventVenueName|EventVenueAddress|EventVenueGoogleLocation)" value="([^"]*)"')
 _POINT = re.compile(r"^\(?\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)?$")
 _EVENTID = re.compile(r'id="eventid" value="([0-9a-f-]+)"')
+# The next show: the older page's show picker, the newer page's hidden field.
+_SHOW = re.compile(r'id="SelectEventShowsToBuyTicket"[^>]*>\s*<option[^>]*value="([0-9a-f-]{36})"|class="showid" value="([0-9a-f-]{36})"')
+_SOLD_OUT = re.compile(r"All tickets are sold out", re.IGNORECASE)
+_SIGNS = {"€": "EUR", "£": "GBP", "$": "USD"}
 _CITY = re.compile(r'<input type="hidden" name="city" value="([^"]+)"')
 
 # ShowsHappening's categories and tags as the category words the enrichment knows. A tag that only
@@ -58,6 +65,7 @@ _TAGS = {
 class ShowsHappeningSettings(SourceSettings):
     site_url: str
     countries: list[str] = Field(default_factory=lambda: ["mt", "gb", "de", "es"])
+    prices_path: str = "/MyEvents/GetAvailableTicketTypesWithPrices"  # the show's ticket types (?id=<show>)
 
 
 class ShowsHappeningScraper(BaseScraper[ShowsHappeningSettings]):
@@ -77,8 +85,13 @@ class ShowsHappeningScraper(BaseScraper[ShowsHappeningSettings]):
                 yield event
 
     async def _fetch_event(self, listed: dict[str, Any]) -> list[ScrapedEvent]:
-        page = await self.get_text(self.settings.site_url + listed["path"])
-        return parse_event(listed, page, self.settings.site_url, self.timezone)
+        s = self.settings
+        page = await self.get_text(s.site_url + listed["path"])
+        # ponytail: the next show's prices stand for every date; per-show prices need one request per date.
+        types = None
+        if show := show_id(page):
+            types = await self.optional("ticket types", self.get_json(s.site_url + s.prices_path, expect=list, params={"id": show}))
+        return parse_event(listed, page, s.site_url, self.timezone, types)
 
 
 def cards(page_html: str, country: str) -> list[dict[str, Any]]:
@@ -99,13 +112,46 @@ def cards(page_html: str, country: str) -> list[dict[str, Any]]:
     return out
 
 
+def show_id(page_html: str) -> str | None:
+    """The next show's id, which the price call takes; None when the page names none."""
+    m = _SHOW.search(page_html)
+    return (m.group(1) or m.group(2)) if m else None
+
+
+def ticket_tiers(types: list[Any] | None) -> list[TicketTier]:
+    """The show's ticket types: "€20.00" and its booking fee; ``DisabledType`` 2 is sold out, 3/4 not on sale."""
+    tiers = []
+    for row in types or []:
+        if not isinstance(row, dict):
+            continue
+        text = str(row.get("Price") or "")
+        price = to_decimal(re.sub(r"[^\d.]", "", text))
+        name = clean_str(row.get("Name"))
+        if price is None or not name:
+            continue
+        disabled = row.get("DisabledType") or 0
+        fee = to_decimal(row.get("BookingFee"))
+        tiers.append(TicketTier(
+            source_ticket_id=clean_str(row.get("TicketTypeId")),
+            name=name,
+            description=clean_str(row.get("Description")),
+            price=price,
+            service_fee=fee or None,
+            currency=next((c for sign, c in _SIGNS.items() if sign in text), "EUR"),
+            status=TierStatus.SOLD_OUT if disabled == 2 else TierStatus.CLOSED if disabled else TierStatus.ON_SALE,
+        ))
+    return tiers
+
+
 def categories(listed: dict[str, Any]) -> list[str]:
     """Category words for the enrichment from the event's categories and tags."""
     words = [_CATEGORIES.get(c.casefold()) for c in listed["categories"]] + [_TAGS.get(t.casefold()) for t in listed["tags"]]
     return list(dict.fromkeys(w for w in words if w))
 
 
-def parse_event(listed: dict[str, Any], page_html: str, site_url: str, default_tz: str) -> list[ScrapedEvent]:
+def parse_event(
+    listed: dict[str, Any], page_html: str, site_url: str, default_tz: str, types: list[Any] | None = None
+) -> list[ScrapedEvent]:
     """One event per listed date that is not over yet."""
     meta = {k: html_lib.unescape(v) for k, v in _META.findall(page_html)}
     # UK pages are drawn by JavaScript: their og:title is the site's ("ShowsHappening | Tickets in Malta").
@@ -122,6 +168,8 @@ def parse_event(listed: dict[str, Any], page_html: str, site_url: str, default_t
     show = _SHOWDATE.search(page_html)
     clock: time | None = datetime.strptime(show.group(2), "%H:%M").time() if show else None
     image = clean_str(meta.get("og:image")) or clean_str(listed["image"])
+    tiers = ticket_tiers(types)
+    sold_out = bool(_SOLD_OUT.search(page_html))
     now = datetime.now(UTC)
     events = []
     # ponytail: a recurring event's other dates take the next show's hour; per-date hours need the API.
@@ -146,6 +194,8 @@ def parse_event(listed: dict[str, Any], page_html: str, site_url: str, default_t
             source_genres=categories(listed),
             image_url=image,
             images=[image] if image else [],
-            currency="GBP" if country == "GB" else "EUR",
+            currency=tiers[0].currency if tiers else "GBP" if country == "GB" else "EUR",
+            tickets=[t.model_copy() for t in tiers],
+            is_sold_out=sold_out,
         ))
     return events

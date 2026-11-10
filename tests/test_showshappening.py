@@ -1,6 +1,10 @@
 import datetime
+import json
+from decimal import Decimal
+from pathlib import Path
 
-from partylinks.scrapers.showshappening import parse_event
+from partylinks.models import TicketKind, TierStatus
+from partylinks.scrapers.showshappening import parse_event, show_id, ticket_tiers
 
 PAGE = """<input type="hidden" class="showdate" value="Thursday 05-Nov-2026 19:30" />
 <input type="hidden" id="EventVenueName" value="Follow the Sun Boutique Hostel" />
@@ -19,3 +23,46 @@ def test_venue_address_and_point_from_hidden_fields() -> None:
     assert (event.latitude, event.longitude) == (35.9127531, 14.4933634)
     assert event.start_at is not None
     assert event.start_at.hour == 19 and str(event.start_at.tzinfo) == "Europe/Malta"
+
+
+TYPES = json.loads((Path(__file__).parent / "fixtures" / "showshappening" / "ticket_types.json").read_text(encoding="utf-8"))
+
+
+def test_show_id_from_old_and_new_pages() -> None:
+    old = '<select class="hidden" id="SelectEventShowsToBuyTicket" name="x"><option selected="selected" value="3226ba42-d920-464c-b88f-08de8e320386">Sat</option>'
+    new = '<input type="hidden" class="showid" value="7fd8c510-c22c-4b28-b82e-91ae34223148" />'
+    assert show_id(old) == "3226ba42-d920-464c-b88f-08de8e320386"
+    assert show_id(new) == "7fd8c510-c22c-4b28-b82e-91ae34223148"
+    assert show_id("<html></html>") is None
+
+
+def test_prices_from_ticket_types() -> None:
+    """Bruckner's 7th (MPO, Nov 2026): two types, face value plus booking fee."""
+    day = datetime.date.today() + datetime.timedelta(days=7)
+    listed = {"title": "Bruckner's 7th", "path": "/mpo/bruckner", "country": "MT", "dates": [day],
+              "image": None, "categories": [], "tags": []}  # fmt: skip
+    event = parse_event(listed, PAGE, "https://www.showshappening.com", "Asia/Jerusalem", TYPES)[0]
+    assert [(t.name, t.price, t.service_fee, t.currency) for t in event.tickets] == [
+        ("Main Concourse", Decimal("30.00"), Decimal(3), "EUR"),
+        ("Main Concourse Senior Citizens and Students", Decimal("18.00"), Decimal("1.8"), "EUR"),
+    ]
+    assert event.currency == "EUR" and not event.is_sold_out
+
+
+def test_free_and_sold_out_types() -> None:
+    tiers = ticket_tiers([
+        {"Name": "Infant", "Price": "€0.00", "BookingFee": 0, "DisabledType": 0},
+        {"Name": "Adult", "Price": "£37.00", "BookingFee": 3.7, "DisabledType": 2},
+        {"Name": "Hidden", "Price": "", "DisabledType": 0},
+    ])  # fmt: skip
+    assert [(t.name, t.price, t.kind, t.status, t.currency) for t in tiers] == [
+        ("Infant", Decimal("0.00"), TicketKind.FREE, TierStatus.ON_SALE, "EUR"),
+        ("Adult", Decimal("37.00"), TicketKind.PAID, TierStatus.SOLD_OUT, "GBP"),
+    ]
+
+
+def test_sold_out_banner() -> None:
+    day = datetime.date.today() + datetime.timedelta(days=7)
+    listed = {"title": "Bach", "path": "/f/bach", "country": "MT", "dates": [day], "image": None, "categories": [], "tags": []}
+    page = PAGE + "<p> All tickets are sold out! </p>"
+    assert parse_event(listed, page, "https://www.showshappening.com", "Asia/Jerusalem")[0].is_sold_out

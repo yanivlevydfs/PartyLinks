@@ -51,3 +51,14 @@ def test_habama_downlevel_render() -> None:
     assert [e.source_event_id for e in habama.parse_day(page, DAY, TZ)] == [
         e.source_event_id for e in habama.parse_day(PAGE, DAY, TZ)
     ]
+
+
+def test_habama_show_picture_from_media_script() -> None:
+    """The show page's script lists its media (Event.aspx?EventId=6761, Nov 2026): type 1 is a picture."""
+    page = 'var resultSet = new String("]201957]1]Upload/MediaFiles]רוקוויל-אבבא.jpg]]רוקוויל - אבבא, צילום: אורטל לביא|");'
+    assert habama.show_images(page, "https://www.habama.co.il") == [
+        "https://www.habama.co.il/Upload/MediaFiles/%D7%A8%D7%95%D7%A7%D7%95%D7%95%D7%99%D7%9C-%D7%90%D7%91%D7%91%D7%90.jpg"
+    ]
+    video = 'var resultSet = new String("]1]2]Upload/MediaFiles]a.jpg]b.mp4]clip|");'
+    assert habama.show_images(video, "https://www.habama.co.il") == []
+    assert habama.show_images("<html></html>", "https://www.habama.co.il") == []

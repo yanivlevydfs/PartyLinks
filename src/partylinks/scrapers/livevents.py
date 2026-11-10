@@ -5,7 +5,10 @@ The site's "shows calendar" (``/events/``) loads one table per month from WordPr
 page makes): each row is an artist, a city (Hebrew, no country) and one or more dates,
 with a link and "from" price when a package or ticket offer exists, else a "request a
 quote" button. One ``ScrapedEvent`` per row and date; ``months_ahead`` requests per run.
-Rows without an offer link point to the calendar page. Times are not given (date only).
+Rows without an offer link point to the calendar page; "SOLD OUT" in the status cell is sold out.
+Most rows (431 of 473, Nov 2026) are "request a quote": the site shows no price for them anywhere
+(the artist's tour page ``/tour/<artist>/`` has the same buttons), so their price stays unknown.
+Times are not given (date only).
 robots.txt is absent (404).
 """
 
@@ -174,6 +177,7 @@ def parse_table(
                     images=[img] if (img := (images or {}).get(artist)) else [],
                     currency=CURRENCY_SIGNS.get(price.group(2).strip(), "EUR") if price else "EUR",
                     min_price=to_decimal(price.group(1).replace(",", "")) if price else None,
+                    is_sold_out="SOLD OUT" in (status or "").upper(),
                     extra={
                         k: v
                         for k, v in {"status": status, "package": bool(link and "/package/" in link.group(1))}.items()

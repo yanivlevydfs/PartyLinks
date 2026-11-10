@@ -8,6 +8,9 @@ A row gives the event's date and local time (Hebrew month), name, venue, Hebrew 
 country, the "from" price with its currency sign and the event id (``events.aspx?eid=``).
 No detail requests: the event page adds only the seat categories. A row with an empty price box
 is out of stock (its event page has no seats, only a "leave your details" form): sold out.
+A performer page's banner (``h_search_section`` background) is the performer's picture
+(``HebBackground_<id>``) that its event pages show too; ``HebCatBackground_`` is the category's
+stock banner shared by every performer without one, so it is not taken.
 ~700 requests per run.
 robots.txt disallows only ``/bin/``, ``/nrereco/`` and ``/search/`` (the "all events" links).
 """
@@ -47,6 +50,8 @@ _NAME = re.compile(r'tickets_name_txt">(.*?)</div>', re.DOTALL)
 _PLACE = re.compile(r'tickets_place_txt[^"]*">(.*?)</div>', re.DOTALL)
 _EID = re.compile(r"events\.aspx\?eid=(\d+)")
 _PRICE = re.compile(r'tickets_price_currency">([^<]*)</div>\s*<div>([^<]*)</div>')
+# The banner: the performer's own picture, or the category's stock one (HebCatBackground_).
+_BANNER = re.compile(r'h_search_section[^"]*"\s+style="background-image:\s*url\(([^)]+)\)')
 _NEXT = re.compile(r'id="hplNext"[^>]*href="([^"]+)"')
 # The top menu links popular performers of every kind from every page: not the category's own.
 _MENU_LINK = re.compile(r'<a\b[^>]*class="[^"]*navlink[^"]*"[^>]*>', re.IGNORECASE)
@@ -73,6 +78,8 @@ class LiveTicketsScraper(BaseScraper[LiveTicketsSettings]):
         async for page_events in self.stream_isolated(list(listings), self._listing_events, label=lambda u: u):
             for event in page_events:
                 kept = events.setdefault(event.source_event_id, event)
+                if event.images and not kept.images:  # a city or venue page has no banner of the performer
+                    kept.image_url, kept.images = event.image_url, event.images
                 kept.source_genres = list(dict.fromkeys([*kept.source_genres, *listings[event.extra["listing"]]]))
         for event in events.values():
             event.extra.pop("listing")
@@ -109,7 +116,7 @@ class LiveTicketsScraper(BaseScraper[LiveTicketsSettings]):
         s, events, start = self.settings, [], url
         for _ in range(s.max_pages):
             page = await self.get_text(url)
-            events += parse_rows(page, s.site_url + s.event_path, self.timezone, listing=start)
+            events += parse_rows(page, s.site_url + s.event_path, self.timezone, listing=start, image=banner(page, start))
             next_link = _NEXT.search(page)
             if not next_link:
                 return events
@@ -132,6 +139,13 @@ def _text(fragment: str) -> str | None:
     return clean_str(re.sub(r"\s+", " ", htmllib.unescape(re.sub(r"<[^>]+>", " ", fragment))).strip(" |"))
 
 
+def banner(page_html: str, url: str) -> str | None:
+    """A performer page's own picture (city and venue pages show no performer's)."""
+    m = _BANNER.search(page_html)
+    image = htmllib.unescape(m.group(1)).strip("'\" ") if m else ""
+    return image if "performers/" in url.lower() and "/HebBackground_" in image else None
+
+
 def category_name(url: str) -> str:
     """A category page's category: Category1/2 name the kind ("CONCERTS", "SOCCER"), Category3 a soccer league."""
     if "/category3/" in url.lower():
@@ -139,7 +153,9 @@ def category_name(url: str) -> str:
     return unquote(url.rsplit("/", 1)[-1].removesuffix(".aspx")).casefold()
 
 
-def parse_rows(page_html: str, event_url: str, timezone: str, listing: str = "") -> list[ScrapedEvent]:
+def parse_rows(
+    page_html: str, event_url: str, timezone: str, listing: str = "", image: str | None = None
+) -> list[ScrapedEvent]:
     """One event per row of a listing page; rows without an id, name or date are skipped."""
     events = []
     for row in _ROW.findall(page_html):
@@ -173,6 +189,7 @@ def parse_rows(page_html: str, event_url: str, timezone: str, listing: str = "")
                 venue_name=place[0] if len(place) >= 3 else None,
                 city=city,
                 country=country,
+                image_url=image,
                 currency=CURRENCY_SIGNS.get(sign, "EUR"),
                 min_price=amount,
                 # An empty price box: the event page has no seat rows, only "סיימנו את מלאי הכרטיסים"

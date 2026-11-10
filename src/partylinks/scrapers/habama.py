@@ -6,8 +6,11 @@ page (``EventAllforDay.aspx?d=&m=&y=``) lists every performance of one day natio
 a short note (director, genre, ages), the show's link and title, and the time; the category
 ("תיאטרון", "מחול", "ילדים"...) heads each group of rows. One GET per day over ``days`` (the
 site lists about two months ahead). Pages are slow (5-90 s) and the backend answers 502 now
-and then, so the timeout is long and 502s are retried by the transport. A show's page has the
-seller's link, but costs another slow request per show, so ``url`` is the habama show page.
+and then, so the timeout is long and 502s are retried by the transport. ``url`` is the habama
+show page. One more GET per show (not per performance) reads its picture: the page's script holds
+its media as ``var resultSet = new String("artist]id]1]Upload/MediaFiles]small.jpg]big.jpg]title|...")``
+(type 1 = image). Habama shows no price: the show page's "מחיר" column is empty (40 of 40 shows
+sampled, Nov 2026), so prices stay unknown.
 robots.txt only disallows SEO bots.
 """
 
@@ -16,6 +19,7 @@ from __future__ import annotations
 import re
 from collections.abc import AsyncIterator
 from datetime import date, datetime, time, timedelta
+from urllib.parse import quote
 
 from selectolax.lexbor import LexborHTMLParser
 
@@ -25,6 +29,7 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _EVENT_ID = re.compile(r"EventId=(\d+)", re.IGNORECASE)
 _TIME = re.compile(r"^(\d{1,2}):(\d{2})$")
+_MEDIA = re.compile(r'var resultSet = new String\("([^"]*)"\)')
 
 
 class HabamaSettings(SourceSettings):
@@ -46,9 +51,34 @@ class HabamaScraper(BaseScraper[HabamaSettings]):
             url = f"{s.site_url}{s.day_path}?Subj=1&Area=1&d={day.day}&m={day.month}&y={day.year % 100}"
             return parse_day(await self.get_text(url), day, self.timezone)
 
+        shows: dict[str, list[ScrapedEvent]] = {}  # a show's performances share its picture
         async for events in self.stream_isolated(days, day_events, lambda d: f"day {d.isoformat()}"):
             for event in events:
+                shows.setdefault(event.extra["show_id"], []).append(event)
+
+        async def with_images(show: str) -> list[ScrapedEvent]:
+            performances = shows[show]
+            page = await self.optional(f"show {show}", self.get_text(str(performances[0].url)))
+            for event in performances:
+                event.images = show_images(page or "", s.site_url)
+                event.image_url = event.images[0] if event.images else None
+            return performances
+
+        # ponytail: performances wait for the whole day crawl (memory ~ a few thousand events).
+        async for events in self.stream_isolated(list(shows), with_images, lambda show: f"show {show}"):
+            for event in events:
                 yield event
+
+
+def show_images(page_html: str, site_url: str) -> list[str]:
+    """The show page's pictures, big version first (its script's ``resultSet``)."""
+    media = _MEDIA.search(page_html)
+    images = []
+    for item in (media.group(1) if media else "").split("|"):
+        parts = item.split("]")
+        if len(parts) > 5 and parts[2] == "1" and (name := parts[5] or parts[4]):
+            images.append(f"{site_url}/{parts[3].strip('/')}/{quote(name)}")
+    return list(dict.fromkeys(images))
 
 
 def _split_hall(hall: str | None) -> tuple[str | None, str | None]:

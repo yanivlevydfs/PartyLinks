@@ -62,3 +62,18 @@ def test_livetickets_category_names():
     assert livetickets.category_name("https://www.livetickets.co.il/Category1/CONCERTS.aspx") == "concerts"
     assert livetickets.category_name("https://www.livetickets.co.il/Category2/SOCCER.aspx") == "soccer"
     assert livetickets.category_name("https://www.livetickets.co.il/Category3/English%20Premier%20League.aspx") == "soccer"
+
+
+def test_livetickets_performer_banner_is_the_picture() -> None:
+    """The performer page's banner (as on livetickets.co.il/performers/Formula 1.aspx, Nov 2026) is its events'
+    picture; the category's stock banner and city pages give none."""
+    own = '<div class="h_search_section list" style="background-image: url(https://www.doctorticket.com/download/Heb_highlights/HebBackground_13368.png);">'
+    stock = '<div class="h_search_section list" style="background-image: url(https://www.doctorticket.com/download/Heb_highlights/HebCatBackground_62.jpg);">'
+    performer = SITE + "performers/Formula%201.aspx"
+    image = livetickets.banner(own, performer)
+    assert image == "https://www.doctorticket.com/download/Heb_highlights/HebBackground_13368.png"
+    assert livetickets.banner(stock, SITE + "performers/Noah%20Kahan.aspx") is None
+    assert livetickets.banner(own, SITE + "cities/Berlin.aspx") is None
+    page = (FIXTURES / "berlin.html").read_text(encoding="utf-8")
+    event = livetickets.parse_rows(page, EVENT_URL, "Asia/Jerusalem", image=image)[0]
+    assert (event.image_url, event.images) == (image, [image])

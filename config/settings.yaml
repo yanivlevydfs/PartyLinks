@@ -2415,8 +2415,9 @@ sources:
   showshappening:
     # ShowsHappening (showshappening.com): ticketing in Malta, the UK, Germany and Spain. Each
     # country's home page is a calendar of every show (path, date, categories, tags, flyer, title);
-    # each event page adds the description, the next show's time and the city. Venue and prices
-    # come from a private API and are not read. ~270 events, ~1,000 dates. Abroad section.
+    # each event page adds the description, the next show's time, venue and city; the next show's
+    # ticket types (prices) come from the site's GetAvailableTicketTypesWithPrices, one call per event.
+    # ~270 events, ~1,000 dates. Abroad section.
     enabled: true
     cron: "8 10,22 * * *"
     site_url: https://www.showshappening.com
@@ -3415,7 +3416,7 @@ sources:
     # "all events of the day" page lists every performance nationwide (hall, note, show, time, category),
     # one GET per day over `days`. Old ASP.NET: pages take 2-90 s and 502 at times, so a long timeout,
     # low concurrency and 21 days (30 can pass the run timeout). ~60% are also sold on sources we read;
-    # no price, image or seller link. robots.txt only disallows SEO bots.
+    # one more GET per show reads its picture; habama shows no price. robots.txt only disallows SEO bots.
     enabled: true
     cron: "11 6,18 * * *"
     site_url: https://www.habama.co.il
