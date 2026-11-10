@@ -1,7 +1,7 @@
 """HOT Cinema (hotcinema.co.il) - cinema chain: Modiin, Kiryon, Haifa, Kfar Saba, Petah Tikva, Rehovot...
 
 The site is server-rendered (ASP.NET + Vue widgets) with small JSON endpoints behind its order
-forms. ``1 + days_ahead`` requests per run:
+forms. ``1 + days_ahead`` listing requests per run (prices below):
 * the home page: every movie now showing as a poster box with its page link, poster image and
   synopsis (``div.movie-box``), read once for artwork and description;
 * ``/tickets/TheaterEvents?movieid=&theatreid=&date=DD/MM/YYYY`` once per day: with empty movie
@@ -10,12 +10,17 @@ forms. ``1 + days_ahead`` requests per run:
   A day's list also holds its after-midnight shows (00:00 of the next date); they stay on the
   day they were listed under, as on the site.
 The feed has no branch names or addresses, so those come from the ``branches`` setting (taken
-from the ``/theater/<id>`` pages). No prices or age ratings without a request per movie, so none
-are given. robots.txt is absent (404): nothing is disallowed.
+from the ``/theater/<id>`` pages). No age ratings. Prices come from the BiggerPicture shop the
+order button opens: ``/order?theaterId=&eventId=`` redirects to ``<shop>/site/<siteId>?code=...``,
+read once per branch for its site id, then one login per site and one request per event and
+screening kind (3D / VIP / Atmos), from its first such screening (see ``biggerpicture``).
+robots.txt is absent (404): nothing is disallowed.
 """
 
 from __future__ import annotations
 
+import asyncio
+import re
 from collections import defaultdict
 from collections.abc import AsyncIterator
 from datetime import date, datetime, timedelta
@@ -25,9 +30,13 @@ from urllib.parse import urljoin, urlsplit
 from pydantic import BaseModel, ConfigDict, Field
 from selectolax.lexbor import LexborHTMLParser
 
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text, parse_iso, to_int, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.biggerpicture import BiggerPicture
+from partylinks.scrapers.pres import with_tiers
+
+_SITE = re.compile(r"/site/(\d+)")
 
 
 class HotCinemaBranch(BaseModel):
@@ -48,6 +57,11 @@ class HotCinemaSettings(SourceSettings):
     # TheaterId -> branch; an unknown id is still listed, under the chain name only.
     branches: dict[int, HotCinemaBranch] = Field(default_factory=dict)
     chain_name: str = "הוט סינמה"
+    # The order button: redirects to the BiggerPicture shop page of the branch's site.
+    order_path: str = "/order?theaterId={theater}&eventId={event}"
+    tickets_api: str = "https://pub-api-use1.biggerpicture.ai/ecomAPI/public/api"
+    sale_channel: str = "WEB"
+    tickets_language: str = "he_IL"
 
 
 class Movie(BaseModel):
@@ -72,9 +86,35 @@ class HotCinemaScraper(BaseScraper[HotCinemaSettings]):
             payload = await self.get_json(s.site_url + s.events_path, params=params, expect=list)
             return parse_day(day, payload, movies, s, self.timezone)
 
-        async for events in self.stream_isolated(days, day_events, lambda d: f"day {d.isoformat()}"):
-            for event in events:
-                yield event
+        listed = self.stream_isolated(days, day_events, lambda d: f"day {d.isoformat()}")
+        events = [event async for day_list in listed for event in day_list]
+        shop = BiggerPicture(self, s.tickets_api, s.sale_channel, s.tickets_language)
+        sites: dict[int, asyncio.Task[int]] = {}
+
+        async def site_id(branch_id: int, event_id: str) -> int:
+            url = s.site_url + s.order_path.format(theater=branch_id, event=event_id)
+            if not (found := _SITE.search((await self.request("GET", url)).url.path)):
+                raise ParseError(f"branch {branch_id}: order page without a shop site")
+            return int(found.group(1))
+
+        async def shop_tiers(branch_id: int, event_id: str) -> list[TicketTier]:
+            return await shop.tiers(await asyncio.shield(sites[branch_id]), event_id)
+
+        async def priced(event: ScrapedEvent) -> ScrapedEvent:
+            kinds: dict[tuple[str, ...], str] = {}
+            for sc in event.extra["screenings"]:
+                kinds.setdefault(tuple(sc["formats"]), sc["event_id"])
+            branch_id = event.extra["branch_id"]
+            if branch_id not in sites:  # one lookup per branch, shared by the concurrent events
+                sites[branch_id] = asyncio.ensure_future(site_id(branch_id, next(iter(kinds.values()))))
+            tiers = []
+            for event_id in kinds.values():
+                call = shop_tiers(branch_id, event_id)
+                tiers += await self.optional(f"prices {event.source_event_id}", call) or []
+            return with_tiers(event, tiers) if tiers else event
+
+        async for event in self.stream_isolated(events, priced, lambda e: e.source_event_id):
+            yield event
 
 
 def parse_movies(page_html: str, site_url: str) -> dict[int, Movie]:
@@ -135,7 +175,7 @@ def _event(
     languages = {
         f"{k}:{v}" for x in rows for k in ("DubbedLanguage", "SubtitledLanguage") if (v := clean_str(x.get(k)))
     }
-    formats = {f for x in rows for f, key in (("3D", "Is3D"), ("VIP", "IsVIP"), ("Atmos", "IsAtmos")) if x.get(key)}
+    formats = {f for x in rows for f in _formats(x)}
     return ScrapedEvent(
         source=HotCinemaScraper.name,
         source_event_id=f"{movie_id}:{branch_id}:{day.isoformat()}",
@@ -160,5 +200,13 @@ def _event(
             "branch_id": branch_id,
             "languages": sorted(languages),
             "formats": sorted(formats),
+            "screenings": [
+                {"start": start.isoformat(), "event_id": clean_str(x.get("EventId")), "formats": _formats(x)}
+                for start, x in screenings
+            ],
         },
     )
+
+
+def _formats(screening: dict[str, Any]) -> list[str]:
+    return [f for f, key in (("3D", "Is3D"), ("VIP", "IsVIP"), ("Atmos", "IsAtmos")) if screening.get(key)]

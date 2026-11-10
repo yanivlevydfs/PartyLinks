@@ -39,3 +39,44 @@ def test_attributes() -> None:
         None, ["drama"], ["2d"], ["first-subbed-lang-he", "subbed"],
     )  # fmt: skip
     assert split_attributes(["16-plus", "imax", "dubbed-lang-he"])[0] == 16
+
+
+def test_prices_per_format_from_the_booking_host() -> None:
+    """One ticketGroups request per event and format, on the PRES host of the booking link; the
+    regular ticket only, its 5 NIS online fee apart from the 49 face value."""
+    import asyncio
+    import copy
+    from decimal import Decimal
+
+    from partylinks.config import HttpSettings
+    from partylinks.scrapers.planet import PlanetScraper, PlanetSettings
+
+    day = copy.deepcopy(DAY)
+    day["events"][1]["attributeIds"].append("imax")  # 349107, first Fear Street screening
+    groups = {
+        f"https://tickets5.planetcinema.co.il/api/presentations/{i}/ticketGroups": f"ticket_groups_{f}.json"
+        for i, f in ((348337, "2d"), (349107, "imax"), (349108, "2d"), (349187, "2d"))
+    }
+    settings = PlanetSettings(cron="0 6 * * *", site_url="https://x", api_path="/il", tenant_id="1")
+    scraper = PlanetScraper(settings, HttpSettings(), TZ)
+    calls: list[str] = []
+
+    async def get_json(url: str, **kwargs: object) -> object:
+        calls.append(url)
+        return json.loads((FIXTURES / groups[url]).read_text("utf-8"))
+
+    scraper.get_json = get_json  # type: ignore[method-assign]
+
+    async def price() -> list:
+        async with scraper:
+            return [await scraper._priced(e) for e in parse_film_events(day, BRANCH, "planet", TZ)]
+
+    events = {e.source_event_id: e for e in asyncio.run(price())}
+    assert sorted(calls) == sorted(groups)
+    loves = events["8590s2r:1025:2026-10-22"]
+    assert [(t.name, t.price, t.service_fee, t.total_price) for t in loves.tickets] == [
+        ("רגיל", Decimal(49), Decimal(5), Decimal(54))
+    ]
+    fear = events["8328s2r:1025:2026-10-22"]
+    assert [(t.name, t.total_price) for t in fear.tickets] == [("רגיל IMAX", Decimal(64)), ("רגיל", Decimal(54))]
+    assert (fear.min_price, fear.max_price, fear.currency) == (Decimal(49), Decimal(59), "ILS")

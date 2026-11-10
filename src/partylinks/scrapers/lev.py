@@ -7,8 +7,9 @@ link). One request per branch and day (7 branches x ``days_ahead``). The movie p
 (``/movies/<slug>/``) adds the poster, synopsis, country/year/language/runtime line, cast
 and age rating: one request per distinct movie (~35, ~0.5 MB each - the page also dumps
 debug arrays). A failing movie page only drops those extras. The branch list carries no
-addresses, so they live in settings. Prices are a flat table on /prices/, not per screening:
-none are given. robots.txt allows everything but ``/wp-admin`` (admin-ajax allowed).
+addresses, so they live in settings. Prices are one flat table on ``/prices/`` (box office and
+online price of a regular screening's ticket), read once per run and given to every event.
+robots.txt allows everything but ``/wp-admin`` (admin-ajax allowed).
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from __future__ import annotations
 import re
 from collections.abc import AsyncIterator
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from typing import Any, NamedTuple
 from urllib.parse import unquote, urlsplit
 from zoneinfo import ZoneInfo
@@ -23,11 +25,14 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, ConfigDict
 from selectolax.lexbor import LexborHTMLParser
 
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text, to_int
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.pres import with_tiers
 
 _TIME = re.compile(r"^(\d{1,2}):(\d{2})$")
+# "מחיר כרטיס ברכישה בקופות – 49 שקלים | מחיר כרטיס ברכישה דרך האתר – 52.50 שקלים" (3D lines differ).
+_PRICE = re.compile(r"מחיר כרטיס ברכישה (בקופות|דרך האתר)\s*[–-]\s*(\d+(?:\.\d+)?)\s*שקלים")
 _AGE = re.compile(r"(\d{1,2})\s*\+")
 _YEAR = re.compile(r"\b(19|20)\d{2}\b")
 # A screening listed before this hour runs after midnight of the listed day.
@@ -48,6 +53,7 @@ class LevSettings(SourceSettings):
     site_url: str
     showtimes_path: str
     showtimes_action: str = "movie_on_location_new"
+    prices_path: str = "/prices/"
     # Days listed, today included.
     days_ahead: int = 3
     # Length of a screening when the movie page gives no runtime: the event ends after the last one.
@@ -92,11 +98,17 @@ class LevScraper(BaseScraper[LevSettings]):
             return url, parse_movie(await self.get_text(url))
 
         movies = dict([x async for x in self.stream_isolated(movie_urls, detail, lambda url: f"movie {unquote(url)}")])
+        page = await self.optional("prices", self.get_text(s.site_url + s.prices_path))
+        tiers = None
+        try:
+            tiers = parse_prices(page) if page else None
+        except ParseError as exc:  # the events stay, without a price
+            self.record_failure("prices", exc)
         for branch_id, day, screenings in listings:
             for event in build_events(
                 screenings, branch_id, s.branches[branch_id], day, movies, self.timezone, s.default_runtime_minutes
             ):
-                yield event
+                yield with_tiers(event, tiers) if tiers else event
 
 
 def parse_showtimes(page_html: str) -> list[Screening]:
@@ -158,6 +170,17 @@ def parse_movie(page_html: str) -> dict[str, Any]:
     code = tree.css_first("#get_locations_single option[value]")
     movie["movie_code"] = clean_str(code.attributes.get("value")) if code else None
     return {k: v for k, v in movie.items() if v not in (None, "")}
+
+
+def parse_prices(page_html: str) -> list[TicketTier]:
+    """The regular ticket of ``/prices/``: box-office price, plus the online surcharge as its fee."""
+    found: dict[str, Decimal] = {}
+    for kind, amount in _PRICE.findall(html_to_text(page_html) or ""):
+        found.setdefault(kind, Decimal(amount))
+    if not (box := found.get("בקופות")):
+        raise ParseError("prices page without the box-office ticket price")
+    online = found.get("דרך האתר")
+    return [TicketTier(name="כרטיס רגיל", price=box, service_fee=online - box if online and online > box else None)]
 
 
 def movie_id(movie_url: str) -> str:

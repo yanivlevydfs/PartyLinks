@@ -2,14 +2,17 @@
 Jerusalem, Netanya, Kfar Saba, Hadera, Ashdod, Be'er Sheva).
 
 The site is a Wix front end; its showtimes come from the chain's PRES ticketing host
-(tickets.cinema-city.co.il), the same JSON API as the ``pres`` source. Two requests:
+(tickets.cinema-city.co.il), the same JSON API as the ``pres`` source:
 
 * ``GET /api/presentations/`` - every upcoming screening of every branch in one call (~4,000
   rows, ~6 MB): id, local ``dateTime``, ``businessDate`` (a 00:15 show belongs to the evening
   before), feature id/name/rating/duration/category, hall, branch (``venueLocationId`` /
-  ``locationName``), languages, ``soldout``. No prices, addresses or coordinates.
+  ``locationName``), languages, ``soldout``, hall type. No addresses or coordinates.
 * ``GET /api/features/`` - every movie with its synopsis HTML and ``imageData`` (poster URL).
   Optional: without it events still carry everything but synopsis and poster.
+* ``GET /api/presentations/<id>/ticketGroups`` - prices (see ``pres``), once per event and hall
+  type (``venueTypeId``: regular, VIP...), from its first such screening. A day's price can differ
+  (promotion days) and so can a show's (``featureTypeId`` 3), hence per event, not per hall.
 
 One event per (movie, branch, business day) within ``days_ahead`` days; ``start_at`` is that
 day's first screening, every time is listed in the description and ``extra.showtimes``. The
@@ -28,9 +31,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text, parse_iso, to_int, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.pres import parse_ticket_groups, with_tiers
 
 _MIN_AGE = re.compile(r"מגיל\s*(\d{1,2})")  # "הותר מגיל 16"; not "עד גיל 9 בליווי מבוגר"
 
@@ -48,6 +52,7 @@ class CinemaCitySettings(SourceSettings):
     api_url: str
     presentations_path: str
     features_path: str
+    ticket_groups_path: str = "/api/presentations/{id}/ticketGroups"
     movie_url: str  # formatted with ``id`` (the feature id)
     days_ahead: int = Field(3, ge=1)
     default_runtime_minutes: int = Field(120, ge=1)  # a screening without durationInMinutes
@@ -66,7 +71,19 @@ class CinemaCityScraper(BaseScraper[CinemaCitySettings]):
         today = datetime.now(zone(self.timezone)).date()
         events = parse_presentations(listing, features or [], s, self.timezone, today)
         self.log.debug("listed %d movie-days", len(events))
-        for event in events:
+
+        async def priced(event: ScrapedEvent) -> ScrapedEvent:
+            kinds: dict[Any, Any] = {}
+            for screening in event.extra["screenings"]:
+                kinds.setdefault(screening["hall_type"], screening["id"])
+            tiers: list[TicketTier] = []
+            for presentation in kinds.values():
+                url = s.api_url + s.ticket_groups_path.format(id=presentation)
+                payload = await self.optional(f"prices {event.source_event_id}", self.get_json(url, expect=dict))
+                tiers += parse_ticket_groups(payload or {})
+            return with_tiers(event, tiers) if tiers else event
+
+        async for event in self.stream_isolated(events, priced, lambda e: e.source_event_id):
             yield event
 
 
@@ -122,6 +139,9 @@ def parse_movie_day(
         "dubbed": clean_str(first.get("dubbedLanguageISO")),
         "subtitles": clean_str(first.get("subbedLanguageISO")),
         "halls": list(dict.fromkeys(h for _, r in shows if (h := clean_str(r.get("venueName"))))),
+        "screenings": [
+            {"start": t.isoformat(), "id": r.get("id"), "hall_type": r.get("venueTypeId")} for t, r in shows
+        ],
         "trailer": clean_str(feature.get("trailer")),
     }
     return ScrapedEvent(

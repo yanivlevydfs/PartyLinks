@@ -1,0 +1,19 @@
+{
+ "ticketGroups": {
+  "2": {
+   "id": 2,
+   "name": "VIP",
+   "tickets": [
+    {
+     "id": 5435,
+     "price": 163.9,
+     "basePrice": 159,
+     "serviceCharge": 4.9,
+     "typId": 1,
+     "name": "VIP",
+     "additionalName": ""
+    }
+   ]
+  }
+ }
+}

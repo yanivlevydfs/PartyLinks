@@ -6,8 +6,11 @@ One request lists the branches with screenings until the last wanted day (name, 
 coordinates), then one ``film-events`` request per branch and day gives that day's films (name,
 length, poster, page link, attribute ids: rating, genres, format, language) and screenings
 (local time, booking link, hall, sold-out flag). Planet: 6 branches x 3 days = 19 requests;
-Rav-Hen: 2 x 3 = 7. Screenings group into one event per film, branch and day. No synopsis or
-prices in the API. robots.txt allows everything but /booking, /club and asset paths.
+Rav-Hen: 2 x 3 = 7. Screenings group into one event per film, branch and day. No synopsis.
+Prices: each screening's booking link is a PRES box office (``tickets5.<site>/api/order/<id>``),
+whose ``/api/presentations/<id>/ticketGroups`` gives the price levels (see ``pres``). Read once per
+event and screening format (2D, IMAX, 4DX, VIP...: each has its own price), from its first such
+screening. robots.txt allows everything but /booking, /club and asset paths.
 """
 
 from __future__ import annotations
@@ -17,13 +20,15 @@ from collections import defaultdict
 from collections.abc import AsyncIterator
 from datetime import date, datetime, timedelta
 from typing import Any
+from urllib.parse import urlsplit
 
-from partylinks.models import ScrapedEvent
+from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, parse_iso, to_float, to_int, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.pres import parse_ticket_groups, with_tiers
 
 _RATING = re.compile(r"^(\d+)-plus$")
-_FORMAT = re.compile(r"^(\d+d\w*|imax|4dx|screenx|vip|atmos|dolby.*|d-box)$")
+_FORMAT = re.compile(r"^(\d+d\w*|imax|4dx|screenx|vip(-\w+)?|atmos|dolby.*|d-box)$")
 _LANGUAGE = re.compile(r"(^|-)(lang|dubbed|subbed)(-|$)")
 _RATED_ALL = "all"
 
@@ -36,6 +41,8 @@ class PlanetSettings(SourceSettings):
     lang: str = "he_IL"
     # Today plus the next days_ahead - 1 days.
     days_ahead: int = 3
+    # On the PRES host of each screening's booking link.
+    ticket_groups_path: str = "/api/presentations/{id}/ticketGroups"
 
 
 class PlanetScraper(BaseScraper[PlanetSettings]):
@@ -61,12 +68,31 @@ class PlanetScraper(BaseScraper[PlanetSettings]):
         async def day_events(item: tuple[dict[str, Any], date]) -> list[ScrapedEvent]:
             branch, day = item
             body = await self._body(f"film-events/in-cinema/{branch.get('id')}/at-date/{day}")
-            return parse_film_events(body, branch, self.name, self.timezone)
+            return [await self._priced(e) for e in parse_film_events(body, branch, self.name, self.timezone)]
 
         jobs = [(b, d) for b in branches if isinstance(b, dict) for d in days]
         async for events in self.stream_isolated(jobs, day_events, label=lambda j: f"branch {j[0].get('id')} {j[1]}"):
             for event in events:
                 yield event
+
+    async def _priced(self, event: ScrapedEvent) -> ScrapedEvent:
+        """Prices of the event's first screening of each format."""
+        kinds: dict[tuple[str, ...], dict[str, Any]] = {}
+        for screening in event.extra["screenings"]:
+            kinds.setdefault(tuple(screening["formats"]), screening)
+        tiers: list[TicketTier] = []
+        for formats, screening in kinds.items():
+            host = urlsplit(screening.get("booking_url") or "")
+            if not host.netloc or not screening.get("id"):
+                continue
+            url = f"{host.scheme}://{host.netloc}" + self.settings.ticket_groups_path.format(id=screening["id"])
+            payload = await self.optional(f"prices {event.source_event_id}", self.get_json(url, expect=dict))
+            label = " ".join(f.upper() for f in formats if f != "2d")
+            tiers += [
+                t.model_copy(update={"name": f"{t.name} {label}"}) if label else t
+                for t in parse_ticket_groups(payload or {})
+            ]
+        return with_tiers(event, tiers) if tiers else event
 
 
 class RavHenScraper(PlanetScraper):
@@ -139,6 +165,8 @@ def parse_film_day(
             "screenings": [
                 {
                     "start": start.isoformat(),
+                    "id": show.get("id"),
+                    "formats": split_attributes(show.get("attributeIds") or [])[2],
                     "booking_url": show.get("bookingLink"),
                     "hall": show.get("auditorium"),
                     "sold_out": bool(show.get("soldOut")),

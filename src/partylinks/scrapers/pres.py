@@ -32,7 +32,7 @@ from __future__ import annotations
 import html as html_lib
 import json
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterable
 from datetime import datetime
 from typing import Any, Literal
 from urllib.parse import quote, unquote
@@ -259,6 +259,8 @@ def parse_ticket_groups(payload: dict[str, Any]) -> list[TicketTier]:
         price, full = max(priced, key=lambda pt: pt[0])
         base = to_decimal(full.get("basePrice"))
         fee = to_decimal(full.get("serviceCharge"))
+        if base is not None and fee and base + fee == price:  # cinema hosts: price = basePrice + fee
+            price = base
         tiers.append(
             TicketTier(
                 source_ticket_id=clean_str(group.get("id")),
@@ -270,6 +272,15 @@ def parse_ticket_groups(payload: dict[str, Any]) -> list[TicketTier]:
             )
         )
     return tiers
+
+
+def with_tiers(event: ScrapedEvent, tiers: Iterable[TicketTier]) -> ScrapedEvent:
+    """``event`` with these tiers (one per name and price) and its min / max price."""
+    unique = list({(t.name, t.price): t for t in tiers}.values())
+    priced = [t.price for t in unique if t.price is not None]
+    return event.model_copy(
+        update={"tickets": unique, "min_price": min(priced, default=None), "max_price": max(priced, default=None)}
+    )
 
 
 def parse_event(

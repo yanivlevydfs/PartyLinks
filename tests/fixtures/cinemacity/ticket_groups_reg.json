@@ -1,0 +1,37 @@
+{
+ "ticketGroups": {
+  "1": {
+   "id": 1,
+   "name": "רגיל",
+   "tickets": [
+    {
+     "id": 264,
+     "price": 54.8,
+     "basePrice": 49.9,
+     "serviceCharge": 4.9,
+     "typId": 1,
+     "name": "רגיל",
+     "additionalName": ""
+    },
+    {
+     "id": 5378,
+     "price": 37.9,
+     "basePrice": 33,
+     "serviceCharge": 4.9,
+     "typId": 1,
+     "name": "חייל בחובה (הצגת חוגר בקופה)",
+     "additionalName": ""
+    },
+    {
+     "id": 5379,
+     "price": 42.9,
+     "basePrice": 38,
+     "serviceCharge": 4.9,
+     "typId": 1,
+     "name": "נכה (הצגת תעודה בקופה)",
+     "additionalName": ""
+    }
+   ]
+  }
+ }
+}

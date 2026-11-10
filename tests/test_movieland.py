@@ -51,3 +51,46 @@ def test_started_screenings_are_left_out() -> None:
     assert events and all(e.start_at is not None and e.start_at >= now for e in events)
     assert all(s >= now.isoformat() for e in events for s in e.extra["showtimes"])
     assert events[0].extra["purchase_url"].startswith("https://")
+
+
+def test_scrape_prices_each_event_from_the_shop(monkeypatch) -> None:
+    """One login per branch site, one price request per event and screening kind; a failing one keeps the event."""
+    import asyncio
+    from decimal import Decimal
+
+    from partylinks.config import HttpSettings
+    from partylinks.scrapers import movieland
+
+    shop = json.loads((Path(__file__).parent / "fixtures/biggerpicture/event_min_1290-116268.json").read_text("utf-8"))
+    scraper = movieland.MovielandScraper(SETTINGS, HttpSettings(), TZ)
+    calls: list[str] = []
+
+    async def get_json(url: str, **kwargs: object) -> object:
+        calls.append(url)
+        if url.endswith("/api/Events"):
+            return MOVIES
+        if url.endswith("/1293-24605/min"):  # one screening's price fails
+            raise RuntimeError("boom")
+        return shop
+
+    async def post_json(url: str, *, json: dict[str, object], **kwargs: object) -> object:
+        calls.append(f"login {json['siteId']}")
+        return {"token": "t"}
+
+    scraper.get_json = get_json  # type: ignore[method-assign]
+    scraper.post_json = post_json  # type: ignore[method-assign]
+    morning = datetime(2026, 10, 22, 8, tzinfo=ZoneInfo(TZ))
+    monkeypatch.setattr(movieland, "datetime", type("D", (datetime,), {"now": staticmethod(lambda tz=None: morning)}))
+
+    async def collect() -> list[object]:
+        async with scraper:
+            return [e async for e in scraper.scrape()]
+
+    events = {e.source_event_id: e for e in asyncio.run(collect())}
+    assert not events.pop("4904:1293:2026-10-22").tickets and len(scraper.failures) == 1
+    priced = list(events.values())
+    assert priced and all(e.min_price == 50 and e.tickets[0].total_price == Decimal("54.5") for e in priced)
+    assert sorted(c for c in calls if c.startswith("login")) == ["login 1291", "login 1293"]
+    assert len([c for c in calls if c.endswith("/min")]) == len(events) + 1 + sum(
+        len({(s["vip"], s["three_d"]) for s in e.extra["screenings"]}) - 1 for e in events.values()
+    )

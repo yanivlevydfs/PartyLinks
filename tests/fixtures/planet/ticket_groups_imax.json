@@ -1,0 +1,19 @@
+{
+ "ticketGroups": {
+  "1": {
+   "id": 1,
+   "name": "רגיל",
+   "tickets": [
+    {
+     "id": 1,
+     "price": 64,
+     "basePrice": 59,
+     "serviceCharge": 5,
+     "typId": 1,
+     "name": "רגיל",
+     "additionalName": "Regular"
+    }
+   ]
+  }
+ }
+}

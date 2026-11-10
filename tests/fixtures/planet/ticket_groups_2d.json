@@ -1,0 +1,55 @@
+{
+ "ticketGroups": {
+  "1": {
+   "id": 1,
+   "name": "רגיל",
+   "tickets": [
+    {
+     "id": 1,
+     "price": 54,
+     "basePrice": 49,
+     "serviceCharge": 5,
+     "typId": 1,
+     "name": "רגיל",
+     "additionalName": "Regular"
+    },
+    {
+     "id": 5,
+     "price": 38,
+     "basePrice": 33,
+     "serviceCharge": 5,
+     "typId": 1,
+     "name": "ילד",
+     "additionalName": "Kids"
+    },
+    {
+     "id": 355,
+     "price": 38,
+     "basePrice": 33,
+     "serviceCharge": 5,
+     "typId": 1,
+     "name": "כרטיס משפחתי",
+     "additionalName": "Family ticket"
+    },
+    {
+     "id": 4,
+     "price": 38,
+     "basePrice": 33,
+     "serviceCharge": 5,
+     "typId": 1,
+     "name": "אזרח ותיק",
+     "additionalName": "Senior citizen"
+    },
+    {
+     "id": 2,
+     "price": 38,
+     "basePrice": 33,
+     "serviceCharge": 5,
+     "typId": 1,
+     "name": "כוחות הביטחון",
+     "additionalName": "Security forces"
+    }
+   ]
+  }
+ }
+}

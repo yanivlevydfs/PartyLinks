@@ -45,3 +45,46 @@ def test_min_age_from_rating_and_missing_features() -> None:
     adult = next(e for e in rated if e.source_event_id == "6433:1173:2026-10-23")
     assert adult.min_age == 16 and adult.image_url is None and adult.address is None
     assert adult.description == "הקרנות: 22:20, 00:30"
+
+
+def test_scrape_prices_per_event_and_hall_type(monkeypatch) -> None:
+    """ticketGroups once per event and hall type; the regular ticket at face value plus the online fee."""
+    import asyncio
+    from datetime import datetime
+    from decimal import Decimal
+    from zoneinfo import ZoneInfo
+
+    from partylinks.config import HttpSettings
+    from partylinks.scrapers import cinemacity
+
+    api = SETTINGS.api_url
+    scraper = cinemacity.CinemaCityScraper(SETTINGS, HttpSettings(), TZ)
+    calls: list[str] = []
+
+    async def get_json(url: str, **kwargs: object) -> object:
+        calls.append(url)
+        if url == api + SETTINGS.presentations_path:
+            return LISTING
+        if url == api + SETTINGS.features_path:
+            return FEATURES
+        name = "vip" if "/887259/" in url else "reg"
+        return json.loads((FIXTURES / f"ticket_groups_{name}.json").read_text("utf-8"))
+
+    scraper.get_json = get_json  # type: ignore[method-assign]
+    morning = datetime(2026, 10, 22, 8, tzinfo=ZoneInfo(TZ))
+    monkeypatch.setattr(cinemacity, "datetime", type("D", (datetime,), {"now": staticmethod(lambda tz=None: morning)}))
+
+    async def collect() -> list[ScrapedEvent]:
+        async with scraper:
+            return [e async for e in scraper.scrape()]
+
+    events = {e.source_event_id: e for e in asyncio.run(collect())}
+    assert len(events) == 9 and not scraper.failures
+    assert len([c for c in calls if c.endswith("/ticketGroups")]) == 10  # 9 events, one with a VIP hall too
+    glilot = events["6462:1170:2026-10-22"]
+    assert [(t.name, t.price, t.service_fee, t.total_price) for t in glilot.tickets] == [
+        ("רגיל", Decimal("49.9"), Decimal("4.9"), Decimal("54.8")),
+        ("VIP", Decimal(159), Decimal("4.9"), Decimal("163.9")),
+    ]
+    assert (glilot.min_price, glilot.max_price) == (Decimal("49.9"), Decimal(159))
+    assert all(e.tickets and e.min_price == Decimal("49.9") for e in events.values())

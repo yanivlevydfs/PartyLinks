@@ -47,3 +47,15 @@ def test_movie_page_adds_poster_synopsis_and_rating() -> None:
     assert loves.description is not None and loves.description.startswith('ה"האהבות שלנו" – סרטו החדש של אבי נשר')
     assert loves.description.endswith("\n\nהקרנות: 11:00, 13:30, 16:00, 18:30, 21:15")
     assert loves.extra["directors"] == "אבי נשר" and loves.source_genres == ["קולנוע"]
+
+
+def test_prices_page() -> None:
+    """The regular ticket: 49 at the box office, 52.50 online (the 3D lines and member deals are not it)."""
+    from decimal import Decimal
+
+    from partylinks.scrapers.lev import parse_prices
+
+    page = (Path(__file__).parent / "fixtures/lev/prices.html").read_text("utf-8")
+    assert [(t.name, t.price, t.service_fee, t.total_price) for t in parse_prices(page)] == [
+        ("כרטיס רגיל", Decimal(49), Decimal("3.50"), Decimal("52.50"))
+    ]

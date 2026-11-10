@@ -5,8 +5,10 @@ every movie on sale and all its screenings in every branch: name, poster file, g
 age rating, and per screening the local datetime, branch id and name, language group
 (subtitles / Hebrew or Russian dub), VIP flag and booking link. Screenings group into one event
 per movie, branch and business day (a screening before 05:00 belongs to the previous day).
-No synopsis (only on the ~100 KB movie pages, not fetched) and no prices. The feed carries no
-branch addresses, so they live in settings. robots.txt allows everything. One request per run.
+No synopsis (only on the ~100 KB movie pages, not fetched). The feed carries no branch addresses,
+so they live in settings. Prices come from the BiggerPicture shop the booking links open (TheaterId
+is its site id): one login per branch, then one request per event and screening kind (VIP / 3D),
+from its first such screening (see ``biggerpicture``). robots.txt allows everything.
 """
 
 from __future__ import annotations
@@ -25,6 +27,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import clean_str, to_int
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.biggerpicture import BiggerPicture
+from partylinks.scrapers.pres import with_tiers
 
 _AGE = re.compile(r"^(\d{1,2})\s*\+")
 # A screening listed before this hour runs after midnight of its business day.
@@ -52,6 +56,10 @@ class MovielandSettings(SourceSettings):
     days_ahead: int = 3
     # By the feed's TheaterId; an unlisted branch is still read, named after the feed.
     branches: dict[str, MovielandBranch] = Field(default_factory=dict)
+    # BiggerPicture shop API (ticket prices).
+    tickets_api: str = "https://pub-api-use1.biggerpicture.ai/ecomAPI/public/api"
+    sale_channel: str = "web"
+    tickets_language: str = "he_IL"
 
 
 class MovielandScraper(BaseScraper[MovielandSettings]):
@@ -68,7 +76,20 @@ class MovielandScraper(BaseScraper[MovielandSettings]):
         today = datetime.now(ZoneInfo(self.timezone)).date()
         days = {today + timedelta(days=i) for i in range(s.days_ahead)}
         self.log.debug("listed %d movies", len(movies))
-        for event in parse_events(movies, s, days, self.timezone, datetime.now(ZoneInfo(self.timezone))):
+        shop = BiggerPicture(self, s.tickets_api, s.sale_channel, s.tickets_language)
+
+        async def priced(event: ScrapedEvent) -> ScrapedEvent:
+            kinds: dict[tuple[bool, bool], str] = {}
+            for sc in event.extra["screenings"]:
+                kinds.setdefault((sc["vip"], sc["three_d"]), sc["event_id"])
+            tiers = []
+            for event_id in kinds.values():
+                call = shop.tiers(int(event.extra["branch_id"]), event_id)
+                tiers += await self.optional(f"prices {event.source_event_id}", call) or []
+            return with_tiers(event, tiers) if tiers else event
+
+        events = parse_events(movies, s, days, self.timezone, datetime.now(ZoneInfo(self.timezone)))
+        async for event in self.stream_isolated(events, priced, lambda e: e.source_event_id):
             yield event
 
 
@@ -143,6 +164,7 @@ def build_event(
                     "booking_url": show.get("BookingNativeUrl"),
                     "language": clean_str(show.get("SiteGroup")),
                     "vip": bool(show.get("IsVip")),
+                    "three_d": bool(show.get("ThreeD")),
                 }
                 for start, show in shows
             ],
