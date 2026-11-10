@@ -494,3 +494,18 @@ def test_venue_box_office_hour_beats_a_guides_typo(tmp_path: Path) -> None:
     ])  # fmt: skip
     assert groups["mevalim:132279"][0] == groups["smarticket:shablul:4833"][0] == groups["kupatbravo:214002"][0]
     assert groups["mevalim:9"][0] not in (groups["smarticket:shablul:8"][0], groups["smarticket:shablul:9"][0])
+
+
+def test_a_listing_without_a_price_offers_its_twins_in_event_data(tmp_path: Path) -> None:
+    """Google's event data: the same party on two sites, one with no price, gets the other's price."""
+    from partylinks.seo import event_jsonld
+
+    settings, _ = grouped(tmp_path, [
+        listing("goout", "a", "THURSDAY MOON | MAINSTREAM", tickets=[]),
+        listing("eventer", "b", "THURSDAY MOON | MAINSTREAM", tickets=[TicketTier(name="Entry", price=Decimal(88))]),
+    ])  # fmt: skip
+    db = Database(settings.database.url)
+    with db.session() as session:
+        bare = session.get(EventRow, "goout:a")
+        assert bare is not None and bare.min_price is None and bare.best_listing_id == "eventer:b"
+        assert event_jsonld(bare, settings)["offers"][0]["price"] == 88

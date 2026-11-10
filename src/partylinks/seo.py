@@ -306,6 +306,12 @@ def _ticket_url(row: EventRow, cfg: Settings) -> str:
 
 def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, Any] | None:
     """Per Google: an Offer per ticket type, price with fees, availability InStock / SoldOut / PreOrder only."""
+    # The same event sold on another site with a price (dedup's best listing): its offers, bought there.
+    session = object_session(row)
+    if row.min_price is None and row.best_listing_id not in (None, row.id) and session is not None:
+        best = session.get(EventRow, row.best_listing_id)
+        if best is not None and best.min_price is not None:
+            return _offers(best, cfg)
     availability = {
         "on_sale": "https://schema.org/InStock",
         "sold_out": "https://schema.org/SoldOut",
