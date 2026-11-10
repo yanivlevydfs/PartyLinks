@@ -304,27 +304,30 @@ def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, An
         "coming_soon": "https://schema.org/PreOrder",
         "closed": "https://schema.org/SoldOut",
     }
+    # Google needs a currency on every Offer (Search Console: 5 without one): the ticket's, the event's,
+    # else shekels for an event in Israel; none known abroad: no Offer.
+    home = "ILS" if not row.country else None
     offers = [
         {
             "@type": "Offer",
             "name": t.name,
             "price": float(t.total_price if t.total_price is not None else t.price or 0),
-            "priceCurrency": t.currency,
+            "priceCurrency": t.currency or row.currency or home,
             "availability": availability.get(t.status, "https://schema.org/InStock"),
             "url": _ticket_url(row, cfg),
             # On sale since: the seller's own sale start, else when we first saw it on sale.
             "validFrom": _iso(t.sale_start or row.first_seen_at, cfg, row),
         }
         for t in row.tickets
-        if t.price is not None or t.is_free
+        if (t.price is not None or t.is_free) and (t.currency or row.currency or home)
     ]
     if offers:
         return offers
-    if row.min_price is not None:  # tiers unknown: one Offer at the lowest price (Google's "price")
+    if row.min_price is not None and (row.currency or home):  # tiers unknown: one Offer at the lowest price (Google's "price")
         return {
             "@type": "Offer",
             "price": float(row.min_price),
-            "priceCurrency": row.currency,
+            "priceCurrency": row.currency or home,
             "url": _ticket_url(row, cfg),
             "availability": "https://schema.org/SoldOut" if row.is_sold_out else "https://schema.org/InStock",
             "validFrom": _iso(row.first_seen_at, cfg, row),
