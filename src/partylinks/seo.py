@@ -1430,7 +1430,13 @@ SITEMAP_PART = 10_000
 
 def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
     """Every public page as a <url> entry (Hebrew and English apart, the blog once)."""
-    rows = session.scalars(select(EventRow).where(upcoming_filter(), EventRow.is_primary.is_(True), _NOT_PLACE).order_by(EventRow.start_at.asc().nulls_first())).all()
+    # The three columns a <url> needs, not ~100k whole rows (~1.4 kB each): those went past the 120 s
+    # statement timeout while many sources ran (IndexNow's submit, 2026-11-10).
+    rows = session.execute(
+        select(EventRow.id, EventRow.slug, EventRow.last_seen_at)
+        .where(upcoming_filter(), EventRow.is_primary.is_(True), _NOT_PLACE)
+        .order_by(EventRow.start_at.asc().nulls_first())
+    ).all()
     paths: list[tuple[str, date | None]] = [("/", None), ("/map", None), ("/abroad", None), ("/venues", None), ("/artists", None), ("/accessibility", None), ("/privacy", None), ("/terms", None)]
     paths += [(p, None) for p in INFO_PAGES]
     today = datetime.now(ZoneInfo(cfg.timezone))  # landing pages change every day
