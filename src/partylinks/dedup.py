@@ -360,7 +360,14 @@ class Deduplicator:
             return True
         # A guide's two pages of one show, one per seller, at one hour and hall: "מדיאה - תיאטרון הקאמרי" and
         # "מדיאה - עם עמוס תמם וכנרת לימוני - תיאטרון הקאמרי" (Makore, Nov 2026). One name holds the other.
-        if bool(a.venue_slug) and a.venue_slug == b.venue_slug and a.timed and b.timed and self._contains(a, b):
+        # Or its two pages of one talk under two names around one name ("מדע על הבר: התחדשות עירונית כהזדמנות" /
+        # "הרצאה של בני פירסט: «התחדשות עירונית כהזדמנות»", OGO, Nov 2026): 3+ shared distinctive words.
+        distance = _distance_m(a, b)
+        same_place = bool(a.venue_slug) and a.venue_slug == b.venue_slug or distance is not None and distance <= 1
+        shared = a.core & b.core
+        if same_place and a.timed and b.timed and (
+            self._contains(a, b) or len(shared) >= 3 and self._distinctive(shared)
+        ):
             return False
         return a.title_key != b.title_key
 

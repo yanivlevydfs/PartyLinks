@@ -604,3 +604,15 @@ def test_two_sites_naming_one_talk_their_own_way_at_one_minute_and_place_are_one
     ])  # fmt: skip
     assert groups["munievents:herzliya:14246"][0] == groups["ogo:a"][0] != groups["ogo:b"][0]
     assert groups["jerusalemmuni:s1"][0] != groups["ogo:s2"][0]
+
+
+def test_one_sites_two_pages_of_one_talk_under_two_names_stay_in_its_group(tmp_path: Path) -> None:
+    """OGO lists the Herzliya talk twice ("מדע על הבר" and "הרצאה של בני פירסט"); both join the city's copy."""
+    cafe = {"venue_name": "קפה אנט", "city": "הרצליה", "source_genres": ["lectures"]}
+    _, groups = grouped(tmp_path, [
+        listing("munievents", "herzliya:14246", "מדע על הבר: התחדשות עירונית כהזדמנות", **cafe),
+        listing("ogo", "a", "הרצאה של בני פירסט: «התחדשות עירונית כהזדמנות»", **cafe),
+        listing("ogo", "b", "מדע על הבר: התחדשות עירונית כהזדמנות", **cafe),
+        listing("smarticket", "herzliya:3836", "מדע על הבר: התחדשות עירונית כהזדמנות", **cafe),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 1
