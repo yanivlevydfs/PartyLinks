@@ -106,7 +106,12 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         tz = zone(self.timezone)
         today = datetime.now(tz).date()
-        window = f"start={today - timedelta(FEED_DAYS)}&end={today + timedelta(FEED_DAYS)}"
+        # The site's own logo (content/images/fb.png, og_image.png), stored before 2026-11-11, is no event
+        # picture: dropped here, or the run would keep it for every event whose page has none.
+        self.known_images = {
+            k: kept for k, urls in self.known_images.items() if (kept := [u for u in urls if "/content/images/" not in u])
+        }
+        window =f"start={today - timedelta(FEED_DAYS)}&end={today + timedelta(FEED_DAYS)}"
         for site in self.settings.sites:
             feed_url = f"{site.url}/events/json/?{window}"
             feed = await self.optional(f"{site.url} feed", self.get_json(feed_url, expect=list)) if site.feed else None
