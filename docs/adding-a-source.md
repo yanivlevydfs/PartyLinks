@@ -173,7 +173,6 @@ Only these lines change outside the new files:
     # israel_proxy: true                                   - Israeli IPs only (free Israeli proxies)
     # vpn: true                                            - only through our Israeli VPN (Railway production)
     # unlist_missing: false                                - the listing is not the full catalogue
-    # run_timeout_seconds: 3600                            - runs longer than the default
     http:
       # impersonate: chrome                                - TLS fingerprint blocks (curl_cffi)
       concurrency: 2

@@ -141,11 +141,12 @@ class SchedulerSettings(BaseModel):
     misfire_grace_seconds: int = Field(600, ge=0)
     # /health flags an enabled source with no successful run for this long.
     stale_after_hours: float = Field(12, gt=0)
-    # The one limit for every source's run, scrape and post-processing (images, regroup, geocode)
-    # together; no source has its own. A run past it is stopped and recorded as failed.
-    run_timeout_seconds: float = Field(10800, gt=0)
-    # A run that brings no new event for this long is stuck: stopped and recorded as failed, however
-    # long its own limit. Big sources run for hours only while they keep finding events.
+    # 0: no limit on a run's length (the default). A run is stopped only when it is stuck (the stall
+    # watchdog below). Above 0: an optional emergency cap for every source, from the admin config tab.
+    # The 3 h cap cut makore and shotgun mid-run while they still found events (2026-11-10).
+    run_timeout_seconds: float = Field(0, ge=0)
+    # The only stop for a live run: no progress for this long (no new event, no answer from the site,
+    # no image stored, no post-processing step started) means stuck: stopped and recorded as failed.
     stall_timeout_seconds: float = Field(900, gt=0)
     # The scheduler and the sources in a worker process of their own (partylinks/worker), so scraping
     # never slows the site; false keeps them in the web process.

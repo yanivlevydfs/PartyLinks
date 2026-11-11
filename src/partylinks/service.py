@@ -23,12 +23,13 @@ import asyncio
 import hashlib
 import json
 import logging
+import math
 import re
 import threading
 from collections import Counter
 from collections.abc import Callable, Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -395,12 +396,26 @@ class ScrapeService:
                 # Each batch's images now, not only after the run: deploys every ~30 min cut long runs
                 # (munievents, 2026-11-11), so their pictures were never stored and the site logo stayed.
                 if scraper is not None and self.settings.media.download and not self._stopping.is_set():
-                    await self._post_step(source, "artwork", failures, self.media.download_pending(source, scraper.working_http))
+                    step = self.media.download_pending(source, scraper.working_http, progress=alive)
+                    await self._post_step(source, "artwork", failures, step)
 
+        # The stall watchdog is the only stop: a run goes on for as long as it makes progress. Each sign of
+        # life (a new event, an answer from the site, an image chunk stored, a post-processing step) pushes
+        # the watchdog back by stall_timeout_seconds. run_timeout_seconds > 0 adds an optional cap.
         stall = self.settings.scheduler.stall_timeout_seconds
         loop = asyncio.get_running_loop()
-        hard_end = loop.time() + timeout
-        deadline = asyncio.timeout_at(min(hard_end, loop.time() + stall))
+        hard_end = loop.time() + timeout if timeout else math.inf
+
+        def until() -> float:
+            return min(hard_end, loop.time() + stall)
+
+        deadline = asyncio.timeout_at(until())
+        watchdog = [deadline]  # the scrape's, then post-processing's
+
+        def alive() -> None:
+            with suppress(RuntimeError):  # the final save, between the two watchdogs: none to push back
+                watchdog[0].reschedule(until())
+
         try:
             async with deadline:
                 # Inside the try: a failure here is recorded as this run's, not left "running" until a restart.
@@ -415,7 +430,7 @@ class ScrapeService:
                 scraper.wanted = lambda event: not self.enricher.is_dropped(event)
                 # Shotgun, slowed by its pace, read sitemaps whose events were all filtered out for over 15
                 # minutes and was stopped as stuck (2026-11-10): any answer from the site is progress too.
-                scraper.progress = lambda: deadline.reschedule(min(hard_end, loop.time() + stall))
+                scraper.progress = alive
                 failures = scraper.failures
                 async with scraper:
                     try:
@@ -423,7 +438,7 @@ class ScrapeService:
                             if self._stopping.is_set():
                                 raise _StopRequested
                             found += 1
-                            deadline.reschedule(min(hard_end, loop.time() + stall))  # progress: not stuck
+                            alive()  # progress: not stuck
                             scraper.artist_profiles += event.artist_profiles
                             if _finished_before(event, self.settings):  # already over; never stored
                                 continue
@@ -438,7 +453,7 @@ class ScrapeService:
                                 batch[enriched.event_id] = enriched
                             if len(batch) >= SAVE_BATCH_SIZE:
                                 await flush()
-                                deadline.reschedule(min(hard_end, loop.time() + stall))  # its images were progress
+                                alive()  # its images were progress
                     except SourceBlockedError as exc:
                         status, error = "blocked", str(exc)  # keep what was collected before the refusal
                         log.warning("source %s blocked: %s", source, exc)
@@ -447,7 +462,7 @@ class ScrapeService:
                 # asyncio fires a timer up to its clock resolution early (~15 ms on Windows): at the run
                 # limit, "now" can read a hair before it.
                 stalled = loop.time() < hard_end - 0.5
-                status, error = "failed", f"no new event for {stall}s" if stalled else f"timed out after {timeout}s"
+                status, error = "failed", f"stuck: no progress for {stall}s" if stalled else f"timed out after {timeout}s"
             else:  # a TimeoutError raised by the scraper itself
                 status, error = "failed", "TimeoutError inside the scraper"
             log.error("source %s %s", source, error)
@@ -466,15 +481,18 @@ class ScrapeService:
                 log.exception("source %s: final save failed", source)
                 status, error = "failed", f"save failed: {type(exc).__name__}: {exc}"[:500]
 
-        # Post-processing: within what is left of the run limit; failures only downgrade to partial.
-        post_deadline = asyncio.timeout_at(max(hard_end, loop.time() + 60))  # at least a minute to finish up
+        # Post-processing: under the same stall watchdog (and cap, with at least a minute to finish up);
+        # failures only downgrade to partial.
+        post_deadline = asyncio.timeout_at(max(until(), loop.time() + 60))
+        watchdog[0] = post_deadline
         try:
             async with post_deadline:
-                await self._post_process(source, scraper, saved, failures)
+                await self._post_process(source, scraper, saved, failures, alive)
         except TimeoutError:
             if not post_deadline.expired():
                 raise
-            failures.append(f"post-processing stopped at the {timeout}s run limit")
+            stuck = loop.time() < hard_end - 0.5
+            failures.append(f"post-processing stuck: no progress for {stall}s" if stuck else f"post-processing stopped at the {timeout}s run limit")
         if status == "success" and failures:
             status = "partial"
 
@@ -492,21 +510,47 @@ class ScrapeService:
         log.info("source %s finished: %s", source, result)
         return result
 
-    async def _post_process(self, source: str, scraper: Any, saved: int, failures: list[str]) -> None:
-        """After the scrape: the new events' images, regroup, geocode, and the artist and venue profiles."""
+    async def _post_process(
+        self, source: str, scraper: Any, saved: int, failures: list[str], alive: Callable[[], None] = lambda: None
+    ) -> None:
+        """After the scrape: the new events' images, regroup, geocode, and the artist and venue profiles.
+        ``alive`` pushes the run's stall watchdog back: at each step and each image chunk stored."""
         if saved > 0 and scraper is not None and not self._stopping.is_set():
             if self.settings.media.download:
-                await self._post_step(source, "artwork", failures, self.media.download_pending(source, scraper.working_http))
+                alive()
+                step = self.media.download_pending(source, scraper.working_http, progress=alive)
+                await self._post_step(source, "artwork", failures, step)
             if self.settings.dedup.enabled:
-                await self._post_step(source, "regroup", failures, asyncio.to_thread(self._regroup_soon))
+                alive()
+                await self._post_step(source, "regroup", failures, self._alive_while(asyncio.to_thread(self._regroup_soon), alive))
             # Saving overwrote coordinates with what the source sent; restore / look up the rest.
-            await self._post_step(source, "geocode", failures, asyncio.to_thread(self._geocode_soon))
+            alive()
+            await self._post_step(source, "geocode", failures, self._alive_while(asyncio.to_thread(self._geocode_soon), alive))
         if scraper is not None and scraper.artist_profiles and not self._stopping.is_set():  # lineups, next run on
+            alive()
             await self._post_step(
-                source, "artist profiles", failures, asyncio.to_thread(self.artists.save_profiles, scraper.artist_profiles)
+                source,
+                "artist profiles",
+                failures,
+                self._alive_while(asyncio.to_thread(self.artists.save_profiles, scraper.artist_profiles), alive),
             )
         if scraper is not None and scraper.venue_profiles and not self._stopping.is_set():
-            await self._post_step(source, "venue profiles", failures, asyncio.to_thread(self.venues.save, scraper.venue_profiles))
+            alive()
+            step = self._alive_while(asyncio.to_thread(self.venues.save, scraper.venue_profiles), alive)
+            await self._post_step(source, "venue profiles", failures, step)
+
+    async def _alive_while(self, step: Any, alive: Callable[[], None]) -> Any:
+        """A blocking step in a thread cannot report progress: it is alive while its thread works, so the
+        run's stall watchdog is pushed back every few seconds until it ends. A query that hangs is stopped
+        by the database itself (statement_timeout, lock_timeout, idle_in_transaction_session_timeout)."""
+        every = min(5.0, self.settings.scheduler.stall_timeout_seconds / 4)
+        task = asyncio.ensure_future(step)
+        try:
+            while not (await asyncio.wait({task}, timeout=every))[0]:
+                alive()
+            return task.result()
+        finally:
+            task.cancel()  # the watchdog fired (a stuck step): stop waiting for it
 
     @staticmethod
     async def _post_step(source: str, what: str, failures: list[str], step: Any) -> None:

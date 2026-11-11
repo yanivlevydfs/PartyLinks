@@ -321,12 +321,12 @@ scheduler:
   # Run every enabled source once when the API process starts.
   run_on_startup: false
   misfire_grace_seconds: 600
-  # One limit for every source, no per-source overrides: a safety net for the biggest sources
-  # (makore, funzing, ogo, posh: 20-30k events). Each source runs on its own thread; a run (scrape,
-  # then its images, regroup and geocode) past this is stopped, keeps what it saved, and is
-  # recorded as failed. Images left over load on the next run.
-  run_timeout_seconds: 10800
-  # What closes a broken source: a run with no new event for this long is stuck, closed at once.
+  # No limit on a run's length: a run goes on while it makes progress, however long that takes (makore,
+  # funzing, ogo, posh, shotgun: 20-30k events). The 3 h cap stopped makore and shotgun mid-run while
+  # they still found events (2026-11-10). Above 0: an optional emergency cap for every source.
+  run_timeout_seconds: 0
+  # The only stop: a run with no progress for this long is stuck, closed at once. Progress is a new
+  # event, any answer from the site, an image chunk stored, or a post-processing step started.
   stall_timeout_seconds: 900
   # Scheduler and sources in a worker process of their own (partylinks/worker): scraping never slows the
   # site. The web process starts it, restarts it if it exits, and talks to it through the database.
@@ -2254,6 +2254,9 @@ sources:
     # so only these category pages are read. Each page's JSON-LD ItemList gives ~28 events with venue,
     # coordinates, price and box office link; page N is ?pages=N. robots.txt allows all but /admin.
     enabled: true
+    # Direct, no proxy: from Railway a page answers in ~0.1 s; through the proxy runs slowed to ~14k
+    # events in 3 h (20k in 41 min before). 120 pages 4 at once, all 200 (2026-11-11).
+    proxied: false
     cron: "41 9,21 * * *"
     site_url: https://www.makore.co.il
     # Every category but sport (Nov 2026: 2 of 13 read, ~16k events left out).
@@ -2408,6 +2411,9 @@ sources:
     # countries the city pages cover), then each event's schema.org JSON-LD: ~13,000 requests a run
     # (~7,000 events, ~40 min). Events abroad go to the abroad section. robots.txt allows everything.
     enabled: true
+    # Direct, no proxy: from Railway each page answers in 0.1-0.2 s, through the proxy ~3 s (13,000
+    # requests: over 3 h). 120 pages 2 at once, all 200, no 429 (2026-11-11). The pace slows it on a 429.
+    proxied: false
     cron: "52 8,20 * * *"
     site_url: https://shotgun.live
     country_path: /en/venues/-/israel

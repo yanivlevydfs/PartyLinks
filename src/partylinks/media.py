@@ -21,7 +21,7 @@ import mimetypes
 import os
 import threading
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from pathlib import Path
@@ -220,9 +220,12 @@ class MediaStore:
         )
         return result
 
-    async def download_pending(self, source: str, http: HttpSettings) -> tuple[int, int]:
+    async def download_pending(
+        self, source: str, http: HttpSettings, progress: Callable[[], None] | None = None
+    ) -> tuple[int, int]:
         """Download every not-yet-stored image of ``source`` in parallel, then persist
-        all results with bulk updates. Returns (stored, failed)."""
+        all results with bulk updates. Returns (stored, failed). ``progress`` is called after each
+        chunk: thousands of images are a live run, not a stuck one (the run's stall watchdog)."""
         pending = await asyncio.to_thread(self._pending, source)
         if not pending:
             return 0, 0
@@ -249,6 +252,8 @@ class MediaStore:
                 failed = [r for r in results if r.get("error") is not None]
                 await asyncio.to_thread(with_db_retry, f"{source} artwork", lambda s=stored, f=failed: self._persist(s, f))
                 stored_count, failed_count = stored_count + len(stored), failed_count + len(failed)
+                if progress is not None:
+                    progress()
         log.debug("%s artwork: %d stored, %d failed", source, stored_count, failed_count)
         return stored_count, failed_count
 

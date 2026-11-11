@@ -278,7 +278,7 @@ def test_a_source_that_stops_finding_events_is_closed_by_the_stall_limit(tmp_pat
 
     result = service.start_source("goout", trigger="test").result(timeout=30)
 
-    assert (result.status, result.error) == ("failed", "no new event for 0.5s")
+    assert (result.status, result.error) == ("failed", "stuck: no progress for 0.5s")
     with db.session() as session:
         assert [e.source_event_id for e in session.query(EventRow)] == ["before-stall"]  # kept
 
@@ -322,7 +322,7 @@ def test_a_source_that_finds_nothing_at_all_is_closed_by_the_stall_limit(tmp_pat
 
     result = service.start_source("goout", trigger="test").result(timeout=30)
 
-    assert (result.status, result.error) == ("failed", "no new event for 0.5s")
+    assert (result.status, result.error) == ("failed", "stuck: no progress for 0.5s")
 
 
 class _BusySource(_SlowSource):
@@ -342,3 +342,24 @@ def test_a_source_that_keeps_finding_events_stops_at_the_one_run_limit(tmp_path:
     result = service.start_source("goout", trigger="test").result(timeout=30)
 
     assert (result.status, result.error) == ("failed", "timed out after 1s")
+
+
+class _LongSource(_SlowSource):
+    """Keeps finding events for longer than the stall limit, then finishes."""
+
+    async def scrape(self) -> AsyncIterator[ScrapedEvent]:
+        for i in range(30):  # 1.5 s, three times a 0.5 s stall limit
+            yield event(f"long{i}")
+            await asyncio.sleep(0.05)
+
+
+def test_no_run_limit_by_default_a_live_run_goes_on_until_done(tmp_path: Path, monkeypatch: Any) -> None:
+    """The 3 h cap cut makore and shotgun mid-run while they still found events (2026-11-10)."""
+    service, _ = make_service(tmp_path)
+    assert service.settings.scheduler.run_timeout_seconds == 0  # no cap: only the stall watchdog stops a run
+    service.settings.scheduler.stall_timeout_seconds = 0.5
+    monkeypatch.setattr(service_module, "build_scraper", lambda name, settings: _LongSource(service._stopping))
+
+    result = service.start_source("goout", trigger="test").result(timeout=30)
+
+    assert (result.status, result.events_found) == ("success", 30), result.error

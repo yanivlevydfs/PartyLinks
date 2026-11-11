@@ -35,9 +35,15 @@ the worker commits data) and `worker_commands` (pause / resume, run now, apply c
 scrape -> enrich -> save -> artwork -> regroup duplicates -> record the run
 ```
 
-- **Isolation.** Each source run has its own worker thread, asyncio loop, HTTP client, lock and
-  timeout (`scheduler.run_timeout_seconds`). A slow, failing or blocked site never delays or
-  breaks another source.
+- **Isolation.** Each source run has its own worker thread, asyncio loop, HTTP client and lock. A
+  slow, failing or blocked site never delays or breaks another source.
+- **Stopped only when stuck.** A run has no length limit. It goes on while it makes progress: a new
+  event, any answer from the site, an image chunk stored, a post-processing step running (a step in
+  a thread counts as alive while its thread works; a hung query is cut by the database's own
+  `statement_timeout` / `lock_timeout`). No progress for `scheduler.stall_timeout_seconds` (900 s)
+  means stuck: the run stops, keeps what it saved, and is recorded as failed. The 3 h cap stopped
+  makore and shotgun mid-run while they still found events (2026-11-10), so
+  `scheduler.run_timeout_seconds` is 0 (off); above 0 it is an optional emergency cap for every source.
 - **Parallel inside a source.** Listing pages, event details and artwork downloads run
   concurrently, up to `http.concurrency`.
 - **Bad data stays small.** One event that fails to parse or enrich is recorded and skipped; the
