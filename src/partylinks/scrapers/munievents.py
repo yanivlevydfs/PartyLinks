@@ -340,11 +340,19 @@ def _detail(page: LexborHTMLParser, base: str, tz: Any) -> dict[str, Any]:
     )
     pic = page.css_first(".event-item-pic img")
     bg = page.css_first(".event-item-pic .pic")
+    # Herzliya puts the poster in the text itself (<p><img src="/uploads/n/...">); its og:image is the site logo.
+    body_img = next(
+        (i for i in (content or page.css_first(".page-content-body") or page).css('img[src*="uploads/"]')
+         if not _in_side_box(i)),
+        None,
+    )
     og = page.css_first('meta[property="og:image"]')
+    og_src = og.attributes.get("content") if og else None
     image = (
         (pic.attributes.get("src") if pic else None)
         or (m.group(1) if bg and (m := _BG_URL.search(bg.attributes.get("style") or "")) else None)
-        or (og.attributes.get("content") if og else None)
+        or (body_img.attributes.get("src") if body_img else None)
+        or (og_src if og_src and "content/images/" not in og_src else None)  # not the site's own logo
     )
     gcal = page.css_first('a[href*="calendar.google.com"]')
     gcal_place = parse_qs(urlsplit(gcal.attributes.get("href") or "").query).get("location", [""])[0] if gcal else ""

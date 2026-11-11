@@ -178,3 +178,19 @@ def test_prices_and_free_entry_from_the_text() -> None:
     e = build_event(card, _read("kfar_saba_free_detail.html"), KFAR, TZ)
     assert e is not None and e.min_price == e.max_price == Decimal(0)
     assert len(e.tickets) == 1 and e.tickets[0].is_free and e.tickets[0].name == "כניסה חופשית"
+
+
+def test_poster_in_page_text_beats_site_logo() -> None:
+    """Herzliya: no .event-item-pic, the poster sits in the text, og:image is the site logo."""
+    page = (
+        '<meta property="og:image" content="content/images/og_image.png?v=1" />'
+        '<div class="page-content-body"><main><p><img alt="" src="/uploads/n/1793275553.1442.png" /></p>'
+        "<p>סדנת אוצרות רחוב לכל המשפחה, בואו ליצור יחד</p></main></div>"
+    )
+    card = Card(url="https://www.herzliya.muni.il/events/14169/", event_id="14169", title="אוצרות רחוב",
+                start=datetime(2026, 11, 11, 17, 0, tzinfo=zone(TZ)), end=None)
+    e = build_event(card, page, MuniSite(url="https://www.herzliya.muni.il", city="הרצליה"), TZ)
+    assert e is not None and e.image_url == "https://www.herzliya.muni.il/uploads/n/1793275553.1442.png"
+    logo_only = build_event(card, '<meta property="og:image" content="content/images/og_image.png" />',
+                            MuniSite(url="https://www.herzliya.muni.il", city="הרצליה"), TZ)
+    assert logo_only is not None and logo_only.image_url is None
