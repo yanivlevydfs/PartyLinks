@@ -74,7 +74,7 @@ export function useArtistFilter(facets: Facet[] | undefined) {
       )}
       <FilterRow label={f.where} scroll>
         <Chip on={!where} onClick={() => set({ where: null, place: null })}>{f.all}</Chip>
-        {here > 0 && <Chip on={where === "israel"} onClick={() => set({ where: where === "israel" ? null : "israel", place: null })}>🇮🇱 {f.israel}</Chip>}
+        {here > 0 && <Chip on={where === "israel"} onClick={() => set({ where: where === "israel" ? null : "israel", place: null })}>📍 {f.israel}</Chip>}
         {away > 0 && <Chip on={where === "abroad"} onClick={() => set({ where: where === "abroad" ? null : "abroad", place: null })}>✈️ {f.abroad}</Chip>}
         {places.map(([w, n]) => (
           <Chip key={w} on={place === w} onClick={() => set({ place: place === w ? null : w })}>
