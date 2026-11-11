@@ -15,6 +15,7 @@ answers every path with its index).
 
 from __future__ import annotations
 
+import asyncio
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime, time
@@ -38,6 +39,8 @@ class GotoTlvSettings(SourceSettings):
     site_url: str = "https://gototlv.co.il"
     events_path: str = "/events.json"
     city: str = "תל אביב-יפו"
+    # One linked page may not hold the run: the first production run stalled on one (Nov 2026).
+    artwork_timeout_seconds: float = 45.0
     social_hosts: list[str] = Field(default_factory=lambda: ["instagram.com", "facebook.com", "tiktok.com"])
 
 
@@ -65,7 +68,10 @@ class GotoTlvScraper(BaseScraper[GotoTlvSettings]):
         if known := self.known_images.get(event.source_event_id):
             event.images = known
         elif (link := event.extra.get("purchase_url")) and self.wanted(event):
-            page = await self.optional(f"artwork {event.source_event_id}", self.get_text(link))
+            page = await self.optional(
+                f"artwork {event.source_event_id}",
+                asyncio.wait_for(self.get_text(link), self.settings.artwork_timeout_seconds),
+            )
             if page and (image := artwork(page)):
                 event.images = [image]
         return event
