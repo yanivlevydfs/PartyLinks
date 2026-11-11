@@ -108,6 +108,10 @@ class _RefusedByProxyIP(httpx.TransportError):
     """The site refused this proxy's IP; retried on the next proxy of the pool."""
 
 
+class _Throttled(httpx.TransportError):
+    """Throttled on our own IP at the slowest pace; retried on the reserve proxy."""
+
+
 def _is_retryable(exc: BaseException) -> bool:
     if isinstance(exc, httpx.HTTPStatusError):
         return exc.response.status_code in RETRYABLE_STATUS
@@ -200,6 +204,8 @@ class BaseScraper[S: SourceSettings](ABC):
             self._israeli = set()
         self._vpn = settings.vpn and bool(http.israel_vpn)
         self._spare_proxies = pool[1:] if pool and "proxy" not in overrides else []
+        # Direct by choice (proxied: false), with the proxy kept in reserve for when the site rations our IP.
+        self._reserve = [] if pool or "proxy" in overrides else [p.strip() for p in (http.source_proxy or "").split(",") if p.strip()]
         self._proxy = overrides.get("proxy") or (pool[0] if pool else None)  # the client's current proxy
         self._pool_size = 1 + len(self._spare_proxies)
         if pool:
@@ -287,6 +293,16 @@ class BaseScraper[S: SourceSettings](ABC):
         self._retired_clients.append(failed)
         self._client, self._proxy = self._new_client(proxy), proxy
         return True
+
+    def _to_reserve(self, failed: httpx.AsyncClient) -> None:
+        """Leave our own IP for the reserve proxy, at the configured pace again (a new IP, a new ration)."""
+        if failed is not self._client:
+            return  # a parallel request already moved
+        proxy, self._spare_proxies, self._reserve = self._reserve[0], self._reserve[1:], []
+        self.log.warning("throttled at the slowest pace on our own IP: switching to %s", proxy.rpartition("@")[2])
+        self._retired_clients.append(failed)
+        self._client, self._proxy = self._new_client(proxy), proxy
+        self._pace = Pace(self.http.concurrency, self.http.request_delay_seconds, self.http.pace, self.log)
 
     @property
     def working_http(self) -> HttpSettings:
@@ -404,6 +420,10 @@ class BaseScraper[S: SourceSettings](ABC):
                 self.progress()
                 if response.status_code in THROTTLED:
                     self._pace.throttled()
+                    if self._reserve and self._pace.slowest and self.http.pace.proxy_when_slowest:
+                        self._to_reserve(client)
+                        switches[0] += 1
+                        raise _Throttled(f"{response.status_code} on our own IP at the slowest pace")
                 else:
                     self._pace.answered()
                 # Refused (403) or throttled (429 / 503: the site rations this IP): the next proxy, while

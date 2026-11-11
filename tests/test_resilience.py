@@ -352,6 +352,28 @@ def test_proxy_pool_moves_on_when_the_proxy_fails() -> None:
     asyncio.run(run())
 
 
+def test_direct_source_throttled_at_the_slowest_pace_moves_to_the_proxy() -> None:
+    """Shotgun (proxied: false) rationed on Railway's IP to a page per 10 s; the proxy is the way out."""
+    http = HttpSettings(source_proxy="http://p:1", backoff_seconds=0, max_retries=1)
+    http.pace.max_delay_seconds = http.pace.min_delay_seconds = 0.01
+    scraper = _Probe(SourceSettings(cron="0 * * * *", proxied=False), http, "UTC")
+    assert scraper.http.proxy is None and scraper._reserve == ["http://p:1"]
+    seen: list[str | None] = []
+
+    def client(proxy: str | None) -> httpx.AsyncClient:
+        seen.append(proxy)
+        return httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(429 if proxy is None else 200)))
+
+    scraper._new_client = client  # type: ignore[method-assign]
+
+    async def run() -> int:
+        async with scraper:
+            return (await scraper.request("GET", "https://site.example/")).status_code
+
+    assert asyncio.run(run()) == 200
+    assert seen == [None, "http://p:1"] and scraper.working_http.proxy == "http://p:1"
+
+
 def test_refused_proxy_ip_moves_to_the_next_proxy() -> None:
     http = HttpSettings(source_proxy="http://a:1, http://b:2", backoff_seconds=0)
     scraper = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")

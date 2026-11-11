@@ -362,6 +362,10 @@ http:
     min_delay_seconds: 0.25
     up_after: 50
     max_concurrency: 0
+    # A source going direct (proxied: false) still throttled at the slowest pace (1 at once, max_delay_seconds
+    # apart) moves to http.source_proxy for the rest of the run: Shotgun was rationed on Railway's IP to
+    # one page per 10 s, 90 min without a save (2026-11-11).
+    proxy_when_slowest: true
   user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
   accept_language: "he-IL,he;q=0.9,en;q=0.8"
   # Outgoing proxy for scraping and image downloads, so source sites see the proxy's IP, not

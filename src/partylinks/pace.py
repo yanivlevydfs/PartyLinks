@@ -31,6 +31,10 @@ class PaceSettings(BaseModel):
     up_after: int = Field(50, ge=1)
     # The most requests at once when speeding up; 0: the configured concurrency (never above it).
     max_concurrency: int = Field(0, ge=0)
+    # A source going direct (proxied: false) that the site still throttles at the slowest pace moves to
+    # `http.source_proxy`: Shotgun rationed Railway's IP to one page per 10 s, 90 min without a save
+    # (2026-11-11), when through the rotating proxy each page is ~3 s, several at once.
+    proxy_when_slowest: bool = True
 
 
 class Pace:
@@ -73,6 +77,10 @@ class Pace:
         self.delay = min(self.settings.max_delay_seconds, max(self.delay * 2, self.settings.min_delay_seconds))
         if (self.limit, self.delay) != before:
             self.log.warning("pace: throttled by the site, slower: %d at once, %.2fs apart", self.limit, self.delay)
+
+    @property
+    def slowest(self) -> bool:
+        return self.settings.enabled and self.limit == 1 and self.delay >= self.settings.max_delay_seconds
 
     def answered(self) -> None:
         if not self.settings.enabled:
