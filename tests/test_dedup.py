@@ -562,3 +562,27 @@ def test_a_guides_two_pages_of_one_show_at_one_hour_are_one_event(tmp_path: Path
         listing("kupatbravo", "c", "מדיאה - תיאטרון הקאמרי", **hall),
     ])  # fmt: skip
     assert len({g for g, _ in groups.values()}) == 1
+
+
+def test_two_smarticket_tenants_are_two_box_offices_not_one_sites_sessions(tmp_path: Path) -> None:
+    """Rehovot's and Lotus's Smarticket list one big band concert under their own names: one event."""
+    hall = {"venue_name": "היכל התרבות רחובות", "city": "רחובות", "source_genres": ["jazz"]}
+    _, groups = grouped(tmp_path, [
+        listing("smarticket", "rehovot:5302", "תזמורת הג'אז רחובות - ביג בנד בהיכל", **hall),
+        listing("smarticket", "lotus:1488", "ביג בנד - תזמורת הג'אז רחובות", **hall),
+        listing("ogo", "x", "תזמורת הג'אז רחובות - ביג בנד בהיכל", **hall),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 1
+
+
+def test_one_name_one_city_one_minute_is_one_event_whatever_the_pins_but_not_films(tmp_path: Path) -> None:
+    far = (32.0866, 34.7818)  # OGO's pin for Bronfman, 2+ km off
+    _, groups = grouped(tmp_path, [
+        listing("eventer", "a", "עידן רייכל והפילהרמונית הישראלית", where=ZOA, venue_name="היכל התרבות צ'רלס ברונפמן", city="תל אביב", source_genres=["israeli"]),
+        listing("ogo", "b", "עידן רייכל והפילהרמונית הישראלית", where=far, venue_name="Jerusalem Blvd 19", city="תל אביב", source_genres=["israeli"]),
+        listing("makore", "c", "עידן רייכל והפילהרמונית הישראלית", where=None, venue_name="היכל התרבות", city="תל אביב", source_genres=["israeli"]),
+        listing("lev", "f1", "זכרונות של חילזון Memoir of a Snail", where=None, venue_name="לב דיזנגוף", city="תל אביב", source_genres=["cinema"]),
+        listing("cinematheque_tlv", "f2", "זכרונות של חילזון Memoir of a Snail", where=None, venue_name="סינמטק", city="תל אביב", source_genres=["cinema"]),
+    ])  # fmt: skip
+    assert groups["eventer:a"][0] == groups["ogo:b"][0] == groups["makore:c"][0]
+    assert groups["lev:f1"][0] != groups["cinematheque_tlv:f2"][0]

@@ -133,6 +133,7 @@ class Deduplicator:
         self._filler = {w.lower() for w in settings.title_filler}
         self._box_offices = set(settings.box_office_sources)
         self._city_pages = set(settings.place_sources)
+        self._tenants = set(settings.tenant_sources)
         self._kind_pairs = [tuple(p) for p in settings.compatible_kinds if len(p) == 2]
 
     def _distinctive(self, core: frozenset[str]) -> bool:
@@ -188,7 +189,7 @@ class Deduplicator:
             return self._subset(a, b)
         if self._other_kind(a, b, ratio):
             return False
-        if self._same_hall(a, b, ratio) or self._city_page(a, b, ratio):
+        if self._same_hall(a, b, ratio) or self._city_page(a, b, ratio) or self._same_title_and_minute(a, b):
             return True
         distance = _distance_m(a, b)
         if distance is not None:
@@ -285,6 +286,33 @@ class Deduplicator:
             ratio = self._ratio(a, b)
         return ratio >= self.settings.strong_title_similarity
 
+    def _site(self, item: _Listing) -> str:
+        """The site a listing is from: a tenant's own box office for Smarticket and the like
+        ("smarticket:lotus" and "smarticket:rehovot" are two venues, not one site's pages)."""
+        if item.source in self._tenants:
+            return item.id.split(":", 2)[1] if item.id.count(":") >= 2 else item.source
+        return item.source
+
+    def _same_title_and_minute(self, a: _Listing, b: _Listing) -> bool:
+        """The same name of 3+ words, in one city, at the very same minute: one event though one site's pin is
+        missing or off (OGO's "Jerusalem Blvd 19" for Bronfman) or the halls are written apart ("נאפופו" /
+        "נאפופו בר אשדוד"). Not films: one film plays at one hour in two cinemas of a city."""
+        return (
+            a.title_key == b.title_key and len(a.title_key.split()) >= 3 and self._distinctive(a.core)
+            and bool(a.city) and a.city == b.city
+            and a.timed and b.timed and a.start is not None and a.start == b.start
+            and "cinema" not in a.kinds | b.kinds
+            and (_distance_m(a, b) is None or self._halls_agree(a, b))
+        )  # fmt: skip
+
+    @staticmethod
+    def _halls_agree(a: _Listing, b: _Listing) -> bool:
+        """One hall's name in the other's ("נאפופו" / "נאפופו-בר-אשדוד"), or one is only a street address
+        ("jerusalem-blvd-19-tel-aviv-yafo"): nothing says these are two places."""
+        x, y = set((a.venue_slug or "").split("-")) - {""}, set((b.venue_slug or "").split("-")) - {""}
+        address = any(any(w.isdigit() for w in words) for words in (x, y))
+        return bool(x and y) and (x <= y or y <= x or address)
+
     def _contains(self, a: _Listing, b: _Listing) -> bool:
         """One title's distinctive words all in the other's."""
         small, big = (a.core, b.core) if len(a.core) <= len(b.core) else (b.core, a.core)
@@ -305,7 +333,7 @@ class Deduplicator:
         """One site's own pages at different hours (sessions of a workshop / show) or under other titles at
         the same hour ("לידה עד גיל שנה" / "גילאי שנה עד שלוש"): separate events. A promoter site has a page per
         promoter, so only its hours count, and only with the party window (see _contradict)."""
-        if a.source != b.source or a.source in self._promoter_pages:
+        if self._site(a) != self._site(b) or a.source in self._promoter_pages:
             return False
         if a.start is not None and b.start is not None and a.start != b.start:
             return True
