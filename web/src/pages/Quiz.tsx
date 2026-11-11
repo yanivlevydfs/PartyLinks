@@ -7,6 +7,7 @@ import { Calendar, filterParams, GenrePicker, toggle, whenText } from "../Filter
 import { DEFAULT_FILTERS, useStore, type Filters } from "../store";
 import { byName, eventPath, label, today, tomorrow, TZ, useT } from "../ui";
 import { Weather } from "../Weather";
+import { locate as findMe } from "../filter_scope/NearMe";
 
 const SLOT_ICONS: Record<string, string> = { morning: "☀️", afternoon: "🌤️", evening: "🌆", night: "🌙" };
 const STEPS = 5;
@@ -62,24 +63,12 @@ export function Quiz() {
     if (items.length) navigate(eventPath(items[Math.floor(Math.random() * items.length)]));
   };
 
-  const locate = () => {
-    if (!navigator.geolocation) return setGeo("fail");
+  const locate = async () => {
     setGeo("busy");
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const res = await fetch(`/locate?lat=${coords.latitude.toFixed(3)}&lng=${coords.longitude.toFixed(3)}`);
-          const where: { region: string | null; city: string | null } = await res.json();
-          if (!where.region) return setGeo("fail");
-          patch({ regions: [where.region], areas: [], city: where.region === "tel_aviv" ? null : where.city });
-          setGeo({ place: where.city ?? label(t.areas, where.region) });
-        } catch {
-          setGeo("fail");
-        }
-      },
-      () => setGeo("fail"),
-      { timeout: 10_000, maximumAge: 10 * 60_000 },
-    );
+    const where = await findMe();
+    if (!where?.region) return setGeo("fail");
+    patch({ regions: [where.region], areas: [], city: where.region === "tel_aviv" ? null : where.city });
+    setGeo({ place: where.city ?? label(t.areas, where.region) });
   };
 
   const day = (v: string) => new Date(v + "T12:00:00Z").toLocaleDateString(t.locale, { timeZone: TZ, weekday: "long" });

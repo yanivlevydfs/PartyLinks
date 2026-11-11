@@ -4,7 +4,9 @@ import { SaveAlertButton } from "./alerts/SaveAlertButton";
 import { useCategories, useEvents, type Params } from "./api";
 import type { Categories, Facet } from "./types";
 import { genreLabel } from "./i18n";
-import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "./store";
+import { DEFAULT_FILTERS, type Filters as FilterState } from "./store";
+import { useFilters } from "./filter_scope/scope";
+import { NearChip } from "./filter_scope/NearMe";
 import { byName, Chip, label, Loader, Select, sourceName, today, tomorrow, TZ, useT } from "./ui";
 
 // The one home-page filter: its state lives in the store, the API query comes from filterParams(),
@@ -97,9 +99,8 @@ function useMedia(query: string) {
 // Both: what is selected shows as removable pills, so nothing is set without being visible.
 export function Filters() {
   const { t, lang } = useT();
-  const f = useStore((s) => s.filters);
-  const set = useStore((s) => s.setFilters);
-  const cats = useCategories().data;
+  const { f, set, base, local } = useFilters();
+  const cats = useCategories(base).data;
   const mobile = useMedia(MOBILE);
   const sheet = useRef<HTMLDialogElement>(null);
   // The phone sheet reopens after a remount (see useDrawer).
@@ -108,7 +109,7 @@ export function Filters() {
   }, [mobile]);
   const { panel: open, setPanel: setOpen } = useDrawer();
   // Same query as the grid below: shares its cache, so the sheet's "Show N" costs no request.
-  const total = useEvents({ ...filterParams(f), sponsored: "true" }).data?.pages[0]?.total;
+  const total = useEvents({ ...base, ...filterParams(f), sponsored: "true" }).data?.pages[0]?.total;
 
   const extras = f.regions.length + f.areas.length + (f.city ? 1 : 0) + f.genres.length + f.shops.length + f.slots.length + (f.price ? 1 : 0) + (f.hideSoldOut ? 1 : 0) + (f.discountOnly ? 1 : 0);
   const dirty = extras > 0 || f.freeOnly || f.when !== "all";
@@ -163,7 +164,7 @@ export function Filters() {
       {f.freeOnly && <Pill onClear={() => set({ freeOnly: false })}>{t.freeOnly}</Pill>}
       {f.discountOnly && <Pill onClear={() => set({ discountOnly: false })}>{t.discountOnly}</Pill>}
       {f.hideSoldOut && <Pill onClear={() => set({ hideSoldOut: false })}>{t.hideSoldOut}</Pill>}
-      <SaveAlertButton filters={f} />
+      {!local && <SaveAlertButton filters={f} />}
       {dirty && <button className="f-clear" onClick={clear}>{t.clearFilters}</button>}
     </div>
   );
@@ -264,8 +265,7 @@ export function Filters() {
 /** Empty result: one button per active filter, showing how many events dropping it would bring back. */
 export function Relax({ didYouMean }: { didYouMean?: string | null }) {
   const { t, lang } = useT();
-  const f = useStore((s) => s.filters);
-  const set = useStore((s) => s.setFilters);
+  const { f, set, base } = useFilters();
   if (f.q) {
     return (
       <div className="msg">
@@ -290,7 +290,7 @@ export function Relax({ didYouMean }: { didYouMean?: string | null }) {
     <div className="msg">
       <p>{t.relax}</p>
       <div className="relax">
-        {options.map(([name, patch]) => <RelaxOption key={name} name={name} params={filterParams({ ...f, ...patch })} onClick={() => set(patch)} />)}
+        {options.map(([name, patch]) => <RelaxOption key={name} name={name} params={{ ...base, ...filterParams({ ...f, ...patch }) }} onClick={() => set(patch)} />)}
       </div>
     </div>
   );
@@ -314,9 +314,8 @@ function Pill({ children, onClear }: { children: ReactNode; onClear: () => void 
 /** One drawer's rows (desktop), or all of them (the phone sheet). */
 function Rows({ only }: { only?: Panel }) {
   const { t, lang } = useT();
-  const f = useStore((s) => s.filters);
-  const set = useStore((s) => s.setFilters);
-  const cats = useCategories().data;
+  const { f, set, base } = useFilters();
+  const cats = useCategories(base).data;
   const show = (p: Panel) => !only || only === p;
 
   const regionKeys = new Set(cats?.regions?.map((r) => r.value));
@@ -334,6 +333,7 @@ function Rows({ only }: { only?: Panel }) {
       {show("area") && !!regions.length && (
         <FilterRow label={t.area}>
           <Chip on={!f.regions.length} onClick={() => set({ regions: [], areas: [], city: null })}>{t.allAreas}</Chip>
+          <NearChip />
           {regions.map((r) => (
             <Chip key={r.value} on={f.regions.includes(r.value)}
               onClick={() => set({ regions: toggle(f.regions, r.value), areas: [], city: null })}>

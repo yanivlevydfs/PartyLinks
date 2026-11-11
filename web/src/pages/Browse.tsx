@@ -7,7 +7,8 @@ import { ArtistLinks } from "../artist_links/ArtistLinks";
 import { ArtistPlayer } from "../artist_links/ArtistPlayer";
 import { SimilarArtists } from "../similar/SimilarArtists";
 import { MapLinks } from "../places/MapLinks";
-import { artistPath, Chip, countryName, EventGrid, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
+import { ScopedEvents } from "../filter_scope/ScopedEvents";
+import { artistPath, Chip, countryName, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
 const PAGE = 60;
 // A to Z: English (abc) then Hebrew (אבג), case and accents ignored, "2" before "10".
@@ -105,7 +106,7 @@ export function VenuePage() {
           </section>
         )}
         <h4 className="section-title">{t.upcomingAt}</h4>
-        <EventGrid params={{ venue: name }} />
+        <ScopedEvents key={name} base={{ venue: name }} />
         <Related path={`/venue/${encodeURIComponent(name)}`} />
       </main>
     </>
@@ -143,7 +144,7 @@ export function ArtistPage() {
         {about && <p className="landing-intro">{about}</p>}
         <ArtistPlayer name={profile?.value ?? name} links={info?.artist_links} />
         <h4 className="section-title">{t.upcomingAt}</h4>
-        <EventGrid params={{ artist: name }} />
+        <ScopedEvents key={name} base={{ artist: name }} />
         <SimilarArtists name={profile?.value ?? name} />
       </main>
     </>

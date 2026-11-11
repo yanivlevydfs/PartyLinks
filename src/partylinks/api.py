@@ -1674,8 +1674,10 @@ def _register_routes(app: FastAPI) -> None:
                     out.append(FacetValue(value=name, events=n))
             return out
 
-        # Per ticket site: real events it sells (every listing of a group counts, once per group).
-        where = [EventRow.country.is_(None), *([upcoming_filter()] if upcoming else [])]
+        # Per ticket site: real events it sells (every listing of a group counts, once per group), within the
+        # request's filters: an artist's sites on its page, abroad sites abroad, only Israel's on the home page.
+        matching = select(EventRow.group_id).where(*filters)
+        where = [EventRow.group_id.in_(matching), *([upcoming_filter()] if upcoming else [])]
         listings = select(EventRow.group_id, EventRow.source).where(*where, placecards.first_opening(where)).distinct()
         group_sources = Counter(source for _, source in session.execute(listings))
 
