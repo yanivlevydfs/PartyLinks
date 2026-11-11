@@ -586,3 +586,21 @@ def test_one_name_one_city_one_minute_is_one_event_whatever_the_pins_but_not_fil
     ])  # fmt: skip
     assert groups["eventer:a"][0] == groups["ogo:b"][0] == groups["makore:c"][0]
     assert groups["lev:f1"][0] != groups["cinematheque_tlv:f2"][0]
+
+
+def test_two_sites_naming_one_talk_their_own_way_at_one_minute_and_place_are_one_event(tmp_path: Path) -> None:
+    """Herzliya, Nov 2026: OGO's "הרצאה של בני פירסט" stood apart from the city's "מדע על הבר" copy of it."""
+    talk = {"city": "הרצליה", "source_genres": ["lectures"]}
+    story = {"city": "ירושלים", "source_genres": ["kids"]}
+    _, groups = grouped(tmp_path, [
+        listing("munievents", "herzliya:14246", "מדע על הבר: התחדשות עירונית כהזדמנות", where=None,
+                venue_name="קפה אנט", address="בן גוריון 32", **talk),
+        listing("ogo", "a", "הרצאה של בני פירסט: «התחדשות עירונית כהזדמנות»", venue_name="מרכז הקיימות",
+                address="(Annette Wine & Barista) Ben Gurion Blvd 32, Herzliya", **talk),
+        listing("ogo", "b", "הרצאה של בני פירסט: «התחדשות עירונית כהזדמנות»", start=START + timedelta(hours=2), **talk),
+        # one city's story hour at two libraries: two events
+        listing("jerusalemmuni", "s1", "שעת סיפור בספריית בית הכרם", where=None, venue_name="ספריית בית הכרם", **story),
+        listing("ogo", "s2", "שעת סיפור בספריית הגבעה הצרפתית", where=None, venue_name="ספריית הגבעה הצרפתית", **story),
+    ])  # fmt: skip
+    assert groups["munievents:herzliya:14246"][0] == groups["ogo:a"][0] != groups["ogo:b"][0]
+    assert groups["jerusalemmuni:s1"][0] != groups["ogo:s2"][0]
