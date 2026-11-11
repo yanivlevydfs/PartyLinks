@@ -9,6 +9,7 @@ import { PlanButton } from "../plans/PlanButton";
 import { EveningPlan } from "../evening/EveningPlan";
 import { EventText } from "../event_text/EventText";
 import { PlaceInfo } from "../places/PlaceInfo";
+import { MapLinks } from "../places/MapLinks";
 import { SaveButton } from "../saved/SaveButton";
 import { EventStats } from "../popularity/EventStats";
 import { LineupPlayer } from "../artist_links/ArtistPlayer";
@@ -41,7 +42,6 @@ export default function EventPage() {
   // Sites often add a tiny share-preview copy of the poster (a WhatsApp thumbnail); it isn't gallery material.
   // ponytail: size heuristic, not a content match; perceptual-hash dedup at download if real extras get dropped.
   const gallery = e.images.slice(1).filter((i) => !i.size_bytes || i.size_bytes > 40_000).map((i) => i.stored_url ?? i.url);
-  const mapQuery = e.latitude != null ? `${e.latitude},${e.longitude}` : [e.venue_name, e.address, e.city].filter(Boolean).join(", ");
   const price = priceLabel(e, t, e.tickets);
   // The other ticket site with the lowest price, when it beats the main listing's: badged "Cheapest".
   // One card per site (a party often has several promoter links on the same site): its cheapest priced one.
@@ -103,11 +103,7 @@ export default function EventPage() {
                   <span>
                     {e.venue_name ? <Link to={venuePath(e.venue_name)}>{e.venue_name}</Link> : null}
                     {[e.venue_name ? "" : null, e.address, e.city, countryName(e.country, lang) || null].filter((x) => x != null && x !== undefined).join(" · ")}{" "}
-                    {mapQuery && (
-                      <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`} target="_blank" rel="noopener noreferrer">
-                        {t.map} ↗
-                      </a>
-                    )}
+                    <MapLinks place={e} label={t.map} />
                   </span>
                 </li>
               )}
