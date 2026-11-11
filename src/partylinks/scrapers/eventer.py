@@ -235,7 +235,19 @@ def parse_event(details: dict[str, Any], tickets_payload: dict[str, Any], page_u
     currency = event.get("defaultCurrency") or "ILS"
     categories = event.get("eventCategories") or {}
     platform = event.get("ticketPlatform") or {}
-    location_description = clean_str(event.get("locationDescription"))
+    # The place per language when the plain one is blank (https://www.eventer.co.il/6kl4f: "" next to
+    # he_IL "צוללת צהובה, הרכבים, ירושלים, ישראל"); Hebrew first.
+    descriptions = event.get("locationDescriptions") or {}
+    location_description = clean_str(event.get("locationDescription")) or next(
+        (d for k in ("he_IL", *descriptions) if (d := clean_str(descriptions.get(k)))), None
+    )
+    if not location_description and not location.get("latitude") and not location.get("addressLocality"):
+        # No place on the event at all: the producer's own address is it - a campsite's nights
+        # (https://www.eventer.co.il/7ag2f: קיבוץ מעיין צבי, with coordinates). ponytail: a producer
+        # whose office is not the venue would mislead; only events with no place of their own get it.
+        contact = (event.get("producer") or {}).get("contactDetails") or {}
+        location = {**location, **(contact.get("address") or {})}
+        location_description = clean_str(contact.get("addressDescription"))
 
     tickets = [_parse_ticket(t, currency) for t in tickets_payload.get("ticketTypes") or [] if isinstance(t, dict)]
     # Every tier sold out: the face values still say what the event costs.

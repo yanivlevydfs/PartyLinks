@@ -25,6 +25,22 @@ def test_venue_address_and_point_from_hidden_fields() -> None:
     assert event.start_at.hour == 19 and str(event.start_at.tzinfo) == "Europe/Malta"
 
 
+def test_venue_from_the_api_when_the_page_has_no_hidden_fields() -> None:
+    # Newer pages are drawn by JavaScript: the venue comes from apicore's /events/<eventid>.
+    day = datetime.date.today() + datetime.timedelta(days=7)
+    listed = {"title": "Acid Night", "path": "/Acidulant/acid-night-1", "country": "MT", "dates": [day],
+              "image": None, "categories": [], "tags": []}  # fmt: skip
+    page = '<input type="hidden" class="showdate" value="Saturday 14-Nov-2026 22:30" />'
+    venue = {"name": "Liquid Club", "address": "Liquid Club,Triq Hal-Gharghur, L-Iklin", "coordinates": "(35.9121438,14.4625855)"}
+    [event] = parse_event(listed, page, "https://www.showshappening.com", "Asia/Jerusalem", venue=venue)
+    assert (event.venue_name, event.address) == ("Liquid Club", "Liquid Club,Triq Hal-Gharghur, L-Iklin")
+    assert (event.latitude, event.longitude) == (35.9121438, 14.4625855)
+    # The page's own fields win over the API's.
+    assert parse_event(listed, PAGE, "https://www.showshappening.com", "Asia/Jerusalem", venue=venue)[0].venue_name == (
+        "Follow the Sun Boutique Hostel"
+    )
+
+
 TYPES = json.loads((Path(__file__).parent / "fixtures" / "showshappening" / "ticket_types.json").read_text(encoding="utf-8"))
 
 

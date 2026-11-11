@@ -252,6 +252,8 @@ def test_city_names_are_canonical() -> None:
     assert enricher.canonical_city("השרון", "השרון 14, תל אביב-יפו") == "תל אביב"
     assert enricher.canonical_city("השרון", None, "מייז תל אביב | MAZE TLV") == "תל אביב"
     assert enricher.canonical_city("6473303", None) is None  # zip code
+    assert enricher.canonical_city(None, None, "היכל התרבות עפולה") == "עפולה"  # a venue ending with its town
+    assert enricher.canonical_city(None, None, "מגדל המים") is None  # a building, not the town מגדל
     assert enricher.canonical_city("Mitzpe Ramon", None) == "מצפה רמון"  # any Israeli town (GeoNames)
     assert enricher.canonical_city("Kalamata", None) == "Kalamata"  # unknown place kept
     assert enricher.canonical_city("Eilat", None) == "אילת"

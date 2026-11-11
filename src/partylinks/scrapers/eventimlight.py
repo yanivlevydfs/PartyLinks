@@ -7,8 +7,9 @@ shop and event URLs it has seen; every ``/<country>/a/<id>`` in it is a shop. Kn
 ``known_file`` (on the data volume) and grow run by run; each Common Crawl collection is read once.
 Details: one request per shop. Its server-rendered page carries the shop's upcoming events as JSON
 (``<script id="vike_pageContext">``, ``data``): title, start/end with offset, category, teaser, artwork,
-lowest price, sold out, and the venue with its address, country and coordinates. Cancelled and past
-events are skipped. Israeli venues go to Israel, the rest abroad (the venue's country).
+lowest price, sold out, and the venue with its address, country and coordinates. A series (``"type":
+"series"``: dates at several venues) carries no venue there: its own page (``/s/<seriesId>``) lists its
+dates, each with its venue, one request per series. Cancelled and past events are skipped. Israeli venues go to Israel, the rest abroad (the venue's country).
 
 Access: Akamai refuses Python's TLS handshake and shops pass through a Queue-it check; speaking as
 Chrome (``http.impersonate``, curl_cffi) passes both. A shop first answers with a small cookie-test page
@@ -46,6 +47,8 @@ class EventimLightSettings(SourceSettings):
     # A shop's page and an event's page, from the shop key "<country>/<organizerId>".
     shop_path: str = "/{country}/a/{shop}/"
     event_path: str = "/{country}/a/{shop}/e/{event}"
+    # A series' page (its dates, each with its venue).
+    series_path: str = "/{country}/a/{shop}/s/{series}"
     image_path: str = "/{country}/api/image/{image}/facebook_event_cover/webp"
     # Market paths of the site; a discovered shop under any other path is ignored.
     countries: list[str] = Field(min_length=1)
@@ -93,7 +96,10 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
                     gone.add(shop)  # closed shop: dropped from the known set
                     return []
                 raise
-            return parse_shop(page, shop, self.settings)
+            events = parse_shop(page, shop, self.settings)
+            for series in series_in_shop(page, shop):
+                events += parse_series(await self.shop_page(shop, series), shop, self.settings)
+            return events
 
         # Shops go in chunks of one market, each led by one shop alone: it takes (or renews) the Queue-it
         # pass, a cookie that lets the chunk's other shops answer at once. Started all in parallel, every
@@ -116,10 +122,11 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
             save_known(self.settings.known_file, known)  # direct: on shutdown the thread pool is closed
         self.log.debug("%d of %d shops closed", len(gone), len(shops))
 
-    async def shop_page(self, shop: str) -> str:
-        """A shop's page, past its cookie-test redirect."""
+    async def shop_page(self, shop: str, series: str | None = None) -> str:
+        """A shop's page (or one of its series' pages), past its cookie-test redirect."""
         country, _, org = shop.partition("/")
-        url = self.settings.site_url + self.settings.shop_path.format(country=country, shop=org)
+        path = self.settings.series_path if series else self.settings.shop_path
+        url = self.settings.site_url + path.format(country=country, shop=org, series=series)
         response = await self.request("GET", url)
         if target := cookie_redirect(response.text):
             response = await self.request("GET", urljoin(str(response.url), target))
@@ -192,17 +199,51 @@ def shops_in_index(lines: list[str], host: str, countries: list[str]) -> set[str
     return shops
 
 
-def parse_shop(
-    page_html: str, shop: str, settings: EventimLightSettings, now: datetime | None = None
-) -> list[ScrapedEvent]:
-    """A shop page's upcoming events (not cancelled, not over)."""
+def _context(page_html: str, shop: str) -> dict:
     node = LexborHTMLParser(page_html).css_first("script#vike_pageContext")
     if node is None:
-        raise ParseError(f"{shop}: no vike_pageContext on the shop page")
-    context = json.loads(node.text())
+        raise ParseError(f"{shop}: no vike_pageContext on the page")
+    return json.loads(node.text())
+
+
+def _shop_items(page_html: str, shop: str) -> list:
+    context = _context(page_html, shop)
     items = context.get("data")
     if not isinstance(items, list):
         items = ((context.get("initialStoreState") or {}).get("events") or {}).get("eventOverviewItems") or []
+    return [item for item in items if isinstance(item, dict)]
+
+
+def _is_series(item: dict) -> bool:
+    return str(item.get("type") or "").lower() == "series"
+
+
+def series_in_shop(page_html: str, shop: str) -> list[str]:
+    """The ids of a shop page's series: their dates and venues are on each series' own page."""
+    return [str(item["id"]) for item in _shop_items(page_html, shop) if _is_series(item) and item.get("id")]
+
+
+def parse_shop(
+    page_html: str, shop: str, settings: EventimLightSettings, now: datetime | None = None
+) -> list[ScrapedEvent]:
+    """A shop page's upcoming events (not cancelled, not over). Series come from parse_series."""
+    items = [item for item in _shop_items(page_html, shop) if not _is_series(item)]
+    return _events(items, page_html, shop, settings, now)
+
+
+def parse_series(
+    page_html: str, shop: str, settings: EventimLightSettings, now: datetime | None = None
+) -> list[ScrapedEvent]:
+    """A series page's upcoming dates, each at its own venue."""
+    store = _context(page_html, shop).get("initialStoreState") or {}
+    series = (store.get("events") or {}).get("series") or {}
+    items = series.get("events") if isinstance(series, dict) else None
+    return _events([i for i in items or [] if isinstance(i, dict)], page_html, shop, settings, now)
+
+
+def _events(
+    items: list[dict], page_html: str, shop: str, settings: EventimLightSettings, now: datetime | None
+) -> list[ScrapedEvent]:
     cancelled = {
         clean_str(n.get("url"))
         for n in jsonld_nodes(page_html)
@@ -212,7 +253,7 @@ def parse_shop(
     now = now or datetime.now(UTC)
     events = []
     for item in items:
-        if not isinstance(item, dict) or not item.get("id") or not clean_str(item.get("title")):
+        if not item.get("id") or not clean_str(item.get("title")):
             continue
         url = settings.site_url + settings.event_path.format(country=country, shop=org, event=item["id"])
         status = str(item.get("status") or "").lower()

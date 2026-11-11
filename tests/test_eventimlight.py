@@ -18,7 +18,9 @@ from partylinks.scrapers.eventimlight import (
     EventimLightScraper,
     cookie_redirect,
     load_known,
+    parse_series,
     parse_shop,
+    series_in_shop,
     shops_in_index,
 )
 
@@ -70,6 +72,18 @@ def test_past_and_cancelled_events_are_skipped() -> None:
     assert parse_shop(_shop(**{'"status":"PUBLISHED"': '"status":"CANCELLED"'}), SHOP, settings, now=BEFORE) == []
     cancelled = _shop(**{"https://schema.org/EventScheduled": "https://schema.org/EventCancelled"})
     assert parse_shop(cancelled, SHOP, settings, now=BEFORE) == []
+
+
+def test_series_dates_come_from_the_series_page_each_at_its_venue() -> None:
+    # A shop lists a series (dates at several venues) with no venue: its own page lists each date's venue.
+    shop = _shop(**{'"type":"event"': '"type":"series"'})
+    assert parse_shop(shop, SHOP, _scraper().settings, now=BEFORE) == []
+    assert series_in_shop(shop, SHOP) == ["69cd89f7bca63b14867bb35c"]
+    page = (FIXTURES / "series.html").read_text(encoding="utf-8")
+    fi = "fi/6448d3a428d7201d6aa70b26"
+    events = parse_series(page, fi, _scraper().settings, now=datetime(2026, 11, 13, tzinfo=UTC))
+    assert [(e.venue_name, e.city, e.country, e.latitude) for e in events] == [("Kupla", "Espoo", "FI", 60.17708)]
+    assert str(events[0].url).endswith("/fi/a/6448d3a428d7201d6aa70b26/e/6a32b3c6de5334af227a3674")
 
 
 def test_cookie_test_page_is_followed_once_on_its_own_host(tmp_path: Path) -> None:

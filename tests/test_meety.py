@@ -40,3 +40,14 @@ def test_price_written_in_the_text() -> None:
     )
     event = parse_event("3083", "https://meety.co.il/events/3083", page, [], "https://meety.co.il", "Asia/Jerusalem")
     assert event is not None and sorted(t.price or -1 for t in event.tickets) == [40, 50]
+
+
+def test_address_from_the_navigate_button() -> None:
+    # meety.co.il/events/19816 (Nov 2026): the maps link lost the comma; the button text keeps it.
+    page = PAGE.replace(
+        '<div onclick=window.location.href="https://maps.google.com/?q=%D7%94%D7%9E%D7%95%D7%A1%D7%9B%D7%99%D7%9D+24%2C+%D7%97%D7%99%D7%A4%D7%94">',
+        '<div onclick="window.location.href=&quot;https://maps.google.com/?q=%D7%94%D7%A9%D7%99%D7%A9+16+%D7%A7%D7%A8%D7%99%D7%99%D7%AA'
+        '+%D7%97%D7%99%D7%99%D7%9D&quot;"><div>נווט לאירוע<br>השיש 16, קריית חיים</div><div><svg></svg></div></div>',
+    )
+    event = parse_event("19816", "https://meety.co.il/events/19816", page, [], "https://meety.co.il", "Asia/Jerusalem")
+    assert event is not None and (event.address, event.city) == ("השיש 16, קריית חיים", "קריית חיים")

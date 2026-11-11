@@ -6,8 +6,10 @@ one link per date with the event's path, the date, its categories and tags, the 
 Details: the event page's own HTML (``og:description``, ``og:image``, the hidden ``showdate`` with
 the next show's day and time, ``eventid``). One event per listed date; a recurring event's other
 dates take the next show's time of day. Venue, address and its Google point come from the page's hidden
-fields (``EventVenueName``, ``EventVenueAddress``, ``EventVenueGoogleLocation``). Prices: the page names
-its next show (the ``SelectEventShowsToBuyTicket`` option, or the newer page's hidden ``showid``) and the
+fields (``EventVenueName``, ``EventVenueAddress``, ``EventVenueGoogleLocation``); the newer pages, drawn
+by JavaScript, carry none of them: their venue (name, address, point) comes from the site's own API,
+apicore.showshappening.com ``/events/<eventid>`` with its public app key, one request per such event.
+Prices: the page names its next show (the ``SelectEventShowsToBuyTicket`` option, or the newer page's hidden ``showid``) and the
 site's own ``/MyEvents/GetAvailableTicketTypesWithPrices?id=<show>`` returns its ticket types (name,
 "€20.00", booking fee, ``DisabledType`` 2 = sold out); one request per event. Newer pages that name no
 show load their shows from apicore.showshappening.com (app key) only: no price then.
@@ -66,6 +68,9 @@ class ShowsHappeningSettings(SourceSettings):
     site_url: str
     countries: list[str] = Field(default_factory=lambda: ["mt", "gb", "de", "es"])
     prices_path: str = "/MyEvents/GetAvailableTicketTypesWithPrices"  # the show's ticket types (?id=<show>)
+    # The site's API (its own pages' app key): an event's details, the venue of pages without hidden fields.
+    api_url: str = "https://apicore.showshappening.com/showshappening/1"
+    api_key: str = "0d3184c9-9437-4f17-af6a-6192491bb700"
 
 
 class ShowsHappeningScraper(BaseScraper[ShowsHappeningSettings]):
@@ -91,7 +96,12 @@ class ShowsHappeningScraper(BaseScraper[ShowsHappeningSettings]):
         types = None
         if show := show_id(page):
             types = await self.optional("ticket types", self.get_json(s.site_url + s.prices_path, expect=list, params={"id": show}))
-        return parse_event(listed, page, s.site_url, self.timezone, types)
+        venue = None
+        if not _HIDDEN.search(page) and (m := _EVENTID.search(page)):
+            headers = {"appkey": s.api_key, "accept": "application/json"}
+            details = await self.optional("venue", self.get_json(f"{s.api_url}/events/{m.group(1)}", expect=dict, headers=headers))
+            venue = (details or {}).get("venue")
+        return parse_event(listed, page, s.site_url, self.timezone, types, venue if isinstance(venue, dict) else None)
 
 
 def cards(page_html: str, country: str) -> list[dict[str, Any]]:
@@ -150,9 +160,11 @@ def categories(listed: dict[str, Any]) -> list[str]:
 
 
 def parse_event(
-    listed: dict[str, Any], page_html: str, site_url: str, default_tz: str, types: list[Any] | None = None
+    listed: dict[str, Any], page_html: str, site_url: str, default_tz: str, types: list[Any] | None = None,
+    venue: dict[str, Any] | None = None,
 ) -> list[ScrapedEvent]:
-    """One event per listed date that is not over yet."""
+    """One event per listed date that is not over yet. ``venue``: the API's (name, address, coordinates),
+    for pages without the hidden venue fields."""
     meta = {k: html_lib.unescape(v) for k, v in _META.findall(page_html)}
     # UK pages are drawn by JavaScript: their og:title is the site's ("ShowsHappening | Tickets in Malta").
     title = listed["title"] or clean_str((meta.get("og:title") or "").removesuffix("| ShowsHappening"))
@@ -163,6 +175,8 @@ def parse_event(
     country = listed["country"]
     zone = ZoneInfo(local_zone("GB" if country == "UK" else country, default_tz))
     hidden = {k: clean_str(html_lib.unescape(v)) for k, v in _HIDDEN.findall(page_html)}
+    for field, key in (("EventVenueName", "name"), ("EventVenueAddress", "address"), ("EventVenueGoogleLocation", "coordinates")):
+        hidden[field] = hidden.get(field) or clean_str((venue or {}).get(key))
     point = _POINT.match(hidden.get("EventVenueGoogleLocation") or "")
     lat, lng = (float(point.group(1)), float(point.group(2))) if point else (None, None)
     show = _SHOWDATE.search(page_html)

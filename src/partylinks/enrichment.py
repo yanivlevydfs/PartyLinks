@@ -676,6 +676,12 @@ class Enricher:
         for text in (city, address):
             if hits := self._places.find(text):
                 return max(hits)[1]
+        # A venue that ends with its town ("היכל התרבות עפולה"): the town, so the event gets a forecast and
+        # a city filter. Only at the end: "מגדל המים" starts with the town מגדל but is a building.
+        if not city and venue and (hits := self._places.find(venue)):
+            start, town = max(hits)
+            if self._places.is_place(" ".join(venue.split()[start:])):
+                return town
         if city is None or city.strip().isdigit() or city.strip().casefold() in self._not_cities:
             return None
         if town := latin_town(city):  # "Ierusalim" -> the configured "ירושלים"; "kfar blum" -> "כפר בלום"

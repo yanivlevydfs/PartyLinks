@@ -91,9 +91,13 @@ def parse_event(
     body = next((n for n in tree.css("div") if "w-3/5" in (n.attributes.get("class") or "").split()), None)
     image = next((src for n in tree.css("img.rounded-2xl") if (src := n.attributes.get("src") or "")), None)
     address = city = None
-    if maps := _MAPS.search(page_html):
+    # The button reads "נווט לאירוע<br>השיש 16, קריית חיים"; its maps link lost the comma (2026-11: "?q=השיש+16+קריית+חיים").
+    nav = tree.css_first("[onclick*='maps.google'] div")
+    if nav and len(lines := [t for t in nav.text(separator="\n").splitlines() if t.strip()]) > 1:
+        address = clean_str(lines[-1])
+    if not address and (maps := _MAPS.search(page_html)):
         address = clean_str(parse_qs(urlsplit(html.unescape(maps.group(0))).query).get("q", [""])[0])
-        city = clean_str(address.rsplit(",", 1)[-1]) if address and "," in address else None
+    city = clean_str(address.rsplit(",", 1)[-1]) if address and "," in address else None
     text = html_to_text(body.html) if body else None
     return ScrapedEvent(
         source=MeetyScraper.name,
