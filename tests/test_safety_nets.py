@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import os
 import threading
+import time
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -363,3 +364,33 @@ def test_no_run_limit_by_default_a_live_run_goes_on_until_done(tmp_path: Path, m
     result = service.start_source("goout", trigger="test").result(timeout=30)
 
     assert (result.status, result.events_found) == ("success", 30), result.error
+
+
+class _ManySource(_SlowSource):
+    """Two save batches and more, fast."""
+
+    async def scrape(self) -> AsyncIterator[ScrapedEvent]:
+        for i in range(450):
+            yield event(f"many{i}")
+            await asyncio.sleep(0)
+        _ManySource.scrape_done_at = time.monotonic()
+
+
+def test_a_batch_s_images_download_beside_the_scrape_never_holding_it(tmp_path: Path, monkeypatch: Any) -> None:
+    """makore's first batch waited 25 min on a backlog of pictures while the scrape stood still (2026-11-11)."""
+    service, _ = make_service(tmp_path)
+    service.settings.media.download = True
+    passes: list[float] = []
+
+    async def slow_pictures(source: str, http: Any, progress: Any = None) -> tuple[int, int]:
+        await asyncio.sleep(1.0)
+        passes.append(time.monotonic())
+        return 0, 0
+
+    monkeypatch.setattr(service.media, "download_pending", slow_pictures)
+    monkeypatch.setattr(service_module, "build_scraper", lambda name, settings: _ManySource(service._stopping))
+
+    result = service.start_source("goout", trigger="test").result(timeout=30)
+
+    assert (result.status, result.events_found) == ("success", 450), result.error
+    assert passes and _ManySource.scrape_done_at < passes[0]  # the scrape ran on while the first pass worked

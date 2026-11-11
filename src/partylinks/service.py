@@ -387,17 +387,23 @@ class ScrapeService:
         batch: dict[str, ScrapedEvent] = {}
         timeout = self.settings.scheduler.run_timeout_seconds  # the same for every source
 
+        images: asyncio.Task[None] | None = None  # the batches' image downloads, beside the scrape
+
         async def flush() -> None:
-            nonlocal saved
+            nonlocal saved, images
             if batch:
                 events = list(batch.values())
                 batch.clear()
                 saved += await self._blocking(self._save, events, failures)
                 # Each batch's images now, not only after the run: deploys every ~30 min cut long runs
                 # (munievents, 2026-11-11), so their pictures were never stored and the site logo stayed.
-                if scraper is not None and self.settings.media.download and not self._stopping.is_set():
+                # In the background, never awaited here: makore's first batch waited 25 min on a backlog
+                # of 1,400 pictures while the scrape stood still (2026-11-11). One pass at a time; a pass
+                # takes every picture pending when it starts, so a later batch's wait for the next one.
+                idle = images is None or images.done()
+                if scraper is not None and self.settings.media.download and not self._stopping.is_set() and idle:
                     step = self.media.download_pending(source, scraper.working_http, progress=alive)
-                    await self._post_step(source, "artwork", failures, step)
+                    images = asyncio.ensure_future(self._post_step(source, "artwork", failures, step))
 
         # The stall watchdog is the only stop: a run goes on for as long as it makes progress. Each sign of
         # life (a new event, an answer from the site, an image chunk stored, a post-processing step) pushes
@@ -487,6 +493,11 @@ class ScrapeService:
         watchdog[0] = post_deadline
         try:
             async with post_deadline:
+                if images is not None:
+                    if self._stopping.is_set():
+                        images.cancel()  # shutting down: the next run loads what is left
+                    else:
+                        await images  # the batches' pass first, then post-processing's own for the rest
                 await self._post_process(source, scraper, saved, failures, alive)
         except TimeoutError:
             if not post_deadline.expired():
