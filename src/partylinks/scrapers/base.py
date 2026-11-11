@@ -48,7 +48,7 @@ from partylinks.config import HttpSettings, validate_cron
 from partylinks.logs import first_line
 from partylinks.models import ScrapedEvent
 from partylinks.pace import Pace
-from partylinks.parsing import ParseError, to_int
+from partylinks.parsing import ParseError, cf_emails, to_int
 
 T = TypeVar("T")
 R = TypeVar("R")
@@ -445,6 +445,10 @@ class BaseScraper[S: SourceSettings](ABC):
                     with _israel_lock:
                         _israel_good = self._proxy  # works: every Israeli-proxy source uses it from now on
                         _israel_dead.pop(self._proxy, None)
+                # Every source alike: Cloudflare's "[email protected]" becomes the real address. Read once,
+                # before any scraper reads .text / .json(), so set on the body httpx decodes them from.
+                if (body := cf_emails(response.content)) is not response.content:
+                    response._content = body
                 return response
         raise AssertionError("unreachable: the last attempt returns or raises (reraise=True)")
 

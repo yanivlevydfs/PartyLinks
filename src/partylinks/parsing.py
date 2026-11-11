@@ -26,6 +26,24 @@ _SPACES = re.compile(r"[^\S\n]+")  # any space but a line break: tab, NBSP, thin
 _TAG = re.compile(r"</?(?:br|p|div|span|li|ul|ol|strong|b|i|em|u|h[1-6]|font|a)\b[^<>]*>", re.IGNORECASE)
 _BEFORE_CLOSE = re.compile(r" +([,.;:!?)\]}])(?= |$)")  # "שלום ," -> "שלום,"; ":)" untouched
 _AFTER_OPEN = re.compile(r"(^|\s)([(\[{]) +")
+# Cloudflare's email obfuscation: the address XORed with the first byte, in hex. The page shows "[email protected]"
+# until a script decodes it; we decode it, so the event's text keeps the real address.
+_CF_EMAIL = re.compile(rb'<(a|span)\b[^>]*?data-cfemail=\\?"([0-9a-fA-F]{4,})\\?"[^>]*>.*?<\\?/\1>', re.DOTALL)
+_CF_LINK = re.compile(rb"/cdn-cgi/l/email-protection#([0-9a-fA-F]{4,})")
+
+
+def _cf_decode(hexed: bytes) -> bytes:
+    raw = bytes.fromhex(hexed.decode())
+    return bytes(b ^ raw[0] for b in raw[1:])
+
+
+def cf_emails(body: bytes) -> bytes:
+    """A page (HTML, or JSON carrying HTML) with Cloudflare's hidden emails written out."""
+    if b"cfemail" not in body and b"email-protection" not in body:
+        return body
+    body = _CF_EMAIL.sub(lambda m: _cf_decode(m.group(2)), body)
+    return _CF_LINK.sub(lambda m: b"mailto:" + _cf_decode(m.group(1)), body)
+
 
 
 class ParseError(ValueError):

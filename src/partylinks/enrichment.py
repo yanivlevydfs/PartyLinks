@@ -18,7 +18,7 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from partylinks.config import AreaSettings, CitySettings, EnrichmentSettings, RegionSettings
-from partylinks.models import EntryType, ScrapedEvent, TicketKind
+from partylinks.models import EntryType, ScrapedEvent, TicketKind, TicketTier
 from partylinks.parsing import slugify
 from partylinks.places import PlaceIndex, all_cities, city_name, city_point, israeli_places, latin_town
 
@@ -301,7 +301,10 @@ class Enricher:
         event.genres = self._detect_genres(event)
         event.lineup = self._lineup(event)
         self._mark_free_tiers(event)
+        free_for_some = _free_from_text(event)
         event.entry_type = self._entry_type(event)
+        if free_for_some and event.entry_type in (EntryType.FREE, EntryType.UNKNOWN):
+            event.entry_type = EntryType.FREE_AND_PAID  # free for kids / residents only: the others pay
         # Free entry = a free ticket you can still get; a sold-out event offers none.
         all_gone = event.is_sold_out or (bool(event.tickets) and not any(t.is_active for t in event.tickets))
         event.has_free_entry = not all_gone and event.entry_type in (EntryType.FREE, EntryType.FREE_AND_PAID)
@@ -755,6 +758,27 @@ def _place_pattern(names: list[str], prefixes: int = 1, after: str = "") -> re.P
 def _spaced(name: str) -> str:
     """A name's spaces and hyphens match a space, hyphen or maqaf: "hip hop" finds "hip-hop", "תל אביב" "תל-אביב"."""
     return re.sub(r"(?:\\ |\\-)+", lambda _: r"[\s\-־]+", re.escape(name.lower()))
+
+
+def _free_from_text(event: ScrapedEvent) -> bool:
+    """Every source alike, from the title and text. Entry costs nothing for everyone ("הכניסה חופשית", "כניסה
+    חינם", "ללא עלות", "free entry") and no paid ticket: a free tier, the event is free. Free for one group only
+    ("חינם לילדים", "ילדים עד גיל 12 נכנסים ללא תשלום", "לתושבי העיר"): a free tier named by that phrase, and
+    True: the event is free and paid, never all free."""
+    from partylinks.scrapers.text_prices import free_for_some, says_free  # local: scrapers import this module
+
+    active = [t for t in event.tickets if t.is_active]
+    if event.is_sold_out or (event.tickets and not active) or any(t.kind is TicketKind.FREE for t in active):
+        return False  # sold out, or a ticket already says free
+    text = f"{event.title}\n{event.description or ''}"
+    if group := free_for_some(text):
+        event.tickets.append(TicketTier(name=group[:80], is_free=True))
+        return True
+    if any(t.kind is not TicketKind.UNKNOWN for t in active) or event.min_price or not says_free(text):
+        return False  # a paid ticket wins over the text
+    event.tickets.append(TicketTier(name="כניסה חופשית", price=Decimal(0), is_free=True))
+    event.min_price = event.max_price = Decimal(0)
+    return False
 
 
 def _free_entry_until(event: ScrapedEvent) -> datetime | None:

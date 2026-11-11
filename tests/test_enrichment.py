@@ -464,3 +464,38 @@ def test_a_synopsis_in_the_venue_field_is_no_venue() -> None:
     )
     enriched = Enricher(settings.enrichment, settings.timezone).enrich(event)
     assert enriched is not None and enriched.venue_name is None
+
+
+def test_free_words_in_any_source_text_mark_the_event_free() -> None:
+    """The same rule for every scraper: "הכניסה חופשית" / "כניסה חינם" / "ללא עלות" with no paid ticket is free."""
+    for text in ("מרתון החלפות.\n\nהכניסה חופשית.", "ערב שירה, כניסה חינם", "ההשתתפות ללא עלות", "Free entry, RSVP"):
+        event = ENRICHER.enrich(make(title="ערב בקהילה", description=text))
+        assert event is not None and event.entry_type is EntryType.FREE and event.has_free_entry, text
+        assert event.min_price == 0
+    # "Free for kids" next to a paid ticket is free and paid; a sold-out event stays sold out; unrelated "חינם" is not entry.
+    paid = ENRICHER.enrich(make(description="הכניסה חופשית לילדים", tickets=[TicketTier(name="מבוגר", price=Decimal(60))]))
+    assert paid is not None and paid.entry_type is EntryType.FREE_AND_PAID and paid.min_price == 60
+    gone = ENRICHER.enrich(make(description="הכניסה חופשית", is_sold_out=True))
+    assert gone is not None and not gone.has_free_entry
+    parking = ENRICHER.enrich(make(title="הופעה", description="חניה חינם ליד האולם"))
+    assert parking is not None and parking.entry_type is EntryType.UNKNOWN
+
+
+def test_free_words_that_are_not_free_entry() -> None:
+    from partylinks.scrapers.text_prices import says_free
+
+    assert says_free("המפגש כולל פעילות חופשית, חוג תנועה") is False  # free play
+    assert says_free("כרטיס הכניסה כולל טעימה חופשית ממגוון היינות") is False
+    assert says_free("הצגות, הופעות, סיורים ללא תשלום, הטבות בעסקים") is False
+    assert says_free("ילדים עד גיל 12 נכנסים ללא תשלום") is False and says_free("הטיפולים הניתנים ללא עלות") is False
+    assert says_free("הכניסה למתחם הכנס חופשית") and says_free("ההשתתפות ללא עלות, אך מותנית בהרשמה")
+    assert says_free("הרשמה חינם שישי באטלנטה") and says_free("הכניסה אליה חופשית")
+
+
+def test_free_for_one_group_is_free_and_paid_never_all_free() -> None:
+    for text in ("ילדים עד גיל 12 נכנסים ללא תשלום.", "הכניסה חינם לילדים", "חינם לתושבי העיר", "הכניסה חופשית לחיילים"):
+        event = ENRICHER.enrich(make(title="יום כיף", description=text))
+        assert event is not None and event.entry_type is EntryType.FREE_AND_PAID, text
+        assert event.min_price is None  # no "from 0 ₪": only the group goes free
+    kids = ENRICHER.enrich(make(description="ילדים חינם", tickets=[TicketTier(name="מבוגר", price=Decimal(60))]))
+    assert kids is not None and kids.entry_type is EntryType.FREE_AND_PAID and kids.min_price == 60
