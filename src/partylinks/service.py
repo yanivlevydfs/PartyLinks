@@ -322,7 +322,7 @@ class ScrapeService:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, changed)
         with self._planning() as session:
-            fills = group_fill.plan(session, self.enricher.clean_name)  # what one store lacks, from the event's other stores / its venue
+            fills = group_fill.plan(session, self.enricher.clean_name, frozenset(self.settings.dedup.place_sources))  # what one store lacks, from the event's other stores / its venue
         if fills:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, fills)

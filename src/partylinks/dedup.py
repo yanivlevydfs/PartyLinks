@@ -132,6 +132,8 @@ class Deduplicator:
         self._kind = {g: kind for kind, genres in settings.kinds.items() for g in genres}
         self._filler = {w.lower() for w in settings.title_filler}
         self._box_offices = set(settings.box_office_sources)
+        self._city_pages = set(settings.place_sources)
+        self._kind_pairs = [tuple(p) for p in settings.compatible_kinds if len(p) == 2]
 
     def _distinctive(self, core: frozenset[str]) -> bool:
         """Enough of a name to match on alone: "דרור קרן", not "techno"."""
@@ -186,7 +188,7 @@ class Deduplicator:
             return self._subset(a, b)
         if self._other_kind(a, b, ratio):
             return False
-        if self._same_hall(a, b, ratio):
+        if self._same_hall(a, b, ratio) or self._city_page(a, b, ratio):
             return True
         distance = _distance_m(a, b)
         if distance is not None:
@@ -220,6 +222,19 @@ class Deduplicator:
         s = self.settings
         return (
             bool(a.venue_slug) and a.venue_slug == b.venue_slug and ratio >= s.strong_title_similarity
+            and a.timed and b.timed and a.start is not None and b.start is not None
+            and abs((a.start - b.start).total_seconds()) <= s.strong_max_start_gap_minutes * 60
+        )  # fmt: skip
+
+    def _city_page(self, a: _Listing, b: _Listing, ratio: float) -> bool:
+        """The city's own page of its event and a box office's copy: one event whatever the places say. The
+        box office names the unit's default hall (Herzliya's Smarticket: "מרכז הקיימות" for a talk at a cafe
+        1.5 km away), so only the name, city and hour must agree."""
+        s = self.settings
+        return (
+            (a.source in self._city_pages) != (b.source in self._city_pages)
+            and bool(a.city) and a.city == b.city
+            and ratio >= s.strong_title_similarity and len(a.title_key.split()) >= 3
             and a.timed and b.timed and a.start is not None and b.start is not None
             and abs((a.start - b.start).total_seconds()) <= s.strong_max_start_gap_minutes * 60
         )  # fmt: skip
@@ -270,9 +285,17 @@ class Deduplicator:
             ratio = self._ratio(a, b)
         return ratio >= self.settings.strong_title_similarity
 
+    def _contains(self, a: _Listing, b: _Listing) -> bool:
+        """One title's distinctive words all in the other's."""
+        small, big = (a.core, b.core) if len(a.core) <= len(b.core) else (b.core, a.core)
+        return self._distinctive(small) and small <= big
+
     def _other_kind(self, a: _Listing, b: _Listing, ratio: float | None = None) -> bool:
-        """A kids' show and a lecture: genre tags are noisy, so a near-identical title still wins."""
+        """A kids' show and a lecture: genre tags are noisy, so a near-identical title still wins. A kids'
+        play is a play: kinds paired in ``compatible_kinds`` never part two listings."""
         if not (a.kinds and b.kinds) or a.kinds & b.kinds:
+            return False
+        if any(x in a.kinds and y in b.kinds or y in a.kinds and x in b.kinds for x, y in self._kind_pairs):
             return False
         if ratio is None:
             ratio = self._ratio(a, b)
@@ -284,7 +307,13 @@ class Deduplicator:
         promoter, so only its hours count, and only with the party window (see _contradict)."""
         if a.source != b.source or a.source in self._promoter_pages:
             return False
-        return a.title_key != b.title_key or (a.start is not None and b.start is not None and a.start != b.start)
+        if a.start is not None and b.start is not None and a.start != b.start:
+            return True
+        # A guide's two pages of one show, one per seller, at one hour and hall: "מדיאה - תיאטרון הקאמרי" and
+        # "מדיאה - עם עמוס תמם וכנרת לימוני - תיאטרון הקאמרי" (Makore, Nov 2026). One name holds the other.
+        if bool(a.venue_slug) and a.venue_slug == b.venue_slug and a.timed and b.timed and self._contains(a, b):
+            return False
+        return a.title_key != b.title_key
 
     def _box_office_hours(self, listings: list[_Listing]) -> None:
         """A venue's own box office with one session of a show that day sets its hour: a guide's "14:00" for

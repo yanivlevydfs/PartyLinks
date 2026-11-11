@@ -20,3 +20,6 @@ class EventTextSettings(BaseModel):
     ltr_block_chars: int = Field(60, ge=1)
     # A description longer than this opens collapsed behind "read more"; all of it stays in the page.
     collapse_chars: int = Field(1800, ge=100)
+    # An event whose own text is shorter than this shows the longest text of its other listings
+    # (the same event on another site, partylinks.event_text.group); 0 = only its own text.
+    group_text_min_chars: int = Field(80, ge=0)

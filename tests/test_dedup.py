@@ -509,3 +509,56 @@ def test_a_listing_without_a_price_offers_its_twins_in_event_data(tmp_path: Path
         bare = session.get(EventRow, "goout:a")
         assert bare is not None and bare.min_price is None and bare.best_listing_id == "eventer:b"
         assert event_jsonld(bare, settings)["offers"][0]["price"] == 88
+
+
+METEOR, ANAT = (32.1748383, 34.8328078), (32.1640, 34.8440)
+
+
+def test_a_citys_own_page_gives_every_listing_of_its_event_its_place(tmp_path: Path) -> None:
+    """Herzliya's Smarticket lists a talk at the unit's hall (מרכז הקיימות / Meteor); the city's own page
+    says "קפה אנט, בן גוריון 32". The city's place wins; a listing with a place of its own never takes
+    another venue's pin (it stopped the geocoder, Nov 2026)."""
+    from partylinks import group_fill
+
+    talk = "מדע על הבר: התחדשות עירונית כהזדמנות"
+    settings, groups = grouped(tmp_path, [
+        listing("smarticket", "3836", talk, where=METEOR, venue_name="מרכז מטאור", address=None, city="הרצליה"),
+        listing("munievents", "14246", talk, where=None, venue_name="קפה אנט", address="בן גוריון 32", city="הרצליה"),
+    ])  # fmt: skip
+    assert groups["smarticket:3836"][0] == groups["munievents:14246"][0]
+    db = Database(settings.database.url)
+    places = frozenset(settings.dedup.place_sources)
+    with db.session() as session:  # not geocoded yet: it keeps its own place and waits for the geocoder
+        fills = {f["id"]: f for f in group_fill.plan(session, None, places)}
+    assert "munievents:14246" not in fills or fills["munievents:14246"]["latitude"] is None
+    with db.session() as session:
+        session.get_one(EventRow, "munievents:14246").latitude, session.get_one(EventRow, "munievents:14246").longitude = ANAT
+    with db.session() as session:
+        fills = {f["id"]: f for f in group_fill.plan(session, None, places)}
+    box_office = fills["smarticket:3836"]
+    assert (box_office["venue_name"], box_office["address"]) == ("קפה אנט", "בן גוריון 32")
+    assert (box_office["latitude"], box_office["longitude"]) == ANAT
+    with db.session() as session:  # off: the box office keeps what it states
+        assert "smarticket:3836" not in {f["id"] for f in group_fill.plan(session)}
+
+
+def test_a_kids_play_tagged_kids_on_one_site_and_theatre_on_another_is_one_event(tmp_path: Path) -> None:
+    """Haifa, Nov 2026: the city's page (kids) joined Smarticket and OGO, Makore (theatre) stayed out."""
+    hall = {"venue_name": "בית יד לבנים", "city": "חיפה"}
+    _, groups = grouped(tmp_path, [
+        listing("haifamuni", "1", "הצגת ילדים: הענק וגנו – תיאטרון גושן", source_genres=["kids"], **hall),
+        listing("smarticket", "2", "הענק וגנו | תיאטרון גושן", source_genres=["kids"], **hall),
+        listing("makore", "3", "הענק וגנו | תיאטרון גושן", source_genres=["theatre"], **hall),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 1
+
+
+def test_a_guides_two_pages_of_one_show_at_one_hour_are_one_event(tmp_path: Path) -> None:
+    """Makore lists the Cameri's "מדיאה" once per seller, one name longer; both join the box offices' copies."""
+    hall = {"venue_name": "תיאטרון הקאמרי", "city": "תל אביב", "source_genres": ["theatre"]}
+    _, groups = grouped(tmp_path, [
+        listing("makore", "a", "מדיאה - תיאטרון הקאמרי", **hall),
+        listing("makore", "b", "מדיאה - עם עמוס תמם וכנרת לימוני - תיאטרון הקאמרי", **hall),
+        listing("kupatbravo", "c", "מדיאה - תיאטרון הקאמרי", **hall),
+    ])  # fmt: skip
+    assert len({g for g, _ in groups.values()}) == 1

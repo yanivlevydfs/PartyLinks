@@ -415,6 +415,18 @@ class DedupSettings(BaseModel):
     secondhand_price_min_ratio: float = Field(0.3, ge=0, le=1)
     # Which listing represents a merged event (first = preferred). Unlisted sources rank last.
     source_priority: list[str] = Field(default_factory=list)
+    # Kinds one event carries on different sites: a kids' play is "kids" on one and "theatre" on another
+    # (Haifa's "הענק וגנו", Nov 2026). Pairs listed here never part two listings.
+    compatible_kinds: list[list[str]] = Field(
+        default_factory=lambda: [["kids", "stage"], ["kids", "cinema"], ["kids", "music"], ["kids", "art"]]
+    )
+    # A city's own event pages: they say where the city's event really is, while its box office lists the
+    # unit's default hall (Herzliya's Smarticket: "מרכז הקיימות" for a talk at Cafe Anat). Every listing of
+    # an event with one of these takes its place (group_fill), and its listing joins the box office copy of
+    # the same name, city and hour wherever the pins are (dedup._city_page). Empty = off.
+    place_sources: list[str] = Field(
+        default_factory=lambda: ["munievents", "haifamuni", "jerusalemmuni", "petahtikvamuni", "ramatganmuni", "sharepointmuni"]
+    )
     # Sites with a page per promoter / entry time of one party (20:00 and 21:00 pages). Any other site's
     # pages at different hours are separate sessions (a workshop at 14:00 and 15:00) and never merge.
     promoter_page_sources: list[str] = Field(default_factory=list)

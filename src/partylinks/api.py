@@ -62,6 +62,7 @@ from partylinks.db import (
 from partylinks.dedup import agreed_listing
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.event_text import DescriptionLayout, description_layout
+from partylinks.event_text.group import group_description
 from partylinks.holiday_pages import core as holiday_pages
 from partylinks.holiday_pages.routes import HolidayOut
 from partylinks.lines.weekly import weekly as lines_weekly
@@ -1460,6 +1461,7 @@ def _register_routes(app: FastAPI) -> None:
             if row.group_id
             else []
         )
+        text = group_description(session, row, cfg.event_text)  # empty here: the same event's text on another site
         listing_ids = [row.id, *(a.id for a in alternatives)]  # changes of every listing of the event
         changes = session.scalars(
             select(DealChangeRow)
@@ -1481,7 +1483,8 @@ def _register_routes(app: FastAPI) -> None:
                 **_summary_extras(session, [row])[row.id],
                 "watching": popularity.watching(session, row.id, cfg.popularity),
                 "lineup_links": artist_links_for(session, cfg.artist_links, row.lineup or []),
-                "description_layout": description_layout(row.description, cfg.event_text),
+                "description": text,
+                "description_layout": description_layout(text, cfg.event_text),
             }
         )
 

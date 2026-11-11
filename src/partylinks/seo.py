@@ -40,6 +40,7 @@ from partylinks.countries import country_name, is_country
 from partylinks.db import EventRow, lineup_has, open_now_filters, upcoming_filter
 from partylinks.dedup import agreed_listing
 from partylinks.event_text import blocks_html, description_layout
+from partylinks.event_text.group import group_description
 from partylinks.placecards import first_opening
 from partylinks.placeinfo.seo import place_seo
 from partylinks.places import all_cities
@@ -372,8 +373,11 @@ def _end(row: EventRow, cfg: Settings) -> str | None:
     return _iso(row.end_at, cfg, row) or (row.local_date.isoformat() if row.local_date else None)
 
 
-def event_jsonld(row: EventRow, cfg: Settings, same_as: dict[str, list[dict[str, str]]] | None = None) -> dict[str, Any]:
-    """``same_as``: lineup name -> its links (partylinks.artist_links), each performer's sameAs."""
+def event_jsonld(
+    row: EventRow, cfg: Settings, same_as: dict[str, list[dict[str, str]]] | None = None, description: str | None = None
+) -> dict[str, Any]:
+    """``same_as``: lineup name -> its links (partylinks.artist_links), each performer's sameAs. ``description``:
+    the text shown on the page (event_text.group), else the row's own."""
     same_as = same_as or {}
     data: dict[str, Any] = {
         "@context": "https://schema.org",
@@ -388,7 +392,7 @@ def event_jsonld(row: EventRow, cfg: Settings, same_as: dict[str, list[dict[str,
         "location": _place(row),
         # The event's own artwork, else its drawn card (never the site logo).
         "image": [i for i in [_cover(cfg, row)] if i],
-        "description": _clip(row.description) or _clip(_about(row)),
+        "description": _clip(description or row.description) or _clip(_about(row)),
         "inLanguage": "he",
         "isAccessibleForFree": row.entry_type == "free" or None,
         "typicalAgeRange": f"{row.min_age}-" if row.min_age else None,
@@ -563,7 +567,8 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
         if row.lineup
         else ""
     )
-    text = blocks_html(description_layout(row.description, cfg.event_text))
+    own_text = group_description(session, row, cfg.event_text)  # or the same event's text on another site
+    text = blocks_html(description_layout(own_text, cfg.event_text))
     about = f"<h2>{t['about_event']}</h2>{text}" if text else ""
     venue_link = f'<a href="/venue/{quote(row.venue_name, safe="")}">{escape(row.venue_name)}</a>' if row.venue_name else ""
     crumbs = [(row.venue_name, f"/venue/{quote(row.venue_name, safe='')}")] if row.venue_name else []
@@ -571,13 +576,13 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
     more = "" if place else _more_html(session, cfg, lang, row)
     return Page(
         title=f"{row.title} · {_when(row, cfg, lang)} · {cfg.site.name}",
-        description=_clip(f"{summary}. {row.description or ''}", 160),
+        description=_clip(f"{summary}. {own_text or ''}", 160),
         # A place open every day is a new listing (and URL) each day: one page for it, its venue page.
         path=f"/venue/{quote(row.venue_name, safe='')}" if place and row.venue_name else event_path(row),
         lang=lang,
         image=_cover(cfg, row),
         og_type="event",
-        jsonld=[place[0] if place else event_jsonld(row, cfg, artist_links_for(session, cfg.artist_links, row.lineup or [])), _breadcrumbs(cfg, lang, *crumbs, (row.title, event_path(row)))],
+        jsonld=[place[0] if place else event_jsonld(row, cfg, artist_links_for(session, cfg.artist_links, row.lineup or []), own_text), _breadcrumbs(cfg, lang, *crumbs, (row.title, event_path(row)))],
         body=(
             f"<article><h1>{escape(row.title)}</h1><p>{escape(_when(row, cfg, lang))}</p>"
             f"<p>{venue_link} {escape(where)}</p><p>{escape(_price(row, lang))}</p>{lineup}"
