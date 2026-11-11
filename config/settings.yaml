@@ -653,6 +653,12 @@ enrichment:
     youth: ["teen party", "teens party", "מסיבת נוער", "מסיבות נוער"]
     # Culture words that name what the event is, read in the title only (title_genres).
     workshops: ["סדנה", "סדנת", "סדנאות", "workshop"]
+    # Phrases only: a bare "צילום" / "צלם" in a text is mostly the small print ("צילום: דנה לוי", a photographer on site).
+    photography: ["תערוכת צילום", "תערוכת הצילום", "תערוכות צילום", "פסטיבל הצילום", "פסטיבל צילום", "סדנת צילום", "סדנאות צילום",
+                  "סיור צילום", "סיורי צילום", "צילום רחוב", "צילום טבע", "צילום נוף", "צילום אנלוגי", "צילום בסמארטפון",
+                  # Not a bare "photography": in English texts it is the small print ("photography & videography").
+                  "photography exhibition", "photo exhibition", "photo festival", "photography festival", "photo walk",
+                  "photowalk", "photography workshop", "photography tour", "analog photography", "fine art photography"]
     kids: ["משחקייה", "ג'ימבורי", "לגיל הרך", "הצגת ילדים", "פעוטות"]
     theatre: ["הצגה", "מחזה", "מחזמר"]
     lectures: ["הרצאה", "הרצאת"]
@@ -689,6 +695,7 @@ enrichment:
     # Not "קהילה" / "קהילתי": community centres tag every event so (kids' shows, workshops), a place, not a meetup.
     meetups: ["فعاليات اجتماعية", "meetups", "community", "meeting", "פעילות חברתית", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות"]
     culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית", "תרבות", "קהילה", "קהילות", "אירועים קהילתיים", "מרכזים קהילתיים", "אירועי מרכזים קהילתיים", "פעילות קהילתית", "המרכז לאומנויות", "אירוע", "אירועים", "תרבות מבוגרים", "שבת תרבות", "מפגשי שכונות", "הבוטיק מועדון תרבות", "החיים הטובים", "לא שיגרתי"]
+    photography: ["צילום", "photography", "photo", "צילום ואמנות", "צילום ועריכה"]
     exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum", "יום המוזיאונים", "אירועי קומיקס", "tentoonstellingen"]
     workshops: ["יצירה", "בישול", "ورشات", "workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест", "course", "courses", "craft", "baking", "יצירה ומלאכה", "תחביבים", "ציור וצביעה", "עיצוב", "טיפוח וקוסמטיקה", "אופנה ולייף סטייל", "תכשיטים וצורפות", "פיסול ונגרות", "צילום", "סריגה ותפירה", "כתיבה ושירה", "גינון", "מייקרס", "סטודיו פתוח", "אומנות", "בישול ואפייה"]
     cinema: ["film", "סרט", "أفلام", "movies", "sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב", "מזרח אסיה על המסך הגדול"]
@@ -855,7 +862,7 @@ enrichment:
                 throwback, nightclubs, pool_party, karaoke, festival, nature_party, open_bar, over_40, youth]
     g_live: [live_show, israeli, rock_indie, jazz, classical_opera, world_balkan, greek, arabic, jewish_music]
     g_stage: [theatre, stand_up, cinema, dance]
-    g_culture: [culture, exhibitions, lectures, workshops, tours, religious, holidays, markets, jewish_music]
+    g_culture: [culture, exhibitions, photography, lectures, workshops, tours, religious, holidays, markets, jewish_music]
     g_kids: [kids, attractions, pools, escape_rooms]
     g_food: [food, happy_hour, fine_dining, kosher, coffee_carts, open_bar]
     g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, environment, volunteering, team_activities]

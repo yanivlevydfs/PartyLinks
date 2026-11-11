@@ -226,7 +226,7 @@ export const STRINGS = {
       hi_tech: "הייטק", conference: "כנסים", classical_opera: "קלאסית / אופרה",
       ai: "AI ובינה מלאכותית", cyber: "סייבר", software_dev: "פיתוח תוכנה", data: "דאטה", cloud_devops: "ענן ו-DevOps",
       startups: "סטארטאפים ויזמות", product: "ניהול מוצר", gaming: "גיימינג", web3: "בלוקצ׳יין ו-Web3",
-      festival: "פסטיבלים", meetups: "מפגשים", culture: "תרבות", exhibitions: "תערוכות", workshops: "סדנאות",
+      festival: "פסטיבלים", meetups: "מפגשים", culture: "תרבות", exhibitions: "תערוכות", photography: "צילום", workshops: "סדנאות",
       cinema: "קולנוע וסרטים", markets: "שווקים וקניות", food: "אוכל", environment: "סביבה", religious: "דת ומסורת",
       holidays: "חגים", sport: "ספורט", happy_hour: "האפי האוור",
       escape_rooms: "חדרי בריחה", attractions: "אטרקציות", coffee_carts: "עגלות קפה", fine_dining: "מסעדות שף", kosher: "מקומות כשרים", work_spaces: "חללי עבודה", volunteering: "התנדבות", team_activities: "פעילויות לצוות", nightclubs: "מועדונים", pools: "בריכות ופארקי מים", pool_party: "מסיבות בריכה", nature_party: "מסיבות טבע", open_bar: "אלכוהול חופשי", over_40: "מסיבות 40 פלוס", youth: "מסיבות נוער",

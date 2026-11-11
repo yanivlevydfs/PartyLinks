@@ -223,6 +223,8 @@ SYNONYMS.update({
     "תערוכה": ("exhibitions",), "תערוכות": ("exhibitions",), "גלריה": ("exhibitions",), "גלריות": ("exhibitions",), "מוזיאון": ("exhibitions",),
     "מוזיאונים": ("exhibitions",), "אמנות": ("exhibitions",), "exhibition": ("exhibitions",), "museum": ("exhibitions",),
     "museums": ("exhibitions",), "gallery": ("exhibitions",), "art": ("exhibitions",),
+    "צילום": ("photography",), "צלם": ("photography",), "צלמים": ("photography",), "צילומים": ("photography",),
+    "photography": ("photography",), "photo": ("photography",), "photos": ("photography",),
     "לילדים": ("kids",), "משפחות": ("kids",), "לכל המשפחה": ("kids",), "פעוטות": ("kids",), "תינוקות": ("kids",),
     "kids": ("kids",), "children": ("kids",), "family": ("kids",), "families": ("kids",),
     "סיור": ("tours",), "סיורים": ("tours",), "טיול": ("tours",), "טיולים": ("tours",), "סיור מודרך": ("tours",),

@@ -129,7 +129,7 @@ GENRES_HE = {
     "startups": "סטארטאפים ויזמות", "product": "ניהול מוצר", "gaming": "גיימינג", "web3": "בלוקצ׳יין ו-Web3",
     "cinema": "קולנוע וסרטים", "happy_hour": "האפי האוור", "dark_wave": "דארק ווייב / סינת׳", "yoga_wellness": "יוגה ורוחניות",
     "liberal": "ליברלי / חילופי זוגות", "kink": "בדסמ / פטיש", "sensual": "טנטרה וחושניות", "gender_balance": "איזון מגדרי",
-    "festival": "פסטיבלים", "meetups": "מפגשים", "culture": "תרבות", "exhibitions": "תערוכות", "workshops": "סדנאות",
+    "festival": "פסטיבלים", "meetups": "מפגשים", "culture": "תרבות", "exhibitions": "תערוכות", "photography": "צילום", "workshops": "סדנאות",
     "markets": "שווקים וקניות", "food": "אוכל", "environment": "סביבה", "religious": "דת ומסורת", "holidays": "חגים",
     "sport": "ספורט", "theatre": "תיאטרון", "kids": "ילדים ומשפחה", "lectures": "הרצאות והעשרה", "tours": "סיורים וטיולים",
     "dance": "מחול", "ballroom": "ריקודים סלוניים", "folk_dance": "ריקודי עם", "latin_dance": "ריקודים לטיניים", "salsa": "סלסה",

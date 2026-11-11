@@ -66,3 +66,14 @@ def test_unpublished_skipped_and_logo_not_artwork() -> None:
     assert parse_event({**PARTY, "published": False}, S, TZ) is None
     assert artwork('<meta property="og:image" content="https://x.co/img/site-logo.png">') is None
     assert artwork('<meta property="og:image" content="https://x.co/e/1.jpg">') == "https://x.co/e/1.jpg"
+
+
+def test_photography_from_title_not_from_small_print() -> None:
+    settings = Settings()
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    festival = {**NO_CLOCK, "id": "photo-israel", "title": "פסטיבל הצילום הבינלאומי"}
+    e = parse_event(festival, S, TZ)
+    assert e is not None and "photography" in enricher.enrich(e).genres
+    talk = {**NO_CLOCK, "id": "talk", "title": "ערב שירה", "description": "האירוע יצולם. צילום: דנה לוי"}
+    e = parse_event(talk, S, TZ)
+    assert e is not None and "photography" not in enricher.enrich(e).genres
