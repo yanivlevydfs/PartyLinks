@@ -60,6 +60,7 @@ from partylinks.enrichment import ABROAD_AREA, UNKNOWN_COUNTRY, Enricher, meters
 from partylinks.geo import Geocoder
 from partylinks.media import MediaStore
 from partylinks.models import ScrapedEvent
+from partylinks.parsing import is_site_logo
 from partylinks.places import all_cities
 from partylinks.popularity import models as popularity
 from partylinks.retention import is_current, purge_expired
@@ -629,6 +630,7 @@ def fill_artwork(event: ScrapedEvent, known: dict[str, list[str]], by_title: dic
     """An event its source gives no artwork keeps what it had (e.g. before selling out),
     else borrows the artwork of another listing of the same show."""
     images = known.get(event.source_event_id) or ([url] if (url := by_title.get(title_key(event.title) or "")) else [])
+    images = [u for u in images if not is_site_logo(u)]  # a logo stored by mistake is not kept
     if images:
         event.images, event.image_url = list(images), images[0]
 

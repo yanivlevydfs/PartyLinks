@@ -47,6 +47,14 @@ def og_image(page_html: str) -> str | None:
     return quote(image, safe=":/%?=&") if image and "admin-ajax" not in image else None
 
 
+_SITE_LOGO = re.compile(r"(?:^|/)content/images/(?:fb|og_image|[\w-]*no-pic)\.png")
+
+
+def is_site_logo(url: str | None) -> bool:
+    """The A.S. Bina municipal CMS's own logo / placeholder (fb.png, og_image.png, w-480-no-pic.png): no event picture."""
+    return bool(url and _SITE_LOGO.search(url))
+
+
 def jsonld_nodes(page_html: str) -> list[dict[str, Any]]:
     """Every object found in the page's ``application/ld+json`` blocks (incl. ``@graph``)."""
     found: list[dict[str, Any]] = []

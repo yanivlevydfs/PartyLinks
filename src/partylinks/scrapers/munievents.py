@@ -39,7 +39,7 @@ from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
-from partylinks.parsing import clean_str, html_to_text, zone
+from partylinks.parsing import clean_str, html_to_text, is_site_logo, zone
 from partylinks.places import PlaceIndex, israeli_places
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -106,11 +106,6 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         tz = zone(self.timezone)
         today = datetime.now(tz).date()
-        # The site's own logo (content/images/fb.png, og_image.png), stored before 2026-11-11, is no event
-        # picture: dropped here, or the run would keep it for every event whose page has none.
-        self.known_images = {
-            k: kept for k, urls in self.known_images.items() if (kept := [u for u in urls if "/content/images/" not in u])
-        }
         window =f"start={today - timedelta(FEED_DAYS)}&end={today + timedelta(FEED_DAYS)}"
         for site in self.settings.sites:
             feed_url = f"{site.url}/events/json/?{window}"
@@ -357,8 +352,9 @@ def _detail(page: LexborHTMLParser, base: str, tz: Any) -> dict[str, Any]:
         (pic.attributes.get("src") if pic else None)
         or (m.group(1) if bg and (m := _BG_URL.search(bg.attributes.get("style") or "")) else None)
         or (body_img.attributes.get("src") if body_img else None)
-        or (og_src if og_src and "content/images/" not in og_src else None)  # not the site's own logo
+        or og_src
     )
+    image = None if is_site_logo(image) else image
     gcal = page.css_first('a[href*="calendar.google.com"]')
     gcal_place = parse_qs(urlsplit(gcal.attributes.get("href") or "").query).get("location", [""])[0] if gcal else ""
     place = (
@@ -454,7 +450,8 @@ def build_event(
         city=city,
         source_genres=card.tags or [site.category],
         organizer=site.organizer or (site.city if site.regional else f"עיריית {site.city}"),
-        image_url=extra.get("image") or card.image,  # the page's full size, else the listing's thumbnail
+        # The page's full size, else the listing's thumbnail; never the site's logo / "no-pic" placeholder.
+        image_url=extra.get("image") or (None if is_site_logo(card.image) else card.image),
         min_price=min(prices) if prices else None,
         max_price=max(prices) if prices else None,
         is_sold_out=sold_out,

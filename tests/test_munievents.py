@@ -194,3 +194,17 @@ def test_poster_in_page_text_beats_site_logo() -> None:
     logo_only = build_event(card, '<meta property="og:image" content="content/images/og_image.png" />',
                             MuniSite(url="https://www.herzliya.muni.il", city="הרצליה"), TZ)
     assert logo_only is not None and logo_only.image_url is None
+
+
+def test_site_logo_never_kept_or_borrowed() -> None:
+    """A logo stored before the fix is dropped, whether known for the event or found by its title."""
+    from partylinks.service import fill_artwork
+
+    card = Card(url="https://www.rehovot.muni.il/events/1937/", event_id="1937", title="פלייבק הורים",
+                start=datetime(2026, 11, 12, 20, 0, tzinfo=zone(TZ)), end=None,
+                image="https://www.rehovot.muni.il/content/images/w-480-no-pic.png?v=2")
+    e = build_event(card, None, MuniSite(url="https://www.rehovot.muni.il", city="רחובות"), TZ)
+    assert e is not None and e.image_url is None and not e.images
+    logo = "https://www.rehovot.muni.il/content/images/fb.png"
+    fill_artwork(e, {e.source_event_id: [logo]}, {"x": logo})
+    assert not e.images
