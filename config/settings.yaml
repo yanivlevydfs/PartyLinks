@@ -672,7 +672,7 @@ enrichment:
     # Kosher bars and restaurants: HappyTLV's own FAQ answer on the place's page (happytlv.is_kosher),
     # declared with the place's category. Never read from text ("לא כשר" would match).
     kosher: ["kosher"]
-    nightclubs: ["nightclubs", "parties", "party", "מסיבה", "מועדוני לילה", "חיי-לילה", "חיי לילה", "gala & ball"]  # parties: Secret Tel Aviv's category
+    nightclubs: ["nightclubs", "parties", "party", "מסיבה", "מסיבות", "מועדוני לילה", "חיי-לילה", "חיי לילה", "gala & ball"]  # parties: Secret Tel Aviv's category
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
@@ -2222,6 +2222,17 @@ sources:
     # event with a place. Events also on secrettelaviv.com merge in dedup.
     enabled: true
     cron: "29 8,20 * * *"
+
+  gototlv:
+    # Daniel Tel Aviv (gototlv.co.il): a hand-picked two-week Tel Aviv guide (parties, culture, free
+    # stuff). Its page loads events.json: the whole edition (~30 events) in one request, plus one
+    # request per new event for the linked page's og:image (the guide has no images). No coordinates:
+    # the street is geocoded in Tel Aviv. Party rows link to Go-Out / Eventer / Chillz (merged by dedup).
+    enabled: true
+    cron: "50 9,21 * * *"
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
 
   klika:
     # KLIKA (klika.live): ticketing app for party lines ("clickas"), a Supabase app whose pages are an

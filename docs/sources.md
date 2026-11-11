@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 117 configured sources, 116 on. Each one has its own module in
+SPOTX collects from 118 configured sources, 117 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -38,6 +38,7 @@ pagination and what the listing and the event page provide.
 | `gagarin` | Gagarin (gagarin.co.il): club site on WordPress + The Events Calendar (`tribe.py`) | 08:46, 20:46 | yes |
 | `secrettelaviv` | Secret Tel Aviv (secrettelaviv.com/tickets): curated city listings (parties, live music, culture...) | 07:59, 19:59 | yes |
 | `secrettelavivapp` | Secret Tel Aviv App (secrettelaviv.app): the same team's newer Base44 guide, read from the public entities API its pages call (upcoming / live events only, venue locations, categories mapped like the .com's); 3 requests a run, coordinates on almost every event; merged with `secrettelaviv` by dedup | 08:29, 20:29 | yes |
+| `gototlv` | Daniel Tel Aviv (gototlv.co.il): a hand-picked two-week Tel Aviv guide (parties, culture, free entry); its page loads `events.json`, the whole edition (~30 events) in one request, plus the linked page's og:image per new event (the guide has no images); no coordinates (streets geocoded in Tel Aviv); party rows link to Go-Out / Eventer / Chillz and merge with them by dedup | 09:50, 21:50 | yes |
 | `makore` | Makore (makore.co.il, "מה קורה"): an events guide for all of Israel | 09:41, 21:41 | yes |
 | `happytlv` | HappyTLV (happytlv.com): Tel Aviv parties, and bars' happy hours (one event per day the deal runs, category **Happy Hour**), plus places across Israel, one event per day each is open (all day when its page gives no hours): escape rooms, attractions, coffee carts, chef restaurants, work spaces, volunteering, clubs, team activities (no address, so no map pin), each its own category. Each place also keeps its weekly hours, rating, Ontopo link, amenities and more (`partylinks.placeinfo`, which adds Ontopo's venues and the place's own website) | 05:13, 17:13 | yes |
 | `beatradar` | Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties, with its own genre tags; merged with those sources by dedup. Blocked for now (see below) | 08:26, 20:26 | yes |

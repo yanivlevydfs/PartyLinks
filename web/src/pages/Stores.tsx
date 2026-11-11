@@ -54,7 +54,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   issta: ["https://www.issta.co.il", "abroad"], megaevents: ["https://www.mega-events.co.il", "abroad"],
   viagogo: ["https://www.viagogo.com", "abroad"], swaptix: ["https://swaptix.co.il", "tickets"], xplorer: ["https://www.xplorer.co.il", "abroad"],
   livetickets: ["https://www.livetickets.co.il", "abroad"], tickethouse: ["https://www.ticket-house.com", "abroad"],
-  secrettelaviv: ["https://www.secrettelaviv.com", "guide"], secrettelavivapp: ["https://secrettelaviv.app", "guide"], klika: ["https://klika.live", "tickets"],
+  secrettelaviv: ["https://www.secrettelaviv.com", "guide"], secrettelavivapp: ["https://secrettelaviv.app", "guide"], klika: ["https://klika.live", "tickets"], gototlv: ["https://gototlv.co.il", "guide"],
   beatradar: ["https://beatradar.co.il", "guide"],
   happytlv: ["https://www.happytlv.com", "guide"], tiuli: ["https://www.tiuli.com", "guide"], meety: ["https://meety.co.il", "guide"],
   funzing: ["https://il.funzing.com", "tickets"], easytix: ["https://easytix.co.il", "tickets"], ticketeams: ["https://ticketeams.co.il", "abroad"],

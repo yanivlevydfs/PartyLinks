@@ -55,6 +55,7 @@ from partylinks.scrapers.jerusalemmuni import JerusalemMuniScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
 from partylinks.scrapers.kikarhamusica import KikarHamusicaScraper
 from partylinks.scrapers.kishreyteufa import KishreyTeufaScraper
+from partylinks.scrapers.gototlv import GotoTlvScraper
 from partylinks.scrapers.klika import KlikaScraper
 from partylinks.scrapers.kupatbravo import KupatbravoScraper
 from partylinks.scrapers.leaan import LeaanScraper
@@ -234,6 +235,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         MeetyScraper,
         SecretTelAvivAppScraper,
         KlikaScraper,
+        GotoTlvScraper,
         FunzingScraper,
         EasytixScraper,
         TicketeamsScraper,
