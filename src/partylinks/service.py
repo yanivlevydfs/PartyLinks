@@ -391,6 +391,10 @@ class ScrapeService:
                 events = list(batch.values())
                 batch.clear()
                 saved += await self._blocking(self._save, events, failures)
+                # Each batch's images now, not only after the run: deploys every ~30 min cut long runs
+                # (munievents, 2026-11-11), so their pictures were never stored and the site logo stayed.
+                if scraper is not None and self.settings.media.download and not self._stopping.is_set():
+                    await self._post_step(source, "artwork", failures, self.media.download_pending(source, scraper.working_http))
 
         stall = self.settings.scheduler.stall_timeout_seconds
         loop = asyncio.get_running_loop()
@@ -433,6 +437,7 @@ class ScrapeService:
                                 batch[enriched.event_id] = enriched
                             if len(batch) >= SAVE_BATCH_SIZE:
                                 await flush()
+                                deadline.reschedule(min(hard_end, loop.time() + stall))  # its images were progress
                     except SourceBlockedError as exc:
                         status, error = "blocked", str(exc)  # keep what was collected before the refusal
                         log.warning("source %s blocked: %s", source, exc)
