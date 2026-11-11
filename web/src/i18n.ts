@@ -46,6 +46,11 @@ export const STRINGS = {
     updatedAgo: (h: number) => (h < 1 ? "הכרטיסים עודכנו עכשיו" : `הכרטיסים והמחירים עודכנו לפני ${h} שעות`),
     unlisted: "האירוע הוסר מאתר המקור (בוטל או ירד מהמכירה). מומלץ לבדוק באתר לפני שמגיעים.",
     artistsTitle: "אמנים ו־DJs",
+    artistFilter: {
+      category: "קטגוריה", genre: "ז׳אנר", where: "איפה", sort: "מיון", all: "הכל",
+      israel: "בישראל", abroad: "בחו״ל", popular: "הכי הרבה אירועים", az: "א־ת",
+      count: (n: number) => `${n.toLocaleString("he")} אמנים`, clear: "ניקוי הסינון",
+    },
     verified: "אמן מאומת",
     upcomingAt: "אירועים קרובים",
     noLocation: (n: number) => `${heEvents(n)} ללא מיקום על המפה`,
@@ -276,6 +281,11 @@ export const STRINGS = {
     updatedAgo: (h: number) => (h < 1 ? "Tickets updated just now" : `Tickets and prices updated ${h}h ago`),
     unlisted: "This event was removed from its source site (cancelled or pulled). Check there before you go.",
     artistsTitle: "Artists & DJs",
+    artistFilter: {
+      category: "Category", genre: "Genre", where: "Where", sort: "Sort", all: "All",
+      israel: "In Israel", abroad: "Abroad", popular: "Most events", az: "A-Z",
+      count: (n: number) => `${n.toLocaleString("en")} artists`, clear: "Clear filters",
+    },
     verified: "Verified artist",
     upcomingAt: "Upcoming events",
     noLocation: (n: number) => `${enEvents(n)} ${n === 1 ? "has" : "have"} no map location`,

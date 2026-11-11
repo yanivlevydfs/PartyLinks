@@ -581,7 +581,7 @@ export function Calendar({ value, counts, onPick }: { value: string; counts: Map
   );
 }
 
-function FilterRow({ label, children, scroll }: { label: string; children: ReactNode; scroll?: boolean }) {
+export function FilterRow({ label, children, scroll }: { label: string; children: ReactNode; scroll?: boolean }) {
   return (
     <div className="frow" role="group" aria-label={label}>
       <span className="frow-label">{label}</span>

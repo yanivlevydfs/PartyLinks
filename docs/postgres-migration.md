@@ -940,3 +940,6 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 ### 2026-11-11 (`/categories`: ticket sites within the request's filters)
 - **No new table or column.** The `sources` facet of `/categories` used to count every upcoming Israeli event (`country IS NULL`) whatever the request asked. It now counts the listings of the groups that match the request's filters (`group_id IN (SELECT group_id FROM events WHERE <filters>)`): an artist's or a venue's ticket sites on its page, abroad sites abroad, Israel's on the home page. Uses the `group_id` index. On prod (~103k listing rows) the home-page query went from 0.23s to 0.39s, behind the response cache; an artist's takes 0.08s.
 - **Tests:** `tests/` categories and source tests.
+### 2026-11-12 (`/artists/tags`: the artists index's filter)
+- **No new table or column.** New read-only query (`partylinks.artist_filter.routes.tags`): `lineup, genres, in_target_city, area, country` of upcoming primary events with a lineup (`upcoming_filter() AND is_primary AND lineup IS NOT NULL`), grouped in Python per casefolded artist name. At prod size (115k rows) it takes ~1.3 s for the query and ~2.4 s in all; the result is held in the API response cache, so a visitor waits only on a rebuild. Uses the existing indexes of the upcoming filter, as `similar.index` does.
+- **Tests:** `tests/test_artist_filter.py`.

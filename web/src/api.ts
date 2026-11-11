@@ -5,7 +5,7 @@ export type Params = Record<string, string | string[] | undefined>;
 
 const PAGE_SIZE = 24;
 
-async function getJSON<T>(url: string, signal?: AbortSignal): Promise<T> {
+export async function getJSON<T>(url: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   return res.json();

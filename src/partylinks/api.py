@@ -1372,6 +1372,7 @@ def _register_routes(app: FastAPI) -> None:
     from partylinks.placeinfo.routes import router as place_info_router
 
     app.include_router(place_info_router)
+    from partylinks.artist_filter.routes import router as artist_filter_router
     from partylinks.evening.routes import router as evening_router
     from partylinks.holiday_pages.routes import router as holidays_router
     from partylinks.similar.routes import router as similar_router
@@ -1380,6 +1381,7 @@ def _register_routes(app: FastAPI) -> None:
     app.include_router(evening_router)
     app.include_router(holidays_router)
     app.include_router(similar_router)
+    app.include_router(artist_filter_router)
     app.include_router(top_router)
     app.include_router(ads_admin_router)
     from partylinks.config_store.routes import router as config_overrides_router

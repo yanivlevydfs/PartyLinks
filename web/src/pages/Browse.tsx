@@ -1,11 +1,12 @@
 // Venue / artist pages and their index lists.
-import { useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo } from "../api";
 import type { Facet } from "../types";
 import { ArtistLinks } from "../artist_links/ArtistLinks";
 import { ArtistPlayer } from "../artist_links/ArtistPlayer";
 import { SimilarArtists } from "../similar/SimilarArtists";
+import { useArtistFilter } from "../artist_filter/ArtistFilter";
 import { MapLinks } from "../places/MapLinks";
 import { ScopedEvents } from "../filter_scope/ScopedEvents";
 import { artistPath, Chip, countryName, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
@@ -14,8 +15,9 @@ const PAGE = 60;
 // A to Z: English (abc) then Hebrew (אבג), case and accents ignored, "2" before "10".
 const byName = new Intl.Collator(["en", "he"], { numeric: true, sensitivity: "base" });
 
-function FacetIndex({ title, facets, path, byArea, logos }: {
+function FacetIndex({ title, facets, path, byArea, logos, toolbar, ordered, filterKey }: {
   title: string; facets: Facet[] | undefined; path: (v: string) => string; byArea?: boolean; logos?: boolean;
+  toolbar?: ReactNode; ordered?: boolean; filterKey?: string; // a filter above the list, keeping its own order
 }) {
   const { t } = useT();
   const [q, setQ] = useState("");
@@ -24,9 +26,11 @@ function FacetIndex({ title, facets, path, byArea, logos }: {
   const [limit, setLimit] = useState(PAGE);
   const areas = byArea ? [...new Set((facets ?? []).map((f) => f.area).filter((a): a is string => !!a))] : [];
   useTitle(title);
+  useEffect(() => setLimit(PAGE), [filterKey]);
   // Case-insensitive, ignores spaces/punctuation, so "gray club" finds "Gray Club תל אביב-יפו".
   const norm = (s: string) => s.toLocaleLowerCase().replace(/[\s\-_.·'"׳״]/g, "");
-  const inArea = facets?.filter((f) => !area || f.area === area).sort((a, b) => byName.compare(a.value, b.value));
+  const inArea = facets?.filter((f) => !area || f.area === area);
+  if (!ordered) inArea?.sort((a, b) => byName.compare(a.value, b.value));
   const match = (s: string) => inArea?.filter((f) => norm(f.value).includes(s)) ?? [];
   const exact = match(norm(q));
   // A typo at the end ("יניבדד") finds nothing: drop letters from the end until names match (3 letters at least).
@@ -39,6 +43,7 @@ function FacetIndex({ title, facets, path, byArea, logos }: {
         <input className="search" type="search" value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} placeholder={t.searchList} aria-label={t.searchList} />
       </Hero>
       <main className="wrap">
+        {toolbar}
         {areas.length > 0 && (
           <div className="chips filters" role="group" aria-label={t.area}>
             <Chip on={!area} onClick={() => { setArea(null); setLimit(PAGE); }}>📍 {t.allAreas}</Chip>
@@ -77,7 +82,8 @@ export function VenuesIndex() {
 
 export function ArtistsIndex() {
   const { t } = useT();
-  return <FacetIndex title={t.artistsTitle} facets={useCategories({ anywhere: "true" }).data?.lineup} path={artistPath} />;
+  const filter = useArtistFilter(useCategories({ anywhere: "true" }).data?.lineup);
+  return <FacetIndex title={t.artistsTitle} facets={filter.facets} path={artistPath} toolbar={filter.rows} ordered={filter.sorted} filterKey={filter.key} />;
 }
 
 export function VenuePage() {

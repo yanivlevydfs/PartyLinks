@@ -27,6 +27,7 @@ from partylinks.accounts.config import AccountsSettings
 from partylinks.artist_links.config import ArtistLinksSettings
 from partylinks.bot.config import BotSettings
 from partylinks.config_store.source import OverridesSource
+from partylinks.artist_filter.config import ArtistFilterSettings
 from partylinks.evening.config import EveningSettings
 from partylinks.event_text.config import EventTextSettings
 from partylinks.holiday_pages.config import HolidayPagesSettings
@@ -698,6 +699,7 @@ class Settings(BaseSettings):
     event_text: EventTextSettings = Field(default_factory=EventTextSettings)  # how a description reads (partylinks.event_text)
     holiday_pages: HolidayPagesSettings = Field(default_factory=HolidayPagesSettings)  # partylinks.holiday_pages
     lines: LinesSettings = Field(default_factory=LinesSettings)  # weekly lines (partylinks.lines)
+    artist_filter: ArtistFilterSettings = Field(default_factory=ArtistFilterSettings)  # the artists index's filter
     similar: SimilarSettings = Field(default_factory=SimilarSettings)  # artists like an artist (partylinks.similar)
     weekly_top: WeeklyTopSettings = Field(default_factory=WeeklyTopSettings)  # this week's top (partylinks.weekly_top)
     place_info: PlaceInfoSettings = Field(default_factory=PlaceInfoSettings)  # hours, booking of places (partylinks.placeinfo)
