@@ -415,6 +415,9 @@ class DedupSettings(BaseModel):
     secondhand_price_min_ratio: float = Field(0.3, ge=0, le=1)
     # Which listing represents a merged event (first = preferred). Unlisted sources rank last.
     source_priority: list[str] = Field(default_factory=list)
+    # One site's short name and full name of one evening at one place this far apart are its doors and its
+    # show, not two sessions (OGO: "מדע על הבר" 19:30, "מדע על הבר: התחדשות עירונית כהזדמנות" 20:00).
+    doors_gap_minutes: int = Field(30, ge=0)
     # Sources made of many sites, one per tenant (the id's second part, "smarticket:lotus:1488"): two
     # tenants' pages are two box offices, not one site's sessions.
     tenant_sources: list[str] = Field(default_factory=lambda: ["smarticket", "smarticket_il", "munievents", "pres", "pres_il"])

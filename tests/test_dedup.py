@@ -629,3 +629,24 @@ def test_a_listing_whose_text_links_the_other_listings_page_is_one_event(tmp_pat
     ])  # fmt: skip
     assert groups["munievents:herzliya:14246"][0] == groups["munievents:herzliya-matnasim:8803"][0]
     assert groups["munievents:herzliya-matnasim:8804"][0] != groups["munievents:herzliya:14246"][0]
+
+
+def test_an_evenings_doors_and_its_talk_on_one_site_join_the_citys_page(tmp_path: Path) -> None:
+    """Herzliya: the community centres and OGO list "מדע על הבר" at 19:30 (their text links the city's page);
+    the city, Smarticket and OGO's two other pages have the talk at 20:00. One event; hourly workshops stay apart."""
+    city = "https://www.herzliya.muni.il/events/14246/"
+    cafe = {"venue_name": "קפה אנט", "city": "הרצליה", "source_genres": ["lectures"]}
+    doors = START - timedelta(minutes=30)
+    _, groups = grouped(tmp_path, [
+        listing("munievents", "herzliya:14246", "מדע על הבר: התחדשות עירונית כהזדמנות", url=city, **cafe),
+        listing("smarticket", "herzliya:3836", "מדע על הבר: התחדשות עירונית כהזדמנות", **cafe),
+        listing("ogo", "a", "הרצאה של בני פירסט: «התחדשות עירונית כהזדמנות»", **cafe),
+        listing("ogo", "b", "מדע על הבר: התחדשות עירונית כהזדמנות", **cafe),
+        listing("ogo", "c", "מדע על הבר", start=doors, description="ערב מדע על הבר", **cafe),
+        listing("munievents", "herzliya-matnasim:8803", "מדע על הבר", start=doors, description=f"פרטים: {city}", **cafe),
+        listing("smarticket", "studio:1", "סדנת חוסן באמצעות בעלי חיים", start=START + timedelta(hours=3)),
+        listing("smarticket", "studio:2", "סדנת חוסן באמצעות בעלי חיים", start=START + timedelta(hours=3, minutes=30)),
+    ])  # fmt: skip
+    herzliya = {g for k, (g, _) in groups.items() if "studio" not in k}
+    assert len(herzliya) == 1
+    assert groups["smarticket:studio:1"][0] != groups["smarticket:studio:2"][0]

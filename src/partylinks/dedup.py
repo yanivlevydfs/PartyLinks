@@ -367,14 +367,21 @@ class Deduplicator:
         promoter, so only its hours count, and only with the party window (see _contradict)."""
         if self._site(a) != self._site(b) or a.source in self._promoter_pages:
             return False
+        distance = _distance_m(a, b)
+        same_place = bool(a.venue_slug) and a.venue_slug == b.venue_slug or distance is not None and distance <= 1
         if a.start is not None and b.start is not None and a.start != b.start:
-            return True
+            # Sessions, except an evening's doors and its talk at one place under other names: OGO's "מדע על הבר"
+            # at 19:30 and "מדע על הבר: התחדשות עירונית כהזדמנות" / "הרצאה של בני פירסט" at 20:00 (Nov 2026).
+            # Only no contradiction: joining still needs a match. The same name at two hours stays two
+            # sessions (a workshop at 14:00 and at 15:00).
+            gap = abs((a.start - b.start).total_seconds())
+            return not (
+                same_place and a.timed and b.timed and a.core != b.core and gap <= self.settings.doors_gap_minutes * 60
+            )
         # A guide's two pages of one show, one per seller, at one hour and hall: "מדיאה - תיאטרון הקאמרי" and
         # "מדיאה - עם עמוס תמם וכנרת לימוני - תיאטרון הקאמרי" (Makore, Nov 2026). One name holds the other.
         # Or its two pages of one talk under two names around one name ("מדע על הבר: התחדשות עירונית כהזדמנות" /
         # "הרצאה של בני פירסט: «התחדשות עירונית כהזדמנות»", OGO, Nov 2026): 3+ shared distinctive words.
-        distance = _distance_m(a, b)
-        same_place = bool(a.venue_slug) and a.venue_slug == b.venue_slug or distance is not None and distance <= 1
         shared = a.core & b.core
         if same_place and a.timed and b.timed and (
             self._contains(a, b) or len(shared) >= 3 and self._distinctive(shared)
