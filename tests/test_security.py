@@ -158,6 +158,19 @@ def test_scrapers_are_slowed_and_scripts_refused(tmp_path: Path) -> None:
         assert c.post("/plans", json={"event_id": "x"}, headers={"user-agent": "curl/8.5"}).status_code == 403
         assert c.get("/api/me/groups", headers={"user-agent": "curl/8.5"}).status_code == 403
         assert c.get("/plan/x", headers={"user-agent": "curl/8.5"}).status_code != 403  # the preview page stays open
+        assert c.get("/images/1/640.webp", headers={"user-agent": "curl/8.5"}).status_code == 403  # no bulk copying
+        preview = {"user-agent": "WhatsApp/2.23.20.0"}  # link previews and search engines still get the picture
+        assert c.get("/images/1/640.webp", headers=preview).status_code not in (403, 429)  # not stored, not refused
+
+
+def test_images_have_their_own_limit(tmp_path: Path) -> None:
+    """Walking /images/<id> past the limit is a 429 to come back later, not a ban."""
+    settings = settings_for(tmp_path)
+    settings.security.images_rate_limit_per_minute = 3
+    with TestClient(create_app(settings, start_scheduler=False), client=("198.51.100.5", 1)) as c:
+        codes = [c.get(f"/images/{i}/640.webp").status_code for i in range(4)]
+        assert 429 not in codes[:3] and codes[3] == 429
+        assert c.get("/health").status_code == 200  # no strike: the rest of the site stays open
 
 
 ADMIN = {"authorization": "Bearer s3cret"}

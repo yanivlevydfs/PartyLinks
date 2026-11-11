@@ -622,6 +622,10 @@ class SecuritySettings(BaseModel):
     # a scraper thousands. Over it = 429, no strike (many phones share one carrier IP).
     data_rate_limit_per_minute: int = Field(60, ge=1)
     data_rate_limit_per_hour: int = Field(1200, ge=1)
+    # /images/ requests that miss Cloudflare's cache, per IP: a person's cold pages need a few hundred,
+    # copying every picture by id needs thousands.
+    images_rate_limit_per_minute: int = Field(300, ge=1)
+    images_rate_limit_per_hour: int = Field(3000, ge=1)
     # Vulnerability probes (/.env, /wp-login.php...), failed admin logins and rate-limit hits are
     # strikes; this many within ban_minutes bans the IP for ban_minutes.
     ban_after_strikes: int = Field(5, ge=1)
@@ -635,7 +639,7 @@ class SecuritySettings(BaseModel):
         "AhrefsBot", "SemrushBot", "MJ12bot", "DotBot", "Bytespider", "PetalBot", "DataForSeoBot",
         "BLEXBot", "serpstatbot", "MegaIndex", "Barkrowler", "ZoominfoBot", "Scrapy",
     ])  # fmt: skip
-    # Scripts and headless browsers: refused (403) on the JSON data API and /go/ only, so AI assistants
+    # Scripts and headless browsers: refused (403) on the JSON data API, /go/ and /images/ only, so AI assistants
     # browsing for a person can still read the pages and llms.txt.
     blocked_clients: list[str] = Field(default_factory=list)
 

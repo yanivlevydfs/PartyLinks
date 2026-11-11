@@ -286,8 +286,15 @@ class SecurityMiddleware:
         if blocked and not local and path not in ("/robots.txt", "/health"):
             return await reject(403, "forbidden")
         script = any(c.lower() in agent.lower() for c in cfg.blocked_clients)
-        if script and not local and path.startswith((*DATA_PATHS, *APP_API_PATHS, "/go/")):
+        if script and not local and path.startswith((*DATA_PATHS, *APP_API_PATHS, "/go/", "/images/")):
             return await reject(403, "forbidden")
+        # Artwork: Cloudflare serves the cached copies, so only misses arrive here. Walking the ids to copy
+        # every picture is a 429 to come back later (no strike: one cold home page draws a hundred).
+        if not local and not owner and path.startswith("/images/") and (
+            self.guard.over_limit(ip, "images", cfg.images_rate_limit_per_minute, now)
+            or self.guard.over_limit(ip, "images-hour", cfg.images_rate_limit_per_hour, now, 3600)
+        ):
+            return await reject(429, "too many requests", [(b"retry-after", b"60")])
         if not local and not owner and not path.startswith((*STATIC_PATHS, *WEBHOOK_PATHS)):
             limit = cfg.admin_rate_limit_per_minute if admin else cfg.rate_limit_per_minute
             if self.guard.over_limit(ip, "admin" if admin else "all", limit, now):
