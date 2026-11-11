@@ -25,7 +25,7 @@ from datetime import datetime
 from decimal import Decimal
 from difflib import SequenceMatcher
 from typing import Any
-from urllib.parse import parse_qsl, urlparse
+from urllib.parse import parse_qsl, unquote, urlparse
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -83,6 +83,7 @@ class _Listing:
     timed: bool = True  # False: the source gave only the date
     abroad: bool = False
     house_numbers: frozenset[str] = frozenset()
+    named_link: tuple[str, str] | None = None  # (box office host, title_key) of a link to a show by its name
     refers: str | None = None  # the first link in its text: "למידע מלא: https://www.herzliya.muni.il/events/14246/"  # numbers in the address ("Ben Gurion Blvd 32" / "בן גוריון 32")
 
 
@@ -121,6 +122,20 @@ def url_key(url: str | None) -> str:
     if bravo := _BRAVO_SEANCE.match(path):
         return f"kupatbravo.co.il/announce/buy/{bravo.group(1)}"
     return f"{host}{path}{query}"
+
+
+def named_link(url: str | None, stopwords: set[str]) -> tuple[str, str] | None:
+    """A link to a Smarticket show by its name, not its id: OGO's "tlv-citymuseum.smarticket.co.il/סיור_עיר_על_פני_מים_סוערים"
+    for the museum's "/event/7888". (host, title_key of the name), so it can find the show it names."""
+    try:
+        parsed = urlparse(url or "")
+    except ValueError:
+        return None
+    host, path = parsed.netloc.lower().removeprefix("www."), unquote(parsed.path).strip("/")
+    if not host.endswith(".smarticket.co.il") or not path or "/" in path or "id" in dict(parse_qsl(parsed.query)):
+        return None
+    name = title_key(path.replace("_", " "), stopwords)
+    return (host, name) if len(name.split()) >= 3 else None
 
 
 def _distance_m(a: _Listing, b: _Listing) -> float | None:
@@ -196,6 +211,8 @@ class Deduplicator:
             return True
         if b.refers and b.refers == a.url_key and a.url_key not in shared_urls and self._site(a) != self._site(b):
             return True
+        if (a.named_link or b.named_link) and (self._names_the_show(a, b) or self._names_the_show(b, a)):
+            return True
         if not a.title_key or not b.title_key:
             return False
         ratio = self._ratio(a, b, self.settings.title_similarity)
@@ -229,6 +246,17 @@ class Deduplicator:
             and ratio >= s.strong_title_similarity and len(a.title_key.split()) >= 3
             and a.start is not None and b.start is not None
             and abs((a.start - b.start).total_seconds()) <= s.strong_max_start_gap_minutes * 60
+        )  # fmt: skip
+
+    @staticmethod
+    def _names_the_show(a: _Listing, b: _Listing) -> bool:
+        """A links to B's box office by B's very name, at B's very minute: one show whatever A's pin says (OGO
+        put the City Museum's tours at the Tel Aviv Museum of Art, 1.6 km off, Nov 2026). The minute tells
+        one name's sessions apart (the opening at 09:00 and at 10:00)."""
+        return (
+            a.named_link is not None and b.url_key.startswith(a.named_link[0] + "/")
+            and a.named_link[1] == b.title_key
+            and a.timed and b.timed and a.start is not None and a.start == b.start
         )  # fmt: skip
 
     def _same_hall(self, a: _Listing, b: _Listing, ratio: float) -> bool:
@@ -387,6 +415,10 @@ class Deduplicator:
             self._contains(a, b) or len(shared) >= 3 and self._distinctive(shared)
         ):
             return False
+        # Its two pages of one show linking one box office page by name ("סיור עיר על פני מים סוערים" and
+        # "מוזיאון העיר: עיר על פני מים סוערים", OGO, Nov 2026, under two pins): one show.
+        if a.named_link is not None and a.named_link == b.named_link and a.timed and b.timed:
+            return False
         return a.title_key != b.title_key
 
     def _box_office_hours(self, listings: list[_Listing]) -> None:
@@ -480,6 +512,7 @@ class Deduplicator:
                 core=frozenset(title.split()) - self._filler, timed=r.time_known is not False, abroad=bool(r.country),
                 house_numbers=frozenset(_NUMBER.findall(r.address or "")),
                 refers=url_key(r.text_link) or None,
+                named_link=named_link(_str(extra.get("purchase_url")), self._stopwords),
             )  # fmt: skip
             # An unlisted row stands alone: as a group's primary it would hide its listed copies.
             if r.local_date is None or r.is_listed is False:

@@ -650,3 +650,28 @@ def test_an_evenings_doors_and_its_talk_on_one_site_join_the_citys_page(tmp_path
     herzliya = {g for k, (g, _) in groups.items() if "studio" not in k}
     assert len(herzliya) == 1
     assert groups["smarticket:studio:1"][0] != groups["smarticket:studio:2"][0]
+
+
+def test_a_link_to_a_box_office_show_by_its_name_joins_that_show_at_that_minute(tmp_path: Path) -> None:
+    """City Museum, Nov 2026: OGO linked the museum's Smarticket shows by name, pinned 1.6 km off."""
+    city_museum, art_museum, cafe = (32.0735, 34.7711), (32.0776, 34.7866), (32.0736, 34.7712)
+    shop = "https://tlv-citymuseum.smarticket.co.il"
+    tour = shop + "/%D7%A1%D7%99%D7%95%D7%A8_%D7%A2%D7%99%D7%A8_%D7%A2%D7%9C_%D7%A4%D7%A0%D7%99_%D7%9E%D7%99%D7%9D_%D7%A1%D7%95%D7%A2%D7%A8%D7%99%D7%9D"
+    opening = shop + "/פתיחת_התערוכה_השנתית_-_עיר_על_מים_סוערים"
+    _, groups = grouped(tmp_path, [
+        listing("smarticket", "tlv-citymuseum:7888", "סיור עיר על פני מים סוערים", where=city_museum,
+                venue_name="מוזיאון העיר תל אביב-יפו", city="תל אביב", url=f"{shop}/event/7888"),
+        listing("ogo", "a", "סיור עיר על פני מים סוערים", where=art_museum, venue_name="מוזיאון תל אביב לאומנות",
+                city="תל אביב", extra={"purchase_url": tour}),
+        listing("ogo", "b", "מוזיאון העיר: עיר על פני מים סוערים", where=cafe, venue_name="Amita Pastry House",
+                city="תל אביב", extra={"purchase_url": tour + "?"}),
+        # One name at two hours: the link joins the session at its own minute only.
+        listing("smarticket", "tlv-citymuseum:7848", "פתיחת התערוכה השנתית - עיר על מים סוערים", where=city_museum,
+                start=START + timedelta(hours=1), venue_name="מוזיאון העיר תל אביב-יפו", city="תל אביב", url=f"{shop}/event/7848"),
+        listing("smarticket", "tlv-citymuseum:7849", "פתיחת התערוכה השנתית - עיר על מים סוערים", where=city_museum,
+                start=START + timedelta(hours=2), venue_name="מוזיאון העיר תל אביב-יפו", city="תל אביב", url=f"{shop}/event/7849"),
+        listing("ogo", "c", "פתיחת התערוכה השנתית - עיר על מים סוערים", where=art_museum, start=START + timedelta(hours=2),
+                venue_name="מוזיאון תל אביב לאומנות", city="תל אביב", extra={"purchase_url": opening}),
+    ])  # fmt: skip
+    assert groups["smarticket:tlv-citymuseum:7888"][0] == groups["ogo:a"][0] == groups["ogo:b"][0]
+    assert groups["ogo:c"][0] == groups["smarticket:tlv-citymuseum:7849"][0] != groups["smarticket:tlv-citymuseum:7848"][0]
