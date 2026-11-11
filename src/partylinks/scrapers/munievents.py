@@ -373,7 +373,7 @@ def ticket_link(detail_html: str, base: str, skip_hosts: list[str]) -> str | Non
     page = LexborHTMLParser(detail_html)
     if page.css_first(".event-item-row.tickets"):
         return None
-    for a in (page.css_first("main") or page.root).css("a.btn[href]"):
+    for a in (page.css_first("main") or page).css("a.btn[href]"):
         href = a.attributes.get("href") or ""
         host = urlsplit(href).hostname or ""
         if (
