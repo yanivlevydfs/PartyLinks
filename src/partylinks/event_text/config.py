@@ -23,3 +23,5 @@ class EventTextSettings(BaseModel):
     # An event whose own text is shorter than this shows the longest text of its other listings
     # (the same event on another site, partylinks.event_text.group); 0 = only its own text.
     group_text_min_chars: int = Field(80, ge=0)
+    # ...or when another listing's text is this many times longer than its own.
+    group_text_longer_ratio: float = Field(2.0, ge=1)

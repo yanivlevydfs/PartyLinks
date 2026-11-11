@@ -30,6 +30,11 @@ def test_an_event_without_text_shows_its_duplicates_text(tmp_path: Path) -> None
         assert group_description(s, talk, settings.event_text) == LECTURE
         talk.description = "קצר"  # a few words of its own: still the full text
         assert group_description(s, talk, settings.event_text) == LECTURE
+        talk.description = "ערב מדע על הבר, העיר הירוקה. מרצה: ד\"ר בני פירסט, מתכנן עירוני ומרצה באוניברסיטה העברית."  # says enough
+        assert group_description(s, talk, settings.event_text) == talk.description
+        settings.event_text.group_text_longer_ratio = 1.1  # but far shorter than the city's: the city's
+        assert group_description(s, talk, settings.event_text) == LECTURE
+        talk.description = "קצר"
         settings.event_text.group_text_min_chars = 0  # off: only its own
         assert group_description(s, talk, settings.event_text) == "קצר"
         talk.description = None

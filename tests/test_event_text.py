@@ -61,7 +61,8 @@ def test_markdown_titles_rules_and_html() -> None:
     assert kinds("**Event Details**\n---\ntext\n## Speaker:\nname") == ["h", "p", "h", "p"]
     html = blocks_html(description_layout("**About**\nsee [the site](https://a.example/x) 1 < 2 & **soon**\nline", S))
     assert html.startswith('<h3 dir="ltr">About</h3>')
-    assert "see the site 1 &lt; 2 &amp; soon<br>line" in html and "**" not in html
+    link = '<a href="https://a.example/x" target="_blank" rel="noopener noreferrer nofollow ugc">the site</a>'
+    assert f"see {link} 1 &lt; 2 &amp; soon<br>line" in html and "**" not in html  # links clickable, as in the app
 
 
 def test_direction_follows_the_text_not_the_first_word() -> None:
@@ -112,3 +113,11 @@ def test_hatarbut_finds_the_full_text_by_the_teasers_end() -> None:
         == "לאור ההצלחה חוזר המחזמר האהוב לבמות בחנוכה\nוזה ההמשך"
     )
     assert _full_text(page, "טקסט אחר לגמרי שלא מופיע...") is None
+
+
+def test_a_link_named_in_words_stays_a_link() -> None:
+    """OGO's "קישור" lost where it led; now Markdown the app and the server page both show as a link."""
+    text = html_to_text('<p>מרצה: בני פירסט <a href="https://www.herzliya.muni.il/events/14246/">קישור</a></p>')
+    assert text == "מרצה: בני פירסט [קישור](https://www.herzliya.muni.il/events/14246/)"
+    html = blocks_html(description_layout(text, S))
+    assert html.startswith('<p dir="rtl">') and 'href="https://www.herzliya.muni.il/events/14246/"' in html and ">קישור</a>" in html

@@ -16,9 +16,10 @@ from partylinks.event_text.config import EventTextSettings
 
 
 def group_description(session: Session, row: EventRow, cfg: EventTextSettings) -> str | None:
-    """``row``'s own description, or the longest of its group when its own is under ``group_text_min_chars``."""
+    """``row``'s own description, or the longest of its group when its own is under ``group_text_min_chars`` or the
+    longest is ``group_text_longer_ratio`` times its own or more."""
     own = (row.description or "").strip()
-    if not row.group_id or len(own) >= cfg.group_text_min_chars:
+    if not row.group_id or cfg.group_text_min_chars == 0:
         return row.description
     best = session.scalar(
         select(EventRow.description)
@@ -26,4 +27,10 @@ def group_description(session: Session, row: EventRow, cfg: EventTextSettings) -
         .order_by(func.length(EventRow.description).desc(), EventRow.id)
         .limit(1)
     )
-    return best if best and len(best.strip()) > len(own) else row.description
+    # Its own text when it says enough: at least group_text_min_chars, and not far shorter than the others'
+    # (Herzliya's community centres: 170 characters of the talk the city's page tells in 700).
+    if best and len(best.strip()) > len(own) and (
+        len(own) < cfg.group_text_min_chars or len(best.strip()) >= cfg.group_text_longer_ratio * len(own)
+    ):
+        return best
+    return row.description

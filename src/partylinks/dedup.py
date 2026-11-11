@@ -54,6 +54,7 @@ _YEAR = re.compile(r"^(?:19|20)\d\d$")
 _BRAVO_SEANCE = re.compile(r"^/announce/buy/(\d+)$")
 
 _NUMBER = re.compile(r"\d+")
+_TEXT_LINK = r"https?://[^\s\"'<>)\]]+"  # PostgreSQL regex: the first link in a description
 
 
 @dataclass
@@ -81,7 +82,8 @@ class _Listing:
     core: frozenset[str] = frozenset()  # title words without filler ("מופע", "חנוכה")
     timed: bool = True  # False: the source gave only the date
     abroad: bool = False
-    house_numbers: frozenset[str] = frozenset()  # numbers in the address ("Ben Gurion Blvd 32" / "בן גוריון 32")
+    house_numbers: frozenset[str] = frozenset()
+    refers: str | None = None  # the first link in its text: "למידע מלא: https://www.herzliya.muni.il/events/14246/"  # numbers in the address ("Ben Gurion Blvd 32" / "בן גוריון 32")
 
 
 def title_key(title: str | None, stopwords: set[str]) -> str:
@@ -100,7 +102,10 @@ def title_numbers(title: str | None) -> frozenset[str]:
 def url_key(url: str | None) -> str:
     if not url:
         return ""
-    parsed = urlparse(url)
+    try:
+        parsed = urlparse(url)
+    except ValueError:  # "https://[..." in a description's text: no page at all
+        return ""
     # Id params name the page on query-routed sites (MainItemPage.aspx?ItemID=...): without them every
     # tel-aviv.gov.il item shares one key and a link to one of them merges the whole day. Tracking params go.
     ids = sorted(
@@ -184,6 +189,12 @@ class Deduplicator:
             return True
         # Two guides sending to one box office page ("Eric Clapton Special" / "מחווה לאריק קלפטון"): one show.
         if a.links_to and a.links_to == b.links_to and a.source != b.source and a.links_to not in shared_urls:
+            return True
+        # Its text sends readers to the other's page (Herzliya's community centres: "מדע על הבר" at 19:30,
+        # its text linking the city's page of the 20:00 talk): one event.
+        if a.refers and a.refers == b.url_key and b.url_key not in shared_urls and self._site(a) != self._site(b):
+            return True
+        if b.refers and b.refers == a.url_key and a.url_key not in shared_urls and self._site(a) != self._site(b):
             return True
         if not a.title_key or not b.title_key:
             return False
@@ -440,6 +451,7 @@ class Deduplicator:
                 EventRow.genres, EventRow.first_seen_at, EventRow.min_price, EventRow.max_price, EventRow.entry_type,
                 EventRow.has_free_entry, EventRow.free_entry_until, EventRow.is_listed, EventRow.is_sold_out,
                 EventRow.time_known, EventRow.country, EventRow.address,
+                func.substring(EventRow.description, _TEXT_LINK).label("text_link"),  # in the database: no whole texts read
             )
         ).all(), key=lambda r: r.id)  # fmt: skip
         tier_counts = _tier_counts(session)
@@ -460,6 +472,7 @@ class Deduplicator:
                 has_free_entry=r.has_free_entry, free_entry_until=r.free_entry_until, sold_out=bool(r.is_sold_out),
                 core=frozenset(title.split()) - self._filler, timed=r.time_known is not False, abroad=bool(r.country),
                 house_numbers=frozenset(_NUMBER.findall(r.address or "")),
+                refers=url_key(r.text_link) or None,
             )  # fmt: skip
             # An unlisted row stands alone: as a group's primary it would hide its listed copies.
             if r.local_date is None or r.is_listed is False:
@@ -473,7 +486,7 @@ class Deduplicator:
         keys = Counter(item.url_key for item in everyone if item.url_key)
         linkers = Counter(
             (item.links_to, item.source) for item in everyone if item.links_to and item.source not in self._promoter_pages
-        )
+        ) + Counter((item.refers, item.source) for item in everyone if item.refers)
         shared = frozenset(k for k, n in keys.items() if n > 1) | frozenset(k for (k, _), n in linkers.items() if n > 1)
         merged = 0
         for listings in by_day.values():

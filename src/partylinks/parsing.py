@@ -84,6 +84,13 @@ def html_to_text(value: str | None) -> str | None:
     tree.strip_tags(["script", "style"])  # code, not text (Herzliya's calendar script, easytix's CSS)
     for br in tree.css("br"):
         br.replace_with("\n")
+    # A link named in words ("קישור", "להרשמה") keeps where it leads, as Markdown the event page shows as a
+    # link (partylinks.event_text, web/src/event_text); a link that shows its own address stays as it is.
+    for a in tree.css("a[href]"):
+        href = (a.attributes.get("href") or "").strip().replace(" ", "%20").replace(")", "%29")
+        label = " ".join(a.text().split()).replace("[", "(").replace("]", ")")
+        if href.startswith(("http://", "https://")) and label and not label.startswith(("http", "www.")):
+            a.replace_with(f"[{label}]({href})")
     for item in tree.css("li"):
         item.insert_before("• ")  # still a list in plain text (partylinks.event_text lays it out)
     for block in tree.css("p, div, h1, h2, h3, h4, h5, h6, li"):

@@ -616,3 +616,16 @@ def test_one_sites_two_pages_of_one_talk_under_two_names_stay_in_its_group(tmp_p
         listing("smarticket", "herzliya:3836", "מדע על הבר: התחדשות עירונית כהזדמנות", **cafe),
     ])  # fmt: skip
     assert len({g for g, _ in groups.values()}) == 1
+
+
+def test_a_listing_whose_text_links_the_other_listings_page_is_one_event(tmp_path: Path) -> None:
+    """Herzliya's community centres list "מדע על הבר" at 19:30; their text links the city's page of the 20:00 talk."""
+    city = "https://www.herzliya.muni.il/events/14246/"
+    _, groups = grouped(tmp_path, [
+        listing("munievents", "herzliya:14246", "מדע על הבר: התחדשות עירונית כהזדמנות", url=city, venue_name="קפה אנט"),
+        listing("munievents", "herzliya-matnasim:8803", "מדע על הבר", start=START - timedelta(minutes=30),
+                description=f"ערב מדע על הבר\nמרצה: ד״ר בני פירסט\n{city}", venue_name="קפה אנט"),
+        listing("munievents", "herzliya-matnasim:8804", "ערב שירה", description="פרטים: https://www.herzliya.muni.il/events/"),
+    ])  # fmt: skip
+    assert groups["munievents:herzliya:14246"][0] == groups["munievents:herzliya-matnasim:8803"][0]
+    assert groups["munievents:herzliya-matnasim:8804"][0] != groups["munievents:herzliya:14246"][0]

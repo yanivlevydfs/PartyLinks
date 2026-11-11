@@ -53,7 +53,7 @@ class DescriptionLayout(BaseModel):
 def _direction(text: str) -> Direction | None:
     """The direction most of its letters run in; None when it has no letters or a tie."""
     rtl = ltr = 0
-    for char in text:
+    for char in re.sub(r"(?:https?://|www\.)\S+", " ", text):  # a link's address says nothing of the language
         kind = unicodedata.bidirectional(char)
         rtl += kind in ("R", "AL")
         ltr += kind == "L" and char.isalpha()
@@ -168,11 +168,28 @@ def description_layout(text: str | None, s: EventTextSettings) -> DescriptionLay
     return DescriptionLayout(blocks=_blocks(lines, s, _direction(tidy) or "rtl"), collapse=len(tidy) > s.collapse_chars)
 
 
+_LINK = re.compile(r"\[([^\]\n]+)\]\(((?:https?://|www\.)[^)\s]+)\)|((?:https?://|www\.)[^\s<>\"]+)")
+_BOLD = re.compile(r"\*\*([^*]+)\*\*")
+
+
+def _anchor(href: str, label: str) -> str:
+    url = href if href.startswith("http") else f"https://{href}"
+    return f'<a href="{escape(url)}" target="_blank" rel="noopener noreferrer nofollow ugc">{escape(label)}</a>'
+
+
 def blocks_html(layout: DescriptionLayout | None) -> str:
-    """The server-rendered description: all of it, as the app lays it out. Links stay plain text here."""
+    """The server-rendered description: all of it, as the app lays it out, its links clickable as in the app
+    (web/src/event_text): "[קישור](https://...)" and bare addresses."""
+
+    def plain(text: str) -> str:
+        return escape(_BOLD.sub(lambda m: m[1], text))
 
     def inline(text: str) -> str:
-        return escape(_MARKDOWN.sub(lambda m: m[1] or m[2], text)).replace("\n", "<br>")
+        out, at = [], 0
+        for m in _LINK.finditer(text):
+            out += [plain(text[at : m.start()]), _anchor(m[2], m[1]) if m[1] else _anchor(m[3], m[3])]
+            at = m.end()
+        return ("".join(out) + plain(text[at:])).replace("\n", "<br>")
 
     html: list[str] = []
     for block in layout.blocks if layout else []:
