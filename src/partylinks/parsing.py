@@ -47,11 +47,19 @@ def og_image(page_html: str) -> str | None:
     return quote(image, safe=":/%?=&") if image and "admin-ajax" not in image else None
 
 
-_SITE_LOGO = re.compile(r"(?:^|/)content/images/(?:fb|og_image|[\w-]*no-pic)\.png")
+# A site's own icon, logo or "no picture" placeholder: never an event's picture. Seen in prod (2026-11-11):
+# ticketmaster.co.il/favicon.ico on tickchak / arenas events (Berry Sakharof's page had no picture though 11
+# duplicates had one), smarticket's uploads/no_pic.png, showshappening's content/logos/, viagogo's
+# d_vgg-defaultLogo, the A.S. Bina municipal CMS's content/images/fb.png, og_image.png, w-480-no-pic.png.
+_SITE_LOGO = re.compile(
+    r"favicon|apple-touch-icon|\.ico(?:[?#]|$)|(?:^|[/_-])no[_-]?(?:pic|image|photo)s?\.\w+(?:[?#]|$)"
+    r"|default-?logo|/content/logos/|(?:^|/)content/images/(?:fb|og_image)\.png",
+    re.IGNORECASE,
+)
 
 
 def is_site_logo(url: str | None) -> bool:
-    """The A.S. Bina municipal CMS's own logo / placeholder (fb.png, og_image.png, w-480-no-pic.png): no event picture."""
+    """A site's icon / logo / "no picture" placeholder rather than the event's own picture."""
     return bool(url and _SITE_LOGO.search(url))
 
 

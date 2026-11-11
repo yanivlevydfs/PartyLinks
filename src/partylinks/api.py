@@ -70,7 +70,8 @@ from partylinks.logs import setup_logging
 from partylinks.mail.images import router as mail_images_router
 from partylinks.media import VARIANT_WIDTHS, variant_path
 from partylinks.models import EntryType
-from partylinks.parsing import TidyText
+from partylinks.parsing import TidyText, is_site_logo
+from partylinks.pictures import live_image_url, live_images
 from partylinks.places import city_abroad, city_name
 from partylinks.popularity import models as popularity
 from partylinks.railcards import nearest_show
@@ -988,17 +989,18 @@ def _group_sources(session: Session, rows: Sequence[EventRow]) -> dict[str, list
 
 
 def _group_covers(session: Session, rows: Sequence[EventRow]) -> dict[str, str]:
-    """Artwork borrowed from a duplicate listing for events whose own source has none."""
-    groups = {r.group_id for r in rows if r.group_id and not r.cover_url and not r.image_url}
+    """A duplicate listing's stored picture for events with no stored picture of their own: an own URL
+    that never downloaded (a favicon, a 403) used to block it (partylinks.pictures)."""
+    groups = {r.group_id for r in rows if r.group_id and not r.cover_url}
     found: dict[str, str] = {}
     if groups:
-        for group_id, image_id in session.execute(
-            select(EventRow.group_id, ImageRow.id)
+        for group_id, image_id, url in session.execute(
+            select(EventRow.group_id, ImageRow.id, ImageRow.url)
             .join(ImageRow.event)
             .where(EventRow.group_id.in_(groups), ImageRow.downloaded_at.is_not(None))
             .order_by(ImageRow.position, ImageRow.id)
         ):
-            if group_id:
+            if group_id and not is_site_logo(url):
                 found.setdefault(group_id, f"/images/{image_id}")
     return found
 
@@ -1009,7 +1011,8 @@ def _summary_extras(session: Session, rows: Sequence[EventRow], cfg: Settings | 
     sources = _group_sources(session, rows)
     covers = _group_covers(session, rows)
     # Only with no picture of its own or its group's: a real picture always wins (artwork package).
-    drawn = artwork.urls(session, [r.id for r in rows if not (r.cover_url or covers.get(r.group_id or ""))])
+    # Own stored > duplicate's stored > own URL still loading > drawn card (partylinks.pictures).
+    drawn = artwork.urls(session, [r.id for r in rows if not (r.cover_url or covers.get(r.group_id or "") or live_image_url(r))])
     liked = popularity.counts(session, [r.id for r in rows])  # likes and views
     places = placecards.card_extras(session, rows)
     was = smartrails.was_prices(session, cfg, rows, datetime.now(UTC))
@@ -1023,6 +1026,7 @@ def _summary_extras(session: Session, rows: Sequence[EventRow], cfg: Settings | 
             "best_deal": deals.get(r.best_listing_id) if r.best_listing_id else None,
             "sources": sources[r.id],
             "cover_url": r.cover_url or covers.get(r.group_id or "") or drawn.get(r.id),
+            "image_url": live_image_url(r),  # a failed download or a logo: none
         }
         for r in rows
     }
@@ -1481,6 +1485,7 @@ def _register_routes(app: FastAPI) -> None:
                 ],
                 "changes": [DealChangeOut.model_validate(c) for c in changes],
                 **_summary_extras(session, [row])[row.id],
+                "images": [ImageOut.model_validate(i) for i in live_images(row)],
                 "watching": popularity.watching(session, row.id, cfg.popularity),
                 "lineup_links": artist_links_for(session, cfg.artist_links, row.lineup or []),
                 "description": text,

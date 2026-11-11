@@ -17,7 +17,7 @@ from pydantic import (
 )
 
 from partylinks.artists import ArtistProfile
-from partylinks.parsing import TidyText
+from partylinks.parsing import TidyText, is_site_logo
 
 
 def without_nul(value: Any) -> Any:
@@ -196,8 +196,9 @@ class ScrapedEvent(BaseModel):
 
     @model_validator(mode="after")
     def _merge_artwork(self) -> ScrapedEvent:
-        """``images`` always starts with the primary artwork and holds no duplicates."""
-        self.images = list(dict.fromkeys(i for i in [self.image_url, *self.images] if i))
+        """``images`` always starts with the primary artwork and holds no duplicates, and no site logo /
+        favicon / placeholder (every source: one check here, not one per scraper)."""
+        self.images = list(dict.fromkeys(i for i in [self.image_url, *self.images] if i and not is_site_logo(i)))
         self.image_url = self.images[0] if self.images else None
         return self
 

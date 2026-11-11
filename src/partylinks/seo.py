@@ -20,7 +20,7 @@ from datetime import date, datetime, timedelta
 from functools import cache
 from html import escape
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 from urllib.parse import parse_qs, quote, unquote, urlsplit
 from zoneinfo import ZoneInfo
 
@@ -41,6 +41,7 @@ from partylinks.db import EventRow, lineup_has, open_now_filters, upcoming_filte
 from partylinks.dedup import agreed_listing
 from partylinks.event_text import blocks_html, description_layout
 from partylinks.event_text.group import group_description
+from partylinks.pictures import live_image_url
 from partylinks.placecards import first_opening
 from partylinks.placeinfo.seo import place_seo
 from partylinks.places import all_cities
@@ -187,7 +188,16 @@ def _url(cfg: Settings, path: str, lang: str = "he") -> str:
     return f"{cfg.site.base_url}{path}" + ("?lang=en" if lang == "en" else "")
 
 
-def event_path(row: EventRow) -> str:
+class _HasSlug(Protocol):
+    """An EventRow, or a sitemap row of its id / slug columns alone."""
+
+    @property
+    def id(self) -> str: ...
+    @property
+    def slug(self) -> str | None: ...
+
+
+def event_path(row: _HasSlug) -> str:
     return f"/event/{quote(row.slug or row.id, safe='')}"
 
 
@@ -203,15 +213,16 @@ def _cover(cfg: Settings, row: EventRow, drawn: bool = True) -> str | None:
     flagged events without "image")."""
     if row.cover_url:
         return cfg.site.base_url + row.cover_url
-    if row.image_url or (session := object_session(row)) is None:
-        return row.image_url
+    own = live_image_url(row)  # None when it failed to download or is a site logo (partylinks.pictures)
+    if (session := object_session(row)) is None:
+        return own
     # A duplicate listing's picture, as the cards show it (no card is drawn while one exists: 458 events had
-    # no picture at all on their page, 2026-11-10); else the drawn card.
+    # no picture at all on their page, 2026-11-10); then the own URL still loading; else the drawn card.
     from partylinks.api import _group_covers  # local: api imports this module
 
     found = _group_covers(session, [row]).get(row.group_id or "")
-    if found or not drawn:
-        return cfg.site.base_url + found if found else None
+    if found or own or not drawn:
+        return cfg.site.base_url + found if found else own
     card = artwork_urls(session, [row.id]).get(row.id)
     return cfg.site.base_url + card if card else None
 

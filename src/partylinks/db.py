@@ -203,7 +203,9 @@ class EventRow(Base):
     @property
     def cover_url(self) -> str | None:
         """First stored artwork, served by the API at ``/images/{id}``."""
-        return next((f"/images/{i.id}" for i in self.images if i.downloaded_at), None)
+        from partylinks.parsing import is_site_logo  # local: parsing stays free of the ORM
+
+        return next((f"/images/{i.id}" for i in self.images if i.downloaded_at and not is_site_logo(i.url)), None)
 
 
 # The default list (/events by date): primary cards in (local_date, start_at, id) order, undated first,

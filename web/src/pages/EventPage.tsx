@@ -42,7 +42,18 @@ export default function EventPage() {
   // Sites often add a tiny share-preview copy of the poster (a WhatsApp thumbnail); it isn't gallery material.
   // ponytail: size heuristic, not a content match; perceptual-hash dedup at download if real extras get dropped.
   const gallery = e.images.slice(1).filter((i) => !i.size_bytes || i.size_bytes > 40_000).map((i) => i.stored_url ?? i.url);
-  const price = priceLabel(e, t, e.tickets);
+  // The best offer across the duplicate listings, as on the cards: the page said "from ₪359" (tickchak) while
+  // Muzi and Ticketmaster, badged "Cheapest" below it, sold from ₪199 (Berry Sakharof, 2026-11-11).
+  const price = priceLabel(
+    {
+      ...e,
+      min_price: e.group_min_price ?? e.min_price,
+      has_free_entry: e.group_has_free_entry ?? e.has_free_entry,
+      entry_type: e.group_entry_type ?? e.entry_type,
+    },
+    t,
+    e.tickets,
+  );
   // The other ticket site with the lowest price, when it beats the main listing's: badged "Cheapest".
   // One card per site (a party often has several promoter links on the same site): its cheapest priced one.
   // Second-hand marketplaces (viagogo, SwapTix...) apart from the box offices; "Cheapest" only among box offices.
