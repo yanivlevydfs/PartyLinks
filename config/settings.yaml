@@ -2229,6 +2229,9 @@ sources:
     # request per new event for the linked page's og:image (the guide has no images). No coordinates:
     # the street is geocoded in Tel Aviv. Party rows link to Go-Out / Eventer / Chillz (merged by dedup).
     enabled: true
+    # The linked pages (namalyafo.co.il 403, tel-aviv.gov.il 472) refuse the evomi IPs and answer an
+    # Israeli one; through the pool the run stalled retrying them (Nov 2026).
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "50 9,21 * * *"
     http:
       concurrency: 2
