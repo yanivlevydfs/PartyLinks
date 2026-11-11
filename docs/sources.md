@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 116 configured sources, 115 on. Each one has its own module in
+SPOTX collects from 117 configured sources, 116 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -48,6 +48,7 @@ pagination and what the listing and the event page provide.
 | `showshappening` | ShowsHappening (showshappening.com): ticketing in Malta, the UK, Germany and Spain (~270 events, ~1,000 dates, abroad section) with its own categories and tags. No venue or price (loaded from a private API) | 10:08, 22:08 | yes |
 | `eventimlight` | Eventim Light (eventim-light.com): CTS Eventim's self-service box office, a shop per organizer in every market (de, at, ch, uk, nl, es, dk, fi, fr, no, se; ~11,800 events from ~2,000 of ~5,300 known shops, Oct 2026, ~90% on the map). Artwork is fetched as Chrome too (Akamai). No catalogue: shops come from the Common Crawl URL index and are kept in `data/eventimlight_shops.json`, growing run by run; one request per shop (its upcoming events as JSON, with venue, country and coordinates). Israeli venues to Israel, the rest abroad | 04:33, 16:33 | yes |
 | `vibez` | Vibez (vibez.io): ticketing for communities and party producers: raves, ecstatic dance, club nights | 08:36, 20:36 | yes |
+| `klika` | KLIKA (klika.live): ticketing app for party lines, a Supabase app read with the anon key its own pages send: the public `events` table (listed and line-only events), each line's genres (`public_seo_catalog`) and the ticket page per event (`public_ticket_page_v2`: tiers, artwork, lineup); no coordinates, the address is geocoded | 11:53, 23:53 | yes |
 | `babebar` | Babe Bar (babebar.co.il): club site on WordPress + The Events Calendar (`tribe.py`) | 09:06, 21:06 | yes |
 | `plusparty` | Plus Party (plusparty.co.il, "מסיבות פלוס"): guide to parties, shows and festivals across Israel; one request, the `/events` page's embedded query cache (every upcoming event, ~160, with kind, venue, street, city, price, age). No seller link (behind its sign-up); nature parties with a secret place get no venue | 09:19, 21:19 | yes |
 

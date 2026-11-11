@@ -2223,6 +2223,18 @@ sources:
     enabled: true
     cron: "29 8,20 * * *"
 
+  klika:
+    # KLIKA (klika.live): ticketing app for party lines ("clickas"), a Supabase app whose pages are an
+    # empty JS shell. Read with the anon key its own bundle sends: the public `events` table (today on,
+    # non-test, published, public: listed and line-only events), the public_seo_catalog RPC (each line's
+    # genres) and public_ticket_page_v2 per event (tiers, artwork, lineup). 2 + N requests a run; no
+    # coordinates, the street address is geocoded.
+    enabled: true
+    cron: "53 11,23 * * *"
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+
   makore:
     # Makore ("מה קורה"): an events guide for all of Israel (workshops, tours, kids' activities too),
     # so only these category pages are read. Each page's JSON-LD ItemList gives ~28 events with venue,
