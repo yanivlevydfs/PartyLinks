@@ -254,6 +254,11 @@ class MediaStore:
                 stored_count, failed_count = stored_count + len(stored), failed_count + len(failed)
                 if progress is not None:
                     progress()
+                # The host says slow down: the rest wait for the next batch, not marked failed for hours
+                # (posh, 2026-11-08: a 6,800-image backlog in one burst, 4,284 refused, kept as errors).
+                if any("429" in (r.get("error") or "") for r in failed):
+                    log.info("%s artwork: 429 from the image host, %d left for later", source, len(pending) - stored_count - failed_count)
+                    break
         log.debug("%s artwork: %d stored, %d failed", source, stored_count, failed_count)
         return stored_count, failed_count
 

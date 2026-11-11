@@ -58,8 +58,14 @@ export function slotAt(slots: Slot[], start: number): Slot | undefined {
 /** When an event's forecast is read: its start; a date alone (no time from the seller), that day's noon
  *  (its stored start is midnight, hours "ago" on the day itself, and would show no forecast).
  *  ponytail: noon UTC, close to the venue's midday from Europe to Asia; the zone's noon if America needs it. */
-export const forecastAt = (e: { start_at: string | null; time_known?: boolean; local_date: string | null }) =>
-  e.time_known === false && e.local_date ? `${e.local_date}T12:00:00Z` : e.start_at;
+export const forecastAt = (e: {
+  start_at: string | null; end_at?: string | null; time_known?: boolean; local_date: string | null;
+}) => {
+  // Under way now (a park "00:00–23:59", a class since 09:00): the weather now, not at its start hours ago.
+  const now = Date.now();
+  if (e.start_at && e.end_at && Date.parse(e.start_at) < now && Date.parse(e.end_at) > now) return new Date(now).toISOString();
+  return e.time_known === false && e.local_date ? `${e.local_date}T12:00:00Z` : e.start_at;
+};
 
 export function Weather({ lat, lng, city, start, zone, full = false }: {
   lat: number | null;
