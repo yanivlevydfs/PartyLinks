@@ -390,11 +390,11 @@ _HEBREW_PREFIXES = (
 
 
 def whole_word(column: Any, word: str) -> ColumnElement[bool]:
-    """``column`` has ``word`` as a whole word, maybe behind a one-letter Hebrew prefix ("\u05d1\u05e8\u05d0\u05e4"): a
+    """``column`` has ``word`` as a whole word, maybe behind one or two Hebrew prefix letters ("\u05d1\u05e8\u05d0\u05e4", "\u05d5\u05d4\u05e8\u05d0\u05e4"): a
     short search word ("\u05e8\u05d0\u05e4") is not found inside "\u05ea\u05e8\u05d0\u05e4\u05d9\u05d4". A case-insensitive regex (``~*``); the
     word is data, not a pattern (every metacharacter escaped), and the pattern is a bound parameter."""
     escaped = word.casefold().translate(_REGEX_META)
-    return column.regexp_match(f"(^|[^{_WORD_CHARS}])[{_HEBREW_PREFIXES}]?{escaped}($|[^{_WORD_CHARS}])", flags="i")
+    return column.regexp_match(f"(^|[^{_WORD_CHARS}])[{_HEBREW_PREFIXES}]{{0,2}}{escaped}($|[^{_WORD_CHARS}])", flags="i")
 
 
 def lineup_contains(name: str) -> ColumnElement[bool]:

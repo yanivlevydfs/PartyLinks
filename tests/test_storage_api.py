@@ -1040,6 +1040,25 @@ def test_smart_search_reads_places_genres_prices_and_covers_abroad(tmp_path: Pat
         assert ids("nothing like this") == []
 
 
+def test_techno_is_music_and_technology_is_hi_tech(tmp_path: Path) -> None:
+    # "טכנו" / "techno" is a genre word: a whole word only, never "טכנולוגית" / "technology" (and back).
+    settings = settings_for(tmp_path)
+    soon = datetime.now(UTC) + timedelta(days=1)
+    seed(settings, [
+        event("he_talk", soon, title="מבינה מלאכותית לחקר החלל: חדשנות טכנולוגית", description="הרצאה"),
+        event("en_talk", soon, title="Space and technology", description="A lecture"),
+        event("nature", soon, title="TECHNO NATURE"), event("melodic", soon, title="טכנו מלודי"),
+        event("prefixed", soon, title="ערב קיץ", description="לילה שלם והטכנו לא נגמר"),
+        event("hitech", soon, title="Product meetup", description="hi-tech evening"),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        ids = lambda q: sorted(e["source_event_id"] for e in client.get("/events", params={"q": q}).json()["items"])
+        party = ["melodic", "nature", "prefixed"]
+        assert ids("טכנו") == ids("techno") == ids("בטכנו") == party
+        for q in ("טכנולוגיה", "טכנולוגית", "technology"):  # the hi-tech category, no party
+            assert {"he_talk", "hitech"} <= set(ids(q)) and not set(party) & set(ids(q)), q
+
+
 def test_a_city_abroad_is_one_city_in_hebrew_and_english(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     future = datetime.now(UTC) + timedelta(days=2)

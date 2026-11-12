@@ -253,7 +253,9 @@ SYNONYMS.update({
     "אלקטרונית": ("electronic",), "אלקטרוני": ("electronic",), "electronic": ("electronic",), "electro": ("electronic",),
     "רטרו": ("throwback",), "retro": ("throwback",), "שנות ה-90": ("nineties",), "שנות ה90": ("nineties",), "90s": ("nineties",), "ניינטיז": ("nineties",),
     "שנות ה-80": ("eighties",), "שנות ה80": ("eighties",), "80s": ("eighties",), "אייטיז": ("eighties",),
-    "כשר": ("kosher",), "כשרה": ("kosher",), "כשרים": ("kosher",), "kosher": ("kosher",), "קפה": ("coffee_carts",), "עגלת קפה": ("coffee_carts",), "הייטק": ("hi_tech",), "hitech": ("hi_tech",), "סטארטאפ": ("startups",), "startup": ("startups",),
+    "כשר": ("kosher",), "כשרה": ("kosher",), "כשרים": ("kosher",), "kosher": ("kosher",), "קפה": ("coffee_carts",), "עגלת קפה": ("coffee_carts",), "הייטק": ("hi_tech",), "hitech": ("hi_tech",),
+    # Tech talks, not techno parties: "טכנו" is a music genre and matches only as a whole word (text_match).
+    "טכנולוגיה": ("hi_tech",), "טכנולוגית": ("hi_tech",), "טכנולוגי": ("hi_tech",), "טכנולוגיות": ("hi_tech",), "technology": ("hi_tech",), "סטארטאפ": ("startups",), "startup": ("startups",),
 })  # fmt: skip
 REGION_ALIASES = {
     "gush_dan": ("גוש דן", "מרכז", "המרכז", "center"), "haifa": ("קריות", "הקריות", "krayot"),
@@ -294,26 +296,25 @@ def _pattern(word: str) -> str:
     return "%" + _escape(word) + "%"
 
 
-def _json_has(column: SQLColumnExpression[Any], word: str) -> Cond:
-    """A JSON list column (event types) holding ``word`` (its JSONB text, case-insensitive)."""
-    return cast(column, String).ilike(_pattern(word), escape="\\")
-
-
 DID_YOU_MEAN_CUTOFF = 0.75  # looser than TYPO_CUTOFF: a suggestion to click, not extra results
 TYPO_CUTOFF = 0.85  # difflib ratio: one letter off in a 5-6 letter word
 CITY_SEARCH_POPULATION = 100_000  # smaller towns abroad share names with plain words
 SHORT_WORD = 3  # up to this long, a word must stand alone in the text: "ראפ" is not in "תראפיה"
 
 
-def text_match(word: str) -> Cond:
+def text_match(word: str, whole: bool = False) -> Cond:
+    """``word`` in an event's text. ``whole``: a known name (genre, city, ticket site) counts only as a whole
+    word, maybe behind a Hebrew prefix: "טכנו" / "techno" is not in "טכנולוגית" / "technology"."""
     pattern = _pattern(word)
 
-    def found(c: SQLColumnExpression[Any]) -> Cond:
-        inside = c.ilike(pattern, escape="\\")
-        return and_(inside, whole_word(c, word)) if len(word) <= SHORT_WORD else inside
+    def found(c: SQLColumnExpression[Any], exact: bool) -> Cond:
+        inside = c.ilike(pattern, escape="\\")  # the cheap test first; the regex only checks what it finds
+        return and_(inside, whole_word(c, word)) if exact else inside
 
-    # The site's own categories too: a ticket site files tennis under "טניס" without the word in the title.
-    return or_(lineup_contains(word), _json_has(EventRow.event_types, word), _json_has(EventRow.source_genres, word), *(found(c) for c in (
+    exact = whole or len(word) <= SHORT_WORD
+    # Lineup and the site's own categories (JSONB text) too: a ticket site files tennis under "טניס".
+    lists = (cast(EventRow.lineup, String), cast(EventRow.event_types, String), cast(EventRow.source_genres, String))
+    return or_(*(found(c, whole) for c in lists), *(found(c, exact) for c in (
         EventRow.title, EventRow.description, EventRow.venue_name, EventRow.city, EventRow.address, EventRow.organizer,
     )))  # fmt: skip
 
@@ -515,7 +516,7 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
         filters.append(EventRow.local_date.between(*ranges[phrase]))
     vocab = _vocabulary(cfg)
     for name in take(vocab):
-        filters.append(or_(vocab[name](), text_match(name)))  # the name in the text counts too: "Jordan" the DJ
+        filters.append(or_(vocab[name](), text_match(name, whole=True)))  # the name in the text counts too: "Jordan" the DJ
     # A city abroad in either language finds it in both: "ברצלונה" also finds "Barcelona" (GeoNames names).
     words = text.split()
     for size in (3, 2, 1):
@@ -534,7 +535,7 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
         match = or_(text_match(w), text_match(w[1:])) if len(w) > 3 and w[0] in "בלמהו" else text_match(w)
         # A typo of a known name ("טכנוו", "פסטבל") also finds what the name finds.
         if len(w) >= 4 and (near := get_close_matches(w, long_names, n=1, cutoff=TYPO_CUTOFF)):
-            match = or_(match, vocab[near[0]](), text_match(near[0]))
+            match = or_(match, vocab[near[0]](), text_match(near[0], whole=True))
         filters.append(match)
     if not filters:
         return []
