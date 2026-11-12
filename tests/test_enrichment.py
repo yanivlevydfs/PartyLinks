@@ -323,6 +323,10 @@ def test_adult_nightlife_genres_from_strong_phrases_only() -> None:
 def test_talk_takes_no_genres_from_its_description() -> None:
     talk = make(title="הרצאה - ריקוד המכונה", description="כך נולדו ההיפ הופ, ההאוס והטכנו")
     assert ENRICHER._detect_genres(talk) == ["lectures"]  # a lecture by its title; no music from its text
+    # A lecture by its source's category (tel-aviv.gov.il): its guest "a techno singer" is not its genre.
+    podcast = make(title="\"מדברים על זה\" - פודקאסט LIVE על הבמה", description="ענבל גוריאל - זמרת טכנו ויוצרת",
+                   source_genres=["הרצאות סיורים והעשרה", "הרצאות והעשרה"])
+    assert "techno" not in ENRICHER._detect_genres(podcast)
 
 
 def test_named_region_overrides_far_coordinates() -> None:

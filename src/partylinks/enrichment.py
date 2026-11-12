@@ -348,7 +348,9 @@ class Enricher:
         ignore = tuple(p.lower() for p in self.settings.declared_ignore)
         declared = " | ".join(d for d in (x.lower() for x in [*event.source_genres, *event.event_types]) if not d.startswith(ignore))
         declared = declared.translate(_QUOTES)
-        talk = self._talk is not None and self._talk.search(event.title.lower().translate(_QUOTES))
+        # A talk by its title or by its source's category ("הרצאות והעשרה": a podcast whose guest is "a techno
+        # singer" was tagged techno, 2026-11-12).
+        talk = self._talk is not None and bool(self._talk.search(event.title.lower().translate(_QUOTES)) or self._talk.search(declared))
         read_text = self.settings.detect_genres_from_text and event.source not in self.settings.declared_genres_only
         # A talk's description names its subject, not its kind: only its title is read, for the talk genres.
         text = (event.title if talk else f"{event.title}\n{event.description or ''}").lower() if read_text else ""
