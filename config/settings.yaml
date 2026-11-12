@@ -906,8 +906,9 @@ enrichment:
                 "conference centre", "conference center", "jungle joy",  # venues abroad (Malta), not a conference / jungle music
                 "eastern standard time", "eastern daylight time", "eastern time",  # US time zones, not mizrahi
                 "non-commercial", "commercial or non", "potter forest", "organic choir",  # photo terms, a park, a choir
-                "תרגום סימולטני לאנגלית, ערבית", "בשפה הערבית", "בשפה הרוסית", "english, russian, arabic",
-                "מסיבה זו", "מסיבות שונות", "מסיבות טכניות", "מסיבות בטיחות", "מסיבות שאינן"]  # "for this reason", not a party  # a tour's language, not Arabic music
+                "תרגום סימולטני לאנגלית, ערבית", "בשפה הערבית", "בשפה הרוסית", "english, russian, arabic",  # a tour's language, not Arabic music
+                "מסיבה זו", "מסיבות שונות", "מסיבות טכניות", "מסיבות בטיחות", "מסיבות שאינן",  # "for this reason", not a party
+                "טכנו-", "טכנו־"]  # "techno-" joined to a word ("שיווק טכנו-באנאלי", a lecture): a prefix, not techno
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
   # talks: their text is read only for these genres.

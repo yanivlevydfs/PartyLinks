@@ -283,6 +283,11 @@ def test_hebrew_genre_words_match_whole_words_only() -> None:
     assert "techno" not in ENRICHER._detect_genres(lecture)  # "טכנו" inside "טכנולוגיים"
     party = make(title="FRIDAY", description="והטכנו הכי טוב בעיר")
     assert "techno" in ENRICHER._detect_genres(party)  # attached prefixes still count
+    # "techno-" hyphened to a word is a prefix ("טכנו-באנאלי"): a futurist's lecture, not a party.
+    talk = make(title="טכנולוגיות שישנו את העולם", description="ללא שמץ של שיווק טכנו-באנאלי, ד\"ר רועי צזנה")
+    assert "techno" not in ENRICHER._detect_genres(talk)
+    for title in ("מסיבת טכנו", "ערב בטכנו", "TECHNO NIGHT", "טכנו - האוס"):
+        assert "techno" in ENRICHER._detect_genres(make(title=title, description="")), title
 
 
 def test_ballroom_dancing_from_its_own_words_only() -> None:
