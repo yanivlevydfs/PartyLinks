@@ -237,3 +237,27 @@ def test_pass_reads_matches_and_keeps_going(tmp_path: Path, monkeypatch: object)
     run_pass(db, cfg, threading.Event())  # a second pass reads nothing it has: the sitemap, then what failed
     assert "https://ontopo.com/he/il/page/20214686" not in asked and "https://own.example" not in asked
     assert "https://ontopo.com/he/il/page/777" in asked
+
+
+def test_page_ontopo_answers_with_500_is_not_asked_every_pass(tmp_path: Path, monkeypatch: object) -> None:
+    """Five such pages in a row ended every pass (max_consecutive_failures) before any other page was read."""
+    settings = settings_for(tmp_path)
+    seed(settings, [])
+    db = Database(settings.database.url, options=settings.database)
+    broken = "https://ontopo.com/he/il/page/12874624"
+    pages = {CFG.ontopo_sitemap: b"<loc>https://ontopo.com/he/il/page/12874624</loc><lastmod>2026-01-01</lastmod>"}
+    asked: list[str] = []
+
+    def get(self: _Reader, url: str, limit: int | None = None) -> bytes | None:
+        asked.append(url)
+        self.status = 500 if url == broken else 200
+        return pages.get(url)
+
+    monkeypatch.setattr(_Reader, "get", get)  # type: ignore[attr-defined]
+    cfg = CFG.model_copy(update={"delay_seconds": 0})
+    run_pass(db, cfg, threading.Event())
+    with db.session(write=False) as session:
+        assert session.get(OntopoVenueRow, "12874624").lastmod == "2026-01-01"
+    asked.clear()
+    run_pass(db, cfg, threading.Event())
+    assert broken not in asked

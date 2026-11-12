@@ -124,7 +124,7 @@ def match_places(places: Iterable[Place], venues: Iterable[Venue], cfg: PlaceInf
 def _public_host(request: httpx.Request) -> None:
     """A website address comes from another site: nothing inside our network, redirects included."""
     infos = socket.getaddrinfo(request.url.host, request.url.port or 443, proto=socket.IPPROTO_TCP)
-    if not all(ipaddress.ip_address(i[4][0].split("%")[0]).is_global for i in infos):
+    if not all(ipaddress.ip_address(str(i[4][0]).split("%")[0]).is_global for i in infos):
         raise httpx.RequestError(f"not a public host: {request.url.host}", request=request)
 
 
@@ -135,6 +135,7 @@ class _Reader:
         self.cfg, self.stop = cfg, stop
         self.client = httpx.Client(headers={"user-agent": cfg.user_agent}, timeout=cfg.timeout_seconds, follow_redirects=True)
         self.failures = 0
+        self.status: int | None = None  # the last answer's HTTP status; None when nothing answered
 
     def done(self) -> bool:
         return self.stop.is_set() or self.failures >= self.cfg.max_consecutive_failures
@@ -142,8 +143,10 @@ class _Reader:
     def get(self, url: str, limit: int | None = None) -> bytes | None:
         """The body, cut at ``limit`` bytes; empty for a page that is gone; None when the request failed."""
         time.sleep(self.cfg.delay_seconds)
+        self.status = None
         try:
             with self.client.stream("GET", url) as response:
+                self.status = response.status_code
                 if response.status_code in (404, 410):
                     self.failures = 0
                     return b""
@@ -206,6 +209,11 @@ def read_venues(db: Database, cfg: PlaceInfoSettings, reader: _Reader, extra_slu
             break
         html = reader.get(cfg.ontopo_page.format(slug=slug))
         row = _parsed(html, slug)
+        if row is None and html is None and (reader.status or 0) >= 500:
+            # Ontopo answers this page with its own server error, every pass (12874624: 500 for weeks): marked read,
+            # data kept, so it is asked again only when its lastmod changes or after refresh_days.
+            _upsert(db, OntopoVenueRow, [{"slug": slug, "lastmod": pages[slug], "fetched_at": utcnow()}], ["slug"])
+            continue
         if row is None:  # no answer, or a page without the state (a block page): not stored, asked next pass
             reader.failures += html is not None
             continue
@@ -228,7 +236,7 @@ def _parsed(html: bytes | None, slug: str) -> dict[str, Any] | None:
 
 def save_matches(db: Database, places: list[Place], cfg: PlaceInfoSettings) -> dict[str, tuple[str, str]]:
     with db.session(write=False) as session:
-        venues = [Venue(*r) for r in session.execute(select(
+        venues = [Venue(slug, title or "", lat, lng, phone) for slug, title, lat, lng, phone in session.execute(select(
             OntopoVenueRow.slug, OntopoVenueRow.title, OntopoVenueRow.latitude, OntopoVenueRow.longitude, OntopoVenueRow.phone,
         ).where(OntopoVenueRow.title.is_not(None), OntopoVenueRow.title.not_like(f"{cfg.ontopo_event_prefix}%")))]  # fmt: skip
     matched = match_places(places, venues, cfg)
@@ -256,7 +264,7 @@ def read_sites(db: Database, cfg: PlaceInfoSettings, stop: threading.Event, plac
     stale = utcnow() - timedelta(days=cfg.refresh_days)
     todo = [
         p for p in places
-        if p.site and not (checked.get(p.url) and checked[p.url] >= stale)
+        if p.site and not ((when := checked.get(p.url)) is not None and when >= stale)
         and not (p.phone and (p.has_hours or matched.get(p.url, ("", ""))[0] in venue_hours))
     ]  # fmt: skip
     # A separate client: only here do addresses come from another site, so only here they are checked.
