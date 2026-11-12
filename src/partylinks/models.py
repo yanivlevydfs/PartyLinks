@@ -5,10 +5,11 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     Field,
     HttpUrl,
     computed_field,
@@ -55,6 +56,21 @@ class EntryType(StrEnum):
     UNKNOWN = "unknown"
 
 
+_CURRENCY_SIGNS = {"$": "USD", "₪": "ILS", "NIS": "ILS", "€": "EUR", "£": "GBP"}
+
+
+def _iso_currency(value: Any) -> Any:
+    """Every source alike: the ISO code the site formats prices with. OGO wrote "$" (a Dubai show, 2026-11-12)
+    and the browser's Intl.NumberFormat threw on it."""
+    if isinstance(value, str):
+        code = value.strip()
+        return _CURRENCY_SIGNS.get(code.upper(), code.upper())
+    return value
+
+
+Currency = Annotated[str, BeforeValidator(_iso_currency)]
+
+
 class TicketTier(BaseModel):
     source_ticket_id: str | None = None
     name: str
@@ -66,7 +82,7 @@ class TicketTier(BaseModel):
     service_fee: Decimal | None = None
     # Every price round of this tier in order (e.g. free until 23:30, then 80).
     price_rounds: list[float] = Field(default_factory=list)
-    currency: str = "ILS"
+    currency: Currency = "ILS"
     # Number of people admitted by one ticket (e.g. 2 for a couple ticket).
     admits: int = 1
     is_free: bool = False
@@ -143,7 +159,7 @@ class ScrapedEvent(BaseModel):
     # Primary artwork plus every other image the source exposes (flyers, banners, gallery).
     image_url: str | None = None
     images: list[str] = Field(default_factory=list)
-    currency: str = "ILS"
+    currency: Currency = "ILS"
     min_price: Decimal | None = None
     max_price: Decimal | None = None
     is_sold_out: bool = False

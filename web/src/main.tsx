@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import Abroad from "./pages/Abroad";
 import { ArtistPage, ArtistsIndex, VenuePage, VenuesIndex } from "./pages/Browse";
 import NotFound from "./pages/NotFound";
+import ErrorPage from "./ErrorPage";
 import AccessibilityPage from "./pages/Accessibility";
 import { BlogIndex, BlogPost } from "./pages/Blog";
 import { AboutPage, ContactPage, FaqPage, PartnersPage } from "./pages/Info";
@@ -65,6 +66,7 @@ function Landing({ landing }: { landing?: LandingKind }) {
 const router = createBrowserRouter([
   {
     element: <Layout />,
+    errorElement: <ErrorPage />, // any page that throws: "something went wrong", never the developer screen
     children: [
       { path: "/", element: <Landing /> },
       { path: "/now", element: <Landing landing="now" /> },

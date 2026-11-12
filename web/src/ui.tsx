@@ -43,7 +43,12 @@ export const byName = <T extends { value: string }>(xs: readonly T[] | undefined
   [...(xs ?? [])].sort((a, b) => name(a.value).localeCompare(name(b.value), lang));
 
 export function money(value: number, currency: string, locale: string) {
-  return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
+  try {
+    return new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
+  } catch {
+    // Not an ISO code (a source wrote "$", 2026-11-12): the number and what the source wrote, never a crash.
+    return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)} ${currency}`;
+  }
 }
 
 export function fmtDate(iso: string | null, t: Strings, opts: Intl.DateTimeFormatOptions) {

@@ -1,0 +1,6 @@
+.error-page {
+  min-height: 70vh; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 48px 16px; text-align: center;
+}
+.error-page h1 { margin: 0; font-size: clamp(26px, 5vw, 40px); }
+.error-page p { margin: 0; color: var(--muted, #b9b0cc); max-width: 420px; }
+.error-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
