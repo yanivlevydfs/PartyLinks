@@ -99,6 +99,14 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
   page's holiday row; 🕎 for Hanukkah, 🎊 the others), with the holiday page's events (`holiday_pages.where`,
   soonest first). No holiday that close: no button. `bot.results` cards a page; "more" carries its offset in
   the button (`hl:t:<n>`, `hl:h:<key>:<n>`). Counted as `top` and `holiday` in the bot tab.
+- **🌙 Plan my evening** (`core/evening.py`): a menu button and words ("תכנן לי ערב בתל אביב", "plan an
+  evening in Haifa tomorrow"). The place and date are read like any search (tonight by default); no place:
+  the chat's last search's place, else the area buttons. Of the first `bot.evening_tries` events found, the
+  first with places around it gets the site's evening (`evening.plan.plan`, as on an event's page: the
+  nearest of each `evening.steps`), sent as labelled cards in the site's order: 🍸 before (happy hour), 🍽️
+  before (dinner), 🎉 the event, ☕ after (morning coffee), each place with its walk from the event. No
+  event has any: the first event alone. 🔁 "another evening" carries the search and the next offset
+  (`ev:<n>:<words>`, dropped when over 64 bytes): no state. Counted as `evening` in the bot tab.
 - **Hebrew first**, like the site: English only when the user writes English or picks it.
 - **On the site** (`web/src/bot/TelegramFab.tsx`): a floating Telegram button on every page except /admin,
   bottom-right on desktop and phones (the accessibility button has bottom-left; on phones it sits above the
@@ -124,6 +132,7 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 | `core/event_actions.py` | the card's ⏰ 👁 🔁 ➕ buttons, /reminders |
 | `core/remind.py` | reminders and watches: set, list, due, prune |
 | `core/similar.py`, `core/calendar.py` | 🔁 similar events; 📅 the `.ics` file and Google link |
+| `core/evening.py` | 🌙 plan my evening: an event and the site's evening around it |
 | `core/highlights.py` | 🔥 the week's top and the coming holidays' events in the menu |
 | `core/navigate.py` | 📍 the map pin, Waze / Google Maps, a place's hours, phone and booking |
 | `core/picks.py`, `core/digest.py`, `core/channel.py` | "interesting events"; /digest; the broadcast channel |
@@ -166,4 +175,5 @@ a row), `tests/test_bot_conversation.py` (the conversation on a database), `test
 (rendering, the webhook's secret, the alert job with a fake bot), `tests/test_bot_features.py` (the card's
 buttons, reminders, watches, similar, calendar, plans, follow, digest, channel, usage and the admin tab),
 `tests/test_bot_navigate.py` (📍 the pin, its links and a place's info),
-`tests/test_bot_highlights.py` (🔥 the week's top, a holiday's button and its events).
+`tests/test_bot_highlights.py` (🔥 the week's top, a holiday's button and its events),
+`tests/test_bot_evening.py` (🌙 an evening's steps in order, another evening, the area buttons).
