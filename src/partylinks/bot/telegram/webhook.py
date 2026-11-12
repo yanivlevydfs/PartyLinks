@@ -78,7 +78,7 @@ async def start(app: FastAPI) -> Application | None:
                 url, secret_token=secret.get_secret_value(), allowed_updates=UPDATES,
                 drop_pending_updates=False,
             )  # fmt: skip
-            await handlers.describe(bot)
+            await handlers.describe(bot, settings)
             log.info("bot: Telegram webhook at %s", url)
         except Exception:
             log.exception("bot: Telegram webhook not set")

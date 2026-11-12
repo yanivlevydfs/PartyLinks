@@ -7,7 +7,7 @@ import hashlib
 import logging
 from collections.abc import Awaitable, Callable
 
-from telegram import BotCommand, MenuButtonCommands, Update
+from telegram import BotCommand, MenuButtonCommands, MenuButtonWebApp, Update, WebAppInfo
 from telegram.error import BadRequest, TelegramError
 from telegram.ext import (
     AIORateLimiter,
@@ -20,7 +20,7 @@ from telegram.ext import (
     filters,
 )  # fmt: skip
 
-from partylinks.bot.core import daily
+from partylinks.bot.core import daily, webapp
 from partylinks.bot.core.conversation import DEFAULT_LANG, Conversation
 from partylinks.bot.core.flood import Flood
 from partylinks.bot.core.phrases import say
@@ -200,7 +200,7 @@ def build(token: str, settings: Callable[[], Settings], db: Database) -> Applica
     return app
 
 
-async def describe(app: Application) -> None:
+async def describe(app: Application, settings: Settings) -> None:
     """The command menu, the description and the about text: Hebrew for every user, like the site. Clears
     the English ones an earlier version set, which Telegram showed to every English-language app."""
     await app.bot.set_my_commands([BotCommand(c, d) for c, d in COMMANDS])
@@ -209,5 +209,7 @@ async def describe(app: Application) -> None:
     await app.bot.delete_my_commands(language_code="en")
     await app.bot.set_my_description("", language_code="en")
     await app.bot.set_my_short_description("", language_code="en")
-    await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    link = webapp.url(settings)  # the menu button opens the site inside Telegram (core/webapp.py)
+    button = MenuButtonWebApp(webapp.MENU_BUTTON, WebAppInfo(link)) if link else MenuButtonCommands()
+    await app.bot.set_chat_menu_button(menu_button=button)
     await group.describe(app.bot)

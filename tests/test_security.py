@@ -26,7 +26,7 @@ def test_headers_probes_bots_and_bans(tmp_path: Path) -> None:
     app = create_app(settings, start_scheduler=False)
     with TestClient(app) as local, TestClient(app, client=("203.0.113.7", 5000)) as outsider:
         ok = local.get("/health")
-        assert ok.headers["x-frame-options"] == "DENY" and "frame-ancestors 'none'" in ok.headers["content-security-policy"]
+        assert ok.headers["x-frame-options"] == "DENY" and "frame-ancestors https://web.telegram.org" in ok.headers["content-security-policy"]
         assert "server" not in ok.headers
         assert local.get("/docs").status_code == 410 and local.get("/openapi.json").status_code == 410
 

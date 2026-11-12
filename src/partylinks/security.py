@@ -57,7 +57,8 @@ WEBHOOK_PATHS = ("/bot/telegram",)
 CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "default-src 'self'",
     # Google Analytics, after consent (consent.tsx); Cloudflare injects its cookieless Web Analytics beacon.
-    "script-src 'self' https://www.googletagmanager.com https://static.cloudflareinsights.com",
+    # Telegram's Mini App script, loaded only inside the bot's Web App (web/src/bot/telegramApp.ts).
+    "script-src 'self' https://www.googletagmanager.com https://static.cloudflareinsights.com https://telegram.org",
     # Leaflet positions tiles with inline styles. Fonts are self-hosted (no Google Fonts: privacy).
     "style-src 'self' 'unsafe-inline'",
     # The accessibility widget fetches its language packs and dyslexia font from jsDelivr (URLs hardcoded).
@@ -71,7 +72,10 @@ CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
+    # Nobody may frame the site but Telegram Web, which runs the bot's Web App in an iframe (its phone and
+    # desktop apps use a webview: not framed). Browsers that read frame-ancestors ignore X-Frame-Options;
+    # DENY stays for those that don't.
+    "frame-ancestors https://web.telegram.org",
 ])  # fmt: skip
 HEADERS = [
     (b"x-content-type-options", b"nosniff"),

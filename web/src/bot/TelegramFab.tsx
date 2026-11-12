@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useT } from "../ui";
+import { TG_APP } from "./telegramApp";
 import "./telegram-fab.css";
 
 const KEY = "partylinks-telegram-fab-closed";
@@ -33,7 +34,7 @@ export function TelegramFab() {
     queryFn: () => fetch("/site").then((r) => r.json() as Promise<{ telegram?: string | null }>),
   }).data?.telegram;
   const [bubble, setBubble] = useState(() => !closed());
-  if (!name || pathname.startsWith("/admin")) return null;
+  if (!name || TG_APP || pathname.startsWith("/admin")) return null;
   const hide = () => {
     try {
       localStorage.setItem(KEY, String(Date.now()));

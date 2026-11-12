@@ -21,6 +21,7 @@ class Button:
     label: str
     action: str | None = None  # pressed: sent back to the bot
     url: str | None = None  # or a link
+    web_app: bool = False  # the link opens inside Telegram (core/webapp.py)
 
 
 @dataclass(frozen=True)

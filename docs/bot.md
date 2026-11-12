@@ -132,6 +132,17 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
   @name), opening `t.me/<bot>?start=widget`. A speech bubble beside it ("Looking for a party? Ask our bot")
   can be closed and stays closed for 30 days; the button stays. It replaced the home page's banner
   (TelegramPromo, desktop only).
+- **🗺 SPOTX inside Telegram** (`core/webapp.py`, `web/src/bot/telegramApp.ts`): a Mini App, no login. The
+  private chat's menu button (beside the typing box) is "🌐 SPOTX", and the 🏠 menu has a "🗺 פתיחת האתר / Open
+  SPOTX" row; both open `site.base_url` + `/?src=tg-app` in Telegram's webview (https only: on localhost the
+  menu button stays the command list and the row is not shown). Only with `src=tg-app` (kept in
+  sessionStorage for the tab) does the site load `telegram.org/js/telegram-web-app.js`; with Telegram's
+  `initData` it calls `ready()` and `expand()`, paints Telegram's bars in the site's background, hides the
+  floating Telegram button, and opens outside links (`target=_blank`: tickets, maps, shares) in the browser
+  with `openLink`, since a link left to the webview replaces the app. Ticket clicks from inside count as
+  placement `tg-app` (`utm.PLACEMENTS`, `utm_content=tg-app`). The CSP lets `https://web.telegram.org` frame
+  the site (Telegram Web runs Mini Apps in an iframe; its phone and desktop apps do not) and loads
+  `https://telegram.org` scripts. No BotFather step: a menu-button Web App needs no `/newapp`.
 
 ## Code (`src/partylinks/bot/`)
 
@@ -154,6 +165,7 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 | `core/daily.py` | ☀️ the daily tip: opt-in, its area and taste, tonight's picks once a day |
 | `core/highlights.py` | 🔥 the week's top and the coming holidays' events in the menu |
 | `core/group.py`, `telegram/group.py` | 👥 groups: the intro, `/find` and mentions -> cards and a poll, removal |
+| `core/webapp.py` | 🗺 the menu button and menu row that open the site inside Telegram (`?src=tg-app`) |
 | `core/navigate.py` | 📍 the map pin, Waze / Google Maps, a place's hours, phone and booking |
 | `core/picks.py`, `core/digest.py`, `core/channel.py` | "interesting events"; /digest; the broadcast channel |
 | `core/usage.py`, `admin_routes.py` | usage rows and the admin's bot tab (`GET /admin/api/bot`) |
@@ -164,7 +176,8 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 
 Hook lines in existing files: `api.py` (the route), `config.py` (`bot:`), `db.py` (the tables),
 `scheduler.py` (the job), `security.py` (the webhook is outside the per-IP rate limit and needs no user
-agent: all of Telegram's posts come from a few addresses), `utm.py` (the `tg` placement),
+agent: all of Telegram's posts come from a few addresses; the CSP lets Telegram Web frame the site and
+loads Telegram's script), `utm.py` (the `tg` and `tg-app` placements),
 `alerts/matcher.py` (`new_event_ids`, shared), `web/src/pages/Admin.tsx` (the bot tab).
 
 ## Switching it on
@@ -201,3 +214,5 @@ buttons, reminders, watches, similar, calendar, plans, follow, digest, channel, 
 `tests/test_bot_daily.py` (☀️ opt-in and out, tonight's picks sent once, nothing tonight, /stop),
 `tests/test_bot_group.py` (👥 cards and a poll with trimmed options, group chatter ignored, removal deletes
 the row, private chats unchanged).
+`tests/test_bot_webapp.py` (🗺 the menu's web_app row and the menu button open `/?src=tg-app`, https only;
+the headers let Telegram Web frame the site).

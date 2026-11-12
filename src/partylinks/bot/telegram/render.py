@@ -19,6 +19,7 @@ from telegram import (
     KeyboardButton,
     LinkPreviewOptions,
     ReplyKeyboardMarkup,
+    WebAppInfo,
 )  # fmt: skip
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
@@ -34,7 +35,8 @@ def keyboard(rows: list[list[Button]]) -> InlineKeyboardMarkup | None:
     if not rows:
         return None
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(b.label, url=b.url) if b.url else InlineKeyboardButton(b.label, callback_data=b.action) for b in row]
+        [InlineKeyboardButton(b.label, web_app=WebAppInfo(b.url)) if b.web_app and b.url else
+         InlineKeyboardButton(b.label, url=b.url) if b.url else InlineKeyboardButton(b.label, callback_data=b.action) for b in row]
         for row in rows
     ])  # fmt: skip
 
