@@ -462,6 +462,35 @@ def test_israel_proxy_sources_try_israeli_ips_first_then_the_usual_pool() -> Non
     assert plain.http.proxy == "http://pool:1" and plain._spare_proxies == []
 
 
+def test_every_proxied_source_falls_back_to_the_vpn_and_a_proxy_500_goes_straight_there() -> None:
+    """holon, 2026-11-12: evomi's exits answered 500 (they cannot reach the site); our VPN can."""
+    http = HttpSettings(source_proxy="http://u:p@a:1, http://u:p@b:2", israel_vpn="http://vpn:8888")
+    scraper = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
+    vpn = f"http://{scraper.name}@vpn:8888"
+    assert scraper.http.proxy == "http://u:p@a:1" and scraper._spare_proxies == ["http://u:p@b:2", vpn]
+    direct = _Probe(SourceSettings(cron="0 * * * *", proxied=False), http, "UTC")
+    assert direct.http.proxy is None  # a direct source stays direct
+
+    async def run() -> None:
+        async with scraper:
+            first = scraper._client
+            assert first is not None
+            scraper._next_proxy(first, httpx.ProxyError("500 Internal Server Error"))
+            assert scraper._proxy == vpn and scraper._spare_proxies == ["http://u:p@b:2"]
+
+    asyncio.run(run())
+    other = _Probe(SourceSettings(cron="0 * * * *"), http, "UTC")
+
+    async def dead() -> None:
+        async with other:
+            first = other._client
+            assert first is not None
+            other._next_proxy(first, httpx.ConnectTimeout("dead proxy"))  # a dead proxy: the next one of the pool
+            assert other._proxy == "http://u:p@b:2" and other._spare_proxies == [vpn]
+
+    asyncio.run(dead())
+
+
 def test_israel_vpn_replaces_every_other_proxy() -> None:
     http = HttpSettings(source_proxy="http://pool:1", israel_proxy="http://il1:1, http://il2:2", israel_vpn="http://vpn:8888")
     scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True, vpn=True), http, "UTC")

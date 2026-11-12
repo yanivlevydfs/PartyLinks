@@ -112,6 +112,11 @@ class _Throttled(httpx.TransportError):
     """Throttled on our own IP at the slowest pace; retried on the reserve proxy."""
 
 
+def _proxy_500(exc: Exception | None) -> bool:
+    """The proxy itself answered 500: its exit could not reach the site (evomi), not a dead proxy."""
+    return isinstance(exc, httpx.ProxyError) and "500" in str(exc)
+
+
 def _is_retryable(exc: BaseException) -> bool:
     if isinstance(exc, httpx.HTTPStatusError):
         return exc.response.status_code in RETRYABLE_STATUS
@@ -185,9 +190,10 @@ class BaseScraper[S: SourceSettings](ABC):
         # A proxied source starts on the first URL of `source_proxy` and moves to the next when the
         # proxy fails or the site refuses its IP (403 / is_blocked). A per-source proxy wins.
         pool = [p.strip() for p in (http.source_proxy or "").split(",") if p.strip()] if settings.proxied else []
-        if settings.vpn and http.israel_vpn:  # our own exit and nothing else: no free proxies, no pool
-            # The source's name as the proxy user, so the vpn logs say who asked (@source:onecity).
-            vpn = http.israel_vpn if "@" in http.israel_vpn else http.israel_vpn.replace("://", f"://{self.name}@", 1)
+        # The source's name as the proxy user, so the vpn logs say who asked (@source:onecity).
+        vpn = (http.israel_vpn if "@" in http.israel_vpn else http.israel_vpn.replace("://", f"://{self.name}@", 1)) if http.israel_vpn else None
+        self._fallback_vpn: str | None = None
+        if settings.vpn and vpn:  # our own exit and nothing else: no free proxies, no pool
             pool = [vpn]
             # One exit: no probe, and no part in the free proxies' shared "good" one (each source's URL differs).
             self._israeli = set()
@@ -203,6 +209,11 @@ class BaseScraper[S: SourceSettings](ABC):
         else:
             self._israeli = set()
         self._vpn = settings.vpn and bool(http.israel_vpn)
+        if pool and vpn and not self._vpn:
+            # Every proxied source ends its pool on our VPN: when the proxies fail (evomi's "500 Internal
+            # Server Error": its exit cannot reach the site), the run goes on through our Israeli exit.
+            pool.append(vpn)
+            self._fallback_vpn = vpn
         self._spare_proxies = pool[1:] if pool and "proxy" not in overrides else []
         # Direct by choice (proxied: false), with the proxy kept in reserve for when the site rations our IP.
         self._reserve = [] if pool or "proxy" in overrides else [p.strip() for p in (http.source_proxy or "").split(",") if p.strip()]
@@ -287,6 +298,8 @@ class BaseScraper[S: SourceSettings](ABC):
         # Another source already found a working one: go straight to it; else the first not found dead lately.
         alive = [p for p in self._spare_proxies if now - dead.get(p, -DEAD_FOR_SECONDS) >= DEAD_FOR_SECONDS]
         proxy = good if good in self._spare_proxies else (alive or self._spare_proxies)[0]
+        if self._fallback_vpn in self._spare_proxies and _proxy_500(exc):
+            proxy = self._fallback_vpn  # the next exit of the same provider meets the same wall: straight to the VPN
         self._spare_proxies.remove(proxy)
         why = f"{type(exc).__name__}: {first_line(exc)[:160]}" if exc else "refused by the site"
         self.log.warning("proxy failed (%s): switching to %s", why, proxy.rpartition("@")[2])
