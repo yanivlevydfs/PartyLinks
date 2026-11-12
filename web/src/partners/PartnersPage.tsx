@@ -1,5 +1,6 @@
 // /partners: for promoters, venues and brands. Texts in texts.json, which the server's crawler page
 // (src/partylinks/partners_page.py) renders too, so both always say the same.
+import type { MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import { INFO_LINKS, Mail } from "../pages/Info";
 import { Hero, useT, useTitle } from "../ui";
@@ -17,6 +18,12 @@ type Section = {
   link?: string[]; // [path, label]
 };
 
+// A plain #hash click is a popstate with no history key, so ScrollRestoration puts the page back at the top.
+function jump(e: MouseEvent<HTMLAnchorElement>) {
+  e.preventDefault();
+  document.getElementById(e.currentTarget.hash.slice(1))?.scrollIntoView({ behavior: "smooth" });
+}
+
 export function PartnersPage() {
   const { lang } = useT();
   const t = TEXTS[lang];
@@ -27,8 +34,8 @@ export function PartnersPage() {
         <p className="pt-eyebrow">{t.eyebrow}</p>
         <p className="hero-pitch">{t.lead}</p>
         <p className="pt-ctas">
-          <a className="c-btn" href="#contact">{t.cta}</a>
-          <a className="c-btn ghost" href="#free">{t.ctaFree}</a>
+          <a className="c-btn" href="#contact" onClick={jump}>{t.cta}</a>
+          <a className="c-btn ghost" href="#free" onClick={jump}>{t.ctaFree}</a>
         </p>
       </Hero>
       <main className="wrap statement pt">
