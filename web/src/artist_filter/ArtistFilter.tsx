@@ -1,6 +1,6 @@
 // The artists index's filter: category (the genre filter's families), genre, where (Israel's regions /
 // countries abroad) and order, from each artist's own upcoming events (GET /artists/tags, partylinks.artist_filter).
-// The choice lives in the URL (/artists?cat=g_parties&genre=techno&where=abroad), so it can be shared.
+// The choice lives in the URL (/artists?cat=g_parties&genre=techno&where=abroad&sort=popular), so it can be shared.
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { getJSON, useCategories } from "../api";
@@ -27,7 +27,7 @@ export function useArtistFilter(facets: Facet[] | undefined) {
   const tags = useQuery({ queryKey: ["artist-tags"], queryFn: () => getJSON<Tags>("/artists/tags"), staleTime: 10 * 60_000 }).data;
   const groups = useCategories({ anywhere: "true" }).data?.genre_groups ?? [];
   const cat = params.get("cat"), genre = params.get("genre"), where = params.get("where"), place = params.get("place");
-  const az = params.get("sort") === "az";
+  const az = params.get("sort") !== "popular"; // A-Z unless asked: a one-click "most events"
   const set = (next: Record<string, string | null>) =>
     setParams((p) => {
       for (const [k, v] of Object.entries(next)) if (v) p.set(k, v); else p.delete(k);
@@ -84,8 +84,8 @@ export function useArtistFilter(facets: Facet[] | undefined) {
         ))}
       </FilterRow>
       <FilterRow label={f.sort}>
-        <Chip on={!az} onClick={() => set({ sort: null })}>{f.popular}</Chip>
-        <Chip on={az} onClick={() => set({ sort: "az" })}>{f.az}</Chip>
+        <Chip on={az} onClick={() => set({ sort: null })}>{f.az}</Chip>
+        <Chip on={!az} onClick={() => set({ sort: "popular" })}>{f.popular}</Chip>
         {shown && <small className="frow-count">{f.count(shown.length)}</small>}
         {active && <button className="link-btn" onClick={() => set({ cat: null, genre: null, where: null, place: null })}>{f.clear}</button>}
       </FilterRow>

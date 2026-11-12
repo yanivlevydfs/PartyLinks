@@ -49,7 +49,9 @@ curl-cffi==0.16.3
 fastapi==0.153.0
     # via partylinks (pyproject.toml)
 ftfy==6.3.1
-    # via partylinks (pyproject.toml)
+    # via
+    #   partylinks (pyproject.toml)
+    #   wordfreq
 geonamescache==3.0.2
     # via partylinks (pyproject.toml)
 h11==0.16.0
@@ -83,8 +85,14 @@ joserfc==1.7.7
     # via authlib
 json-repair==0.61.7
     # via partylinks (pyproject.toml)
+langcodes==3.5.1
+    # via wordfreq
+locate==1.1.1
+    # via wordfreq
 markupsafe==3.0.4
     # via jinja2
+msgpack==1.2.4
+    # via wordfreq
 opentelemetry-api==1.45.1
     # via fastapi
 pillow==13.0.0
@@ -128,6 +136,10 @@ python-telegram-bot==22.8
     # via partylinks (pyproject.toml)
 pyyaml==6.0.3
     # via pydantic-settings
+regex==2026.9.29
+    # via
+    #   partylinks (pyproject.toml)
+    #   wordfreq
 requests==2.34.2
     # via resend
 resend==2.50.0
@@ -185,4 +197,6 @@ uvicorn==0.54.0
 wcwidth==0.9.4
     # via ftfy
 webauthn==3.0.1
+    # via partylinks (pyproject.toml)
+wordfreq==3.1.1
     # via partylinks (pyproject.toml)

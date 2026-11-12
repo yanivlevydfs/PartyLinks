@@ -499,3 +499,13 @@ def test_free_for_one_group_is_free_and_paid_never_all_free() -> None:
         assert event.min_price is None  # no "from 0 ₪": only the group goes free
     kids = ENRICHER.enrich(make(description="ילדים חינם", tickets=[TicketTier(name="מבוגר", price=Decimal(60))]))
     assert kids is not None and kids.entry_type is EntryType.FREE_AND_PAID and kids.min_price == 60
+
+
+def test_common_words_are_not_spotted_as_artists() -> None:
+    """Curated one-word names that are plain words ("Love", "Winter") come only from a source's own lineup."""
+    enricher = Enricher(SETTINGS.enrichment, SETTINGS.timezone)
+    enricher.learn_artists([], featured=["Love", "Winter", "Blue", "Fisher", "Anyma"])
+    event = enricher.enrich(make(title="I LOVE COLLEGE PARTIES", description="Winter Dreams with FISHER and Anyma. Rhapsody in Blue"))
+    assert event is not None and event.lineup == ["Fisher", "Anyma"]
+    listed = enricher.enrich(make(title="Boat party", description="", artists=["DJ WILD", "Love"]))
+    assert listed is not None and "Love" in listed.lineup

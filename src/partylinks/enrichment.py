@@ -414,10 +414,11 @@ class Enricher:
         # A name that is also a genre word ("Melodic" in "melodic techno") or very short ("ko") is not spotted,
         # nor a one-word name with no Latin letter: Hebrew has no capitals to tell "חיים" / "כהן" from plain words.
         genre_parts = {part for words in self._genre_words for part in words.split()}
+        common = self.settings.lineup.common_word_zipf
         spot = sorted(
             {n.strip() for n in featured
              if len(n.strip()) >= min_len and n.strip().casefold() not in genre_parts | self._blocked
-             and (" " in n.strip() or re.search(r"[A-Za-z]", n))},
+             and (" " in n.strip() or (re.search(r"[A-Za-z]", n) and not _common_word(n.strip(), common)))},
             key=len, reverse=True,
         )  # fmt: skip
         # Multi-word names match in any case; one-word names only as written or in capitals ("Dali" / "DALI").
@@ -758,6 +759,13 @@ def _place_pattern(names: list[str], prefixes: int = 1, after: str = "") -> re.P
 def _spaced(name: str) -> str:
     """A name's spaces and hyphens match a space, hyphen or maqaf: "hip hop" finds "hip-hop", "תל אביב" "תל-אביב"."""
     return re.sub(r"(?:\\ |\\-)+", lambda _: r"[\s\-־]+", re.escape(name.lower()))
+
+
+def _common_word(name: str, zipf: float) -> bool:
+    """True for a plain English word ("Love", "Winter"), never spotted as an artist in running text."""
+    from wordfreq import zipf_frequency  # local: loads its word lists on first use
+
+    return zipf > 0 and zipf_frequency(name, "en") >= zipf
 
 
 def _free_from_text(event: ScrapedEvent) -> bool:

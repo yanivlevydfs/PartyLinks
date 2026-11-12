@@ -8,6 +8,8 @@ fastapi>=0.115
 curl_cffi>=0.15
 httpx[socks]>=0.28
 ftfy==6.3.1
+wordfreq==3.1.1
+regex==2026.9.29
 json-repair==0.61.7
 pycountry==26.2.16
 pydantic>=2.9

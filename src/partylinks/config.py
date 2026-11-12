@@ -24,10 +24,10 @@ from pydantic_settings import (
 )
 
 from partylinks.accounts.config import AccountsSettings
+from partylinks.artist_filter.config import ArtistFilterSettings
 from partylinks.artist_links.config import ArtistLinksSettings
 from partylinks.bot.config import BotSettings
 from partylinks.config_store.source import OverridesSource
-from partylinks.artist_filter.config import ArtistFilterSettings
 from partylinks.evening.config import EveningSettings
 from partylinks.event_text.config import EventTextSettings
 from partylinks.holiday_pages.config import HolidayPagesSettings
@@ -269,6 +269,10 @@ class LineupSettings(BaseModel):
     set_qualifiers: list[str] = Field(default_factory=list)
     min_known_length: int = Field(4, ge=2)  # shorter known names are never used as split points
     min_glued_length: int = Field(9, ge=4)  # shorter words are never split
+    # A one-word curated name that is also a common English word ("Love", "Winter", "Blue", "Europe") is not
+    # spotted in titles / text ("I LOVE COLLEGE PARTIES"), only taken from a source's own lineup. Its word
+    # frequency (wordfreq's Zipf scale: "love" 5.8, "winter" 4.9, "Fisher" 4.0, "Solomun" 1.3); 0 = off.
+    common_word_zipf: float = Field(4.5, ge=0)
 
 
 class TimeSlot(BaseModel):
