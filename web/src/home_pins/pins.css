@@ -34,3 +34,16 @@
 .pin-tools button:hover { background: var(--panel-solid); }
 .pin-tools button:disabled { opacity: .5; cursor: wait; }
 .pin-err { color: var(--pink); font-size: 13px; }
+
+/* A home row's edit door: a small red ✎ beside the ‹ › arrows (admins). */
+/* .trending-nav button paints every head button: this one stays red. */
+.pin-icon, .trending-nav button.pin-icon { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 0; background: var(--pink); color: #fff;
+  font: 700 15px/30px inherit; cursor: pointer; box-shadow: 0 0 10px rgb(255 46 147 / .45); flex: none; }
+.pin-icon:hover, .trending-nav button.pin-icon:hover { filter: brightness(1.12); background: var(--pink); }
+.pin-icon:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.row-pins h3 { margin: 4px 0 8px; font-size: 15px; }
+.row-pins ul { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.row-pins li { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.pin-x { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-hot); background: var(--panel-2); color: var(--pink);
+  font: 700 14px/26px inherit; cursor: pointer; flex: none; }
+.pin-x:disabled { opacity: .5; cursor: wait; }

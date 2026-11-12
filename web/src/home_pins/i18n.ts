@@ -27,6 +27,10 @@ const he = {
   close: "סגירה",
   pinBtn: "📌 נעיצה בדף הבית",
   addBtn: "➕ הוסף אירוע",
+  editRow: "עריכת השורה: הוספה והסרה של אירועים נעוצים",
+  inRow: "נעוצים בשורה הזו",
+  noneInRow: "אין כרגע אירועים נעוצים בשורה הזו",
+  addToRow: "הוספת אירוע לשורה",
   holiday: "✡️ שורת החג",
 };
 
@@ -56,6 +60,10 @@ const en: typeof he = {
   close: "Close",
   pinBtn: "📌 Pin to the home page",
   addBtn: "➕ Add an event",
+  editRow: "Edit this row: add and remove pinned events",
+  inRow: "Pinned in this row",
+  noneInRow: "Nothing is pinned in this row yet",
+  addToRow: "Add an event to this row",
   holiday: "✡️ Holiday row",
 };
 
