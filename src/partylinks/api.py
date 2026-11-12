@@ -560,6 +560,9 @@ class ResponseCache:
         """(body, status) of ``key`` if cached, fresh or stale (a stale one is rebuilt in the
         background); None when it has to be built first. Never builds in the caller's thread."""
         if hit := self._items.get(key):
+            with self._lock:  # least recently used last out: a hit moves to the end
+                if key in self._items:
+                    self._items[key] = self._items.pop(key)
             built_at, changes, body, code = hit
             age = time.monotonic() - built_at
             if age < self.ttl and (age < self.min_fresh or changes == Database.changes or not self.follow_writes):
@@ -572,7 +575,15 @@ class ResponseCache:
 
     def get(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> tuple[bytes, int]:
         """(body, status) of ``key``; ``build`` returns the body, or (body, status)."""
-        return self.peek(key, build) or self._build(key, build, self.build_wait)
+        if hit := self.peek(key, build):
+            return hit
+        try:
+            return self._build(key, build, self.build_wait)
+        except CacheBusy:
+            if old := self._items.get(key):  # busy: any older copy at once (refreshed behind), not a 503
+                self._refresh(key, build)
+                return old[2], old[3]
+            raise
 
     def _build(
         self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]], wait: float = 0
@@ -588,10 +599,12 @@ class ResponseCache:
         with self._lock:
             if old := self._items.pop(key, None):
                 self._bytes -= len(old[2])
-            if self._bytes + len(body) > self.max_bytes:
-                self._items.clear()
-                self._builders.clear()
-                self._bytes = 0
+            # The least recently used go first. Clearing it all (as before) emptied the home page and every hot
+            # page together whenever a crawler walk filled it: all cold at once, under load.
+            while self._items and self._bytes + len(body) > self.max_bytes:
+                gone = next(iter(self._items))
+                self._bytes -= len(self._items.pop(gone)[2])
+                self._builders.pop(gone, None)
             self._items[key] = (now, changes, body, code)
             self._builders[key] = build
             self._bytes += len(body)

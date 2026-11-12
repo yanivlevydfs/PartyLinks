@@ -135,6 +135,10 @@ class ApiSettings(BaseModel):
     # A page or listing that is not cached waits at most this long for a build slot, then a 503 (Retry-After):
     # crawlers opening cold pages must not hold every thread (the site went down twice on 2026-11-12). 0: no limit.
     cache_build_wait_seconds: float = Field(8, ge=0)
+    # Rendered pages kept in memory (least recently used dropped first), and how long one is still served at
+    # once while it is rebuilt in the background: a page built once never makes a visitor wait again that day.
+    html_cache_mb: int = Field(128, ge=8)
+    html_max_stale_seconds: float = Field(86400, ge=0)
 
 
 class SchedulerSettings(BaseModel):

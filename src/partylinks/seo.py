@@ -54,7 +54,6 @@ from partylinks.venues import PLACE_LISTING
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
 LIST_LIMIT = 60  # events listed on index pages
 HTML_TTL_S = 300  # a rendered page is reused this long
-HTML_CACHE_BYTES = 64 << 20
 LLMS_LIMIT = 400
 DESC_LIMIT = 300
 AI_CRAWLERS = [
@@ -1633,9 +1632,11 @@ def register(app: FastAPI, site_dir: Path) -> None:
     # as the API (stale entries are rebuilt in the background), so a visitor waits only on a first visit.
     from partylinks.api import CacheBusy, ResponseCache  # local: api imports this module
 
+    api_cfg = app.state.settings.api
     rendered = ResponseCache(  # scrapes write all day
-        ttl=HTML_TTL_S, max_bytes=HTML_CACHE_BYTES, follow_writes=False, build_wait=app.state.settings.api.cache_build_wait_seconds
-    )
+        ttl=HTML_TTL_S, max_bytes=api_cfg.html_cache_mb << 20, max_stale=api_cfg.html_max_stale_seconds,
+        follow_writes=False, build_wait=api_cfg.cache_build_wait_seconds,
+    )  # fmt: skip
     app.state.html_cache = rendered  # api.CachedPages serves hits before routing
 
     def page(request: Request, build: Any, missing: int = 410) -> HTMLResponse:  # 410: drop it, like every missing page

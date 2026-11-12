@@ -211,3 +211,34 @@ def test_a_cold_page_waits_a_bounded_time_for_a_build_slot() -> None:
     for t in busy:
         t.join()
     assert cache.get(("/cold", ""), lambda: b"y") == (b"y", 200)  # a slot free again: built as usual
+
+
+def test_a_full_cache_drops_the_least_recently_used_not_everything() -> None:
+    from partylinks.api import ResponseCache
+
+    cache = ResponseCache(max_bytes=30)
+    for k in ("home", "a", "b"):
+        cache.get((k, ""), lambda k=k: k.encode() * 10 if k != "home" else b"h" * 10)
+    cache.get(("home", ""), lambda: b"rebuilt")  # a hit: home is now the most recently used
+    cache.get(("c", ""), lambda: b"c" * 10)  # full: "a" (least recently used) goes, not everything
+    assert cache.peek(("home", "")) == (b"h" * 10, 200) and cache.peek(("a", "")) is None
+    assert cache.peek(("b", "")) is not None and cache.peek(("c", "")) is not None
+
+
+def test_busy_serves_an_old_copy_instead_of_a_503() -> None:
+    import threading
+    import time
+
+    from partylinks.api import ResponseCache
+
+    cache, release = ResponseCache(build_wait=0.2, max_stale=0), threading.Event()
+    cache.get(("/page", ""), lambda: b"old")
+    busy = [threading.Thread(target=cache.get, args=((f"/p{i}", ""), lambda: release.wait(5) and b"x")) for i in range(4)]
+    for t in busy:
+        t.start()
+    time.sleep(0.1)
+    cache._items[("/page", "")] = (0.0, *cache._items[("/page", "")][1:])  # long expired
+    assert cache.get(("/page", ""), lambda: b"new") == (b"old", 200)  # busy: the old copy at once
+    release.set()
+    for t in busy:
+        t.join()
