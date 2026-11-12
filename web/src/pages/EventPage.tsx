@@ -11,6 +11,7 @@ import { EventText } from "../event_text/EventText";
 import { PlaceInfo } from "../places/PlaceInfo";
 import { MapLinks } from "../places/MapLinks";
 import { SaveButton } from "../saved/SaveButton";
+import { EventPinButton } from "../home_pins/PinButtons";
 import { EventStats } from "../popularity/EventStats";
 import { LineupPlayer } from "../artist_links/ArtistPlayer";
 import { AddToCalendar, countryName, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
@@ -145,6 +146,7 @@ export default function EventPage() {
               {e.start_at && <AddToCalendar e={e} start={e.start_at} />}
               <PlanButton eventId={e.id} />
               <SaveButton eventId={e.id} large />
+              <EventPinButton event={e} />
             </div>
           </div>
         </div>

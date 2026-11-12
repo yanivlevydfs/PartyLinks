@@ -1420,6 +1420,9 @@ def _register_routes(app: FastAPI) -> None:
     app.include_router(artist_filter_router)
     app.include_router(top_router)
     app.include_router(ads_admin_router)
+    from partylinks.home_pins.routes import router as home_pins_router
+
+    app.include_router(home_pins_router)
     from partylinks.config_store.routes import router as config_overrides_router
 
     app.include_router(config_overrides_router)
@@ -1474,8 +1477,7 @@ def _register_routes(app: FastAPI) -> None:
                 out.rails[key], wheres[key] = load(filters, RAIL_POOL), filters
                 if key == cfg.smart_rails.after:
                     out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
-            if cfg.home_pins.events:
-                home_pins.pin(out.rails, wheres, event_filters(request), load, cfg.home_pins.events)
+            home_pins.pin(session, out.rails, wheres, event_filters(request), load)
             return out
 
         return _cached(request, build)

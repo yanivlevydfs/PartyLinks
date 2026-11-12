@@ -236,6 +236,7 @@
 | `sponsored` | `event_id` (`ads/models.py:21`) | טבעי | |
 | `sponsored_stats` | `(event_id, day)` composite (`ads/models.py:36-37`) | composite | תקין |
 | `flags` | `key` (`db.py:287`) | טבעי | |
+| `home_pins` | `event_id` (`home_pins/models.py`) | טבעי | נוסף 2026-11-12. בלי FK, כמו `sponsored`; ‏`delete_events` מוחק את הנעיצה עם האירוע (`delete_pins`). |
 | `plans` | `id` String(12) (`plans/models.py`) | טבעי: הסוד של הקישור (`secrets.token_urlsafe(9)`, 12 תווים, מ-2026-10-29; ישנים: 8 תווים) | נוסף 2026-10-28. מופיע ב-URL `/plan/{id}`, לכן חייב להישמר ב-copy. |
 | `plan_votes` | `id` int autoinc (`plans/models.py`) | surrogate | נוסף 2026-10-28. `setval` אחרי copy כמו כל int PK. |
 | `plan_events` | `(plan_id, event_id)` composite (`plans/models.py`) | composite | נוסף 2026-10-28 ("איזו מסיבה?"). |
@@ -951,3 +952,7 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **New table `bot_groups`** (created by `create_schema`): `channel` + `chat_id` (the PK, varchar 16 / 32), `lang` varchar(2), `joined_at`. A group the bot is in; nothing about members. Deleted when the bot is removed from the group or the group becomes a supergroup.
 - **Queries:** on join and on each group `/find`: `INSERT INTO bot_groups ... ON CONFLICT DO NOTHING` then `SELECT lang` by the PK; the search is the private chat's (`build_event_filters`, `LIMIT bot.group_results`). On removal: `DELETE FROM bot_groups WHERE channel = ? AND chat_id = ?` and `UPDATE bot_usage SET chat = NULL WHERE chat = <hash>` (as /stop).
 - **Tests:** `tests/test_bot_group.py`.
+### 2026-11-12 (home pins: the admin pins events to home rows, `home_pins`)
+- **New table `home_pins`** (created by `create_schema`): `event_id` text PK, `rails` JSONB (row keys; `[]` = Trending + every row it matches), `position` int, `until` timestamptz NULL, `note` text NULL, `created_at`. Replaces the `home_pins.events` setting (removed; a leftover `config_overrides` key is ignored). No FK: `db.delete_events` runs `DELETE FROM home_pins WHERE event_id IN (<chunk>)` (PK).
+- **Queries:** per `/events/rails` build (behind the response cache): `SELECT * FROM home_pins WHERE until IS NULL OR until > now() ORDER BY position` (a handful of rows, no index needed), then per pin one `SELECT EXISTS(<row filters> AND (id = :id OR group_id = (SELECT group_id FROM events WHERE id = :id))), ...` over every row (PK + the `group_id` index), and the card by the same group match with the upcoming filter `LIMIT 1`. The admin tab runs the same per pin. Search reuses `/events?q=`.
+- **Tests:** `tests/test_home_pins.py`.

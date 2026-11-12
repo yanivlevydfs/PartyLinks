@@ -927,6 +927,7 @@ def delete_events(session: Session, event_ids: Sequence[str]) -> list[str]:
         delete_saved(session, chunk)  # hearts go with their event
         delete_views(session, chunk)  # and its view counts (partylinks.popularity)
         delete_hits(session, chunk)  # alert matches too
+        delete_pins(session, chunk)  # home-row pins (partylinks.home_pins)
         # Through the module: importing artwork first (seo does) reaches here while it is half loaded.
         partylinks.artwork.models.delete_artwork(session, chunk)  # drawn cards of events with no picture
         session.execute(delete(EventRow).where(EventRow.id.in_(chunk)))
@@ -955,6 +956,7 @@ import partylinks.artistdb
 import partylinks.artwork.models
 import partylinks.bot.models
 import partylinks.config_store.models
+import partylinks.home_pins.models
 import partylinks.mail.models
 import partylinks.passkeys.models
 import partylinks.placeinfo.models
@@ -965,5 +967,6 @@ import partylinks.venue_profiles
 import partylinks.worker.models
 from partylinks.ads.models import prune_sponsored
 from partylinks.alerts.models import delete_hits
+from partylinks.home_pins.models import delete_pins
 from partylinks.popularity.models import delete_views
 from partylinks.saved.models import delete_saved

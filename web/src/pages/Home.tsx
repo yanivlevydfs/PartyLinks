@@ -8,6 +8,7 @@ import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store
 import { artistPath, Card, CardSkeletons, EventGrid, GridLoading, Hero, Related, useT, useTitle, venuePath } from "../ui";
 import type { EventSummary } from "../types";
 import { Quiz } from "./Quiz";
+import { RailPinButton } from "../home_pins/PinButtons";
 
 // Regions with a /region/<key> page (seo.py REGION_NAMES); Tel Aviv and Eilat are city pages.
 const REGION_PAGES = ["gush_dan", "sharon", "jerusalem", "haifa", "galilee", "negev"];
@@ -197,13 +198,13 @@ function Trending() {
   if (q.isPending) return <Rail title={t.trending} sub={t.trendingSub} pool={undefined} />;
   const holiday = q.data?.holiday;
   return <>{rails.map(([key, pool]) => key === "trending"
-    ? <Rail key={key} title={t.trending} sub={t.trendingSub} pool={pool} />
-    : key === "holiday" ? holiday && <Rail key={key} title={t.holidayRail(holiday[lang])} sub={t.holidayRailSub} pool={pool} />
-    : t.rails[key] && <Rail key={key} title={t.rails[key][0]} sub={t.rails[key][1]} pool={pool} />)}</>;
+    ? <Rail key={key} rail={key} title={t.trending} sub={t.trendingSub} pool={pool} />
+    : key === "holiday" ? holiday && <Rail key={key} rail={key} title={t.holidayRail(holiday[lang])} sub={t.holidayRailSub} pool={pool} />
+    : t.rails[key] && <Rail key={key} rail={key} title={t.rails[key][0]} sub={t.rails[key][1]} pool={pool} />)}</>;
 }
 
 /** A sideways row of cards: a random 12 of the row's pool (undefined: still loading). */
-export function Rail({ title, sub, pool }: { title: string; sub: string; pool: EventSummary[] | undefined }) {
+export function Rail({ title, sub, pool, rail }: { title: string; sub: string; pool: EventSummary[] | undefined; rail?: string }) {
   const row = useRef<HTMLDivElement>(null);
   // Shuffled once per visit: a fresh copy replacing the stored one doesn't reshuffle the row under the visitor.
   // A stored copy may be days old, so events already over are dropped.
@@ -229,6 +230,7 @@ export function Rail({ title, sub, pool }: { title: string; sub: string; pool: E
           <p>{sub}</p>
         </div>
         <div className="trending-nav">
+          <RailPinButton rail={rail} />
           <button onClick={() => scroll(-1)} aria-label="‹">‹</button>
           <button onClick={() => scroll(1)} aria-label="›">›</button>
         </div>
