@@ -68,7 +68,9 @@ function Rows({ e, rail, onDone, onChange }: { e: Picked; rail?: string; onDone?
 function Form({ e, pin, natural, rail, onDone }: { e: Picked; pin: Pin | null; natural: string[]; rail?: string; onDone?: () => void }) {
   const { p, rows } = usePinText();
   const { save, unpin } = usePinChange();
-  const [rails, setRails] = useState(() => [...new Set([...(pin?.rails ?? []), ...(rail ? [rail] : [])])]);
+  // ➕ on an auto pin (no rows chosen) keeps where it shows now (Trending + its own rows) and adds this row.
+  const shown = pin && !pin.rails.length && rail ? ["trending", ...natural] : (pin?.rails ?? []);
+  const [rails, setRails] = useState(() => [...new Set([...shown, ...(rail ? [rail] : [])])]);
   const [until, setUntil] = useState(pin?.until ? new Date(pin.until).toLocaleDateString("en-CA", { timeZone: TZ }) : "");
   const [note, setNote] = useState(pin?.note ?? "");
   const toggle = (k: string) => setRails((r) => (r.includes(k) ? r.filter((x) => x !== k) : [...r, k]));

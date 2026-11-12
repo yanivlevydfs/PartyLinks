@@ -84,6 +84,7 @@ def event_pin(event_id: str, session: SessionDep) -> dict[str, Any]:
 def save(event_id: str, body: PinIn, session: SessionDep) -> dict[str, Any]:
     """Pin an upcoming event (a new pin leads the others) or change its rows, end and note."""
     if not session.scalar(select(exists().where(EventRow.id == event_id, upcoming_filter()))):
+        log.info("home pins: refused %s: no such upcoming event", event_id)
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"{event_id}: no such upcoming event")
     p = session.get(HomePinRow, event_id)
     if p is None:
@@ -107,7 +108,8 @@ def unpin(event_id: str, session: SessionDep) -> None:
 @router.post("/order")
 def reorder(event_ids: list[str], session: SessionDep) -> dict[str, int]:
     """Every pin's event id, first shown first."""
+    moved = 0
     for p in session.scalars(select(HomePinRow).where(HomePinRow.event_id.in_(event_ids))):
-        p.position = event_ids.index(p.event_id)
-    log.info("home pins: reordered %d", len(event_ids))
-    return {"saved": len(event_ids)}
+        p.position, moved = event_ids.index(p.event_id), moved + 1
+    log.info("home pins: reordered %d", moved)
+    return {"saved": moved}
