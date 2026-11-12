@@ -24,6 +24,7 @@ def _place(
     at: tuple[float, float],
     level: int | None = None,
     open_hours: str | None = None,
+    deal: str | None = None,
 ) -> object:
     """A place listing for ``hours`` from ``start`` (a bar's: its happy-hour slot); ``open_hours`` its
     opening hours every day ("18:00-02:00", as extra.hours) when given."""
@@ -31,7 +32,7 @@ def _place(
         key, start, title=key, url=f"https://www.happytlv.com/x/{key}", end_at=start + timedelta(hours=hours),
         latitude=at[0], longitude=at[1], source_genres=[genre],
         extra={PLACE_LISTING: True, **({"price_level": level} if level else {}),
-               **({"hours": {d: [open_hours] for d in DAYS}} if open_hours else {})},
+               **({"hours": {d: [open_hours] for d in DAYS}} if open_hours else {}), **({"deal": deal} if deal else {})},
     )  # fmt: skip
 
 
@@ -76,7 +77,7 @@ def test_after_a_show_a_bar_open_late_counts_not_its_happy_hour(tmp_path: Path) 
         event("show", at(21), title="Stand-up", end_at=None, latitude=CLUB[0], longitude=CLUB[1]),  # no end: till 00:00
         _place("deal-bar", at(18), 2, "happy hour", (32.0810, 34.7810)),  # happy hour 18-20, hours unknown
         # Happy hour at noon, open till 02:00: not drinks before a 21:00 show, but a late stop after it.
-        _place("night-bar", at(12), 2, "happy hour", (32.0815, 34.7805), open_hours="12:00-02:00"),
+        _place("night-bar", at(12), 2, "happy hour", (32.0815, 34.7805), open_hours="12:00-02:00", deal="1+1"),
         _place("early-bar", at(12), 2, "happy hour", (32.0795, 34.7795), open_hours="12:00-23:00"),  # shut at 00:00
         _place("odd-bar", at(12), 2, "happy hour", (32.0790, 34.7810), open_hours="late"),  # unreadable: skipped
         # Tonight's slot already over and deleted: tomorrow's listing stands for the bar open tonight.
@@ -88,3 +89,4 @@ def test_after_a_show_a_bar_open_late_counts_not_its_happy_hour(tmp_path: Path) 
     assert steps == {"drinks": ["deal-bar"], "late": ["night-bar", "gone-bar"]}  # deal-bar's 18-20 isn't late
     late = out["steps"][-1]["stops"][0]["event"]  # shows its opening hours, not its noon happy hour
     assert (late["start_at"], late["end_at"]) == (at(12).isoformat(), (at(2) + timedelta(days=1)).isoformat())
+    assert late["deal"] is None  # its noon happy hour's "1+1" is not on at midnight

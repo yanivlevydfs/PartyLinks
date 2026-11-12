@@ -41,8 +41,9 @@ def evening_for(session: Session, cfg: Settings, ref: str, budget: bool = False)
     extras = _summary_extras(session, rows, cfg)
 
     def card(r: EventRow, opens: Span | None = None) -> EventSummaryOut:
-        """``opens``: an "after" stop's opening hours, shown instead of its listing's (a happy-hour slot)."""
-        hours = {"start_at": opens[0], "end_at": opens[1]} if opens else {}
+        """``opens``: an "after" stop's opening hours, shown instead of its listing's (a happy-hour slot), and
+        without the happy hour's deal: at 23:00 "1+1 on drinks" beside "18:00-02:00" read as still on."""
+        hours = {"start_at": opens[0], "end_at": opens[1], "deal": None} if opens else {}
         return EventSummaryOut.model_validate(r).model_copy(update=extras[r.id] | hours)
 
     return EveningOut(
