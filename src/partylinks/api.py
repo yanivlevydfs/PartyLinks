@@ -65,6 +65,7 @@ from partylinks.event_text import DescriptionLayout, description_layout
 from partylinks.event_text.group import group_description
 from partylinks.holiday_pages import core as holiday_pages
 from partylinks.holiday_pages.routes import HolidayOut
+from partylinks.home_pins import rails as home_pins
 from partylinks.lines.weekly import weekly as lines_weekly
 from partylinks.logs import setup_logging
 from partylinks.mail.images import router as mail_images_router
@@ -243,6 +244,7 @@ class EventSummaryOut(_Out):
     hood: str | None = None  # its neighbourhood, "הצפון הישן"
     bookable: bool = False  # matched to an Ontopo venue (partylinks.placeinfo)
     was_price: float | None = None  # the price before a recent drop (partylinks.smartrails)
+    pinned: bool = False  # pinned by the owner to the home rows: shown first (partylinks.home_pins)
     weekly: str | None = None  # a weekly line's weekday, "thursday" (partylinks.lines)
 
     @model_validator(mode="after")
@@ -1457,6 +1459,7 @@ def _register_routes(app: FastAPI) -> None:
                                          events=n, page=True)  # fmt: skip
                 smart = {"holiday": [*event_filters(request, date_to=now + timedelta(days=cfg.holiday_pages.ahead_days)),
                                      *holiday_pages.where(holiday)], **smart}  # fmt: skip
+            wheres = dict(smart)  # each row's filters, for the pinned events (partylinks.home_pins)
             if cfg.smart_rails.after not in HOME_RAILS:
                 out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
             for key, spec in HOME_RAILS.items():
@@ -1468,9 +1471,11 @@ def _register_routes(app: FastAPI) -> None:
                     filters.append(EventRow.group_size > 1)
                 if spec.get("exclude"):
                     filters.append(not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec["exclude"]))))
-                out.rails[key] = load(filters, RAIL_POOL)
+                out.rails[key], wheres[key] = load(filters, RAIL_POOL), filters
                 if key == cfg.smart_rails.after:
                     out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
+            if cfg.home_pins.events:
+                home_pins.pin(out.rails, wheres, event_filters(request), load, cfg.home_pins.events)
             return out
 
         return _cached(request, build)

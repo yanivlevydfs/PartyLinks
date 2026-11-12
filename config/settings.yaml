@@ -159,6 +159,12 @@ popularity:
 # Home rows only we can make (src/partylinks/smartrails), after the `after` row: open now, free if you come
 # now, price dropped, revealed today, last tickets, and tonight's weather. A card also shows its price before
 # a drop in the last price_down_days ("₪120 → ₪90"). The weather rows read the cached forecast only.
+# Events pinned to the home page's rows (src/partylinks/home_pins): first in 🔥 Trending and in every row whose
+# filters they match (electronic, tonight...), never shuffled away; one over drops out by itself. Slugs or ids.
+home_pins:
+  events:
+    - techno-nature-winter-edition-2026-11-19-selector-e172bf67
+
 smart_rails:
   enabled: true
   after: tonight          # an /events/rails key (api.HOME_RAILS)

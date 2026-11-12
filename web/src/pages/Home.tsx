@@ -215,7 +215,7 @@ export function Rail({ title, sub, pool }: { title: string; sub: string; pool: E
       const j = Math.floor(Math.random() * (i + 1));
       [list[i], list[j]] = [list[j], list[i]];
     }
-    return list.slice(0, 12);
+    return [...list.filter((e) => e.pinned), ...list.filter((e) => !e.pinned)].slice(0, 12); // pinned first, always shown
   }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
   if (loaded && items.length < 3) return null;
   const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth, behavior: "smooth" });

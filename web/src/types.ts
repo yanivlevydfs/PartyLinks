@@ -67,6 +67,7 @@ export interface EventSummary {
   bookable?: boolean;
   /** The price before a drop in the last few days (partylinks.smartrails): shown struck through. */
   was_price?: number | null;
+  pinned?: boolean; // pinned by the owner to the home rows: shown first (partylinks.home_pins)
   /** A weekly line (partylinks.lines): its weekday, "thursday". */
   weekly?: string | null;
   /** Free entry until then (any listing of the event). */
