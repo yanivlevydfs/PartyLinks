@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { getJSON, useCategories } from "../api";
 import { FilterRow, GROUP_ICON } from "../Filters";
+import { genreLabel } from "../i18n";
 import type { Facet } from "../types";
 import { Chip, countryName, label, useT } from "../ui";
 
@@ -60,7 +61,7 @@ export function useArtistFilter(facets: Facet[] | undefined) {
         <Chip on={!cat} onClick={() => set({ cat: null, genre: null })}>{f.all}</Chip>
         {groups.filter((g) => cats.has(g.value)).map((g) => (
           <Chip key={g.value} on={cat === g.value} onClick={() => set({ cat: cat === g.value ? null : g.value, genre: null })}>
-            <span aria-hidden>{GROUP_ICON[g.value]}</span> {label(t.genre, g.value)} <small>{cats.get(g.value)}</small>
+            <span aria-hidden>{GROUP_ICON[g.value]}</span> {genreLabel(lang, g.value)} <small>{cats.get(g.value)}</small>
           </Chip>
         ))}
       </FilterRow>
@@ -68,7 +69,7 @@ export function useArtistFilter(facets: Facet[] | undefined) {
         <FilterRow label={f.genre} scroll>
           <Chip on={!genre} onClick={() => set({ genre: null })}>{f.all}</Chip>
           {genres.map(([g, n]) => (
-            <Chip key={g} on={genre === g} onClick={() => set({ genre: genre === g ? null : g })}>{label(t.genre, g)} <small>{n}</small></Chip>
+            <Chip key={g} on={genre === g} onClick={() => set({ genre: genre === g ? null : g })}>{genreLabel(lang, g)} <small>{n}</small></Chip>
           ))}
         </FilterRow>
       )}
