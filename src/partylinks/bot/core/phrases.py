@@ -48,7 +48,7 @@ PHRASES: dict[str, dict[str, tuple[str, ...]]] = {
                 "🔔 ״עדכן אותי״ שולח לכם אירועים חדשים שמתאימים לחיפוש.\n"
                 "מתחת לכל אירוע: ⏰ תזכורת לפני, 👁 מעקב מחיר וכרטיסים, 🔁 אירועים דומים, ➕ יומן, ״מי בא?״ "
                 "ומעקב אחרי האמן או המקום.\n"
-                "/alerts ההתראות · /reminders תזכורות ומעקבים · /digest סיכום שבועי · /lang שפה · /stop מחיקת הכל"
+                "/alerts ההתראות · /reminders תזכורות ומעקבים · /digest סיכום שבועי · /daily טיפ יומי · /lang שפה · /stop מחיקת הכל"
             ),
         ),
         "en": (
@@ -59,7 +59,7 @@ PHRASES: dict[str, dict[str, tuple[str, ...]]] = {
                 '🔔 "Alert me" sends you new events that match the search.\n'
                 "Under every event: ⏰ a reminder, 👁 price and ticket watch, 🔁 similar events, ➕ calendar, "
                 "\"who's coming?\" and following the artist or venue.\n"
-                "/alerts alerts · /reminders reminders and watches · /digest weekly picks · /lang language · "
+                "/alerts alerts · /reminders reminders and watches · /digest weekly picks · /daily daily tip · /lang language · "
                 "/stop delete everything"
             ),
         ),
