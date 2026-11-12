@@ -45,6 +45,31 @@ def cf_emails(body: bytes) -> bytes:
     return _CF_LINK.sub(lambda m: b"mailto:" + _cf_decode(m.group(1)), body)
 
 
+# A "[email protected]" a source copied as plain text (OGO from the municipality): the address is gone, so the
+# placeholder goes: as a contact line ("| דוא"ל: …", "Email: …") with its label, inside a sentence ("דרך המייל
+# …") it points to the organizer's page, so the sentence still reads.
+_LOST_EMAIL = r"\[email[\s\xa0]protected\]"
+_LOST_LABELED = re.compile(
+    r"(?:\s*[|,/·•]\s*|\s+)?(?<![\w\"״'])(?:כתובת\s)?(?:דוא[\"״']?ל|אימייל|מייל|e-?mail|электронная почта)"
+    rf"\s*:\s*{_LOST_EMAIL}",
+    re.IGNORECASE,
+)
+_LOST_IN_TEXT = re.compile(_LOST_EMAIL, re.IGNORECASE)
+_HEBREW = re.compile("[א-ת]")
+
+
+def drop_lost_emails(text: str | None) -> str | None:
+    """``text`` without the "[email protected]" placeholders whose address no page carries any more."""
+    if not text or "protected]" not in text:
+        return text
+    text = _LOST_LABELED.sub("", text)
+    return _LOST_IN_TEXT.sub(
+        lambda m: (
+            "(בדף המארגן)" if _HEBREW.search(text[max(0, m.start() - 40) : m.start()]) else "(on the organizer's page)"
+        ),
+        text,
+    ).strip()
+
 
 class ParseError(ValueError):
     """Raised when a payload does not have the structure a scraper expects."""

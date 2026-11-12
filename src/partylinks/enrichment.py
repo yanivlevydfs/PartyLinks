@@ -19,7 +19,7 @@ from zoneinfo import ZoneInfo
 
 from partylinks.config import AreaSettings, CitySettings, EnrichmentSettings, RegionSettings
 from partylinks.models import EntryType, ScrapedEvent, TicketKind, TicketTier
-from partylinks.parsing import slugify
+from partylinks.parsing import drop_lost_emails, slugify
 from partylinks.places import PlaceIndex, all_cities, city_name, city_point, israeli_places, latin_town
 
 _EDGE_DECOR = re.compile(r"^[^\w'\"(]+|[^\w'\")]+$")
@@ -297,6 +297,7 @@ class Enricher:
         if any(skip.casefold() in title for skip in self.settings.skip_titles):
             return None
         self._slugs(event)
+        event.description = drop_lost_emails(event.description)
         self._drop_social_purchase(event)
         event.genres = self._detect_genres(event)
         event.lineup = self._lineup(event)
