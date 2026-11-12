@@ -11,6 +11,7 @@ const TEXT = {
 export default function ErrorPage() {
   console.error(useRouteError()); // kept for the browser console; never shown to visitors
   const t = TEXT[document.documentElement.lang === "en" ? "en" : "he"];
+  document.title = `${t.title} · SPOTX`; // not the previous page's title
   return (
     <main className="wrap error-page" role="alert">
       <h1>⚠️ {t.title}</h1>
