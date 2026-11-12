@@ -66,3 +66,15 @@ def test_parse_event() -> None:
     assert regular.remaining == 30
     assert (event.min_price, event.max_price) == (Decimal(40), Decimal(60))
     assert not event.is_sold_out
+
+
+def test_unlisted_events_are_found_in_the_wayback_index_and_a_search() -> None:
+    from datetime import UTC, datetime
+
+    from partylinks.scrapers import eventbuzz_discover as discover
+
+    cdx = "http://eventbuzz.co.il/lp/event/vhs\nhttps://eventbuzz.co.il/lp/event/vhs?lang=en&\nhttps://eventbuzz.co.il/lp/event/\n"
+    ddg = '<a href="//duckduckgo.com/l/?uddg=https%3A%2F%2Feventbuzz.co.il%2Flp%2Fevent%2Fx">eventbuzz.co.il/lp/event/kinorai-burlesque-night</a>'
+    assert discover.slugs(cdx) == ["vhs"] and discover.slugs(ddg) == ["kinorai-burlesque-night"]
+    assert discover.wayback_url("cdx?from={since}", 10, datetime(2026, 11, 12, tzinfo=UTC)) == "cdx?from=20261102"
+    assert discover.search_urls("s?q={q}&s={offset}", "site:x", 2) == ["s?q=site%3Ax&s=0", "s?q=site%3Ax&s=30"]

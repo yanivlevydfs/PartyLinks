@@ -20,6 +20,7 @@ from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, html_to_text, to_decimal, to_int
+from partylinks.scrapers import eventbuzz_discover as discover
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _DATETIME = re.compile(r"(\d{1,2}):(\d{2})\s+(\d{1,2})\.(\d{1,2})\.(\d{4})")
@@ -52,6 +53,13 @@ class EventbuzzSettings(SourceSettings):
     event_path_prefix: str
     selectors: EventbuzzSelectors
     labels: EventbuzzLabels
+    # Unlisted events (eventbuzz_discover): the Wayback Machine's index of the last days, and a site: search.
+    wayback_url: str = ""
+    wayback_days: int = 120
+    search_url: str = ""
+    search_query: str = "site:eventbuzz.co.il/lp/event"
+    search_pages: int = 5
+    extra_slugs: list[str] = []  # links the owner saw before any index did (the admin's config tab)
 
 
 class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
@@ -61,9 +69,22 @@ class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         urls = parse_listing(await self.get_text(s.site_url + s.listing_path), s)
-        self.log.debug("listed %d events", len(urls))
+        listed = len(urls)
+        urls = list(dict.fromkeys(urls + [s.site_url + s.event_path_prefix + slug for slug in await self._unlisted()]))
+        self.log.debug("listed %d events, %d more found elsewhere", listed, len(urls) - listed)
         async for event in self.stream_isolated(urls, self._fetch_event, label=lambda u: u):
             yield event
+
+    async def _unlisted(self) -> list[str]:
+        s, pages = self.settings, []
+        if s.wayback_url:
+            pages.append(("wayback index", discover.wayback_url(s.wayback_url, s.wayback_days)))
+        if s.search_url:
+            pages += [(f"search page {i + 1}", u) for i, u in enumerate(discover.search_urls(s.search_url, s.search_query, s.search_pages))]
+        found: list[str] = list(s.extra_slugs)
+        for what, url in pages:  # a failing index or search page costs only its links
+            found += discover.slugs(await self.optional(what, self.get_text(url)) or "")
+        return list(dict.fromkeys(found))
 
     async def _fetch_event(self, url: str) -> ScrapedEvent:
         return parse_event(await self.get_text(url), url, self.settings, self.timezone)

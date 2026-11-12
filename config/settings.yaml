@@ -1625,6 +1625,17 @@ sources:
     labels:
       start: התחלה
       location: מיקום
+    # Most events are not on /events (producers share /lp/event/<slug> links): every link the Wayback
+    # Machine archived in the last wayback_days, and a DuckDuckGo site: search (search_pages pages).
+    wayback_url: "https://web.archive.org/cdx/search/cdx?url=eventbuzz.co.il/lp/event/*&output=txt&fl=original&collapse=urlkey&from={since}"
+    wayback_days: 120
+    search_url: "https://html.duckduckgo.com/html/?q={q}&s={offset}"
+    search_query: "site:eventbuzz.co.il/lp/event"
+    search_pages: 5
+    # Links seen before any index has them (new events shared on Instagram): their slugs.
+    extra_slugs: [kinorai-burlesque-night]
+    http:
+      timeout_seconds: 120  # the Wayback index of hundreds of links answers in 20-60 s
 
   popit:
     # Aggregator: today every listing links out to Zygo (merged by dedup via extra.purchase_url);
