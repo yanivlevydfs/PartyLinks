@@ -20,7 +20,7 @@ class EveningSettings(BaseModel):
     walk_m: int = Field(1500, ge=100, le=20000)  # places this far from the event at most
     per_step: int = Field(3, ge=1, le=10)  # nearest places shown per step
     # An event with no end: assumed to last this long (the "after" steps start then).
-    assumed_hours: float = Field(5, gt=0, le=24)
+    assumed_hours: float = Field(3, gt=0, le=24)
     # "This week at the place": the venue's other listings this many days ahead.
     venue_days: int = Field(7, ge=1, le=60)
     venue_items: int = Field(6, ge=0, le=20)

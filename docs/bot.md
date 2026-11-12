@@ -122,7 +122,8 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
   the chat's last search's place, else the area buttons. Of the first `bot.evening_tries` events found, the
   first with places around it gets the site's evening (`evening.plan.plan`, as on an event's page: the
   nearest of each `evening.steps`), sent as labelled cards in the site's order: 🍸 before (happy hour), 🍽️
-  before (dinner), 🎉 the event, 🍻 after (a bar or late food, open in the 3 hours after it ends), each place with its walk from the event. No
+  before (dinner), 🎉 the event, 🍻 after (a bar or late food open in the 3 hours after it ends, by the place's opening
+  hours, not its happy-hour slot; an event with no end lasts `evening.assumed_hours`), each place with its walk from the event. No
   event has any: the first event alone. 🔁 "another evening" carries the search and the next offset
   (`ev:<n>:<words>`, dropped when over 64 bytes): no state. Counted as `evening` in the bot tab.
 - **Hebrew first**, like the site: English only when the user writes English or picks it.

@@ -190,7 +190,8 @@ evening:
   enabled: true
   walk_m: 1500            # places this far from the event at most
   per_step: 3             # nearest places per step
-  assumed_hours: 5        # an event with no end lasts this long (the "after" steps start then)
+  assumed_hours: 3        # an event with no end lasts this long: the "after" steps start then (a 20:00 show:
+                          # 23:00; 5 put a 19:30 show's after-window at 00:30-03:30, past most bars)
   venue_days: 7           # "this week at the place": that many days ahead
   venue_items: 6
   budget_max_level: 2     # "a budget evening": places up to ₪₪ (₪ = 1 ... ₪₪₪₪ = 4); unpriced places stay
@@ -198,7 +199,7 @@ evening:
     - {key: drinks, genres: [happy_hour], when: before, hours: 5}
     - {key: dinner, genres: [fine_dining, food], when: before, hours: 5}
     # After: a bar or late food open in the 3 hours after it ends (a 6-hour "morning coffee" window caught
-    # all-day coffee carts at midnight).
+    # all-day coffee carts at midnight). After, a place's opening hours count, not its happy-hour slot.
     - {key: late, genres: [happy_hour, open_bar, food], when: after, hours: 3}
 
 # Israeli holiday pages (src/partylinks/holiday_pages): /holiday/<key> lists the events from a holiday's eve to

@@ -25,7 +25,8 @@ def _talk(tmp_path: Path) -> tuple:
         event("party", datetime.combine(day, time(23), tz), title="Techno night", latitude=CLUB[0], longitude=CLUB[1]),
         _place("bar", datetime.combine(day, time(19), tz), 2, "happy hour", (32.0820, 34.7810)),
         _place("chef", datetime.combine(day, time(18), tz), 4, "fine dining", (32.0805, 34.7805)),
-        _place("night", datetime.combine(day + timedelta(days=1), time(3), tz), 3, "happy hour", (32.0790, 34.7790)),  # open as it ends
+        # Its happy hour at noon, but open till 06:00 (extra.hours): the stop after a party ending at 05:00.
+        _place("night", datetime.combine(day, time(12), tz), 2, "happy hour", (32.0790, 34.7790), open_hours="12:00-06:00"),
     ])  # fmt: skip
     return Conversation(lambda: settings, db, "telegram"), db, settings
 

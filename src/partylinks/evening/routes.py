@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from partylinks.api import EventSummaryOut, _summary_extras, build_event_filters
 from partylinks.config import Settings
 from partylinks.db import Database, EventRow
-from partylinks.evening.plan import plan
+from partylinks.evening.plan import Span, plan
 
 router = APIRouter(tags=["events"])
 
@@ -40,11 +40,16 @@ def evening_for(session: Session, cfg: Settings, ref: str, budget: bool = False)
     rows = [r for step in found.steps for r, _ in step.items] + found.venue
     extras = _summary_extras(session, rows, cfg)
 
-    def card(r: EventRow) -> EventSummaryOut:
-        return EventSummaryOut.model_validate(r).model_copy(update=extras[r.id])
+    def card(r: EventRow, opens: Span | None = None) -> EventSummaryOut:
+        """``opens``: an "after" stop's opening hours, shown instead of its listing's (a happy-hour slot)."""
+        hours = {"start_at": opens[0], "end_at": opens[1]} if opens else {}
+        return EventSummaryOut.model_validate(r).model_copy(update=extras[r.id] | hours)
 
     return EveningOut(
-        steps=[StepOut(key=s.key, stops=[StopOut(event=card(r), distance_m=d) for r, d in s.items]) for s in found.steps],
+        steps=[
+            StepOut(key=s.key, stops=[StopOut(event=card(r, s.opens.get(r.id)), distance_m=d) for r, d in s.items])
+            for s in found.steps
+        ],
         venue=[card(r) for r in found.venue],
         budget_max_level=cfg.evening.budget_max_level,
     )
