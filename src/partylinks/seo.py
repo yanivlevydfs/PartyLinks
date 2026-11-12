@@ -1631,9 +1631,11 @@ def register(app: FastAPI, site_dir: Path) -> None:
     # Rendered pages are the same for every visitor; building one runs several whole-table queries
     # (~1.5 s for the home page at prod size, ~12 s for /artists). Served from the same kind of cache
     # as the API (stale entries are rebuilt in the background), so a visitor waits only on a first visit.
-    from partylinks.api import ResponseCache  # local: api imports this module
+    from partylinks.api import CacheBusy, ResponseCache  # local: api imports this module
 
-    rendered = ResponseCache(ttl=HTML_TTL_S, max_bytes=HTML_CACHE_BYTES, follow_writes=False)  # scrapes write all day
+    rendered = ResponseCache(  # scrapes write all day
+        ttl=HTML_TTL_S, max_bytes=HTML_CACHE_BYTES, follow_writes=False, build_wait=app.state.settings.api.cache_build_wait_seconds
+    )
     app.state.html_cache = rendered  # api.CachedPages serves hits before routing
 
     def page(request: Request, build: Any, missing: int = 410) -> HTMLResponse:  # 410: drop it, like every missing page
@@ -1651,7 +1653,10 @@ def register(app: FastAPI, site_dir: Path) -> None:
                               body=f"<h1>{t['not_found']}</h1>")  # fmt: skip
             return render(index.read_text(encoding="utf-8"), result, settings, alt).encode(), result.status
 
-        body, code = rendered.get(html_key(request.url.path, request.url.query), make)
+        try:
+            body, code = rendered.get(html_key(request.url.path, request.url.query), make)
+        except CacheBusy:  # the plain app shell: a visitor's browser renders the page, a crawler retries later
+            return HTMLResponse(index.read_text(encoding="utf-8"), status_code=503, headers={"Retry-After": "30"})
         return HTMLResponse(body, status_code=code)
 
     @app.get("/landing-info", tags=["meta"])

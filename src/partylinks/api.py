@@ -514,6 +514,10 @@ class _SiteFiles(StaticFiles):
         return response
 
 
+class CacheBusy(Exception):
+    """No build slot freed within ``build_wait``: the request gets a quick 503 instead of holding a thread."""
+
+
 class ResponseCache:
     """Bodies of public reads (JSON, rendered pages). An entry goes stale when a write commits
     (``Database.changes``, unless ``follow_writes`` is off; never before ``min_fresh``, so a scrape committing
@@ -532,9 +536,14 @@ class ResponseCache:
         max_stale: float = 3600,
         follow_writes: bool = True,
         min_fresh: float = 0,
+        build_wait: float = 0,
     ) -> None:
         self.ttl, self.max_bytes, self.max_stale, self.follow_writes = ttl, max_bytes, max_stale, follow_writes
         self.min_fresh = min_fresh
+        # A request waits this long for a build slot, then CacheBusy (0: as long as it takes). Crawlers opening
+        # cold pages held all slots; every waiting request held a thread until uvicorn's 200 were full and the
+        # whole site answered 503 (2026-11-12, twice).
+        self.build_wait = build_wait
         self._items: dict[tuple[str, str], tuple[float, int, bytes, int]] = {}  # built at, changes, body, status
         self._builders: dict[tuple[str, str], Callable[[], bytes | tuple[bytes, int]]] = {}  # to refresh a peeked entry
         self._bytes = 0
@@ -563,12 +572,18 @@ class ResponseCache:
 
     def get(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> tuple[bytes, int]:
         """(body, status) of ``key``; ``build`` returns the body, or (body, status)."""
-        return self.peek(key, build) or self._build(key, build)
+        return self.peek(key, build) or self._build(key, build, self.build_wait)
 
-    def _build(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> tuple[bytes, int]:
-        with self._builds:
+    def _build(
+        self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]], wait: float = 0
+    ) -> tuple[bytes, int]:
+        if not self._builds.acquire(timeout=wait or None):
+            raise CacheBusy(key[0])
+        try:
             changes, now = Database.changes, time.monotonic()  # read before building: a write during it wins
             out = build()
+        finally:
+            self._builds.release()
         body, code = out if isinstance(out, tuple) else (out, 200)
         with self._lock:
             if old := self._items.pop(key, None):
@@ -917,9 +932,15 @@ def create_app(
         log.info("request: %s %s refused by the database: %s", request.method, request.url.path, exc.orig)
         return JSONResponse({"detail": "invalid value"}, status_code=status.HTTP_400_BAD_REQUEST)
 
+    @app.exception_handler(CacheBusy)
+    async def _busy(request: Request, exc: CacheBusy) -> Response:
+        log.info("busy: %s waited %ss for a build slot", request.url.path, settings.api.cache_build_wait_seconds)
+        return JSONResponse({"detail": "busy, try again shortly"}, status_code=503, headers={"Retry-After": "30"})
+
     app.state.response_cache = ResponseCache(
-        ttl=settings.api.cache_ttl_seconds, min_fresh=settings.api.cache_min_fresh_seconds
-    )
+        ttl=settings.api.cache_ttl_seconds, min_fresh=settings.api.cache_min_fresh_seconds,
+        build_wait=settings.api.cache_build_wait_seconds,
+    )  # fmt: skip
     sign_in_state(app, settings)  # innermost: only the Google sign-in routes read it
     app.add_middleware(CachedPages)  # inside gzip and security: a cached page is still compressed and guarded
     app.add_middleware(GZipMiddleware, minimum_size=1000)

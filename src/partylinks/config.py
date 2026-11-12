@@ -132,6 +132,9 @@ class ApiSettings(BaseModel):
     # page and scanned the events table (27k full scans in a few hours).
     cache_ttl_seconds: float = Field(60, gt=0)
     cache_min_fresh_seconds: float = Field(30, ge=0)
+    # A page or listing that is not cached waits at most this long for a build slot, then a 503 (Retry-After):
+    # crawlers opening cold pages must not hold every thread (the site went down twice on 2026-11-12). 0: no limit.
+    cache_build_wait_seconds: float = Field(8, ge=0)
 
 
 class SchedulerSettings(BaseModel):

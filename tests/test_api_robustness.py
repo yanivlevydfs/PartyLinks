@@ -181,3 +181,33 @@ def test_a_venue_page_is_that_venue_only(tmp_path: Path) -> None:
         abroad = c.get("/venue/Berghain").text
         assert "Techno night berlin" in abroad and "noindex" not in abroad
         assert "/venue/Berghain" in c.get("/venues").text
+
+
+def test_a_cold_page_waits_a_bounded_time_for_a_build_slot() -> None:
+    """2026-11-12: crawlers on cold pages held the 4 build slots, every waiting request a thread, until uvicorn's
+    200 were full and the whole site answered 503. Now the extra request gets a quick CacheBusy (503)."""
+    import threading
+    import time
+
+    import pytest
+
+    from partylinks.api import CacheBusy, ResponseCache
+
+    cache, release = ResponseCache(build_wait=0.2), threading.Event()
+
+    def slow() -> bytes:
+        release.wait(5)
+        return b"x"
+
+    busy = [threading.Thread(target=cache.get, args=((f"/p{i}", ""), slow)) for i in range(4)]
+    for t in busy:
+        t.start()
+    time.sleep(0.1)
+    started = time.monotonic()
+    with pytest.raises(CacheBusy):
+        cache.get(("/cold", ""), lambda: b"y")
+    assert time.monotonic() - started < 1
+    release.set()
+    for t in busy:
+        t.join()
+    assert cache.get(("/cold", ""), lambda: b"y") == (b"y", 200)  # a slot free again: built as usual
