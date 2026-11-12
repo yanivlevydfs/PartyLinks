@@ -14,7 +14,18 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from partylinks.bot.core import consent, digest, evening, event_actions, highlights, menu, navigate, understand, usage
+from partylinks.bot.core import (
+    consent,
+    daily,
+    digest,
+    evening,
+    event_actions,
+    highlights,
+    menu,
+    navigate,
+    understand,
+    usage,
+)
 from partylinks.bot.core.card import cards
 from partylinks.bot.core.find import Found, search, search_or_widen
 from partylinks.bot.core.phrases import label, say
@@ -197,6 +208,8 @@ class Conversation:
             return await digest.choose(self, chat_id, lang, action.removeprefix(DIGEST))
         if action.startswith(highlights.PREFIX):
             return await highlights.press(self, chat_id, lang, action.removeprefix(highlights.PREFIX))
+        if action.startswith(daily.PREFIX):
+            return await daily.press(self, chat_id, lang, action.removeprefix(daily.PREFIX))
         if action.startswith(evening.PREFIX):
             return await evening.press(self, chat_id, lang, action.removeprefix(evening.PREFIX))
         if action.startswith(navigate.NAVIGATE):

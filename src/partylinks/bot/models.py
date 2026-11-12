@@ -3,10 +3,10 @@ imports this module). A chat is never a site account: no name, no phone, only th
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from partylinks.db import Base, UTCDateTime, utcnow
@@ -33,6 +33,8 @@ class BotChatRow(Base):
     digest_on: Mapped[bool] = mapped_column(Boolean, default=False)  # /digest: the weekly picks (opt-in only)
     digest_query: Mapped[str | None] = mapped_column(Text)  # the digest's search words; None: everything
     digest_sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    daily_query: Mapped[str | None] = mapped_column(Text)  # /daily (opt-in): its area and taste words; None: off
+    daily_sent_on: Mapped[date | None] = mapped_column(Date)  # the last day it was sent (site's time zone)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     blocked_at: Mapped[datetime | None] = mapped_column(UTCDateTime)  # the user blocked the bot: nothing is sent
     consent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)  # "I agree" on the entry screen (consent.py)

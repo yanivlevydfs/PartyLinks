@@ -145,6 +145,8 @@ bot:
   inactive_days: 365          # a chat silent this long is deleted, alerts with it (the entry screen says 12 months)
   banner_url: null            # the banner, {lang} for he / en; empty: site.base_url + /bot-banner-{lang}.png
   evening_tries: 10           # 🌙 plan my evening: events tried for one with places around it (evening.plan)
+  daily_hour: 10              # ☀️ /daily (opt-in): up to daily_results of tonight's picks at this hour, site time zone
+  daily_results: 3
 
 # Likes / views / watching now on every event (src/partylinks/popularity). Likes = saved hearts; a view =
 # one visitor (hash of IP + user agent, crawlers left out) opening the event's page, once a day.

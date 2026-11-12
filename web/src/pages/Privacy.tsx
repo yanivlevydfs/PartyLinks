@@ -49,6 +49,7 @@ const TEXT = {
         list: [
           "מזהה הצ'אט בטלגרם, השפה, החיפוש האחרון (כדי להמשיך אותו, כמו \"ומחר?\"), ומיקום ששיתפתם בעצמכם לחיפוש \"קרוב אליי\".",
           "מה שביקשתם במפורש: התראות, תזכורות, מעקב מחיר והסיכום השבועי.",
+          "בטיפ היומי (/daily): האזור והטעם שבחרתם והיום שבו נשלח לאחרונה; /daily נוסף מבטל אותו.",
           "לסטטיסטיקת שימוש נשמר סוג הפעולה ומילות החיפוש, עם טביעה מקוצרת של מזהה הצ'אט ולא המזהה עצמו.",
           "צ'אט שאינו פעיל 12 חודשים נמחק עם כל המידע שלו. הפקודה /stop מוחקת הכל מיד, וגם \"ביטול\" במסך הכניסה.",
           "ההודעות עוברות דרך Telegram (Telegram FZ-LLC, איחוד האמירויות), שחלה עליה מדיניות הפרטיות שלה.",
@@ -156,6 +157,7 @@ const TEXT = {
         list: [
           "Your Telegram chat ID, language, your last search (to continue it, as in \"and tomorrow?\"), and a location you shared yourself for a \"near me\" search.",
           "What you asked for explicitly: alerts, reminders, price watches and the weekly picks.",
+          "For the daily tip (/daily): the area and taste you chose and the day it was last sent; a second /daily stops it.",
           "For usage statistics we keep the kind of action and the search words, with a shortened fingerprint of the chat ID, not the ID itself.",
           "A chat inactive for 12 months is deleted with all its data. /stop deletes everything at once, and so does \"Decline\" on the entry screen.",
           "Messages pass through Telegram (Telegram FZ-LLC, United Arab Emirates), whose own privacy policy applies.",

@@ -52,6 +52,7 @@ export function AdminBot() {
             <Stat label="Reminders ⏰" value={now.reminders} />
             <Stat label="Watches 👁" value={now.watches} />
             <Stat label="Digest 📬" value={now.digest} hint="subscribed" />
+            <Stat label="Daily tip ☀️" value={now.daily} hint="subscribed" />
             <Stat label="Channel posts" value={now.channel_posts} hint="last 60 days" />
           </div>
         </Card>

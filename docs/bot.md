@@ -60,6 +60,13 @@ most 64 bytes, an event id may be longer); an event that is over answers "no lon
 - **/digest:** opt-in only. Every `bot.digest_weekday` at `bot.digest_hour` (default Thursday 12:00), up to
   `bot.digest_results` weekend picks (`core/picks.py`: the most clicked in the last week first), for
   everything or for the chat's last search. At most once a week.
+- **☀️ Daily tip** (`core/daily.py`, `/daily` and a menu button): opt-in only, then an area (the menu's
+  areas, or all of Israel); the taste is the chat's last search without its place and date, else everything.
+  Every day at `bot.daily_hour` (default 10:00) up to `bot.daily_results` (3) of tonight's picks
+  (`core/picks.py`) for that area and taste. Nothing tonight: no message. At most once a day
+  (`bot_chats.daily_sent_on`); an event is on one night only, so a tip never repeats one. A second `/daily`
+  (or the button) stops it; `/stop` and "Decline" delete it with the chat's row. Counted as `daily_on`,
+  `daily_off`, `daily_sent`; subscribers in the bot tab.
 
 ## The broadcast channel (phase 2)
 
@@ -72,7 +79,7 @@ ticket and details links only. A WhatsApp channel has no posting API: not built.
 
 `GET /admin/api/bot` and the admin's **bot** tab (`web/src/bot/AdminBot.tsx`): whether the bot runs (token,
 secret, webhook, channel, digest time), the chats, those active and new in 7 days, those that blocked the
-bot, active alerts, pending reminders, watches, digest subscribers, channel posts; over a chosen period:
+bot, active alerts, pending reminders, watches, digest and daily tip subscribers, channel posts; over a chosen period:
 people, messages, searches, inline queries, ticket clicks from the bot's cards (`/go/...?at=tg`), each per
 day, what the bot did (by kind), top searches and searches that found nothing. Rows in `bot_usage` carry a
 hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
@@ -133,6 +140,7 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 | `core/remind.py` | reminders and watches: set, list, due, prune |
 | `core/similar.py`, `core/calendar.py` | 🔁 similar events; 📅 the `.ics` file and Google link |
 | `core/evening.py` | 🌙 plan my evening: an event and the site's evening around it |
+| `core/daily.py` | ☀️ the daily tip: opt-in, its area and taste, tonight's picks once a day |
 | `core/highlights.py` | 🔥 the week's top and the coming holidays' events in the menu |
 | `core/navigate.py` | 📍 the map pin, Waze / Google Maps, a place's hours, phone and booking |
 | `core/picks.py`, `core/digest.py`, `core/channel.py` | "interesting events"; /digest; the broadcast channel |
@@ -140,7 +148,7 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 | `telegram/webhook.py` | `POST /bot/telegram`, starts the bot with the app, sets the webhook |
 | `telegram/handlers.py` | Telegram updates -> the conversation |
 | `telegram/render.py` | a `Reply` -> Telegram messages, inline results |
-| `telegram/jobs.py` | the worker's jobs: alerts, reminders, watches (`bot:alerts`), digest (`bot:digest`), channel (`bot:channel`) |
+| `telegram/jobs.py` | the worker's jobs: alerts, reminders, watches (`bot:alerts`), digest (`bot:digest`), daily tip (`bot:daily`), channel (`bot:channel`) |
 
 Hook lines in existing files: `api.py` (the route), `config.py` (`bot:`), `db.py` (the tables),
 `scheduler.py` (the job), `security.py` (the webhook is outside the per-IP rate limit and needs no user
@@ -176,4 +184,5 @@ a row), `tests/test_bot_conversation.py` (the conversation on a database), `test
 buttons, reminders, watches, similar, calendar, plans, follow, digest, channel, usage and the admin tab),
 `tests/test_bot_navigate.py` (📍 the pin, its links and a place's info),
 `tests/test_bot_highlights.py` (🔥 the week's top, a holiday's button and its events),
-`tests/test_bot_evening.py` (🌙 an evening's steps in order, another evening, the area buttons).
+`tests/test_bot_evening.py` (🌙 an evening's steps in order, another evening, the area buttons),
+`tests/test_bot_daily.py` (☀️ opt-in and out, tonight's picks sent once, nothing tonight, /stop).

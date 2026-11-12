@@ -87,6 +87,7 @@ def stats(session: Session, timezone: str, days: int = 30, top: int = 30) -> dic
         "reminders": session.scalar(select(func.count()).select_from(BotReminderRow).where(BotReminderRow.sent_at.is_(None))) or 0,
         "watches": session.scalar(select(func.count()).select_from(BotWatchRow)) or 0,
         "digest": session.scalar(select(func.count()).select_from(BotChatRow).where(BotChatRow.digest_on.is_(True))) or 0,
+        "daily": session.scalar(select(func.count()).select_from(BotChatRow).where(BotChatRow.daily_query.is_not(None))) or 0,
         "channel_posts": session.scalar(select(func.count()).select_from(BotChannelPostRow)) or 0,
     }  # fmt: skip
     return {

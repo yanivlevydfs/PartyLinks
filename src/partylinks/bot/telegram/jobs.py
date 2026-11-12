@@ -17,7 +17,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from telegram.error import Forbidden, TelegramError
 from telegram.ext import AIORateLimiter, ExtBot
 
-from partylinks.bot.core import alerts, channel, consent, digest, refs, remind, usage
+from partylinks.bot.core import alerts, channel, consent, daily, digest, refs, remind, usage
 from partylinks.bot.core.card import cards, money
 from partylinks.bot.core.phrases import duration, label, say
 from partylinks.bot.core.reply import Card, Reply
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from partylinks.service import ScrapeService
 
 log = logging.getLogger(__name__)
-JOB_ID, DIGEST_JOB_ID, CHANNEL_JOB_ID = "bot:alerts", "bot:digest", "bot:channel"
+JOB_ID, DIGEST_JOB_ID, CHANNEL_JOB_ID, DAILY_JOB_ID = "bot:alerts", "bot:digest", "bot:channel", "bot:daily"
 CHANNEL_LANG = "he"
 
 
@@ -150,21 +150,36 @@ async def run(service: ScrapeService) -> None:
     await _with_bot(service, "alerts", work)
 
 
-async def run_digest(service: ScrapeService) -> None:
+async def send_picks(
+    settings: Settings, db: Database, bot: ExtBot, items: list[digest.Digest], intro: Callable[[digest.Digest], str], kind: str,
+) -> int:  # fmt: skip
+    """The 📬 digest's or the ☀️ daily tip's picks, each to its chat; returns how many went out."""
+    sent = 0
+    for item in items:
+        if item.channel != CHANNEL:
+            continue
+        found = await _cards(settings, db, item.event_ids, item.lang)
+        if found:
+            sent += await _deliver(db, bot, item.chat_ref, item.chat_id, Reply(intro(item), found), item.lang, kind)
+    return sent
+
+
+async def _run_picks(service: ScrapeService, name: str, due: Callable[..., list[digest.Digest]], intro: Callable[[digest.Digest], str]) -> None:
     settings, db = service.settings, service.db
 
     async def work(bot: ExtBot) -> None:
-        sent = 0
-        for item in await asyncio.to_thread(digest.due, settings, db):
-            if item.channel != CHANNEL:
-                continue
-            found = await _cards(settings, db, item.event_ids, item.lang)
-            if found:
-                text = say("digest_new", item.lang, q=item.query or label("everything", item.lang))
-                sent += await _deliver(db, bot, item.chat_ref, item.chat_id, Reply(text, found), item.lang, "digest_sent")
-        log.info("bot digest: %d sent", sent)
+        items = await asyncio.to_thread(due, settings, db)
+        log.info("bot %s: %d sent", name, await send_picks(settings, db, bot, items, intro, f"{name}_sent"))
 
-    await _with_bot(service, "digest", work)
+    await _with_bot(service, name, work)
+
+
+async def run_digest(service: ScrapeService) -> None:
+    await _run_picks(service, "digest", digest.due, lambda i: say("digest_new", i.lang, q=i.query or label("everything", i.lang)))
+
+
+async def run_daily(service: ScrapeService) -> None:
+    await _run_picks(service, "daily", daily.due, daily.intro)
 
 
 async def run_channel(service: ScrapeService) -> None:
@@ -203,6 +218,7 @@ def schedule(scheduler: AsyncIOScheduler, settings: Settings, service: ScrapeSer
         run_digest, CronTrigger(day_of_week=weekday, hour=cfg.digest_hour, timezone=settings.timezone),
         id=DIGEST_JOB_ID, name=DIGEST_JOB_ID, **common,
     )  # fmt: skip
+    scheduler.add_job(run_daily, CronTrigger(hour=cfg.daily_hour, timezone=settings.timezone), id=DAILY_JOB_ID, name=DAILY_JOB_ID, **common)
     if cfg.channel_id:
         scheduler.add_job(
             run_channel, CronTrigger(hour=cfg.channel_hour, timezone=settings.timezone),

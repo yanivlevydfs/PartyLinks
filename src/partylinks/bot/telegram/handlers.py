@@ -20,6 +20,7 @@ from telegram.ext import (
     filters,
 )  # fmt: skip
 
+from partylinks.bot.core import daily
 from partylinks.bot.core.conversation import DEFAULT_LANG, Conversation
 from partylinks.bot.core.flood import Flood
 from partylinks.bot.core.phrases import say
@@ -34,7 +35,7 @@ CHANNEL = "telegram"
 PRIVATE = filters.ChatType.PRIVATE
 INLINE_CACHE_SECONDS = 60
 CONCURRENT_UPDATES = 16
-COMMANDS = [("menu", "תפריט: קטגוריות, אזורים ותאריכים"), ("start", "התחלה"), ("alerts", "ההתראות שלי"), ("reminders", "התזכורות והמעקבים שלי"), ("digest", "סיכום שבועי לסופ״ש"),
+COMMANDS = [("menu", "תפריט: קטגוריות, אזורים ותאריכים"), ("start", "התחלה"), ("alerts", "ההתראות שלי"), ("reminders", "התזכורות והמעקבים שלי"), ("digest", "סיכום שבועי לסופ״ש"), ("daily", "טיפ יומי: הכי שווים הערב"),
             ("lang", "English / עברית"), ("help", "עזרה"), ("stop", "מחיקת כל המידע שלי")]  # fmt: skip
 # What an empty chat shows before /start (≤512 characters), and the profile's "about" (≤120).
 DESCRIPTION = (
@@ -65,6 +66,7 @@ class Handlers:
         app.add_handler(CommandHandler("lang", self.on_lang, filters=PRIVATE))
         app.add_handler(CommandHandler("reminders", self.on_reminders, filters=PRIVATE))
         app.add_handler(CommandHandler("digest", self.on_digest, filters=PRIVATE))
+        app.add_handler(CommandHandler("daily", lambda u, c: self._answer(u, c, lambda ch, l: daily.press(self.talk, ch, l, "")), filters=PRIVATE))
         app.add_handler(CommandHandler("stop", self.on_stop, filters=PRIVATE))
         app.add_handler(MessageHandler(PRIVATE & filters.LOCATION, self.on_location))
         app.add_handler(MessageHandler(PRIVATE & filters.TEXT & ~filters.COMMAND, self.on_text))
