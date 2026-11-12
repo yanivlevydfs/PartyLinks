@@ -7,23 +7,25 @@ from __future__ import annotations
 
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
 from partylinks.bot.core import menu, refs, understand, usage
-from partylinks.bot.core.card import cards
+from partylinks.bot.core.card import cards, when
 from partylinks.bot.core.find import search
 from partylinks.bot.core.phrases import label
 from partylinks.bot.core.reply import MAX_ACTION_BYTES, Button, Reply
+from partylinks.config import Settings
 from partylinks.db import EventRow
-from partylinks.evening.plan import plan
+from partylinks.evening.plan import Span, plan
 
 if TYPE_CHECKING:
     from partylinks.bot.core.conversation import Conversation
 
 PREFIX = "ev:"
 START = "0:"
-Stop = tuple[str, EventRow, int | None]  # (step key or "main", the listing, meters from the event)
+Stop = tuple[str, EventRow, int | None, Span | None]  # (step key or "main", listing, meters away, opening hours)
 TEXT: dict[str, dict[str, str]] = {
     "button": {"he": "🌙 תכננו לי ערב", "en": "🌙 Plan my evening"},
     "where": {"he": "🌙 איפה נבלה? בחרו אזור:", "en": "🌙 Where to? Pick an area:"},
@@ -80,6 +82,14 @@ def _where(lang: str, words: str) -> Reply:
     return Reply(_t("where", lang), buttons=[*menu._pairs(pick), [Button(label("menu_home", lang), menu.HOME)]])
 
 
+def _opening(lines: tuple[str, ...], row: EventRow, opens: Span | None, cfg: Settings, lang: str) -> tuple[str, ...]:
+    """An "after" stop shows the place's opening hours (as the site), not its listing's slot: "🗓 הערב · 18:00–02:00"."""
+    if not opens or not lines:
+        return lines
+    end = opens[1].astimezone(ZoneInfo(row.time_zone or cfg.timezone))
+    return (f"{when(row, cfg, lang, start=opens[0])}–{end:%H:%M}", *lines[1:])
+
+
 def _distance(meters: int, lang: str) -> str:
     return _t("m", lang, n=meters) if meters < 1000 else _t("km", lang, n=f"{meters / 1000:.1f}")
 
@@ -93,7 +103,7 @@ async def press(conv: Conversation, chat_id: str, lang: str, data: str) -> Reply
     offset, _, words = data.partition(":")
     start = int(offset) if offset.isascii() and offset.isdigit() else 0
     words = understand.search_part(words, cfg, today)[0]
-    when = {s.key: s.when for s in cfg.evening.steps}
+    steps = {s.key: s.when for s in cfg.evening.steps}
 
     def work(session: Session) -> tuple[str, int, list[Stop], dict[str, dict[str, Any]]] | None:
         query = words
@@ -111,9 +121,8 @@ async def press(conv: Conversation, chat_id: str, lang: str, data: str) -> Reply
         for n, row in enumerate(found.rows):
             if found.extras.get(row.id, {}).get("place"):
                 continue
-            stops = [
-                (s.key, *s.items[0]) for s in plan(session, cfg, row, lambda **kw: build_event_filters(cfg, **kw)).steps
-            ]
+            planned = plan(session, cfg, row, lambda **kw: build_event_filters(cfg, **kw)).steps
+            stops = [(s.key, *s.items[0], s.opens.get(s.items[0][0].id)) for s in planned]
             if best is None or stops:
                 best = (n, row, stops)
             if stops:
@@ -121,10 +130,10 @@ async def press(conv: Conversation, chat_id: str, lang: str, data: str) -> Reply
         evening: list[Stop] = []
         if best:
             n, row, stops = best
-            evening = [s for s in stops if when.get(s[0]) == "before"] + [("main", row, None)]
-            evening += [s for s in stops if when.get(s[0]) != "before"]
+            evening = [s for s in stops if steps.get(s[0]) == "before"] + [("main", row, None, None)]
+            evening += [s for s in stops if steps.get(s[0]) != "before"]
         usage.record(session, conv.channel, chat_id, "evening", q=query, results=len(evening))
-        return query, start + (best[0] if best else 0), evening, refs.extras(session, [r for _, r, _ in evening])
+        return query, start + (best[0] if best else 0), evening, refs.extras(session, [r for _, r, _, _ in evening])
 
     result = await conv._in_db(work)
     if result is None:
@@ -132,11 +141,11 @@ async def press(conv: Conversation, chat_id: str, lang: str, data: str) -> Reply
     query, at, evening, extras = result
     if not evening:
         return Reply(_t("none", lang), buttons=conv._starters(lang))
-    drawn = await cards([r for _, r, _ in evening], extras, cfg, lang)
+    drawn = await cards([r for _, r, _, _ in evening], extras, cfg, lang)
     shown = [
-        replace(c, title=f"{_t(key if key in TEXT else when.get(key, 'after'), lang)} {c.title}",
-                lines=c.lines + ((_distance(d, lang),) if d is not None else ()))
-        for (key, _, d), c in zip(evening, drawn, strict=True)
+        replace(c, title=f"{_t(key if key in TEXT else steps.get(key, 'after'), lang)} {c.title}",
+                lines=_opening(c.lines, r, opens, cfg, lang) + ((_distance(d, lang),) if d is not None else ()))
+        for (key, r, d, opens), c in zip(evening, drawn, strict=True)
     ]  # fmt: skip
     another = _action(at + 1, query)
     row = [Button(_t("another", lang), another)] if another else []

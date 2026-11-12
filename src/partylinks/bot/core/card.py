@@ -29,13 +29,15 @@ CURRENCY = {"ILS": "₪", "USD": "$", "EUR": "€", "GBP": "£"}
 EVENING_FROM = 17  # a start today from this hour is "tonight"
 
 
-def when(row: EventRow, cfg: Settings, lang: str, now: datetime | None = None) -> str:
-    """"🗓 הערב · 23:00", "🗓 שישי 7.11 · 22:00", "🗓 Fri 7 Nov": in the venue's own clock."""
+def when(row: EventRow, cfg: Settings, lang: str, now: datetime | None = None, start: datetime | None = None) -> str:
+    """"🗓 הערב · 23:00", "🗓 שישי 7.11 · 22:00", "🗓 Fri 7 Nov": in the venue's own clock. ``start``: another
+    time than the listing's (a place's opening hours, evening.plan)."""
     if row.start_at is None:
         return ""
     zone = ZoneInfo(row.time_zone or cfg.timezone)
-    start = row.start_at.astimezone(zone)
-    day = row.local_date or start.date()
+    day = start.astimezone(zone).date() if start else row.local_date
+    start = (start or row.start_at).astimezone(zone)
+    day = day or start.date()
     today = (now or datetime.now(UTC)).astimezone(zone).date()
     if day == today:
         name = label("tonight_at" if start.hour >= EVENING_FROM or not row.time_known else "today_at", lang)

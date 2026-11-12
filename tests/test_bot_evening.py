@@ -42,6 +42,7 @@ def test_an_evening_in_words_is_the_sites_plan_in_order(tmp_path: Path) -> None:
         "🍸 לפני: האפי האוור bar", "🍽️ לפני: ארוחה chef", "🎉 האירוע: Techno night", "🍻 אחרי: בר או אוכל בלילה night",
     ]  # fmt: skip
     assert reply.cards[0].lines[-1].startswith("🚶") and "מ׳" in reply.cards[0].lines[-1]
+    assert reply.cards[-1].lines[0] == "🗓 מחר · 12:00–06:00"  # the bar's opening hours, as the site shows them
     another = next(a for a in _actions(reply) if a.startswith("ev:"))
     assert another.startswith("ev:1:") and len(another.encode()) <= MAX_ACTION_BYTES
     nothing = _run(talk.press(CHAT, another, "he"))  # no other event that day
