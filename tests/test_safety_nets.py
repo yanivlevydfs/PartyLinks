@@ -381,9 +381,15 @@ def test_a_batch_s_images_download_beside_the_scrape_never_holding_it(tmp_path: 
     service, _ = make_service(tmp_path)
     service.settings.media.download = True
     passes: list[float] = []
+    _ManySource.scrape_done_at = None
 
     async def slow_pictures(source: str, http: Any, progress: Any = None) -> tuple[int, int]:
-        await asyncio.sleep(1.0)
+        # Waits for the scrape to end (20 s at most): a pass that held the scrape could never see it end.
+        # Not a fixed sleep: on a busy machine 450 saves took over a second and the test failed for nothing.
+        for _ in range(400):
+            if _ManySource.scrape_done_at is not None:
+                break
+            await asyncio.sleep(0.05)
         passes.append(time.monotonic())
         return 0, 0
 
