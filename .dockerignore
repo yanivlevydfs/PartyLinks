@@ -13,3 +13,4 @@ web/node_modules
 web/dist
 *.bat
 node_modules
+social

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><title>SPOTX promo – long</title>
+<style>
+@font-face{font-family:Rubik;font-weight:900;src:url(fonts/rubik-hebrew-900-normal.woff2);unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+FB1D-FB4F}
+@font-face{font-family:Rubik;font-weight:900;src:url(fonts/rubik-latin-900-normal.woff2);unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:Rubik;font-weight:700;src:url(fonts/rubik-hebrew-700-normal.woff2);unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+FB1D-FB4F}
+@font-face{font-family:Rubik;font-weight:700;src:url(fonts/rubik-latin-700-normal.woff2);unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:Heebo;font-weight:700;src:url(fonts/heebo-hebrew-700-normal.woff2);unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+FB1D-FB4F}
+@font-face{font-family:Heebo;font-weight:700;src:url(fonts/heebo-latin-700-normal.woff2);unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:Heebo;font-weight:500;src:url(fonts/heebo-hebrew-500-normal.woff2);unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+FB1D-FB4F}
+@font-face{font-family:Heebo;font-weight:500;src:url(fonts/heebo-latin-500-normal.woff2);unicode-range:U+0000-00FF,U+2000-206F}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#06040b}
+body{font-family:Heebo,'Noto Color Emoji',sans-serif;color:#f7f2ff;direction:rtl}
+#world{position:absolute;inset:0;overflow:hidden}
+#cam{position:absolute;inset:-60px}
+.blob{position:absolute;border-radius:50%;filter:blur(130px)}
+.beam{position:absolute;top:-300px;width:170px;height:2600px;transform-origin:50% 0;filter:blur(18px);mix-blend-mode:screen}
+.p{position:absolute;border-radius:50%}
+.layer{position:absolute;left:60px;right:60px;top:60px;bottom:60px;display:none}
+.d{font-family:Rubik,'Noto Color Emoji';font-weight:900;line-height:1;letter-spacing:-1.5px}
+.g{background:linear-gradient(100deg,#ff2e93,#9d4dff 50%,#19e3ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.c{position:absolute;left:0;right:0;text-align:center}
+.ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
+.sub{font-family:Heebo;font-weight:700;color:#d9cff2;line-height:1.5}
+.pk{color:#ff2e93}.cy{color:#19e3ff}.mu{color:#b3a6d4}
+.glass{background:rgba(22,14,38,.78);border:2px solid rgba(160,120,255,.28);border-radius:34px;box-shadow:0 30px 90px rgba(0,0,0,.55)}
+.chip{display:inline-flex;align-items:center;gap:10px;padding:18px 30px;border-radius:999px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.18);font-family:Rubik;font-weight:700;font-size:40px;margin:8px}
+.chip.big{font-size:46px;padding:20px 34px;margin:10px}
+.chip.on{background:rgba(255,46,147,.22);border-color:#ff2e93}
+.notif{position:absolute;left:40px;right:40px;padding:26px 30px;border-radius:36px;background:rgba(40,30,60,.86);border:1.5px solid rgba(255,255,255,.14);box-shadow:0 30px 80px rgba(0,0,0,.5);display:flex;gap:24px;align-items:center}
+.notif .ic{width:86px;height:86px;border-radius:22px;background:#140d22;display:flex;align-items:center;justify-content:center;flex:none}
+.notif .tt{font-size:26px;color:#b3a6d4;display:flex;justify-content:space-between}
+.notif .bd{font-size:36px;font-weight:700;margin-top:6px;line-height:1.25}
+.card{position:absolute;width:520px;border-radius:30px;overflow:hidden;background:#120b1f;border:2px solid rgba(160,120,255,.3);box-shadow:0 30px 90px rgba(0,0,0,.6)}
+.card .art{height:300px;position:relative}
+.card .date{position:absolute;top:18px;right:18px;background:rgba(6,4,11,.78);border:2px solid #ff2e93;border-radius:16px;padding:8px 14px;text-align:center;line-height:1}
+.card .price{position:absolute;top:18px;left:18px;background:#fff;color:#06040b;font-weight:700;font-size:22px;padding:8px 16px;border-radius:999px}
+.card .body{padding:20px 24px 24px}
+.tag{display:inline-block;font-size:19px;padding:6px 14px;border-radius:999px;background:rgba(157,77,255,.2);border:1.5px solid rgba(157,77,255,.5);margin-left:8px}
+#flash{position:absolute;inset:0;background:#fff;opacity:0}
+#vign{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.75))}
+#noise{position:absolute;inset:0;opacity:.15;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.prow{display:flex;justify-content:space-between;align-items:center;padding:22px 10px;border-bottom:1.5px solid rgba(160,120,255,.18);font-size:44px}
+.opt{position:relative;margin-top:22px;padding:22px 26px;border-radius:20px;background:rgba(255,255,255,.06);overflow:hidden;font-size:36px;font-weight:700;display:flex;justify-content:space-between}
+.opt .bar{position:absolute;right:0;top:0;bottom:0;background:rgba(37,211,102,.28)}
+.opt span{position:relative}
+</style></head><body>
+<div id="world"><div id="cam">
+<div id="bgl"></div><div id="parts"></div>
+
+<!-- 0 intro A -->
+<div class="layer" id="L0">
+ <div class="c d" data-at="0.2" data-fx="slam" style="top:420px;font-size:180px">חמישי.</div>
+ <div class="c d cy" data-at="2" data-fx="slam" style="top:640px;font-size:250px"><span class="ltr">22:40</span></div>
+ <div class="c d" data-at="4.5" data-fx="up" style="top:960px;font-size:96px">ועדיין אין תוכנית 🫠</div>
+</div>
+<!-- 1 intro B -->
+<div class="layer" id="L1">
+ <div class="c d" data-at="0.1" data-fx="up" style="top:330px;font-size:104px">10 טאבים פתוחים.</div>
+ <div class="c d" data-at="1.6" data-fx="up" style="top:490px;font-size:104px">4 קבוצות טלגרם.</div>
+ <div class="c d mu" data-at="3" data-fx="up" style="top:650px;font-size:76px">סטוריז, פלאיירים, וואטסאפים…</div>
+ <div class="c d pk" data-at="4.6" data-fx="slam" style="top:860px;font-size:150px">ואפס החלטות 💀</div>
+</div>
+<!-- 2 drop -->
+<div class="layer" id="L2">
+ <div class="c d" data-at="0" data-fx="slam" data-out="3.8" style="top:500px;font-size:300px">די.</div>
+ <div class="c d g" data-at="2" data-fx="slam" data-out="3.8" style="top:860px;font-size:130px">יש פתרון 👇</div>
+ <div class="c" data-at="4" data-fx="logo" style="top:520px;display:flex;justify-content:center;align-items:center;gap:22px;direction:ltr">
+   <svg viewBox="0 0 64 64" class="pin" style="width:200px;height:200px"></svg>
+   <span class="d" style="font-size:190px;letter-spacing:6px">SPOT<span class="pk" style="text-shadow:0 0 50px rgba(255,46,147,.9)">X</span></span></div>
+ <div class="c sub" data-at="5" data-fx="up" style="top:860px;font-size:72px">לאן יוצאים? <span class="g d">ככה.</span></div>
+</div>
+<!-- 3 all events -->
+<div class="layer" id="L3">
+ <div class="c d" data-at="0" data-fx="slam" style="top:260px;font-size:140px">כל המסיבות,</div>
+ <div class="c d cy" data-at="1" data-fx="slam" style="top:420px;font-size:140px">ההופעות,</div>
+ <div class="c d pk" data-at="2" data-fx="slam" style="top:580px;font-size:140px">הליינים,</div>
+ <div class="c d g" data-at="3" data-fx="slam" style="top:750px;font-size:170px">בישראל.</div>
+ <div class="c sub" data-at="4.5" data-fx="up" style="top:1000px;font-size:58px">88 אתרים במקום אחד.<br>בלי לרדוף אחרי סטוריז.</div>
+</div>
+<!-- 4 categories (3 bars) -->
+<div class="layer" id="L4">
+ <div class="c d" data-at="0" data-fx="slam" style="top:170px;font-size:130px">לא רק מסיבות 👀</div>
+ <div class="c" style="top:400px;display:flex;flex-wrap:wrap;justify-content:center;padding:0 10px">
+  <span class="chip big" data-at="1.0" data-fx="pop">🪩 מסיבות ומועדונים</span>
+  <span class="chip big" data-at="1.6" data-fx="pop">🎙️ הופעות חיות</span>
+  <span class="chip big" data-at="2.2" data-fx="pop">😂 סטנדאפ</span>
+  <span class="chip big" data-at="2.8" data-fx="pop">🎪 פסטיבלים</span>
+  <span class="chip big" data-at="3.4" data-fx="pop">🎭 במה ומסך</span>
+  <span class="chip big" data-at="4.0" data-fx="pop">🍸 אוכל ושתייה</span>
+  <span class="chip big" data-at="4.6" data-fx="pop">⚽ פנאי וספורט</span>
+  <span class="chip big" data-at="5.2" data-fx="pop">💻 הייטק ומיטאפים</span>
+  <span class="chip big" data-at="5.8" data-fx="pop">🏳️‍🌈 קהילה וגאווה</span>
+  <span class="chip big" data-at="6.4" data-fx="pop">🧸 ילדים ומשפחה</span>
+ </div>
+ <div class="c sub" data-at="7.6" data-fx="up" style="top:1250px;font-size:64px">מה שבא לך. <span class="d g" style="font-size:76px">מתי שבא לך.</span></div>
+</div>
+<!-- 5 genres -->
+<div class="layer" id="L5">
+ <div class="c d" data-at="0" data-fx="up" style="top:250px;font-size:96px">ובאיזה וייב? 🎧</div>
+ <div id="gbg" style="position:absolute;left:-120px;right:-120px;top:470px;height:560px"></div>
+ <div class="c d" id="gw" style="top:610px;font-size:270px"></div>
+ <div id="tick" style="position:absolute;top:1130px;white-space:nowrap;font-family:Rubik;font-weight:900;font-size:76px"></div>
+ <div class="c sub" data-at="1" data-fx="up" style="top:1290px;font-size:56px">עשרות ז'אנרים. <b class="cy">מצאת את שלך.</b></div>
+</div>
+<!-- 6 abroad -->
+<div class="layer" id="L6">
+ <div id="plane" style="position:absolute;top:170px;font-size:170px">✈️</div>
+ <div class="c d" data-at="0.4" data-fx="slam" style="top:420px;font-size:170px">וגם בחו״ל</div>
+ <div class="c sub" data-at="1.6" data-fx="up" style="top:640px;font-size:64px">פסטיבלים, הופעות ומסיבות<br>מעבר לים 🌍</div>
+ <div class="c" data-at="3" data-fx="pop" style="top:880px"><span class="chip big">🎪 פסטיבלים</span><span class="chip big">🎤 הופעות</span><span class="chip big">🪩 מסיבות</span></div>
+ <div class="c d g" data-at="4.6" data-fx="slam" style="top:1080px;font-size:96px">באותו חיפוש.</div>
+</div>
+<!-- 7 numbers -->
+<div class="layer" id="L7">
+ <div id="cards"></div>
+ <div class="c d cy" data-at="0" data-fx="slam" style="top:180px;font-size:380px"><span class="ltr" id="n1">88</span></div>
+ <div class="c d" data-at="1" data-fx="up" style="top:560px;font-size:110px">אתרים.</div>
+ <div class="c d pk" data-at="2.5" data-fx="slam" style="top:740px;font-size:190px"><span class="ltr" id="n2">60,000+</span></div>
+ <div class="c d" data-at="3.5" data-fx="up" style="top:950px;font-size:100px">אירועים.</div>
+ <div class="c d g" data-at="5" data-fx="slam" style="top:1110px;font-size:120px">חיפוש אחד. זהו.</div>
+</div>
+<!-- 8 quiz -->
+<div class="layer" id="L8">
+ <div class="c d" data-at="0" data-fx="slam" style="top:170px;font-size:96px">לא יודעים מה בא לכם?</div>
+ <div class="c sub" data-at="0.9" data-fx="up" style="top:330px;font-size:60px">כמה שאלות קצרות, ויש תוכנית 🎯</div>
+ <div class="c" style="top:500px;display:flex;flex-direction:column;align-items:center;gap:18px">
+  <span class="chip big" data-at="1.8" data-fx="pop">📅 מתי?</span>
+  <span class="chip big" data-at="2.4" data-fx="pop">📍 איפה?</span>
+  <span class="chip big" data-at="3.0" data-fx="pop">🎧 מה בא לכם?</span>
+  <span class="chip big" data-at="3.6" data-fx="pop">💸 מה התקציב?</span>
+ </div>
+ <div class="c" data-at="4.8" data-fx="slam" style="top:1120px"><span class="d" style="display:inline-block;background:linear-gradient(100deg,#ff2e93,#9d4dff);padding:26px 56px;border-radius:999px;font-size:76px;box-shadow:0 0 70px rgba(255,46,147,.6)">🎲 תפתיעו אותי</span></div>
+</div>
+<!-- 9 filters -->
+<div class="layer" id="L9">
+ <div class="c d" data-at="0" data-fx="slam" style="top:170px;font-size:100px">ובאתר עצמו:</div>
+ <div class="c d" data-at="0.5" data-fx="slam" style="top:300px;font-size:110px;letter-spacing:4px"><span class="ltr">SPOT<span class="pk">X</span>.FUN</span></div>
+ <div class="c" data-at="1.4" data-fx="pop" style="top:490px"><span class="chip on">⚡ הערב</span><span class="chip">🌙 מחר</span><span class="chip">🎉 סופ״ש</span></div>
+ <div class="c" data-at="2.2" data-fx="pop" style="top:620px"><span class="chip">📍 לידי</span><span class="chip">🗺️ מפה</span><span class="chip">🟢 פתוח עכשיו</span></div>
+ <div class="c" data-at="3.0" data-fx="pop" style="top:750px"><span class="chip">🎟️ חינם אם מגיעים עכשיו</span></div>
+ <div class="c" data-at="3.6" data-fx="pop" style="top:880px"><span class="chip">📉 המחיר ירד</span><span class="chip">✨ נחשף היום</span></div>
+ <div class="c sub" data-at="4.8" data-fx="up" style="top:1060px;font-size:62px">מסננים בשנייה,<br><span class="d g" style="font-size:80px">יוצאים בדקה.</span></div>
+</div>
+<!-- 10 prices -->
+<div class="layer" id="L10">
+ <div class="c d" data-at="0" data-fx="slam" style="top:170px;font-size:120px">אותו כרטיס,</div>
+ <div class="c d g" data-at="1" data-fx="slam" style="top:310px;font-size:120px">כמה אתרים 🤯</div>
+ <div class="glass" data-at="1.8" data-fx="up" style="position:absolute;left:60px;right:60px;top:500px;padding:14px 44px">
+  <div class="prow" data-at="2.0" data-fx="pop"><span class="ltr" style="font-weight:700">Eventer</span><b class="ltr">₪95</b></div>
+  <div class="prow" data-at="2.4" data-fx="pop"><span class="ltr" style="font-weight:700">Go-Out</span><b class="ltr">₪99</b></div>
+  <div class="prow" data-at="2.8" data-fx="pop" style="color:#2bf5a0"><span class="ltr" style="font-weight:700">Tickchak</span><span><span style="font-size:28px;background:rgba(43,245,160,.18);padding:8px 16px;border-radius:999px;margin-left:16px">הכי זול</span><b class="ltr">₪79</b></span></div>
+  <div class="prow" data-at="3.2" data-fx="pop" style="border:0"><span style="font-weight:700">♻️ יד שנייה</span><b class="ltr">₪70</b></div>
+ </div>
+ <div class="c sub" data-at="4.4" data-fx="up" style="top:1080px;font-size:56px">כולל עמלות ומה אזל.<br><span class="d cy" style="font-size:72px">תופסים הכי זול 💸</span></div>
+</div>
+<!-- 11 alerts -->
+<div class="layer" id="L11">
+ <div class="c d" data-at="0" data-fx="slam" style="top:150px;font-size:150px">התראות 🔔</div>
+ <div class="c sub" data-at="0.8" data-fx="up" style="top:330px;font-size:62px">כי פומו זה לא וייב.</div>
+ <div class="notif" data-at="1.8" data-fx="drop" style="top:480px"><div class="ic"><svg viewBox="0 0 64 64" class="pin" width="64"></svg></div><div style="flex:1"><div class="tt"><b>SPOTX</b><span>עכשיו</span></div><div class="bd">🆕 עלתה מסיבת טכנו חדשה בת״א, בדיוק כמו שביקשת</div></div></div>
+ <div class="notif" data-at="3" data-fx="drop" style="top:720px"><div class="ic"><svg viewBox="0 0 64 64" class="pin" width="64"></svg></div><div style="flex:1"><div class="tt"><b>SPOTX</b><span>עכשיו</span></div><div class="bd">🎧 הדיג'יי שאתה עוקב אחריו מנגן בחמישי</div></div></div>
+ <div class="notif" data-at="4.2" data-fx="drop" style="top:940px"><div class="ic"><svg viewBox="0 0 64 64" class="pin" width="64"></svg></div><div style="flex:1"><div class="tt"><b>SPOTX</b><span>עכשיו</span></div><div class="bd">📉 המחיר ירד! Techno Bunker ב-₪79</div></div></div>
+ <div class="c sub" data-at="5.6" data-fx="up" style="top:1190px;font-size:52px">בפעמון באתר, בבוט ובמייל.<br><b class="cy">אתה ראשון לדעת.</b></div>
+</div>
+<!-- 12 save + reminders -->
+<div class="layer" id="L12">
+ <div class="c d" data-at="0" data-fx="slam" style="top:150px;font-size:96px">שומרים ⭐ ומתזכרים ⏰</div>
+ <div class="c sub" data-at="0.8" data-fx="up" style="top:320px;font-size:58px">שלא תגלה ביום ראשון שפספסת 😬</div>
+ <div class="notif" data-at="2" data-fx="drop" style="top:480px"><div class="ic" style="font-size:52px">⏰</div><div style="flex:1"><div class="tt"><b>SPOTX</b><span>21:00</span></div><div class="bd">Techno Bunker מתחיל בעוד שעתיים. מתלבשים! 🔥</div></div></div>
+ <div class="glass" data-at="3.3" data-fx="up" style="position:absolute;left:40px;right:40px;top:740px;padding:34px 40px;display:flex;gap:30px;align-items:center">
+  <div style="width:130px;height:140px;border-radius:24px;background:#fff;color:#06040b;text-align:center;overflow:hidden;flex:none"><div style="background:#ff2e93;color:#fff;font-weight:700;font-size:28px;padding:6px">שישי</div><div class="d" style="font-size:78px;margin-top:8px">14</div></div>
+  <div><div class="d" style="font-size:46px">📅 נוסף ליומן</div><div style="font-size:34px;color:#b3a6d4;margin-top:10px">גוגל, אפל, כל יומן</div></div></div>
+ <div class="c sub" data-at="4.8" data-fx="up" style="top:1060px;font-size:58px">קליק אחד, <span class="d g" style="font-size:70px">וזה ביומן.</span></div>
+</div>
+<!-- 13 friends (3 bars) -->
+<div class="layer" id="L13">
+ <div class="c d" data-at="0" data-fx="slam" style="top:120px;font-size:112px">"מי בא איתי?" 👥</div>
+ <div class="c sub" data-at="0.8" data-fx="up" style="top:280px;font-size:52px">שולחים לינק לחבר'ה בוואטסאפ.<br>בלי הרשמה, בלי 200 הודעות של "אולי" 🙄</div>
+ <div data-at="1.8" data-fx="up" style="position:absolute;left:90px;right:90px;top:480px;background:#202c33;border-radius:30px;padding:30px 34px 34px;box-shadow:0 30px 90px rgba(0,0,0,.55)">
+  <div style="font-size:26px;color:#25d366;font-weight:700">החבר'ה 🪩</div>
+  <div class="d" style="font-size:46px;margin-top:10px">איזו מסיבה בשישי? 🔥</div>
+  <div class="opt"><div class="bar" id="v1"></div><span>Techno Bunker</span><span id="c1">0</span></div>
+  <div class="opt"><div class="bar" id="v2"></div><span>Sunset House</span><span id="c2">0</span></div>
+  <div class="opt"><div class="bar" id="v3"></div><span>נשאר בבית עם נטפליקס 😂</span><span id="c3">0</span></div>
+ </div>
+ <div class="c" data-at="6.6" data-fx="pop" style="top:1070px"><span class="chip big">🚗 יש לי רכב · 3 מקומות</span><span class="chip big">🙋 צריך טרמפ</span></div>
+ <div class="c sub" data-at="7.6" data-fx="up" style="top:1220px;font-size:50px">וגם מי מסיע ומי צריך טרמפ 😎</div>
+ <div class="c" data-at="9" data-fx="stamp" style="top:1330px"><span class="d" style="display:inline-block;font-size:100px;color:#25d366;border:8px solid #25d366;border-radius:30px;padding:8px 40px;transform:rotate(-6deg);background:rgba(6,4,11,.6)">סגרנו ✅</span></div>
+</div>
+<!-- 14 bot -->
+<div class="layer" id="L14">
+ <div class="c d" data-at="0" data-fx="slam" style="top:100px;font-size:110px">עצלנים? 😏</div>
+ <div class="c d g" data-at="0.7" data-fx="slam" style="top:230px;font-size:96px">כתבו לבוט בטלגרם</div>
+ <div id="phone" style="position:absolute;left:150px;right:150px;top:400px;height:1000px;border-radius:70px;background:#0e1621;border:3px solid rgba(255,255,255,.18);box-shadow:0 0 0 14px #030207,0 50px 160px rgba(42,168,240,.45);overflow:hidden">
+  <div style="height:130px;background:#17212b;display:flex;align-items:flex-end;padding:0 30px 18px;gap:16px"><div style="width:66px;height:66px;border-radius:50%;background:#140d22;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 64 64" class="pin" width="48"></svg></div><div><div style="font-weight:700;font-size:30px">SPOTX</div><div style="font-size:20px;color:#7cc8ff">בוט</div></div></div>
+  <div style="padding:26px 24px;display:flex;flex-direction:column;gap:18px">
+   <div id="b1" style="align-self:flex-start;background:#2b5278;border-radius:26px;border-bottom-right-radius:8px;padding:18px 26px;font-size:32px;font-weight:700"><span id="typed"></span></div>
+   <div id="b2" style="align-self:flex-end;background:#1e1630;border-radius:26px;border-bottom-left-radius:8px;padding:18px 26px;font-size:30px">מצאתי 12 מסיבות 🎉</div>
+   <div id="m1"></div><div id="m2"></div>
+  </div>
+ </div>
+ <div class="c" data-at="6" data-fx="slam" style="top:1430px"><span style="display:inline-block;padding:20px 44px;border-radius:999px;background:linear-gradient(180deg,#2aa8f0,#1c89d8);font-family:Rubik;font-weight:900;font-size:56px;direction:ltr;box-shadow:0 0 60px rgba(25,227,255,.5)">@spotxilbot</span></div>
+</div>
+<!-- 15 free -->
+<div class="layer" id="L15">
+ <div class="c d" data-at="0" data-fx="slam" style="top:220px;font-size:110px">ורגע, כמה זה עולה?</div>
+ <div class="c d cy" data-at="1.5" data-fx="slam" style="top:400px;font-size:400px;text-shadow:0 0 80px rgba(25,227,255,.7)"><span class="ltr">₪0</span></div>
+ <div class="c d g" data-at="3" data-fx="slam" style="top:830px;font-size:150px">הכל. חינם.</div>
+ <div class="c sub" data-at="4.4" data-fx="up" style="top:1040px;font-size:56px">בלי הרשמה. בלי מנוי.<br>בלי אותיות קטנות.</div>
+</div>
+<!-- 16 CTA (3 bars) -->
+<div class="layer" id="L16">
+ <div class="c" data-at="0" data-fx="logo" style="top:300px;display:flex;justify-content:center;align-items:center;gap:22px;direction:ltr">
+   <svg viewBox="0 0 64 64" class="pin" style="width:200px;height:200px"></svg>
+   <span class="d" style="font-size:190px;letter-spacing:6px">SPOT<span class="pk" style="text-shadow:0 0 50px rgba(255,46,147,.9)">X</span></span></div>
+ <div class="c d" data-at="2" data-fx="slam" style="top:620px;font-size:150px">יאללה, יוצאים.</div>
+ <div class="c sub" data-at="3.5" data-fx="up" style="top:820px;font-size:60px">כל האירועים בישראל ובחו״ל.<br><span class="d g" style="font-size:80px">במקום אחד. בחינם.</span></div>
+ <div class="c" data-at="8" data-fx="slam" style="top:1100px"><span style="display:inline-block;background:#fff;color:#06040b;font-family:Rubik;font-weight:900;font-size:90px;letter-spacing:4px;padding:28px 70px;border-radius:999px;direction:ltr;box-shadow:0 0 100px rgba(255,46,147,.7)">SPOT<span class="pk">X</span>.FUN</span></div>
+ <div class="c sub" data-at="9" data-fx="up" style="top:1320px;font-size:50px">בטלגרם: <span class="ltr" style="color:#7cc8ff">@spotxilbot</span></div>
+</div>
+</div><div id="vign"></div><div id="flash"></div><div id="noise"></div></div>
+<script>
+const PIN=`__PIN__`;
+document.querySelectorAll('svg.pin').forEach((s,i)=>{s.innerHTML=PIN.replace(/id="(\w+)"/g,`id="$1${i}"`).replace(/url\(#(\w+)\)/g,`url(#$1${i})`)});
+const B=60/124, BAR=4*B;
+const SB=[0,2,4,6,8,11,13,15,17,19,21,23,25,27,30,32,34,37.6]; // scene starts in bars
+const S=SB.map(x=>x*BAR), DROP=4*BAR, END_GROOVE=36*BAR, TOTAL=37*BAR+1.2;
+const IX={gen:5,abroad:6,num:7,poll:13,bot:14};
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const eo=x=>1-Math.pow(1-clamp(x),3);
+const eback=x=>{x=clamp(x);const c=1.8;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const prog=(t,a,d)=>clamp((t-a)/d);
+const hash=n=>{const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s)};
+const LAYERS=[...document.querySelectorAll('.layer')];
+const ANIM=LAYERS.map(L=>[...L.querySelectorAll('[data-at]')]);
+
+// background
+const bgl=$('bgl');
+const BLOBS=[['#ff2e93',900],['#9d4dff',1000],['#19e3ff',700],['#9d4dff',800]].map(([c,w])=>{const d=document.createElement('div');d.className='blob';d.style.cssText=`width:${w}px;height:${w}px;background:${c}`;bgl.appendChild(d);return d});
+const BC=['#ff2e93','#19e3ff','#9d4dff','#ff2e93','#19e3ff','#9d4dff'];
+const BEAMS=BC.map((c,i)=>{const d=document.createElement('div');d.className='beam';d.style.left=(80+i*170)+'px';bgl.appendChild(d);return d});
+const PARTS=[...Array(46)].map((_,i)=>{const d=document.createElement('div');d.className='p';$('parts').appendChild(d);return d});
+
+const GEN=[['טכנו','#ff2e93','#06040b'],['האוס','#19e3ff','#06040b'],['היפ הופ','#9d4dff','#fff'],['מזרחית','#b6ff3b','#06040b']];
+$('tick').textContent='טראנס · רגאטון · אפרו · דראם אנד בייס · דיסקו פאנק · מיינסטרים · R&B · פסיי · ישראלי · ג׳אז · רוק אינדי · '.repeat(3);
+
+const ARTS=["radial-gradient(circle at 30% 30%,#ff2e93,transparent 50%),radial-gradient(circle at 75% 70%,#19e3ff,transparent 55%),linear-gradient(135deg,#2a0f45,#06040b)",
+"radial-gradient(circle at 70% 25%,#ffb13b,transparent 50%),radial-gradient(circle at 25% 80%,#ff2e93,transparent 55%),linear-gradient(135deg,#3a0d2a,#06040b)",
+"radial-gradient(circle at 50% 40%,#2bf5a0,transparent 50%),radial-gradient(circle at 15% 85%,#9d4dff,transparent 55%),linear-gradient(135deg,#0d2a2a,#06040b)",
+"radial-gradient(circle at 40% 60%,#9d4dff,transparent 55%),radial-gradient(circle at 80% 20%,#19e3ff,transparent 45%),linear-gradient(135deg,#140d22,#06040b)"];
+const CARDS=[['Techno Bunker','14','שישי 23:00 · תל אביב','החל מ-₪89',['טכנו','18+']],['Sunset House','12','חמישי 21:30 · יפו','חינם',['האוס','גגות']],['Forest Trance','21','שישי 22:00 · צפון','החל מ-₪120',['טראנס']],['Warehouse 03','15','שבת 00:30 · חיפה','החל מ-₪110',['טכנו']],['Open Air','20','חמישי 22:00 · אילת','החל מ-₪95',['האוס']],['Live Sessions','13','שישי 21:00 · ירושלים','החל מ-₪75',['הופעה']]];
+const CEL=CARDS.map((c,i)=>{const d=document.createElement('div');d.className='card';d.innerHTML=`<div class="art" style="background:${ARTS[i%4]}"><div class="date"><div class="d" style="font-size:40px">${c[1]}</div><div style="font-size:18px;color:#ff2e93;margin-top:4px">נוב'</div></div><div class="price">${c[3]}</div></div><div class="body"><div class="d" style="font-size:38px;letter-spacing:0">${c[0]}</div><div style="font-size:24px;color:#b3a6d4;margin-top:10px">${c[2]}</div><div style="margin-top:14px">${c[4].map(x=>`<span class="tag">${x}</span>`).join('')}</div></div>`;$('cards').appendChild(d);return d});
+function mini(el,i,title,meta){el.style.cssText='align-self:flex-end;width:88%;background:#1e1630;border-radius:26px;border-bottom-left-radius:8px;overflow:hidden';el.innerHTML=`<div style="height:150px;background:${ARTS[i]}"></div><div style="padding:16px 22px"><div class="d" style="font-size:32px;letter-spacing:0">${title}</div><div style="font-size:23px;color:#b3a6d4;margin-top:6px">${meta}</div><div style="display:flex;gap:10px;margin-top:12px"><span style="flex:1;text-align:center;background:rgba(42,168,240,.2);color:#7cc8ff;border-radius:12px;padding:10px;font-size:22px;font-weight:700">🎟 כרטיסים</span><span style="flex:1;text-align:center;background:rgba(42,168,240,.2);color:#7cc8ff;border-radius:12px;padding:10px;font-size:22px;font-weight:700">⏰ תזכורת</span></div></div>`}
+mini($('m1'),0,'Techno Bunker','שישי 23:00 · ת״א · ₪89'); mini($('m2'),3,'Warehouse 03','שבת 00:30 · ת״א · ₪110');
+
+function tf(el,o,x,y,s,r,b){el.style.opacity=o;el.style.transform=`translate(${x}px,${y}px) scale(${s}) rotate(${r||0}deg)`;el.style.filter=b?`blur(${b}px)`:''}
+function fx(el,t0,t,pulse){
+  const at=t0+parseFloat(el.dataset.at)*B, kind=el.dataset.fx, out=el.dataset.out?t0+parseFloat(el.dataset.out)*B:1e9;
+  if(t<at||t>=out+.2){el.style.opacity=0;return}
+  const oo=t>out?1-prog(t,out,.2):1;
+  if(kind==='slam'){const p=prog(t,at,.16);tf(el,clamp(p*2.5)*oo,0,0,1.55-.55*eo(p),0,16*(1-p))}
+  else if(kind==='up'){const p=prog(t,at,.35);tf(el,clamp(p*1.6)*oo,0,50*(1-eo(p)),1,0,8*(1-p))}
+  else if(kind==='pop'){const p=prog(t,at,.3);tf(el,clamp(p*2)*oo,0,0,.6+.4*eback(p),0,0)}
+  else if(kind==='drop'){const p=prog(t,at,.38);tf(el,clamp(p*2)*oo,0,-220*(1-eback(p)),1,0,0)}
+  else if(kind==='stamp'){const p=prog(t,at,.18);tf(el,clamp(p*3)*oo,0,0,2.2-1.2*eo(p),0,0)}
+  else if(kind==='logo'){const p=prog(t,at,.45);tf(el,clamp(p*2)*oo,0,-500*(1-eback(p)),1+pulse*.03,0,0)}
+}
+function chroma(el,a){el.style.textShadow=`${a}px 0 rgba(255,46,147,.8), ${-a}px 0 rgba(25,227,255,.8)`}
+
+function render(t){
+  const ph=((t%B)+B)%B/B, beatN=Math.floor(t/B), bar=Math.floor(t/BAR);
+  const groove=t>=DROP&&t<END_GROOVE&&!((bar===16||bar===29)&&t%BAR>=2*B);
+  const pulse=groove?Math.exp(-ph*5.5):0;
+  const sh=pulse*6; $('cam').style.transform=`translate(${(hash(beatN)-.5)*sh*2}px,${(hash(beatN+9)-.5)*sh*2}px) scale(${1+pulse*.01})`;
+  BLOBS.forEach((d,i)=>{const a=t*.3+i*1.7;d.style.left=(90+Math.cos(a)*300+(i%2?400:-250))+'px';d.style.top=(200+i*430+Math.sin(a*1.3)*220)+'px';d.style.opacity=(.34+pulse*.25)*clamp(t)});
+  BEAMS.forEach((d,i)=>{const ang=Math.sin(t*(groove?1.5:.6)+i*1.1)*28+(i-2.5)*6;d.style.transform=`rotate(${ang}deg)`;d.style.background=`linear-gradient(180deg,${BC[(i+bar)%6]},transparent 80%)`;d.style.opacity=(groove?.2+pulse*.3:.12+.05*Math.sin(t*3+i))*clamp(t/.6)});
+  PARTS.forEach((d,i)=>{const sp=60+hash(i)*160;const y=2120-((t*sp*(groove?1.6:1)+hash(i+3)*2200)%2300);const sz=3+hash(i+1)*7;d.style.cssText=`left:${hash(i+7)*1150}px;top:${y}px;width:${sz}px;height:${sz}px;opacity:${.25+.45*hash(i+5)+pulse*.3};background:${['#fff','#ff2e93','#19e3ff'][i%3]}`});
+  let fl=0;[[DROP,.85],[S[2]+4*B,.6],[S[4],.35],[S[6],.4],[S[7],.35],[S[8],.6],[S[11],.35],[S[13],.35],[S[14],.6],[S[15]+1.5*B,.6],[S[16],.5],[36*BAR,.8]].forEach(([a,s])=>{if(t>=a)fl=Math.max(fl,s*Math.exp(-(t-a)*9))});
+  if(t>=3*BAR&&t<DROP)fl=Math.max(fl,.06*Math.exp(-ph*10));
+  $('flash').style.opacity=fl;
+  const ca=3+pulse*10;
+  LAYERS.forEach((L,i)=>{const on=t>=S[i]&&t<S[i+1];L.style.display=on?'block':'none';if(!on)return;
+    ANIM[i].forEach(el=>fx(el,S[i],t,pulse));
+    // scene exit: quick fade/zoom in last 0.12s
+    const ex=prog(t,S[i+1]-.12,.12); L.style.opacity=1-ex; L.style.transform=`scale(${1+ex*.08})`;
+    L.querySelectorAll('.d').forEach(el=>{if(!el.classList.contains('g')&&!el.closest('.glass,.notif,#phone,.card,[data-fx=stamp]'))chroma(el,ca)});
+  });
+  // scene specifics
+  if(t>=S[IX.gen]&&t<S[IX.gen+1]){const lt=t-S[IX.gen],idx=Math.min(3,Math.floor(lt/(2*B)));const[w,bg,fg]=GEN[idx];const gw=$('gw');gw.textContent=w;gw.style.color=fg;
+    const p=prog(t,S[IX.gen]+idx*2*B,.14);tf(gw,1,0,0,1.4-.4*eo(p)+pulse*.03,idx%2?-3:3,0);gw.style.textShadow='none';
+    const gb=$('gbg');gb.style.background=bg;gb.style.opacity=.93;gb.style.transform=`rotate(${idx%2?3:-3}deg) scaleY(${.9+pulse*.08})`;
+    $('tick').style.transform=`translateX(${-1500+lt*420}px)`;$('tick').style.color=idx%2?'#19e3ff':'#fff'}
+  if(t>=S[IX.abroad]&&t<S[IX.abroad+1]){const lt=t-S[IX.abroad];const pl=$('plane');pl.style.left=(-250+lt*330)+'px';pl.style.transform=`translateY(${-lt*40}px) rotate(-8deg)`;}
+  if(t>=S[IX.num]&&t<S[IX.num+1]){const t0=S[IX.num];$('n1').textContent=Math.round(88*eo(prog(t,t0,1.5*B)));const p2=prog(t,t0+2.5*B,1.6*B);$('n2').textContent=(Math.round(60000*eo(p2)/100)*100).toLocaleString('en-US')+(p2>=1?'+':'');
+    CEL.forEach((c,i)=>{const at=t0+(i*.7+1)*B,p=eo(prog(t,at,.4)),side=i%2?1:-1;c.style.left=[-260,560,-220,600,-150,520][i]+'px';c.style.top=[1330,1290,1500,1460,1640,1620][i]+'px';c.style.opacity=t<at?0:.85*clamp(p*1.5);c.style.transform=`translate(${side*900*(1-p)}px,${300*(1-p)}px) rotate(${[-12,10,-7,13,-15,8][i]*p+side*20*(1-p)}deg) scale(.8)`;c.style.filter=`brightness(${.55+pulse*.2})`})}
+  if(t>=S[IX.poll]&&t<S[IX.poll+1]){const t0=S[IX.poll];[[1,5,7],[2,2,7],[3,0,7]].forEach(([k,n,tot])=>{const p=eo(prog(t,t0+2.6*B,2.4*B));const v=Math.round(n*p);$('v'+k).style.width=(100*v/tot)+'%';$('c'+k).textContent=v+(k===3&&p>=1?' 💀':'')})}
+  if(t>=S[IX.bot]&&t<S[IX.bot+1]){const t0=S[IX.bot];const ph5=$('phone');const pin=eback(prog(t,t0+.3*B,.5));ph5.style.transform=`translateY(${(1-pin)*1300}px) scale(${1+pulse*.01})`;
+    const msg=[...'האוס בתל אביב הערב 🪩'];const n=Math.round(msg.length*prog(t,t0+1.2*B,1.6*B));const sent=t>=t0+3*B;
+    $('typed').textContent=msg.slice(0,n).join('')+(sent?'':'|');$('b1').style.opacity=t<t0+1.2*B?0:1;
+    const p2=prog(t,t0+3.6*B,.25);tf($('b2'),t<t0+3.6*B?0:1,0,0,.6+.4*eback(p2));$('b2').style.transformOrigin='left bottom';
+    [['m1',4.3],['m2',5.1]].forEach(([id,k])=>{const p=prog(t,t0+k*B,.3);tf($(id),t<t0+k*B?0:1,0,40*(1-p),.5+.5*eback(p));$(id).style.transformOrigin='left bottom'})}
+  $('world').style.opacity=1-prog(t,TOTAL-.7,.7);
+}
+window.render=render;window.TOTAL=TOTAL;window.S=S;render(0);
+</script></body></html>
