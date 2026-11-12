@@ -8,7 +8,6 @@ import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store
 import { artistPath, Card, CardSkeletons, EventGrid, GridLoading, Hero, Related, useT, useTitle, venuePath } from "../ui";
 import type { EventSummary } from "../types";
 import { Quiz } from "./Quiz";
-import { TelegramPromo } from "../bot/TelegramPromo";
 
 // Regions with a /region/<key> page (seo.py REGION_NAMES); Tel Aviv and Eilat are city pages.
 const REGION_PAGES = ["gush_dan", "sharon", "jerusalem", "haifa", "galilee", "negev"];
@@ -169,14 +168,12 @@ export default function Home({ landing }: { landing?: "now" | "tonight" | "weeke
           <>
             <Quiz />
             <ForYouRow />
-            <TelegramPromo />
             <Trending />
           </>
         ) : (
           <>
             {!landing && !f.q && <button className="quiz-again" onClick={again}>✨ {t.quiz.again}</button>}
             {landing && info?.intro && <p className="landing-intro">{info.intro}</p>}
-            {!f.q && <TelegramPromo />}
             <Filters />
             {/* A search keeps its results right under the filters. */}
             {!f.q && <ForYouRow />}

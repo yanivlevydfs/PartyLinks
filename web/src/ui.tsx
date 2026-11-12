@@ -5,6 +5,7 @@ import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { CookieConsent, useConsent } from "./consent";
 import { InstallBanner } from "./Install";
+import { TelegramFab } from "./bot/TelegramFab";
 import { INFO_LINKS } from "./pages/Info";
 import { AdLabel, hit, SponsoredFrame, SponsoredStrip, useAdView } from "./ads/Sponsored";
 import { forecastAt, Weather } from "./Weather";
@@ -138,6 +139,7 @@ export function Layout() {
       <ScrollRestoration getKey={(loc) => (LANDING.test(loc.pathname) ? "landing" : loc.key)} />
       <CookieConsent />
       <InstallBanner />
+      <TelegramFab />
       <header className="top">
         <div className="wrap top-row">
           <Link className="logo" to="/" aria-label="SPOTX">

@@ -1086,7 +1086,7 @@ def _register_routes(app: FastAPI) -> None:
             "privacy": site.privacy.model_dump(mode="json") | {"email": hide_email(site.privacy.email)},
             "accounts": request.app.state.settings.accounts.ready,  # any account UI at all
             "providers": request.app.state.settings.accounts.providers,  # the "Continue with ..." buttons
-            "telegram": telegram_username(request.app),  # the bot's @name (web/src/bot/TelegramPromo.tsx)
+            "telegram": telegram_username(request.app),  # the bot's @name (web/src/bot/TelegramFab.tsx)
         }
 
     @app.get("/health", tags=["meta"])
