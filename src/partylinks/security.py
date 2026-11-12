@@ -72,11 +72,12 @@ CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    # Nobody may frame the site but Telegram Web, which runs the bot's Web App in an iframe (its phone and
-    # desktop apps use a webview: not framed). Browsers that read frame-ancestors ignore X-Frame-Options;
-    # DENY stays for those that don't.
-    "frame-ancestors https://web.telegram.org",
+    "frame-ancestors 'none'",
 ])  # fmt: skip
+# The bot's Web App only (?src=tg-app, never /admin): Telegram Web runs it in an iframe (its phone and desktop
+# apps use a webview: not framed). Any page framable by Telegram Web would let any bot frame it there with the
+# visitor's cookies, so only the app's entry page is. Browsers that read frame-ancestors ignore X-Frame-Options.
+CSP_TG_APP = CSP.replace("frame-ancestors 'none'", "frame-ancestors https://web.telegram.org")
 HEADERS = [
     (b"x-content-type-options", b"nosniff"),
     (b"x-frame-options", b"DENY"),
@@ -330,7 +331,8 @@ class SecurityMiddleware:
                 out = [(k, v) for k, v in message.get("headers", []) if k.lower() != b"server"]
                 out += HEADERS
                 if not docs:
-                    out.append((b"content-security-policy", CSP.encode()))
+                    tg_app = b"src=tg-app" in scope.get("query_string", b"") and not path.startswith("/admin")
+                    out.append((b"content-security-policy", (CSP_TG_APP if tg_app else CSP).encode()))
                 if https:
                     out.append((b"strict-transport-security", b"max-age=31536000; includeSubDomains"))
                 if admin:

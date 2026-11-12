@@ -59,8 +59,9 @@ def test_describe_sets_the_menu_button(tmp_path: Path) -> None:
     assert isinstance(bot.calls["set_chat_menu_button"]["menu_button"], MenuButtonCommands)
 
 
-def test_headers_let_telegram_web_frame_the_site(tmp_path: Path) -> None:
+def test_only_the_web_app_entry_page_may_be_framed_by_telegram_web(tmp_path: Path) -> None:
     with TestClient(create_app(settings_for(tmp_path), start_scheduler=False)) as client:
-        csp = client.get("/health").headers["content-security-policy"]
-    assert "frame-ancestors https://web.telegram.org;" in csp + ";"
-    assert "https://telegram.org" in next(d for d in csp.split("; ") if d.startswith("script-src"))
+        csp = {u: client.get(u).headers["content-security-policy"] for u in ("/?src=tg-app", "/", "/admin?src=tg-app")}
+    assert "frame-ancestors https://web.telegram.org;" in csp["/?src=tg-app"] + ";"
+    assert "frame-ancestors 'none'" in csp["/"] and "frame-ancestors 'none'" in csp["/admin?src=tg-app"]
+    assert "https://telegram.org" in next(d for d in csp["/"].split("; ") if d.startswith("script-src"))
