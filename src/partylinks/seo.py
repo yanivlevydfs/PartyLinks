@@ -855,6 +855,11 @@ INFO_PAGES = {
 
 
 def info_page(path: str) -> Any:
+    if path == "/partners":  # the full page: partners_page.py, texts shared with the React page
+        from partylinks.partners_page import partners_page  # local: it imports this module
+
+        return partners_page
+
     def build(session: Session, cfg: Settings, lang: str) -> Page:
         i = 0 if lang == "he" else 1
         title, text = INFO_PAGES[path][0][i], INFO_PAGES[path][1][i].format(name=cfg.site.name)

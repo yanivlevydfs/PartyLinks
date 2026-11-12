@@ -40,6 +40,8 @@ COPY content/ content/
 COPY --from=web /web/dist web/dist
 # Ticket sites' display names: the website builds them in, the server draws them on event artwork.
 COPY web/src/sourceNames.json web/src/sourceNames.json
+# /partners texts: the website builds them in, the server renders them for crawlers (partners_page.py).
+COPY web/src/partners/texts.json web/src/partners/texts.json
 
 # Images, caches, inboxes: mount a volume at /app/data or everything resets on
 # deploy (Railway: a service volume; it refuses a VOLUME instruction here).

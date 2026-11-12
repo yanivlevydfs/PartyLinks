@@ -1,0 +1,24 @@
+/* /partners (PartnersPage.tsx): on top of the info pages' .statement */
+.pt-eyebrow { margin: 10px 0 0; color: var(--cyan); font: 700 15px/1.3 var(--display); letter-spacing: .02em; }
+.pt-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 0; }
+.pt-ctas .c-btn { flex: none; text-decoration: none; display: inline-flex; align-items: center; }
+.pt section { scroll-margin-top: 80px; }
+
+.pt .pt-cards { list-style: none; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
+.pt-cards li { padding: 16px 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.pt-cards h3 { margin: 0 0 6px; font: 700 18px/1.3 var(--display); }
+.pt-cards p { margin: 8px 0 0; font-size: 15px; line-height: 1.6; color: var(--muted); }
+.pt-tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--green); border: 1px solid currentColor; }
+.pt-tag.paid { color: var(--pink); }
+
+.pt .pt-steps { list-style: none; padding: 0; counter-reset: step; }
+.pt-steps li { counter-increment: step; display: flex; gap: 12px; align-items: baseline; }
+.pt-steps li::before {
+  content: counter(step); flex: none; width: 30px; height: 30px; display: inline-grid; place-items: center;
+  border-radius: 50%; background: var(--grad); color: #fff; font: 700 15px/1 var(--display);
+}
+
+.pt-faq { border-bottom: 1px solid var(--line); padding: 12px 0; }
+.pt-faq summary { cursor: pointer; font-weight: 700; color: var(--text); }
+.pt-faq summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.pt-faq p { margin: 8px 0 0; color: var(--muted); }

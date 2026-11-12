@@ -20,7 +20,7 @@ function useEmail() {
   return useQuery({ queryKey: ["site"], queryFn: () => fetch("/site").then((r) => r.json() as Promise<{ email?: string }>) }).data?.email;
 }
 
-function Mail({ subject }: { subject?: string }) {
+export function Mail({ subject }: { subject?: string }) {
   const { lang } = useT();
   const email = useEmail();
   if (!email) return <p className="muted">{lang === "he" ? "כתובת הדוא\"ל תפורסם בקרוב." : "Our email address will be published soon."}</p>;
@@ -168,55 +168,6 @@ export function ContactPage() {
           {t.privacy} <Link to="/privacy">{lang === "he" ? "מדיניות פרטיות" : "Privacy policy"}</Link>
           {" · "}<Link to="/accessibility">{lang === "he" ? "הצהרת נגישות" : "Accessibility statement"}</Link>
         </p>
-        <Back />
-      </main>
-    </>
-  );
-}
-
-const PARTNERS = {
-  he: {
-    intro: "SPOTX מגיע לאנשים שמחפשים בדיוק עכשיו לאן לצאת. אם אתם מייצרים אירועים, מארחים אותם או מוכרים להם כרטיסים, בואו נדבר.",
-    who: [
-      ["מפיקים ואמנים", "ודאו שהאירועים שלכם מופיעים עם כל הפרטים: ליינאפ, תמונות, מחירים וקישור ישיר לקנייה."],
-      ["מקומות ומועדונים", "עמוד מקום מסודר עם כל האירועים הקרובים שלכם, על המפה ובחיפוש לפי עיר."],
-      ["אתרי כרטיסים", "חיבור ישיר (פיד או API) כדי שהאירועים שלכם יתעדכנו מהר ובדיוק, ומעקב אחרי ההפניות שאנחנו שולחים אליכם."],
-      ["מותגים ומדיה", "תוכן משותף, כתבות בבלוג ומדריכי בילוי לקהל שיוצא לבלות."],
-    ],
-    how: "כתבו לנו כמה מילים על עצמכם ועל מה שמעניין אתכם, ונחזור אליכם.",
-    subject: "שיתוף פעולה עם SPOTX",
-  },
-  en: {
-    intro: "SPOTX reaches people who are looking for somewhere to go right now. If you create events, host them or sell their tickets, let's talk.",
-    who: [
-      ["Promoters and artists", "Make sure your events appear with every detail: lineup, images, prices and a direct link to buy."],
-      ["Venues and clubs", "A proper venue page with all your upcoming events, on the map and in city search."],
-      ["Ticketing sites", "A direct connection (feed or API) so your events update quickly and accurately, with tracking of the traffic we send you."],
-      ["Brands and media", "Joint content, blog features and going-out guides for people heading out."],
-    ],
-    how: "Write us a few words about yourself and what interests you, and we'll get back to you.",
-    subject: "Partnership with SPOTX",
-  },
-};
-
-export function PartnersPage() {
-  const { lang } = useT();
-  const t = PARTNERS[lang];
-  useTitle(title("/partners", lang));
-  return (
-    <>
-      <Hero title={title("/partners", lang)} />
-      <main className="wrap statement">
-        <p>{t.intro}</p>
-        {t.who.map(([h, p]) => (
-          <section key={h}>
-            <h2>{h}</h2>
-            <p>{p}</p>
-          </section>
-        ))}
-        <h2>{lang === "he" ? "יוצרים קשר" : "Get in touch"}</h2>
-        <p>{t.how}</p>
-        <Mail subject={t.subject} />
         <Back />
       </main>
     </>
