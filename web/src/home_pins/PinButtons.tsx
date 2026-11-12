@@ -7,7 +7,7 @@ import type { Picked } from "./api";
 import { usePinText } from "./i18n";
 import { PinPicker } from "./PinPicker";
 
-function Sheet({ event, rail, onClose }: { event?: Picked; rail?: string; onClose: () => void }) {
+export function PinSheet({ event, rail, onClose }: { event?: Picked; rail?: string; onClose: () => void }) {
   const { p, lang } = usePinText();
   useEffect(() => {
     const esc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -32,7 +32,7 @@ function AdminDoor({ label, className, event, rail }: { label: string; className
   return (
     <>
       <button type="button" className={className} onClick={() => setOpen(true)}>{label}</button>
-      {open && <Sheet event={event} rail={rail} onClose={() => setOpen(false)} />}
+      {open && <PinSheet event={event} rail={rail} onClose={() => setOpen(false)} />}
     </>
   );
 }

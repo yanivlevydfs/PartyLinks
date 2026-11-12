@@ -5,10 +5,11 @@ import { holidayWhen, useCategories, useEvents, useHolidays, useLandingInfo, use
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
-import { artistPath, Card, CardSkeletons, EventGrid, GridLoading, Hero, Related, useT, useTitle, venuePath } from "../ui";
+import { artistPath, CardSkeletons, EventGrid, GridLoading, Hero, Related, useT, useTitle, venuePath } from "../ui";
 import type { EventSummary } from "../types";
 import { Quiz } from "./Quiz";
 import { RailPinButton } from "../home_pins/PinButtons";
+import { RailCard } from "../home_pins/RailCard";
 
 // Regions with a /region/<key> page (seo.py REGION_NAMES); Tel Aviv and Eilat are city pages.
 const REGION_PAGES = ["gush_dan", "sharon", "jerusalem", "haifa", "galilee", "negev"];
@@ -236,7 +237,7 @@ export function Rail({ title, sub, pool, rail }: { title: string; sub: string; p
         </div>
       </div>
       <div className="trending-row" ref={row}>
-        {loaded ? items.map((e) => <Card key={e.id} e={e} />) : <CardSkeletons n={4} />}
+        {loaded ? items.map((e) => <RailCard key={e.id} e={e} />) : <CardSkeletons n={4} />}
       </div>
     </section>
   );

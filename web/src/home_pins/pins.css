@@ -24,3 +24,13 @@
 .pin-door { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: inherit; cursor: pointer; }
 .pin-door.small { padding: 4px 10px; font-size: 13px; }
 .pin-door:hover { border-color: var(--line-hot); }
+
+/* A pinned card in a home row, for an admin: ✏️ edit and ✕ unpin under it (RailCard.tsx). */
+/* card-wrap: the row's own sizing applies; a column (card, then tools) without the outer hover lift. */
+.pin-card.card-wrap { flex-direction: column; gap: 6px; }
+.pin-card.card-wrap:hover { transform: none; }
+.pin-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pin-tools button { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line-hot); background: var(--panel-2); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.pin-tools button:hover { background: var(--panel-solid); }
+.pin-tools button:disabled { opacity: .5; cursor: wait; }
+.pin-err { color: var(--pink); font-size: 13px; }
