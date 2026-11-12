@@ -1627,7 +1627,7 @@ sources:
       location: מיקום
     # Most events are not on /events (producers share /lp/event/<slug> links): every link the Wayback
     # Machine archived in the last wayback_days, and a DuckDuckGo site: search (search_pages pages).
-    wayback_url: "https://web.archive.org/cdx/search/cdx?url=eventbuzz.co.il/lp/event/*&output=txt&fl=original&collapse=urlkey&from={since}"
+    wayback_url: "https://web.archive.org/cdx/search/cdx?url=eventbuzz.co.il/lp/event/&matchType=prefix&output=txt&fl=original&collapse=urlkey&limit=3000&from={since}"
     wayback_days: 120
     search_url: "https://html.duckduckgo.com/html/?q={q}&s={offset}"
     search_query: "site:eventbuzz.co.il/lp/event"

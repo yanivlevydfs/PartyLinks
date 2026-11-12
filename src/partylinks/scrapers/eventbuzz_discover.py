@@ -12,6 +12,9 @@ import re
 from datetime import UTC, datetime, timedelta
 from urllib.parse import quote
 
+import httpx
+from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
+
 _SLUG = re.compile(r"eventbuzz\.co\.il/lp/event/([A-Za-z0-9_\-]+)")
 
 
@@ -27,3 +30,19 @@ def wayback_url(template: str, days: int, now: datetime | None = None) -> str:
 
 def search_urls(template: str, query: str, pages: int, per_page: int = 30) -> list[str]:
     return [template.format(q=quote(query), offset=i * per_page) for i in range(pages)]
+
+
+async def fetch_direct(url: str, timeout: float, user_agent: str) -> str:
+    """An index or search page, straight from our own address: archive.org's index takes 20-60 s to answer
+    and the rotating proxies cut it off every time (2026-11-12: a run spent 40 minutes on it, retrying each)."""
+    async with httpx.AsyncClient(timeout=timeout, headers={"User-Agent": user_agent}, follow_redirects=True) as client:
+        # archive.org answers 503 now and then under load: three tries, 10 s and 20 s apart.
+        async for attempt in AsyncRetrying(
+            stop=stop_after_attempt(3), wait=wait_exponential(min=10, max=20),
+            retry=retry_if_exception_type(httpx.HTTPError), reraise=True,
+        ):  # fmt: skip
+            with attempt:
+                response = await client.get(url)
+                response.raise_for_status()
+                return response.text
+    raise AssertionError("unreachable: the last try returns or raises")

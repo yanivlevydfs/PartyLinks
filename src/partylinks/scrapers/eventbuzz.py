@@ -15,7 +15,7 @@ from datetime import datetime
 from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
@@ -59,7 +59,7 @@ class EventbuzzSettings(SourceSettings):
     search_url: str = ""
     search_query: str = "site:eventbuzz.co.il/lp/event"
     search_pages: int = 5
-    extra_slugs: list[str] = []  # links the owner saw before any index did (the admin's config tab)
+    extra_slugs: list[str] = Field(default_factory=list)  # links the owner saw before any index did (the admin's config tab)
 
 
 class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
@@ -83,7 +83,8 @@ class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
             pages += [(f"search page {i + 1}", u) for i, u in enumerate(discover.search_urls(s.search_url, s.search_query, s.search_pages))]
         found: list[str] = list(s.extra_slugs)
         for what, url in pages:  # a failing index or search page costs only its links
-            found += discover.slugs(await self.optional(what, self.get_text(url)) or "")
+            page = discover.fetch_direct(url, self.http.timeout_seconds, self.http.user_agent)
+            found += discover.slugs(await self.optional(what, page) or "")
         return list(dict.fromkeys(found))
 
     async def _fetch_event(self, url: str) -> ScrapedEvent:
