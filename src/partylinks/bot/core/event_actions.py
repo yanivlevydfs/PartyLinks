@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 from sqlalchemy.orm import Session
 
 from partylinks import seo
-from partylinks.bot.core import calendar, refs, remind, similar, usage
+from partylinks.bot.core import calendar, navigate, refs, remind, similar, usage
 from partylinks.bot.core.card import cards
 from partylinks.bot.core.phrases import duration, label, say
 from partylinks.bot.core.reply import (
@@ -121,6 +121,7 @@ async def press(conv: Conversation, chat_id: str, lang: str, action: str) -> Rep
     rows_ = [
         [Button(label("ics", lang), f"{ICS}{ref}"), Button(label("google_cal", lang), url=calendar.google(row, page))],
         [Button(label("plan", lang), f"{PLAN}{ref}")],
+        [navigate.button(row, ref, lang)],
     ]
     for i, name in enumerate(_follows(row)):
         action_ = f"{FOLLOW}{ref}:{i}"

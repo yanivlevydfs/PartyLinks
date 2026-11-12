@@ -50,6 +50,12 @@ most 64 bytes, an event id may be longer); an event that is over answers "no lon
   link, the same entry as the site's "add to calendar"; 👥 "who's coming?": a site plan (`plans`, the page
   `/plan/{id}`) with a Telegram share button; ⭐ follow the venue or one of the first three artists: an
   alert on that name, after the same ✅ as every alert.
+- **➕ 📍 How to get there** (`core/navigate.py`): the venue as a Telegram map pin (`send_venue`) with Waze
+  and Google Maps buttons; no coordinates: says so, with the address. A place (a bar, a restaurant: a
+  `happy_hour` listing or an Ontopo match) also gets what the site's place page shows
+  (`placeinfo.details.place_details`): opening hours, the phone (+972, tap to call), Ontopo booking
+  (`place_info.ontopo_booking`, `?source=spotx`) or its own booking link, and the website. Counted as
+  `navigate` and `place_info` in the bot tab.
 - **/reminders** (and the keyboard's ⏰ button): the chat's reminders and watches; a tap deletes one.
 - **/digest:** opt-in only. Every `bot.digest_weekday` at `bot.digest_hour` (default Thursday 12:00), up to
   `bot.digest_results` weekend picks (`core/picks.py`: the most clicked in the last week first), for
@@ -112,6 +118,7 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 | `core/event_actions.py` | the card's ⏰ 👁 🔁 ➕ buttons, /reminders |
 | `core/remind.py` | reminders and watches: set, list, due, prune |
 | `core/similar.py`, `core/calendar.py` | 🔁 similar events; 📅 the `.ics` file and Google link |
+| `core/navigate.py` | 📍 the map pin, Waze / Google Maps, a place's hours, phone and booking |
 | `core/picks.py`, `core/digest.py`, `core/channel.py` | "interesting events"; /digest; the broadcast channel |
 | `core/usage.py`, `admin_routes.py` | usage rows and the admin's bot tab (`GET /admin/api/bot`) |
 | `telegram/webhook.py` | `POST /bot/telegram`, starts the bot with the app, sets the webhook |
@@ -150,4 +157,5 @@ there); the search, cards, buttons and inline mode all work.
 `tests/test_bot_understand.py` (real sentences -> search words; every misunderstanding found later becomes
 a row), `tests/test_bot_conversation.py` (the conversation on a database), `tests/test_bot_telegram.py`
 (rendering, the webhook's secret, the alert job with a fake bot), `tests/test_bot_features.py` (the card's
-buttons, reminders, watches, similar, calendar, plans, follow, digest, channel, usage and the admin tab).
+buttons, reminders, watches, similar, calendar, plans, follow, digest, channel, usage and the admin tab),
+`tests/test_bot_navigate.py` (📍 the pin, its links and a place's info).

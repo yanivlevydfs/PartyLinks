@@ -14,7 +14,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from partylinks.bot.core import consent, digest, event_actions, menu, understand, usage
+from partylinks.bot.core import consent, digest, event_actions, menu, navigate, understand, usage
 from partylinks.bot.core.card import cards
 from partylinks.bot.core.find import Found, search, search_or_widen
 from partylinks.bot.core.phrases import label, say
@@ -191,6 +191,8 @@ class Conversation:
             return await menu.press(self, chat_id, lang, action)
         if action.startswith(DIGEST):
             return await digest.choose(self, chat_id, lang, action.removeprefix(DIGEST))
+        if action.startswith(navigate.NAVIGATE):
+            return await navigate.press(self, chat_id, lang, action.removeprefix(navigate.NAVIGATE))
         if (reply := await event_actions.press(self, chat_id, lang, action)) is not None:
             return reply
         log.info("bot: unknown button %r", action[:40])

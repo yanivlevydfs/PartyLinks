@@ -92,6 +92,8 @@ async def edit(query: CallbackQuery, reply: Reply) -> bool:
 
 async def send(bot: Bot, chat_id: int | str, reply: Reply, lang: str) -> None:
     """Every message of ``reply``, in order. With no cards the buttons go under the text (or the picture)."""
+    if reply.venue:
+        await bot.send_venue(chat_id, *reply.venue)
     under_text = None if reply.cards else keyboard(reply.buttons)
     sent = False
     if reply.photo:  # the banner with the text as its caption; a picture Telegram cannot fetch: text alone

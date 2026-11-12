@@ -46,3 +46,4 @@ class Reply:
     photo: str | None = None  # a picture with the text as its caption (the entry screen's banner)
     html: bool = False  # ``text`` is already HTML (our own fixed texts only, never an event's)
     edit: bool = False  # a menu screen: replaces the message whose button was pressed, when it can
+    venue: tuple[float, float, str, str] | None = None  # a map pin before the text: (lat, lng, title, address)
