@@ -44,3 +44,4 @@ class BotSettings(BaseModel):
     evening_tries: int = Field(10, ge=1, le=50)  # 🌙 plan my evening: events tried for one with places around it
     daily_hour: int = Field(10, ge=0, le=23)  # ☀️ /daily (opt-in): tonight's picks at this hour, site time zone
     daily_results: int = Field(3, ge=1, le=10)
+    group_results: int = Field(3, ge=1, le=9)  # 👥 /find in a group: cards, then a poll (+ "none": Telegram's 10 options)

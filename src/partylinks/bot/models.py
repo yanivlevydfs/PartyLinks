@@ -123,6 +123,18 @@ class BotChannelPostRow(Base):
     posted_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
 
 
+class BotGroupRow(Base):
+    """A Telegram group the bot is in (core/group.py): its id and language only, nothing about members.
+    Deleted when the bot is removed."""
+
+    __tablename__ = "bot_groups"
+
+    channel: Mapped[str] = mapped_column(String(16), primary_key=True)
+    chat_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    lang: Mapped[str] = mapped_column(String(2), default="he")  # from the group's title when the bot joined
+    joined_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
 class BotUsageRow(Base):
     """One thing the bot did, for the admin's bot tab. ``chat`` is a hash of the chat id (counts people,
     never names one); /stop empties it."""

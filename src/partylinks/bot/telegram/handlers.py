@@ -1,4 +1,4 @@
-"""Telegram updates -> the conversation -> messages. Private chats only (a group gets nothing); inline
+"""Telegram updates -> the conversation -> messages. Private chats (a group gets /find only: group.py); inline
 mode ("@bot techno tonight") works in any chat. A failure is logged and answered with a short apology."""
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from partylinks.bot.core.flood import Flood
 from partylinks.bot.core.phrases import say
 from partylinks.bot.core.reply import CONSENT, Reply
 from partylinks.bot.core.understand import lang_of
-from partylinks.bot.telegram import render
+from partylinks.bot.telegram import group, render
 from partylinks.config import Settings
 from partylinks.db import Database
 
@@ -71,6 +71,7 @@ class Handlers:
         app.add_handler(MessageHandler(PRIVATE & filters.LOCATION, self.on_location))
         app.add_handler(MessageHandler(PRIVATE & filters.TEXT & ~filters.COMMAND, self.on_text))
         app.add_handler(MessageHandler(PRIVATE & ~filters.TEXT & ~filters.LOCATION & ~filters.COMMAND, self.on_other))
+        group.install(app, self)
         app.add_handler(CallbackQueryHandler(self.on_press))
         app.add_handler(InlineQueryHandler(self.on_inline))
         app.add_error_handler(self.on_error)
@@ -209,3 +210,4 @@ async def describe(app: Application) -> None:
     await app.bot.set_my_description("", language_code="en")
     await app.bot.set_my_short_description("", language_code="en")
     await app.bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    await group.describe(app.bot)

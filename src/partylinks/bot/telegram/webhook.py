@@ -27,7 +27,7 @@ from partylinks.config import Settings
 log = logging.getLogger(__name__)
 PATH = "/bot/telegram"
 SECRET_HEADER = "x-telegram-bot-api-secret-token"
-UPDATES = ["message", "callback_query", "inline_query"]
+UPDATES = ["message", "callback_query", "inline_query", "my_chat_member"]  # the last: added to / removed from a group
 MIN_SECRET = 16  # characters; Telegram allows 1-256 of A-Z a-z 0-9 _ -
 START_ATTEMPTS = 4
 START_PAUSE = 3.0  # seconds, times the attempt number

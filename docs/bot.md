@@ -32,7 +32,18 @@ record (decisions D1 to D11, phases): [telegram-bot-design.md](telegram-bot-desi
   (no weather: Telegram asks on every keystroke; at most `bot.inline_per_minute` per user).
 - **Commands:** `/start`, `/alerts` (tap one to delete it), `/lang` (Hebrew / English; until chosen, the
   language follows the letters of each message), `/help`, `/stop` (deletes the chat's row and its alerts).
-- Private chats only; a group gets nothing. Stickers, voice and photos get a friendly "text or location".
+- Private chats, and in groups `/find` only (below). Stickers, voice and photos get a friendly "text or location".
+- **👥 Friends' groups** (`core/group.py`, `telegram/group.py`): added to a group, the bot posts one intro
+  (in the group title's language, Hebrew by default): `/find <words>` or "@bot techno tonight", and that it
+  keeps nothing about members, only the group's id while it is in it. `/find` (or a mention with words) runs
+  the private chat's search and sends up to `bot.group_results` (3) cards with 🎟 and ℹ️ only (⏰ 👁 alerts
+  are personal: private chat), then one native poll "לאן הולכים?" / "Where are we going?" (not anonymous,
+  one answer): the events' titles (cut to Telegram's 100 characters) and "🤷 אף אחד" / "🤷 None". No entry
+  screen and nothing per member: `bot_groups` holds the group's id and language, deleted when the bot is
+  removed (a `my_chat_member` update; the usage rows are unlinked, as /stop does) or the group becomes a
+  supergroup. Privacy mode stays on: the bot never sees the rest of the group's talk. `bot.messages_per_minute`
+  per group, then silence. Counted as `group_join`, `group_find`, `group_poll`. Groups' command menu shows
+  `/find` only (`BotCommandScopeAllGroupChats`).
 
 ## Under every card (phases 1b and 1c)
 
@@ -127,7 +138,7 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 | File | Role |
 | --- | --- |
 | `config.py` | the `bot:` settings block |
-| `models.py` | `bot_chats`, `bot_alerts`, `bot_alert_hits`, `bot_state`, `bot_refs`, `bot_reminders`, `bot_watches`, `bot_channel_posts`, `bot_usage` |
+| `models.py` | `bot_chats`, `bot_alerts`, `bot_alert_hits`, `bot_state`, `bot_refs`, `bot_reminders`, `bot_watches`, `bot_channel_posts`, `bot_groups`, `bot_usage` |
 | `core/understand.py` | a message -> search words, cheapest / near, follow-ups, chat commands |
 | `core/find.py` | search through the site's filters and ranking; near me; widening |
 | `core/card.py`, `core/forecast.py` | the event card and its weather line |
@@ -142,6 +153,7 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 | `core/evening.py` | 🌙 plan my evening: an event and the site's evening around it |
 | `core/daily.py` | ☀️ the daily tip: opt-in, its area and taste, tonight's picks once a day |
 | `core/highlights.py` | 🔥 the week's top and the coming holidays' events in the menu |
+| `core/group.py`, `telegram/group.py` | 👥 groups: the intro, `/find` and mentions -> cards and a poll, removal |
 | `core/navigate.py` | 📍 the map pin, Waze / Google Maps, a place's hours, phone and booking |
 | `core/picks.py`, `core/digest.py`, `core/channel.py` | "interesting events"; /digest; the broadcast channel |
 | `core/usage.py`, `admin_routes.py` | usage rows and the admin's bot tab (`GET /admin/api/bot`) |
@@ -158,7 +170,8 @@ agent: all of Telegram's posts come from a few addresses), `utm.py` (the `tg` pl
 ## Switching it on
 
 1. In Telegram, talk to [@BotFather](https://t.me/BotFather): `/newbot`, then `/setinline` (a placeholder
-   such as "techno tonight") for inline mode. Keep the token.
+   such as "techno tonight") for inline mode, and `/setjoingroups` Enable for friends' groups (privacy mode,
+   `/setprivacy`, stays Enabled). Keep the token.
 2. Railway variables of the web service (both processes read them):
    - `PARTYLINKS_BOT__TELEGRAM_TOKEN` = the token
    - `PARTYLINKS_BOT__TELEGRAM_WEBHOOK_SECRET` = a random string (1-256 of `A-Z a-z 0-9 _ -`), e.g.
@@ -185,4 +198,6 @@ buttons, reminders, watches, similar, calendar, plans, follow, digest, channel, 
 `tests/test_bot_navigate.py` (📍 the pin, its links and a place's info),
 `tests/test_bot_highlights.py` (🔥 the week's top, a holiday's button and its events),
 `tests/test_bot_evening.py` (🌙 an evening's steps in order, another evening, the area buttons),
-`tests/test_bot_daily.py` (☀️ opt-in and out, tonight's picks sent once, nothing tonight, /stop).
+`tests/test_bot_daily.py` (☀️ opt-in and out, tonight's picks sent once, nothing tonight, /stop),
+`tests/test_bot_group.py` (👥 cards and a poll with trimmed options, group chatter ignored, removal deletes
+the row, private chats unchanged).
