@@ -67,13 +67,14 @@ def test_short_words_match_whole_words_only(tmp_path: Path) -> None:
     start = datetime.now(UTC) + timedelta(days=1)
     db = seed(settings_for(tmp_path), [
         event("rap", start, title="ערב ראפ בבארבי"), event("prefix", start, title="היפהופ בראפ"),
-        event("therapy", start, title="סאונד תראפיה"), event("two", start, title="ערב שירה והראפ"), event("dot", start, title="a.b party"),
+        event("therapy", start, title="סאונד תראפיה"), event("two", start, title="ערב שירה והראפ"),
+        event("odd_pair", start, title="לשראפ"), event("dot", start, title="a.b party"),
     ])  # fmt: skip
     with db.session(write=False) as session:
         found = set(session.scalars(select(EventRow.source_event_id).where(whole_word(EventRow.title, "ראפ"))))
         dotted = set(session.scalars(select(EventRow.source_event_id).where(whole_word(EventRow.title, "a.b"))))
         wildcard = set(session.scalars(select(EventRow.source_event_id).where(whole_word(EventRow.title, "a?b"))))
-    assert found == {"rap", "prefix", "two"}  # not inside "תראפיה"; "והראפ": two prefix letters
+    assert found == {"rap", "prefix", "two"}  # not inside "תראפיה"; "והראפ": two prefix letters, "לש" is no prefix pair
     assert dotted == {"dot"} and wildcard == set()  # the word is text, never a pattern
 
 

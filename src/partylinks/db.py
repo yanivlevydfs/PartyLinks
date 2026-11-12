@@ -387,6 +387,9 @@ _REGEX_META = str.maketrans({c: "\\" + c for c in "\\.^$*+?()[]{}|-"})
 _HEBREW_PREFIXES = (
     "\u05d1\u05dc\u05de\u05d4\u05d5\u05db\u05e9"  # one-letter prefixes: bet, lamed, mem, he, vav, kaf, shin
 )
+# Two prefix letters: vav, shin, mem or kaf, then he, bet, lamed, mem or kaf ("וה", "מה", "שב"); not any pair:
+# "לשרוק" (to whistle) is no rock.
+_TWO_PREFIXES = "[ושמכ][הבלמכ]"
 
 
 def whole_word(column: Any, word: str) -> ColumnElement[bool]:
@@ -394,7 +397,7 @@ def whole_word(column: Any, word: str) -> ColumnElement[bool]:
     short search word ("\u05e8\u05d0\u05e4") is not found inside "\u05ea\u05e8\u05d0\u05e4\u05d9\u05d4". A case-insensitive regex (``~*``); the
     word is data, not a pattern (every metacharacter escaped), and the pattern is a bound parameter."""
     escaped = word.casefold().translate(_REGEX_META)
-    return column.regexp_match(f"(^|[^{_WORD_CHARS}])[{_HEBREW_PREFIXES}]{{0,2}}{escaped}($|[^{_WORD_CHARS}])", flags="i")
+    return column.regexp_match(f"(^|[^{_WORD_CHARS}])(?:{_TWO_PREFIXES}|[{_HEBREW_PREFIXES}])?{escaped}($|[^{_WORD_CHARS}])", flags="i")
 
 
 def lineup_contains(name: str) -> ColumnElement[bool]:
