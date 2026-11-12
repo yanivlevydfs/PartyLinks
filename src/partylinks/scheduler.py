@@ -17,6 +17,20 @@ from partylinks.service import ScrapeService, SourceBusyError
 
 log = logging.getLogger(__name__)
 
+
+class _ShutdownIsNotAnError(logging.Filter):
+    """A job cancelled because the server stops (a deploy) is logged by APScheduler as "raised an exception:
+    CancelledError" with a traceback (mail:welcome, 2026-11-12): one info line instead, for every job."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.exc_info and isinstance(record.exc_info[1], asyncio.CancelledError):
+            record.levelno, record.levelname, record.exc_info, record.exc_text = logging.INFO, "INFO", None, None
+            record.msg = "Job %r stopped: server shutting down"
+        return True
+
+
+logging.getLogger("apscheduler.executors.default").addFilter(_ShutdownIsNotAnError())
+
 RETENTION_JOB_ID = "retention"
 
 

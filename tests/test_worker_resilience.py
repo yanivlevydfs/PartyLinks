@@ -165,3 +165,21 @@ def test_the_heartbeat_beats_while_the_default_executor_is_busy(tmp_path: Path, 
     assert after > before  # published although the default executor never freed up
     assert "background step failed" in caplog.text and "variants exploded" in caplog.text
 
+
+
+def test_a_job_cancelled_by_shutdown_is_one_info_line_not_an_error(caplog) -> None:
+    import asyncio
+    import logging
+
+    import partylinks.scheduler  # noqa: F401 - installs the filter
+
+    log = logging.getLogger("apscheduler.executors.default")
+    with caplog.at_level(logging.INFO, logger=log.name):
+        for exc in (asyncio.CancelledError(), ValueError("real")):
+            try:
+                raise exc
+            except BaseException:
+                log.exception('Job "%s" raised an exception', "mail:welcome")
+    cancelled, real = caplog.records[-2:]
+    assert (cancelled.levelno, cancelled.exc_info) == (logging.INFO, None) and "shutting down" in cancelled.getMessage()
+    assert real.levelno == logging.ERROR and real.exc_info is not None
