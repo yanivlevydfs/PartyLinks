@@ -60,6 +60,8 @@ function usePendingAlert(setSaved: (s: Saved) => void) {
         setSaved({ ok: true, id: list.items.some((x) => x.id === a.id) ? null : a.id, name: n });
       }).catch(() => setSaved({ ok: false }));
     }
+    // Once per sign-in (me.id): the alert saved while signed out is created once, not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.id]);
 }
 
@@ -95,7 +97,7 @@ export function Bell() {
     document.addEventListener("pointerdown", away);
     document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", esc); };
-  }, [open]);
+  }, [open, setOpen]); // setOpen: the panel store's, stable
   if (!me) return null;
   const unseen = bell.data?.unseen ?? 0;
   /** Remove one notification, or all of them (no id). */

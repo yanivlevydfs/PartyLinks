@@ -23,6 +23,8 @@ function usePendingSave(done: (ok: boolean) => void) {
     send(`/api/me/saved/${encodeURIComponent(id)}`, "PUT")
       .then(() => { done(true); return qc.invalidateQueries({ queryKey: ["saved"] }); })
       .catch(() => done(false));
+    // Once per sign-in (me.id): the event chosen while signed out is saved once; done/qc are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.id]);
 }
 import "./saved.css";

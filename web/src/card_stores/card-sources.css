@@ -1,9 +1,12 @@
 /* A card's ticket sites (CardSources.tsx): two names, a "+N" chip, and the full list over the picture on tap. */
-.card-sources .more {
-  border: 0; border-radius: 999px; background: rgb(255 255 255 / .9); color: #111; font: 700 11px/1.5 inherit;
-  padding: 1px 7px; cursor: pointer; text-shadow: none;
+/* .src.more: above .sources .src (white text, ui styles), which made it white on white (2026-11-13). */
+.sources.card-sources .src.more {
+  border: 0; border-radius: 999px; background: rgb(255 255 255 / .92); color: #14081f; font-family: inherit;
+  font-size: 11px; font-weight: 800; line-height: 1.5; padding: 1px 7px; cursor: pointer; text-shadow: none;
+  margin: 0; position: static; /* a card's round-button rule gave it 40px margins: the names rose to the date */
 }
-.card-sources .more:hover { background: #fff; }
+.sources.card-sources { align-items: center; }
+.sources.card-sources .src.more:hover { background: #fff; }
 .card-sources .all {
   position: absolute; bottom: calc(100% + 6px); inset-inline-start: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 4px 10px;
   max-width: 220px; padding: 8px 10px; border-radius: 12px; background: rgb(10 6 18 / .92); border: 1px solid var(--line-hot);

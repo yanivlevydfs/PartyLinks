@@ -78,7 +78,7 @@ export default function Home({ landing }: { landing?: "now" | "tonight" | "weeke
       regions: landing === "region" && region ? [region.replace("-", "_")] : [],
       price: landing === "price" && band ? PRICE_PAGES[band] ?? "" : "",
     });
-  }, [landing, genre, when, city, sub, region, band, set]);
+  }, [landing, genre, when, city, sub, region, band, set, cityWhen]); // cityWhen: from sub, a plain string
   // /city/:city: the city's region comes with the categories (Tel Aviv's is known: the target city, as landingPath).
   const cityRegion = cityName && (city === "tel-aviv" ? "tel_aviv" : cats?.cities.find((c) => c.value === cityName.he)?.area);
   // The list waits for the city's whole filter (its name, its region): a list fetched for half of it would be

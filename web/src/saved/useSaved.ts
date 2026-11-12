@@ -58,6 +58,8 @@ export function useMergeOnSignIn() {
       .then((list) => { qc.setQueryData(["saved", me.id], list); clear(); })
       .catch(() => {}) // tried again on the next page
       .finally(() => { busy.current = false; });
+    // On sign-in and when the local list grows: not on every new array of the same ids (it merged them).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.id, ids.length]);
 }
 
