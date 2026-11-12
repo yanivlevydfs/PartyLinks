@@ -141,7 +141,9 @@ export function Layout() {
   return (
     <>
       {/* A new page starts at the top (an event opened from a scrolled list started near its bottom); back restores. */}
-      <ScrollRestoration getKey={(loc) => (LANDING.test(loc.pathname) ? "landing" : loc.key)} />
+      {/* A plain <a href="#x"> has no history key ("default"), so a stale position would pull the page back from the
+          section the browser just scrolled to: a fresh key has no saved position and the router scrolls to #x instead. */}
+      <ScrollRestoration getKey={(loc) => (LANDING.test(loc.pathname) ? "landing" : loc.key === "default" && loc.hash ? loc.hash + Math.random() : loc.key)} />
       <CookieConsent />
       <InstallBanner />
       <TelegramFab />
