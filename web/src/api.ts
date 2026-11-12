@@ -97,7 +97,7 @@ export const useHolidays = () =>
 /** A holiday's dates as the filter's `when` range. */
 export const holidayWhen = (h: Pick<Holiday, "start" | "end">) => `${h.start}~${h.end}`;
 
-/** The home page's rows under "Trending": a pool of the busiest events per row (server-side HOME_RAILS);
+/** The home page's rows under "Trending": a pool of the busiest events per row (settings home_rails, admin config tab);
  *  `holiday`: the coming holiday its "holiday" row is about. */
 export const useRails = () => useKept<{ rails: Record<string, EventSummary[]>; holiday?: Holiday | null }>("rails", "/events/rails");
 

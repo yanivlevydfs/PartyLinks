@@ -66,6 +66,7 @@ from partylinks.event_text.group import group_description
 from partylinks.holiday_pages import core as holiday_pages
 from partylinks.holiday_pages.routes import HolidayOut
 from partylinks.home_pins import rails as home_pins
+from partylinks.home_rails import log_once as broken_home_rail
 from partylinks.lines.weekly import weekly as lines_weekly
 from partylinks.logs import setup_logging
 from partylinks.mail.images import router as mail_images_router
@@ -689,40 +690,6 @@ def _sounds_like(request: Request, q: str) -> list[str]:
 
 # Built in the background on startup (an empty cache made the first visits after a deploy take 3-12 s).
 WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/posts", "/categories", "/categories?anywhere=true", "/ticket-sites", "/events/rails", "/sitemap.xml")
-
-# The home page's rows (/events/rails), in order: event filters, plus "days" ahead (default 30) and
-# "multi" (only events on more than one ticket site) and "exclude" (none of these genres).
-# One cached response for all of them.
-HOME_RAILS: dict[str, dict[str, Any]] = {
-    "trending": {"days": 14, "multi": True},
-    # A night out: evening and night, music, parties and shows only, nothing for kids.
-    "tonight": {
-        "today": True,
-        "time_slot": ["evening", "night"],
-        "genre": [
-            "techno", "house", "trance", "hip_hop", "rnb", "mainstream", "pop", "reggaeton_latin", "afro",
-            "dancehall_reggae", "mizrahi", "israeli", "greek", "arabic", "disco_funk", "drum_and_bass", "bass_dubstep",
-            "hardstyle", "edm", "electronic", "throwback", "rock_indie", "jazz", "world_balkan", "dark_wave",
-            "live_show", "lgbt", "stand_up", "karaoke", "festival", "happy_hour", "theatre", "classical_opera",
-        ],
-        "exclude": ["kids", "lectures", "workshops", "conference"],
-    },
-    "electronic": {
-        "genre": ["techno", "house", "trance", "electronic", "edm", "drum_and_bass", "bass_dubstep", "hardstyle"]
-    },
-    "free": {"free_entry": True},
-    "live": {"genre": ["live_show"]},
-    "israeli": {"genre": ["israeli", "mizrahi", "greek"]},
-    "mainstream": {"genre": ["mainstream", "hip_hop", "rnb", "reggaeton_latin", "throwback", "pop"]},
-    "standup": {"genre": ["stand_up"]},
-    "festival": {"genre": ["festival"]},
-    "theatre": {"genre": ["theatre", "dance"]},
-    "jazz": {"genre": ["jazz", "classical_opera"]},
-    "kids": {"genre": ["kids"]},
-    "lectures": {"genre": ["lectures", "workshops", "culture", "exhibitions"]},
-    "hitech": {"genre": ["hi_tech", "ai", "cyber", "software_dev", "startups", "conference"]},
-}
-RAIL_POOL = 30
 
 
 def build_event_filters(
@@ -1429,7 +1396,7 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.get("/events/rails", response_model=RailsOut, tags=["events"])
     def rails(request: Request) -> Response:
-        """Every home-page row (HOME_RAILS) in one cached response, warmed on startup: the busiest
+        """Every home-page row (settings home_rails) in one cached response, warmed on startup: the busiest
         events of each, from tonight to the row's horizon."""
         cfg: Settings = request.app.state.settings
 
@@ -1463,19 +1430,24 @@ def _register_routes(app: FastAPI) -> None:
                 smart = {"holiday": [*event_filters(request, date_to=now + timedelta(days=cfg.holiday_pages.ahead_days)),
                                      *holiday_pages.where(holiday)], **smart}  # fmt: skip
             wheres = dict(smart)  # each row's filters, for the pinned events (partylinks.home_pins)
-            if cfg.smart_rails.after not in HOME_RAILS:
+            if cfg.smart_rails.after not in {r.key for r in cfg.home_rails.rows}:
                 out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
-            for key, spec in HOME_RAILS.items():
-                kw = {k: v for k, v in spec.items() if k not in ("days", "multi", "today", "exclude")}
-                if spec.get("today"):
-                    kw["on_date"] = now.date()
-                filters = event_filters(request, date_to=now + timedelta(days=spec.get("days", 30)), **kw)
-                if spec.get("multi"):
-                    filters.append(EventRow.group_size > 1)
-                if spec.get("exclude"):
-                    filters.append(not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec["exclude"]))))
-                out.rails[key], wheres[key] = load(filters, RAIL_POOL), filters
-                if key == cfg.smart_rails.after:
+            for spec in cfg.home_rails.rows:
+                try:
+                    filters = event_filters(
+                        request, date_to=now + timedelta(days=spec.days), genre=spec.genre or None,
+                        time_slot=spec.time_slot or None, free_entry=spec.free_entry or None,
+                        on_date=now.date() if spec.today else None,
+                    )  # fmt: skip
+                    if spec.multi:
+                        filters.append(EventRow.group_size > 1)
+                    if spec.exclude:
+                        filters.append(not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec.exclude))))
+                    with session.begin_nested():  # a failed query rolls back to here, the other rows still load
+                        out.rails[spec.key], wheres[spec.key] = load(filters, cfg.home_rails.pool), filters
+                except Exception:  # noqa: BLE001 - an admin's bad row must not take the home page down
+                    broken_home_rail(spec.key)
+                if spec.key == cfg.smart_rails.after:
                     out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
             home_pins.pin(session, out.rails, wheres, event_filters(request), load)
             return out

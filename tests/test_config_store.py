@@ -88,3 +88,25 @@ def test_helpers() -> None:
     assert store.without(data, "a.c.d") == {"a": {"b": 1}, "e": [1]}
     assert store.merge({"a": {"b": 0, "x": 9}, "e": [0, 0]}, data) == {"a": {"b": 1, "x": 9, "c": {"d": 2}}, "e": [1]}
     assert store.lookup(data, "a.c.d") == 2 and store.lookup(data, "a.zz") is None
+
+
+def test_the_home_rows_are_changed_in_the_config_tab(tmp_path: Path) -> None:
+    """home_rails: a changed row round-trips through the overrides and /events/rails shows it after apply."""
+    settings = settings_for(tmp_path)
+    settings.admin.token = SecretStr("s3cret")
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        assert isinstance(client.app, FastAPI)
+        db = client.app.state.db
+        _clean(db)
+        try:
+            for bad in ("home_rails:\n  rows: [{key: x, genre: [no_such_genre]}]\n",
+                        "home_rails:\n  rows: [{key: x}, {key: x}]\n"):  # fmt: skip
+                assert not client.post("/admin/api/config/overrides/validate", headers=ADMIN, json={"yaml": bad}).json()["ok"]
+            text = "home_rails:\n  rows: [{key: hitech, genre: [hi_tech]}, {key: brand_new, genre: [jazz]}]\n"
+            assert client.post("/admin/api/config/overrides/validate", headers=ADMIN, json={"yaml": text}).json()["ok"]
+            assert client.put("/admin/api/config/overrides", headers=ADMIN, json={"yaml": text}).status_code == 200
+            rails = client.get("/events/rails").json()["rails"]
+            assert {"hitech", "brand_new"} <= set(rails) and "electronic" not in rails  # the list replaces the file's
+            assert get_settings().home_rails.pool == store.file_data()["home_rails"]["pool"]  # the rest of the block stays
+        finally:
+            _clean(db)

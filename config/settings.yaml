@@ -156,12 +156,43 @@ popularity:
   min_watching: 2       # "watching now" shows from this many (the visitor reading it is one)
   keep_days: 365        # view rows older than this are deleted with the hourly retention
 
+# The home page's rows (/events/rails, src/partylinks/home_rails), in screen order: event filters over the next
+# `days` (default 30): genre (any of, with sub-genres), exclude (none of), today, time_slot, free_entry, and
+# multi (only events on more than one ticket site). The web shows a row only when it has a title for its key
+# (t.rails in web/src/i18n.ts). Change or add rows in the admin config tab; an override of `rows` replaces the list.
+home_rails:
+  pool: 30                # cards per row's pool (the page shows a random dozen)
+  rows:
+    - {key: trending, days: 14, multi: true}
+    # A night out: evening and night, music, parties and shows only, nothing for kids.
+    - key: tonight
+      today: true
+      time_slot: [evening, night]
+      genre: [techno, house, trance, hip_hop, rnb, mainstream, pop, reggaeton_latin, afro, dancehall_reggae, mizrahi,
+              israeli, greek, arabic, disco_funk, drum_and_bass, bass_dubstep, hardstyle, edm, electronic, throwback,
+              rock_indie, jazz, world_balkan, dark_wave, live_show, lgbt, stand_up, karaoke, festival, happy_hour,
+              theatre, classical_opera]
+      exclude: [kids, lectures, workshops, conference]
+    - {key: electronic, genre: [techno, house, trance, electronic, edm, drum_and_bass, bass_dubstep, hardstyle]}
+    - {key: free, free_entry: true}
+    - {key: live, genre: [live_show]}
+    - {key: israeli, genre: [israeli, mizrahi, greek]}
+    - {key: mainstream, genre: [mainstream, hip_hop, rnb, reggaeton_latin, throwback, pop]}
+    - {key: standup, genre: [stand_up]}
+    - {key: festival, genre: [festival]}
+    - {key: theatre, genre: [theatre, dance]}
+    - {key: jazz, genre: [jazz, classical_opera]}
+    - {key: kids, genre: [kids]}
+    - {key: lectures, genre: [lectures, workshops, culture, exhibitions]}
+    # Not "conference" alone: a couples' or a fans' conference is not hi-tech (2026-11-13, as g_tech).
+    - {key: hitech, genre: [hi_tech, ai, cyber, software_dev, startups]}
+
 # Home rows only we can make (src/partylinks/smartrails), after the `after` row: open now, free if you come
 # now, price dropped, revealed today, last tickets, and tonight's weather. A card also shows its price before
 # a drop in the last price_down_days ("₪120 → ₪90"). The weather rows read the cached forecast only.
 smart_rails:
   enabled: true
-  after: tonight          # an /events/rails key (api.HOME_RAILS)
+  after: tonight          # a home_rails row key; none such: these rows lead
   pool: 30                # cards per row's pool (the page shows a random dozen)
   free_now_hours: 4       # "free if you come now": free entry that ends within this many hours
   new_hours: 24           # "revealed today": first seen this recently
@@ -873,11 +904,14 @@ enrichment:
                 throwback, nightclubs, pool_party, karaoke, festival, nature_party, open_bar, over_40, youth]
     g_live: [live_show, israeli, rock_indie, jazz, classical_opera, world_balkan, greek, arabic, jewish_music]
     g_stage: [theatre, stand_up, cinema, dance]
-    g_culture: [culture, exhibitions, photography, lectures, workshops, tours, religious, holidays, markets, jewish_music]
+    g_culture: [culture, exhibitions, photography, lectures, workshops, tours, religious, holidays, markets, jewish_music,
+                conference]
     g_kids: [kids, attractions, pools, escape_rooms]
     g_food: [food, happy_hour, fine_dining, kosher, coffee_carts, open_bar]
     g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, environment, volunteering, team_activities]
-    g_tech: [hi_tech, conference, work_spaces, meetups]
+    # Not "conference" alone: a couples', a trauma or a Harry Potter fans' conference is not hi-tech (2026-11-13). A tech
+    # conference is also tagged hi_tech / ai / cyber / startups, and any conference is in g_culture.
+    g_tech: [hi_tech, work_spaces, meetups]
     g_community: [lgbt, liberal, kink, sensual, gender_balance, meetups]
   detect_genres_from_text: true
   # Sources whose own categories are precise: their text is not read for genres.

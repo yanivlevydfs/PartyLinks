@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -31,6 +31,7 @@ from partylinks.config_store.source import OverridesSource
 from partylinks.evening.config import EveningSettings
 from partylinks.event_text.config import EventTextSettings
 from partylinks.holiday_pages.config import HolidayPagesSettings
+from partylinks.home_rails.config import HomeRailsSettings
 from partylinks.lines.config import LinesSettings
 from partylinks.mail.config import MailSettings
 from partylinks.pace import PaceSettings
@@ -705,6 +706,7 @@ class Settings(BaseSettings):
     weather: WeatherSettings = Field(default_factory=WeatherSettings)
     bot: BotSettings = Field(default_factory=BotSettings)  # the chat bot (partylinks.bot)
     popularity: PopularitySettings = Field(default_factory=PopularitySettings)  # likes / views / watching now
+    home_rails: HomeRailsSettings = Field(default_factory=HomeRailsSettings)  # home rows (partylinks.home_rails)
     smart_rails: SmartRailsSettings = Field(default_factory=SmartRailsSettings)  # home rows (partylinks.smartrails)
     evening: EveningSettings = Field(default_factory=EveningSettings)  # plan the evening (partylinks.evening)
     event_text: EventTextSettings = Field(default_factory=EventTextSettings)  # how a description reads (partylinks.event_text)
@@ -727,6 +729,12 @@ class Settings(BaseSettings):
         except (KeyError, ValueError) as exc:  # ZoneInfoNotFoundError is a KeyError
             raise ValueError(f"unknown timezone {value!r}") from exc
         return value
+
+    @model_validator(mode="after")
+    def _home_rails_genres(self) -> Settings:
+        if unknown := self.home_rails.unknown_genres(self.enrichment):
+            raise ValueError(f"home_rails: unknown genres {', '.join(unknown)}")
+        return self
 
     @classmethod
     def settings_customise_sources(

@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import exists, func, select
 
 from partylinks.admin import AdminDep
-from partylinks.api import HOME_RAILS, SessionDep
+from partylinks.api import SessionDep
 from partylinks.config import get_settings
 from partylinks.db import EventRow, upcoming_filter
 from partylinks.home_pins.models import HomePinRow
@@ -21,12 +21,13 @@ from partylinks.home_pins.rails import matches, shown_in
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/api/home-pins", tags=["admin"], dependencies=[AdminDep])
-# Every row a pin may choose: the fixed ones, the coming holiday's, and the smart ones (smartrails.rail_filters).
-ROW_KEYS = {*HOME_RAILS, "holiday", "now", "rainy", "outside", "free_now", "price_down", "new_today", "last_tickets"}
+# Every row a pin may choose beside the settings' (home_rails): the coming holiday's and the smart ones
+# (smartrails.rail_filters).
+OTHER_ROWS = {"holiday", "now", "rainy", "outside", "free_now", "price_down", "new_today", "last_tickets"}
 
 
 class PinIn(BaseModel):
-    rails: list[str] = Field(default_factory=list, max_length=len(ROW_KEYS))  # [] = Trending + every row it matches
+    rails: list[str] = Field(default_factory=list, max_length=100)  # [] = Trending + every row it matches
     until: datetime | None = None
     note: str | None = Field(None, max_length=500)
 
@@ -39,7 +40,7 @@ class PinIn(BaseModel):
     @field_validator("rails")
     @classmethod
     def _known(cls, value: list[str]) -> list[str]:
-        if unknown := set(value) - ROW_KEYS:
+        if unknown := set(value) - OTHER_ROWS - {r.key for r in get_settings().home_rails.rows}:
             raise ValueError(f"unknown rows: {', '.join(sorted(unknown))}")
         return list(dict.fromkeys(value))
 

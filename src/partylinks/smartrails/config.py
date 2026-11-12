@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 class SmartRailsSettings(BaseModel):
     enabled: bool = True
-    # The home rows these come after (api.HOME_RAILS key); missing: they lead.
+    # The home rows these come after (a home_rails row key); missing: they lead.
     after: str = "tonight"
     # Cards per row's pool (the page shows a random dozen of them).
     pool: int = Field(30, ge=3, le=100)
