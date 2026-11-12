@@ -927,14 +927,15 @@ def delete_events(session: Session, event_ids: Sequence[str]) -> list[str]:
         session.execute(delete(ImageRow).where(ImageRow.event_id.in_(chunk)))
         session.execute(delete(DealChangeRow).where(DealChangeRow.event_id.in_(chunk)))
         delete_plans(session, chunk)  # "who's coming?" plans go with their event
-        delete_saved(session, chunk)  # hearts go with their event
-        delete_views(session, chunk)  # and its view counts (partylinks.popularity)
-        delete_hits(session, chunk)  # alert matches too
-        delete_pins(session, chunk)  # home-row pins (partylinks.home_pins)
-        # Through the module: importing artwork first (seo does) reaches here while it is half loaded.
+        partylinks.saved.models.delete_saved(session, chunk)  # hearts go with their event
+        partylinks.popularity.models.delete_views(session, chunk)  # and its view counts
+        partylinks.alerts.models.delete_hits(session, chunk)  # alert matches too
+        partylinks.home_pins.models.delete_pins(session, chunk)  # home-row pins
+        # Through the modules, never `from ... import` at the bottom: importing one of them first (seo imports
+        # artwork, a test ads.models) reaches here while it is half loaded and the name isn't there yet.
         partylinks.artwork.models.delete_artwork(session, chunk)  # drawn cards of events with no picture
         session.execute(delete(EventRow).where(EventRow.id.in_(chunk)))
-    prune_sponsored(session)  # sponsored picks of events now gone
+    partylinks.ads.models.prune_sponsored(session)  # sponsored picks of events now gone
     return files
 
 
@@ -968,8 +969,3 @@ import partylinks.popularity.models
 import partylinks.saved.models
 import partylinks.venue_profiles
 import partylinks.worker.models
-from partylinks.ads.models import prune_sponsored
-from partylinks.alerts.models import delete_hits
-from partylinks.home_pins.models import delete_pins
-from partylinks.popularity.models import delete_views
-from partylinks.saved.models import delete_saved

@@ -14,9 +14,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+import partylinks.saved.models  # through the module: importing saved.models first reaches here half loaded
 from partylinks.db import Base, Database, UTCDateTime, utcnow
 from partylinks.popularity.config import PopularitySettings
-from partylinks.saved.models import SavedEventRow
 
 log = logging.getLogger(__name__)
 
@@ -64,8 +64,9 @@ def counts(session: Session, ids: list[str]) -> dict[str, dict[str, int]]:
     """Likes and views of these events: two grouped queries for a whole page of cards."""
     if not ids:
         return {}
+    saved = partylinks.saved.models.SavedEventRow
     likes = dict(session.execute(
-        select(SavedEventRow.event_id, func.count()).where(SavedEventRow.event_id.in_(ids)).group_by(SavedEventRow.event_id)
+        select(saved.event_id, func.count()).where(saved.event_id.in_(ids)).group_by(saved.event_id)
     ).all())  # fmt: skip
     views = dict(session.execute(
         select(EventViewRow.event_id, func.count()).where(EventViewRow.event_id.in_(ids)).group_by(EventViewRow.event_id)
