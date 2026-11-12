@@ -14,7 +14,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from partylinks.bot.core import consent, digest, event_actions, menu, navigate, understand, usage
+from partylinks.bot.core import consent, digest, event_actions, highlights, menu, navigate, understand, usage
 from partylinks.bot.core.card import cards
 from partylinks.bot.core.find import Found, search, search_or_widen
 from partylinks.bot.core.phrases import label, say
@@ -127,6 +127,8 @@ class Conversation:
             return await self.reminders(chat_id, lang)
         if text.strip() in (label("menu_home", "he"), label("menu_home", "en")):
             return menu.home(cfg, lang)
+        if highlights.wants_top(text, cfg):
+            return await highlights.press(self, chat_id, lang, highlights.FIRST_TOP)
         if message.kind in ("greeting", "empty"):
             return Reply(say("greeting", lang), buttons=self._starters(lang))
         if message.kind == "thanks":
@@ -191,6 +193,8 @@ class Conversation:
             return await menu.press(self, chat_id, lang, action)
         if action.startswith(DIGEST):
             return await digest.choose(self, chat_id, lang, action.removeprefix(DIGEST))
+        if action.startswith(highlights.PREFIX):
+            return await highlights.press(self, chat_id, lang, action.removeprefix(highlights.PREFIX))
         if action.startswith(navigate.NAVIGATE):
             return await navigate.press(self, chat_id, lang, action.removeprefix(navigate.NAVIGATE))
         if (reply := await event_actions.press(self, chat_id, lang, action)) is not None:

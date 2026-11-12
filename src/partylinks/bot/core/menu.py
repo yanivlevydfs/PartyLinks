@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from partylinks import seo
+from partylinks.bot.core import highlights
 from partylinks.bot.core.phrases import label, say
 from partylinks.bot.core.reply import MENU, REFINE, SEARCH, Button, Reply
 from partylinks.config import Settings
@@ -91,6 +92,7 @@ def home(cfg: Settings, lang: str, edit: bool = False) -> Reply:
         [Button(label("menu_genres", lang), action("g")), Button(label("menu_areas", lang), action("a"))],
         [Button(WHEN["tn"][1][i], action("r", when="tn")), Button(WHEN["tm"][1][i], action("r", when="tm"))],
         [Button(WHEN["wk"][1][i], action("r", when="wk")), Button(label("free", lang), SEARCH + ("חינם" if lang == "he" else "free"))],
+        *highlights.rows(cfg, lang),
         [Button(label("near", lang), MENU + "near")],
         [Button(label("my_alerts", lang), MENU + "alerts"), Button(label("my_events", lang), MENU + "mine")],
         [Button(label("menu_lang", lang), MENU + "lang")],

@@ -93,6 +93,12 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
   keeps no state; the pickers replace the pressed message instead of adding one. A choice runs as the
   site's search words ("טכנו בצפון בסופ״ש"), so "more", 🔔 alert me and "and tomorrow?" work on it; under
   its results a bar changes one part and keeps the others.
+- **🔥 Top of the week and holidays** (`core/highlights.py`): a menu row with 🔥 the site's weekly top
+  (`weekly_top.core.top`, the /top page's events in its order; also asked in words: "הכי חם השבוע", "what's
+  hot this week") and a button for each holiday starting within `holiday_pages.rail_days` (like the home
+  page's holiday row; 🕎 for Hanukkah, 🎊 the others), with the holiday page's events (`holiday_pages.where`,
+  soonest first). No holiday that close: no button. `bot.results` cards a page; "more" carries its offset in
+  the button (`hl:t:<n>`, `hl:h:<key>:<n>`). Counted as `top` and `holiday` in the bot tab.
 - **Hebrew first**, like the site: English only when the user writes English or picks it.
 - **On the site** (`web/src/bot/TelegramFab.tsx`): a floating Telegram button on every page except /admin,
   bottom-right on desktop and phones (the accessibility button has bottom-left; on phones it sits above the
@@ -118,6 +124,7 @@ hash of the chat id, never the id; `/stop` unlinks them; kept `bot.usage_days`.
 | `core/event_actions.py` | the card's ⏰ 👁 🔁 ➕ buttons, /reminders |
 | `core/remind.py` | reminders and watches: set, list, due, prune |
 | `core/similar.py`, `core/calendar.py` | 🔁 similar events; 📅 the `.ics` file and Google link |
+| `core/highlights.py` | 🔥 the week's top and the coming holidays' events in the menu |
 | `core/navigate.py` | 📍 the map pin, Waze / Google Maps, a place's hours, phone and booking |
 | `core/picks.py`, `core/digest.py`, `core/channel.py` | "interesting events"; /digest; the broadcast channel |
 | `core/usage.py`, `admin_routes.py` | usage rows and the admin's bot tab (`GET /admin/api/bot`) |
@@ -158,4 +165,5 @@ there); the search, cards, buttons and inline mode all work.
 a row), `tests/test_bot_conversation.py` (the conversation on a database), `tests/test_bot_telegram.py`
 (rendering, the webhook's secret, the alert job with a fake bot), `tests/test_bot_features.py` (the card's
 buttons, reminders, watches, similar, calendar, plans, follow, digest, channel, usage and the admin tab),
-`tests/test_bot_navigate.py` (📍 the pin, its links and a place's info).
+`tests/test_bot_navigate.py` (📍 the pin, its links and a place's info),
+`tests/test_bot_highlights.py` (🔥 the week's top, a holiday's button and its events).
