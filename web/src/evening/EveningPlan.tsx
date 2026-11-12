@@ -1,5 +1,5 @@
 // "Plan the evening" on an event's page (GET /events/{id}/evening, partylinks.evening): places near the event
-// open before it (drinks, dinner) and after it (coffee the morning after), nearest first, and what else is on
+// open before it (drinks, dinner) and after it (a bar or late food), nearest first, and what else is on
 // at the same place this week. Steps and distances come from the server's `evening` settings.
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -19,14 +19,14 @@ const TEXT: Record<Lang, { title: string; venue: string; budget: (cap: string) =
     title: "🗺️ תכננו את הערב",
     budget: (cap) => `💸 רק מקומות זולים (עד ${cap})`,
     venue: "📅 השבוע במקום",
-    steps: { drinks: "🥂 לפני: האפי האוור קרוב", dinner: "🍽️ לפני: ארוחה טובה", morning: "☕ אחרי: קפה של בוקר" },
+    steps: { drinks: "🥂 לפני: האפי האוור קרוב", dinner: "🍽️ לפני: ארוחה טובה", late: "🍻 אחרי: בר או אוכל בלילה" },
     m: (n) => (n < 1000 ? `${n} מ׳` : `${(n / 1000).toFixed(1)} ק״מ`),
   },
   en: {
     title: "🗺️ Plan the evening",
     budget: (cap) => `💸 Cheap places only (up to ${cap})`,
     venue: "📅 This week at the place",
-    steps: { drinks: "🥂 Before: a happy hour nearby", dinner: "🍽️ Before: a good dinner", morning: "☕ After: morning coffee" },
+    steps: { drinks: "🥂 Before: a happy hour nearby", dinner: "🍽️ Before: a good dinner", late: "🍻 After: a bar or late food" },
     m: (n) => (n < 1000 ? `${n} m` : `${(n / 1000).toFixed(1)} km`),
   },
 };

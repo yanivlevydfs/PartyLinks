@@ -197,7 +197,9 @@ evening:
   steps:                  # key: its name on the page (web/src/evening); genres: place genres that fit
     - {key: drinks, genres: [happy_hour], when: before, hours: 5}
     - {key: dinner, genres: [fine_dining, food], when: before, hours: 5}
-    - {key: morning, genres: [coffee_carts], when: after, hours: 6}
+    # After: a bar or late food open in the 3 hours after it ends (a 6-hour "morning coffee" window caught
+    # all-day coffee carts at midnight).
+    - {key: late, genres: [happy_hour, open_bar, food], when: after, hours: 3}
 
 # Israeli holiday pages (src/partylinks/holiday_pages): /holiday/<key> lists the events from a holiday's eve to
 # its last day (dates: search.HOLIDAY_NAMES), /holidays the coming ones; a home row shows the next one.

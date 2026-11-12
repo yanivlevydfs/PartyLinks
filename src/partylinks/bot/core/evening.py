@@ -1,5 +1,5 @@
 """🌙 Plan my evening: an event at the place and date asked (tonight by default) with the site's evening
-around it (``evening.plan.plan``: drinks and dinner nearby before it, coffee after), each stop a labelled
+around it (``evening.plan.plan``: drinks and dinner nearby before it, a bar or late food after), each stop a labelled
 card in that order. No place: the chat's last one, else the area buttons. The buttons carry the search and
 where in it the evening was found (``ev:<offset>:<words>``): "another evening" is the next event; no state."""
 
@@ -32,7 +32,7 @@ TEXT: dict[str, dict[str, str]] = {
     # The site's steps (evening.steps keys); a step added in the admin gets "before" / "after".
     "drinks": {"he": "🍸 לפני: האפי האוור", "en": "🍸 Before: happy hour"},
     "dinner": {"he": "🍽️ לפני: ארוחה", "en": "🍽️ Before: dinner"},
-    "morning": {"he": "☕ אחרי: קפה של בוקר", "en": "☕ After: morning coffee"},
+    "late": {"he": "🍻 אחרי: בר או אוכל בלילה", "en": "🍻 After: a bar or late food"},
     "before": {"he": "⏮ לפני:", "en": "⏮ Before:"},
     "after": {"he": "⏭ אחרי:", "en": "⏭ After:"},
     "m": {"he": "🚶 {n} מ׳ מהאירוע", "en": "🚶 {n} m from the event"},

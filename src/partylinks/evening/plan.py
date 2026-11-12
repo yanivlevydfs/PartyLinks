@@ -1,5 +1,5 @@
 """Plan my evening: places near an event that are open in each step's window (drinks and dinner before it,
-coffee the morning after...), nearest first, and what else is on at the same place this week.
+a bar or late food after...), nearest first, and what else is on at the same place this week.
 
 Steps come from ``evening.steps`` (settings.yaml): a step's place genres and its window before the event
 starts or after it ends. A place is listed once a day (``partylinks.placecards``), so one place may match

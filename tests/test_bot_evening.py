@@ -25,7 +25,7 @@ def _talk(tmp_path: Path) -> tuple:
         event("party", datetime.combine(day, time(23), tz), title="Techno night", latitude=CLUB[0], longitude=CLUB[1]),
         _place("bar", datetime.combine(day, time(19), tz), 2, "happy hour", (32.0820, 34.7810)),
         _place("chef", datetime.combine(day, time(18), tz), 4, "fine dining", (32.0805, 34.7805)),
-        _place("coffee", datetime.combine(day + timedelta(days=1), time(7), tz), 5, "coffee carts", (32.0790, 34.7790)),
+        _place("night", datetime.combine(day + timedelta(days=1), time(3), tz), 3, "happy hour", (32.0790, 34.7790)),  # open as it ends
     ])  # fmt: skip
     return Conversation(lambda: settings, db, "telegram"), db, settings
 
@@ -38,7 +38,7 @@ def test_an_evening_in_words_is_the_sites_plan_in_order(tmp_path: Path) -> None:
     talk, db, _ = _talk(tmp_path)
     reply = _run(talk.text(CHAT, "תכנן לי ערב בתל אביב מחר", "he"))
     assert [c.title for c in reply.cards] == [
-        "🍸 לפני: האפי האוור bar", "🍽️ לפני: ארוחה chef", "🎉 האירוע: Techno night", "☕ אחרי: קפה של בוקר coffee",
+        "🍸 לפני: האפי האוור bar", "🍽️ לפני: ארוחה chef", "🎉 האירוע: Techno night", "🍻 אחרי: בר או אוכל בלילה night",
     ]  # fmt: skip
     assert reply.cards[0].lines[-1].startswith("🚶") and "מ׳" in reply.cards[0].lines[-1]
     another = next(a for a in _actions(reply) if a.startswith("ev:"))

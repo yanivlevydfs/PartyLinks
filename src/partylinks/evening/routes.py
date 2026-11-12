@@ -21,7 +21,7 @@ class StopOut(BaseModel):
 
 
 class StepOut(BaseModel):
-    key: str  # evening.steps[].key: drinks, dinner, morning...
+    key: str  # evening.steps[].key: drinks, dinner, late...
     stops: list[StopOut]
 
 

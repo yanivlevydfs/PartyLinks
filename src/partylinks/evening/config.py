@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 
 class EveningStep(BaseModel):
-    key: str  # the step's name on the page (web/src/evening i18n): drinks, dinner, morning...
+    key: str  # the step's name on the page (web/src/evening i18n): drinks, dinner, late...
     genres: list[str]  # place genres that fit it (happy_hour, fine_dining, coffee_carts...)
     # before: open some time in the `hours` before the event starts; after: in the `hours` after it ends.
     when: Literal["before", "after"]

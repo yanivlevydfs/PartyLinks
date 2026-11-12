@@ -46,7 +46,7 @@ def test_the_evening_around_a_party(tmp_path: Path) -> None:
         steps = {s["key"]: [(x["event"]["title"], x["distance_m"]) for x in s["stops"]] for s in out["steps"]}
         assert [t for t, _ in steps["drinks"]] == ["near-bar"]  # not 5 km away, not the next evening
         assert 150 < steps["drinks"][0][1] < 400
-        assert [t for t, _ in steps["morning"]] == ["coffee"]
+        assert "late" not in steps  # ends ~04:00: no bar open then; the 07:00 coffee cart is not "after a party"
         assert [e["title"] for e in out["venue"]] == ["Club X Saturday"]
         assert [t for t, _ in steps["dinner"]] == ["chef"] and out["steps"][0]["stops"][0]["event"]["price_level"] == 2
         cheap = client.get("/events/test:party/evening", params={"budget": "true"}).json()
