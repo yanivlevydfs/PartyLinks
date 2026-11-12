@@ -26,7 +26,8 @@ def test_site_logos_favicons_and_placeholders() -> None:
                 "https://www.kfar-saba.muni.il/content/images/w-480-no-pic.png", "https://x.il/content/images/fb.png?v=2025a"):  # fmt: skip
         assert is_site_logo(url), url
     for url in ("https://muzi.co.il/wp-content/uploads/2024/07/6685a979160ea.jpg", "https://x.example/nopicnic.jpg",
-                "https://x.example/no-pictures-party-night.jpg", "https://images.makore.co.il/events/24df5bc3"):  # fmt: skip
+                "https://x.example/no-pictures-party-night.jpg", "https://images.makore.co.il/events/24df5bc3",
+                "https://media.stubhubstatic.com/stubhub-v2-catalog/d_vgg-defaultLogo.jpg/q_auto:low,f_auto/categories/54350/6561814"):  # fmt: skip
         assert not is_site_logo(url), url
 
 

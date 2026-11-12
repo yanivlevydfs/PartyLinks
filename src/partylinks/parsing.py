@@ -92,18 +92,21 @@ def og_image(page_html: str) -> str | None:
 
 # A site's own icon, logo or "no picture" placeholder: never an event's picture. Seen in prod (2026-11-11):
 # ticketmaster.co.il/favicon.ico on tickchak / arenas events (Berry Sakharof's page had no picture though 11
-# duplicates had one), smarticket's uploads/no_pic.png, showshappening's content/logos/, viagogo's
+# duplicates had one), smarticket's uploads/no_pic.png, showshappening's content/logos/, viagogo's bare
 # d_vgg-defaultLogo, the A.S. Bina municipal CMS's content/images/fb.png, og_image.png, w-480-no-pic.png.
 _SITE_LOGO = re.compile(
     r"favicon|apple-touch-icon|\.ico(?:[?#]|$)|(?:^|[/_-])no[_-]?(?:pic|image|photo)s?\.\w+(?:[?#]|$)"
     r"|default-?logo|/content/logos/|(?:^|/)content/images/(?:fb|og_image)\.png",
     re.IGNORECASE,
 )
+# Cloudinary's "/d_<file>/" is only the fallback for when the picture after it is missing: viagogo's
+# ".../d_vgg-defaultLogo.jpg/<transforms>/categories/<id>/<id>" was a real picture on all 40 sampled (2026-11-12).
+_CLOUDINARY_FALLBACK = re.compile(r"/d_[^/]+/(?=[^/]+/.)")
 
 
 def is_site_logo(url: str | None) -> bool:
     """A site's icon / logo / "no picture" placeholder rather than the event's own picture."""
-    return bool(url and _SITE_LOGO.search(url))
+    return bool(url and _SITE_LOGO.search(_CLOUDINARY_FALLBACK.sub("/", url)))
 
 
 def jsonld_nodes(page_html: str) -> list[dict[str, Any]]:
