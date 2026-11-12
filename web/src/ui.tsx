@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { CardSources } from "./card_stores/CardSources";
 import sourceNames from "./sourceNames.json";
 import { Link, NavLink, Outlet, ScrollRestoration } from "react-router-dom";
 import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
@@ -101,8 +102,9 @@ const SOURCE_NAMES: Record<string, string> = sourceNames; // web/src/sourceNames
 export const sourceName = (source: string) => SOURCE_NAMES[source] ?? source;
 
 /** Ticket-site tags: every store selling the event (this listing's first), each name once (smarticket and smarticket_il are both "Smarticket"). */
+export const ticketSites = (e: { source: string; sources?: string[] }) => [...new Set((e.sources?.length ? e.sources : [e.source]).map(sourceName))];
 export function Sources({ e, className = "" }: { e: { source: string; sources?: string[] }; className?: string }) {
-  const names = [...new Set((e.sources?.length ? e.sources : [e.source]).map(sourceName))];
+  const names = ticketSites(e);
   return (
     <span className={"sources " + className}>
       {names.map((n) => <span key={n} className="src">{n}</span>)}
@@ -354,7 +356,7 @@ export function Card({ e }: { e: EventSummary }) {
             {e.was_price != null && <s className="was">{money(e.was_price, e.currency, t.locale)}</s>}{price}
           </span>
         )}
-        <Sources e={e} className="on-img" />
+        <CardSources names={ticketSites(e)} />
       </div>
       <div className="card-body">
         <h3 dir="auto">{e.title}</h3>

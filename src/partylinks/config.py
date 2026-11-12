@@ -572,6 +572,8 @@ class VerificationSettings(BaseModel):
 class SiteSettings(BaseModel):
     # Public address of the website (no trailing slash): canonical links, sitemap, JSON-LD, share previews.
     base_url: str = "http://localhost:8000"
+    # Ticket-site names on a card's picture before a "+N" chip (web/src/card_stores): 12 covered the picture.
+    card_sources_shown: int = Field(2, ge=1, le=12)
     name: str = "SPOTX"
     # The artists index (/artists, the filter's artist list) and the sitemap's /artist/ pages list verified
     # artists only: names with a profile in the artist book (sellers' artist pages). Names read from free text
