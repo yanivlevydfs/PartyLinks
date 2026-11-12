@@ -24,7 +24,7 @@ from functools import cache
 from typing import Any
 
 import httpx
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, text
 
 from partylinks.config import CitySettings, GeocodingSettings
 from partylinks.db import Database, EventRow, GeoCacheRow, bulk_update_by_id, upcoming_filter, utcnow, with_db_retry
@@ -333,12 +333,25 @@ class Geocoder:
         self._pins = {k.lower(): v for k, v in settings.venues.items()}
 
     # ------------------------------------------------------------------ public
+    def _from_duplicates(self) -> int:
+        """An upcoming listing with no point takes its duplicate's (one group: the same event at the same place),
+        the group's primary first. 665 such events on 2026-11-12 (the bot's 📍, the map and the weather lacked them).
+        One UPDATE on the indexed group_id."""
+        with self.db.session() as session:
+            return session.execute(text("""
+                UPDATE events e SET latitude = g.latitude, longitude = g.longitude
+                FROM (SELECT DISTINCT ON (group_id) group_id, latitude, longitude FROM events
+                      WHERE latitude IS NOT NULL AND group_id IS NOT NULL ORDER BY group_id, is_primary DESC) g
+                WHERE e.group_id = g.group_id AND e.latitude IS NULL AND e.start_at > now()
+            """)).rowcount  # fmt: skip
+
     def locate_missing(self, network: bool = True, stop: threading.Event | None = None) -> GeoStats:
         """Fill coordinates of upcoming events that have none. Safe to call any time."""
         stats = GeoStats()
         if not self.settings.enabled:
             return stats
         self.drop_bad_points()
+        stats.located += self._from_duplicates()
         if network:
             stats.lookups = self._lookup_new(stop)
         stats.located += self._locate_abroad(network, stop)

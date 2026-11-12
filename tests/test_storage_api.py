@@ -1364,3 +1364,26 @@ def test_a_daily_place_is_one_page_its_venue(tmp_path: Path) -> None:
         assert event_page(session, settings, "he", "test:bar").path == "/venue/Radler"  # type: ignore[union-attr]
         urls = "".join(sitemap_urls(session, settings))
         assert "techno-night-gig" in urls and "techno-night-bar" not in urls and "/venue/Radler" in urls
+
+
+def test_a_listing_with_no_point_takes_its_duplicates(tmp_path: Path) -> None:
+    """DECISION at Gagarin, 2026-11-12: one listing had no point, its duplicates did (665 such events)."""
+    from partylinks.geo import Geocoder
+
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [
+        event("pinned", future, title="Decision", venue_name="Gagarin", latitude=32.0535, longitude=34.7744),
+        event("bare", future, title="Decision festival", city="תל אביב"),
+        event("alone", future, title="Elsewhere", city="תל אביב"),
+    ])  # fmt: skip
+    with db.session() as session:
+        rows = {r.source_event_id: r for r in session.query(EventRow)}
+        rows["bare"].group_id = rows["pinned"].group_id
+        rows["bare"].is_primary = False
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db)
+    assert geo._from_duplicates() == 1
+    with db.session() as session:
+        points = {r.source_event_id: (r.latitude, r.longitude) for r in session.query(EventRow)}
+    assert points["bare"] == (32.0535, 34.7744) and points["alone"] == (None, None)
