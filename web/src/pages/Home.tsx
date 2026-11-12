@@ -208,6 +208,8 @@ export function Rail({ title, sub, pool }: { title: string; sub: string; pool: E
   // Shuffled once per visit: a fresh copy replacing the stored one doesn't reshuffle the row under the visitor.
   // A stored copy may be days old, so events already over are dropped.
   const loaded = !!pool;
+  // A fresh copy with a newly pinned event reshuffles once, so the pin shows without waiting for the next visit.
+  const pins = (pool ?? []).filter((e) => e.pinned).map((e) => e.id).join();
   const items = useMemo(() => {
     const now = Date.now();
     const list = (pool ?? []).filter((e) => !e.start_at || Date.parse(e.end_at ?? e.start_at) > now);
@@ -216,7 +218,7 @@ export function Rail({ title, sub, pool }: { title: string; sub: string; pool: E
       [list[i], list[j]] = [list[j], list[i]];
     }
     return [...list.filter((e) => e.pinned), ...list.filter((e) => !e.pinned)].slice(0, 12); // pinned first, always shown
-  }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loaded, pins]); // eslint-disable-line react-hooks/exhaustive-deps
   if (loaded && items.length < 3) return null;
   const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth, behavior: "smooth" });
   return (
