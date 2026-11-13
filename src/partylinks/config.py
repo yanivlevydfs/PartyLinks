@@ -724,6 +724,18 @@ class SecuritySettings(BaseModel):
     # Scripts and headless browsers: refused (403) on the JSON data API, /go/ and /images/ only, so AI assistants
     # browsing for a person can still read the pages and llms.txt.
     blocked_clients: list[str] = Field(default_factory=list)
+    # Pages (text/html answers) per IP (partylinks.page_guard): the app moves between pages without the server,
+    # so a person loads few; copying every event page takes thousands. Over it = 429, no strike. Search engines
+    # whose address checks out in DNS (verified_crawler_domains) are not limited.
+    page_rate_limit_per_minute: int = Field(30, ge=1)
+    page_rate_limit_per_day: int = Field(500, ge=1)
+    verified_crawler_domains: list[str] = Field(default_factory=lambda: [
+        "googlebot.com", "google.com", "search.msn.com", "yandex.ru", "yandex.net", "yandex.com",
+        "applebot.apple.com", "crawl.baidu.com", "crawl.baidu.jp",
+    ])  # fmt: skip
+    # A link no person sees (hidden, nofollow, disallowed in robots.txt): fetching it bans the address at once.
+    # Empty: no trap. Not under a data path (/events...), which have their own rules.
+    trap_path: str = "/archive/all-events"
 
 
 class WeatherSettings(BaseModel):

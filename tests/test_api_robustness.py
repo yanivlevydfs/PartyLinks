@@ -37,6 +37,7 @@ def _settings(tmp_path: Path) -> Settings:
     settings = settings_for(tmp_path)
     settings.admin.token = SecretStr("s3cret")
     settings.security.rate_limit_per_minute = settings.security.data_rate_limit_per_minute = 1_000_000
+    settings.security.page_rate_limit_per_minute = settings.security.page_rate_limit_per_day = 1_000_000  # partylinks.page_guard
     settings.security.admin_rate_limit_per_minute = settings.security.ban_after_strikes = 1_000_000
     settings.security.go_rate_limit_per_minute = 1_000_000
     return settings

@@ -20,6 +20,7 @@ ME, FRIEND = "voter-aaaa-1111", "voter-bbbb-2222"
 def _app(tmp_path: Path):
     settings = settings_for(tmp_path)
     settings.security.rate_limit_per_minute = settings.security.data_rate_limit_per_minute = 100_000
+    settings.security.page_rate_limit_per_minute = settings.security.page_rate_limit_per_day = 100_000  # partylinks.page_guard
     db = seed(settings, [event(k, datetime.now(UTC) + timedelta(days=2, hours=i)) for i, k in enumerate("abcde")])
     return create_app(settings, start_scheduler=False), db
 

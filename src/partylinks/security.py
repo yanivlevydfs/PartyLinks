@@ -19,6 +19,7 @@ from collections import defaultdict, deque
 from typing import Any
 from urllib.parse import urlsplit
 
+from partylinks import page_guard
 from partylinks.admin import LOOPBACK
 from partylinks.config import SecuritySettings
 
@@ -46,7 +47,7 @@ DATA_PATHS = ("/events", "/categories", "/posts", "/ticket-sites", "/locate",
               "/places/categories", "/holidays/list", "/top/list", "/artists/similar", "/artists/tags", "/facets")
 # The app's own JSON (group plans, a user's account): only our pages call it, so script clients are
 # refused there too. Not /plan/<id>: WhatsApp's link preview reads that page.
-APP_API_PATHS = ("/plans", "/api/me")
+APP_API_PATHS = ("/plans", "/api/me", "/api/promote-requests")  # the last: the /promote form and its event picker
 # Card artwork and the site's own files: one home page draws well over a hundred, so they don't
 # count toward the general rate limit (a few reloads banned a visitor).
 STATIC_PATHS = ("/images/", "/artwork/", "/assets/", "/icons/", "/favicon")
@@ -315,6 +316,17 @@ class SecurityMiddleware:
                 or self.guard.over_limit(ip, "data-hour", cfg.data_rate_limit_per_hour, now, 3600)
             ):
                 return await reject(429, "too many requests", [(b"retry-after", b"60")])
+        # The trap link (partylinks.page_guard): only a client ignoring robots.txt and nofollow gets here.
+        if cfg.trap_path and path == cfg.trap_path and not local and not await page_guard.real_crawler(ip, agent, cfg):
+            self.guard.banned[ip] = now + cfg.ban_minutes * 60
+            log.warning("banned %s for %g min: fetched the trap link (%s)", ip, cfg.ban_minutes, agent[:80])
+            return await reject(410, "gone")
+        # Pages: a share per IP, so the event pages can't all be copied (partylinks.page_guard).
+        pages = not local and not owner and scope["method"] == "GET" and not path.startswith(
+            (*DATA_PATHS, *APP_API_PATHS, *STATIC_PATHS, *WEBHOOK_PATHS, "/api/", "/admin", "/auth/", "/go/", "/site", "/health")
+        )  # JSON, files and redirects have their own limits; the rest of the GETs are pages
+        if pages and page_guard.pages_over(self.guard.hits, ip, cfg, now) and not await page_guard.real_crawler(ip, agent, cfg):
+            return await reject(429, "too many requests", [(b"retry-after", b"60")])
         try:
             length = int(headers.get("content-length") or 0)
         except ValueError:
@@ -344,6 +356,8 @@ class SecurityMiddleware:
                 if message["status"] == 401 and not local and headers.get("authorization"):
                     self.guard.bad_token(ip, headers.get("authorization", ""), cfg, time.monotonic())
                 message = {**message, "headers": out}
+                if pages and message["status"] == 200 and any(k.lower() == b"content-type" and v.startswith(b"text/html") for k, v in out):
+                    page_guard.count(self.guard.hits, ip, time.monotonic())
             await send(message)
 
         return await self.app(scope, receive, send_with_headers)

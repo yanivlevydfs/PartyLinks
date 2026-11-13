@@ -20,6 +20,7 @@ LECTURE = "איך משפיעים פרויקטים של פינוי־בינוי ע
 def test_an_event_without_text_shows_its_duplicates_text(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     settings.security.rate_limit_per_minute = settings.security.data_rate_limit_per_minute = 100_000
+    settings.security.page_rate_limit_per_minute = settings.security.page_rate_limit_per_day = 100_000  # partylinks.page_guard
     db = seed(settings, [event("talk", SOON, title="מדע על הבר", description=None)])
     with db.session() as s:
         talk = s.get(EventRow, "test:talk")

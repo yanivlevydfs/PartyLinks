@@ -41,6 +41,7 @@ def test_a_failed_own_picture_takes_the_duplicates(tmp_path: Path) -> None:
     """Berry Sakharof (tickchak): its only picture, ticketmaster's favicon, never downloaded; 11 duplicates had one."""
     settings = settings_for(tmp_path)
     settings.security.rate_limit_per_minute = settings.security.data_rate_limit_per_minute = 100_000
+    settings.security.page_rate_limit_per_minute = settings.security.page_rate_limit_per_day = 100_000  # partylinks.page_guard
     db = seed(settings, [event("berry", SOON, images=[])])
     with db.session() as s:
         row = s.get(EventRow, "test:berry")

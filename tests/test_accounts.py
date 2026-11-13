@@ -28,6 +28,7 @@ ADMIN = "boss@spotx.test"
 def _settings(tmp_path: Path, **extra: Any) -> Settings:
     settings = settings_for(tmp_path)
     settings.security.rate_limit_per_minute = settings.security.data_rate_limit_per_minute = 100_000
+    settings.security.page_rate_limit_per_minute = settings.security.page_rate_limit_per_day = 100_000  # partylinks.page_guard
     settings.site.base_url = "http://testserver"
     settings.accounts = AccountsSettings.model_validate({
         "enabled": True, "google_client_id": "id", "google_client_secret": "secret",

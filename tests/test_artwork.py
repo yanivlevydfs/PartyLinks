@@ -21,6 +21,7 @@ SOON = datetime.now(UTC) + timedelta(days=2)
 def _settings(tmp_path: Path):
     s = settings_for(tmp_path)
     s.security.rate_limit_per_minute = s.security.data_rate_limit_per_minute = 100_000
+    s.security.page_rate_limit_per_minute = s.security.page_rate_limit_per_day = 100_000  # partylinks.page_guard
     return s
 
 

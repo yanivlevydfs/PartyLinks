@@ -1433,7 +1433,9 @@ def render(template: str, page: Page, cfg: Settings, alt: Page | None = None) ->
     html = template.replace("<!--seo-->", "\n    ".join(head), 1)
     html = _strip_title(html, keep=head[0])
     html = html.replace('<html lang="he" dir="rtl">', f'<html lang="{page.lang}" dir="{"rtl" if page.lang == "he" else "ltr"}">', 1)
-    return html.replace('<div id="root"></div>', f'<div id="root"><div class="ssr">{page.body}</div></div>', 1)
+    # The scraper trap (partylinks.page_guard): hidden from people, nofollow and disallowed for crawlers.
+    trap = f'<a href="{cfg.security.trap_path}" rel="nofollow" hidden tabindex="-1">archive</a>' if cfg.security.trap_path else ""
+    return html.replace('<div id="root"></div>', f'<div id="root"><div class="ssr">{page.body}{trap}</div></div>', 1)
 
 
 def _strip_title(html: str, keep: str) -> str:
@@ -1526,7 +1528,8 @@ def sitemap_part(urls: list[str], part: int) -> str | None:
 
 
 def robots(cfg: Settings) -> str:
-    private = "".join(f"Disallow: {p}\n" for p in ROBOTS_PRIVATE)
+    trap = [cfg.security.trap_path] if cfg.security.trap_path else []  # partylinks.page_guard
+    private = "".join(f"Disallow: {p}\n" for p in [*ROBOTS_PRIVATE, *trap])
     ai = "".join(f"User-agent: {bot}\n" for bot in AI_CRAWLERS)
     blocked = "".join(f"User-agent: {bot}\n" for bot in cfg.security.blocked_bots)
     return (

@@ -177,10 +177,10 @@ ADMIN = {"authorization": "Bearer s3cret"}
 # The only writes a visitor may send: sponsored views / clicks, and "who's coming?" plans and answers.
 PUBLIC_WRITES = {"/events/sponsored/hit", "/plans", "/plans/{plan_id}/votes", "/plans/{plan_id}/events",
                  "/api/email/unsubscribe",  # a signed token, from the mail client (RFC 8058)
-                 "/api/promote-requests",  # the /promote form: anyone, rate-limited, our pages only (tests/test_promote_requests.py)
                  "/bot/telegram"}  # Telegram's webhook: its own secret header (tests/test_bot_telegram.py)
 # A signed-in user's own writes: refused without a session cookie (403 first when not from our pages).
-USER_WRITES = ("/api/me", "/api/auth/", "/api/passkeys/", "/plans/{plan_id}")  # the last: a group's rename, by its creator
+USER_WRITES = ("/api/me", "/api/auth/", "/api/passkeys/", "/plans/{plan_id}",  # the last: a group's rename, by its creator
+               "/api/promote-requests")  # the /promote form (tests/test_promote_requests.py)
 
 
 def _open_app(tmp_path: Path) -> Any:
@@ -188,6 +188,7 @@ def _open_app(tmp_path: Path) -> Any:
     settings = settings_for(tmp_path)
     settings.admin.token = SecretStr("s3cret")
     settings.security.rate_limit_per_minute = settings.security.data_rate_limit_per_minute = 100_000
+    settings.security.page_rate_limit_per_minute = settings.security.page_rate_limit_per_day = 100_000  # partylinks.page_guard
     settings.security.admin_rate_limit_per_minute = 100_000  # the enumeration below asks every admin route
     settings.security.ban_after_strikes = 100_000
     return create_app(settings, start_scheduler=False)

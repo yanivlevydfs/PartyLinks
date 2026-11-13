@@ -16,6 +16,7 @@ from tests.test_storage_api import event, seed, settings_for
 def test_builder_matches_the_endpoint(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     settings.security.rate_limit_per_minute = settings.security.data_rate_limit_per_minute = 100_000
+    settings.security.page_rate_limit_per_minute = settings.security.page_rate_limit_per_day = 100_000  # partylinks.page_guard
     db = seed(settings, [event(k, datetime.now(UTC) + timedelta(days=2, hours=i)) for i, k in enumerate("abc")])
     with db.session(write=False) as session:
         count = lambda **params: session.scalar(
