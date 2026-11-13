@@ -1394,6 +1394,11 @@ def _register_routes(app: FastAPI) -> None:
     from partylinks.home_pins.routes import router as home_pins_router
 
     app.include_router(home_pins_router)
+    from partylinks.promote.routes import admin as promote_admin_router
+    from partylinks.promote.routes import public as promote_router
+
+    app.include_router(promote_router)  # the /promote form
+    app.include_router(promote_admin_router)
     from partylinks.config_store.routes import router as config_overrides_router
 
     app.include_router(config_overrides_router)

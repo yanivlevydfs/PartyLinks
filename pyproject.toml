@@ -10,6 +10,8 @@ dependencies = [
     "tzdata==2026.2",
     "apscheduler>=3.11,<4",
     "cachetools>=5.5",
+    "email-validator>=2.2,<3",  # pydantic EmailStr (the /promote form)
+    "phonenumbers>=9,<10",  # the /promote form's mobile number
     "convertdate==2.5.1",
     "fastapi>=0.115",
     "python-multipart>=0.0.20",  # Form() parsing: /auth/facebook/deletion (signed_request)

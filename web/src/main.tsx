@@ -12,6 +12,7 @@ import AccessibilityPage from "./pages/Accessibility";
 import { BlogIndex, BlogPost } from "./pages/Blog";
 import { AboutPage, ContactPage, FaqPage } from "./pages/Info";
 import { PartnersPage } from "./partners/PartnersPage";
+import { PromotePage } from "./promote/PromotePage";
 import PrivacyPage from "./pages/Privacy";
 import StoresPage from "./pages/Stores";
 import TermsPage from "./pages/Terms";
@@ -108,6 +109,7 @@ const router = createBrowserRouter([
       { path: "/faq", element: <FaqPage /> },
       { path: "/contact", element: <ContactPage /> },
       { path: "/partners", element: <PartnersPage /> },
+      { path: "/promote", element: <PromotePage /> }, // promotion request form (its own files: promote/)
       { path: "/stores", element: <StoresPage /> },
     ],
   },

@@ -3,6 +3,8 @@ geonamescache==3.0.2
 tzdata==2026.2
 apscheduler>=3.11,<4
 cachetools>=5.5
+email-validator>=2.2,<3
+phonenumbers>=9,<10
 convertdate==2.5.1
 fastapi>=0.115
 python-multipart>=0.0.20

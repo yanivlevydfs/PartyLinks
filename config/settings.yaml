@@ -70,7 +70,7 @@ site:
   # for access / correction / deletion requests. The cookie banner itself is in web/src/consent.tsx.
   privacy:
     email: contact@spotx.fun
-    updated: 2026-10-26    # last review of the policy (renamed SPOTX)
+    updated: 2026-11-13    # last review of the policy (the /promote request form)
   # New pages pushed to Bing / Yandex (src/partylinks/indexnow.py). The key is public (served at
   # /<key>.txt); runs only when base_url is https, so never from localhost.
   indexnow:

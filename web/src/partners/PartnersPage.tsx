@@ -30,7 +30,7 @@ export function PartnersPage() {
         <p className="pt-eyebrow">{t.eyebrow}</p>
         <p className="hero-pitch">{t.lead}</p>
         <p className="pt-ctas">
-          <a className="c-btn" href="#contact">{t.cta}</a>
+          <Link className="c-btn" to="/promote">{t.cta}</Link>
           <a className="c-btn ghost" href="#free">{t.ctaFree}</a>
         </p>
       </Hero>

@@ -237,6 +237,7 @@
 | `sponsored_stats` | `(event_id, day)` composite (`ads/models.py:36-37`) | composite | תקין |
 | `flags` | `key` (`db.py:287`) | טבעי | |
 | `home_pins` | `event_id` (`home_pins/models.py`) | טבעי | נוסף 2026-11-12. בלי FK, כמו `sponsored`; ‏`delete_events` מוחק את הנעיצה עם האירוע (`delete_pins`). |
+| `promote_requests` | `id` serial (`promote/models.py`) | surrogate | נוסף 2026-11-13. בלי FK: האירועים נשמרים כ-snapshot ב-JSON (`events`), כך שבקשה נשארת קריאה גם אחרי שהאירוע עבר. |
 | `plans` | `id` String(12) (`plans/models.py`) | טבעי: הסוד של הקישור (`secrets.token_urlsafe(9)`, 12 תווים, מ-2026-10-29; ישנים: 8 תווים) | נוסף 2026-10-28. מופיע ב-URL `/plan/{id}`, לכן חייב להישמר ב-copy. |
 | `plan_votes` | `id` int autoinc (`plans/models.py`) | surrogate | נוסף 2026-10-28. `setval` אחרי copy כמו כל int PK. |
 | `plan_events` | `(plan_id, event_id)` composite (`plans/models.py`) | composite | נוסף 2026-10-28 ("איזו מסיבה?"). |
@@ -973,3 +974,10 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Queries (`partylinks.ads.paid.sync`):** after every pin / sponsor change (admin tab, event page 💰 / 📌, a rail's ✎) and once per regroup: `UPDATE events SET is_sponsored = true WHERE id IN (<pins ∪ sponsored, until open>) AND is_sponsored IS false` (PK), then `UPDATE events SET is_sponsored = false WHERE is_sponsored IS true AND id NOT IN (<same>)` (a seq scan, no index). Prod shapes (read-only, 2026-11-13, ~169k rows): 0.05 s and 0.19 s.
 - **Also:** `group_fill.plan` reads `events.title` too, to drop a stored lineup name that is a plain English word of the title ("Winter" of "WINTER EDITION"); same whole-table read as before.
 - **Tests:** `tests/test_sponsored_results.py::test_events_know_whether_they_are_paid`, `tests/test_dedup.py::test_a_plain_word_of_the_title_leaves_stored_lineups`.
+### 2026-11-13 (overdue sources start at worker startup, `Database.latest_runs`)
+- **No table or column change.** New read at worker startup: `Database.latest_runs()` takes each source's newest `scrape_runs` row (`row_number() OVER (PARTITION BY source ORDER BY id DESC) = 1`, same shape as `interrupted_sources`). A source whose cron fired after that run started (or that never ran), and whose newest run is not `interrupted`, starts at startup, oldest first, after the interrupted ones (`scheduler.resume_overdue`, default true). Why: a scheduled run waiting for one of the 6 run slots has no run row yet; a deploy dropped it, so it was never resumed (klika: one admin run on 2026-11-11, then nothing; 77 of 118 sources ran in the last 24 h).
+- **Tests:** `tests/test_run_health.py::test_a_scheduled_run_a_restart_dropped_from_the_queue_starts_at_startup`.
+### 2026-11-13 (`promote_requests`: the /promote form)
+- **New table `promote_requests`** (`partylinks.promote.models`, created by `create_schema`): `id` serial PK, `name`, `business` (nullable), `email`, `phone` (E.164), `events` JSON (a snapshot of each picked event: id, slug, title, venue_name, start_at), `placements` JSON, `message` (nullable), `lang`, `status` (`new` / `contacted` / `closed`), `created_at`. No FK, no extra index: a few requests a day, read by the admin only.
+- **Queries:** the form's `POST /api/promote-requests` reads `SELECT ... FROM events WHERE id IN (<picked, at most promote.max_events>) AND <upcoming_filter>` (PK) and inserts one row; the admin's tab `SELECT ... ORDER BY id DESC LIMIT promote.admin_shown`, `UPDATE ... SET status` and `DELETE` by PK.
+- **Tests:** `tests/test_promote_requests.py`.

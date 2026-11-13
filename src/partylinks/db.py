@@ -663,6 +663,21 @@ class Database:
             if statuses[0] == "interrupted" and statuses.count("interrupted") < max_in_a_row
         }
 
+    def latest_runs(self) -> dict[str, tuple[datetime, str]]:
+        """Each source's newest run: (started_at, status). The startup scheduler compares it with the
+        source's cron to find sources whose scheduled run never started (lost in the queue by a restart)."""
+        ranked = select(
+            ScrapeRunRow.source,
+            ScrapeRunRow.started_at,
+            ScrapeRunRow.status,
+            func.row_number().over(partition_by=ScrapeRunRow.source, order_by=ScrapeRunRow.id.desc()).label("n"),
+        ).subquery()
+        with self.session(write=False) as session:
+            rows = session.execute(
+                select(ranked.c.source, ranked.c.started_at, ranked.c.status).where(ranked.c.n == 1)
+            ).all()
+        return {source: (started, status) for source, started, status in rows}
+
     @contextmanager
     def session(self, write: bool = True) -> Generator[Session]:
         """``write=False`` for page requests: they read beside a writer and never queue behind one."""
@@ -969,6 +984,7 @@ import partylinks.passkeys.models
 import partylinks.placeinfo.models
 import partylinks.plans.models
 import partylinks.popularity.models
+import partylinks.promote.models
 import partylinks.saved.models
 import partylinks.venue_profiles
 import partylinks.worker.models

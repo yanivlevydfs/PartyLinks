@@ -177,6 +177,7 @@ ADMIN = {"authorization": "Bearer s3cret"}
 # The only writes a visitor may send: sponsored views / clicks, and "who's coming?" plans and answers.
 PUBLIC_WRITES = {"/events/sponsored/hit", "/plans", "/plans/{plan_id}/votes", "/plans/{plan_id}/events",
                  "/api/email/unsubscribe",  # a signed token, from the mail client (RFC 8058)
+                 "/api/promote-requests",  # the /promote form: anyone, rate-limited, our pages only (tests/test_promote_requests.py)
                  "/bot/telegram"}  # Telegram's webhook: its own secret header (tests/test_bot_telegram.py)
 # A signed-in user's own writes: refused without a session cookie (403 first when not from our pages).
 USER_WRITES = ("/api/me", "/api/auth/", "/api/passkeys/", "/plans/{plan_id}")  # the last: a group's rename, by its creator

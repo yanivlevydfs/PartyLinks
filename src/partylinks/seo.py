@@ -849,6 +849,11 @@ INFO_PAGES = {
         "מפיקים, מקומות, אתרי כרטיסים ומותגים: בואו נעבוד יחד כדי שהאירועים שלכם יגיעו לעוד אנשים ב-{name}.",
         "Promoters, venues, ticketing sites and brands: let's work together to bring your events to more people on {name}.",
     )),
+    # The request form (web/src/promote/PromotePage.tsx, partylinks.promote).
+    "/promote": (("קידום אירוע", "Promote your event"), (
+        "האירוע שלכם כבר ב-{name}? בחרו אותו, ספרו לנו מה תרצו לקדם, ונחזור אליכם עם הצעת מחיר לפרסום ממומן.",
+        "Your event is already on {name}? Pick it, tell us what you want to promote, and we'll come back with a quote for sponsored placement.",
+    )),
 }
 
 

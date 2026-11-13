@@ -88,8 +88,8 @@
       {
         "id": "contact",
         "h": "בואו נמלא לכם את הרחבה",
-        "p": "שלחו לנו קישור לאירוע, התאריכים ומה אתם רוצים להשיג, ונחזור אליכם עם הצעת מחיר.",
-        "link": ["/contact", "לעמוד צור קשר"]
+        "p": "בחרו את האירועים בטופס, ספרו מה תרצו לקדם, ונחזור אליכם עם הצעת מחיר. מעדיפים מייל? הכתובת כאן:",
+        "link": ["/promote", "לטופס בקשת קידום: בחרו אירועים ושלחו"]
       }
     ],
     "subject": "פרסום אירוע ב-SPOTX"
@@ -183,8 +183,8 @@
       {
         "id": "contact",
         "h": "Let's fill your dance floor",
-        "p": "Send us a link to the event, the dates and what you want to achieve, and we'll come back with a quote.",
-        "link": ["/contact", "Go to the contact page"]
+        "p": "Pick your events in the form, tell us what you want to promote, and we'll come back with a quote. Prefer email? Here's the address:",
+        "link": ["/promote", "To the promotion request form: pick events and send"]
       }
     ],
     "subject": "Advertising an event on SPOTX"

@@ -15,6 +15,7 @@ class RateLimitSettings(BaseModel):
     plans: int = Field(20, ge=1, le=1000)  # creating a plan and adding an event to compare
     plan_votes: int = Field(60, ge=1, le=1000)  # answers on a plan
     fb_deletion: int = Field(30, ge=1, le=1000)  # Meta's data-deletion callback
+    promote: int = Field(5, ge=1, le=1000)  # promotion requests sent from /promote (partylinks.promote)
 
 
 class AccountsSettings(BaseModel):

@@ -41,6 +41,7 @@ from partylinks.pace import PaceSettings
 from partylinks.placeinfo.config import PlaceInfoSettings
 from partylinks.plans.config import PlansSettings
 from partylinks.popularity.config import PopularitySettings
+from partylinks.promote.config import PromoteSettings
 from partylinks.similar.config import SimilarSettings
 from partylinks.smartrails.config import SmartRailsSettings
 from partylinks.weekly_top.config import WeeklyTopSettings
@@ -157,6 +158,9 @@ class SchedulerSettings(BaseModel):
     run_on_startup: bool = False
     # A source whose last run a restart interrupted runs again at startup, unless this many in a row were.
     resume_max_in_a_row: int = Field(3, ge=1)
+    # A source whose last cron time passed with no run started since (its run waited in the queue when a
+    # deploy restarted the worker, so it never got a run row) runs at startup too, oldest first.
+    resume_overdue: bool = True
     misfire_grace_seconds: int = Field(600, ge=0)
     # /health flags an enabled source with no successful run for this long.
     stale_after_hours: float = Field(12, gt=0)
@@ -819,6 +823,7 @@ class Settings(BaseSettings):
     weekly_top: WeeklyTopSettings = Field(default_factory=WeeklyTopSettings)  # this week's top (partylinks.weekly_top)
     artwork: ArtworkSettings = Field(default_factory=ArtworkSettings)  # drawn cards for events with no picture
     ads: AdsSettings = Field(default_factory=AdsSettings)  # paid placements' side rails (partylinks.ads)
+    promote: PromoteSettings = Field(default_factory=PromoteSettings)  # the /promote request form (partylinks.promote)
     place_info: PlaceInfoSettings = Field(default_factory=PlaceInfoSettings)  # hours, booking of places (partylinks.placeinfo)
     artist_links: ArtistLinksSettings = Field(default_factory=ArtistLinksSettings)  # artists' Spotify / YouTube... (MusicBrainz)
     alerts: AlertsSettings = Field(default_factory=AlertsSettings)  # the bell, For you, alert preview (partylinks.alerts)

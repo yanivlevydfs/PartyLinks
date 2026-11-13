@@ -46,6 +46,10 @@ cryptography==50.0.2
     #   webauthn
 curl-cffi==0.16.3
     # via partylinks (pyproject.toml)
+dnspython==2.9.2
+    # via email-validator
+email-validator==2.3.0
+    # via partylinks (pyproject.toml)
 fastapi==0.153.0
     # via partylinks (pyproject.toml)
 ftfy==6.3.1
@@ -74,6 +78,7 @@ icalendar==7.3.0
 idna==3.20
     # via
     #   anyio
+    #   email-validator
     #   httpx
     #   httpx2
     #   requests
@@ -95,6 +100,8 @@ msgpack==1.2.4
     # via wordfreq
 opentelemetry-api==1.45.1
     # via fastapi
+phonenumbers==9.0.43
+    # via partylinks (pyproject.toml)
 pillow==13.0.0
     # via partylinks (pyproject.toml)
 psycopg==3.3.6

@@ -6,6 +6,7 @@ import { Loader, TZ } from "../ui";
 import { useTicketSites } from "../api";
 import { Sponsored } from "../ads/AdminSponsored";
 import { AdminPins } from "../home_pins/AdminPins";
+import { AdminPromote } from "../promote/AdminPromote";
 import { Overrides } from "../config_store/AdminOverrides";
 import { SignInButton } from "../accounts/AccountSlot";
 import { AdminEmail } from "../accounts/AdminEmail";
@@ -65,7 +66,7 @@ export const ago = (iso: string | null | undefined) => {
 const adminClient = new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: true } } });
 
 // --------------------------------------------------------------------------- page
-const TABS = ["overview", "features", "quality", "health", "clicks", "searches", "bot", "users", "email", "sponsored", "pins", "sources", "runs", "config", "maintenance"] as const;
+const TABS = ["overview", "features", "quality", "health", "clicks", "searches", "bot", "users", "email", "sponsored", "pins", "requests", "sources", "runs", "config", "maintenance"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function AdminPage() {
@@ -126,6 +127,7 @@ function Admin() {
       {tab === "searches" && <Searches />}
       {tab === "sponsored" && <Sponsored />}
       {tab === "pins" && <AdminPins />}
+      {tab === "requests" && <AdminPromote />}
       {tab === "sources" && <Sources />}
       {tab === "runs" && <Runs />}
       {tab === "config" && <Overrides />}

@@ -44,6 +44,10 @@ const TEXT = {
         ],
       },
       {
+        title: "בקשת קידום אירוע (רשות)",
+        body: ["בעל אירוע שממלא את טופס הקידום בעמוד \"קידום אירוע\" שולח לנו את שמו, שם ההפקה או העסק (לא חובה), כתובת דוא\"ל, טלפון נייד, האירועים שבחר, מה הוא רוצה לקדם והערות. המידע משמש רק כדי לחזור אליו בעניין הקידום, נשלח למנהלי האתר בדוא\"ל (דרך Resend) ונשמר עד שהבקשה נמחקת. אפשר לבקש מחיקה בכל עת בכתובת שלמטה."],
+      },
+      {
         title: "בוט הטלגרם (רשות)",
         body: ["אפשר לחפש אירועים גם בבוט שלנו בטלגרם. הבוט שומר מידע רק אחרי שלחצתם \"אישור והמשך\" במסך הכניסה שלו:"],
         list: [
@@ -151,6 +155,10 @@ const TEXT = {
           "Retention and deletion: data is kept while the account exists. An event that has ended is removed from saved events and alerts. You can delete the account at any time on \"My account\"; deletion is immediate and permanent.",
           "Accounts are for people aged 16 and over.",
         ],
+      },
+      {
+        title: "Event promotion requests (optional)",
+        body: ["An event owner who fills in the form on \"Promote your event\" sends us their name, production or business name (optional), email address, mobile number, the events they picked, what they want promoted and their notes. We use it only to get back to them about the promotion; it is emailed to the site's admins (through Resend) and kept until the request is deleted. You can ask for deletion at any time at the address below."],
       },
       {
         title: "Telegram bot (optional)",
