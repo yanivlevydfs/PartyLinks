@@ -54,16 +54,18 @@ def tags(
     return {key: {"g": _kept(genres[key], n, share), "w": _kept(places[key], n, share)} for key, n in events.items()}
 
 
+def tags_body(state: Any) -> bytes:
+    """GET /artists/tags's JSON (also read by the artists index, partylinks.facet_list)."""
+    with state.db.session(write=False) as session:
+        listed = set(state.service.artists.profiles()) if state.settings.site.artists_verified_only else None
+        found = tags(session, state.settings, state.service.enricher.areas.region_keys, listed)
+    return json.dumps(found, ensure_ascii=False, separators=(",", ":")).encode()
+
+
 @router.get("/artists/tags")
 def artist_tags(request: Request) -> Response:
     state: Any = request.app.state
-
-    def body() -> bytes:
-        with state.db.session(write=False) as session:
-            listed = set(state.service.artists.profiles()) if state.settings.site.artists_verified_only else None
-            found = tags(session, state.settings, state.service.enricher.areas.region_keys, listed)
-        return json.dumps(found, ensure_ascii=False, separators=(",", ":")).encode()
-
     return Response(
-        state.response_cache.get((request.url.path, request.url.query), body)[0], media_type="application/json"
+        state.response_cache.get((request.url.path, request.url.query), lambda: tags_body(state))[0],
+        media_type="application/json",
     )

@@ -16,6 +16,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Annotated, Any
 from zoneinfo import ZoneInfo
 
@@ -1385,6 +1386,9 @@ def _register_routes(app: FastAPI) -> None:
     app.include_router(similar_router)
     app.include_router(artist_filter_router)
     app.include_router(top_router)
+    from partylinks.facet_list.routes import router as facet_list_router
+
+    app.include_router(facet_list_router)  # the venues / artists indexes, a page at a time
     app.include_router(ads_admin_router)
     from partylinks.home_pins.routes import router as home_pins_router
 
@@ -1607,6 +1611,14 @@ def _register_routes(app: FastAPI) -> None:
         return _cached(request, lambda session: build_categories(request, session, filters, upcoming), exclude_none=True)
 
     @app.get("/ticket-sites", response_model=Stores, tags=["events"])
+    def anywhere_categories() -> bytes:
+        """/categories?anywhere=true's JSON (the venue and artist indexes page it, partylinks.facet_list)."""
+        with app.state.db.session(write=False) as session:
+            built = build_categories(SimpleNamespace(app=app), session, build_event_filters(app.state.settings, anywhere=True), True)  # type: ignore[arg-type]
+        return built.model_dump_json(by_alias=True, exclude_none=True).encode()
+
+    app.state.anywhere_categories = anywhere_categories
+
     def stores(request: Request) -> Response:
         """The ticket sites events come from, with how many upcoming events each sells (the stores page)."""
 

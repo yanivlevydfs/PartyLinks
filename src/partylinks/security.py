@@ -43,7 +43,7 @@ DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
 # The places hub, holidays, this week's top and similar artists are listings too (the pages of the same
 # names stay open: crawlers read those).
 DATA_PATHS = ("/events", "/categories", "/posts", "/ticket-sites", "/locate",
-              "/places/categories", "/holidays/list", "/top/list", "/artists/similar", "/artists/tags")
+              "/places/categories", "/holidays/list", "/top/list", "/artists/similar", "/artists/tags", "/facets")
 # The app's own JSON (group plans, a user's account): only our pages call it, so script clients are
 # refused there too. Not /plan/<id>: WhatsApp's link preview reads that page.
 APP_API_PATHS = ("/plans", "/api/me")

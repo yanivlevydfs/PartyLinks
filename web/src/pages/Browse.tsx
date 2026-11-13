@@ -1,73 +1,132 @@
 // Venue / artist pages and their index lists.
 import { type ReactNode, useEffect, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { useCategories, useEvents, useLandingInfo } from "../api";
+import { getJSON, type Params, toQuery, useCategories, useEvents, useLandingInfo } from "../api";
 import type { Facet } from "../types";
 import { ArtistLinks } from "../artist_links/ArtistLinks";
 import { ArtistPlayer } from "../artist_links/ArtistPlayer";
 import { SimilarArtists } from "../similar/SimilarArtists";
-import { useArtistFilter } from "../artist_filter/ArtistFilter";
+import { type ArtistChips, ArtistFilterRows, useArtistFilter } from "../artist_filter/ArtistFilter";
 import { MapLinks } from "../places/MapLinks";
 import { ScopedEvents } from "../filter_scope/ScopedEvents";
 import { useWeb } from "../site_params/useWeb";
 import { artistPath, Chip, countryName, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
-// A to Z: English (abc) then Hebrew (אבג), case and accents ignored, "2" before "10".
-const byName = new Intl.Collator(["en", "he"], { numeric: true, sensitivity: "base" });
+// The name's first letter, drawn when there is no picture.
+const initial = (s: string) => s.replace(/^[^\p{L}\p{N}]+/u, "").charAt(0).toLocaleUpperCase();
 
-function FacetIndex({ title, facets, path, byArea, logos, toolbar, ordered, filterKey }: {
-  title: string; facets: Facet[] | undefined; path: (v: string) => string; byArea?: boolean; logos?: boolean;
-  toolbar?: ReactNode; ordered?: boolean; filterKey?: string; // a filter above the list, keeping its own order
+/** One page of GET /facets/venues or /facets/artists. */
+interface FacetPage { items: Facet[]; total: number; page: number; fuzzy: boolean; areas?: string[]; chips?: ArtistChips }
+
+type View = "list" | "grid";
+const VIEW_KEY = "facetView";
+function savedView(): View {
+  try {
+    const v = localStorage.getItem(VIEW_KEY);
+    if (v === "list" || v === "grid") return v;
+  } catch { /* private mode */ }
+  return matchMedia("(max-width: 760px)").matches ? "list" : "grid"; // phones read names, desktops see pictures
+}
+
+/** List / grid switch: two icon buttons, the choice remembered on this device. */
+function ViewToggle({ view, set }: { view: View; set: (v: View) => void }) {
+  const { t } = useT();
+  const pick = (v: View) => {
+    set(v);
+    try { localStorage.setItem(VIEW_KEY, v); } catch { /* private mode */ }
+  };
+  return (
+    <div className="view-toggle" role="group">
+      <button type="button" aria-pressed={view === "list"} aria-label={t.viewList} title={t.viewList} onClick={() => pick("list")}>
+        <svg viewBox="0 0 24 24" aria-hidden><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </button>
+      <button type="button" aria-pressed={view === "grid"} aria-label={t.viewGrid} title={t.viewGrid} onClick={() => pick("grid")}>
+        <svg viewBox="0 0 24 24" aria-hidden><rect x="4" y="4" width="6.5" height="6.5" rx="1.5" /><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" /><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" /><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" /></svg>
+      </button>
+    </div>
+  );
+}
+
+function FacetIndex({ title, kind, path, logos, extra, toolbar }: {
+  title: string; kind: "venues" | "artists"; path: (v: string) => string; logos?: boolean;
+  extra?: Params; toolbar?: (first: FacetPage | undefined) => ReactNode; // the artists' filter and its query
 }) {
   const { t } = useT();
-  const PAGE = useWeb().index_page_size;
+  const web = useWeb();
   const [q, setQ] = useState("");
+  const [typed, setTyped] = useState(""); // the box, ahead of the search while the user types
   const [area, setArea] = useState<string | null>(null);
-  // Thousands of cards at once froze the page: render a page at a time; search still covers the whole list.
-  const [limit, setLimit] = useState(PAGE);
-  const areas = byArea ? [...new Set((facets ?? []).map((f) => f.area).filter((a): a is string => !!a))] : [];
+  const [view, setView] = useState<View>(savedView);
   useTitle(title);
-  useEffect(() => setLimit(PAGE), [filterKey, PAGE]);
-  // Case-insensitive, ignores spaces/punctuation, so "gray club" finds "Gray Club תל אביב-יפו".
-  const norm = (s: string) => s.toLocaleLowerCase().replace(/[\s\-_.·'"׳״]/g, "");
-  const inArea = facets?.filter((f) => !area || f.area === area);
-  if (!ordered) inArea?.sort((a, b) => byName.compare(a.value, b.value));
-  const match = (s: string) => inArea?.filter((f) => norm(f.value).includes(s)) ?? [];
-  const exact = match(norm(q));
-  // A typo at the end ("יניבדד") finds nothing: drop letters from the end until names match (3 letters at least).
-  let shown = exact;
-  for (let s = norm(q); facets && !shown.length && s.length > 3; ) shown = match((s = s.slice(0, -1)));
-  const fuzzy = exact.length === 0 && shown.length > 0;
+  useEffect(() => {
+    const id = setTimeout(() => setQ(typed.trim()), web.search_debounce_ms);
+    return () => clearTimeout(id);
+  }, [typed, web.search_debounce_ms]);
+  // The server searches, filters and pages (partylinks.facet_list): a page at a time, "load more" for the next.
+  const qs = toQuery({ q: q || undefined, area: area ?? undefined, page_size: String(web.index_page_size), ...extra });
+  const list = useInfiniteQuery({
+    queryKey: ["facets", kind, qs],
+    queryFn: ({ pageParam, signal }) => getJSON<FacetPage>(`/facets/${kind}?${qs}&page=${pageParam}`, signal),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.page * web.index_page_size < last.total ? last.page + 1 : undefined),
+    placeholderData: (prev) => prev, // the old list stays while the next search loads: no flash
+    staleTime: 5 * 60_000,
+  });
+  const first = list.data?.pages[0];
+  const shown = list.data?.pages.flatMap((p) => p.items) ?? [];
+  const areas = first?.areas ?? [];
+  const searching = typed.trim() !== q || (list.isFetching && !list.isFetchingNextPage);
   return (
     <>
       <Hero title={title}>
-        <input className="search" type="search" value={q} onChange={(e) => { setQ(e.target.value); setLimit(PAGE); }} placeholder={t.searchList} aria-label={t.searchList} />
+        <div className="facet-search">
+          <svg viewBox="0 0 24 24" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+          <input className="search" type="search" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={t.searchList} aria-label={t.searchList} enterKeyHint="search" />
+          {searching && <span className="facet-spin" aria-hidden />}
+        </div>
       </Hero>
       <main className="wrap">
-        {toolbar}
+        {toolbar?.(first)}
         {areas.length > 0 && (
-          <div className="chips filters" role="group" aria-label={t.area}>
-            <Chip on={!area} onClick={() => { setArea(null); setLimit(PAGE); }}>📍 {t.allAreas}</Chip>
-            {areas.map((a) => (
-              <Chip key={a} on={area === a} onClick={() => { setArea(area === a ? null : a); setLimit(PAGE); }}>{label(t.areas, a)}</Chip>
-            ))}
+          <div className="filters" role="group" aria-label={t.area}>
+            <div className="chips scroll">
+              <Chip on={!area} onClick={() => setArea(null)}>📍 {t.allAreas}</Chip>
+              {areas.map((a) => (
+                <Chip key={a} on={area === a} onClick={() => setArea(area === a ? null : a)}>{label(t.areas, a)}</Chip>
+              ))}
+            </div>
           </div>
         )}
-        {!facets && <Loader />}
-        {facets && !shown.length && <p className="msg">{q ? t.noMatch(q) : t.empty}</p>}
-        {fuzzy && <p className="msg">{t.closest(q)}</p>}
-        <div className="facet-grid">
-          {shown.slice(0, limit).map((f) => (
-            <Link key={f.value} className={"facet" + (f.image_url ? (logos ? " with-logo" : " with-photo") : "")} to={path(f.value)}>
-              {f.image_url && <Img src={f.image_url} alt="" className={logos ? "facet-logo" : "facet-photo"} />}
-              <b dir="auto">{f.value}{f.verified && <Verified />}</b>
-              <small>{t.events(f.events)}{f.area ? ` · ${label(t.areas, f.area)}` : ""}{f.kind ? ` · ${f.kind.toUpperCase()}` : ""}</small>
+        {first && (
+          <div className="facet-bar">
+            {/* the artist filter prints its own count */}
+            {(!toolbar || q) && <span className="facet-count" aria-live="polite">{t.listCount(first.total)}</span>}
+            <ViewToggle view={view} set={setView} />
+          </div>
+        )}
+        {!first && (list.isError ? <p className="msg">{t.empty}</p> : <Loader />)}
+        {first && !shown.length && <p className="msg">{q ? t.noMatch(q) : t.empty}</p>}
+        {first?.fuzzy && <p className="msg">{t.closest(q)}</p>}
+        <div className={"facets " + view + (searching ? " stale" : "")}>
+          {shown.map((f) => (
+            <Link key={f.value} className="fi" to={path(f.value)}>
+              <Img src={f.image_url} alt="" text={initial(f.value) || "♫"} className={"fi-av" + (logos ? " logo" : "")} />
+              <b><bdi>{f.value}</bdi>{f.verified && <Verified />}</b>
+              <small>
+                <span className="n">{t.events(f.events)}</span>
+                {f.area ? ` · ${label(t.areas, f.area)}` : ""}{f.kind ? ` · ${f.kind.toUpperCase()}` : ""}
+              </small>
+              <svg className="fi-go" viewBox="0 0 24 24" aria-hidden><path d="M9 6l6 6-6 6" /></svg>
             </Link>
           ))}
         </div>
-        {shown.length > limit && (
+        {list.hasNextPage && (
           <div className="more">
-            <button onClick={() => setLimit(limit + PAGE)}>{t.loadMore}</button>
+            <button onClick={() => list.fetchNextPage()} disabled={list.isFetchingNextPage}>
+              {list.isFetchingNextPage ? <span className="facet-spin" aria-hidden /> : t.loadMore}
+            </button>
+            {first && <small className="facet-count">{t.listShown(shown.length, first.total)}</small>}
           </div>
         )}
       </main>
@@ -77,14 +136,16 @@ function FacetIndex({ title, facets, path, byArea, logos, toolbar, ordered, filt
 
 export function VenuesIndex() {
   const { t } = useT();
-  const venues = useCategories({ anywhere: "true" }).data?.venues;
-  return <FacetIndex title={t.venuesTitle} facets={venues} path={venuePath} byArea logos />;
+  return <FacetIndex title={t.venuesTitle} kind="venues" path={venuePath} logos />;
 }
 
 export function ArtistsIndex() {
   const { t } = useT();
-  const filter = useArtistFilter(useCategories({ anywhere: "true" }).data?.lineup);
-  return <FacetIndex title={t.artistsTitle} facets={filter.facets} path={artistPath} toolbar={filter.rows} ordered={filter.sorted} filterKey={filter.key} />;
+  const { query } = useArtistFilter(undefined, undefined);
+  return (
+    <FacetIndex title={t.artistsTitle} kind="artists" path={artistPath} extra={query}
+      toolbar={(first) => <ArtistFilterRows chips={first?.chips} total={first?.total} />} />
+  );
 }
 
 export function VenuePage() {
