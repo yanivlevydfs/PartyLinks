@@ -1627,8 +1627,13 @@ def register(app: FastAPI, site_dir: Path) -> None:
 
     @app.get("/llms.txt", include_in_schema=False)
     def llms(request: Request) -> PlainTextResponse:
-        with request.app.state.db.session(write=False) as session:
-            return PlainTextResponse(llms_txt(session, cfg(request)), media_type="text/markdown; charset=utf-8")
+        # 4-9 s of whole-table queries per request at prod size: served from the API's response cache.
+        def build() -> bytes:
+            with request.app.state.db.session(write=False) as session:
+                return llms_txt(session, cfg(request)).encode()
+
+        body = request.app.state.response_cache.get(("/llms.txt", ""), build)[0]
+        return PlainTextResponse(body, media_type="text/markdown; charset=utf-8")
 
     from partylinks import blog
 
