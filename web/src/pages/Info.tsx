@@ -10,7 +10,7 @@ export const INFO_LINKS: { path: string; label: Record<Lang, string> }[] = [
   { path: "/about", label: { he: "אודות", en: "About" } },
   { path: "/faq", label: { he: "שאלות נפוצות", en: "FAQ" } },
   { path: "/contact", label: { he: "צור קשר", en: "Contact us" } },
-  { path: "/partners", label: { he: "שיתופי פעולה", en: "Partnerships" } },
+  { path: "/partners", label: { he: "פרסום ושיתופי פעולה", en: "Advertise with us" } },
   { path: "/stores", label: { he: "חנויות הכרטיסים", en: "Ticket stores" } },
 ];
 
@@ -142,13 +142,13 @@ const CONTACT = {
   he: {
     intro: "יש שאלה, הצעה, טעות באירוע או אירוע שחסר? נשמח לשמוע. כדי שנוכל לעזור מהר, צרפו קישור לאירוע או לעמוד הרלוונטי.",
     more: "מפיקים, מקומות ואתרי כרטיסים:",
-    partners: "לעמוד שיתופי הפעולה",
+    partners: "לעמוד הפרסום ושיתופי הפעולה",
     privacy: "בקשות בנושא פרטיות ונגישות:",
   },
   en: {
     intro: "A question, a suggestion, a wrong detail or a missing event? We'd love to hear from you. To help us answer quickly, include a link to the event or page.",
     more: "Promoters, venues and ticketing sites:",
-    partners: "see Partnerships",
+    partners: "see Advertise with us",
     privacy: "Privacy and accessibility requests:",
   },
 };

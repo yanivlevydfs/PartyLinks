@@ -845,7 +845,7 @@ INFO_PAGES = {
         "כל אתרי הכרטיסים, המועדונים והיכלי התרבות ש-{name} אוסף מהם אירועים, וכמה אירועים קרובים יש לכל אחד.",
         "Every ticketing site, club and culture hall {name} collects events from, and how many upcoming events each one has.",
     )),
-    "/partners": (("שיתופי פעולה", "Partnerships"), (
+    "/partners": (("פרסום ושיתופי פעולה", "Advertise with us"), (
         "מפיקים, מקומות, אתרי כרטיסים ומותגים: בואו נעבוד יחד כדי שהאירועים שלכם יגיעו לעוד אנשים ב-{name}.",
         "Promoters, venues, ticketing sites and brands: let's work together to bring your events to more people on {name}.",
     )),

@@ -1,16 +1,79 @@
 {
   "he": {
-    "metaTitle": "פרסום וקידום אירועים · שיתופי פעולה",
-    "description": "מפיקים, מקומות ויחצנים: האירועים שלכם מופיעים ב-SPOTX בחינם. רוצים יותר? מיקום ממומן, מקום ראשון בשורות עמוד הבית, וקונים שמגיעים ישר לעמוד הכרטיסים שלכם.",
-    "eyebrow": "למפיקים, מקומות, יחצנים ומותגים",
-    "lead": "SPOTX פוגש אנשים בדיוק כשהם מחפשים לאן לצאת הערב או בסופ״ש. אנחנו מביאים אותם לאירוע שלכם, ומשם ישר לעמוד הכרטיסים.",
-    "cta": "דברו איתנו על קידום",
-    "ctaFree": "איך מופיעים בחינם",
+    "metaTitle": "פרסום אירועים ממומן · למפיקים, מקומות ומותגים",
+    "description": "פרסום ממומן ב-SPOTX: האירוע שלכם בפס הצדדי, בשלושת המקומות הראשונים בחיפוש ובראש שורות עמוד הבית, מול קהל שמחפש לאן לצאת. דו״ח צפיות וקליקים.",
+    "eyebrow": "פרסום למפיקים, ליינים, מקומות ומותגים",
+    "lead": "הקהל שלכם כבר מחפש לאן לצאת. ב-SPOTX הוא מוצא את זה. שימו את האירוע שלכם ראשון מול אנשים שבאו להחליט, וכל קליק הולך ישר לעמוד המכירה שלכם.",
+    "cta": "קבלו הצעת מחיר",
+    "ctaFree": "מה אפשר לקנות",
     "sections": [
       {
+        "id": "why",
+        "h": "למה לפרסם ב-SPOTX",
+        "stats": [
+          ["100,000+", "אירועים קרובים באתר"],
+          ["100+", "אתרי כרטיסים ומקורות שאנחנו סורקים"],
+          ["3", "מקומות ממומנים בראש תוצאות החיפוש"],
+          ["0%", "עמלה על כרטיסים"]
+        ],
+        "list": ["כוונת יציאה, לא גלילה: מי שנכנס ל-SPOTX מחפש אירוע לערב או לסופ״ש, לפי עיר, תאריך וסגנון.", "הכול במקום אחד: הקהל משווה כאן בין כל האירועים בישראל, אז מי שמופיע ראשון נבחר ראשון.", "הקליק שלכם: הקנייה נעשית בעמוד הכרטיסים שלכם, ואנחנו לא לוקחים עמלה מאף כרטיס."]
+      },
+      {
+        "id": "promote",
+        "h": "מקומות הפרסום",
+        "cards": [
+          ["פס צדדי ממומן", "בכל עמוד", "האירוע שלכם בפסים הצדדיים של כל עמוד באתר במסכים רחבים, ובפס מעל תחתית העמוד בטלפון. הוא מוצג בזרקור ומתחלף כל כמה שניות, כך שהוא נראה שוב ושוב לאורך הביקור."],
+          ["ראשון בתוצאות החיפוש", "עד 3 מקומות", "האירוע מוצג בראש התוצאות בכל חיפוש וסינון שהוא מתאים לו: העיר, הסגנון והתאריך שלו. מי שמחפש מסיבת טכנו בתל אביב בסופ״ש רואה אתכם קודם."],
+          ["הצמדה בעמוד הבית", "שורה לבחירתכם", "האירוע ראשון בשורה בעמוד הבית, כמו \"חם עכשיו\" או שורת הסגנון שלכם, לאורך כל תקופת הקמפיין."]
+        ],
+        "note": "כל מקום מסומן \"ממומן\", כפי שהחוק דורש, ואפשר לשלב כמה מקומות באותו קמפיין."
+      },
+      {
+        "id": "get",
+        "h": "מה מקבלים",
+        "list": [
+          "דו״ח לכל קמפיין: צפיות, קליקים ו-CTR, לפי מקום ההצגה (פס צדדי או תוצאות החיפוש).",
+          "צפייה נספרת רק כשלפחות חצי מהכרטיס הופיע על המסך, פעם אחת בביקור. בלי מספרים מנופחים.",
+          "כל קליק על \"כרטיסים\" עובר ישר לעמוד המכירה שלכם עם תגי UTM (utm_source=spotx), כך שתראו את התנועה ואת המכירות גם בכלי הניתוח שלכם.",
+          "בונוס בחינם: האירוע נכנס גם לעמודי האמן, המקום, העיר והסגנון, למפה, להתראות של מי שעוקב אחריכם, למייל השבועי ולבוט הטלגרם ‎@spotxilbot."
+        ]
+      },
+      {
+        "id": "who",
+        "h": "למי זה מתאים",
+        "list": [
+          "מפיקים וליינים שרוצים למלא רחבה, במיוחד בשבועות האחרונים לפני האירוע.",
+          "מועדונים, ברים והיכלי תרבות עם לוח אירועים קבוע.",
+          "פסטיבלים והופעות גדולות שצריכים חשיפה ארצית לאורך זמן.",
+          "מותגים שרוצים להגיע לקהל שיוצא, ליד האירועים שהוא בוחר."
+        ]
+      },
+      {
+        "id": "how",
+        "h": "איך זה עובד",
+        "steps": [
+          "שולחים לנו קישור לאירוע או לעמוד הכרטיסים, ומה אתם רוצים להשיג.",
+          "מקבלים הצעה: מקומות הפרסום, ערים או שורות, ותאריכים.",
+          "אנחנו מעלים את הקמפיין ובודקים שהאירוע מוצג נכון בכל מקום.",
+          "מקבלים דו״ח צפיות, קליקים ו-CTR, ומחליטים אם להאריך."
+        ]
+      },
+      {
+        "id": "faq",
+        "h": "שאלות נפוצות",
+        "faq": [
+          ["כמה זה עולה?", "המחיר תלוי במקומות הפרסום ובאורך הקמפיין. כתבו לנו מה האירוע ומתי, ונחזור עם הצעה."],
+          ["אפשר לכוון לעיר או לסגנון?", "כן. בתוצאות, אירוע ממומן מוצג ראשון רק בחיפושים שהוא מתאים להם: העיר, הסגנון והתאריך שלו. בעמוד הבית בוחרים באילו שורות הוא יופיע. הפס הצדדי מוצג בכל העמודים."],
+          ["איך נספרים צפיות וקליקים?", "צפייה: כרטיס ממומן שלפחות חציו הופיע על המסך, פעם אחת בכל ביקור. קליק: לחיצה על האירוע או על \"כרטיסים\", שעוברת דרכנו לרגע, נספרת, וממשיכה לעמוד שלכם עם תגי UTM."],
+          ["מתי הקמפיין מסתיים?", "בתאריך שסיכמנו, או מוקדם יותר אם האירוע עבר. אירוע שעבר יורד מהאתר מעצמו, אז לא משלמים על חשיפה לאירוע שכבר נגמר."],
+          ["האירוע שלי צריך להיות באתר קודם?", "רוב האירועים כבר כאן: אנחנו סורקים מעל 100 אתרי כרטיסים. מוכרים באתר שלא ברשימה? שלחו לנו קישור ונוסיף."],
+          ["אתם מוכרים כרטיסים?", "לא. הקנייה נעשית באתר הכרטיסים שלכם, ואנחנו לא צד לעסקה ולא גובים עמלה."]
+        ]
+      },
+      {
         "id": "free",
-        "h": "קודם כל: חינם",
-        "p": "כל אירוע שנמכר באחד מאתרי הכרטיסים שאנחנו סורקים (Eventer, Go-Out, Smarticket ועוד עשרות) מופיע ב-SPOTX מעצמו, בלי הרשמה ובלי תשלום. אירוע שנמכר בכמה אתרים מתאחד לכרטיס אחד עם כל האפשרויות לקנייה. כדי שהוא ייראה הכי טוב, דאגו שבאתר הכרטיסים יהיו:",
+        "h": "גם בלי לשלם: מופיעים בחינם",
+        "p": "כל אירוע שנמכר באחד מאתרי הכרטיסים שאנחנו סורקים (Eventer, Go-Out, Smarticket ועשרות נוספים) מופיע ב-SPOTX מעצמו, בלי הרשמה ובלי תשלום. כדי שהוא ייראה הכי טוב, וגם הקמפיין שלכם, דאגו שבאתר הכרטיסים יהיו:",
         "list": [
           "שם ברור: מי מופיע ומה הסגנון.",
           "תאריך ושעה מדויקים.",
@@ -22,70 +85,89 @@
         "link": ["/stores", "לרשימת אתרי הכרטיסים שאנחנו סורקים"]
       },
       {
+        "id": "contact",
+        "h": "בואו נמלא לכם את הרחבה",
+        "p": "שלחו לנו קישור לאירוע, התאריכים ומה אתם רוצים להשיג, ונחזור אליכם עם הצעת מחיר.",
+        "link": ["/contact", "לעמוד צור קשר"]
+      }
+    ],
+    "subject": "פרסום אירוע ב-SPOTX"
+  },
+  "en": {
+    "metaTitle": "Sponsored event advertising · For promoters, venues and brands",
+    "description": "Advertise on SPOTX: your event in the side rail, the top 3 search results and the home rows, in front of people choosing where to go. Views and clicks report.",
+    "eyebrow": "Advertising for promoters, venues and brands",
+    "lead": "Your audience is already looking for where to go out. On SPOTX they find it. Put your event first in front of people who came to decide, and every click goes straight to your ticket page.",
+    "cta": "Get a quote",
+    "ctaFree": "What you can buy",
+    "sections": [
+      {
+        "id": "why",
+        "h": "Why advertise on SPOTX",
+        "stats": [
+          ["100,000+", "upcoming events on the site"],
+          ["100+", "ticketing sites and sources we scan"],
+          ["3", "sponsored spots at the top of search results"],
+          ["0%", "commission on tickets"]
+        ],
+        "list": ["Intent, not scrolling: people come to SPOTX to find an event for tonight or the weekend, by city, date and genre.", "Everything in one place: people compare every event in Israel here, so whoever shows first gets picked first.", "Your click: the purchase happens on your ticket page, and we take no commission on any ticket."]
+      },
+      {
         "id": "promote",
-        "h": "דרכים לקדם אירוע",
+        "h": "Ad placements",
         "cards": [
-          ["מיקום ממומן", "קידום", "האירוע שלכם בפסים הצדדיים של כל עמוד במסכים רחבים (ובפס מעל תחתית העמוד במסכים צרים), וראשון בתוצאות החיפוש והסינון שהוא מתאים להן. מסומן \"ממומן\"."],
-          ["ראשון בשורות עמוד הבית", "קידום", "הצמדה לשורות הגלילה בעמוד הבית, כמו \"חם עכשיו\" או שורת סגנון: האירוע מוצג ראשון בשורה לאורך התקופה שסיכמנו."],
-          ["בוט הטלגרם", "חינם", "‎@spotxilbot מוצא אירועים לפי מה שכותבים לו, שולח למי שנרשם טיפ יומי וסיכום לסופ״ש עם האירועים שהכי מעניינים אנשים, ומזכיר לפני שהאירוע מתחיל. ערוץ טלגרם עם המלצות יומיות: בקרוב."],
-          ["התראות ומייל שבועי", "חינם", "משתמשים מגדירים התראות על אמנים, מקומות וסגנונות. אירוע חדש שמתאים להם מגיע אליהם בפעמון באתר ובמייל השבועי של יום חמישי."],
-          ["עמודים, מפה ו\"מי בא?\"", "חינם", "לכל מקום, אמן, עיר וסגנון יש עמוד משלו שמנועי חיפוש מוצאים. כל אירוע מופיע על המפה, ואפשר לשתף אותו עם חברים כתוכנית \"מי בא?\"."]
-        ]
+          ["Sponsored side rail", "Every page", "Your event in the side rails of every page on wide screens, and in a strip above the footer on phones. It takes the spotlight every few seconds, so it is seen again and again during a visit."],
+          ["First in search results", "Up to 3 spots", "Your event leads the results of every search and filter it matches: its city, genre and date. Someone looking for a techno party in Tel Aviv this weekend sees you first."],
+          ["Pinned on the home page", "Row of your choice", "Your event leads a home page row, such as \"Trending\" or your genre's row, for the whole campaign."]
+        ],
+        "note": "Every placement is marked \"Sponsored\", as the law requires, and one campaign can combine several placements."
       },
       {
         "id": "get",
-        "h": "מה אתם מקבלים",
+        "h": "What you get",
         "list": [
-          "קונים שמגיעים ישר לעמוד הכרטיסים שלכם. אנחנו לא מוכרים כרטיסים ולא גובים עמלה מהקונה.",
-          "כל לחיצה על \"כרטיסים\" נספרת, והקישור נושא תגי UTM (utm_source=spotx), כך שתראו את התנועה מאיתנו גם בכלי הניתוח שלכם.",
-          "במיקום ממומן: צפיות ולחיצות לכל אירוע, לפי מקום ההצגה (פסים צדדיים או תוצאות).",
-          "קהל שנכנס בלי הרשמה ובלי תשלום, ומחפש בדיוק לאן לצאת."
+          "A report for every campaign: views, clicks and CTR, by placement (side rail or search results).",
+          "A view counts only when at least half the card was on screen, once per visit. No inflated numbers.",
+          "Every click on \"Tickets\" goes straight to your ticket page with UTM tags (utm_source=spotx), so you see the traffic and the sales in your own analytics too.",
+          "Free extras: the event also reaches its artist, venue, city and genre pages, the map, the alerts of people who follow you, the weekly email and the Telegram bot @spotxilbot."
+        ]
+      },
+      {
+        "id": "who",
+        "h": "Who it's for",
+        "list": [
+          "Promoters and party lines who want a full dance floor, especially in the last weeks before the event.",
+          "Clubs, bars and culture halls with a regular calendar.",
+          "Festivals and big shows that need national exposure over time.",
+          "Brands that want to reach people who go out, next to the events they choose."
         ]
       },
       {
         "id": "how",
-        "h": "איך זה עובד",
+        "h": "How it works",
         "steps": [
-          "כותבים לנו: מה האירוע, איפה ומתי, וקישור לעמוד הכרטיסים.",
-          "בוחרים יחד את סוג הקידום, השורות או הערים, והתאריכים.",
-          "אנחנו מעלים את הקידום ובודקים שהאירוע מוצג נכון.",
-          "מקבלים את המספרים: צפיות ולחיצות על האירוע."
+          "Send us a link to the event or its ticket page, and what you want to achieve.",
+          "Get an offer: placements, cities or rows, and dates.",
+          "We launch the campaign and check the event shows correctly everywhere.",
+          "Get a report of views, clicks and CTR, and decide whether to extend."
         ]
       },
       {
         "id": "faq",
-        "h": "שאלות נפוצות",
+        "h": "FAQ",
         "faq": [
-          ["זה עולה כסף להופיע ב-SPOTX?", "לא. כל אירוע מאתרי הכרטיסים שאנחנו סורקים מופיע בחינם. רק קידום (מיקום ממומן ומקום ראשון בעמוד הבית) הוא בתשלום, והמחיר תלוי בתקופה ובמיקום. כתבו לנו להצעה."],
-          ["מאילו אתרי כרטיסים אתם אוספים?", "מעשרות אתרים: אתרי כרטיסים כמו Eventer, Go-Out ו-Smarticket, וגם אתרי מועדונים והיכלי תרבות. הרשימה המלאה בעמוד חנויות הכרטיסים. מוכרים באתר שלא ברשימה? כתבו לנו."],
-          ["פרט באירוע שגוי. איך מתקנים?", "הפרטים מגיעים מאתר הכרטיסים, אז הכי מהיר לתקן שם: הסריקה רצה לאורך היום והתיקון יגיע אלינו. לא התעדכן? שלחו לנו קישור לאירוע ונתקן."],
-          ["אפשר לכוון לעיר או לסגנון?", "כן. בתוצאות, אירוע ממומן מוצג ראשון רק בחיפושים שהוא מתאים להם: העיר, הסגנון והתאריך שלו. בעמוד הבית בוחרים באילו שורות הוא יופיע. הפסים הצדדיים מוצגים בכל העמודים."],
-          ["איך נספרות הלחיצות?", "לחיצה על \"כרטיסים\" עוברת דרכנו לרגע, נספרת, ומעבירה לעמוד שלכם עם תגי UTM. במיקום ממומן נספרות גם צפיות: כרטיס שלפחות חציו הופיע על המסך, פעם אחת בכל ביקור."],
-          ["אתם מוכרים כרטיסים?", "לא. הקנייה נעשית באתר הכרטיסים שלכם, ואנחנו לא צד לעסקה."]
+          ["How much does it cost?", "The price depends on the placements and the campaign's length. Tell us what the event is and when, and we'll come back with an offer."],
+          ["Can I target a city or a genre?", "Yes. In results, a sponsored event leads only the searches it matches: its city, genre and date. On the home page you choose which rows it appears in. The side rail shows on every page."],
+          ["How are views and clicks counted?", "A view: a sponsored card at least half on screen, once per visit. A click: a tap on the event or on \"Tickets\", which passes through us for a moment, is counted, and goes on to your page with UTM tags."],
+          ["When does the campaign end?", "On the date we agreed, or earlier if the event has passed. A past event leaves the site by itself, so you never pay for exposure of an event that is over."],
+          ["Does my event need to be on the site first?", "Most events already are: we scan over 100 ticketing sites. Selling on a site that isn't listed? Send us a link and we'll add it."],
+          ["Do you sell tickets?", "No. People buy on your ticketing site, and we are not a party to the purchase and take no commission."]
         ]
       },
       {
-        "id": "contact",
-        "h": "בואו נדבר",
-        "p": "ספרו לנו על האירוע או המקום ועל מה שאתם רוצים להשיג, ונחזור אליכם עם הצעה. מחירים לפי בקשה.",
-        "link": ["/contact", "לעמוד צור קשר"]
-      }
-    ],
-    "subject": "קידום אירוע ב-SPOTX",
-    "paidTag": "קידום"
-  },
-  "en": {
-    "metaTitle": "Advertise and promote events · Partnerships",
-    "description": "Promoters, venues and brands: your events are on SPOTX for free. Promote them with sponsored placement and first place on the home page.",
-    "eyebrow": "For promoters, venues and brands",
-    "lead": "SPOTX meets people right when they're looking for where to go tonight or this weekend. We bring them to your event, and from there straight to your ticket page.",
-    "cta": "Talk to us about promotion",
-    "ctaFree": "How to get listed for free",
-    "sections": [
-      {
         "id": "free",
-        "h": "Free, first of all",
-        "p": "Every event sold on one of the ticketing sites we scan (Eventer, Go-Out, Smarticket and dozens more) appears on SPOTX by itself, with no sign-up and no fee. An event sold on several sites is merged into one card with every place to buy. To make it look its best, give it on the ticketing site:",
+        "h": "Without paying: listed for free",
+        "p": "Every event sold on one of the ticketing sites we scan (Eventer, Go-Out, Smarticket and dozens more) appears on SPOTX by itself, with no sign-up and no fee. To make it look its best, and your campaign too, give it on the ticketing site:",
         "list": [
           "A clear title: who's playing and what style.",
           "The exact date and time.",
@@ -97,56 +179,12 @@
         "link": ["/stores", "See the ticketing sites we scan"]
       },
       {
-        "id": "promote",
-        "h": "Ways to promote an event",
-        "cards": [
-          ["Sponsored placement", "Promotion", "Your event in the side rails of every page on wide screens (and a strip above the footer on narrow ones), and first in the search and filter results it matches. Marked \"Sponsored\"."],
-          ["First in the home page rows", "Promotion", "Pinned to the home page's scrolling rows, such as \"Trending\" or a genre row: your event leads the row for the period we agree on."],
-          ["The Telegram bot", "Free", "@spotxilbot finds events from whatever people type, sends subscribers a daily tip and a weekend round-up of the events people are most into, and reminds them before the event starts. A Telegram channel with daily picks: coming soon."],
-          ["Alerts and the weekly email", "Free", "Users set alerts for artists, venues and genres. A new event that matches reaches them in the site's bell and in Thursday's weekly email."],
-          ["Pages, map and \"Who's coming?\"", "Free", "Every venue, artist, city and genre has its own page that search engines find. Every event is on the map, and can be shared with friends as a \"Who's coming?\" plan."]
-        ]
-      },
-      {
-        "id": "get",
-        "h": "What you get",
-        "list": [
-          "Buyers sent straight to your ticket page. We don't sell tickets and charge buyers no fee.",
-          "Every click on \"Tickets\" is counted, and the link carries UTM tags (utm_source=spotx), so you see our traffic in your own analytics too.",
-          "With sponsored placement: views and clicks for each event, by where it was shown (side rails or results).",
-          "An audience that needs no sign-up and pays nothing, looking for exactly where to go out."
-        ]
-      },
-      {
-        "id": "how",
-        "h": "How it works",
-        "steps": [
-          "Write to us: what the event is, where and when, and a link to its ticket page.",
-          "Together we pick the promotion, the rows or cities, and the dates.",
-          "We set it up and check the event shows correctly.",
-          "You get the numbers: views and clicks on your event."
-        ]
-      },
-      {
-        "id": "faq",
-        "h": "FAQ",
-        "faq": [
-          ["Does it cost anything to be listed on SPOTX?", "No. Every event from the ticketing sites we scan is listed for free. Only promotion (sponsored placement and first place on the home page) is paid, priced by period and placement. Write to us for a quote."],
-          ["Which ticketing sites do you collect from?", "Dozens: ticketing sites such as Eventer, Go-Out and Smarticket, plus club sites and culture halls. The full list is on the Ticket stores page. Selling on a site that isn't there? Write to us."],
-          ["A detail of my event is wrong. How do I fix it?", "Details come from the ticketing site, so the fastest fix is there: scanning runs throughout the day and the change will reach us. Still wrong? Send us a link to the event and we'll fix it."],
-          ["Can I target a city or a genre?", "Yes. In results, a sponsored event leads only the searches it matches: its city, genre and date. On the home page you choose which rows it appears in. The side rails show on every page."],
-          ["How are clicks counted?", "A click on \"Tickets\" passes through us for a moment, is counted, and goes on to your page with UTM tags. Sponsored placements also count views: a card at least half on screen, once per visit."],
-          ["Do you sell tickets?", "No. People buy on your ticketing site, and we are not a party to the purchase."]
-        ]
-      },
-      {
         "id": "contact",
-        "h": "Let's talk",
-        "p": "Tell us about your event or venue and what you want to achieve, and we'll come back with an offer. Pricing on request.",
+        "h": "Let's fill your dance floor",
+        "p": "Send us a link to the event, the dates and what you want to achieve, and we'll come back with a quote.",
         "link": ["/contact", "Go to the contact page"]
       }
     ],
-    "subject": "Promoting an event on SPOTX",
-    "paidTag": "Promotion"
+    "subject": "Advertising an event on SPOTX"
   }
 }

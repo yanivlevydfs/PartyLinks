@@ -10,6 +10,8 @@ type Section = {
   id: string;
   h: string;
   p?: string;
+  stats?: string[][]; // [value, label]
+  note?: string; // after the cards
   list?: string[];
   steps?: string[];
   cards?: string[][]; // [title, tag, text]
@@ -36,6 +38,13 @@ export function PartnersPage() {
           <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`}>
             <h2 id={`${s.id}-h`}>{s.h}</h2>
             {s.p && <p>{s.p}</p>}
+            {s.stats && (
+              <dl className="pt-stats">
+                {s.stats.map(([v, label]) => (
+                  <div key={label}><dt>{label}</dt><dd><span dir="ltr">{v}</span></dd></div>
+                ))}
+              </dl>
+            )}
             {s.list && <ul>{s.list.map((x) => <li key={x}>{x}</li>)}</ul>}
             {s.steps && <ol className="pt-steps">{s.steps.map((x) => <li key={x}>{x}</li>)}</ol>}
             {s.cards && (
@@ -43,12 +52,13 @@ export function PartnersPage() {
                 {s.cards.map(([h, tag, p]) => (
                   <li key={h}>
                     <h3>{h}</h3>
-                    <span className={`pt-tag${tag === t.paidTag ? " paid" : ""}`}>{tag}</span>
+                    <span className="pt-tag">{tag}</span>
                     <p>{p}</p>
                   </li>
                 ))}
               </ul>
             )}
+            {s.note && <p>{s.note}</p>}
             {s.faq?.map(([q, a]) => (
               <details key={q} className="pt-faq">
                 <summary>{q}</summary>
