@@ -573,7 +573,8 @@ class SiteSettings(BaseModel):
     # Public address of the website (no trailing slash): canonical links, sitemap, JSON-LD, share previews.
     base_url: str = "http://localhost:8000"
     # Ticket-site names on a card's picture before a "+N" chip (web/src/card_stores): 12 covered the picture.
-    card_sources_shown: int = Field(2, ge=1, le=12)
+    # 0 hides them on every screen (the owner's call, 2026-11-13: they add nothing over the picture).
+    card_sources_shown: int = Field(0, ge=0, le=12)
     # After a Google / Facebook sign-in, offer "sign in with fingerprint next time" on a device without a
     # passkey (web/src/passkeys/PasskeyOffer.tsx); "Not now" asks again after this many days, 0 never offers.
     passkey_offer_days: int = Field(30, ge=0, le=365)
