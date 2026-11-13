@@ -187,8 +187,10 @@ html[dir="ltr"] .sp-list a:hover { transform: translateX(2px); }
 /* A paid card (results placement, or pushed to the home rows): a gold-pink frame that keeps running round it. */
 @property --sp-a { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
 .card-wrap.ad::before {
-  content: ""; position: absolute; inset: -2px; z-index: 1; pointer-events: none;
-  border-radius: calc(var(--radius) + 2px); padding: 2px;
+  /* Inside the card, over its own border: the home rows clip at the card's edge (overflow-x), so a frame
+     drawn outside it was cut off on the first and last card in view. */
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  border-radius: var(--radius); padding: 2px;
   background: conic-gradient(from var(--sp-a), #ffd23f, #ff2e93, #9d4dff, #ffd23f 50%, #fff6c8 55%, #ffd23f 60%, #ff2e93, #ffd23f);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask-composite: exclude;
