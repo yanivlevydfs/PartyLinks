@@ -25,10 +25,12 @@ admin_router = APIRouter(prefix="/admin/api", tags=["admin"], dependencies=[Admi
 
 
 class SponsoredOut(BaseModel):
-    """The home page's two paid rails, each in the admin's order."""
+    """The home page's two paid rails, each in the admin's order, and each rail's seconds per spotlight
+    (settings ads.rotate_*)."""
 
     right: list[EventSummaryOut] = []
     left: list[EventSummaryOut] = []
+    rotate: dict[str, float] = {}
 
 
 class SponsoredHitIn(BaseModel):
@@ -42,8 +44,10 @@ def sponsored(session: SessionDep) -> SponsoredOut:
     """Paid placements (picked in the admin) that are still upcoming and within their campaign;
     none at all while the admin's sponsored switch is off. Not in the response cache: an admin
     change shows on the next request (the browser keeps its own copy)."""
+    ads = get_settings().ads
+    rotate = {"right": ads.rotate_right_seconds, "left": ads.rotate_left_seconds}
     if not flag_on(session, "sponsored"):
-        return SponsoredOut()
+        return SponsoredOut(rotate=rotate)
     pairs = session.execute(
         select(SponsoredRow.side, EventRow)
         .join(EventRow, EventRow.id == SponsoredRow.event_id)
@@ -53,7 +57,7 @@ def sponsored(session: SessionDep) -> SponsoredOut:
         .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
     ).all()
     extras = _summary_extras(session, [e for _, e in pairs])
-    out = SponsoredOut()
+    out = SponsoredOut(rotate=rotate)
     for side, e in pairs:
         getattr(out, side).append(EventSummaryOut.model_validate(e).model_copy(update=extras[e.id]))
     return out
@@ -83,8 +87,9 @@ def sponsored_hit(body: SponsoredHitIn, request: Request, session: SessionDep) -
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-class SponsoredIn(BaseModel):
-    event_id: str
+class SponsoredOneIn(BaseModel):
+    """One event's placement, set from the site itself (the event page's 💰, a rail's ✎)."""
+
     side: Literal["right", "left"]
     until: datetime | None = None  # campaign end; None = while the event is on
     placement: Literal["rails", "results", "both"] = "rails"  # side rails, first in matching results, or both
@@ -94,6 +99,25 @@ class SponsoredIn(BaseModel):
     def _israel(cls, value: datetime | None) -> datetime | None:
         """The admin's "ends 5.11" arrives as Israel's wall clock (2026-11-05T23:59), not the browser's."""
         return value.replace(tzinfo=ZoneInfo(get_settings().timezone)) if value and value.tzinfo is None else value
+
+
+class SponsoredIn(SponsoredOneIn):
+    event_id: str
+
+
+def _pick_out(s: SponsoredRow, e: EventRow | None, live: bool) -> dict[str, Any]:
+    return {
+        "event_id": s.event_id,
+        "side": s.side,
+        "until": s.until,
+        "placement": s.placement,
+        "title": e.title if e else None,
+        "slug": e.slug if e else None,
+        "start_at": e.start_at if e else None,
+        "venue_name": e.venue_name if e else None,
+        "cover_url": (e.cover_url or e.image_url) if e else None,
+        "live": live,
+    }
 
 
 @admin_router.get("/sponsored")
@@ -108,22 +132,49 @@ def sponsored_list(session: SessionDep) -> dict[str, Any]:
     ids = [s.event_id for s, _ in pairs]
     upcoming = set(session.scalars(select(EventRow.id).where(EventRow.id.in_(ids), upcoming_filter())))
     now = datetime.now(UTC)
-    items = [
-        {
-            "event_id": s.event_id,
-            "side": s.side,
-            "until": s.until,
-            "placement": s.placement,
-            "title": e.title if e else None,
-            "slug": e.slug if e else None,
-            "start_at": e.start_at if e else None,
-            "venue_name": e.venue_name if e else None,
-            "cover_url": (e.cover_url or e.image_url) if e else None,
-            "live": s.event_id in upcoming and (s.until is None or s.until > now),
-        }
-        for s, e in pairs
-    ]
+    items = [_pick_out(s, e, s.event_id in upcoming and (s.until is None or s.until > now)) for s, e in pairs]
     return {"enabled": flag_on(session, "sponsored"), "items": items}
+
+
+@admin_router.get("/sponsored/event/{event_id:path}")
+def sponsored_one(event_id: str, session: SessionDep) -> dict[str, Any]:
+    """One event's placement (None if it has none) and the site-wide switch: the event page's 💰 sheet."""
+    s = session.get(SponsoredRow, event_id)
+    e = session.get(EventRow, event_id)
+    live = bool(
+        s and e and session.scalar(select(EventRow.id).where(EventRow.id == event_id, upcoming_filter()))
+        and (s.until is None or s.until > datetime.now(UTC))
+    )
+    return {"enabled": flag_on(session, "sponsored"), "pick": _pick_out(s, e, live) if s else None}
+
+
+@admin_router.put("/sponsored/event/{event_id:path}")
+def sponsored_one_save(event_id: str, body: SponsoredOneIn, session: SessionDep) -> dict[str, Any]:
+    """Sponsor one event, or change its placement. New on a side (or moved to the other one): last there."""
+    if session.get(EventRow, event_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "event not found")
+    row = session.get(SponsoredRow, event_id)
+    if row is None and (session.scalar(select(func.count()).select_from(SponsoredRow)) or 0) >= (
+        most := get_settings().api.max_sponsored
+    ):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"at most {most} sponsored events")
+    if row is None or row.side != body.side:
+        last = session.scalar(select(func.max(SponsoredRow.position)).where(SponsoredRow.side == body.side))
+        position = -1 if last is None else last
+        if row is None:
+            row = SponsoredRow(event_id=event_id)
+            session.add(row)
+        row.side, row.position = body.side, position + 1
+    row.until, row.placement = body.until, body.placement
+    session.flush()
+    return sponsored_one(event_id, session)
+
+
+@admin_router.delete("/sponsored/event/{event_id:path}", status_code=status.HTTP_204_NO_CONTENT)
+def sponsored_one_remove(event_id: str, session: SessionDep) -> Response:
+    """Stop sponsoring one event (its views and clicks stay in the report)."""
+    session.execute(delete(SponsoredRow).where(SponsoredRow.event_id == event_id))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @admin_router.get("/sponsored/stats")

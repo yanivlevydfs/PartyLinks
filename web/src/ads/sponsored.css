@@ -183,3 +183,6 @@ html[dir="ltr"] .sp-list a:hover { transform: translateX(2px); }
 /* A paid card at the top of the results (ui.tsx Card): its "Sponsored" label, in the new / updated badge's place. */
 .fresh.ad { background: #ffd23f; box-shadow: 0 0 18px rgb(255 210 63 / .55); }
 .card-wrap.ad .card { border-color: rgb(255 210 63 / .55); }
+
+/* A rail's ✎ (admins): its own size here, and the head's gradient text must not paint it. */
+.sp-head .sp-edit { width: 22px; height: 22px; margin-inline-start: auto; font-size: 12px; -webkit-text-fill-color: #fff; color: #fff; letter-spacing: 0; }

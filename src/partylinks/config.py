@@ -24,6 +24,7 @@ from pydantic_settings import (
 )
 
 from partylinks.accounts.config import AccountsSettings
+from partylinks.ads.config import AdsSettings
 from partylinks.alerts.config import AlertsSettings
 from partylinks.artist_filter.config import ArtistFilterSettings
 from partylinks.artist_links.config import ArtistLinksSettings
@@ -817,6 +818,7 @@ class Settings(BaseSettings):
     similar: SimilarSettings = Field(default_factory=SimilarSettings)  # artists like an artist (partylinks.similar)
     weekly_top: WeeklyTopSettings = Field(default_factory=WeeklyTopSettings)  # this week's top (partylinks.weekly_top)
     artwork: ArtworkSettings = Field(default_factory=ArtworkSettings)  # drawn cards for events with no picture
+    ads: AdsSettings = Field(default_factory=AdsSettings)  # paid placements' side rails (partylinks.ads)
     place_info: PlaceInfoSettings = Field(default_factory=PlaceInfoSettings)  # hours, booking of places (partylinks.placeinfo)
     artist_links: ArtistLinksSettings = Field(default_factory=ArtistLinksSettings)  # artists' Spotify / YouTube... (MusicBrainz)
     alerts: AlertsSettings = Field(default_factory=AlertsSettings)  # the bell, For you, alert preview (partylinks.alerts)

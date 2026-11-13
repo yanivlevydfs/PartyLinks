@@ -163,6 +163,8 @@ export interface EventPage {
 export interface SponsoredRails {
   right: EventSummary[];
   left: EventSummary[];
+  /** Seconds per spotlight on each side (settings ads.rotate_*). */
+  rotate?: Partial<Record<"right" | "left", number>>;
 }
 
 /** A map pin (GET /events/map): just what its popup shows. */

@@ -1,3 +1,4 @@
+import { SponsorButton } from "../ads/SponsorSheet";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { SaveAlertButton } from "../alerts/SaveAlertButton";
 import { useAlertText } from "../alerts/i18n";
@@ -147,6 +148,7 @@ export default function EventPage() {
               <PlanButton eventId={e.id} />
               <SaveButton eventId={e.id} large />
               <EventPinButton event={e} />
+              <SponsorButton event={e} />
             </div>
           </div>
         </div>

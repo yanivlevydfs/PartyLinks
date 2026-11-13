@@ -240,7 +240,7 @@ export function Rail({ title, sub, pool, rail }: { title: string; sub: string; p
         </div>
       </div>
       <div className="trending-row" ref={row}>
-        {loaded ? items.map((e) => <RailCard key={e.id} e={e} />) : <CardSkeletons n={4} />}
+        {loaded ? items.map((e) => <RailCard key={e.id} e={e} rail={rail} />) : <CardSkeletons n={4} />}
       </div>
     </section>
   );

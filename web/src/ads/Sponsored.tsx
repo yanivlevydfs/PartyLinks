@@ -6,10 +6,11 @@ import { useSponsored } from "../api";
 import type { EventSummary } from "../types";
 import { eventPath, Img, label, priceLabel, sized, useT, when } from "../ui";
 import { forecastAt, Weather } from "../Weather";
+import { RailSponsorButton } from "./SponsorSheet";
 import "./sponsored.css";
 
 type Side = "right" | "left";
-// Seconds per spotlight; out of step so the two rails never flip together.
+// Seconds per spotlight when the server sends none (settings ads.rotate_*); out of step so the rails never flip together.
 const ROTATE_S: Record<Side, number> = { right: 6, left: 7.5 };
 
 // For the advertiser report (admin): a view is counted once per event and placement per visit, every click counts.
@@ -55,8 +56,8 @@ export function SponsoredFrame({ children }: { children: ReactNode }) {
   const on = !!rails && rails.right.length + rails.left.length > 0 && !admin;
   return (
     <div className={"sp-page" + (on ? " on" : "")}>
-      {on && <Rail side="right" items={rails.right} />}
-      {on && <Rail side="left" items={rails.left} />}
+      {on && <Rail side="right" items={rails.right} seconds={rails.rotate?.right ?? ROTATE_S.right} />}
+      {on && <Rail side="left" items={rails.left} seconds={rails.rotate?.left ?? ROTATE_S.left} />}
       {children}
     </div>
   );
@@ -79,13 +80,13 @@ export function SponsoredStrip() {
   );
 }
 
-function Head() {
+function Head({ side }: { side?: Side }) {
   const { t } = useT();
-  return <div className="sp-head"><span className="sp-pulse" aria-hidden />{t.sponsored}</div>;
+  return <div className="sp-head"><span className="sp-pulse" aria-hidden />{t.sponsored}{side && <RailSponsorButton side={side} />}</div>;
 }
 
 /** One side: a rotating spotlight (paused on hover), its progress, and the side's whole list. */
-function Rail({ side, items }: { side: Side; items: EventSummary[] }) {
+function Rail({ side, items, seconds }: { side: Side; items: EventSummary[]; seconds: number }) {
   const { t } = useT();
   const [active, setActive] = useState(0);
   if (!items.length) return <aside className="sp-rail" data-side={side} aria-hidden />;
@@ -93,7 +94,7 @@ function Rail({ side, items }: { side: Side; items: EventSummary[] }) {
   const next = () => setActive((a) => (a + 1) % items.length);
   return (
     <aside className="sp-rail" data-side={side} aria-label={t.sponsored}>
-      <Head />
+      <Head side={side} />
       <div className="sp-frame">
         <div className="sp-stage">
           {items.map((e, n) => <Spot key={e.id} e={e} on={n === i} />)}
@@ -104,7 +105,7 @@ function Rail({ side, items }: { side: Side; items: EventSummary[] }) {
           <div className="sp-progress" aria-hidden>
             {items.map((e, n) => (
               <span key={e.id} className={n < i ? "done" : ""}>
-                {n === i && <i key={active} style={{ animationDuration: `${ROTATE_S[side]}s` }} onAnimationEnd={next} />}
+                {n === i && <i key={active} style={{ animationDuration: `${seconds}s` }} onAnimationEnd={next} />}
               </span>
             ))}
           </div>

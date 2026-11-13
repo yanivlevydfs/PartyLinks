@@ -34,7 +34,7 @@ const other = (s: Side): Side => (s === "right" ? "left" : "right");
 export function Sponsored() {
   const qc = useQueryClient();
   const saved = useQuery({
-    queryKey: ["sponsored"],
+    queryKey: ["admin-sponsored"],
     queryFn: () => call<{ enabled: boolean; items: Pick[] }>("/admin/api/sponsored"),
   });
   const [picks, setPicks] = useState<Pick[]>([]);
@@ -42,12 +42,12 @@ export function Sponsored() {
   const dirty = !!saved.data && JSON.stringify(strip(picks)) !== JSON.stringify(strip(saved.data.items));
   const save = useMutation({
     mutationFn: () => call("/admin/api/sponsored", { method: "PUT", body: JSON.stringify(strip(picks)) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sponsored"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-sponsored"] }); qc.invalidateQueries({ queryKey: ["sponsored"] }); },
   });
   const enabled = !!saved.data?.enabled;
   const toggle = useMutation({
     mutationFn: () => post("/admin/api/sponsored/enabled", { on: !enabled }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sponsored"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-sponsored"] }); qc.invalidateQueries({ queryKey: ["sponsored"] }); },
   });
 
   const [q, setQ] = useState("");

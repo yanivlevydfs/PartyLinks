@@ -108,3 +108,30 @@ def test_a_pick_goes_with_its_event(tmp_path: Path) -> None:
     with db.session() as s:
         assert set(s.scalars(select(SponsoredRow.event_id))) == {"test:b"}
         assert s.scalar(select(func.sum(SponsoredStatRow.views))) == 5
+
+
+def test_one_event_sponsored_from_the_site(tmp_path: Path) -> None:
+    """The event page's 💰 / a rail's ✎: one event's placement saved, moved and removed on its own."""
+    settings = settings_for(tmp_path)
+    soon = datetime.now(UTC) + timedelta(days=1)
+    seed(settings, [event(f"e{i}", soon + timedelta(hours=i)) for i in range(3)])
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        one = "/admin/api/sponsored/event/test:"
+        assert client.get(one + "e0").json() == {"enabled": False, "pick": None}
+        assert client.put(one + "nope", json={"side": "right"}).status_code in (404, 410)  # a gone event: 410
+        client.post("/admin/api/sponsored/enabled", json={"on": True})
+        for e in ("e0", "e1"):
+            assert client.put(one + e, json={"side": "right"}).json()["pick"]["live"] is True
+        rails = client.get("/events/sponsored").json()
+        assert [x["source_event_id"] for x in rails["right"]] == ["e0", "e1"]
+        assert rails["rotate"] == {"right": 6.0, "left": 7.5}
+        # Moved to the other side: last there. Results only: off the rails, in the admin list still.
+        client.put(one + "e0", json={"side": "left"})
+        client.put(one + "e2", json={"side": "left", "placement": "results"})
+        rails = client.get("/events/sponsored").json()
+        assert [x["source_event_id"] for x in rails["left"]] == ["e0"]
+        items = client.get("/admin/api/sponsored").json()["items"]
+        assert [(i["event_id"], i["side"]) for i in items] == [("test:e0", "left"), ("test:e2", "left"), ("test:e1", "right")]
+        assert client.delete(one + "e0").status_code == 204
+        assert client.get(one + "e0").json()["pick"] is None
+        assert [x["source_event_id"] for x in client.get("/events/sponsored").json()["left"]] == []
