@@ -2,6 +2,7 @@
 // a passkey for this site. On success the page reloads at ``next``, as after Google, so a pending action
 // (the save heart, "Save as alert") completes the same way.
 import { useState } from "react";
+import { TG_APP } from "../bot/telegramApp";
 import { signInWithPasskey, supported, type Failure } from "./passkeys";
 import { usePasskeyText } from "./i18n";
 import "./passkeys.css";
@@ -20,22 +21,25 @@ function Fingerprint() {
 export function PasskeySignIn({ next = location.pathname + location.search }: { next?: string }) {
   const t = usePasskeyText();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<Exclude<Failure, "cancelled"> | null>(null);
-  if (!supported()) return null;
+  const [error, setError] = useState<Failure | null>(null);
+  if (!supported() || TG_APP) return null; // Telegram's webview has no passkeys
   const go = async () => {
     setBusy(true);
     setError(null);
     const failed = await signInWithPasskey();
     if (failed === null) return location.assign(next);
     setBusy(false);
-    if (failed !== "cancelled") setError(failed === "already" ? "failed" : failed);
+    // "cancelled" is also the browser's answer when this device holds no passkey for the site: say how to add one.
+    setError(failed === "already" ? "failed" : failed);
   };
   return (
     <>
       <button type="button" className="google-btn pk-btn" onClick={go} disabled={busy} aria-busy={busy}>
         <Fingerprint /> <span>{busy ? t.working : t.signIn}</span>
       </button>
-      {error && <p className="pk-error" role="alert">{t[error]}</p>}
+      {error === "cancelled"
+        ? <p className="pk-hint" role="status">{t.noneHere}</p>
+        : error && <p className="pk-error" role="alert">{t[error]}</p>}
     </>
   );
 }

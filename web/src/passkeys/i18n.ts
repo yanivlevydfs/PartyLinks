@@ -19,6 +19,11 @@ const he = {
   blocked: "החשבון הזה חסום. לפרטים כתבו לנו דרך עמוד צור קשר.",
   failed: "הפעולה לא הצליחה. נסו שוב.",
   unsupported: "הדפדפן הזה לא תומך בכניסה עם טביעת אצבע.",
+  noneHere: "לא נמצאה כניסה בטביעת אצבע במכשיר הזה. היכנסו עם Google, ומיד אחר כך נציע להוסיף אותה (או בעמוד החשבון).",
+  offerTitle: "להיכנס בפעם הבאה בטביעת אצבע?",
+  offerText: "שנייה אחת, ובפעם הבאה נכנסים מהמכשיר הזה בטביעת אצבע, בזיהוי פנים או בקוד המסך, בלי Google.",
+  offerYes: "הוספת טביעת אצבע",
+  offerNo: "לא עכשיו",
 };
 
 const en: typeof he = {
@@ -39,6 +44,11 @@ const en: typeof he = {
   blocked: "This account is blocked. Write to us through the contact page.",
   failed: "That didn't work. Try again.",
   unsupported: "This browser doesn't support fingerprint sign-in.",
+  noneHere: "No fingerprint sign-in on this device yet. Continue with Google and we'll offer to add it right after (or on your account page).",
+  offerTitle: "Sign in with your fingerprint next time?",
+  offerText: "One second, and next time this device signs you in with your fingerprint, face or screen lock: no Google.",
+  offerYes: "Add fingerprint",
+  offerNo: "Not now",
 };
 
 export function usePasskeyText() {

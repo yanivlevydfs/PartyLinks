@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BellMenuItem } from "../alerts/Bell";
 import { useBell } from "../alerts/useAlerts";
+import { PasskeyOffer } from "../passkeys/PasskeyOffer";
 import { PasskeySignIn } from "../passkeys/PasskeySignIn";
 import { SavedMenuItem } from "../saved/SavedLink";
 import { useStore } from "../store";
@@ -125,6 +126,7 @@ export function AccountSlot() {
         <SignInSheet title={t.signInTitle} text="" next={location.pathname + location.search} onClose={() => setChoosing(false)} />
       )}
       <WelcomeSheet />
+      <PasskeyOffer />
     </>
   );
 }

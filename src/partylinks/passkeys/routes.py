@@ -175,6 +175,7 @@ def login_verify(body: Ceremony, request: Request) -> Response:
             .where(PasskeyRow.credential_id == bytes_to_base64url(credential.raw_id))
         ).first()
         if found is None:  # removed from the account, or its account deleted: the device still offers it
+            log.info("passkey sign-in refused: unknown passkey")
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "unknown passkey")
         passkey, user = found
         handle = credential.response.user_handle

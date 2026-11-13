@@ -3,6 +3,7 @@
 import { browserSupportsWebAuthn, startAuthentication, startRegistration, WebAuthnError } from "@simplewebauthn/browser";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { send } from "../accounts/useMe";
+import { markHere } from "./device";
 
 export interface Passkey {
   id: number;
@@ -15,6 +16,15 @@ export interface Passkey {
 export type Failure = "cancelled" | "already" | "unknown" | "blocked" | "failed";
 
 export const supported = () => browserSupportsWebAuthn();
+
+/** A fingerprint / face / screen-lock check built into this device (not only a USB key): worth offering. */
+export async function builtIn(): Promise<boolean> {
+  try {
+    return supported() && (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+  } catch {
+    return false;
+  }
+}
 
 /** The device's kind, to tell passkeys apart on the account page (the visitor can't see the credential ids). */
 export function deviceName(ua = navigator.userAgent): string {
@@ -44,9 +54,12 @@ export async function signInWithPasskey(): Promise<Failure | null> {
     const optionsJSON = await send<Parameters<typeof startAuthentication>[0]["optionsJSON"]>("/api/passkeys/login/options", "POST");
     const credential = await startAuthentication({ optionsJSON: optionsJSON! });
     await send("/api/passkeys/login/verify", "POST", { credential });
+    markHere(true);
     return null;
   } catch (err) {
-    return failure(err);
+    const why = failure(err);
+    if (why === "unknown") markHere(false); // removed from the account: offer adding it again
+    return why;
   }
 }
 
@@ -71,9 +84,12 @@ export function usePasskeyActions() {
         const optionsJSON = await send<Parameters<typeof startRegistration>[0]["optionsJSON"]>("/api/passkeys/register/options", "POST");
         const credential = await startRegistration({ optionsJSON: optionsJSON! });
         await send("/api/passkeys/register/verify", "POST", { credential, name: deviceName() });
+        markHere(true);
         return null;
       } catch (err) {
-        return failure(err);
+        const why = failure(err);
+        if (why === "already") markHere(true);
+        return why;
       } finally {
         void refresh();
       }

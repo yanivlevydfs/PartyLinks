@@ -1091,6 +1091,7 @@ def _register_routes(app: FastAPI) -> None:
             "providers": request.app.state.settings.accounts.providers,  # the "Continue with ..." buttons
             "telegram": telegram_username(request.app),  # the bot's @name (web/src/bot/TelegramFab.tsx)
             "card_sources_shown": site.card_sources_shown,  # names on a card before "+N" (web/src/card_stores)
+            "passkey_offer_days": site.passkey_offer_days,  # web/src/passkeys/PasskeyOffer.tsx
         }
 
     @app.get("/health", tags=["meta"])
