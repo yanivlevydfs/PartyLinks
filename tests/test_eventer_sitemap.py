@@ -16,7 +16,7 @@ def test_link_names_from_sitemap_urls() -> None:
 
 def test_robots_disallow_only_for_every_crawler() -> None:
     robots = "User-agent: Facebot\nDisallow: /fb\nUser-agent: *\nDisallow:\nDisallow: /p/*\nDisallow: /secret\nSitemap: https://x/s.xml"
-    assert disallowed(robots) == {"secret"}
+    assert disallowed(robots) == ["secret"]
 
 
 def test_newest_names_read_from_the_end_skip_private_and_dedupe() -> None:
@@ -41,3 +41,22 @@ def test_a_deleted_event_is_gone_not_a_block() -> None:
     gone = httpx.Response(403, content=b'{"message":"Event does not exist"}')
     assert EventerScraper.is_gone(None, gone)  # type: ignore[arg-type]
     assert not EventerScraper.is_gone(None, httpx.Response(403, content=b"<html>Access denied</html>"))  # type: ignore[arg-type]
+
+
+def test_private_names_newest_first_before_the_sitemap() -> None:
+    import asyncio
+
+    from partylinks.scrapers.eventer_sitemap import sitemap_link_names
+
+    pages = {
+        "https://x/robots.txt": "User-agent: *\nDisallow: /old_secret\nDisallow: /new_secret",
+        "https://x/sitemap.xml": "<loc>https://x/s1.xml</loc>",
+        "https://x/s1.xml": _sitemap("a", "old_secret", "b"),
+    }
+
+    class Fake:
+        async def get_text(self, url: str) -> str:
+            return pages[url]
+
+    names = asyncio.run(sitemap_link_names(Fake(), "https://x", "/sitemap.xml", "/robots.txt", 10, 1))  # type: ignore[arg-type]
+    assert names == ["new_secret", "b", "a"]

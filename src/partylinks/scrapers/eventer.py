@@ -61,6 +61,8 @@ class EventerSettings(SourceSettings):
     sitemap_path: str = ""
     robots_path: str = "/robots.txt"
     sitemap_newest: int = Field(12000, ge=0)
+    # The newest private (robots.txt-listed, link-only) event names read too; 0 = off.
+    private_newest: int = Field(3000, ge=0)
     event_details_path: str
     ticket_types_path: str
     # Event statuses whose ticket list is public: ticketTypes.js answers an empty 403 for every other one
@@ -136,7 +138,9 @@ class EventerScraper(BaseScraper[EventerSettings]):
                 if isinstance(slide, dict) and slide.get("linkName") and slide.get("slideType", EVENT_SLIDE) == EVENT_SLIDE
             )
         if s.sitemap_path:
-            newest = sitemap_link_names(self, s.base_url, s.sitemap_path, s.robots_path, s.sitemap_newest)
+            newest = sitemap_link_names(
+                self, s.base_url, s.sitemap_path, s.robots_path, s.sitemap_newest, s.private_newest
+            )
             seen.update(dict.fromkeys(await self.optional("sitemap", newest) or []))
         if not seen and self.failures:
             raise ParseError("every listing failed")

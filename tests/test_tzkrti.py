@@ -37,9 +37,24 @@ def test_parse_event() -> None:
     assert enriched is not None and enriched.genres and enriched.city == "חיפה"
 
 
-def test_courses_past_and_private_are_not_events() -> None:
+def test_courses_and_past_are_not_events_private_is() -> None:
     course = {**ITEM, "category": {"name": {"en": "Courses", "ar": "دورات"}}}
     assert parse_event(course, SETTINGS, TZ) is None
     assert parse_event({**ITEM, "is_past": 1}, SETTINGS, TZ) is None
-    assert parse_event({**ITEM, "private": 1}, SETTINGS, TZ) is None
+    assert parse_event({**ITEM, "private": 1, "unlisted": 1}, SETTINGS, TZ) is not None
     assert parse_event({**ITEM, "from_date": None}, SETTINGS, TZ) is None
+
+
+def test_checkout_page_event_and_probe_filter() -> None:
+    import html as html_lib
+
+    item = {**ITEM, "published": 1, "cancelled": 0, "country_iso": "IL", "sale_status": "On Sale", "unlisted": 1}
+    page = f'<checkout-landing\n :event="{html_lib.escape(json.dumps(item))}" :other="1">'
+    from partylinks.scrapers.tzkrti import parse_embedded, probe_wanted
+
+    found = parse_embedded(page)
+    assert found is not None and found["id"] == 4618 and probe_wanted(found, SETTINGS)
+    assert not probe_wanted({**found, "published": 0}, SETTINGS)
+    assert not probe_wanted({**found, "sale_status": "On Hold"}, SETTINGS)
+    assert not probe_wanted({**found, "country_iso": "JO"}, SETTINGS)
+    assert not probe_wanted({**found, "cancelled": 1}, SETTINGS)

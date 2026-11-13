@@ -921,8 +921,9 @@ enrichment:
   # an exhibition, a concert and classical music too. Its events also carry the real category ("מחול").
   declared_ignore: ["מחול אמנות ומוזיקה"]
   # Not events, from any source: a GO-OUT promoter's "Ticket Management" page sells passes to several parties
-  # (a past Rosh Hashana one "on sale"), listed by Beat Radar as one festival.
-  skip_titles: ["ticket management"]
+  # (a past Rosh Hashana one "on sale"), listed by Beat Radar as one festival. "בדיקת מפה": Eventer's private
+  # seat-map test pages (a hall's map checked before sale), reached since private events are read.
+  skip_titles: ["ticket management", "בדיקת מפה"]
   # Small print that names a genre word in passing, removed from the text before genres are read.
   # Nov 2026 genre audit: phrases whose words are no genre ("open house", "pop art", the evening prayer,
   # "the eastern gate", a Mediterranean menu).
@@ -1434,11 +1435,14 @@ sources:
     users: ["tomix", "forumclub", "syrup", "levontin7", "mazkeka", "hangar11"]
     # Every public event page, newest first (the sitemap is in creation order, no dates): the newest
     # 6,000 reach back ~4 months, where most events still to come were put on sale. Most are past and
-    # dropped after their details (one request each); robots.txt's disallowed (private) ones are skipped.
+    # dropped after their details (one request each). Private (link-only) events are not in the sitemap:
+    # robots.txt disallows them one by one (~98,000, creation order); the newest private_newest of them
+    # (3,000: ~4 months) are read too.
     # Eventer banned all 5 proxy IPs (403) at 8 parallel requests over 12,000 pages (2026-10-31): 3 at a
     # time, 1 s apart.
     sitemap_path: /sitemap.xml
     sitemap_newest: 6000
+    private_newest: 3000
     http:
       concurrency: 3
       request_delay_seconds: 1.0
@@ -3663,6 +3667,10 @@ sources:
     enabled: true
     cron: "27 7,19 * * *"
     site_url: https://tzkrti.com
+    # Unlisted (link-only) events are not in the API: ids from probe_back below the newest listed one to
+    # probe_ahead past it are read from their checkout page; published, on-sale Israeli ones are kept.
+    probe_back: 800
+    probe_ahead: 30
     http:
       concurrency: 2
       request_delay_seconds: 0.5

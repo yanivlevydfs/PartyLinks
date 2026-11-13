@@ -3,8 +3,10 @@
 ``/sitemap.xml`` indexes ``sitemap_1.xml`` ... ``sitemap_N.xml`` (~145,000 pages since 2018) in creation
 order, newest last, with no dates. An event is put on sale weeks or months before it starts, so the
 newest ``newest`` event pages hold the upcoming ones; past ones among them are dropped once their
-details are read (the sitemap gives no date to skip them earlier). Pages robots.txt disallows
-(private events, ~98,000 exact ``Disallow: /<linkName>`` lines) are left out.
+details are read (the sitemap gives no date to skip them earlier). Private (link-only) events are not in
+the sitemap: robots.txt lists them as ~98,000 exact ``Disallow: /<linkName>`` lines, also in creation
+order, so the newest ``private_newest`` of those are read too (the owner wants every event, private ones
+included).
 """
 
 from __future__ import annotations
@@ -40,9 +42,9 @@ def link_name(url: str) -> str | None:
     return parts[0] if len(parts) == 1 else None
 
 
-def disallowed(robots: str) -> set[str]:
-    """Exact single-segment paths disallowed for every crawler (``User-agent: *``)."""
-    names: set[str] = set()
+def disallowed(robots: str) -> list[str]:
+    """Exact single-segment paths disallowed for every crawler (``User-agent: *``), in file order, once each."""
+    names: dict[str, None] = {}
     for_all = False
     for line in robots.splitlines():
         key, _, value = line.partition(":")
@@ -50,8 +52,8 @@ def disallowed(robots: str) -> set[str]:
         if key == "user-agent":
             for_all = value == "*"
         elif for_all and key == "disallow" and (name := link_name("https://x" + value)) and "*" not in name:
-            names.add(name)
-    return names
+            names[name] = None
+    return list(names)
 
 
 def newest_names(sitemaps: list[str], newest: int, skip: set[str]) -> list[str]:
@@ -66,14 +68,19 @@ def newest_names(sitemaps: list[str], newest: int, skip: set[str]) -> list[str]:
     return list(names)
 
 
-async def sitemap_link_names(scraper: BaseScraper, base_url: str, index_path: str, robots_path: str, newest: int) -> list[str]:
-    """Read sitemap files from the newest back until ``newest`` event names are collected."""
-    skip = disallowed(await scraper.get_text(base_url + robots_path))
+async def sitemap_link_names(
+    scraper: BaseScraper, base_url: str, index_path: str, robots_path: str, newest: int, private_newest: int = 0
+) -> list[str]:
+    """The newest ``private_newest`` robots-listed private names, newest first, then sitemap files read from
+    the newest back until ``newest`` public event names are collected."""
+    private = disallowed(await scraper.get_text(base_url + robots_path))
+    names = private[::-1][:private_newest]
+    skip = set(private)
     files = _LOC.findall(await scraper.get_text(base_url + index_path))
     read: list[str] = []
     for url in reversed(files):
         read.insert(0, await scraper.get_text(url))
-        names = newest_names(read, newest, skip)
-        if len(names) >= newest:
-            return names
-    return newest_names(read, newest, skip)
+        public = newest_names(read, newest, skip)
+        if len(public) >= newest:
+            return names + public
+    return names + newest_names(read, newest, skip)

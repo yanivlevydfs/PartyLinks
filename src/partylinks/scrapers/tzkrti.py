@@ -7,15 +7,22 @@ site also sells in Jordan and the Palestinian Authority. Each event has its name
 category (English and Arabic), its place with address and coordinates, the lowest price and the artwork
 (``images/...`` under ``/storage/``). The event's page is ``/en/checkout/<id>`` (the slug pages loop).
 robots.txt disallows nothing.
+
+Unlisted (link-only) events are left out of the API. Ids are sequential and ``/en/checkout/<id>`` embeds
+the full event JSON (``:event="..."``) for any id, so after the listing every id from ``probe_back`` below
+the newest listed one to ``probe_ahead`` past it is read too; only published, on-sale Israeli events are kept.
 """
 
 from __future__ import annotations
 
+import html
+import json
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any
 
+import httpx
 from pydantic import Field
 
 from partylinks.config import RetentionSettings
@@ -25,6 +32,7 @@ from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _PRICE = re.compile(r"(\d+(?:\.\d+)?)")
+_EMBEDDED = re.compile(r'[\s:]event="(\{&quot;.*?\})"', re.DOTALL)
 
 
 class TzkrtiSettings(SourceSettings):
@@ -38,6 +46,11 @@ class TzkrtiSettings(SourceSettings):
     max_pages: int = Field(30, ge=1)
     # Categories that are not events (a course of lessons).
     skip_categories: list[str] = Field(default_factory=lambda: ["courses"])
+    # Unlisted events: ids this far below / above the newest listed one are read one by one (0 and 0: off).
+    probe_back: int = Field(800, ge=0)
+    probe_ahead: int = Field(30, ge=0)
+    probe_country: str = "IL"
+    probe_sale_status: list[str] = Field(default_factory=lambda: ["on sale", "sold out", "happening now"])
 
 
 class TzkrtiScraper(BaseScraper[TzkrtiSettings]):
@@ -48,6 +61,38 @@ class TzkrtiScraper(BaseScraper[TzkrtiSettings]):
         return {"Accept": "application/json"}
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
+        listed: dict[int, dict[str, Any]] = {}  # event id -> listing item
+        async for event in self._listing(listed):
+            yield event
+        s = self.settings
+        if not listed or not (s.probe_back or s.probe_ahead):
+            return
+        # A checkout page's category is null: its category_id is looked up among the listed items.
+        categories = {i.get("category_id"): i.get("category") for i in listed.values() if i.get("category")}
+        newest = max(listed)
+        gaps = [i for i in range(max(1, newest - s.probe_back), newest + s.probe_ahead + 1) if i not in listed]
+        async for event in self.stream_isolated(gaps, lambda i: self._probe_unlisted(i, categories), label=str):
+            yield event
+
+    async def _probe_unlisted(self, event_id: int, categories: dict[Any, dict[str, Any]]) -> ScrapedEvent | None:
+        """An id missing from the listing: None unless it is a published, on-sale event in Israel."""
+        s = self.settings
+        try:
+            page = await self.get_text(s.site_url + s.event_page_path.format(id=event_id))
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                return None
+            raise
+        item = parse_embedded(page)
+        if not item or not probe_wanted(item, s):
+            return None
+        item["category"] = item.get("category") or categories.get(item.get("category_id")) or {}
+        event = parse_event(item, s, self.timezone)
+        if event and is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
+            return event
+        return None
+
+    async def _listing(self, listed: dict[int, dict[str, Any]]) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         for page in range(1, s.max_pages + 1):
             payload = await self.get_json(
@@ -55,6 +100,8 @@ class TzkrtiScraper(BaseScraper[TzkrtiSettings]):
             )
             listing = payload.get("events") or {}
             for item in listing.get("items") or []:
+                if isinstance(item.get("id"), int):
+                    listed[item["id"]] = item
                 try:
                     event = parse_event(item, s, self.timezone)
                 except Exception as exc:  # noqa: BLE001 - one odd event never drops the others
@@ -65,6 +112,28 @@ class TzkrtiScraper(BaseScraper[TzkrtiSettings]):
             if not payload.get("hasMore"):
                 return
         self.log.warning("listing truncated at max_pages=%d", s.max_pages)
+
+
+def parse_embedded(page: str) -> dict[str, Any] | None:
+    """The event JSON a checkout page carries in its ``:event`` attribute."""
+    match = _EMBEDDED.search(page)
+    if not match:
+        return None
+    try:
+        data = json.loads(html.unescape(match.group(1)))
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def probe_wanted(item: dict[str, Any], s: TzkrtiSettings) -> bool:
+    """Published, not cancelled, selling, in the probed country (drafts and "On Hold" are not live)."""
+    return (
+        bool(item.get("published"))
+        and not item.get("cancelled")
+        and str(item.get("country_iso") or "").upper() == s.probe_country.upper()
+        and str(item.get("sale_status") or "").lower() in s.probe_sale_status
+    )
 
 
 def _text(value: Any) -> str | None:
@@ -83,8 +152,8 @@ def _english(value: Any) -> str | None:
 
 
 def parse_event(item: dict[str, Any], s: TzkrtiSettings, timezone: str) -> ScrapedEvent | None:
-    """One API item -> event; None for a past, private, unlisted or non-event (course) item."""
-    if item.get("is_past") or item.get("private") or item.get("unlisted"):
+    """One API item -> event; None for a past or non-event (course) item. Private / unlisted are kept."""
+    if item.get("is_past"):
         return None
     category = item.get("category") or {}
     names = category.get("name") or {}
