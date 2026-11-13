@@ -60,10 +60,8 @@ class BeatRadarScraper(BaseScraper[BeatRadarSettings]):
 
 
 def parse_event(item: dict[str, Any], timezone: str) -> ScrapedEvent | None:
-    """One party; None when it is hidden on the site."""
+    """One party, hidden ones too (every event is wanted; its ticket link also feeds the seller's scraper)."""
     meta = item.get("metadata") or {}
-    if meta.get("visibility") not in (None, "all"):
-        return None
     event_id, url = clean_str(item.get("_id")), _without_ref(clean_str(meta.get("url")))
     title = _text(item.get("title"), "original", "he", "en")  # "he" is often a machine translation
     start = parse_iso(item.get("startTimestamp"), timezone)

@@ -418,3 +418,11 @@ def test_selector_probes_unlisted_private_ids() -> None:
 
     assert sorted(e.source_event_id for e in asyncio.run(go())) == ["10", "12"]
     assert not scraper.failures
+
+
+def test_goout_reads_go_out_links_of_other_sources() -> None:
+    assert goout.event_ref("https://www.go-out.co/event/1792399854329?ref=beatradar") == "1792399854329"
+    assert goout.event_ref("https://go-out.co/event/abc") == "abc"
+    assert goout.event_ref("https://www.go-out.co/artist/x/y") is None
+    assert goout.event_ref("https://selector.org.il/e/x") is None
+    assert goout.event_ref("https://evil-go-out.co/event/1") is None

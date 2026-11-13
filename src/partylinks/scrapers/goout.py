@@ -6,6 +6,8 @@ Details: the event page's ``__NEXT_DATA__`` holds the full event (its own
 ``Tickets`` array is only a placeholder). Every ticket tier - price rounds,
 status, booking fee - comes from ``GET /endOne/loadEventTickets?eventUrl=<url>``,
 the same call the event page makes. The page's schema.org offers are a fallback.
+Private (link-only) events are on no feed: go-out event links that other sources stored (Beat Radar,
+Popit...: ``linked_urls``) are read too.
 """
 
 from __future__ import annotations
@@ -15,6 +17,7 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
+from urllib.parse import urlsplit
 
 from pydantic import Field
 
@@ -59,7 +62,9 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         refs = await self._list_event_urls()
-        self.log.debug("listed %d events", len(refs))
+        linked = [ref for url in self.linked_urls if (ref := event_ref(url)) and ref not in refs]
+        self.log.debug("listed %d events, %d more linked from other sites", len(refs), len(linked))
+        refs += linked
         if self.settings.artists_endpoint:
             self.artist_profiles = await self.optional("artists", self._list_artists()) or []
             self.log.debug("listed %d artists", len(self.artist_profiles))
@@ -134,6 +139,16 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
             self.optional(f"{url_id} tickets", self.get_json(s.base_url + s.tickets_endpoint, params={"eventUrl": url_id})),
         )
         return parse_event(next_data(page_html), page_url, self.timezone, tickets, s.image_url_templates)
+
+
+def event_ref(url: str) -> str | None:
+    """https://www.go-out.co/event/1792399854329?ref=x -> "1792399854329"; other links -> None."""
+    parts = urlsplit(url)
+    path = [p for p in parts.path.split("/") if p]
+    host = parts.hostname or ""
+    if (host == "go-out.co" or host.endswith(".go-out.co")) and len(path) == 2 and path[0] == "event":
+        return path[1]
+    return None
 
 
 def parse_event(
