@@ -875,7 +875,7 @@ def test_sponsored_rails_show_upcoming_picks_in_admin_order(tmp_path: Path) -> N
     start = datetime.now(UTC) + timedelta(days=1)
     seed(settings, [event(n, start) for n in ("a", "b", "c", "d")])
     with TestClient(create_app(settings)) as client:
-        assert client.get("/events/sponsored").json() == {"right": [], "left": []}
+        assert client.get("/events/sponsored").json() == {"right": [], "left": [], "rotate": {"right": 6.0, "left": 7.5}}
         picks = [
             {"event_id": "test:b", "side": "right"},
             {"event_id": "test:a", "side": "left"},
@@ -883,7 +883,7 @@ def test_sponsored_rails_show_upcoming_picks_in_admin_order(tmp_path: Path) -> N
             {"event_id": "test:d", "side": "left", "until": (datetime.now(UTC) - timedelta(hours=1)).isoformat()},
         ]
         assert client.put("/admin/api/sponsored", json=picks).json() == {"saved": 4}
-        assert client.get("/events/sponsored").json() == {"right": [], "left": []}  # switched off by default
+        assert client.get("/events/sponsored").json() == {"right": [], "left": [], "rotate": {"right": 6.0, "left": 7.5}}  # switched off by default
         assert client.post("/admin/api/sponsored/enabled", json={"on": True}).json() == {"enabled": True}
         rails = client.get("/events/sponsored").json()
         assert [e["id"] for e in rails["right"]] == ["test:b", "test:c"]
@@ -910,7 +910,7 @@ def test_sponsored_rails_show_upcoming_picks_in_admin_order(tmp_path: Path) -> N
             ("test:c", 1, 0),
         ]
         client.post("/admin/api/sponsored/enabled", json={"on": False})
-        assert client.get("/events/sponsored").json() == {"right": [], "left": []}  # every ad hidden
+        assert client.get("/events/sponsored").json() == {"right": [], "left": [], "rotate": {"right": 6.0, "left": 7.5}}  # every ad hidden
         hit("test:b", "click")  # nothing on show: not counted
         assert client.get("/admin/api/sponsored/stats").json()["clicks"] == 1
 
