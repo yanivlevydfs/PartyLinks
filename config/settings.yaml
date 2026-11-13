@@ -1509,6 +1509,9 @@ sources:
     max_pages: 200
     # Empty list = keep every event type. "Concert" is what Selector labels "Parties".
     allowed_event_types: []
+    # Private (link-only) events are not in the listing: ids between the listed ones and this
+    # many past the newest are fetched one by one too (0: off).
+    probe_ahead: 60
 
   barby:
     enabled: true

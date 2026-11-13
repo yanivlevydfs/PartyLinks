@@ -5,6 +5,9 @@ Listing: ``GET api.selector.org.il/event/list?skip&take&dateType=start`` returns
 (the API rejects ``take`` above 20).
 Details: ``GET /event?id=<id>`` adds the public link, description, age policy
 and the full ticket list.
+Private (link-only) events never appear in the listing. Ids are sequential, so every id
+between the lowest listed one and ``probe_ahead`` past the highest is also fetched; a
+missing id (404) or a past event is dropped there.
 """
 
 from __future__ import annotations
@@ -14,6 +17,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
+import httpx
 from pydantic import Field
 
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
@@ -32,6 +36,8 @@ class SelectorSettings(SourceSettings):
     page_size: int = Field(20, ge=1, le=20)
     max_pages: int = Field(50, ge=1)
     allowed_event_types: list[str] = Field(default_factory=list)
+    # Private events: ids probed between the listed ones and this far past the newest (0: off).
+    probe_ahead: int = Field(60, ge=0)
 
 
 class SelectorScraper(BaseScraper[SelectorSettings]):
@@ -46,6 +52,11 @@ class SelectorScraper(BaseScraper[SelectorSettings]):
         self.log.debug("listed %d events", len(ids))
         async for event in self.stream_isolated(ids, self._fetch_event, label=str):
             yield event
+        if self.settings.probe_ahead and ids:
+            listed = set(ids)
+            gaps = [i for i in range(min(ids), max(ids) + self.settings.probe_ahead + 1) if i not in listed]
+            async for event in self.stream_isolated(gaps, self._probe_event, label=str):
+                yield event
 
     async def _list_event_ids(self) -> list[int]:
         s = self.settings
@@ -72,6 +83,21 @@ class SelectorScraper(BaseScraper[SelectorSettings]):
         s = self.settings
         event = await self.get_json(s.api_url + s.event_path, params={"id": event_id}, expect=dict)
         return parse_event(event, s.site_url + s.event_page_path)
+
+    async def _probe_event(self, event_id: int) -> ScrapedEvent | None:
+        """An unlisted id: None when it does not exist, is not live or is already over."""
+        try:
+            event = await self._fetch_event(event_id)
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                return None
+            raise
+        except ParseError:
+            return None
+        if event.extra.get("status") not in (None, "active") or event.extra.get("hidden"):
+            return None
+        end = event.end_at or event.start_at
+        return event if end and end > datetime.now(UTC) else None
 
 
 def parse_event(event: dict[str, Any], page_url_template: str) -> ScrapedEvent:
@@ -110,6 +136,9 @@ def parse_event(event: dict[str, Any], page_url_template: str) -> ScrapedEvent:
         tickets=tickets,
         extra={
             "event_link": event.get("eventLink"),
+            "status": event.get("status"),
+            "private": event.get("isPrivate"),
+            "hidden": event.get("isHidden"),
             "audience_sex": event.get("sex"),
             "requires_approval": event.get("isNeedConfirmation"),
             "fee_percent": event.get("feePercent"),
