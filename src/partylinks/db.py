@@ -191,6 +191,9 @@ class EventRow(Base):
     group_has_free_entry: Mapped[bool] = mapped_column(Boolean, default=False)
     group_entry_type: Mapped[str] = mapped_column(String(16), default="unknown", index=True)
     best_listing_id: Mapped[str | None] = mapped_column(Text)
+    # Paid: pinned to the home rows (home_pins) or a sponsored placement (sponsored), campaign not over.
+    # Kept by partylinks.ads.paid.sync after every change and every regroup; a scrape never writes it.
+    is_sponsored: Mapped[bool] = mapped_column(Boolean, default=False)
 
     tickets: Mapped[list[TicketRow]] = relationship(
         back_populates="event", cascade="all, delete-orphan", order_by="TicketRow.position"

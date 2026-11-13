@@ -327,6 +327,8 @@ export function Card({ e }: { e: EventSummary }) {
   const fresh = freshness(e);
   const freeLabel = freeUntilLabel(e, t);
   const ad = useAdView<HTMLAnchorElement>(e.sponsored, true, "results");
+  // Paid: a results placement, a push to the home rows, or any paid event (events.is_sponsored). Marked by law.
+  const paid = !!e.sponsored || !!e.pinned || !!e.is_sponsored;
   // Cards show the best offer across duplicate listings, matching the free-entry filter.
   const price = priceLabel(
     {
@@ -339,7 +341,7 @@ export function Card({ e }: { e: EventSummary }) {
   );
   return (
     // The share links sit beside the card's link (links cannot nest), drawn inside its frame.
-    <div className={"card-wrap" + (e.sponsored ? " ad" : "")}>
+    <div className={"card-wrap" + (paid ? " ad" : "")}>
     <Link className="card" to={eventPath(e)} ref={ad} onClick={() => e.sponsored && hit(e.sponsored, "click", "results")}>
       <div className="card-img">
         <Img src={sized(e.cover_url ?? e.image_url, 640)} alt={e.title} className="cover" text={e.title} />
@@ -349,7 +351,7 @@ export function Card({ e }: { e: EventSummary }) {
           <Weather lat={e.latitude} lng={e.longitude} city={e.city} start={forecastAt(e)} zone={e.time_zone} />
         </div>
         {/* A paid card says so; that outranks new / updated. */}
-        {e.sponsored ? <AdLabel />
+        {paid ? <AdLabel />
           : fresh && <span className={`fresh ${fresh}`}>{fresh === "new" ? t.isNew : t.updatedBadge}</span>}
         {e.is_sold_out ? (
           <span className="flag sold">{t.soldOut}</span>

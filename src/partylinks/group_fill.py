@@ -39,16 +39,19 @@ def plan(
     session: Session,
     clean_name: Callable[[str], str | None] | None = None,
     place_sources: frozenset[str] = frozenset(),
+    title_word: Callable[[str, str], bool] | None = None,
 ) -> list[dict[str, Any]]:
     """Rows to update (id + every fill column): reads only, so it can run outside the write lock. ``clean_name``
     (the enrichment's name rule) cleans what stored lineups hold from before a rule was tightened: "01] DJ IAGO"
-    -> "DJ IAGO", "00h00 - 06h30" dropped."""
+    -> "DJ IAGO", "00h00 - 06h30" dropped. ``title_word`` drops a plain word the old title spotting took
+    ("Winter" of "WINTER EDITION"): else a listing no longer scraped kept it, and filled it into the others."""
     rows = session.execute(
         select(
             EventRow.id,
             EventRow.group_id,
             EventRow.is_primary,
             EventRow.source,
+            EventRow.title,
             *(getattr(EventRow, c) for c in _COLUMNS),
         ).where(EventRow.is_listed.is_(True))
     ).all()
@@ -64,10 +67,12 @@ def plan(
             spots[(r.venue_slug, r.city)][(r.latitude, r.longitude)] += 1
 
     filled = {i: dict(v) for i, v in current.items()}
-    if clean_name is not None:
-        for row in filled.values():
+    titles = {r.id: r.title or "" for r in rows}
+    if clean_name is not None or title_word is not None:
+        for i, row in filled.items():
             if row["lineup"]:
-                row["lineup"] = list(dict.fromkeys(c for n in row["lineup"] if (c := clean_name(n))))
+                names = (c for n in row["lineup"] if (c := clean_name(n) if clean_name else n))
+                row["lineup"] = list(dict.fromkeys(n for n in names if not (title_word and title_word(n, titles[i]))))
     for members in groups.values():
         if len(members) < 2:
             continue

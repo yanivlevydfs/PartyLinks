@@ -464,14 +464,14 @@ select option { background: var(--panel-solid); color: var(--text); }
 .trending .flag { bottom: 8px; inset-inline-end: 8px; font-size: 11px; padding: 3px 9px; }
 .trending .sources.on-img { bottom: 8px; inset-inline-start: 8px; max-width: calc(100% - 90px); }
 .trending .sources .src { font-size: 10px; }
-/* Phone: full-bleed, no boxed panel; two cards a line, read top to bottom with the page (no sideways swipe). */
+/* Phone: full-bleed, no boxed panel; a sideways strip like desktop, two cards in view, one swipe = the next two. */
 @media (max-width: 760px) {
   .trending-nav { display: none; }
   .trending { margin-inline: -16px; padding: 18px 0 14px; border-inline: 0; border-radius: 0; }
   .trending-head { padding: 0 16px 12px; }
-  .trending-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; overflow: visible; scroll-snap-type: none; padding: 6px 16px 4px; margin-inline: 0; }
-  .trending-row > .card-wrap { min-width: 0; }
-  .trending-row > :nth-child(n + 5) { display: none; } /* two lines a row: a teaser, the full list follows */
+  .trending-row { gap: 10px; padding: 6px 16px 4px; margin-inline: 0; scroll-padding-inline: 16px; overscroll-behavior-x: contain; }
+  .trending-row > .card-wrap, .trending-row > .card { flex: 0 0 calc((100% - 10px) / 2); scroll-snap-align: none; }
+  .trending-row > .card-wrap:nth-child(odd), .trending-row > .card:nth-child(odd) { scroll-snap-align: start; scroll-snap-stop: always; } /* a swipe moves one pair */
   /* Compact: no share / calendar buttons on these teaser cards (the event page has them). */
   .trending .share-one, .trending .card-wrap > .cal { display: none; }
   .trending .card-wrap .tags { padding-bottom: 0; }

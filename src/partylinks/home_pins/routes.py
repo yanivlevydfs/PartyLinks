@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import exists, func, select
 
 from partylinks.admin import AdminDep
+from partylinks.ads import paid
 from partylinks.api import SessionDep
 from partylinks.config import get_settings
 from partylinks.db import EventRow, upcoming_filter
@@ -94,6 +95,7 @@ def save(event_id: str, body: PinIn, session: SessionDep) -> dict[str, Any]:
         session.add(p)
     p.rails, p.until, p.note = body.rails, body.until, body.note
     session.flush()
+    paid.sync(session)  # events.is_sponsored
     log.info("home pins: pinned %s to %s until %s", event_id, body.rails or "auto rows", body.until or "the event ends")
     return _out(session, *(_pin_of(session, event_id) or (p, None)))
 
@@ -103,6 +105,8 @@ def unpin(event_id: str, session: SessionDep) -> None:
     """Unpin (already gone: nothing to do)."""
     if p := session.get(HomePinRow, event_id):
         session.delete(p)
+        session.flush()
+        paid.sync(session)  # events.is_sponsored
         log.info("home pins: unpinned %s", event_id)
 
 

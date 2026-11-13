@@ -32,17 +32,17 @@ async def main():
         if sys.argv[1] == 'frames':
             for t in sys.argv[2:]:
                 await pg.evaluate(f'render({t})')
-                await pg.screenshot(path=f'/tmp/vid/f_{t}.jpg', type='jpeg', quality=85)
+                await pg.screenshot(path=f'/tmp/vid/f_{t}.png', type='png')
         else:
             _, _, idx, a, z, out = sys.argv
             a, z = float(a), float(z)
             n0, n1 = round(a * FPS), round(z * FPS)
             tmp = out.replace('.mp4', '.part.mp4')
-            ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', str(FPS), '-i', '-',
-                                   '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '17', '-pix_fmt', 'yuv420p', '-r', str(FPS), tmp], stdin=subprocess.PIPE)
+            ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'image2pipe', '-c:v', 'png', '-framerate', str(FPS), '-i', '-',
+                                   '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '14', '-pix_fmt', 'yuv420p', '-r', str(FPS), tmp], stdin=subprocess.PIPE)
             for f in range(n0, n1):
                 await pg.evaluate(f'render({f / FPS})')
-                ff.stdin.write(await pg.screenshot(type='jpeg', quality=92))
+                ff.stdin.write(await pg.screenshot(type='png'))
             ff.stdin.close()
             if ff.wait() == 0: os.replace(tmp, out)
             print('scene', idx, n1 - n0, 'frames')

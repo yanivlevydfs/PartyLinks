@@ -15,6 +15,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import defer, selectinload
 
 from partylinks.admin import AdminDep
+from partylinks.ads import paid
 from partylinks.ads.models import SponsoredRow, SponsoredStatRow
 from partylinks.api import EventSummaryOut, SessionDep, _summary_extras
 from partylinks.config import get_settings
@@ -167,6 +168,7 @@ def sponsored_one_save(event_id: str, body: SponsoredOneIn, session: SessionDep)
         row.side, row.position = body.side, position + 1
     row.until, row.placement = body.until, body.placement
     session.flush()
+    paid.sync(session)  # events.is_sponsored
     return sponsored_one(event_id, session)
 
 
@@ -174,6 +176,7 @@ def sponsored_one_save(event_id: str, body: SponsoredOneIn, session: SessionDep)
 def sponsored_one_remove(event_id: str, session: SessionDep) -> Response:
     """Stop sponsoring one event (its views and clicks stay in the report)."""
     session.execute(delete(SponsoredRow).where(SponsoredRow.event_id == event_id))
+    paid.sync(session)  # events.is_sponsored
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -239,4 +242,6 @@ def sponsored_save(items: list[SponsoredIn], session: SessionDep) -> dict[str, i
             )
         )
         positions[i.side] += 1
+    session.flush()
+    paid.sync(session)  # events.is_sponsored
     return {"saved": len(items)}

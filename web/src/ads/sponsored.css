@@ -125,16 +125,17 @@ html[dir="ltr"] .sp-list a:hover { transform: translateX(2px); }
   display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 4px 2px 8px;
 }
 .sp-strip-row::-webkit-scrollbar { display: none; }
-/* Phone: two a line, top to bottom like the home rows (no sideways swipe). */
-@media (max-width: 760px) {
-  .sp-strip-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; scroll-snap-type: none; }
-  .sp-strip-row .sp-spot { flex: none; min-width: 0; }
-}
 .sp-strip-row .sp-spot {
   position: relative; flex: 0 0 calc((100% - 4 * 12px) / 5); min-width: 0; aspect-ratio: 4 / 5; border-radius: 16px; scroll-snap-align: start;
   border: 1px solid var(--line-hot); box-shadow: 0 0 22px -8px var(--pink);
 }
 .sp-strip-row .sp-spot.on .sp-img { animation: none; }
+/* Phone: sideways like the home rows, two in view, one swipe = the next two. */
+@media (max-width: 760px) {
+  .sp-strip-row { overscroll-behavior-x: contain; }
+  .sp-strip-row .sp-spot { flex-basis: calc((100% - 12px) / 2); scroll-snap-align: none; }
+  .sp-strip-row .sp-spot:nth-child(odd) { scroll-snap-align: start; scroll-snap-stop: always; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .sp-frame, .sp-spot.on .sp-img, .sp-pulse::after { animation: none; }
@@ -182,7 +183,19 @@ html[dir="ltr"] .sp-list a:hover { transform: translateX(2px); }
 
 /* A paid card at the top of the results (ui.tsx Card): its "Sponsored" label, in the new / updated badge's place. */
 .fresh.ad { background: #ffd23f; box-shadow: 0 0 18px rgb(255 210 63 / .55); }
-.card-wrap.ad .card { border-color: rgb(255 210 63 / .55); }
+.card-wrap.ad .card { border-color: transparent; box-shadow: 0 0 22px -4px rgb(255 210 63 / .45), 0 0 34px -10px rgb(255 46 147 / .5); }
+/* A paid card (results placement, or pushed to the home rows): a gold-pink frame that keeps running round it. */
+@property --sp-a { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.card-wrap.ad::before {
+  content: ""; position: absolute; inset: -2px; z-index: 1; pointer-events: none;
+  border-radius: calc(var(--radius) + 2px); padding: 2px;
+  background: conic-gradient(from var(--sp-a), #ffd23f, #ff2e93, #9d4dff, #ffd23f 50%, #fff6c8 55%, #ffd23f 60%, #ff2e93, #ffd23f);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: sp-frame 3.2s linear infinite;
+}
+@keyframes sp-frame { to { --sp-a: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .card-wrap.ad::before { animation: none; } }
 
 /* A rail's ✎ (admins): its own size here, and the head's gradient text must not paint it. */
 .sp-head .sp-edit { width: 22px; height: 22px; margin-inline-start: auto; font-size: 12px; -webkit-text-fill-color: #fff; color: #fff; letter-spacing: 0; }

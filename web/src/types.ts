@@ -68,6 +68,7 @@ export interface EventSummary {
   /** The price before a drop in the last few days (partylinks.smartrails): shown struck through. */
   was_price?: number | null;
   pinned?: boolean; // pinned by the owner to the home rows: shown first (partylinks.home_pins)
+  is_sponsored?: boolean; // paid right now (events.is_sponsored): pinned or a sponsored placement
   /** A weekly line (partylinks.lines): its weekday, "thursday". */
   weekly?: string | null;
   /** Free entry until then (any listing of the event). */

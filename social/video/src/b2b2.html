@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><title>SPOTX promo – long</title>
+<style>
+@font-face{font-family:Rubik;font-weight:900;src:url(fonts/rubik-hebrew-900-normal.woff2);unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+FB1D-FB4F}
+@font-face{font-family:Rubik;font-weight:900;src:url(fonts/rubik-latin-900-normal.woff2);unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:Rubik;font-weight:700;src:url(fonts/rubik-hebrew-700-normal.woff2);unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+FB1D-FB4F}
+@font-face{font-family:Rubik;font-weight:700;src:url(fonts/rubik-latin-700-normal.woff2);unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:Heebo;font-weight:700;src:url(fonts/heebo-hebrew-700-normal.woff2);unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+FB1D-FB4F}
+@font-face{font-family:Heebo;font-weight:700;src:url(fonts/heebo-latin-700-normal.woff2);unicode-range:U+0000-00FF,U+2000-206F}
+@font-face{font-family:Heebo;font-weight:500;src:url(fonts/heebo-hebrew-500-normal.woff2);unicode-range:U+0590-05FF,U+200C-2010,U+20AA,U+FB1D-FB4F}
+@font-face{font-family:Heebo;font-weight:500;src:url(fonts/heebo-latin-500-normal.woff2);unicode-range:U+0000-00FF,U+2000-206F}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#06040b}
+body{font-family:Heebo,'Noto Color Emoji',sans-serif;color:#f7f2ff;direction:rtl}
+#world{position:absolute;inset:0;overflow:hidden}
+#cam{position:absolute;inset:-60px}
+.blob{position:absolute;border-radius:50%;filter:blur(130px)}
+.beam{position:absolute;top:-300px;width:170px;height:2600px;transform-origin:50% 0;filter:blur(18px);mix-blend-mode:screen}
+.p{position:absolute;border-radius:50%}
+.layer{position:absolute;left:60px;right:60px;top:60px;bottom:60px;display:none}
+.d{font-family:Rubik,'Noto Color Emoji';font-weight:900;line-height:1;letter-spacing:-1.5px}
+.g{background:linear-gradient(100deg,#ff2e93,#9d4dff 50%,#19e3ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.c{position:absolute;left:0;right:0;text-align:center}
+.ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
+.sub{font-family:Heebo;font-weight:700;color:#d9cff2;line-height:1.3}
+.pk{color:#ff2e93}.cy{color:#19e3ff}.mu{color:#b3a6d4}
+.glass{background:rgba(22,14,38,.78);border:2px solid rgba(160,120,255,.28);border-radius:34px;box-shadow:0 30px 90px rgba(0,0,0,.55)}
+.chip{display:inline-flex;align-items:center;gap:10px;padding:18px 30px;border-radius:999px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.18);font-family:Rubik;font-weight:700;font-size:40px;margin:8px}
+.chip.big{font-size:46px;padding:20px 34px;margin:10px}
+.mk{border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));border:1.5px solid rgba(255,255,255,.08)}
+.rail{position:absolute;top:80px;width:160px;bottom:20px;border-radius:18px;background:#160d26;border:3px solid #ff2e93;overflow:hidden}
+.rart{height:55%}.rt{font-family:Rubik;font-weight:900;font-size:24px;padding:12px;text-align:center}
+.adl{display:inline-block;font-size:20px;font-weight:700;background:#ff2e93;color:#fff;padding:4px 12px;border-radius:999px}
+.rail .adl{position:absolute;bottom:12px;left:50%;transform:translateX(-50%)}
+.row{display:flex;gap:24px;align-items:center;padding:20px;border-radius:24px;background:rgba(22,14,38,.8);border:1.5px solid rgba(160,120,255,.2);margin-bottom:18px}
+.row.spon{border:3px solid #ff2e93;background:rgba(255,46,147,.12)}
+.rth{width:130px;height:110px;border-radius:16px;background:rgba(255,255,255,.08);flex:none}
+.bar1{height:26px;width:70%;border-radius:8px;background:rgba(255,255,255,.14)}.bar2{height:20px;width:45%;border-radius:8px;background:rgba(255,255,255,.08);margin-top:14px}
+.hc{flex:1;border-radius:22px;overflow:hidden;background:#120b1f;border:1.5px solid rgba(160,120,255,.22)}
+.hc.pinned{border:3px solid #ff2e93;flex:1.3}
+.hart{height:230px;background:rgba(255,255,255,.07);position:relative}
+.pinb{position:absolute;top:10px;right:12px;font-size:44px}
+.stat{padding:30px 20px;text-align:center}.sl{font-size:32px;color:#b3a6d4;font-weight:700}.sv{font-size:70px;margin-top:10px}
+.vt{display:flex;gap:34px;align-items:center;padding:42px 40px}.ve{font-size:92px}.vh{font-size:66px}.vs{font-size:40px;color:#d9cff2;margin-top:8px;font-weight:700}
+.fn{height:150px;border-radius:30px;display:flex;justify-content:space-between;align-items:center;padding:0 40px;font-size:40px;font-weight:700;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.fn .d{font-size:72px}
+.pkg{padding:34px 26px;text-align:center;position:relative}.pe{font-size:80px}.ph{font-size:64px;margin-top:6px}.ps{font-size:32px;color:#d9cff2;font-weight:700;margin-top:10px}
+.prem{border:3px solid #ff2e93;box-shadow:0 0 70px rgba(255,46,147,.55)}.best{position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:#ff2e93;color:#fff;font-weight:700;font-size:26px;padding:6px 20px;border-radius:999px;white-space:nowrap}
+.chip.on{background:rgba(255,46,147,.22);border-color:#ff2e93}
+.notif{position:absolute;left:40px;right:40px;padding:26px 30px;border-radius:36px;background:rgba(40,30,60,.86);border:1.5px solid rgba(255,255,255,.14);box-shadow:0 30px 80px rgba(0,0,0,.5);display:flex;gap:24px;align-items:center}
+.notif .ic{width:86px;height:86px;border-radius:22px;background:#140d22;display:flex;align-items:center;justify-content:center;flex:none}
+.notif .tt{font-size:26px;color:#b3a6d4;display:flex;justify-content:space-between}
+.notif .bd{font-size:36px;font-weight:700;margin-top:6px;line-height:1.25}
+.card{position:absolute;width:520px;border-radius:30px;overflow:hidden;background:#120b1f;border:2px solid rgba(160,120,255,.3);box-shadow:0 30px 90px rgba(0,0,0,.6)}
+.card .art{height:300px;position:relative}
+.card .date{position:absolute;top:18px;right:18px;background:rgba(6,4,11,.78);border:2px solid #ff2e93;border-radius:16px;padding:8px 14px;text-align:center;line-height:1}
+.card .price{position:absolute;top:18px;left:18px;background:#fff;color:#06040b;font-weight:700;font-size:22px;padding:8px 16px;border-radius:999px}
+.card .body{padding:20px 24px 24px}
+.tag{display:inline-block;font-size:19px;padding:6px 14px;border-radius:999px;background:rgba(157,77,255,.2);border:1.5px solid rgba(157,77,255,.5);margin-left:8px}
+#flash{position:absolute;inset:0;background:#fff;opacity:0}
+#vign{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.75))}
+#noise{position:absolute;inset:0;opacity:.15;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.prow{display:flex;justify-content:space-between;align-items:center;padding:22px 10px;border-bottom:1.5px solid rgba(160,120,255,.18);font-size:44px}
+.opt{position:relative;margin-top:22px;padding:22px 26px;border-radius:20px;background:rgba(255,255,255,.06);overflow:hidden;font-size:36px;font-weight:700;display:flex;justify-content:space-between}
+.opt .bar{position:absolute;right:0;top:0;bottom:0;background:rgba(37,211,102,.28)}
+.opt span{position:relative}
+</style></head><body>
+<div id="world"><div id="cam">
+<div id="bgl"></div><div id="parts"></div>
+
+<!-- 0 -->
+<div class="layer" id="L0">
+ <div class="c d" data-at="0.2" data-fx="slam" style="top:330px;font-size:150px">יש לכם מסיבה.</div>
+ <div class="c d cy" data-at="1.6" data-fx="slam" style="top:500px;font-size:150px">ליין.</div>
+ <div class="c d pk" data-at="3" data-fx="slam" style="top:670px;font-size:150px">הופעה.</div>
+ <div class="c d g" data-at="4.4" data-fx="slam" style="top:840px;font-size:150px">פסטיבל.</div>
+</div>
+<!-- 1 -->
+<div class="layer" id="L1">
+ <div class="c d" data-at="0.2" data-fx="up" style="top:380px;font-size:112px;line-height:1.15">הקהל שלכם כבר<br>מחפש לאן לצאת.</div>
+ <div class="c d pk" data-at="3.4" data-fx="slam" style="top:740px;font-size:92px;line-height:1.2">השאלה היא אם<br>הוא ימצא אתכם.</div>
+</div>
+<!-- 2 drop -->
+<div class="layer" id="L2">
+ <div class="c" data-at="0" data-fx="logo" style="top:380px;display:flex;justify-content:center;align-items:center;gap:22px;direction:ltr">
+   <svg viewBox="0 0 64 64" class="pin" style="width:200px;height:200px"></svg>
+   <span class="d" style="font-size:190px;letter-spacing:6px">SPOT<span class="pk" style="text-shadow:0 0 50px rgba(255,46,147,.9)">X</span></span></div>
+ <div class="c" data-at="1.5" data-fx="pop" style="top:690px"><span class="chip big on" style="font-size:52px">לבעלי אירועים ומפרסמים</span></div>
+ <div class="c sub" data-at="3" data-fx="up" style="top:880px;font-size:66px">תנו לקהל הנכון<br><span class="d g" style="font-size:88px">למצוא אתכם.</span></div>
+</div>
+<!-- 3 -->
+<div class="layer" id="L3">
+ <div class="c d" data-at="0" data-fx="up" style="top:250px;font-size:104px;line-height:1.15">המקום שבו<br>מחליטים <span class="g">לאן יוצאים.</span></div>
+ <div class="glass" data-at="2" data-fx="pop" style="position:absolute;left:80px;right:80px;top:600px;padding:34px 40px;display:flex;justify-content:space-between;align-items:center"><span class="d cy ltr" style="font-size:96px">60,000+</span><span class="d" style="font-size:52px">אירועים</span></div>
+ <div class="glass" data-at="3" data-fx="pop" style="position:absolute;left:80px;right:80px;top:800px;padding:34px 40px;display:flex;justify-content:space-between;align-items:center"><span class="d pk ltr" style="font-size:96px">88</span><span class="d" style="font-size:52px">מקורות</span></div>
+ <div class="glass" data-at="4" data-fx="pop" style="position:absolute;left:80px;right:80px;top:1000px;padding:34px 40px;display:flex;justify-content:space-between;align-items:center"><span class="d g" style="font-size:80px">ישראל + חו״ל</span><span class="d" style="font-size:52px">✈️</span></div>
+</div>
+<!-- comparison -->
+<div class="layer" id="L4">
+ <div class="c d" data-at="0" data-fx="slam" style="top:170px;font-size:84px">ההבדל שעושה <span class="g">את הכסף 💰</span></div>
+ <div class="glass" data-at="1.2" data-fx="pop" style="position:absolute;left:60px;right:60px;top:400px;padding:40px;opacity:.9">
+  <div class="d" style="font-size:56px;color:#8a7fa8">📱 מודעה בפיד</div>
+  <div class="d" style="font-size:72px;margin-top:16px;color:#b3a6d4">גוללים. מדלגים. שוכחים.</div></div>
+ <div class="glass" data-at="2.8" data-fx="pop" style="position:absolute;left:60px;right:60px;top:740px;padding:40px;border:3px solid #ff2e93;box-shadow:0 0 70px rgba(255,46,147,.5)">
+  <div class="d" style="font-size:56px" ><span class="ltr">SPOT<span class="pk">X</span></span> 📍</div>
+  <div class="d g" style="font-size:80px;margin-top:16px">מחפשים. בוחרים. קונים.</div></div>
+ <div class="c sub" data-at="4.8" data-fx="up" style="top:1120px;font-size:54px">אצלנו אתם לא מפריעים לאף אחד.<br><b class="cy">אתם בדיוק מה שהם מחפשים.</b></div>
+</div>
+<!-- intent -->
+<div class="layer" id="L5">
+ <div class="c d" data-at="0" data-fx="slam" style="top:260px;font-size:120px;line-height:1.1">הם כבר<br>החליטו לצאת.</div>
+ <div class="c sub" data-at="1.8" data-fx="up" style="top:600px;font-size:60px">לא צריך לשכנע אותם.<br>רק להיות שם כשהם בוחרים <b class="cy">לאן.</b></div>
+ <div class="c d g" data-at="4" data-fx="slam" style="top:900px;font-size:150px">ואתם שם. 🎯</div>
+</div>
+<!-- 5 rails (3 bars) -->
+<div class="layer" id="L6">
+ <div class="c d" data-at="0" data-fx="slam" style="top:150px;font-size:110px">📍 פס צדדי ממומן</div>
+ <div class="c sub" data-at="0.9" data-fx="up" style="top:310px;font-size:56px">הכרטיס שלכם, קבוע בצד<br>של כל עמוד באתר.</div>
+ <div data-at="2" data-fx="up" style="position:absolute;left:30px;right:30px;top:540px;height:720px;border-radius:30px;background:#0d0818;border:2px solid rgba(160,120,255,.3);overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.6)">
+  <div style="height:56px;background:#1a1128;display:flex;align-items:center;gap:10px;padding:0 22px;direction:ltr"><i style="width:14px;height:14px;border-radius:50%;background:#ff5f57"></i><i style="width:14px;height:14px;border-radius:50%;background:#febc2e"></i><i style="width:14px;height:14px;border-radius:50%;background:#28c840"></i><span style="margin-left:20px;font-size:22px;color:#b3a6d4;background:#0d0818;padding:6px 18px;border-radius:10px">spotx.fun</span></div>
+  <div style="position:absolute;top:80px;left:200px;right:200px;bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+   <div class="mk"></div><div class="mk"></div><div class="mk"></div><div class="mk"></div>
+  </div>
+  <div class="rail" id="railR" style="right:20px"><div class="rart" style="background:radial-gradient(circle at 30% 30%,#ff2e93,transparent 55%),linear-gradient(135deg,#2a0f45,#06040b)"></div><div class="rt">המסיבה שלכם</div><span class="adl">ממומן</span></div>
+  <div class="rail" id="railL" style="left:20px"><div class="rart" style="background:radial-gradient(circle at 60% 40%,#19e3ff,transparent 55%),linear-gradient(135deg,#140d22,#06040b)"></div><div class="rt">הליין שלכם</div><span class="adl">ממומן</span></div>
+ </div>
+ <div class="c sub" data-at="7.5" data-fx="up" style="top:1310px;font-size:52px">בימין, בשמאל, <b class="cy">או בשניהם.</b></div>
+</div>
+<!-- 6 results -->
+<div class="layer" id="L7">
+ <div class="c d" data-at="0" data-fx="slam" style="top:150px;font-size:104px">🔝 ראש התוצאות</div>
+ <div class="c sub" data-at="0.9" data-fx="up" style="top:300px;font-size:54px">עד 3 מקומות ראשונים בכל חיפוש,<br>מסומנים "ממומן" כמו שצריך.</div>
+ <div style="position:absolute;left:80px;right:80px;top:540px">
+  <div class="row spon" data-at="2" data-fx="pop"><div class="rth" style="background:radial-gradient(circle at 30% 30%,#ff2e93,transparent 55%),linear-gradient(135deg,#2a0f45,#06040b)"></div><div style="flex:1"><div class="d" style="font-size:40px;letter-spacing:0">האירוע שלכם</div><div style="font-size:26px;color:#b3a6d4;margin-top:6px">שישי 23:00 · תל אביב</div></div><span class="adl">ממומן</span></div>
+  <div class="row" data-at="2.6" data-fx="pop"><div class="rth"></div><div style="flex:1"><div class="bar1"></div><div class="bar2"></div></div></div>
+  <div class="row" data-at="3" data-fx="pop"><div class="rth"></div><div style="flex:1"><div class="bar1"></div><div class="bar2"></div></div></div>
+  <div class="row" data-at="3.4" data-fx="pop"><div class="rth"></div><div style="flex:1"><div class="bar1"></div><div class="bar2"></div></div></div>
+ </div>
+ <div class="c d g" data-at="4.8" data-fx="slam" style="top:1250px;font-size:80px">הראשונים שרואים.</div>
+</div>
+<!-- 7 home pin -->
+<div class="layer" id="L8">
+ <div class="c d" data-at="0" data-fx="slam" style="top:150px;font-size:104px">📌 הצמדה בעמוד הבית</div>
+ <div class="c sub" data-at="0.9" data-fx="up" style="top:300px;font-size:54px">בראש השורות שכולם רואים<br>כשהם נכנסים לאתר.</div>
+ <div style="position:absolute;left:40px;right:40px;top:520px">
+  <div class="d" data-at="1.8" data-fx="up" style="font-size:52px;margin-bottom:22px">🔥 חם עכשיו</div>
+  <div style="display:flex;gap:20px">
+   <div class="hc pinned" data-at="2.3" data-fx="pop"><div class="hart" style="background:radial-gradient(circle at 30% 30%,#ff2e93,transparent 55%),radial-gradient(circle at 75% 70%,#19e3ff,transparent 55%),linear-gradient(135deg,#2a0f45,#06040b)"><span class="pinb">📌</span></div><div class="d" style="font-size:32px;padding:16px;letter-spacing:0">האירוע שלכם</div></div>
+   <div class="hc" data-at="2.7" data-fx="pop"><div class="hart"></div><div style="padding:18px"><div class="bar1"></div></div></div>
+   <div class="hc" data-at="3" data-fx="pop"><div class="hart"></div><div style="padding:18px"><div class="bar1"></div></div></div>
+  </div>
+  <div class="d" data-at="3.6" data-fx="up" style="font-size:52px;margin:40px 0 22px">🌙 יוצאים הערב</div>
+  <div style="display:flex;gap:20px">
+   <div class="hc" data-at="3.9" data-fx="pop"><div class="hart" style="height:150px"></div></div>
+   <div class="hc" data-at="4.1" data-fx="pop"><div class="hart" style="height:150px"></div></div>
+   <div class="hc" data-at="4.3" data-fx="pop"><div class="hart" style="height:150px"></div></div>
+  </div>
+ </div>
+</div>
+<!-- value -->
+<div class="layer" id="L9">
+ <div class="c d" data-at="0" data-fx="slam" style="top:140px;font-size:110px">מה אתם מקבלים? 💎</div>
+ <div style="position:absolute;left:50px;right:50px;top:330px;display:flex;flex-direction:column;gap:30px">
+  <div class="glass vt" data-at="1.2" data-fx="pop"><span class="ve">👀</span><div><div class="d vh">חשיפה בכל עמוד</div><div class="vs">כל גולש, בכל עמוד באתר, רואה אתכם</div></div></div>
+  <div class="glass vt" data-at="2.4" data-fx="pop"><span class="ve">🥇</span><div><div class="d vh">מקום ראשון</div><div class="vs">לפני <b class="cy ltr">60,000+</b> אירועים אחרים</div></div></div>
+  <div class="glass vt" data-at="3.6" data-fx="pop"><span class="ve">🔥</span><div><div class="d vh">קהל רותח</div><div class="vs">אנשים שמחפשים לצאת. עכשיו.</div></div></div>
+  <div class="glass vt" data-at="4.8" data-fx="pop"><span class="ve">📊</span><div><div class="d vh">מדידה עד הקליק</div><div class="vs">צפיות, קליקים, CTR ו-UTM</div></div></div>
+ </div>
+ <div class="c d g" data-at="7.2" data-fx="slam" style="top:1400px;font-size:80px">זה לא באנר. זה לקוחות.</div>
+</div>
+<!-- funnel -->
+<div class="layer" id="L10">
+ <div class="c d" data-at="0" data-fx="slam" style="top:140px;font-size:110px">מצפייה לכרטיס 🎟️</div>
+ <div class="c sub" data-at="0.9" data-fx="up" style="top:300px;font-size:52px">ככה נראה קמפיין אצלנו:</div>
+ <div class="c" style="top:430px;display:flex;flex-direction:column;align-items:center;gap:22px">
+  <div class="fn" data-at="1.8" data-fx="pop" style="width:900px;background:linear-gradient(90deg,#19e3ff,#9d4dff)"><span class="d ltr" id="f1">0</span><span>צפיות בכרטיס שלכם 👀</span></div>
+  <div class="fn" data-at="3.2" data-fx="pop" style="width:740px;background:linear-gradient(90deg,#9d4dff,#ff2e93)"><span class="d ltr" id="f2">0</span><span>קליקים לעמוד המכירה 👆</span></div>
+  <div class="fn" data-at="4.6" data-fx="pop" style="width:580px;background:linear-gradient(90deg,#ff2e93,#ffb13b)"><span class="d" style="font-size:54px">🎟️🎟️🎟️</span><span>כרטיסים נמכרים</span></div>
+ </div>
+ <div class="c" data-at="2" data-fx="up" style="top:1000px;font-size:28px;color:#8a7fa8">* מספרים לדוגמה</div>
+ <div class="c sub" data-at="6.6" data-fx="up" style="top:1080px;font-size:56px">כל קליק = מישהו<br><b class="cy">שכבר רוצה לבוא.</b></div>
+</div>
+<!-- 8 report -->
+<div class="layer" id="L11">
+ <div class="c d" data-at="0" data-fx="slam" style="top:150px;font-size:110px">📊 שקיפות מלאה</div>
+ <div class="c sub" data-at="0.9" data-fx="up" style="top:310px;font-size:54px">דו״ח צפיות, קליקים ו-CTR<br>לכל קמפיין. כולל הורדה ל-CSV.</div>
+ <div style="position:absolute;left:50px;right:50px;top:540px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
+  <div class="glass stat" data-at="2" data-fx="pop"><div class="sl">צפיות</div><div class="d cy ltr sv" id="st1">0</div></div>
+  <div class="glass stat" data-at="2.4" data-fx="pop"><div class="sl">קליקים</div><div class="d pk ltr sv" id="st2">0</div></div>
+  <div class="glass stat" data-at="2.8" data-fx="pop"><div class="sl">CTR</div><div class="d ltr sv" id="st3" style="color:#2bf5a0">0%</div></div>
+ </div>
+ <div class="glass" data-at="3.2" data-fx="up" style="position:absolute;left:50px;right:50px;top:800px;height:360px;padding:30px;display:flex;align-items:flex-end;gap:16px;direction:ltr" id="chart"></div>
+ <div class="c" data-at="3.4" data-fx="up" style="top:1180px;font-size:28px;color:#8a7fa8">* נתונים להמחשה</div>
+ <div class="c d g" data-at="5" data-fx="slam" style="top:1250px;font-size:76px">יודעים בדיוק מה קיבלתם.</div>
+</div>
+<!-- 9 click goes to you -->
+<div class="layer" id="L12">
+ <div class="c d" data-at="0" data-fx="slam" style="top:150px;font-size:110px">🎯 הקליק הולך אליכם</div>
+ <div class="c sub" data-at="0.9" data-fx="up" style="top:310px;font-size:54px">ישר לעמוד המכירה שלכם.<br>אתם מוכרים, אנחנו מביאים קהל.</div>
+ <div class="glass" data-at="2" data-fx="pop" style="position:absolute;left:120px;right:120px;top:560px;padding:30px;text-align:center"><div class="d" style="font-size:48px">כרטיס ב-SPOTX</div><div style="margin-top:18px"><span class="chip on" style="font-size:36px">🎟️ כרטיסים</span></div></div>
+ <div class="c d" data-at="2.8" data-fx="pop" style="top:800px;font-size:90px">⬇</div>
+ <div class="glass" data-at="3.3" data-fx="pop" style="position:absolute;left:120px;right:120px;top:920px;padding:30px;text-align:center;border-color:#2bf5a0"><div class="d" style="font-size:52px;color:#2bf5a0">עמוד המכירה שלכם ✅</div><div class="ltr" style="font-size:24px;color:#8a7fa8;margin-top:14px">…?utm_source=spotx&amp;utm_medium=affiliate</div></div>
+ <div class="c sub" data-at="4.8" data-fx="up" style="top:1160px;font-size:50px">עם תגי UTM: כל כניסה מאיתנו<br><b class="cy">מופיעה גם באנליטיקס שלכם.</b></div>
+</div>
+<!-- 10 flexibility -->
+<div class="layer" id="L13">
+ <div class="c d" data-at="0" data-fx="slam" style="top:130px;font-size:110px">💼 חבילות פרסום</div>
+ <div class="c sub" data-at="0.8" data-fx="up" style="top:280px;font-size:50px">בוחרים את החשיפה שמתאימה לכם:</div>
+ <div style="position:absolute;left:50px;right:50px;top:400px;display:grid;grid-template-columns:1fr 1fr;gap:24px">
+  <div class="glass pkg" data-at="1.5" data-fx="pop"><div class="pe">📍</div><div class="d ph">צד</div><div class="ps">פס צדדי בכל עמוד</div></div>
+  <div class="glass pkg" data-at="2.1" data-fx="pop"><div class="pe">🔝</div><div class="d ph">תוצאות</div><div class="ps">3 המקומות הראשונים בחיפוש</div></div>
+  <div class="glass pkg" data-at="2.7" data-fx="pop"><div class="pe">📌</div><div class="d ph">בית</div><div class="ps">הצמדה בעמוד הבית</div></div>
+  <div class="glass pkg prem" data-at="3.5" data-fx="pop"><span class="best">הכי משתלם</span><div class="pe">👑</div><div class="d ph g">פרימיום</div><div class="ps">הכל ביחד + דו״ח מלא</div></div>
+ </div>
+ <div class="c sub" data-at="5" data-fx="up" style="top:1180px;font-size:52px">תמחור לפי מיקום ותקופה.<br><b class="cy">הצעת מחיר מותאמת אישית.</b></div>
+</div>
+<div class="layer" id="L14">
+ <div class="c d" data-at="0" data-fx="slam" style="top:200px;font-size:110px">למי זה מתאים?</div>
+ <div class="c" style="top:420px;display:flex;flex-wrap:wrap;justify-content:center;padding:0 20px">
+  <span class="chip big" data-at="1" data-fx="pop">🪩 מפיקי מסיבות</span>
+  <span class="chip big" data-at="1.5" data-fx="pop">🎧 ליינים ומועדונים</span>
+  <span class="chip big" data-at="2" data-fx="pop">🎪 פסטיבלים</span>
+  <span class="chip big" data-at="2.5" data-fx="pop">🎤 הופעות ואמנים</span>
+  <span class="chip big" data-at="3" data-fx="pop">🍸 ברים ומקומות</span>
+  <span class="chip big" data-at="3.5" data-fx="pop">✨ מותגים</span>
+ </div>
+ <div class="c sub" data-at="4.8" data-fx="up" style="top:1000px;font-size:56px">כל מי שרוצה <b class="cy">אנשים בכניסה.</b></div>
+</div>
+<!-- urgency -->
+<div class="layer" id="L15">
+ <div class="c d" data-at="0" data-fx="slam" style="top:240px;font-size:120px;line-height:1.1">הסופ״ש הבא<br><span class="pk">כבר בדרך 🔥</span></div>
+ <div class="c sub" data-at="2" data-fx="up" style="top:580px;font-size:60px">המקומות הממומנים מוגבלים.</div>
+ <div class="c d g" data-at="3.5" data-fx="slam" style="top:760px;font-size:96px;line-height:1.15">מי שתופס ראשון,<br>רואים אותו ראשון.</div>
+</div>
+<!-- 12 CTA (3 bars) -->
+<div class="layer" id="L16">
+ <div class="c" data-at="0" data-fx="logo" style="top:260px;display:flex;justify-content:center;align-items:center;gap:22px;direction:ltr">
+   <svg viewBox="0 0 64 64" class="pin" style="width:180px;height:180px"></svg>
+   <span class="d" style="font-size:170px;letter-spacing:6px">SPOT<span class="pk" style="text-shadow:0 0 50px rgba(255,46,147,.9)">X</span></span></div>
+ <div class="c d" data-at="2" data-fx="slam" style="top:560px;font-size:120px;line-height:1.1">בואו נמלא לכם<br><span class="g">את הרחבה.</span></div>
+ <div class="c sub" data-at="4" data-fx="up" style="top:860px;font-size:54px">להצעת מחיר ופרסום:</div>
+ <div class="c" data-at="8" data-fx="slam" style="top:960px"><span style="display:inline-block;background:#fff;color:#06040b;font-family:Rubik;font-weight:900;font-size:76px;letter-spacing:3px;padding:26px 60px;border-radius:999px;direction:ltr;box-shadow:0 0 100px rgba(255,46,147,.7)">SPOT<span class="pk">X</span>.FUN/PARTNERS</span></div>
+ <div class="c sub" data-at="9" data-fx="up" style="top:1170px;font-size:46px">דברו איתנו היום 🚀<br><b class="cy">והאירוע הבא שלכם מתפוצץ.</b></div>
+</div>
+
+</div><div id="vign"></div><div id="flash"></div><div id="noise"></div></div>
+<script>
+const PIN=`__PIN__`;
+document.querySelectorAll('svg.pin').forEach((s,i)=>{s.innerHTML=PIN.replace(/id="(\w+)"/g,`id="$1${i}"`).replace(/url\(#(\w+)\)/g,`url(#$1${i})`)});
+const B=60/124, BAR=4*B;
+const SB=[0,2,4,6,8,10,12,15,17,19,22,25,27,29,31,33,35,38.6];
+const S=SB.map(x=>x*BAR), DROP=4*BAR, END_GROOVE=37*BAR, TOTAL=38*BAR+1.2, FILLS=[16,30];
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const eo=x=>1-Math.pow(1-clamp(x),3);
+const eback=x=>{x=clamp(x);const c=1.8;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const prog=(t,a,d)=>clamp((t-a)/d);
+const hash=n=>{const s=Math.sin(n*127.1)*43758.5453;return s-Math.floor(s)};
+const LAYERS=[...document.querySelectorAll('.layer')];
+const ANIM=LAYERS.map(L=>[...L.querySelectorAll('[data-at]')]);
+const bgl=$('bgl');
+const BLOBS=[['#ff2e93',900],['#9d4dff',1000],['#19e3ff',700],['#9d4dff',800]].map(([c,w])=>{const d=document.createElement('div');d.className='blob';d.style.cssText=`width:${w}px;height:${w}px;background:${c}`;bgl.appendChild(d);return d});
+const BC=['#ff2e93','#19e3ff','#9d4dff','#ff2e93','#19e3ff','#9d4dff'];
+const BEAMS=BC.map((c,i)=>{const d=document.createElement('div');d.className='beam';d.style.left=(80+i*170)+'px';bgl.appendChild(d);return d});
+const PARTS=[...Array(46)].map((_,i)=>{const d=document.createElement('div');d.className='p';$('parts').appendChild(d);return d});
+const CH=$('chart'); const BARS=[...Array(14)].map((_,i)=>{const d=document.createElement('div');d.style.cssText=`flex:1;border-radius:8px 8px 0 0;background:linear-gradient(0deg,#9d4dff,${i%2?'#ff2e93':'#19e3ff'})`;CH.appendChild(d);return d});
+function tf(el,o,x,y,s,r,b){el.style.opacity=o;el.style.transform=`translate(${x}px,${y}px) scale(${s}) rotate(${r||0}deg)`;el.style.filter=b?`blur(${b}px)`:''}
+function fx(el,t0,t,pulse){
+  const at=t0+parseFloat(el.dataset.at)*B, kind=el.dataset.fx, out=el.dataset.out?t0+parseFloat(el.dataset.out)*B:1e9;
+  if(t<at||t>=out+.2){el.style.opacity=0;return}
+  const oo=t>out?1-prog(t,out,.2):1;
+  if(kind==='slam'){const p=prog(t,at,.16);tf(el,clamp(p*2.5)*oo,0,0,1.55-.55*eo(p),0,16*(1-p))}
+  else if(kind==='up'){const p=prog(t,at,.35);tf(el,clamp(p*1.6)*oo,0,50*(1-eo(p)),1,0,8*(1-p))}
+  else if(kind==='pop'){const p=prog(t,at,.3);tf(el,clamp(p*2)*oo,0,0,.6+.4*eback(p),0,0)}
+  else if(kind==='logo'){const p=prog(t,at,.45);tf(el,clamp(p*2)*oo,0,-500*(1-eback(p)),1+pulse*.03,0,0)}
+}
+function chroma(el,a){el.style.textShadow=`${a}px 0 rgba(255,46,147,.8), ${-a}px 0 rgba(25,227,255,.8)`}
+function render(t){
+  const ph=((t%B)+B)%B/B, beatN=Math.floor(t/B), bar=Math.floor(t/BAR);
+  const groove=t>=DROP&&t<END_GROOVE&&!(FILLS.includes(bar)&&t%BAR>=2*B);
+  const pulse=groove?Math.exp(-ph*5.5):0;
+  const sh=pulse*5; $('cam').style.transform=`translate(${(hash(beatN)-.5)*sh*2}px,${(hash(beatN+9)-.5)*sh*2}px) scale(${1+pulse*.008})`;
+  BLOBS.forEach((d,i)=>{const a=t*.3+i*1.7;d.style.left=(90+Math.cos(a)*300+(i%2?400:-250))+'px';d.style.top=(200+i*430+Math.sin(a*1.3)*220)+'px';d.style.opacity=(.32+pulse*.22)*clamp(t)});
+  BEAMS.forEach((d,i)=>{const ang=Math.sin(t*(groove?1.4:.6)+i*1.1)*28+(i-2.5)*6;d.style.transform=`rotate(${ang}deg)`;d.style.background=`linear-gradient(180deg,${BC[(i+bar)%6]},transparent 80%)`;d.style.opacity=(groove?.18+pulse*.25:.12+.05*Math.sin(t*3+i))*clamp(t/.6)});
+  PARTS.forEach((d,i)=>{const sp=60+hash(i)*160;const y=2120-((t*sp*(groove?1.5:1)+hash(i+3)*2200)%2300);const sz=3+hash(i+1)*7;d.style.cssText=`left:${hash(i+7)*1150}px;top:${y}px;width:${sz}px;height:${sz}px;opacity:${.25+.45*hash(i+5)+pulse*.3};background:${['#fff','#ff2e93','#19e3ff'][i%3]}`});
+  let fl=0;[[DROP,.85],[S[3],.3],[S[4],.35],[S[6],.4],[S[7],.3],[S[8],.3],[S[9],.45],[S[10],.35],[S[11],.3],[S[15],.5],[S[16],.5],[37*BAR,.8]].forEach(([a,s])=>{if(t>=a)fl=Math.max(fl,s*Math.exp(-(t-a)*9))});
+  if(t>=3*BAR&&t<DROP)fl=Math.max(fl,.06*Math.exp(-ph*10));
+  $('flash').style.opacity=fl;
+  const ca=3+pulse*9;
+  LAYERS.forEach((L,i)=>{const on=t>=S[i]&&t<S[i+1];L.style.display=on?'block':'none';if(!on)return;
+    ANIM[i].forEach(el=>fx(el,S[i],t,pulse));
+    const ex=prog(t,S[i+1]-.12,.12); L.style.opacity=1-ex; L.style.transform=`scale(${1+ex*.08})`;
+    L.querySelectorAll('.d').forEach(el=>{if(!el.classList.contains('g')&&!el.closest('.glass,.row,.hc,.rail,.fn,[data-fx=pop]'))chroma(el,ca)});
+  });
+  // rails glow
+  ['railR','railL'].forEach((id,k)=>{const el=$(id);const g=20+pulse*50;el.style.boxShadow=`0 0 ${g}px rgba(255,46,147,${.5+pulse*.4})`;const p=eback(prog(t,S[6]+(3+k*.8)*B,.4));el.style.transform=`translateX(${(k?-1:1)*220*(1-p)}px)`;el.style.opacity=t<S[6]+(3+k*.8)*B?0:1});
+  document.querySelectorAll('.row.spon,.hc.pinned').forEach(el=>el.style.boxShadow=`0 0 ${20+pulse*45}px rgba(255,46,147,${.45+pulse*.4})`);
+  // report
+  if(t>=S[10]&&t<S[11]){const p1=eo(prog(t,S[10]+1.9*B,2*B)),p2=eo(prog(t,S[10]+3.3*B,2*B));$('f1').textContent=Math.round(48000*p1).toLocaleString('en-US');$('f2').textContent=Math.round(3900*p2).toLocaleString('en-US')}
+  if(t>=S[11]&&t<S[12]){const p=eo(prog(t,S[11]+2.2*B,2.4*B));$('st1').textContent=Math.round(48210*p).toLocaleString('en-US');$('st2').textContent=Math.round(3905*p).toLocaleString('en-US');$('st3').textContent=(8.1*p).toFixed(1)+'%';
+    BARS.forEach((b,i)=>{const h=[30,42,38,55,48,62,58,70,66,78,74,85,88,96][i];const q=eo(prog(t,S[11]+3.4*B+i*.06,.5));b.style.height=(h*q*2.9)+'px'})}
+  $('world').style.opacity=1-prog(t,TOTAL-.7,.7);
+}
+window.render=render;window.TOTAL=TOTAL;render(0);
+</script></body></html>

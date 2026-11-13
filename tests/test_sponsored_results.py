@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from partylinks.api import create_app
 from partylinks.db import EventRow
@@ -27,7 +27,10 @@ def test_paid_matches_lead_page_one_only_when_they_match(tmp_path: Path) -> None
 
         def page(qs: str) -> dict:
             client.app.state.response_cache._items.clear()  # type: ignore[attr-defined]
-            return client.get(f"/events?page_size=4&{qs}").json()
+            body = client.get(f"/events?page_size=4&{qs}").json()
+            for e in body["items"]:  # a rails pick is paid (marked everywhere) but takes no place in the list
+                e.pop("is_sponsored")
+            return body
 
         def ids(body: dict) -> list[str]:
             return [e["source_event_id"] for e in body["items"]]
@@ -135,3 +138,27 @@ def test_one_event_sponsored_from_the_site(tmp_path: Path) -> None:
         assert client.delete(one + "e0").status_code == 204
         assert client.get(one + "e0").json()["pick"] is None
         assert [x["source_event_id"] for x in client.get("/events/sponsored").json()["left"]] == []
+
+
+def test_events_know_whether_they_are_paid(tmp_path: Path) -> None:
+    """events.is_sponsored: false by default, true while pinned or sponsored, false again once removed or over."""
+    settings = settings_for(tmp_path)
+    soon = datetime.now(UTC) + timedelta(days=1)
+    db = seed(settings, [event(f"e{i}", soon + timedelta(hours=i)) for i in range(3)])
+
+    def paid() -> set[str]:
+        with db.session(write=False) as session:
+            return set(session.scalars(select(EventRow.id).where(EventRow.is_sponsored.is_(True))))
+
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        assert paid() == set()
+        client.put("/admin/api/home-pins/test:e0", json={"rails": []})
+        client.put("/admin/api/sponsored/event/test:e1", json={"side": "left"})
+        assert paid() == {"test:e0", "test:e1"}
+        assert {e["id"]: e["is_sponsored"] for e in client.get("/events").json()["items"]} == {
+            "test:e0": True, "test:e1": True, "test:e2": False,
+        }
+        client.delete("/admin/api/home-pins/test:e0")
+        past = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
+        client.put("/admin/api/sponsored/event/test:e1", json={"side": "left", "until": past})
+        assert paid() == set()

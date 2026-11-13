@@ -428,6 +428,21 @@ def test_stored_lineups_are_cleaned_by_the_current_name_rule(tmp_path: Path) -> 
     assert [f["lineup"] for f in fills] == [["DJ IAGO", "ANSTY"]]
 
 
+def test_a_plain_word_of_the_title_leaves_stored_lineups(tmp_path: Path) -> None:
+    """"Winter" of "WINTER EDITION", taken before the common-word rule: dropped, so no stale listing fills it back."""
+    from partylinks import group_fill
+
+    settings, _ = grouped(tmp_path, [listing("selector", "a", "TECHNO NATURE WINTER EDITION")])
+    db = Database(settings.database.url)
+    with db.session() as session:
+        session.get_one(EventRow, "selector:a").lineup = ["Winter", "MANNA", "Solomun"]
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    assert not enricher.title_word("Solomun", "SOLOMUN ALL NIGHT")  # a rare word is a name
+    with db.session() as session:
+        fills = group_fill.plan(session, enricher.clean_name, title_word=enricher.title_word)
+    assert [f["lineup"] for f in fills] == [["MANNA", "Solomun"]]
+
+
 def test_one_sites_hour_just_after_midnight_joins_the_others_and_the_agreed_hour_fronts(tmp_path: Path) -> None:
     tz = ZoneInfo("Asia/Jerusalem")
     day = datetime.now(tz).date() + timedelta(days=5)

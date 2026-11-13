@@ -39,6 +39,7 @@ from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import Session
 
 from partylinks import group_fill
+from partylinks.ads import paid
 from partylinks.artistdb import ArtistBook
 from partylinks.config import Settings
 from partylinks.db import (
@@ -324,10 +325,14 @@ class ScrapeService:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, changed)
         with self._planning() as session:
-            fills = group_fill.plan(session, self.enricher.clean_name, frozenset(self.settings.dedup.place_sources))  # what one store lacks, from the event's other stores / its venue
+            fills = group_fill.plan(
+                session, self.enricher.clean_name, frozenset(self.settings.dedup.place_sources), self.enricher.title_word
+            )  # what one store lacks, from the event's other stores / its venue
         if fills:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, fills)
+        with self.db.session() as session:
+            paid.sync(session)  # events.is_sponsored: a campaign that ended is no longer paid
         log.debug("group fill: %d events", len(fills))
         return merged
 

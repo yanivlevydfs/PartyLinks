@@ -576,6 +576,17 @@ class Enricher:
         """A stored lineup name under the current name rule: cleaned, or None (group_fill applies it to stored rows)."""
         return self._as_name(value)
 
+    def title_word(self, name: str, title: str) -> bool:
+        """A stored name that is a plain English word of the event's own title ("Winter" from "TECHNO NATURE
+        WINTER EDITION"): what title spotting took before the common-word rule, never an act (group_fill drops it)."""
+        word, low = name.strip(), title.casefold()
+        return (  # cheapest test first: it runs on every stored name, every regroup
+            " " not in word
+            and word.casefold() in low
+            and re.search(rf"(?<!\w){re.escape(word.casefold())}(?!\w)", low) is not None
+            and _common_word(word, self.settings.lineup.common_word_zipf)
+        )
+
     def _as_name(self, value: str) -> str | None:
         cfg = self.settings.lineup
         if "??" in value:  # "04] ??? — corrompido": a slot not announced yet

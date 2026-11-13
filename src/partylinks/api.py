@@ -247,6 +247,7 @@ class EventSummaryOut(_Out):
     bookable: bool = False  # matched to an Ontopo venue (partylinks.placeinfo)
     was_price: float | None = None  # the price before a recent drop (partylinks.smartrails)
     pinned: bool = False  # pinned by the owner to the home rows: shown first (partylinks.home_pins)
+    is_sponsored: bool = False  # paid right now: pinned or a sponsored placement (events.is_sponsored, partylinks.ads.paid)
     weekly: str | None = None  # a weekly line's weekday, "thursday" (partylinks.lines)
 
     @model_validator(mode="after")
@@ -1385,10 +1386,10 @@ def _register_routes(app: FastAPI) -> None:
     app.include_router(holidays_router)
     app.include_router(similar_router)
     app.include_router(artist_filter_router)
-    app.include_router(top_router)
     from partylinks.facet_list.routes import router as facet_list_router
 
     app.include_router(facet_list_router)  # the venues / artists indexes, a page at a time
+    app.include_router(top_router)
     app.include_router(ads_admin_router)
     from partylinks.home_pins.routes import router as home_pins_router
 
@@ -1610,7 +1611,6 @@ def _register_routes(app: FastAPI) -> None:
         """Facet counts of the events matching the list's filters (none: every upcoming event)."""
         return _cached(request, lambda session: build_categories(request, session, filters, upcoming), exclude_none=True)
 
-    @app.get("/ticket-sites", response_model=Stores, tags=["events"])
     def anywhere_categories() -> bytes:
         """/categories?anywhere=true's JSON (the venue and artist indexes page it, partylinks.facet_list)."""
         with app.state.db.session(write=False) as session:
@@ -1619,6 +1619,7 @@ def _register_routes(app: FastAPI) -> None:
 
     app.state.anywhere_categories = anywhere_categories
 
+    @app.get("/ticket-sites", response_model=Stores, tags=["events"])
     def stores(request: Request) -> Response:
         """The ticket sites events come from, with how many upcoming events each sells (the stores page)."""
 
