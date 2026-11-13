@@ -38,7 +38,7 @@ export function PasskeyOffer() {
     setNote(t.failed);
   };
   return createPortal(
-    <div className="sheet-back" onClick={later}>
+    <div className="sheet-back pk-back" onClick={later}>
       <div className="sheet pk-offer" role="dialog" aria-modal="true" aria-labelledby="pk-offer-title" onClick={(e) => e.stopPropagation()}>
         <h2 id="pk-offer-title">{t.offerTitle}</h2>
         <p>{t.offerText}</p>

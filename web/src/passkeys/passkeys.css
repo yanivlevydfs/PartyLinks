@@ -13,4 +13,12 @@
 .pk-list .c-btn { justify-self: start; }
 
 .pk-hint { margin: 0; color: var(--muted); font-size: .9em; max-width: 340px; }
-.pk-offer .pk-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pk-back { z-index: 2100; } /* over the cookie banner (.consent 2000), which hid "Not now" on phones */
+/* The offer: centred column, one full-width button, "Not now" quietly under it. */
+.pk-offer { text-align: center; justify-items: center; gap: 10px; padding: 28px 24px 20px; }
+.pk-offer h2 { font-size: 1.3rem; line-height: 1.3; }
+.pk-offer p { margin: 0; color: var(--muted); line-height: 1.6; max-width: 340px; }
+.pk-offer .pk-actions { display: grid; gap: 6px; width: 100%; max-width: 320px; margin-top: 8px; }
+.pk-offer .pk-actions .c-btn { width: 100%; justify-content: center; }
+.pk-offer .pk-actions .link-btn { justify-self: center; padding: 8px 16px; color: var(--muted); text-decoration: none; }
+.pk-offer .pk-actions .link-btn:hover { color: var(--text); }
