@@ -36,6 +36,9 @@ def test_a_fake_googlebot_is_limited_and_a_real_one_is_not(app, monkeypatch: pyt
     monkeypatch.setattr(page_guard.socket, "getaddrinfo", lambda host, port: [(0, 0, 0, "", ("66.249.66.1", 0))])
     with TestClient(app, client=("66.249.66.1", 1)) as google, TestClient(app, client=("198.51.100.9", 1)) as fake:
         assert all(google.get("/about", headers=GOOGLE).status_code == 200 for _ in range(6))
+        app.state.settings.security.data_rate_limit_per_minute = 2
+        assert all(google.get("/categories", headers=GOOGLE).status_code == 200 for _ in range(4))  # rendering
+        assert [fake.get("/categories", headers=GOOGLE).status_code for _ in range(3)] == [200, 200, 429]
         assert [fake.get("/about", headers=GOOGLE).status_code for _ in range(4)] == [200, 200, 200, 429]
 
 

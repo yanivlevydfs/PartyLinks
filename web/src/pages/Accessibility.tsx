@@ -34,9 +34,16 @@ const TEXT = {
       "המפה היא רכיב חזותי. אותו מידע זמין גם ברשימות המקומות והאירועים.",
       "רכישת הכרטיסים נעשית באתרים חיצוניים, שהנגישות שלהם באחריות המפעילים שלהם.",
     ],
+    eventsTitle: "נגישות באירועים",
+    events:
+      "האתר מרכז אירועים שמפיקים ומקומות שונים מפרסמים, ואיננו מפיקים אותם. ההנגשה באירוע ובמקום עצמו (חניה, כניסה, מקומות ישיבה, שירותים נגישים ועוד) באחריות המפיק והמקום. לבירור אמצעי ההנגשה באירוע מסוים פנו למפיק או למקום, דרך עמוד הכרטיסים שמקושר מעמוד האירוע.",
+    serviceTitle: "שירות ומשרדים",
+    service:
+      "השירות שלנו ניתן באתר ובדוא\"ל בלבד. אין לנו משרדים שמקבלים קהל ואין מוקד טלפוני.",
     contactTitle: "פניות בנושא נגישות",
     contactIntro:
-      "נתקלתם בבעיית נגישות? נשמח לשמוע ולתקן. כדי שנוכל לטפל בפנייה, נבקש לציין את העמוד, תיאור הבעיה, ואת הדפדפן וטכנולוגיית העזר שבהן השתמשתם.",
+      "נתקלתם בבעיית נגישות? נשמח לשמוע ולתקן. כדי שנוכל לטפל בפנייה, נבקש לציין את העמוד, תיאור הבעיה, ואת הדפדפן וטכנולוגיית העזר שבהן השתמשתם. נשיב לכל פנייה תוך 5 ימי עבודה.",
+    contactPage: "אפשר לפנות גם דרך עמוד צור קשר",
     coordinator: "רכז/ת הנגישות",
     email: "דוא\"ל",
     phone: "טלפון",
@@ -68,9 +75,15 @@ const TEXT = {
       "The map is visual. The same information is available in the venue and party lists.",
       "Tickets are bought on external sites, whose accessibility is the responsibility of their operators.",
     ],
+    eventsTitle: "Accessibility at events",
+    events:
+      "The site lists events published by many organizers and venues; we don't produce them. Accessibility at the event and venue itself (parking, entrance, seating, accessible toilets and more) is the organizer's and venue's responsibility. To ask about a specific event, contact its organizer or venue through the ticket page linked from the event page.",
+    serviceTitle: "Service and offices",
+    service: "Our service is on the website and by email only. We have no offices open to the public and no phone line.",
     contactTitle: "Accessibility contact",
     contactIntro:
-      "Found an accessibility problem? We want to hear about it and fix it. Please include the page, a description of the problem, and the browser and assistive technology you used.",
+      "Found an accessibility problem? We want to hear about it and fix it. Please include the page, a description of the problem, and the browser and assistive technology you used. We reply to every message within 5 business days.",
+    contactPage: "You can also write to us through the contact page",
     coordinator: "Accessibility coordinator",
     email: "Email",
     phone: "Phone",
@@ -104,6 +117,12 @@ export default function AccessibilityPage() {
         <h2>{t.limitsTitle}</h2>
         <ul>{t.limits.map((x) => <li key={x}>{x}</li>)}</ul>
 
+        <h2>{t.eventsTitle}</h2>
+        <p>{t.events}</p>
+
+        <h2>{t.serviceTitle}</h2>
+        <p>{t.service}</p>
+
         <h2>{t.contactTitle}</h2>
         <p>{t.contactIntro}</p>
         {hasContact ? (
@@ -115,6 +134,8 @@ export default function AccessibilityPage() {
         ) : (
           site && <p className="muted">{t.contactMissing}</p>
         )}
+
+        <p><Link to="/contact">{t.contactPage}</Link></p>
 
         {updated && <p className="muted">{t.updated} {updated}.</p>}
         <p><Link to="/">{t.back}</Link></p>

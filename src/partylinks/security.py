@@ -311,10 +311,12 @@ class SecurityMiddleware:
             # every event's link (offers.url) faster than that, and a ban shut them out of the whole site.
             if path.startswith("/go/") and self.guard.over_limit(ip, "go", cfg.go_rate_limit_per_minute, now):
                 return await reject(429, "too many requests", [(b"retry-after", b"60")])
+            # Google renders a page by fetching its JSON like a browser (39% of Googlebot's requests): a 429 there
+            # left the page empty to it. A search engine that checks out in DNS is not limited (partylinks.page_guard).
             if path.startswith(DATA_PATHS) and (
                 self.guard.over_limit(ip, "data", cfg.data_rate_limit_per_minute, now)
                 or self.guard.over_limit(ip, "data-hour", cfg.data_rate_limit_per_hour, now, 3600)
-            ):
+            ) and not await page_guard.real_crawler(ip, agent, cfg):
                 return await reject(429, "too many requests", [(b"retry-after", b"60")])
         # The trap link (partylinks.page_guard): only a client ignoring robots.txt and nofollow gets here.
         if cfg.trap_path and path == cfg.trap_path and not local and not await page_guard.real_crawler(ip, agent, cfg):

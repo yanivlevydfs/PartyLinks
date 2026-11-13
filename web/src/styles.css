@@ -743,6 +743,14 @@ select option { background: var(--panel-solid); color: var(--text); }
   border: 2px solid rgb(255 255 255 / .25); border-top-color: var(--pink); animation: spin .7s linear infinite;
 }
 .facets.stale { opacity: .55; transition: opacity .2s; }
+/* The first page loading: placeholder rows / tiles in the list's shape (Browse.tsx FacetIndex) */
+.sk-facets .fi { pointer-events: none; }
+.sk-facets .sk-line { display: block; width: 70%; height: 12px; }
+.sk-facets .sk-line.short { width: 40%; height: 10px; }
+.facets.list.sk-facets .fi-av { grid-row: span 2; }
+.facets.list.sk-facets .sk-line { grid-column: 2; align-self: end; }
+.facets.list.sk-facets .sk-line.short { align-self: start; }
+.facets.grid.sk-facets .sk-line { margin: 4px 4px 0; }
 .more .facet-count { display: block; margin-top: 12px; font-size: 13px; }
 .more button .facet-spin { border-top-color: #fff; }
 .facet-bar { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }

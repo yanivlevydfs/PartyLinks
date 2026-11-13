@@ -26,8 +26,8 @@ from zoneinfo import ZoneInfo
 
 import yaml
 from cachetools import TTLCache
-from fastapi import FastAPI, Request, Response
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi import FastAPI, Request, Response, status
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from sqlalchemy import ColumnElement, String, cast, func, or_, select
 from sqlalchemy.orm import Session, object_session, selectinload
 
@@ -540,8 +540,21 @@ def _home_graph(cfg: Settings, lang: str, t: dict[str, str], rows: list[EventRow
     return {"@context": "https://schema.org", "@graph": graph}
 
 
+# The home page's own menu in the HTML Google reads first: its main sections, by name (Google's sitelinks
+# advice: a logical structure with important pages linked, short relevant anchor text).
+SECTIONS = [
+    ("/venues", "מקומות", "Venues"), ("/artists", "אמנים", "Artists"), ("/map", "מפת אירועים", "Event map"),
+    ("/abroad", "אירועים בחו״ל", "Events abroad"), ("/blog", "מגזין", "Magazine"),
+    ("/partners", "פרסום ושיתופי פעולה", "Advertise with us"), ("/about", "אודות", "About"),
+    ("/contact", "צור קשר", "Contact us"), ("/accessibility", "הצהרת נגישות", "Accessibility statement"),
+]  # fmt: skip
+
+
 def home_page(session: Session, cfg: Settings, lang: str) -> Page:
     t = TEXT[lang]
+    nav = "<nav><ul>" + "".join(
+        f'<li><a href="{path}">{escape(he if lang == "he" else en)}</a></li>' for path, he, en in SECTIONS
+    ) + "</ul></nav>"
     rows = _upcoming(session, _NOT_PLACE)
     faq = _where_to(session, cfg, lang)
     faq_html = "".join(f"<h2>{escape(q)}</h2><p>{escape(a)}</p>" for q, a in faq)
@@ -551,7 +564,7 @@ def home_page(session: Session, cfg: Settings, lang: str) -> Page:
         path="/",
         lang=lang,
         jsonld=[_home_graph(cfg, lang, t, rows, faq)],
-        body=f"<h1>{escape(t['site_title'])}</h1><p>{escape(t['site_desc'])}</p>{faq_html}{_landing_links(session, cfg, lang)}"
+        body=f"<h1>{escape(t['site_title'])}</h1><p>{escape(t['site_desc'])}</p>{nav}{faq_html}{_landing_links(session, cfg, lang)}"
         f"<h2>{escape(t['upcoming'])}</h2>" + _event_list_html(rows, cfg, lang),
     )
 
@@ -778,7 +791,8 @@ def accessibility_page(session: Session, cfg: Settings, lang: str) -> Page:
         path="/accessibility",
         lang=lang,
         jsonld=[_breadcrumbs(cfg, lang, (title, "/accessibility"))],
-        body=f"<h1>{title}</h1><p>{escape(text)}</p>{contact}",
+        body=f"<h1>{title}</h1><p>{escape(text)}</p>{contact}"
+        + f'<p><a href="/contact">{"צור קשר" if he else "Contact us"}</a></p>',
     )
 
 
@@ -1722,6 +1736,11 @@ def register(app: FastAPI, site_dir: Path) -> None:
     @app.get("/accessibility", include_in_schema=False)
     def accessibility(request: Request) -> HTMLResponse:
         return page(request, accessibility_page)
+
+    @app.get("/accessibility-statement", include_in_schema=False)
+    def accessibility_statement() -> RedirectResponse:
+        """The name other Israeli sites use for it."""
+        return RedirectResponse("/accessibility", status.HTTP_301_MOVED_PERMANENTLY)
 
     @app.get("/privacy", include_in_schema=False)
     def privacy(request: Request) -> HTMLResponse:
