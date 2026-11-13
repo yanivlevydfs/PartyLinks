@@ -1,12 +1,16 @@
 // /promote: an event owner picks their upcoming events (the site's own search, which lists upcoming events
 // only), says what to promote and leaves their details. POST /api/promote-requests (partylinks.promote).
 // ?event=<id> starts with that event picked (a link from an event page or an email).
+// Signed-in users only (the owner's call, 2026-11-13): signed out, the page offers sign-in and comes back here.
 import { useQuery } from "@tanstack/react-query";
-import { type FormEvent, type ReactNode, useDeferredValue, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { SignInButton } from "../accounts/AccountSlot";
+import { useMe, useSite } from "../accounts/useMe";
 import { getJSON } from "../api";
-import type { EventDetail, EventPage, EventSummary } from "../types";
-import { Hero, Img, sized, TZ, useTitle } from "../ui";
+import { useWeb } from "../site_params/useWeb";
+import type { EventDetail, EventSummary } from "../types";
+import { Hero, Img, Loader, sized, TZ, useTitle } from "../ui";
 import { usePromoteText } from "./i18n";
 import "./promote.css";
 
@@ -32,13 +36,46 @@ function EventRow({ e, children }: { e: Picked; children: ReactNode }) {
 }
 
 export function PromotePage() {
-  const { p, lang } = usePromoteText();
+  const { p } = usePromoteText();
   useTitle(p.metaTitle);
+  const site = useSite();
+  const me = useMe();
+  if (!site || (site.accounts && me.isPending)) return <Loader />;
+  if (!site.accounts)
+    return (
+      <>
+        <Hero title={p.title}><p className="hero-pitch">{p.lead}</p></Hero>
+        <main className="wrap pr"><p className="pr-err">{p.accountsOff} <Link to="/contact">→</Link></p></main>
+      </>
+    );
+  if (!me.data)
+    return (
+      <>
+        <Hero title={p.title}><p className="hero-pitch">{p.lead}</p></Hero>
+        <main className="wrap pr">
+          <section className="pr-signin">
+            <h2>{p.signInTitle}</h2>
+            <p>{p.signInText}</p>
+            <SignInButton next={location.pathname + location.search} />
+          </section>
+        </main>
+      </>
+    );
+  return <PromoteForm name={me.data.name} email={me.data.email} />;
+}
+
+function PromoteForm({ name, email }: { name: string; email: string }) {
+  const { p, lang } = usePromoteText();
   const [params] = useSearchParams();
   const first = params.get("event");
   const [picked, setPicked] = useState<Picked[]>([]);
   const [q, setQ] = useState("");
-  const query = useDeferredValue(q.trim());
+  const [query, setQuery] = useState(""); // what was typed, once typing pauses: one search, not one a keystroke
+  const debounce = useWeb().search_debounce_ms;
+  useEffect(() => {
+    const id = setTimeout(() => setQuery(q.trim()), debounce);
+    return () => clearTimeout(id);
+  }, [q, debounce]);
   const [placements, setPlacements] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
@@ -57,8 +94,10 @@ export function PromotePage() {
   });
   const found = useQuery({
     queryKey: ["promote-search", query],
-    queryFn: ({ signal }) => getJSON<EventPage>(`/events?q=${encodeURIComponent(query)}&page_size=8`, signal),
+    // The form's own light search (title, venue, lineup of upcoming events): the site's full one is too slow here.
+    queryFn: ({ signal }) => getJSON<Picked[]>(`/api/promote-requests/events?q=${encodeURIComponent(query)}`, signal),
     enabled: query.length >= 2,
+    staleTime: 60_000,
   });
 
   const toggle = (e: Picked) =>
@@ -87,7 +126,8 @@ export function PromotePage() {
       if (res.ok) return setDone(true);
       const detail = JSON.stringify((await res.json().catch(() => null))?.detail ?? "");
       setError(
-        res.status === 429 ? p.tooMany
+        res.status === 401 ? p.signInAgain
+        : res.status === 429 ? p.tooMany
         : res.status === 404 ? p.closed
         : detail.includes("phone") ? p.badPhone
         : detail.includes("email") ? p.badEmail
@@ -114,7 +154,7 @@ export function PromotePage() {
       </>
     );
 
-  const results = found.data?.items ?? [];
+  const results = found.data ?? [];
   return (
     <>
       <Hero title={p.title}><p className="hero-pitch">{p.lead}</p></Hero>
@@ -173,9 +213,9 @@ export function PromotePage() {
           <fieldset>
             <legend>{p.stepDetails}</legend>
             <div className="pr-fields">
-              <label>{p.name}<input className="pr-input" name="name" required minLength={2} maxLength={120} autoComplete="name" /></label>
+              <label>{p.name}<input className="pr-input" name="name" required minLength={2} maxLength={120} autoComplete="name" defaultValue={name} /></label>
               <label>{p.business}<input className="pr-input" name="business" maxLength={160} autoComplete="organization" /></label>
-              <label>{p.email}<input className="pr-input" name="email" type="email" required maxLength={254} autoComplete="email" dir="ltr" /></label>
+              <label>{p.email}<input className="pr-input" name="email" type="email" required maxLength={254} autoComplete="email" dir="ltr" defaultValue={email} /></label>
               <label>{p.phone}<input className="pr-input" name="phone" type="tel" required minLength={9} maxLength={40} autoComplete="tel" inputMode="tel" dir="ltr" placeholder="05X-XXXXXXX" /></label>
             </div>
             <label className="pr-wide">{p.message}

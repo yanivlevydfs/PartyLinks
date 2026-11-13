@@ -1,4 +1,5 @@
-"""``POST /api/promote-requests`` (the /promote form, anyone, rate-limited) and the admin's
+"""``POST /api/promote-requests`` (the /promote form, signed-in users only, rate-limited), its event picker
+``GET /api/promote-requests/events`` and the admin's
 ``/admin/api/promote-requests`` (list, set status, delete). Included by partylinks.api."""
 
 from __future__ import annotations
@@ -10,14 +11,17 @@ from typing import Annotated, Any, Literal
 import phonenumbers
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, StringConstraints
-from sqlalchemy import select
+from sqlalchemy import String, and_, cast, or_, select
+from sqlalchemy.orm import selectinload
 
 from partylinks.accounts.guard import SameOrigin, limited
+from partylinks.accounts.sessions import UserDep
 from partylinks.admin import AdminDep
 from partylinks.api import SessionDep
 from partylinks.config import Settings
 from partylinks.db import EventRow, upcoming_filter
 from partylinks.promote.models import PromoteRequestRow
+from partylinks.search import _pattern
 
 log = logging.getLogger(__name__)
 public = APIRouter(tags=["promote"])
@@ -56,6 +60,7 @@ def _out(r: PromoteRequestRow) -> dict[str, Any]:
     return {
         "id": r.id, "name": r.name, "business": r.business, "email": r.email, "phone": r.phone, "events": r.events,
         "placements": r.placements, "message": r.message, "lang": r.lang, "status": r.status, "created_at": r.created_at,
+        "user_id": r.user_id,
     }  # fmt: skip
 
 
@@ -92,13 +97,41 @@ def _email_admins(cfg: Settings, r: dict[str, Any]) -> None:
         log.exception("promote request %s: admin email failed", r["id"])
 
 
+@public.get("/api/promote-requests/events", dependencies=[limited("promote-search", "promote_search")])
+def pick(q: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=80)], user: UserDep,
+         session: SessionDep) -> list[dict[str, Any]]:  # fmt: skip
+    """The form's event picker: upcoming events whose title, venue or lineup holds every typed word, soonest
+    first. ~0.13 s on prod (2026-11-13), where the site's full search (/events?q=, ranked, counted) takes 1.6-2 s
+    a keystroke. Signed-in users only, as the form."""
+    words = q.split()[:5]
+    found = session.scalars(
+        select(EventRow)
+        .options(selectinload(EventRow.images))
+        .where(
+            upcoming_filter(), EventRow.is_primary.is_(True),
+            and_(*(or_(EventRow.title.ilike(_pattern(w), escape="\\"), EventRow.venue_name.ilike(_pattern(w), escape="\\"),
+                       cast(EventRow.lineup, String).ilike(_pattern(w), escape="\\")) for w in words)),
+        )
+        .order_by(EventRow.start_at)
+        .limit(8)
+    )  # fmt: skip
+    return [
+        {"id": e.id, "slug": e.slug, "title": e.title, "start_at": e.start_at, "venue_name": e.venue_name,
+         "city": e.city, "cover_url": e.cover_url, "image_url": None}
+        for e in found
+    ]  # fmt: skip
+
+
 @public.post(
     "/api/promote-requests",
     status_code=status.HTTP_201_CREATED,
     dependencies=[limited("promote", "promote"), SameOrigin],
 )
-def create(body: RequestIn, request: Request, session: SessionDep, background: BackgroundTasks) -> dict[str, Any]:
-    """Save a request for upcoming events only: any id that is not an upcoming event answers 422."""
+def create(
+    body: RequestIn, request: Request, user: UserDep, session: SessionDep, background: BackgroundTasks
+) -> dict[str, Any]:
+    """Save a signed-in user's request (signed out: 401) for upcoming events only: any id that is not an
+    upcoming event answers 422. The owner asked for sign-in (2026-11-13): a request comes from a known account."""
     cfg: Settings = request.app.state.settings
     if not cfg.promote.enabled:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "promotion requests are closed")
@@ -123,11 +156,13 @@ def create(body: RequestIn, request: Request, session: SessionDep, background: B
     ]  # fmt: skip
     r = PromoteRequestRow(
         name=body.name, business=body.business or None, email=body.email, phone=phone, events=events,
-        placements=list(dict.fromkeys(body.placements)), message=body.message or None, lang=body.lang,
+        placements=list(dict.fromkeys(body.placements)), message=body.message or None, lang=body.lang, user_id=user.id,
     )  # fmt: skip
     session.add(r)
     session.flush()
-    log.info("promote request %s: %d events, placements %s", r.id, len(events), r.placements or "-")
+    log.info(
+        "promote request %s from user %s: %d events, placements %s", r.id, user.id, len(events), r.placements or "-"
+    )
     background.add_task(_email_admins, cfg, _out(r))
     return {"id": r.id}
 

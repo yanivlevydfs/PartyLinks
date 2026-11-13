@@ -35,6 +35,19 @@ def _empty_database(_test_database: str, monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 @pytest.fixture(autouse=True)
+def _no_real_email(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The local .env may hold a real Resend key: no test may send real mail. A test that sends mail
+    replaces these itself (tests/test_mail.py); anything else that tries fails loudly."""
+    import resend
+
+    def refuse(*_: object, **__: object) -> None:
+        raise AssertionError("a test tried to send real email through Resend")
+
+    monkeypatch.setattr(resend.Batch, "send", refuse)
+    monkeypatch.setattr(resend.Emails, "send", refuse)
+
+
+@pytest.fixture(autouse=True)
 def _no_live_israeli_proxies(monkeypatch: pytest.MonkeyPatch) -> None:
     """`israel_proxy` sources would fetch the live proxy feed and dial real proxies."""
     monkeypatch.setenv("PARTYLINKS_HTTP__ISRAEL_PROXY_FEED", "")

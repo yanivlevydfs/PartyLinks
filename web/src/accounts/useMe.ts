@@ -26,7 +26,7 @@ export async function send<T = unknown>(url: string, method: string, body?: unkn
 
 export type Provider = "google" | "facebook";
 
-function useSite() {
+export function useSite() {
   return useQuery({ queryKey: ["site"], queryFn: () => fetch("/site").then((r) => r.json()) }).data;
 }
 

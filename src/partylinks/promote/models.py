@@ -27,5 +27,6 @@ class PromoteRequestRow(Base):
     placements: Mapped[list[str]] = mapped_column(JSONType, default=list)  # routes.PLACEMENTS keys
     message: Mapped[str | None] = mapped_column(Text)
     lang: Mapped[str] = mapped_column(Text, default="he")
+    user_id: Mapped[str | None] = mapped_column(Text)  # the signed-in account that sent it (users.id; no FK)
     status: Mapped[str] = mapped_column(Text, default="new")  # routes.STATUSES
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)

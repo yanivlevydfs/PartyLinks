@@ -16,6 +16,7 @@ class RateLimitSettings(BaseModel):
     plan_votes: int = Field(60, ge=1, le=1000)  # answers on a plan
     fb_deletion: int = Field(30, ge=1, le=1000)  # Meta's data-deletion callback
     promote: int = Field(5, ge=1, le=1000)  # promotion requests sent from /promote (partylinks.promote)
+    promote_search: int = Field(120, ge=1, le=5000)  # its event picker's searches (a few per typed name)
 
 
 class AccountsSettings(BaseModel):
