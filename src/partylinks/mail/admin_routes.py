@@ -39,7 +39,7 @@ def email_state(request: Request) -> dict[str, Any]:
     settings = request.app.state.settings
     with request.app.state.db.session() as session:
         s = jobs.switches(session)
-        runs = session.scalars(select(EmailRunRow).order_by(EmailRunRow.id.desc()).limit(20)).all()
+        runs = session.scalars(select(EmailRunRow).order_by(EmailRunRow.id.desc()).limit(settings.mail.admin_runs_shown)).all()
         return {
             "ready": mailer.ready(settings), "key": settings.mail.resend_api_key is not None,
             "from": settings.mail.from_address, "digest_cron": settings.mail.digest_cron, "timezone": settings.timezone,

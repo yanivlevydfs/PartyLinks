@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 
 from partylinks.api import create_app
 from partylinks.db import delete_events
+from partylinks.plans.config import PlansSettings
 from partylinks.plans.models import PlanEventRow, PlanRow, PlanVoteRow
-from partylinks.plans.routes import MAX_OPTIONS, MAX_VOTES
 from tests.test_accounts import OURS, FakeGoogle, sign_in
 from tests.test_storage_api import event, seed, settings_for
 
@@ -58,7 +58,7 @@ def test_plan_is_capped_and_goes_with_its_event(tmp_path: Path) -> None:
     with TestClient(app) as c:
         pid = c.post("/plans", json={"event_id": "test:a"}).json()["id"]
         app.state.guard.over_limit = lambda *a, **k: False  # the cap, not the per-IP rate limit
-        for i in range(MAX_VOTES):
+        for i in range(PlansSettings().max_votes):
             assert c.post(f"/plans/{pid}/votes", json={"voter": f"voter-{i:08d}", "name": f"n{i}", "answer": "yes"}).status_code == 200
         assert c.post(f"/plans/{pid}/votes", json={"voter": "voter-overflow", "name": "x", "answer": "yes"}).status_code == 409
         assert c.post(f"/plans/{pid}/votes", json={"voter": "voter-00000000", "name": "n0", "answer": "no"}).status_code == 200
@@ -80,7 +80,7 @@ def test_which_party_and_who_drives(tmp_path: Path) -> None:
         for k in "cd":
             c.post(f"/plans/{pid}/events", json={"event_id": f"test:{k}"})
         assert c.post(f"/plans/{pid}/events", json={"event_id": "test:e"}).status_code == 409  # MAX_OPTIONS
-        assert MAX_OPTIONS == 4
+        assert PlansSettings().max_options == 4
         assert c.post(f"/plans/{pid}/events", json={"event_id": "nope"}).status_code == 410
 
         vote = {"voter": ME, "name": "יניב", "answer": "yes", "picks": ["test:b", "test:x", "test:b"], "ride": "drive", "seats": 3}

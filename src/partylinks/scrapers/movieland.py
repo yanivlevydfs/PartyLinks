@@ -32,7 +32,6 @@ from partylinks.scrapers.pres import with_tiers
 
 _AGE = re.compile(r"^(\d{1,2})\s*\+")
 # A screening listed before this hour runs after midnight of its business day.
-_NIGHT_HOUR = 5
 # Genre of non-film items (football / show broadcasts): no "קולנוע" for those.
 _NOT_FILM = "אירוע"
 
@@ -54,6 +53,7 @@ class MovielandSettings(SourceSettings):
     movie_path: str = "/movie/{id}"
     # Today plus the next days_ahead - 1 days.
     days_ahead: int = 3
+    night_hour: int = Field(5, ge=0, le=23)  # a screening before this hour belongs to the previous business day
     # By the feed's TheaterId; an unlisted branch is still read, named after the feed.
     branches: dict[str, MovielandBranch] = Field(default_factory=dict)
     # BiggerPicture shop API (ticket prices).
@@ -93,8 +93,8 @@ class MovielandScraper(BaseScraper[MovielandSettings]):
             yield event
 
 
-def business_day(start: datetime) -> date:
-    return (start - timedelta(days=1)).date() if start.hour < _NIGHT_HOUR else start.date()
+def business_day(start: datetime, night_hour: int) -> date:
+    return (start - timedelta(days=1)).date() if start.hour < night_hour else start.date()
 
 
 def parse_events(
@@ -113,7 +113,7 @@ def parse_events(
                 start = datetime.fromisoformat(show["Date"]).replace(tzinfo=tz)
             except (KeyError, TypeError, ValueError):
                 continue
-            if (day := business_day(start)) in days and (now is None or start >= now):
+            if (day := business_day(start, settings.night_hour)) in days and (now is None or start >= now):
                 groups[(str(show.get("TheaterId")), day)].append((start, show))
         for (branch_id, day), shows in groups.items():
             shows.sort(key=lambda x: x[0])

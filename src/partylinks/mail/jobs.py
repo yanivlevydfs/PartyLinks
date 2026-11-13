@@ -25,10 +25,6 @@ from partylinks.saved.models import SavedEventRow
 from partylinks.saved.routes import cards
 
 log = logging.getLogger(__name__)
-INSTANT_MAX = 10
-DIGEST_DAYS = 10  # matches for events in the next 10 days
-SAVED_DAYS = 7
-FILLER = 6
 
 
 def switches(session: Session) -> MailSwitchesRow:
@@ -100,8 +96,8 @@ def welcome(settings: Settings, db: Database) -> None:
     with db.session() as session:
         users = session.scalars(
             select(UserRow).where(
-                UserRow.welcome_sent_at.is_(None), UserRow.blocked_at.is_(None), UserRow.created_at < started - timedelta(minutes=2)
-            ).limit(500)
+                UserRow.welcome_sent_at.is_(None), UserRow.blocked_at.is_(None), UserRow.created_at < started - timedelta(minutes=settings.mail.welcome_delay_minutes)
+            ).limit(settings.mail.welcome_batch)
         ).all()  # fmt: skip
         session.expunge_all()
     if not users:
@@ -139,7 +135,7 @@ def instant(settings: Settings, db: Database) -> None:
         users = {u.id: u for u in session.scalars(select(UserRow).where(UserRow.id.in_(by_user)))}
         messages, skipped = [], 0
         for user_id, ids in by_user.items():
-            events = cards(session, list(dict.fromkeys(ids)))[:INSTANT_MAX]
+            events = cards(session, list(dict.fromkeys(ids)))[: settings.mail.instant_max_events]
             if not events:
                 skipped += 1
                 continue
@@ -158,7 +154,7 @@ def instant(settings: Settings, db: Database) -> None:
     done = _send(settings, db, "instant", f"instant:{started.timestamp():.0f}", messages, skipped, started)
     with db.session() as session:
         now = utcnow()
-        # Every pending match of a user it went to (more than INSTANT_MAX are dropped: they are in the bell).
+        # Every pending match of a user it went to (more than mail.instant_max_events are dropped: they are in the bell).
         session.execute(
             update(AlertHitRow).where(AlertHitRow.user_id.in_(done), AlertHitRow.instant_sent_at.is_(None)).values(instant_sent_at=now)
         )  # fmt: skip
@@ -174,8 +170,8 @@ def digest_parts(settings: Settings, session: Session, user: UserRow) -> tuple[d
     t = TEXT[lang]
     tz = ZoneInfo(settings.timezone)
     today = datetime.now(tz).date()
-    soon = datetime.combine(today + timedelta(days=SAVED_DAYS), datetime.max.time(), tzinfo=tz)
-    later = datetime.combine(today + timedelta(days=DIGEST_DAYS), datetime.max.time(), tzinfo=tz)
+    soon = datetime.combine(today + timedelta(days=settings.mail.digest_saved_days), datetime.max.time(), tzinfo=tz)
+    later = datetime.combine(today + timedelta(days=settings.mail.digest_days), datetime.max.time(), tzinfo=tz)
 
     saved_ids = list(session.scalars(select(SavedEventRow.event_id).where(SavedEventRow.user_id == user.id)))
     saved = [c for c in cards(session, saved_ids) if c["start_at"] and datetime.fromisoformat(c["start_at"]) <= soon]
@@ -191,14 +187,16 @@ def digest_parts(settings: Settings, session: Session, user: UserRow) -> tuple[d
     ]
     shown |= {c["id"] for c in matches}
     sections = [Section(t["digest_saved"], saved), Section(t["digest_matches"], matches)]
-    if len(shown) < 4:  # a quiet week: this weekend's free events, then the weekend's highlights
+    filler = settings.mail.digest_filler
+    # A quiet week: this weekend's free events, then the weekend's highlights.
+    if len(shown) < settings.mail.digest_quiet_below:
         weekend: dict[str, Any] = {"weekend": True, "date_to": datetime.combine(today + timedelta(days=7), datetime.max.time())}
         fillers: tuple[tuple[str, dict[str, Any]], ...] = ((t["digest_free"], {"free_entry": True}), (t["digest_weekend"], {}))
         for title, extra in fillers:
             ids = session.scalars(
-                select(EventRow.id).where(*build_event_filters(settings, **weekend, **extra)).order_by(EventRow.group_size.desc(), EventRow.start_at).limit(FILLER * 2)
+                select(EventRow.id).where(*build_event_filters(settings, **weekend, **extra)).order_by(EventRow.group_size.desc(), EventRow.start_at).limit(filler * 2)
             )  # fmt: skip
-            more = [c for c in cards(session, list(ids)) if c["id"] not in shown][:FILLER]
+            more = [c for c in cards(session, list(ids)) if c["id"] not in shown][:filler]
             shown |= {c["id"] for c in more}
             sections.append(Section(title, more))
     count = sum(len(s.events) for s in sections)

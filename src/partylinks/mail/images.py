@@ -27,8 +27,6 @@ from partylinks.media import VARIANT_WIDTHS, variant_path
 HERO = (1104, 552)  # the lead card's 552x276 frame, at 2x
 THUMB = (224, 168)  # a row's 112x84 frame, at 2x
 SIZES = {HERO, THUMB}
-QUALITY = 82
-HEADERS = {"Cache-Control": "public, max-age=604800"}  # a week: an email is opened days after it goes
 
 router = APIRouter(tags=["mail"], include_in_schema=False)
 
@@ -38,7 +36,7 @@ def mail_image(path: str, size: tuple[int, int]) -> str:
     return f"{path}/mail-{size[0]}x{size[1]}.jpg"
 
 
-def crop_jpeg(data: bytes | Path, size: tuple[int, int]) -> bytes:
+def crop_jpeg(data: bytes | Path, size: tuple[int, int], quality: int = 82) -> bytes:
     """The picture cut to ``size`` around its centre, as JPEG on the email's dark background."""
     with Image.open(data if isinstance(data, Path) else io.BytesIO(data)) as im:
         im.draft("RGB", size)
@@ -49,7 +47,7 @@ def crop_jpeg(data: bytes | Path, size: tuple[int, int]) -> bytes:
             picture.paste(rgba, mask=rgba)
         out = io.BytesIO()
         ImageOps.fit(picture.convert("RGB"), size, Image.Resampling.LANCZOS).save(
-            out, "JPEG", quality=QUALITY, optimize=True, progressive=True
+            out, "JPEG", quality=quality, optimize=True, progressive=True
         )
     return out.getvalue()
 
@@ -63,10 +61,11 @@ def _size(width: int, height: int) -> tuple[int, int]:
 def _serve(request: Request, name: str, size: tuple[int, int], make: Callable[[], bytes | Path]) -> Response:
     # ponytail: _mail/ files aren't claimed by the orphan sweep, so it clears them now and then; the next
     # request makes them again (one resize). Claim them in MediaStore.sweep if that ever costs.
+    mail = request.app.state.settings.mail
     cached = request.app.state.service.media.path_for(f"_mail/{name}")
     if not cached.is_file():
         try:
-            data = crop_jpeg(make(), size)
+            data = crop_jpeg(make(), size, mail.image_quality)
         except HTTPException:
             raise
         except Exception as exc:
@@ -75,7 +74,9 @@ def _serve(request: Request, name: str, size: tuple[int, int], make: Callable[[]
         tmp = cached.with_name(f"{cached.name}.{os.getpid()}-{threading.get_ident()}.tmp")
         tmp.write_bytes(data)
         os.replace(tmp, cached)  # atomic: a parallel request never reads half a file
-    return FileResponse(cached, media_type="image/jpeg", headers=HEADERS)
+    # Cached long: an email is opened days after it goes.
+    headers = {"Cache-Control": f"public, max-age={mail.image_cache_seconds}"}
+    return FileResponse(cached, media_type="image/jpeg", headers=headers)
 
 
 @router.get("/images/{image_id}/mail-{width}x{height}.jpg")

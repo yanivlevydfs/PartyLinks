@@ -59,6 +59,10 @@ class EventbuzzSettings(SourceSettings):
     search_url: str = ""
     search_query: str = "site:eventbuzz.co.il/lp/event"
     search_pages: int = 5
+    # Index / search pages fetched straight: tries, and the wait between them (doubling from min up to max).
+    direct_attempts: int = Field(3, ge=1)
+    direct_wait_min_seconds: float = Field(10, ge=0)
+    direct_wait_max_seconds: float = Field(20, ge=0)
     extra_slugs: list[str] = Field(default_factory=list)  # links the owner saw before any index did (the admin's config tab)
 
 
@@ -83,7 +87,7 @@ class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
             pages += [(f"search page {i + 1}", u) for i, u in enumerate(discover.search_urls(s.search_url, s.search_query, s.search_pages))]
         found: list[str] = list(s.extra_slugs)
         for what, url in pages:  # a failing index or search page costs only its links
-            page = discover.fetch_direct(url, self.http.timeout_seconds, self.http.user_agent)
+            page = discover.fetch_direct(url, self.http.timeout_seconds, self.http.user_agent, s)
             found += discover.slugs(await self.optional(what, page) or "")
         return list(dict.fromkeys(found))
 

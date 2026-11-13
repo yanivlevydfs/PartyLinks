@@ -10,6 +10,7 @@ import type { EventSummary } from "../types";
 import { Quiz } from "./Quiz";
 import { RailPinButton } from "../home_pins/PinButtons";
 import { RailCard } from "../home_pins/RailCard";
+import { useWeb } from "../site_params/useWeb";
 
 // Regions with a /region/<key> page (seo.py REGION_NAMES); Tel Aviv and Eilat are city pages.
 const REGION_PAGES = ["gush_dan", "sharon", "jerusalem", "haifa", "galilee", "negev"];
@@ -123,6 +124,7 @@ export default function Home({ landing }: { landing?: "now" | "tonight" | "weeke
 
   // Debounce the search box; the store keeps what was typed. A new search starts from a clean
   // filter, so leftover filters (date, area, genre...) never hide what was searched for.
+  const debounce = useWeb().home_search_debounce_ms;
   const [q, setQ] = useState(f.q);
   const [suggest, setSuggest] = useState(false);
   const sent = useRef(f.q); // the last search this box sent: any other change (a "did you mean") is shown in it
@@ -133,9 +135,9 @@ export default function Home({ landing }: { landing?: "now" | "tonight" | "weeke
       if (text.length === 1 || text === useStore.getState().filters.q) return;
       sent.current = text;
       set(text ? { ...DEFAULT_FILTERS, q: text } : { q: text });
-    }, 250);
+    }, debounce);
     return () => clearTimeout(id);
-  }, [q, set]);
+  }, [q, set, debounce]);
   useEffect(() => {
     if (f.q !== sent.current) {
       sent.current = f.q;
@@ -207,6 +209,7 @@ function Trending() {
 /** A sideways row of cards: a random 12 of the row's pool (undefined: still loading). */
 export function Rail({ title, sub, pool, rail }: { title: string; sub: string; pool: EventSummary[] | undefined; rail?: string }) {
   const row = useRef<HTMLDivElement>(null);
+  const shown = useWeb().home_row_events;
   // Shuffled once per visit: a fresh copy replacing the stored one doesn't reshuffle the row under the visitor.
   // A stored copy may be days old, so events already over are dropped.
   const loaded = !!pool;
@@ -219,8 +222,8 @@ export function Rail({ title, sub, pool, rail }: { title: string; sub: string; p
       const j = Math.floor(Math.random() * (i + 1));
       [list[i], list[j]] = [list[j], list[i]];
     }
-    return [...list.filter((e) => e.pinned), ...list.filter((e) => !e.pinned)].slice(0, 12); // pinned first, always shown
-  }, [loaded, pins]); // eslint-disable-line react-hooks/exhaustive-deps
+    return [...list.filter((e) => e.pinned), ...list.filter((e) => !e.pinned)].slice(0, shown); // pinned first, always shown
+  }, [loaded, pins, shown]); // eslint-disable-line react-hooks/exhaustive-deps
   if (loaded && items.length < 3) return null;
   const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth, behavior: "smooth" });
   return (

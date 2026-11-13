@@ -21,10 +21,7 @@ from partylinks.db import EventRow, upcoming_filter, utcnow
 from partylinks.saved.routes import cards
 
 NO_STORE = {"Cache-Control": "private, no-store"}
-WRITE = [SameOrigin, limited("me", 30)]
-BELL_SIZE = 30
-FOR_YOU = 12
-PREVIEW = 6
+WRITE = [SameOrigin, limited("me", "me")]
 # "For you" per user for 10 minutes; an alert change clears that user's entry.
 _for_you: TTLCache[str, list[dict[str, Any]]] = TTLCache(maxsize=10_000, ttl=600)
 
@@ -174,7 +171,7 @@ def preview(alert_id: int, user: UserDep, request: Request, response: Response) 
         return _matching(session, Criteria.model_validate(alert.criteria), request.app.state.settings)
 
 
-@router.post("/alerts/preview", dependencies=[limited("me", 60)])
+@router.post("/alerts/preview", dependencies=[limited("me", "alert_preview")])
 def preview_new(body: Criteria, user: UserDep, request: Request, response: Response) -> dict[str, Any]:
     """The count and first events for criteria not saved yet (the alert form's live "N events now")."""
     response.headers.update(NO_STORE)
@@ -186,7 +183,7 @@ def _matching(session: Session, criteria: Criteria, cfg: Settings) -> dict[str, 
     clauses = where(criteria, cfg)
     total = session.scalar(select(func.count()).select_from(EventRow).where(*clauses)) or 0
     ids = list(
-        session.scalars(select(EventRow.id).where(*clauses).order_by(EventRow.start_at, EventRow.id).limit(PREVIEW))
+        session.scalars(select(EventRow.id).where(*clauses).order_by(EventRow.start_at, EventRow.id).limit(cfg.alerts.preview))
     )
     return {"total": total, "items": cards(session, ids)}
 
@@ -195,6 +192,7 @@ def _matching(session: Session, criteria: Criteria, cfg: Settings) -> dict[str, 
 def bell(user: UserDep, request: Request, response: Response) -> dict[str, Any]:
     """The newest matches of the user's alerts, with the alert's name and whether it was seen."""
     response.headers.update(NO_STORE)
+    size = request.app.state.settings.alerts.bell_size
     with request.app.state.db.session(write=False) as session:
         unseen = session.scalar(
             select(func.count()).select_from(AlertHitRow)
@@ -205,7 +203,7 @@ def bell(user: UserDep, request: Request, response: Response) -> dict[str, Any]:
             .join(AlertRow, AlertRow.id == AlertHitRow.alert_id)
             .where(AlertHitRow.user_id == user.id, _shown())
             .order_by(AlertHitRow.matched_at.desc())
-            .limit(BELL_SIZE * 2)  # one event can match two alerts: shown once
+            .limit(size * 2)  # one event can match two alerts: shown once
         ).all()
         first: dict[str, Any] = {}
         for h in hits:
@@ -215,7 +213,7 @@ def bell(user: UserDep, request: Request, response: Response) -> dict[str, Any]:
             {"event": by_id[e], "alert": h.name, "matched_at": h.matched_at, "seen": h.seen_at is not None}
             for e, h in first.items()
             if e in by_id
-        ][:BELL_SIZE]
+        ][:size]
         return {"unseen": unseen, "items": items}
 
 
@@ -266,7 +264,7 @@ def for_you(user: UserDep, request: Request, response: Response) -> dict[str, An
                 select(EventRow.id)
                 .where(any_alert, EventRow.id.not_in(cleared))
                 .order_by(EventRow.start_at, EventRow.id)
-                .limit(FOR_YOU)
+                .limit(cfg.alerts.for_you)
             )
             items = cards(session, list(ids))
     _for_you[user.id] = items

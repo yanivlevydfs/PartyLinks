@@ -667,14 +667,11 @@ def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_
     return Response(cache.get((request.url.path, request.url.query), body)[0], media_type="application/json")
 
 
-SOUND_INDEX_TTL_S = 600
-
-
 def _sound_index(request: Request) -> dict[str, list[str]]:
-    """Every lineup name by its skeleton, rebuilt at most every 10 minutes."""
+    """Every lineup name by its skeleton, rebuilt at most every api.sound_index_ttl_seconds (10 minutes)."""
     state = request.app.state
     built, index = getattr(state, "sound_index", (0.0, {}))
-    if time.monotonic() - built > SOUND_INDEX_TTL_S:
+    if time.monotonic() - built > get_settings().api.sound_index_ttl_seconds:
         db: Database = state.db
         with db.session(write=False) as session:
             lineups = session.scalars(select(EventRow.lineup).where(EventRow.lineup.is_not(None))).all()
@@ -1039,7 +1036,6 @@ log = logging.getLogger(__name__)
 
 CRAWLER = re.compile(r"bot|crawler|spider|google-", re.IGNORECASE)  # search crawlers following /go/, not clicks
 MAX_LIST_PARAMS = 20
-EVENT_CHANGES_LIMIT = 20
 
 
 def current_clause_for_feed() -> ColumnElement[bool]:
@@ -1092,6 +1088,7 @@ def _register_routes(app: FastAPI) -> None:
             "telegram": telegram_username(request.app),  # the bot's @name (web/src/bot/TelegramFab.tsx)
             "card_sources_shown": site.card_sources_shown,  # names on a card before "+N" (web/src/card_stores)
             "passkey_offer_days": site.passkey_offer_days,  # web/src/passkeys/PasskeyOffer.tsx
+            "web": site.web.model_dump(),  # web/src/site_params/useWeb.ts
         }
 
     @app.get("/health", tags=["meta"])
@@ -1488,7 +1485,7 @@ def _register_routes(app: FastAPI) -> None:
             select(DealChangeRow)
             .where(DealChangeRow.event_id.in_(listing_ids))
             .order_by(DealChangeRow.at.desc(), DealChangeRow.id.desc())
-            .limit(EVENT_CHANGES_LIMIT)
+            .limit(cfg.api.event_changes_limit)
         ).all()
         return EventOut.model_validate(row).model_copy(
             update={

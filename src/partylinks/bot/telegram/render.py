@@ -26,6 +26,7 @@ from telegram.error import BadRequest
 
 from partylinks.bot.core.phrases import label
 from partylinks.bot.core.reply import Button, Card, Reply
+from partylinks.config import get_settings
 
 log = logging.getLogger(__name__)
 NO_PREVIEW = LinkPreviewOptions(is_disabled=True)
@@ -51,11 +52,9 @@ def main_keyboard(lang: str) -> ReplyKeyboardMarkup:
     )
 
 
-TITLE_LIMIT = 300  # with the short card lines, well inside a caption's 1024 characters
-
-
 def caption(card: Card) -> str:
-    title = card.title if len(card.title) <= TITLE_LIMIT else card.title[: TITLE_LIMIT - 1] + "…"
+    cut = get_settings().bot.card_title_max  # with the short card lines, well inside a caption's 1024 characters
+    title = card.title if len(card.title) <= cut else card.title[: cut - 1] + "…"
     return f"<b>{escape(title)}</b>\n" + "\n".join(escape(line) for line in card.lines)
 
 

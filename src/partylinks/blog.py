@@ -35,7 +35,7 @@ from pydantic import BaseModel, ValidationError
 from sqlalchemy import ColumnElement
 
 from partylinks import seo
-from partylinks.config import Settings
+from partylinks.config import Settings, get_settings
 from partylinks.db import EventRow, lineup_contains
 
 log = logging.getLogger(__name__)
@@ -50,10 +50,6 @@ CATEGORIES = {  # key -> (Hebrew, English)
 }
 EMBED = re.compile(r"<!--\s*events\b(.*?)-->", re.DOTALL)
 H2 = re.compile(r"<h2>(.*?)</h2>", re.DOTALL)
-EMBED_MAX = 24
-EMBED_DEFAULT = 6
-WORDS_PER_MINUTE = 200
-RELATED = 3
 
 
 class Faq(BaseModel):
@@ -83,7 +79,7 @@ class Post(BaseModel):
     @property
     def read_minutes(self) -> int:
         words = len(re.sub(r"<[^>]+>", " ", EMBED.sub(" ", self.body)).split())
-        return max(1, round(words / WORDS_PER_MINUTE))
+        return max(1, round(words / get_settings().blog.words_per_minute))
 
 
 # --------------------------------------------------------------------------- loading
@@ -154,7 +150,7 @@ def embed_params(raw: str, cfg: Settings) -> dict[str, str]:
     """Embed attributes -> the same query the React grid sends to /events."""
     args = {k: v.strip('"') for k, v in re.findall(r'(\w+)=("[^"]*"|\S+)', raw)}
     limit = args.get("limit", "")
-    params = {"page_size": str(min(int(limit), EMBED_MAX) if limit.isdigit() else EMBED_DEFAULT)}
+    params = {"page_size": str(min(int(limit), cfg.blog.embed_max) if limit.isdigit() else cfg.blog.embed_default)}
     if "genre" in args:
         params["genre"] = args["genre"]
     if args.get("when") == "tonight":
@@ -227,9 +223,9 @@ def summary(session: Any, post: Post, cfg: Settings) -> dict[str, Any]:
 
 
 def related(posts: list[Post], post: Post) -> list[Post]:
-    """Same category first, then the newest of the rest."""
+    """Same category first, then the newest of the rest (blog.related of them)."""
     others = [p for p in posts if p.slug != post.slug]
-    return sorted(others, key=lambda p: p.category != post.category)[:RELATED]
+    return sorted(others, key=lambda p: p.category != post.category)[: get_settings().blog.related]
 
 
 # --------------------------------------------------------------------------- server-rendered pages
@@ -326,7 +322,7 @@ def post_page(session: Any, cfg: Settings, lang: str, slug: str) -> seo.Page | N
         "dateModified": post.modified.isoformat(),
         "inLanguage": post.lang,
         "articleSection": category,
-        "wordCount": post.read_minutes * WORDS_PER_MINUTE,
+        "wordCount": post.read_minutes * cfg.blog.words_per_minute,
         "image": [image] if image else None,
         "author": {"@type": "Organization", "name": post.author or cfg.site.name, "url": cfg.site.base_url + "/"},
         "publisher": {"@id": cfg.site.base_url + "/#org"},
@@ -336,7 +332,7 @@ def post_page(session: Any, cfg: Settings, lang: str, slug: str) -> seo.Page | N
         seo._breadcrumbs(cfg, post.lang, (_title(post.lang), "/blog"), (category, f"/blog/category/{post.category}"), (post.title, path)),
     ]
     if embedded:
-        jsonld.append(seo._item_list(embedded[: seo.LIST_LIMIT], cfg, post.title))
+        jsonld.append(seo._item_list(embedded[: cfg.seo.list_limit], cfg, post.title))
     faq_html = ""
     if post.faq:
         jsonld.append({

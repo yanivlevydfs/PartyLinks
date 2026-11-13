@@ -46,7 +46,7 @@ def submit(settings: Settings, db: Database) -> int:
     for i in range(0, len(todo), BATCH):
         chunk = todo[i : i + BATCH]
         body = {"host": host, "key": cfg.indexnow.key, "keyLocation": f"{cfg.base_url}/{cfg.indexnow.key}.txt", "urlList": chunk}
-        response = httpx.post(ENDPOINT, json=body, timeout=60)
+        response = httpx.post(ENDPOINT, json=body, timeout=cfg.indexnow.timeout_seconds)
         if response.status_code not in (200, 202):  # 403: key file not reachable yet, 422: URL off-host
             log.warning("indexnow: %s refused %d URLs: %s", response.status_code, len(chunk), response.text[:200])
             break

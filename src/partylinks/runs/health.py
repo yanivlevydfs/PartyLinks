@@ -26,7 +26,6 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 RETRY_TRIGGER = "retry"
 COUNTED = ("schedule", RETRY_TRIGGER)  # an admin's own run unpauses when healthy, never strikes
-USUAL_RUNS = 5  # "usual" = median events found by this many recent good runs
 
 
 def pause_key(source: str) -> str:
@@ -86,7 +85,7 @@ class RunHealth:
                 select(ScrapeRunRow.events_found)
                 .where(ScrapeRunRow.source == result.source, ScrapeRunRow.id != result.run_id,
                        ScrapeRunRow.status.in_(("success", "partial")), ScrapeRunRow.events_found > 0)
-                .order_by(ScrapeRunRow.id.desc()).limit(USUAL_RUNS)
+                .order_by(ScrapeRunRow.id.desc()).limit(cfg.usual_runs)
             ).all()  # fmt: skip
         usual = statistics.median(found) if found else 0
         if usual >= cfg.low_count_min_usual and result.events_found < cfg.low_count_ratio * usual:

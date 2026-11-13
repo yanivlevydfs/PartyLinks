@@ -37,8 +37,6 @@ from partylinks.parsing import (
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
-PAGE_SIZE = 100
-
 
 class TiktikSettings(SourceSettings):
     site_url: str
@@ -47,6 +45,7 @@ class TiktikSettings(SourceSettings):
     # Every product, not the categories alone: matches sit in league categories outside music and sport too.
     whole_catalogue: bool = True
     max_pages: int = Field(40, ge=1)
+    page_size: int = Field(100, ge=1, le=100)  # products per listing request (the Store API allows 100 at most)
 
 
 class TiktikScraper(BaseScraper[TiktikSettings]):
@@ -59,7 +58,7 @@ class TiktikScraper(BaseScraper[TiktikSettings]):
         by_url: dict[str, Any] = {}
         categories: list[int | None] = [None] if s.whole_catalogue or not s.category_ids else list(s.category_ids)
         for category in categories:
-            products = await self.paginate(lambda index: self._listing_page(category, index), PAGE_SIZE, s.max_pages)  # noqa: B023 - awaited here
+            products = await self.paginate(lambda index: self._listing_page(category, index), s.page_size, s.max_pages)  # noqa: B023 - awaited here
             by_url.update((p["permalink"], p) for p in products if isinstance(p, dict) and p.get("permalink"))
         self.log.debug("listed %d products", len(by_url))
         async for event in self.stream_isolated(by_url.values(), self._fetch_product, label=lambda p: p["permalink"]):
@@ -72,7 +71,7 @@ class TiktikScraper(BaseScraper[TiktikSettings]):
     async def _listing_page(self, category: int | None, index: int) -> tuple[list[Any], int | None]:
         s = self.settings
         # The default order (by date) drops ~2% of products across pages; by id every one is listed.
-        params: dict[str, Any] = {"per_page": PAGE_SIZE, "page": index + 1, "orderby": "id", "order": "asc"}
+        params: dict[str, Any] = {"per_page": s.page_size, "page": index + 1, "orderby": "id", "order": "asc"}
         if category is not None:
             params["category"] = category
         response = await self.request("GET", s.site_url + s.products_path, params=params)

@@ -24,7 +24,6 @@ from partylinks.parsing import ParseError, clean_str, to_decimal, to_int, zone
 from partylinks.scrapers.abroad import country_code, local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
-PAGE_SIZE = 100
 MONTHS = {
     m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)
 }
@@ -46,6 +45,7 @@ class TicketPlaceSettings(SourceSettings):
     category_ids: list[int]  # shows, festivals
     festival_category_id: int
     max_pages: int = Field(10, ge=1)
+    page_size: int = Field(100, ge=1, le=100)  # products per listing request (WordPress allows 100 at most)
 
 
 class TicketPlaceScraper(BaseScraper[TicketPlaceSettings]):
@@ -55,7 +55,7 @@ class TicketPlaceScraper(BaseScraper[TicketPlaceSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        products = await self.paginate(self._listing_page, PAGE_SIZE, s.max_pages)
+        products = await self.paginate(self._listing_page, s.page_size, s.max_pages)
         festivals = {
             p["link"]: s.festival_category_id in (p.get("product_cat") or [])
             for p in products
@@ -72,7 +72,7 @@ class TicketPlaceScraper(BaseScraper[TicketPlaceSettings]):
     async def _listing_page(self, index: int) -> tuple[list[Any], int | None]:
         s = self.settings
         params = {
-            "per_page": PAGE_SIZE,
+            "per_page": s.page_size,
             "page": index + 1,
             "product_cat": ",".join(map(str, s.category_ids)),
             "_fields": "id,link,product_cat",

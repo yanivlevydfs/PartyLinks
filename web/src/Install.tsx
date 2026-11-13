@@ -1,13 +1,12 @@
-// "Add SPOTX to your home screen" banner, mobile only, 10 seconds after the page opens.
+// "Add SPOTX to your home screen" banner, mobile only, 10 seconds (site.web.install_delay_seconds) after the page opens.
 // Android (Chrome, Edge, Samsung): the browser's own install dialog via beforeinstallprompt.
 // iOS has no such event: the banner shows the Share > Add to Home Screen steps instead.
 import { useEffect, useState } from "react";
 import { useConsent } from "./consent";
+import { useWeb } from "./site_params/useWeb";
 import { useT } from "./ui";
 
 export const INSTALL_KEY = "partylinks-install-dismissed";
-const DELAY_MS = 10_000;
-const SNOOZE_DAYS = 14;
 
 interface InstallPrompt extends Event {
   prompt: () => Promise<void>;
@@ -27,10 +26,11 @@ const isMobile = isIos || /Android|Mobi/i.test(ua);
 const standalone = () =>
   matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
 
-function snoozed(): boolean {
+// Delay and snooze: site.web.install_delay_seconds / install_snooze_days (admin config tab).
+function snoozed(days: number): boolean {
   try {
     const at = Number(localStorage.getItem(INSTALL_KEY));
-    return !!at && Date.now() - at < SNOOZE_DAYS * 86_400_000;
+    return !!at && Date.now() - at < days * 86_400_000;
   } catch {
     return false;
   }
@@ -59,14 +59,15 @@ export function InstallBanner() {
   const consentOpen = useConsent((s) => s.panel !== null);
   const [due, setDue] = useState(false);
   const [closed, setClosed] = useState(false);
+  const { install_delay_seconds: delay, install_snooze_days: snooze } = useWeb();
 
   useEffect(() => {
-    if (!isMobile || standalone() || snoozed()) return;
-    const timer = setTimeout(() => setDue(true), DELAY_MS);
+    if (!isMobile || standalone() || snoozed(snooze)) return;
+    const timer = setTimeout(() => setDue(true), delay * 1000);
     const installed = () => setClosed(true);
     window.addEventListener("appinstalled", installed);
     return () => { clearTimeout(timer); window.removeEventListener("appinstalled", installed); };
-  }, []);
+  }, [delay, snooze]);
 
   // Never on top of the consent banner; Android only once the browser says the app is installable.
   if (!due || closed || consentOpen || (!isIos && !deferred)) return null;

@@ -5,6 +5,7 @@ import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { useCategories, useLandingInfo } from "../api";
 import type { Facet } from "../types";
 import { EventGrid, Hero, Related, Select, useT, useTitle } from "../ui";
+import { useWeb } from "../site_params/useWeb";
 
 const UNKNOWN = "ZZ"; // the server's code for an event abroad in an unknown country
 
@@ -26,8 +27,9 @@ export default function Abroad() {
   };
   const [text, setText] = useState(q);
   const [suggest, setSuggest] = useState(false);
+  const debounce = useWeb().search_debounce_ms;
   useEffect(() => {
-    const id = setTimeout(() => text.trim() !== q && set({ q: text.trim() }), 300);
+    const id = setTimeout(() => text.trim() !== q && set({ q: text.trim() }), debounce);
     return () => clearTimeout(id);
   }, [text]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => setText(q), [q]);

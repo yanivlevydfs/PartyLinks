@@ -16,7 +16,7 @@ from partylinks.accounts.guard import limited
 from partylinks.accounts.service import Blocked, EmailTaken, Provider, sign_in
 
 log = logging.getLogger(__name__)
-router = APIRouter(tags=["accounts"], include_in_schema=False, dependencies=[limited("auth", 10)])
+router = APIRouter(tags=["accounts"], include_in_schema=False, dependencies=[limited("auth", "auth")])
 oauth = OAuth()
 
 

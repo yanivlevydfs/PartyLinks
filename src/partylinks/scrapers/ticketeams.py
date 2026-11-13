@@ -39,7 +39,6 @@ from partylinks.parsing import (
 from partylinks.scrapers.abroad import country_code, local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
-PAGE_SIZE = 100
 TAXONOMIES = ("product_cat", "stadiums", "halls", "cities", "countrys", "arts")
 _MONTHS = {m: i for i, m in enumerate(
     ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"], 1)}  # fmt: skip
@@ -53,6 +52,7 @@ _NOT_A_PICTURE = re.compile(r"רקע|לוגו|logo", re.IGNORECASE)  # the site'
 class TicketeamsSettings(SourceSettings):
     site_url: str = "https://ticketeams.co.il"
     max_pages: int = Field(30, ge=1)
+    page_size: int = Field(100, ge=1, le=100)  # products per listing request (WordPress allows 100 at most)
 
 
 @dataclass
@@ -108,7 +108,7 @@ class TicketeamsScraper(BaseScraper[TicketeamsSettings]):
 
     async def _list(self, kind: str, fields: str) -> list[Any]:
         async def page(index: int) -> tuple[list[Any], int | None]:
-            params = {"per_page": PAGE_SIZE, "page": index + 1, "_fields": fields, "orderby": "id", "order": "asc"}
+            params = {"per_page": self.settings.page_size, "page": index + 1, "_fields": fields, "orderby": "id", "order": "asc"}
             response = await self.request("GET", f"{self.settings.site_url}/wp-json/wp/v2/{kind}", params=params)
             try:
                 items = response.json()
@@ -118,7 +118,7 @@ class TicketeamsScraper(BaseScraper[TicketeamsSettings]):
                 raise ParseError(f"{response.request.url}: expected a list")
             return items, to_int(response.headers.get("X-WP-Total"))
 
-        return await self.paginate(page, PAGE_SIZE, self.settings.max_pages)
+        return await self.paginate(page, self.settings.page_size, self.settings.max_pages)
 
 
 def parse_terms(items: list[Any]) -> dict[int, Term]:

@@ -79,7 +79,6 @@ _LINKS = re.compile(r"\S+@\S+|https?://\S+|www\.\S+|\b[\w-]+(?:\.[\w-]+)*\.(?:co
 
 OUTSIDE_AREA = "outside"
 # A city name with no country is taken for a city abroad only when that city is this big (no village guesses).
-TOWN_ABROAD_MIN_POPULATION = 100_000
 ABROAD_AREA = "abroad"
 # ISO 3166 "unknown": an event abroad whose country the source does not give. Any country code
 # keeps an event out of the Israeli feed and in the abroad section.
@@ -285,7 +284,7 @@ class Enricher:
 
     def town_point(self, city: str) -> tuple[float, float] | None:
         """Centre of the town ``city`` names: an Israeli one (GeoNames), else a big city abroad ("Milan")."""
-        return self._town_centers.get(city) or city_point(city, None, min_population=TOWN_ABROAD_MIN_POPULATION)
+        return self._town_centers.get(city) or city_point(city, None, min_population=self.settings.town_abroad_min_population)
 
     def is_dropped(self, event: ScrapedEvent) -> bool:
         """True when enrich() would drop the event (another city while focusing on one)."""

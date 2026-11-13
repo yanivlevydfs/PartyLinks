@@ -18,8 +18,7 @@ from partylinks.accounts.redact import scrub
 from partylinks.config import Settings
 
 log = logging.getLogger(__name__)
-BATCH = 100
-PAUSE = 0.6  # seconds between requests: under 2 a second
+BATCH = 100  # Resend's most messages a batch request
 # Our account's problems (billing, quota, key), not the message's: the run stops, nobody else can fix it.
 ACCOUNT_CODES = {401, 402, 403, 429}
 ACCOUNT_TYPES = {
@@ -110,5 +109,5 @@ def send(settings: Settings, messages: list[Message], key: str) -> tuple[list[Me
             failed += chunk
             error = error or message
         if n + 1 < len(requests):
-            time.sleep(PAUSE)
+            time.sleep(settings.mail.send_pause_seconds)
     return sent, failed, error

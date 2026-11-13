@@ -1,9 +1,8 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useWeb } from "./site_params/useWeb";
 import type { Categories, EventDetail, EventPage, EventSummary, MapPins, Post, PostList, SponsoredRails } from "./types";
 
 export type Params = Record<string, string | string[] | undefined>;
-
-const PAGE_SIZE = 24;
 
 export async function getJSON<T>(url: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal });
@@ -20,7 +19,7 @@ export function toQuery(params: Params): string {
 }
 
 export function useEvents(params: Params) {
-  const qs = toQuery({ page_size: String(PAGE_SIZE), ...params });
+  const qs = toQuery({ page_size: String(useWeb().events_page_size), ...params });
   return useInfiniteQuery({
     queryKey: ["events", qs],
     // signal: a request overtaken by the next keystroke or filter is cancelled, not left to load the server.

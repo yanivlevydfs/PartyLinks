@@ -44,7 +44,7 @@ from tenacity import (
 )
 
 from partylinks.artists import ArtistProfile
-from partylinks.config import HttpSettings, validate_cron
+from partylinks.config import HttpSettings, get_settings, validate_cron
 from partylinks.logs import first_line
 from partylinks.models import ScrapedEvent
 from partylinks.pace import Pace
@@ -64,7 +64,6 @@ def _firewall_code(status: int) -> bool:
     except ValueError:
         return status >= 400
     return False
-MAX_RETRY_AFTER_SECONDS = 120
 
 
 class SourceSettings(BaseModel):
@@ -123,11 +122,13 @@ def _is_retryable(exc: BaseException) -> bool:
     return isinstance(exc, httpx.TransportError)
 
 
-def _retry_after(exc: BaseException | None) -> float | None:
+def _retry_after(exc: BaseException | None, cap: float | None = None) -> float | None:
+    """The Retry-After header's seconds, at most ``cap`` (default: http.max_retry_after_seconds)."""
     if not isinstance(exc, httpx.HTTPStatusError):
         return None
     seconds = to_int(exc.response.headers.get("Retry-After"))
-    return min(float(seconds), MAX_RETRY_AFTER_SECONDS) if seconds is not None and seconds >= 0 else None
+    cap = get_settings().http.max_retry_after_seconds if cap is None else cap
+    return min(float(seconds), cap) if seconds is not None and seconds >= 0 else None
 
 
 async def gather_or_cancel[X](coros: Iterable[Coroutine[Any, Any, X]]) -> list[X]:
@@ -150,22 +151,19 @@ _israel_good: str | None = None
 _israel_lock = threading.Lock()  # check-and-set across source threads
 # Israeli proxies a source just found dead (monotonic time): the others try them last, not first.
 _israel_dead: dict[str, float] = {}
-DEAD_FOR_SECONDS = 1800
-FEED_TTL_SECONDS = 1800
-PROBE_SECONDS = 15  # each Israeli proxy gets this long to answer the source's first request
 
 
-def _israeli_feed(url: str | None) -> list[str]:
+def _israeli_feed(url: str | None, http: HttpSettings) -> list[str]:
     """Proxy URLs from a geonode-style JSON list (``data: [{ip, port, protocols}]``), cached per URL.
     A failed fetch yields nothing: the configured list and `source_proxy` still follow."""
     if not url:
         return []
     cached = _feed_cache.get(url)
-    if cached and time.monotonic() - cached[0] < FEED_TTL_SECONDS:
+    if cached and time.monotonic() - cached[0] < http.israel_proxy_feed_ttl_seconds:
         return cached[1]
     # ponytail: sync fetch in a sync constructor blocks the loop up to 10 s every 30 min; prefetch async if that bites
     try:
-        rows = httpx.get(url, timeout=10).raise_for_status().json()["data"]
+        rows = httpx.get(url, timeout=http.israel_proxy_feed_timeout_seconds).raise_for_status().json()["data"]
         # httpx speaks to HTTP(S) and SOCKS5 proxies (socksio); SOCKS4 is skipped.
         scheme = lambda protocols: "http" if {"http", "https"} & set(protocols) else "socks5" if "socks5" in protocols else None
         proxies = [f"{scheme(r.get('protocols', []))}://{r['ip']}:{r['port']}" for r in rows if scheme(r.get("protocols", []))]
@@ -199,11 +197,11 @@ class BaseScraper[S: SourceSettings](ABC):
             self._israeli = set()
         elif settings.israel_proxy:
             israeli = [p.strip() for p in (http.israel_proxy or "").split(",") if p.strip()]
-            israeli = list(dict.fromkeys(_israeli_feed(http.israel_proxy_feed) + israeli))
+            israeli = list(dict.fromkeys(_israeli_feed(http.israel_proxy_feed, http) + israeli))
             random.shuffle(israeli)  # no known good one yet: walk the free proxies in random order
-            now = time.monotonic()
+            now, dead_for = time.monotonic(), http.israel_proxy_dead_seconds
             # The shared working one first, recently dead ones last (stable: the shuffle stays among equals).
-            israeli.sort(key=lambda p: (p != _israel_good, now - _israel_dead.get(p, -DEAD_FOR_SECONDS) < DEAD_FOR_SECONDS))
+            israeli.sort(key=lambda p: (p != _israel_good, now - _israel_dead.get(p, -dead_for) < dead_for))
             pool = israeli + pool
             self._israeli = set(israeli)
         else:
@@ -250,7 +248,7 @@ class BaseScraper[S: SourceSettings](ABC):
         self._retired_clients: list[httpx.AsyncClient] = []  # replaced after a proxy failure; closed at exit
         self._pace = Pace(self.http.concurrency, self.http.request_delay_seconds, self.http.pace, self.log)
         self._probe: asyncio.Task[None] | None = None  # the Israeli pool's one parallel check (see _probe_israeli)
-        self._backoff = wait_exponential(multiplier=self.http.backoff_seconds, max=60)
+        self._backoff = wait_exponential(multiplier=self.http.backoff_seconds, max=self.http.backoff_max_seconds)
 
     # ----------------------------------------------------------------- lifecycle
     async def __aenter__(self) -> Self:
@@ -264,7 +262,7 @@ class BaseScraper[S: SourceSettings](ABC):
         self._client, self._retired_clients = None, []
 
     def _new_client(self, proxy: str | None) -> httpx.AsyncClient:
-        impersonate, connect = self.http.impersonate, min(10.0, self.http.timeout_seconds)
+        impersonate, connect = self.http.impersonate, min(self.http.connect_timeout_seconds, self.http.timeout_seconds)
         return httpx.AsyncClient(
             # A dead proxy fails on connect: give up on it in 10 s instead of the full timeout, so a
             # pool of free proxies is walked in minutes. Reads keep the full timeout.
@@ -296,7 +294,8 @@ class BaseScraper[S: SourceSettings](ABC):
         if not self._spare_proxies:
             return False
         # Another source already found a working one: go straight to it; else the first not found dead lately.
-        alive = [p for p in self._spare_proxies if now - dead.get(p, -DEAD_FOR_SECONDS) >= DEAD_FOR_SECONDS]
+        dead_for = self.http.israel_proxy_dead_seconds
+        alive = [p for p in self._spare_proxies if now - dead.get(p, -dead_for) >= dead_for]
         proxy = good if good in self._spare_proxies else (alive or self._spare_proxies)[0]
         if self._fallback_vpn in self._spare_proxies and _proxy_500(exc):
             proxy = self._fallback_vpn  # the next exit of the same provider meets the same wall: straight to the VPN
@@ -343,7 +342,7 @@ class BaseScraper[S: SourceSettings](ABC):
     # ----------------------------------------------------------------- transport
     def _wait(self, state: RetryCallState) -> float:
         """Server-requested Retry-After when given, otherwise exponential backoff."""
-        retry_after = _retry_after(state.outcome.exception() if state.outcome else None)
+        retry_after = _retry_after(state.outcome.exception() if state.outcome else None, self.http.max_retry_after_seconds)
         return retry_after if retry_after is not None else self._backoff(state)
 
     async def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
@@ -355,7 +354,7 @@ class BaseScraper[S: SourceSettings](ABC):
     async def _probe_israeli(self, url: str) -> None:
         """Try every Israeli proxy of the pool at once on the source's first URL, and keep only those that
         answer (any status: a refusal is the site's, not the proxy's). Walked one by one, a pool of dead
-        free proxies took the whole 30-min run; in parallel it takes ``PROBE_SECONDS``. None answers: the
+        free proxies took the whole 30-min run; in parallel it takes ``http.israel_proxy_probe_seconds``. None answers: the
         source goes on with the rest of its pool, or stops. The whole list each time, the ones found dead
         lately too: free proxies come back, and a parallel check costs the same for 1 or 100."""
         global _israel_good
@@ -369,7 +368,7 @@ class BaseScraper[S: SourceSettings](ABC):
         async def answers(proxy: str) -> bool:
             client = self._new_client(proxy)
             try:
-                async with asyncio.timeout(PROBE_SECONDS), client.stream("GET", https):
+                async with asyncio.timeout(self.http.israel_proxy_probe_seconds), client.stream("GET", https):
                     return True  # the headers came back: enough, a big page is not read through a slow proxy
             except Exception:  # noqa: BLE001 - whatever breaks, this proxy is no use
                 return False
@@ -479,7 +478,7 @@ class BaseScraper[S: SourceSettings](ABC):
         (ParseError): a site answering 200 with a half-built page mid-publish or mid-deploy.
         HTTP errors are already retried by ``request``."""
         async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(2), wait=self._backoff, retry=retry_if_exception_type(ParseError), reraise=True
+            stop=stop_after_attempt(self.http.parse_error_attempts), wait=self._backoff, retry=retry_if_exception_type(ParseError), reraise=True
         ):
             with attempt:
                 return await call()

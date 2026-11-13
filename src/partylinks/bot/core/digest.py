@@ -22,7 +22,6 @@ from partylinks.db import Database, utcnow
 if TYPE_CHECKING:
     from partylinks.bot.core.conversation import Conversation
 
-AGAIN = timedelta(days=6)  # one digest a week, whatever the job's misfires
 DIGEST_QUERY_MAX = 100
 
 
@@ -77,7 +76,7 @@ def due(settings: Settings, db: Database) -> list[Digest]:
     with db.session() as session:
         chats = session.scalars(
             select(BotChatRow).where(BotChatRow.digest_on.is_(True), BotChatRow.blocked_at.is_(None),
-                                     or_(BotChatRow.digest_sent_at.is_(None), BotChatRow.digest_sent_at < now - AGAIN))
+                                     or_(BotChatRow.digest_sent_at.is_(None), BotChatRow.digest_sent_at < now - timedelta(days=cfg.digest_again_days)))
         ).all()  # fmt: skip
         found: dict[str | None, list[str]] = {}
         for chat in chats:

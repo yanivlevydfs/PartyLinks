@@ -14,8 +14,6 @@ from sqlalchemy.orm import Session
 from partylinks.bot.models import BotChatRow, BotReminderRow, BotWatchRow
 from partylinks.db import Database, EventRow, upcoming_filter, utcnow
 
-AHEAD = timedelta(minutes=5)  # a reminder this close to its time is not set (it would come too late)
-
 
 @dataclass
 class Note:
@@ -34,7 +32,9 @@ class Note:
 
 
 # ---------------------------------------------------------------------- from the buttons
-def toggle_reminder(session: Session, chat: BotChatRow, row: EventRow, hours: list[float], cap: int) -> tuple[str, list[float]]:
+def toggle_reminder(
+    session: Session, chat: BotChatRow, row: EventRow, hours: list[float], cap: int, min_ahead: timedelta
+) -> tuple[str, list[float]]:
     """⏰ pressed: the reminders at ``hours`` before the start still ahead, or, pressed again, none.
     Returns (phrase key, the hours set)."""
     mine = (BotReminderRow.chat_ref == chat.id, BotReminderRow.event_id == row.id, BotReminderRow.sent_at.is_(None))
@@ -44,7 +44,7 @@ def toggle_reminder(session: Session, chat: BotChatRow, row: EventRow, hours: li
     if row.start_at is None:
         return "reminder_soon", []
     now = utcnow()
-    ahead = sorted({h for h in hours if row.start_at - timedelta(hours=h) > now + AHEAD}, reverse=True)
+    ahead = sorted({h for h in hours if row.start_at - timedelta(hours=h) > now + min_ahead}, reverse=True)
     if not ahead:
         return "reminder_soon", []
     events = session.scalar(

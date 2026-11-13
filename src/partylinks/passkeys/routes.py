@@ -42,8 +42,8 @@ from partylinks.passkeys.models import PasskeyRow
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/passkeys", tags=["accounts"], include_in_schema=False)
 NO_STORE = {"Cache-Control": "private, no-store"}
-OWN = [SameOrigin, limited("passkey", 20)]  # the signed-in user's own passkeys
-SIGN_IN = [SameOrigin, limited("auth", 10)]  # the same budget as the Google and Facebook sign-in
+OWN = [SameOrigin, limited("passkey", "passkey")]  # the signed-in user's own passkeys
+SIGN_IN = [SameOrigin, limited("auth", "auth")]  # the same budget as the Google and Facebook sign-in
 STATE = {"register": "passkey_register", "login": "passkey_login"}  # keys in the signed sign-in cookie
 
 

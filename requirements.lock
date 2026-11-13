@@ -132,6 +132,8 @@ python-dateutil==2.9.0.post0
     # via icalendar
 python-dotenv==1.2.4
     # via pydantic-settings
+python-multipart==0.0.33
+    # via partylinks (pyproject.toml)
 python-telegram-bot==22.8
     # via partylinks (pyproject.toml)
 pyyaml==6.0.3

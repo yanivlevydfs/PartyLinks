@@ -6,13 +6,12 @@ import { useEffect, useRef } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { send, useMe } from "../accounts/useMe";
+import { useWeb } from "../site_params/useWeb";
 import type { EventSummary } from "../types";
-
-const MAX_LOCAL = 500;
 
 interface LocalSaved {
   ids: string[];
-  toggle: (id: string) => void;
+  toggle: (id: string, max: number) => void; // max: site.web.saved_local_max
   clear: () => void;
 }
 
@@ -20,7 +19,7 @@ export const useLocalSaved = create<LocalSaved>()(
   persist(
     (set) => ({
       ids: [],
-      toggle: (id) => set((s) => ({ ids: s.ids.includes(id) ? s.ids.filter((x) => x !== id) : [id, ...s.ids].slice(0, MAX_LOCAL) })),
+      toggle: (id, max) => set((s) => ({ ids: s.ids.includes(id) ? s.ids.filter((x) => x !== id) : [id, ...s.ids].slice(0, max) })),
       clear: () => set({ ids: [] }),
     }),
     { name: "spotx-saved" },
@@ -67,11 +66,12 @@ export function useSaved() {
   const me = useMe().data;
   const qc = useQueryClient();
   const local = useLocalSaved();
+  const maxLocal = useWeb().saved_local_max;
   const server = useServerSaved();
   const ids = me ? server.data?.ids ?? [] : local.ids;
 
   const toggle = async (id: string) => {
-    if (!me) return local.toggle(id);
+    if (!me) return local.toggle(id, maxLocal);
     const key = ["saved", me.id];
     const before = qc.getQueryData<SavedList>(key);
     const on = !!before?.ids.includes(id);

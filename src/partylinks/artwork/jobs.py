@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from partylinks.service import ScrapeService
 
 log = logging.getLogger(__name__)
-INTERVAL_MINUTES = 15
 
 
 async def _run(scrape: ScrapeService) -> None:
@@ -28,9 +27,9 @@ async def _run(scrape: ScrapeService) -> None:
 
 
 def schedule(scheduler: AsyncIOScheduler, settings: Settings, scrape: ScrapeService) -> None:
-    """Called by ``scheduler.build_scheduler``. First run two minutes after start, then every 15 minutes."""
+    """Called by ``scheduler.build_scheduler``. First run two minutes after start, then every artwork.interval_minutes (15)."""
     scheduler.add_job(
-        _run, IntervalTrigger(minutes=INTERVAL_MINUTES, timezone=settings.timezone), args=(scrape,),
+        _run, IntervalTrigger(minutes=settings.artwork.interval_minutes, timezone=settings.timezone), args=(scrape,),
         id="artwork:draw", name="artwork:draw", max_instances=1, coalesce=True,
         next_run_time=datetime.now(datetime.now().astimezone().tzinfo) + timedelta(minutes=2),
         misfire_grace_time=settings.scheduler.misfire_grace_seconds,

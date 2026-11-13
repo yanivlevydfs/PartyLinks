@@ -10,10 +10,14 @@ from __future__ import annotations
 
 import re
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 from urllib.parse import quote
 
 import httpx
 from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+if TYPE_CHECKING:
+    from partylinks.scrapers.eventbuzz import EventbuzzSettings
 
 _SLUG = re.compile(r"eventbuzz\.co\.il/lp/event/([A-Za-z0-9_\-]+)")
 
@@ -32,13 +36,13 @@ def search_urls(template: str, query: str, pages: int, per_page: int = 30) -> li
     return [template.format(q=quote(query), offset=i * per_page) for i in range(pages)]
 
 
-async def fetch_direct(url: str, timeout: float, user_agent: str) -> str:
+async def fetch_direct(url: str, timeout: float, user_agent: str, s: EventbuzzSettings) -> str:
     """An index or search page, straight from our own address: archive.org's index takes 20-60 s to answer
     and the rotating proxies cut it off every time (2026-11-12: a run spent 40 minutes on it, retrying each)."""
     async with httpx.AsyncClient(timeout=timeout, headers={"User-Agent": user_agent}, follow_redirects=True) as client:
-        # archive.org answers 503 now and then under load: three tries, 10 s and 20 s apart.
+        # archive.org answers 503 now and then under load: s.direct_attempts tries (3, 10 s and 20 s apart).
         async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(3), wait=wait_exponential(min=10, max=20),
+            stop=stop_after_attempt(s.direct_attempts), wait=wait_exponential(min=s.direct_wait_min_seconds, max=s.direct_wait_max_seconds),
             retry=retry_if_exception_type(httpx.HTTPError), reraise=True,
         ):  # fmt: skip
             with attempt:

@@ -17,7 +17,7 @@ from partylinks.db import utcnow
 
 router = APIRouter(prefix="/api", tags=["accounts"], include_in_schema=False)
 NO_STORE = {"Cache-Control": "private, no-store"}
-WRITE = [SameOrigin, limited("me", 30)]
+WRITE = [SameOrigin, limited("me", "me")]
 
 
 class MeOut(BaseModel):

@@ -31,7 +31,7 @@ import httpx
 from PIL import Image, ImageFile, ImageOps
 from sqlalchemy import or_, select, update
 
-from partylinks.config import HttpSettings, MediaSettings, project_path
+from partylinks.config import HttpSettings, MediaSettings, get_settings, project_path
 from partylinks.db import Database, EventRow, ImageRow, bulk_update_by_id, utcnow, with_db_retry
 
 log = logging.getLogger(__name__)
@@ -59,8 +59,7 @@ def sniff_image_type(data: bytes) -> str | None:
 
 PERSIST_CHUNK = 50
 VARIANT_WIDTHS = (640, 1280)  # cards (296px wide on desktop, 166px at 3x on phones) / event page (420px, 2x-3x)
-MAX_PIXELS = 50_000_000  # bigger pictures are not resized (the decode alone is ~200MB): the original is served
-# MAX_PIXELS replaces PIL's own guard (warn past ~89M pixels, raise past ~179M): that one fires on open and
+# media.max_pixels (bigger pictures are not resized, the original is served) replaces PIL's own guard (warn past ~89M pixels, raise past ~179M): that one fires on open and
 # filled the log, while make_variants reads only the header before the check below. PIL is used nowhere else.
 Image.MAX_IMAGE_PIXELS = None
 # A JPEG missing its last few bytes (movieland's end 1-93 bytes short) shows fine in a browser: decode it
@@ -83,7 +82,7 @@ def make_variants(path: Path, quality: int) -> bool:
     only version) for animations, oversized or unreadable pictures; never raises."""
     try:
         with Image.open(path) as im:
-            if getattr(im, "is_animated", False) or im.width * im.height > MAX_PIXELS:
+            if getattr(im, "is_animated", False) or im.width * im.height > get_settings().media.max_pixels:
                 return False
             # A CMYK profile would be wrong once converted to RGB.
             icc = im.info.get("icc_profile") if im.mode in ("RGB", "RGBA") else None
@@ -107,7 +106,7 @@ def readable(path: Path) -> bool:
     """Whether the picture decodes: a cut-off download passes the header sniff but not this."""
     try:
         with Image.open(path) as im:
-            if not getattr(im, "is_animated", False) and im.width * im.height <= MAX_PIXELS:
+            if not getattr(im, "is_animated", False) and im.width * im.height <= get_settings().media.max_pixels:
                 im.load()
         return True
     except Exception:  # noqa: BLE001 - any decode error means unreadable

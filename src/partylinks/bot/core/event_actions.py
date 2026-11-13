@@ -5,6 +5,7 @@ the event's short number (refs.py); a stale one answers "no longer available".""
 from __future__ import annotations
 
 import secrets
+from datetime import timedelta
 from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
@@ -30,6 +31,7 @@ from partylinks.bot.core.reply import (
     Reply,
 )  # fmt: skip
 from partylinks.bot.models import BotChatRow
+from partylinks.config import get_settings
 from partylinks.db import EventRow
 from partylinks.plans.models import PlanRow
 
@@ -37,13 +39,12 @@ if TYPE_CHECKING:
     from partylinks.bot.core.conversation import Conversation
 
 PREFIXES = (REMIND, WATCH, SIMILAR, OPTIONS, ICS, PLAN, FOLLOW, FORGET)
-FOLLOW_ARTISTS = 3  # ⭐ buttons for the first artists of the lineup
 ALERT_QUERY_MAX = 100  # alerts.criteria.Criteria.q (conversation uses it too)
-TITLE_IN_TEXT = 80
 
 
 def _short(title: str) -> str:
-    return title if len(title) <= TITLE_IN_TEXT else title[: TITLE_IN_TEXT - 1] + "…"
+    cut = get_settings().bot.title_in_text
+    return title if len(title) <= cut else title[: cut - 1] + "…"
 
 
 def _and(parts: list[str], lang: str) -> str:
@@ -53,7 +54,7 @@ def _and(parts: list[str], lang: str) -> str:
 def _follows(row: EventRow) -> list[str]:
     """What ⭐ can follow: the venue, then the lineup's first artists (each a search alert)."""
     names = [row.venue_name] if row.venue_name else []
-    names += [a for a in (row.artists or [])[:FOLLOW_ARTISTS] if a and a not in names]
+    names += [a for a in (row.artists or [])[: get_settings().bot.follow_artists] if a and a not in names]
     return [n for n in names if len(n) <= ALERT_QUERY_MAX]
 
 
@@ -76,7 +77,9 @@ async def press(conv: Conversation, chat_id: str, lang: str, action: str) -> Rep
 
     def act(session: Session, chat: BotChatRow, row: EventRow, title: str) -> Reply | None:
         if prefix == REMIND:
-            key, hours = remind.toggle_reminder(session, chat, row, cfg.bot.reminder_hours, cfg.bot.max_reminders)
+            key, hours = remind.toggle_reminder(
+                session, chat, row, cfg.bot.reminder_hours, cfg.bot.max_reminders, timedelta(minutes=cfg.bot.reminder_min_ahead_minutes)
+            )
             usage.record(session, conv.channel, chat_id, "reminder_set" if key == "reminder_set" else key)
             h = _and([duration(x, chat.lang) for x in hours], chat.lang)
             return Reply(say(key, chat.lang, t=title, h=h, n=cfg.bot.max_reminders))

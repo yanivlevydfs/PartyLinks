@@ -19,6 +19,7 @@ import { SavedLink } from "./saved/SavedLink";
 import { EventStats } from "./popularity/EventStats";
 import { useMe } from "./accounts/useMe";
 import { SiteShare } from "./share/SiteShare";
+import { useWeb } from "./site_params/useWeb";
 import { useStore } from "./store";
 import type { EventPage, EventSummary } from "./types";
 
@@ -133,6 +134,7 @@ export function Layout() {
   const setLang = useStore((s) => s.setLang);
   const me = useMe().data;
   const cats = useCategories().data;
+  const web = useWeb();
   const openConsent = useConsent((s) => s.openSettings);
 
   useEffect(() => {
@@ -184,10 +186,10 @@ export function Layout() {
           <Link to="/tonight">{t.tonight}</Link>
           <Link to="/weekend">{t.weekend}</Link>
           <Link to="/blog">{t.nav.blog}</Link>
-          {Object.entries(CITIES).filter(([, c]) => (cats?.cities.find((x) => x.value === c.he)?.events ?? 0) >= 3).map(([key, c]) => (
+          {Object.entries(CITIES).filter(([, c]) => (cats?.cities.find((x) => x.value === c.he)?.events ?? 0) >= web.footer_min_events).map(([key, c]) => (
             <Link key={key} to={`/city/${key}`}>{c[lang]}</Link>
           ))}
-          {cats?.genres.filter((g) => g.events >= 3).slice(0, 12).map((g) => (
+          {cats?.genres.filter((g) => g.events >= web.footer_min_events).slice(0, web.footer_genres).map((g) => (
             <Link key={g.value} to={`/genre/${g.value}`}>{genreLabel(lang, g.value)}</Link>
           ))}
         </nav>
@@ -321,6 +323,7 @@ export function freshness(e: EventSummary): "new" | "updated" | null {
 
 export function Card({ e }: { e: EventSummary }) {
   const { t, lang } = useT();
+  const web = useWeb();
   const fresh = freshness(e);
   const freeLabel = freeUntilLabel(e, t);
   const ad = useAdView<HTMLAnchorElement>(e.sponsored, true, "results");
@@ -373,7 +376,7 @@ export function Card({ e }: { e: EventSummary }) {
           <p className="meta">📍 {[e.venue_name, e.country ? [e.city, countryName(e.country, lang)].filter(Boolean).join(", ")
             : e.area && label(t.areas, e.area)].filter(Boolean).join(" · ")}</p>
         )}
-        {e.lineup.length > 0 && <p className="meta">🎧 {e.lineup.slice(0, 4).join(" · ")}</p>}
+        {e.lineup.length > 0 && <p className="meta">🎧 {e.lineup.slice(0, web.card_lineup_shown).join(" · ")}</p>}
         {e.in_text && <p className="meta">🔍 {t.inText}</p>}
         <EventStats e={e} compact />
         <div className="tags">
@@ -383,7 +386,7 @@ export function Card({ e }: { e: EventSummary }) {
           {e.has_discount && !e.is_sold_out && <span className="tag deal">{t.discountOnly}</span>}
           {e.weekly && <span className="tag line">{t.weekly(label(t.days, e.weekly))}</span>}
           {/* Kosher always shows on a place's card, whatever its other genres. */}
-          {[...new Set([...e.genres.filter((g) => g === "kosher"), ...e.genres])].slice(0, 3).map((g) => <span key={g} className="tag">{genreLabel(lang, g)}</span>)}
+          {[...new Set([...e.genres.filter((g) => g === "kosher"), ...e.genres])].slice(0, web.card_genres_shown).map((g) => <span key={g} className="tag">{genreLabel(lang, g)}</span>)}
           {!!e.min_age && <span className="tag age">{t.age(e.min_age)}</span>}
         </div>
       </div>

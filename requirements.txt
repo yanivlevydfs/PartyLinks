@@ -5,6 +5,7 @@ apscheduler>=3.11,<4
 cachetools>=5.5
 convertdate==2.5.1
 fastapi>=0.115
+python-multipart>=0.0.20
 curl_cffi>=0.15
 httpx[socks]>=0.28
 ftfy==6.3.1

@@ -27,7 +27,7 @@ from partylinks.accounts.service import delete_user
 
 log = logging.getLogger(__name__)
 router = APIRouter(tags=["accounts"], include_in_schema=False)
-SIGN_IN = [limited("auth", 10)]  # the bucket Google's sign-in counts on too
+SIGN_IN = [limited("auth", "auth")]  # the bucket Google's sign-in counts on too
 oauth = OAuth()
 FIELDS = "id,name,email,picture.type(large)"
 
@@ -108,7 +108,7 @@ def _delete(request: Request, facebook_id: str) -> None:
             log.info("facebook data deletion: user %s deleted", user.id)
 
 
-@router.post("/auth/facebook/deletion", dependencies=[limited("fb-deletion", 30)])  # Meta's servers
+@router.post("/auth/facebook/deletion", dependencies=[limited("fb-deletion", "fb_deletion")])  # Meta's servers
 async def deletion(request: Request) -> Response:
     """Meta calls this when a user removes the app or asks for their data: the account is deleted at once."""
     cfg = request.app.state.settings

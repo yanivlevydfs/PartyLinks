@@ -24,8 +24,10 @@ from pydantic_settings import (
 )
 
 from partylinks.accounts.config import AccountsSettings
+from partylinks.alerts.config import AlertsSettings
 from partylinks.artist_filter.config import ArtistFilterSettings
 from partylinks.artist_links.config import ArtistLinksSettings
+from partylinks.artwork.config import ArtworkSettings
 from partylinks.bot.config import BotSettings
 from partylinks.config_store.source import OverridesSource
 from partylinks.evening.config import EveningSettings
@@ -36,6 +38,7 @@ from partylinks.lines.config import LinesSettings
 from partylinks.mail.config import MailSettings
 from partylinks.pace import PaceSettings
 from partylinks.placeinfo.config import PlaceInfoSettings
+from partylinks.plans.config import PlansSettings
 from partylinks.popularity.config import PopularitySettings
 from partylinks.similar.config import SimilarSettings
 from partylinks.smartrails.config import SmartRailsSettings
@@ -112,6 +115,8 @@ class DatabaseSettings(BaseModel):
     extensions: list[str] = ["pg_stat_statements"]
     # Writers run concurrently on row locks; true queues this process's writers one at a time.
     serialize_writes: bool = False
+    # serialize_writes: how long a writer waits for its turn before giving up (the write is then retried).
+    write_wait_seconds: float = Field(120, gt=0, le=3600)
     # At startup, how long to wait for the database to answer (it may be restarting) before giving up;
     # keep it under the deploy's health-check timeout (railway.json: 120 s).
     startup_wait_s: float = Field(90, gt=0)
@@ -128,6 +133,10 @@ class ApiSettings(BaseModel):
     max_page: int = Field(40, ge=1)
     # Paid placements (admin, placement results | both) matching a list's filters, shown first on its page 1.
     sponsored_results: int = Field(3, ge=0)
+    max_sponsored: int = Field(40, ge=1, le=1000)  # most paid placements the admin can save at once
+    # The "sounds like" index of every lineup name is rebuilt at most this often.
+    sound_index_ttl_seconds: float = Field(600, ge=0, le=86400)
+    event_changes_limit: int = Field(20, ge=0, le=500)  # price/tier changes shown on an event page
     # Cached pages and listings: rebuilt after cache_ttl_seconds, or after a write, but never younger than
     # cache_min_fresh_seconds. The worker commits every few seconds; without that floor every visit rebuilt its
     # page and scanned the events table (27k full scans in a few hours).
@@ -180,6 +189,7 @@ class SchedulerSettings(BaseModel):
     low_count_ratio: float = Field(0.3, ge=0, le=1)
     email_on_pause: bool = False  # also email the admins when a source is paused (the owner asked for none)
     low_count_min_usual: int = Field(10, ge=1)  # sources usually finding fewer are not judged by count
+    usual_runs: int = Field(5, ge=1, le=50)  # "usual" count = median events found by this many recent good runs
     # Schema drift: a run where more than this share of items failed (parse / validation / save / fetch,
     # the run's failures list) is bad too, once it has at least failure_min failures.
     max_failure_ratio: float = Field(0.15, ge=0, le=1)
@@ -203,6 +213,16 @@ class HttpSettings(BaseModel):
     backoff_seconds: float = Field(2, ge=0)
     request_delay_seconds: float = Field(0.5, ge=0)
     concurrency: int = Field(4, ge=1)
+    connect_timeout_seconds: float = Field(10, gt=0)  # longest wait to connect (capped by timeout_seconds)
+    backoff_max_seconds: float = Field(60, ge=0)  # the exponential backoff between retries never waits longer
+    max_retry_after_seconds: float = Field(120, ge=0)  # a site's Retry-After header is obeyed up to this long
+    parse_error_attempts: int = Field(2, ge=1)  # tries of a page that came back without its data (half-built)
+    # Israeli proxies (israel_proxy sources): how long one found dead is tried last, how long the free list
+    # (israel_proxy_feed) is cached and may take to load, and how long each proxy gets to answer the first request.
+    israel_proxy_dead_seconds: float = Field(1800, ge=0)
+    israel_proxy_feed_ttl_seconds: float = Field(1800, ge=0)
+    israel_proxy_feed_timeout_seconds: float = Field(10, gt=0)
+    israel_proxy_probe_seconds: float = Field(15, gt=0)
     # Slower when the site throttles (429 / 503), faster again when it doesn't (partylinks.pace).
     pace: PaceSettings = Field(default_factory=PaceSettings)
     user_agent: str = "Mozilla/5.0"
@@ -322,6 +342,8 @@ class EnrichmentSettings(BaseModel):
     # Every other Israeli locality of at least this many people (GeoNames, places.py) is known too:
     # its spelling and its area on the map. Smaller ones are often plain words ("מגדל").
     places_min_population: int = Field(2000, ge=0)
+    # A bare town name that is not Israeli is placed at a city abroad only if it has at least this many people.
+    town_abroad_min_population: int = Field(100_000, ge=0)
     # A venue name whose events span more than this (degrees, ~100 m) is no one place: it ties no names together.
     venue_max_spread_degrees: float = 0.001
     # A venue name longer than this is a description a site put in the place field: no venue (and no geocoding).
@@ -490,6 +512,8 @@ class MediaSettings(BaseModel):
     storage: Literal["database", "filesystem"] = "database"
     directory: Path = Path("data/media")
     max_bytes: int = Field(15_000_000, ge=1)
+    # Bigger pictures (width x height) are not resized (the decode alone is ~200MB): the original is served.
+    max_pixels: int = Field(50_000_000, ge=1_000_000)
     # A failed download (timeout, 503...) is retried on runs after this many hours.
     retry_failed_after_hours: float = Field(6, gt=0)
     # Resized WebP copies (640 / 1280 wide) stored beside each file: their encoder quality, and how
@@ -524,6 +548,12 @@ class GeocodingSettings(BaseModel):
     # A source point farther than this from a small town (under places_min_population) named as the event's
     # city is wrong ("קיבוץ דן" on Tel Aviv's opera house); bigger towns use their own radius.
     small_town_radius_m: float = Field(3000, gt=0)
+    # An abroad city centre this far from the GeoNames city of that name is another place (Freiburg on the Elbe).
+    wrong_city_m: float = Field(25_000, gt=0)
+    # A bare city name abroad means the GeoNames city of that name only if it is this big (else maybe a namesake).
+    sure_city_population: int = Field(50_000, ge=0)
+    # One point given for this many different venues is a source's fallback ("somewhere in Tel Aviv"), not a place.
+    placeholder_venues: int = Field(4, ge=2, le=100)
     # Manual pins, only for places OpenStreetMap doesn't know: venue-name / address keyword
     # (case-insensitive) -> [lat, lon]. Checked first.
     venues: dict[str, tuple[float, float]] = Field(default_factory=dict)
@@ -559,6 +589,7 @@ class IndexNowSettings(BaseModel):
     key: str = ""  # public; served at /<key>.txt. Empty: off
     cron: str = "40 * * * *"
     state_file: str = "data/indexnow-sent.txt"
+    timeout_seconds: float = Field(60, gt=0, le=600)  # one submit request's limit
 
 
 class VerificationSettings(BaseModel):
@@ -567,6 +598,27 @@ class VerificationSettings(BaseModel):
     google: str = ""  # Search Console: HTML tag method, the content="..." value
     bing: str = ""  # Bing Webmaster Tools (msvalidate.01)
     yandex: str = ""  # Yandex Webmaster
+
+
+class WebSettings(BaseModel):
+    """Numbers the website (web/src) reads from GET /site → web; each file keeps the same value as its fallback."""
+
+    events_page_size: int = Field(24, ge=1, le=200)  # cards per page of an event list (web/src/api.ts)
+    index_page_size: int = Field(60, ge=10, le=1000)  # venues / artists shown per "load more" (pages/Browse.tsx)
+    home_row_events: int = Field(12, ge=3, le=60)  # cards in each home-page row (pages/Home.tsx Rail)
+    map_popup_events: int = Field(8, ge=1, le=50)  # events listed in a map pin's popup (pages/MapPage.tsx)
+    home_search_debounce_ms: int = Field(250, ge=0, le=3000)  # home search box: wait after typing before searching
+    search_debounce_ms: int = Field(300, ge=0, le=3000)  # abroad search and a plan's "add option" search box wait
+    card_lineup_shown: int = Field(4, ge=0, le=20)  # lineup names on an event card (ui.tsx)
+    card_genres_shown: int = Field(3, ge=0, le=10)  # genre tags on an event card (ui.tsx)
+    footer_genres: int = Field(12, ge=0, le=50)  # genre links in the footer (ui.tsx)
+    footer_min_events: int = Field(3, ge=0, le=100)  # a city or genre needs this many events for a footer link
+    install_delay_seconds: int = Field(10, ge=0, le=600)  # mobile "add to home screen" banner shows after this long
+    install_snooze_days: int = Field(14, ge=0, le=365)  # "Not now" on that banner hides it this many days
+    telegram_bubble_snooze_days: int = Field(30, ge=0, le=365)  # closed "ask the bot" bubble stays closed this long
+    bell_poll_seconds: int = Field(60, ge=10, le=3600)  # signed-in alerts bell refresh, visible tab only (rate limit)
+    plan_poll_seconds: int = Field(10, ge=2, le=600)  # an open group plan refreshes its votes this often
+    saved_local_max: int = Field(500, ge=10, le=5000)  # saved events kept on a signed-out device
 
 
 class SiteSettings(BaseModel):
@@ -594,6 +646,7 @@ class SiteSettings(BaseModel):
     privacy: PrivacySettings = Field(default_factory=PrivacySettings)
     indexnow: IndexNowSettings = Field(default_factory=IndexNowSettings)
     verification: VerificationSettings = Field(default_factory=VerificationSettings)
+    web: WebSettings = Field(default_factory=WebSettings)  # the website's lists, delays and polls (GET /site → web)
 
     @field_validator("base_url")
     @classmethod
@@ -617,6 +670,7 @@ class AdminSettings(BaseModel):
     # Bearer token for /admin and the mutating API routes. Keep it out of the YAML:
     # PARTYLINKS_ADMIN__TOKEN=... in the environment or in .env. Unset = localhost only.
     token: SecretStr | None = None
+    keep_backups: int = Field(30, ge=1, le=1000)  # settings.yaml backups kept when the config tab saves
 
 
 class SecuritySettings(BaseModel):
@@ -650,6 +704,10 @@ class SecuritySettings(BaseModel):
     ban_after_strikes: int = Field(5, ge=1)
     ban_minutes: float = Field(60, gt=0)
     max_body_bytes: int = Field(1_000_000, ge=1)
+    # Cache-Control on the public listings (/events, /categories...): browsers and Cloudflare reuse one this long,
+    # and serve it stale this much longer while refetching.
+    public_cache_seconds: int = Field(30, ge=0, le=86400)
+    public_stale_seconds: int = Field(60, ge=0, le=86400)
     # Interactive API docs at /docs, /redoc and /openapi.json. Off = a smaller map for attackers.
     api_docs: bool = False
     # Crawlers that only harvest data (SEO tools, dataset scrapers): disallowed in robots.txt
@@ -681,6 +739,43 @@ class WeatherSettings(BaseModel):
     unknown_place_cache_seconds: int = Field(86400, ge=0)  # ...and on "no such place" (looked up, not found)
     # Slots farther ahead are dropped: past about a week a forecast is a guess, so no weather beats a wrong one.
     max_days: float = Field(7, gt=0)
+
+
+class SeoSettings(BaseModel):
+    """Server-rendered pages, sitemap and llms.txt (partylinks.seo)."""
+
+    list_limit: int = Field(60, ge=1, le=500)  # events listed (and in the ItemList) on an index or landing page
+    landing_rows: int = Field(500, ge=1, le=5000)  # events a landing / holiday page reads for its counts and FAQ
+    map_rows: int = Field(200, ge=1, le=2000)  # events on the /map page
+    index_names: int = Field(300, ge=1, le=5000)  # names listed on /artists and /venues
+    llms_limit: int = Field(400, ge=0, le=5000)  # upcoming events listed in llms.txt
+    description_chars: int = Field(300, ge=50, le=1000)  # a page's meta description (and link preview) is cut here
+    event_description_chars: int = Field(160, ge=50, le=1000)  # an event page's meta description is cut here
+    genre_page_min: int = Field(3, ge=1)  # fewer upcoming events than this: no landing page (thin content)
+    town_page_min: int = Field(10, ge=1)  # same for a town that is not in enrichment.cities
+    html_ttl_seconds: float = Field(300, gt=0)  # a rendered page is reused this long (restart to apply)
+    sitemap_part_urls: int = Field(10_000, ge=100, le=50_000)  # URLs per sitemap file (Google reads at most 50,000)
+    sitemap_ttl_seconds: float = Field(3600, gt=0)  # the sitemap URL list is rebuilt this often (restart to apply)
+    sitemap_max_stale_seconds: float = Field(86400, ge=0)  # an old list is served this long while rebuilding
+
+
+class SearchSettings(BaseModel):
+    """Smart search (partylinks.search)."""
+
+    typo_cutoff: float = Field(0.85, gt=0, le=1)  # difflib ratio for a typo of a known name to count
+    did_you_mean_cutoff: float = Field(0.75, gt=0, le=1)  # looser: a "did you mean" suggestion to click
+    city_min_population: int = Field(100_000, ge=0)  # smaller towns abroad are not searched by name
+    short_word_chars: int = Field(3, ge=0, le=10)  # words this short must stand alone in the text
+    umbrella_genres: int = Field(4, ge=1, le=50)  # a listing with more genres ranks one part lower
+
+
+class BlogSettings(BaseModel):
+    """The blog (partylinks.blog)."""
+
+    embed_max: int = Field(24, ge=1, le=200)  # most events a live embed in a post shows
+    embed_default: int = Field(6, ge=1, le=200)  # events an embed shows when it names no limit
+    words_per_minute: int = Field(200, ge=50, le=1000)  # reading speed for "N min read"
+    related: int = Field(3, ge=0, le=20)  # related posts under a post
 
 
 class Settings(BaseSettings):
@@ -721,8 +816,14 @@ class Settings(BaseSettings):
     artist_filter: ArtistFilterSettings = Field(default_factory=ArtistFilterSettings)  # the artists index's filter
     similar: SimilarSettings = Field(default_factory=SimilarSettings)  # artists like an artist (partylinks.similar)
     weekly_top: WeeklyTopSettings = Field(default_factory=WeeklyTopSettings)  # this week's top (partylinks.weekly_top)
+    artwork: ArtworkSettings = Field(default_factory=ArtworkSettings)  # drawn cards for events with no picture
     place_info: PlaceInfoSettings = Field(default_factory=PlaceInfoSettings)  # hours, booking of places (partylinks.placeinfo)
     artist_links: ArtistLinksSettings = Field(default_factory=ArtistLinksSettings)  # artists' Spotify / YouTube... (MusicBrainz)
+    alerts: AlertsSettings = Field(default_factory=AlertsSettings)  # the bell, For you, alert preview (partylinks.alerts)
+    plans: PlansSettings = Field(default_factory=PlansSettings)  # who's coming / which party (partylinks.plans)
+    seo: SeoSettings = Field(default_factory=SeoSettings)  # server-rendered pages, sitemap (partylinks.seo)
+    search: SearchSettings = Field(default_factory=SearchSettings)  # smart search (partylinks.search)
+    blog: BlogSettings = Field(default_factory=BlogSettings)  # partylinks.blog
     # Raw per-source blocks; each scraper validates its own block with its own model.
     # None = a block whose keys are all commented out (reported as invalid, not a crash).
     sources: dict[str, dict[str, Any] | None] = Field(default_factory=dict)

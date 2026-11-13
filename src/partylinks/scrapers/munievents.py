@@ -57,7 +57,6 @@ _LEFT = re.compile(r"נותרו רק (\d+)")
 _EVENT_ID = re.compile(r"/events/(\d+)/?$")
 _HEBREW = re.compile(r"[א-ת]")
 _BG_URL = re.compile(r"url\(['\"]?([^'\")]+)")
-FEED_DAYS = 365  # feed window each way: a season that began last autumn still runs
 
 
 class MuniSite(BaseModel):
@@ -73,6 +72,7 @@ class MuniSite(BaseModel):
 
 class MuniEventsSettings(SourceSettings):
     sites: list[MuniSite] = Field(min_length=1)
+    feed_days: int = Field(365, ge=1)  # feed window each way: a season that began last autumn still runs
     # Not events: a course or a weekly class listed on the city's calendar ("קורס NLP / ימי ד'").
     skip_title_words: list[str] = Field(default_factory=list)
     # Ticket sellers whose page states no price before a purchase wizard (Rehovot's info-cloud) or a form.
@@ -106,7 +106,8 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         tz = zone(self.timezone)
         today = datetime.now(tz).date()
-        window =f"start={today - timedelta(FEED_DAYS)}&end={today + timedelta(FEED_DAYS)}"
+        days = self.settings.feed_days
+        window = f"start={today - timedelta(days)}&end={today + timedelta(days)}"
         for site in self.settings.sites:
             feed_url = f"{site.url}/events/json/?{window}"
             feed = await self.optional(f"{site.url} feed", self.get_json(feed_url, expect=list)) if site.feed else None

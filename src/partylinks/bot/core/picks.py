@@ -13,9 +13,6 @@ from sqlalchemy.orm import Session, defer, selectinload
 from partylinks.config import Settings
 from partylinks.db import ClickRow, EventRow, utcnow
 
-CLICKS_DAYS = 7
-OVERSHOOT = 4  # rows read per pick: room for repeats of a show
-
 
 def picks(
     session: Session, cfg: Settings, query: str | None, when: Literal["weekend", "tonight"], today: date, limit: int,
@@ -29,12 +26,12 @@ def picks(
         filters.append(EventRow.local_date <= today + timedelta(days=(5 - today.weekday()) % 7))  # to Saturday
     clicks = (
         select(ClickRow.event_id, func.count().label("n"))
-        .where(ClickRow.at >= utcnow() - timedelta(days=CLICKS_DAYS)).group_by(ClickRow.event_id).subquery()
+        .where(ClickRow.at >= utcnow() - timedelta(days=cfg.bot.picks_clicks_days)).group_by(ClickRow.event_id).subquery()
     )  # fmt: skip
     rows = session.scalars(
         select(EventRow).outerjoin(clicks, clicks.c.event_id == EventRow.id).where(*filters)
         .order_by(func.coalesce(clicks.c.n, 0).desc(), EventRow.image_url.is_(None), EventRow.start_at.asc().nulls_last(), EventRow.id)
-        .limit(limit * OVERSHOOT)
+        .limit(limit * cfg.bot.picks_overshoot)
         .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
     ).all()  # fmt: skip
     out: list[EventRow] = []

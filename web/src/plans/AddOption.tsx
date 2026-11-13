@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import type { EventPage } from "../types";
 import { Img, sized, useT, when } from "../ui";
+import { useWeb } from "../site_params/useWeb";
 import { usePlanText } from "./i18n";
 import { WRITE_HEADERS, type Plan } from "./types";
 
@@ -14,10 +15,11 @@ export function AddOption({ plan, onAdded }: { plan: Plan; onAdded: (plan: Plan)
   const [text, setText] = useState("");
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState("");
+  const debounce = useWeb().search_debounce_ms;
   useEffect(() => {
-    const id = setTimeout(() => setQ(text.trim()), 300);
+    const id = setTimeout(() => setQ(text.trim()), debounce);
     return () => clearTimeout(id);
-  }, [text]);
+  }, [text, debounce]);
   const e = plan.event;
   const day = e.local_date;
   // The whole day (one request), nearest to the plan's own start first: Friday night's parties, not its morning.

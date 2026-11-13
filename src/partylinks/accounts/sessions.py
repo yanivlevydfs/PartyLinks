@@ -15,7 +15,6 @@ from partylinks.accounts.models import SessionRow, UserRow
 from partylinks.db import utcnow
 
 COOKIE = "spotx_session"
-ROLL_AFTER = timedelta(days=1)  # move the expiry forward at most once a day, not on every request
 
 
 def _hash(token: str) -> str:
@@ -38,8 +37,9 @@ def revoke_all(session: Session, user_id: str) -> None:
     session.execute(delete(SessionRow).where(SessionRow.user_id == user_id))
 
 
-def user_for(session: Session, token: str | None, days: int) -> UserRow | None:
-    """The signed-in user, or None: no cookie, an unknown or expired token, or a blocked user."""
+def user_for(session: Session, token: str | None, days: int, roll_hours: int = 24) -> UserRow | None:
+    """The signed-in user, or None: no cookie, an unknown or expired token, or a blocked user. The expiry moves
+    forward at most every ``roll_hours`` (accounts.session_roll_hours), not on every request."""
     if not token:
         return None
     row = session.execute(
@@ -53,7 +53,7 @@ def user_for(session: Session, token: str | None, days: int) -> UserRow | None:
     now = utcnow()
     if seen.expires_at <= now or user.blocked_at is not None:
         return None
-    if now - seen.last_seen_at > ROLL_AFTER:
+    if now - seen.last_seen_at > timedelta(hours=roll_hours):
         seen.last_seen_at, seen.expires_at = now, now + timedelta(days=days)
     return user
 
@@ -65,7 +65,8 @@ def optional_user(request: Request) -> UserRow | None:
     if not token or not request.app.state.settings.accounts.enabled:
         return None
     with request.app.state.db.session() as session:
-        user = user_for(session, token, request.app.state.settings.accounts.session_days)
+        accounts = request.app.state.settings.accounts
+        user = user_for(session, token, accounts.session_days, accounts.session_roll_hours)
         if user is not None:
             session.flush()
             session.expunge(user)

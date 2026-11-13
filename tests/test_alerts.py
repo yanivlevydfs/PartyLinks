@@ -237,9 +237,8 @@ def test_cleared_notifications_leave_for_you_and_are_not_emailed(
 
     sent: list[Any] = []
     monkeypatch.setattr(resend.Batch, "send", lambda params, options=None: sent.extend(params) or {"data": []})
-    monkeypatch.setattr("partylinks.mail.send.PAUSE", 0)
     app, db, settings = _app(tmp_path, events=[])
-    settings.mail = settings.mail.model_validate({"resend_api_key": "re_test"})
+    settings.mail = settings.mail.model_validate({"resend_api_key": "re_test", "send_pause_seconds": 0})
     matcher.run(settings, db)
     with TestClient(app) as c:
         sign_in(c, fake)

@@ -59,6 +59,8 @@ class EventimLightSettings(SourceSettings):
     cdx_collections: int = Field(12, ge=0)
     cdx_timeout_seconds: float = Field(300, gt=0)
     cdx_attempts: int = Field(4, ge=1)
+    cdx_backoff_seconds: float = Field(5, ge=0)  # first wait between index tries, doubling each time
+    cdx_backoff_max_seconds: float = Field(60, ge=0)  # longest wait between index tries
     # The index is slow and often answers 502/504: discovery gets this long per run.
     cdx_budget_seconds: float = Field(1800, gt=0)
     # Known shops and the crawls already read (a JSON file on the data volume).
@@ -140,7 +142,7 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
             async def get(endpoint: str, params: dict[str, str] | None = None) -> httpx.Response:
                 async for attempt in AsyncRetrying(
                     stop=stop_after_attempt(s.cdx_attempts),
-                    wait=wait_exponential(multiplier=5, max=60),
+                    wait=wait_exponential(multiplier=s.cdx_backoff_seconds, max=s.cdx_backoff_max_seconds),
                     retry=retry_if_exception(lambda e: isinstance(e, httpx.TransportError | httpx.HTTPStatusError)),
                     reraise=True,
                 ):

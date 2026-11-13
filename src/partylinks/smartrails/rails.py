@@ -61,7 +61,7 @@ def rail_filters(
     s = cfg.smart_rails
     if not s.enabled:
         return {}
-    month = {"date_to": now + timedelta(days=30)}
+    month = {"date_to": now + timedelta(days=s.window_days)}
     free_until = now + timedelta(hours=s.free_now_hours)
     sold_out = aliased(EventRow)
     sold_somewhere = select(sold_out.group_id).where(sold_out.group_id.is_not(None), sold_out.is_sold_out.is_(True))

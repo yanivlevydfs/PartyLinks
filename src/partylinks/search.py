@@ -19,7 +19,7 @@ from sqlalchemy import ColumnElement, SQLColumnExpression, String, and_, case, c
 from sqlalchemy.orm import aliased
 
 from partylinks import countries, seo
-from partylinks.config import Settings
+from partylinks.config import Settings, get_settings
 from partylinks.db import EventRow, lineup_contains, whole_word
 from partylinks.places import city_abroad
 
@@ -296,10 +296,9 @@ def _pattern(word: str) -> str:
     return "%" + _escape(word) + "%"
 
 
-DID_YOU_MEAN_CUTOFF = 0.75  # looser than TYPO_CUTOFF: a suggestion to click, not extra results
-TYPO_CUTOFF = 0.85  # difflib ratio: one letter off in a 5-6 letter word
-CITY_SEARCH_POPULATION = 100_000  # smaller towns abroad share names with plain words
-SHORT_WORD = 3  # up to this long, a word must stand alone in the text: "ראפ" is not in "תראפיה"
+# search.* in Settings: did_you_mean_cutoff is looser than typo_cutoff (a suggestion to click, not extra
+# results); typo_cutoff 0.85 is one letter off in a 5-6 letter word; city_min_population: smaller towns abroad
+# share names with plain words; short_word_chars: "ראפ" is not in "תראפיה".
 
 
 def text_match(word: str, whole: bool = False) -> Cond:
@@ -311,7 +310,7 @@ def text_match(word: str, whole: bool = False) -> Cond:
         inside = c.ilike(pattern, escape="\\")  # the cheap test first; the regex only checks what it finds
         return and_(inside, whole_word(c, word)) if exact else inside
 
-    exact = whole or len(word) <= SHORT_WORD
+    exact = whole or len(word) <= get_settings().search.short_word_chars
     # Lineup and the site's own categories (JSONB text) too: a ticket site files tennis under "טניס".
     lists = (cast(EventRow.lineup, String), cast(EventRow.event_types, String), cast(EventRow.source_genres, String))
     return or_(*(found(c, whole) for c in lists), *(found(c, exact) for c in (
@@ -362,7 +361,7 @@ def did_you_mean(q: str, cfg: Settings, names: Iterable[str]) -> str | None:
     found nothing: "אינפקטד מושרום" -> "Infected Mushroom"."""
     text = " ".join(q.casefold().split())
     choices = {n.casefold(): n for n in (*_vocabulary(cfg), *names) if len(n) >= 3}
-    near = get_close_matches(text, list(choices), n=1, cutoff=DID_YOU_MEAN_CUTOFF)
+    near = get_close_matches(text, list(choices), n=1, cutoff=cfg.search.did_you_mean_cutoff)
     return choices[near[0]] if near and near[0] != text else None
 
 
@@ -374,7 +373,6 @@ def by_skeleton(names: Iterable[str]) -> dict[str, list[str]]:
 
 
 TIER = 1000  # relevance(): tier * TIER - parts matched
-UMBRELLA_GENRES = 4  # more genres than this: a mixed listing, one part less in relevance()
 
 
 def tier(rank: int) -> int:
@@ -415,7 +413,7 @@ def relevance(q: str, cfg: Settings, artists: Iterable[str] = ()) -> ColumnEleme
     parts = kinds + [or_(*(_whole_word(EventRow.title, f) for f in (w, w[1:]) if len(f) >= 2)) for w in loose]
     matched = sum((case((p, 1), else_=0) for p in parts), literal(0)) if parts else literal(0)
     if kinds:  # a listing filed under many kinds ("אירועי נובמבר": 9 genres) is less likely the kind asked for
-        matched = matched - case((func.jsonb_array_length(EventRow.genres) > UMBRELLA_GENRES, 1), else_=0)
+        matched = matched - case((func.jsonb_array_length(EventRow.genres) > cfg.search.umbrella_genres, 1), else_=0)
     return case((or_(*top), 0), (or_(*inside), TIER), else_=2 * TIER) - matched
 
 
@@ -525,7 +523,7 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
             if f" {phrase} " not in text:
                 continue  # part of a longer city already taken
             for name in (phrase, phrase[1:]) if phrase[0] in "בלמהו" else (phrase,):
-                if len(name) >= 3 and (city := city_abroad(name, min_population=CITY_SEARCH_POPULATION)):
+                if len(name) >= 3 and (city := city_abroad(name, min_population=cfg.search.city_min_population)):
                     text = text.replace(f" {phrase} ", " ")
                     filters.append(or_(*(text_match(n.casefold()) for n in city[1])))
                     break
@@ -534,7 +532,7 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
         # "ברומא" is "רומא" with "in": a Hebrew one-letter prefix may be dropped.
         match = or_(text_match(w), text_match(w[1:])) if len(w) > 3 and w[0] in "בלמהו" else text_match(w)
         # A typo of a known name ("טכנוו", "פסטבל") also finds what the name finds.
-        if len(w) >= 4 and (near := get_close_matches(w, long_names, n=1, cutoff=TYPO_CUTOFF)):
+        if len(w) >= 4 and (near := get_close_matches(w, long_names, n=1, cutoff=cfg.search.typo_cutoff)):
             match = or_(match, vocab[near[0]](), text_match(near[0], whole=True))
         filters.append(match)
     if not filters:

@@ -26,7 +26,6 @@ WEEKDAYS = {
 }
 EN_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 CURRENCY = {"ILS": "₪", "USD": "$", "EUR": "€", "GBP": "£"}
-EVENING_FROM = 17  # a start today from this hour is "tonight"
 
 
 def when(row: EventRow, cfg: Settings, lang: str, now: datetime | None = None, start: datetime | None = None) -> str:
@@ -40,7 +39,7 @@ def when(row: EventRow, cfg: Settings, lang: str, now: datetime | None = None, s
     day = day or start.date()
     today = (now or datetime.now(UTC)).astimezone(zone).date()
     if day == today:
-        name = label("tonight_at" if start.hour >= EVENING_FROM or not row.time_known else "today_at", lang)
+        name = label("tonight_at" if start.hour >= cfg.bot.evening_from_hour or not row.time_known else "today_at", lang)
     elif day == today + timedelta(days=1):
         name = label("tomorrow_at", lang)
     else:

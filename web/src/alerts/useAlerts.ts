@@ -5,6 +5,7 @@ import { genreLabel, type Lang } from "../i18n";
 import type { Filters } from "../store";
 import type { EventSummary } from "../types";
 import { label, useT } from "../ui";
+import { useWeb } from "../site_params/useWeb";
 
 export interface Criteria {
   q: string;
@@ -114,11 +115,12 @@ export interface BellItem {
 
 export function useBell() {
   const me = useMe().data;
+  const poll = useWeb().bell_poll_seconds;
   return useQuery<{ unseen: number; items: BellItem[] }>({
     queryKey: ["bell", me?.id],
     queryFn: () => fetch("/api/me/bell", { credentials: "same-origin" }).then((r) => r.json()),
     enabled: !!me,
-    refetchInterval: 60_000, // once a minute, and only while the tab is visible (rate limit)
+    refetchInterval: poll * 1000, // once a minute (site.web.bell_poll_seconds), and only while the tab is visible (rate limit)
     refetchIntervalInBackground: false,
   });
 }

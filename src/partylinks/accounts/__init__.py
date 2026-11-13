@@ -34,7 +34,7 @@ def sign_in_state(app: FastAPI, settings: Settings) -> None:
             SessionMiddleware,
             secret_key=settings.accounts.session_secret.get_secret_value(),
             session_cookie="spotx_signin",
-            max_age=600,
+            max_age=settings.accounts.sign_in_minutes * 60,
             same_site="lax",
             https_only=settings.site.base_url.startswith("https://"),
         )

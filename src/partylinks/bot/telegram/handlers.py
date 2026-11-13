@@ -33,8 +33,6 @@ from partylinks.db import Database
 log = logging.getLogger(__name__)
 CHANNEL = "telegram"
 PRIVATE = filters.ChatType.PRIVATE
-INLINE_CACHE_SECONDS = 60
-CONCURRENT_UPDATES = 16
 COMMANDS = [("menu", "תפריט: קטגוריות, אזורים ותאריכים"), ("start", "התחלה"), ("alerts", "ההתראות שלי"), ("reminders", "התזכורות והמעקבים שלי"), ("digest", "סיכום שבועי לסופ״ש"), ("daily", "טיפ יומי: הכי שווים הערב"),
             ("lang", "English / עברית"), ("help", "עזרה"), ("stop", "מחיקת כל המידע שלי")]  # fmt: skip
 # What an empty chat shows before /start (≤512 characters), and the profile's "about" (≤120).
@@ -170,7 +168,7 @@ class Handlers:
             return
         lang = lang_of(query.query, DEFAULT_LANG)
         found = await self.talk.inline(query.query, lang)
-        await query.answer(render.inline_results(found), cache_time=INLINE_CACHE_SECONDS, is_personal=False)
+        await query.answer(render.inline_results(found), cache_time=self.settings().bot.inline_cache_seconds, is_personal=False)
 
     async def on_error(self, update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
         tag = chat_tag(update.effective_chat.id) if isinstance(update, Update) and update.effective_chat else "-"
@@ -193,7 +191,7 @@ def build(token: str, settings: Callable[[], Settings], db: Database) -> Applica
     app = (
         Application.builder().token(token).updater(None)
         .rate_limiter(AIORateLimiter(max_retries=2))
-        .concurrent_updates(CONCURRENT_UPDATES)  # one chat's slow search never holds up the others
+        .concurrent_updates(settings().bot.concurrent_updates)  # one chat's slow search never holds up the others
         .build()
     )  # fmt: skip
     Handlers(settings, db).install(app)

@@ -1,25 +1,25 @@
 // A floating "ask the bot" button on every page (it replaced the home page's Telegram banner), bottom-right (the accessibility button has bottom-left).
 // Shown only while the bot runs (GET /site → telegram, the ["site"] query other parts share: no extra request).
-// The speech bubble beside it can be closed, and stays closed for 30 days; the button itself stays.
+// The speech bubble beside it can be closed, and stays closed for 30 days (site.web.telegram_bubble_snooze_days); the button itself stays.
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
+import { useWeb } from "../site_params/useWeb";
 import { useT } from "../ui";
 import { TG_APP } from "./telegramApp";
 import "./telegram-fab.css";
 
 const KEY = "partylinks-telegram-fab-closed";
-const SNOOZE_DAYS = 30;
 
 const TEXT = {
   he: { bubble: "מחפשים מסיבה? שאלו את הבוט", label: "הבוט שלנו בטלגרם", close: "סגירה" },
   en: { bubble: "Looking for a party? Ask our bot", label: "Our Telegram bot", close: "Close" },
 };
 
-function closed(): boolean {
+function closed(days: number): boolean {
   try {
     const at = Number(localStorage.getItem(KEY));
-    return !!at && Date.now() - at < SNOOZE_DAYS * 86_400_000;
+    return !!at && Date.now() - at < days * 86_400_000;
   } catch {
     return false;
   }
@@ -33,13 +33,15 @@ export function TelegramFab() {
     queryKey: ["site"],
     queryFn: () => fetch("/site").then((r) => r.json() as Promise<{ telegram?: string | null }>),
   }).data?.telegram;
-  const [bubble, setBubble] = useState(() => !closed());
+  const snooze = useWeb().telegram_bubble_snooze_days;
+  const [hidden, setHidden] = useState(false);
+  const bubble = !hidden && !closed(snooze);
   if (!name || TG_APP || pathname.startsWith("/admin")) return null;
   const hide = () => {
     try {
       localStorage.setItem(KEY, String(Date.now()));
     } catch {}
-    setBubble(false);
+    setHidden(true);
   };
 
   return (

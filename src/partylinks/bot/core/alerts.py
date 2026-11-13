@@ -18,12 +18,11 @@ from partylinks.alerts import matcher
 from partylinks.alerts.criteria import Criteria
 from partylinks.bot.core.understand import today_in
 from partylinks.bot.models import BotAlertHitRow, BotAlertRow, BotChatRow, BotStateRow
-from partylinks.config import Settings
+from partylinks.config import Settings, get_settings
 from partylinks.db import Database, EventRow, upcoming_filter, utcnow
 
 log = logging.getLogger(__name__)
 INSERT_CHUNK = 5_000  # hit rows per INSERT (two parameters each)
-STALE = timedelta(days=1)  # a match not sent by then is no news any more: dropped, never sent late
 
 
 @dataclass
@@ -76,11 +75,12 @@ def match(settings: Settings, db: Database) -> int:
 
 
 def prune(db: Database) -> int:
-    """Hits of events that are over (or gone) leave the table, and so do matches not sent within STALE
+    """Hits of events that are over (or gone) leave the table, and so do matches not sent within bot.alert_stale_hours
     (over a cap, or the chat had blocked the bot): never sent late."""
     with db.session() as session:
         upcoming = select(EventRow.id).where(upcoming_filter())
-        stale = BotAlertHitRow.sent_at.is_(None) & (BotAlertHitRow.matched_at < utcnow() - STALE)
+        since = utcnow() - timedelta(hours=get_settings().bot.alert_stale_hours)
+        stale = BotAlertHitRow.sent_at.is_(None) & (BotAlertHitRow.matched_at < since)
         result: Any = session.execute(delete(BotAlertHitRow).where(BotAlertHitRow.event_id.not_in(upcoming) | stale))
         return result.rowcount or 0
 

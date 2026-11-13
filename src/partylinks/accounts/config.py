@@ -5,6 +5,18 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, SecretStr
 
 
+class RateLimitSettings(BaseModel):
+    """Calls a minute per IP on the account routes (accounts.guard.limited); over it answers 429."""
+
+    auth: int = Field(10, ge=1, le=1000)  # sign-in with Google, Facebook or a passkey
+    me: int = Field(30, ge=1, le=1000)  # a signed-in user's writes: alerts, saved, account, plans' groups
+    alert_preview: int = Field(60, ge=1, le=1000)  # the alert form's live count (counted in the "me" bucket)
+    passkey: int = Field(20, ge=1, le=1000)  # adding / removing one's own passkeys
+    plans: int = Field(20, ge=1, le=1000)  # creating a plan and adding an event to compare
+    plan_votes: int = Field(60, ge=1, le=1000)  # answers on a plan
+    fb_deletion: int = Field(30, ge=1, le=1000)  # Meta's data-deletion callback
+
+
 class AccountsSettings(BaseModel):
     enabled: bool = True  # false: no account UI, /auth answers 404, the account jobs idle
     google_client_id: str = ""
@@ -20,6 +32,10 @@ class AccountsSettings(BaseModel):
     # ...and from all passes of the last 24 hours: a source back after days of failures lists its backlog at once.
     max_hits_per_day: int = Field(10, ge=1)
     admin_emails: list[str] = Field(default_factory=list)  # promoted to admin on sign-in
+    session_roll_hours: int = Field(24, ge=1, le=24 * 30)  # a session's expiry moves forward at most this often
+    sign_in_minutes: int = Field(10, ge=1, le=60)  # how long one Google / Facebook sign-in may take (restart to apply)
+    admin_users_page: int = Field(25, ge=5, le=500)  # users per page in the admin's users tab
+    rate_limits: RateLimitSettings = Field(default_factory=RateLimitSettings)
 
     @property
     def google_ready(self) -> bool:

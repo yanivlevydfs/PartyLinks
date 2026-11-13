@@ -29,8 +29,6 @@ PATH = "/bot/telegram"
 SECRET_HEADER = "x-telegram-bot-api-secret-token"
 UPDATES = ["message", "callback_query", "inline_query", "my_chat_member"]  # the last: added to / removed from a group
 MIN_SECRET = 16  # characters; Telegram allows 1-256 of A-Z a-z 0-9 _ -
-START_ATTEMPTS = 4
-START_PAUSE = 3.0  # seconds, times the attempt number
 
 
 def strong(secret: SecretStr | None) -> bool:
@@ -57,17 +55,17 @@ async def start(app: FastAPI) -> Application | None:
         )
         return None
     bot = handlers.build(cfg.telegram_token.get_secret_value(), lambda: app.state.settings, app.state.db)
-    for attempt in range(1, START_ATTEMPTS + 1):
+    for attempt in range(1, cfg.start_attempts + 1):
         try:
             await bot.initialize()
             await bot.start()
             break
         except NetworkError as exc:  # timed out (seen on a busy boot): Telegram is usually there a moment later
-            if attempt == START_ATTEMPTS:
+            if attempt == cfg.start_attempts:
                 log.exception("bot: Telegram did not start after %d attempts", attempt)
                 return None
-            log.warning("bot: Telegram did not answer (%s), attempt %d of %d", exc, attempt, START_ATTEMPTS)
-            await asyncio.sleep(START_PAUSE * attempt)
+            log.warning("bot: Telegram did not answer (%s), attempt %d of %d", exc, attempt, cfg.start_attempts)
+            await asyncio.sleep(cfg.start_pause_seconds * attempt)
         except Exception:  # a wrong token: the site runs regardless
             log.exception("bot: Telegram did not start")
             return None

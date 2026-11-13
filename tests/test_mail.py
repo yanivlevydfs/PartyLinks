@@ -57,7 +57,6 @@ def outbox(monkeypatch: pytest.MonkeyPatch) -> Outbox:
     box = Outbox()
     monkeypatch.setattr(resend.Batch, "send", box.send)
     monkeypatch.setattr(resend.Emails, "send", box.send_one)
-    monkeypatch.setattr("partylinks.mail.send.PAUSE", 0)
     monkeypatch.setattr("partylinks.mail.render._forecasts", lambda settings, cards: {c["id"]: "☀️ 24°" for c in cards})
     return box
 
@@ -71,7 +70,7 @@ def _no_settle(monkeypatch: pytest.MonkeyPatch) -> None:
 def _app(tmp_path: Path, events: list[Any] | None = None) -> tuple[Any, Database, Any]:
     settings = _settings(tmp_path)
     # instant on here so its rules stay tested; production runs with it off (one weekly email)
-    settings.mail = settings.mail.model_validate({"resend_api_key": "re_test", "instant_enabled": True})
+    settings.mail = settings.mail.model_validate({"resend_api_key": "re_test", "instant_enabled": True, "send_pause_seconds": 0})
     settings.site.email = "contact@spotx.test"
     db = seed(
         settings, events if events is not None else [event(k, SOON + timedelta(hours=i)) for i, k in enumerate("abc")]
@@ -280,7 +279,7 @@ def test_switches_account_errors_and_admin(tmp_path: Path, fake: FakeGoogle, out
 def test_instant_emails_are_off_by_default(tmp_path: Path, fake: FakeGoogle, outbox: Outbox) -> None:
     """The owner's rule: one email a week. With mail.instant_enabled off, an instant alert's matches stay in the bell."""
     app, db, settings = _app(tmp_path, events=[])
-    settings.mail = settings.mail.model_validate({"resend_api_key": "re_test"})
+    settings.mail = settings.mail.model_validate({"resend_api_key": "re_test", "send_pause_seconds": 0})
     matcher.run(settings, db)
     with TestClient(app) as c:
         sign_in(c, fake)

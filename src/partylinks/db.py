@@ -58,7 +58,6 @@ from partylinks.models import ScrapedEvent
 
 log = logging.getLogger(__name__)
 
-WRITE_WAIT_S = 120  # serialize_writes: how long a writer waits for its turn before giving up (then retried)
 
 # PostgreSQL errors that a second try can get past: serialization failure, deadlock, lock timeout,
 # server shutting down / restarting, connection lost. Never a statement timeout (57014): it would
@@ -670,8 +669,9 @@ class Database:
             return
         if getattr(self._writing, "active", False):
             raise RuntimeError("nested write session: the outer one holds the write lock")
-        if not self._writer.acquire(timeout=WRITE_WAIT_S):
-            raise PoolTimeout(f"no turn in the writer queue within {WRITE_WAIT_S}s")  # transient: retried
+        wait = self.options.write_wait_seconds
+        if not self._writer.acquire(timeout=wait):
+            raise PoolTimeout(f"no turn in the writer queue within {wait:g}s")  # transient: retried
         self._writing.active = True
         try:
             with self._sessions() as session, session.begin():

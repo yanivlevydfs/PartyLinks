@@ -41,7 +41,7 @@ def holiday_page(session: Session, cfg: Settings, lang: str, key: str) -> seo.Pa
     h, _ = found
     t, name, dates = TEXT[lang], h.name(lang), _dates(h)
     title = t["title"].format(name=name)
-    rows = seo._upcoming(session, *where(h), limit=500)
+    rows = seo._upcoming(session, *where(h), limit=cfg.seo.landing_rows)
     faq = seo._faq(rows, lang, t["scope"].format(name=name), cfg.site.name)
     faq_ld = {
         "@context": "https://schema.org",
@@ -56,10 +56,10 @@ def holiday_page(session: Session, cfg: Settings, lang: str, key: str) -> seo.Pa
         path=path,
         lang=lang,
         image=seo._cover(cfg, rows[0]) if rows else None,
-        jsonld=[seo._item_list(rows[: seo.LIST_LIMIT], cfg, title), faq_ld,
+        jsonld=[seo._item_list(rows[: cfg.seo.list_limit], cfg, title), faq_ld,
                 seo._breadcrumbs(cfg, lang, (t["index"], "/holidays"), (title, path))],
         body=f"<h1>{escape(title)}</h1><p>{escape(t['intro'].format(name=name, dates=dates))}</p>"
-        + seo._event_list_html(rows[: seo.LIST_LIMIT], cfg, lang)
+        + seo._event_list_html(rows[: cfg.seo.list_limit], cfg, lang)
         + f"<section><h2>{'שאלות נפוצות' if lang == 'he' else 'FAQ'}</h2>{faq_html}</section>",
     )  # fmt: skip
 

@@ -9,9 +9,9 @@ import { SimilarArtists } from "../similar/SimilarArtists";
 import { useArtistFilter } from "../artist_filter/ArtistFilter";
 import { MapLinks } from "../places/MapLinks";
 import { ScopedEvents } from "../filter_scope/ScopedEvents";
+import { useWeb } from "../site_params/useWeb";
 import { artistPath, Chip, countryName, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
-const PAGE = 60;
 // A to Z: English (abc) then Hebrew (אבג), case and accents ignored, "2" before "10".
 const byName = new Intl.Collator(["en", "he"], { numeric: true, sensitivity: "base" });
 
@@ -20,13 +20,14 @@ function FacetIndex({ title, facets, path, byArea, logos, toolbar, ordered, filt
   toolbar?: ReactNode; ordered?: boolean; filterKey?: string; // a filter above the list, keeping its own order
 }) {
   const { t } = useT();
+  const PAGE = useWeb().index_page_size;
   const [q, setQ] = useState("");
   const [area, setArea] = useState<string | null>(null);
   // Thousands of cards at once froze the page: render a page at a time; search still covers the whole list.
   const [limit, setLimit] = useState(PAGE);
   const areas = byArea ? [...new Set((facets ?? []).map((f) => f.area).filter((a): a is string => !!a))] : [];
   useTitle(title);
-  useEffect(() => setLimit(PAGE), [filterKey]);
+  useEffect(() => setLimit(PAGE), [filterKey, PAGE]);
   // Case-insensitive, ignores spaces/punctuation, so "gray club" finds "Gray Club תל אביב-יפו".
   const norm = (s: string) => s.toLocaleLowerCase().replace(/[\s\-_.·'"׳״]/g, "");
   const inArea = facets?.filter((f) => !area || f.area === area);

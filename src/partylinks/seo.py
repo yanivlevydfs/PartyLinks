@@ -52,10 +52,6 @@ from partylinks.venue_profiles import profile_for as venue_profile_for
 from partylinks.venues import PLACE_LISTING
 
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content"
-LIST_LIMIT = 60  # events listed on index pages
-HTML_TTL_S = 300  # a rendered page is reused this long
-LLMS_LIMIT = 400
-DESC_LIMIT = 300
 AI_CRAWLERS = [
     "OAI-SearchBot", "ChatGPT-User", "GPTBot", "Claude-SearchBot", "Claude-User", "ClaudeBot", "PerplexityBot",
     "Perplexity-User", "Google-Extended", "Applebot-Extended", "Bingbot",
@@ -158,7 +154,7 @@ GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBT
                  "g_parties": "Parties & Clubs", "g_live": "Live Music", "g_stage": "Stage & Screen",
                  "g_culture": "Culture & Learning", "g_kids": "Kids & Family", "g_food": "Food & Drinks",
                  "g_leisure": "Leisure & Sport", "g_tech": "Tech & Business", "g_community": "Community & LGBTQ+"}  # fmt: skip
-GENRE_PAGE_MIN = 3  # fewer upcoming events than this: no landing page (thin content)
+# seo.genre_page_min in Settings: fewer upcoming events than this, no landing page (thin content).
 
 
 def genre_label(genre: str, lang: str) -> str:
@@ -253,7 +249,8 @@ def _summary(row: EventRow, cfg: Settings, lang: str) -> str:
     return " · ".join(p for p in parts if p)
 
 
-def _clip(text: str | None, limit: int = DESC_LIMIT) -> str:
+def _clip(text: str | None, limit: int | None = None) -> str:
+    limit = get_settings().seo.description_chars if limit is None else limit
     text = " ".join((text or "").split())
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
@@ -266,12 +263,13 @@ def _iso(dt: datetime | None, cfg: Settings, row: EventRow) -> str | None:
     return dt.astimezone(ZoneInfo(row.time_zone or cfg.timezone)).isoformat(timespec="seconds") if dt else None
 
 
-def _upcoming(session: Session, *where: Any, limit: int = LIST_LIMIT, abroad: bool | None = False) -> list[EventRow]:
+def _upcoming(session: Session, *where: Any, limit: int | None = None, abroad: bool | None = False) -> list[EventRow]:
     """``abroad``: None for events anywhere (an artist's page, like the site's). One listing per real event
     (the primary): the same party sold on four sites is listed once."""
     if abroad is not None:
         where = (EventRow.country.is_not(None) if abroad else EventRow.country.is_(None), *where)
     where = (upcoming_filter(), EventRow.is_primary.is_(True), *where)
+    limit = get_settings().seo.list_limit if limit is None else limit
     return list(
         session.scalars(
             select(EventRow)
@@ -494,10 +492,10 @@ def _where_to(session: Session, cfg: Settings, lang: str) -> list[tuple[str, str
     for when, ask in (("tonight", ("לאן יוצאים הערב?", "Where to go out tonight?")),
                       ("weekend", ("לאן יוצאים בסוף השבוע?", "Where to go out this weekend?"))):  # fmt: skip
         where = (*_when_where(when, cfg), _NOT_PLACE)
-        rows = _upcoming(session, *where, limit=500)
+        rows = _upcoming(session, *where, limit=cfg.seo.landing_rows)
         if not rows:
             continue
-        # The real count (rows stop at 500), and examples that are events many sites sell, not places open daily.
+        # The real count (rows stop at seo.landing_rows), and examples that are events many sites sell, not places open daily.
         count = session.scalar(
             select(func.count()).select_from(EventRow)
             .where(upcoming_filter(), EventRow.is_primary.is_(True), EventRow.country.is_(None), *where)
@@ -586,7 +584,7 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
     more = "" if place else _more_html(session, cfg, lang, row)
     return Page(
         title=f"{row.title} · {_when(row, cfg, lang)} · {cfg.site.name}",
-        description=_clip(f"{summary}. {own_text or ''}", 160),
+        description=_clip(f"{summary}. {own_text or ''}", cfg.seo.event_description_chars),
         # A place open every day is a new listing (and URL) each day: one page for it, its venue page.
         path=f"/venue/{quote(row.venue_name, safe='')}" if place and row.venue_name else event_path(row),
         lang=lang,
@@ -651,7 +649,7 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
     return Page(
         # Abroad: the venue's city, not "upcoming events in Israel" (Madarae is in San Francisco).
         title=f"{name} · {rows[0].city if rows and rows[0].country and rows[0].city else t['upcoming']} · {cfg.site.name}",
-        description=about[:300],
+        description=about[: cfg.seo.description_chars],
         path=path,
         lang=lang,
         image=logo or (_cover(cfg, rows[0]) if rows else None),
@@ -711,7 +709,7 @@ def _names(session: Session, kind: str, verified_only: bool = False) -> list[str
 
 def index_page(session: Session, cfg: Settings, lang: str, kind: str) -> Page:
     t = TEXT[lang]
-    names = _names(session, kind, cfg.site.artists_verified_only)[:300]
+    names = _names(session, kind, cfg.site.artists_verified_only)[: cfg.seo.index_names]
     prefix = "/venue/" if kind == "venues" else "/artist/"
     links = "".join(f'<li><a href="{prefix}{quote(n, safe="")}">{escape(n)}</a></li>' for n in names)
     return Page(
@@ -726,7 +724,7 @@ def index_page(session: Session, cfg: Settings, lang: str, kind: str) -> Page:
 
 def map_page(session: Session, cfg: Settings, lang: str) -> Page:
     t = TEXT[lang]
-    rows = _upcoming(session, EventRow.latitude.is_not(None), limit=200)
+    rows = _upcoming(session, EventRow.latitude.is_not(None), limit=cfg.seo.map_rows)
     return Page(
         title=f"{t['map']} · {cfg.site.name}",
         description=t["site_desc"],
@@ -744,7 +742,7 @@ def abroad_page(session: Session, cfg: Settings, lang: str) -> Page:
             select(EventRow)
             .where(upcoming_filter(), EventRow.country.is_not(None), EventRow.is_primary.is_(True))
             .order_by(EventRow.start_at.asc().nulls_first())
-            .limit(LIST_LIMIT)
+            .limit(cfg.seo.list_limit)
             .options(selectinload(EventRow.images))
         )
     )
@@ -877,7 +875,7 @@ def info_page(path: str) -> Any:
 
 # --------------------------------------------------------------------------- landing pages
 # kind: "tonight" | "weekend" | "genre" | "city", or "genre_tonight" / "genre_weekend" for one genre
-# tonight or this weekend ("טכנו הערב", "סטנדאפ בסופ״ש"). Every page needs GENRE_PAGE_MIN events.
+# tonight or this weekend ("טכנו הערב", "סטנדאפ בסופ״ש"). Every page needs seo.genre_page_min events.
 WHENS = ("tonight", "weekend")
 # /price/<slug>: the price filter's bands (PRICE_BANDS), as PRICE_PAGES in web/src/pages/Home.tsx.
 PRICE_PAGES = {"under-50": "u50", "50-150": "50_150", "150-300": "150_300", "300-plus": "300p"}
@@ -897,7 +895,7 @@ def price_pages(session: Session) -> dict[str, str]:
     """{slug: band} of the price pages with enough upcoming events."""
     return _facet(("price",), lambda: {
         slug: band for slug, band in PRICE_PAGES.items()
-        if (session.scalar(select(func.count()).select_from(EventRow).where(upcoming_filter(), *_price_where(band))) or 0) >= GENRE_PAGE_MIN
+        if (session.scalar(select(func.count()).select_from(EventRow).where(upcoming_filter(), *_price_where(band))) or 0) >= get_settings().seo.genre_page_min
     })  # fmt: skip
 
 
@@ -923,12 +921,12 @@ def genre_counts(session: Session, cfg: Settings | None = None, when: str | None
     where = _when_where(when, cfg) if cfg else []
     for genres in session.scalars(select(EventRow.genres).where(upcoming_filter(), EventRow.country.is_(None), *where)):
         counts.update(cfg.enrichment.with_parents(genres or []) if cfg else genres or [])
-    return {g: n for g, n in counts.most_common() if n >= GENRE_PAGE_MIN}
+    least = get_settings().seo.genre_page_min
+    return {g: n for g, n in counts.most_common() if n >= least}
 
 
 # A town that is not in the config (GeoNames, places.py) gets a city page only with this many upcoming
-# events: the busiest towns (Shoham, Ganei Tikva, Tiberias...), not every village with a show or two.
-TOWN_PAGE_MIN = 10
+# events (seo.town_page_min): the busiest towns (Shoham, Ganei Tikva, Tiberias...), not every village with a show or two.
 
 
 def _page_cities(cfg: Settings) -> list[CitySettings]:
@@ -970,7 +968,7 @@ def city_pages(session: Session, cfg: Settings, when: str | None = None) -> list
     def build() -> list[CitySettings]:
         counts = Counter(session.scalars(select(EventRow.city).where(upcoming_filter(), *_when_where(when, cfg))))
         configured = {c.key for c in cfg.enrichment.cities}
-        return [c for c in _page_cities(cfg) if counts[c.he] >= (GENRE_PAGE_MIN if c.key in configured else TOWN_PAGE_MIN)]
+        return [c for c in _page_cities(cfg) if counts[c.he] >= (cfg.seo.genre_page_min if c.key in configured else cfg.seo.town_page_min)]
 
     return _facet(("city_pages", id(cfg), when), build)
 
@@ -984,7 +982,7 @@ def city_genre_counts(session: Session, cfg: Settings) -> dict[str, dict[str, in
         for city, genres in rows:
             if city:
                 counts.setdefault(city, Counter()).update(cfg.enrichment.with_parents(genres or []))
-        return {c: {g: n for g, n in cnt.most_common() if n >= GENRE_PAGE_MIN} for c, cnt in counts.items()}
+        return {c: {g: n for g, n in cnt.most_common() if n >= cfg.seo.genre_page_min} for c, cnt in counts.items()}
 
     return _facet(("city_genre_counts", id(cfg)), build)
 
@@ -1004,7 +1002,7 @@ REGION_NAMES = {
 def region_pages(session: Session) -> list[str]:
     def build() -> list[str]:
         counts = Counter(session.scalars(select(EventRow.area).where(upcoming_filter(), EventRow.country.is_(None))))
-        return [k for k in REGION_NAMES if counts[k] >= GENRE_PAGE_MIN]
+        return [k for k in REGION_NAMES if counts[k] >= get_settings().seo.genre_page_min]
 
     return _facet(("region_pages",), build)
 
@@ -1016,7 +1014,7 @@ def abroad_countries(session: Session) -> dict[str, str]:
         counts = Counter(session.scalars(select(EventRow.country).where(upcoming_filter(), EventRow.country.is_not(None))))
         out: dict[str, str] = {}
         for code, n in counts.most_common():
-            if code and n >= GENRE_PAGE_MIN and is_country(code):
+            if code and n >= get_settings().seo.genre_page_min and is_country(code):
                 out[_ascii_slug(country_name(code, "en"))] = code
         return out
 
@@ -1333,7 +1331,7 @@ def landing_page(session: Session, cfg: Settings, lang: str, path: str) -> Page 
     land = resolve_landing(session, cfg, lang, path)
     if land is None:
         return None
-    rows = _upcoming(session, *land.where, limit=500, abroad=land.abroad)
+    rows = _upcoming(session, *land.where, limit=cfg.seo.landing_rows, abroad=land.abroad)
     title, desc, intro, scope = _landing_text(land.kind, lang, land.label, land.place)
     intro = _intro(land, lang) or intro
     today = datetime.now(ZoneInfo(cfg.timezone)).date()
@@ -1344,7 +1342,7 @@ def landing_page(session: Session, cfg: Settings, lang: str, path: str) -> Page 
         "@type": "FAQPage",
         "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq],
     }
-    jsonld = [_item_list(rows[:LIST_LIMIT], cfg, title), faq_ld, _breadcrumbs(cfg, lang, (title, path))]
+    jsonld = [_item_list(rows[: cfg.seo.list_limit], cfg, title), faq_ld, _breadcrumbs(cfg, lang, (title, path))]
     if land.city:
         c = land.city
         city_ld: dict[str, Any] = {
@@ -1365,7 +1363,7 @@ def landing_page(session: Session, cfg: Settings, lang: str, path: str) -> Page 
         lang=lang,
         image=_cover(cfg, rows[0]) if rows else None,
         jsonld=jsonld,
-        body=f"<h1>{escape(title)}</h1><p>{escape(intro)}</p>" + _event_list_html(rows[:LIST_LIMIT], cfg, lang)
+        body=f"<h1>{escape(title)}</h1><p>{escape(intro)}</p>" + _event_list_html(rows[: cfg.seo.list_limit], cfg, lang)
         + f"<section><h2>{'שאלות נפוצות' if lang == 'he' else 'FAQ'}</h2>{faq_html}</section>"
         + _links_html(_related(session, cfg, lang, path), lang),
     )
@@ -1394,7 +1392,7 @@ def render(template: str, page: Page, cfg: Settings, alt: Page | None = None) ->
     other = "en" if page.lang == "he" else "he"
     preview = page.description
     if alt and alt.description and alt.description != page.description:
-        preview = _clip(f"{page.description} | {alt.description}", 300)
+        preview = _clip(f"{page.description} | {alt.description}", cfg.seo.description_chars)
     head = [
         f"<title>{escape(page.title)}</title>",
         f'<meta name="description" content="{escape(page.description)}" />',
@@ -1444,8 +1442,8 @@ def _strip_title(html: str, keep: str) -> str:
 
 
 # --------------------------------------------------------------------------- crawl files
-# Google reads at most 50,000 URLs / 50 MB per sitemap file; the site has more, so /sitemap.xml is an index of parts.
-SITEMAP_PART = 10_000
+# Google reads at most 50,000 URLs / 50 MB per sitemap file; the site has more, so /sitemap.xml is an index of parts
+# of seo.sitemap_part_urls each.
 
 
 def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
@@ -1498,7 +1496,8 @@ def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
 
 
 def sitemap_index(urls: list[str], cfg: Settings) -> str:
-    parts = range(1, (len(urls) + SITEMAP_PART - 1) // SITEMAP_PART + 1)
+    size = cfg.seo.sitemap_part_urls
+    parts = range(1, (len(urls) + size - 1) // size + 1)
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -1509,7 +1508,8 @@ def sitemap_index(urls: list[str], cfg: Settings) -> str:
 
 def sitemap_part(urls: list[str], part: int) -> str | None:
     """Part 1, 2... of the URL list; None past the end."""
-    chunk = urls[(part - 1) * SITEMAP_PART : part * SITEMAP_PART] if part >= 1 else []
+    size = get_settings().seo.sitemap_part_urls
+    chunk = urls[(part - 1) * size : part * size] if part >= 1 else []
     if not chunk:
         return None
     return (
@@ -1537,7 +1537,7 @@ def llms_txt(session: Session, cfg: Settings) -> str:
     from partylinks import blog
 
     base = cfg.site.base_url
-    rows = _upcoming(session, limit=LLMS_LIMIT)
+    rows = _upcoming(session, limit=cfg.seo.llms_limit)
     now = datetime.now(ZoneInfo(cfg.timezone))
     lines = [
         f"# {cfg.site.name}",
@@ -1600,7 +1600,9 @@ def register(app: FastAPI, site_dir: Path) -> None:
     # Built once, reused for an hour, then rebuilt in the background while the old list is served.
     from partylinks.api import ResponseCache  # local: api imports this module
 
-    sitemap_cache = ResponseCache(ttl=3600, max_stale=86400, follow_writes=False)
+    sitemap_cache = ResponseCache(
+        ttl=app.state.settings.seo.sitemap_ttl_seconds, max_stale=app.state.settings.seo.sitemap_max_stale_seconds, follow_writes=False
+    )
     sitemap_lock = threading.Lock()  # concurrent first requests wait for one build instead of starting their own
 
     def cached_urls(request: Request) -> list[str]:
@@ -1639,7 +1641,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
 
     api_cfg = app.state.settings.api
     rendered = ResponseCache(  # scrapes write all day
-        ttl=HTML_TTL_S, max_bytes=api_cfg.html_cache_mb << 20, max_stale=api_cfg.html_max_stale_seconds,
+        ttl=app.state.settings.seo.html_ttl_seconds, max_bytes=api_cfg.html_cache_mb << 20, max_stale=api_cfg.html_max_stale_seconds,
         follow_writes=False, build_wait=api_cfg.cache_build_wait_seconds,
     )  # fmt: skip
     app.state.html_cache = rendered  # api.CachedPages serves hits before routing

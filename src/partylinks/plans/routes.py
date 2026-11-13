@@ -18,15 +18,14 @@ from partylinks.accounts.models import Gender, UserRow
 from partylinks.accounts.sessions import OptionalUserDep, UserDep, optional_user
 from partylinks.db import EventRow
 from partylinks.parsing import tidy_text
+from partylinks.plans.config import MAX_OPTIONS_CAP
 from partylinks.plans.models import GROUP_NAME_LENGTH, NAME_LENGTH, PlanEventRow, PlanRow, PlanVoteRow
 
-MAX_VOTES = 60  # a plan is for a group of friends, not a crowd
-MAX_OPTIONS = 4  # "which party on Friday?": up to four events side by side
 MAX_SEATS = 8
 Answer = Literal["yes", "maybe", "no"]
 Ride = Literal["drive", "need"]
 NO_STORE = {"Cache-Control": "private, no-store"}
-WRITE = [SameOrigin, limited("me", 30)]
+WRITE = [SameOrigin, limited("me", "me")]
 TEXT = {
     "he": {"title": "מי בא איתי?", "desc": "לחצו ותגידו אם אתם באים", "which": "איזו מסיבה?", "which_desc": "לחצו ובחרו לאן הולכים"},
     "en": {"title": "Who's coming?", "desc": "Tap to say if you're in", "which": "Which party?", "which_desc": "Tap and pick where we go"},
@@ -50,7 +49,7 @@ class VoteIn(BaseModel):
     voter: str = Field(min_length=8, max_length=36, pattern=r"^[A-Za-z0-9-]+$")
     name: str = Field(min_length=1, max_length=NAME_LENGTH)
     answer: Answer
-    picks: list[str] | None = Field(default=None, max_length=MAX_OPTIONS)  # option event ids (several events)
+    picks: list[str] | None = Field(default=None, max_length=MAX_OPTIONS_CAP)  # option event ids (several events)
     ride: Ride | None = None
     seats: int | None = Field(default=None, ge=1, le=MAX_SEATS)  # with ride=drive
     gender: Gender | None = None  # signed in, also kept on the account
@@ -156,7 +155,7 @@ def _event(session: Session, ref: str) -> EventRow:
     return event
 
 
-@router.post("/plans", response_model=PlanOut, status_code=status.HTTP_201_CREATED, dependencies=[limited("plans", 20)])
+@router.post("/plans", response_model=PlanOut, status_code=status.HTTP_201_CREATED, dependencies=[limited("plans", "plans")])
 def create_plan(body: PlanIn, request: Request) -> PlanOut:
     """A new plan for an event; the link to send is ``/plan/<id>``. Made signed in, it is a group in
     the creator's account (``/api/me/groups``) and may carry a name."""
@@ -194,21 +193,21 @@ def rename(plan_id: str, body: NameIn, user: UserDep, request: Request) -> PlanO
         return _plan_out(session, plan, None, user)
 
 
-@router.post("/plans/{plan_id}/events", response_model=PlanOut, dependencies=[limited("plans", 20)])
+@router.post("/plans/{plan_id}/events", response_model=PlanOut, dependencies=[limited("plans", "plans")])
 def add_option(plan_id: str, body: OptionIn, request: Request) -> PlanOut:
-    """Another event to compare ("which party on Friday?"), up to ``MAX_OPTIONS``; anyone with the link."""
+    """Another event to compare ("which party on Friday?"), up to ``plans.max_options``; anyone with the link."""
     with request.app.state.db.session() as session:
         plan = _plan(session, plan_id)
         event, ids = _event(session, body.event_id), _option_ids(session, plan)
         if event.id not in ids:
-            if len(ids) >= MAX_OPTIONS:
+            if len(ids) >= request.app.state.settings.plans.max_options:
                 raise HTTPException(status.HTTP_409_CONFLICT, "this plan has the most events it can compare")
             session.add(PlanEventRow(plan_id=plan.id, event_id=event.id, position=len(ids)))
             session.flush()
         return _plan_out(session, plan, None, _signed_in(request))
 
 
-@router.post("/plans/{plan_id}/votes", response_model=PlanOut, dependencies=[limited("plan-votes", 60)])
+@router.post("/plans/{plan_id}/votes", response_model=PlanOut, dependencies=[limited("plan-votes", "plan_votes")])
 def vote(plan_id: str, body: VoteIn, request: Request) -> PlanOut:
     """Answer, or change this browser's answer (same voter key): in / maybe / no, which of the plan's
     events (when it compares several), and a car with free seats or the need of a ride."""
@@ -235,7 +234,7 @@ def vote(plan_id: str, body: VoteIn, request: Request) -> PlanOut:
                 # An account's answer changes only signed in as that account, whatever key is sent.
                 raise HTTPException(status.HTTP_403_FORBIDDEN, "sign in to change this answer")
         if row is None:
-            if (session.scalar(select(func.count()).where(PlanVoteRow.plan_id == plan_id)) or 0) >= MAX_VOTES:
+            if (session.scalar(select(func.count()).where(PlanVoteRow.plan_id == plan_id)) or 0) >= request.app.state.settings.plans.max_votes:
                 raise HTTPException(status.HTTP_409_CONFLICT, "this plan is full")
             row = PlanVoteRow(plan_id=plan_id, voter=body.voter)
             session.add(row)

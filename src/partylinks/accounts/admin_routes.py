@@ -19,7 +19,6 @@ from partylinks.admin import AdminDep
 from partylinks.db import utcnow
 
 router = APIRouter(prefix="/admin/api", tags=["admin"], dependencies=[AdminDep], include_in_schema=False)
-PAGE = 25
 # Per-user counts added by other packages (saved events, alerts): name -> (session, user ids) -> {id: n}.
 COUNTS: dict[str, Any] = {}
 
@@ -54,6 +53,7 @@ def _user(session: Session, user_id: str) -> UserRow:
 
 @router.get("/users")
 def list_users(request: Request, q: str = "", page: int = Query(1, ge=1)) -> dict[str, Any]:
+    size = request.app.state.settings.accounts.admin_users_page
     with request.app.state.db.session(write=False) as session:
         where = []
         if q.strip():
@@ -65,10 +65,10 @@ def list_users(request: Request, q: str = "", page: int = Query(1, ge=1)) -> dic
             )
         total = session.scalar(select(func.count()).select_from(UserRow).where(*where)) or 0
         users = session.scalars(
-            select(UserRow).where(*where).order_by(UserRow.created_at.desc()).offset((page - 1) * PAGE).limit(PAGE)
+            select(UserRow).where(*where).order_by(UserRow.created_at.desc()).offset((page - 1) * size).limit(size)
         ).all()
         live, extra = _counts(session, [u.id for u in users])
-        return {"total": total, "page": page, "page_size": PAGE, "items": [_row(u, live, extra) for u in users]}
+        return {"total": total, "page": page, "page_size": size, "items": [_row(u, live, extra) for u in users]}
 
 
 @router.get("/users/stats")

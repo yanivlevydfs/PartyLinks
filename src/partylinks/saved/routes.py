@@ -17,7 +17,7 @@ from partylinks.saved.models import SavedEventRow
 
 MAX_CARDS = 100  # a signed-out browser's hearts per request
 NO_STORE = {"Cache-Control": "private, no-store"}
-WRITE = [SameOrigin, limited("me", 30)]
+WRITE = [SameOrigin, limited("me", "me")]
 
 router = APIRouter(tags=["saved"], include_in_schema=False)
 

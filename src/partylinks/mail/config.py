@@ -21,3 +21,14 @@ class MailSettings(BaseModel):
     # secret keep the old one in unsubscribe_old_secrets: refusals must keep working from every email sent.
     unsubscribe_secret: SecretStr | None = None
     unsubscribe_old_secrets: list[SecretStr] = []
+    instant_max_events: int = Field(10, ge=1, le=30)  # events in one instant alert email; the rest stay in the bell
+    digest_days: int = Field(10, ge=1, le=31)  # the digest lists alert matches of events in the next this many days
+    digest_saved_days: int = Field(7, ge=1, le=31)  # ...and the user's saved events in the next this many days
+    digest_quiet_below: int = Field(4, ge=0, le=30)  # fewer events than this: the digest adds the weekend's picks
+    digest_filler: int = Field(6, ge=0, le=20)  # events in each of those added sections (free, weekend highlights)
+    welcome_delay_minutes: int = Field(2, ge=0, le=1440)  # the welcome email waits this long after sign-up
+    welcome_batch: int = Field(500, ge=1, le=5000)  # welcome emails sent in one pass at most
+    send_pause_seconds: float = Field(0.6, ge=0, le=10)  # between Resend requests: under its 2 a second
+    image_quality: int = Field(82, ge=30, le=100)  # JPEG quality of the pictures in emails (new files only)
+    image_cache_seconds: int = Field(604800, ge=0, le=31536000)  # browser / mail proxy cache of those pictures
+    admin_runs_shown: int = Field(20, ge=1, le=500)  # recent email runs listed in the admin's email tab

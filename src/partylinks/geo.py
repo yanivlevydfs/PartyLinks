@@ -34,13 +34,8 @@ from partylinks.places import city_point, israeli_places
 log = logging.getLogger(__name__)
 
 # Nominatim ``addresstype`` values precise enough for a pin ("place" = a house number).
-# An abroad city centre this far from the GeoNames city of that name is another place (Freiburg on the
-# Elbe for Freiburg im Breisgau: 600 km). The same city from two sources is a few km apart at most.
-WRONG_CITY_M = 25_000
-# A bare city name abroad means the GeoNames city of that name only if it is this big (Freiburg 230k,
-# Rogers 70k); a smaller one may be a namesake of a town GeoNames doesn't list (under 15,000 people).
+# geocoding.wrong_city_m / sure_city_population: abroad city centres (see GeocodingSettings).
 # ponytail: a population rule; the venue's own address would be exact if a source ever gives it.
-SURE_CITY_POPULATION = 50_000
 GEONAMES_KIND = "geonames"  # GeoCacheRow.kind of a centre taken from GeoNames, not Nominatim
 PRECISE = {
     "place", "house", "building", "road", "amenity", "leisure", "tourism", "shop", "office", "club",
@@ -56,9 +51,6 @@ _STREET_WORDS = re.compile(
 )
 _STREET_NUMBER = re.compile(r"^((?:[^\W\d_][\w'׳\-]*\s+){1,4}\d{1,4})(?!\d)")  # "Ben Yehuda 102"
 _DASHES = re.compile(r"[\s\-–־_]+")
-
-# One point given for this many different venues is a source's fallback ("somewhere in Tel Aviv"), not a place.
-PLACEHOLDER_VENUES = 4
 
 # One request at a time across every source thread (Nominatim usage policy).
 _rate_lock = threading.Lock()
@@ -388,7 +380,7 @@ class Geocoder:
         for row in missing:
             if p := found[row.id]:
                 venues[_rounded(p)].add(venue_key(row.venue_name) or street_key(row.address) or "")
-        shared = {p for p, keys in venues.items() if distinct_venues(keys) >= PLACEHOLDER_VENUES}
+        shared = {p for p, keys in venues.items() if distinct_venues(keys) >= self.settings.placeholder_venues}
         unplaced: Counter[str] = Counter()
         updates = []
         for row in missing:
@@ -432,7 +424,7 @@ class Geocoder:
         shared: Counter[tuple[float, float]] = Counter()
         for r in rows:
             reason = self._bad(r, (r.latitude, r.longitude))
-            placeholder = distinct.setdefault(_point(r), distinct_venues(venues[_point(r)])) >= PLACEHOLDER_VENUES
+            placeholder = distinct.setdefault(_point(r), distinct_venues(venues[_point(r)])) >= self.settings.placeholder_venues
             if reason or placeholder:
                 bad.append({"id": r.id, "latitude": None, "longitude": None})
                 why[f"{r.source}: {reason or 'shared'}"] += 1
@@ -594,7 +586,7 @@ class Geocoder:
             22k) is not the Rosemont of the Rosemont Theatre (Illinois, 4k), which Nominatim finds."""
             if country == UNKNOWN_COUNTRY or not clean(city):
                 return None
-            return city_point(clean(city), country, min_population=SURE_CITY_POPULATION)
+            return city_point(clean(city), country, min_population=self.settings.sure_city_population)
 
         with self.db.session(write=False) as session:
             cache = {c.query: c for c in session.scalars(select(GeoCacheRow).where(GeoCacheRow.query.like("% @__")))}
@@ -646,7 +638,7 @@ class Geocoder:
             if not (hit.found and hit.latitude is not None and hit.longitude is not None):
                 continue
             point = known(city, country)
-            if point and meters(point, (hit.latitude, hit.longitude)) > WRONG_CITY_M:
+            if point and meters(point, (hit.latitude, hit.longitude)) > self.settings.wrong_city_m:
                 moves[query] = point
             elif point is None and hit.kind == GEONAMES_KIND:  # moved here by an older rule the city no longer meets
                 moves[query] = None

@@ -131,11 +131,11 @@ def _forwarded_client(scope: dict[str, Any], cfg: SecuritySettings) -> None:
         scope["client"] = (last, 0)
 
 
-def _cache_policy(path: str) -> bytes | None:
+def _cache_policy(path: str, cfg: SecuritySettings) -> bytes | None:
     if path.startswith("/assets/"):
         return b"public, max-age=31536000, immutable"
     if path.startswith(PUBLIC_API):
-        return b"public, max-age=30, stale-while-revalidate=60"
+        return f"public, max-age={cfg.public_cache_seconds}, stale-while-revalidate={cfg.public_stale_seconds}".encode()
     return None
 
 
@@ -324,7 +324,7 @@ class SecurityMiddleware:
 
         docs = path.startswith(DOCS_PATHS)  # Swagger UI needs inline scripts and a CDN
         https = scope.get("scheme") == "https"
-        cache = _cache_policy(path) if scope["method"] in ("GET", "HEAD") else None
+        cache = _cache_policy(path, cfg) if scope["method"] in ("GET", "HEAD") else None
 
         async def send_with_headers(message: dict[str, Any]) -> None:
             if message["type"] == "http.response.start":

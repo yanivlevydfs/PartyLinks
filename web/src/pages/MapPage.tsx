@@ -18,6 +18,7 @@ import type { MapEvent } from "../types";
 import { eventPath, Loader, Sources, useT, useTitle, venuePath, when } from "../ui";
 import type { Lang } from "../i18n";
 import { GENRE_ICON as ICON } from "../genreIcons";
+import { useWeb } from "../site_params/useWeb";
 
 const ISRAEL: [number, number] = [31.9, 34.95];
 
@@ -207,6 +208,7 @@ const PIN = TOUCH
 /** One location and its events. */
 function Spot({ list }: { list: MapEvent[] }) {
   const { t } = useT();
+  const popupMax = useWeb().map_popup_events;
   return (
     <CircleMarker
       center={[list[0].latitude, list[0].longitude]}
@@ -220,7 +222,7 @@ function Spot({ list }: { list: MapEvent[] }) {
           {list[0].venue_name && <Link className="pop-venue" to={venuePath(list[0].venue_name)}>{list[0].venue_name}</Link>}
           <small className="pop-count">{t.results(list.length)}</small>
           <ul>
-            {list.slice(0, 8).map((e) => (
+            {list.slice(0, popupMax).map((e) => (
               <li key={e.id}>
                 <Link to={eventPath(e)}>
                   <small>{when(e, t, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</small>

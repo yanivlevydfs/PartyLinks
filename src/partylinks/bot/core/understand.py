@@ -27,19 +27,6 @@ from partylinks.search import (
     exact_dates,
 )
 
-# Whole messages the bot answers itself (casefolded, punctuation and emoji gone).
-GREETINGS = {
-    "היי", "הי", "שלום", "אהלן", "הלו", "היוש", "מה נשמע", "מה קורה", "מה המצב", "בוקר טוב", "ערב טוב",
-    "hi", "hello", "hey", "yo", "sup", "hiya", "good morning", "good evening",
-}  # fmt: skip
-THANKS = {"תודה", "תודה רבה", "תנקס", "אחלה", "מעולה", "סבבה", "יופי", "thanks", "thank you", "thx", "great", "cool"}
-HELP = {"עזרה", "help", "מה אתה יודע", "מה אתה יודע לעשות", "מה אפשר", "איך זה עובד", "מה אפשר לשאול"}
-MORE = {"עוד", "עוד אירועים", "תראה עוד", "תן עוד", "הבאים", "more", "next", "show more", "more please"}
-ALERTS = {"התראות", "ההתראות שלי", "ההתראות", "my alerts", "alerts"}
-# Inside a search: options of the bot, not words to find.
-NEAR = ("קרוב אליי", "קרוב אלי", "קרוב לידי", "לידי", "בסביבה", "בסביבתי", "באזור שלי", "near me", "nearby", "around me", "close to me")  # fmt: skip
-CHEAP = ("הכי זול", "הכי זולים", "הכי זולות", "זולים", "זולות", "זול", "בזול", "cheapest", "cheap")
-FOLLOW_MARKERS = ("ומה עם ", "ומה לגבי ", "מה עם ", "מה לגבי ", "and what about ", "what about ", "how about ", "and ")
 # Emoji and punctuation; keeps ג'אז, סופ"ש, 40+, עד 100 ₪, and a date's dot or slash ("7.11", "7/11").
 _NOT_TEXT = re.compile(r"(?!(?<=\d)[./](?=\d))[^\w\s'\"״׳₪+<\-]")
 
@@ -102,7 +89,7 @@ def _dates(today: date) -> frozenset[str]:
     return frozenset({*WEEKEND, *DAYS, *date_ranges(today)})
 
 
-def _found(text: str, phrases: frozenset[str] | set[str] | tuple[str, ...]) -> list[str]:
+def _found(text: str, phrases: frozenset[str] | set[str] | tuple[str, ...] | list[str]) -> list[str]:
     """The phrases in ``text`` (whole words), longest first, each word counted once."""
     padded, out = f" {text} ", []
     for p in sorted(phrases, key=len, reverse=True):
@@ -147,8 +134,9 @@ def today_in(cfg: Settings) -> date:
 
 def search_part(text: str, cfg: Settings, today: date) -> tuple[str, bool, bool]:
     """(words to search, cheapest first, near me) of a cleaned message."""
-    near, cheap = bool(_found(text, NEAR)), bool(_found(text, CHEAP))
-    text = without(text, _found(text, (*NEAR, *CHEAP)))
+    bot = cfg.bot
+    near, cheap = bool(_found(text, bot.near_words)), bool(_found(text, bot.cheap_words))
+    text = without(text, _found(text, (*bot.near_words, *bot.cheap_words)))
     parts = kinds(text, cfg, today)
     names = [n for n in _vocabulary(cfg) if " " in n]  # "drum and bass", "stand up": names, not chat words
     return _drop_filler(text, parts["date"] + parts["place"] + names), cheap, near
@@ -158,7 +146,7 @@ def follow_up(text: str, previous: str, cfg: Settings, today: date) -> str | Non
     """The previous search with the part this message names replaced ("ומחר", "and in haifa", "בצפון?"),
     or None when the message is a new search."""
     core, marked = text, False
-    for marker in FOLLOW_MARKERS:
+    for marker in cfg.bot.follow_markers:
         if text.startswith(marker):
             core, marked = text.removeprefix(marker), True
             break
@@ -182,7 +170,9 @@ def read(text: str, cfg: Settings, previous: str | None = None, today: date | No
     text = clean(text, cfg.bot.max_text_length)
     if not text:
         return Message("empty")
-    for kind, words in (("greeting", GREETINGS), ("thanks", THANKS), ("help", HELP), ("more", MORE), ("alerts", ALERTS)):
+    bot = cfg.bot
+    for kind, words in (("greeting", bot.greeting_words), ("thanks", bot.thanks_words), ("help", bot.help_words),
+                        ("more", bot.more_words), ("alerts", bot.alerts_words)):  # fmt: skip
         if text in words:
             return Message(kind)
     query, cheap, near = search_part(text, cfg, today)

@@ -16,6 +16,7 @@ import { NewVotesToast, useNewVotes } from "./NewVotes";
 import { usePlanText } from "./i18n";
 import "./plans.css";
 import { WRITE_HEADERS, type Answer, type Gender, type Plan, type Ride, type Vote } from "./types";
+import { useWeb } from "../site_params/useWeb";
 
 // The browser's voter key (changes its own answer) and the name it last used. Storage can be off
 // (private mode): then the key lives for this visit only.
@@ -53,6 +54,7 @@ function PlanView() {
   const p = usePlanText();
   const client = useQueryClient();
   const key = ["plan", id];
+  const poll = useWeb().plan_poll_seconds;
   const { data, error, isPending } = useQuery({
     queryKey: key,
     queryFn: async () => {
@@ -63,7 +65,7 @@ function PlanView() {
     },
     // Friends answer while it is open: every 10 s (6 requests a minute, well under the rate limit), and at once
     // on coming back to the tab (staleTime 0: the app-wide 60 s kept a fresh-looking list on return).
-    refetchInterval: 10_000,
+    refetchInterval: poll * 1000,
     staleTime: 0,
     retry: false,
   });

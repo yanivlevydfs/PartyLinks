@@ -38,7 +38,6 @@ log = logging.getLogger(__name__)
 
 LOOPBACK = {"127.0.0.1", "::1", "localhost", "testclient"}
 BACKUP_DIR = "config/backups"
-KEEP_BACKUPS = 30
 # Changing these only takes effect after the process restarts.
 RESTART_KEYS = ("database", "api")
 
@@ -415,7 +414,7 @@ async def put_config(body: ConfigIn, request: Request) -> dict[str, Any]:
     backups.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(ZoneInfo(request.app.state.settings.timezone)).strftime("%Y%m%d-%H%M%S")
     (backups / f"settings-{stamp}.yaml").write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
-    for old in sorted(backups.glob("settings-*.yaml"))[:-KEEP_BACKUPS]:
+    for old in sorted(backups.glob("settings-*.yaml"))[:-request.app.state.settings.admin.keep_backups]:
         old.unlink()
     path.write_text(body.yaml.replace("\r\n", "\n"), encoding="utf-8")
     log.info("admin: saved %s (backup settings-%s.yaml)", path, stamp)

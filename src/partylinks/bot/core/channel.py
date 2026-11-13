@@ -12,10 +12,8 @@ from sqlalchemy.dialects.postgresql import insert
 from partylinks.bot.core.picks import picks
 from partylinks.bot.core.understand import today_in
 from partylinks.bot.models import BotChannelPostRow
-from partylinks.config import Settings
+from partylinks.config import Settings, get_settings
 from partylinks.db import Database, utcnow
-
-KEEP = timedelta(days=60)  # posts remembered this long (longer than any event is listed ahead, near enough)
 
 
 def when(settings: Settings) -> Literal["weekend", "tonight"]:
@@ -34,5 +32,6 @@ def due(settings: Settings, db: Database, channel: str) -> list[str]:
 
 def prune(db: Database) -> int:
     with db.session() as session:
-        result: Any = session.execute(delete(BotChannelPostRow).where(BotChannelPostRow.posted_at < utcnow() - KEEP))
+        since = utcnow() - timedelta(days=get_settings().bot.channel_keep_days)
+        result: Any = session.execute(delete(BotChannelPostRow).where(BotChannelPostRow.posted_at < since))
         return result.rowcount or 0

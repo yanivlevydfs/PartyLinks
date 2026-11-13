@@ -38,7 +38,6 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import CursorResult
 
 log = logging.getLogger(__name__)
-PER_PASS = 1500  # ~0.1 s each, 4 at a time: production had 4,284 events with no picture (2026-10-29), 3 passes
 # ponytail: threads, bounded by the worker's CPUs (Pillow's heavy steps release the GIL); a process pool
 # if drawing ever becomes the worker's bottleneck.
 CONCURRENCY = max(1, min(4, os.cpu_count() or 1))
@@ -82,8 +81,8 @@ def _signature(row: EventRow, sources: list[str]) -> str:
     return hashlib.sha1("|".join(parts).encode()).hexdigest()
 
 
-def plan(db: Database) -> tuple[list[Job], int, int]:
-    """Step 1: the cards to draw (new or outdated, up to PER_PASS), how many events need one, and how many
+def plan(db: Database, per_pass: int = 1500) -> tuple[list[Job], int, int]:
+    """Step 1: the cards to draw (new or outdated, up to ``per_pass``: artwork.per_pass), how many events need one, and how many
     cards were removed (a real picture arrived, the event ended or is no longer its group's primary)."""
     from partylinks.api import _group_sources  # local: api imports this package's routes
 
@@ -101,7 +100,7 @@ def plan(db: Database) -> tuple[list[Job], int, int]:
         sig = _signature(r, srcs)
         if have.get(r.id) != sig:
             jobs.append(Job(r.id, r.title or "", tuple(srcs), r.start_at, r.city, r.time_known is not False, sig))
-    return jobs[:PER_PASS], len(wanted), removed
+    return jobs[:per_pass], len(wanted), removed
 
 
 def make(settings: Settings, db: Database, job: Job) -> bool:
@@ -126,7 +125,7 @@ def make(settings: Settings, db: Database, job: Job) -> bool:
 
 async def run_async(settings: Settings, db: Database) -> dict[str, int]:
     """One pass, cards drawn ``CONCURRENCY`` at a time."""
-    jobs, needed, removed = await asyncio.to_thread(plan, db)
+    jobs, needed, removed = await asyncio.to_thread(plan, db, settings.artwork.per_pass)
     gate = asyncio.Semaphore(CONCURRENCY)
 
     async def one(job: Job) -> bool:

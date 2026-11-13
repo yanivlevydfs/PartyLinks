@@ -45,7 +45,6 @@ _SOON = re.compile(r"בקרוב|טרם\s+נפתח|תהיה\s+זמינה")
 _FREE = re.compile(r"כניסה\s+חופשית|ללא\s+(?:עלות|תשלום)|לא\s+בתשלום")  # "האירוע לא בתשלום, ..."
 # A hall named "מפגש ב-ZOOM": an online meeting, skipped like every source's online events.
 _ONLINE = re.compile(r"\bzoom\b|זום", re.IGNORECASE)
-CALENDAR_WINDOW = timedelta(days=182)
 
 
 class SmarticketTenant(BaseModel):
@@ -78,6 +77,7 @@ class SmarticketSettings(SourceSettings):
     calendar_path: str
     # 6-month calendar windows read for a tenant whose /api/shows is empty.
     calendar_windows: int = Field(2, ge=1)
+    calendar_window_days: int = Field(182, ge=1)  # days per calendar request
     tenants: list[SmarticketTenant]
 
 
@@ -121,7 +121,7 @@ class SmarticketScraper(BaseScraper[SmarticketSettings]):
     async def _calendar_shows(self, host: str) -> list[dict[str, Any]]:
         start, rows = datetime.now(ZoneInfo(self.timezone)).date(), []  # Israel's today, not the server's
         for _ in range(self.settings.calendar_windows):
-            end = start + CALENDAR_WINDOW
+            end = start + timedelta(days=self.settings.calendar_window_days)
             payload = await self.get_json(
                 f"https://{host}{self.settings.calendar_path}",
                 params={"start": start.isoformat(), "end": end.isoformat()},

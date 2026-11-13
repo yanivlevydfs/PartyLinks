@@ -17,6 +17,8 @@ class SmartRailsSettings(BaseModel):
     new_hours: float = Field(24, gt=0, le=168)
     # "Price dropped": a listing of the event got cheaper this many days ago or less.
     price_down_days: float = Field(3, gt=0, le=30)
+    # The non-tonight rows (free now, revealed today, last tickets...) list events up to this many days ahead.
+    window_days: int = Field(30, ge=1, le=365)
     # Weather rows: tonight's forecast at this city (enrichment.cities key), the slot that covers this hour.
     weather_city: str = "tel-aviv"
     weather_hour: int = Field(20, ge=0, le=23)

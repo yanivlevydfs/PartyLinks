@@ -18,10 +18,9 @@ from fastapi.testclient import TestClient
 from PIL import Image
 from sqlalchemy import text, update
 
-from partylinks import media as media_module
 from partylinks import service as service_module
 from partylinks.api import create_app
-from partylinks.config import HttpSettings, Settings
+from partylinks.config import HttpSettings, Settings, get_settings
 from partylinks.db import Database, EventRow, ImageRow, upsert_events
 from partylinks.media import MediaStore, has_variants, make_variants, variant_path
 from partylinks.models import ScrapedEvent, TicketTier
@@ -297,7 +296,7 @@ def test_orphan_sweep_admin_endpoint_defaults_to_a_dry_run(tmp_path: Path) -> No
 def test_an_oversized_picture_keeps_its_original_quietly(tmp_path: Path, monkeypatch: Any, caplog: Any) -> None:
     path = tmp_path / "big.jpg"
     path.write_bytes(picture((300, 200)))
-    monkeypatch.setattr(media_module, "MAX_PIXELS", 50_000)  # stands in for a 100M+ pixel poster
+    monkeypatch.setattr(get_settings().media, "max_pixels", 50_000)  # stands in for a 100M+ pixel poster
     with warnings.catch_warnings(record=True) as seen:
         assert make_variants(path, 80) is False
     assert not seen and not caplog.text

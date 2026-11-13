@@ -83,9 +83,6 @@ def sponsored_hit(body: SponsoredHitIn, request: Request, session: SessionDep) -
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-MAX_SPONSORED = 40
-
-
 class SponsoredIn(BaseModel):
     event_id: str
     side: Literal["right", "left"]
@@ -172,8 +169,8 @@ def sponsored_switch(body: SwitchIn, session: SessionDep) -> dict[str, bool]:
 @admin_router.put("/sponsored")
 def sponsored_save(items: list[SponsoredIn], session: SessionDep) -> dict[str, int]:
     """Replace every placement; list order is the order within each side."""
-    if len(items) > MAX_SPONSORED:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"at most {MAX_SPONSORED} sponsored events")
+    if len(items) > (most := get_settings().api.max_sponsored):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"at most {most} sponsored events")
     ids = [i.event_id for i in items]
     if len(set(ids)) != len(ids):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "an event can be sponsored once")

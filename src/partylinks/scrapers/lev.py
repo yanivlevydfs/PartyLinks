@@ -22,7 +22,7 @@ from typing import Any, NamedTuple
 from urllib.parse import unquote, urlsplit
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.models import ScrapedEvent, TicketTier
@@ -35,8 +35,6 @@ _TIME = re.compile(r"^(\d{1,2}):(\d{2})$")
 _PRICE = re.compile(r"מחיר כרטיס ברכישה (בקופות|דרך האתר)\s*[–-]\s*(\d+(?:\.\d+)?)\s*שקלים")
 _AGE = re.compile(r"(\d{1,2})\s*\+")
 _YEAR = re.compile(r"\b(19|20)\d{2}\b")
-# A screening listed before this hour runs after midnight of the listed day.
-_NIGHT_HOUR = 5
 
 
 class LevBranch(BaseModel):
@@ -58,6 +56,7 @@ class LevSettings(SourceSettings):
     days_ahead: int = 3
     # Length of a screening when the movie page gives no runtime: the event ends after the last one.
     default_runtime_minutes: int = 120
+    night_hour: int = Field(5, ge=0, le=23)  # a screening before this hour belongs to the previous day's night
     branches: dict[str, LevBranch]
 
 
@@ -106,7 +105,7 @@ class LevScraper(BaseScraper[LevSettings]):
             self.record_failure("prices", exc)
         for branch_id, day, screenings in listings:
             for event in build_events(
-                screenings, branch_id, s.branches[branch_id], day, movies, self.timezone, s.default_runtime_minutes
+                screenings, branch_id, s.branches[branch_id], day, movies, self.timezone, s.default_runtime_minutes, s.night_hour
             ):
                 yield with_tiers(event, tiers) if tiers else event
 
@@ -196,6 +195,7 @@ def build_events(
     movies: dict[str, dict[str, Any]],
     timezone: str,
     default_runtime_minutes: int = 120,
+    night_hour: int = 5,
 ) -> list[ScrapedEvent]:
     """One event per movie of this branch and day, starting at its first screening."""
     tz = ZoneInfo(timezone)
@@ -203,7 +203,7 @@ def build_events(
     for sc in screenings:
         hour, minute = (int(x) for x in sc.clock.split(":"))
         start = datetime.combine(day, time(hour, minute), tz)
-        if hour < _NIGHT_HOUR:
+        if hour < night_hour:
             start += timedelta(days=1)
         by_movie.setdefault(sc.movie_url, []).append((start, sc))
     events = []
