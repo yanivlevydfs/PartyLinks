@@ -10,6 +10,7 @@
       {
         "id": "why",
         "h": "למה לפרסם ב-SPOTX",
+        "video": ["/video/spotx-advertisers.mp4", "/video/spotx-advertisers.webp", "סרטון: פרסום ב-SPOTX, דקה ורבע"],
         "stats": [
           ["100,000+", "אירועים קרובים באתר"],
           ["100+", "אתרי כרטיסים ומקורות שאנחנו סורקים"],
@@ -104,6 +105,7 @@
       {
         "id": "why",
         "h": "Why advertise on SPOTX",
+        "video": ["/video/spotx-advertisers.mp4", "/video/spotx-advertisers.webp", "Video: advertising on SPOTX, 1:15 (in Hebrew)"],
         "stats": [
           ["100,000+", "upcoming events on the site"],
           ["100+", "ticketing sites and sources we scan"],

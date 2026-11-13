@@ -12,6 +12,7 @@ type Section = {
   p?: string;
   stats?: string[][]; // [value, label]
   note?: string; // after the cards
+  video?: string[]; // [mp4, poster, caption]
   list?: string[];
   steps?: string[];
   cards?: string[][]; // [title, tag, text]
@@ -35,38 +36,47 @@ export function PartnersPage() {
       </Hero>
       <main className="wrap statement pt">
         {(t.sections as Section[]).map((s) => (
-          <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`}>
-            <h2 id={`${s.id}-h`}>{s.h}</h2>
-            {s.p && <p>{s.p}</p>}
-            {s.stats && (
-              <dl className="pt-stats">
-                {s.stats.map(([v, label]) => (
-                  <div key={label}><dt>{label}</dt><dd><span dir="ltr">{v}</span></dd></div>
-                ))}
-              </dl>
+          <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className={s.video ? "pt-split" : undefined}>
+            {s.video && (
+              // preload="none": nothing but the poster loads until someone presses play
+              <figure className="pt-video">
+                <video src={s.video[0]} poster={s.video[1]} controls playsInline preload="none" aria-label={s.video[2]} />
+                <figcaption>{s.video[2]}</figcaption>
+              </figure>
             )}
-            {s.list && <ul>{s.list.map((x) => <li key={x}>{x}</li>)}</ul>}
-            {s.steps && <ol className="pt-steps">{s.steps.map((x) => <li key={x}>{x}</li>)}</ol>}
-            {s.cards && (
-              <ul className="pt-cards">
-                {s.cards.map(([h, tag, p]) => (
-                  <li key={h}>
-                    <h3>{h}</h3>
-                    <span className="pt-tag">{tag}</span>
-                    <p>{p}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {s.note && <p>{s.note}</p>}
-            {s.faq?.map(([q, a]) => (
-              <details key={q} className="pt-faq">
-                <summary>{q}</summary>
-                <p>{a}</p>
-              </details>
-            ))}
-            {s.id === "contact" && <Mail subject={t.subject} />}
-            {s.link && <p><Link to={s.link[0]}>{s.link[1]}</Link></p>}
+            <div>
+              <h2 id={`${s.id}-h`}>{s.h}</h2>
+              {s.p && <p>{s.p}</p>}
+              {s.stats && (
+                <dl className="pt-stats">
+                  {s.stats.map(([v, label]) => (
+                    <div key={label}><dt>{label}</dt><dd><span dir="ltr">{v}</span></dd></div>
+                  ))}
+                </dl>
+              )}
+              {s.list && <ul>{s.list.map((x) => <li key={x}>{x}</li>)}</ul>}
+              {s.steps && <ol className="pt-steps">{s.steps.map((x) => <li key={x}>{x}</li>)}</ol>}
+              {s.cards && (
+                <ul className="pt-cards">
+                  {s.cards.map(([h, tag, p]) => (
+                    <li key={h}>
+                      <h3>{h}</h3>
+                      <span className="pt-tag">{tag}</span>
+                      <p>{p}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {s.note && <p>{s.note}</p>}
+              {s.faq?.map(([q, a]) => (
+                <details key={q} className="pt-faq">
+                  <summary>{q}</summary>
+                  <p>{a}</p>
+                </details>
+              ))}
+              {s.id === "contact" && <Mail subject={t.subject} />}
+              {s.link && <p><Link to={s.link[0]}>{s.link[1]}</Link></p>}
+            </div>
           </section>
         ))}
       </main>

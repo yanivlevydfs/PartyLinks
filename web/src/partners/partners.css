@@ -4,6 +4,19 @@
 .pt-ctas .c-btn { flex: none; text-decoration: none; display: inline-flex; align-items: center; }
 .pt section { scroll-margin-top: 80px; }
 
+/* A section with the vertical video: the video beside the text on wide screens, above it on phones */
+.pt-video { margin: 0 auto 20px; width: min(100%, 280px); }
+.pt-video video {
+  display: block; width: 100%; aspect-ratio: 9 / 16; border-radius: var(--radius); background: #000;
+  border: 1px solid var(--line-hot); box-shadow: 0 0 34px -10px var(--pink);
+}
+.pt-video figcaption { margin-top: 8px; font-size: 13px; color: var(--muted); text-align: center; }
+@media (min-width: 900px) {
+  .pt-split { display: grid; grid-template-columns: 1fr 280px; gap: 36px; align-items: start; }
+  .pt-split > .pt-video { grid-column: 2; grid-row: 1; margin: 36px 0 0; } /* level with the h2's top margin */
+  .pt-split > div { grid-column: 1; grid-row: 1; min-width: 0; }
+}
+
 .pt .pt-cards { list-style: none; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
 .pt-cards li { padding: 16px 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
 .pt-cards h3 { margin: 0 0 6px; font: 700 18px/1.3 var(--display); }
