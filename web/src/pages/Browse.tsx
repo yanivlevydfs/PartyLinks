@@ -14,7 +14,10 @@ import { useWeb } from "../site_params/useWeb";
 import { artistPath, Chip, countryName, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
 // The name's first letter, drawn when there is no picture.
-const initial = (s: string) => s.replace(/^[^\p{L}\p{N}]+/u, "").charAt(0).toLocaleUpperCase();
+const initial = (s: string) => {
+  const c = s.replace(/^[^\p{L}\p{N}]+/u, "").charAt(0);
+  return /\p{L}/u.test(c) ? c.toLocaleUpperCase() : "#"; // "1-800-LoLitA": not a big "1"
+};
 
 /** One page of GET /facets/venues or /facets/artists. */
 interface FacetPage { items: Facet[]; total: number; page: number; fuzzy: boolean; areas?: string[]; chips?: ArtistChips }
@@ -111,7 +114,7 @@ function FacetIndex({ title, kind, path, logos, extra, toolbar }: {
         <div className={"facets " + view + (searching ? " stale" : "")}>
           {shown.map((f) => (
             <Link key={f.value} className="fi" to={path(f.value)}>
-              <Img src={f.image_url} alt="" text={initial(f.value) || "♫"} className={"fi-av" + (logos ? " logo" : "")} />
+              <Img src={f.image_url} alt="" text={initial(f.value)} className={"fi-av" + (logos && f.verified ? " logo" : "")} />
               <b><bdi>{f.value}</bdi>{f.verified && <Verified />}</b>
               <small>
                 <span className="n">{t.events(f.events)}</span>

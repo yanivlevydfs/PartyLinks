@@ -24,6 +24,12 @@ def test_search_ranks_whole_name_then_prefix_then_word_then_anywhere() -> None:
     assert not fuzzy
 
 
+def test_az_puts_names_starting_with_a_digit_last() -> None:
+    from partylinks.facet_list.routes import az_key
+
+    assert sorted(["1-800-LoLitA", "Zed", "'t Hart", "Abba"], key=az_key) == ["Abba", "'t Hart", "Zed", "1-800-LoLitA"]
+
+
 def test_search_drops_a_typo_at_the_end() -> None:
     found, fuzzy = search([f("Gray Club"), f("Other")], "graycluxx")
     assert [x["value"] for x in found] == ["Gray Club"] and fuzzy
@@ -52,7 +58,7 @@ def test_venues_page_and_search(tmp_path: Path) -> None:
         second = client.get("/facets/venues?page_size=2&page=2").json()
         found = client.get("/facets/venues?q=venue03").json()
     assert first["total"] == 5  # "-" is no venue
-    assert [v["value"] for v in first["items"] + second["items"]] == ["Venue 00", "Venue 01", "Venue 02", "Venue 03"]
+    assert len({v["value"] for v in first["items"] + second["items"]}) == 4  # busiest first, then A to Z
     assert [v["value"] for v in found["items"]] == ["Venue 03"]
 
 

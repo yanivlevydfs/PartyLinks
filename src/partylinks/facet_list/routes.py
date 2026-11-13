@@ -12,6 +12,10 @@ from collections.abc import Callable, Iterable
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Query, Request, Response
+from sqlalchemy import select
+
+from partylinks.db import EventRow, ImageRow, upcoming_filter
+from partylinks.parsing import is_site_logo
 
 router = APIRouter(tags=["facets"])
 
@@ -25,8 +29,10 @@ def norm(s: str) -> str:
     return _STRIP.sub("", s.casefold())
 
 
-def az_key(name: str) -> str:
-    return _LEAD.sub("", name).casefold()
+def az_key(name: str) -> tuple[bool, str]:
+    """A to Z by the first letter, names starting with a digit or a sign after the letters ("#" in a phone book)."""
+    key = _LEAD.sub("", name).casefold()
+    return (not key[:1].isalpha(), key)
 
 
 def named(value: str) -> bool:
@@ -132,8 +138,35 @@ def _parsed(state: Any, key: tuple[str, str], build: Callable[[], bytes]) -> Any
     return memo[key][1]
 
 
-def _page(items: list[dict[str, Any]], page: int, size: int) -> list[dict[str, Any]]:
-    return items[(page - 1) * size : page * size]
+def pictures_body(state: Any) -> bytes:
+    """A picture for each artist and venue from its upcoming events (the soonest first): the index shows it when
+    the artist or venue has no photo or logo of its own. Stored pictures only, never a drawn card."""
+    with state.db.session(write=False) as session:
+        rows = session.execute(
+            select(EventRow.lineup, EventRow.venue_name, ImageRow.id, ImageRow.url)
+            .join(ImageRow.event)
+            .where(upcoming_filter(), EventRow.is_primary.is_(True), ImageRow.downloaded_at.is_not(None))
+            .order_by(EventRow.start_at, ImageRow.position, ImageRow.id)
+        ).all()
+    artists: dict[str, str] = {}
+    venues: dict[str, str] = {}
+    for lineup, venue, image_id, url in rows:
+        if is_site_logo(url):
+            continue
+        path = f"/images/{image_id}/640.webp"
+        if venue:
+            venues.setdefault(venue.casefold(), path)
+        for name in lineup or []:
+            if name:
+                artists.setdefault(str(name).casefold(), path)
+    return json.dumps({"a": artists, "v": venues}, separators=(",", ":")).encode()
+
+
+def _page(state: Any, items: list[dict[str, Any]], page: int, size: int, kind: str) -> list[dict[str, Any]]:
+    """The page's rows, each with a picture: its own, else one of its events'."""
+    pictures = _parsed(state, ("/facets/pictures", ""), lambda: pictures_body(state))[kind]
+    rows = items[(page - 1) * size : page * size]
+    return [r if r.get("image_url") else {**r, "image_url": pictures.get(r["value"].casefold())} for r in rows]
 
 
 PageQ = Annotated[int, Query(ge=1, le=1000)]
@@ -154,8 +187,14 @@ def venues(request: Request, q: TextQ = None, area: TextQ = None, page: PageQ = 
         if q:
             shown, fuzzy = search(shown, q)
         else:
-            shown, fuzzy = sorted(shown, key=lambda f: az_key(f["value"])), False
-        out = {"items": _page(shown, page, size), "total": len(shown), "page": page, "fuzzy": fuzzy, "areas": areas}
+            shown, fuzzy = sorted(shown, key=lambda f: (-f["events"], az_key(f["value"]))), False  # busiest first
+        out = {
+            "items": _page(state, shown, page, size, "v"),
+            "total": len(shown),
+            "page": page,
+            "fuzzy": fuzzy,
+            "areas": areas,
+        }
         return json.dumps(out, ensure_ascii=False, separators=(",", ":")).encode()
 
     return Response(
@@ -191,7 +230,7 @@ def artists(
         else:
             shown, fuzzy = sorted(shown, key=lambda f: az_key(f["value"])), False
         out = {
-            "items": _page(shown, page, size), "total": len(shown), "page": page, "fuzzy": fuzzy,
+            "items": _page(state, shown, page, size, "a"), "total": len(shown), "page": page, "fuzzy": fuzzy,
             "all": len(cats["lineup"]), "chips": chips,
         }  # fmt: skip
         return json.dumps(out, ensure_ascii=False, separators=(",", ":")).encode()
