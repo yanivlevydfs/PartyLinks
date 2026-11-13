@@ -2,6 +2,7 @@
 // The contact address comes from config (site.email, else site.privacy.email) via GET /site.
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { ContactForm } from "../contact/ContactForm";
 import type { Lang } from "../i18n";
 import { Hero, HiddenEmail, useT, useTitle } from "../ui";
 
@@ -162,6 +163,7 @@ export function ContactPage() {
       <Hero title={title("/contact", lang)} />
       <main className="wrap statement">
         <p>{t.intro}</p>
+        <ContactForm />
         <Mail />
         <p>{t.more} <Link to="/partners">{t.partners}</Link></p>
         <p className="muted">

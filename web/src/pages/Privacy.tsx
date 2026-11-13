@@ -45,7 +45,11 @@ const TEXT = {
       },
       {
         title: "בקשת קידום אירוע (רשות)",
-        body: ["בעל אירוע מחובר שממלא את טופס הקידום בעמוד \"קידום אירוע\" שולח לנו את שמו, שם ההפקה או העסק (לא חובה), כתובת דוא\"ל, טלפון נייד, האירועים שבחר, מה הוא רוצה לקדם והערות. המידע משמש רק כדי לחזור אליו בעניין הקידום, נשלח למנהלי האתר בדוא\"ל (דרך Resend) ונשמר עד שהבקשה נמחקת. אפשר לבקש מחיקה בכל עת בכתובת שלמטה."],
+        body: ["בעל אירוע מחובר שממלא את טופס הקידום בעמוד \"קידום אירוע\" שולח לנו את שמו, שם ההפקה או העסק (לא חובה), כתובת דוא\"ל, טלפון נייד, האירועים שבחר, מה הוא רוצה לקדם והערות. המידע משמש רק כדי לחזור אליו בעניין הקידום ונשמר עד שהבקשה נמחקת. אפשר לבקש מחיקה בכל עת בכתובת שלמטה."],
+      },
+      {
+        title: "טופס צור קשר (רשות)",
+        body: ["מי ששולח הודעה בטופס שבעמוד \"צור קשר\" שולח לנו את שמו, כתובת דוא\"ל, נושא, קישור (לא חובה) וההודעה. המידע משמש רק כדי לענות לפונה, ונשמר עד שההודעה נמחקת. אפשר לבקש מחיקה בכל עת בכתובת שלמטה."],
       },
       {
         title: "בוט הטלגרם (רשות)",
@@ -158,7 +162,11 @@ const TEXT = {
       },
       {
         title: "Event promotion requests (optional)",
-        body: ["A signed-in event owner who fills in the form on \"Promote your event\" sends us their name, production or business name (optional), email address, mobile number, the events they picked, what they want promoted and their notes. We use it only to get back to them about the promotion; it is emailed to the site's admins (through Resend) and kept until the request is deleted. You can ask for deletion at any time at the address below."],
+        body: ["A signed-in event owner who fills in the form on \"Promote your event\" sends us their name, production or business name (optional), email address, mobile number, the events they picked, what they want promoted and their notes. We use it only to get back to them about the promotion, and keep it until the request is deleted. You can ask for deletion at any time at the address below."],
+      },
+      {
+        title: "Contact form (optional)",
+        body: ["Sending a message with the form on \"Contact us\" sends us your name, email address, subject, a link (optional) and the message. We use it only to answer you, and keep it until the message is deleted. You can ask for deletion at any time at the address below."],
       },
       {
         title: "Telegram bot (optional)",

@@ -30,6 +30,7 @@ FastAPI, served by the same process as the website.
 | GET | `/site` | Site name, base URL, the contact, accessibility and privacy addresses (encoded; the site reveals them on a click), and `accounts`: whether Google sign-in is configured |
 | GET | `/auth/google/login?next=`, `/auth/google/callback` | Sign in with Google (server redirect). Only when sign-in is configured; 10 requests a minute per IP |
 | GET / POST | `/api/email/unsubscribe?t=` | An email's unsubscribe link: GET shows a confirm page (changes nothing), POST unsubscribes (also RFC 8058 one-click). `t` is a signed `{user, kind}`, kind `digest`, `instant` or `all` |
+| POST | `/api/contact` | The /contact form, no sign-in: `{name, email, subject?, page? (http/https), message, lang}` saved in `contact_messages` for the admin's "requests" tab (`/admin/api/contact-messages`: list, PATCH status, DELETE); nothing is emailed. `201` saved, `404` off (`contact.enabled`). Our pages only (`X-Requested-With: spotx`), hidden `website` field for bots. Code: `partylinks/contact/`, `web/src/contact/` |
 | GET | `/health` | Liveness and readiness: database, scheduler, per-source freshness, config errors |
 
 ### `/events` filters
@@ -119,6 +120,7 @@ Set in `security`. Over the limit the API returns `429`:
 | `/go/` | 20 requests per minute | `go_rate_limit_per_minute` |
 | `/auth/` (sign-in) | 10 requests per minute | in code (`accounts/google.py`) |
 | Account writes (`/api/me*`) | 30 requests per minute (alert previews 60) | in code (`accounts/guard.py` callers) |
+| `/api/contact` | 3 messages per minute | `accounts.rate_limits.contact` |
 
 Repeated strikes (vulnerability probes, wrong admin tokens, rate-limit hits) ban the IP for
 `ban_minutes`. Card artwork and the site's own files stay out of the per-minute count: one home

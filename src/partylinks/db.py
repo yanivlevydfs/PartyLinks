@@ -978,6 +978,7 @@ import partylinks.artistdb
 import partylinks.artwork.models
 import partylinks.bot.models
 import partylinks.config_store.models
+import partylinks.contact.models
 import partylinks.home_pins.models
 import partylinks.mail.models
 import partylinks.passkeys.models

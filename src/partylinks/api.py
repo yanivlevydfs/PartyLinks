@@ -1399,6 +1399,11 @@ def _register_routes(app: FastAPI) -> None:
 
     app.include_router(promote_router)  # the /promote form
     app.include_router(promote_admin_router)
+    from partylinks.contact.routes import admin as contact_admin_router
+    from partylinks.contact.routes import router as contact_router
+
+    app.include_router(contact_router)  # the /contact form
+    app.include_router(contact_admin_router)
     from partylinks.config_store.routes import router as config_overrides_router
 
     app.include_router(config_overrides_router)

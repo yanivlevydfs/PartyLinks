@@ -31,6 +31,7 @@ from partylinks.artist_links.config import ArtistLinksSettings
 from partylinks.artwork.config import ArtworkSettings
 from partylinks.bot.config import BotSettings
 from partylinks.config_store.source import OverridesSource
+from partylinks.contact.config import ContactSettings
 from partylinks.evening.config import EveningSettings
 from partylinks.event_text.config import EventTextSettings
 from partylinks.holiday_pages.config import HolidayPagesSettings
@@ -836,6 +837,7 @@ class Settings(BaseSettings):
     artwork: ArtworkSettings = Field(default_factory=ArtworkSettings)  # drawn cards for events with no picture
     ads: AdsSettings = Field(default_factory=AdsSettings)  # paid placements' side rails (partylinks.ads)
     promote: PromoteSettings = Field(default_factory=PromoteSettings)  # the /promote request form (partylinks.promote)
+    contact: ContactSettings = Field(default_factory=ContactSettings)  # the /contact form (partylinks.contact)
     place_info: PlaceInfoSettings = Field(default_factory=PlaceInfoSettings)  # hours, booking of places (partylinks.placeinfo)
     artist_links: ArtistLinksSettings = Field(default_factory=ArtistLinksSettings)  # artists' Spotify / YouTube... (MusicBrainz)
     alerts: AlertsSettings = Field(default_factory=AlertsSettings)  # the bell, For you, alert preview (partylinks.alerts)

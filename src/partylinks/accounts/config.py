@@ -17,6 +17,7 @@ class RateLimitSettings(BaseModel):
     fb_deletion: int = Field(30, ge=1, le=1000)  # Meta's data-deletion callback
     promote: int = Field(5, ge=1, le=1000)  # promotion requests sent from /promote (partylinks.promote)
     promote_search: int = Field(120, ge=1, le=5000)  # its event picker's searches (a few per typed name)
+    contact: int = Field(3, ge=1, le=1000)  # messages sent from the /contact form (partylinks.contact)
 
 
 class AccountsSettings(BaseModel):

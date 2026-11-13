@@ -4,12 +4,11 @@
 
 from __future__ import annotations
 
-import html
 import logging
 from typing import Annotated, Any, Literal
 
 import phonenumbers
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field, StringConstraints
 from sqlalchemy import String, and_, cast, or_, select
 from sqlalchemy.orm import selectinload
@@ -64,39 +63,6 @@ def _out(r: PromoteRequestRow) -> dict[str, Any]:
     }  # fmt: skip
 
 
-def _email_admins(cfg: Settings, r: dict[str, Any]) -> None:
-    """One plain email per admin, Reply-To the requester. Runs after the response (BackgroundTasks)."""
-    from partylinks.mail import send as mailer  # local: mail pulls in the accounts package
-
-    admins = [a.strip() for a in cfg.accounts.admin_emails if a.strip()]
-    if not cfg.promote.email_admins or not admins or not mailer.ready(cfg):
-        log.info("promote request %s: no admin email (off, no admin_emails or mail not set up)", r["id"])
-        return
-    page = cfg.site.base_url.rstrip("/") + "/admin"
-    lines = [
-        f"{r['name']}" + (f" ({r['business']})" if r["business"] else ""),
-        f"Email: {r['email']}",
-        f"Phone: {r['phone']}",
-        "Placements: " + (", ".join(r["placements"]) or "-"),
-        "",
-        *[f"- {e['title']} | {e['start_at'] or ''} | {e['venue_name'] or ''} | {cfg.site.base_url.rstrip('/')}/event/{e['slug'] or e['id']}"
-          for e in r["events"]],
-        "",
-        r["message"] or "",
-        "",
-        f"All requests: {page} (requests tab)",
-    ]  # fmt: skip
-    text = "\n".join(lines)
-    body = "".join(f"<p>{html.escape(line)}</p>" if line else "<br>" for line in lines)
-    subject = f"SPOTX: promotion request from {r['name']} ({len(r['events'])} events)"
-    messages = [mailer.Message(user_id="admin", to=to, subject=subject, html=body, text=text, unsubscribe_url=page,
-                               reply_to=r["email"], tags={"kind": "promote_request"}) for to in admins]  # fmt: skip
-    try:
-        mailer.send(cfg, messages, key=f"promote-request:{r['id']}")
-    except Exception:
-        log.exception("promote request %s: admin email failed", r["id"])
-
-
 @public.get("/api/promote-requests/events", dependencies=[limited("promote-search", "promote_search")])
 def pick(q: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=80)], user: UserDep,
          session: SessionDep) -> list[dict[str, Any]]:  # fmt: skip
@@ -128,7 +94,7 @@ def pick(q: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2
     dependencies=[limited("promote", "promote"), SameOrigin],
 )
 def create(
-    body: RequestIn, request: Request, user: UserDep, session: SessionDep, background: BackgroundTasks
+    body: RequestIn, request: Request, user: UserDep, session: SessionDep
 ) -> dict[str, Any]:
     """Save a signed-in user's request (signed out: 401) for upcoming events only: any id that is not an
     upcoming event answers 422. The owner asked for sign-in (2026-11-13): a request comes from a known account."""
@@ -162,8 +128,7 @@ def create(
     session.flush()
     log.info(
         "promote request %s from user %s: %d events, placements %s", r.id, user.id, len(events), r.placements or "-"
-    )
-    background.add_task(_email_admins, cfg, _out(r))
+    )  # no admin email (the owner, 2026-11-13: save on sending); the admin's requests tab lists it
     return {"id": r.id}
 
 

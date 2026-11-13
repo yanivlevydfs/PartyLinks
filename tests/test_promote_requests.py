@@ -55,8 +55,7 @@ def test_a_request_is_saved_with_its_events_and_listed_for_the_admin(site: TestC
     user = site.get("/api/me").json()["id"]
     [r] = as_admin(site).get("/admin/api/promote-requests").json()
     assert r["user_id"] == user
-    [mail] = site.mails  # type: ignore[attr-defined]
-    assert mail.to == ADMIN and mail.reply_to == "dana@example.com" and "Techno Nature" in mail.text
+    assert site.mails == []  # type: ignore[attr-defined]  # no admin email: the owner saves on sending
     assert r["phone"] == "+972525381648" and r["status"] == "new" and r["placements"] == ["rail", "results"]
     assert [e["title"] for e in r["events"]] == ["Techno Nature", "Jazz Night"]
     assert (
