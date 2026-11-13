@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -64,6 +65,27 @@ async def _scheduled_indexnow(service: ScrapeService) -> None:
         log.exception("indexnow submit failed")
 
 
+def overdue_sources(
+    enabled: list[tuple[str, Any]], latest: dict[str, tuple[datetime, str]], now: datetime
+) -> list[str]:
+    """Enabled sources whose cron fired since their newest run started (or that never ran), with no run
+    started since: the scheduled run sat in the run queue and a restart dropped it (no run row, so it is
+    not "interrupted"). Oldest first. A source whose newest run is interrupted is left to the resume rule.
+
+    klika ran once (an admin run, 2026-11-11) and never again: ~40 sources queued behind long runs lost
+    their turn to seven deploys a day."""
+    found: list[tuple[datetime, str]] = []
+    for name, source in enabled:
+        started, status = latest.get(name, (None, ""))
+        if status == "interrupted":
+            continue
+        trigger = CronTrigger.from_crontab(source.cron, timezone=now.tzinfo)
+        due = trigger.get_next_fire_time(None, started) if started else None
+        if started is None or (due is not None and due <= now):
+            found.append((started or datetime.min.replace(tzinfo=UTC), name))
+    return [name for _, name in sorted(found)]
+
+
 def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOScheduler:
     scheduler = AsyncIOScheduler(timezone=settings.timezone)
     now = datetime.now(ZoneInfo(settings.timezone))
@@ -73,14 +95,18 @@ def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOSchedu
     resume = service.db.interrupted_sources(settings.scheduler.resume_max_in_a_row)
     if resume:
         log.warning("resuming %d sources a restart interrupted: %s", len(resume), ", ".join(sorted(resume)))
-    resumed = 0
+    overdue = overdue_sources(enabled, service.db.latest_runs(), now) if settings.scheduler.resume_overdue else []
+    overdue = [n for n in overdue if n not in resume]
+    if overdue:
+        log.warning("starting %d sources whose scheduled run never started: %s", len(overdue), ", ".join(overdue))
+    # Interrupted first, then overdue oldest first: each gets the next stagger slot.
+    slot = {n: i for i, n in enumerate([*sorted(resume), *overdue])}
     for index, (name, source) in enumerate(enabled):
         # Startup runs are spread out so a deploy never fires every source at once.
         # APScheduler treats an explicit next_run_time=None as "paused", so only pass it when set.
         startup = {"next_run_time": now + index * stagger} if settings.scheduler.run_on_startup else {}
-        if not startup and name in resume:
-            startup = {"next_run_time": now + resumed * stagger}
-            resumed += 1
+        if not startup and name in slot:
+            startup = {"next_run_time": now + slot[name] * stagger}
         try:  # one bad trigger skips only that source
             scheduler.add_job(
                 _scheduled_run,

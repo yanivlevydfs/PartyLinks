@@ -88,6 +88,31 @@ def test_a_run_a_restart_cut_short_starts_again_at_startup() -> None:
     assert db.interrupted_sources(3) == {"goout", "ogo"}
 
 
+def test_a_scheduled_run_a_restart_dropped_from_the_queue_starts_at_startup() -> None:
+    from datetime import datetime, timedelta
+    from types import SimpleNamespace
+    from zoneinfo import ZoneInfo
+
+    from partylinks.scheduler import overdue_sources
+
+    tz = ZoneInfo("Asia/Jerusalem")
+    now = datetime(2026, 11, 13, 14, 0, tzinfo=tz)
+    cron = SimpleNamespace(cron="53 11,23 * * *")
+    enabled = [(n, cron) for n in ("klika", "fresh", "cut", "never", "older")]
+    latest = {
+        "klika": (datetime(2026, 11, 11, 9, 41, tzinfo=tz), "success"),  # missed four crons
+        "fresh": (now - timedelta(minutes=30), "success"),  # ran after the 11:53 cron
+        "cut": (now - timedelta(days=2), "interrupted"),  # the resume rule's
+        "older": (datetime(2026, 11, 10, 1, 0, tzinfo=tz), "success"),
+    }
+    assert overdue_sources(enabled, latest, now) == ["never", "older", "klika"]
+    db = Database(os.environ["PARTYLINKS_DATABASE__URL"])
+    db.create_schema()
+    with db.session() as session:
+        session.add_all(ScrapeRunRow(source="lr", trigger="schedule", status=s) for s in ("failed", "success"))
+    assert db.latest_runs()["lr"][1] == "success"
+
+
 def test_a_paused_source_emails_nobody_unless_asked(monkeypatch) -> None:
     from partylinks.mail import send as mailer
 
