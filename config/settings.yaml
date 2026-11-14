@@ -758,7 +758,8 @@ enrichment:
                  "relaxed performance", "sign language", "audio described"]
     quiz_games: ["טריוויה", "ערב טריוויה", "פאב קוויז", "קוויז", "חידון", "משחקי קופסה", "משחקי קופסא",
                  "ערב משחקי קופסה", "trivia", "trivia night", "pub quiz", "quiz night", "board games", "board game night",
-                 "dungeons & dragons", "dungeons and dragons", "квиз"]
+                 "dungeons & dragons", "dungeons and dragons", "квиз",
+                 "מהג'ונג", "מהג׳ונג", "ברידג'", "ברידג׳", "קנסטה"]  # card / tile game clubs (ogo_us, Nov 2026)
     students: ["מסיבת סטודנטים", "מסיבות סטודנטים", "ערב סטודנטים", "אגודת הסטודנטים", "יום הסטודנט",
                "student party", "student night", "students party"]
     drag_cabaret: ["drag show", "drag queen", "drag queens", "drag brunch", "drag night", "מופע דראג", "דראג קווין",
@@ -767,7 +768,7 @@ enrichment:
              "תיאטרון אלתור", "מופע אלתור", "improv", "improv show", "improv comedy", "impro theatre", "theatresports"]
     escape_rooms: ["חדר בריחה", "חדרי בריחה", "escape room"]
     volunteering: ["ערב התרמה", "אירוע התרמה", "אירוע ההתרמה", "מופע התרמה", "fundraiser", "charity gala",
-                   "benefit concert"]
+                   "benefit concert", "גאלה", "גאלת", "פילנתרופיה"]  # community galas (ogo_us, Nov 2026)
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
     reggaeton_latin: ["música latina"]
@@ -829,7 +830,7 @@ enrichment:
     workshops: ["יצירה", "בישול", "ورشات", "workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест", "course", "courses", "craft", "baking", "יצירה ומלאכה", "תחביבים", "ציור וצביעה", "עיצוב", "טיפוח וקוסמטיקה", "אופנה ולייף סטייל", "תכשיטים וצורפות", "פיסול ונגרות", "צילום", "סריגה ותפירה", "כתיבה ושירה", "גינון", "מייקרס", "סטודיו פתוח", "אומנות", "בישול ואפייה"]
     cinema: ["kino", "film", "סרט", "أفلام", "movies", "sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב", "מזרח אסיה על המסך הגדול"]
     stand_up: ["kabarett", "comedia", "komödie", "comedy club", "ستاند اب كوميدي", "comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ", "comy", "סאטירה", "קומדי בר", "סטנד-אפ", "סטנדאפ", "stand-up", "kleinkunst", "monólogo", "comédie"]
-    markets: ["كريسمس ماركت", "shopping", "יריד", "ירידים", "שוק", "שווקים", "ярмарка"]
+    markets: ["كريسمس ماركت", "shopping", "יריד", "ירידים", "שוק", "שווקים", "ярмарка", "fair"]
     food: ["קולינריה", "culinary", "comida & bebida", "essen & trinken", "food events", "food", "אוכל", "מזון", "מפגשים קולינריים", "טעימות יין", "טעימות בירה", "tastings", "בישול ואפייה", "אלכוהול", "מאכלי עדות", "צמחוני וטבעוני", "מתוקים", "מטבח אסייתי", "ארוחה משותפת"]
     environment: ["חודש האקלים", "אקלים", "climate", "environmental", "סביבה", "איכות הסביבה", "קיימות", "טבע", "גינות"]
     religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат", "chassidic", "religion"]
@@ -3739,6 +3740,7 @@ sources:
     locale: he
     country: US
     default_zone: America/New_York
+    currency: USD
     days_ahead: 730
     max_events: 30000
     http:
@@ -3756,6 +3758,7 @@ sources:
     locale: he
     country: DE
     default_zone: Europe/Berlin
+    currency: EUR
     days_ahead: 730
     max_events: 30000
     http:

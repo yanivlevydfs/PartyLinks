@@ -59,6 +59,19 @@ _TAGS = {
     "еда": "food",
     "спорт": "sport",
     "конференция": "conference",
+    # Untranslated, "праздник" / "фестиваль" matched the Russian-language genre's keywords: 214 of 1,390
+    # ogo_us events (Hanukkah, Shabbat dinners) were filed as Russian (Nov 2026).
+    "праздник": "holidays",
+    "фестиваль": "festival",
+    "прогулка": "tour",
+    "ярмарка": "fair",
+    "шабат": "religious",
+    "вебинар": "lecture",
+    "стрим": "lecture",
+    "групповое занятие": "workshop",
+    "языковой клуб": "meetups",
+    "благотворительность": "charity",
+    "аукцион": "charity",
 }
 _LANGUAGES = {
     "иврит": "he",
@@ -67,6 +80,9 @@ _LANGUAGES = {
     "французский": "fr",
     "испанский": "es",
     "арабский": "ar",
+    "немецкий": "de",
+    "итальянский": "it",
+    "идиш": "yi",
 }
 
 
