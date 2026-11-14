@@ -1,8 +1,9 @@
 """Eventbuzz events that its /events page does not list (a producer's link-in-bio, Instagram ads).
 
 The site has no sitemap, catalogue or API; an event lives only at /lp/event/<slug>. Its links are
-gathered from the Wayback Machine's index (every page it archived lately) and a DuckDuckGo
-``site:`` search. Each one is read from its own page like a listed one, so a past event is dropped
+gathered from the Wayback Machine's index (every page it archived lately), a DuckDuckGo ``site:``
+search, other sources' ticket links (``linked_urls``) and the show pages of venues that sell through
+Eventbuzz (``venue_pages``: a WordPress REST list of pages, each page's eventbuzz links). Each one is read from its own page like a listed one, so a past event is dropped
 there; nothing is stored about the links themselves.
 """
 
@@ -19,12 +20,14 @@ from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt,
 if TYPE_CHECKING:
     from partylinks.scrapers.eventbuzz import EventbuzzSettings
 
-_SLUG = re.compile(r"eventbuzz\.co\.il/lp/event/([A-Za-z0-9_\-]+)")
+# /lp/event/<slug>, or the short link /<slug> producers share (it redirects there): Hasimta's show pages.
+_SLUG = re.compile(r"eventbuzz\.co\.il/(?:lp/event/)?([A-Za-z0-9_\-]+)/?(?=[\"'\s<>?#&]|$)")
+_NOT_EVENTS = {"lp", "events", "event", "login", "register", "about", "contact", "terms", "privacy", "wp-content"}
 
 
 def slugs(text: str) -> list[str]:
-    """The event slugs named anywhere in ``text`` (a CDX listing, a results page), once each, in order."""
-    return list(dict.fromkeys(_SLUG.findall(text)))
+    """The event slugs named anywhere in ``text`` (a CDX listing, a results page, a venue page), once each, in order."""
+    return list(dict.fromkeys(s for s in _SLUG.findall(text) if s.lower() not in _NOT_EVENTS))
 
 
 def wayback_url(template: str, days: int, now: datetime | None = None) -> str:

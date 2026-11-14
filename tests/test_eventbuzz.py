@@ -78,3 +78,22 @@ def test_unlisted_events_are_found_in_the_wayback_index_and_a_search() -> None:
     assert discover.slugs(cdx) == ["vhs"] and discover.slugs(ddg) == ["kinorai-burlesque-night"]
     assert discover.wayback_url("cdx?from={since}", 10, datetime(2026, 11, 12, tzinfo=UTC)) == "cdx?from=20261102"
     assert discover.search_urls("s?q={q}&s={offset}", "site:x", 2) == ["s?q=site%3Ax&s=0", "s?q=site%3Ax&s=30"]
+
+
+def test_short_links_on_venue_pages() -> None:
+    from partylinks.scrapers import eventbuzz_discover as discover
+
+    page = '<a href="https://eventbuzz.co.il/9jskh">17.12</a><a href="https://eventbuzz.co.il/g14qv/">19.12</a>'
+    page += '<a href="https://eventbuzz.co.il/events">all</a><img src="https://eventbuzz.co.il/wp-content/x.png">'
+    assert discover.slugs(page) == ["9jskh", "g14qv"]
+
+
+def test_venue_categories_from_mapped_terms_else_the_venue() -> None:
+    from partylinks.scrapers.eventbuzz import VenuePages, venue_labels
+
+    venue = VenuePages(url="x", genres=["תיאטרון"], term_genres={"מופעי ג'אז": ["ג'אז"]})
+    jazz = {"_embedded": {"wp:term": [[{"name": "מופעי ג'אז"}, {"name": "קאנטרי גורן גולדשטיין"}]]}}
+    hall = {"_embedded": {"wp:term": [[{"name": "קאנטרי גורן גולדשטיין"}]]}}  # a hall, not country music
+    assert venue_labels(jazz, venue) == ["ג'אז"]
+    assert venue_labels(hall, venue) == ["תיאטרון"]
+    assert venue_labels({}, venue) == ["תיאטרון"]

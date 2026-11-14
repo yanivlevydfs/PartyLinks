@@ -1677,6 +1677,12 @@ sources:
     search_pages: 5
     # Links seen before any index has them (new events shared on Instagram): their slugs.
     extra_slugs: [kinorai-burlesque-night]
+    # Venues whose show pages link their dates to Eventbuzz (short links /<slug>), missing from /events;
+    # their dates' source genres: the venue's, or a mapped WordPress term's (_embed=wp:term).
+    venue_pages:
+      - url: "https://hasimta.com/wp-json/wp/v2/shows?per_page=100&_embed=wp:term&_fields=link,_links,_embedded"
+        genres: ["תיאטרון"]   # Hasimta Theatre, Jaffa; its other terms name halls ("קאנטרי גורן גולדשטיין")
+        term_genres: {"מופעי ג'אז": ["ג'אז"]}
     http:
       timeout_seconds: 120  # the Wayback index of hundreds of links answers in 20-60 s
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime
+from typing import Any
 from urllib.parse import urljoin, urlsplit
 from zoneinfo import ZoneInfo
 
@@ -49,6 +50,15 @@ class EventbuzzLabels(BaseModel):
     location: str
 
 
+class VenuePages(BaseModel):
+    """A venue selling through Eventbuzz: a WordPress REST list of its show pages (``[{"link": ...}]``, with
+    ``_embed=wp:term`` for their terms). Each page's dates get ``genres``, or a mapped term's instead."""
+
+    url: str
+    genres: list[str] = Field(default_factory=list)
+    term_genres: dict[str, list[str]] = Field(default_factory=dict)  # other terms (hall names) are ignored
+
+
 class EventbuzzSettings(SourceSettings):
     site_url: str
     listing_path: str
@@ -65,6 +75,7 @@ class EventbuzzSettings(SourceSettings):
     direct_attempts: int = Field(3, ge=1)
     direct_wait_min_seconds: float = Field(10, ge=0)
     direct_wait_max_seconds: float = Field(20, ge=0)
+    venue_pages: list[VenuePages] = Field(default_factory=list)
     extra_slugs: list[str] = Field(default_factory=list)  # links the owner saw before any index did (the admin's config tab)
 
 
@@ -84,13 +95,25 @@ class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
             if event and is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known):
                 yield event
 
+    venue_genres: dict[str, list[str]]  # slug -> the venue's categories of its show page (venue_pages)
+
     async def _unlisted(self) -> list[str]:
+        self.venue_genres = {}
         s, pages = self.settings, []
         if s.wayback_url:
             pages.append(("wayback index", discover.wayback_url(s.wayback_url, s.wayback_days)))
         if s.search_url:
             pages += [(f"search page {i + 1}", u) for i, u in enumerate(discover.search_urls(s.search_url, s.search_query, s.search_pages))]
-        found: list[str] = list(s.extra_slugs)
+        found: list[str] = list(s.extra_slugs) + discover.slugs(" ".join(self.linked_urls))
+        for venue in s.venue_pages:  # a failing venue costs only its links
+            rows = await self.optional(f"venue pages {venue.url}", self.get_json(venue.url, expect=list)) or []
+            for row in rows:
+                if isinstance(row, dict) and row.get("link"):
+                    page = await self.optional(f"venue page {row['link']}", self.get_text(row["link"])) or ""
+                    labels = venue_labels(row, venue)
+                    for slug in discover.slugs(page):
+                        found.append(slug)
+                        self.venue_genres.setdefault(slug, []).extend(labels)
         for what, url in pages:  # a failing index or search page costs only its links
             page = discover.fetch_direct(url, self.http.timeout_seconds, self.http.user_agent, s)
             found += discover.slugs(await self.optional(what, page) or "")
@@ -100,7 +123,17 @@ class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
         response = await self.request("GET", url)
         if response.url.path.rstrip("/") == "" and urlsplit(url).path.rstrip("/"):
             return None  # a deleted event page redirects to the home page (old Wayback / search slugs)
-        return parse_event(response.text, url, self.settings, self.timezone)
+        event = parse_event(response.text, url, self.settings, self.timezone)
+        labels = getattr(self, "venue_genres", {}).get(url.rsplit("/", 1)[-1])
+        return event.model_copy(update={"source_genres": [*event.source_genres, *labels]}) if labels else event
+
+
+def venue_labels(row: dict[str, Any], venue: VenuePages) -> list[str]:
+    """Source genres of a show page's dates: its mapped WordPress terms' (``_embed=wp:term``), else the venue's."""
+    groups = (row.get("_embedded") or {}).get("wp:term") or []
+    names = [n for group in groups for t in group if isinstance(t, dict) and (n := clean_str(t.get("name")))]
+    mapped = [g for n in names for g in venue.term_genres.get(n, [])]
+    return mapped or list(venue.genres)
 
 
 def parse_listing(page_html: str, s: EventbuzzSettings) -> list[str]:
