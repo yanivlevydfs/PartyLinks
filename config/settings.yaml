@@ -949,6 +949,8 @@ enrichment:
     goout: [nightclubs]     # club nights ("Thursday | John Doe") whose type is only "מועדוני לילה"
     grayclub: [nightclubs]
     ogo: [culture]          # city guide: talks, circles, community events
+    ogo_us: [culture]       # same guide, USA
+    ogo_de: [culture]       # same guide, Germany
     makore: [culture]
     music80s: [throwback]   # 80s / 90s party guide
     iwant: [nightclubs]     # party box office; some events have no genre ("אחר" or empty)
@@ -1022,7 +1024,9 @@ enrichment:
   # Not events, from any source: a GO-OUT promoter's "Ticket Management" page sells passes to several parties
   # (a past Rosh Hashana one "on sale"), listed by Beat Radar as one festival. "בדיקת מפה": Eventer's private
   # seat-map test pages (a hall's map checked before sale), reached since private events are read.
-  skip_titles: ["ticket management", "בדיקת מפה"]
+  # "מכרז פומבי": Ashdod's and Holon's municipal companies sell public-tender documents through their box
+  # offices (OGO, Smarticket), so tenders came in as events (Nov 2026).
+  skip_titles: ["ticket management", "בדיקת מפה", "מכרז פומבי"]
   # Small print that names a genre word in passing, removed from the text before genres are read.
   # Nov 2026 genre audit: phrases whose words are no genre ("open house", "pop art", the evening prayer,
   # "the eastern gate", a Mediterranean menu).
@@ -1318,6 +1322,8 @@ geocoding:
     "room 48": [32.0743905, 34.7758641]                 # ROOM 48, King George 48, Tel Aviv (Ozen Bar's club; Airdrop / Makore name it alone)
     "טיקוטין": [32.8093487, 34.9853850]                  # Tikotin Museum of Japanese Art, Haifa (Carmel centre)
     "טיקטין": [32.8093487, 34.9853850]                   # same hall as Haifa Museums spell it ("אודיטוריום טיקטין")
+    "התאומים 4": [32.0528940, 34.7524660]                # Hasimta Theatre / JAR, Mazal Teomim 4, Old Jaffa (OSM names it "מזל תאומים" only)
+    "jar יפו": [32.0528940, 34.7524660]                  # same hall, Eventbuzz's venue name
     "מוזיאון הטבע התנ\"כי": [31.7545650, 34.9954937]      # Biblical Natural History Museum, Beit Shemesh
     "מוזיאון האדם והחי": [32.0465660, 34.8239377]        # Man and the Living World Museum, Ramat Gan National Park
     "בית הראשונים, ביתן אהרון": [32.4033105, 34.8966634]  # Emek Hefer heritage house (eventpro), not the Pardes Hanna one
@@ -1499,6 +1505,175 @@ media:
   # quality, and the threads that make the copies older files still lack (0 = none).
   webp_quality: 78
   variant_threads: 2
+
+# Smart search (partylinks.search): the names people type for a category, a region or a ticket site,
+# on top of the names the app already knows (category labels in seo.py, cities, sources' keys). Only
+# words that name the category itself: a sub-kind ("מרתון", "יין", "מטאל") is matched as a word, not as
+# the whole category. Keys are genres or genre_groups (g_parties); a word may sit under several. Category
+# keywords (enrichment.genres) decide what an event is; these decide what a search means.
+search:
+  synonyms:
+    g_parties: ["מסיבה", "מסיבת", "party", "parties", "ליין", "רייב", "rave"]
+    nature_party: ["מסיבת טבע"]
+    trance: ["מסיבת טבע"]
+    psytrance: ["פסיכדלי", "פסי טראנס", "פסיי", "psy"]
+    kpop: ["קיי פופ"]
+    hasidic: ["חסידי", "חסידית"]
+    jewish_music: ["חזנות"]
+    melodic_techno: ["מלודיק", "melodic"]
+    live_show: ["הופעה", "הופעה חיה", "קונצרט", "concert", "live", "קונצרטים", "concerts", "gig"]
+    classical_opera: ["קונצרט", "קונצרטים", "קלאסי", "מוזיקה קלאסית", "תזמורת", "פילהרמונית", "orchestra", "symphony"]
+    nightclubs: ["מועדון", "קלאב"]
+    theatre: ["הצגה", "הצגות", "תאטרון", "מחזמר", "מחזה", "מחזות", "מחזות זמר", "הצגת", "play", "plays", "theater", "musical"]
+    cinema: ["סרט", "הקרנה", "הקרנות", "הקרנת", "בכורה", "movie", "movies", "film", "films", "screening"]
+    lectures: ["הרצאה", "שיחה", "lecture", "talk", "talks"]
+    workshops: ["סדנה", "סדנת", "קורס", "קורסים", "workshop"]
+    festival: ["פסטיבל", "festivals"]
+    stand_up: ["קומדיה", "סטנד אפ", "סטנד-אפ", "סטנדאפיסט", "קומי", "comedy", "standup", "stand-up", "קומדיות"]
+    jazz: ["ג'אז"]
+    hip_hop: ["היפהופ", "hiphop", "ראפ", "rap", "trap", "טראפ"]
+    lgbt: ["גאה", "להטב", "להט״ב", "גייז", "גיי", "קוויר", "gay", "queer", "pride"]
+    escape_rooms: ["חדר בריחה"]
+    pools: ["בריכה", "פארק מים"]
+    pool_party: ["מסיבת בריכה"]
+    over_40: ["40 פלוס", "40+", "ארבעים פלוס"]
+    youth: ["נוער", "teen", "teens"]
+    happy_hour: ["הפי אוור"]
+    exhibitions: ["תערוכה", "גלריה", "גלריות", "מוזיאון", "אמנות", "exhibition", "museum", "gallery", "art"]
+    photography: ["צלם", "צלמים", "צילומים", "photo", "photos"]
+    kids: ["לילדים", "משפחות", "לכל המשפחה", "פעוטות", "children", "family", "families"]
+    tours: ["סיור", "טיול", "סיור מודרך", "tour", "trip", "hike"]
+    sport: ["sports"]
+    food: ["טעימות", "טעימת", "קולינריה", "tasting"]
+    fine_dining: ["מסעדה", "ארוחת שף", "dinner"]
+    markets: ["שוק", "יריד", "ירידים", "פשפשים", "market", "fair"]
+    dance: ["ריקוד", "ריקודים", "בלט", "ballet"]
+    latin_dance: ["בצ'אטה", "בצאטה", "bachata", "קיזומבה", "kizomba"]
+    ballroom: ["סלוני"]
+    yoga_wellness: ["ריטריט", "yoga", "wellness", "retreat"]
+    mizrahi: ["מזרחי"]
+    conference: ["כנס"]
+    meetups: ["מפגש", "meetup"]
+    gaming: ["esports"]
+    attractions: ["אטרקציה"]
+    rock_indie: ["rock", "indie"]
+    afro: ["אפרוביטס", "afrobeats"]
+    electronic: ["אלקטרונית", "אלקטרוני", "electro"]
+    throwback: ["רטרו", "retro"]
+    nineties: ["שנות ה-90", "שנות ה90"]
+    eighties: ["שנות ה-80", "שנות ה80"]
+    kosher: ["כשר", "כשרה", "כשרים"]
+    coffee_carts: ["קפה", "עגלת קפה"]
+    hi_tech: ["hitech", "טכנולוגיה", "טכנולוגית", "טכנולוגי", "טכנולוגיות", "technology"]
+    startups: ["סטארטאפ", "startup"]
+  region_aliases:
+    gush_dan: ["גוש דן", "מרכז", "המרכז", "center"]
+    haifa: ["קריות", "הקריות", "krayot"]
+    galilee: ["צפון", "הצפון", "גליל", "הגליל", "north"]
+    negev: ["דרום", "הדרום", "נגב", "הנגב", "south"]
+  source_aliases:
+    goout: ["go out", "go-out", "גו אאוט", "גואאוט"]
+    eventer: ["אוונטר", "איוונטר"]
+    zygo: ["זייגו"]
+    tickchak: ["טיקצ'אק", "טיקצאק"]
+    goshow: ["גו שואו", "גושואו", "go show"]
+    tzkrti: ["תזכרתי", "tazkarti", "تذكرتي"]
+    fever: ["פיבר", "candlelight", "קנדללייט"]
+    towerofdavid: ["מגדל דוד", "tower of david", "החיזיון הלילי"]
+    tamuseum: ["מוזיאון תל אביב", "tel aviv museum of art"]
+    eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
+    swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
+    jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
+    smarticket: ["סמרטיקט"]
+    smarticket_il: ["פריינדס", "friends"]
+    barby: ["בארבי"]
+    reading3: ["רידינג", "רידינג 3", "רדינג", "רדינג 3", "reading 3", "reading"]
+    kupatbravo: ["קופת ברבו", "kupat bravo"]
+    easytix: ["איזיטיקס", "easy tix"]
+    ticketmaster: ["טיקטמאסטר"]
+    mevalim: ["מבלים"]
+    hulyo: ["הוליו"]
+    popit: ["פופיט"]
+    beatradar: ["beat radar", "ביט ראדר"]
+    iwant: ["i want", "איוונט", "איי וונט"]
+    music80s: ["80smusic", "80s music", "80 מיוזיק"]
+    happytlv: ["happy tlv", "הפי תל אביב"]
+    secrettelaviv: ["secret tel aviv"]
+    secrettelavivapp: ["secret tel aviv app"]
+    klika: ["klika", "קליקה"]
+    inperson: ["inperson", "in person", "אינפרסון"]
+    gototlv: ["gototlv", "daniel tel aviv", "דניאל תל אביב"]
+    mugics: ["mugics", "מיוזיקס", "מוגיקס"]
+    efokulam: ["efokulam", "efo kulam", "אפו כולם", "איפה כולם"]
+    liveisrael: ["liveisrael", "live israel", "לייב ישראל"]
+    plusparty: ["plus party", "plusparty", "מסיבות פלוס", "פלוס פארטי"]
+    cinemacity: ["cinema city", "סינמה סיטי"]
+    hotcinema: ["hot cinema", "הוט סינמה"]
+    ravhen: ["rav hen", "רב חן"]
+    lev: ["סינמה לב"]
+    zappa: ["זאפה"]
+    zoatlv: ["zoa tlv", "zoa house"]
+    eventimlight: ["eventim light", "eventim-light"]
+    selector: ["סלקטור"]
+    grayclub: ["gray club", "גריי קלאב"]
+    chillz: ["צ'ילז", "צילז"]
+    megatickets: ["mega tickets", "מגה טיקטס"]
+    eventbuzz: ["event buzz", "איוונט באז"]
+    epgb: ["radio epgb"]
+    tiktik: ["tik tik", "טיק טיק", "טיקטיק"]
+    gagarin: ["גגארין"]
+    babebar: ["babe bar", "בייב בר"]
+    comy: ["קומי"]
+    eventim: ["אוונטים", "איוונטים"]
+    jerusalemtheatre: ["jerusalem theatre", "תיאטרון ירושלים"]
+    agol: ["עגול", "אגול"]
+    airdrop: ["air drop", "אירדרופ", "אייר דרופ"]
+    vibez: ["וייבז"]
+    shotgun: ["שוטגאן"]
+    eventbrite: ["איוונטברייט"]
+    ticketingo: ["טיקטינגו", "ticketingo", "sportsevents365"]
+    showshappening: ["shows happening", "שואוז הפנינג"]
+    luma: ["לומה"]
+    geektime: ["גיקטיים"]
+    peoplecomputers: ["people and computers", "אנשים ומחשבים"]
+    parks: ["רשות הטבע והגנים", "רט\"ג", "גנים לאומיים", "שמורות טבע", "parks authority"]
+    meetup: ["מיטאפ"]
+    beershevatheatre: ["תיאטרון באר שבע"]
+    nikonitai: ["ניקו ניתאי", "niko nitai"]
+    planet: ["yes planet", "יס פלאנט"]
+    cinematheque_tlv: ["סינמטק תל אביב", "tel aviv cinematheque"]
+    cinematheque_jlm: ["סינמטק ירושלים", "jerusalem cinematheque"]
+    movieland: ["מובילנד"]
+    kishreyteufa: ["קשרי תעופה"]
+    ticketplace: ["ticket place", "טיקט פלייס"]
+    livevents: ["live events", "לייב איוונטס"]
+    issta: ["איסתא"]
+    megaevents: ["mega events", "מגה איוונטס"]
+    viagogo: ["ויאגוגו"]
+    hamenagen: ["המנגן"]
+    hatarbut: ["היכל התרבות"]
+    kikarhamusica: ["כיכר המוזיקה"]
+    xplorer: ["אקספלורר"]
+    livetickets: ["live tickets", "לייב טיקטס"]
+    tiuli: ["טיולי"]
+    ogo: ["אוגו"]
+    ogo_us: ["ogo usa", "אוגו ארהב"]
+    ogo_de: ["ogo germany", "אוגו גרמניה"]
+    muzi: ["מוזי"]
+    standupist: ["סטנדאפיסט פורטל", "פורטל סטנדאפיסט"]
+    onecity: ["one city", "וואן סיטי"]
+    petahtikvamuni: ["עיריית פתח תקווה", "עיריית פתח תקוה"]
+    jerusalemmuni: ["עיריית ירושלים"]
+    sharepointmuni: ["עיריית ראשון לציון", "עיריית ראשל\"צ"]
+    tickethouse: ["ticket house", "טיקט האוס"]
+    barak: ["barak tickets", "ברק כרטיסים"]
+    bargiyora: ["bar giyora", "בר גיורא"]
+    levontin7: ["levontin 7", "לבונטין 7"]
+    yellowsubmarine: ["yellow submarine", "הצוללת הצהובה"]
+    halutz: ["hahalutz 33", "החלוץ 33"]
+    meety: ["מיטי"]
+    funzing: ["פאנזינג"]
+    ticketeams: ["טיקטימס"]
 
 sources:
   goout:
@@ -3545,6 +3720,42 @@ sources:
     site_url: https://www.ogo.co.il
     sitemap_path: /sitemap.xml
     locale: he
+    days_ahead: 730
+    max_events: 30000
+    http:
+      concurrency: 4
+      impersonate: chrome
+
+  ogo_us:
+    # OGO USA (us.ogo.events): OGO's guide to events in the USA, same platform as `ogo`: sitemap index,
+    # one request per event page dated within days_ahead (JSON-LD, Hebrew locale), seller page fills a
+    # missing price / picture. robots.txt Disallow: / and noindex (Nov 2026): read by the owner's choice.
+    enabled: true
+    proxied: false  # as ogo: Cloudflare 403s the evomi pool
+    vpn: false  # our VPN exits in Israel: no use for a US / German site
+    cron: "33 9,21 * * *"
+    site_url: https://us.ogo.events
+    sitemap_path: /sitemap.xml
+    locale: he
+    country: US
+    default_zone: America/New_York
+    days_ahead: 730
+    max_events: 30000
+    http:
+      concurrency: 4
+      impersonate: chrome
+
+  ogo_de:
+    # OGO Germany (de.ogo.events): as ogo_us, for Germany.
+    enabled: true
+    proxied: false
+    vpn: false  # our VPN exits in Israel
+    cron: "49 7,19 * * *"
+    site_url: https://de.ogo.events
+    sitemap_path: /sitemap.xml
+    locale: he
+    country: DE
+    default_zone: Europe/Berlin
     days_ahead: 730
     max_events: 30000
     http:

@@ -791,6 +791,10 @@ class SearchSettings(BaseModel):
     city_min_population: int = Field(100_000, ge=0)  # smaller towns abroad are not searched by name
     short_word_chars: int = Field(3, ge=0, le=10)  # words this short must stand alone in the text
     umbrella_genres: int = Field(4, ge=1, le=50)  # a listing with more genres ranks one part lower
+    # Genre or genre group -> more words people search it by; region / source key -> more names for it.
+    synonyms: dict[str, list[str]] = Field(default_factory=dict)
+    region_aliases: dict[str, list[str]] = Field(default_factory=dict)
+    source_aliases: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class BlogSettings(BaseModel):

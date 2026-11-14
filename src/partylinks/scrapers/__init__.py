@@ -79,6 +79,7 @@ from partylinks.scrapers.munievents import MuniEventsScraper
 from partylinks.scrapers.music80s import Music80sScraper
 from partylinks.scrapers.muzi import MuziScraper
 from partylinks.scrapers.ogo import OgoScraper
+from partylinks.scrapers.ogo_abroad import OgoDeScraper, OgoUsScraper
 from partylinks.scrapers.onecity import OneCityScraper
 from partylinks.scrapers.parks import ParksScraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
@@ -193,6 +194,8 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         HappyTlvScraper,
         MegaeventsScraper,
         ViagogoScraper,
+        OgoUsScraper,
+        OgoDeScraper,
         HamenagenScraper,
         HatarbutScraper,
         HolonScraper,

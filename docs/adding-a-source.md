@@ -156,7 +156,7 @@ Only these lines change outside the new files:
 | `config/settings.yaml` | The `sources.<name>` block (see below) |
 | `web/src/sourceNames.json` | `"<name>": "<Display Name>"`. Used by the site, the source filter, and event artwork |
 | `web/src/pages/Stores.tsx` | `<name>: ["<site url>", "<kind>"]` in `STORES`; kind is one of `tickets`, `venue`, `culture`, `cinema`, `abroad`, `guide`, `city` |
-| `src/partylinks/search.py` | `SOURCE_ALIASES`: names people type (Hebrew spelling too). Never reuse another source's alias |
+| `config/settings.yaml` | `search.source_aliases`: names people type (Hebrew spelling too). Never reuse another source's alias |
 | `config/settings.yaml` `enrichment.genres` | Only when a category maps to nothing (section 3) |
 | Other sources' `ticket_hosts` | When a venue site links to this seller, so the listings merge |
 | `docs/sources.md` | A row in the right section's table, and the source count in the header |
@@ -263,7 +263,7 @@ Other sessions commit to `master` at the same time:
 - [ ] Every event on the map (coordinates or a geocodable address; venue coords for single-venue sites)
 - [ ] Every event has a site genre (`check_source.py` shows no `NO GENRE`)
 - [ ] Purchase links kept, social profiles dropped; artwork URLs passed
-- [ ] `SCRAPERS`, config block on a free cron slot, `sourceNames.json`, `Stores.tsx`, `SOURCE_ALIASES`
+- [ ] `SCRAPERS`, config block on a free cron slot, `sourceNames.json`, `Stores.tsx`, `search.source_aliases`
 - [ ] `docs/sources.md` row and count; `postgres-migration.md` if the DB changed
 - [ ] `tests/test_<name>.py`; `check_source.py` says `OK`; ruff; full pytest; `tsc` if web changed
 - [ ] Committed with only my hunks, pushed, deploy `SUCCESS`

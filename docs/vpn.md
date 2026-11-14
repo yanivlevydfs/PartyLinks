@@ -66,6 +66,14 @@ Added 2026-11-02, after a 72-hour sweep of the failed runs (each site tested fro
 | munievents | true | ~25 city sites (rehovot, kfar-saba, herzliya, eilat, bat-yam, kiryat-gat...): 403 without, 200 through the VPN. rosh-haayin, nahariya and ariel answer no datacenter IP, VPN included |
 | pres | true | ipo / lessin / cintlv `.presglobal.store`: 403 without, 200 through the VPN |
 
+Added 2026-11-14:
+
+| Source | `vpn` | Why |
+| --- | --- | --- |
+| ogo | true | Cloudflare began 403-ing Railway's IP on event pages mid-run; 200 through the VPN with Chrome TLS |
+| ogo_us | false | us.ogo.events: a US site, our VPN exits in Israel. Railway IP + Chrome TLS, no evomi (`proxied: false`) |
+| ogo_de | false | de.ogo.events: a German site, same as ogo_us |
+
 Set in settings.yaml and, for the running server at once, as admin overrides (`sources.<name>.vpn`).
 
 eventim, zappa and holon, and barak's empty pages, need a residential Israeli IP. A VPN IP is a datacenter IP, so it will not open them.

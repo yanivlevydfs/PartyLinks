@@ -188,105 +188,6 @@ def date_ranges(today: date) -> dict[str, tuple[date, date]]:
     return out
 
 
-# Words people search by that name a kind of event rather than a genre label.
-PARTY = ("techno", "house", "trance", "mainstream", "hip_hop", "electronic", "nightclubs", "reggaeton_latin", "afro",
-         "disco_funk", "drum_and_bass", "bass_dubstep", "hardstyle", "edm", "throwback", "mizrahi", "rnb", "dancehall_reggae", "dark_wave")
-SYNONYMS: dict[str, tuple[str, ...]] = {
-    "מסיבה": PARTY, "מסיבות": PARTY, "מסיבת": PARTY, "party": PARTY, "parties": PARTY, "ליין": PARTY, "רייב": PARTY, "rave": PARTY,
-    "מסיבת טבע": ("nature_party", "trance"), "מסיבות טבע": ("nature_party", "trance"), "פסיכדלי": ("psytrance",), "psytrance": ("psytrance",), "פסי טראנס": ("psytrance",), "פסיי": ("psytrance",), "psy": ("psytrance",),
-    "קיי פופ": ("kpop",), "kpop": ("kpop",), "חסידי": ("hasidic",), "חסידית": ("hasidic",), "חזנות": ("jewish_music",), "מלודיק": ("melodic_techno",), "melodic": ("melodic_techno",),
-    "הופעה": ("live_show",), "הופעות": ("live_show",), "הופעה חיה": ("live_show",), "קונצרט": ("live_show", "classical_opera"),
-    "concert": ("live_show",), "live": ("live_show",), "מועדון": ("nightclubs",), "מועדונים": ("nightclubs",), "קלאב": ("nightclubs",),
-    "הצגה": ("theatre",), "הצגות": ("theatre",), "תאטרון": ("theatre",), "מחזמר": ("theatre",), "סרט": ("cinema",), "סרטים": ("cinema",),
-    "ילדים": ("kids",), "משפחה": ("kids",), "הרצאה": ("lectures",), "סדנה": ("workshops",), "סדנאות": ("workshops",),
-    "פסטיבל": ("festival",), "פסטיבלים": ("festival",), "קומדיה": ("stand_up",), "stand up": ("stand_up",), "סטנד אפ": ("stand_up",),
-    "ג'אז": ("jazz",), "היפהופ": ("hip_hop",), "hiphop": ("hip_hop",), "ראפ": ("hip_hop",), "rap": ("hip_hop",),
-    "גאה": ("lgbt",), "להטב": ("lgbt",), "להט״ב": ("lgbt",), "חדר בריחה": ("escape_rooms",), "חדרי בריחה": ("escape_rooms",),
-    "בריכה": ("pools",), "בריכות": ("pools",), "פארק מים": ("pools",), "פארקי מים": ("pools",),
-    "מסיבת בריכה": ("pool_party",), "מסיבות בריכה": ("pool_party",), "pool party": ("pool_party",),
-    "אלכוהול חופשי": ("open_bar",), "open bar": ("open_bar",), "40 פלוס": ("over_40",), "40+": ("over_40",), "נוער": ("youth",),
-    "הפי אוור": ("happy_hour",), "יוגה": ("yoga_wellness",), "אופרה": ("classical_opera",), "קלאסית": ("classical_opera",),
-    "רוק": ("rock_indie",), "אינדי": ("rock_indie",), "דיסקו": ("disco_funk",), "רגאטון": ("reggaeton_latin",), "לטיני": ("reggaeton_latin",),
-}  # fmt: skip
-# Every kind of event by the words people use for it (singular, plural, slang, English), on top of the
-# category labels themselves (_genre_names): a search names a category in many ways. Only words that name
-# the category itself: a sub-kind ("מרתון", "יין", "מטאל") is matched as a word, not as its whole category.
-SYNONYMS.update({
-    "קולנוע": ("cinema",), "הקרנה": ("cinema",), "הקרנות": ("cinema",), "הקרנת": ("cinema",), "בכורה": ("cinema",),
-    "movie": ("cinema",), "movies": ("cinema",), "film": ("cinema",), "films": ("cinema",), "screening": ("cinema",),
-    "תיאטרון": ("theatre",), "מחזה": ("theatre",), "מחזות": ("theatre",), "מחזות זמר": ("theatre",), "הצגת": ("theatre",),
-    "play": ("theatre",), "plays": ("theatre",), "theater": ("theatre",), "musical": ("theatre",), "musicals": ("theatre",),
-    "סטנדאפ": ("stand_up",), "סטנד-אפ": ("stand_up",), "סטנדאפיסט": ("stand_up",), "קומי": ("stand_up",),
-    "comedy": ("stand_up",), "standup": ("stand_up",), "stand-up": ("stand_up",), "קומדיות": ("stand_up",),
-    "הרצאות": ("lectures",), "שיחה": ("lectures",), "lecture": ("lectures",), "lectures": ("lectures",), "talk": ("lectures",), "talks": ("lectures",),
-    "סדנת": ("workshops",), "קורס": ("workshops",), "קורסים": ("workshops",), "workshop": ("workshops",), "workshops": ("workshops",),
-    "תערוכה": ("exhibitions",), "תערוכות": ("exhibitions",), "גלריה": ("exhibitions",), "גלריות": ("exhibitions",), "מוזיאון": ("exhibitions",),
-    "מוזיאונים": ("exhibitions",), "אמנות": ("exhibitions",), "exhibition": ("exhibitions",), "museum": ("exhibitions",),
-    "museums": ("exhibitions",), "gallery": ("exhibitions",), "art": ("exhibitions",),
-    "צילום": ("photography",), "צלם": ("photography",), "צלמים": ("photography",), "צילומים": ("photography",),
-    "photography": ("photography",), "photo": ("photography",), "photos": ("photography",),
-    "לילדים": ("kids",), "משפחות": ("kids",), "לכל המשפחה": ("kids",), "פעוטות": ("kids",), "תינוקות": ("kids",),
-    "kids": ("kids",), "children": ("kids",), "family": ("kids",), "families": ("kids",),
-    "סיור": ("tours",), "סיורים": ("tours",), "טיול": ("tours",), "טיולים": ("tours",), "סיור מודרך": ("tours",),
-    "tour": ("tours",), "tours": ("tours",), "trip": ("tours",), "hike": ("tours",),
-    "ספורט": ("sport",),
-    "sport": ("sport",), "sports": ("sport",),
-    "טעימות": ("food",), "טעימת": ("food",), "קולינריה": ("food",),
-    "food": ("food",), "tasting": ("food",),
-    "מסעדה": ("fine_dining",), "ארוחת שף": ("fine_dining",), "dinner": ("fine_dining",),
-    "שוק": ("markets",), "יריד": ("markets",), "ירידים": ("markets",), "פשפשים": ("markets",), "market": ("markets",), "fair": ("markets",),
-    "ריקוד": ("dance",), "ריקודים": ("dance",), "בלט": ("dance",), "dance": ("dance",), "ballet": ("dance",),
-    "בצ'אטה": ("latin_dance",), "בצאטה": ("latin_dance",), "bachata": ("latin_dance",), "קיזומבה": ("latin_dance",), "kizomba": ("latin_dance",),
-    "salsa": ("salsa",), "ריקודים סלוניים": ("ballroom",), "סלוני": ("ballroom",),
-    "מדיטציה": ("yoga_wellness",), "רוחניות": ("yoga_wellness",), "ריטריט": ("yoga_wellness",), "yoga": ("yoga_wellness",),
-    "meditation": ("yoga_wellness",), "wellness": ("yoga_wellness",), "retreat": ("yoga_wellness",),
-    "festival": ("festival",), "festivals": ("festival",), "קונצרטים": ("live_show", "classical_opera"), "concerts": ("live_show",), "gig": ("live_show",),
-    "קלאסי": ("classical_opera",), "מוזיקה קלאסית": ("classical_opera",), "תזמורת": ("classical_opera",), "פילהרמונית": ("classical_opera",),
-    "classical": ("classical_opera",), "opera": ("classical_opera",), "orchestra": ("classical_opera",), "symphony": ("classical_opera",),
-    "מזרחי": ("mizrahi",), "קריוקי": ("karaoke",), "karaoke": ("karaoke",), "כנס": ("conference",), "conference": ("conference",),
-    "מפגש": ("meetups",), "meetup": ("meetups",), "meetups": ("meetups",), "גיימינג": ("gaming",), "gaming": ("gaming",), "esports": ("gaming",),
-    "התנדבות": ("volunteering",), "volunteering": ("volunteering",), "אטרקציה": ("attractions",), "attractions": ("attractions",),
-    "האפי האוור": ("happy_hour",), "happy hour": ("happy_hour",), "גייז": ("lgbt",), "גיי": ("lgbt",), "קוויר": ("lgbt",), "גאווה": ("lgbt",),
-    "gay": ("lgbt",), "queer": ("lgbt",), "lgbt": ("lgbt",), "pride": ("lgbt",), "teen": ("youth",), "teens": ("youth",),
-    "ארבעים פלוס": ("over_40",), "פופ": ("pop",), "pop": ("pop",), "rock": ("rock_indie",), "indie": ("rock_indie",),
-    "היפ הופ": ("hip_hop",), "hip hop": ("hip_hop",), "trap": ("hip_hop",), "טראפ": ("hip_hop",), "אפרוביטס": ("afro",), "afrobeats": ("afro",),
-    "אלקטרונית": ("electronic",), "אלקטרוני": ("electronic",), "electronic": ("electronic",), "electro": ("electronic",),
-    "רטרו": ("throwback",), "retro": ("throwback",), "שנות ה-90": ("nineties",), "שנות ה90": ("nineties",), "90s": ("nineties",), "ניינטיז": ("nineties",),
-    "שנות ה-80": ("eighties",), "שנות ה80": ("eighties",), "80s": ("eighties",), "אייטיז": ("eighties",),
-    "כשר": ("kosher",), "כשרה": ("kosher",), "כשרים": ("kosher",), "kosher": ("kosher",), "קפה": ("coffee_carts",), "עגלת קפה": ("coffee_carts",), "הייטק": ("hi_tech",), "hitech": ("hi_tech",),
-    # Tech talks, not techno parties: "טכנו" is a music genre and matches only as a whole word (text_match).
-    "טכנולוגיה": ("hi_tech",), "טכנולוגית": ("hi_tech",), "טכנולוגי": ("hi_tech",), "טכנולוגיות": ("hi_tech",), "technology": ("hi_tech",), "סטארטאפ": ("startups",), "startup": ("startups",),
-})  # fmt: skip
-REGION_ALIASES = {
-    "gush_dan": ("גוש דן", "מרכז", "המרכז", "center"), "haifa": ("קריות", "הקריות", "krayot"),
-    "galilee": ("צפון", "הצפון", "גליל", "הגליל", "north"), "negev": ("דרום", "הדרום", "נגב", "הנגב", "south"),
-}  # fmt: skip
-SOURCE_ALIASES = {
-    "goout": ("go out", "go-out", "גו אאוט", "גואאוט"), "eventer": ("אוונטר", "איוונטר"), "zygo": ("זייגו",),
-    "tickchak": ("טיקצ'אק", "טיקצאק"), "goshow": ("גו שואו", "גושואו", "go show"), "tzkrti": ("תזכרתי", "tazkarti", "تذكرتي"), "fever": ("פיבר", "candlelight", "קנדללייט"), "towerofdavid": ("מגדל דוד", "tower of david", "החיזיון הלילי"), "tamuseum": ("מוזיאון תל אביב", "tel aviv museum of art"), "eventpro": ("מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"), "swaptix": ("סוופטיקס", "סווטיקס", "swap tix"), "jaffatheatre": ("תיאטרון יפו", "jaffa theatre", "סראיא"), "smarticket": ("סמרטיקט",), "smarticket_il": ("פריינדס", "friends"), "barby": ("בארבי",), "reading3": ("רידינג", "רידינג 3", "רדינג", "רדינג 3", "reading 3", "reading"), "kupatbravo": ("קופת ברבו", "kupat bravo"), "easytix": ("איזיטיקס", "easy tix"),
-    "ticketmaster": ("טיקטמאסטר",), "mevalim": ("מבלים",), "hulyo": ("הוליו",), "popit": ("פופיט",), "beatradar": ("beat radar", "ביט ראדר"), "iwant": ("i want", "איוונט", "איי וונט"), "music80s": ("80smusic", "80s music", "80 מיוזיק"),
-    "happytlv": ("happy tlv", "הפי תל אביב"), "secrettelaviv": ("secret tel aviv",), "secrettelavivapp": ("secret tel aviv app",), "klika": ("klika", "קליקה"), "inperson": ("inperson", "in person", "אינפרסון"), "gototlv": ("gototlv", "daniel tel aviv", "דניאל תל אביב"), "mugics": ("mugics", "מיוזיקס", "מוגיקס"), "efokulam": ("efokulam", "efo kulam", "אפו כולם", "איפה כולם"), "liveisrael": ("liveisrael", "live israel", "לייב ישראל"), "plusparty": ("plus party", "plusparty", "מסיבות פלוס", "פלוס פארטי"), "cinemacity": ("cinema city", "סינמה סיטי"),
-    "hotcinema": ("hot cinema", "הוט סינמה"), "ravhen": ("rav hen", "רב חן"), "lev": ("סינמה לב",), "zappa": ("זאפה",),
-    "zoatlv": ("zoa tlv", "zoa house"), "eventimlight": ("eventim light", "eventim-light"),
-    "selector": ("סלקטור",), "grayclub": ("gray club", "גריי קלאב"), "chillz": ("צ'ילז", "צילז"),
-    "megatickets": ("mega tickets", "מגה טיקטס"), "eventbuzz": ("event buzz", "איוונט באז"), "epgb": ("radio epgb",),
-    "tiktik": ("tik tik", "טיק טיק", "טיקטיק"), "gagarin": ("גגארין",), "babebar": ("babe bar", "בייב בר"), "comy": ("קומי",),
-    "eventim": ("אוונטים", "איוונטים"), "jerusalemtheatre": ("jerusalem theatre", "תיאטרון ירושלים"),
-    "agol": ("עגול", "אגול"), "airdrop": ("air drop", "אירדרופ", "אייר דרופ"), "vibez": ("וייבז",), "shotgun": ("שוטגאן",),
-    "eventbrite": ("איוונטברייט",), "ticketingo": ("טיקטינגו", "ticketingo", "sportsevents365"), "showshappening": ("shows happening", "שואוז הפנינג"), "luma": ("לומה",),
-    "geektime": ("גיקטיים",), "peoplecomputers": ("people and computers", "אנשים ומחשבים"), "parks": ("רשות הטבע והגנים", "רט\"ג", "גנים לאומיים", "שמורות טבע", "parks authority"), "meetup": ("מיטאפ",),
-    "beershevatheatre": ("תיאטרון באר שבע",), "nikonitai": ("ניקו ניתאי", "niko nitai"), "planet": ("yes planet", "יס פלאנט"),
-    "cinematheque_tlv": ("סינמטק תל אביב", "tel aviv cinematheque"), "cinematheque_jlm": ("סינמטק ירושלים", "jerusalem cinematheque"),
-    "movieland": ("מובילנד",), "kishreyteufa": ("קשרי תעופה",), "ticketplace": ("ticket place", "טיקט פלייס"),
-    "livevents": ("live events", "לייב איוונטס"), "issta": ("איסתא",), "megaevents": ("mega events", "מגה איוונטס"),
-    "viagogo": ("ויאגוגו",), "hamenagen": ("המנגן",), "hatarbut": ("היכל התרבות",), "kikarhamusica": ("כיכר המוזיקה",),
-    "xplorer": ("אקספלורר",), "livetickets": ("live tickets", "לייב טיקטס"), "tiuli": ("טיולי",), "ogo": ("אוגו",),
-    "muzi": ("מוזי",), "standupist": ("סטנדאפיסט פורטל", "פורטל סטנדאפיסט"), "onecity": ("one city", "וואן סיטי"), "petahtikvamuni": ("עיריית פתח תקווה", "עיריית פתח תקוה"), "jerusalemmuni": ("עיריית ירושלים",), "sharepointmuni": ("עיריית ראשון לציון", "עיריית ראשל\"צ"), "tickethouse": ("ticket house", "טיקט האוס"),
-    "barak": ("barak tickets", "ברק כרטיסים"), "bargiyora": ("bar giyora", "בר גיורא"), "levontin7": ("levontin 7", "לבונטין 7"),
-    "yellowsubmarine": ("yellow submarine", "הצוללת הצהובה"), "halutz": ("hahalutz 33", "החלוץ 33"), "meety": ("מיטי",),
-    "funzing": ("פאנזינג",), "ticketeams": ("טיקטימס",),
-}  # fmt: skip
-
 
 def _escape(word: str) -> str:
     return word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
@@ -418,8 +319,8 @@ def relevance(q: str, cfg: Settings, artists: Iterable[str] = ()) -> ColumnEleme
 
 
 def _area_and_site_names(cfg: Settings) -> set[str]:
-    names = {n for key, (he, _, en) in seo.REGION_NAMES.items() for n in (he, en, *REGION_ALIASES.get(key, ()))}
-    names |= {n for key in cfg.sources for n in (key, *SOURCE_ALIASES.get(key, ()))}
+    names = {n for key, (he, _, en) in seo.REGION_NAMES.items() for n in (he, en, *cfg.search.region_aliases.get(key, ()))}
+    names |= {n for key in cfg.sources for n in (key, *cfg.search.source_aliases.get(key, ()))}
     # A city in Israel too: the search already keeps only its events, so "תל אביב" in a title is no merit.
     names |= {n for c in cfg.enrichment.cities for n in (c.he, c.en, *c.aliases)}
     return {p + n.casefold() for n in names for p in (HE_PREFIXES if re.match(r"[֐-׿]", n) else ("",))}
@@ -437,8 +338,12 @@ def _genre_names(cfg: Settings) -> dict[str, tuple[str, ...]]:
             for part in {label, *label.split(" / "), *label.split(" ו")}:
                 if len(part.strip()) >= 2:
                     names.setdefault(part.strip().casefold(), (g,))
-    for name, gs in SYNONYMS.items():
-        names.setdefault(name.casefold(), gs)
+    synonyms: dict[str, tuple[str, ...]] = {}
+    for g, words in cfg.search.synonyms.items():  # a word under several genres means all of them
+        for w in words:
+            synonyms[w.casefold()] = (*synonyms.get(w.casefold(), ()), g)
+    for name, gs in synonyms.items():
+        names.setdefault(name, gs)
     for name in list(names):  # ג׳אז and ג'אז: either apostrophe
         names.setdefault(name.replace("׳", "'"), names[name])
         names.setdefault(name.replace("'", "׳"), names[name])
@@ -470,12 +375,12 @@ def _vocabulary(cfg: Settings) -> dict[str, Callable[[], Cond]]:
     add("ישראל", lambda: EventRow.country.is_(None))
     add("israel", lambda: EventRow.country.is_(None))
     for key, (he, _, en) in seo.REGION_NAMES.items():
-        for name in (he, en, en.removeprefix("the "), *REGION_ALIASES.get(key, ())):
+        for name in (he, en, en.removeprefix("the "), *cfg.search.region_aliases.get(key, ())):
             add(name, lambda key=key: EventRow.area == key)
     for name, genres in _genre_names(cfg).items():
         add(name, lambda genres=genres: or_(*(_genre(cfg, g) for g in genres)))
     for key in cfg.sources:  # a ticket site: everything it sells ("zygo", "גו אאוט")
-        for name in (key, *SOURCE_ALIASES.get(key, ())):
+        for name in (key, *cfg.search.source_aliases.get(key, ())):
             add(name, lambda key=key: EventRow.group_id.in_(select(_listing.group_id).where(_listing.source == key)))
     return names
 

@@ -20,7 +20,6 @@ from partylinks.search import (
     FREE,
     HE_PREFIXES,
     PRICE,
-    REGION_ALIASES,
     WEEKEND,
     _vocabulary,
     date_ranges,
@@ -72,14 +71,15 @@ def _he_forms(names: set[str]) -> set[str]:
 
 def _places(cfg: Settings) -> frozenset[str]:
     """Every name of a place the search knows (a city, a region, a country, abroad), with ב / ל / מ."""
-    return _place_names(tuple(n for c in cfg.enrichment.cities for n in (c.he, c.en, *c.aliases)))
+    names = [n for c in cfg.enrichment.cities for n in (c.he, c.en, *c.aliases)]
+    for key, (he, _, en) in seo.REGION_NAMES.items():
+        names += [he, en, en.removeprefix("the "), *cfg.search.region_aliases.get(key, ())]
+    return _place_names(tuple(names))
 
 
 @lru_cache(maxsize=4)
-def _place_names(cities: tuple[str, ...]) -> frozenset[str]:
-    names = set(cities)
-    for key, (he, _, en) in seo.REGION_NAMES.items():
-        names |= {he, en, en.removeprefix("the "), *REGION_ALIASES.get(key, ())}
+def _place_names(given: tuple[str, ...]) -> frozenset[str]:
+    names = set(given)
     names |= {name for name, _ in countries.names()} | {"ישראל", "israel"}
     return frozenset(_he_forms(names) | ABROAD)
 

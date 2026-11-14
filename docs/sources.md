@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 120 configured sources, 119 on. Each one has its own module in
+SPOTX collects from 122 configured sources, 121 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -134,6 +134,8 @@ many of them free.
 | `matnasnet` | Matnasnet (also `*.atarix.co.il`): the CMS of most community centres and some councils | 05:41, 17:41 | yes |
 | `onecity` | OneCity municipal sites (WordPress + GeoDirectory: Karmiel, Even Yehuda, ...) | 04:17, 16:17 | yes |
 | `ogo` | OGO (ogo.co.il): a human-moderated guide to cultural events across Israel | 06:27, 18:27 | yes |
+| `ogo_us` | OGO USA (us.ogo.events): the same guide for the USA, events abroad; no VPN (US site, our VPN is Israeli); robots.txt `Disallow: /`, read by the owner's choice | 09:33, 21:33 | yes |
+| `ogo_de` | OGO Germany (de.ogo.events): the same guide for Germany, events abroad; no VPN; same robots.txt | 07:49, 19:49 | yes |
 | `muzi` | Muzi (muzi.co.il): community-run guide to concerts and shows across Israel | 05:29, 17:29 | yes |
 | `mugics` | Mugics (mugics.com): live-music board where musicians and venues post shows; read from the map-pins API its pages call (30-day windows, ~25 requests, ~390 shows, coordinates on all); ticket links merge with the venues' own listings. robots.txt disallows `/api/` on www, read anyway by the owner's choice | 09:13, 21:13 | yes |
 | `efokulam` | EfoKulam (efokulam.co.il, "איפה כולם"): nightlife guide (club nights, parties, festivals, mostly Tel Aviv); read from its wp-json `events` post type (~6 requests, ~50 current events of ~460 rows); no coordinates (addresses geocoded), no venue field; prices from the article's highlighted chips, artists from its "ליינאפ" block (chips / ✓ list); seller links (Go-Out, Eventer) merge with those sources | 08:43, 20:43 | yes |

@@ -9,7 +9,7 @@ record (decisions D1 to D11, phases): [telegram-bot-design.md](telegram-bot-desi
   ("טכנו בתל אביב בסופ״ש", "הופעה בחיפה מחר", "something free tonight", "Infected Mushroom"). Chat words
   ("מה יש", "תמצא לי", "please", `search.FILLER`) are dropped. The rest goes to the site's own search
   (`search.smart_filters` through `api.build_event_filters`), so the bot finds what the site finds: every
-  category by its label and the words people use for it (`search.SYNONYMS`: "סרט", "הצגה", "הרצאה",
+  category by its label and the words people use for it (`search.synonyms` in config/settings.yaml: "סרט", "הצגה", "הרצאה",
   "תערוכה", "סיור", "movie"...), a day by number ("ב-7.11", "7/11/26"). The site's search box reads the
   same way, and when nothing is found it widens as the bot does (without the date, then without the place)
   and says so (`/events` → `widened`, `widened_q`).

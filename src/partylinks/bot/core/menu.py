@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 HOME = MENU + "h"
 # The search words of an area, in each language: names the site's search reads as that area (REGION_NAMES,
-# REGION_ALIASES, ABROAD in search.py; tests/test_bot_menu.py checks each).
+# search.region_aliases in settings.yaml, ABROAD in search.py; tests/test_bot_menu.py checks each).
 AREAS = {
     "gush_dan": ("במרכז", "center"), "sharon": ("השרון", "sharon"), "jerusalem": ("בירושלים והסביבה", "jerusalem area"),
     "haifa": ("בחיפה והקריות", "haifa and the krayot"), "galilee": ("בצפון", "north"), "negev": ("בדרום", "south"),

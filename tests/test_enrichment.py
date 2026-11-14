@@ -536,3 +536,8 @@ def test_new_categories_add_to_an_events_kind_never_replace_it() -> None:
     assert "drag_cabaret" not in genres("Cabaret Extra! Centre Pompidou", declared=["kabarett"])
     assert "women_only" not in genres("מסיבה", "הכניסה לזוגות ונשים בלבד")
     assert "singles_dating" in genres("ערב היכרויות לרווקים ורווקות")
+
+def test_public_tenders_are_not_events() -> None:
+    # Ashdod's municipal company sells tender documents through OGO / Smarticket (Nov 2026).
+    assert ENRICHER.enrich(make(title="מכרז פומבי מס' 10/2026")) is None
+    assert ENRICHER.enrich(make(title="כנס תורת המכרזים")) is not None
