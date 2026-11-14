@@ -59,6 +59,8 @@ class BarbyScraper(BaseScraper[BarbySettings]):
         payload = await self.get_json(s.site_url + s.list_path, expect=dict)
         listing = payload.get("returnShow")
         shows = [show for show in (listing.get("show") if isinstance(listing, dict) else None) or [] if isinstance(show, dict)]
+        # showId 0 is a placeholder row ("אתר", no date) whose detail pages 404: every run ended partial (Nov 2026).
+        shows = [show for show in shows if str(show.get("showId") or "").strip("0")]
         self.log.debug("listed %d events", len(shows))
         async for event in self.stream_isolated(shows, self._fetch_event, label=lambda show: str(show.get("showId"))):
             yield event

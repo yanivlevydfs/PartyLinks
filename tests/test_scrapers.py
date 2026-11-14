@@ -155,6 +155,31 @@ def test_barby_sequential_tiers_and_single_price() -> None:
     assert len(single.tickets) == 1 and single.tickets[0].price == Decimal(245)
 
 
+def test_barby_skips_the_placeholder_show_0() -> None:
+    import asyncio
+
+    from partylinks.config import HttpSettings, Settings
+    from partylinks.scrapers import barby
+
+    cfg = barby.BarbySettings.model_validate(Settings().sources["barby"])
+    scraper = barby.BarbyScraper(cfg, HttpSettings(), TZ)
+    asked: list[Any] = []
+
+    async def fake_get_json(url: str, **_: object) -> Any:
+        if url.endswith(cfg.list_path):
+            return {"returnShow": {"show": [{"showId": 0, "showName": "אתר"}]}}
+        asked.append(url)
+        return {}
+
+    scraper.get_json = fake_get_json  # type: ignore[method-assign]
+
+    async def run() -> list[Any]:
+        return [e async for e in scraper.scrape()]
+
+    # showId 0 ("אתר", no date) answered 404 on its detail pages: every run ended partial (Nov 2026).
+    assert asyncio.run(run()) == [] and asked == [] and not scraper.failures
+
+
 def test_grayclub_cards_and_event_page() -> None:
     from partylinks.config import Settings
     from partylinks.scrapers import grayclub
