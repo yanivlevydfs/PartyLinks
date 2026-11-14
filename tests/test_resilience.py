@@ -426,7 +426,8 @@ def test_one_run_limit_for_every_source() -> None:
     from partylinks.scrapers.base import SourceSettings
 
     assert "run_timeout_seconds" not in SourceSettings.model_fields  # no source sets its own
-    raw = yaml.safe_load(open("config/settings.yaml", encoding="utf-8"))
+    with open("config/settings.yaml", encoding="utf-8") as f:
+        raw = yaml.safe_load(f)
     assert not [name for name, block in raw["sources"].items() if "run_timeout_seconds" in (block or {})]
 
 

@@ -134,6 +134,16 @@ def us_zone(city: str, address: str | None, default: str) -> str:
     return city_zone(name, "US") or default
 
 
+_US_CITY = re.compile(r"([^,\d]+?),\s*[A-Z]{2}\b(?:\s+\d{5})?(?:,\s*USA?)?\s*$")  # "..., Briarcliff Manor, NY 10510"
+_DE_CITY = re.compile(r"\b\d{5}\s+([^,\d]+?)\s*(?:,\s*(?:Germany|Deutschland))?\s*$")  # "..., 40213 Düsseldorf"
+
+
+def address_city(address: str | None) -> str | None:
+    """The city an address ends with (US "City, ST 12345" or German "12345 City"), lower case."""
+    match = _US_CITY.search(address or "") or _DE_CITY.search(address or "")
+    return match.group(1).strip().casefold() if match else None
+
+
 def parse_event(page_html: str, url: str, source: str, default_zone: str, currency: str = "USD") -> ScrapedEvent | None:
     """The page's event via ``ogo.parse_event``, in the venue's country and zone; None when cancelled."""
     match = _EVENT_URL.match(url)
@@ -149,6 +159,8 @@ def parse_event(page_html: str, url: str, source: str, default_zone: str, curren
     if country == "US" and (us_tz := us_zone(city, event.address or event.venue_name, default_zone)) != tz:
         tz = us_tz  # a date-only start is midnight in the venue's zone: parsed again in it
         event = cast(ScrapedEvent, ogo.parse_event(page_html, il_url, tz))
+    if event.city is None:  # "/any-city/" pages: the city is in the address, which geocoding abroad reads by city
+        event = event.model_copy(update={"city": address_city(event.address)})
     # Re-validated, not model_copy: the URL must become an HttpUrl again.
     return ScrapedEvent.model_validate(
         {

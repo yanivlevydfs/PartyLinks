@@ -123,3 +123,12 @@ def test_russian_tags_are_translated_not_russian_language() -> None:
     de_url = "https://de.ogo.events/he/event/de/berlin/2026/11/13/eli-yatzp-new-show-f5hknqanjcCgQRBMAvBs8Z"
     unpriced = parse_event(_read("event_date_only.html"), de_url, "ogo_de", "Europe/Berlin", "EUR")
     assert unpriced is not None and not unpriced.tickets and unpriced.currency == "EUR"
+
+
+def test_address_city_for_any_city_pages() -> None:
+    from partylinks.scrapers.ogo_abroad import address_city
+
+    assert address_city("Temple Beth Am, 12 Main St, Briarcliff Manor, NY 10510") == "briarcliff manor"
+    assert address_city("JCC, 400 Main St, Tenafly, NJ 07670, USA") == "tenafly"
+    assert address_city("Jüdische Gemeinde, Zietenstraße 50, 40476 Düsseldorf") == "düsseldorf"
+    assert address_city("Online") is None and address_city(None) is None

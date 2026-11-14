@@ -794,11 +794,11 @@ def _free_from_text(event: ScrapedEvent) -> bool:
         return False  # sold out, or a ticket already says free
     text = f"{event.title}\n{event.description or ''}"
     if group := free_for_some(text):
-        event.tickets.append(TicketTier(name=group[:80], is_free=True))
+        event.tickets.append(TicketTier(name=group[:80], is_free=True, currency=event.currency))
         return True
     if any(t.kind is not TicketKind.UNKNOWN for t in active) or event.min_price or not says_free(text):
         return False  # a paid ticket wins over the text
-    event.tickets.append(TicketTier(name="כניסה חופשית", price=Decimal(0), is_free=True))
+    event.tickets.append(TicketTier(name="כניסה חופשית", price=Decimal(0), is_free=True, currency=event.currency))
     event.min_price = event.max_price = Decimal(0)
     return False
 

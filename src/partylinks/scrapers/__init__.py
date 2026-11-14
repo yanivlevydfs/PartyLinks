@@ -15,7 +15,6 @@ from partylinks.scrapers.bargiyora import BarGiyoraScraper
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.beatradar import BeatRadarScraper
 from partylinks.scrapers.beershevatheatre import BeerShevaTheatreScraper
-from partylinks.scrapers.nikonitai import NikoNitaiScraper
 from partylinks.scrapers.chillz import ChillzScraper
 from partylinks.scrapers.cinemacity import CinemaCityScraper
 from partylinks.scrapers.cinematheque_tlv import JerusalemCinemathequeScraper, TelAvivCinemathequeScraper
@@ -37,6 +36,7 @@ from partylinks.scrapers.funzing import FunzingScraper
 from partylinks.scrapers.geektime import GeektimeScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.goshow import GoShowScraper
+from partylinks.scrapers.gototlv import GotoTlvScraper
 from partylinks.scrapers.grayclub import GrayclubScraper
 from partylinks.scrapers.habama import HabamaScraper
 from partylinks.scrapers.haezor import HaEzorScraper
@@ -48,6 +48,7 @@ from partylinks.scrapers.hatarbut import HatarbutScraper
 from partylinks.scrapers.holon import HolonScraper
 from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
+from partylinks.scrapers.inperson import InpersonScraper
 from partylinks.scrapers.issta import IsstaScraper
 from partylinks.scrapers.iwant import IwantScraper
 from partylinks.scrapers.jaffatheatre import JaffaTheatreScraper
@@ -55,8 +56,6 @@ from partylinks.scrapers.jerusalemmuni import JerusalemMuniScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
 from partylinks.scrapers.kikarhamusica import KikarHamusicaScraper
 from partylinks.scrapers.kishreyteufa import KishreyTeufaScraper
-from partylinks.scrapers.gototlv import GotoTlvScraper
-from partylinks.scrapers.inperson import InpersonScraper
 from partylinks.scrapers.klika import KlikaScraper
 from partylinks.scrapers.kupatbravo import KupatbravoScraper
 from partylinks.scrapers.leaan import LeaanScraper
@@ -78,6 +77,7 @@ from partylinks.scrapers.mugics import MugicsScraper
 from partylinks.scrapers.munievents import MuniEventsScraper
 from partylinks.scrapers.music80s import Music80sScraper
 from partylinks.scrapers.muzi import MuziScraper
+from partylinks.scrapers.nikonitai import NikoNitaiScraper
 from partylinks.scrapers.ogo import OgoScraper
 from partylinks.scrapers.ogo_abroad import OgoDeScraper, OgoUsScraper
 from partylinks.scrapers.onecity import OneCityScraper

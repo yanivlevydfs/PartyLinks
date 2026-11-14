@@ -859,7 +859,7 @@ def test_genre_labels_and_icons_match_across_web_server_and_config() -> None:
 
     web = Path(__file__).parents[1] / "web" / "src"
     i18n = (web / "i18n.ts").read_text(encoding="utf-8")
-    pairs = lambda block: dict(re.findall(r'(\w+):\s*"([^"]*)"', block))  # noqa: E731
+    pairs = lambda block: dict(re.findall(r'(\w+):\s*"([^"]*)"', block))
     he = pairs(i18n.split("genre: <Record<string, string>>{")[1].split("\n    },")[0])
     en = pairs(i18n.split("const EN_GENRE_FIX: Record<string, string> = {")[1].split("};")[0])
     assert he == seo.GENRES_HE
