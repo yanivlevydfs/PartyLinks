@@ -66,7 +66,7 @@ def _serve(reload: bool = False) -> int:
     # Only these proxies may set the client address (X-Forwarded-For); the Server header is dropped.
     net = {"proxy_headers": True, "forwarded_allow_ips": ",".join(settings.security.trusted_proxies), "server_header": False,
            # Shed load past this many open connections (503) instead of slowing to a crawl; drop idle keep-alives fast.
-           "limit_concurrency": 200, "timeout_keep_alive": 5}
+           "limit_concurrency": settings.api.limit_concurrency, "timeout_keep_alive": 5}
     if reload:
         # Development: restart on any change under src/. Config changes don't need it (admin -> apply).
         # Only the worker writes the log file: two processes on one file break rotation on Windows.
@@ -79,6 +79,7 @@ def _serve(reload: bool = False) -> int:
         # Scraping in a worker process of its own, so it never slows the site (partylinks/worker).
         separate = settings.scheduler.enabled and settings.scheduler.separate_process
         app = create_app(settings, start_scheduler=False if separate else None, worker_process=separate, overrides=True)
+        net["limit_concurrency"] = app.state.settings.api.limit_concurrency  # with the admin's override
         # The worker's heartbeat, once the app has started (app.state.worker): a hung worker is restarted.
         state = lambda: app.state.worker.state() if getattr(app.state, "worker", None) else None
         supervisor = WorkerProcess(settings.scheduler, state) if separate else None
@@ -102,12 +103,13 @@ def _chillz_links() -> int:
     """Write a clickable list of recent Chillz pages (from the public sitemap) for manual saving."""
     from partylinks.config import project_path
     from partylinks.db import EventRow
-    from partylinks.scrapers.chillz import ChillzScraper, write_links_page
+    from partylinks.scrapers.chillz import ChillzScraper, ChillzSettings, write_links_page
 
     settings = get_settings()
     scraper = build_scraper("chillz", settings)
-    if not isinstance(scraper, ChillzScraper):
+    if not isinstance(scraper, ChillzScraper) or not isinstance(scraper.settings, ChillzSettings):
         raise TypeError("the 'chillz' source is not the Chillz scraper")
+    chillz = scraper.settings
 
     async def discover() -> list:  # type: ignore[type-arg]
         async with scraper:
@@ -118,7 +120,7 @@ def _chillz_links() -> int:
     db.create_schema()
     with db.session() as session:
         imported = set(session.scalars(select(EventRow.source_event_id).where(EventRow.source == "chillz")))
-    inbox = project_path(scraper.settings.inbox_dir or "data/chillz_inbox")
+    inbox = project_path(chillz.inbox_dir or "data/chillz_inbox")
     target = project_path("data/chillz_links.html")
     write_links_page(target, pages, imported, inbox)
     log.info("%d pages (%d already imported) -> %s", len(pages), len(imported), target)

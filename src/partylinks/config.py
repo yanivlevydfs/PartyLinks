@@ -130,6 +130,9 @@ class DatabaseSettings(BaseModel):
 class ApiSettings(BaseModel):
     host: str = "0.0.0.0"
     port: int = 8000
+    # Open connections past this get a 503 from uvicorn. One phone opening the home page fires ~230 requests in a
+    # second (rail images + weather); at 200, 67 of them failed (2026-11-14). Read at startup: a restart applies it.
+    limit_concurrency: int = Field(1000, ge=50)
     default_page_size: int = Field(50, ge=1)
     max_page_size: int = Field(200, ge=1)
     # Deepest page of a list: a person stops scrolling long before, a dump of every event needs all of them.

@@ -344,6 +344,9 @@ security:
 api:
   host: 0.0.0.0
   port: 8000
+  # Open connections past this get a 503. One phone on the home page fires ~230 requests in a second
+  # (rail images + weather); at 200, 67 failed (2026-11-14). Read at startup: a restart applies it.
+  limit_concurrency: 1000
   default_page_size: 50
   # Small pages: dumping every event takes many requests (the site asks for 24, the map uses /events/map).
   max_page_size: 50
