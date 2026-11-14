@@ -1371,6 +1371,13 @@ def test_search_by_area_does_not_rank_titles_holding_its_words(tmp_path: Path) -
     assert relevance("גוש דן", cfg) is None
     assert relevance("zygo", cfg) is None
     assert relevance("טכנו בגוש דן", cfg) is not None
+    # A site name with sound-alike artists: no words left, so no empty "WHEN  THEN" (prod 500 on q=chillz).
+    from sqlalchemy.dialects import postgresql
+
+    rank = relevance("chillz", cfg, ["Ekloz"])
+    assert rank is not None
+    sql = str(rank.compile(dialect=postgresql.dialect()))
+    assert "WHEN  THEN" not in sql and "lineup" in sql
 
 
 def test_a_served_page_has_one_title() -> None:

@@ -315,7 +315,9 @@ def relevance(q: str, cfg: Settings, artists: Iterable[str] = ()) -> ColumnEleme
     matched = sum((case((p, 1), else_=0) for p in parts), literal(0)) if parts else literal(0)
     if kinds:  # a listing filed under many kinds ("אירועי נובמבר": 9 genres) is less likely the kind asked for
         matched = matched - case((func.jsonb_array_length(EventRow.genres) > cfg.search.umbrella_genres, 1), else_=0)
-    return case((or_(*top), 0), (or_(*inside), TIER), else_=2 * TIER) - matched
+    # Only artists left ("chillz" is a site name, dropped above): no words, so no "inside" WHEN (an empty or_ is "WHEN  THEN").
+    whens = [(or_(*conds), tier) for conds, tier in ((top, 0), (inside, TIER)) if conds]
+    return case(*whens, else_=2 * TIER) - matched
 
 
 def _area_and_site_names(cfg: Settings) -> set[str]:
