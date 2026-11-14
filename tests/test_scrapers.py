@@ -393,17 +393,24 @@ def test_selector_probes_unlisted_private_ids() -> None:
     from partylinks.scrapers import build_scraper
 
     base = load("selector_event")
-    future = {"startDate": "2099-11-14T13:00:00.000Z", "endDate": "2099-11-14T16:00:00.000Z"}
+    from datetime import UTC, datetime, timedelta
+
+    day = (datetime.now(UTC) + timedelta(days=5)).strftime("%Y-%m-%d")
+    old = (datetime.now(UTC) - timedelta(days=3)).strftime("%Y-%m-%d")
+    later = (datetime.now(UTC) + timedelta(days=300)).strftime("%Y-%m-%d")
+    future = {"startDate": f"{day}T13:00:00.000Z", "endDate": f"{day}T16:00:00.000Z"}
     events = {
         10: base | future | {"id": 10, "eventLink": "listed"},
         12: base | future | {"id": 12, "eventLink": "private", "isPrivate": True},
         13: base | {"id": 13, "eventLink": "past", "startDate": "2001-01-01T10:00:00.000Z", "endDate": None},
         14: base | future | {"id": 14, "eventLink": "deleted", "status": "deleted"},
+        # Started days ago, "ends" next year: a placeholder end, past (the listing keeps such events).
+        15: base | {"id": 15, "eventLink": "stale", "startDate": f"{old}T20:00:00.000Z", "endDate": f"{later}T20:00:00.000Z"},
     }
 
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/event/list":
-            return httpx.Response(200, json={"list": [{"id": 10, "type": []}], "totalCount": 1})
+            return httpx.Response(200, json={"list": [{"id": 10, "type": []}, {"id": 15, "type": []}], "totalCount": 2})
         found = events.get(int(request.url.params["id"]))
         return httpx.Response(200, json=found) if found else httpx.Response(404, json={"message": "Not Found"})
 

@@ -7,7 +7,8 @@ Details: ``GET /event?id=<id>`` adds the public link, description, age policy
 and the full ticket list.
 Private (link-only) events never appear in the listing. Ids are sequential, so every id
 between the lowest listed one and ``probe_ahead`` past the highest is also fetched; a
-missing id (404) or a past event is dropped there.
+missing id (404) is dropped there. Every event, listed or probed, must pass ``retention.is_current``
+(the listing keeps events that started days ago with a placeholder end months later).
 """
 
 from __future__ import annotations
@@ -20,8 +21,10 @@ from typing import Any
 import httpx
 from pydantic import Field
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, has_time, html_to_text, parse_iso, to_decimal, to_int
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 CENTS = Decimal("0.01")
@@ -51,12 +54,20 @@ class SelectorScraper(BaseScraper[SelectorSettings]):
         ids = await self._list_event_ids()
         self.log.debug("listed %d events", len(ids))
         async for event in self.stream_isolated(ids, self._fetch_event, label=str):
-            yield event
+            if self._current(event):
+                yield event
         if self.settings.probe_ahead and ids:
             listed = set(ids)
             gaps = [i for i in range(min(ids), max(ids) + self.settings.probe_ahead + 1) if i not in listed]
             async for event in self.stream_isolated(gaps, self._probe_event, label=str):
-                yield event
+                if self._current(event):
+                    yield event
+
+    def _current(self, event: ScrapedEvent | None) -> bool:
+        # The listing keeps events that started days ago with an end months away (a placeholder).
+        return bool(event) and is_current(
+            event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known
+        )
 
     async def _list_event_ids(self) -> list[int]:
         s = self.settings
@@ -96,8 +107,7 @@ class SelectorScraper(BaseScraper[SelectorSettings]):
             return None
         if event.extra.get("status") not in (None, "active") or event.extra.get("hidden"):
             return None
-        end = event.end_at or event.start_at
-        return event if end and end > datetime.now(UTC) else None
+        return event
 
 
 def parse_event(event: dict[str, Any], page_url_template: str) -> ScrapedEvent:

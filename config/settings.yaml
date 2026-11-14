@@ -2294,6 +2294,24 @@ sources:
     enabled: true
     cron: "29 8,20 * * *"
 
+  inperson:
+    # inperson (inperson.social): Tel Aviv social-meetup app (tables of six, matchmaking evenings, yoga,
+    # cocktail workshops), invite-only and age-gated. /events lists every coming event in an ItemList
+    # JSON-LD (~5); one request per event page for its SocialEvent JSON-LD. No coordinates: the city is
+    # geocoded (dating tables hide the venue until approval).
+    enabled: true
+    cron: "23 8,20 * * *"
+    # Its communities (/com/<slug>, the organizer of every event), as the site's categories.
+    community_genres:
+      six: ["דייטינג"]
+      reserved: ["דייטינג"]
+      limitless: ["דייטינג"]
+      secret: ["דייטינג", "מסיבות"]
+      box-meeting: ["דייטינג"]
+      handson: ["סדנה"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
   gototlv:
     # Daniel Tel Aviv (gototlv.co.il): a hand-picked two-week Tel Aviv guide (parties, culture, free
     # stuff). Its page loads events.json: the whole edition (~30 events) in one request, plus one

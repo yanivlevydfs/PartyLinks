@@ -18,8 +18,10 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel, Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, html_to_text, to_decimal, to_int
+from partylinks.retention import is_current
 from partylinks.scrapers import eventbuzz_discover as discover
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
@@ -76,8 +78,11 @@ class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
         listed = len(urls)
         urls = list(dict.fromkeys(urls + [s.site_url + s.event_path_prefix + slug for slug in await self._unlisted()]))
         self.log.debug("listed %d events, %d more found elsewhere", listed, len(urls) - listed)
+        retention = RetentionSettings()
         async for event in self.stream_isolated(urls, self._fetch_event, label=lambda u: u):
-            yield event
+            # Wayback / search slugs are mostly old events: dropped here, not left for the save to refuse.
+            if event and is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known):
+                yield event
 
     async def _unlisted(self) -> list[str]:
         s, pages = self.settings, []
