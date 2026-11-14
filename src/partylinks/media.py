@@ -97,6 +97,9 @@ def make_variants(path: Path, quality: int) -> bool:
             copy.save(tmp, "WEBP", quality=quality, method=4, icc_profile=icc)
             os.replace(tmp, target)  # atomic: a request never reads a half-written copy
         return True
+    except FileNotFoundError:
+        # The same URL downloaded twice at once: the other copy was already found unreadable and deleted.
+        return False
     except Exception as exc:  # noqa: BLE001 - a broken picture keeps its original only
         log.warning("artwork copies of %s failed: %s: %s", path, type(exc).__name__, exc)
         return False

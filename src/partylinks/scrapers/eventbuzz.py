@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field
@@ -91,8 +91,11 @@ class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
             found += discover.slugs(await self.optional(what, page) or "")
         return list(dict.fromkeys(found))
 
-    async def _fetch_event(self, url: str) -> ScrapedEvent:
-        return parse_event(await self.get_text(url), url, self.settings, self.timezone)
+    async def _fetch_event(self, url: str) -> ScrapedEvent | None:
+        response = await self.request("GET", url)
+        if response.url.path.rstrip("/") == "" and urlsplit(url).path.rstrip("/"):
+            return None  # a deleted event page redirects to the home page (old Wayback / search slugs)
+        return parse_event(response.text, url, self.settings, self.timezone)
 
 
 def parse_listing(page_html: str, s: EventbuzzSettings) -> list[str]:
