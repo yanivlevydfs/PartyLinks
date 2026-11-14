@@ -707,23 +707,106 @@ enrichment:
     kids: ["משחקייה", "ג'ימבורי", "לגיל הרך", "הצגת ילדים", "פעוטות"]
     theatre: ["הצגה", "מחזה", "מחזמר"]
     lectures: ["הרצאה", "הרצאת"]
+    # Nov 2026 category audit (prod labels no genre matched + Eventbrite / Meetup / Fever / Funzing menus).
+    # Phrases only where a bare word is a plain one: "נשים בלבד" is also "זוגות ונשים בלבד" (gender_balance),
+    # "רווקות" "זוגות ורווקות", "improvisation" a jazz solo, "לסטודנטים" the student discount.
+    musicals: ["מחזמר", "מחזמרים", "המחזמר", "מיוזיקל", "מחזה מוזיקלי", "הצגה מוזיקלית", "מחזמר משפחתי",
+               "musical theatre", "broadway musical", "the musical", "west end musical"]
+    russian: ["ברוסית", "בשפה הרוסית בלבד", "דוברי רוסית", "דוברי הרוסית", "in russian", "на русском", "на русском языке",
+              "спектакль", "спектакля", "концерт", "концерта", "вечер", "лекция", "экскурсия", "стендап", "театр",
+              "фестиваль", "мастер-класс", "праздник", "шоу", "для детей", "песни", "билеты"]
+    parents_babies: ["גן עם אמא", "גן עם אבא", "גן עם הורים", "הורים ותינוקות", "הורים ופעוטות", "חופשת לידה",
+                     "בחופשת לידה", "יולדות", "אמהות טריות", "תינוקות ופעוטות", "מנשאים", "סדנת הנקה",
+                     "הכנה ללידה", "לידה עד זחילה", "זחילה עד שנה", "new moms", "mommy and me"]
+    seniors: ["גיל הזהב", "הגיל השלישי", "גיל שלישי", "אזרחים ותיקים", "אזרחים וותיקים", "אזרחיות ואזרחים ותיקים",
+              "senior citizens"]
+    english: ["in english", "english speakers", "english speaking", "english-speaking", "anglos", "olim", "new olim",
+              "עולים חדשים", "דוברי אנגלית", "ההרצאה באנגלית", "ההצגה באנגלית", "המופע באנגלית", "הסיור באנגלית",
+              "הרצאה באנגלית", "הצגה באנגלית", "מופע באנגלית", "סיור באנגלית", "יתקיים באנגלית", "תתקיים באנגלית",
+              "בשפה האנגלית", "language exchange", "חילופי שפות"]
+    literature: ["השקת ספר", "השקת הספר", "מועדון קריאה", "מועדון ספר", "קריאת שירה", "ערב קריאה", "מפגש עם הסופר",
+                 "מפגש עם הסופרת", "מפגש סופרים", "שבוע הספר", "פסטיבל ספרות", "פסטיבל שירה", "סלאם שירה",
+                 "פואטרי סלאם", "poetry slam", "poetry reading", "book launch", "book club", "spoken word", "lesung"]
+    museums: ["מוזיאון", "המוזיאון", "במוזיאון", "מוזיאונים", "מרכז מבקרים", "מרכז המבקרים", "ליל המוזיאונים",
+              "museum", "museum night"]
+    circus_magic: ["קרקס", "הקרקס", "מופע קרקס", "אקרובטיקה", "להטוטנות", "להטוטן", "להטוטנים", "קוסם", "קוסמות",
+                   "מופע קסמים", "מנטליסט", "מנטליזם", "circus", "cirque", "acrobatics", "juggling", "magician",
+                   "magic show", "mentalist", "illusionist"]
+    meditation: ["meditation", "breathwork", "sound healing", "cacao ceremony", "spiritual retreat", "meditation retreat", "מדיטציה", "מדיטציית",
+                 "נשימה מעגלית", "טקס קקאו", "ריפוי בצליל", "קערות טיבטיות", "אמבט צלילים", "ריטריט", "מעגל נשימות"]  # not "retreat": a company offsite
+    sports_matches: ["ליגת העל", "ליגת האלופות", "ליגה אירופית", "הליגה האירופית", "יורוליג", "euroleague",
+                     "champions league", "europa league", "premier league", "la liga", "serie a", "bundesliga", "nba",
+                     "nfl", "formula 1", "פורמולה 1", "גרנד פרי", "grand prix", "מונדיאל", "יורו 2028", "גביע המדינה",
+                     "גביע הטוטו", "דרבי", "wrestling", "wwe", "ufc", "ice hockey", "eishockey", "motorsport"]
+    # Not bare "מרתון" / "marathon": "מרתון סטנדאפ", a film marathon.
+    running: ["מרוץ", "מירוץ", "חצי מרתון", "מרתון ירושלים", "מרתון תל אביב", "מרתון טבריה", "מרתון ריצה", "קבוצת ריצה",
+              "טריאתלון", "half marathon", "marathon run", "5k", "10k",
+              "fun run", "running club", "run club", "triathlon"]
+    tastings: ["טעימות יין", "טעימת יין", "סדנת יין", "ערב יין", "טעימות בירה", "טעימות וויסקי", "טעימות ויסקי",
+               "סדנת וויסקי", "סדנת בירה", "סדנת קוקטיילים", "מבשלת בירה", "wine tasting", "whisky tasting",
+               "whiskey tasting", "beer tasting", "brewery tour", "whiskytasting", "weinprobe", "verkostung"]
+    cooking_class: ["סדנת בישול", "סדנאות בישול", "סדנת אפייה", "סדנת אפיה", "סדנאות אפייה", "סדנת שף", "סדנת סושי",
+                    "סדנת פסטה", "סדנת שוקולד", "סדנת קינוחים", "סדנת לחם", "cooking class", "cooking workshop",
+                    "baking class", "baking workshop", "kochkurs", "grillkurs"]
+    singles_dating: ["רווקים ורווקות", "רווקות ורווקים", "לרווקים", "פנויים פנויות", "פנויים ופנויות", "ספיד דייט",
+                     "ספיד דייטינג", "ערב היכרויות", "מפגש היכרויות", "אירוע היכרויות", "speed dating",
+                     "singles party", "singles night", "singles event", "singles mixer"]
+    women_only: ["לנשים בלבד", "ערב נשים", "ערב לנשים", "מעגל נשים", "קבוצה לנשים", "סדנה לנשים", "women only",
+                 "women-only", "for women only", "ladies only"]
+    accessible: ["מופע מונגש", "הצגה מונגשת", "שפת סימנים", "בשפת הסימנים", "לכבדי שמיעה",
+                 "לכבדות שמיעה", "לקויי שמיעה", "לקויי ראייה", "אנשים עם מוגבלות", "עם מוגבלויות", "על הרצף",
+                 "relaxed performance", "sign language", "audio described"]
+    quiz_games: ["טריוויה", "ערב טריוויה", "פאב קוויז", "קוויז", "חידון", "משחקי קופסה", "משחקי קופסא",
+                 "ערב משחקי קופסה", "trivia", "trivia night", "pub quiz", "quiz night", "board games", "board game night",
+                 "dungeons & dragons", "dungeons and dragons", "квиз"]
+    students: ["מסיבת סטודנטים", "מסיבות סטודנטים", "ערב סטודנטים", "אגודת הסטודנטים", "יום הסטודנט",
+               "student party", "student night", "students party"]
+    drag_cabaret: ["drag show", "drag queen", "drag queens", "drag brunch", "drag night", "מופע דראג", "דראג קווין",
+                   "דראג קווינס", "קברט", "burlesque", "בורלסק"]  # not "cabaret": French club nights; "Kabarett" is satire
+    improv: ["אימפרו", "תיאטרון אימפרוביזציה", "מופע אימפרוביזציה", "אימפרוביזציה קומית", "קומדיית אימפרוביזציה",
+             "תיאטרון אלתור", "מופע אלתור", "improv", "improv show", "improv comedy", "impro theatre", "theatresports"]
+    escape_rooms: ["חדר בריחה", "חדרי בריחה", "escape room"]
+    volunteering: ["ערב התרמה", "אירוע התרמה", "אירוע ההתרמה", "מופע התרמה", "fundraiser", "charity gala",
+                   "benefit concert"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
     reggaeton_latin: ["música latina"]
     electronic: ["música electrónica"]
     happy_hour: ["happy hour", "happy-hour", "happyhour", "האפי האוור", "האפי אוור", "הפי האוור"]
     # HappyTLV's place sections (see happytlv.places): one word each, declared by the scraper.
-    escape_rooms: ["escape rooms", "מרחב בריחה"]
+    escape_rooms: ["escape rooms", "מרחב בריחה", "מרחבי בריחה", "חדר בריחה", "חדרי בריחה"]
     attractions: ["attractions"]
     coffee_carts: ["coffee carts"]
     fine_dining: ["fine dining"]
     work_spaces: ["work spaces"]
-    volunteering: ["התנדבות", "volunteering"]
+    volunteering: ["התנדבות", "volunteering", "התרמה", "charity", "благотворительность"]
+    # Nov 2026 category audit: the new categories' source labels (municipal audiences, box-office and abroad sellers).
+    musicals: ["musicals", "musical", "מחזות זמר", "מחזמר", "מחזמרים"]
+    parents_babies: ["הורים ותינוקות", "חופשת לידה", "לידה עד זחילה", "זחילה עד שנה", "שנה עד שנתיים"]
+    seniors: ["ותיקים", "וותיקים", "הגיל השלישי", "גיל שלישי", "אזרחים ותיקים", "אזרחיות/ים וותיקות/ים",
+              "קתדרה ואזרחים ותיקים", "חודש האזרחים הוותיקים", "גיל הזהב"]
+    english: ["english", "olim", "עולים", "אנגלוס"]
+    literature: ["literatur", "literature", "ספרות", "כתיבה ושירה", "writing", "lesung", "lesungen"]
+    museums: ["מוזיאון", "מוזיאונים", "museum", "museums", "מוזיאונים ומרכזי מבקרים"]
+    circus_magic: ["קרקס", "קסמים וקרקס", "שובו של הקרקס", "zirkus", "circus", "magia", "magic"]
+    meditation: ["meditation", "מדיטציה", "spirituality", "רוחניות"]
+    sports_matches: ["wrestling", "eishockey", "motorsport", "צ׳מפיונשיפ", "יורו 2028", "nba", "football", "soccer",
+                     "basketball", "כדורגל", "כדורסל", "ליגה", "ליגת"]
+    running: ["ריצה", "מרוץ", "running"]
+    tastings: ["טעימות יין", "טעימות בירה", "tastings"]
+    cooking_class: ["בישול ואפייה", "cooking", "baking"]
+    singles_dating: ["dating", "singles"]  # not "דייטינג": Funzing's date-night ideas for couples
+    women_only: ["נשים", "לנשים", "women"]
+    accessible: ["אנשים עם מוגבלות", "נגישות", "accessible"]
+    quiz_games: ["квиз", "משחקי קופסא", "משחקי קופסה", "board games"]
+    students: ["סטודנטים", "students", "student"]
+    drag_cabaret: ["drag", "burlesque"]
+    improv: ["improvisation", "improv", "אימפרוביזציה"]
     team_activities: ["team activities"]
     # Kosher bars and restaurants: HappyTLV's own FAQ answer on the place's page (happytlv.is_kosher),
     # declared with the place's category. Never read from text ("לא כשר" would match).
     kosher: ["kosher"]
-    nightclubs: ["nightclubs", "parties", "party", "מסיבה", "מסיבות", "מועדוני לילה", "חיי-לילה", "חיי לילה", "gala & ball"]  # parties: Secret Tel Aviv's category
+    nightclubs: ["nightclubs", "parties", "party", "מסיבה", "מסיבות", "מועדוני לילה", "חיי-לילה", "חיי לילה", "gala & ball", "discoteca & baile"]  # parties: Secret Tel Aviv's category
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
@@ -733,7 +816,7 @@ enrichment:
     # Secret Tel Aviv's categories (its parties are told apart by their music genres), widened with the
     # category names other sources declare: municipal calendars (Tel Aviv, Holon, Haifa, Bina cities),
     # box offices, guides (OGO tags, some in Russian), viagogo / abroad sellers.
-    live_show: ["konzerte", "clubkonzerte", "schlager & volksmusik", "במות פתוחות", "קרקס", "live music", "livemusic", "international artists", "concert", "concerts", "other concerts", "מופעי לילה",
+    live_show: ["konsert", "konserter", "koncert", "konzerte", "clubkonzerte", "schlager & volksmusik", "במות פתוחות", "קרקס", "live music", "livemusic", "international artists", "concert", "concerts", "other concerts", "מופעי לילה",
                 "show", "shows", "performances", "music", "הופעות", "הופעה", "הופעות מוזיקה", "מופע", "מופעים",
                 "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki", "קונצרטים", "מופעי מבוגרים", "קסמים וקרקס", "שובו של הקרקס", "موسيقى", "אנסמבל", "תזמורת המהפכה", "candlelight", "הפעלה מוזיקאלית", "magia", "cabaret"]  # concets: Eventer's spelling of its concerts category
     festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele", "חשיפה בינלאומית"]
@@ -741,21 +824,23 @@ enrichment:
     meetups: ["فعاليات اجتماعية", "meetups", "community", "meeting", "פעילות חברתית", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות"]
     culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית", "תרבות", "קהילה", "קהילות", "אירועים קהילתיים", "מרכזים קהילתיים", "אירועי מרכזים קהילתיים", "פעילות קהילתית", "המרכז לאומנויות", "אירוע", "אירועים", "תרבות מבוגרים", "שבת תרבות", "מפגשי שכונות", "הבוטיק מועדון תרבות", "החיים הטובים", "לא שיגרתי"]
     photography: ["צילום", "photography", "photo", "צילום ואמנות", "צילום ועריכה"]
-    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum", "יום המוזיאונים", "אירועי קומיקס", "tentoonstellingen"]
+    exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum", "יום המוזיאונים", "אירועי קומיקס", "tentoonstellingen",
+                  "ausstellungen", "ausstellung", "exposicion", "exposición", "exposiciones", "udstilling", "utställning"]
     workshops: ["יצירה", "בישול", "ورشات", "workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест", "course", "courses", "craft", "baking", "יצירה ומלאכה", "תחביבים", "ציור וצביעה", "עיצוב", "טיפוח וקוסמטיקה", "אופנה ולייף סטייל", "תכשיטים וצורפות", "פיסול ונגרות", "צילום", "סריגה ותפירה", "כתיבה ושירה", "גינון", "מייקרס", "סטודיו פתוח", "אומנות", "בישול ואפייה"]
-    cinema: ["film", "סרט", "أفلام", "movies", "sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב", "מזרח אסיה על המסך הגדול"]
-    stand_up: ["ستاند اب كوميدي", "comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ", "comy", "סאטירה", "קומדי בר", "סטנד-אפ", "סטנדאפ", "stand-up", "kleinkunst", "monólogo", "comédie"]
+    cinema: ["kino", "film", "סרט", "أفلام", "movies", "sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב", "מזרח אסיה על המסך הגדול"]
+    stand_up: ["kabarett", "comedia", "komödie", "comedy club", "ستاند اب كوميدي", "comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ", "comy", "סאטירה", "קומדי בר", "סטנד-אפ", "סטנדאפ", "stand-up", "kleinkunst", "monólogo", "comédie"]
     markets: ["كريسمس ماركت", "shopping", "יריד", "ירידים", "שוק", "שווקים", "ярмарка"]
-    food: ["food events", "food", "אוכל", "מזון", "מפגשים קולינריים", "טעימות יין", "טעימות בירה", "tastings", "בישול ואפייה", "אלכוהול", "מאכלי עדות", "צמחוני וטבעוני", "מתוקים", "מטבח אסייתי", "ארוחה משותפת"]
-    environment: ["environmental", "סביבה", "איכות הסביבה", "קיימות", "טבע", "גינות"]
+    food: ["קולינריה", "culinary", "comida & bebida", "essen & trinken", "food events", "food", "אוכל", "מזון", "מפגשים קולינריים", "טעימות יין", "טעימות בירה", "tastings", "בישול ואפייה", "אלכוהול", "מאכלי עדות", "צמחוני וטבעוני", "מתוקים", "מטבח אסייתי", "ארוחה משותפת"]
+    environment: ["חודש האקלים", "אקלים", "climate", "environmental", "סביבה", "איכות הסביבה", "קיימות", "טבע", "גינות"]
     religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат", "chassidic", "religion"]
     holidays: ["טו בשבט", "عروض عيد الميلاد", "holidays", "halloween", "חגים", "חג", "праздник", "hanukkah", "chanukah", "christmas", "new year",
-               "thanksgiving", "חנוכה", "פורים", "סילבסטר"]
+               "thanksgiving", "חנוכה", "פורים", "סילבסטר", "weihnachten", "silvester", "silvester & neujahr", "karneval",
+               "fasching", "ostern", "valentinstag", "navidad", "kerst"]
     lgbt: ["pride", "הקהילה הגאה"]
     sport: ["nba", "ליגה", "ליגת", "יורוליג", "טניס", "צ׳מפיונשיפ", "כושר גופני", "sport", "sports", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
             "מרוץ", "אופניים", "אימוני כושר", "קבוצת הליכה", "פוצ'יוולי", "footvolley", "urheilu", "אקסטרים"]
     yoga_wellness: ["wellness", "health", "בריאות", "פילאטיס", "עיסוי"]
-    classical_opera: ["klassik", "classical", "קלאסי", "música clásica", "opéra", "opérette", "קלאסית", "קאמרית"]
+    classical_opera: ["oper & operette", "oper", "operette", "klassik", "classical", "קלאסי", "música clásica", "opéra", "opérette", "קלאסית", "קאמרית"]
     # Genres only as a source's own category: in text these are plain words ("folk tales", "organic wine",
     # "VIP lounge", "garage sale", "tourist trap", "hardcore fans", "Jungle Book", "Greek salad").
     psytrance: ["psy", "goa", "forest", "psychedelic"]
@@ -777,13 +862,14 @@ enrichment:
     mizrahi: ["yam_tichoni", "eastern", "מזרחי"]
     rock_indie: ["אלטרנטיבי", "גל חדש", "rocknroll", "música alternativa", "alternative", "indie", "metal"]
     world_balkan: ["world", "música del mundo", "folk", "ethnic", "אתני"]
-    theatre: ["theater", "theatre", "גילי 3-18", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus", "תיאטראות", "مسرح", "teatteri", "kulttuuri: teatteri", "drama", "improvisation"]
-    kids: ["kinderveranstaltung", "הפעלה", "عائلة", "kids", "children", "גילי 3-18", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
+    theatre: ["theater", "theatre", "גילי 3-18", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus", "תיאטראות", "مسرح", "teatteri", "kulttuuri: teatteri", "drama", "improvisation", "teater", "teatro & danza"]
+    kids: ["familie", "kinderveranstaltung", "הפעלה", "عائلة", "kids", "children", "גילי 3-18", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
            "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך", "רמתגנצ'יק", "שבת משפחתי", "שנה עד שנתיים", "זחילה עד שנה", "שלוש עד ארבע", "לידה עד זחילה", "שנתיים עד שלוש", "ארבע עד חמש", "אחר-צהריים ר\"גוע"]
     lectures: ["vortrag", "literatur", "שיח קהילתי", "lecture", "lectures", "עונת תרבות", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "foredrag", "העצמה אישית", "אנתרופולוגיה", "יחסים ואהבה", "קריירה", "מנטורינג וקואוצ׳ינג", "עסקים וכלכלה", "סמינר", "אסכולות", "מיניות", "הערים המרתקות", "עניין"]
-    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre", "חווית המבקר", "סיורי חנוכיות", "אדריכלות"]
+    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre", "חווית המבקר", "סיורי חנוכיות", "אדריכלות",
+            "führungen & rundfahrten", "führungen", "führung", "rundfahrten", "stadtführung"]
     dance: ["tanz", "عرض راقص", "dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט", "tanssi"]
-    conference: ["conferences"]  # Eventer's category (the text genre matches "conference" alone)
+    conference: ["conferences", "messe", "messen"]  # Eventer's category (the text genre matches "conference" alone)
   # Last resort, for an event no category, title word or source default placed: words a show's text uses
   # for what it is ("ההצגה", "שחקנים", "המופע", "מרצה"). Read in the title and description, only when
   # nothing else matched, so a party that mentions "סדנה" keeps its music genres alone.
@@ -895,6 +981,14 @@ enrichment:
     world_balkan: [country, flamenco, chanson]
     jewish_music: [hasidic, piyut, klezmer]
     dance: [ballroom, folk_dance, latin_dance]
+    # Nov 2026 category audit.
+    theatre: [musicals]
+    stand_up: [improv]
+    kids: [parents_babies]
+    exhibitions: [museums]
+    yoga_wellness: [meditation]
+    sport: [sports_matches, running]
+    food: [tastings, cooking_class]
     latin_dance: [salsa]
     throwback: [eighties, nineties]
     # Linked both ways: either one shows both.
@@ -906,16 +1000,18 @@ enrichment:
     g_parties: [electronic, mainstream, pop, hip_hop, rnb, reggaeton_latin, dancehall_reggae, disco_funk, dark_wave,
                 throwback, nightclubs, pool_party, karaoke, festival, nature_party, open_bar, over_40, youth]
     g_live: [live_show, israeli, rock_indie, jazz, classical_opera, world_balkan, greek, arabic, jewish_music]
-    g_stage: [theatre, stand_up, cinema, dance]
-    g_culture: [culture, exhibitions, photography, lectures, workshops, tours, religious, holidays, markets, jewish_music,
-                conference]
+    g_stage: [theatre, stand_up, cinema, dance, circus_magic, drag_cabaret]
+    g_culture: [culture, exhibitions, photography, lectures, literature, workshops, tours, religious, holidays, markets,
+                jewish_music, conference]
     g_kids: [kids, attractions, pools, escape_rooms]
     g_food: [food, happy_hour, fine_dining, kosher, coffee_carts, open_bar]
-    g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, environment, volunteering, team_activities]
+    g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, quiz_games, environment, volunteering,
+                team_activities]
     # Not "conference" alone: a couples', a trauma or a Harry Potter fans' conference is not hi-tech (2026-11-13). A tech
     # conference is also tagged hi_tech / ai / cyber / startups, and any conference is in g_culture.
     g_tech: [hi_tech, work_spaces, meetups]
-    g_community: [lgbt, liberal, kink, sensual, gender_balance, meetups]
+    g_community: [lgbt, liberal, kink, sensual, gender_balance, meetups, seniors, english, russian, women_only,
+                  singles_dating, accessible, students]
   detect_genres_from_text: true
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
@@ -962,7 +1058,14 @@ enrichment:
   declared_genres_beside:
     hardstyle: {with: [electronic], without: [rock_indie]}
   # Genres read from the title only, never the description ("סדנאות יוגה" at a festival is no workshop).
-  title_genres: [workshops, kids, theatre, lectures]
+  # Box-office small print names seniors ("הנחה לאזרחים ותיקים"), a hall a museum, a talk a marathon.
+  # Russian / English: OGO translates its listings into Russian, a Hebrew tour is "also in English", a play has subtitles.
+  title_genres: [workshops, kids, theatre, lectures, seniors, museums, circus_magic, running, russian, english]
+  # Nov 2026 categories that say who an event is for or narrow its kind: they never take the place of its
+  # fallback / source-default kind (a museum tour stays a tour, a seniors' talk a lecture).
+  extra_genres: [musicals, russian, parents_babies, seniors, english, literature, museums, circus_magic, meditation,
+                 sports_matches, running, tastings, cooking_class, singles_dating, women_only, accessible, quiz_games,
+                 students, drag_cabaret, improv]
   talk_keywords: ["הרצאה", "הרצאות", "lecture", "סדנה", "סדנת", "workshop", "קפה דעת"]
   # A ticket tier named with one of these and priced 0 is treated as free entry.
   # DJ / performer extraction from descriptions. A line matching a header keyword

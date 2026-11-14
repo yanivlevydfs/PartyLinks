@@ -40,9 +40,10 @@ WHEN = {
     "wk": (("בסופ״ש", "this weekend"), ("🎉 סופ״ש", "🎉 Weekend")),
     "w7": (("השבוע", "this week"), ("📆 השבוע", "📆 This week")),
 }  # fmt: skip
+# Mirrors web/src/Filters.tsx GROUP_ICON (tests/test_storage_api.py checks it).
 GROUP_ICONS = {
-    "g_parties": "🪩", "g_live": "🎸", "g_stage": "🎭", "g_culture": "🏛", "g_kids": "🧸", "g_food": "🍷",
-    "g_leisure": "🏄", "g_tech": "💻", "g_community": "🏳️‍🌈",
+    "g_parties": "🎧", "g_live": "🎤", "g_stage": "🎭", "g_culture": "🖼️", "g_kids": "🧸", "g_food": "🍽️",
+    "g_leisure": "🎡", "g_tech": "💻", "g_community": "🌈",
 }  # fmt: skip
 
 

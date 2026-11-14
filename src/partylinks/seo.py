@@ -134,6 +134,7 @@ GENRES_HE = {
     "pools": "בריכות ופארקי מים", "pool_party": "מסיבות בריכה",
     "psytrance": "פסיי טראנס", "hard_techno": "הארד טכנו", "melodic_techno": "מלודיק טכנו / האוס", "minimal_deep_tech": "מינימל / דיפ טק", "deep_house": "דיפ האוס", "tech_house": "טק האוס", "progressive_house": "פרוגרסיב האוס", "organic_house": "אורגניק האוס", "afro_house": "אפרו האוס", "indie_dance": "אינדי דאנס", "ambient": "אמביינט", "metal": "מטאל", "punk": "פאנק רוק", "blues": "בלוז", "kpop": "K-Pop", "brazilian": "מוזיקה ברזילאית", "amapiano": "אמאפיאנו", "country": "קאנטרי", "flamenco": "פלמנקו", "chanson": "שאנסון", "singalong": "שירה בציבור", "jewish_music": "מוזיקה יהודית", "hasidic": "מוזיקה חסידית", "piyut": "פיוט", "klezmer": "כליזמר",
     "nature_party": "מסיבות טבע", "open_bar": "אלכוהול חופשי", "over_40": "מסיבות 40 פלוס", "youth": "מסיבות נוער",
+    "musicals": "מחזמרים", "russian": "ברוסית", "parents_babies": "הורים ותינוקות", "seniors": "אזרחים ותיקים", "english": "באנגלית ולעולים", "literature": "ספרות ושירה", "museums": "מוזיאונים", "circus_magic": "קרקס וקוסמות", "meditation": "מדיטציה ורוחניות", "sports_matches": "משחקי ספורט", "running": "ריצה ומרוצים", "tastings": "טעימות יין ובירה", "cooking_class": "סדנאות בישול", "singles_dating": "רווקים והיכרויות", "women_only": "לנשים", "accessible": "מונגש ונגיש", "quiz_games": "טריוויה ומשחקי קופסה", "students": "סטודנטים", "drag_cabaret": "דראג וקברט", "improv": "אימפרוביזציה",
     "g_parties": "מסיבות ומועדונים", "g_live": "הופעות ומוזיקה חיה", "g_stage": "במה ומסך", "g_culture": "תרבות והעשרה",
     "g_kids": "ילדים ומשפחה", "g_food": "אוכל ושתייה", "g_leisure": "פנאי וספורט", "g_tech": "הייטק ועסקים",
     "g_community": "קהילה ו-LGBTQ+",
@@ -151,6 +152,7 @@ GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBT
                  "team_activities": "Team activities", "nightclubs": "Clubs",
                  "pools": "Pools & Water parks", "pool_party": "Pool parties",
                  "nature_party": "Nature parties", "open_bar": "Open bar", "over_40": "40+ parties", "youth": "Teen parties",
+                 "musicals": "Musicals", "russian": "In Russian", "parents_babies": "Parents & Babies", "seniors": "Seniors", "english": "In English & Olim", "literature": "Books & Poetry", "museums": "Museums", "circus_magic": "Circus & Magic", "meditation": "Meditation & Spirituality", "sports_matches": "Sports Matches", "running": "Running & Races", "tastings": "Wine & Beer Tastings", "cooking_class": "Cooking Classes", "singles_dating": "Singles & Dating", "women_only": "For Women", "accessible": "Accessible", "quiz_games": "Trivia & Board Games", "students": "Students", "drag_cabaret": "Drag & Cabaret", "improv": "Improv",
                  "g_parties": "Parties & Clubs", "g_live": "Live Music", "g_stage": "Stage & Screen",
                  "g_culture": "Culture & Learning", "g_kids": "Kids & Family", "g_food": "Food & Drinks",
                  "g_leisure": "Leisure & Sport", "g_tech": "Tech & Business", "g_community": "Community & LGBTQ+"}  # fmt: skip

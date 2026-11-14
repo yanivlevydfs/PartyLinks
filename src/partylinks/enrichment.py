@@ -384,15 +384,16 @@ class Enricher:
                     and near & set(self.settings.expand_genres(rule.get("with", [])))
                     and not any(p.search(text) for g in without for p in (self._genres.get(g), self._declared.get(g)) if p)):
                 from_text.add(genre)
-        if found | from_text:
-            return sorted(found | from_text)
+        genres = found | from_text
+        if genres - set(self.settings.extra_genres):
+            return sorted(genres)
         whole = _LINKS.sub(" ", f"{event.title}\n{event.description or ''}".lower()).translate(_QUOTES)
         for phrase in self._text_ignore:
             whole = whole.replace(phrase, " ")
         # The show's own words first ("תזמורת" at a culture hall is a concert), then the source's usual kind.
-        if fallback := sorted(g for g, pattern in self._fallback.items() if pattern.search(whole)):
-            return fallback
-        return list(self.settings.source_default_genres.get(event.source, []))
+        if fallback := {g for g, pattern in self._fallback.items() if pattern.search(whole)}:
+            return sorted(fallback | genres)
+        return sorted({*self.settings.source_default_genres.get(event.source, []), *genres})
 
     # ------------------------------------------------------------------ lineup
     def _lineup(self, event: ScrapedEvent) -> list[str]:

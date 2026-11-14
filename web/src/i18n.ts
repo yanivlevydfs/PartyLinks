@@ -225,13 +225,13 @@ export const STRINGS = {
     genre: <Record<string, string>>{
       techno: "טכנו", house: "האוס", trance: "טראנס", hip_hop: "היפ הופ", rnb: "R&B",
       mainstream: "מיינסטרים", pop: "פופ", reggaeton_latin: "רגאטון / לטיני", afro: "אפרו",
-      dancehall_reggae: "דאנסהול / רגאיי", mizrahi: "מזרחית", israeli: "ישראלי", greek: "יוונית",
+      dancehall_reggae: "דאנסהול / רגאיי", mizrahi: "מזרחית", israeli: "מוזיקה ישראלית", greek: "יוונית",
       arabic: "ערבית", disco_funk: "דיסקו / פאנק", drum_and_bass: "דראם אנד בייס", bass_dubstep: "בייס / דאבסטפ",
-      hardstyle: "הארדסטייל", edm: "EDM", electronic: "אלקטרונית", downtempo_chill: "צ׳יל",
+      hardstyle: "הארדסטייל", edm: "EDM", electronic: "מוזיקה אלקטרונית", downtempo_chill: "צ׳יל",
       throwback: "נוסטלגיה", eighties: "אייטיז / שנות ה־80", nineties: "ניינטיז / שנות ה־90", rock_indie: "רוק / אינדי", jazz: "ג׳אז", world_balkan: "בלקן / וורלד",
       dark_wave: "דארק ווייב / סינת׳", yoga_wellness: "יוגה ורוחניות",
       liberal: "ליברלי / חילופי זוגות", kink: "בדסמ / פטיש", sensual: "טנטרה וחושניות", gender_balance: "איזון מגדרי",
-      live_show: "הופעה חיה", lgbt: "גאווה", stand_up: "סטנדאפ", karaoke: "קריוקי",
+      live_show: "הופעות חיות", lgbt: "גאווה", stand_up: "סטנדאפ", karaoke: "קריוקי",
       hi_tech: "הייטק", conference: "כנסים", classical_opera: "קלאסית / אופרה",
       ai: "AI ובינה מלאכותית", cyber: "סייבר", software_dev: "פיתוח תוכנה", data: "דאטה", cloud_devops: "ענן ו-DevOps",
       startups: "סטארטאפים ויזמות", product: "ניהול מוצר", gaming: "גיימינג", web3: "בלוקצ׳יין ו-Web3",
@@ -239,6 +239,7 @@ export const STRINGS = {
       cinema: "קולנוע וסרטים", markets: "שווקים וקניות", food: "אוכל", environment: "סביבה", religious: "דת ומסורת",
       holidays: "חגים", sport: "ספורט", happy_hour: "האפי האוור",
       escape_rooms: "חדרי בריחה", attractions: "אטרקציות", coffee_carts: "עגלות קפה", fine_dining: "מסעדות שף", kosher: "מקומות כשרים", work_spaces: "חללי עבודה", volunteering: "התנדבות", team_activities: "פעילויות לצוות", nightclubs: "מועדונים", pools: "בריכות ופארקי מים", pool_party: "מסיבות בריכה", nature_party: "מסיבות טבע", open_bar: "אלכוהול חופשי", over_40: "מסיבות 40 פלוס", youth: "מסיבות נוער",
+      musicals: "מחזמרים", russian: "ברוסית", parents_babies: "הורים ותינוקות", seniors: "אזרחים ותיקים", english: "באנגלית ולעולים", literature: "ספרות ושירה", museums: "מוזיאונים", circus_magic: "קרקס וקוסמות", meditation: "מדיטציה ורוחניות", sports_matches: "משחקי ספורט", running: "ריצה ומרוצים", tastings: "טעימות יין ובירה", cooking_class: "סדנאות בישול", singles_dating: "רווקים והיכרויות", women_only: "לנשים", accessible: "מונגש ונגיש", quiz_games: "טריוויה ומשחקי קופסה", students: "סטודנטים", drag_cabaret: "דראג וקברט", improv: "אימפרוביזציה",
       g_parties: "מסיבות ומועדונים", g_live: "הופעות ומוזיקה חיה", g_stage: "במה ומסך", g_culture: "תרבות והעשרה",
       g_kids: "ילדים ומשפחה", g_food: "אוכל ושתייה", g_leisure: "פנאי וספורט", g_tech: "הייטק ועסקים", g_community: "קהילה ו-LGBTQ+",
       theatre: "תיאטרון", kids: "ילדים ומשפחה", lectures: "הרצאות והעשרה", tours: "סיורים וטיולים", dance: "מחול", ballroom: "ריקודים סלוניים", folk_dance: "ריקודי עם", latin_dance: "ריקודים לטיניים", salsa: "סלסה",
@@ -468,13 +469,16 @@ export const STRINGS = {
 export type Strings = typeof STRINGS.he;
 
 // English genre labels: "drum_and_bass" -> "Drum And Bass" (with a few fixes).
+// The genre labels here mirror seo.py GENRES_HE / GENRES_EN_FIX (tests/test_storage_api.py checks it).
 const EN_GENRE_FIX: Record<string, string> = { eighties: "80s", nineties: "90s", rnb: "R&B", edm: "EDM", hip_hop: "Hip Hop", lgbt: "LGBTQ+", reggaeton_latin: "Reggaeton / Latin",
+  stand_up: "Stand-up comedy", live_show: "Live music",
   hi_tech: "Hi-tech", classical_opera: "Classical / Opera", ai: "AI", cinema: "Cinema & Movies",
-  software_dev: "Software development", cloud_devops: "Cloud & DevOps", web3: "Web3 & Blockchain", happy_hour: "Happy Hour",
+  software_dev: "Software development", cloud_devops: "Cloud & DevOps", web3: "Web3 & Blockchain", happy_hour: "Happy hour",
   dark_wave: "Dark Wave / Synth", yoga_wellness: "Yoga & Wellness", liberal: "Liberal / Swingers", kink: "BDSM / Fetish",
   sensual: "Tantra & Sensual", gender_balance: "Gender balanced", kids: "Kids & Family", lectures: "Lectures & Talks",
   tours: "Tours & Trips", ballroom: "Ballroom Dancing", folk_dance: "Folk Dancing", latin_dance: "Latin Dancing",
-  team_activities: "Team Activities", nightclubs: "Clubs", pools: "Pools & Water Parks", pool_party: "Pool Parties", nature_party: "Nature Parties", open_bar: "Open Bar", over_40: "40+ Parties", youth: "Teen Parties",
+  team_activities: "Team activities", nightclubs: "Clubs", pools: "Pools & Water parks", pool_party: "Pool parties", nature_party: "Nature parties", open_bar: "Open bar", over_40: "40+ parties", youth: "Teen parties",
+  musicals: "Musicals", russian: "In Russian", parents_babies: "Parents & Babies", seniors: "Seniors", english: "In English & Olim", literature: "Books & Poetry", museums: "Museums", circus_magic: "Circus & Magic", meditation: "Meditation & Spirituality", sports_matches: "Sports Matches", running: "Running & Races", tastings: "Wine & Beer Tastings", cooking_class: "Cooking Classes", singles_dating: "Singles & Dating", women_only: "For Women", accessible: "Accessible", quiz_games: "Trivia & Board Games", students: "Students", drag_cabaret: "Drag & Cabaret", improv: "Improv",
   g_parties: "Parties & Clubs", g_live: "Live Music", g_stage: "Stage & Screen", g_culture: "Culture & Learning",
   g_kids: "Kids & Family", g_food: "Food & Drinks", g_leisure: "Leisure & Sport", g_tech: "Tech & Business",
   g_community: "Community & LGBTQ+",

@@ -7,5 +7,6 @@ export const GENRE_ICON: Record<string, string> = {
   sport: "⚽", happy_hour: "🥂", theatre: "🎭", kids: "🧸", lectures: "📚", tours: "🗺️", dance: "🩰", yoga_wellness: "🧘",
   escape_rooms: "🔐", attractions: "🎡", coffee_carts: "☕", fine_dining: "🍷", kosher: "✡️", work_spaces: "💼", volunteering: "🤲",
   team_activities: "🧩", nightclubs: "🪩", pools: "🏊", pool_party: "🏖️", nature_party: "🌲", open_bar: "🍸", over_40: "🕺", youth: "🎒",
+  musicals: "🎭", russian: "🪆", parents_babies: "👶", seniors: "👵", english: "🇬🇧", literature: "📖", museums: "🏛️", circus_magic: "🎪", meditation: "🕉️", sports_matches: "🏟️", running: "🏃", tastings: "🍷", cooking_class: "👩‍🍳", singles_dating: "💘", women_only: "👩", accessible: "♿", quiz_games: "🎲", students: "🎓", drag_cabaret: "💃", improv: "🎬",
   psytrance: "🍄", metal: "🤘", blues: "🎺", kpop: "💜", country: "🤠", flamenco: "💃", jewish_music: "🕎", klezmer: "🎻", singalong: "🎶",
 };

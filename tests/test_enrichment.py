@@ -518,3 +518,21 @@ def test_common_words_are_not_spotted_as_artists() -> None:
     assert event is not None and event.lineup == ["Fisher", "Anyma"]
     listed = enricher.enrich(make(title="Boat party", description="", artists=["DJ WILD", "Love"]))
     assert listed is not None and "Love" in listed.lineup
+
+
+def test_new_categories_add_to_an_events_kind_never_replace_it() -> None:
+    def genres(title: str, description: str = "", source: str = "test", declared: list[str] | None = None) -> set[str]:
+        event = make(title=title, description=description, source=source, source_genres=declared or [])
+        return set(ENRICHER._detect_genres(event))
+
+    # Seen in the Nov 2026 audit: a museum tour lost "tours" / "exhibitions" to "museums" alone.
+    assert {"museums", "tours", "exhibitions"} <= genres("סיור במוזיאון - עברית")
+    assert {"seniors", "lectures"} <= genres("הרצאה לאזרחים ותיקים: עיצוב הבית")
+    assert {"musicals", "theatre"} <= genres("המחזמר פיטר פן")
+    assert genres("מרתון סטנדאפ עם כוכבי הקומדי בר") & {"running"} == set()  # a comedy night, not a race
+    assert "russian" in genres("Концерт: Семён Слепаков")
+    assert "russian" not in genres("מופע חנוכה", "Праздничный концерт для всей семьи")  # OGO's translation
+    assert "english" not in genres("איש הגשם", "Performances with English subtitles, in English too")
+    assert "drag_cabaret" not in genres("Cabaret Extra! Centre Pompidou", declared=["kabarett"])
+    assert "women_only" not in genres("מסיבה", "הכניסה לזוגות ונשים בלבד")
+    assert "singles_dating" in genres("ערב היכרויות לרווקים ורווקות")

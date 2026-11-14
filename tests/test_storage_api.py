@@ -851,6 +851,28 @@ def test_web_city_list_mirrors_the_config() -> None:
     assert web == {c.key: c.he for c in Settings().enrichment.cities}
 
 
+def test_genre_labels_and_icons_match_across_web_server_and_config() -> None:
+    import re
+
+    from partylinks import seo
+    from partylinks.bot.core.menu import GROUP_ICONS
+
+    web = Path(__file__).parents[1] / "web" / "src"
+    i18n = (web / "i18n.ts").read_text(encoding="utf-8")
+    pairs = lambda block: dict(re.findall(r'(\w+):\s*"([^"]*)"', block))  # noqa: E731
+    he = pairs(i18n.split("genre: <Record<string, string>>{")[1].split("\n    },")[0])
+    en = pairs(i18n.split("const EN_GENRE_FIX: Record<string, string> = {")[1].split("};")[0])
+    assert he == seo.GENRES_HE
+    assert en == seo.GENRES_EN_FIX
+    filters = (web / "Filters.tsx").read_text(encoding="utf-8")
+    assert pairs(filters.split("export const GROUP_ICON: Record<string, string> = {")[1].split("};")[0]) == GROUP_ICONS
+    s = Settings().enrichment
+    keys = {*s.genres, *s.declared_genres, *s.fallback_genres, *s.genre_families, *s.genre_groups}
+    keys |= {g for members in [*s.genre_families.values(), *s.genre_groups.values()] for g in members}
+    assert not keys - set(seo.GENRES_HE), "genres with no Hebrew label"
+    assert set(s.genre_groups) == set(GROUP_ICONS), "groups with no icon"
+
+
 def test_region_filter_mixes_tel_aviv_with_regions_and_locate_finds_them(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     future = datetime.now(UTC) + timedelta(days=2)

@@ -398,6 +398,9 @@ class EnrichmentSettings(BaseModel):
     declared_genres_beside: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
     # Genres read from the title only, never the description.
     title_genres: list[str] = Field(default_factory=list)
+    # Genres that only add to an event's others (who it is for, a narrower kind): alone they still let the
+    # fallback words and the source default give its kind, so a museum tour stays a tour and an exhibition.
+    extra_genres: list[str] = Field(default_factory=list)
     lineup: LineupSettings = Field(default_factory=LineupSettings)
     time_slots: list[TimeSlot] = Field(default_factory=list)
     weekend_days: list[str] = Field(default_factory=list)
