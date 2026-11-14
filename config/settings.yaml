@@ -618,7 +618,7 @@ enrichment:
     stand_up: ["stand up", "standup", "stand-up", "סטנדאפ", "סטנד אפ", "קומדי בר"]
     karaoke: ["karaoke", "קריוקי"]
     yoga_wellness: ["yoga", "ecstatic dance", "meditation", "breathwork", "sound healing", "cacao ceremony", "יוגה",
-                    "אקסטטיק", "מדיטציה", "נשימה מעגלית", "טקס קקאו"]
+                    "אקסטטיק", "מדיטציה", "נשימה מעגלית", "טקס קקאו", "וולנס", "ריפוי בצליל", "קערות טיבטיות", "אמבט צלילים"]
     # Adult nightlife (18+). Only strong phrases: "פטיש" alone is also a hammer, "munch" Edvard Munch,
     # "פוליאמוריה" a stand-up topic, "ליברליות" opinions ("דעותיו הליברליות"), "ארוטית" a dance review,
     # "ליברלית" politics ("הציונות הליברלית") and "חושני" / "לטקס" turn up in concert blurbs.

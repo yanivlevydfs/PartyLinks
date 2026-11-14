@@ -47,3 +47,8 @@
 .pin-x { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-hot); background: var(--panel-2); color: var(--pink);
   font: 700 14px/26px inherit; cursor: pointer; flex: none; }
 .pin-x:disabled { opacity: .5; cursor: wait; }
+
+/* Phones: no row editing (✎ on the row, 📌 / ✏️ / ✕ under the cards); admins edit rows on desktop. */
+@media (max-width: 760px) {
+  .pin-tools, .pin-icon, .trending-nav button.pin-icon { display: none; }
+}
