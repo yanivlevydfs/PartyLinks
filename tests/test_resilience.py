@@ -807,3 +807,25 @@ def test_a_site_refusing_our_vpn_is_blocked_at_once_without_a_probe() -> None:
     with pytest.raises(SourceBlockedError, match=r"refuses our Israeli VPN \(472\)"):
         asyncio.run(scraper.get_text("https://site/x"))
     assert calls == ["https://site/x"]  # one request: no probe, no retries
+
+
+def test_impersonating_transport_asks_again_when_curl_hands_over_103_early_hints() -> None:
+    from types import SimpleNamespace
+
+    from curl_cffi import CurlHttpVersion
+
+    from partylinks.scrapers.base import _ImpersonatingTransport
+
+    calls: list[Any] = []
+
+    class FakeSession:
+        async def request(self, *args: Any, **kwargs: Any) -> Any:
+            calls.append(kwargs.get("http_version"))
+            status = 103 if len(calls) == 1 else 200
+            return SimpleNamespace(status_code=status, headers=httpx.Headers(), content=b"ok")
+
+    transport = _ImpersonatingTransport.__new__(_ImpersonatingTransport)
+    transport._session = FakeSession()  # type: ignore[assignment]
+    response = asyncio.run(transport.handle_async_request(httpx.Request("GET", "https://chillz.com/en/x")))
+    assert response.status_code == 200 and response.content == b"ok"
+    assert calls == [None, CurlHttpVersion.V1_1]

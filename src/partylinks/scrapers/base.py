@@ -31,6 +31,7 @@ from http import HTTPStatus
 from typing import Any, ClassVar, Self, TypeVar, cast
 
 import httpx
+from curl_cffi import CurlHttpVersion
 from curl_cffi import requests as curl_requests
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from socksio.exceptions import SOCKSError
@@ -607,14 +608,24 @@ class _ImpersonatingTransport(httpx.AsyncBaseTransport):
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         headers = {k: v for k, v in request.headers.items() if k.lower() not in self._DROP_REQUEST}
+        body = await request.aread() or None
         try:
             r = await self._session.request(
                 cast(curl_requests.session.HttpMethod, request.method), str(request.url),
-                headers=headers, data=await request.aread() or None, allow_redirects=False,
+                headers=headers, data=body, allow_redirects=False,
             )
+            # A 1xx ("103 Early Hints", Chillz via the proxy) handed over as the final answer: ask again
+            # over HTTP/1.1, where the real status comes through.
+            if r.status_code < 200:
+                r = await self._session.request(
+                    cast(curl_requests.session.HttpMethod, request.method), str(request.url),
+                    headers=headers, data=body, allow_redirects=False, http_version=CurlHttpVersion.V1_1,
+                )
         except curl_requests.RequestsError as exc:
             # Connect/timeout/proxy failures alike: a ConnectError is retried and moves to the next proxy.
             raise httpx.ConnectError(str(exc), request=request) from exc
+        if r.status_code < 200:
+            raise httpx.ConnectError(f"{r.status_code} informational answer only", request=request)
         kept = [(k, v) for k, v in r.headers.multi_items() if v is not None and k.lower() not in self._DROP_RESPONSE]
         return httpx.Response(r.status_code, headers=kept, content=r.content, request=request)
 
