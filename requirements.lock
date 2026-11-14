@@ -103,6 +103,10 @@ opentelemetry-api==1.45.1
 phonenumbers==9.0.43
     # via partylinks (pyproject.toml)
 pillow==13.0.0
+    # via
+    #   partylinks (pyproject.toml)
+    #   pillow-heif
+pillow-heif==1.8.1
     # via partylinks (pyproject.toml)
 psycopg==3.3.6
     # via partylinks (pyproject.toml)

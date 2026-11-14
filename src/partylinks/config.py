@@ -534,7 +534,7 @@ class MediaSettings(BaseModel):
     variant_threads: int = Field(2, ge=0)
     # Never SVG / HTML: they would run as pages on this site's origin.
     allowed_content_types: list[str] = Field(
-        default_factory=lambda: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]
+        default_factory=lambda: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/heic", "image/heif"]
     )
 
 

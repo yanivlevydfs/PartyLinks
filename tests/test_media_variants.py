@@ -22,7 +22,7 @@ from partylinks import service as service_module
 from partylinks.api import create_app
 from partylinks.config import HttpSettings, Settings, get_settings
 from partylinks.db import Database, EventRow, ImageRow, upsert_events
-from partylinks.media import MediaStore, has_variants, make_variants, variant_path
+from partylinks.media import MediaStore, has_variants, make_variants, sniff_image_type, variant_path
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.retention import purge_expired
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -137,14 +137,37 @@ def test_copies_keep_alpha_never_upscale_and_follow_exif(tmp_path: Path) -> None
     assert make_variants(cmyk, 78) and width_of(cmyk.with_name("print.jpg.1280.webp")) == 800
 
 
-def test_animations_and_broken_files_keep_only_the_original(tmp_path: Path) -> None:
+def test_animations_become_animated_webp_and_broken_files_keep_only_the_original(tmp_path: Path) -> None:
     gif = tmp_path / "loop.gif"
     frames = [Image.new("RGB", (50, 50), c) for c in ("red", "blue")]
-    frames[0].save(gif, "GIF", save_all=True, append_images=frames[1:])
+    frames[0].save(gif, "GIF", save_all=True, append_images=frames[1:], duration=200, loop=0)
     broken = tmp_path / "broken.jpg"
     broken.write_bytes(b"\xff\xd8\xff not really a jpeg")
-    assert not make_variants(gif, 78) and not make_variants(broken, 78)
-    assert sorted(p.name for p in tmp_path.iterdir()) == ["broken.jpg", "loop.gif"]  # no copies, no temp files
+    assert make_variants(gif, 78) and not make_variants(broken, 78)
+    with Image.open(gif.with_name("loop.gif.640.webp")) as im:
+        assert im.format == "WEBP" and im.n_frames == 2  # still animated
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["broken.jpg", "loop.gif", "loop.gif.1280.webp", "loop.gif.640.webp"]
+
+
+def test_heic_and_mpo_photos_are_converted(tmp_path: Path) -> None:
+    heic = tmp_path / "phone.jpg"  # posh: iPhone HEIC served as image/jpeg
+    heic.write_bytes(picture((800, 600), fmt="HEIF"))
+    assert sniff_image_type(heic.read_bytes()) == "image/heic"
+    mpo = tmp_path / "camera.jpg"  # a JPEG with a second (depth / preview) frame: one photo, not an animation
+    Image.new("RGB", (800, 600), "red").save(mpo, "MPO", save_all=True, append_images=[Image.new("RGB", (800, 600), "blue")])
+    assert make_variants(heic, 78) and make_variants(mpo, 78)
+    assert width_of(heic.with_name("phone.jpg.640.webp")) == 640
+    with Image.open(mpo.with_name("camera.jpg.640.webp")) as im:
+        assert getattr(im, "n_frames", 1) == 1
+
+
+def test_backfill_downloads_again_a_stored_picture_whose_files_are_gone(tmp_path: Path) -> None:
+    _, db, media, image_id = stored(tmp_path, picture((1600, 900)))
+    media.path_for("test/flyer.jpg").unlink()
+    assert media.build_missing_variants() == (0, 0)
+    with db.session(write=False) as session:
+        row = session.get(ImageRow, image_id)
+        assert row is not None and row.downloaded_at is None and row.local_path is None and row.error is None
 
 
 def test_backfill_makes_missing_copies_once(tmp_path: Path) -> None:

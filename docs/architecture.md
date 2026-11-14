@@ -122,7 +122,9 @@ onto disk, and served at `/images/{id}`.
 With disk storage (production), artwork is kept as WebP only: each file becomes two resized
 copies, `<file>.640.webp` for cards and `<file>.1280.webp` for the event page (quality
 `webp_quality`, no upscaling, EXIF rotation applied, transparency kept), and the original is
-deleted. Only animations, pictures over 50M pixels and unreadable files keep their original.
+deleted. Animations become animated WebP; HEIC (iPhone) and MPO photos are converted too. Only pictures over
+50M pixels (after JPEG draft decoding) and unreadable files keep their original. Stored rows whose files are
+gone are downloaded again at startup.
 Every source stores artwork through `MediaStore._store`, which writes the download, converts it
 and deletes it (`webp_only`), on a worker thread after the run's scrape, so every scraper's images
 are WebP right at import. Copies are named after the file (`local_path` keeps the original name),

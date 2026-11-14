@@ -7,9 +7,10 @@ run, so artwork fetching stays isolated per source like scraping.
 
 Every stored file becomes two resized WebP copies, ``<file>.640.webp`` (cards) and
 ``<file>.1280.webp`` (the event page), served at ``/images/{id}/{width}.webp``, and the original
-is deleted: ``/images/{id}`` then serves the 1280 copy. Only a picture that can't be converted
-(animated, huge, unreadable) keeps its original. Copies are made when the file is stored (every
-source goes through ``_store``); ``build_missing_variants`` converts the files stored before.
+is deleted: ``/images/{id}`` then serves the 1280 copy. Animations become animated WebP. Only a
+picture that can't be converted (too many pixels to decode, unreadable) keeps its original. Copies
+are made when the file is stored (every source goes through ``_store``); ``build_missing_variants``
+converts the files stored before and downloads again stored rows whose files are gone.
 """
 
 from __future__ import annotations
@@ -28,7 +29,8 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from PIL import Image, ImageFile, ImageOps
+from PIL import Image, ImageFile, ImageOps, ImageSequence
+from pillow_heif import register_heif_opener
 from sqlalchemy import or_, select, update
 
 from partylinks.config import HttpSettings, MediaSettings, get_settings, project_path
@@ -54,7 +56,12 @@ def sniff_image_type(data: bytes) -> str | None:
         return "image/webp"
     if data[4:12] in (b"ftypavif", b"ftypavis"):
         return "image/avif"
+    if data[4:8] == b"ftyp" and data[8:12] in _HEIF_BRANDS:  # iPhone photos; posh labels them image/jpeg
+        return "image/heic"
     return None
+
+
+_HEIF_BRANDS = (b"heic", b"heix", b"heim", b"heis", b"hevc", b"hevx", b"mif1", b"msf1")
 
 
 PERSIST_CHUNK = 50
@@ -65,7 +72,9 @@ Image.MAX_IMAGE_PIXELS = None
 # A JPEG missing its last few bytes (movieland's end 1-93 bytes short) shows fine in a browser: decode it
 # the same way. Only a file that isn't a picture at all is refused (see readable()).
 ImageFile.LOAD_TRUNCATED_IMAGES = True  # pyrefly: ignore[bad-assignment]  (Pillow's stub types it Literal[False])
+register_heif_opener()  # HEIC / HEIF open like any other picture (pillow-heif)
 _ALPHA_MODES = ("RGBA", "LA", "PA")
+mimetypes.add_type("image/heic", ".heic")
 
 
 def variant_path(relative: str, width: int) -> str:
@@ -77,24 +86,46 @@ def has_variants(path: Path) -> bool:
     return all(path.with_name(variant_path(path.name, w)).is_file() for w in VARIANT_WIDTHS)
 
 
+def _animated(im: Image.Image) -> bool:
+    # MPO (a phone's JPEG with a depth / preview frame) says it is animated: it is one photo.
+    return bool(getattr(im, "is_animated", False)) and im.format != "MPO"
+
+
 def make_variants(path: Path, quality: int) -> bool:
-    """Write the resized WebP copies of ``path`` beside it. Returns False (the original stays the
-    only version) for animations, oversized or unreadable pictures; never raises."""
+    """Write the resized WebP copies of ``path`` beside it (animated WebP for an animation). Returns
+    False (the original stays the only version) for pictures too big to decode or unreadable; never raises."""
+    max_pixels = get_settings().media.max_pixels
     try:
         with Image.open(path) as im:
-            if getattr(im, "is_animated", False) or im.width * im.height > get_settings().media.max_pixels:
+            im.draft(im.mode, (VARIANT_WIDTHS[-1], VARIANT_WIDTHS[-1]))  # JPEG: decode at 1/2-1/8 scale, still >= 1280
+            animated = _animated(im)
+            frames = im.n_frames if animated else 1  # pyrefly: ignore[missing-attribute]
+            if im.width * im.height * frames > max_pixels:  # after draft: a huge JPEG decodes small
                 return False
             # A CMYK profile would be wrong once converted to RGB.
             icc = im.info.get("icc_profile") if im.mode in ("RGB", "RGBA") else None
-            im.draft(im.mode, (VARIANT_WIDTHS[-1], VARIANT_WIDTHS[-1]))  # JPEG: decode at 1/2-1/8 scale, still >= 1280
-            alpha = im.mode in _ALPHA_MODES or (im.mode == "P" and "transparency" in im.info)
-            picture = ImageOps.exif_transpose(im).convert("RGBA" if alpha else "RGB")
+            durations: list[int] = []
+            loop = 0
+            if animated:
+                pictures = [f.convert("RGBA") for f in ImageSequence.Iterator(im)]
+                durations = [f.info.get("duration", 100) for f in ImageSequence.Iterator(im)]
+                loop = im.info.get("loop", 0)
+            else:
+                alpha = im.mode in _ALPHA_MODES or (im.mode == "P" and "transparency" in im.info)
+                pictures = [ImageOps.exif_transpose(im).convert("RGBA" if alpha else "RGB")]
         for width in VARIANT_WIDTHS:
-            copy = picture.copy()
-            copy.thumbnail((width, width * 4), Image.Resampling.LANCZOS)  # never upscales; tall posters stay whole
+            copies = []
+            for picture in pictures:
+                copy = picture.copy()
+                copy.thumbnail((width, width * 4), Image.Resampling.LANCZOS)  # never upscales; tall posters stay whole
+                copies.append(copy)
             target = path.with_name(variant_path(path.name, width))
             tmp = target.with_name(f"{target.name}.{os.getpid()}-{threading.get_ident()}.tmp")
-            copy.save(tmp, "WEBP", quality=quality, method=4, icc_profile=icc)
+            if animated:
+                copies[0].save(tmp, "WEBP", quality=quality, method=4, save_all=True, append_images=copies[1:],
+                               duration=durations, loop=loop)  # fmt: skip
+            else:
+                copies[0].save(tmp, "WEBP", quality=quality, method=4, icc_profile=icc)
             os.replace(tmp, target)  # atomic: a request never reads a half-written copy
         return True
     except FileNotFoundError:
@@ -330,6 +361,11 @@ class MediaStore:
                 if r is not None
             ]
         todo = [p for p in (self.path_for(r) for r in relatives) if p.is_file()]
+        # Stored rows with neither the file nor its copies: a broken picture that also blocks the drawn
+        # card. Download them again (posh, 2026-11-15: 12 such rows).
+        gone = [r for r in relatives if not self.path_for(r).is_file() and not has_variants(self.path_for(r))]
+        if gone:
+            self._refetch(gone)
         if not todo:
             return 0, 0
         log.debug("artwork copies: %d of %d files still have their original, %d threads", len(todo), len(relatives), threads)

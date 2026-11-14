@@ -39,3 +39,4 @@ types-PyYAML>=6
 types-Authlib>=1.6
 types-convertdate>=2.5.1
 pgserver==0.1.4  # local PostgreSQL for localhost and tests (not in the production image)
+pillow-heif>=1.1
