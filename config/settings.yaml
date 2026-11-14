@@ -3407,7 +3407,10 @@ sources:
     # the 3 h limit with 11,141; from Railway the site answered 600 pages at 4 at once (5.4/s) and 8 at
     # once (6.3/s) without a 429 (Nov 2026), so 4 at once, no delay: ~1 h.
     enabled: true
-    proxied: false  # Cloudflare 403s the evomi pool's IPs; Railway's own IP gets 200 (Nov 2026)
+    proxied: false  # Cloudflare 403s the evomi pool's IPs
+    # Cloudflare began 403-ing Railway's own IP on event pages mid-run (sitemap still 200); our Israeli
+    # VPN with Chrome's fingerprint gets 200 (2026-11-14).
+    vpn: true  # our Israeli VPN only (Railway production)
     cron: "27 6,18 * * *"
     site_url: https://www.ogo.co.il
     sitemap_path: /sitemap.xml
@@ -3416,6 +3419,7 @@ sources:
     max_events: 30000
     http:
       concurrency: 4
+      impersonate: chrome
 
   mugics:
     # Mugics (mugics.com): a live-music board where musicians and venues post their shows (all of Israel).
