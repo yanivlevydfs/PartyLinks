@@ -19,6 +19,10 @@ class HomeRail(BaseModel):
     today: bool = False  # only today's
     time_slot: list[str] = Field(default_factory=list)  # enrichment.time_slots keys
     free_entry: bool = False  # only events with a free tier
+    weekend: bool = False  # only weekend days (enrichment.weekend_days)
+    abroad: bool = False  # events abroad instead of in Israel
+    discount: bool = False  # only events with a discount on some ticket site
+    max_price: float | None = Field(None, gt=0)  # cheapest ticket at most this much (free ones excluded)
 
 
 class HomeRailsSettings(BaseModel):

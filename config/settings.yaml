@@ -173,8 +173,18 @@ home_rails:
               rock_indie, jazz, world_balkan, dark_wave, live_show, lgbt, stand_up, karaoke, festival, happy_hour,
               theatre, classical_opera]
       exclude: [kids, lectures, workshops, conference]
+    - {key: weekend, weekend: true, days: 7}
     - {key: electronic, genre: [techno, house, trance, electronic, edm, drum_and_bass, bass_dubstep, hardstyle]}
+    - {key: deals, discount: true}
+    - {key: cheap, max_price: 50}
     - {key: free, free_entry: true}
+    - key: date_night
+      time_slot: [evening]
+      genre: [jazz, tastings, cooking_class, musicals, sensual, classical_opera, chanson]
+      exclude: [kids, conference]
+    - {key: singles, genre: [singles_dating], days: 60}
+    - {key: friends, genre: [quiz_games, karaoke, gaming, escape_rooms]}
+    - {key: abroad_fest, abroad: true, genre: [festival], days: 180}
     - {key: live, genre: [live_show]}
     - {key: israeli, genre: [israeli, mizrahi, greek]}
     - {key: mainstream, genre: [mainstream, hip_hop, rnb, reggaeton_latin, throwback, pop]}
@@ -183,12 +193,20 @@ home_rails:
     - {key: theatre, genre: [theatre, dance]}
     - {key: jazz, genre: [jazz, classical_opera]}
     - {key: kids, genre: [kids]}
+    - {key: food, genre: [food]}
+    - {key: wellness, genre: [yoga_wellness, meditation]}
+    - {key: sports, genre: [sports_matches, running]}
+    - {key: lgbt, genre: [lgbt, drag_cabaret]}
+    - {key: students, genre: [students]}
+    - {key: over40, genre: [over_40, eighties, nineties]}
+    - {key: english, genre: [english]}
+    - {key: russian, genre: [russian]}
     - {key: lectures, genre: [lectures, workshops, culture, exhibitions]}
     # Not "conference" alone: a couples' or a fans' conference is not hi-tech (2026-11-13, as g_tech).
     - {key: hitech, genre: [hi_tech, ai, cyber, software_dev, startups]}
 
-# Home rows only we can make (src/partylinks/smartrails), after the `after` row: open now, free if you come
-# now, price dropped, revealed today, last tickets, and tonight's weather. A card also shows its price before
+# Home rows only we can make (src/partylinks/smartrails), after the `after` row: open now, starting soon, free if you come
+# now, most viewed, most saved, price dropped, revealed today, last tickets, and tonight's weather. A card also shows its price before
 # a drop in the last price_down_days ("₪120 → ₪90"). The weather rows read the cached forecast only.
 smart_rails:
   enabled: true
@@ -197,6 +215,10 @@ smart_rails:
   free_now_hours: 4       # "free if you come now": free entry that ends within this many hours
   new_hours: 24           # "revealed today": first seen this recently
   price_down_days: 3      # "price dropped": a drop this recent
+  popular_days: 7         # "most viewed": distinct visitors who opened it in this many days...
+  popular_min_views: 2    # ...at least this many (2026-11-16: 39 events at 2, 6 at 5)
+  saved_min: 1            # "most saved": hearts from at least this many people (hidden under 3 events)
+  soon_hours: 3           # "starting soon": starts within this many hours, still selling
   weather_city: tel-aviv  # enrichment.cities key whose forecast decides the weather row
   weather_hour: 20        # tonight's slot covering this local hour
   rain_mm: 0.5            # this much rain in that slot: "rainy day" (indoor genres tonight)

@@ -992,3 +992,7 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 ### 2026-11-16 (map: `end_at` on every pin)
 - **Query:** `GET /events/map` also selects `events.end_at` (same `SELECT`, one more column; no new index). The map page marks a pin "on now" when an event there started and has not ended (`map/live`).
 - **Size:** about 30 bytes per pin before gzip (~50k pins in prod); the response stays cached as before.
+
+### 2026-11-16 (home rows: most viewed, most saved, starting soon, and filtered rows)
+- **Queries (`smartrails/rails.py`, inside the cached `GET /events/rails`):** "most viewed" is `coalesce(group_id, id) IN (SELECT ... FROM events JOIN event_views ON event_views.event_id = events.id WHERE event_views.day >= today - smart_rails.popular_days GROUP BY ... HAVING count(DISTINCT visitor) >= popular_min_views)` (uses the `event_views.day` index); "most saved" the same over `saved_events` (`HAVING count(DISTINCT user_id) >= saved_min`, the `saved_events.event_id` index); "starting soon" is `start_at BETWEEN now AND now + soon_hours`, `time_known`, not sold out. No new tables, columns or indexes.
+- **`home_rails` rows** may now set `weekend` (`events.is_weekend`), `abroad` (`country IS NOT NULL`), `discount` (the group's `has_discount`) and `max_price` (`group_min_price <= max_price AND > 0`): the existing `/events` filters, no new SQL shape.

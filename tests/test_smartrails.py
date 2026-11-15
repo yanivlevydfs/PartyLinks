@@ -12,7 +12,10 @@ from fastapi.testclient import TestClient
 
 from partylinks.api import create_app
 from partylinks.config import Settings
+from partylinks.accounts.models import UserRow
 from partylinks.db import DealChangeRow
+from partylinks.popularity.models import EventViewRow
+from partylinks.saved.models import SavedEventRow
 from partylinks.models import TicketTier
 from partylinks.smartrails.rails import rail_filters
 from tests.test_storage_api import event, seed, settings_for
@@ -34,6 +37,11 @@ def test_rows_and_the_price_before_a_drop(tmp_path: Path) -> None:
     ])  # fmt: skip
     with db.session() as session:  # the scan saw "Cheaper now" drop from 120 to its 80
         session.add(DealChangeRow(event_id="test:cheaper", source="test", kind="price_down", old="120", new="80", at=now))
+        # "Later" opened by five visitors this week; saved by two people.
+        session.add_all(EventViewRow(event_id="test:later", day=now.date(), visitor=f"v{i}", last_at=now) for i in range(5))
+        session.add_all(UserRow(id=f"u{i}", email=f"u{i}@x.test", name="U") for i in range(2))
+        session.flush()
+        session.add_all(SavedEventRow(user_id=f"u{i}", event_id="test:later") for i in range(2))
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         rails = {k: {e["title"] for e in v} for k, v in client.get("/events/rails").json()["rails"].items()}
         keys = list(rails)
@@ -41,6 +49,8 @@ def test_rows_and_the_price_before_a_drop(tmp_path: Path) -> None:
         assert rails["free_now"] == {"Free before midnight"}  # not one whose free entry ends in five days
         assert rails["price_down"] == {"Cheaper now"}
         assert rails["now"] == {"On right now"}
+        assert rails["popular"] == rails["most_saved"] == {"Free entry later"}
+        assert rails["starting_soon"] == {"Free before midnight"}  # within soon_hours, not one already on
         assert {"Free before midnight", "Cheaper now", "On right now"} <= rails["new_today"]
         items = {e["title"]: e for e in client.get("/events").json()["items"]}
         assert items["Cheaper now"]["was_price"] == 120 and items["On right now"]["was_price"] is None

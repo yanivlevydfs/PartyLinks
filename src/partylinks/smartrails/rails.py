@@ -18,6 +18,8 @@ from sqlalchemy.orm import Session, aliased
 
 from partylinks.config import Settings
 from partylinks.db import DealChangeRow, EventRow
+from partylinks.popularity.models import EventViewRow
+from partylinks.saved.models import SavedEventRow
 
 # The API's event filters (api.build_event_filters with its settings bound): keyword arguments -> clauses.
 Filters = Callable[..., list[ColumnElement[bool]]]
@@ -31,6 +33,31 @@ def _changed_groups(cfg: Settings, now: datetime) -> Any:
         select(func.coalesce(listing.group_id, listing.id))
         .join(DealChangeRow, DealChangeRow.event_id == listing.id)
         .where(DealChangeRow.kind == "price_down", DealChangeRow.at >= since)
+    )
+
+
+def _popular_groups(cfg: Settings, now: datetime) -> Any:
+    """Groups whose listings were opened by at least ``popular_min_views`` visitors in ``popular_days``."""
+    listing = aliased(EventRow)
+    group = func.coalesce(listing.group_id, listing.id)
+    return (
+        select(group)
+        .join(EventViewRow, EventViewRow.event_id == listing.id)
+        .where(EventViewRow.day >= now.date() - timedelta(days=cfg.smart_rails.popular_days))
+        .group_by(group)
+        .having(func.count(func.distinct(EventViewRow.visitor)) >= cfg.smart_rails.popular_min_views)
+    )
+
+
+def _saved_groups(cfg: Settings) -> Any:
+    """Groups saved (the heart) by at least ``saved_min`` people."""
+    listing = aliased(EventRow)
+    group = func.coalesce(listing.group_id, listing.id)
+    return (
+        select(group)
+        .join(SavedEventRow, SavedEventRow.event_id == listing.id)
+        .group_by(group)
+        .having(func.count(func.distinct(SavedEventRow.user_id)) >= cfg.smart_rails.saved_min)
     )
 
 
@@ -65,14 +92,21 @@ def rail_filters(
     free_until = now + timedelta(hours=s.free_now_hours)
     sold_out = aliased(EventRow)
     sold_somewhere = select(sold_out.group_id).where(sold_out.group_id.is_not(None), sold_out.is_sold_out.is_(True))
+    group = func.coalesce(EventRow.group_id, EventRow.id)
     return {
         "now": filters(open_now=True),
+        "starting_soon": [
+            *filters(sold_out=False, date_from=now, date_to=now + timedelta(hours=s.soon_hours)),
+            EventRow.time_known.is_(True),
+        ],
         **_weather_rails(cfg, now, filters, slots),
         "free_now": [
             *filters(free_entry=True, date_to=free_until),
             EventRow.group_free_entry_until.is_not(None),
             EventRow.group_free_entry_until <= free_until,
         ],
+        "popular": [*filters(**month), group.in_(_popular_groups(cfg, now))],
+        "most_saved": [*filters(**month), group.in_(_saved_groups(cfg))],
         "price_down": [*filters(**month), func.coalesce(EventRow.group_id, EventRow.id).in_(_changed_groups(cfg, now))],
         "new_today": [*filters(**month), EventRow.first_seen_at >= now - timedelta(hours=s.new_hours)],
         # Selling out: its free tickets are gone, or another site sold out while this one still sells.

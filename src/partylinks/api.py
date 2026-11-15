@@ -1452,8 +1452,11 @@ def _register_routes(app: FastAPI) -> None:
                     filters = event_filters(
                         request, date_to=now + timedelta(days=spec.days), genre=spec.genre or None,
                         time_slot=spec.time_slot or None, free_entry=spec.free_entry or None,
-                        on_date=now.date() if spec.today else None,
+                        on_date=now.date() if spec.today else None, weekend=spec.weekend or None,
+                        abroad=spec.abroad or None, discount=spec.discount or None, max_price=spec.max_price,
                     )  # fmt: skip
+                    if spec.max_price:
+                        filters.append(EventRow.group_min_price > 0)
                     if spec.multi:
                         filters.append(EventRow.group_size > 1)
                     if spec.exclude:

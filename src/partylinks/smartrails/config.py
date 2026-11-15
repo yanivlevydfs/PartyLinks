@@ -19,6 +19,13 @@ class SmartRailsSettings(BaseModel):
     price_down_days: float = Field(3, gt=0, le=30)
     # The non-tonight rows (free now, revealed today, last tickets...) list events up to this many days ahead.
     window_days: int = Field(30, ge=1, le=365)
+    # "Most viewed": distinct visitors who opened the event's page in the last popular_days, at least this many.
+    popular_days: int = Field(7, ge=1, le=60)
+    popular_min_views: int = Field(2, ge=1)
+    # "Most saved": saved (the heart) by at least this many people.
+    saved_min: int = Field(1, ge=1)
+    # "Starting soon": starts within this many hours and still sells.
+    soon_hours: float = Field(3, gt=0, le=24)
     # Weather rows: tonight's forecast at this city (enrichment.cities key), the slot that covers this hour.
     weather_city: str = "tel-aviv"
     weather_hour: int = Field(20, ge=0, le=23)
