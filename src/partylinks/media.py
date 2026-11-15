@@ -344,7 +344,11 @@ class MediaStore:
     def _write(self, relative: str, data: bytes) -> Path:
         target = self.path_for(relative)
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(data)
+        # Atomic: two events sharing a picture URL download it at once (kupatbravo, 2026-11-15); a plain write
+        # truncated the file under the other thread's decode ("artwork copies ... UnidentifiedImageError").
+        tmp = target.with_name(f"{target.name}.{os.getpid()}-{threading.get_ident()}.tmp")
+        tmp.write_bytes(data)
+        os.replace(tmp, target)
         return target
 
     def build_missing_variants(self, threads: int | None = None) -> tuple[int, int]:
