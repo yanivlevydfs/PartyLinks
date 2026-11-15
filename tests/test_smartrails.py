@@ -10,13 +10,13 @@ from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
 
+from partylinks.accounts.models import UserRow
 from partylinks.api import create_app
 from partylinks.config import Settings
-from partylinks.accounts.models import UserRow
 from partylinks.db import DealChangeRow
+from partylinks.models import TicketTier
 from partylinks.popularity.models import EventViewRow
 from partylinks.saved.models import SavedEventRow
-from partylinks.models import TicketTier
 from partylinks.smartrails.rails import rail_filters
 from tests.test_storage_api import event, seed, settings_for
 
