@@ -489,8 +489,14 @@ class BaseScraper[S: SourceSettings](ABC):
     def record_failure(self, what: str, exc: BaseException) -> None:
         """Record one skipped item. Not while shutting down: a deploy closes the thread pools and every
         item left fails alike ("cannot schedule new futures after shutdown", 120 lines): the run stops."""
-        if isinstance(exc, RuntimeError) and "cannot schedule new futures" in str(exc):
+        # The same at shutdown when the run's HTTP client is already closed (posh, 2026-11-15).
+        if isinstance(exc, RuntimeError) and ("cannot schedule new futures" in str(exc) or "client has been closed" in str(exc)):
             raise exc
+        if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (404, 410):
+            # The site removed that page (a stale sitemap entry, a cancelled show): not a scraper fault, so not a
+            # partial run (leaan event 8419 made every run partial, Nov 2026). A source whose listing 404s still fails.
+            self.log.info("gone %s: %d", what, exc.response.status_code)
+            return
         message = f"{what}: {type(exc).__name__}: {first_line(exc)}"[:500]
         self.failures.append(message)
         self.log.warning("skipped %s", message)

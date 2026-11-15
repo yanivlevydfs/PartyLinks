@@ -672,6 +672,18 @@ def test_a_shutdown_stops_the_run_instead_of_skipping_every_item() -> None:
     with pytest.raises(RuntimeError, match="after shutdown"):
         asyncio.run(run())
     assert scraper.failures == []
+    with pytest.raises(RuntimeError, match="client has been closed"):
+        scraper.record_failure("item 1", RuntimeError("Cannot send a request, as the client has been closed."))
+
+
+def test_an_item_page_the_site_removed_is_not_a_failure() -> None:
+    """A 404 / 410 item page (a stale sitemap entry): the run stays a success; other errors still count."""
+    scraper = probe(lambda r: httpx.Response(200))
+    request = httpx.Request("GET", "https://x.example/e/1")
+    for code in (404, 410, 500):
+        exc = httpx.HTTPStatusError(f"error {code}", request=request, response=httpx.Response(code))
+        scraper.record_failure(f"event {code}", exc)
+    assert scraper.failures == ["event 500: HTTPStatusError: error 500"]
 
 
 def test_many_sources_finishing_together_share_one_rerun_of_a_whole_table_pass() -> None:

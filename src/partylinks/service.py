@@ -245,8 +245,7 @@ class ScrapeService:
             if genres != (r.genres or []):
                 updates.append({"id": r.id, "genres": genres})
         with self.db.session() as session:
-            if updates:
-                session.execute(update(EventRow), updates)
+            bulk_update_by_id(session, EventRow, updates)  # id order (no deadlock), a purged row skipped
             session.execute(delete(FlagRow).where(FlagRow.key.like("genres:%")))
             session.add(FlagRow(key=key, on=True))
         log.info("genres: config changed, updated %d of %d events", len(updates), len(rows))
@@ -290,8 +289,10 @@ class ScrapeService:
                 updates.append({"id": row.id, "area": area, "city": city, "in_target_city": here, "country": country})
         if updates:
             # ponytail: a row saved between the read and this write keeps its fresh values until the next pass.
+            # By id, skipping rows purged meanwhile: the ORM bulk update deadlocked with a concurrent run's
+            # pass and raised StaleDataError on a purged row (geocode step, 2026-11-15).
             with self.db.session() as session:
-                session.execute(update(EventRow), updates)
+                bulk_update_by_id(session, EventRow, updates)
         changed = len(updates)
         log.debug("areas/cities: updated %d events", changed)
         return changed
