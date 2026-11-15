@@ -121,7 +121,7 @@ class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
             except httpx.HTTPError as exc:
                 # Not a partial run: the events it found before are read again from the stored pages (linked_urls);
                 # archive.org answers 503 / 504 for hours at a time (Nov 2026).
-                self.log.warning("%s unavailable, only its new links missed: %s: %s", what, type(exc).__name__, exc)
+                self.log.info("%s unavailable, only its new links missed: %s: %s", what, type(exc).__name__, exc)
         return list(dict.fromkeys(found))
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
