@@ -7,18 +7,25 @@ import rtlText from "@mapbox/mapbox-gl-rtl-text/mapbox-gl-rtl-text.min.js?url";
 import { CircleMarker, MapContainer, Marker, Popup, useMap, useMapEvent } from "react-leaflet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Supercluster from "supercluster";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toQuery, useCategories, useMapEvents } from "../api";
-import { SaveButton } from "../saved/SaveButton";
 import { genreLabel } from "../i18n";
 import { useAllowed, useConsent } from "../consent";
 import { Filters, filterParams, GROUP_ICON } from "../Filters";
 import { useStore } from "../store";
 import type { MapEvent } from "../types";
-import { eventPath, Loader, Sources, useT, useTitle, venuePath, when } from "../ui";
+import { eventPath, Loader, today, useT, useTitle } from "../ui";
 import type { Lang } from "../i18n";
 import { GENRE_ICON as ICON } from "../genreIcons";
-import { useWeb } from "../site_params/useWeb";
+import { SpotPanel, type PanelMode } from "../map/SpotPanel";
+import { MapControls } from "../map/MapControls";
+import type { LatLng } from "../map/geo";
+import { EveningPins } from "../map/EveningPins";
+import { HourBar } from "../map/HourBar";
+import { inWindow, isLive, startHour } from "../map/time";
+import { linkPath, readLink } from "../map/url";
+import { useSaved } from "../saved/useSaved";
+import "../map/map.css";
 
 const ISRAEL: [number, number] = [31.9, 34.95];
 
@@ -45,9 +52,11 @@ function Tiles({ lang }: { lang: Lang }) {
 
 export default function MapPage() {
   const { t, lang } = useT();
+  const navigate = useNavigate();
   // The home page's filter (same store): the map shows what the list shows, not every event at once.
   // Every date by default: ~17k pins, clustered, ~1 MB gzipped.
   const f = useStore((s) => s.filters);
+  const setFilters = useStore((s) => s.setFilters);
   const params = filterParams({ ...f, sort: "start_at" });
   const { data, isError, isPending } = useMapEvents(params);
   useTitle(t.nav.map);
@@ -58,15 +67,56 @@ export default function MapPage() {
   const { consent, save } = useConsent();
   const showTiles = allowed || once;
 
+  // A shared link (map/url.ts): its filters on arrival, its view instead of the first fit, its place open.
+  const link = useRef(readLink()).current;
+  useEffect(() => { if (Object.keys(link.filters).length) setFilters(link.filters); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // On top of the filter: my saved events only, and the evening's hour bar.
+  const savedIds = useSaved().ids;
+  const saved = useMemo(() => new Set(savedIds), [savedIds]);
+  const [savedOnly, setSavedOnly] = useState(false);
+  const [hour, setHour] = useState<number | null>(null);
+  const items = useMemo(
+    () => (data?.items ?? []).filter((e) => (!savedOnly || saved.has(e.id)) && (hour == null || inWindow(startHour(e), hour))),
+    [data, savedOnly, saved, hour],
+  );
+
   // One pin per location; a venue usually hosts many events.
-  const spots = new Map<string, MapEvent[]>();
-  for (const e of data?.items ?? []) {
-    const key = `${e.latitude.toFixed(4)},${e.longitude.toFixed(4)}`;
-    spots.set(key, [...(spots.get(key) ?? []), e]);
-  }
+  const spots = useMemo(() => {
+    const out = new Map<string, MapEvent[]>();
+    for (const e of items) {
+      const key = spotKeyOf(e);
+      const list = out.get(key);
+      if (list) list.push(e); else out.set(key, [e]);
+    }
+    return out;
+  }, [items]);
   const placed = data?.items.length ?? 0;
   const unplaced = data?.unplaced ?? 0;
   const [heat, setHeat] = useState(false);
+
+  // The side panel: a pin's place, or the list of everything inside the map's view.
+  const [spotKey, setSpotKey] = useState<string | null>(link.spot);
+  const [listOpen, setListOpen] = useState(false);
+  const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
+  const [map, setMap] = useState<L.Map | null>(null);
+  const [me, setMe] = useState<LatLng | null>(null);
+  // A link's own view, or a visitor who asked for "near me": the map stops fitting itself to the pins.
+  const [hold, setHold] = useState(!!link.at);
+  const [hover, setHover] = useState<string | null>(null);
+  const inView = useMemo(
+    () => (bounds ? items.filter((e) => bounds.contains([e.latitude, e.longitude])) : []),
+    [bounds, items],
+  );
+  const spotList = spotKey ? spots.get(spotKey) : undefined;
+  const panel: PanelMode | null = spotList ? { kind: "spot", list: spotList } : listOpen ? { kind: "view", list: inView } : null;
+  const pick = (key: string) => { setSpotKey(key); setListOpen(false); };
+  const focus = (where: LatLng) => map?.flyTo(where, Math.max(map.getZoom(), 16));
+  const located = (where: LatLng) => { setMe(where); setHold(true); map?.flyTo(where, 14); };
+
+  // The address bar follows the view, so copying it (or the share button) gives the same map.
+  const sharePath = () => (map ? linkPath(map.getCenter(), map.getZoom(), spotKey, f) : location.pathname);
+  useEffect(() => { if (map) history.replaceState(history.state, "", sharePath()); }, [bounds, spotKey, f, map]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <main className="map-page">
@@ -77,16 +127,34 @@ export default function MapPage() {
           <>
             <span>{t.onMap(placed)}</span>
             {unplaced > 0 && <small>{t.noLocation(unplaced)}</small>}
-            <button className={"chip" + (heat ? " on" : "")} aria-pressed={heat} onClick={() => setHeat(!heat)}>{t.heatMap}</button>
+            <button className={"chip map-heat" + (heat ? " on" : "")} aria-pressed={heat} onClick={() => setHeat(!heat)}>{t.heatMap}</button>
           </>
         )}
       </div>
-      <div className="wrap map-wrap">
-      <MapContainer center={ISRAEL} zoom={8} className="map" scrollWheelZoom>
+      <div className={"wrap map-wrap" + (panel ? " has-panel" : "")}>
+      {/* A phone pinches to zoom: the +/- buttons only covered pins there. */}
+      <MapContainer center={link.at ? [link.at[0], link.at[1]] : ISRAEL} zoom={link.at?.[2] ?? 8} className="map" scrollWheelZoom zoomControl={!TOUCH}>
         {showTiles && <Tiles lang={lang} />}
-        <FitTo filter={toQuery(params)} points={[...spots.values()].map((l) => [l[0].latitude, l[0].longitude] as [number, number])} />
-        {heat ? <Heat items={data?.items ?? []} /> : <Pins spots={[...spots.values()]} />}
+        <Watch onMap={setMap} onBounds={setBounds} onEmptyClick={() => setSpotKey(null)} />
+        {!hold && <FitTo filter={toQuery(params)} points={[...spots.values()].map((l) => [l[0].latitude, l[0].longitude] as [number, number])} />}
+        {heat ? <Heat items={items} />
+          : <Pins spots={[...spots.values()]} selected={spotKey} hover={hover} saved={saved} onPick={pick} />}
+        {spotList && !heat && <EveningPins eventId={spotList[0].id} onOpen={(e) => navigate(eventPath(e))} />}
+        {me && <CircleMarker center={me} radius={8} pathOptions={{ color: "#fff", weight: 3, fillColor: "#19e3ff", fillOpacity: 1 }} interactive={false} />}
       </MapContainer>
+      {data && !heat && (
+        <MapControls inView={inView.length} listOpen={listOpen && !spotList}
+          onList={() => { setSpotKey(null); setListOpen(!listOpen || !!spotList); }}
+          onLocated={located}
+          onTonight={() => { setFilters({ when: "tonight" }); setSpotKey(null); setListOpen(true); }}
+          savedCount={saved.size} savedOnly={savedOnly} onSavedOnly={() => setSavedOnly(!savedOnly)}
+          sharePath={sharePath} />
+      )}
+      {data && !heat && <HourBar hour={hour} onHour={setHour} count={items.length} />}
+      {panel && (
+        <SpotPanel mode={panel} me={me} onHover={setHover} onFocus={focus}
+          onClose={() => { setSpotKey(null); setListOpen(false); }} />
+      )}
       </div>
       {!showTiles && (
         <div className="map-gate" role="region" aria-label={t.mapGate.title}>
@@ -157,15 +225,29 @@ function Cats() {
   );
 }
 
+/** Hands the map and its view up to the page; a click on the map itself (not a pin) closes a place's panel. */
+function Watch({ onMap, onBounds, onEmptyClick }: { onMap: (m: L.Map) => void; onBounds: (b: L.LatLngBounds) => void; onEmptyClick: () => void }) {
+  const map = useMap();
+  useEffect(() => { onMap(map); onBounds(map.getBounds()); }, [map]); // eslint-disable-line react-hooks/exhaustive-deps
+  useMapEvent("moveend", () => onBounds(map.getBounds()));
+  useMapEvent("click", onEmptyClick);
+  return null;
+}
+
+const spotKeyOf = (e: MapEvent) => `${e.latitude.toFixed(4)},${e.longitude.toFixed(4)}`;
+
 /** Nearby spots merge into one numbered bubble (supercluster); a click zooms in until they split. */
-function Pins({ spots }: { spots: MapEvent[][] }) {
+function Pins({ spots, selected, hover, saved, onPick }: { spots: MapEvent[][]; selected: string | null; hover: string | null; saved: Set<string>; onPick: (key: string) => void }) {
   const map = useMap();
   const [, redraw] = useState(0);
   useMapEvent("moveend", () => redraw((n) => n + 1));
   const ids = spots.map((l) => l[0].id).join();
+  const day = today();
   const index = useMemo(() => {
     const sc = new Supercluster<{ list: MapEvent[] }, { n: number }>({
+      // Leaflet's tiles are 256px; supercluster's default 512 halved the radius, and bubbles up to 56px overlapped.
       radius: 60,
+      extent: 256,
       maxZoom: 17,
       map: (p) => ({ n: p.list.length }),
       reduce: (acc, p) => { acc.n += p.n; },
@@ -182,7 +264,13 @@ function Pins({ spots }: { spots: MapEvent[][] }) {
     const [lng, lat] = c.geometry.coordinates;
     // Keyed by place, not by its first event: a refetch reorders/changes the list, and a new key
     // remounted the pin and closed its open popup.
-    if (!("cluster" in c.properties)) return <Spot key={`${lat},${lng}`} list={c.properties.list} />;
+    if (!("cluster" in c.properties)) {
+      const list = c.properties.list, key = spotKeyOf(list[0]);
+      const now = Date.now();
+      const kind: Kind = list.some((e) => saved.has(e.id)) ? "saved" : list.some((e) => isLive(e, now)) ? "live" : list.some((e) => e.local_date === day) ? "today" : "later";
+      return <Spot key={`${lat},${lng}`} list={list} kind={kind}
+        selected={selected === key} hot={hover === `${list[0].latitude},${list[0].longitude}`} onPick={() => onPick(key)} />;
+    }
     const { cluster_id: id, n } = c.properties;
     const size = Math.round(Math.min(30 + Math.log2(n) * 5, 56));
     return (
@@ -201,42 +289,30 @@ function Pins({ spots }: { spots: MapEvent[][] }) {
 // A finger needs a bigger target than a 5px dot: on touch screens a wide, invisible stroke takes the tap
 // (a miss landed on the map, which closed the open popup instead of opening the next one).
 const TOUCH = window.matchMedia("(pointer: coarse)").matches;
-const PIN = TOUCH
-  ? { color: "#ff2e93", fillColor: "#ff2e93", fillOpacity: 0.7, weight: 22, opacity: 0 }
-  : { color: "#ff2e93", fillColor: "#ff2e93", fillOpacity: 0.7, weight: 1 };
+// Gold: one of my saved events; green (pulsing): on right now; cyan: on today; pink: later.
+// A white ring: the open place, or the list row under the mouse.
+const COLOR = { saved: "#ffc531", live: "#2bf5a0", today: "#19e3ff", later: "#ff2e93" } as const;
+type Kind = keyof typeof COLOR;
 
-/** One location and its events. */
-function Spot({ list }: { list: MapEvent[] }) {
-  const { t } = useT();
-  const popupMax = useWeb().map_popup_events;
+/** One location; a click opens its events in the side panel. */
+function Spot({ list, kind, selected, hot, onPick }: { list: MapEvent[]; kind: Kind; selected: boolean; hot: boolean; onPick: () => void }) {
+  const fill = COLOR[kind];
+  const ring = selected || hot;
+  // Small pins that grow slowly: big ones merged into one pink blob over the whole country.
+  const radius = Math.min(5 + Math.log2(list.length) * 2, 14) + (ring ? 4 : 0);
   return (
     <CircleMarker
       center={[list[0].latitude, list[0].longitude]}
-      // Small pins that grow slowly: big ones merged into one pink blob over the whole country.
-      radius={Math.min(5 + Math.log2(list.length) * 2, 14)}
-      pathOptions={PIN}
-    >
-      {/* Narrow enough for a phone, and panned clear of the zoom buttons. */}
-      <Popup maxWidth={260} autoPanPaddingTopLeft={[56, 12]} autoPanPaddingBottomRight={[12, 12]}>
-        <div className="pop">
-          {list[0].venue_name && <Link className="pop-venue" to={venuePath(list[0].venue_name)}>{list[0].venue_name}</Link>}
-          <small className="pop-count">{t.results(list.length)}</small>
-          <ul>
-            {list.slice(0, popupMax).map((e) => (
-              <li key={e.id}>
-                <Link to={eventPath(e)}>
-                  <small>{when(e, t, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}</small>
-                  <span dir="auto">{e.title}</span>
-                  <Sources e={e} />
-                </Link>
-                <SaveButton eventId={e.id} />
-              </li>
-            ))}
-          </ul>
-          {list.length > 8 && list[0].venue_name && <Link to={venuePath(list[0].venue_name)}>+{list.length - 8}</Link>}
-        </div>
-      </Popup>
-    </CircleMarker>
+      radius={radius}
+      // A finger needs a bigger target than a 5px dot: a wide invisible stroke takes the tap.
+      pathOptions={{
+        ...(ring ? { color: "#fff", weight: 3, opacity: 1, fillColor: fill, fillOpacity: 0.95 }
+          : TOUCH ? { color: fill, fillColor: fill, fillOpacity: 0.8, weight: 22, opacity: 0 }
+          : { color: fill, fillColor: fill, fillOpacity: 0.8, weight: 1 }),
+        className: kind === "live" ? "pin-live" : undefined,
+      }}
+      eventHandlers={{ click: (ev) => { L.DomEvent.stopPropagation(ev); onPick(); } }}
+    />
   );
 }
 

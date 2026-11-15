@@ -169,7 +169,7 @@ export interface SponsoredRails {
 }
 
 /** A map pin (GET /events/map): just what its popup shows. */
-export type MapEvent = Pick<EventSummary, "id" | "slug" | "title" | "start_at" | "time_known" | "time_zone" | "local_date" | "venue_name" | "source" | "sources"> & {
+export type MapEvent = Pick<EventSummary, "id" | "slug" | "title" | "start_at" | "end_at" | "time_known" | "time_zone" | "local_date" | "venue_name" | "source" | "sources"> & {
   latitude: number;
   longitude: number;
 };

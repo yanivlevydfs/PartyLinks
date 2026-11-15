@@ -35,7 +35,7 @@ export function TelegramFab() {
   }).data?.telegram;
   const snooze = useWeb().telegram_bubble_snooze_days;
   const [hidden, setHidden] = useState(false);
-  const bubble = !hidden && !closed(snooze);
+  const bubble = !hidden && !closed(snooze) && !pathname.endsWith("/map"); // on the map it covered the pins
   if (!name || TG_APP || pathname.startsWith("/admin")) return null;
   const hide = () => {
     try {

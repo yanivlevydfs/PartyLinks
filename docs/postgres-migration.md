@@ -988,3 +988,7 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Queries:** `POST /api/contact` (no sign-in) inserts one row; the admin's "requests" tab `SELECT ... ORDER BY id DESC LIMIT contact.admin_shown`, `UPDATE ... SET status` and `DELETE` by PK (`/admin/api/contact-messages`). Nothing is emailed.
 - **No email to admins (the owner, to save on sending):** `/promote` requests are no longer emailed (`promote.email_admins` removed). The admin accounts' own mail choices were switched off in the prod `users` / `alerts` rows (`digest_opt_in = false`, alerts' `instant = false`), a data update, no code.
 - **Tests:** `tests/test_contact.py`.
+
+### 2026-11-16 (map: `end_at` on every pin)
+- **Query:** `GET /events/map` also selects `events.end_at` (same `SELECT`, one more column; no new index). The map page marks a pin "on now" when an event there started and has not ended (`map/live`).
+- **Size:** about 30 bytes per pin before gzip (~50k pins in prod); the response stays cached as before.

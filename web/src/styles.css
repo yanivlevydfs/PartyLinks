@@ -838,35 +838,49 @@ select option { background: var(--panel-solid); color: var(--text); }
 
 /* ------------------------------------------------------------------ map */
 .map-page { display: flex; flex-direction: column; min-height: calc(100dvh - 68px - env(safe-area-inset-top)); }
-.map-bar { display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; padding-block: 12px; color: var(--text); font-weight: 500; }
-.map-bar small { color: var(--muted); }
+.map-bar { display: flex; gap: 6px 14px; align-items: center; flex-wrap: wrap; padding-block: 2px 10px; color: var(--text); font-weight: 600; }
+.map-bar small { color: var(--muted); font-weight: 500; }
+.map-bar .map-heat { margin-inline-start: auto; }
 /* A flex column shrinks auto-margined .wrap blocks to their content; keep them the site's width. */
 .map-page > .wrap { width: 100%; }
+/* The list's filter, tighter: the map below takes what is left of the screen. Sorting means nothing on a map. */
+.map-page .filters { margin-bottom: 10px; }
+.map-page .filters .sort { display: none; }
 .map-wrap { flex: 1; display: flex; flex-direction: column; padding-bottom: 16px; }
 .map, .map.leaflet-container {
-  flex: 1; min-height: 65vh; background: #0a0612;
+  flex: 1; min-height: 340px; background: #0a0612;
   border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
 }
 /* Night-mode map: invert the light OSM tiles and tint them violet. */
 .map .leaflet-tile-pane { filter: invert(1) hue-rotate(200deg) brightness(.9) contrast(.85) saturate(.55); }
 .map-page ~ .foot { display: none; }
-/* Category cards over the map: a grid on desktop, one swipeable row on phones. */
-.map-cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; padding-block: 14px 4px; }
+/* Category pills over the map: they wrap on desktop, one swipeable row on phones. */
+.map-cats { display: flex; flex-wrap: wrap; gap: 8px; padding-block: 12px 10px; }
 .map-cat {
-  display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 92px; padding: 10px 6px; cursor: pointer;
-  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); font: inherit; text-align: center;
+  flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 16px 6px 12px; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; color: var(--text); font: inherit; white-space: nowrap;
   transition: border-color .15s, background .15s, transform .15s;
 }
-.map-cat > span { font-size: 26px; line-height: 1; }
+.map-cat > span { font-size: 20px; line-height: 1; }
 .map-cat b { font-size: 14px; line-height: 1.2; }
-.map-cat small { color: var(--muted); font-weight: 600; }
+.map-cat small { color: var(--muted); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .map-cat:hover { border-color: var(--line-hot); transform: translateY(-2px); }
 .map-cat.on { background: var(--pink); border-color: var(--pink); color: #fff; box-shadow: 0 6px 20px -6px rgb(255 46 147 / .7); }
 .map-cat.on small { color: #fff; }
 .map-cat:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 @media (max-width: 760px) {
-  .map-cats { display: flex; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
-  .map-cat { flex: 0 0 96px; min-height: 84px; }
+  .map-cats { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; margin-inline: -16px; padding: 10px 16px 8px; }
+  .map-cats::-webkit-scrollbar { display: none; }
+  .map-cat { min-height: 40px; padding-block: 4px; }
+  .map-page .filters { margin-bottom: 6px; }
+  .map-bar { font-size: 13px; padding-bottom: 6px; flex-wrap: nowrap; }
+  .map-bar > span { white-space: nowrap; }
+  .map-bar small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .map .leaflet-control-attribution { font-size: 9px; line-height: 1.4; max-width: 70vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .map-bar .map-heat { min-height: 32px; padding: 2px 12px; font-size: 13px; }
+  /* Edge to edge: every pixel of a phone's width goes to the map. */
+  .map-wrap { padding: 0; }
+  .map, .map.leaflet-container { border-radius: 0; border-inline: 0; border-bottom: 0; min-height: 300px; }
 }
 @media (prefers-reduced-motion: reduce) { .map-cat { transition: none; } .map-cat:hover { transform: none; } }
 .map .leaflet-popup-content-wrapper, .map .leaflet-popup-tip {

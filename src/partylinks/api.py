@@ -345,6 +345,7 @@ class MapEventOut(_Out):
     slug: str | None
     title: str
     start_at: datetime | None
+    end_at: datetime | None = None  # "on now" pins (map/live)
     time_known: bool = True
     time_zone: str | None = None
     local_date: date | None = None
@@ -1333,8 +1334,8 @@ def _register_routes(app: FastAPI) -> None:
             located = and_(EventRow.latitude.is_not(None), EventRow.longitude.is_not(None))
             rows = session.execute(
                 select(
-                    EventRow.id, EventRow.slug, EventRow.title, EventRow.start_at, EventRow.time_known, EventRow.time_zone,
-                    EventRow.local_date, EventRow.venue_name,
+                    EventRow.id, EventRow.slug, EventRow.title, EventRow.start_at, EventRow.end_at, EventRow.time_known,
+                    EventRow.time_zone, EventRow.local_date, EventRow.venue_name,
                     EventRow.latitude, EventRow.longitude, EventRow.source, EventRow.group_id,
                 )
                 .where(*filters, located, placecards.first_opening(filters))  # a place: one pin

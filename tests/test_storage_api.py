@@ -653,6 +653,7 @@ def test_cached_responses_follow_writes_and_map_returns_located_events(tmp_path:
             "slug",
             "title",
             "start_at",
+            "end_at",
             "time_known",
             "time_zone",
             "local_date",
