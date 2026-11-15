@@ -53,7 +53,8 @@ scrape -> enrich -> save -> artwork -> regroup duplicates -> record the run
 - **At most `scheduler.max_parallel_runs` (6) sources at once.** The rest wait in a queue.
 - **Bad runs are retried** (`runs/health.py`): a run that failed, was blocked, found no events or far fewer
   than usual is run again after 15 minutes, 1 hour and 3 hours; still bad, the source is paused (kept in the
-  `flags` table as `paused:<source>`) and the admins are emailed. A healthy run unpauses it (see
+  `flags` table as `paused:<source>`) and the admins are emailed. Its cron still tries it (a "probe" run, no
+  strike, no email); a healthy run unpauses it (see
   [admin](admin.md), "Run manager").
 
 ## Enrichment (`enrichment.py`)

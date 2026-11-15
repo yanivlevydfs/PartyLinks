@@ -40,7 +40,9 @@ stored half-read. A bad run is run again after each of
 `scheduler.retry_after_minutes` (15 min, 1 h, 3 h). Still bad after the last retry, the source is paused
 (`paused:<source>` in the `flags` table, so it survives deploys) and the admins in
 `PARTYLINKS_ACCOUNTS__ADMIN_EMAILS` get an email (when Resend is set up). An admin's own "run now" never
-counts as a strike, and any healthy run unpauses the source: fix it, then run it now.
+counts as a strike, and any healthy run unpauses the source: fix it, then run it now. A paused source is
+still tried at each of its cron times (a "probe" run: no strike, no email), so a site that was only down
+unpauses by itself once it answers again.
 
 ## Bans
 

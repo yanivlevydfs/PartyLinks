@@ -1,7 +1,8 @@
 """After every run: is the source healthy? A bad run (failed, blocked, no events, or far fewer than
 usual) is run again after ``scheduler.retry_after_minutes`` (15 min, 1 h, 3 h); still bad after the
 last retry, the source is paused (``paused:<source>`` in the flags table, so it survives restarts)
-and the admins get an email. Any healthy run (an admin's "run now" after the fix) unpauses it.
+and the admins get an email. Any healthy run (an admin's "run now" after the fix, or the "probe" run its
+cron still starts while paused: a site that was only down) unpauses it.
 
 ponytail: strike counts and retry timers live in memory; a restart mid-chain starts the count again.
 """

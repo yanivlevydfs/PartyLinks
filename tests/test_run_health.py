@@ -58,7 +58,9 @@ def test_bad_runs_retry_then_pause_and_a_healthy_run_unpauses(monkeypatch) -> No
     assert retries[-1] == "email" and h.paused("goout")
     h.after_run(_run(h.db, 0, "failed"), "admin")  # an admin's failed run: no strike, no email
     assert retries.count("email") == 1 and h.paused("goout")
-    h.after_run(_run(h.db, 90), "admin")  # fixed
+    h.after_run(_run(h.db, 0, "failed"), "probe")  # a paused source's scheduled try: site still down, nothing new
+    assert retries.count("email") == 1 and h.paused("goout")
+    h.after_run(_run(h.db, 90), "probe")  # the site is back: unpaused with no admin
     assert not h.paused("goout")
 
 

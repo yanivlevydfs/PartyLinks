@@ -37,10 +37,12 @@ RETENTION_JOB_ID = "retention"
 
 async def _scheduled_run(service: ScrapeService, source: str) -> None:
     try:
-        if await asyncio.to_thread(service.health.paused, source):
-            log.info("skipping scheduled %s run: paused (broken source; a healthy admin run unpauses it)", source)
-            return
-        await service.run_source(source, trigger="schedule")
+        # A paused source (a site down, gagarin 502 2026-11-15) is still tried at each of its scheduled times: a
+        # "probe" run that never strikes or emails, and unpauses it once the site answers again.
+        paused = await asyncio.to_thread(service.health.paused, source)
+        if paused:
+            log.info("scheduled %s run while paused: probing whether the site is back", source)
+        await service.run_source(source, trigger="probe" if paused else "schedule")
     except SourceBusyError:
         log.info("skipping scheduled %s run: previous run still in progress", source)
     except asyncio.CancelledError:
