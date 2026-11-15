@@ -86,3 +86,41 @@ def test_coming_leaves_out_past_catalogue_rows_and_placeholder_ends() -> None:
     assert not _coming({"start_time": "2025-03-14T11:30:00.000Z", "end_time": "2025-03-14T20:00:00.000Z"}, tz)
     # Sabaya: a September start with an end months on is over, not still running.
     assert not _coming({"start_time": "2026-09-15T12:00:00.000Z", "end_time": "2099-01-01T00:00:00.000Z"}, tz)
+
+
+def test_a_configured_producer_is_read_with_no_event_in_the_listing() -> None:
+    import asyncio
+    from datetime import UTC, datetime, timedelta
+
+    import httpx
+
+    from partylinks.config import HttpSettings
+
+    start = (datetime.now(UTC) + timedelta(days=5)).strftime("%Y-%m-%dT18:30:00.000Z")
+    bamboo = {"id": "e1", "name": "BAMBOO PARTY", "location": "The Spot Hostel - נמל תל אביב", "start_time": start,
+              "status": "active", "timezone": "Asia/Jerusalem", "project": {"id": "p-bamboo", "name": "Bamboo Club"}}  # fmt: skip
+    other = {**bamboo, "id": "e0", "name": "OTHER", "project": {"id": "p-other"}}
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if path.endswith("/events") and "/projects/" not in path:
+            return httpx.Response(200, json={"events": [other] if request.url.params["page"] == "1" else []})
+        if path.endswith("/projects/p-bamboo/events"):
+            return httpx.Response(200, json={"events": [bamboo]})
+        if path.endswith("/projects/p-other/events"):
+            return httpx.Response(200, json={"events": [other]})
+        if path.endswith("/products"):
+            return httpx.Response(200, json={"products": []})
+        row = bamboo if path.endswith("/e1") else other
+        return httpx.Response(200, json={"event": row})
+
+    settings = vibez.VibezSettings(cron="0 * * * *", proxied=False, site_url=SITE, api_url="https://api.test/buyer",
+                                   projects=["p-bamboo"])  # fmt: skip
+    scraper = vibez.VibezScraper(settings, HttpSettings(max_retries=0), TZ)
+    scraper._new_client = lambda proxy: httpx.AsyncClient(transport=httpx.MockTransport(answer))  # type: ignore[method-assign]
+
+    async def run() -> list:
+        async with scraper:
+            return [e async for e in scraper.scrape()]
+
+    assert sorted(e.title for e in asyncio.run(run())) == ["BAMBOO PARTY", "OTHER"]

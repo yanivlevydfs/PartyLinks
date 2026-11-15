@@ -2778,6 +2778,10 @@ sources:
     cron: "36 8,20 * * *"
     site_url: https://web.vibez.io
     api_url: https://api.vibez.io/api/v102/buyer
+    # Producers read always, listed or not: Bamboo Club (Tel Aviv community parties, singles and
+    # business evenings at roaming venues; sells only by link from Instagram bamboo.club.il).
+    projects:
+      - ddcd7570-f5d4-4b77-9fda-3f9a391232cd   # Bamboo Club
     http:
       concurrency: 4
 

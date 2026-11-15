@@ -9,7 +9,8 @@ categories (``tags`` is always empty), so genres come from the name and descript
 Unlisted events (a producer's event out of the public listing, sold through a link it posts, e.g. a
 Facebook ad) are read too: ``/projects/{id}/events`` gives each producer's whole catalogue, past ones
 included, so every producer seen in the listing (~40) adds its coming events (one request each;
-past ones are left out before any detail request).
+past ones are left out before any detail request). ``projects`` names producers read always, even
+with no event in the listing (Bamboo Club sells only by link).
 """
 
 from __future__ import annotations
@@ -48,6 +49,8 @@ class VibezSettings(SourceSettings):
     site_url: str
     api_url: str
     max_pages: int = Field(20, ge=1)
+    # Producers whose catalogue is read even when none of their events is in the public listing.
+    projects: list[str] = Field(default_factory=list)
 
 
 class VibezScraper(BaseScraper[VibezSettings]):
@@ -75,6 +78,7 @@ class VibezScraper(BaseScraper[VibezSettings]):
             raise ParseError("the event listing is empty")
         self.log.debug("listed %d events", len(listed))
         projects = {pid for i in listed.values() if (pid := clean_str((i.get("project") or {}).get("id")))}
+        projects.update(s.projects)
         for pid in sorted(projects):
             payload = await self.optional(
                 f"project {pid}", self.get_json(f"{s.api_url}/projects/{pid}/events", expect=dict)
