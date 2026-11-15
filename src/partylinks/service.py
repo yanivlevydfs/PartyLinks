@@ -615,10 +615,13 @@ class ScrapeService:
         return known
 
     def _linked_urls(self, source: str) -> list[str]:
-        """Ticket links of other sources' upcoming events (aggregators such as Popit link out)."""
+        """Ticket links of other sources' upcoming events (aggregators such as Popit link out), then this
+        source's own upcoming event pages: an unlisted event found once (archive.org, a search, a link) is read
+        again even on a run where that discovery fails (eventbuzz: archive.org 503/504, Nov 2026)."""
         url = EventRow.extra["purchase_url"].as_string()
         with self.db.session(write=False) as session:
-            rows = session.scalars(select(url).where(EventRow.source != source, url.is_not(None), upcoming_filter()))
+            rows = list(session.scalars(select(url).where(EventRow.source != source, url.is_not(None), upcoming_filter())))
+            rows += session.scalars(select(EventRow.url).where(EventRow.source == source, upcoming_filter()))
             return list(dict.fromkeys(rows))
 
     def _artwork_by_title(self, source: str) -> dict[str, str]:

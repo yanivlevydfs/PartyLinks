@@ -118,7 +118,9 @@ async def details_or_listing(
             raise
         lost = [u for u in urls if (i := event_id_of(u)) and i not in done and i not in listed]
         if lost or not lost_only:
-            scraper.record_failure("event pages", exc)
+            # Name the lost pages: "access denied" alone hid which events the listing lacked (eventim, Nov 2026).
+            missing = f" ({len(lost)} not in the listing, e.g. {', '.join(lost[:3])})" if lost else ""
+            scraper.record_failure("event pages", SourceBlockedError(f"{exc}{missing}"))
         scraper.log.warning("event pages refused (%s): the rest come from the listing, %d not in it", exc, len(lost))
     make = build or (lambda i, u, item: listing_event(i, u, item, scraper.timezone, scraper.name, type_genres))
     for url in urls:

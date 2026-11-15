@@ -16,6 +16,7 @@ from typing import Any
 from urllib.parse import urljoin, urlsplit
 from zoneinfo import ZoneInfo
 
+import httpx
 from pydantic import BaseModel, Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
@@ -114,9 +115,13 @@ class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
                     for slug in discover.slugs(page):
                         found.append(slug)
                         self.venue_genres.setdefault(slug, []).extend(labels)
-        for what, url in pages:  # a failing index or search page costs only its links
-            page = discover.fetch_direct(url, self.http.timeout_seconds, self.http.user_agent, s)
-            found += discover.slugs(await self.optional(what, page) or "")
+        for what, url in pages:  # a failing index or search page costs only its new links
+            try:
+                found += discover.slugs(await discover.fetch_direct(url, self.http.timeout_seconds, self.http.user_agent, s))
+            except httpx.HTTPError as exc:
+                # Not a partial run: the events it found before are read again from the stored pages (linked_urls);
+                # archive.org answers 503 / 504 for hours at a time (Nov 2026).
+                self.log.warning("%s unavailable, only its new links missed: %s: %s", what, type(exc).__name__, exc)
         return list(dict.fromkeys(found))
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:

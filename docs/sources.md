@@ -60,7 +60,7 @@ pagination and what the listing and the event page provide.
 | --- | --- | --- | --- |
 | `ticketmaster` | Ticketmaster Israel (ticketmaster.co.il): concerts, shows and festivals nationwide | 06:49, 18:49 | yes |
 | `eventim` | Eventim Israel (eventim.co.il): concerts, theatre, shows and sport; Akamai refuses event pages after ~13: those events come from the city pages' ItemList (`eventim_listing.py`), the run then partial | 08:13, 20:13 | yes |
-| `zappa` | Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni, on the Eventim platform (`eventim.py`); Akamai refuses event pages after ~13: those events come from the city pages' ItemList (`eventim_listing.py`), the run then partial | 09:47, 21:47 | yes |
+| `zappa` | Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni, on the Eventim platform (`eventim.py`); Akamai refuses event pages after ~13: those events come from Eventim's public search API (`eventim_api.py`, every Zappa show), the run stays clean | 09:47, 21:47 | yes |
 | `pres` | PRES ticketing platform (pres.global): Kupat Tel Aviv, Cameri, Habima, the Israeli Opera, the Khan and more | 06:28, 18:28 | yes |
 | `pres_il` | PRES box offices that answer Israeli IPs only: Beit Lessin, the Israel Philharmonic (`pres.py`, through the Israeli proxies) | 06:34, 18:34 | yes |
 | `smarticket_il` | Smarticket box offices that answer our Israeli VPN only: FRIENDS (`smarticket.py`, through the VPN) | 06:48, 18:48 | yes |
@@ -72,7 +72,7 @@ pagination and what the listing and the event page provide.
 | `megatickets` | Megatickets (megatickets.co.il) | 06:00, 18:00 | yes |
 | `music80s` | 80sMusic (80smusic.co.il): guide to 80s / 90s / new wave / dark 80s parties; tickets on IWANT | 10:15, 22:15 | yes |
 | `iwant` | IWANT (iwant.co.il): Tel Aviv party box office (80s / new wave / dark eighties, grunge, trance) | 09:22, 21:22 | yes |
-| `eventbuzz` | Eventbuzz (eventbuzz.co.il): independent productions and community events; unlisted events from the Wayback index, a `site:` search, other sources' ticket links and the show pages of venues selling through it (`venue_pages`: Hasimta Theatre, ~49 dates); past ones dropped before saving | 07:10, 19:10 | yes |
+| `eventbuzz` | Eventbuzz (eventbuzz.co.il): independent productions and community events; unlisted events from the Wayback index, a `site:` search, other sources' ticket links, its own stored upcoming pages (so an archive.org outage misses only new links, not a partial run) and the show pages of venues selling through it (`venue_pages`: Hasimta Theatre, ~49 dates); past ones dropped before saving | 07:10, 19:10 | yes |
 | `standupist` | Standupist (standupist.co.il), stand-up portal and box office: its EventON API in one call (repeats, pin, prices), post tags name the artists, the listing page marks sold out | 05:47, 17:47 | yes |
 | `comy` | Comy (comy.co.il), stand-up box office. On beside the `comy` host under `pres` (prices, tickets left); dedup merges the two | 06:33, 18:33 | yes |
 | `jerusalemtheatre` | Jerusalem Theatre (jerusalem-theatre.co.il): theatre, music, dance, festivals and children's shows | 07:33, 19:33 | yes |

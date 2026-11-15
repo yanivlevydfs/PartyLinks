@@ -14,7 +14,7 @@ from partylinks.config import Settings
 from partylinks.models import ScrapedEvent
 from partylinks.scrapers import build_scraper
 from partylinks.scrapers.base import SourceBlockedError
-from partylinks.scrapers.eventim import EventimScraper, parse_event, sitemap_event_urls
+from partylinks.scrapers.eventim import EventimScraper, EventimSettings, parse_event, sitemap_event_urls
 
 TZ = "Asia/Jerusalem"
 URL = "https://www.eventim.co.il/event/show-venue-22285519/"
@@ -195,6 +195,14 @@ def test_refused_event_pages_come_from_the_city_listing_and_the_run_is_partial()
         ("1", "שלמה ארצי", "היכל מנורה", Decimal("199.0"))
     ]  # b-2 is in the sitemap only: not invented, and the run is partial so it is not unlisted either
     assert scraper.failures and "event pages" in scraper.failures[0]
+    assert "1 not in the listing, e.g. https://www.eventim.co.il/event/b-2/" in scraper.failures[0]  # which one
+
+
+def test_zappa_falls_back_on_the_search_api_like_eventim() -> None:
+    zappa, eventim = build_scraper("zappa", Settings()).settings, build_scraper("eventim", Settings()).settings
+    assert isinstance(zappa, EventimSettings) and isinstance(eventim, EventimSettings)
+    assert zappa.api_url and (zappa.api_url, zappa.api_web_id) == (eventim.api_url, eventim.api_web_id)
+    assert not zappa.city_paths  # their items would overwrite the API's (no artwork, no coordinates)
 
 
 def test_zappa_reads_the_zappa_club_sitemap_too() -> None:

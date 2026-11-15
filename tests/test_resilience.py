@@ -173,6 +173,19 @@ def test_bulk_update_skips_rows_deleted_meanwhile(tmp_path: Path) -> None:
         assert session.get(EventRow, "test:a").group_size == 3  # type: ignore[union-attr]
 
 
+def test_a_source_reads_its_own_stored_upcoming_pages_again(tmp_path: Path) -> None:
+    """An unlisted event found once (archive.org, a search) is read again on a run where that discovery fails."""
+    settings, db = db_for(tmp_path)
+    with db.session() as session:
+        upsert_events(session, [event("a"), event("old", start_at=datetime.now(UTC) - timedelta(days=3))])
+    service = ScrapeService(settings, db)
+    try:
+        assert service._linked_urls("test") == ["https://e.example/a"]  # upcoming only
+        assert service._linked_urls("other") == []  # another source's page is not its own
+    finally:
+        service.shutdown()
+
+
 def test_shared_artwork_file_survives_deleting_one_event(tmp_path: Path) -> None:
     settings, db = db_for(tmp_path)
     media = MediaStore(settings.media, db)
