@@ -3195,6 +3195,12 @@ sources:
     ticket_groups_path: /api/presentations/{id}/ticketGroups
     order_url: https://cintlv.presglobal.store/order/{id}
     days_ahead: 14  # the feed lists more days than 3/7 (audit, Nov 2026)
+    # Festival pages on www: their cards (admin-ajax load_more_posts, per section) give each PRES
+    # screening its artwork, site page and festival genres. Remove a festival once it is over.
+    festivals:
+      - page_url: https://www.cinema.co.il/soundtracktelaviv2026/  # Soundtrack Tel Aviv, 24-28.11.2026
+        genres: [פסטיבל, סאונדטראק]
+        section_genres: {פאנק: punk, ילדים: ילדים}
 
   cinematheque_jlm:
     # Jerusalem Cinematheque (jer-cin.org.il, דרך חברון 11): the same PRES reader as

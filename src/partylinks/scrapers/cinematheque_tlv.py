@@ -16,7 +16,14 @@ first screening, every time is listed in the description and ``extra.showtimes``
 event pages are WordPress slugs the API does not give, so ``url`` is the PRES order page of the
 first screening. Film + talk screenings ("+ הרצאה") stay films; lecture-course meetings
 ("... - מפגש 7", "2026-2027" course categories) are tagged ``הרצאה`` instead of ``קולנוע``.
-robots.txt of www allows everything but /wp-admin; the PRES host has none.
+robots.txt of www allows everything but /wp-admin (admin-ajax.php is allowed); the PRES host has none.
+
+Festivals (``festivals`` in config, e.g. Soundtrack Tel Aviv): the festival's page on www lists every
+screening as a card with its PRES order id, artwork and site event page. The page itself gives the
+section filters ("פאנק", "ילדים"...); the cards come from the theme's own ``load_more_posts`` admin-ajax
+call, paged until empty, once for the festival and once per section (~20 requests). A screening whose id
+is on a card gets the card's artwork (PRES has almost none), its site page as ``url``, the festival's
+genres and the mapped section genres. Optional: without it the PRES events are saved as they are.
 """
 
 from __future__ import annotations
@@ -28,7 +35,8 @@ from collections.abc import AsyncIterator
 from datetime import date, datetime, timedelta
 from typing import Any
 
-from pydantic import Field
+from pydantic import BaseModel, Field
+from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text, og_image, parse_iso, to_int, zone
@@ -40,6 +48,19 @@ _COURSE_TITLE = re.compile(r"מפגש\s*\d+")
 _COURSE_CATEGORY = re.compile(r"\b20\d\d-20")
 # jer-cin.org.il's calendar: <button ... data-event-id="43087" data-event-node="99048">.
 _FILM_BUTTON = re.compile(r'data-event-id="(\d+)"\s+data-event-node="(\d+)"')
+# A festival card's order button: https://cintlv.pres.global/order/135449 (a PRES screening id).
+_ORDER_ID = re.compile(r"/order/(\d+)")
+_SECTION = re.compile(r"movie-cat-(\d+)")
+
+
+class CinemathequeFestival(BaseModel):
+    """A festival page on the cinematheque's site, its cards matched to PRES screenings by order id."""
+
+    page_url: str
+    genres: list[str] = Field(default_factory=lambda: ["פסטיבל"])  # source genres of every screening
+    # Section name -> source genre. Sections not listed stay in extra.series only ("פאנק" alone would map
+    # to funk, "ישראלי" to Israeli music).
+    section_genres: dict[str, str] = Field(default_factory=dict)
 
 
 class TelAvivCinemathequeSettings(SourceSettings):
@@ -54,6 +75,10 @@ class TelAvivCinemathequeSettings(SourceSettings):
     venue_name: str = "סינמטק תל אביב"
     address: str | None = "הארבעה 5"
     city: str | None = "תל אביב"
+    festivals: list[CinemathequeFestival] = Field(default_factory=list)
+    ajax_url: str = "https://www.cinema.co.il/wp-admin/admin-ajax.php"
+    festival_action: str = "load_more_posts"  # the festival page's own "load more" call: paged cards
+    max_festival_pages: int = Field(50, ge=1)  # a guard against a site that never answers empty
 
 
 class TelAvivCinemathequeScraper(BaseScraper[TelAvivCinemathequeSettings]):
@@ -79,8 +104,36 @@ class TelAvivCinemathequeScraper(BaseScraper[TelAvivCinemathequeSettings]):
 
         tiers = dict([x async for x in self.stream_isolated(first, prices, lambda m: f"prices of feature {m}")])
         by_id = {clean_str(f.get("id")): f for f in features or [] if isinstance(f, dict)}
+        cards: dict[str, FestivalCard] = {}
+        for festival in s.festivals:
+            cards.update(await self.optional(f"festival {festival.page_url}", self.festival_cards(festival)) or {})
         for (movie, day), shows in groups.items():
-            yield build_event(movie, day, shows, by_id.get(movie) or {}, tiers.get(movie, []), s, self.name)
+            event = build_event(movie, day, shows, by_id.get(movie) or {}, tiers.get(movie, []), s, self.name)
+            yield apply_festival(event, cards)
+
+    async def festival_cards(self, festival: CinemathequeFestival) -> dict[str, FestivalCard]:
+        """PRES screening id -> its festival card, with the sections it is listed under."""
+        s = self.settings
+        main, sections = festival_sections(await self.get_text(festival.page_url))
+        if not main:
+            raise ParseError("festival page without its category filter")
+        cards: dict[str, FestivalCard] = {}
+        for category in [main, *sections]:
+            for paged in range(1, s.max_festival_pages + 1):
+                form = {"action": s.festival_action, "paged": str(paged), "category_id": category}
+                page = parse_festival_cards((await self.request("POST", s.ajax_url, data=form)).text)
+                if not page:
+                    break
+                for order_id, card in page.items():
+                    known = cards.setdefault(order_id, card)
+                    if category in sections:
+                        known.sections.append(sections[category])
+        for card in cards.values():
+            card.genres = list(dict.fromkeys(
+                [*festival.genres, *(festival.section_genres[n] for n in card.sections if n in festival.section_genres)]
+            ))  # fmt: skip
+        self.log.debug("festival %s: %d screenings", festival.page_url, len(cards))
+        return cards
 
 
 class JerusalemCinemathequeSettings(TelAvivCinemathequeSettings):
@@ -139,6 +192,64 @@ class JerusalemCinemathequeScraper(TelAvivCinemathequeScraper):
                 for event in movie_events:
                     event.image_url, event.images = image, [image]
                     yield event  # saved again, now with its picture
+
+
+class FestivalCard(BaseModel):
+    url: str | None = None
+    image: str | None = None
+    sections: list[str] = Field(default_factory=list)
+    genres: list[str] = Field(default_factory=list)
+
+
+def festival_sections(page_html: str) -> tuple[str | None, dict[str, str]]:
+    """The festival page's filters: its own category id (the active one) and section id -> name."""
+    tree = LexborHTMLParser(page_html)
+    main, sections = None, {}
+    for li in tree.css("li[data-filters]"):
+        m = _SECTION.fullmatch(li.attributes.get("data-filters") or "")
+        name = clean_str(li.text(strip=True))
+        if not m or not name:
+            continue
+        if "my-active" in (li.attributes.get("class") or "").split():
+            main = main or m.group(1)
+        else:
+            sections[m.group(1)] = name
+    if main:
+        sections.pop(main, None)
+    return main, sections
+
+
+def parse_festival_cards(cards_html: str) -> dict[str, FestivalCard]:
+    """One page of festival cards: PRES order id -> its site page and artwork."""
+    cards: dict[str, FestivalCard] = {}
+    for box in LexborHTMLParser(cards_html).css("div.alm-listing"):
+        order = box.css_first("a.order-btn")
+        m = _ORDER_ID.search(order.attributes.get("href") or "") if order else None
+        if not m:
+            continue
+        link = box.css_first(".title a")
+        img = box.css_first(".img-wraper img")
+        image = img and (img.attributes.get("data-src") or img.attributes.get("src"))
+        cards[m.group(1)] = FestivalCard(
+            url=clean_str(link.attributes.get("href")) if link else None,
+            image=image if image and image.startswith("http") else None,  # not the lazy-load data: placeholder
+        )
+    return cards
+
+
+def apply_festival(event: ScrapedEvent, cards: dict[str, FestivalCard]) -> ScrapedEvent:
+    """The festival card of any of the event's screenings: its page, artwork, sections and genres."""
+    card = next((c for i in event.extra.get("screening_ids") or [] if (c := cards.get(str(i)))), None)
+    if card is None:
+        return event
+    if card.url:
+        event.url = card.url
+    if card.image and not event.image_url:
+        event.image_url, event.images = card.image, [card.image]
+    event.source_genres = list(dict.fromkeys([*event.source_genres, *card.genres]))
+    if card.sections:
+        event.extra["series"] = list(dict.fromkeys([*event.extra.get("series", []), *card.sections]))
+    return event
 
 
 def film_nodes(calendar_html: str) -> dict[str, str]:

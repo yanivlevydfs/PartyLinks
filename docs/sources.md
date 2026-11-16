@@ -114,7 +114,7 @@ pagination and what the listing and the event page provide.
 | `hotcinema` | HOT Cinema (hotcinema.co.il): cinema chain: Modiin, Kiryon, Haifa, Kfar Saba, Petah Tikva, Rehovot.. | 09:35, 21:35 | yes |
 | `lev` | Lev cinemas (lev.co.il, "קולנוע לב"): the art-house chain's own box office | 06:59, 18:59 | yes |
 | `movieland` | Movieland (movieland.co.il): cinema screenings of the chain's six branches | 08:02, 20:02 | yes |
-| `cinematheque_tlv` | Tel Aviv Cinematheque (cinema.co.il, "סינמטק תל אביב"): its PRES box office | 10:05, 22:05 | yes |
+| `cinematheque_tlv` | Tel Aviv Cinematheque (cinema.co.il, "סינמטק תל אביב"): its PRES box office; festival pages in `festivals` (Soundtrack Tel Aviv 2026) add artwork, the site page and festival genres to their screenings | 10:05, 22:05 | yes |
 | `cinematheque_jlm` | Jerusalem Cinematheque (jer-cin.org.il), its PRES box office (`cinematheque_tlv.py`); films' pictures from the cinematheque's own film pages at its robots.txt Crawl-delay 180 (up to 15 a run, each film once) | 10:17, 22:17 | yes |
 
 ## Cities, community and guides
