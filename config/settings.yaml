@@ -4011,6 +4011,7 @@ sources:
     site_url: https://radical.org.il
     calendar_path: /calendar/
     products_path: /wp-json/wc/store/v1/products
+    vpn: true  # Cloudflare: the first run from Railway hung with 0 events (Nov 2026); our Israeli VPN + Chrome TLS
     venue_name: בית רדיקל
     address: התחייה פינת הרצל
     city: תל אביב-יפו
