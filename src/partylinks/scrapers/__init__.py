@@ -90,6 +90,7 @@ from partylinks.scrapers.poalimatarim import PoalimAtarimScraper
 from partylinks.scrapers.popit import PopitScraper
 from partylinks.scrapers.posh import PoshScraper
 from partylinks.scrapers.pres import PresIsraelScraper, PresScraper
+from partylinks.scrapers.radical import RadicalScraper
 from partylinks.scrapers.ramatganmuni import RamatGanMuniScraper
 from partylinks.scrapers.reading3 import Reading3Scraper
 from partylinks.scrapers.secrettelaviv import SecretTelAvivScraper
@@ -222,6 +223,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         TicketHouseScraper,
         BarakScraper,
         BarGiyoraScraper,
+        RadicalScraper,
         HaEzorScraper,
         Levontin7Scraper,
         GoShowScraper,

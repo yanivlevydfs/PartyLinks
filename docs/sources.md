@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 122 configured sources, 121 on. Each one has its own module in
+SPOTX collects from 123 configured sources, 122 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -86,6 +86,7 @@ pagination and what the listing and the event page provide.
 | `barak` | Barak Tickets (barak-tickets.co.il): Haifa box office: concerts, theatre, stand-up, kids; Akamai refuses event pages after ~13: those events come from the city pages' ItemList (`eventim_listing.py`), the run then partial | 07:04, 19:04 | yes |
 | `kikarhamusica` | Kikar HaMusica (kikar-hamusica.com): Jerusalem's music square, daily live sets | 03:33, 15:33 | yes |
 | `bargiyora` | Bar Giyora (bar-giyora.co.il): live-show bar in Tel Aviv: music, stand-up, lectures | 06:26, 18:26 | yes |
+| `radical` | Radical (radical.org.il, "בית רדיקל"): culture house in Jaffa, two halls (auditorium, basement): lectures, films, concerts, workshops, book clubs. WooCommerce behind Cloudflare (`impersonate: chrome`): the calendar's Elementor grids give date (no year: the weekday picks it), time and artwork, paged only while dates are still coming; the Store API adds categories, price range, stock and text (~6 requests). No end times | 09:44, 21:44 | yes |
 | `haezor` | HaEzor / The Zone (haezor.com): live-music club in Tel Aviv | 06:36, 18:36 | yes |
 | `goshow` | GoShow (goshow.co.il): box office of AMAMA, Stand Up Factory, Comedy Bar and small stages and pubs | 07:21, 19:21 | yes |
 | `tzkrti` | Tzkrti (tzkrti.com): the Arab sector's ticketing site: Nazareth, Haifa, Akka, Tarshiha | 07:27, 19:27 | yes |

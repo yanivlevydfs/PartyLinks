@@ -809,7 +809,7 @@ enrichment:
     seniors: ["ותיקים", "וותיקים", "הגיל השלישי", "גיל שלישי", "אזרחים ותיקים", "אזרחיות/ים וותיקות/ים",
               "קתדרה ואזרחים ותיקים", "חודש האזרחים הוותיקים", "גיל הזהב"]
     english: ["english", "olim", "עולים", "אנגלוס"]
-    literature: ["literatur", "literature", "ספרות", "כתיבה ושירה", "writing", "lesung", "lesungen"]
+    literature: ["literatur", "literature", "ספרות", "כתיבה ושירה", "writing", "lesung", "lesungen", "בוק קלאב"]
     museums: ["מוזיאון", "מוזיאונים", "museum", "museums", "מוזיאונים ומרכזי מבקרים"]
     circus_magic: ["קרקס", "קסמים וקרקס", "שובו של הקרקס", "zirkus", "circus", "magia", "magic"]
     meditation: ["meditation", "מדיטציה", "spirituality", "רוחניות"]
@@ -844,7 +844,7 @@ enrichment:
                 "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki", "קונצרטים", "מופעי מבוגרים", "קסמים וקרקס", "שובו של הקרקס", "موسيقى", "אנסמבל", "תזמורת המהפכה", "candlelight", "הפעלה מוזיקאלית", "magia", "cabaret"]  # concets: Eventer's spelling of its concerts category
     festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele", "חשיפה בינלאומית"]
     # Not "קהילה" / "קהילתי": community centres tag every event so (kids' shows, workshops), a place, not a meetup.
-    meetups: ["فعاليات اجتماعية", "meetups", "community", "meeting", "פעילות חברתית", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות"]
+    meetups: ["فعاليات اجتماعية", "meetups", "community", "meeting", "פעילות חברתית", "ערב חברתי", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות"]
     culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית", "תרבות", "קהילה", "קהילות", "אירועים קהילתיים", "מרכזים קהילתיים", "אירועי מרכזים קהילתיים", "פעילות קהילתית", "המרכז לאומנויות", "אירוע", "אירועים", "תרבות מבוגרים", "שבת תרבות", "מפגשי שכונות", "הבוטיק מועדון תרבות", "החיים הטובים", "לא שיגרתי"]
     photography: ["צילום", "photography", "photo", "צילום ואמנות", "צילום ועריכה"]
     exhibitions: ["exhibitions", "exhibition", "art", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum", "יום המוזיאונים", "אירועי קומיקס", "tentoonstellingen",
@@ -888,7 +888,7 @@ enrichment:
     theatre: ["theater", "theatre", "גילי 3-18", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus", "תיאטראות", "مسرح", "teatteri", "kulttuuri: teatteri", "drama", "improvisation", "teater", "teatro & danza"]
     kids: ["familie", "kinderveranstaltung", "הפעלה", "عائلة", "kids", "children", "גילי 3-18", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
            "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך", "רמתגנצ'יק", "שבת משפחתי", "שנה עד שנתיים", "זחילה עד שנה", "שלוש עד ארבע", "לידה עד זחילה", "שנתיים עד שלוש", "ארבע עד חמש", "אחר-צהריים ר\"גוע"]
-    lectures: ["vortrag", "literatur", "שיח קהילתי", "lecture", "lectures", "עונת תרבות", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "foredrag", "העצמה אישית", "אנתרופולוגיה", "יחסים ואהבה", "קריירה", "מנטורינג וקואוצ׳ינג", "עסקים וכלכלה", "סמינר", "אסכולות", "מיניות", "הערים המרתקות", "עניין"]
+    lectures: ["vortrag", "literatur", "שיח קהילתי", "lecture", "lectures", "עונת תרבות", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "פאנל דוברים", "foredrag", "העצמה אישית", "אנתרופולוגיה", "יחסים ואהבה", "קריירה", "מנטורינג וקואוצ׳ינג", "עסקים וכלכלה", "סמינר", "אסכולות", "מיניות", "הערים המרתקות", "עניין"]
     tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre", "חווית המבקר", "סיורי חנוכיות", "אדריכלות",
             "führungen & rundfahrten", "führungen", "führung", "rundfahrten", "stadtführung"]
     dance: ["tanz", "عرض راقص", "dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט", "tanssi"]
@@ -951,6 +951,7 @@ enrichment:
     onecity: [culture]  # municipal community events tagged only by audience ("גיל שלישי", "סטודנטים")
     holon: [culture]
     megatickets: [nightclubs]  # party promoter's box office ("Fraternity Tel Aviv")
+    radical: [culture]  # Radical's halls: a talk / evening filed under "auditorium" or "basement" alone
     livetickets: [live_show]  # concert trips; sports trips say "פורמולה 1" / "NFL" (fallback words)
     arenas: [culture]
     gagarin: [nightclubs]  # club nights the API leaves uncategorised ("INSOMNIA #25")
@@ -1691,6 +1692,7 @@ search:
     tickethouse: ["ticket house", "טיקט האוס"]
     barak: ["barak tickets", "ברק כרטיסים"]
     bargiyora: ["bar giyora", "בר גיורא"]
+    radical: ["radical", "רדיקל", "בית רדיקל"]
     levontin7: ["levontin 7", "לבונטין 7"]
     yellowsubmarine: ["yellow submarine", "הצוללת הצהובה"]
     halutz: ["hahalutz 33", "החלוץ 33"]
@@ -3998,6 +4000,29 @@ sources:
     longitude: 34.7820
     http:
       concurrency: 1
+
+  radical:
+    # Radical (radical.org.il): culture house in Jaffa (lectures, films, concerts, workshops), a WooCommerce
+    # shop behind Cloudflare (Chrome TLS). The calendar's Elementor grids give id, date (no year), time and
+    # artwork, their "load more" pages only while dates are still coming; the Store API adds categories,
+    # price range, stock and text in one call. ~6 requests a run.
+    enabled: true
+    cron: "44 9,21 * * *"
+    site_url: https://radical.org.il
+    calendar_path: /calendar/
+    products_path: /wp-json/wc/store/v1/products
+    venue_name: בית רדיקל
+    address: התחייה פינת הרצל
+    city: תל אביב-יפו
+    latitude: 32.0489502   # OSM node "בית רדיקל", HaTehiya, Jaffa
+    longitude: 34.7687989
+    halls: {auditorium: האודיטוריום, basement: המרתף}
+    # Where, or "an event", not what kind; "כללי" (shop-wide) would read as culture.
+    skip_categories: [events, auditorium, basement, other-auditorium, other-basement, כללי]
+    http:
+      impersonate: chrome
+      concurrency: 1
+      request_delay_seconds: 1.0
 
   haezor:
     # HaEzor / The Zone: live-music club on HaRechev, Tel Aviv. The gig calendar page lists every show
