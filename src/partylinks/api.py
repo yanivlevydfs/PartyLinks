@@ -81,7 +81,17 @@ from partylinks.railcards import nearest_show
 from partylinks.saved.routes import router as saved_router
 from partylinks.scheduler import RETENTION_JOB_ID, build_scheduler, next_run_times
 from partylinks.scrapers import SCRAPERS, configured_sources, source_errors
-from partylinks.search import by_skeleton, did_you_mean, relevance, smart_filters, sounds_like, tier
+from partylinks.search import (
+    NameIndex,
+    SuggestIndex,
+    correct_spelling,
+    did_you_mean,
+    ranked_columns,
+    relevance,
+    smart_filters,
+    sounds_like,
+    tier,
+)
 from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
 from partylinks.smartrails import rails as smartrails
@@ -501,6 +511,7 @@ _SORT_COLUMNS = {
     EventSort.trending: EventRow.group_size.desc().nulls_last(),
 }
 _START = _SORT_COLUMNS[EventSort.start_asc]
+RANK_MAX = 3000  # a search with more matches is listed by date, unranked (see list_events)
 
 
 # --------------------------------------------------------------------------- app
@@ -670,17 +681,37 @@ def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_
     return Response(cache.get((request.url.path, request.url.query), body)[0], media_type="application/json")
 
 
-def _sound_index(request: Request) -> dict[str, list[str]]:
-    """Every lineup name by its skeleton, rebuilt at most every api.sound_index_ttl_seconds (10 minutes)."""
+def _name_index(request: Request) -> NameIndex:
+    """Lineup and venue names by their skeleton, and the words of every title and name (spelling fixes),
+    rebuilt at most every api.sound_index_ttl_seconds (10 minutes): in the background once built, so no
+    search waits for the rebuild (a read of every primary event's names, ~1 s on prod)."""
     state = request.app.state
-    built, index = getattr(state, "sound_index", (0.0, {}))
-    if time.monotonic() - built > get_settings().api.sound_index_ttl_seconds:
+    built, index = getattr(state, "sound_index", (0.0, None))
+    if index is None:
+        return _build_name_index(state)
+    stale = time.monotonic() - built > get_settings().api.sound_index_ttl_seconds
+    if stale and not getattr(state, "sound_index_building", False):
+        state.sound_index_building = True
+        threading.Thread(target=_build_name_index, args=(state,), name="name-index", daemon=True).start()
+    return index
+
+
+def _build_name_index(state: Any) -> NameIndex:
+    try:
         db: Database = state.db
         with db.session(write=False) as session:
-            lineups = session.scalars(select(EventRow.lineup).where(EventRow.lineup.is_not(None))).all()
-        index = by_skeleton(n for lineup in lineups for n in lineup or [])
+            names = select(EventRow.lineup, EventRow.venue_name, EventRow.title).where(EventRow.is_primary.is_(True))
+            rows = session.execute(names).all()
+        index = NameIndex.of(rows)
         state.sound_index = (time.monotonic(), index)
-    return index
+        return index
+    finally:
+        state.sound_index_building = False
+
+
+def _sound_index(request: Request) -> dict[str, list[str]]:
+    """Every lineup and venue name by its skeleton (``_name_index``)."""
+    return _name_index(request).by_skeleton
 
 
 def _sounds_like(request: Request, q: str) -> list[str]:
@@ -1277,20 +1308,43 @@ def _register_routes(app: FastAPI) -> None:
                 ).all()
                 return total, rows
 
+            def by_rank(where: list[ColumnElement[bool]], q: str, alike: list[str]) -> tuple[int, Sequence[EventRow], set[str]]:
+                # Ranking reads every match anyway, so one pass gives both the order and the total
+                # (measured at 35k events: as fast as the count + page it replaces). Within a rank,
+                # events in Israel before those abroad (the search covers both), then by date.
+                # A search matching thousands ("מסיבה") is listed by date: ranking reads every match
+                # (measured: ~0.1 ms a row), and its matches are mostly the same kind anyway.
+                if (session.scalar(select(func.count()).select_from(select(EventRow.id).where(*where).limit(RANK_MAX + 1).subquery())) or 0) > RANK_MAX:
+                    return (*by_date(where), set())
+                cols = ranked_columns(*where)
+                rank = relevance(q, cfg, alike, cols)
+                assert rank is not None
+                ranked = session.execute(
+                    select(cols.c.id, rank).order_by(rank, cols.c.country.is_not(None), cols.c.start_at.asc().nulls_first(), cols.c.id)
+                ).all()
+                wanted = [i for i, _ in ranked[start:stop]]
+                weak = {i for i, r in ranked[start:stop] if tier(r) == 2} if names_only else set()
+                found = {r.id: r for r in session.scalars(card.where(EventRow.id.in_(wanted)))}
+                return len(ranked), [found[i] for i in wanted if i in found], weak
+
             if rank is None:
                 total, rows = by_date(where)
             else:
-                # Ranking reads every match anyway, so one pass gives both the order and the total
-                # (measured at 35k events: as fast as the count + page it replaces).
-                ranked = session.execute(select(EventRow.id, rank).where(*where).order_by(rank, _START, EventRow.id)).all()
-                total, wanted = len(ranked), [i for i, _ in ranked[start:stop]]
-                weak = {i for i, r in ranked[start:stop] if tier(r) == 2} if names_only else set()
-                found = {r.id: r for r in session.scalars(card.where(EventRow.id.in_(wanted)))}
-                rows = [found[i] for i in wanted if i in found]
+                total, rows, weak = by_rank(where, q or "", _sounds_like(request, q or ""))
+            suggestion = widened = widened_q = None
+            # Nothing found: each word no title or name has, spelled as the closest one that has ("omer adm").
+            fixed = correct_spelling(q, _name_index(request), cfg.search.typo_cutoff) if q and not total and not drop else None
+            if fixed:
+                alike = _sounds_like(request, fixed)
+                respelled = [*filters[:-1], *smart_filters(fixed, cfg, alike)]  # the search is the last filter
+                respelled.append(placecards.first_opening(respelled))
+                again = relevance(fixed, cfg, alike) if rank is not None else None
+                total, rows, weak = by_rank(respelled, fixed, alike) if again is not None else (*by_date(respelled), set())
+                if total:
+                    widened, widened_q = "spelling", fixed
             total += len(drop)
             promoted = {r.id: pick for r, pick in first}
             rows = [r for r, _ in first] + list(rows)
-            suggestion = widened = widened_q = None
             if q and not total and not drop and smart_filters(q, cfg):  # the search is the last filter
                 # As the bot does: without the date words ("היום"), then without the place, keeping the rest.
                 text = understand.clean(q, MAX_TEXT_PARAM)
@@ -1632,6 +1686,29 @@ def _register_routes(app: FastAPI) -> None:
         return built.model_dump_json(by_alias=True, exclude_none=True).encode()
 
     app.state.anywhere_categories = anywhere_categories
+
+    def suggest_index() -> SuggestIndex:
+        """The artist and venue lists of /categories?anywhere=true (the response cache's copy, rebuilt with it)."""
+        body, _ = app.state.response_cache.get(("/categories", "anywhere=true"), anywhere_categories)
+        built = getattr(app.state, "suggest_index", None)
+        if built is None or built[0] is not body:
+            lists = json.loads(body)
+            built = (body, SuggestIndex({"artists": lists.get("lineup", []), "venues": lists.get("venues", [])}))
+            app.state.suggest_index = built
+        return built[1]
+
+    @app.get("/search/suggest", tags=["events"])
+    def search_suggest(
+        q: Annotated[str, Query(max_length=MAX_TEXT_PARAM, description="What was typed so far")],
+        limit: Annotated[int, Query(ge=1, le=10)] = 5,
+    ) -> Response:
+        """Artists and venues whose names match what was typed in the search box (prefix, any word's start,
+        inside, or the same name in the other alphabet), busiest first: the box's suggestions, at every
+        keystroke, instead of the full name index (~450 KB) in the browser."""
+        found = suggest_index().find(q, limit)
+        keep = ("value", "events", "verified", "image_url", "area")
+        body = {kind: [{k: x[k] for k in keep if x.get(k) is not None} for x in items] for kind, items in found.items()}
+        return JSONResponse(body, headers={"Cache-Control": "public, max-age=60"})
 
     @app.get("/ticket-sites", response_model=Stores, tags=["events"])
     def stores(request: Request) -> Response:

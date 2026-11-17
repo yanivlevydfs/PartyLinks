@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ForYouRow } from "../alerts/ForYouRow";
-import { holidayWhen, useCategories, useEvents, useHolidays, useLandingInfo, useRails, type Holiday } from "../api";
+import { holidayWhen, useCategories, useEvents, useHolidays, useLandingInfo, useRails, useSuggest, type Holiday } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
@@ -246,32 +246,30 @@ export function Rail({ title, sub, pool, rail }: { title: string; sub: string; p
   );
 }
 
-/** Artists, venues and cities matching the search text, under the box while typing. The full name index
- *  (/categories?anywhere=true, ~190KB, cached) loads on the first focus, not with the page.
- *  ponytail: filtered in the browser; a /search/suggest endpoint if the index outgrows a phone. */
+/** Genres, cities, artists and venues matching the search text, under the box while typing. Artists and
+ *  venues come from the server (/search/suggest: a few names per keystroke, matched in any spelling,
+ *  "omer adam" suggests עומר אדם) instead of the full name index (~450KB) in the browser; genres and
+ *  cities from the page's own /categories, already loaded. */
 function Suggestions({ q }: { q: string }) {
   const { t, lang } = useT();
-  const cats = useCategories({ anywhere: "true" }).data;
+  const cats = useCategories().data;
   const text = q.trim().toLocaleLowerCase();
+  const found = useSuggest(q.trim()).data;
   const items = useMemo(() => {
-    if (!cats || text.length < 2) return [];
-    const pick = <T extends { value: string; events: number }>(list: T[], n: number) => list
-      .filter((x) => x.value.toLocaleLowerCase().includes(text))
-      .sort((a, b) => +b.value.toLocaleLowerCase().startsWith(text) - +a.value.toLocaleLowerCase().startsWith(text) || b.events - a.events)
-      .slice(0, n);
+    if (text.length < 2) return [];
     const cities = Object.entries(CITIES).filter(([, c]) => c.he.includes(q.trim()) || c.en.toLowerCase().includes(text))
       .sort(([, a], [, b]) => +b[lang].toLocaleLowerCase().startsWith(text) - +a[lang].toLocaleLowerCase().startsWith(text) || a[lang].localeCompare(b[lang], lang))
       .slice(0, 2)
-      .map(([slug, c]) => ({ key: "c" + slug, icon: "📍", label: c[lang], to: `/city/${slug}`, n: cats.cities.find((x) => x.value === c.he)?.events }));
-    const genres = cats.genres.filter((g) => genreLabel(lang, g.value).toLocaleLowerCase().includes(text) || g.value.replace("_", " ").includes(text))
+      .map(([slug, c]) => ({ key: "c" + slug, icon: "📍", label: c[lang], to: `/city/${slug}`, n: cats?.cities.find((x) => x.value === c.he)?.events }));
+    const genres = (cats?.genres ?? []).filter((g) => genreLabel(lang, g.value).toLocaleLowerCase().includes(text) || g.value.replace("_", " ").includes(text))
       .slice(0, 2).map((g) => ({ key: "g" + g.value, icon: "🎵", label: genreLabel(lang, g.value), to: `/genre/${g.value}`, n: g.events }));
     return [
       ...genres,
       ...cities,
-      ...pick(cats.lineup, 4).map((a) => ({ key: "a" + a.value, icon: "🎧", label: a.value, to: artistPath(a.value), n: a.events })),
-      ...pick(cats.venues, 3).map((v) => ({ key: "v" + v.value, icon: "🏛", label: v.value, to: venuePath(v.value), n: v.events })),
+      ...(found?.artists ?? []).slice(0, 4).map((a) => ({ key: "a" + a.value, icon: "🎧", label: a.value, to: artistPath(a.value), n: a.events })),
+      ...(found?.venues ?? []).slice(0, 3).map((v) => ({ key: "v" + v.value, icon: "🏛", label: v.value, to: venuePath(v.value), n: v.events })),
     ];
-  }, [cats, text, q, lang]);
+  }, [cats, found, text, q, lang]);
   if (!items.length) return null;
   return (
     <ul className="suggest" aria-label={t.search}>

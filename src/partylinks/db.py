@@ -566,6 +566,9 @@ class Database:
                     self._create_index(index)
             self._tune_storage()
             self._create_extensions()
+            from partylinks import search_index  # local: it reads EventRow
+
+            search_index.ensure(self.engine)  # the search's full-text index (built in the background on a big table)
 
     def wait_until_ready(self) -> None:
         """At startup, wait (with backoff, up to ``database.startup_wait_s``) until PostgreSQL answers:

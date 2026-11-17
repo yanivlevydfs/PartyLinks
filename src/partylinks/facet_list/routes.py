@@ -16,6 +16,7 @@ from sqlalchemy import select
 
 from partylinks.db import EventRow, ImageRow, upcoming_filter
 from partylinks.parsing import is_site_logo
+from partylinks.search_index import norm as search_norm
 
 router = APIRouter(tags=["facets"])
 
@@ -25,8 +26,9 @@ _LEAD = re.compile(r"^[\W_]+")  # "📍 Rio", "'t Hart": filed under their first
 
 
 def norm(s: str) -> str:
-    """Case-insensitive, no spaces or punctuation: "gray club" finds "Gray Club תל אביב-יפו"."""
-    return _STRIP.sub("", s.casefold())
+    """Case-insensitive, no spaces or punctuation: "gray club" finds "Gray Club תל אביב-יפו"; Hebrew final letters,
+    niqqud and Latin accents as the search ignores them (``search_index.norm``): "שלומ" is "שלום", "cafe" "Café"."""
+    return _STRIP.sub("", search_norm(s).casefold())
 
 
 def az_key(name: str) -> tuple[bool, str]:

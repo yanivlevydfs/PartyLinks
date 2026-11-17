@@ -15,13 +15,27 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from convertdate import hebrew, holidays
-from sqlalchemy import ColumnElement, SQLColumnExpression, String, and_, case, cast, func, literal, or_, select
+from sqlalchemy import (
+    ColumnElement,
+    SQLColumnExpression,
+    String,
+    Text,
+    and_,
+    any_,
+    case,
+    cast,
+    func,
+    literal,
+    or_,
+    select,
+)
 from sqlalchemy.orm import aliased
 
-from partylinks import countries, seo
+from partylinks import countries, search_index, seo
 from partylinks.config import Settings, get_settings
-from partylinks.db import EventRow, lineup_contains, whole_word
+from partylinks.db import _HEBREW_PREFIXES, _TWO_PREFIXES, EventRow, lineup_contains, whole_word
 from partylinks.places import city_abroad
+from partylinks.search_index import norm
 
 Cond = ColumnElement[bool]
 _listing = aliased(EventRow)  # another listing of the same event (its group), for ticket-site names
@@ -188,7 +202,6 @@ def date_ranges(today: date) -> dict[str, tuple[date, date]]:
     return out
 
 
-
 def _escape(word: str) -> str:
     return word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
@@ -204,7 +217,13 @@ def _pattern(word: str) -> str:
 
 def text_match(word: str, whole: bool = False) -> Cond:
     """``word`` in an event's text. ``whole``: a known name (genre, city, ticket site) counts only as a whole
-    word, maybe behind a Hebrew prefix: "טכנו" / "techno" is not in "טכנולוגית" / "technology"."""
+    word, maybe behind a Hebrew prefix: "טכנו" / "techno" is not in "טכנולוגית" / "technology".
+
+    With the full-text index (``search_index``): each word of ``word`` as the start of a word of the text
+    ("עומ" finds "עומר", "infect" finds "Infected"), behind Hebrew prefix letters too, finals / niqqud /
+    geresh / case / accents ignored; ``whole`` (and a word of one or two letters): whole words only."""
+    if search_index.ready():
+        return search_index.matches(word, prefix=not whole and len(word) > 2)
     pattern = _pattern(word)
 
     def found(c: SQLColumnExpression[Any], exact: bool) -> Cond:
@@ -247,12 +266,12 @@ def skeleton(name: str) -> str:
 
 
 def sounds_like(q: str, by_skeleton: dict[str, list[str]]) -> list[str]:
-    """Lineup names spelled differently from ``q`` that sound the same ("אינפקטד מאשרום": Infected Mushroom).
-    ponytail: a short skeleton (three consonants) counts only when one name has it; fuzzier matching
-    (one consonant off) when the misses log shows a need."""
+    """Lineup and venue names spelled differently from ``q`` that sound the same ("אינפקטד מאשרום": Infected
+    Mushroom, "בארבי": Barby). ponytail: a short skeleton (three consonants) counts only when few names
+    have it (a venue's two spellings); fuzzier matching (one consonant off) when the misses log shows a need."""
     key = skeleton(q)
     names = by_skeleton.get(key, []) if len(key) >= 3 else []
-    if len(key) == 3 and len(names) > 1:
+    if len(key) == 3 and len({n.casefold() for n in names}) > 3:
         return []
     return [n for n in names if n.casefold() != q.strip().casefold()]
 
@@ -273,6 +292,97 @@ def by_skeleton(names: Iterable[str]) -> dict[str, list[str]]:
     return out
 
 
+class NameIndex:
+    """The stored events' names, for what SQL cannot do: lineup and venue names by skeleton (``sounds_like``:
+    "בארבי" is Barby), and every word of the titles and names by first letter (``correct_spelling``)."""
+
+    def __init__(self, by_skeleton: dict[str, list[str]], words: set[str]) -> None:
+        self.by_skeleton, self.words = by_skeleton, words
+        self.by_letter: dict[str, list[str]] = {}
+        for w in sorted(words):
+            self.by_letter.setdefault(w[0], []).append(w)
+
+    @classmethod
+    def of(cls, rows: Iterable[tuple[list[str] | None, str | None, str | None]]) -> NameIndex:
+        """From (lineup, venue_name, title) rows."""
+        names: set[str] = set()
+        words: set[str] = set()
+        for lineup, venue, title in rows:
+            names.update(n for n in (*(lineup or ()), venue) if n)
+            words.update(norm(title).split())
+        for name in names:
+            words.update(norm(name).split())
+        return cls(by_skeleton(names), {w for w in words if len(w) >= 3 and not w.isdigit()})
+
+
+def _starts(word: str, typed: str) -> bool:
+    """``typed`` is the start of ``word``, either maybe behind a Hebrew prefix letter ("בבארבי", "בארבי")."""
+    return (
+        word.startswith(typed)
+        or (word[0] in "בלמהו" and len(word) > len(typed) + 1 and word[1:].startswith(typed))
+        or (typed[0] in "בלמהו" and len(typed) > 3 and word.startswith(typed[1:]))
+    )
+
+
+class SuggestIndex:
+    """Artist and venue names (the /categories?anywhere=true lists) for the search box's suggestions while
+    typing, matched in memory: the name itself, its start, the start of each of its words (behind Hebrew
+    prefix letters too), anywhere inside, or (for a name of 4+ consonants) its sound in the other alphabet
+    ("omer adam" suggests "עומר אדם"). Busiest names first within each kind of match."""
+
+    def __init__(self, lists: dict[str, list[dict[str, Any]]]) -> None:
+        self.lists = {
+            kind: [(norm(x["value"]), skeleton(x["value"]), x) for x in items if x.get("value")]
+            for kind, items in lists.items()
+        }
+
+    @staticmethod
+    def _score(q: str, words: list[str], sound: str, name: str, name_sound: str) -> int | None:
+        if name == q:
+            return 0
+        if name.startswith(q):
+            return 1
+        name_words = name.split()
+        if all(any(_starts(w, x) for w in name_words) for x in words):
+            return 2
+        if q in name:
+            return 3
+        if len(sound) >= 4 and name_sound.startswith(sound):
+            return 4
+        return None
+
+    def find(self, q: str, limit: int) -> dict[str, list[dict[str, Any]]]:
+        text = norm(q)
+        if len(text) < 2:
+            return {kind: [] for kind in self.lists}
+        words, sound = text.split(), skeleton(q)
+        out = {}
+        for kind, items in self.lists.items():
+            scored = [
+                (score, -int(x.get("events") or 0), x["value"], x)
+                for name, name_sound, x in items
+                if (score := self._score(text, words, sound, name, name_sound)) is not None
+            ]
+            out[kind] = [x for *_, x in sorted(scored, key=lambda s: s[:3])[:limit]]
+        return out
+
+
+def correct_spelling(q: str, index: NameIndex, cutoff: float) -> str | None:
+    """``q`` with each word no title or name has replaced by the closest one that has ("omer adm" ->
+    "omer adam", "infekted mushrom" -> "infected mushroom"); None when no word changes. For a search that
+    found nothing: a word compared with the stored words of its first letter and a similar length."""
+    out, changed = [], False
+    for w in norm(q).split():
+        if len(w) >= 3 and not w.isdigit() and w not in index.words:
+            near = get_close_matches(
+                w, [c for c in index.by_letter.get(w[0], ()) if abs(len(c) - len(w)) <= 2], n=1, cutoff=cutoff
+            )
+            if near:
+                w, changed = near[0], True
+        out.append(w)
+    return " ".join(out) if changed else None
+
+
 TIER = 1000  # relevance(): tier * TIER - parts matched
 
 
@@ -281,55 +391,114 @@ def tier(rank: int) -> int:
     return (rank + TIER - 1) // TIER
 
 
-def relevance(q: str, cfg: Settings, artists: Iterable[str] = ()) -> ColumnElement[int] | None:
-    """Tier 0: the event is of a searched genre / kind ("טכנו", "מסיבה") or a searched word is a whole word of
-    its title; 1: a word is inside the title, lineup or venue; 2: only elsewhere (description, city...).
+def _spaced(column: SQLColumnExpression[Any]) -> ColumnElement[str]:
+    """``column`` normalised as the search words are (``search_index.norm``), a space at each end."""
+    return literal(" ") + func.spotx_norm(cast(column, Text)) + literal(" ")
+
+
+def _has_word(spaced: ColumnElement[str], word: str) -> Cond:
+    """A whole word of a ``_spaced`` text, maybe behind Hebrew prefix letters ("בבארבי" has "בארבי")."""
+    if re.match(r"[֐-׿]", word):
+        return spaced.regexp_match(f" (?:{_TWO_PREFIXES}|[{_HEBREW_PREFIXES}])?{re.escape(word)} ")
+    return spaced.ilike(f"% {_escape(word)} %", escape="\\")
+
+
+def ranked_columns(*where: Cond) -> Any:
+    """The columns ``relevance`` reads, of the events matching ``where``, the normalised texts computed once a
+    row (OFFSET 0 keeps PostgreSQL from folding them back into each of the rank's dozens of tests)."""
+    return (
+        select(
+            EventRow.id, EventRow.genres, EventRow.country, EventRow.start_at,
+            _spaced(EventRow.title).label("title"), _spaced(EventRow.lineup).label("lineup"),
+            _spaced(EventRow.venue_name).label("venue"),
+        )
+        .where(*where)
+        .offset(0)
+        .subquery()
+    )  # fmt: skip
+
+
+def relevance(q: str, cfg: Settings, artists: Iterable[str] = (), cols: Any = None) -> ColumnElement[int] | None:
+    """Tier 0: the event is of a searched genre / kind ("טכנו", "מסיבה"), a searched word is a whole word of
+    its title, the whole search is a name of its lineup or venue, or a sound-alike name is; 1: a word is
+    inside the title, lineup or venue; 2: only elsewhere (description, city...).
     Within a tier, events matching more of the search come first: for "סרט לילדים" a children's film
-    before a kids' workshop that only mentions film. Sorts search results before the date, so "טכנו"
-    lists techno parties before "טכנודע". The value is tier * TIER - parts matched (smaller first)."""
+    before a kids' workshop that only mentions film; the search's words together ("omer adam") in the
+    title, lineup or venue count more, and more again at the title's start. Sorts search results before the
+    date, so "טכנו" lists techno parties before "טכנודע". Text is compared normalised (``search_index.norm``:
+    "Omer Adam," is "omer adam"). The value is tier * TIER - parts matched (smaller first). ``cols``: the
+    columns of ``ranked_columns`` (each text normalised once a row), else the event's own."""
     text = " " + " ".join(q.casefold().split()) + " "
-    for name in sorted(_area_and_site_names(cfg), key=len, reverse=True):  # "גוש דן", "בתל אביב": places, not title words
+    for name in sorted(
+        _area_and_site_names(cfg), key=len, reverse=True
+    ):  # "גוש דן", "בתל אביב": places, not title words
         text = text.replace(f" {name} ", " ")
     # Dates, prices and "free" are filters, not title words ("הלילה" is no reason to list "מטבח לילה" first).
     today = datetime.now(ZoneInfo(cfg.timezone)).date()
     text = " " + " ".join(PRICE.sub(" ", text).split()) + " "
-    for name in sorted({*FREE, *WEEKEND, *DAYS, *date_ranges(today), *exact_dates(text.strip(), today)}, key=len, reverse=True):
+    for name in sorted(
+        {*FREE, *WEEKEND, *DAYS, *date_ranges(today), *exact_dates(text.strip(), today)}, key=len, reverse=True
+    ):
         text = text.replace(f" {name.casefold()} ", " ")
-    words = [w for w in re.findall(r"\w{2,}", text) if not w.isdigit() and w not in FILLER]  # "מה יש" is in "ישראל"
+    words = [
+        w for w in norm(text).split() if len(w) >= 2 and not w.isdigit() and w not in FILLER
+    ]  # "מה יש" is in "ישראל"
     artists = list(artists)
     if not words and not artists:
         return None
+    if cols is None:
+        title, lineup, venue, genre_list = (
+            _spaced(EventRow.title),
+            _spaced(EventRow.lineup),
+            _spaced(EventRow.venue_name),
+            EventRow.genres,
+        )
+    else:
+        title, lineup, venue, genre_list = cols.c.title, cols.c.lineup, cols.c.venue, cols.c.genres
+    names = (title, lineup, venue)
+    genre = lambda g: _genre(cfg, g, genre_list)
     genres = {g for name, gs in _genre_names(cfg).items() if f" {name} " in text for g in gs}
     forms = [f for w in words for f in ((w, w[1:]) if len(w) > 3 and w[0] in "בלמהו" else (w,))]
-    top = [_whole_word(EventRow.title, f) for f in forms] + [_genre(cfg, g) for g in genres]
-    top += [lineup_contains(a) for a in artists]
-    inside = [
-        EventRow.title.ilike(_pattern(f), escape="\\") | lineup_contains(f) | EventRow.venue_name.ilike(_pattern(f), escape="\\")
-        for f in forms
-    ]
+    phrase = " ".join(words)
+    together = or_(*(_has_word(n, phrase) for n in names)) if len(words) > 1 else None
+    top = [_has_word(title, f) for f in forms] + [genre(g) for g in genres]
+    top += [or_(*(_has_word(n, norm(a)) for n in names)) for a in artists if norm(a)]
+    if words:
+        top.append(or_(_has_word(lineup, phrase), _has_word(venue, phrase)))
+    inside = [or_(*(n.ilike(_pattern(f), escape="\\") for n in names)) for f in forms]
     # Each kind searched and each other word: one part. Words of a kind's own name count with the kind.
     named = {name for name in _genre_names(cfg) if f" {name} " in text}
-    kinds = [or_(*(_genre(cfg, g) for g in _genre_names(cfg)[name])) for name in named]
-    loose = [w for w in words if not any(w in name.split() for name in named)]
-    parts = kinds + [or_(*(_whole_word(EventRow.title, f) for f in (w, w[1:]) if len(f) >= 2)) for w in loose]
+    kinds = [or_(*(genre(g) for g in _genre_names(cfg)[name])) for name in named]
+    loose = [w for w in words if not any(w in norm(name).split() for name in named)]
+    parts = kinds + [or_(*(_has_word(title, f) for f in (w, w[1:]) if len(f) >= 2)) for w in loose]  # the title's words
     matched = sum((case((p, 1), else_=0) for p in parts), literal(0)) if parts else literal(0)
+    if together is not None:  # "omer adam" together, then at the title's start: before a title with "Adam" alone
+        matched = (
+            matched
+            + case((together, 2), else_=0)
+            + case((title.ilike(f" {_escape(phrase)} %", escape="\\"), 1), else_=0)
+        )
     if kinds:  # a listing filed under many kinds ("אירועי נובמבר": 9 genres) is less likely the kind asked for
-        matched = matched - case((func.jsonb_array_length(EventRow.genres) > cfg.search.umbrella_genres, 1), else_=0)
+        matched = matched - case((func.jsonb_array_length(genre_list) > cfg.search.umbrella_genres, 1), else_=0)
     # Only artists left ("chillz" is a site name, dropped above): no words, so no "inside" WHEN (an empty or_ is "WHEN  THEN").
     whens = [(or_(*conds), tier) for conds, tier in ((top, 0), (inside, TIER)) if conds]
     return case(*whens, else_=2 * TIER) - matched
 
 
 def _area_and_site_names(cfg: Settings) -> set[str]:
-    names = {n for key, (he, _, en) in seo.REGION_NAMES.items() for n in (he, en, *cfg.search.region_aliases.get(key, ()))}
+    names = {
+        n for key, (he, _, en) in seo.REGION_NAMES.items() for n in (he, en, *cfg.search.region_aliases.get(key, ()))
+    }
     names |= {n for key in cfg.sources for n in (key, *cfg.search.source_aliases.get(key, ()))}
     # A city in Israel too: the search already keeps only its events, so "תל אביב" in a title is no merit.
     names |= {n for c in cfg.enrichment.cities for n in (c.he, c.en, *c.aliases)}
     return {p + n.casefold() for n in names for p in (HE_PREFIXES if re.match(r"[֐-׿]", n) else ("",))}
 
 
-def _genre(cfg: Settings, genre: str) -> Cond:
-    return or_(*(cast(EventRow.genres, String).ilike(f'%"{g}"%') for g in cfg.enrichment.expand_genres([genre])))
+def _genre(cfg: Settings, genre: str, column: Any = None) -> Cond:
+    # JSONB containment: served by the genres GIN index (search_index), so a genre word ORed with text stays indexed.
+    column = EventRow.genres if column is None else column
+    return or_(*(column.contains([g]) for g in cfg.enrichment.expand_genres([genre])))
 
 
 def _genre_names(cfg: Settings) -> dict[str, tuple[str, ...]]:
@@ -383,7 +552,7 @@ def _vocabulary(cfg: Settings) -> dict[str, Callable[[], Cond]]:
         add(name, lambda genres=genres: or_(*(_genre(cfg, g) for g in genres)))
     for key in cfg.sources:  # a ticket site: everything it sells ("zygo", "גו אאוט")
         for name in (key, *cfg.search.source_aliases.get(key, ())):
-            add(name, lambda key=key: EventRow.group_id.in_(select(_listing.group_id).where(_listing.source == key)))
+            add(name, lambda key=key: _sold_on(key))
     return names
 
 
@@ -421,7 +590,9 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
         filters.append(EventRow.local_date.between(*ranges[phrase]))
     vocab = _vocabulary(cfg)
     for name in take(vocab):
-        filters.append(or_(vocab[name](), text_match(name, whole=True)))  # the name in the text counts too: "Jordan" the DJ
+        filters.append(
+            or_(vocab[name](), text_match(name, whole=True))
+        )  # the name in the text counts too: "Jordan" the DJ
     # A city abroad in either language finds it in both: "ברצלונה" also finds "Barcelona" (GeoNames names).
     words = text.split()
     for size in (3, 2, 1):
@@ -444,4 +615,20 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
         filters.append(match)
     if not filters:
         return []
-    return [or_(and_(*filters), *(lineup_contains(a) for a in artists))]
+    return [or_(and_(*filters), *(_name_match(a) for a in artists))]
+
+
+def _sold_on(source: str) -> Cond:
+    """Events a ticket site sells (any listing of the group): ``= ANY(ARRAY(...))``, computed once, so the
+    planner can read it from the group_id index inside an OR (an ``IN (SELECT ...)`` there scans every row)."""
+    groups = func.array(
+        select(_listing.group_id).where(_listing.source == source, _listing.group_id.is_not(None)).scalar_subquery()
+    )
+    return EventRow.group_id == any_(groups)
+
+
+def _name_match(name: str) -> Cond:
+    """Events with a sound-alike name (``sounds_like``) in their lineup or venue."""
+    if search_index.ready():
+        return search_index.matches(name, prefix=False)
+    return lineup_contains(name) | EventRow.venue_name.ilike(_pattern(name), escape="\\")

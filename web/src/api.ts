@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { useWeb } from "./site_params/useWeb";
 import type { Categories, EventDetail, EventPage, EventSummary, MapPins, Post, PostList, SponsoredRails } from "./types";
 
@@ -27,6 +28,25 @@ export function useEvents(params: Params) {
     placeholderData: (prev) => prev, // the old results stay (dimmed) while the new ones load: no flash of skeletons
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < 40 && last.page * last.page_size < last.total ? last.page + 1 : undefined), // 40: the API's max_page
+  });
+}
+
+export interface Suggested { value: string; events: number; verified?: boolean; image_url?: string; area?: string }
+
+/** Artists and venues matching what is typed in the search box (GET /search/suggest), asked after a short
+ *  pause in typing; a request overtaken by the next keystroke is cancelled (signal). */
+export function useSuggest(q: string) {
+  const [text, setText] = useState(q);
+  useEffect(() => {
+    const id = setTimeout(() => setText(q), 120);
+    return () => clearTimeout(id);
+  }, [q]);
+  return useQuery({
+    queryKey: ["suggest", text],
+    queryFn: ({ signal }) => getJSON<{ artists: Suggested[]; venues: Suggested[] }>(`/search/suggest?q=${encodeURIComponent(text)}`, signal),
+    enabled: text.length >= 2,
+    staleTime: 5 * 60_000,
+    placeholderData: (prev) => prev, // the last names stay while the next ones load
   });
 }
 

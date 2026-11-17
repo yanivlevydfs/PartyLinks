@@ -619,7 +619,7 @@ class WebSettings(BaseModel):
     index_page_size: int = Field(60, ge=10, le=1000)  # venues / artists shown per "load more" (pages/Browse.tsx)
     home_row_events: int = Field(12, ge=3, le=60)  # cards in each home-page row (pages/Home.tsx Rail)
     map_popup_events: int = Field(20, ge=5, le=50)  # events per page in the map's side panel, each page one /events/cards request (map/SpotPanel.tsx)
-    home_search_debounce_ms: int = Field(250, ge=0, le=3000)  # home search box: wait after typing before searching
+    home_search_debounce_ms: int = Field(200, ge=0, le=3000)  # home search box: wait after typing before searching
     search_debounce_ms: int = Field(300, ge=0, le=3000)  # abroad search and a plan's "add option" search box wait
     card_lineup_shown: int = Field(4, ge=0, le=20)  # lineup names on an event card (ui.tsx)
     card_genres_shown: int = Field(3, ge=0, le=10)  # genre tags on an event card (ui.tsx)

@@ -156,7 +156,7 @@ export interface EventPage {
   items: EventSummary[];
   /** A search that found nothing: the closest known name that finds something. */
   did_you_mean?: string | null;
-  widened?: "date" | "place" | null; // nothing found: the search without its date / place words
+  widened?: "date" | "place" | "spelling" | null; // nothing found: the search without its date / place words, or respelled
   widened_q?: string | null;
 }
 
