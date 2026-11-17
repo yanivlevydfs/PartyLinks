@@ -23,6 +23,15 @@ def test_listing_links_every_card_once() -> None:
     assert f"{SITE}/shalvata/spoons-last-dance" in urls
 
 
+def test_listing_cards_in_another_markup() -> None:
+    page = (
+        '<a href="/wtgl-marina" class="event-card x"><h3>WTGL</h3></a>'
+        "<a class='ev-card' href='/goat/backstage-records-tuesday'>B</a>"
+        '<a class="nav" href="/clubs">Clubs</a><a class="card" href="#top">up</a>'
+    )
+    assert listing_urls(page, SITE) == [f"{SITE}/wtgl-marina", f"{SITE}/goat/backstage-records-tuesday"]
+
+
 def test_club_night_with_price_range_and_seller_link() -> None:
     e = _event("shalvata_spoons-last-dance.html", "shalvata/spoons-last-dance")
     assert e is not None and e.source_event_id == "shalvata/spoons-last-dance"

@@ -50,7 +50,7 @@ Each process has its own pool (`database.pool_size` + `max_overflow`, 40 each, 8
 | `PARTYLINKS_DATABASE__URL` | `${{Postgres.DATABASE_URL}}` (private network; the driver is set in code). Required: without it the app looks for the local dev server and stops |
 | `PARTYLINKS_DATABASE__SERIALIZE_WRITES` | `true` queues writers one at a time (default `false`: concurrent writers) |
 | `PARTYLINKS_SCHEDULER__ENABLED=true` | Turns scraping on (it is off in `settings.yaml`, so localhost never scrapes) |
-| `PARTYLINKS_SCHEDULER__RUN_ON_STARTUP=true` | Runs every source once when the process starts |
+| `PARTYLINKS_SCHEDULER__RUN_ON_STARTUP` | **Unset (false).** `true` runs every source once at each start: with 6 run slots the ~130 runs queued ~10 h after every deploy and scheduled runs were skipped ("maximum number of running instances", 84 sources claimed, 2026-11-17). Restarts are covered without it: interrupted runs resume and overdue ones start (`scheduler.resume_overdue`) |
 | `PARTYLINKS_ADMIN__TOKEN` | A long random string for the admin console and the mutating API |
 | `PARTYLINKS_HTTP__SOURCE_PROXY` | Proxy every source goes through, so sites never see the server's IP. A comma-separated list is a failover pool: a source moves to the next URL only when the proxy itself fails. A source can opt out with `proxied: false` |
 | `PARTYLINKS_HTTP__ISRAEL_PROXY` | Israeli proxies, a comma-separated list, tried first by sources with `israel_proxy: true` (`source_proxy` is the last resort) |

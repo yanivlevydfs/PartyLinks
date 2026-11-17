@@ -208,3 +208,46 @@ def test_site_logo_never_kept_or_borrowed() -> None:
     logo = "https://www.rehovot.muni.il/content/images/fb.png"
     fill_artwork(e, {e.source_event_id: [logo]}, {"x": logo})
     assert not e.images
+
+
+def test_unreachable_site_skipped_and_broken_event_pages_read_from_the_listing() -> None:
+    import asyncio
+    from datetime import timedelta
+
+    import httpx
+
+    from partylinks.config import Settings
+    from partylinks.scrapers import build_scraper
+    from partylinks.scrapers.munievents import BROKEN_PAGES
+
+    scraper = build_scraper("munievents", Settings())
+    dead, broken = "www.dead.muni.il", "www.broken.muni.il"
+    scraper.settings.sites = [  # type: ignore[attr-defined]
+        MuniSite(url=f"https://{dead}", city="אריאל"),
+        MuniSite(url=f"https://{broken}", city="מעלה אדומים"),
+    ]
+    scraper.http.max_retries, scraper.http.backoff_seconds, scraper.http.request_delay_seconds = 0, 0, 0
+    day = (datetime.now(zone(TZ)) + timedelta(days=3)).strftime("%Y-%m-%dT20:00:00")
+    rows = [{"id": i, "title": f"מופע {i}", "start": day, "url": f"/events/{i}/"} for i in range(1, 9)]
+    asked: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        asked.append(f"{request.url.host}{request.url.path}")
+        if request.url.host == dead:
+            raise httpx.ConnectTimeout("no answer", request=request)
+        if request.url.path == "/events/json/":
+            return httpx.Response(200, json=rows)
+        if request.url.path == "/events/":
+            return httpx.Response(200, text="<html></html>", headers={"content-type": "text/html"})
+        return httpx.Response(500)
+
+    async def go() -> list:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.scrape()]
+
+    events = asyncio.run(go())
+    assert [a for a in asked if a.startswith(dead)] == [f"{dead}/events/json/"]  # no listing request after it
+    assert len(events) == 8  # every event kept, from the feed alone
+    pages = [a for a in asked if a.startswith(broken) and a.count("/") == 3]
+    assert BROKEN_PAGES <= len(pages) < 8  # the site's event pages stopped being read after a few 500s

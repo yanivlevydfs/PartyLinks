@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from PIL import Image, ImageFile, ImageOps, ImageSequence
+from PIL import Image, ImageFile, ImageOps, ImageSequence, UnidentifiedImageError
 from pillow_heif import register_heif_opener
 from sqlalchemy import or_, select, update
 
@@ -130,6 +130,11 @@ def make_variants(path: Path, quality: int) -> bool:
         return True
     except FileNotFoundError:
         # The same URL downloaded twice at once: the other copy was already found unreadable and deleted.
+        return False
+    except UnidentifiedImageError:
+        # Not a picture after all (a cut-off or empty body through a proxy: img.makore.app via the VPN,
+        # 2026-11-17). The caller deletes it and downloads it again after the cooldown: no warning.
+        log.info("artwork copies of %s: not a readable image, fetched again later", path)
         return False
     except Exception as exc:  # noqa: BLE001 - a broken picture keeps its original only
         log.warning("artwork copies of %s failed: %s: %s", path, type(exc).__name__, exc)

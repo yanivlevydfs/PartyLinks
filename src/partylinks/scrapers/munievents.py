@@ -23,6 +23,8 @@ agent is redirected to the host's abuse page (abuse.spd.co.il).
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import html
 import re
 from collections.abc import AsyncIterator
@@ -42,7 +44,7 @@ from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import clean_str, html_to_text, is_site_logo, zone
 from partylinks.places import PlaceIndex, israeli_places
 from partylinks.retention import is_current
-from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.seller_page import fetch_seller_page, seller_tiers
 from partylinks.scrapers.text_prices import says_free
 
@@ -57,6 +59,9 @@ _LEFT = re.compile(r"נותרו רק (\d+)")
 _EVENT_ID = re.compile(r"/events/(\d+)/?$")
 _HEBREW = re.compile(r"[א-ת]")
 _BG_URL = re.compile(r"url\(['\"]?([^'\")]+)")
+
+
+BROKEN_PAGES = 3  # event pages failing 5xx in a row: the site's page template is down, the rest from the listing
 
 
 class MuniSite(BaseModel):
@@ -110,7 +115,19 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
         window = f"start={today - timedelta(days)}&end={today + timedelta(days)}"
         for site in self.settings.sites:
             feed_url = f"{site.url}/events/json/?{window}"
-            feed = await self.optional(f"{site.url} feed", self.get_json(feed_url, expect=list)) if site.feed else None
+            feed = None
+            if site.feed:
+                try:
+                    feed = await self.get_json(feed_url, expect=list)
+                except SourceBlockedError:
+                    raise
+                except httpx.TransportError as exc:
+                    # No answer at all (ariel, shomron, rng... drop our VPN's IP, Nov 2026): the listing would
+                    # wait out the same retries (8 x 20 s a site), so the site is skipped for this run.
+                    self.record_failure(f"{site.url} unreachable", exc)
+                    continue
+                except Exception as exc:  # noqa: BLE001 - a broken feed: the listing page instead
+                    self.record_failure(f"{site.url} feed", exc)
             page = await self.optional(f"{site.url} listing", self.get_text(site.url + "/events/")) or ""
             listed = parse_listing(page, site.url, self.timezone, today)
             if feed:
@@ -122,6 +139,27 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
                 cards = listed
             cards = [c for c in cards if not any(w in c.title for w in self.settings.skip_title_words)]
             self.log.debug("%s: %d upcoming events (%s)", site.url, len(cards), "feed" if feed else "listing")
+            # Event pages answering 5xx in a row (maale-adummim: every page 500, Nov 2026, 75 log lines a run):
+            # after BROKEN_PAGES the site's other events are kept from the listing alone, reported once.
+            # Until one page answers, one at a time: parallel requests would all be sent before the first 500.
+            broken, probe = {"in_a_row": 0, "listing_only": 0, "answered": 0}, asyncio.Lock()
+
+            async def page_of(card: Card, broken: dict[str, int] = broken, probe: asyncio.Lock = probe) -> str | None:
+                async with probe if not broken["answered"] else contextlib.nullcontext():
+                    if broken["in_a_row"] >= BROKEN_PAGES:
+                        broken["listing_only"] += 1
+                        return None
+                    try:
+                        detail = await self.get_text(card.url)
+                    except SourceBlockedError:
+                        raise
+                    except Exception as exc:  # noqa: BLE001 - the event is still kept from its card
+                        if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code >= 500:
+                            broken["in_a_row"] += 1
+                        self.record_failure(card.url, exc)
+                        return None
+                    broken["in_a_row"], broken["answered"] = 0, 1
+                    return detail
 
             async def fetch(card: Card, site: MuniSite = site) -> ScrapedEvent | None:
                 listed_only = build_event(card, None, site, self.timezone)
@@ -131,7 +169,7 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
                     return None  # a season that began already (שנת תשפ"ז): the service never stores it, skip its page
                 if listed_only is not None and not self.wanted(listed_only):
                     return listed_only
-                detail = await self.optional(card.url, self.get_text(card.url))
+                detail = await page_of(card)
                 seller = ticket_link(detail, site.url, self.settings.seller_skip_hosts) if detail else None
                 seller_html = await fetch_seller_page(self, seller) if seller else None
                 offers = seller_tiers(seller_html, seller) if seller_html else []
@@ -139,6 +177,8 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
 
             async for event in self.stream_isolated(cards, fetch, label=lambda c: c.url):
                 yield event
+            if broken["listing_only"]:
+                self.log.warning("%s: event pages answer 5xx; %d events kept from the listing only", site.url, broken["listing_only"])
 
 
 def _text(node: LexborNode | None) -> str:

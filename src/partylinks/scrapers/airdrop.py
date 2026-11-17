@@ -45,6 +45,9 @@ from partylinks.scrapers.abroad import country_code, local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _CARD = re.compile(r'<a\s+class="wcard\b[^"]*"\s+href="([^"#]+)"')
+_ANCHOR = re.compile(r"<a\b([^>]*)>", re.IGNORECASE)
+_CLASS = re.compile(r'\bclass\s*=\s*["\']([^"\']*)["\']', re.IGNORECASE)
+_HREF = re.compile(r'\bhref\s*=\s*["\']([^"\'#][^"\']*)["\']', re.IGNORECASE)
 _LOC = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>")
 _EVENT_TYPES = {"event", "musicevent", "festival"}
 
@@ -65,10 +68,15 @@ class AirdropScraper(BaseScraper[AirdropSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         urls = listing_urls(await self.get_text(s.site_url + s.listing_path), s.site_url)
-        if not urls:
-            raise ParseError("listing has no event cards")
         sitemap = await self.optional("sitemap", self.get_text(s.site_url + s.sitemap_path))
-        urls = list(dict.fromkeys(urls + sitemap_urls(sitemap or "", s.site_url)))
+        mapped = sitemap_urls(sitemap or "", s.site_url)
+        if not urls:
+            # The cards' markup changed (2026-11-17: 0 cards, the whole run failed while the sitemap
+            # still listed every event page): the sitemap carries the run, the listing is reported.
+            if not mapped:
+                raise ParseError("listing has no event cards and the sitemap no pages")
+            self.record_failure("listing", ParseError("no event cards (markup changed?): the sitemap's pages only"))
+        urls = list(dict.fromkeys(urls + mapped))
         self.log.debug("listed %d pages", len(urls))
         retention, seen, profiles = RetentionSettings(), set(urls), {}
         for _ in range(s.max_link_rounds + 1):
@@ -94,7 +102,13 @@ class AirdropScraper(BaseScraper[AirdropSettings]):
 
 def listing_urls(page_html: str, site_url: str) -> list[str]:
     """Event pages the listing's cards link to, in order, once each."""
-    return list(dict.fromkeys(urljoin(site_url + "/", href) for href in _CARD.findall(page_html)))
+    hrefs = _CARD.findall(page_html)
+    if not hrefs:  # attributes in another order, or a renamed card class (…card…): any <a> with "card" in its class
+        for attrs in _ANCHOR.findall(page_html):
+            cls, href = _CLASS.search(attrs), _HREF.search(attrs)
+            if cls and href and "card" in cls.group(1).lower() and not href.group(1).startswith("#"):
+                hrefs.append(href.group(1))
+    return list(dict.fromkeys(urljoin(site_url + "/", href) for href in hrefs))
 
 
 def sitemap_urls(xml: str, site_url: str) -> list[str]:
