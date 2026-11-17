@@ -11,6 +11,9 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
 2. Recon (section 1): robots.txt, the data the page itself loads, platform already covered?, access
    (plain / `impersonate: chrome` / `israel_proxy` / `vpn: true` when even the free Israeli proxies fail). If the auto-mode classifier denies probing,
    stop, explain, and ask the user for a narrow `autoMode.allow` rule in `.claude/settings.local.json`.
+   **Access test, in this order, cheapest first:** 1) direct (plain request) 2) via proxy
+   (`israel_proxy: true`) only if direct fails 3) VPN (`vpn: true`) only if both fail. Configure the
+   first that works and report it (direct / proxy / vpn).
    **Israeli-only sites:** the local machine may be abroad, so a local request proves nothing.
    Run the dry run inside the production container, through the Israeli VPN (it writes nothing):
    `railway ssh --service web -- "PYTHONIOENCODING=utf-8 python - <name> --show 10" < scripts/check_source.py`. The image has no `scripts/`, so the script goes in on stdin. `railway run` would run
