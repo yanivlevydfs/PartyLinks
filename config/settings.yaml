@@ -952,6 +952,7 @@ enrichment:
     tiuli: [attractions]  # trips guide; its one category is "מיוחד"
     pres_il: [culture]  # IPO chamber series ("מיוחד קאמרי") and Lessin specials name no genre
     onecity: [culture]  # municipal community events tagged only by audience ("גיל שלישי", "סטודנטים")
+    milgammuni: [culture]  # municipal programme; the site's topic filter is not on its event pages
     holon: [culture]
     megatickets: [nightclubs]  # party promoter's box office ("Fraternity Tel Aviv")
     radical: [culture]  # Radical's halls: a talk / evening filed under "auditorium" or "basement" alone
@@ -1700,6 +1701,7 @@ search:
     muzi: ["מוזי"]
     standupist: ["סטנדאפיסט פורטל", "פורטל סטנדאפיסט"]
     onecity: ["one city", "וואן סיטי"]
+    milgammuni: ["עיריית בית שאן", "bet shean municipality", "beit shean municipality"]
     petahtikvamuni: ["עיריית פתח תקווה", "עיריית פתח תקוה"]
     haderamuni: ["עיריית חדרה", "hadera municipality"]
     ironit: ["עירונית אשדוד", "ironit", "החברה העירונית לתרבות הפנאי אשדוד"]
@@ -3672,7 +3674,7 @@ sources:
       - {url: https://www.ma-soreq.org.il, city: מועצה אזורית נחל שורק, regional: true}
       - {url: https://www.mvhr.org.il, city: מועצה אזורית מבואות החרמון, regional: true}
       - {url: https://www.hrhevron.co.il, city: מועצה אזורית הר חברון, regional: true}
-      - {url: https://www.j-v.org.il, city: מועצה אזורית ערבות הירדן, regional: true}
+      - {url: https://www.j-v.org.il, city: מועצה אזורית עמק הירדן, regional: true}  # Emek HaYarden (Kinneret), not Arvot HaYarden
       - {url: https://www.merchavim.org.il, city: מועצה אזורית מרחבים, regional: true, feed: false}
       - {url: https://www.mta.org.il/he, city: מועצה אזורית מטה אשר, regional: true, feed: false}
       - {url: https://www.matnas-yoav.org.il, city: מועצה אזורית יואב, regional: true, organizer: 'מתנ"ס יואב', feed: false}
@@ -3696,6 +3698,8 @@ sources:
       - {url: https://www.alfe-menashe.muni.il, city: אלפי מנשה, organizer: מועצה מקומית אלפי מנשה}
       - {url: https://www.ramat-yishay.com, city: רמת ישי, organizer: מועצה מקומית רמת ישי}
       - {url: https://www.efrat.muni.il/he, city: אפרת, organizer: מועצה מקומית אפרת, feed: false}
+      - {url: https://www.bin-ada.co.il, city: בנימינה-גבעת עדה, organizer: מועצה מקומית בנימינה-גבעת עדה}  # ticks.co.il rows skipped
+      - {url: https://www.baitisraeli.co.il, city: מועצה אזורית גוש עציון, regional: true, feed: false}
 
   haifamuni:
     # Haifa municipality city-events (WordPress; REST API closed): one listing page (~60 events),
@@ -4006,6 +4010,7 @@ sources:
       - {url: https://www.mako.org.il, city: עכו}
       - {url: https://www.cnnc.org.il, city: נתניה}   # community centres, Netanya centre-north (Dora, Neot Herzl)
       - {url: https://www.mqb.org.il, city: קריית ביאליק}
+      - {url: https://www.matnasetzion.com, city: גוש עציון}   # its hall's Smarticket (etzion) is left to smarticket
     http:
       concurrency: 3
       request_delay_seconds: 0.5
@@ -4027,6 +4032,19 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 0.5
+
+  milgammuni:
+    # Metropolinet's city multisite (WordPress + Elementor; REST API 401, no feed): the events grid page
+    # (one request, every events post newest first, no dates), then event pages in that order until 3
+    # past ones in a row (~5 requests a run): date and time, place, description, registration link.
+    enabled: true
+    vpn: true  # bet-shean.org.il: no answer to production directly or via the proxies, 200 via our VPN (Nov 2026)
+    cron: "32 6,18 * * *"
+    sites:
+      - {url: https://bet-shean.org.il, city: בית שאן}
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
 
   habama:
     # Habama (habama.co.il): performing-arts portal (theatre, dance, classical, kids, comedy). Its

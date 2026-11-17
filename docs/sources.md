@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 131 configured sources, 130 on. Each one has its own module in
+SPOTX collects from 132 configured sources, 131 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -138,6 +138,7 @@ many of them free.
 | `munievents` | Municipal and council calendars on the A.S. Bina CMS: ~90 cities, councils, community centres | 06:03, 18:03 | yes |
 | `matnasnet` | Matnasnet (also `*.atarix.co.il`): the CMS of most community centres and some councils | 05:41, 17:41 | yes |
 | `onecity` | OneCity municipal sites (WordPress + GeoDirectory: Karmiel, Even Yehuda, ...) | 04:17, 16:17 | yes |
+| `milgammuni` | Metropolinet city multisite (WordPress + Elementor: Bet She'an): events grid, then event pages until 3 past in a row; Israeli VPN | 06:32, 18:32 | yes |
 | `ogo` | OGO (ogo.co.il): a human-moderated guide to cultural events across Israel | 06:27, 18:27 | yes |
 | `ogo_us` | OGO USA (us.ogo.events): the same guide for the USA, events abroad; no VPN (US site, our VPN is Israeli); robots.txt `Disallow: /`, read by the owner's choice | 09:33, 21:33 | yes |
 | `ogo_de` | OGO Germany (de.ogo.events): the same guide for Germany, events abroad; no VPN; same robots.txt | 07:49, 19:49 | yes |
