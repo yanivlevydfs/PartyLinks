@@ -20,7 +20,7 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from urllib.parse import urljoin, urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.config import RetentionSettings
@@ -74,7 +74,11 @@ class MilgamMuniScraper(BaseScraper[MilgamMuniSettings]):
                 if event is None:
                     continue
                 if not is_current(
-                    event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known
+                    event.start_at,
+                    event.end_at,
+                    RetentionSettings.model_validate({}),
+                    self.timezone,
+                    time_known=event.time_known,
                 ):
                     past_in_row += 1
                     if past_in_row >= self.settings.stop_after_past:
@@ -161,7 +165,7 @@ def parse_event(page_html: str, url: str, image: str | None, site: MilgamSite, t
     return ScrapedEvent(
         source=MilgamMuniScraper.name,
         source_event_id=f"{urlsplit(site.url).hostname}:{post.group(1) if post else slug}",
-        url=url,
+        url=HttpUrl(url),
         title=title,
         description=description,
         start_at=start,

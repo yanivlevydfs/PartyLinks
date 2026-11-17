@@ -32,7 +32,7 @@ def test_paid_morning_show_with_registration_link() -> None:
     assert e is not None
     assert e.source_event_id == "bet-shean.org.il:31587"
     assert e.title == "בוקר תרבות: מצחיק עד דמעות – סיפורו של שייקה אופיר"
-    assert e.start_at.isoformat() == "2026-11-17T10:00:00+02:00" and e.time_known
+    assert e.start_at is not None and e.start_at.isoformat() == "2026-11-17T10:00:00+02:00" and e.time_known
     assert (e.venue_name, e.address, e.city) == ("בית יד לבנים", "רחוב דוד רמז 6", "בית שאן")
     assert e.min_price == Decimal(40)
     assert e.extra["purchase_url"] == "https://did.li/yLAmC"  # not the header's "פנייה למוקד"
@@ -45,7 +45,7 @@ def test_paid_morning_show_with_registration_link() -> None:
 def test_free_bar_meetup_drops_the_sign_up_form() -> None:
     e = parse_event(_page("event_bar.html"), URL, None, SITE, TZ)
     assert e is not None
-    assert e.start_at.isoformat() == "2026-10-14T20:00:00+03:00"
+    assert e.start_at is not None and e.start_at.isoformat() == "2026-10-14T20:00:00+03:00"
     assert (e.venue_name, e.address) == ("OPAA – הבר היווני של דלאל", "שדרות הארבעה 3")
     assert e.min_price == 0 and e.tickets[0].is_free
     assert e.extra == {}  # forms.gle is a sign-up form, not a seller
