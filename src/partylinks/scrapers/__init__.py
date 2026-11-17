@@ -44,7 +44,6 @@ from partylinks.scrapers.habama import HabamaScraper
 from partylinks.scrapers.haderamuni import HaderaMuniScraper
 from partylinks.scrapers.haezor import HaEzorScraper
 from partylinks.scrapers.haifamuni import HaifaMuniScraper
-from partylinks.scrapers.ironit import IronitScraper
 from partylinks.scrapers.halutz import HalutzScraper
 from partylinks.scrapers.hamenagen import HamenagenScraper
 from partylinks.scrapers.happytlv import HappyTlvScraper
@@ -54,6 +53,7 @@ from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
 from partylinks.scrapers.hypd import HypdScraper
 from partylinks.scrapers.inperson import InpersonScraper
+from partylinks.scrapers.ironit import IronitScraper
 from partylinks.scrapers.issta import IsstaScraper
 from partylinks.scrapers.iwant import IwantScraper
 from partylinks.scrapers.jaffatheatre import JaffaTheatreScraper
