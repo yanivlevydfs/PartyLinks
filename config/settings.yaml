@@ -3783,6 +3783,7 @@ sources:
       "מרכז צעירים טורבינה": "הנשיא 15"
       "הספרייה העירונית חדרה": "הנשיא 44"
       "מרכז ברוש": "הלל יפה 26"   # פנאי העיר חדרה (04-9118806), per the user
+      "מרכז הפנאי בית אליעזר": "השיזף 6"   # Beit Eliezer, per the user
     skip_purchase_hosts: ["eventshadera.smarticket.co.il"]
     catch_all_categories: {"כנסים": "כנס"}   # on an Oktoberfest and a Taki tournament (Nov 2026)
     http:
