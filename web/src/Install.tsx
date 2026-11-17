@@ -3,6 +3,7 @@
 // iOS has no such event: the banner shows the Share > Add to Home Screen steps instead.
 import { useEffect, useState } from "react";
 import { useConsent } from "./consent";
+import { currentDevice } from "./device";
 import { useWeb } from "./site_params/useWeb";
 import { useT } from "./ui";
 
@@ -13,16 +14,18 @@ interface InstallPrompt extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-// Fires once, possibly before React mounts: catch it at module load.
-let deferred: InstallPrompt | null = null;
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault(); // our banner instead of the browser's mini-infobar
-  deferred = e as InstallPrompt;
-});
+const { mobile: isMobile, ios: isIos } = currentDevice();
 
-const ua = navigator.userAgent;
-const isIos = /iPhone|iPad|iPod/.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua));
-const isMobile = isIos || /Android|Mobi/i.test(ua);
+// Fires once, possibly before React mounts: catch it at module load. Phones and tablets only: Chrome/Edge
+// fire it on PCs too, and there we leave it alone so the browser's own address-bar install stays as is.
+let deferred: InstallPrompt | null = null;
+if (isMobile) {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault(); // our banner instead of the browser's mini-infobar
+    deferred = e as InstallPrompt;
+  });
+}
+
 const standalone = () =>
   matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
 
