@@ -38,9 +38,10 @@ export function PartnersPage() {
         {(t.sections as Section[]).map((s) => (
           <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className={s.video ? "pt-split" : undefined}>
             {s.video && (
-              // preload="none": nothing but the poster loads until someone presses play
+              // preload="metadata": the duration and first frame show (the moov atom is at the front, so
+              // only the start of the file loads); the poster covers the box until play
               <figure className="pt-video">
-                <video src={s.video[0]} poster={s.video[1]} controls playsInline preload="none" aria-label={s.video[2]} />
+                <video src={s.video[0]} poster={s.video[1]} controls playsInline preload="metadata" aria-label={s.video[2]} />
                 <figcaption>{s.video[2]}</figcaption>
               </figure>
             )}

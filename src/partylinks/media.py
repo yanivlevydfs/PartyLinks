@@ -75,6 +75,9 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True  # pyrefly: ignore[bad-assignment]  (Pill
 register_heif_opener()  # HEIC / HEIF open like any other picture (pillow-heif)
 _ALPHA_MODES = ("RGBA", "LA", "PA")
 mimetypes.add_type("image/heic", ".heic")
+# Python 3.12 has no .webp type: the site's static WebP files (the /partners video poster) went out as
+# application/octet-stream with nosniff, and a browser may refuse to draw that as an image.
+mimetypes.add_type("image/webp", ".webp")
 
 
 def variant_path(relative: str, width: int) -> str:
