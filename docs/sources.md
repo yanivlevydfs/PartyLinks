@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 130 configured sources, 129 on. Each one has its own module in
+SPOTX collects from 131 configured sources, 130 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -131,6 +131,7 @@ many of them free.
 | `ramatganmuni` | Ramat Gan municipality (ramat-gan.muni.il): culture, community, seniors | 05:38, 17:38 | yes |
 | `petahtikvamuni` | Petah Tikva municipality (petah-tikva.muni.il): its Umbraco events API; Smarticket mirrors left to `smarticket` | 05:16, 17:16 | yes |
 | `haderamuni` | Hadera municipality (hadera.muni.il): WordPress sitemap (120 days of lastmod) and event pages; `eventshadera` Smarticket sales left to `smarticket`; Israeli VPN | 05:54, 17:54 | yes |
+| `ironit` | Ashdod culture company (ironit.org.il): its calendar feed (admin-ajax `get_events`), REST types and event pages; sales on the city's Smarticket tenant (`ashdod`) left to `smarticket`, so mostly free community events | 09:14, 21:14 | yes |
 | `jerusalemmuni` | Jerusalem municipality calendar (jerusalem.muni.il): its GetEventsNew listing, one card per date, a page per event (pin, prices, ticket link); Israeli VPN | 04:37, 16:37 | yes |
 | `sharepointmuni` | Municipal event lists on SharePoint (Rishon LeZion); rows sold by the culture hall / Smarticket left to `smarticket`. Off: the site answers home Israeli IPs only | 05:22, 17:22 | no |
 | `holon` | Holon municipality (holon.muni.il): free and paid events across the city | 04:09, 16:09 | yes |
@@ -220,3 +221,6 @@ first in `PARTYLINKS_HTTP__ISRAEL_PROXY`.
 | T-TLV | No live site at t-tlv.com |
 | Ticketnet | ticketnet.co.il no longer answers (last working capture 2024) |
 | OnTour | ontour.co.il (Issta Music) sells the same ~16 packages that `issta` already lists |
+| Netanya municipality | netanya.muni.il (SharePoint): the events list comes from SharePoint search, and the site blocks `/_api` with a Cloudflare firewall rule; its RSS feed has only the 25 latest-changed pages, without titles. Most of its events are community centres, libraries, Planetanya and the culture hall, which `matnasnet`, `eventpro` and `smarticket` already read (Nov 2026) |
+| Ra'anana municipality | raanana.muni.il (WordPress) has no events data of its own: its events block is the Smarticket tenant `tickets.raanana.muni.il` (= raanana.smarticket.co.il), already read by `smarticket`, as is `mishkan.raanana.muni.il` (Nov 2026) |
+| Ashdod municipality | ashdod.muni.il's events archive has listed nothing since 2023; the city's events are on `ironit` and the Smarticket tenants `ashdod` / `mishkan-ashdod` (Nov 2026) |

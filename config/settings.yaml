@@ -945,6 +945,7 @@ enrichment:
     ramatganmuni: [culture]  # municipal programme: seniors' month, aliyah club...
     petahtikvamuni: [culture]  # municipal market rows tagged only by audience or hall
     haderamuni: [culture]  # municipal programme: awareness weeks, community evenings, tagged by audience
+    ironit: [culture]  # Ashdod culture company: community evenings, parades, tours that name no genre
     jerusalemmuni: [culture]  # municipal calendar dates tagged only by audience or neighbourhood
     sharepointmuni: [culture]  # municipal lists: "תרבות ואומנות", seniors' month, untyped rows
     vibez: [culture]  # no categories; 7 of 88 (Nov 2026) name no genre in their text (performance, community night)
@@ -1701,6 +1702,7 @@ search:
     onecity: ["one city", "וואן סיטי"]
     petahtikvamuni: ["עיריית פתח תקווה", "עיריית פתח תקוה"]
     haderamuni: ["עיריית חדרה", "hadera municipality"]
+    ironit: ["עירונית אשדוד", "ironit", "החברה העירונית לתרבות הפנאי אשדוד"]
     jerusalemmuni: ["עיריית ירושלים"]
     sharepointmuni: ["עיריית ראשון לציון", "עיריית ראשל\"צ"]
     tickethouse: ["ticket house", "טיקט האוס"]
@@ -3779,6 +3781,18 @@ sources:
       "מרכז ברוש": "הלל יפה 26"   # פנאי העיר חדרה (04-9118806), per the user
     skip_purchase_hosts: ["eventshadera.smarticket.co.il"]
     catch_all_categories: {"כנסים": "כנס"}   # on an Oktoberfest and a Taki tournament (Nov 2026)
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+
+  ironit:
+    # Ashdod's culture and leisure company (ironit.org.il, WordPress): the calendar page's admin-ajax
+    # get_events feed lists every upcoming "Event" post per day (1 request); the REST API names their
+    # types (4 requests); each page gives place, date, hour, artwork and the buy link (~120 pages).
+    # Events sold through the city's Smarticket tenant (ashdod, read by smarticket) are skipped.
+    # Direct from Railway: 200 (Nov 2026), no proxy needed.
+    enabled: true
+    cron: "14 9,21 * * *"
     http:
       concurrency: 2
       request_delay_seconds: 1.0
