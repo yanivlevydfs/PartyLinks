@@ -54,6 +54,10 @@ _FULL_DATE = re.compile(r"\b(\d{1,2})[./](\d{1,2})[./](20\d{2})\b")
 _PRICE = re.compile(r"(\d+(?:\.\d+)?)")
 _POST_ID = re.compile(r"\bpostid-(\d+)\b")
 _TITLE_SUFFIX = re.compile(r"\s+[–-]\s+אתר האינטרנט\s*$")
+_SEPARATOR = re.compile(r"\s+[I|]\s+|\s*\|\s*|\s+[–—]\s+")
+_WHEN = re.compile(r"\s*,?\s*(?:\bיום\s|\d{1,2}[./]\d{1,2}[./]\d{2,4})")
+_CLOCK = re.compile(r"\d{1,2}:\d{2}")
+_STREET = re.compile(r"^(?:רחוב|רח'|רח׳|שדרות|שד')\s+")
 
 
 class HaderaMuniSettings(SourceSettings):
@@ -73,6 +77,9 @@ class HaderaMuniSettings(SourceSettings):
     venue_addresses: dict[str, str] = Field(default_factory=dict)
     # Box offices another source reads in full: their events are skipped here.
     skip_purchase_hosts: list[str] = Field(default_factory=list)
+    # Catch-all categories (category -> the title word that makes it true): "כנסים" is on an
+    # Oktoberfest and a Taki tournament, so it counts only for a title that says "כנס".
+    catch_all_categories: dict[str, str] = Field(default_factory=dict)
     place_words: list[str] = Field(
         default_factory=lambda: [
             "אולם", "מרכז", "מועדון", "ספריית", "הספרייה", "היכל", "בית ספר", "בית הספר", "פארק", "גן ",
@@ -190,6 +197,8 @@ def apply_terms(event: ScrapedEvent, tokens: list[str], names: dict[str, str], s
             # The page's own street stays; a street that only came from the replaced venue's name goes.
             if not event.address or event.address == _street(event.venue_name, s):
                 update["address"] = _street(venue, s)
+        elif name in s.catch_all_categories and s.catch_all_categories[name] not in event.title:
+            continue
         elif name.lower() not in genres:
             genres.append(name.lower())
     update["source_genres"] = genres
@@ -226,28 +235,46 @@ def _valid(year: int, month: int, day: int) -> bool:
     return True
 
 
-def _place_line(paragraphs: list[str], s: HaderaMuniSettings) -> str | None:
+def _split_place(text: str, s: HaderaMuniSettings) -> tuple[str | None, str | None]:
+    """A place line or map title -> (hall, street).
+
+    "מרכז הפנאי בית אליעזר, חדרה I יום שלישי, 01.12.2026" -> ("מרכז הפנאי בית אליעזר", None);
+    "מועדון אקים חדרה (בוטקובסקי 3, חדרה)" -> ("מועדון אקים", "בוטקובסקי 3");
+    "מרכז פיס בבי"ס..., רחוב באר אורה" -> ("מרכז פיס בבי"ס...", "באר אורה"); "יצחק רבין 13" -> (None, "יצחק רבין 13").
+    """
+    text = _SEPARATOR.split(text)[0]  # " I יום שלישי", " | 20:00"
+    text = _WHEN.split(text)[0]  # ", יום שלישי, 01.12.2026"
+    inner = [p for group in re.findall(r"\(([^)]*)\)", text) for p in group.split(",")]
+    text = re.sub(r"\s*\([^)]*\)", "", text)
+    hall = None
+    streets: list[str] = []
+    for part in [*text.split(","), *inner]:
+        part = part.strip(" ,.")
+        part = part.removeprefix(s.city + " ").strip() if part != s.city else ""
+        if not part:
+            continue
+        if _STREET.match(part) or (any(c.isdigit() for c in part) and not _is_place(part, s)):
+            streets.append(_STREET.sub("", part).strip())
+        elif hall is None and part not in inner:
+            hall = part.removesuffix(" " + s.city).strip() or None
+    return hall, (streets[0] if streets else None)
+
+
+def _is_place(text: str, s: HaderaMuniSettings) -> bool:
+    return any(text.startswith(w) for w in s.place_words)
+
+
+def _place_line(paragraphs: list[str], s: HaderaMuniSettings) -> tuple[str | None, str | None]:
     """The content line naming the hall: "באולם רנה שני", "מרכז ברוש (גן ברנדייס), חדרה"."""
     for line in paragraphs:
-        if len(line) > 70 or ":" in line or "₪" in line:
+        if len(line) > 90 or "₪" in line:
             continue
         text = line
-        if not any(text.startswith(w) for w in s.place_words) and text.startswith("ב"):
+        if not _is_place(text, s) and text.startswith("ב"):
             text = text[1:]
-        if any(text.startswith(w) for w in s.place_words):
-            text = re.sub(r"\s*\([^)]*\)", "", text)
-            text = text.removesuffix(", " + s.city).removesuffix(" " + s.city).strip(" ,.")
-            return text or None
-    return None
-
-
-def _clean_address(value: str | None, city: str) -> str | None:
-    """The map embed's title: "האלון 28, חדרה" -> "האלון 28"; a name without a number is no address."""
-    text = clean_str(value)
-    if not text or not any(c.isdigit() for c in text):
-        return None
-    text = text.removesuffix(", " + city).removeprefix(city + " ").strip(" ,")
-    return text or None
+        if _is_place(text, s) and not _CLOCK.search(_SEPARATOR.split(text)[0]):
+            return _split_place(text, s)
+    return None, None
 
 
 def _waze_point(url: str | None) -> tuple[float, float] | None:
@@ -271,6 +298,7 @@ def parse_event(
     body = tree.css_first("body")
     post_id = _POST_ID.search(body.attributes.get("class") or "") if body else None
     title = _text(root.css_first("h2.elementor-heading-title")) or _TITLE_SUFFIX.sub("", _text(tree.css_first("title")))
+    title = title.strip(" .")  # ".אוקטוברפסט."
     if not post_id or not title:
         raise ParseError(f"{url}: no post id or title")
     content = root.css_first(".elementor-widget-theme-post-content")
@@ -333,9 +361,13 @@ def parse_event(
 
     frame = root.css_first(".elementor-widget-google_maps iframe")
     map_title = clean_str(frame.attributes.get("title")) if frame else None
-    venue = _place_line(paragraphs, s) or (map_title.split(",")[0].strip() if map_title else None)
+    # The hall from the text, else the map title's; the street from the map title, else the text's.
+    # A place that is only a street ("יצחק רבין 13") is the address, and the event has no hall name.
+    hall, street = _place_line(paragraphs, s)
+    map_hall, map_street = _split_place(map_title, s) if map_title else (None, None)
+    venue = hall or map_hall
     venue = _alias(venue, s) if venue else None
-    address = _clean_address(map_title, s.city) or _street(venue, s)
+    address = map_street or street or _street(venue, s)
     point = _waze_point(waze)
 
     art = content.css_first("figure a[href]") if content else None

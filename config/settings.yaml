@@ -729,6 +729,7 @@ enrichment:
     kids: ["משחקייה", "ג'ימבורי", "לגיל הרך", "הצגת ילדים", "פעוטות"]
     theatre: ["הצגה", "מחזה", "מחזמר"]
     lectures: ["הרצאה", "הרצאת"]
+    festival: ["אוקטוברפסט", "oktoberfest"]  # a beer festival by its name (Hadera's ".אוקטוברפסט.")
     # Nov 2026 category audit (prod labels no genre matched + Eventbrite / Meetup / Fever / Funzing menus).
     # Phrases only where a bare word is a plain one: "נשים בלבד" is also "זוגות ונשים בלבד" (gender_balance),
     # "רווקות" "זוגות ורווקות", "improvisation" a jazz solo, "לסטודנטים" the student discount.
@@ -1089,7 +1090,7 @@ enrichment:
   # Genres read from the title only, never the description ("סדנאות יוגה" at a festival is no workshop).
   # Box-office small print names seniors ("הנחה לאזרחים ותיקים"), a hall a museum, a talk a marathon.
   # Russian / English: OGO translates its listings into Russian, a Hebrew tour is "also in English", a play has subtitles.
-  title_genres: [workshops, kids, theatre, lectures, seniors, museums, circus_magic, running, russian, english]
+  title_genres: [workshops, kids, theatre, lectures, seniors, museums, circus_magic, running, russian, english, festival]
   # Nov 2026 categories that say who an event is for or narrow its kind: they never take the place of its
   # fallback / source-default kind (a museum tour stays a tour, a seniors' talk a lecture).
   extra_genres: [musicals, russian, parents_babies, seniors, english, literature, museums, circus_magic, meditation,
@@ -3777,6 +3778,7 @@ sources:
       "הספרייה העירונית חדרה": "הנשיא 44"
       "מרכז ברוש": "הלל יפה 26"   # פנאי העיר חדרה (04-9118806), per the user
     skip_purchase_hosts: ["eventshadera.smarticket.co.il"]
+    catch_all_categories: {"כנסים": "כנס"}   # on an Oktoberfest and a Taki tournament (Nov 2026)
     http:
       concurrency: 2
       request_delay_seconds: 1.0

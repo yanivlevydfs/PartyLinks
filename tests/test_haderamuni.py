@@ -227,3 +227,52 @@ def test_run_reads_recent_pages_only_and_names_their_categories() -> None:
     assert e.start_at.date() == soon.date() and e.start_at.hour == 17
     assert e.source_genres == ["לכל המשפחה", "ספורט"]
     assert ("52914" in events) == (now.date() <= datetime(2026, 11, 29).date())
+
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    [
+        ("מרכז הפנאי בית אליעזר, חדרה I יום שלישי, 01.12.2026", ("מרכז הפנאי בית אליעזר", None)),
+        (
+            'מרכז פיס בבי"ס הרב תחומי למדעים ואומנויות, רחוב באר אורה',
+            ('מרכז פיס בבי"ס הרב תחומי למדעים ואומנויות', "באר אורה"),
+        ),
+        ("מועדון אקים חדרה (בוטקובסקי 3, חדרה)", ("מועדון אקים", "בוטקובסקי 3")),
+        ("יצחק רבין 13", (None, "יצחק רבין 13")),
+        ("הגיבורים 74, חדרה", (None, "הגיבורים 74")),
+        ('חדרה רמב"ם 39, חדרה', (None, 'רמב"ם 39')),
+        ("מרכז ברוש, גן ברנדייס", ("מרכז ברוש", None)),
+    ],
+)
+def test_place_line_splits_hall_and_street(line: str, expected: tuple) -> None:
+    from partylinks.scrapers.haderamuni import _split_place
+
+    assert _split_place(line, S) == expected
+
+
+def test_street_only_place_is_the_address_not_the_venue() -> None:
+    html = page("52912").replace("באולם הספורט של בית הספר צפרירים", "").replace("האלון 28, חדרה", "יצחק רבין 13, חדרה")
+    e, _ = parse_event(html, f"{SITE}/x/", LASTMOD, S, TZ)
+    assert (e.venue_name, e.address) == (None, "יצחק רבין 13")
+
+
+def test_place_line_with_its_date_and_a_street_in_the_text() -> None:
+    html = page("52912").replace(
+        "באולם הספורט של בית הספר צפרירים", "מרכז הפנאי בית אליעזר, חדרה I יום שלישי, 01.12.2026"
+    )
+    e, _ = parse_event(html, f"{SITE}/x/", LASTMOD, S, TZ)
+    assert (e.venue_name, e.address) == ("מרכז הפנאי בית אליעזר", "האלון 28")
+
+
+def test_dotted_title_is_cleaned_and_oktoberfest_is_a_festival() -> None:
+    html = page("52912").replace("טורניר שווים במגרש</h2>", ".אוקטוברפסט.</h2>")
+    e, tokens = parse_event(html, f"{SITE}/x/", LASTMOD, S, TZ)
+    assert e.title == "אוקטוברפסט"
+    # The catch-all "כנסים" category is no conference on a title that does not say so.
+    named = apply_terms(e, tokens, {tokens[0]: "כנסים"}, S)
+    assert "כנסים" not in named.source_genres
+    settings = Settings()
+    genres = Enricher(settings.enrichment, settings.timezone).enrich(named).genres
+    assert "festival" in genres and "conference" not in genres
+    talk = apply_terms(e.model_copy(update={"title": "כנס עסקים"}), tokens, {tokens[0]: "כנסים"}, S)
+    assert "כנסים" in talk.source_genres
