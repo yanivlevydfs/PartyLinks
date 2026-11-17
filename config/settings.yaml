@@ -3775,6 +3775,7 @@ sources:
       "היכל אנרבוקס": "משמר הגבול 1"
       "מרכז צעירים טורבינה": "הנשיא 15"
       "הספרייה העירונית חדרה": "הנשיא 44"
+      "מרכז ברוש": "הלל יפה 26"   # פנאי העיר חדרה (04-9118806), per the user
     skip_purchase_hosts: ["eventshadera.smarticket.co.il"]
     http:
       concurrency: 2
