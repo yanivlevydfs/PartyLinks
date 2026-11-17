@@ -1444,6 +1444,9 @@ geocoding:
     "נווה עמל": [32.1636250, 34.8581485]                # Neve Amal community centre, Foster 2, Herzliya
     "מרכז הבמה גני תקווה": [32.0589649, 34.8800730]     # Merkaz HaBama, HaCarmel, Ganei Tikva
     "דיונה אשדוד": [31.7782192, 34.6494647]             # Diuna community centre (hall), Ben Ami Blvd, Ashdod
+    "שלוחת אריאל שרון": [32.0792243, 34.8485443]        # Givat Shmuel matnas, Nahum 1 (Nominatim reads "נחום" as Nahum Sokolov)
+    "מתנ\"ס גבעת שמואל": [32.0792243, 34.8485443]       # the same building
+    "תיכון גבעת שמואל": [32.0694469, 34.8509751]        # Givat Shmuel high school, Golda Meir
     "ראש ציפור": [32.0985848, 34.8057304]               # Rosh Tzipor (birding centre), Yarkon Park, Tel Aviv
     "היכל התרבות נתניה": [32.3281532, 34.8624359]       # Netanya culture hall, Eliyahu HaGiladi
     "היכל התרבות לוד": [31.9431810, 34.8869670]         # Lod culture hall, Eliezer Kaplan 2
@@ -3593,6 +3596,7 @@ sources:
       - {url: https://www.maale-adummim.muni.il, city: מעלה אדומים, feed: false}
       - {url: https://www.nof-hagalil.muni.il, city: נוף הגליל, feed: false}
       - {url: https://www.givat-shmuel.muni.il, city: גבעת שמואל, feed: false}
+      - {url: https://www.givatshmuel.org.il, city: גבעת שמואל, organizer: 'מתנ"ס גבעת שמואל'}
       - {url: https://www.oryehuda.muni.il, city: אור יהודה, feed: false}
       - {url: https://www.dimona.muni.il, city: דימונה, feed: false}
       - {url: https://www.kiryat-motzkin.muni.il, city: קריית מוצקין}
