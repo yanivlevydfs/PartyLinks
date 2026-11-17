@@ -1054,8 +1054,15 @@ enrichment:
   # seat-map test pages (a hall's map checked before sale), reached since private events are read.
   # "מכרז פומבי": Ashdod's and Holon's municipal companies sell public-tender documents through their box
   # offices (OGO, Smarticket), so tenders came in as events (Nov 2026).
-  # School trips are no public event (a muni calendar listed "טיול שנתי שכבה ח'", Nov 2026).
-  skip_titles: ["ticket management", "בדיקת מפה", "מכרז פומבי", "טיול שנתי", "טיולים שנתיים", "טיול שכבה", "טיולי שכבה"]
+  # School-internal and closed events are no public event: a muni calendar listed "טיול שנתי שכבה ח'"
+  # (Nov 2026). Grade / pupils / staff / parents' meetings, closed or private events, cancelled listings.
+  skip_titles: [
+    "ticket management", "בדיקת מפה", "מכרז פומבי",
+    "טיול שנתי", "טיולים שנתיים", "טיול שכבה", "טיולי שכבה", "שכבה א'", "שכבה ב'", "שכבה ג'", "שכבה ד'",
+    "שכבה ה'", "שכבה ו'", "שכבה ז'", "שכבה ח'", "שכבה ט'", "שכבה י'", "שכבת ", "לתלמידי בית הספר",
+    "אסיפת הורים", "ועד הורים", "השתלמות מורים", "השתלמות גננות", "לצוות בית הספר", "לעובדי העירייה",
+    "אירוע סגור", "אירוע פרטי", "סגור לקהל", "canceled event", "cancelled event", "האירוע בוטל",
+  ]
   # Small print that names a genre word in passing, removed from the text before genres are read.
   # Nov 2026 genre audit: phrases whose words are no genre ("open house", "pop art", the evening prayer,
   # "the eastern gate", a Mediterranean menu).
