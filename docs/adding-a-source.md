@@ -54,6 +54,17 @@ sources are never changed to make room for a new one.
 6. **Before any probing that may be read as circumvention** (a hidden API, a blocked site),
    the auto-mode classifier may deny it. Ask the user for a narrow `autoMode.allow` rule in
    `.claude/settings.local.json` naming the site, then continue.
+7. **Israeli-only sites from abroad:** a request from a machine outside Israel proves nothing.
+   Run the dry run inside the production container, through the Israeli VPN (it writes nothing):
+
+   ```bash
+   railway ssh --service web -- "PYTHONIOENCODING=utf-8 python - <name> --show 10" < scripts/check_source.py
+   ```
+
+   The image has no `scripts/` folder, so the script goes in on stdin. `railway run` runs the
+   command locally with production variables, so it does not reach the VPN. This needs the
+   machine's SSH key registered with Railway (`railway ssh keys add`; on Windows PowerShell
+   `railway.cmd`) and `ssh.railway.com` in `~/.ssh/known_hosts`.
 
 ## 2. Write the scraper
 

@@ -11,6 +11,11 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
 2. Recon (section 1): robots.txt, the data the page itself loads, platform already covered?, access
    (plain / `impersonate: chrome` / `israel_proxy` / `vpn: true` when even the free Israeli proxies fail). If the auto-mode classifier denies probing,
    stop, explain, and ask the user for a narrow `autoMode.allow` rule in `.claude/settings.local.json`.
+   **Israeli-only sites:** the local machine may be abroad, so a local request proves nothing.
+   Run the dry run inside the production container, through the Israeli VPN (it writes nothing):
+   `railway ssh --service web -- "PYTHONIOENCODING=utf-8 python - <name> --show 10" < scripts/check_source.py`. The image has no `scripts/`, so the script goes in on stdin. `railway run` would run
+   locally, not in Railway. Needs this machine's SSH key registered (`railway.cmd ssh keys add`)
+   and ssh.railway.com in `~/.ssh/known_hosts`.
 3. Build in a new file only (`src/partylinks/scrapers/<name>.py` + `tests/test_<name>.py`);
    existing files get the hook lines of section 4 and nothing else. Never edit another source to
    make room.
