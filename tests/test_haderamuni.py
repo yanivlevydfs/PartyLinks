@@ -98,7 +98,7 @@ def test_hall_line_and_street_from_the_map() -> None:
 
 def test_place_without_a_street() -> None:
     e, tokens = event("52910")
-    assert (e.venue_name, e.address) == ("מרכז ברוש", None)  # "מרכז ברוש (גן ברנדייס), חדרה"
+    assert (e.venue_name, e.address) == ("מרכז ברוש", "הלל יפה 26")  # "מרכז ברוש (גן ברנדייס), חדרה"
     assert e.latitude is None  # Waze by venue id only
     assert e.min_price == Decimal(55)
     assert e.extra["purchase_url"].startswith("https://www.pnay.org.il/")

@@ -187,7 +187,8 @@ def apply_terms(event: ScrapedEvent, tokens: list[str], names: dict[str, str], s
         if token.startswith(s.venue_taxonomy + "-"):
             venue = _alias(name, s)
             update["venue_name"] = venue
-            if not event.address:
+            # The page's own street stays; a street that only came from the replaced venue's name goes.
+            if not event.address or event.address == _street(event.venue_name, s):
                 update["address"] = _street(venue, s)
         elif name.lower() not in genres:
             genres.append(name.lower())
