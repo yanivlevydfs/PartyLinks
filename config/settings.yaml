@@ -829,7 +829,7 @@ enrichment:
     # Kosher bars and restaurants: HappyTLV's own FAQ answer on the place's page (happytlv.is_kosher),
     # declared with the place's category. Never read from text ("לא כשר" would match).
     kosher: ["kosher"]
-    nightclubs: ["nightclubs", "parties", "party", "מסיבה", "מסיבות", "מועדוני לילה", "חיי-לילה", "חיי לילה", "gala & ball", "discoteca & baile"]  # parties: Secret Tel Aviv's category
+    nightclubs: ["nightclubs", "nightlife", "parties", "party", "מסיבה", "מסיבות", "מועדוני לילה", "חיי-לילה", "חיי לילה", "gala & ball", "discoteca & baile"]  # parties: Secret Tel Aviv's category
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
@@ -1652,6 +1652,8 @@ search:
     jerusalemtheatre: ["jerusalem theatre", "תיאטרון ירושלים"]
     agol: ["עגול", "אגול"]
     airdrop: ["air drop", "אירדרופ", "אייר דרופ"]
+    hypd: ["הייפד", "ההייפ מוצדק", "hyped"]
+    getin: ["get in", "get-in", "גט אין", "גטאין"]
     vibez: ["וייבז"]
     shotgun: ["שוטגאן"]
     eventbrite: ["איוונטברייט"]
@@ -2722,6 +2724,28 @@ sources:
     sitemap_path: /sitemap.xml
     http:
       concurrency: 4
+
+  getin:
+    # GETIN (get-in.com / getin.xyz): ticketing platform for club nights and festivals, mostly abroad
+    # (Miami, NYC, Toronto, Dubai, Mexico) plus a few Israeli nights. api/filter-events (the site's own
+    # call; ~32 a filter, so: none, Israel, week, trending, each category: ~15 requests, ~35 events) and
+    # each event's page for description and currency. Producers sell here: the page is the seller.
+    enabled: true
+    cron: "42 7,19 * * *"
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
+
+  hypd:
+    # hypd (hypd.co.il, "ההייפ מוצדק"): curated party board for Israel (club nights, raves, festivals).
+    # /sitemaps/events.xml (1 request, ~110 upcoming pages; past ones are in another sitemap) and each
+    # page's MusicEvent JSON-LD: place with coordinates, performers, the producer's seller link (Zygo,
+    # Go-Out...) as extra.purchase_url. Genres from the page's /genre/ links. robots.txt: /api/, /go/ out.
+    enabled: true
+    cron: "39 7,19 * * *"
+    http:
+      concurrency: 3
+      request_delay_seconds: 0.5
 
   airdrop:
     # Airdrop (airdrop.co.il): party guide for Israeli clubs and festivals and party trips abroad.

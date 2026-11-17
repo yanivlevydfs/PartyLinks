@@ -34,6 +34,7 @@ from partylinks.scrapers.fever import FeverScraper
 from partylinks.scrapers.friendshist import FriendsHistScraper
 from partylinks.scrapers.funzing import FunzingScraper
 from partylinks.scrapers.geektime import GeektimeScraper
+from partylinks.scrapers.getin import GetinScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.goshow import GoShowScraper
 from partylinks.scrapers.gototlv import GotoTlvScraper
@@ -48,6 +49,7 @@ from partylinks.scrapers.hatarbut import HatarbutScraper
 from partylinks.scrapers.holon import HolonScraper
 from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
+from partylinks.scrapers.hypd import HypdScraper
 from partylinks.scrapers.inperson import InpersonScraper
 from partylinks.scrapers.issta import IsstaScraper
 from partylinks.scrapers.iwant import IwantScraper
@@ -169,6 +171,8 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         JerusalemTheatreScraper,
         DropScraper,
         AirdropScraper,
+        HypdScraper,
+        GetinScraper,
         AgolScraper,
         YotzimScraper,
         LumaScraper,
