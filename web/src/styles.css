@@ -665,7 +665,7 @@ select option { background: var(--panel-solid); color: var(--text); }
 .buy-note a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 @keyframes pulse { 50% { box-shadow: 0 0 55px rgb(255 46 147 / .75), inset 0 0 0 1px rgb(255 255 255 / .25); } }
 
-.foot { color: var(--muted); padding: 40px 16px 84px; text-align: center; margin-top: 48px; border-top: 1px solid var(--line); font-family: var(--display); letter-spacing: 2px; }
+.foot { color: var(--muted); padding: 40px 16px; text-align: center; margin-top: 48px; border-top: 1px solid var(--line); font-family: var(--display); letter-spacing: 2px; }
 
 /* ------------------------------------------------------------------ event page */
 .event { position: relative; isolation: isolate; padding-bottom: 20px; overflow-x: clip; }
@@ -1011,27 +1011,8 @@ select option { background: var(--panel-solid); color: var(--text); }
 .statement .contact { list-style: none; padding: 16px 20px; background: var(--panel); border: 1px solid var(--line-hot); border-radius: 14px; }
 .statement .muted { color: var(--muted); }
 .foot a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
-/* Legal row: items never break inside, the row wraps between them; dots drawn here so a wrapped line starts clean. */
-.foot-legal { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px 0; margin: 0; padding: 0; list-style: none; font-size: 13px; letter-spacing: .3px; }
-.foot-legal li { white-space: nowrap; }
-.foot-legal li + li::before { content: "·"; margin-inline: 8px; opacity: .6; }
-.foot-legal a, .foot-legal .linkish { display: inline-block; padding-block: 4px; } /* 24px+ tap height */
-/* Disclaimer: quiet small print, not a banner. Full text stays in the DOM; phones clamp it (see the 760px block). */
-.foot-disclaimer {
-  max-width: 720px; margin: 18px auto 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px;
-  background: rgb(255 255 255 / .03); color: var(--muted); font: 400 12.5px/1.6 "Heebo", system-ui, sans-serif; letter-spacing: 0;
-}
-.foot-disclaimer p { margin: 0; text-wrap: pretty; }
-.foot-more { display: none; }
-/* Copyright row: one line; the build date is the first thing to go on narrow screens. */
-.foot-copy {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin: 12px 0 0;
-  font: 400 12px/1.5 "Heebo", system-ui, sans-serif; letter-spacing: 0; color: rgb(179 166 212 / .8);
-}
-.foot-copy span { white-space: nowrap; }
-.foot-copy span + span::before { content: "·"; margin-inline: 6px; opacity: .7; }
-.foot-ver, .foot-date { font-variant-numeric: tabular-nums; }
-.foot-ver bdi, .foot-date bdi { opacity: .8; }
+.foot-disclaimer { max-width: 680px; margin: 20px auto 0; padding: 10px 16px; border-radius: 12px; background: var(--pink); color: #fff; font: 600 13px/1.6 "Heebo", system-ui, sans-serif; letter-spacing: 0; box-shadow: 0 0 24px rgb(255 46 147 / .35); }
+.foot-copy { margin: 14px 0 0; font-size: 12px; letter-spacing: 0; opacity: .6; }
 .foot-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; margin-bottom: 18px; letter-spacing: 0; font-size: 14px; }
 .adm-banner { background: rgb(255 209 102 / .08); border: 1px solid rgb(255 209 102 / .35); border-radius: 12px; padding: 10px 14px; margin-bottom: 10px; }
 
@@ -1346,7 +1327,6 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 
 /* ------------------------------------------------------------------ phone tab bar + sticky buy bar */
 .tabbar, .buy-bar { display: none; }
-@media (max-width: 340px) { .foot-date { display: none; } }
 @media (max-width: 760px) {
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
   /* Logo flush at the start, the buttons packed at the end. Physical margins: the logo is direction ltr, so its logical ones flip. */
@@ -1410,18 +1390,7 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .hero { padding: 22px 0 14px; }
   .hero h1 { font-size: clamp(28px, 8.5vw, 40px); font-size: round(down, clamp(28px, 8.5vw, 40px), 1px); letter-spacing: -1px; }
   .search { margin-top: 14px; padding: 12px 18px; font-size: 16px; }
-  /* Bottom padding clears the floating accessibility / Telegram buttons (76px up, 46px tall) above the tab bar,
-     which body's padding already clears. */
-  .foot { margin-top: 24px; padding: 24px 12px calc(64px + env(safe-area-inset-bottom)); }
-  .foot-links { gap: 6px 14px; margin-bottom: 14px; font-size: 13px; }
-  /* Wrapped legal rows: no dots (a wrapped line would start with one), just gaps. */
-  .foot-legal { gap: 0 14px; font-size: 12.5px; }
-  .foot-legal li + li::before { content: none; }
-  .foot-disclaimer { display: flex; align-items: baseline; gap: 8px; margin-top: 14px; padding: 6px 12px; font-size: 12px; line-height: 1.5; text-align: start; }
-  .foot-disclaimer p { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .foot-disclaimer.open p { white-space: normal; }
-  .foot-more { display: inline-block; flex: none; min-height: 24px; padding: 2px 4px; color: var(--text); font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-  .foot-copy { margin-top: 10px; font-size: 11px; }
+  .foot { margin-top: 24px; padding-block: 28px; }
 
   /* Popups sit above the tab bar, buttons on one row; they cover the accessibility button meanwhile. */
   .consent, .install { inset: auto 8px calc(70px + env(safe-area-inset-bottom)); }

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { CardSources } from "./card_stores/CardSources";
 import sourceNames from "./sourceNames.json";
 import { Link, NavLink, Outlet, ScrollRestoration } from "react-router-dom";
@@ -129,24 +129,6 @@ export function useTitle(title: string | undefined) {
 // The home page and its filter pages (/genre/x, /tonight...) are one page: picking a filter keeps the scroll.
 const LANDING = /^\/(now|holiday|tonight|weekend|genre|city|region)?(\/|$)/;
 
-
-// __VERSION__ is "sha · date": the footer shows them as separate items so a narrow screen can drop the date.
-const [VERSION_SHA, VERSION_DATE] = __VERSION__.split(" · ");
-
-// The legal disclaimer, full text always in the DOM. Phones clamp it to one line with a toggle; wide screens show it all.
-function FootDisclaimer({ t }: { t: Strings }) {
-  const [open, setOpen] = useState(false);
-  const id = useId();
-  return (
-    <div className={"foot-disclaimer" + (open ? " open" : "")}>
-      <p id={id}>{t.disclaimer}</p>
-      <button type="button" className="linkish foot-more" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
-        {open ? t.disclaimerLess : t.disclaimerMore}
-      </button>
-    </div>
-  );
-}
-
 export function Layout() {
   const { t, lang } = useT();
   const setLang = useStore((s) => s.setLang);
@@ -212,22 +194,14 @@ export function Layout() {
           ))}
         </nav>
         <SiteShare />
-        {/* Legal row: each item stays whole (nowrap), the row wraps between items; the dots are CSS. */}
-        <ul className="foot-legal">
-          <li>{lang === "he" ? "SPOTX · ישראל" : "SPOTX · Israel"}</li>
-          {INFO_LINKS.map((l) => <li key={l.path}><Link to={l.path}>{l.label[lang]}</Link></li>)}
-          <li><Link to="/accessibility">{t.accessibility}</Link></li>
-          <li><Link to="/terms">{t.terms}</Link></li>
-          <li><Link to="/privacy">{t.privacy}</Link></li>
-          <li><button className="linkish" onClick={openConsent}>{t.cookieSettings}</button></li>
-        </ul>
-        <FootDisclaimer t={t} />
-        <p className="foot-copy">
-          <span>© {new Date().getFullYear()} SPOTX</span>
-          <span className="foot-rights">{t.rights}</span>
-          <span className="foot-ver"><bdi>v{VERSION_SHA}</bdi></span>
-          {VERSION_DATE && <span className="foot-date"><bdi>{VERSION_DATE}</bdi></span>}
-        </p>
+        {lang === "he" ? "SPOTX · ישראל" : "SPOTX · Israel"}
+        {INFO_LINKS.map((l) => <Fragment key={l.path}>{" · "}<Link to={l.path}>{l.label[lang]}</Link></Fragment>)}
+        {" · "}<Link to="/accessibility">{t.accessibility}</Link>
+        {" · "}<Link to="/terms">{t.terms}</Link>
+        {" · "}<Link to="/privacy">{t.privacy}</Link>
+        {" · "}<button className="linkish" onClick={openConsent}>{t.cookieSettings}</button>
+        <p className="foot-disclaimer">{t.disclaimer}</p>
+        <p className="foot-copy">© {new Date().getFullYear()} SPOTX · {t.rights} · v{__VERSION__}</p>
       </footer>
       </SponsoredFrame>
       {/* Phones: the main sections as a thumb-reach tab bar instead of a header row that scrolls off. */}
