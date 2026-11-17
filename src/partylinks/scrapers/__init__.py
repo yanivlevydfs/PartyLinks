@@ -102,6 +102,7 @@ from partylinks.scrapers.selector import SelectorScraper
 from partylinks.scrapers.sharepointmuni import SharePointMuniScraper
 from partylinks.scrapers.shotgun import ShotgunScraper
 from partylinks.scrapers.showshappening import ShowsHappeningScraper
+from partylinks.scrapers.skiddle import SkiddleScraper
 from partylinks.scrapers.smarticket import SmarticketIsraelScraper, SmarticketScraper
 from partylinks.scrapers.standupist import StandupistScraper
 from partylinks.scrapers.swaptix import SwapTixScraper
@@ -179,6 +180,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         TakeABreakScraper,
         DiceScraper,
         XceedScraper,
+        SkiddleScraper,
         AgolScraper,
         YotzimScraper,
         LumaScraper,

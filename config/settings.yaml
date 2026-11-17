@@ -1660,6 +1660,7 @@ search:
     takeabreak: ["take a break", "טייק א ברייק", "טייק אברייק"]
     dice: ["דייס", "dice.fm"]
     xceed: ["אקסיד", "xceed.me"]
+    skiddle: ["סקידל", "skiddle.com"]
     vibez: ["וייבז"]
     shotgun: ["שוטגאן"]
     eventbrite: ["איוונטברייט"]
@@ -2782,6 +2783,16 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 1.0
+
+  skiddle:
+    # Skiddle (skiddle.com): UK club nights, only London and Manchester (cities in SkiddleSettings).
+    # Each city's /clubs/<City>/ page embeds its 24 trending nights in __NEXT_DATA__ (venue coords,
+    # prices, artists): 2 requests a run, no event page. AWS WAF challenges from the 3rd quick page.
+    enabled: true
+    cron: "28 7,19 * * *"
+    http:
+      concurrency: 1
+      request_delay_seconds: 10.0
 
   airdrop:
     # Airdrop (airdrop.co.il): party guide for Israeli clubs and festivals and party trips abroad.
