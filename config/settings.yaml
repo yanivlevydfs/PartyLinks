@@ -1654,6 +1654,7 @@ search:
     airdrop: ["air drop", "אירדרופ", "אייר דרופ"]
     hypd: ["הייפד", "ההייפ מוצדק", "hyped"]
     getin: ["get in", "get-in", "גט אין", "גטאין"]
+    takeabreak: ["take a break", "טייק א ברייק", "טייק אברייק"]
     vibez: ["וייבז"]
     shotgun: ["שוטגאן"]
     eventbrite: ["איוונטברייט"]
@@ -2746,6 +2747,16 @@ sources:
     http:
       concurrency: 3
       request_delay_seconds: 0.5
+
+  takeabreak:
+    # Take A Break (takebreaktravel.com): an Israeli agency's packages (flight + hotel + ticket) to club
+    # nights, concerts, festivals and matches abroad. /events (ItemList of the upcoming ones, card kind
+    # badges) + each event page (Event JSON-LD, hotels' per-person ILS prices): ~16 requests a run.
+    enabled: true
+    cron: "52 6,18 * * *"
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
 
   airdrop:
     # Airdrop (airdrop.co.il): party guide for Israeli clubs and festivals and party trips abroad.
