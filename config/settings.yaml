@@ -943,6 +943,7 @@ enrichment:
     kikarhamusica: [live_show]  # a music stage; Saturday-night sets come with no category ("שבת")
     ramatganmuni: [culture]  # municipal programme: seniors' month, aliyah club...
     petahtikvamuni: [culture]  # municipal market rows tagged only by audience or hall
+    haderamuni: [culture]  # municipal programme: awareness weeks, community evenings, tagged by audience
     jerusalemmuni: [culture]  # municipal calendar dates tagged only by audience or neighbourhood
     sharepointmuni: [culture]  # municipal lists: "תרבות ואומנות", seniors' month, untyped rows
     vibez: [culture]  # no categories; 7 of 88 (Nov 2026) name no genre in their text (performance, community night)
@@ -1499,6 +1500,8 @@ geocoding:
     "ג'וליס": [32.9430618, 35.1869431]                   # Julis, plain apostrophe
     "גן יעקב (הבימה)": [32.0734349, 34.7793900]          # Gan Yaakov, by Habima, Tel Aviv
     "גלריה מזל דגים": [32.0533730, 34.7514300]           # Mazal Dagim 4, Old Jaffa (OSM house point)
+    "אולם רנה שני": [32.4392438, 34.9139189]             # Rene Shani hall, Rambam St, Hadera (OSM theatre)
+    "מרכז צעירים טורבינה": [32.4404062, 34.9179031]      # Turbina youth centre, HaNasi 15, Hadera (OSM)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
@@ -1696,6 +1699,7 @@ search:
     standupist: ["סטנדאפיסט פורטל", "פורטל סטנדאפיסט"]
     onecity: ["one city", "וואן סיטי"]
     petahtikvamuni: ["עיריית פתח תקווה", "עיריית פתח תקוה"]
+    haderamuni: ["עיריית חדרה", "hadera municipality"]
     jerusalemmuni: ["עיריית ירושלים"]
     sharepointmuni: ["עיריית ראשון לציון", "עיריית ראשל\"צ"]
     tickethouse: ["ticket house", "טיקט האוס"]
@@ -3743,6 +3747,38 @@ sources:
       "עמישב": "קהילת שיקגו 1"
     http:
       impersonate: chrome
+
+  haderamuni:
+    # Hadera municipality (WordPress, post type muni_events): the core sitemap lists every event page
+    # (~790 all-time) with lastmod; pages modified in the last 120 days are read (~110), past dates
+    # dropped. Categories are post classes, named from the taxonomy sitemaps / term pages. Pages sold
+    # through the eventshadera Smarticket box office (read by smarticket) are skipped.
+    enabled: true
+    # Refuses Railway's IP and the free Israeli proxies (both time out); 200 through our VPN (Nov 2026).
+    vpn: true  # our Israeli VPN only (Railway production)
+    cron: "54 5,17 * * *"
+    site_url: https://www.hadera.muni.il
+    city: חדרה
+    lastmod_days: 120
+    # Audiences that name a kind of event; teens, students, adults and seniors come listed together.
+    genre_audiences: ["לכל המשפחה", "ילדים (6-12)", "הגיל הרך (0-5)", "הורים", "קהילת להט\"ב", "דוברי רוסית"]
+    venue_aliases:   # spellings in the texts and the event_location terms -> one hall
+      "רינה שני": "אולם רנה שני"
+      "רנה שני": "אולם רנה שני"
+      "אנרבוקס": "היכל אנרבוקס"
+      "טורבינה": "מרכז צעירים טורבינה"
+      "מרכז צעירים": "מרכז צעירים טורבינה"
+      "ספריית מרכזית": "הספרייה העירונית חדרה"
+      "ספרייה מרכזית": "הספרייה העירונית חדרה"
+    venue_addresses:   # streets of the halls the pages name without one
+      "אולם רנה שני": "רמב\"ם 39"
+      "היכל אנרבוקס": "משמר הגבול 1"
+      "מרכז צעירים טורבינה": "הנשיא 15"
+      "הספרייה העירונית חדרה": "הנשיא 44"
+    skip_purchase_hosts: ["eventshadera.smarticket.co.il"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
 
   standupist:
     # Standupist (standupist.co.il): stand-up portal and box office on WordPress + EventON. One call to
