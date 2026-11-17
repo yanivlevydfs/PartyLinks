@@ -39,7 +39,9 @@ sources are never changed to make room for a new one.
 3. **Check whether a platform we already read covers it.** If the site runs on PRES, Smarticket,
    Tickchak, The Events Calendar (`tribe.py`) or Eventer, add a host or an organizer to that
    source's settings instead of writing a new scraper.
-4. **Check access.** Note how the site answers a plain client:
+4. **Check access, cheapest first:** 1) direct (plain request), 2) via proxy (`israel_proxy: true`)
+   only if direct fails, 3) the VPN (`vpn: true`) only if both fail. Test from production for
+   Israeli sites (step 7). Configure the first mode that works. Note how the site answers:
 
    | Answer | What to use |
    | --- | --- |
