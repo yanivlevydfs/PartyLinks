@@ -1,10 +1,10 @@
 """DICE (dice.fm) - a ticketing app for club nights, DJ sets and gigs in Europe and the US.
 
 Only the cities Israelis fly to most are read (config ``cities``: London, Berlin, Paris, Barcelona,
-Madrid, Lisbon, Milan, Ibiza, New York), and in each only the music kinds this site is about
+Madrid, Lisbon, Milan, Ibiza, New York, Rome, Miami, Los Angeles, Manchester), and in each only the music kinds this site is about
 (``filters``: DJ, party, gig): a city's browse page (``/browse/<city-id>/music/<kind>``, Next.js)
 embeds its ~30 top events in ``__NEXT_DATA__`` with no further page, so a run is cities x kinds
-requests (~27). robots.txt allows every path to every crawler but the AI-training ones.
+requests (~39). robots.txt allows every path to every crawler but the AI-training ones.
 
 A row gives id (the page is ``/event/<id>``), name, sold-out status, square artwork, start and end
 with the venue's time zone, the venue (name, street address, city, country) and the "from" price
@@ -26,6 +26,9 @@ from partylinks.parsing import ParseError, clean_str, next_data, parse_iso, zone
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
+# The money of the countries read, for a row that names none (then it has no price either).
+LOCAL_CURRENCY = {"GB": "GBP", "US": "USD"}
+
 
 class DiceSettings(SourceSettings):
     site_url: str = "https://dice.fm"
@@ -41,6 +44,10 @@ class DiceSettings(SourceSettings):
             "milano-5d68e89f7f285e094f60b00e",
             "ibiza-5e68e75a86c4a10280c01a29",
             "new_york-5bbf4db0f06331478e9b2c59",
+            "roma-5d68eb080c4e18d46783919d",
+            "miami-5e3bf1b0fe75488ec46cdf9f",
+            "losangeles-5982e13c613de866017c3e3a",
+            "man-54d8a22538fe5d27d5000019",
         ]
     )
     # Browse filter path -> the genre it gives.
@@ -122,7 +129,7 @@ def parse_row(row: dict[str, Any], genres: list[str], site_url: str, timezone: s
         time_zone=None if country == "IL" else tz,
         source_genres=list(dict.fromkeys(genres)),
         images=[image] if image else [],
-        currency=clean_str(price.get("currency")),
+        currency=clean_str(price.get("currency")) or LOCAL_CURRENCY.get(country, "EUR"),  # unpriced rows have none
         min_price=low,
         max_price=low,
         is_sold_out=sold_out,

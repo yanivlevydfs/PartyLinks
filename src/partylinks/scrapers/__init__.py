@@ -122,6 +122,7 @@ from partylinks.scrapers.tribe import BabeBarScraper, GagarinScraper
 from partylinks.scrapers.tzkrti import TzkrtiScraper
 from partylinks.scrapers.viagogo import ViagogoScraper
 from partylinks.scrapers.vibez import VibezScraper
+from partylinks.scrapers.xceed import XceedScraper
 from partylinks.scrapers.xplorer import XplorerScraper
 from partylinks.scrapers.yellowsubmarine import YellowSubmarineScraper
 from partylinks.scrapers.yotzim import YotzimScraper
@@ -177,6 +178,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         GetinScraper,
         TakeABreakScraper,
         DiceScraper,
+        XceedScraper,
         AgolScraper,
         YotzimScraper,
         LumaScraper,

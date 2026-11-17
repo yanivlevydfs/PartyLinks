@@ -75,4 +75,6 @@ def test_sold_out_and_unpriced_rows() -> None:
         TZ,
     )
     assert sold is not None and sold.is_sold_out and sold.min_price is None and sold.tickets == []
+    free = parse_row(ROW | {"price": {}}, ["party"], "https://dice.fm", TZ)
+    assert free is not None and free.currency == "GBP" and free.min_price is None
     assert parse_row(ROW | {"name": " "}, ["party"], "https://dice.fm", TZ) is None

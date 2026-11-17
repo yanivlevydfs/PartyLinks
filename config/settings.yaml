@@ -1656,6 +1656,7 @@ search:
     getin: ["get in", "get-in", "גט אין", "גטאין"]
     takeabreak: ["take a break", "טייק א ברייק", "טייק אברייק"]
     dice: ["דייס", "dice.fm"]
+    xceed: ["אקסיד", "xceed.me"]
     vibez: ["וייבז"]
     shotgun: ["שוטגאן"]
     eventbrite: ["איוונטברייט"]
@@ -2762,12 +2763,22 @@ sources:
   dice:
     # DICE (dice.fm): club nights, DJ sets and gigs abroad, only in the cities Israelis fly to most and
     # only the DJ / party / gig kinds (cities and filters in DiceSettings). Each city's browse page per
-    # kind embeds its ~30 top events in __NEXT_DATA__: ~27 requests a run, no event page.
+    # kind embeds its ~30 top events in __NEXT_DATA__: ~39 requests a run, no event page.
     enabled: true
     cron: "14 5,17 * * *"
     http:
       concurrency: 1
       request_delay_seconds: 1.5
+
+  xceed:
+    # Xceed (xceed.me): clubs and club nights in Spain, Italy, Portugal and Germany, only the cities
+    # Israelis fly to most (cities in XceedSettings). Each city's events page (React state, ~24 top
+    # events with genres) + each event's page (JSON-LD: venue, coordinates, offers): ~270 requests.
+    enabled: true
+    cron: "1 6,18 * * *"
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
 
   airdrop:
     # Airdrop (airdrop.co.il): party guide for Israeli clubs and festivals and party trips abroad.
