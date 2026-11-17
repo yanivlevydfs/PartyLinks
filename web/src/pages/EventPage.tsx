@@ -1,5 +1,6 @@
 import { SponsorButton } from "../ads/SponsorSheet";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { SaveAlertButton } from "../alerts/SaveAlertButton";
 import { useAlertText } from "../alerts/i18n";
 import { isGone, useEvent } from "../api";
@@ -23,6 +24,12 @@ export default function EventPage() {
   const navigate = useNavigate();
   const { data: e, error, isError, isPending } = useEvent(id);
   useTitle(e?.title);
+  // One address per event: an old /event/<slug> link, or a duplicate listing's, shows as its short /e/<code>.
+  const location = useLocation();
+  const canonical = e?.code ? eventPath(e) : null;
+  useEffect(() => {
+    if (canonical && location.pathname !== canonical) navigate(canonical + location.search + location.hash, { replace: true });
+  }, [canonical]); // eslint-disable-line react-hooks/exhaustive-deps
   const back = () => (history.state?.idx > 0 ? navigate(-1) : navigate("/"));
   const alertText = useAlertText();
 

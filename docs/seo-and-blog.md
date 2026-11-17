@@ -6,10 +6,12 @@ plain-HTML copy of the content inside `#root`. React replaces that copy on load.
 
 ## Server-rendered pages
 
-`/`, `/event/<slug>`, `/venue/<name>`, `/venues`, `/artist/<name>`, `/artists`, `/map`, `/abroad`,
+`/`, `/e/<code>` (an event; the old `/event/<slug>` answers 301 to it, see below), `/venue/<name>`, `/venues`, `/artist/<name>`, `/artists`, `/map`, `/abroad`,
 `/abroad/<country>`, `/plan/<id>` (a "who's coming?" link's WhatsApp preview, `noindex`),
 `/tonight`, `/weekend`, `/genre/<genre>`, `/genre/<genre>/<when>`, `/city/<city>`,
 `/accessibility`, `/privacy`, `/terms`, and the blog pages.
+
+Event pages live at a short link, `/e/<code>` (`partylinks.shortlinks`): 8 characters made by Sqids (`sqids`, with its blocklist) over `23456789bcdfghjkmnpqrstvwxz` (no 0/o/1/l/i, no vowels, one case), encoding 4 bytes of sha256 of the listing id and stored in `events.code`. It is the one canonical address of the event: `<link rel=canonical>`, `og:url`, the JSON-LD `url` / `@id`, the sitemap, llms.txt, the share buttons, emails and the Telegram bot all use it. `/event/<slug>` or `/event/<id>`, a code in capitals or with a tail (`/e/<code>/<words>`), and a duplicate listing's code all answer `301` to the group primary's `/e/<code>` (`Cache-Control: max-age=86400`: a regroup may change the primary); an event that is over, or an unknown code, `410`.
 
 A person's own pages, `/account`, `/saved` and `/alerts`, answer `200` with a bare `noindex` shell (a title
 only) that the React app draws; they are in no sitemap.

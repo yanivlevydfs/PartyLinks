@@ -60,7 +60,7 @@ from partylinks.db import (
     open_now_filters,
     upcoming_filter,
 )
-from partylinks.dedup import agreed_listing
+from partylinks.dedup import primary_listing
 from partylinks.enrichment import ABROAD_AREA, OUTSIDE_AREA, meters
 from partylinks.event_text import DescriptionLayout, description_layout
 from partylinks.event_text.group import group_description
@@ -186,6 +186,7 @@ class ImageOut(_Out):
 class EventSummaryOut(_Out):
     id: str
     slug: str | None
+    code: str | None = None  # the short link /e/<code> (partylinks.shortlinks); None: not given one yet
     source: str
     source_event_id: str
     # Our /go/ redirect, not the seller's link (see seo.go_path).
@@ -287,6 +288,7 @@ class AlternativeOut(_Out):
 
     id: str
     slug: str | None
+    code: str | None = None
     source: str
     url: str
     title: str
@@ -353,6 +355,7 @@ class MapEventOut(_Out):
 
     id: str
     slug: str | None
+    code: str | None = None
     title: str
     start_at: datetime | None
     end_at: datetime | None = None  # "on now" pins (map/live)
@@ -1388,7 +1391,7 @@ def _register_routes(app: FastAPI) -> None:
             located = and_(EventRow.latitude.is_not(None), EventRow.longitude.is_not(None))
             rows = session.execute(
                 select(
-                    EventRow.id, EventRow.slug, EventRow.title, EventRow.start_at, EventRow.end_at, EventRow.time_known,
+                    EventRow.id, EventRow.slug, EventRow.code, EventRow.title, EventRow.start_at, EventRow.end_at, EventRow.time_known,
                     EventRow.time_zone, EventRow.local_date, EventRow.venue_name,
                     EventRow.latitude, EventRow.longitude, EventRow.source, EventRow.group_id,
                 )
@@ -1528,16 +1531,16 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.get("/events/{event_ref}", response_model=EventOut, tags=["events"])
     def get_event(event_ref: str, session: SessionDep, request: Request) -> EventOut:
-        """Look an event up by id (``source:source_event_id``) or by slug. Opening it counts a view."""
+        """Look an event up by id (``source:source_event_id``), short code or slug. Opening it counts a view."""
         row = session.scalar(
             select(EventRow)
-            .where(or_(EventRow.id == event_ref, EventRow.slug == event_ref))
+            .where(or_(EventRow.id == event_ref, EventRow.slug == event_ref, EventRow.code == event_ref))
             .options(selectinload(EventRow.tickets), selectinload(EventRow.images))
         )
         if row is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "event not found")
         cfg: Settings = request.app.state.settings
-        row = agreed_listing(session, row, cfg.dedup)
+        row = primary_listing(session, row)  # one page per real event: its group's primary listing
         if who := popularity.visitor(
             request.client.host if request.client else None, request.headers.get("user-agent", "")
         ):

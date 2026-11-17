@@ -163,6 +163,8 @@ six==1.17.0
     # via python-dateutil
 socksio==1.0.0
     # via httpx
+sqids==0.5.2
+    # via partylinks (pyproject.toml)
 sqlalchemy==2.1.5
     # via partylinks (pyproject.toml)
 starlette==1.9.0

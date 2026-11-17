@@ -78,7 +78,7 @@ def test_a_search_answers_with_cards_links_and_weather(tmp_path: Path) -> None:
     base = settings.site.base_url.rstrip("/")
     assert tickets.url == f"{base}/go/{card.event_id.replace(':', '%3A')}?at=tg"
     assert details.url is not None
-    assert details.url.startswith(f"{base}/event/") and "utm_source=telegram" in details.url
+    assert details.url.startswith(f"{base}/e/") and "utm_source=telegram" in details.url  # the short link, UTM kept
     assert [b.action for b in reply.buttons[0]] == [MORE, ALERT]  # 3 found, 2 shown
 
 

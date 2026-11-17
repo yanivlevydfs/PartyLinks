@@ -171,7 +171,7 @@ def test_seo_crawl_files_and_event_jsonld(tmp_path: Path) -> None:
         assert client.get("/sitemap-2.xml").status_code == 410 and client.get("/sitemap-0.xml").status_code == 410
         assert client.get("/event/party-2020-01-01-goout-0000").status_code == 410  # over and deleted: gone for good
         sitemap = client.get("/sitemap-1.xml").text
-        assert "/event/" in sitemap and 'hreflang="en"' in sitemap
+        assert "/e/" in sitemap and "/event/" not in sitemap and 'hreflang="en"' in sitemap  # short links
         # Privacy and cookie policy: crawlable, and its contact comes from /site.
         assert "/privacy" in sitemap and "מדיניות פרטיות" in client.get("/privacy").text
         assert "/terms" in sitemap and "אינם אחראים" in client.get("/terms").text
@@ -651,6 +651,7 @@ def test_cached_responses_follow_writes_and_map_returns_located_events(tmp_path:
         assert set(pins["items"][0]) == {
             "id",
             "slug",
+            "code",
             "title",
             "start_at",
             "end_at",
@@ -1412,7 +1413,9 @@ def test_a_daily_place_is_one_page_its_venue(tmp_path: Path) -> None:
     with db.session() as session:  # a new listing each day it is open: canonical and sitemap are the venue page
         assert event_page(session, settings, "he", "test:bar").path == "/venue/Radler"  # type: ignore[union-attr]
         urls = "".join(sitemap_urls(session, settings))
-        assert "techno-night-gig" in urls and "techno-night-bar" not in urls and "/venue/Radler" in urls
+        gig, bar = (session.get(EventRow, i) for i in ("test:gig", "test:bar"))
+        assert gig and bar and gig.code and bar.code
+        assert f"/e/{gig.code}" in urls and f"/e/{bar.code}" not in urls and "/venue/Radler" in urls
 
 
 def test_a_listing_with_no_point_takes_its_duplicates(tmp_path: Path) -> None:

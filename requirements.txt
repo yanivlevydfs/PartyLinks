@@ -21,6 +21,7 @@ tzfpy>=1.0
 pydantic-settings[yaml]>=2.6
 selectolax>=1.0
 psycopg[binary]>=3.2
+sqids>=0.5
 sqlalchemy>=2.0
 tenacity>=9.0
 uvicorn>=0.32

@@ -83,6 +83,7 @@ const router = createBrowserRouter([
       { path: "/region/:region", element: <Landing landing="region" /> },
       { path: "/price/:band", element: <Landing landing="price" /> },
       { path: "/event/:id", element: <EventPage /> },
+      { path: "/e/:id/*", element: <EventPage /> }, // the short link (the server sends /e/<code>/<tail> to /e/<code>)
       { path: "/plan/:id", element: <Suspense fallback={<Loader />}><PlanPage /></Suspense> },
       { path: "/groups", element: <Suspense fallback={<Loader />}><GroupsPage /></Suspense> },
       { path: "/map", element: <Suspense fallback={<Loader />}><MapPage /></Suspense> },

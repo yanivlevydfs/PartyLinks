@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from partylinks import weather
+from partylinks import shortlinks, weather
 from partylinks.config import Settings
 from partylinks.mail.events import jsonld
 from partylinks.mail.images import HERO, THUMB, mail_image
@@ -194,7 +194,8 @@ def _cards(settings: Settings, sections: list[Section], kind: str, lang: str) ->
         c["_thumb"] = f"{base}{mail_image(cover, THUMB)}" if ours else None
         c["_image"] = c["_hero"]
         c["_title"] = _short(c.get("title") or "")
-        c["_url"] = link(settings, f"/event/{c.get('slug') or c['id']}", kind, lang)
+        page = shortlinks.path(c["code"]) if c.get("code") else f"/event/{c.get('slug') or c['id']}"  # the short link
+        c["_url"] = link(settings, page, kind, lang)
         c["_when"] = _when(c, lang, settings.timezone)
         c["_place"] = " · ".join(x for x in (c.get("venue_name"), c.get("city")) if x)
         c["_weather"] = sky.get(c["id"], "")

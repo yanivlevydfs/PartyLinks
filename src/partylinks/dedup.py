@@ -578,6 +578,14 @@ def agreed_listing(session: Session, row: EventRow, settings: DedupSettings) -> 
     return primary if primary and gap >= settings.night_typo_min_gap_hours * 3600 else row
 
 
+def primary_listing(session: Session, row: EventRow) -> EventRow:
+    """The listing that stands for the real event (its group's primary): one page, one address, per event.
+    The other listings of the group are its alternatives on that page."""
+    if row.is_primary or not row.group_id or row.group_id == row.id:
+        return row
+    return session.get(EventRow, row.group_id) or row
+
+
 def _closeness(a: _Listing, b: _Listing) -> tuple[float, float]:
     sa, sb = a.start, b.start  # locals: the type checker narrows these, not attributes
     gap = abs((sa - sb).total_seconds()) if sa and sb else 0.0

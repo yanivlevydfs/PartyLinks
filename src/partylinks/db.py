@@ -129,6 +129,8 @@ class EventRow(Base):
     source: Mapped[str] = mapped_column(String(32), index=True)
     source_event_id: Mapped[str] = mapped_column(Text)
     slug: Mapped[str | None] = mapped_column(Text, unique=True)
+    # The short link's code (/e/<code>, partylinks.shortlinks): set when the row is first stored, never changed.
+    code: Mapped[str | None] = mapped_column(String(12), unique=True, index=True)
     url: Mapped[str] = mapped_column(Text)
     title: Mapped[str] = mapped_column(Text)
     description: Mapped[str | None] = mapped_column(Text)
@@ -764,8 +766,10 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
          **{f: getattr(e, f) for f in _EVENT_FIELDS}}
         for e in sorted(events, key=lambda e: e.event_id)  # consistent lock order across writers
     ]  # fmt: skip
+    codes = partylinks.shortlinks.assign(session, [i for i in ids if i not in stored])  # new listings only
     for row in event_rows:
         row["content_hash"] = content_hash(row)
+        row["code"] = codes.get(str(row["id"]))  # kept on a conflict: a stored code never changes
     seen = {r["id"] for r in event_rows if r["id"] in stored and stored[r["id"]][2] == r["content_hash"]}
     changed = [r for r in event_rows if r["id"] not in seen]
     changes = _deal_changes_for(session, events, hashes, now)
@@ -775,7 +779,7 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
             execution_options={"synchronize_session": False},
         )
     if changed:
-        session.execute(_upsert(session, EventRow, changed, key="id", keep=_GROUP_COLUMNS | {"id", "first_seen_at"}))
+        session.execute(_upsert(session, EventRow, changed, key="id", keep=_GROUP_COLUMNS | {"id", "first_seen_at", "code"}))
     if changes:
         session.execute(insert(DealChangeRow), changes)
 
@@ -990,5 +994,6 @@ import partylinks.plans.models
 import partylinks.popularity.models
 import partylinks.promote.models
 import partylinks.saved.models
+import partylinks.shortlinks
 import partylinks.venue_profiles
 import partylinks.worker.models

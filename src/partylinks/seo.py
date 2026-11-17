@@ -31,6 +31,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from sqlalchemy import ColumnElement, String, cast, func, or_, select
 from sqlalchemy.orm import Session, object_session, selectinload
 
+from partylinks import shortlinks
 from partylinks.alerts.criteria import PRICE_BANDS
 from partylinks.artist_bio import bio as artist_bio
 from partylinks.artist_links.models import links_for as artist_links_for
@@ -38,7 +39,7 @@ from partylinks.artwork.service import urls as artwork_urls
 from partylinks.config import CitySettings, Settings, get_settings
 from partylinks.countries import country_name, is_country
 from partylinks.db import EventRow, lineup_has, open_now_filters, upcoming_filter
-from partylinks.dedup import agreed_listing
+from partylinks.dedup import primary_listing
 from partylinks.event_text import blocks_html, description_layout
 from partylinks.event_text.group import group_description
 from partylinks.pictures import live_image_url
@@ -186,7 +187,7 @@ def _url(cfg: Settings, path: str, lang: str = "he") -> str:
 
 
 class _HasSlug(Protocol):
-    """An EventRow, or a sitemap row of its id / slug columns alone."""
+    """An EventRow, or a sitemap row of its id / slug / code columns alone."""
 
     @property
     def id(self) -> str: ...
@@ -195,7 +196,13 @@ class _HasSlug(Protocol):
 
 
 def event_path(row: _HasSlug) -> str:
-    return f"/event/{quote(row.slug or row.id, safe='')}"
+    """The event page's one address: the short link ``/e/<code>`` (partylinks.shortlinks); a listing not
+    given a code yet, the old ``/event/<slug>`` (it answers 301 to the short one once there is one)."""
+    return event_href(getattr(row, "code", None), row.slug, row.id)
+
+
+def event_href(code: str | None, slug: str | None, event_id: str) -> str:
+    return shortlinks.path(code) if code else f"/event/{quote(slug or event_id, safe='')}"
 
 
 def go_path(event_id: str) -> str:
@@ -574,10 +581,10 @@ def home_page(session: Session, cfg: Settings, lang: str) -> Page:
 def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | None:
     row = session.scalar(
         select(EventRow)
-        .where(or_(EventRow.id == ref, EventRow.slug == ref))
+        .where(or_(EventRow.id == ref, EventRow.slug == ref, EventRow.code == ref))
         .options(selectinload(EventRow.tickets), selectinload(EventRow.images))
     )
-    row = row and agreed_listing(session, row, cfg.dedup)
+    row = row and primary_listing(session, row)  # one page per real event, as event_redirect sends it
     if row is None or not is_current(row.start_at, row.end_at, cfg.retention, cfg.timezone, time_known=row.time_known):
         return None  # over but not purged yet (the nightly pass): gone all the same, never a past event's page
     t = TEXT[lang]
@@ -614,6 +621,28 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
             + more
         ),
     )
+
+
+def event_redirect(request: Request, ref: str) -> Response | None:
+    """Where an event page's address is not its canonical short link, the 301 to it: the old
+    ``/event/<slug>`` (or ``/event/<id>``), a code in another case or with a tail, a duplicate listing's
+    code (to its group's primary). None: serve the page here (or its 410, when there is no such event)."""
+    short = request.url.path.startswith("/e/")
+    code = shortlinks.normalize(ref) if short else None
+    if short and code is None:
+        return None
+    with request.app.state.db.session(write=False) as session:
+        where = EventRow.code == code if short else or_(EventRow.id == ref, EventRow.slug == ref)
+        row = session.scalar(select(EventRow).where(where))
+        target = row and primary_listing(session, row)
+        if target is None or not target.code:
+            return None  # gone (410), or not given a code yet: the page as it is
+        dest = shortlinks.path(target.code)
+    if request.url.path == dest:
+        return None
+    query = f"?{request.url.query}" if request.url.query else ""
+    # A day in caches, not forever: a regroup may make another listing the primary.
+    return RedirectResponse(dest + query, status.HTTP_301_MOVED_PERMANENTLY, headers={"Cache-Control": "public, max-age=86400"})
 
 
 def _more_html(session: Session, cfg: Settings, lang: str, row: EventRow) -> str:
@@ -1474,7 +1503,7 @@ def sitemap_urls(session: Session, cfg: Settings) -> list[str]:
     # The three columns a <url> needs, not ~100k whole rows (~1.4 kB each): those went past the 120 s
     # statement timeout while many sources ran (IndexNow's submit, 2026-11-10).
     rows = session.execute(
-        select(EventRow.id, EventRow.slug, EventRow.last_seen_at)
+        select(EventRow.id, EventRow.slug, EventRow.code, EventRow.last_seen_at)
         .where(upcoming_filter(), EventRow.is_primary.is_(True), _NOT_PLACE)
         .order_by(EventRow.start_at.asc().nulls_first())
     ).all()
@@ -1714,10 +1743,26 @@ def register(app: FastAPI, site_dir: Path) -> None:
     def home(request: Request) -> HTMLResponse:
         return page(request, home_page)
 
-    @app.get("/event/{ref}", include_in_schema=False)
-    def event(ref: str, request: Request) -> HTMLResponse:
+    def event_html(ref: str, request: Request) -> Response:
+        if (moved := event_redirect(request, ref)) is not None:
+            return moved
         # An event over is deleted (never kept past its date): 410 tells crawlers it is gone for good.
         return page(request, lambda s, c, lang: event_page(s, c, lang, ref))
+
+    @app.get("/event/{ref}", include_in_schema=False)
+    def event(ref: str, request: Request) -> Response:
+        """The old long address (``/event/<slug>``): 301 to the short one."""
+        return event_html(ref, request)
+
+    @app.get("/e/{code}", include_in_schema=False)
+    def event_short(code: str, request: Request) -> Response:
+        """The short link, the event page's canonical address (partylinks.shortlinks)."""
+        return event_html(code, request)
+
+    @app.get("/e/{code}/{tail:path}", include_in_schema=False)
+    def event_short_tail(code: str, tail: str, request: Request) -> Response:
+        """A cosmetic tail after the code (``/e/<code>/<words>``) is ignored: 301 to the code alone."""
+        return event_html(code, request)
 
     @app.get("/venue/{name}", include_in_schema=False)
     def venue(name: str, request: Request) -> HTMLResponse:

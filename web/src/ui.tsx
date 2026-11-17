@@ -115,8 +115,10 @@ export function Sources({ e, className = "" }: { e: { source: string; sources?: 
 
 export const venuePath = (name: string) => `/venue/${encodeURIComponent(name)}`;
 export const artistPath = (name: string) => `/artist/${encodeURIComponent(name)}`;
-// Pretty slug URLs (the API resolves either slug or id); same paths the server renders for crawlers.
-export const eventPath = (e: { id: string; slug: string | null }) => `/event/${encodeURIComponent(e.slug ?? e.id)}`;
+// The short link /e/<code> (the API resolves a code, slug or id); same paths the server renders for crawlers.
+// A listing with no code yet: the old /event/<slug>, which the server sends on to the short one.
+export const eventPath = (e: { id: string; slug: string | null; code?: string | null }) =>
+  e.code ? `/e/${e.code}` : `/event/${encodeURIComponent(e.slug ?? e.id)}`;
 
 /** Browser tab title for the current page. */
 export function useTitle(title: string | undefined) {

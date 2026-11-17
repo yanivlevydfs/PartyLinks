@@ -21,6 +21,7 @@ from apscheduler.schedulers.base import STATE_PAUSED, STATE_RUNNING
 from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert
 
+from partylinks import shortlinks
 from partylinks.config import Settings
 from partylinks.config_store import store as config_overrides
 from partylinks.db import Database, utcnow
@@ -92,6 +93,8 @@ class Worker:
                 log.exception("worker: startup step %s failed", name)
         # WebP copies older files still lack: in the background, so the scrapers start now.
         self._spawn(asyncio.to_thread(self.service.media.build_missing_variants))
+        # Short-link codes for rows stored before events.code (new rows get theirs when stored): a no-op query once done.
+        self._spawn(asyncio.to_thread(shortlinks.backfill, self.db))
         self.scheduler.start()
         await asyncio.to_thread(self.service.geocode)
 
