@@ -35,6 +35,8 @@ export const STRINGS = {
     terms: "תנאי שימוש",
     rights: "כל הזכויות שמורות",
     buyNote: "המכירה, המחיר וקיום האירוע באחריות אתר הכרטיסים והמארגן. SPOTX רק מציג את האירוע.",
+    disclaimerMore: "עוד",
+    disclaimerLess: "פחות",
     disclaimer: "SPOTX רק אוסף ומציג אירועים שנמכרים באתרים אחרים. האתר ובעליו אינם אחראים לאירועים, לתוכנם, למחירים או לשינויי מחיר. הרכישה וכל פרטי האירוע הם באחריות המארגן ואתר הכרטיסים.",
     mapGate: {
       title: "המפה נטענת מ-OpenFreeMap",
@@ -294,6 +296,8 @@ export const STRINGS = {
     terms: "Terms of use",
     rights: "All rights reserved",
     buyNote: "The sale, price and the event itself are the ticketing site's and organizer's responsibility. SPOTX only lists the event.",
+    disclaimerMore: "More",
+    disclaimerLess: "Less",
     disclaimer: "SPOTX only collects and shows events sold on other sites. The site and its owners are not responsible for the events, their content, prices or price changes. Purchases and all event details are the responsibility of the organizer and the ticket site.",
     mapGate: {
       title: "The map loads from OpenFreeMap",
