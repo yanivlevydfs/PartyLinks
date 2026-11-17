@@ -22,7 +22,12 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
 3. Build in a new file only (`src/partylinks/scrapers/<name>.py` + `tests/test_<name>.py`);
    existing files get the hook lines of section 4 and nothing else. Never edit another source to
    make room.
-4. Run `python scripts/check_source.py <name> --show 10` until it says `OK`; fix every `NO GENRE`,
+4. **Every event fully placed and categorised:** site categories mapped to our genres (no `NO GENRE`;
+   a category that maps to nothing gets keywords or a new genre, section 3), ISO `country` + venue
+   `time_zone` for every event abroad, `city` on every event, and a location: coordinates or a
+   geocodable venue + address (never a city centre as the venue's pin). Read the coverage lines:
+   city below 100% or map below ~90% needs a fix or a stated reason.
+   Run `python scripts/check_source.py <name> --show 10` until it says `OK`; fix every `NO GENRE`,
    `PAST` and `CRON CLASH` line. Then ruff, the full pytest, and `npx tsc` in `web/` if web changed.
 5. Commit only your hunks (other sessions share master), push, wait for the Railway deploy
    `SUCCESS`, then verify in production (section 8): run, `--runs`, read-only DB counts, `640.webp`
