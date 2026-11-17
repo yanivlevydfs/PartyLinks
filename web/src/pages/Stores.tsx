@@ -61,7 +61,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   funzing: ["https://il.funzing.com", "tickets"], easytix: ["https://easytix.co.il", "tickets"], ticketeams: ["https://ticketeams.co.il", "abroad"],
   festivalim: ["https://www.festivalim.co.il", "guide"], ogo: ["https://www.ogo.co.il", "guide"], ogo_us: ["https://us.ogo.events", "abroad"], ogo_de: ["https://de.ogo.events", "abroad"], muzi: ["https://muzi.co.il", "guide"], mugics: ["https://mugics.com", "guide"], efokulam: ["https://efokulam.co.il", "guide"], liveisrael: ["https://liveisrael.co", "guide"],
   plusparty: ["https://plusparty.co.il", "guide"], standupist: ["https://standupist.co.il", "tickets"],
-  agol: ["https://agol-join.vercel.app", "venue"], airdrop: ["https://airdrop.co.il", "guide"], hypd: ["https://hypd.co.il", "guide"], getin: ["https://get-in.com", "abroad"], takeabreak: ["https://takebreaktravel.com", "abroad"], yotzim: ["https://yotzim.com", "guide"],
+  agol: ["https://agol-join.vercel.app", "venue"], airdrop: ["https://airdrop.co.il", "guide"], hypd: ["https://hypd.co.il", "guide"], getin: ["https://get-in.com", "abroad"], takeabreak: ["https://takebreaktravel.com", "abroad"], dice: ["https://dice.fm", "abroad"], yotzim: ["https://yotzim.com", "guide"],
   telaviv: ["https://www.tel-aviv.gov.il", "city"], haifamuni: ["https://www.haifa.muni.il", "city"],
   ramatganmuni: ["https://www.ramat-gan.muni.il", "city"], petahtikvamuni: ["https://www.petah-tikva.muni.il", "city"], jerusalemmuni: ["https://www.jerusalem.muni.il", "city"], sharepointmuni: ["https://www.rishonlezion.muni.il", "city"], holon: ["https://www.holon.muni.il", "city"],
   munievents: [null, "city"], matnasnet: [null, "city"], eventpro: [null, "city"], onecity: [null, "city"],

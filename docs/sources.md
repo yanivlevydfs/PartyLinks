@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 126 configured sources, 125 on. Each one has its own module in
+SPOTX collects from 127 configured sources, 126 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -174,6 +174,7 @@ many of them free.
 | `ticketeams` | Ticketeams (ticketeams.co.il): football, basketball, tennis, Formula 1 and concerts abroad | 05:49, 17:49 | yes |
 | `xplorer` | Xplorer (xplorer.co.il): a flights site's board of concerts and festivals abroad | 03:53, 15:53 | yes |
 | `takeabreak` | Take A Break (takebreaktravel.com): packages (flight + hotel + ticket) to club nights, concerts, festivals and matches abroad | 06:52, 18:52 | yes |
+| `dice` | DICE (dice.fm): club nights, DJ sets and gigs in London, Berlin, Paris, Barcelona, Madrid, Lisbon, Milan, Ibiza and New York (top ~30 per city and kind) | 05:14, 17:14 | yes |
 | `megaevents` | Mega Events (mega-events.co.il): packages (flight + hotel + ticket) to concerts and matches abroad | 05:43, 17:43 | yes |
 
 ## Prices and availability: source quirks
