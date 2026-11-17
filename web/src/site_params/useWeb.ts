@@ -8,7 +8,7 @@ export const WEB_DEFAULTS = {
   index_page_size: 60,
   home_row_events: 12,
   map_popup_events: 20,
-  home_search_debounce_ms: 250,
+  home_search_debounce_ms: 200,
   search_debounce_ms: 300,
   card_lineup_shown: 4,
   card_genres_shown: 3,
