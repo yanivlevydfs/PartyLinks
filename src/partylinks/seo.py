@@ -553,7 +553,7 @@ def _home_graph(cfg: Settings, lang: str, t: dict[str, str], rows: list[EventRow
 # advice: a logical structure with important pages linked, short relevant anchor text).
 SECTIONS = [
     ("/venues", "מקומות", "Venues"), ("/artists", "אמנים", "Artists"), ("/map", "מפת אירועים", "Event map"),
-    ("/abroad", "אירועים בחו״ל", "Events abroad"), ("/blog", "מגזין", "Magazine"),
+    ("/abroad", "אירועים בחו״ל", "Events abroad"), ("/cities", "ערים", "Cities"), ("/blog", "מגזין", "Magazine"),
     ("/partners", "פרסום ושיתופי פעולה", "Advertise with us"), ("/about", "אודות", "About"),
     ("/contact", "צור קשר", "Contact us"), ("/accessibility", "הצהרת נגישות", "Accessibility statement"),
 ]  # fmt: skip

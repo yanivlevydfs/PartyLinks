@@ -164,6 +164,7 @@ export function Layout() {
             <NavLink to="/" end>{t.nav.parties}</NavLink>
             <NavLink to="/map">{t.nav.map}</NavLink>
             <NavLink to="/abroad">{t.nav.abroad}</NavLink>
+            <NavLink to="/cities">{t.nav.cities}</NavLink>
             <NavLink to="/venues">{t.nav.venues}</NavLink>
             <NavLink to="/artists">{t.nav.artists}</NavLink>
             <NavLink to="/stores">{t.nav.stores}</NavLink>
@@ -184,7 +185,7 @@ export function Layout() {
         <nav className="foot-links" aria-label={t.genres}>
           <Link to="/top">{t.top}</Link>
           <Link to="/places">{t.places}</Link>
-          <Link to="/cities">{lang === "he" ? "ערים" : "Cities"}</Link>
+          <Link to="/cities">{t.nav.cities}</Link>
           <Link to="/holidays">{t.holidays}</Link>
           <Link to="/now">{t.now}</Link>
           <Link to="/tonight">{t.tonight}</Link>
