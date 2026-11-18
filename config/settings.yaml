@@ -1446,6 +1446,8 @@ geocoding:
     "אודיטוריום הכט": [32.763218, 35.018062]            # Hecht Auditorium, University of Haifa (the Hecht Museum's building)
     "המשכן לאמנויות, אוניברסיטת חיפה": [32.7609456, 35.0204641]  # University of Haifa's arts building (the campus, OSM), Israel Music Festival
     "אורוות האומנים": [32.4726788, 34.9815251]          # Ourvot HaOmanim (the artists' stables), Pardes Hanna (OSM)
+    "ביער | ילדי תימן החטופים": [32.4355583, 34.9001833]  # Baya'ar, Hadera (OSM)
+    "החאן של איציק": [30.7677164, 35.2796246]           # Itzik's inn, Moshav Hatzeva (the moshav, OSM: no point of its own)
     "creation field": [32.473961, 34.9817879]          # Creation Field, Pardes Hanna's agricultural school compound (OSM: the Rothschild agricultural high school)
     "אולם דורות שער הנגב": [31.506606, 34.645993]      # Kibbutz Dorot's hall (the kibbutz, OSM: one hall), Smarticket and the music festival
     # Recurring venues of upcoming events still off the map (OSM POI / numbered-building points, Nov 2026).
@@ -2923,6 +2925,16 @@ sources:
       "הירקון 62": {city: תל אביב}
       "מועדון המיוזיק סיטי": {address: "החיטה 1", city: באר שבע}             # "מיוזיק סיטי, החיטה 1, באר שבע"
       "אולם אגמים": {city: באר שבע}                                           # The Alchemist's Beer Sheva cocktail festival
+      "isaac's khan, arava": {venue_name: "החאן של איציק", city: חצבה}          # Itzik Maoz's inn, Moshav Hatzeva (ias.co.il)
+      "סילו תרבות": {city: הוד השרון}                                          # Silo Culture, in Hod HaSharon's fields (Kfar Hadar's silo)
+      "bayaar": {venue_name: "ביער", address: "ילדי תימן החטופים", city: חדרה}  # Baya'ar, at Hasharon Park (bayaar.co.il; OSM)
+      "shittim": {venue_name: שיטים, city: שיטים}                               # Desert Bass's festival site, Arava (pinned above)
+      # Koh Phangan's party venues (Sacred Moon Phangan, Sola Luna).
+      "merkaba sunset beach club": {city: Ko Pha-ngan}
+      "lost jungle": {city: Ko Pha-ngan}
+      "lost jungle grand opening": {venue_name: LOST JUNGLE, city: Ko Pha-ngan}
+      "hidden paradise koh phangan": {venue_name: Hidden Paradise, city: Ko Pha-ngan}
+      "koh phangan - thailand": {venue_name: Waterfall Festival Venue, city: Ko Pha-ngan}
     http:
       concurrency: 4
 
