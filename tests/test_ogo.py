@@ -44,6 +44,17 @@ def test_parse_event() -> None:
     assert (event.min_price, event.max_price) == (Decimal(135), Decimal(135))
 
 
+def test_end_a_day_after_start_is_no_end() -> None:
+    # OGO's filler end (start + 24 h) kept a 23:00 party on the site through the next night (Backstage Records, Nov 2026).
+    page = _read("event.html").replace('"endDate":"2026-11-16T21:59:59.999Z"', '"endDate":"2026-11-17T19:30:00.000Z"')
+    event = parse_event(page, URL, "Asia/Jerusalem")
+    assert event is not None and event.end_at is None
+
+    real = _read("event.html").replace('"endDate":"2026-11-16T21:59:59.999Z"', '"endDate":"2026-11-16T21:30:00.000Z"')
+    event = parse_event(real, URL, "Asia/Jerusalem")
+    assert event is not None and event.end_at is not None and event.end_at.isoformat() == "2026-11-16T21:30:00+00:00"
+
+
 def test_date_only_event_and_abroad() -> None:
     url = f"{BASE}/haifa/2026/11/13/eli-yatzp-new-show-f5hknqanjcCgQRBMAvBs8Z"
     event = parse_event(_read("event_date_only.html"), url, "Asia/Jerusalem")

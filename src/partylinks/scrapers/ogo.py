@@ -167,9 +167,15 @@ def parse_event(page_html: str, url: str, default_tz: str) -> ScrapedEvent | Non
     offer = next((o for o in [node.get("offers")] if isinstance(o, dict)), {})
     address = (node.get("location") or {}).get("address") or {}
     tz = zone(default_tz)
-    # A date-only event has no end; an end at 23:59:59 local is the site's "until the end of the day".
+    # A date-only event has no end; an end at 23:59:59 local is the site's "until the end of the day", and an end
+    # exactly a day after the start is its filler for "no end" (a 23:00 party "ending" 23:00 the next night kept
+    # the event on our site a day after it was over).
     end = event.end_at
-    if len(str(node.get("startDate") or "")) == 10 or (end and end.astimezone(tz).time() >= time(23, 59)):
+    if (
+        len(str(node.get("startDate") or "")) == 10
+        or (end and end.astimezone(tz).time() >= time(23, 59))
+        or (end and event.start_at and end - event.start_at == timedelta(days=1))
+    ):
         end = None
     # validFrom is the event's own start, not a sale start; tiers without a price say nothing.
     tickets = [t.model_copy(update={"sale_start": None}) for t in event.tickets if t.price is not None]
