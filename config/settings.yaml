@@ -474,7 +474,7 @@ enrichment:
     - {key: ashkelon, he: "אשקלון", en: Ashkelon, aliases: ["ashkelon"], center: [31.669, 34.571], radius_m: 7000}
     - {key: eilat, he: "אילת", en: Eilat, aliases: ["eilat", "elat"], center: [29.558, 34.952], radius_m: 8000}
     - {key: rishon-lezion, he: "ראשון לציון", en: Rishon LeZion, aliases: ["rishon lezion", "rishon le zion", "rishon letsiyon", "ראשל\"צ", "ראשל״צ"], center: [31.964, 34.804], radius_m: 7000}
-    - {key: beer-sheva, he: "באר שבע", en: Be'er Sheva, aliases: ["beersheba", "be'er sheva", "beer sheva", "beer-sheva", "באר-שבע"], center: [31.252, 34.791], radius_m: 8000}
+    - {key: beer-sheva, he: "באר שבע", en: Be'er Sheva, aliases: ["beersheba", "beer sheba", "be'er sheva", "beer sheva", "beer-sheva", "באר-שבע"], center: [31.252, 34.791], radius_m: 8000}
     - {key: holon, he: "חולון", en: Holon, aliases: ["holon"], center: [32.016, 34.779], radius_m: 4000}
     - {key: bat-yam, he: "בת ים", en: Bat Yam, aliases: ["bat yam", "בת-ים"], center: [32.017, 34.750], radius_m: 3000}
     - {key: givatayim, he: "גבעתיים", en: Givatayim, aliases: ["givatayim", "giv'atayim", "givataim"], center: [32.071, 34.810], radius_m: 2500}
@@ -1445,6 +1445,7 @@ geocoding:
     "מדיטק": [32.0118153, 34.7774368]                  # Holon Mediatheque, Golda Meir 6 (all its halls)
     "אודיטוריום הכט": [32.763218, 35.018062]            # Hecht Auditorium, University of Haifa (the Hecht Museum's building)
     "המשכן לאמנויות, אוניברסיטת חיפה": [32.7609456, 35.0204641]  # University of Haifa's arts building (the campus, OSM), Israel Music Festival
+    "אורוות האומנים": [32.4726788, 34.9815251]          # Ourvot HaOmanim (the artists' stables), Pardes Hanna (OSM)
     "creation field": [32.473961, 34.9817879]          # Creation Field, Pardes Hanna's agricultural school compound (OSM: the Rothschild agricultural high school)
     "אולם דורות שער הנגב": [31.506606, 34.645993]      # Kibbutz Dorot's hall (the kibbutz, OSM: one hall), Smarticket and the music festival
     # Recurring venues of upcoming events still off the map (OSM POI / numbered-building points, Nov 2026).
@@ -2910,6 +2911,18 @@ sources:
     # Facebook page place it at Pardes Hanna's agricultural school compound (Nov 2026).
     places:
       "creation field": {venue_name: Creation Field, address: "מתחם בית הספר החקלאי", city: פרדס חנה-כרכור}
+      # The rest from each producer's own description (Nov 2026).
+      "duplex club": {address: "הש״ך 10", city: תל אביב}                       # "דופלקס תל אביב | הש״ך 10"
+      "ביאינג אורוות האומנים": {address: "אורוות האומנים", city: פרדס חנה-כרכור}  # "בוויז: אורוות האומנים, פרדס חנה"
+      "קפה הצבי - אורוות האמנים פרדס חנה": {address: "אורוות האומנים", city: פרדס חנה-כרכור}
+      "the terminal @ first station, david remez 4 - דוד רמז 4, תחנה ראשונה": {venue_name: "The Terminal, התחנה הראשונה", address: "דוד רמז 4", city: ירושלים}
+      "simtat beit habad 3": {address: "סמטת בית הבד 3", city: תל אביב}          # Neve Tzedek
+      "סטודיו מפתח soul": {address: "יוחנן הסנדלר 6", city: כפר סבא}
+      "hotel house of delray": {address: "הלל הזקן 8", city: תל אביב}          # "Hotel DelRay in the Shuk"
+      "fuchsberg center - מרכז פיוקסברג": {address: "אגרון 4", city: ירושלים}
+      "הירקון 62": {city: תל אביב}
+      "מועדון המיוזיק סיטי": {address: "החיטה 1", city: באר שבע}             # "מיוזיק סיטי, החיטה 1, באר שבע"
+      "אולם אגמים": {city: באר שבע}                                           # The Alchemist's Beer Sheva cocktail festival
     http:
       concurrency: 4
 
