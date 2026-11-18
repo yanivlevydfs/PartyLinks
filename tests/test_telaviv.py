@@ -7,7 +7,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from partylinks.models import ScrapedEvent
-from partylinks.scrapers.telaviv import TelAvivSettings, _prices, parse_items, search
+from partylinks.scrapers.telaviv import TelAvivSettings, _interests, _prices, parse_items, search
 
 TZ = "Asia/Jerusalem"
 ITEMS = json.loads((Path(__file__).parent / "fixtures/telaviv/events.json").read_text("utf-8"))
@@ -76,3 +76,8 @@ def test_cost_spellings_text_price_and_no_cost() -> None:
 def test_thousands_are_one_amount_and_unlabelled_text_amounts_are_not_prices() -> None:
     assert _prices('1,600-2,000 ש"ח') == [Decimal(1600), Decimal(2000)]
     assert _prices("כמפורט בידיעה", "ההחזר יתבצע בקיזוז 5% או 100 ₪ הנמוך מבינהם") == []
+
+
+def test_twice_escaped_categories_stay_whole() -> None:
+    field = {"TlvFieldsOfInterests": "מחול אמנות ומוזיקה (קלאסית, ג&amp;#39;ז) | מוזיקה;קהילות | אירועים קהילתיים;"}
+    assert _interests(field) == "מחול אמנות ומוזיקה (קלאסית, ג'ז) | מוזיקה;קהילות | אירועים קהילתיים;"

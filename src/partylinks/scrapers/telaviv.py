@@ -17,6 +17,7 @@ robots.txt disallows /Lists/, /Search/ and a few asset paths, not /_vti_bin/.
 
 from __future__ import annotations
 
+import html
 import re
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
@@ -138,6 +139,17 @@ def _prices(cost: str, text: str = "") -> list[Decimal]:
     return sorted({Decimal(n.replace(",", "")) for n in _LABELLED.findall(text)})
 
 
+def _interests(v: dict[str, str]) -> str:
+    """The categories, ";"-separated. The service escapes them twice ("ג&amp;#39;ז" for ג'ז): unescaped
+    first, or the ";" of an entity splits a category in pieces ("ג&amp", "#39", "ז)")."""
+    text = v.get("TlvFieldsOfInterests", "")
+    for _ in range(3):
+        text, before = html.unescape(text), text
+        if text == before:
+            break
+    return text
+
+
 def parse_item(v: dict[str, str], s: TelAvivSettings, timezone: str) -> ScrapedEvent | None:
     item_id, list_id, title = clean_str(v.get("ListItemID")), clean_str(v.get("ListID")), clean_str(v.get("Title"))
     start = _date(v.get("TlvStartDate", ""), timezone)
@@ -155,7 +167,7 @@ def parse_item(v: dict[str, str], s: TelAvivSettings, timezone: str) -> ScrapedE
     place = clean_str(v.get("TlvCityLocation"))
     summary = clean_str(v.get("TlvSummary"))
     body = html_to_text(_BREAK.sub("\n", text.replace("\u200b", "")))
-    genres =(clean_str(g) for part in v.get("TlvFieldsOfInterests", "").split(";") for g in part.split("|"))
+    genres = (clean_str(g) for part in _interests(v).split(";") for g in part.split("|"))
     return ScrapedEvent(
         source=TelAvivScraper.name,
         # Item ids repeat across the site's two event lists.

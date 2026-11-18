@@ -149,6 +149,19 @@ def test_genres_from_text_and_declared_types() -> None:
     assert {"techno", "house", "mainstream", "edm"} <= set(event.genres)
 
 
+def test_queer_and_lesbian_parties_are_lgbt() -> None:
+    for title in ("ישפה ערב חיבורים x מסיבה לסביות קווירית", "ליין קוויר בפלורנטין", "Lesbian night"):
+        event = ENRICHER.enrich(make(title=title, description=""))
+        assert event is not None and "lgbt" in event.genres, title
+    # "גאווה" alone is pride of any kind; "שוגייז" (shoegaze) holds "גייז". Neither is an LGBT event.
+    for title in ("קונצרט של זמר עברי וגאווה ישראלית", "להקת שוגייז-רוק"):
+        event = ENRICHER.enrich(make(title=title, description=""))
+        assert event is not None and "lgbt" not in event.genres, title
+    # An audience tag, it keeps the event's own kind (a party stays a party).
+    party = ENRICHER.enrich(make(title="מסיבה לסביות קווירית", description=""))
+    assert party is not None and {"lgbt", "nightclubs"} <= set(party.genres)
+
+
 def test_film_text_is_not_read_for_music_genres() -> None:
     drive_in = make(title="קולנוע דרייב אין | 29.10", description="פסקול של ג'אז, יוונית ומוזיקה אלקטרונית")
     event = ENRICHER.enrich(drive_in)
