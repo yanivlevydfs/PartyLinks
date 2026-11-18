@@ -476,9 +476,15 @@ class Geocoder:
         """The text names a region the point is outside of ("...בגן שמואל" placed in Tel Aviv). Outside the
         target city the place in the text wins; rows known to be in it are judged by the city check alone."""
         lat, lon = point or (row.latitude, row.longitude)
-        return row.in_target_city is not True and self.areas.contradicts(
-            row.city, row.venue_name, row.address, lat, lon
-        )
+        return row.in_target_city is not True and self._text_contradicts(row, (lat, lon))
+
+    def _text_contradicts(self, row: Place, point: Point) -> bool:
+        """areas.contradicts, except at the town the city field names: there a place word in the address is
+        a street's name. "שוהם 73, חריש" (Shoham Street, Harish) was refused as "not in Shoham", Nov 2026."""
+        town = self._cities.get(row.city or "")
+        if town is not None and town.center and meters(town.center, point) <= town.radius_m:
+            return False
+        return self.areas.contradicts(row.city, row.venue_name, row.address, *point)
 
     def _in_its_city(self, row: Place, point: Point) -> bool:
         """Within the radius of the event's city, when that city is a known one. A row with no city but known
@@ -527,9 +533,7 @@ class Geocoder:
             return False  # "Gray Club, יהוד" answered with the Gray Club in Modiin
         if row.in_target_city and not any(k in _city_key(hit.city) for k in self._city_keys):
             return False  # e.g. "Kibbutz Galuyot 52" resolved to Bnei Brak
-        if row.in_target_city is False and self.areas.contradicts(
-            row.city, row.venue_name, row.address, hit.latitude, hit.longitude
-        ):
+        if row.in_target_city is False and self._text_contradicts(row, (hit.latitude, hit.longitude)):
             return False
         # Area keywords are Tel Aviv streets ("הרצל", "בן יהודה" exist in every town).
         area = self.areas.keyword_area(row.venue_name, row.address) if row.in_target_city is not False else None

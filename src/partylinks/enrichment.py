@@ -683,16 +683,14 @@ class Enricher:
         A prefix ("קיבוץ יגור") goes, a whole Latin field naming a small town gets its Hebrew name."""
         if city and self._city_prefix:
             city = self._city_prefix.sub("", city.strip()) or city
-        for text in (city, address, venue):
+        # Per field, a configured city then any other Israeli town (GeoNames); a venue name only for the
+        # configured ones ("מגדל המים" is no town). The city field is read whole before the venue: smarticket's
+        # "אולם תרבות חריש - כתובת: רח' שוהם 73" with city חריש was filed under Shoham (Nov 2026).
+        for text, towns in ((city, True), (address, True), (venue, False)):
             if not text:
                 continue
             hits = [(m.start(), name) for name, p in self._cities for m in p.finditer(text.lower())]
-            if hits:
-                return max(hits)[1]
-        # Any other Israeli town (GeoNames), from the city field or the address only: a venue name
-        # ("מגדל המים") is no town.
-        for text in (city, address):
-            if hits := self._places.find(text):
+            if hits or (towns and (hits := self._places.find(text))):
                 return max(hits)[1]
         # A venue that ends with its town ("היכל התרבות עפולה"): the town, so the event gets a forecast and
         # a city filter. Only at the end: "מגדל המים" starts with the town מגדל but is a building.

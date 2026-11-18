@@ -22,3 +22,21 @@ def test_street_inside_the_venue_field() -> None:
 
 def test_country_alone_is_no_address() -> None:
     assert not any(q.startswith("Israel") for q in candidates(place("Israel")))
+
+
+def test_a_street_named_after_another_town_is_no_contradiction() -> None:
+    """"שוהם 73, חריש" is Shoham Street in Harish: OSM's answer there was refused as "not in Shoham" (Nov 2026)."""
+    from partylinks.config import get_settings
+    from partylinks.enrichment import Enricher
+    from partylinks.geo import Geocoder
+
+    cfg = get_settings()
+    enricher = Enricher(cfg.enrichment, cfg.timezone)
+    geo = Geocoder(cfg.geocoding, enricher.areas, cfg.enrichment.target_city.aliases, None, cfg.enrichment.cities)  # type: ignore[arg-type]
+    harish = (32.4676477, 35.0455838)  # OSM: Shoham Street, Avnei Hen, Harish
+    assert geo._bad(place("שוהם 73", "אולם תרבות", "חריש"), harish) is None
+    assert geo._bad(place("(מתנ''ס חריש) Shoham St 73, Harish", "מתנ''ס חריש", "חריש"), harish) is None
+    # A place word with no town of its own still decides: Kibbutz HaGoshrim is not in the Negev.
+    assert geo._bad(place(None, "קיבוץ הגושרים"), (31.25, 34.79)) == "region"
+    # The city field names the town before a town in the venue's street: Harish, not Shoham.
+    assert enricher.canonical_city("חריש", None, "אולם תרבות חריש - כתובת: רח' שוהם 73 (מסומן)") == "חריש"

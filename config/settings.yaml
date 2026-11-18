@@ -1868,6 +1868,9 @@ geocoding:
     "גלריה מזל דגים": [32.0533730, 34.7514300]           # Mazal Dagim 4, Old Jaffa (OSM house point)
     "אולם רנה שני": [32.4392438, 34.9139189]             # Rene Shani hall, Rambam St, Hadera (OSM theatre)
     "מרכז צעירים טורבינה": [32.4404062, 34.9179031]      # Turbina youth centre, HaNasi 15, Hadera (OSM)
+    "מיני ישראל": [31.8422518, 34.9689726]               # Mini Israel park, Latrun (OSM tourism point; makore's shows there)
+    "עין המפרץ": [32.9036151, 35.0961117]                # Kibbutz Ein HaMifratz (OSM village point; Meitar music school, funzing)
+    "d-one דרום השרון": [32.1333242, 34.9242354]         # D-ONE, Neve Yarak (OSM village point; a small moshav)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
@@ -1905,6 +1908,8 @@ geocoding:
       "לוין 22": [32.1640594, 34.8367359]  # לוין 22, הרצליה
     "טבריה":
       "מלון מגדלה - המרכז הרוחני duc in altum": [32.8267566, 35.5152961]  # מלון מגדלה (Duc in Altum), צומת מגדל, נוף הארבל, מגדל
+    "יד השמונה":
+      "המתססה": [31.8094724, 35.0901961]  # המתססה, יד השמונה (OSM village point; a small moshav)
     "יבנה":
       "אולם תבור": [31.8168499, 34.7281236]  # אולם תבור, גבעת וושינגטון, גבעת וושינגטון, גבעת וושינגטון
     "יואב":
@@ -1935,6 +1940,8 @@ geocoding:
       "ספרייה אזורית מטה יהודה": [31.7665744, 35.0039498]  # ספרייה אזורית מטה יהודה, צמוד לבניין המועצה, נחם
     "ניר דוד":
       "בית אלפא": [32.5186951, 35.4274412]  # גן לאומי בית אלפא, חפציבה
+    "עין הבשור":
+      "משק ברק": [31.2805660, 34.4437627]  # משק ברק, עין הבשור (OSM village point; a small moshav)
     "ערד":
       "כפר הנוקדים": [31.3050241, 35.2704844]  # כפר הנוקדים, ערד
     "קרית מלאכי":
