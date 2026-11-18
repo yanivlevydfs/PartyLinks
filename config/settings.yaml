@@ -1238,7 +1238,9 @@ enrichment:
                "akko", "acre", "nahariya", "karmiel", "tiberias", "afula", "safed", "tzfat", "rosh pina", "nazareth",
                "yokneam", "beit shean", "hagoshrim", "kinneret", "ramat yishai", "migdal", "lotem", "katzrin",
                "metula", "kiryat shmona", "golan"]
-      boxes: [[32.4, 33.4, 35.1, 35.95], [32.92, 33.4, 34.9, 35.95]]
+      # Yokne'am (35.08-35.12 E) is named here but sits west of 35.1: its points read as contradicting the
+      # region and were refused (656 events, Nov 2026). Haifa's box comes first, so regions are unchanged.
+      boxes: [[32.4, 33.4, 35.1, 35.95], [32.92, 33.4, 34.9, 35.95], [32.62, 32.68, 35.06, 35.13]]
     - key: sharon
       places: ["השרון", "רעננה", "כפר סבא", "הרצליה", "נתניה", "כפר יונה", "תל מונד", "קדימה", "אבן יהודה", "פרדסיה",
                "חדרה", "פרדס חנה", "כרכור", "קיסריה", "אור עקיבא", "בנימינה", "גבעת חיים", "גן שמואל", "עין שמר",
