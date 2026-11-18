@@ -205,10 +205,11 @@ def event_href(code: str | None, slug: str | None, event_id: str) -> str:
     return shortlinks.path(code) if code else f"/event/{quote(slug or event_id, safe='')}"
 
 
-def go_path(event_id: str) -> str:
+def go_path(event_id: str, code: str | None = None) -> str:
     """Our redirect to the seller's page (GET /go/...): ticket links are handed out one click at a
-    time, rate-limited, and never appear in bulk in the API or the pages."""
-    return f"/go/{quote(event_id, safe='')}"
+    time, rate-limited, and never appear in bulk in the API or the pages. ``/go/<code>`` (the short
+    link's code) when the listing has one; ``/go/<listing id>`` still answers for older links."""
+    return f"/go/{code}" if code else f"/go/{quote(event_id, safe='')}"
 
 
 def _cover(cfg: Settings, row: EventRow, drawn: bool = True) -> str | None:
@@ -319,7 +320,7 @@ def _place(row: EventRow) -> dict[str, Any]:
 def _ticket_url(row: EventRow, cfg: Settings) -> str:
     """Our /go/ redirect to the seller (seller links never sit in a page). Google wants offers.url
     crawlable, so robots.txt allows /go/; crawlers' visits are not counted as clicks."""
-    return _url(cfg, go_path(row.id))
+    return _url(cfg, go_path(row.id, row.code))
 
 
 def _offers(row: EventRow, cfg: Settings) -> list[dict[str, Any]] | dict[str, Any] | None:
@@ -617,7 +618,7 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
             f"<article><h1>{escape(row.title)}</h1><p>{escape(_when(row, cfg, lang))}</p>"
             f"<p>{venue_link} {escape(where)}</p><p>{escape(_price(row, lang))}</p>{lineup}"
             f"{about}{place[1] if place else ''}"
-            f'<p><a href="{escape(go_path(row.id))}?at=seo" rel="nofollow noopener">{t["tickets"]} ({escape(row.source)})</a></p></article>'
+            f'<p><a href="{escape(go_path(row.id, row.code))}?at=seo" rel="nofollow noopener">{t["tickets"]} ({escape(row.source)})</a></p></article>'
             + more
         ),
     )

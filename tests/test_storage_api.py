@@ -775,11 +775,12 @@ def test_seller_links_leave_only_through_the_rate_limited_redirect(tmp_path: Pat
     with TestClient(create_app(settings), headers={"user-agent": "Mozilla/5.0"}) as client:
         pages = [client.get(p).text for p in ("/events", "/events/test:a", "/events/map", "/changes", "/event/test:a")]
         assert not [p for p in pages if "seller.example" in p]
-        assert client.get("/events/test:a").json()["url"] == "/go/test%3Aa"
-        go = client.get("/go/test%3Aa?at=buy", follow_redirects=False)
+        page = client.get("/events/test:a").json()
+        assert page["url"] == f"/go/{page['code']}"  # the short code, like the page's /e/<code>
+        go = client.get(f"/go/{page['code'].upper()}?at=buy", follow_redirects=False)
         assert go.status_code == 302 and go.headers["location"].startswith("https://seller.example/a?utm_source=spotx&")
         assert "utm_content=buy" in go.headers["location"]
-        client.get("/go/test%3Aa?at=alt", follow_redirects=False)
+        assert client.get("/go/test%3Aa?at=alt", follow_redirects=False).status_code == 302  # older links still work
         client.get("/go/test%3Aa?at=nonsense", follow_redirects=False)
         client.get("/go/missing", follow_redirects=False)  # gone: the home page, not counted
         stats = client.get("/admin/api/clicks?days=7").json()

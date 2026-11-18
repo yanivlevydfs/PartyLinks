@@ -33,7 +33,7 @@ from sqlalchemy.exc import DataError
 from sqlalchemy.orm import Session, aliased, defer, load_only, selectinload, undefer
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from partylinks import clicks, placecards, searches, seo, utm
+from partylinks import clicks, placecards, searches, seo, shortlinks, utm
 from partylinks import status as server_status
 from partylinks.accounts import install as install_accounts
 from partylinks.accounts import sign_in_state
@@ -263,7 +263,7 @@ class EventSummaryOut(_Out):
 
     @model_validator(mode="after")
     def _go(self) -> EventSummaryOut:
-        self.url = seo.go_path(self.id)
+        self.url = seo.go_path(self.id, self.code)
         return self
 
 
@@ -271,6 +271,7 @@ class DealOut(_Out):
     """The cheapest listing of an event across all sources (free entry wins)."""
 
     id: str
+    code: str | None = None
     source: str
     url: str
     min_price: float | None
@@ -279,7 +280,7 @@ class DealOut(_Out):
 
     @model_validator(mode="after")
     def _go(self) -> DealOut:
-        self.url = seo.go_path(self.id)
+        self.url = seo.go_path(self.id, self.code)
         return self
 
 
@@ -303,7 +304,7 @@ class AlternativeOut(_Out):
 
     @model_validator(mode="after")
     def _go(self) -> AlternativeOut:
-        self.url = seo.go_path(self.id)
+        self.url = seo.go_path(self.id, self.code)
         return self
 
 
@@ -1004,7 +1005,7 @@ def _best_deals(session: Session, rows: Sequence[EventRow]) -> dict[str, DealOut
     if not ids:
         return {}
     deal_columns = load_only(
-        EventRow.id, EventRow.source, EventRow.url, EventRow.min_price, EventRow.has_free_entry, EventRow.entry_type
+        EventRow.id, EventRow.code, EventRow.source, EventRow.url, EventRow.min_price, EventRow.has_free_entry, EventRow.entry_type
     )
     return {
         d.id: DealOut.model_validate(d)
@@ -1412,7 +1413,8 @@ def _register_routes(app: FastAPI) -> None:
         """The seller's page of one listing: the only place a ticket link leaves the server
         (one click at a time, rate-limited by SecurityMiddleware), counted, and UTM-tagged for the
         seller's analytics. ``at`` = where on our page it was clicked (utm.PLACEMENTS)."""
-        row = session.get(EventRow, event_id)
+        code = shortlinks.normalize(event_id) if ":" not in event_id else None  # listing ids are "source:id"
+        row = session.scalar(select(EventRow).where(EventRow.code == code)) if code else session.get(EventRow, event_id)
         headers = {"Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow"}
         if not row or not row.url.startswith(("https://", "http://")):
             # An event that is over is deleted (no past events kept): 410, so search engines drop the link.

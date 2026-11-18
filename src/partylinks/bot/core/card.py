@@ -78,7 +78,7 @@ def price(row: EventRow, lang: str, extra: dict[str, Any]) -> str:
 def links(row: EventRow, extra: dict[str, Any], cfg: Settings, lang: str) -> tuple[Button, ...]:
     base = cfg.site.base_url.rstrip("/")
     deal = extra.get("best_deal")
-    go = (deal.url if deal else seo.go_path(row.id)) + f"?at={PLACEMENT}"
+    go = (deal.url if deal else seo.go_path(row.id, row.code)) + f"?at={PLACEMENT}"
     page = {"utm_source": "telegram", "utm_medium": "bot"} | ({"lang": "en"} if lang == "en" else {})
     return (
         Button(label("tickets", lang), url=base + go),

@@ -4,6 +4,7 @@ alerts (only with a confirm), /stop. No chat app: the core's Reply objects (part
 from __future__ import annotations
 
 import asyncio
+import re
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -76,7 +77,7 @@ def test_a_search_answers_with_cards_links_and_weather(tmp_path: Path) -> None:
     assert any(line.startswith("💸") for line in card.lines)
     tickets, details = card.buttons
     base = settings.site.base_url.rstrip("/")
-    assert tickets.url == f"{base}/go/{card.event_id.replace(':', '%3A')}?at=tg"
+    assert re.fullmatch(rf"{re.escape(base)}/go/[a-z0-9]{{8}}\?at=tg", tickets.url or ""), tickets.url  # the short code
     assert details.url is not None
     assert details.url.startswith(f"{base}/e/") and "utm_source=telegram" in details.url  # the short link, UTM kept
     assert [b.action for b in reply.buttons[0]] == [MORE, ALERT]  # 3 found, 2 shown
