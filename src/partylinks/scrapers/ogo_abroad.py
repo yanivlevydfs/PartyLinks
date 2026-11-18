@@ -72,6 +72,7 @@ class _OgoAbroadScraper(OgoScraper):
             page = await self.get_text(url)
         s = cast(OgoAbroadSettings, self.settings)
         event = parse_event(page, url, self.name, s.default_zone, s.currency)
+        del page  # not kept while the seller's request waits its turn (ogo: 1.7 GB of pages, Nov 2026)
         return await self._sellers.fill(event) if event is not None else None
 
 

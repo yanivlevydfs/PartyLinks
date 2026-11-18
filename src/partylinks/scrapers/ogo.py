@@ -152,6 +152,9 @@ class OgoScraper(BaseScraper[OgoSettings]):
             url = urljoin(url, moved.group(1))
             page = await self.get_text(url)
         event = parse_event(page, url, self.timezone)
+        # The page (~2.8 MB as text) goes before the seller's request, which waits behind thousands of
+        # pages: kept, they piled up to 1.7 GB in 28 min and the worker hit the 8 GB limit (Nov 2026).
+        del page
         # Many OGO events give no price or picture: the seller's page has them (seller_offers).
         return await self._sellers.fill(event) if event is not None else None
 
