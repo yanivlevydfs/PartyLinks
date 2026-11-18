@@ -1874,6 +1874,34 @@ geocoding:
     "תיאטרון דימונה": [31.0619717, 35.0371103]           # Dimona Theatre, Kovshei Eilat St, Dimona (OSM amenity)
     "ma'agan michael": [32.5553209, 34.9166572]          # Kibbutz Ma'agan Michael (OSM village point; ogo's venue name)
     "גן לאומי מגדל צדק": [32.0808421, 34.9570584]        # Migdal Tsedek (Migdal Afek) national park, Rosh HaAyin (OSM historic)
+    "מלון נבל דוד": [32.8876963, 35.5769862]  # Nevel David hotel, Kfar Nahum (OSM building; tiuli.com/lodgings/974)
+    "כנסית קרית יערים": [31.8093619, 35.1040129]  # Notre Dame de l'Arche d'Alliance, Abu Ghosh (OSM way 156328219)
+    "במה 1 חולון": [32.0266560, 34.7745142]  # Holon Theatre, Kugel Blvd 11 (its hall 'Bama 1'; OSM theatre)
+    "מייקרס בית קשת": [32.7190580, 35.3943311]  # Makers, Kibbutz Beit Keshet (OSM village point)
+    "beit galili, na'an": [31.8837553, 34.8570894]  # Beit Galili, Kibbutz Na'an (OSM village point; ogo)
+    "קרית חרושת": [32.6902570, 35.1097811]  # Kiryat Haroshet community centre, Henrietta Szold St, Kiryat Tiv'on (OSM street)
+    "beit nir": [31.6472934, 34.8741310]  # Kibbutz Beit Nir (OSM village point; ogo)
+    "יד לשריון": [31.8384617, 34.9798783]  # Yad La-Shiryon armoured corps museum, Latrun (OSM museum)
+    "kfar harif": [31.7463333, 34.7924638]  # Kfar HaRif (OSM village point)
+    "כפר הריף": [31.7463333, 34.7924638]  # Kfar HaRif (OSM village point; smarticket)
+    "נצר חזני": [31.8216134, 34.8624802]  # Netzer Hazani, Nahal Sorek (OSM village point)
+    "מתחם הגנים עזר": [31.7365072, 34.6714475]  # Ezer, Be'er Tuvia (OSM hamlet point)
+    "ספריה בניצן": [31.7399419, 34.6318163]  # Nitzan library, Hof Ashkelon (OSM village point)
+    "בית התותחן": [32.5644575, 34.9534413]  # Beit HaTotchan, Zichron Ya'akov (OSM site)
+    "האלון גבעת עדה": [32.5155716, 35.0071292]  # HaAlon St, Givat Ada side of Binyamina (OSM street)
+    "herzliya cinematheque": [32.1626981, 34.8414606]  # Herzliya Cinematheque, now in city hall, Ben Gurion 22 (tickchak)
+    "סינמטק הרצליה": [32.1626981, 34.8414606]  # same, Hebrew name
+    "גינת הבעל שם טוב": [32.1618115, 34.8412815]  # Ba'al Shem Tov garden by Herzliya city hall (OSM street)
+    "תאו - מרכז": [32.1662618, 34.8022501]  # Tav (תאו) culture centre, Wingate 168, Herzliya Pituach (OSM)
+    "עין נון": [32.8414700, 35.5110925]  # Ein Nun spring, Migdal (OSM)
+    "גן לאומי מצדה": [31.3156403, 35.3538943]  # Masada national park (OSM archaeological site)
+    "מושב שעל": [33.1162357, 35.7148885]  # Moshav Sha'al, Golan (OSM village point)
+    "קרן נפתלי": [33.0907097, 35.5629387]  # Keren Naftali peak (OSM)
+    "keren naftali": [33.0907097, 35.5629387]  # same, ogo
+    "har amasa": [31.3426169, 35.1021887]  # Har Amasa (OSM village point)
+    "פארק מכבית": [32.0680220, 34.8580109]  # Maccabit park, Kiryat Ono (OSM park)
+    "חניון הפיתול": [32.9790457, 35.4423599]  # HaPitul campsite, Meron, Route 866 (OSM)
+    "משתלות אייל": [31.9157850, 34.8499267]  # Eyal nurseries, Yashresh (OSM village point)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
@@ -1896,6 +1924,7 @@ geocoding:
       "בית העם שדה אילן": [32.7499507, 35.4221584]  # בית העם שדה אילן, שדה אילן
       "מועדון בית קשת": [32.719058, 35.3943311]  # מועדון בית קשת, בית קשת
     "גולן":
+      "מועדון ותיקים בקשת": [32.9807330, 35.8085857]  # Keshet seniors' club (OSM village point)
       "מועדון נטור": [32.8538055, 35.7514617]  # מושב נטור, נטור
       "טנא": [33.0962822, 35.7961971]  # טנא, עין זיוון
       "מועדון אודם": [33.1943741, 35.7483145]  # מועדון אודם, אודם
@@ -1914,12 +1943,14 @@ geocoding:
     "יד השמונה":
       "המתססה": [31.8094724, 35.0901961]  # המתססה, יד השמונה (OSM village point; a small moshav)
     "יבנה":
+      "מועדון קפה אירופה": [31.8778543, 34.7429785]  # Cafe Europa club, HaAlon St (OSM street)
       "אולם תבור": [31.8168499, 34.7281236]  # אולם תבור, גבעת וושינגטון, גבעת וושינגטון, גבעת וושינגטון
     "יואב":
       "בית ניר": [31.6472934, 34.874131]  # קיבוץ בית ניר, בית ניר
     "ירוחם":
       "דיונה": [30.9886008, 34.8936797]  # דיונה, אגם ירוחם 1, ירוחם
     "ירושלים":
+      "השער הקדום": [31.7816733, 35.2304533]  # the ancient (Roman) gate under Damascus Gate (OSM)
       "לובי כניסה": [31.7804775, 35.212831]  # היכל התרבות בית העם, בצלאל 11, ירושלים
     "כורזים":
       "מועדון בית קשת": [32.719058, 35.3943311]  # מועדון בית קשת, בית קשת
@@ -1964,6 +1995,29 @@ geocoding:
       "barbi": [32.0612548, 34.812513]  # בארבי, קיבוץ גלויות 52, תל אביב
       "גריי יהוד": [32.029077, 34.8998321]  # מועדון הגריי יהוד, החרושת 2, יהוד-מונוסון
       "גן הפסגה": [32.0541002, 34.7531348]  # גן הפסגה (גן אברשה), יפו
+    "באר שבע":
+      "תמוז": [31.2402043, 34.7884438]  # Tamuz, Herzl 12, Old City (tickchak; OSM street, no house number)
+      "המסגריה": [31.2404100, 34.7150744]  # Club HaMasgeria, Kibbutz Hatzerim (OSM village point; ogo)
+    "קריית אתא":
+      "מיינד אטאק": [32.8044337, 35.0713184]  # Mind Attack escape rooms, Yosef Batzri St (OSM street)
+    "צור משה":
+      "חדר מוסיקה": [32.2978073, 34.9135462]  # Tzur Moshe music room (OSM village point)
+    "פרדסיה":
+      "ברחוב הרימון": [32.3062722, 34.9066038]  # youth club, HaRimon St (OSM street)
+      "בית טלי": [32.3061688, 34.9105607]  # Beit Tali library (OSM library)
+    "רעננה":
+      "אודיטוריום יד לבנים": [32.1805221, 34.8711198]  # Yad LaBanim house, HaBanim St (OSM community centre)
+      "תיכון אביב": [32.1770836, 34.8606174]  # Aviv high school theatre hall, HaPrachim (OSM school)
+    "ברקת":
+      "ברקת 9": [32.0188526, 34.9437790]  # Moshav Bareket (OSM village point)
+    "בית השמונאי":
+      "אשכול הפיס": [31.8889401, 34.9165448]  # Beit Hashmonai (OSM village point)
+    "נהריה":
+      "ספרייה עירונית": [33.0135647, 35.1030032]  # city library, HaTavor / Derekh HaAtsmaut corner (OSM street)
+    "גני תיקווה":
+      "דרך הים 9": [32.0641901, 34.8738161]  # Meitar high school sports hall, Derekh HaYam 9 (OSM school)
+    "יקום":
+      "אולם יקום": [32.2485734, 34.8420870]  # Kibbutz Yakum (OSM village point)
 
 retention:
   enabled: true
