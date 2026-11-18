@@ -1466,6 +1466,8 @@ geocoding:
     "פארק יהושפט": [31.2640488, 35.2082623]             # Yehoshafat park, Arad
     "ברוניתא": [32.5743404, 34.9551146]                 # Brunita, HaNadiv, Zikhron Ya'akov
     "פאב ההוביט hobbit": [32.5736623, 34.9544712]       # the Hobbit pub, HaMeyasdim, Zikhron Ya'akov
+    "מוזיאון הלוחם היהודי": [31.8384617, 34.9798783]      # Jewish Soldier in WWII museum, Latrun, beside Yad LaShiryon (OSM: Yad LaShiryon)
+    'הרפת הרובוטית במושב אבנ"י אית"ן': [32.8246384, 35.7667337]  # the robotic dairy in Moshav Avnei Eitan, Golan (the moshav, OSM)
     "אורוות האומנים": [32.4726788, 34.9815251]          # Ourvot HaOmanim (the artists' stables), Pardes Hanna (OSM)
     "ביער | ילדי תימן החטופים": [32.4355583, 34.9001833]  # Baya'ar, Hadera (OSM)
     "החאן של איציק": [30.7677164, 35.2796246]           # Itzik's inn, Moshav Hatzeva (the moshav, OSM: no point of its own)
