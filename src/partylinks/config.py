@@ -805,6 +805,7 @@ class BlogSettings(BaseModel):
     embed_default: int = Field(6, ge=1, le=200)  # events an embed shows when it names no limit
     words_per_minute: int = Field(200, ge=50, le=1000)  # reading speed for "N min read"
     related: int = Field(3, ge=0, le=20)  # related posts under a post
+    image_refresh_minutes: float = Field(60, ge=1)  # a post's picture from its live list, looked up again after this
 
 
 class Settings(BaseSettings):

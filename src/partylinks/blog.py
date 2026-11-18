@@ -20,7 +20,9 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import date, datetime
+import threading
+import time
+from datetime import date, datetime, timedelta
 from email.utils import format_datetime
 from functools import lru_cache
 from html import escape, unescape
@@ -124,11 +126,31 @@ def _mtimes(path: Path) -> tuple[float, ...]:
 def load_posts(cfg: Settings, content: Path | None = None, lang: str = "he") -> list[Post]:
     """Published posts, newest first, in English where translated when ``lang`` is "en"."""
     today = datetime.now(ZoneInfo(cfg.timezone)).date()
-    posts = [
-        p for p in (_parse_at(f, _mtimes(f), lang) for f in sorted((content or CONTENT_DIR).glob("*.html")))
-        if p and not p.draft and p.date <= today and not (p.expires and p.expires <= today)
-    ]  # fmt: skip
+    folder = content or CONTENT_DIR
+    found = [_parse_at(f, _mtimes(f), lang) for f in sorted(folder.glob("*.html"))]
+    found += [_weekly(f, lang, today) for f in sorted((folder / "weekly").glob("*.html"))]
+    posts = [p for p in found if p and not p.draft and p.date <= today and not (p.expires and p.expires <= today)]
     return sorted(posts, key=lambda p: (p.date, p.slug), reverse=True)
+
+
+def _weekly(path: Path, lang: str, today: date) -> Post | None:
+    """A post in ``weekly/`` is this week's (Sunday to Saturday): dated its Sunday, so it is the newest post every
+    week, with {from} / {to} (15.11) and {from_iso} / {to_iso} (2026-11-15, for embeds' from= / to=) filled in."""
+    if (post := _parse_at(path, _mtimes(path), lang)) is None:
+        return None
+    start = today - timedelta(days=(today.weekday() + 1) % 7)
+    end = start + timedelta(days=6)
+    marks = {"{from}": f"{start:%d.%m}", "{to}": f"{end:%d.%m}", "{from_iso}": start.isoformat(), "{to_iso}": end.isoformat()}
+
+    def fill(text: str) -> str:
+        for mark, value in marks.items():
+            text = text.replace(mark, value)
+        return text
+
+    return post.model_copy(update={
+        "title": fill(post.title), "description": fill(post.description), "body": fill(post.body), "date": start,
+        "updated": None, "faq": [Faq(q=fill(f.q), a=fill(f.a)) for f in post.faq],
+    })  # fmt: skip
 
 
 def _anchor_id(text: str) -> str:
@@ -157,6 +179,10 @@ def embed_params(raw: str, cfg: Settings) -> dict[str, str]:
         params["date"] = datetime.now(ZoneInfo(cfg.timezone)).date().isoformat()
     elif args.get("when") == "weekend":
         params["weekend"] = "true"
+    # A month's roundup: from= / to= (YYYY-MM-DD, local days, both included).
+    for key, param, clock in (("from", "date_from", "00:00:00"), ("to", "date_to", "23:59:59")):
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", args.get(key, "")):
+            params[param] = f"{args[key]}T{clock}"
     city = next((c for c in cfg.enrichment.cities if c.key == args.get("city")), None)
     if city:
         params["city"] = city.he
@@ -176,6 +202,10 @@ def _embed_rows(session: Any, params: dict[str, str], cfg: Settings) -> list[Eve
         where += seo._when_where("tonight", cfg)
     if "weekend" in params:
         where += seo._when_where("weekend", cfg)
+    if "date_from" in params:
+        where.append(EventRow.local_date >= date.fromisoformat(params["date_from"][:10]))
+    if "date_to" in params:
+        where.append(EventRow.local_date <= date.fromisoformat(params["date_to"][:10]))
     if "city" in params:
         where.append(EventRow.city == params["city"])
     if "venue" in params:
@@ -199,13 +229,54 @@ def blocks(post: Post, cfg: Settings) -> list[dict[str, Any]]:
     return [b for b in out if b.get("events") or b.get("html", "").strip()]
 
 
-def _image(session: Any, post: Post, cfg: Settings) -> str | None:
-    """The post's own image, else the artwork of the first event in its first live list."""
+# A post's picture from its live list: one events query per post (~0.2 s each, 7-20 s for the magazine's list
+# built cold, which a visitor after a quiet hour waited for). Kept per list, Hebrew and English alike, and once
+# older than blog.image_refresh_minutes served as is while a background thread looks again.
+_IMAGES: dict[str, tuple[float, str | None]] = {}
+_IMAGES_LOCK = threading.Lock()
+_IMAGES_REFRESHING: set[str] = set()
+
+
+def _cover_of(session: Any, embed: str, cfg: Settings) -> str | None:
+    rows = _embed_rows(session, embed_params(embed, cfg) | {"page_size": "1"}, cfg)
+    return seo._cover(cfg, rows[0]) if rows else None
+
+
+def _refresh_image(db: Any, embed: str, cfg: Settings) -> None:
+    with _IMAGES_LOCK:
+        if embed in _IMAGES_REFRESHING:
+            return
+        _IMAGES_REFRESHING.add(embed)
+
+    def run() -> None:
+        try:
+            with db.session(write=False) as session:
+                _IMAGES[embed] = (time.monotonic(), _cover_of(session, embed, cfg))
+        except Exception:  # the old picture stays
+            log.exception("blog image refresh failed for %s", embed)
+        finally:
+            with _IMAGES_LOCK:
+                _IMAGES_REFRESHING.discard(embed)
+
+    threading.Thread(target=run, name="blog-image", daemon=True).start()
+
+
+def _image(session: Any, post: Post, cfg: Settings, db: Any = None) -> str | None:
+    """The post's own image, else the artwork of the first event in its first live list. ``db``: a stale
+    picture is refreshed in the background (without it, kept until a caller with one comes)."""
     if post.image:
         return post.image if post.image.startswith("http") else cfg.site.base_url + post.image
     first = EMBED.search(post.body)
-    rows = _embed_rows(session, embed_params(first[1], cfg) | {"page_size": "1"}, cfg) if first else []
-    return seo._cover(cfg, rows[0]) if rows else None
+    if not first:
+        return None
+    embed = " ".join(first[1].split())
+    if (hit := _IMAGES.get(embed)) is None:
+        url = _cover_of(session, embed, cfg)
+        _IMAGES[embed] = (time.monotonic(), url)
+        return url
+    if db is not None and time.monotonic() - hit[0] > cfg.blog.image_refresh_minutes * 60:
+        _refresh_image(db, embed, cfg)
+    return hit[1]
 
 
 # --------------------------------------------------------------------------- JSON for the site
@@ -214,10 +285,10 @@ def _cat(key: str) -> dict[str, str]:
     return {"key": key, "he": he, "en": en}
 
 
-def summary(session: Any, post: Post, cfg: Settings) -> dict[str, Any]:
+def summary(session: Any, post: Post, cfg: Settings, db: Any = None) -> dict[str, Any]:
     return {
         "slug": post.slug, "title": post.title, "description": post.description, "date": post.date,
-        "updated": post.modified, "category": _cat(post.category), "image": _image(session, post, cfg),
+        "updated": post.modified, "category": _cat(post.category), "image": _image(session, post, cfg, db),
         "read_minutes": post.read_minutes, "lang": post.lang,
     }  # fmt: skip
 
@@ -347,7 +418,7 @@ def post_page(session: Any, cfg: Settings, lang: str, slug: str) -> seo.Page | N
         description=post.description,
         path=path,
         lang=lang,
-        langs=("he", "en") if (CONTENT_DIR / "en" / f"{slug}.html").is_file() else ("he",),
+        langs=("he", "en") if any((d / "en" / f"{slug}.html").is_file() for d in (CONTENT_DIR, CONTENT_DIR / "weekly")) else ("he",),
         image=image,
         og_type="article",
         jsonld=jsonld,
@@ -403,7 +474,7 @@ def register(app: FastAPI, page: Any) -> None:
         shown = [p for p in posts if not category or p.category == category]
         return cached(request, lambda session: {
             "categories": [_cat(k) | {"posts": n} for k, n in counts.items() if n],
-            "items": [summary(session, p, cfg(request)) for p in shown],
+            "items": [summary(session, p, cfg(request), request.app.state.db) for p in shown],
         })  # fmt: skip
 
     @app.get("/posts/{slug}", tags=["blog"])
@@ -412,11 +483,11 @@ def register(app: FastAPI, page: Any) -> None:
         post = next((p for p in posts if p.slug == slug), None)
         if post is None:
             raise HTTPException(404, "post not found")
-        return cached(request, lambda session: summary(session, post, cfg(request)) | {
+        return cached(request, lambda session: summary(session, post, cfg(request), request.app.state.db) | {
             "blocks": blocks(post, cfg(request)),
             "toc": toc(post),
             "faq": [f.model_dump() for f in post.faq],
-            "related": [summary(session, p, cfg(request)) for p in related(posts, post)],
+            "related": [summary(session, p, cfg(request), request.app.state.db) for p in related(posts, post)],
         })  # fmt: skip
 
     @app.get("/blog/rss.xml", include_in_schema=False)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import time as clock
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -453,6 +453,56 @@ def test_blog_posts_pages_feed_and_live_embeds(tmp_path: Path, monkeypatch: pyte
             assert '"BlogPosting"' in page.text and '"FAQPage"' in page.text
             assert "Techno night 0" in page.text and 'hreflang="en"' in page.text
             assert "Techno guide" in client.get("/blog/guide?lang=en").text
+
+
+def test_blog_weekly_post_and_dated_embeds(tmp_path: Path) -> None:
+    from partylinks import blog
+
+    settings = settings_for(tmp_path)
+    weekly = tmp_path / "blog" / "weekly"
+    (weekly / "en").mkdir(parents=True)
+    (weekly / "week.html").write_text(
+        '---\ntitle: "השבוע {from}–{to}"\ndescription: "d"\ndate: 2026-01-04\nfaq:\n  - q: "מתי?"\n    a: "{from}"\n---\n'
+        "<p>x</p>\n<!--events genre=techno from={from_iso} to={to_iso}-->",
+        encoding="utf-8",
+    )
+    (weekly / "en" / "week.html").write_text('---\ntitle: "This week {from}–{to}"\ndescription: "d"\n---\n<p>x</p>', encoding="utf-8")
+    on = date(2026, 11, 18)  # a Wednesday: the week is Sunday 15.11 to Saturday 21.11
+    post = blog._weekly(weekly / "week.html", "he", on)
+    assert post and (post.title, post.date, post.faq[0].a) == ("השבוע 15.11–21.11", date(2026, 11, 15), "15.11")
+    assert blog.blocks(post, settings)[1]["events"] == {
+        "page_size": "6", "genre": "techno", "date_from": "2026-11-15T00:00:00", "date_to": "2026-11-21T23:59:59",
+    }  # fmt: skip
+    sunday = blog._weekly(weekly / "week.html", "he", date(2026, 11, 15))
+    assert sunday and sunday.date == date(2026, 11, 15)  # a Sunday: its own week
+    english = blog._weekly(weekly / "week.html", "en", on)
+    assert english and english.title == "This week 15.11–21.11" and english.lang == "en"
+    assert blog.embed_params("from=12/2026 to=x", settings) == {"page_size": "6"}  # not a date: ignored
+
+
+def test_blog_post_picture_looked_up_once_then_refreshed_behind(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from partylinks import blog
+
+    settings = settings_for(tmp_path)
+    post = blog.Post(slug="p", title="t", description="d", date=date(2026, 1, 1), body="<!--events genre=techno-->")
+    calls: list[str] = []
+
+    def cover(session: object, embed: str, cfg: object) -> str:
+        calls.append(embed)
+        return f"https://img/{len(calls)}"
+
+    monkeypatch.setattr(blog, "_IMAGES", {})
+    monkeypatch.setattr(blog, "_cover_of", cover)
+    db = seed(settings, [])
+    assert blog._image(None, post, settings, db) == "https://img/1"
+    assert blog._image(None, post, settings, db) == "https://img/1" and calls == ["genre=techno"]  # cached
+    blog._IMAGES["genre=techno"] = (0.0, "https://img/1")  # long stale: the old one at once, a new one behind
+    assert blog._image(None, post, settings, db) == "https://img/1"
+    for _ in range(100):
+        if blog._IMAGES["genre=techno"][1] == "https://img/2":
+            break
+        clock.sleep(0.02)
+    assert blog._IMAGES["genre=techno"][1] == "https://img/2"
 
 
 def test_admin_scan_runs_all_enabled_or_the_chosen_sources(tmp_path: Path) -> None:

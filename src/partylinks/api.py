@@ -723,7 +723,7 @@ def _sounds_like(request: Request, q: str) -> list[str]:
 
 
 # Built in the background on startup (an empty cache made the first visits after a deploy take 3-12 s).
-WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/posts", "/categories", "/categories?anywhere=true", "/ticket-sites", "/events/rails", "/sitemap.xml")
+WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/posts", "/posts?lang=en", "/categories", "/categories?anywhere=true", "/ticket-sites", "/events/rails", "/sitemap.xml")
 
 
 def build_event_filters(

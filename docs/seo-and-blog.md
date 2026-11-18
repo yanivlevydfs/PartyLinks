@@ -62,6 +62,13 @@ Each post is a file `content/blog/<slug>.html`: a YAML header between `---` line
 - **Live event lists.** A comment such as
   `<!--events genre=techno when=weekend city=tel-aviv limit=6-->` in the body is replaced by
   matching upcoming events. `venue=`, `artist=` and `free=true` also work.
+  `from=2026-12-01 to=2026-12-31` (local days, both included) keeps a month's roundup to its month.
+- **Weekly post.** A file in `content/blog/weekly/` (English in `weekly/en/`) is this week's post,
+  Sunday to Saturday: dated this week's Sunday, so it is the newest post every week, with `{from}` /
+  `{to}` (15.11) and `{from_iso}` / `{to_iso}` (for `from=` / `to=`) filled in. `this-week-in-israel` is one.
+- **Pictures.** A post without `image:` shows the first event of its first live list. That lookup is kept
+  per list and redone in the background after `blog.image_refresh_minutes`, so the magazine's list (`/posts`)
+  builds without querying events.
 - **Scheduled posts.** A post dated in the future, or marked `draft: true`, stays hidden until its
   date.
 - **English version.** Every post also gets `content/blog/en/<slug>.html`: the same shape, with
