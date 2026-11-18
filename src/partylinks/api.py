@@ -1303,6 +1303,8 @@ def _register_routes(app: FastAPI) -> None:
                     if sort is EventSort.start_asc and not abroad
                     else (_SORT_COLUMNS[sort], _START)
                 )
+                if q and sort is EventSort.start_asc and not abroad:  # a search covers abroad too: Israel's first
+                    order = (EventRow.country.is_not(None), *order)
                 rows = session.scalars(
                     card.where(*where)
                     .order_by(*order, EventRow.id)
