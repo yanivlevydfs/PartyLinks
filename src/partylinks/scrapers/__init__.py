@@ -54,7 +54,6 @@ from partylinks.scrapers.hulyo import HulyoScraper
 from partylinks.scrapers.hypd import HypdScraper
 from partylinks.scrapers.inperson import InpersonScraper
 from partylinks.scrapers.ironit import IronitScraper
-from partylinks.scrapers.israelmusicfest import IsraelMusicFestScraper
 from partylinks.scrapers.issta import IsstaScraper
 from partylinks.scrapers.iwant import IwantScraper
 from partylinks.scrapers.jaffatheatre import JaffaTheatreScraper
@@ -262,7 +261,6 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         KlikaScraper,
         GotoTlvScraper,
         InpersonScraper,
-        IsraelMusicFestScraper,
         FunzingScraper,
         EasytixScraper,
         TicketeamsScraper,
