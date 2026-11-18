@@ -90,6 +90,22 @@ def test_a_run_a_restart_cut_short_starts_again_at_startup() -> None:
     assert db.interrupted_sources(3) == {"goout", "ogo"}
 
 
+def test_a_run_deploys_keep_cutting_is_still_resumed() -> None:
+    db = Database(os.environ["PARTYLINKS_DATABASE__URL"])
+    db.create_schema()
+    shutdown, died = "service shutting down", "process stopped before the run finished"
+    runs = {"makore": [shutdown] * 5, "shotgun": [died, died, died], "eventer": [died, shutdown, shutdown, died, died]}
+    with db.session() as session:
+        for source, errors in runs.items():
+            session.add_all(
+                ScrapeRunRow(source=source, trigger="schedule", status="interrupted", error=e) for e in errors
+            )
+    # makore was only ever cut by deploys (ogo, Nov 2026: 13 in a row); shotgun died with the process 3
+    # times. eventer's last 3 runs hold 2 deaths, under the limit.
+    assert {"makore", "eventer"} <= db.interrupted_sources(3)
+    assert "shotgun" not in db.interrupted_sources(3)
+
+
 def test_a_scheduled_run_a_restart_dropped_from_the_queue_starts_at_startup() -> None:
     from datetime import datetime, timedelta
     from types import SimpleNamespace

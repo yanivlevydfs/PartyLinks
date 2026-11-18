@@ -91,6 +91,10 @@ def with_db_retry[T](what: str, fn: Callable[[], T]) -> T:
     raise AssertionError("unreachable")
 
 
+# The error of a run a clean shutdown (a deploy) stopped; any other interrupted run died with the process.
+SHUTDOWN_ERROR = "service shutting down"
+
+
 def utcnow() -> datetime:
     return datetime.now(UTC)
 
@@ -646,26 +650,31 @@ class Database:
         return count
 
     def interrupted_sources(self, max_in_a_row: int) -> set[str]:
-        """Sources whose latest run was interrupted (a deploy or restart cut it), fewer than
-        ``max_in_a_row`` times in a row: a run that keeps killing the process is not resumed again."""
+        """Sources whose latest run was interrupted (a deploy or restart cut it). A source whose last
+        ``max_in_a_row`` runs include that many that died with the process (no clean shutdown: it may be
+        what kills it) is not resumed again. A deploy's clean stop does not count: ogo's ~1 h run was cut
+        by 13 deploys in a row and stopped resuming, so it never finished and same-day events went
+        missing (Nov 2026)."""
         ranked = select(
             ScrapeRunRow.source,
             ScrapeRunRow.status,
+            ScrapeRunRow.error,
             func.row_number().over(partition_by=ScrapeRunRow.source, order_by=ScrapeRunRow.id.desc()).label("n"),
         ).subquery()
         with self.session(write=False) as session:
             rows = session.execute(
-                select(ranked.c.source, ranked.c.status)
+                select(ranked.c.source, ranked.c.status, ranked.c.error)
                 .where(ranked.c.n <= max_in_a_row)
                 .order_by(ranked.c.source, ranked.c.n)
             ).all()
-        latest: dict[str, list[str]] = defaultdict(list)
-        for source, status in rows:
-            latest[source].append(status)
+        latest: dict[str, list[tuple[str, str | None]]] = defaultdict(list)
+        for source, status, error in rows:
+            latest[source].append((status, error))
         return {
             s
-            for s, statuses in latest.items()
-            if statuses[0] == "interrupted" and statuses.count("interrupted") < max_in_a_row
+            for s, runs in latest.items()
+            if runs[0][0] == "interrupted"
+            and sum(status == "interrupted" and error != SHUTDOWN_ERROR for status, error in runs) < max_in_a_row
         }
 
     def latest_runs(self) -> dict[str, tuple[datetime, str]]:

@@ -160,7 +160,8 @@ class ApiSettings(BaseModel):
 class SchedulerSettings(BaseModel):
     enabled: bool = True
     run_on_startup: bool = False
-    # A source whose last run a restart interrupted runs again at startup, unless this many in a row were.
+    # A source whose last run a restart interrupted runs again at startup, unless this many of its last runs
+    # died with the process (a deploy's clean stop does not count).
     resume_max_in_a_row: int = Field(3, ge=1)
     # A source whose last cron time passed with no run started since (its run waited in the queue when a
     # deploy restarted the worker, so it never got a run row) runs at startup too, oldest first.

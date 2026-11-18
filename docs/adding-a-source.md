@@ -13,6 +13,7 @@ sources are never changed to make room for a new one.
 | Rule | What it means in practice |
 | --- | --- |
 | **Never past events** | Do not fetch past events, and do not keep a skip-list file of their URLs. Filter them out from the listing itself: server-side query, sitemap `<lastmod>`, card dates. Before yielding, apply `retention.is_current`, the same rule the site uses to display and purge. |
+| **Nearest first** | Fetch and yield the soonest events first: date-ordered listing pages, detail URLs sorted by date, near months before far ones. Events are saved as they are yielded and deploys cut long runs, so a cut run must already hold this week. A site with no date before the detail page: its own order (usually soonest first), never reversed. |
 | **On the map** | Every event with a place carries `latitude` / `longitude`, or an address that geocoding can find. For a single-venue source, set the venue's coordinates in its config block (look them up in Nominatim with `geocoding.user_agent`, never a personal email). Weather comes from these coordinates. |
 | **In our categories** | `source_genres` carries the site's own categories. The keywords in `enrichment.genres` map them to site genres, and every event must end up with at least one. |
 | **In the stores** | Add the display name to `web/src/sourceNames.json` and a line to `STORES` in `web/src/pages/Stores.tsx`. |
@@ -273,6 +274,7 @@ Other sessions commit to `master` at the same time:
 - [ ] Data read from the site's own API / feed / JSON-LD; `robots.txt` respected
 - [ ] Own module with a docstring; settings model with no hard-coded constants
 - [ ] No past event fetched or yielded (`is_current`), no past-URL file; no start more than `retention.max_future_days` ahead (`check_source.py` prints `TOO FAR`: a broken date the site sends)
+- [ ] Nearest events fetched and yielded first (a run cut half way holds this week)
 - [ ] Every event on the map (coordinates or a geocodable address; venue coords for single-venue sites)
 - [ ] Every event has a site genre (`check_source.py` shows no `NO GENRE`)
 - [ ] Purchase links kept, social profiles dropped; artwork URLs passed

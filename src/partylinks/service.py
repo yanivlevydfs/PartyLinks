@@ -43,6 +43,7 @@ from partylinks.ads import paid
 from partylinks.artistdb import ArtistBook
 from partylinks.config import Settings
 from partylinks.db import (
+    SHUTDOWN_ERROR,
     Database,
     EventRow,
     FlagRow,
@@ -480,10 +481,10 @@ class ScrapeService:
                 status, error = "failed", "TimeoutError inside the scraper"
             log.error("source %s %s", source, error)
         except _StopRequested:
-            status, error = "interrupted", "service shutting down"
+            status, error = "interrupted", SHUTDOWN_ERROR
         except Exception as exc:
             if self._stopping.is_set():  # a deploy closed the thread pools mid-run: not the source's fault
-                status, error = "interrupted", "service shutting down"
+                status, error = "interrupted", SHUTDOWN_ERROR
             else:
                 log.exception("source %s failed", source)
                 status, error = "failed", f"{type(exc).__name__}: {exc}"[:500]
