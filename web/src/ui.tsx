@@ -155,7 +155,8 @@ export function Layout() {
       <TelegramFab />
       <header className="top">
         <div className="wrap top-row">
-          <Link className="logo" to="/" aria-label="SPOTX">
+          {/* The logo is a fresh start: a full page load (new data, filters and quiz reset), not the router's same-page no-op. */}
+          <Link className="logo" to="/" reloadDocument aria-label="SPOTX">
             <Mark />
             <span className="word">SPOT<span>X</span></span>
           </Link>

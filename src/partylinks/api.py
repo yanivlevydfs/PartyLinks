@@ -1507,13 +1507,18 @@ def _register_routes(app: FastAPI) -> None:
             if cfg.smart_rails.after not in {r.key for r in cfg.home_rails.rows}:
                 out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
             for spec in cfg.home_rails.rows:
+                if spec.holiday and out.holiday and out.holiday.key == spec.holiday:
+                    continue  # the coming holiday's own row already shows it
                 try:
+                    window = spec.window(now.date())  # a holiday's or a month's next dates, however far
                     filters = event_filters(
-                        request, date_to=now + timedelta(days=spec.days), genre=spec.genre or None,
+                        request, date_to=now + timedelta(days=366 if window else spec.days), genre=spec.genre or None,
                         time_slot=spec.time_slot or None, free_entry=spec.free_entry or None,
                         on_date=now.date() if spec.today else None, weekend=spec.weekend or None,
                         abroad=spec.abroad or None, discount=spec.discount or None, max_price=spec.max_price,
                     )  # fmt: skip
+                    if window:
+                        filters += [EventRow.local_date >= window[0], EventRow.local_date <= window[1]]
                     if spec.max_price:
                         filters.append(EventRow.group_min_price > 0)
                     if spec.multi:
