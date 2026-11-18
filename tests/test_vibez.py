@@ -133,3 +133,24 @@ def test_listing_and_catalogue_rows_soonest_first() -> None:
         {"id": "near", "start_time": "2026-11-19T22:00:00", "timezone": "Asia/Jerusalem"},
     ]
     assert [r["id"] for r in vibez.soonest_first(rows, "Asia/Jerusalem")] == ["near", "far", "none"]
+
+
+def test_a_configured_place_gives_the_venue_its_town() -> None:
+    # Creation Field (Nov 2026): Vibez gives only "creation field"; the config names its compound and town.
+    cfg = vibez.VibezSettings.model_validate(Settings().sources["vibez"])
+    row = {
+        "id": "152551fc-021a-484f-bf24-fb7980025149",
+        "name": "רביעי טראנס ריאקשן",
+        "location": "creation field",
+        "start_time": "2026-11-18T18:00:00.000Z",
+        "timezone": "Asia/Jerusalem",
+        "status": "active",
+        "project": {},
+    }
+    event = vibez.with_place(vibez.parse_event(row, [], SITE, TZ), cfg.places)
+    assert event is not None
+    assert (event.venue_name, event.city) == ("Creation Field", "פרדס חנה-כרכור")
+    enriched = Enricher(Settings().enrichment, TZ).enrich(event)
+    assert enriched is not None and enriched.city == "פרדס חנה-כרכור"
+    assert vibez.with_place(parse("dopamine - Masquerade"), cfg.places).city is None  # no configured place: as is
+    assert vibez.with_place(None, cfg.places) is None

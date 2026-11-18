@@ -1445,6 +1445,7 @@ geocoding:
     "מדיטק": [32.0118153, 34.7774368]                  # Holon Mediatheque, Golda Meir 6 (all its halls)
     "אודיטוריום הכט": [32.763218, 35.018062]            # Hecht Auditorium, University of Haifa (the Hecht Museum's building)
     "המשכן לאמנויות, אוניברסיטת חיפה": [32.7609456, 35.0204641]  # University of Haifa's arts building (the campus, OSM), Israel Music Festival
+    "creation field": [32.473961, 34.9817879]          # Creation Field, Pardes Hanna's agricultural school compound (OSM: the Rothschild agricultural high school)
     "אולם דורות שער הנגב": [31.506606, 34.645993]      # Kibbutz Dorot's hall (the kibbutz, OSM: one hall), Smarticket and the music festival
     # Recurring venues of upcoming events still off the map (OSM POI / numbered-building points, Nov 2026).
     # Generic hall names ("אולם ראשי", "היכל התרבות" alone) are left out: the city is not part of the match.
@@ -2905,6 +2906,10 @@ sources:
     # business evenings at roaming venues; sells only by link from Instagram bamboo.club.il).
     projects:
       - ddcd7570-f5d4-4b77-9fda-3f9a391232cd   # Bamboo Club
+    # Locations that name no town. Creation Field: a party ground "on Waze"; its producer (קריאיישן) and its
+    # Facebook page place it at Pardes Hanna's agricultural school compound (Nov 2026).
+    places:
+      "creation field": {venue_name: Creation Field, address: "מתחם בית הספר החקלאי", city: פרדס חנה-כרכור}
     http:
       concurrency: 4
 

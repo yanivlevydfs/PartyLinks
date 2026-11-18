@@ -24,7 +24,7 @@ from importlib import resources
 from typing import Any
 
 import httpx
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from partylinks.countries import country_code
 from partylinks.enrichment import UNKNOWN_COUNTRY
@@ -45,12 +45,21 @@ _STREET = re.compile(r"\d|,")
 MAX_SPAN = timedelta(days=7)
 
 
+class VibezPlace(BaseModel):
+    venue_name: str | None = None
+    address: str | None = None
+    city: str | None = None
+
+
 class VibezSettings(SourceSettings):
     site_url: str
     api_url: str
     max_pages: int = Field(20, ge=1)
     # Producers whose catalogue is read even when none of their events is in the public listing.
     projects: list[str] = Field(default_factory=list)
+    # Vibez's free-text locations that name no town ("creation field": a party ground found "on Waze"), by
+    # their text (any case) -> the venue's name, address and city.
+    places: dict[str, VibezPlace] = Field(default_factory=dict)
 
 
 class VibezScraper(BaseScraper[VibezSettings]):
@@ -101,7 +110,7 @@ class VibezScraper(BaseScraper[VibezSettings]):
         s = self.settings
         detail = (await self.get_json(f"{s.api_url}/events/{event_id}")).get("event") or {}
         products = (await self.get_json(f"{s.api_url}/events/{event_id}/products")).get("products") or []
-        return parse_event(detail, products, s.site_url, self.timezone)
+        return with_place(parse_event(detail, products, s.site_url, self.timezone), s.places)
 
 
 def _coming(item: dict[str, Any], timezone: str) -> bool:
@@ -158,6 +167,16 @@ def parse_event(
         tickets=tickets,
         is_sold_out=bool(tickets) and all(t.status is TierStatus.SOLD_OUT for t in tickets),
     )
+
+
+def with_place(event: ScrapedEvent | None, places: dict[str, VibezPlace]) -> ScrapedEvent | None:
+    """The event at the place its location text names in ``places`` (venue, address, city); as is otherwise."""
+    text = (event.venue_name or event.address or "").casefold().strip() if event else ""
+    place = next((p for key, p in places.items() if key.casefold().strip() == text), None) if text else None
+    if event is None or place is None:
+        return event
+    found = {k: v for k, v in place.model_dump().items() if v}
+    return event.model_copy(update=found)
 
 
 @lru_cache(maxsize=1)
