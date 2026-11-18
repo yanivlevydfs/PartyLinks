@@ -1,22 +1,27 @@
 // Every ticket site / box office the events come from, with how many upcoming events each sells (GET /ticket-sites).
 // Crawlers without JavaScript get a summary from seo.py (INFO_PAGES).
-import type { CSSProperties } from "react";
+import { type CSSProperties, type ReactNode, useDeferredValue, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { type TicketSite, useCategories, useTicketSites } from "../api";
+import { type BoxOffice, type TicketSite, useCategories, useTicketSites } from "../api";
 import type { Lang } from "../i18n";
 import { DEFAULT_FILTERS, useStore } from "../store";
 import { Hero, Loader, sourceName, useT, useTitle } from "../ui";
 
-type Kind = "tickets" | "venue" | "culture" | "cinema" | "abroad" | "guide" | "city";
+// In screen order: the sections the stores are grouped in, with their headings.
+type Kind = "tickets" | "culture" | "venue" | "cinema" | "guide" | "city" | "abroad";
 const KINDS: Record<Kind, Record<Lang, string>> = {
-  tickets: { he: "כרטיסים", en: "Tickets" },
-  venue: { he: "מועדון", en: "Club" },
+  tickets: { he: "אתרי כרטיסים", en: "Ticket sites" },
   culture: { he: "תרבות ובמה", en: "Stage & culture" },
+  venue: { he: "מועדונים והופעות", en: "Clubs & venues" },
   cinema: { he: "קולנוע", en: "Cinema" },
+  guide: { he: "מדריכים ולוחות אירועים", en: "Guides & listings" },
+  city: { he: "רשויות מקומיות", en: "Municipalities" },
   abroad: { he: "חו״ל", en: "Abroad" },
-  guide: { he: "מדריך", en: "Guide" },
-  city: { he: "רשות מקומית", en: "Municipality" },
 };
+const KIND_ORDER = Object.keys(KINDS) as Kind[];
+const OFFICES_SHOWN = 24; // box offices before "show more" (the list runs to hundreds)
+const GROUP_SHOWN = 8; // stores per kind before "show all" (two rows on a wide screen)
+const CITY_CHIPS = 12; // the cities with the most box-office events get a chip
 
 // Store home page and kind; a source missing here still shows, without a link.
 const STORES: Record<string, [string | null, Kind]> = {
@@ -71,28 +76,52 @@ const TEXT = {
   he: {
     title: "חנויות הכרטיסים",
     intro: "SPOTX לא מוכר כרטיסים. כל אירוע באתר מגיע מאחד האתרים האלה, ולחיצה על \"כרטיסים\" מעבירה ישר אליהם. תודה לכולם.",
-    total: (events: string, stores: number) => `${events} אירועים קרובים בישראל ובחו״ל מ-${stores} מקורות`,
     events: "אירועים קרובים",
+    upcoming: "אירועים קרובים",
+    sources: "אתרים",
+    offices: "קופות",
+    search: "חיפוש אתר, קופה או עיר",
+    all: "הכל",
+    sitesTitle: "אתרי הכרטיסים והמקורות",
     site: "לאתר",
     browse: "לאירועים שלהם",
     updated: "עודכן",
-    offices: "קופות של ערים, מועצות ואולמות",
-    officesIntro: "קופות הכרטיסים של היכלות תרבות, מתנ\"סים, מועצות ותיאטראות שאנחנו קוראים דרך Smarticket.",
+    officesTitle: "קופות של ערים, מועצות ואולמות",
+    officesIntro: "קופות הכרטיסים של היכלות תרבות, מתנ\"סים, מועצות ותיאטראות שאנחנו קוראים דרך Smarticket ומערכות דומות.",
+    allCities: "כל הערים",
+    more: (n: number) => `עוד ${n} קופות`,
+    allOf: (n: number) => `הצג את כל ה-${n}`,
+    less: "הצג פחות",
+    none: "לא מצאנו אתר או קופה בשם הזה.",
   },
   en: {
     title: "Ticket stores",
     intro: "SPOTX doesn't sell tickets. Every event here comes from one of these sites, and \"Tickets\" takes you straight to them. Thank you all.",
-    total: (events: string, stores: number) => `${events} upcoming events in Israel and abroad from ${stores} sources`,
     events: "upcoming events",
+    upcoming: "upcoming events",
+    sources: "sites",
+    offices: "box offices",
+    search: "Search a site, box office or city",
+    all: "All",
+    sitesTitle: "Ticket sites & sources",
     site: "Website",
     browse: "Their events",
     updated: "Updated",
-    offices: "City, council and venue box offices",
-    officesIntro: "The box offices of culture halls, community centres, councils and theatres we read through Smarticket.",
+    officesTitle: "City, council and venue box offices",
+    officesIntro: "The box offices of culture halls, community centres, councils and theatres we read through Smarticket and similar systems.",
+    allCities: "All cities",
+    more: (n: number) => `${n} more box offices`,
+    allOf: (n: number) => `Show all ${n}`,
+    less: "Show less",
+    none: "No site or box office by that name.",
   },
 };
 
 function ago(iso: string, locale: string): string {
+  return agoRaw(iso, locale).replace(/\s*\(\d+\)/, ""); // Hebrew "לפני שעה (1)": the count is already in the word
+}
+
+function agoRaw(iso: string, locale: string): string {
   const minutes = Math.round((Date.parse(iso) - Date.now()) / 60_000);
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   if (Math.abs(minutes) < 60) return rtf.format(minutes, "minute");
@@ -103,6 +132,15 @@ function ago(iso: string, locale: string): string {
 // The same store always gets the same neon hue for its monogram.
 const hue = (name: string) => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
 const domain = (url: string) => new URL(url).hostname.replace(/^(www|live|web)\./, "");
+const fold = (s: string) => s.toLocaleLowerCase().normalize("NFKD").replace(/[֑-ׇ̀-ͯ]/g, "");
+
+interface Row { site: TicketSite; url: string | null; kind: Kind }
+
+// A filter chip. Not ui's Chip: that one scrolls its chosen chip into view on mount, which here (an "All" chip
+// chosen in each section) dragged the page down to the box offices on load.
+function Pick({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
+  return <button className={on ? "chip on" : "chip"} aria-pressed={on} onClick={onClick}>{children}</button>;
+}
 
 export default function StoresPage() {
   const { t: strings, lang } = useT();
@@ -115,6 +153,7 @@ export default function StoresPage() {
   // /ticket-sites down (a server without it, a restart): the home filter's counts, Israel only.
   const fallback: TicketSite[] | undefined = sites.isError ? cats.data?.sources.map((s) => ({ name: s.value, events: s.events, updated_at: null })) : undefined;
   const stores = sites.data?.stores ?? fallback;
+  const offices = useMemo(() => sites.data?.box_offices ?? [], [sites.data]);
   // Once per group, a place once: one sold on three sites is one event (the stores' counts would add it three
   // times). Israel and abroad together; the home page's total is Israel only.
   const total = sites.data?.total ?? stores?.reduce((n, s) => n + s.events, 0) ?? 0;
@@ -127,54 +166,136 @@ export default function StoresPage() {
     setQuizDone(true);
     navigate("/");
   };
-  const max = stores?.[0]?.events ?? 1;
+
+  const [typed, setTyped] = useState("");
+  const query = fold(useDeferredValue(typed).trim());
+  const [kind, setKind] = useState<Kind | null>(null);
+  const [city, setCity] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const [open, setOpen] = useState<Set<Kind>>(new Set());
+  const toggle = (k: Kind) => setOpen((o) => { const n = new Set(o); if (!n.delete(k)) n.add(k); return n; });
+  const num = (n: number) => n.toLocaleString(strings.locale);
+
+  // A store with nothing upcoming says nothing here; the rest by kind, biggest first (the API's order).
+  const rows = useMemo<Row[]>(
+    () => (stores ?? []).filter((s) => s.events > 0).map((site) => {
+      const [url, k] = STORES[site.name] ?? [null, "tickets"];
+      return { site, url, kind: k };
+    }),
+    [stores],
+  );
+  const matches = (...texts: (string | null | undefined)[]) => !query || texts.some((x) => x && fold(x).includes(query));
+  const found = rows.filter((r) => matches(sourceName(r.site.name), r.site.name, r.url && domain(r.url)));
+  const kindCount = (k: Kind) => found.filter((r) => r.kind === k).length;
+  const groups = KIND_ORDER.filter((k) => (!kind || k === kind) && kindCount(k) > 0)
+    .map((k) => ({ kind: k, rows: found.filter((r) => r.kind === k) }));
+
+  const cities = useMemo(() => {
+    const by = new Map<string, number>();
+    for (const o of offices) if (o.city) by.set(o.city, (by.get(o.city) ?? 0) + o.events);
+    return [...by].sort((a, b) => b[1] - a[1]).slice(0, CITY_CHIPS).map(([c]) => c);
+  }, [offices]);
+  const officesFound = offices.filter((o) => (!city || o.city === city) && matches(o.name, o.city, domain(o.url)));
+  const officesShown = showAll || query ? officesFound : officesFound.slice(0, OFFICES_SHOWN);
 
   return (
     <>
       <Hero title={t.title}>
         <p className="landing-intro">{t.intro}</p>
-        {stores && <p className="stores-total">{t.total(total.toLocaleString(strings.locale), stores.length)}</p>}
+        {stores && (
+          <ul className="stores-stats">
+            <li><b>{num(total)}</b> {t.upcoming}</li>
+            <li><a href="#sites"><b>{num(rows.length)}</b> {t.sources}</a></li>
+            {offices.length > 0 && <li><a href="#offices"><b>{num(offices.length)}</b> {t.offices}</a></li>}
+          </ul>
+        )}
+        {stores && (
+          <div className="facet-search">
+            <svg viewBox="0 0 24 24" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+            <input className="search" type="search" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={t.search} aria-label={t.search} enterKeyHint="search" />
+          </div>
+        )}
       </Hero>
-      <main className="wrap">
+      <main className="wrap stores-page">
         {!stores && (failed ? <p className="msg">{strings.error}</p> : <Loader />)}
-        <ol className="stores">
-          {stores?.map((s, i) => {
-            const [url, kind] = STORES[s.name] ?? [null, "tickets"];
-            return (
-              <li key={s.name} className="store" style={{ "--hue": hue(s.name), animationDelay: `${Math.min(i, 20) * 30}ms` } as CSSProperties}>
-                <span className="store-rank">{i + 1}</span>
-                <span className="store-mono" aria-hidden>{sourceName(s.name).replace(/^the /i, "").charAt(0).toUpperCase()}</span>
-                <div className="store-head">
-                  <b dir="ltr">{sourceName(s.name)}</b>
-                  <small>{KINDS[kind][lang]}{url && <> · <span dir="ltr">{domain(url)}</span></>}</small>
-                </div>
-                <div className="store-count">
-                  <b>{s.events.toLocaleString(strings.locale)}</b>
-                  <small>{t.events}</small>
-                </div>
-                <span className="store-bar"><span style={{ width: `${Math.max(3, (s.events / max) * 100)}%` }} /></span>
-                <div className="store-foot">
-                  {s.updated_at && <small>{t.updated} {ago(s.updated_at, strings.locale)}</small>}
-                  {browsable.has(s.name) ? <button className="linkish" onClick={() => browse(s.name)}>{t.browse}</button>
-                    : s.events > 0 && <Link className="linkish" to={`/abroad?source=${encodeURIComponent(s.name)}`}>{t.browse}</Link>}
-                  {url && <a href={url} target="_blank" rel="noopener noreferrer">{t.site} ↗</a>}
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-        {!!sites.data?.box_offices?.length && (
-          <section className="box-offices">
-            <h4 className="section-title">{t.offices}</h4>
-            <p className="msg">{t.officesIntro}</p>
-            <div className="facet-grid">
-              {sites.data.box_offices.map((o) => (
-                <a key={o.url} className="facet" href={o.url} target="_blank" rel="noopener noreferrer">
-                  <b dir="auto">{o.name}</b>
-                  <small>{strings.events(o.events)}{o.city ? ` · ${o.city}` : ""} · <span dir="ltr">{domain(o.url)}</span> ↗</small>
-                </a>
-              ))}
+        {stores && (
+          <section id="sites" className="stores-section">
+            <h2 className="stores-h">{t.sitesTitle}</h2>
+            <div className="filters stores-filter" role="group" aria-label={t.sitesTitle}>
+              <div className="chips scroll">
+                <Pick on={!kind} onClick={() => setKind(null)}>{t.all} <small>{found.length}</small></Pick>
+                {KIND_ORDER.filter((k) => kindCount(k) > 0).map((k) => (
+                  <Pick key={k} on={kind === k} onClick={() => setKind(kind === k ? null : k)}>{KINDS[k][lang]} <small>{kindCount(k)}</small></Pick>
+                ))}
+              </div>
             </div>
+            {groups.map((g) => {
+              const max = g.rows[0]?.site.events || 1;
+              // One kind chosen, or a search: every match; otherwise each kind's biggest, the rest a click away.
+              const whole = !!kind || !!query || open.has(g.kind) || g.rows.length <= GROUP_SHOWN + 2;
+              const shown = whole ? g.rows : g.rows.slice(0, GROUP_SHOWN);
+              return (
+                <div key={g.kind} className="store-group">
+                  <h3 className="section-title">{KINDS[g.kind][lang]} <small>{g.rows.length}</small></h3>
+                  <ol className="stores">
+                    {shown.map(({ site: s, url }, i) => (
+                      <li key={s.name} className="store" style={{ "--hue": hue(s.name), animationDelay: `${Math.min(i, 12) * 25}ms` } as CSSProperties}>
+                        <span className="store-mono" aria-hidden>{sourceName(s.name).replace(/^the /i, "").charAt(0).toUpperCase()}</span>
+                        <div className="store-head">
+                          <b dir="auto">{sourceName(s.name)}</b>
+                          {url && <small dir="ltr">{domain(url)}</small>}
+                        </div>
+                        <div className="store-count">
+                          <b>{num(s.events)}</b>
+                          <small>{t.events}</small>
+                        </div>
+                        <span className="store-bar"><span style={{ width: `${Math.max(3, (s.events / max) * 100)}%` }} /></span>
+                        <div className="store-foot">
+                          <small>{s.updated_at ? `${t.updated} ${ago(s.updated_at, strings.locale)}` : ""}</small>
+                          {browsable.has(s.name) ? <button className="linkish" onClick={() => browse(s.name)}>{t.browse}</button>
+                            : <Link className="linkish" to={`/abroad?source=${encodeURIComponent(s.name)}`}>{t.browse}</Link>}
+                          {url && <a href={url} target="_blank" rel="noopener noreferrer">{t.site} ↗</a>}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  {!kind && !query && g.rows.length > GROUP_SHOWN + 2 && (
+                    <button className="store-group-more" aria-expanded={whole} onClick={() => toggle(g.kind)}>
+                      {whole ? t.less : t.allOf(g.rows.length)}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            {query && found.length === 0 && officesFound.length === 0 && <p className="msg">{t.none}</p>}
+          </section>
+        )}
+        {offices.length > 0 && (
+          <section id="offices" className="stores-section">
+            <h2 className="stores-h">{t.officesTitle}</h2>
+            <p className="landing-intro">{t.officesIntro}</p>
+            <div className="filters stores-filter" role="group" aria-label={t.officesTitle}>
+              <div className="chips scroll">
+                <Pick on={!city} onClick={() => setCity(null)}>📍 {t.allCities}</Pick>
+                {cities.map((c) => <Pick key={c} on={city === c} onClick={() => setCity(city === c ? null : c)}>{c}</Pick>)}
+              </div>
+            </div>
+            <ul className="offices">
+              {officesShown.map((o: BoxOffice) => (
+                <li key={o.url}>
+                  <a className="office" href={o.url} target="_blank" rel="noopener noreferrer">
+                    <span className="office-name">
+                      <b dir="auto">{o.name}</b>
+                      <small>{o.city && <>{o.city} · </>}<span dir="ltr">{domain(o.url)}</span> ↗</small>
+                    </span>
+                    <span className="office-count"><b>{num(o.events)}</b><small>{t.events}</small></span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            {officesShown.length < officesFound.length && (
+              <div className="more"><button onClick={() => setShowAll(true)}>{t.more(officesFound.length - officesShown.length)}</button></div>
+            )}
           </section>
         )}
       </main>
