@@ -2940,7 +2940,8 @@ sources:
       - {host: eventshadera, venue_name: "אגף אתו\"ס עיריית חדרה", city: חדרה}
       - {host: traintheater, venue_name: תיאטרון הקרון, city: ירושלים, rooms: true, category: תיאטרון}
       - {host: haulam-phk, venue_name: האולם - בית תרבות מקומי פרדס חנה כרכור, city: פרדס חנה-כרכור, rooms: true}
-      - {host: dolev, venue_name: "מתנ\"ס קריית אונו", city: קריית אונו, skip_title_words: ["תשלום"]}
+      # Eilat's community centres (Kolier, Theatronchik); filed under Kiryat Ono until Nov 2026.
+      - {host: dolev, venue_name: "מתנ\"סים אילת", city: אילת, skip_title_words: ["תשלום"]}
       - {host: fringeb7, venue_name: תיאטרון הפרינג' באר שבע, city: באר שבע, rooms: true, category: תיאטרון}
       - {host: htk, venue_name: היכל התרבות כרמיאל, city: כרמיאל}
       - {host: mifgashim-mb, venue_name: "מתנ\"ס מפגשים מזכרת בתיה", city: מזכרת בתיה, keep_categories: ["מופעים ואירועים"]}
@@ -3032,7 +3033,8 @@ sources:
       - {host: beit-zvi, rooms: true, venue_name: בית צבי - בית הספר לאמנויות הבמה, city: רמת גן}
       - {host: evenyehuda-community, venue_name: מרכז קהילתי אבן יהודה, city: אבן יהודה, skip_title_words: ["חוג", "קורס", "ג׳ימבורי", "ג'ימבורי"]}
       - {host: eilatmatnasim, venue_name: רשת המתנ"סים אילת, city: אילת, skip_title_words: ["חוג", "קורס"]}
-      - {host: elad-theater, venue_name: תיאטרון אלעד, city: אילת}
+      # A touring company: each hall names its own town, and a hall without one is no town of the company's.
+      - {host: elad-theater, venue_name: תיאטרון אלעד}
       - {host: arts, rooms: true, venue_name: הפקולטה לאמנויות אוניברסיטת תל אביב, city: תל אביב-יפו,
          skip_categories: ["העשרה באמנויות"], skip_title_words: ["רפרטואר"]}
       - {host: bh, venue_name: BH הפקות, city: אשדוד}
