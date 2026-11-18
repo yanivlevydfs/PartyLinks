@@ -1703,6 +1703,7 @@ search:
     megaevents: ["mega events", "מגה איוונטס"]
     viagogo: ["ויאגוגו"]
     hamenagen: ["המנגן"]
+    israelmusicfest: ["חג המוזיקה הישראלית", "חג המוסיקה הישראלית", "israel music fest"]
     hatarbut: ["היכל התרבות"]
     kikarhamusica: ["כיכר המוזיקה"]
     xplorer: ["אקספלורר"]
@@ -3453,6 +3454,24 @@ sources:
     latitude: 31.4
     longitude: 34.9
     radius_m: 300000
+
+  israelmusicfest:
+    # Israel Music Festival (חג המוזיקה הישראלית, the Culture Ministry's): a week of free concerts of original
+    # Israeli music in several cities. WordPress: one wp-json call lists the concert posts (title, artwork, city);
+    # each concert's page gives its text and the registration link (the producer's Wix site), whose JSON-LD gives
+    # the time, the hall's address and SoldOut. ~2 requests a concert. robots.txt allows everything.
+    enabled: true
+    cron: "53 5,17 * * *"
+    site_url: https://israelmusicfest.co.il
+    city_names: {"מעלות": "מעלות-תרשיחא"}
+    venue_names:   # the halls under the names other sources give them (one venue page each)
+      "המשכן לאמנויות הבמה נתיבות": "משכן פיס היכל התרבות נתיבות"
+      "היכל שלמה לתרבות ואמנויות הבמה מעלות תרשיחא": "היכל התרבות מעלות תרשיחא"
+      "אולם המופעים דורות, קיבוץ דורות": "אולם דורות שער הנגב"
+    skip_title_words: ["קורס", "חוג"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
 
   hamenagen:
     # HaMenagen: Jewish / Hasidic music site's concert calendar. Its app API
