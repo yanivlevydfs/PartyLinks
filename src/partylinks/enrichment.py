@@ -732,7 +732,8 @@ def _in_boxes(region: RegionSettings, latitude: float, longitude: float) -> bool
 
 
 # Region place words that, inside a venue name or an address, are usually a street, a name or a direction.
-NOT_A_PLACE_IN_NAMES = frozenset({"צפון", "הצפון", "גולן", "אילת", "שדרות", "אשכול", "גלילות"})
+# "מגדל" is a tower in a name ("מגדל דוד", "גן לאומי מגדל צדק" in Rosh HaAyin), rarely the town Migdal.
+NOT_A_PLACE_IN_NAMES = frozenset({"צפון", "הצפון", "גולן", "אילת", "שדרות", "אשכול", "גלילות", "מגדל"})
 
 
 # Hebrew geresh / gershayim and curly quotes read as the ASCII ones: "ג׳אז", "ג’אז" and "ג'אז" are one word.

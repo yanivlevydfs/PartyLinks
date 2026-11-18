@@ -472,13 +472,10 @@ class Geocoder:
         if (not pin and not self._in_its_city(row, point)) or not self.areas.in_israel(*point):
             return "outside its city"
         if match and match[0] in (row.venue_name or "").lower():
-            # The venue itself is a hand-pinned place: its name decides, not a seller's city fallback (the Khan
-            # theatre's shows at ZOA House, Tel Aviv, came as Jerusalem) nor a town word inside the name ("גן לאומי
-            # מגדל צדק" is not Migdal in the Galilee), Nov 2026. The rest of the text still has to agree.
-            def strip(text: str | None) -> str:
-                return re.sub(re.escape(match[0]), " ", text or "", flags=re.IGNORECASE)
-
-            row = SimpleNamespace(venue_name=strip(row.venue_name), address=strip(row.address), city=None,
+            # The venue itself is a hand-pinned place: its name decides over a seller's city fallback (the Khan
+            # theatre's shows at ZOA House, Tel Aviv, came as Jerusalem, Nov 2026). The text still has to agree:
+            # "קיבוץ הגושרים" pinned in Tel Aviv by mistake is refused.
+            row = SimpleNamespace(venue_name=row.venue_name, address=row.address, city=None,
                                   in_target_city=row.in_target_city)  # fmt: skip
         # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
         return "region" if self._contradicts(row, point) else None
