@@ -1927,6 +1927,7 @@ geocoding:
     "ב\"ש":
       "החלוץ 33": [31.2380563, 34.7881988]  # החלוץ 33, החלוץ 33, באר שבע
     "בית שמש":
+      "קולנוע לב העיר": [31.7487001, 34.9844619]  # Lev HaIr cinema, Zinman hall, Simtat Wizo 8
       "היכל התרבות": [31.7483413, 34.9931702]  # היכל התרבות בית שמש, מורדי הגטאות 13, בית שמש
       "היכל פיס לתרבות": [31.7483413, 34.9931702]  # היכל התרבות בית שמש, מורדי הגטאות 13, בית שמש
     "גבעת אבני":
@@ -2006,7 +2007,6 @@ geocoding:
       "גריי יהוד": [32.029077, 34.8998321]  # מועדון הגריי יהוד, החרושת 2, יהוד-מונוסון
       "גן הפסגה": [32.0541002, 34.7531348]  # גן הפסגה (גן אברשה), יפו
     "באר שבע":
-      "קולנוע לב העיר": [31.7487001, 34.9844619]  # Lev HaIr cinema is in Beit Shemesh (Zinman hall, Simtat Wizo 8); smarticket files it under Be'er Sheva
       "בית יהדות איראן": [31.2529928, 34.7949114]  # Iranian Jewry house, Lea Goldberg 24 (OSM street)
       "תמוז": [31.2402043, 34.7884438]  # Tamuz, Herzl 12, Old City (tickchak; OSM street, no house number)
       "המסגריה": [31.2404100, 34.7150744]  # Club HaMasgeria, Kibbutz Hatzerim (OSM village point; ogo)
@@ -3123,7 +3123,8 @@ sources:
       - {host: tarbutiberias.co.il, venue_name: היכל התרבות טבריה, city: טבריה, skip_title_words: ["תשלום", "קורס"]}
       - {host: htc, venue_name: היכל התרבות חוף הכרמל, rooms: true}
       - {host: weilcenter, venue_name: מרכז וייל, city: כפר שמריהו, rooms: true}
-      - {host: matnasbs, venue_name: המרכזים הקהילתיים באר שבע, city: באר שבע, skip_title_words: ["קורס", "חוג", "בדיקות", "דוכנים", "שיעור ניסיון"]}
+      # "מתנ״ס בית שמש" (bs = Beit Shemesh): it was filed under Be'er Sheva until Nov 2026.
+      - {host: matnasbs, venue_name: המרכזים הקהילתיים בית שמש, city: בית שמש, skip_title_words: ["קורס", "חוג", "בדיקות", "דוכנים", "שיעור ניסיון"]}
       - {host: matnaskazrin, venue_name: היכל התרבות קצרין, city: קצרין, skip_title_words: ["ייעוץ"]}
       - {host: jaffacinema, venue_name: קולנוע יפו, city: תל אביב-יפו, rooms: true, category: קולנוע}
       - {host: tickets.nalagaat.org.il, venue_name: מרכז נא לגעת, city: תל אביב-יפו, rooms: true, skip_title_words: ["קורס"]}
