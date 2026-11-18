@@ -24,3 +24,29 @@
 .city-bar .page-share { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
 .city-bar .page-share .site-share-label { color: var(--muted); font-size: 13px; }
 .city-bar .page-share .share { justify-content: flex-start; }
+
+/* /cities: search, country picker, busiest cities as tiles, then A to Z (Israel by region). */
+.cities .search { width: 100%; }
+.cities-countries { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 4px 0 10px; }
+.cities-countries::-webkit-scrollbar { display: none; }
+.cities-countries .chip { flex: none; cursor: pointer; }
+.cities-countries .chip.on { background: rgb(255 46 147 / .16); border-color: var(--line-hot); color: #fff; }
+.cities-countries .chip small { color: var(--muted); margin-inline-start: 4px; }
+.cities-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; font: 800 24px/1.25 var(--display); margin: 14px 0 4px; }
+.cities-h small { font: 500 14px/1 inherit; color: var(--muted); }
+.cities-all-link { font: 600 14px/1 "Heebo", system-ui, sans-serif; color: var(--pink); margin-inline-start: auto; }
+.cities-sub { font: 700 15px/1.3 var(--display); color: var(--muted); margin: 18px 0 8px; }
+.cities-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.cities-tile {
+  display: grid; gap: 4px; padding: 14px 14px 12px; text-decoration: none; color: var(--text);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px; transition: border-color .15s, transform .15s;
+}
+.cities-tile:hover, .cities-tile:focus-visible { border-color: var(--line-hot); transform: translateY(-1px); }
+.cities-tile b { font: 700 17px/1.2 var(--display); }
+.cities-tile small { font-size: 12px; color: var(--muted); }
+.cities-group h4 { font: 700 14px/1.3 "Heebo", system-ui, sans-serif; margin: 16px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.cities-group h4 small, .cities-az small { color: var(--muted); font-weight: 500; font-size: 12px; }
+.cities-az { list-style: none; margin: 0; padding: 0; columns: 4 160px; column-gap: 20px; }
+.cities-az li { break-inside: avoid; padding: 5px 0; }
+.cities-az a { color: var(--text); text-decoration: none; font-weight: 500; }
+.cities-az a:hover, .cities-az a:focus-visible { color: var(--pink); }

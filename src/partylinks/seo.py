@@ -1172,11 +1172,23 @@ def cities_index(session: Session, cfg: Settings, lang: str) -> list[dict[str, A
     [{code, name, path, events, cities: [{path, name, events}]}]: what /cities shows."""
 
     def build() -> list[dict[str, Any]]:
-        counts = Counter(session.scalars(select(EventRow.city).where(upcoming_filter(), EventRow.country.is_(None))))
+        rows = session.execute(select(EventRow.city, EventRow.area, EventRow.in_target_city).where(upcoming_filter(), EventRow.country.is_(None))).all()
+        counts = Counter(city for city, _, _ in rows)
+        # Each city's region (the page groups Israel's cities by it): its events' most common region area;
+        # the target city's events carry neighbourhoods instead (Tel Aviv: Gush Dan), Eilat's its own area (the South).
+        areas: dict[str, Counter[str]] = {}
+        for city, area, target in rows:
+            region = "gush_dan" if target else "negev" if area == "eilat" else area
+            if city and region in REGION_NAMES:
+                areas.setdefault(city, Counter())[region] += 1
         israel = sorted(city_pages(session, cfg), key=lambda c: -counts[c.he])
+        region_of = {c.he: (areas[c.he].most_common(1)[0][0] if c.he in areas else "other") for c in israel}
         out = [{
             "code": "IL", "name": "ישראל" if lang == "he" else "Israel", "path": "/", "events": sum(counts[c.he] for c in israel),
-            "cities": [{"path": f"/city/{c.key}", "name": c.he if lang == "he" else c.en, "events": counts[c.he]} for c in israel],
+            "cities": [{"path": f"/city/{c.key}", "name": c.he if lang == "he" else c.en, "events": counts[c.he], "region": region_of[c.he]}
+                       for c in israel],
+            "regions": [{"key": k, "name": v[0] if lang == "he" else v[2].removeprefix("the ")} for k, v in REGION_NAMES.items()]
+            + [{"key": "other", "name": "עוד ערים" if lang == "he" else "More cities"}],
         }]  # fmt: skip
         countries = Counter(session.scalars(select(EventRow.country).where(upcoming_filter(), EventRow.country.is_not(None))))
         by_country: dict[str, list[AbroadCity]] = {}
