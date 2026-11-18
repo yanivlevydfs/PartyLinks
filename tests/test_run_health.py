@@ -144,3 +144,22 @@ def test_a_paused_source_emails_nobody_unless_asked(monkeypatch) -> None:
     h.settings.scheduler.email_on_pause = True
     h._email("zappa", 4, "failed: timed out", 1)
     assert [m.to for m in sent] == ["owner@example.com"]
+
+
+def test_a_run_after_an_interrupted_one_knows_since_when() -> None:
+    from datetime import UTC, datetime, timedelta
+
+    db = Database(os.environ["PARTYLINKS_DATABASE__URL"])
+    db.create_schema()
+    now = datetime.now(UTC)
+    runs = {"tiktik": ["success", "interrupted", "interrupted"], "barby": ["interrupted", "success"]}
+    with db.session() as session:
+        for source, statuses in runs.items():
+            session.add_all(
+                ScrapeRunRow(source=source, trigger="schedule", status=s, started_at=now - timedelta(hours=3 - i))
+                for i, s in enumerate(statuses)
+            )
+    since = db.resumed_since("tiktik", 12)
+    assert since is not None and abs(since - (now - timedelta(hours=2))) < timedelta(seconds=1)  # the streak's start
+    assert db.resumed_since("tiktik", 1) is not None and db.resumed_since("tiktik", 0) is None  # capped / off
+    assert db.resumed_since("barby", 12) is None  # its last run finished

@@ -10,7 +10,7 @@ import time
 from collections import defaultdict
 from collections.abc import Callable, Generator, Iterator, Sequence
 from contextlib import contextmanager
-from datetime import UTC, date, datetime, tzinfo
+from datetime import UTC, date, datetime, timedelta, tzinfo
 from datetime import time as dt_time
 from decimal import Decimal
 from typing import Any, ClassVar, cast
@@ -676,6 +676,36 @@ class Database:
             if runs[0][0] == "interrupted"
             and sum(status == "interrupted" and error != SHUTDOWN_ERROR for status, error in runs) < max_in_a_row
         }
+
+    def resumed_since(self, source: str, max_hours: float) -> datetime | None:
+        """When the streak of interrupted runs that ``source``'s newest finished run ends began (its oldest
+        run's start, at most ``max_hours`` back); None when the newest finished run was not interrupted."""
+        with self.session(write=False) as session:
+            rows = session.execute(
+                select(ScrapeRunRow.status, ScrapeRunRow.started_at)
+                .where(ScrapeRunRow.source == source, ScrapeRunRow.status != "running")
+                .order_by(ScrapeRunRow.id.desc())
+                .limit(50)
+            ).all()
+        since = None
+        for status, started in rows:
+            if status != "interrupted":
+                break
+            since = started
+        if since is None or max_hours <= 0:
+            return None
+        return max(since, utcnow() - timedelta(hours=max_hours))
+
+    def seen_since(self, source: str, since: datetime) -> frozenset[str]:
+        """Ids of ``source``'s upcoming events read at or after ``since``."""
+        with self.session(write=False) as session:
+            return frozenset(
+                session.scalars(
+                    select(EventRow.source_event_id).where(
+                        EventRow.source == source, EventRow.last_seen_at >= since, upcoming_filter()
+                    )
+                )
+            )
 
     def latest_runs(self) -> dict[str, tuple[datetime, str]]:
         """Each source's newest run: (started_at, status). The startup scheduler compares it with the

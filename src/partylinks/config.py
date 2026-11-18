@@ -163,6 +163,10 @@ class SchedulerSettings(BaseModel):
     # A source whose last run a restart interrupted runs again at startup, unless this many of its last runs
     # died with the process (a deploy's clean stop does not count).
     resume_max_in_a_row: int = Field(3, ge=1)
+    # A run that follows an interrupted one skips the pages of events already read since that streak began, up
+    # to this many hours back (sources that support it: BaseScraper.fresh_ids). ogo's ~17k pages take hours and
+    # deploys restarted it from the top every 30-60 min, so it never got past the first ~2k (Nov 2026).
+    resume_skip_hours: float = Field(12, ge=0)
     # A source whose last cron time passed with no run started since (its run waited in the queue when a
     # deploy restarted the worker, so it never got a run row) runs at startup too, oldest first.
     resume_overdue: bool = True

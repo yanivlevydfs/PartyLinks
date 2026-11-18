@@ -114,6 +114,11 @@ class OgoScraper(BaseScraper[OgoSettings]):
         urls = upcoming_event_urls(
             sitemaps, s.locale, today, today + timedelta(days=s.days_ahead), today - timedelta(days=s.recurring_days_back)
         )
+        if self.fresh_ids:  # a run after an interrupted one: pages read since then are not read again
+            kept = [u for u in urls if (m := _EVENT_URL.match(u)) is None or m.group(7) not in self.fresh_ids]
+            self.fresh_skipped = len(urls) - len(kept)
+            self.log.info("resumed: %d pages read since the interrupted run skipped", self.fresh_skipped)
+            urls = kept
         if len(urls) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
         self.log.debug("listed %d upcoming events", len(urls))

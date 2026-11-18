@@ -242,6 +242,10 @@ class BaseScraper[S: SourceSettings](ABC):
         # Ticket links that other sources' upcoming events point to (extra.purchase_url; filled by the
         # service), so a site whose list hides some events (private ones) can still read those pages.
         self.linked_urls: list[str] = []
+        # Ids of events already read since the interrupted run(s) this run follows (set by the service). A
+        # source with one request per event may skip those pages: the service counts them as still listed.
+        self.fresh_ids: frozenset[str] = frozenset()
+        self.fresh_skipped = 0  # how many it skipped: still listed, so they count as found (run health)
         # Whether an event will be kept (e.g. it is in the target city). Set by the service; a
         # source spends extra per-event requests (artwork) only on events that pass it.
         self.wanted: Callable[[ScrapedEvent], bool] = lambda event: True

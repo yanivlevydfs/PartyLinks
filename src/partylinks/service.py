@@ -393,6 +393,8 @@ class ScrapeService:
         scraper = None
         failures: list[str] = []
         batch: dict[str, ScrapedEvent] = {}
+        # After an interrupted run: events read since then count as seen (the scraper may skip their pages).
+        resumed: datetime | None = None
         timeout = self.settings.scheduler.run_timeout_seconds  # the same for every source
 
         images: asyncio.Task[None] | None = None  # the batches' image downloads, beside the scrape
@@ -439,6 +441,9 @@ class ScrapeService:
                 scraper = build_scraper(source, self.settings)
                 scraper.known_images = await asyncio.to_thread(self._known_images, source)
                 scraper.linked_urls = await asyncio.to_thread(self._linked_urls, source)
+                resumed = await asyncio.to_thread(self.db.resumed_since, source, self.settings.scheduler.resume_skip_hours)
+                if resumed is not None:
+                    scraper.fresh_ids = await asyncio.to_thread(self.db.seen_since, source, resumed)
                 artwork = await asyncio.to_thread(self._artwork_by_title, source)
                 scraper.known_artists = {key: p for key, p in profiles.items() if p.source == source}
                 scraper.wanted = lambda event: not self.enricher.is_dropped(event)
@@ -517,10 +522,11 @@ class ScrapeService:
 
         if not self._stopping.is_set():  # shutting down: the run is recorded as interrupted on next start
             try:
-                await asyncio.to_thread(_with_db_retry, "track changes", lambda: self._track_changes(source, run_id, status, found))
+                await asyncio.to_thread(_with_db_retry, "track changes", lambda: self._track_changes(source, run_id, status, found, resumed))
             except Exception:
                 log.exception("source %s: change tracking failed", source)
 
+        found += scraper.fresh_skipped if scraper else 0  # skipped after an interrupted run: still listed
         result = RunResult(run_id, source, status, found, saved, len(failures), error)
         try:
             await self._blocking(_with_db_retry, "finish run", lambda: self._finish_run(result, failures))
@@ -647,7 +653,9 @@ class ScrapeService:
         self.media.delete_files(orphaned_files)
         return saved
 
-    def _track_changes(self, source: str, run_id: int, status: str, found: int | None = None) -> None:
+    def _track_changes(
+        self, source: str, run_id: int, status: str, found: int | None = None, resumed: datetime | None = None
+    ) -> None:
         """Record how many known events changed offers in this run; unlist the ones that vanished."""
         with self.db.session() as session:
             run = session.get(ScrapeRunRow, run_id)
@@ -663,8 +671,9 @@ class ScrapeService:
             # Only a complete run proves an event is gone; a partial / failed / blocked one proves nothing,
             # nor does one that found nothing at all (a changed page layout reads as an empty listing).
             if status == "success" and found != 0 and source_settings(source, self.settings).unlist_missing:
+                seen_from = min(started, resumed) if resumed else started  # pages skipped after an interrupted run
                 gone = session.scalars(
-                    select(EventRow.id).where(EventRow.source == source, EventRow.last_seen_at < started, upcoming_filter())
+                    select(EventRow.id).where(EventRow.source == source, EventRow.last_seen_at < seen_from, upcoming_filter())
                 ).all()
                 if gone:
                     session.execute(update(EventRow).where(EventRow.id.in_(gone)).values(is_listed=False))
