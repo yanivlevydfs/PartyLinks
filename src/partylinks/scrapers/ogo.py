@@ -27,8 +27,10 @@ import httpx
 from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, html_to_text, jsonld_nodes, schema_types, zone
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.chillz import EVENT_TYPES, parse_page
 from partylinks.scrapers.seller_offers import SellerLookup, SellerLookupSettings
@@ -94,6 +96,10 @@ class OgoSettings(SourceSettings, SellerLookupSettings):
     # request each, and the site answers 429 above ~2.5 requests/s, so 10 days fit a 30-minute run.
     days_ahead: int = Field(10, ge=1)
     max_events: int = Field(5000, ge=1)
+    # A recurring event stays in the sitemap under its FIRST date (a weekly yoga class at 2026/08/05) while
+    # its page gives the next session: pages dated this many days back are read too, right after today's.
+    # Without them 33 of Tel Aviv municipality's 119 upcoming events were never read (Nov 2026).
+    recurring_days_back: int = Field(120, ge=0)
 
 
 class OgoScraper(BaseScraper[OgoSettings]):
@@ -105,13 +111,18 @@ class OgoScraper(BaseScraper[OgoSettings]):
         today = datetime.now(zone(self.timezone)).date()
         index = await self.get_text(s.site_url + s.sitemap_path)
         sitemaps = [xml for url in _locs(index) if (xml := await self._sitemap(url)) is not None]
-        urls = upcoming_event_urls(sitemaps, s.locale, today, today + timedelta(days=s.days_ahead))
+        urls = upcoming_event_urls(
+            sitemaps, s.locale, today, today + timedelta(days=s.days_ahead), today - timedelta(days=s.recurring_days_back)
+        )
         if len(urls) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
         self.log.debug("listed %d upcoming events", len(urls))
         self._sellers = SellerLookup(self, s)
+        retention = RetentionSettings()
         async for event in self.stream_isolated(urls[: s.max_events], self._fetch_event, label=lambda u: u):
-            yield event
+            # A page dated in the past that is not recurring is over.
+            if is_current(event.start_at, event.end_at, retention, self.timezone):
+                yield event
         self.log.info("seller filled %s", dict(self._sellers.filled))
 
     async def _sitemap(self, url: str) -> str | None:
@@ -144,14 +155,20 @@ def _locs(xml: str) -> list[str]:
     return [html.unescape(u) for u in _LOC.findall(xml)]
 
 
-def upcoming_event_urls(sitemaps: list[str], locale: str, first: date, last: date) -> list[str]:
-    """Event pages dated ``first``..``last`` in ``locale``, each once, soonest first (a cut keeps the nearest)."""
+def upcoming_event_urls(
+    sitemaps: list[str], locale: str, first: date, last: date, recurring_since: date | None = None
+) -> list[str]:
+    """Event pages dated ``first``..``last`` in ``locale``, each once, soonest first (a cut keeps the nearest).
+
+    Pages dated ``recurring_since``..``first`` (a recurring event's first date) come right after ``first``'s:
+    the next session of a weekly class is near."""
+    since = min(recurring_since or first, first)
     found: dict[str, date] = {}
     for url in (u for xml in sitemaps for u in _locs(xml)):
         match = _EVENT_URL.match(url)
-        if match and first <= (day := date(*map(int, match.group(4, 5, 6)))) <= last:
+        if match and since <= (day := date(*map(int, match.group(4, 5, 6)))) <= last:
             found.setdefault(f"{match.group(1)}/{locale}{match.group(2)}", day)
-    return sorted(found, key=found.__getitem__)
+    return sorted(found, key=lambda u: (max(found[u], first), found[u] < first))
 
 
 def parse_event(page_html: str, url: str, default_tz: str) -> ScrapedEvent | None:

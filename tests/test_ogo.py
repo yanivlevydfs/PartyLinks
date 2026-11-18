@@ -81,6 +81,16 @@ def test_upcoming_event_urls() -> None:
     ]
 
 
+def test_recurring_pages_dated_back_come_right_after_today() -> None:
+    # A weekly class stays in the sitemap under its first date (Tel Aviv municipality's yoga, 2026/08/05).
+    site = "https://www.ogo.co.il/ru/event/il/tel-aviv"
+    paths = ["2026/11/19/tomorrow-a1", "2026/08/05/yoga-b2", "2026/11/18/today-c3", "2026/06/01/too-old-d4"]
+    xml = "".join(f"<url><loc>{site}/{p}</loc></url>" for p in paths)
+    urls = upcoming_event_urls([xml], "he", date(2026, 11, 18), date(2026, 12, 1), date(2026, 7, 21))
+    assert [u.rsplit("/", 4)[-1] for u in urls] == ["today-c3", "yoga-b2", "tomorrow-a1"]
+    assert upcoming_event_urls([xml], "he", date(2026, 11, 18), date(2026, 12, 1))[0].endswith("today-c3")
+
+
 class _Oct23(datetime):
     @classmethod
     def now(cls, tz: tzinfo | None = None) -> datetime:  # type: ignore[override]
@@ -89,6 +99,8 @@ class _Oct23(datetime):
 
 def test_scrape_reads_every_sitemap(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(ogo, "datetime", _Oct23)
+    # The fixture's event (2026-11-16) is current on the faked 23 Oct, whatever the real clock says.
+    monkeypatch.setattr(ogo, "is_current", lambda start, *_: start is not None and start.date() >= date(2026, 10, 23))
     settings = OgoSettings(
         cron="0 * * * *", site_url="https://www.ogo.co.il", sitemap_path="/sitemap.xml", days_ahead=365
     )
