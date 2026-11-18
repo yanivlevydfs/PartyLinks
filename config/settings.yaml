@@ -1445,6 +1445,25 @@ geocoding:
     "מדיטק": [32.0118153, 34.7774368]                  # Holon Mediatheque, Golda Meir 6 (all its halls)
     "אודיטוריום הכט": [32.763218, 35.018062]            # Hecht Auditorium, University of Haifa (the Hecht Museum's building)
     "המשכן לאמנויות, אוניברסיטת חיפה": [32.7609456, 35.0204641]  # University of Haifa's arts building (the campus, OSM), Israel Music Festival
+    # The venues with the most upcoming events off the map (Nov 2026 audit), found in OSM (Photon) by name or
+    # address and checked by hand; a name that may be another town's hall is left out (a pin ignores the city).
+    "ירדן, יוקנעם עילית": [32.6417356, 35.0893128]       # a ceramics studio on HaYarden St, Yokne'am Illit (the street; 660 events)
+    "מרכז המבקרים על שם משה נובומייסקי": [31.0703734, 35.3973088]  # Novomeysky visitor centre, Dead Sea Works
+    "אולם פיס פסגת זאב": [31.8230517, 35.2399208]        # Heichal Pais, Pisgat Ze'ev, Jerusalem
+    'היכל התרבות העירוני כ"ס': [32.1766984, 34.9052622]  # Kfar Saba's culture hall (Yad Labanim)
+    "רוטשילד 24": [32.067792, 34.778052]                # Rothschild 24, Tel Aviv: Jimmy Who, GOAT, John Doe
+    "rothschild blvd 24": [32.067792, 34.778052]        # the same, as Go-Out writes it
+    "jimmywho": [32.067792, 34.778052]                  # "JIMMYWHO? Bar & Lounge", Rothschild 24
+    "jimmy who": [32.067792, 34.778052]
+    "goat tlv": [32.067792, 34.778052]                  # GOAT TLV, Rothschild 24
+    "tel aviv port": [32.0986368, 34.7742689]           # Namal Tel Aviv (Zygo's address for its port parties)
+    "גן לאומי תל ערד": [31.2781052, 35.122118]           # Tel Arad national park
+    "בית קינן": [32.1749578, 34.8306428]                # Beit Kinan, Natan Alterman 51, Herzliya
+    "יוסי שריד 2": [32.1624314, 34.8263055]             # Naomi Shemer school, Herzliya
+    "ספורטק, רחובות": [31.8958427, 34.7852287]          # Rehovot's Sportek
+    "פארק יהושפט": [31.2640488, 35.2082623]             # Yehoshafat park, Arad
+    "ברוניתא": [32.5743404, 34.9551146]                 # Brunita, HaNadiv, Zikhron Ya'akov
+    "פאב ההוביט hobbit": [32.5736623, 34.9544712]       # the Hobbit pub, HaMeyasdim, Zikhron Ya'akov
     "אורוות האומנים": [32.4726788, 34.9815251]          # Ourvot HaOmanim (the artists' stables), Pardes Hanna (OSM)
     "ביער | ילדי תימן החטופים": [32.4355583, 34.9001833]  # Baya'ar, Hadera (OSM)
     "החאן של איציק": [30.7677164, 35.2796246]           # Itzik's inn, Moshav Hatzeva (the moshav, OSM: no point of its own)
