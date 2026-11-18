@@ -29,7 +29,7 @@ from partylinks.scrapers.abroad import airports, country_code, local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.popit import flight_payload
 
-_EVENT_START = re.compile(r'\{"id":\d+,"created_at"')
+_EVENT_START = re.compile(r'\{"id":\d+,"(?:created_at|name)"')
 
 
 class MegaeventsSettings(SourceSettings):
@@ -71,7 +71,7 @@ class MegaeventsScraper(BaseScraper[MegaeventsSettings]):
 
 
 def event_objects(rsc: str) -> list[dict[str, Any]]:
-    """Every distinct event object (an ``{"id":<int>,"created_at":...`` row) in the payload."""
+    """Every distinct event object (``{"id":<int>,"created_at"|"name":...`` with a date) in the payload."""
     decoder = json.JSONDecoder()
     found: dict[int, dict[str, Any]] = {}
     for match in _EVENT_START.finditer(rsc):
@@ -79,7 +79,7 @@ def event_objects(rsc: str) -> list[dict[str, Any]]:
             obj, _ = decoder.raw_decode(rsc, match.start())
         except ValueError:
             continue
-        if isinstance(obj, dict) and "date" in obj and "tickets_and_rates" in obj:
+        if isinstance(obj, dict) and "date" in obj and ("tickets_and_rates" in obj or "from_price" in obj):
             found.setdefault(obj["id"], obj)
     return list(found.values())
 
@@ -140,7 +140,9 @@ def parse_event(
     tickets = [t for t in raw.get("tickets_and_rates") or [] if isinstance(t, dict) and t.get("available")]
     cheapest = min((p for t in tickets if (p := to_decimal(t.get("price")))), default=None)
     min_price = None
-    if cheapest is not None:
+    if "from_price" in raw:  # slim listing rows (Nov 2026): the site's own "from" price, USD
+        min_price = to_decimal(raw.get("from_price")) or None
+    elif cheapest is not None:
         if raw.get("package_mode") == "ticket_only":
             min_price = cheapest + (to_decimal(raw.get("ticket_only_markup")) or 0)
         else:
@@ -165,7 +167,7 @@ def parse_event(
         images=images,
         currency="USD",
         min_price=min_price,
-        is_sold_out=not tickets,
+        is_sold_out=bool(raw["sold_out"]) if "sold_out" in raw else not tickets,
         extra={
             k: v
             for k, v in {

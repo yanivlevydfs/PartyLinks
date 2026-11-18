@@ -59,3 +59,22 @@ def test_scrape_home_payload(caplog: pytest.LogCaptureFixture) -> None:
     assert harry.artists == ["Harry Styles"]  # "Harry Styles London": the city is dropped
     assert harry.country == "GB" and harry.start_at is not None and harry.start_at.tzinfo == ZoneInfo("Europe/London")
     assert harry.min_price == Decimal(1695) and not harry.is_sold_out
+
+
+def test_slim_listing_rows_use_the_sites_from_price() -> None:
+    """Nov 2026 home page: rows carry from_price / sold_out instead of tickets and markups."""
+    from partylinks.scrapers.megaevents import event_objects, parse_event
+
+    row = (
+        '{"id":869,"name":"מיוז","name_english":"Muse","type":"tx_event","date":"2026-11-21",'
+        '"location":{"name":"מילאנו, איטליה","latitude":45.46,"longitude":9.19,"city_iata":"MIL",'
+        '"country_code":""},"package_mode":"package","card_image_url":"https://x/a.jpg",'
+        '"from_price":1234,"sold_out":false}'
+    )
+    match = row.replace('"id":869', '"id":870').replace('"name_english":"Muse"', '"name_english":"A vs B"')
+    raws = event_objects(f"[{row},{match}]")
+    assert [r["id"] for r in raws] == [869, 870]
+    event = parse_event(raws[0], "https://www.mega-events.co.il/order/{event_id}", "Asia/Jerusalem", Decimal(175))
+    assert event is not None
+    assert (event.min_price, event.is_sold_out, event.city, event.country) == (Decimal(1234), False, "מילאנו", "IT")
+    assert parse_event(raws[1], "https://x/{event_id}", "Asia/Jerusalem", Decimal(175)) is None  # football
