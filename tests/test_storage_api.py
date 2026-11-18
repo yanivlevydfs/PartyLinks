@@ -347,6 +347,28 @@ def test_geocoder_drops_placeholder_and_out_of_city_source_points(tmp_path: Path
         assert (pinned.latitude, pinned.longitude) == tuple(settings.geocoding.venues["היכל התרבות חבל מודיעין"])
 
 
+def test_a_pinned_building_of_many_venues_is_no_placeholder(tmp_path: Path) -> None:
+    from partylinks.geo import Geocoder
+
+    # Holon's Mediatheque: the theatre, the Caricature Museum, a youth centre... one pinned point (Nov 2026).
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    lat, lon = settings.geocoding.venues["מדיטק"]
+    names = ["תיאטרון המדיטק", "מוזיאון הקריקטורה והקומיקס", "אליעזר מרכז צעירים", "ספריית חולון", "ביצה"]
+    db = seed(settings, [
+        *(event(f"m{i}", future, venue_name=n, city="חולון", address=None, latitude=lat, longitude=lon) for i, n in enumerate(names)),
+        event("new", future, venue_name="מדיטק חולון", city="חולון", address=None),
+    ])  # fmt: skip
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(
+        settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+    )
+    assert geo.drop_bad_points() == 0
+    geo.locate_missing(network=False)
+    with db.session() as session:
+        assert all(r.latitude == lat for r in session.query(EventRow))  # the new one placed on the pin too
+
+
 def test_rescrape_tracks_offer_changes_and_unlists_vanished_events(tmp_path: Path) -> None:
     import time
 

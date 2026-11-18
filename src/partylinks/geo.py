@@ -21,7 +21,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import timedelta
 from functools import cache
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import httpx
 from sqlalchemy import delete, select, text
@@ -30,6 +30,9 @@ from partylinks.config import CitySettings, GeocodingSettings
 from partylinks.db import Database, EventRow, GeoCacheRow, bulk_update_by_id, upcoming_filter, utcnow, with_db_retry
 from partylinks.enrichment import UNKNOWN_COUNTRY, AreaMatcher, meters
 from partylinks.places import city_point, israeli_places
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import CursorResult
 
 log = logging.getLogger(__name__)
 
@@ -323,6 +326,10 @@ class Geocoder:
         self._city_keys = {_city_key(a) for a in target_city_aliases if a.strip()}
         self._target = next((c for c in self._cities.values() if _city_key(c.he) in self._city_keys), None)
         self._pins = {k.lower(): v for k, v in settings.venues.items()}
+        # A building of many venues (Rothschild 24: Jimmy Who, GOAT, John Doe; Holon's Mediatheque and its halls) has
+        # one real point under many unrelated names. A pinned point is checked by hand: never a placeholder (511
+        # events off the map, Nov 2026).
+        self._pin_points = {_rounded((float(v[0]), float(v[1]))) for v in settings.venues.values()}
 
     # ------------------------------------------------------------------ public
     def _from_duplicates(self) -> int:
@@ -330,12 +337,13 @@ class Geocoder:
         the group's primary first. 665 such events on 2026-11-12 (the bot's 📍, the map and the weather lacked them).
         One UPDATE on the indexed group_id."""
         with self.db.session() as session:
-            return session.execute(text("""
+            done = session.execute(text("""
                 UPDATE events e SET latitude = g.latitude, longitude = g.longitude
                 FROM (SELECT DISTINCT ON (group_id) group_id, latitude, longitude FROM events
                       WHERE latitude IS NOT NULL AND group_id IS NOT NULL ORDER BY group_id, is_primary DESC) g
                 WHERE e.group_id = g.group_id AND e.latitude IS NULL AND e.start_at > now()
-            """)).rowcount  # fmt: skip
+            """))  # fmt: skip
+            return cast("CursorResult[Any]", done).rowcount or 0  # an UPDATE's result has a row count
 
     def locate_missing(self, network: bool = True, stop: threading.Event | None = None) -> GeoStats:
         """Fill coordinates of upcoming events that have none. Safe to call any time."""
@@ -380,7 +388,9 @@ class Geocoder:
         for row in missing:
             if p := found[row.id]:
                 venues[_rounded(p)].add(venue_key(row.venue_name) or street_key(row.address) or "")
-        shared = {p for p, keys in venues.items() if distinct_venues(keys) >= self.settings.placeholder_venues}
+        shared = {
+            p for p, keys in venues.items() if distinct_venues(keys) >= self.settings.placeholder_venues
+        } - self._pin_points
         unplaced: Counter[str] = Counter()
         updates = []
         for row in missing:
@@ -424,7 +434,9 @@ class Geocoder:
         shared: Counter[tuple[float, float]] = Counter()
         for r in rows:
             reason = self._bad(r, (r.latitude, r.longitude))
-            placeholder = distinct.setdefault(_point(r), distinct_venues(venues[_point(r)])) >= self.settings.placeholder_venues
+            placeholder = _point(r) not in self._pin_points and (
+                distinct.setdefault(_point(r), distinct_venues(venues[_point(r)])) >= self.settings.placeholder_venues
+            )
             if reason or placeholder:
                 bad.append({"id": r.id, "latitude": None, "longitude": None})
                 why[f"{r.source}: {reason or 'shared'}"] += 1
