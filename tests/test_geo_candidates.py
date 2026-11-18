@@ -52,3 +52,20 @@ def test_an_address_names_its_town_last() -> None:
     assert enricher.canonical_city(None, "תיאטרון דימונה DimonaTheater, כובשי אילת, דימונה, ישראל") == "דימונה"
     assert enricher.canonical_city(None, "שדרות ירושלים 19, תל אביב") == "תל אביב"
     assert enricher.canonical_city(None, "רחוב הרצל 5, חולון, Israel") == "חולון"
+
+
+def test_a_pinned_venue_name_decides_over_the_sellers_city() -> None:
+    """The Khan theatre's shows at ZOA House (Tel Aviv) came with the Khan's city, Jerusalem; "גן לאומי מגדל צדק"
+    (Rosh HaAyin) names the Galilee town Migdal. Both were refused as "region" though pinned by hand (Nov 2026)."""
+    from partylinks.config import get_settings
+    from partylinks.enrichment import Enricher
+    from partylinks.geo import Geocoder
+
+    cfg = get_settings()
+    enricher = Enricher(cfg.enrichment, cfg.timezone)
+    geo = Geocoder(cfg.geocoding, enricher.areas, cfg.enrichment.target_city.aliases, None, cfg.enrichment.cities)  # type: ignore[arg-type]
+    for row in (place(None, "בית ציוני אמריקה", "ירושלים"), place(None, "גן לאומי מגדל צדק")):
+        pin = geo._pin(row)
+        assert pin is not None and geo._bad(row, pin) is None
+    # A pin found only in the address still answers to the city field.
+    assert geo._bad(place("קיבוץ הגושרים"), (31.25, 34.79)) == "region"

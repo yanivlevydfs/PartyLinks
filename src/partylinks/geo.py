@@ -21,6 +21,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import timedelta
 from functools import cache
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
 import httpx
@@ -463,12 +464,22 @@ class Geocoder:
         and locate_missing (places): when they disagreed, every pass cleared what the last one placed."""
         # A manual pin wins over the sellers' points and the city field: Airport City's hall sat on three wrong
         # points, one of them Modi'in's centre from "חבל מודיעין" (Nov 2026). The region check still holds.
-        pin = self._pin(row)
+        match = self._pin_match(row)
+        pin = match[1] if match else None
         if pin and meters(pin, point) > self.settings.max_area_distance_m:
             return "off its pin"
         # An event in Israel (no country) placed abroad: beatradar's "North" sat in Portugal (Oct 2026).
         if (not pin and not self._in_its_city(row, point)) or not self.areas.in_israel(*point):
             return "outside its city"
+        if match and match[0] in (row.venue_name or "").lower():
+            # The venue itself is a hand-pinned place: its name decides, not a seller's city fallback (the Khan
+            # theatre's shows at ZOA House, Tel Aviv, came as Jerusalem) nor a town word inside the name ("גן לאומי
+            # מגדל צדק" is not Migdal in the Galilee), Nov 2026. The rest of the text still has to agree.
+            def strip(text: str | None) -> str:
+                return re.sub(re.escape(match[0]), " ", text or "", flags=re.IGNORECASE)
+
+            row = SimpleNamespace(venue_name=strip(row.venue_name), address=strip(row.address), city=None,
+                                  in_target_city=row.in_target_city)  # fmt: skip
         # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
         return "region" if self._contradicts(row, point) else None
 
@@ -497,9 +508,14 @@ class Geocoder:
     def _pin(self, row: Place) -> tuple[float, float] | None:
         """A hand-checked point: one of the event's town first (``city_venues``, names other towns share),
         then one that holds anywhere (``venues``)."""
+        match = self._pin_match(row)
+        return match[1] if match else None
+
+    def _pin_match(self, row: Place) -> tuple[str, Point] | None:
+        """The pin's key and point (see _pin)."""
         text = f"{row.venue_name or ''} | {row.address or ''}".lower()
         local = self._city_pins.get(row.city or "", {})
-        return next((tuple(v) for pins in (local, self._pins) for k, v in pins.items() if k in text), None)  # type: ignore[return-value]
+        return next(((k, tuple(v)) for pins in (local, self._pins) for k, v in pins.items() if k in text), None)  # type: ignore[misc]
 
     def _known(self, session: object) -> tuple[Known, Known]:
         """Placed venues and streets per city; a point outside its own city teaches nothing."""
