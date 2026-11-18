@@ -1871,6 +1871,9 @@ geocoding:
     "מיני ישראל": [31.8422518, 34.9689726]               # Mini Israel park, Latrun (OSM tourism point; makore's shows there)
     "עין המפרץ": [32.9036151, 35.0961117]                # Kibbutz Ein HaMifratz (OSM village point; Meitar music school, funzing)
     "d-one דרום השרון": [32.1333242, 34.9242354]         # D-ONE, Neve Yarak (OSM village point; a small moshav)
+    "תיאטרון דימונה": [31.0619717, 35.0371103]           # Dimona Theatre, Kovshei Eilat St, Dimona (OSM amenity)
+    "ma'agan michael": [32.5553209, 34.9166572]          # Kibbutz Ma'agan Michael (OSM village point; ogo's venue name)
+    "גן לאומי מגדל צדק": [32.0808421, 34.9570584]        # Migdal Tsedek (Migdal Afek) national park, Rosh HaAyin (OSM historic)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
@@ -1940,6 +1943,10 @@ geocoding:
       "ספרייה אזורית מטה יהודה": [31.7665744, 35.0039498]  # ספרייה אזורית מטה יהודה, צמוד לבניין המועצה, נחם
     "ניר דוד":
       "בית אלפא": [32.5186951, 35.4274412]  # גן לאומי בית אלפא, חפציבה
+    "עשרת":
+      "ספריה אזורית גדרות": [31.8247948, 34.7455804]  # Gderot regional library, Asseret (OSM village point; a small moshav)
+    "הערבה התיכונה":
+      "אולם רוזנטל": [30.6140945, 35.1846411]  # Rosenthal hall, Sapir (OSM village point; the council's small centre)
     "עין הבשור":
       "משק ברק": [31.2805660, 34.4437627]  # משק ברק, עין הבשור (OSM village point; a small moshav)
     "ערד":

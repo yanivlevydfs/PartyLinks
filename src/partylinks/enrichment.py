@@ -686,7 +686,10 @@ class Enricher:
         # Per field, a configured city then any other Israeli town (GeoNames); a venue name only for the
         # configured ones ("מגדל המים" is no town). The city field is read whole before the venue: smarticket's
         # "אולם תרבות חריש - כתובת: רח' שוהם 73" with city חריש was filed under Shoham (Nov 2026).
-        for text, towns in ((city, True), (address, True), (venue, False)):
+        # An address is read from its last comma part back: the town ends it, a street named after another town
+        # comes earlier ("תיאטרון דימונה, כובשי אילת, דימונה" was filed under Eilat, Nov 2026).
+        parts = [p for p in reversed((address or "").split(",")) if p.strip()]
+        for text, towns in ((city, True), *((p, True) for p in parts), (venue, False)):
             if not text:
                 continue
             hits = [(m.start(), name) for name, p in self._cities for m in p.finditer(text.lower())]

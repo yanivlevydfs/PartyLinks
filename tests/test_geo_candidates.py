@@ -40,3 +40,15 @@ def test_a_street_named_after_another_town_is_no_contradiction() -> None:
     assert geo._bad(place(None, "קיבוץ הגושרים"), (31.25, 34.79)) == "region"
     # The city field names the town before a town in the venue's street: Harish, not Shoham.
     assert enricher.canonical_city("חריש", None, "אולם תרבות חריש - כתובת: רח' שוהם 73 (מסומן)") == "חריש"
+
+
+def test_an_address_names_its_town_last() -> None:
+    """"כובשי אילת" is a street in Dimona: the town is the last part of the address (Nov 2026)."""
+    from partylinks.config import get_settings
+    from partylinks.enrichment import Enricher
+
+    cfg = get_settings()
+    enricher = Enricher(cfg.enrichment, cfg.timezone)
+    assert enricher.canonical_city(None, "תיאטרון דימונה DimonaTheater, כובשי אילת, דימונה, ישראל") == "דימונה"
+    assert enricher.canonical_city(None, "שדרות ירושלים 19, תל אביב") == "תל אביב"
+    assert enricher.canonical_city(None, "רחוב הרצל 5, חולון, Israel") == "חולון"
