@@ -10,6 +10,7 @@ data/
 .vscode/
 node_modules/
 web/dist/
+*.tsbuildinfo
 
 # Design hook cache (the hook rebuilds it); .impeccable/config.json is shared and committed.
 .impeccable/hook.cache.json
