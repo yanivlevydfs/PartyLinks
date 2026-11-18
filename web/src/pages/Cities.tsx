@@ -1,14 +1,11 @@
 // /cities: find a city fast. A search box over every city (any country), a row of countries (Israel
 // first), the chosen country's busiest cities as tiles, then all its cities A to Z (Israel's by region).
 // GET /cities-index, the same list the server renders for crawlers (seo.cities_page). ?country=FR keeps the choice.
-import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useCitiesIndex, type CityLink, type CountryCities as Country } from "../api";
 import { Hero, Loader, useT, useTitle } from "../ui";
 import "../city/city.css";
-
-interface CityLink { path: string; name: string; events: number; region?: string }
-interface Country { code: string; name: string; path: string; events: number; cities: CityLink[]; regions?: { key: string; name: string }[] }
 
 const TOP = 12;
 
@@ -31,15 +28,7 @@ export default function CitiesPage() {
   useTitle(p.title);
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState("");
-  const { data } = useQuery({
-    queryKey: ["cities-index", lang],
-    queryFn: async () => {
-      const res = await fetch(`/cities-index?lang=${lang}`);
-      if (!res.ok) throw new Error(`${res.status} /cities-index`);
-      return (await res.json()) as Country[];
-    },
-    staleTime: 5 * 60_000,
-  });
+  const { data } = useCitiesIndex(lang);
   const country = data?.find((c) => c.code === params.get("country")) ?? data?.[0];
   const pick = (code: string) => {
     setQ("");

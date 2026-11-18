@@ -50,6 +50,19 @@ export function useSuggest(q: string) {
   });
 }
 
+export interface CityLink { path: string; name: string; events: number; region?: string }
+export interface CountryCities { code: string; name: string; path: string; events: number; cities: CityLink[]; regions?: { key: string; name: string }[] }
+
+/** Every city with a page, by country, Israel first (GET /cities-index): the /cities page and the search box's suggestions. */
+export function useCitiesIndex(lang: string, enabled = true) {
+  return useQuery({
+    queryKey: ["cities-index", lang],
+    queryFn: ({ signal }) => getJSON<CountryCities[]>(`/cities-index?lang=${lang}`, signal),
+    staleTime: 5 * 60_000,
+    enabled,
+  });
+}
+
 /** Every event matching the filter that has coordinates, in one request, for the map. */
 export function useMapEvents(params: Params = {}) {
   const qs = toQuery(params);

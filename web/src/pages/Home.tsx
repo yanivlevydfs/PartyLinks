@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CityBar } from "../city/CityBar";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ForYouRow } from "../alerts/ForYouRow";
-import { holidayWhen, useCategories, useEvents, useHolidays, useLandingInfo, useRails, useSuggest, type Holiday } from "../api";
+import { holidayWhen, useCategories, useCitiesIndex, useEvents, useHolidays, useLandingInfo, useRails, useSuggest, type Holiday } from "../api";
 import { Filters, filterParams, Relax } from "../Filters";
 import { CITIES, genreLabel } from "../i18n";
 import { DEFAULT_FILTERS, useStore, type Filters as FilterState } from "../store";
@@ -257,12 +257,18 @@ function Suggestions({ q }: { q: string }) {
   const cats = useCategories().data;
   const text = q.trim().toLocaleLowerCase();
   const found = useSuggest(q.trim()).data;
+  const world = useCitiesIndex(lang, text.length >= 2).data;
   const items = useMemo(() => {
     if (text.length < 2) return [];
-    const cities = Object.entries(CITIES).filter(([, c]) => c.he.includes(q.trim()) || c.en.toLowerCase().includes(text))
-      .sort(([, a], [, b]) => +b[lang].toLocaleLowerCase().startsWith(text) - +a[lang].toLocaleLowerCase().startsWith(text) || a[lang].localeCompare(b[lang], lang))
-      .slice(0, 2)
-      .map(([slug, c]) => ({ key: "c" + slug, icon: "📍", label: c[lang], to: `/city/${slug}`, n: cats?.cities.find((x) => x.value === c.he)?.events }));
+    // Every city page (/cities-index: Israel's and abroad's) by its name in this language, and Israel's
+    // by either spelling ("kfar" finds כפר סבא on the Hebrew site); names starting with the text first.
+    const other = new Set(Object.entries(CITIES).filter(([, c]) => c.he.includes(q.trim()) || c.en.toLowerCase().includes(text)).map(([slug]) => `/city/${slug}`));
+    const cities = (world ?? []).flatMap((country) => country.cities
+      .filter((c) => c.name.toLocaleLowerCase().includes(text) || other.has(c.path))
+      .map((c) => ({ ...c, label: country.path === "/" ? c.name : `${c.name}, ${country.name}` })))
+      .sort((a, b) => +b.name.toLocaleLowerCase().startsWith(text) - +a.name.toLocaleLowerCase().startsWith(text) || b.events - a.events)
+      .slice(0, 3)
+      .map((c) => ({ key: "c" + c.path, icon: "📍", label: c.label, to: c.path, n: c.events }));
     const genres = (cats?.genres ?? []).filter((g) => genreLabel(lang, g.value).toLocaleLowerCase().includes(text) || g.value.replace("_", " ").includes(text))
       .slice(0, 2).map((g) => ({ key: "g" + g.value, icon: "🎵", label: genreLabel(lang, g.value), to: `/genre/${g.value}`, n: g.events }));
     return [
@@ -271,7 +277,7 @@ function Suggestions({ q }: { q: string }) {
       ...(found?.artists ?? []).slice(0, 4).map((a) => ({ key: "a" + a.value, icon: "🎧", label: a.value, to: artistPath(a.value), n: a.events })),
       ...(found?.venues ?? []).slice(0, 3).map((v) => ({ key: "v" + v.value, icon: "🏛", label: v.value, to: venuePath(v.value), n: v.events })),
     ];
-  }, [cats, found, text, q, lang]);
+  }, [cats, found, world, text, q, lang]);
   if (!items.length) return null;
   return (
     <ul className="suggest" aria-label={t.search}>

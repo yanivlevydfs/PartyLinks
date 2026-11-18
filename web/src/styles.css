@@ -1339,8 +1339,8 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .top-row .bell { position: absolute; }
   html .menu-phone { display: flex !important; }
   .tabbar {
-    position: fixed; z-index: 1000; inset: auto 0 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    position: fixed; z-index: 1000; inset: auto 0 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+    padding: 6px 2px calc(6px + env(safe-area-inset-bottom));
     background: rgb(10 6 18 / .88); backdrop-filter: blur(18px) saturate(1.4);
     border-top: 1px solid var(--line);
   }

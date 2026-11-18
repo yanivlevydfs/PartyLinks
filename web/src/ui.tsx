@@ -228,6 +228,7 @@ const TABS: [string, keyof Strings["nav"], ReactNode][] = [
   ["/venues", "venues", <><path d="M3 20h18M5 20V9l7-5 7 5v11" /><path d="M10 20v-5h4v5" /></>],
   ["/artists", "artists", <><path d="M4 14v-2a8 8 0 0 1 16 0v2" /><rect x="3" y="14" width="4" height="6" rx="1.5" /><rect x="17" y="14" width="4" height="6" rx="1.5" /></>],
   ["/abroad", "abroad", <><path d="m2.5 13.5 19-7-4 13-5.5-4-3 3v-5z" /><path d="m12 15.5 9.5-9" /></>],
+  ["/cities", "cities", <><path d="M3 21h18" /><path d="M5 21V8l5-3v16" /><path d="M10 21V11h9v10" /><path d="M13 14h3M13 17h3" /></>],
   ["/blog", "blog", <><path d="M5 4h11l3 3v13H5z" /><path d="M9 10h6M9 14h6M9 18h4" /></>],
 ];
 
