@@ -560,6 +560,9 @@ class GeocodingSettings(BaseModel):
     retry_failed_days: int = Field(14, ge=1)
     # One Nominatim request's limit; a failed request is not cached and ends the pass's lookups.
     timeout_seconds: float = Field(20, gt=0)
+    # A Nominatim hiccup (5xx such as "503 first byte timeout", or a timeout) is asked once more after this
+    # pause before the pass gives up; a refusal (429, other 4xx) is not.
+    retry_wait_seconds: float = Field(5, ge=0)
     # A hit further than this from the area its address keywords name is a same-name street elsewhere.
     max_area_distance_m: float = Field(2500, gt=0)
     # A source point farther than this from a small town (under places_min_population) named as the event's

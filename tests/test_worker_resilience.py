@@ -59,6 +59,31 @@ def test_a_failed_geocoding_request_is_not_cached_and_ends_the_pass(tmp_path: Pa
         assert session.scalar(select(func.count()).select_from(GeoCacheRow)) == 0
 
 
+def test_a_nominatim_hiccup_is_asked_again_not_the_end_of_the_pass(tmp_path: Path, monkeypatch: Any) -> None:
+    settings = settings_for(tmp_path)
+    settings.geocoding.max_lookups_per_run = 5
+    settings.geocoding.min_interval_seconds = 1
+    settings.geocoding.retry_wait_seconds = 0
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [event("a", future, address="המרץ 2, תל אביב-יפו"), event("b", future, address="הרצל 10, תל אביב-יפו")])
+    asked: list[str] = []
+
+    def stumble_once(request: httpx.Request) -> httpx.Response:
+        asked.append(request.url.params["q"])
+        if len(asked) == 1:
+            return httpx.Response(503, text="first byte timeout", request=request)
+        return httpx.Response(200, json=[], request=request)
+
+    real = httpx.Client
+    monkeypatch.setattr(httpx, "Client", lambda **kw: real(transport=httpx.MockTransport(stumble_once), **kw))
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities)
+    stats = geo.locate_missing(network=True)
+
+    assert asked[0] == asked[1]  # the same address asked again after the 503
+    assert stats.lookups >= 2 and len(set(asked)) >= 2  # and the pass went on to the next one
+
+
 # ------------------------------------------------------------------ 2. artwork proxy
 class _Proxied(BaseScraper[SourceSettings]):
     name = "goout"

@@ -718,11 +718,12 @@ class Geocoder:
                         params.pop("countrycodes")
                     else:
                         params["countrycodes"] = country.lower()
-                response = client.get(self.settings.url, params=params)
-                response.raise_for_status()
-                results = response.json()
+                results = self._get(client, params)
             except (httpx.HTTPError, ValueError) as exc:
-                log.warning("geocoding %r failed: %s", query, exc)
+                reason = (
+                    f"HTTP {exc.response.status_code}" if isinstance(exc, httpx.HTTPStatusError) else type(exc).__name__
+                )
+                log.warning("geocoding %r failed (%s); asked again next pass", query, reason)
                 return None
             finally:
                 _last_request = time.monotonic()
@@ -737,6 +738,21 @@ class Geocoder:
             if country or self._fits(query, hit):
                 return hit
         return GeoCacheRow(query=query, found=False, looked_up_at=utcnow())
+
+    def _get(self, client: httpx.Client, params: dict[str, Any]) -> list[dict[str, Any]]:
+        """One search, asked once more after ``retry_wait_seconds`` when Nominatim stumbles (5xx, timeout):
+        a single "503 first byte timeout" used to end the whole pass's lookups."""
+        for attempt in (1, 2):
+            try:
+                response = client.get(self.settings.url, params=params)
+                response.raise_for_status()
+                return response.json()
+            except (httpx.TimeoutException, httpx.HTTPStatusError) as exc:
+                hiccup = not isinstance(exc, httpx.HTTPStatusError) or exc.response.status_code >= 500
+                if attempt == 2 or not hiccup:
+                    raise
+                time.sleep(self.settings.retry_wait_seconds)
+        raise AssertionError("unreachable")
 
     def _fits(self, query: str, hit: GeoCacheRow) -> bool:
         if hit.kind not in PRECISE:
