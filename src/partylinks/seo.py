@@ -1102,6 +1102,11 @@ class AbroadCity:
     def name(self, lang: str) -> str:
         return self.he if lang == "he" else self.en
 
+    @property
+    def in_he(self) -> str:
+        """"בפריז"; a name GeoNames has no Hebrew for keeps its Latin spelling after a hyphen: "ב-Astoria"."""
+        return f"ב{self.he}" if _HEBREW.search(self.he) else f"ב-{self.he}"
+
 
 def abroad_cities(session: Session) -> list[AbroadCity]:
     """Cities abroad with enough upcoming events for a page, busiest first, in countries that have one.
@@ -1234,8 +1239,8 @@ def _landing_paths(session: Session, cfg: Settings) -> list[tuple[str, str, str]
         out.append((c.path, c.he, c.en))
         for sub in abroad_city_subpages(session, cfg, c):
             when = {"tonight": ("הערב", "tonight"), "weekend": ("בסופ״ש", "this weekend")}.get(sub)
-            out.append((f"{c.path}/{sub}", f"{when[0]} ב{c.he}", f"{c.en} {when[1]}") if when
-                       else (f"{c.path}/{sub}", f"{genre_label(sub, 'he')} ב{c.he}", f"{genre_label(sub, 'en')} in {c.en}"))  # fmt: skip
+            out.append((f"{c.path}/{sub}", f"{when[0]} {c.in_he}", f"{c.en} {when[1]}") if when
+                       else (f"{c.path}/{sub}", f"{genre_label(sub, 'he')} {c.in_he}", f"{genre_label(sub, 'en')} in {c.en}"))  # fmt: skip
     out += [("/cities", "ערים", "Cities")]
     out += [(f"/price/{slug}", f"אירועים {PRICE_LABELS[b][0]}", f"Events {PRICE_LABELS[b][1]}") for slug, b in price_pages(session).items()]
     from partylinks.holiday_pages.pages import paths as holiday_paths  # local: it imports this module
@@ -1442,7 +1447,7 @@ def resolve_landing(session: Session, cfg: Settings, lang: str, path: str) -> La
         when = sub if sub in WHENS else None
         # Its sub-pages read as an Israeli city's ("What's on tonight in Paris"): those texts name no country.
         kind = f"city_{when}" if when else "city_genre" if sub else "abroad_city"
-        land = Landing(kind, path, genre_label(sub, lang) if sub and not when else name, f"ב{name}" if he else f"in {name}",
+        land = Landing(kind, path, genre_label(sub, lang) if sub and not when else name, world.in_he if he else f"in {name}",
                        [EventRow.country == world.code, EventRow.city.in_(world.spellings)], abroad=True, country=world.code, world=world)  # fmt: skip
         if sub and not when:
             land.genre = sub
@@ -1502,7 +1507,7 @@ def _related(session: Session, cfg: Settings, lang: str, path: str) -> list[tupl
         world = _abroad_city(f"/abroad/{rest[0]}/{rest[1]}", session) if len(rest) >= 2 else None
         code = world.code if world else countries.get(rest[0]) if rest else None
         if world:
-            in_w = f"ב{world.he}" if he else f"in {world.en}"
+            in_w = world.in_he if he else f"in {world.en}"
             out.append((world.path, f"כל האירועים {in_w}" if he else f"All events {in_w}"))
             labels = {"tonight": "הערב" if he else "Tonight", "weekend": "בסופ״ש" if he else "This weekend"}
             out += [(f"{world.path}/{s}", f"{labels.get(s) or genre_label(s, lang)} {in_w}") for s in abroad_city_subpages(session, cfg, world)[:14]]
