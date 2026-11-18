@@ -50,7 +50,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   makore: ["https://www.makore.co.il", "culture"], jaffatheatre: ["https://www.jaffatheatre.org.il", "culture"], jerusalemtheatre: ["https://www.jerusalem-theatre.co.il", "culture"],
   beershevatheatre: ["https://b7t.co.il", "culture"], nikonitai: ["https://nikonitai.smarticket.co.il", "venue"], hatarbut: ["https://www.hatarbut.co.il", "culture"], zoatlv: ["https://zoatlv.co.il", "culture"],
   habama: ["https://www.habama.co.il", "culture"], friendshist: ["https://friends-hist.co.il", "culture"],
-  hamenagen: ["https://hamenagen.net", "culture"], israelmusicfest: ["https://israelmusicfest.co.il", "culture"], poalimatarim: ["https://poalimatarim.com", "culture"],
+  hamenagen: ["https://hamenagen.net", "culture"], israelmusicfest: ["https://israelmusicfest.co.il", "culture"], feelbeit: ["https://feelbeit.com", "venue"], tlvjazzfest: ["https://tlvjazzfest26.com", "culture"], poalimatarim: ["https://poalimatarim.com", "culture"],
   geektime: ["https://www.geektime.co.il/event/", "culture"], peoplecomputers: ["https://events.co.il", "culture"], parks: ["https://www.parks.org.il/activities/", "culture"],
   planet: ["https://www.planetcinema.co.il", "cinema"], ravhen: ["https://www.rav-hen.co.il", "cinema"],
   cinemacity: ["https://www.cinema-city.co.il", "cinema"], hotcinema: ["https://www.hotcinema.co.il", "cinema"],

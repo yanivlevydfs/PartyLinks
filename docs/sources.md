@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 132 configured sources, 131 on. Each one has its own module in
+SPOTX collects from 135 configured sources, 134 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -82,6 +82,9 @@ pagination and what the listing and the event page provide.
 | `nikonitai` | Niko Nitai Theatre (nikonitai.smarticket.co.il), Jaffa: plays, festivals and talks; its Smarticket tenant's API is empty, so each performance's JSON-LD is read | 06:39, 18:39 | yes |
 | `arenas` | Arenas, stadiums and amphitheaters, from Tickchak LIVE (`tickchak.py`) | 07:57, 19:57 | yes |
 | `hamenagen` | HaMenagen (hamenagen.net): Jewish and Hasidic music concert calendar | 04:43, 16:43 | yes |
+| `feelbeit` | FeelBeit (feelbeit.com): a Jerusalem arts space and its yearly LAYERS festival of free concerts and DJ sets; one wp-json call (`layers_event`, the Hebrew posts), the venue pinned in config | 06:22, 18:22 | yes |
+| `tlvjazzfest` | Tel Aviv-Yafo Jazz Festival (tlvjazzfest26.com): three free days at Beit Romano; the home page's Festival JSON-LD, the schedule (`data.js`) and the press bios (`artists-info.js`): one event per day with its programme, one per headliner | 06:31, 18:31 | yes |
+| `israelmusicfest` | Israel Music Festival (israelmusicfest.co.il, חג המוזיקה הישראלית): the Culture Ministry's week of free Israeli-music concerts; wp-json list, each concert's page, and its Wix registration page's JSON-LD (time, address, SoldOut) | 05:53, 17:53 | yes |
 | `hatarbut` | Heichal HaTarbut Tel Aviv (hatarbut.co.il): the Charles Bronfman Auditorium's show calendar | 05:07, 17:07 | yes |
 | `habama` | Habama (habama.co.il): performing-arts portal: theatre, dance, classical, kids, comedy | 06:11, 18:11 | yes |
 | `friendshist` | FRIENDS (friends-hist.co.il): the Histadrut's culture club, shows and plays in halls nationwide | 07:34, 19:34 | yes |

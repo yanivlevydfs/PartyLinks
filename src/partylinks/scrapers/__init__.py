@@ -30,6 +30,7 @@ from partylinks.scrapers.eventer import EventerScraper
 from partylinks.scrapers.eventim import EventimScraper, ZappaScraper
 from partylinks.scrapers.eventimlight import EventimLightScraper
 from partylinks.scrapers.eventpro import EventProScraper
+from partylinks.scrapers.feelbeit import FeelBeitScraper
 from partylinks.scrapers.festivalim import FestivalimScraper
 from partylinks.scrapers.fever import FeverScraper
 from partylinks.scrapers.friendshist import FriendsHistScraper
@@ -54,6 +55,7 @@ from partylinks.scrapers.hulyo import HulyoScraper
 from partylinks.scrapers.hypd import HypdScraper
 from partylinks.scrapers.inperson import InpersonScraper
 from partylinks.scrapers.ironit import IronitScraper
+from partylinks.scrapers.israelmusicfest import IsraelMusicFestScraper
 from partylinks.scrapers.issta import IsstaScraper
 from partylinks.scrapers.iwant import IwantScraper
 from partylinks.scrapers.jaffatheatre import JaffaTheatreScraper
@@ -121,6 +123,7 @@ from partylinks.scrapers.ticketmaster import TicketmasterScraper
 from partylinks.scrapers.ticketplace import TicketPlaceScraper
 from partylinks.scrapers.tiktik import TiktikScraper
 from partylinks.scrapers.tiuli import TiuliScraper
+from partylinks.scrapers.tlvjazzfest import TlvJazzFestScraper
 from partylinks.scrapers.towerofdavid import TowerOfDavidScraper
 from partylinks.scrapers.tribe import BabeBarScraper, GagarinScraper
 from partylinks.scrapers.tzkrti import TzkrtiScraper
@@ -261,6 +264,9 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         KlikaScraper,
         GotoTlvScraper,
         InpersonScraper,
+        IsraelMusicFestScraper,
+        FeelBeitScraper,
+        TlvJazzFestScraper,
         FunzingScraper,
         EasytixScraper,
         TicketeamsScraper,

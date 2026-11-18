@@ -1050,7 +1050,8 @@ enrichment:
   detect_genres_from_text: true
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
-  declared_genres_only: [funzing, ticketeams, standupist]
+  # Israel Music Festival: a concert's text is its programme, and piece names ("מדיטציה ראשונה", "Nostalgia") read as genres.
+  declared_genres_only: [funzing, ticketeams, standupist, israelmusicfest]
   # Tel Aviv municipality's catch-all category: "אמנות", "מוזיקה", "קלאסית" in its name made every dance class
   # an exhibition, a concert and classical music too. Its events also carry the real category ("מחול").
   declared_ignore: ["מחול אמנות ומוזיקה"]
@@ -1443,6 +1444,8 @@ geocoding:
     "בית ציוני אמריקה": [32.0746, 34.7822]              # Beit Zionei America, Daniel Frisch 1, Tel Aviv
     "מדיטק": [32.0118153, 34.7774368]                  # Holon Mediatheque, Golda Meir 6 (all its halls)
     "אודיטוריום הכט": [32.763218, 35.018062]            # Hecht Auditorium, University of Haifa (the Hecht Museum's building)
+    "המשכן לאמנויות, אוניברסיטת חיפה": [32.7609456, 35.0204641]  # University of Haifa's arts building (the campus, OSM), Israel Music Festival
+    "אולם דורות שער הנגב": [31.506606, 34.645993]      # Kibbutz Dorot's hall (the kibbutz, OSM: one hall), Smarticket and the music festival
     # Recurring venues of upcoming events still off the map (OSM POI / numbered-building points, Nov 2026).
     # Generic hall names ("אולם ראשי", "היכל התרבות" alone) are left out: the city is not part of the match.
     "היכל התרבות | עמק דותן 49": [31.8991635, 35.0148195]  # Modi'in culture hall as Smarticket writes it (same point as above)
@@ -1703,6 +1706,9 @@ search:
     megaevents: ["mega events", "מגה איוונטס"]
     viagogo: ["ויאגוגו"]
     hamenagen: ["המנגן"]
+    israelmusicfest: ["חג המוזיקה הישראלית", "חג המוסיקה הישראלית", "israel music fest"]
+    feelbeit: ["feelbeit", "פילבית", "פיל בית", "layers", "שכבות"]
+    tlvjazzfest: ["פסטיבל הג'אז", "פסטיבל הגאז", "tlv jazz fest", "tel aviv jazz festival"]
     hatarbut: ["היכל התרבות"]
     kikarhamusica: ["כיכר המוזיקה"]
     xplorer: ["אקספלורר"]
@@ -3453,6 +3459,51 @@ sources:
     latitude: 31.4
     longitude: 34.9
     radius_m: 300000
+
+  feelbeit:
+    # FeelBeit (feelbeit.com), a Jerusalem arts space at the Planet complex, and its yearly LAYERS festival (שכבות):
+    # free concerts and DJ sets. The year's festival site lists every show in one wp-json call (layers_event,
+    # Hebrew / English / Arabic posts; the Hebrew ones kept): start, title, text, artwork. One venue, pinned here.
+    enabled: true
+    cron: "22 6,18 * * *"
+    site_url: https://feelbeit.com/layers2026
+    venue_name: FeelBeit
+    address: נעמי 4
+    city: ירושלים
+    latitude: 31.7618346    # Planet Jerusalem, Naomi 4 (OSM), "The Planet Complex"
+    longitude: 35.2261141
+    skip_title_words: ["קורס"]
+    http:
+      concurrency: 1
+
+  tlvjazzfest:
+    # Tel Aviv-Yafo Jazz Festival: three free days at Beit Romano (and Park HaMesila), a static site per year.
+    # 3 requests: the home page's Festival JSON-LD (first day, venue), data.js (the schedule: stage, minutes, kind)
+    # and artists-info.js (press bios and photos). One event per day (its programme) and one per headliner.
+    enabled: true
+    cron: "31 6,18 * * *"
+    site_url: https://tlvjazzfest26.com
+    skip_title_words: ["קורס"]
+    http:
+      concurrency: 1
+
+  israelmusicfest:
+    # Israel Music Festival (חג המוזיקה הישראלית, the Culture Ministry's): a week of free concerts of original
+    # Israeli music in several cities. WordPress: one wp-json call lists the concert posts (title, artwork, city);
+    # each concert's page gives its text and the registration link (the producer's Wix site), whose JSON-LD gives
+    # the time, the hall's address and SoldOut. ~2 requests a concert. robots.txt allows everything.
+    enabled: true
+    cron: "53 5,17 * * *"
+    site_url: https://israelmusicfest.co.il
+    city_names: {"מעלות": "מעלות-תרשיחא"}
+    venue_names:   # the halls under the names other sources give them (one venue page each)
+      "המשכן לאמנויות הבמה נתיבות": "משכן פיס-היכל התרבות נתיבות"
+      "היכל שלמה לתרבות ואמנויות הבמה מעלות תרשיחא": "היכל התרבות מעלות תרשיחא"
+      "אולם המופעים דורות, קיבוץ דורות": "אולם דורות שער הנגב"
+    skip_title_words: ["קורס"]  # not "חוג": "רשת גימל חוגגת 50"
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
 
   hamenagen:
     # HaMenagen: Jewish / Hasidic music site's concert calendar. Its app API

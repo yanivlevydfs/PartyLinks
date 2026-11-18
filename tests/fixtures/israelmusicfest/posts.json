@@ -1,0 +1,102 @@
+[
+ {
+  "id": 2026,
+  "date": "2026-11-16T10:27:38",
+  "modified": "2026-11-16T10:27:38",
+  "link": "https://israelmusicfest.co.il/%d7%a4%d7%90%d7%a0%d7%9c-%d7%99%d7%95%d7%a6%d7%a8%d7%99%d7%9d-%d7%95%d7%99%d7%95%d7%a6%d7%a8%d7%95%d7%aa-2-12-%d7%97%d7%99%d7%a4%d7%94/",
+  "title": {
+   "rendered": "פאנל יוצרים ויוצרות | 2.12 | חיפה"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://israelmusicfest.co.il/wp-content/uploads/2026/11/SN_600X1200.png"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "category",
+      "name": "2.12 | חיפה"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ {
+  "id": 1620,
+  "date": "2026-11-02T16:14:03",
+  "modified": "2026-11-11T17:27:12",
+  "link": "https://israelmusicfest.co.il/%d7%aa%d7%96%d7%9e%d7%95%d7%a8%d7%aa-%d7%94%d7%92%d7%b3%d7%90%d7%96-%d7%94%d7%99%d7%a9%d7%a8%d7%90%d7%9c%d7%99%d7%aa-%d7%9e%d7%90%d7%a8%d7%97%d7%aa-%d7%90%d7%aa-%d7%90%d7%91%d7%99%d7%a9%d7%99-%d7%9b/",
+  "title": {
+   "rendered": "תזמורת הג׳אז הישראלית מארחת את אבישי כהן | 1.12 | קיבוץ דורות"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://israelmusicfest.co.il/wp-content/uploads/2026/11/הג׳אז-ואבישי-חמ״י-1200-x-600-פיקסל.png"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "category",
+      "name": "דורות | Dorot"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ {
+  "id": 1600,
+  "date": "2026-11-02T15:28:33",
+  "modified": "2026-11-18T01:24:32",
+  "link": "https://israelmusicfest.co.il/%d7%96%d7%9e%d7%9f-%d7%a9%d7%99%d7%a8%d7%94-%d7%a8%d7%97%d7%9c-28-11/",
+  "title": {
+   "rendered": "זמן שירה &#8211; רחל | 28.11 | תל אביב"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://israelmusicfest.co.il/wp-content/uploads/2026/11/זמן-שירה-חמ״י-1.png"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "category",
+      "name": "תל אביב | Tel Aviv"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ {
+  "id": 1513,
+  "date": "2025-09-08T14:21:37",
+  "modified": "2026-11-11T17:35:01",
+  "link": "https://israelmusicfest.co.il/%d7%94%d7%a0%d7%a7%d7%a9%d7%9f-%d7%94%d7%a0%d7%95%d7%94%d7%9d-%d7%a8%d7%a1%d7%99%d7%98%d7%9c-%d7%9b%d7%9c%d7%99-%d7%94%d7%a7%d7%a9%d7%94-28-9-1600-%d7%9e%d7%98%d7%94-%d7%90%d7%a9%d7%a8/",
+  "title": {
+   "rendered": "קונצרט פתיחה חגיגי | תזמורת הנוער הלאומית וסולני התזמורת הפילהרמונית הישראלית | 27.11 | תל אביב"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://israelmusicfest.co.il/wp-content/uploads/2025/09/פתיחה-חמ״-1200-x-600-פיקסל-1.png"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "category",
+      "name": "תל אביב | Tel Aviv"
+     }
+    ],
+    []
+   ]
+  }
+ }
+]
