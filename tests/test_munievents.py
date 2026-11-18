@@ -9,7 +9,15 @@ from pathlib import Path
 
 from partylinks.models import TierStatus
 from partylinks.parsing import zone
-from partylinks.scrapers.munievents import Card, MuniSite, build_event, parse_categories, parse_feed, parse_listing
+from partylinks.scrapers.munievents import (
+    Card,
+    MuniSite,
+    build_event,
+    by_start,
+    parse_categories,
+    parse_feed,
+    parse_listing,
+)
 
 TZ = "Asia/Jerusalem"
 TODAY = date(2026, 10, 20)
@@ -251,3 +259,13 @@ def test_unreachable_site_skipped_and_broken_event_pages_read_from_the_listing()
     assert len(events) == 8  # every event kept, from the feed alone
     pages = [a for a in asked if a.startswith(broken) and a.count("/") == 3]
     assert BROKEN_PAGES <= len(pages) < 8  # the site's event pages stopped being read after a few 500s
+
+
+def test_event_pages_soonest_first_undated_last() -> None:
+    tz = zone(TZ)
+    cards = [
+        Card(url="u/far", event_id="far", title="far", start=datetime(2027, 2, 1, tzinfo=tz), end=None),
+        Card(url="u/none", event_id="none", title="none", start=None, end=None, undated=True),
+        Card(url="u/near", event_id="near", title="near", start=datetime(2026, 10, 21, 20, tzinfo=tz), end=None),
+    ]
+    assert [c.event_id for c in sorted(cards, key=by_start)] == ["near", "far", "none"]

@@ -119,9 +119,7 @@ class JerusalemMuniScraper(BaseScraper[JerusalemMuniSettings]):
         online = {c.path for c in await self.optional("online", listing(online="true")) or []}
         coming = [c for c in cards.values() if c.path not in online]
 
-        by_page: dict[str, list[Card]] = {}
-        for card in coming:
-            by_page.setdefault(card.page, []).append(card)
+        by_page = pages_soonest_first(coming)
 
         async def event_page(path: str) -> list[ScrapedEvent]:
             info = parse_page(await self.get_text(s.site_url + path), s)
@@ -131,6 +129,15 @@ class JerusalemMuniScraper(BaseScraper[JerusalemMuniSettings]):
             for event in events:
                 if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
                     yield event
+
+
+def pages_soonest_first(cards: list[Card]) -> dict[str, list[Card]]:
+    """Each event page's dates, the pages by their first date: a run cut half-way already holds
+    the nearest week (Nov 2026); stream_isolated fetches in input order."""
+    by_page: dict[str, list[Card]] = {}
+    for card in sorted(cards, key=lambda c: (c.day, c.start or "")):
+        by_page.setdefault(card.page, []).append(card)
+    return by_page
 
 
 def _token(html: str) -> str:

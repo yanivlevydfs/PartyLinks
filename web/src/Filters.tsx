@@ -42,7 +42,7 @@ function priceParams(band: string): Params {
   return { min_price: min != null ? String(min) : undefined, max_price: max != null ? String(max) : undefined };
 }
 
-function whenParams(when: string): Params {
+export function whenParams(when: string): Params {
   // Started and not over yet; places listed all day (no hours) are left out (api.py open_now).
   if (when === "now") return { open_now: "true" };
   if (when === "tonight") return { date: today() };

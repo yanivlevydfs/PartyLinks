@@ -95,7 +95,7 @@ class TelAvivCinemathequeScraper(BaseScraper[TelAvivCinemathequeSettings]):
 
         # Prices from each feature's first screening in the window.
         first: dict[str, Any] = {}
-        for (movie, _), shows in sorted(groups.items(), key=lambda g: g[0][1]):
+        for (movie, _), shows in groups.items():
             first.setdefault(movie, shows[0][1].get("id"))
 
         async def prices(movie: str) -> tuple[str, list[TicketTier]]:
@@ -280,7 +280,8 @@ def group_screenings(
             groups[(movie, day)].append((start, row))
     for shows in groups.values():
         shows.sort(key=lambda x: x[0])
-    return dict(groups)
+    # The API lists rows by feature, not by time (Nov 2026): the soonest day first, also for the price calls.
+    return dict(sorted(groups.items(), key=lambda g: g[1][0][0]))
 
 
 def build_event(

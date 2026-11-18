@@ -11,6 +11,7 @@ import { type ArtistChips, ArtistFilterRows, useArtistFilter } from "../artist_f
 import { MapLinks } from "../places/MapLinks";
 import { ScopedEvents } from "../filter_scope/ScopedEvents";
 import { useWeb } from "../site_params/useWeb";
+import { outbound } from "../utm";
 import { artistPath, Chip, countryName, Hero, Img, label, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
 // The name's first letter, drawn when there is no picture.
@@ -215,7 +216,7 @@ export function ArtistPage() {
         {/* Spotify, YouTube, Instagram... merged from the ticket sites' profile and MusicBrainz (artist_links) */}
         <ArtistLinks links={info?.artist_links} name={profile?.value ?? name} />
         {profile?.profile_url && /^https?:\/\//i.test(profile.profile_url) && (
-          <a className="sub" href={profile.profile_url} target="_blank" rel="noopener noreferrer">{siteName(profile.profile_url)} ↗</a>
+          <a className="sub" href={outbound(profile.profile_url, "artist", "profile")} target="_blank" rel="noopener noreferrer">{siteName(profile.profile_url)} ↗</a>
         )}
       </Hero>
       <main className="wrap">
@@ -252,7 +253,7 @@ function SocialLinks({ urls }: { urls: string[] }) {
         const site = siteName(u);
         const icon = site === "facebook" || site === "instagram" ? site : "web";
         return (
-          <a key={u} className={"share-btn " + icon} href={u} target="_blank" rel="noopener noreferrer" aria-label={site} title={site}>
+          <a key={u} className={"share-btn " + icon} href={outbound(u, "venue", icon)} target="_blank" rel="noopener noreferrer" aria-label={site} title={site}>
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>{SHARE_ICONS[icon]}</svg>
           </a>
         );

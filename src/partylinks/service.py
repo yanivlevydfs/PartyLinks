@@ -448,7 +448,7 @@ class ScrapeService:
                 failures = scraper.failures
                 async with scraper:
                     try:
-                        async for event in scraper.scrape():
+                        async for event in scraper.events():
                             if self._stopping.is_set():
                                 raise _StopRequested
                             found += 1

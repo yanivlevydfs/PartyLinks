@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from partylinks.models import ScrapedEvent
-from partylinks.scrapers.hotcinema import HotCinemaBranch, HotCinemaSettings, parse_day, parse_movies
+from partylinks.parsing import zone
+from partylinks.scrapers.hotcinema import HotCinemaBranch, HotCinemaSettings, parse_day, parse_movies, soonest_first
 
 TZ = "Asia/Jerusalem"
 FIXTURES = Path(__file__).parent / "fixtures/hotcinema"
@@ -107,3 +108,12 @@ def test_scrape_prices_from_the_shop(monkeypatch) -> None:
     logins = sorted(c for c in calls if c.startswith("login"))
     assert logins == ["login 1114", "login 1116", "login 1117", "login 112", "login 119"]
     assert f"{SETTINGS.tickets_api}/cus/event/code/1116-156853/min" in calls
+
+
+def test_days_are_priced_soonest_first() -> None:
+    def show(i: str, day: int | None) -> ScrapedEvent:
+        start = datetime(2026, 11, day, 20, tzinfo=zone(TZ)) if day else None
+        return ScrapedEvent.model_validate({"source": "hotcinema", "source_event_id": i, "url": SITE, "title": i, "start_at": start})
+
+    ordered = soonest_first([show("undated", None), show("far", 20), show("near", 18), show("mid", 19)])
+    assert [e.source_event_id for e in ordered] == ["near", "mid", "far", "undated"]

@@ -31,6 +31,7 @@ import json
 import re
 import urllib.parse
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -132,6 +133,9 @@ class EventimScraper(BaseScraper[EventimSettings]):
                 return product_event(event_id, url, item, self.timezone, self.name)
             return listing_event(event_id, url, item, self.timezone, self.name, s.type_genres)
 
+        # The sitemap has no dates; the API / city listing does: event pages soonest first, so a run cut
+        # half-way (or by Akamai) already holds the nearest week (Nov 2026).
+        urls = soonest_urls(urls, listed, self.timezone)
         lost_only = bool(s.api_url)  # the API lists every event: a refused page loses nothing
         events = details_or_listing(self, urls, self._fetch_event, listed, s.type_genres, build, lost_only=lost_only)
         async for event in events:
@@ -212,6 +216,18 @@ class ZappaScraper(EventimScraper):
 
 def _event_id(url: str) -> str:
     return m.group(1) if (m := _EVENT_ID.search(urllib.parse.urlsplit(url).path)) else url
+
+
+def soonest_urls(urls: list[str], listed: Listed, timezone: str) -> list[str]:
+    """Event pages by the start their API product or city-page item gives; unlisted ones last, in sitemap order."""
+    last = datetime.max.replace(tzinfo=UTC)
+
+    def start(url: str) -> datetime:
+        _, item = listed.get(_event_id(url), ("", {}))
+        live = (item.get("typeAttributes") or {}).get("liveEntertainment") or {}
+        return parse_iso(live.get("startDate") or item.get("startDate"), timezone) or last
+
+    return sorted(urls, key=start)
 
 
 def pick_urls(urls: list[str], words: list[str], skip: list[str]) -> list[str]:

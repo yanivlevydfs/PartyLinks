@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -72,15 +73,18 @@ class ZygoScraper(BaseScraper[ZygoSettings]):
             batch = await self.get_json(url, params={"limit": s.page_size, "skip": index * s.page_size}, expect=list)
             return [item for item in batch if isinstance(item, dict)], None
 
-        seen: dict[str, None] = {}
+        seen: dict[str, dict[str, Any]] = {}
         for pass_no in range(1, s.max_passes + 1):
             before = len(seen)
             items = await self.paginate(page, s.page_size, s.max_pages)
-            seen.update((str(item["id"]), None) for item in items if item.get("id"))
+            for item in items:
+                if item.get("id"):
+                    seen.setdefault(str(item["id"]), item)
             self.log.debug("pass %d: %d new ids", pass_no, len(seen) - before)
             if len(seen) == before:
                 break
-        return list(seen)
+        # The API shuffles its pages (Nov 2026): soonest first, a run a deploy cuts holds the nearest events.
+        return [str(item["id"]) for item in soonest_first(list(seen.values()))]
 
     async def _fetch_event(self, event_id: str) -> ScrapedEvent:
         """``event_id`` is a listed id, or a linked page's full URL."""
@@ -89,6 +93,12 @@ class ZygoScraper(BaseScraper[ZygoSettings]):
         else:
             page_url = self.settings.site_url + self.settings.event_page_path.format(event_id=event_id)
         return parse_event(next_data(await self.get_text(page_url)), page_url)
+
+
+def soonest_first(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Listing rows by ``startDate``, ascending; rows without one keep their order, last."""
+    far = datetime.max.replace(tzinfo=UTC)
+    return sorted(items, key=lambda e: parse_iso(e.get("startDate")) or far)
 
 
 def parse_event(data: dict[str, Any], page_url: str) -> ScrapedEvent:

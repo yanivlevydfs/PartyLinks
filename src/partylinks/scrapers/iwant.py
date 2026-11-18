@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import Field
@@ -60,6 +60,8 @@ class IwantScraper(BaseScraper[IwantSettings]):
                 event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known
             ):
                 current.append(event)
+        # The feed holds past rows too, in no promised order: event pages soonest first (Nov 2026).
+        current.sort(key=lambda e: e.start_at or datetime.max.replace(tzinfo=UTC))
         async for event in self.stream_isolated(current, self._with_tiers, lambda e: str(e.url)):
             yield event
 

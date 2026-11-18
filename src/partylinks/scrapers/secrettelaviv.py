@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator, Sequence
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
@@ -93,7 +93,8 @@ class SecretTelAvivScraper(BaseScraper[SecretTelAvivSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        feed = parse_feed(await self.get_text(s.site_url + s.feed_path), s, self.timezone)
+        # Event pages soonest first, whatever order the feed has: a cut run holds the nearest week (Nov 2026).
+        feed = soonest_first(parse_feed(await self.get_text(s.site_url + s.feed_path), s, self.timezone))
         if not feed:
             raise ParseError("no events in the iCal feed")
         self.log.debug("listed %d events", len(feed))
@@ -134,6 +135,12 @@ class SecretTelAvivScraper(BaseScraper[SecretTelAvivSettings]):
             page = await fetch_seller_page(self, seller)
             event.tickets = seller_tiers(page, seller) if page else []
         return event
+
+
+def soonest_first(events: list[ScrapedEvent]) -> list[ScrapedEvent]:
+    """Events by start time, undated last: stream_isolated fetches in input order."""
+    last = datetime.max.replace(tzinfo=UTC)
+    return sorted(events, key=lambda e: e.start_at or last)
 
 
 def event_slug(url: str, s: SecretTelAvivSettings) -> str:

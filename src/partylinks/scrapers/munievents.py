@@ -27,9 +27,9 @@ import asyncio
 import contextlib
 import html
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from functools import cache
 from typing import Any
@@ -113,6 +113,10 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
         today = datetime.now(tz).date()
         days = self.settings.feed_days
         window = f"start={today - timedelta(days)}&end={today + timedelta(days)}"
+        # Every site's listing first, then all their event pages soonest first: site by site, a run cut
+        # short (a deploy, Nov 2026) held the first sites' whole season and nothing of the rest.
+        work: list[tuple[Card, Callable[[Card], Awaitable[ScrapedEvent | None]]]] = []
+        sites_broken: list[tuple[str, dict[str, int]]] = []
         for site in self.settings.sites:
             feed_url = f"{site.url}/events/json/?{window}"
             feed = None
@@ -161,7 +165,9 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
                     broken["in_a_row"], broken["answered"] = 0, 1
                     return detail
 
-            async def fetch(card: Card, site: MuniSite = site) -> ScrapedEvent | None:
+            async def fetch(
+                card: Card, site: MuniSite = site, page_of: Callable[[Card], Awaitable[str | None]] = page_of
+            ) -> ScrapedEvent | None:
                 listed_only = build_event(card, None, site, self.timezone)
                 if listed_only is not None and not is_current(
                     listed_only.start_at, listed_only.end_at, RetentionSettings(), self.timezone, time_known=listed_only.time_known
@@ -175,10 +181,19 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
                 offers = seller_tiers(seller_html, seller) if seller_html else []
                 return build_event(card, detail, site, self.timezone, offers)
 
-            async for event in self.stream_isolated(cards, fetch, label=lambda c: c.url):
-                yield event
+            work += [(card, fetch) for card in cards]
+            sites_broken.append((site.url, broken))
+        work.sort(key=lambda w: by_start(w[0]))
+        async for event in self.stream_isolated(work, lambda w: w[1](w[0]), label=lambda w: w[0].url):
+            yield event
+        for url, broken in sites_broken:
             if broken["listing_only"]:
-                self.log.warning("%s: event pages answer 5xx; %d events kept from the listing only", site.url, broken["listing_only"])
+                self.log.warning("%s: event pages answer 5xx; %d events kept from the listing only", url, broken["listing_only"])
+
+
+def by_start(card: Card) -> datetime:
+    """Fetch order: soonest start first, undated cards last."""
+    return card.start or datetime.max.replace(tzinfo=UTC)
 
 
 def _text(node: LexborNode | None) -> str:

@@ -45,7 +45,7 @@ from partylinks.event_text.group import group_description
 from partylinks.pictures import live_image_url
 from partylinks.placecards import first_opening
 from partylinks.placeinfo.seo import place_seo
-from partylinks.places import all_cities
+from partylinks.places import all_cities, city_abroad, city_name, city_point, city_zone
 from partylinks.retention import is_current
 from partylinks.venue_profiles import load_profiles as load_venue_profiles
 from partylinks.venue_profiles import logo_path as venue_logo_path
@@ -1071,6 +1071,136 @@ def abroad_countries(session: Session) -> dict[str, str]:
     return _facet(("abroad_countries",), build)
 
 
+_HEBREW = re.compile(r"[\u0590-\u05ff]")
+_YIDDISH = re.compile(r"ע|\Bא|יי")  # ע and a mid-word א as vowels: "בערלין", "לאנדאן", not "ברלין", "לונדון"
+
+
+def hebrew_city_name(names: tuple[str, ...]) -> str | None:
+    """The Hebrew one of a city's GeoNames names. Their Hebrew-script names list Yiddish first
+    ("פאריז", "בארצעלאנע"): the one with the fewest Yiddish vowel letters, the first of equals."""
+    hebrew = [n for n in names if _HEBREW.search(n)]
+    return min(hebrew, key=lambda n: len(_YIDDISH.findall(n))) if hebrew else None
+
+
+@dataclass(frozen=True)
+class AbroadCity:
+    """A city abroad with a page, /abroad/<country slug>/<slug>: its names and the stored spellings of it."""
+
+    code: str  # country, ISO alpha-2
+    country_slug: str
+    slug: str  # its GeoNames (English) name, plain ASCII
+    he: str
+    en: str
+    spellings: tuple[str, ...]  # every EventRow.city stored for it ("Paris", "פריז", "פריז, צרפת")
+    events: int
+    center: tuple[float, float] | None
+
+    @property
+    def path(self) -> str:
+        return f"/abroad/{self.country_slug}/{self.slug}"
+
+    def name(self, lang: str) -> str:
+        return self.he if lang == "he" else self.en
+
+
+def abroad_cities(session: Session) -> list[AbroadCity]:
+    """Cities abroad with enough upcoming events for a page, busiest first, in countries that have one.
+    A city named in two languages by different sellers ("Paris" / "פריז") is one city (its GeoNames id)."""
+
+    def build() -> list[AbroadCity]:
+        slugs = {code: slug for slug, code in abroad_countries(session).items()}
+        counts: Counter[tuple[str, str]] = Counter(
+            (city, code) for city, code in session.execute(
+                select(EventRow.city, EventRow.country).where(upcoming_filter(), EventRow.country.is_not(None), EventRow.city.is_not(None))
+            ) if city and code
+        )  # fmt: skip
+        groups: dict[tuple[str, int], tuple[tuple[str, ...], Counter[str]]] = {}
+        for (city, code), n in counts.items():
+            found = city_abroad(city, code) if code in slugs else None
+            if found:
+                groups.setdefault((code, found[0]), (found[1], Counter()))[1][city] += n
+        out: list[AbroadCity] = []
+        taken: set[str] = set()
+        for (code, _), (names, spelled) in sorted(groups.items(), key=lambda g: -g[1][1].total()):
+            en = next((n for n in names if not _HEBREW.search(n)), names[0])
+            hebrew = [s for s, _ in spelled.most_common() if _HEBREW.search(s)]
+            he = city_name(hebrew[0], code) if hebrew else hebrew_city_name(names) or en
+            slug = _ascii_slug(en)
+            if spelled.total() < get_settings().seo.genre_page_min or not slug or f"{code}/{slug}" in taken:
+                continue
+            taken.add(f"{code}/{slug}")
+            out.append(AbroadCity(code, slugs[code], slug, he, en, tuple(spelled), spelled.total(), city_point(en, code)))
+        return out
+
+    return _facet(("abroad_cities",), build)
+
+
+def _abroad_city(path: str, session: Session) -> AbroadCity | None:
+    return next((c for c in abroad_cities(session) if c.path == path), None)
+
+
+def abroad_city_genres(session: Session, cfg: Settings, when: str | None = None) -> dict[str, dict[str, int]]:
+    """City abroad (its path) -> its upcoming events (tonight / this weekend) by genre, the genres with
+    enough of them for a /abroad/<country>/<city>/<genre> page; "" holds the city's total."""
+
+    def build() -> dict[str, dict[str, int]]:
+        paths = {(spelled, c.code): c.path for c in abroad_cities(session) for spelled in c.spellings}
+        counts: dict[str, Counter[str]] = {}
+        rows = session.execute(select(EventRow.city, EventRow.country, EventRow.genres).where(
+            upcoming_filter(), EventRow.country.is_not(None), EventRow.city.is_not(None), *_when_where(when, cfg)))  # fmt: skip
+        for city, code, genres in rows:
+            if (path := paths.get((city, code))) is not None:
+                counts.setdefault(path, Counter()).update(["", *cfg.enrichment.with_parents(genres or [])])
+        return {p: {g: n for g, n in cnt.most_common() if n >= cfg.seo.genre_page_min} for p, cnt in counts.items()}
+
+    return _facet(("abroad_city_genres", id(cfg), when), build)
+
+
+def abroad_city_subpages(session: Session, cfg: Settings, world: AbroadCity) -> list[str]:
+    """The sub-pages a city abroad has: tonight, this weekend (enough events in it), then its genres."""
+    whens = [w for w in WHENS if "" in abroad_city_genres(session, cfg, w).get(world.path, {})]
+    return [*whens, *(g for g in abroad_city_genres(session, cfg).get(world.path, {}) if g)]
+
+
+def cities_index(session: Session, cfg: Settings, lang: str) -> list[dict[str, Any]]:
+    """Every city with a page, by country: Israel first, then the countries abroad (busiest first).
+    [{code, name, path, events, cities: [{path, name, events}]}]: what /cities shows."""
+
+    def build() -> list[dict[str, Any]]:
+        counts = Counter(session.scalars(select(EventRow.city).where(upcoming_filter(), EventRow.country.is_(None))))
+        israel = sorted(city_pages(session, cfg), key=lambda c: -counts[c.he])
+        out = [{
+            "code": "IL", "name": "ישראל" if lang == "he" else "Israel", "path": "/", "events": sum(counts[c.he] for c in israel),
+            "cities": [{"path": f"/city/{c.key}", "name": c.he if lang == "he" else c.en, "events": counts[c.he]} for c in israel],
+        }]  # fmt: skip
+        countries = Counter(session.scalars(select(EventRow.country).where(upcoming_filter(), EventRow.country.is_not(None))))
+        by_country: dict[str, list[AbroadCity]] = {}
+        for c in abroad_cities(session):
+            by_country.setdefault(c.code, []).append(c)
+        for slug, code in abroad_countries(session).items():
+            out.append({
+                "code": code, "name": country_name(code, lang), "path": f"/abroad/{slug}", "events": countries[code],
+                "cities": [{"path": c.path, "name": c.name(lang), "events": c.events} for c in by_country.get(code, [])],
+            })  # fmt: skip
+        return out
+
+    return _facet(("cities_index", id(cfg), lang), build)
+
+
+def cities_page(session: Session, cfg: Settings, lang: str) -> Page:
+    he = lang == "he"
+    title = "ערים: אירועים לפי עיר, בישראל ובחו״ל" if he else "Cities: events by city, in Israel and abroad"
+    desc = ("כל הערים עם אירועים קרובים, לפי מדינה: ערי ישראל וערים בחו״ל, עם מסיבות, הופעות ופסטיבלים."
+            if he else "Every city with upcoming events, by country: Israel's cities and cities abroad, with parties, concerts and festivals.")  # fmt: skip
+    body = f"<h1>{escape(title)}</h1><p>{escape(desc)}</p>"
+    for country in cities_index(session, cfg, lang):
+        items = "".join(f'<li><a href="{escape(c["path"])}">{escape(c["name"])}</a></li>' for c in country["cities"])
+        body += f'<section><h2><a href="{escape(country["path"])}">{escape(country["name"])}</a></h2><ul>{items}</ul></section>'
+    crumb = "ערים" if he else "Cities"
+    return Page(title=f"{title} · {cfg.site.name}", description=desc, path="/cities", lang=lang,
+                jsonld=[_breadcrumbs(cfg, lang, (crumb, "/cities"))], body=body)  # fmt: skip
+
+
 def _nearby(city: CitySettings, cities: list[CitySettings], n: int = 4) -> list[CitySettings]:
     if not city.center:
         return []
@@ -1100,6 +1230,13 @@ def _landing_paths(session: Session, cfg: Settings) -> list[tuple[str, str, str]
             for c in cities for g in by_city.get(c.he, {})]  # fmt: skip
     out += [(f"/region/{k.replace('_', '-')}", f"אירועים {REGION_NAMES[k][1]}", f"Events in {REGION_NAMES[k][2]}") for k in region_pages(session)]
     out += [(f"/abroad/{slug}", country_name(code, "he"), country_name(code, "en")) for slug, code in abroad_countries(session).items()]
+    for c in abroad_cities(session):
+        out.append((c.path, c.he, c.en))
+        for sub in abroad_city_subpages(session, cfg, c):
+            when = {"tonight": ("הערב", "tonight"), "weekend": ("בסופ״ש", "this weekend")}.get(sub)
+            out.append((f"{c.path}/{sub}", f"{when[0]} ב{c.he}", f"{c.en} {when[1]}") if when
+                       else (f"{c.path}/{sub}", f"{genre_label(sub, 'he')} ב{c.he}", f"{genre_label(sub, 'en')} in {c.en}"))  # fmt: skip
+    out += [("/cities", "ערים", "Cities")]
     out += [(f"/price/{slug}", f"אירועים {PRICE_LABELS[b][0]}", f"Events {PRICE_LABELS[b][1]}") for slug, b in price_pages(session).items()]
     from partylinks.holiday_pages.pages import paths as holiday_paths  # local: it imports this module
 
@@ -1149,6 +1286,9 @@ def _landing_text(kind: str, lang: str, label: str, place: str = "") -> tuple[st
             "abroad_country": (f"אירועים {p}: הופעות ופסטיבלים {p}",
                                f"כרטיסים וחבילות להופעות, מסיבות ופסטיבלים {p}: תאריכים, מקומות ומחירים.",
                                f"כל ההופעות והפסטיבלים הקרובים {p}.", p),
+            "abroad_city": (f"מה עושים {p}? הופעות, מסיבות ופסטיבלים {p}",
+                            f"כל ההופעות, המסיבות והפסטיבלים הקרובים {p}: תאריכים, מקומות, מחירים וכרטיסים.",
+                            f"כל האירועים הקרובים {p}, מאתרי הכרטיסים והחבילות במקום אחד.", p),
             "price": (f"אירועים {g}: הופעות, מסיבות והצגות",
                       f"כל האירועים הקרובים בישראל עם כרטיס {g}: הופעות, מסיבות, סטנדאפ והצגות, עם תאריכים, מקומות וכרטיסים.",
                       f"כל האירועים הקרובים שיש בהם כרטיס {g}, מכל אתרי הכרטיסים במקום אחד.", g),
@@ -1190,6 +1330,9 @@ def _landing_text(kind: str, lang: str, label: str, place: str = "") -> tuple[st
         "abroad_country": (f"Events {p}: concerts and festivals",
                            f"Tickets and packages for concerts, parties and festivals {p}: dates, venues and prices.",
                            f"Every upcoming concert and festival {p}.", p),
+        "abroad_city": (f"What's on {p}: concerts, parties and festivals",
+                        f"Upcoming concerts, parties and festivals {p}: dates, venues, prices and tickets.",
+                        f"Every upcoming event {p}, from ticketing and travel-package sites in one place.", p),
         "price": (f"Events {g} in Israel: concerts, parties and shows",
                   f"Upcoming events in Israel with a ticket {g}: concerts, parties, stand-up and shows, with dates, venues and tickets.",
                   f"Every upcoming event with a ticket {g}, from every ticketing site in one place.", g),
@@ -1242,6 +1385,8 @@ class Landing:
     region: str | None = None
     genre: str | None = None
     abroad: bool = False
+    country: str | None = None  # abroad: the country's code
+    world: AbroadCity | None = None  # a city abroad
 
 
 def resolve_landing(session: Session, cfg: Settings, lang: str, path: str) -> Landing | None:
@@ -1287,7 +1432,21 @@ def resolve_landing(session: Session, cfg: Settings, lang: str, path: str) -> La
         if code is None:
             return None
         name = country_name(code, lang)
-        land = Landing("abroad_country", path, name, f"ב{name}" if he else f"in {name}", [EventRow.country == code], abroad=True)
+        land = Landing("abroad_country", path, name, f"ב{name}" if he else f"in {name}", [EventRow.country == code], abroad=True, country=code)
+    elif head == "abroad" and len(rest) in (2, 3):
+        world = _abroad_city(f"/abroad/{rest[0]}/{rest[1]}", session)
+        sub = rest[2] if len(rest) == 3 else None
+        if world is None or (sub is not None and sub not in abroad_city_subpages(session, cfg, world)):
+            return None
+        name = world.name(lang)
+        when = sub if sub in WHENS else None
+        # Its sub-pages read as an Israeli city's ("What's on tonight in Paris"): those texts name no country.
+        kind = f"city_{when}" if when else "city_genre" if sub else "abroad_city"
+        land = Landing(kind, path, genre_label(sub, lang) if sub and not when else name, f"ב{name}" if he else f"in {name}",
+                       [EventRow.country == world.code, EventRow.city.in_(world.spellings)], abroad=True, country=world.code, world=world)  # fmt: skip
+        if sub and not when:
+            land.genre = sub
+            land.where.append(_genre_filter(sub, cfg))
     elif head == "price" and len(rest) == 1 and rest[0] in price_pages(session):
         band = PRICE_PAGES[rest[0]]
         land = Landing("price", path, PRICE_LABELS[band][0 if he else 1], where=_price_where(band))
@@ -1338,7 +1497,23 @@ def _related(session: Session, cfg: Settings, lang: str, path: str) -> list[tupl
         if c:
             city_links(c)
     elif head == "abroad":
-        out += [(f"/abroad/{slug}", country_name(code, lang)) for slug, code in abroad_countries(session).items()]
+        # A city: its country, the country's other cities, its venues. A country: its cities. Then the other countries.
+        countries = abroad_countries(session)
+        world = _abroad_city(f"/abroad/{rest[0]}/{rest[1]}", session) if len(rest) >= 2 else None
+        code = world.code if world else countries.get(rest[0]) if rest else None
+        if world:
+            in_w = f"ב{world.he}" if he else f"in {world.en}"
+            out.append((world.path, f"כל האירועים {in_w}" if he else f"All events {in_w}"))
+            labels = {"tonight": "הערב" if he else "Tonight", "weekend": "בסופ״ש" if he else "This weekend"}
+            out += [(f"{world.path}/{s}", f"{labels.get(s) or genre_label(s, lang)} {in_w}") for s in abroad_city_subpages(session, cfg, world)[:14]]
+            out.append((f"/abroad/{world.country_slug}", f"כל האירועים ב{country_name(world.code, lang)}" if he else f"All events in {country_name(world.code, lang)}"))
+        out += [(c.path, c.name(lang)) for c in abroad_cities(session) if code and c.code == code][:16]
+        if world:
+            venues = Counter(session.scalars(select(EventRow.venue_name).where(
+                upcoming_filter(), EventRow.country == world.code, EventRow.city.in_(world.spellings), EventRow.venue_name.is_not(None))))  # fmt: skip
+            out += [(f"/venue/{quote(v, safe='')}", v) for v, _ in venues.most_common(8) if v]
+        out += [(f"/abroad/{slug}", country_name(c, lang)) for slug, c in countries.items()]
+        out.append(("/cities", "כל הערים" if he else "All cities"))
     elif head == "price":
         out += [(f"/price/{slug}", ("אירועים " if he else "Events ") + PRICE_LABELS[b][0 if he else 1]) for slug, b in price_pages(session).items()]
     if head in ("city", "genre", "region", "now", "tonight", "weekend"):
@@ -1368,9 +1543,13 @@ def landing_info(session: Session, cfg: Settings, lang: str, path: str) -> dict[
             info["artist_links"] = artist_links_for(session, cfg.artist_links, [name]).get(name, [])
         return info
     title, _, intro, _ = _landing_text(land.kind, lang, land.label, land.place)
-    country = abroad_countries(session).get(path.rsplit("/", 1)[-1]) if land.abroad else None
-    city = {"he": land.city.he, "en": land.city.en} if land.city else None
-    return {"title": title, "intro": _intro(land, lang) or intro, "links": links, "country": country, "city": city}
+    country = land.country
+    city = {"he": land.city.he, "en": land.city.en} if land.city else {"he": land.world.he, "en": land.world.en} if land.world else None
+    # The city's centre and clock: the page's forecast strip (web city/CityBar).
+    center = land.city.center if land.city else land.world.center if land.world else None
+    zone = city_zone(land.world.en, land.world.code) if land.world else cfg.timezone if land.city else None
+    return {"title": title, "intro": _intro(land, lang) or intro, "links": links, "country": country, "city": city,
+            "center": list(center) if center else None, "zone": zone}  # fmt: skip
 
 
 def _intro(land: Landing, lang: str) -> str | None:
@@ -1385,7 +1564,7 @@ def landing_page(session: Session, cfg: Settings, lang: str, path: str) -> Page 
     title, desc, intro, scope = _landing_text(land.kind, lang, land.label, land.place)
     intro = _intro(land, lang) or intro
     today = datetime.now(ZoneInfo(cfg.timezone)).date()
-    tonight = [r for r in rows if r.local_date == today] if land.kind in ("city", "region") else None
+    tonight = [r for r in rows if r.local_date == today] if land.kind in ("city", "region", "abroad_city") else None
     faq = _faq(rows, lang, scope, cfg.site.name, tonight)
     faq_ld = {
         "@context": "https://schema.org",
@@ -1405,6 +1584,18 @@ def landing_page(session: Session, cfg: Settings, lang: str, path: str) -> Page 
         if c.center:
             city_ld["geo"] = {"@type": "GeoCoordinates", "latitude": c.center[0], "longitude": c.center[1]}
         jsonld.append(city_ld)
+    elif land.world:
+        w = land.world
+        world_ld: dict[str, Any] = {
+            "@context": "https://schema.org",
+            "@type": "City",
+            "name": w.name(lang),
+            "url": _url(cfg, w.path, lang),
+            "containedInPlace": {"@type": "Country", "name": country_name(w.code, lang)},
+        }
+        if w.center:
+            world_ld["geo"] = {"@type": "GeoCoordinates", "latitude": w.center[0], "longitude": w.center[1]}
+        jsonld.append(world_ld)
     faq_html = "".join(f"<h3>{escape(q)}</h3><p>{escape(a)}</p>" for q, a in faq)
     return Page(
         title=f"{title} · {cfg.site.name}",
@@ -1421,8 +1612,9 @@ def landing_page(session: Session, cfg: Settings, lang: str, path: str) -> Page 
 
 def _landing_links(session: Session, cfg: Settings, lang: str) -> str:
     """Links from the home page, so crawlers reach every landing page."""
-    # City sub-pages (/city/x/techno) are linked from their city page, not from here.
-    paths = [x for x in _landing_paths(session, cfg) if not (x[0].startswith("/city/") and x[0].count("/") == 3)]
+    # City sub-pages (/city/x/techno) are linked from their city page, cities abroad from their country's page.
+    paths = [x for x in _landing_paths(session, cfg) if not (x[0].startswith("/city/") and x[0].count("/") == 3)
+             and not (x[0].startswith("/abroad/") and x[0].count("/") >= 3)]  # fmt: skip
     links = [(p, he if lang == "he" else en) for p, he, en in [*paths, ("/blog", "המגזין", "Magazine")]]
     return "<nav><ul>" + "".join(f'<li><a href="{p}">{escape(n)}</a></li>' for p, n in links) + "</ul></nav>"
 
@@ -1814,6 +2006,16 @@ def register(app: FastAPI, site_dir: Path) -> None:
     def abroad(request: Request) -> HTMLResponse:
         return page(request, abroad_page)
 
+    @app.get("/cities", include_in_schema=False)
+    def cities(request: Request) -> HTMLResponse:
+        return page(request, cities_page)
+
+    @app.get("/cities-index", tags=["meta"])
+    def cities_index_(request: Request, lang: str = "he") -> list[dict[str, Any]]:
+        """Every city with a page, by country (Israel first): the /cities page's data."""
+        with request.app.state.db.session(write=False) as session:
+            return cities_index(session, cfg(request), "en" if lang == "en" else "he")
+
     @app.get("/places", include_in_schema=False)
     def places(request: Request) -> HTMLResponse:
         from partylinks.placecards.pages import places_page  # local: placecards.pages imports this module
@@ -1843,7 +2045,8 @@ def register(app: FastAPI, site_dir: Path) -> None:
         return page(request, lambda s, c, lang: landing_page(s, c, lang, request.url.path.rstrip("/")))
 
     for path in ("/now", "/tonight", "/weekend", "/genre/{genre}", "/genre/{genre}/{when}", "/city/{city}", "/city/{city}/{sub}",
-                 "/region/{region}", "/abroad/{country}", "/price/{band}"):  # fmt: skip
+                 "/region/{region}", "/abroad/{country}", "/abroad/{country}/{city}",
+                 "/abroad/{country}/{city}/{sub}", "/price/{band}"):  # fmt: skip
         app.get(path, include_in_schema=False)(landing)
 
     def _own_page(path: str, he: str, en: str) -> Callable[[Request], HTMLResponse]:

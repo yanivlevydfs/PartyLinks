@@ -14,7 +14,7 @@ from partylinks.config import Settings
 from partylinks.models import ScrapedEvent
 from partylinks.scrapers import build_scraper
 from partylinks.scrapers.base import SourceBlockedError
-from partylinks.scrapers.eventim import EventimScraper, EventimSettings, parse_event, sitemap_event_urls
+from partylinks.scrapers.eventim import EventimScraper, EventimSettings, parse_event, sitemap_event_urls, soonest_urls
 
 TZ = "Asia/Jerusalem"
 URL = "https://www.eventim.co.il/event/show-venue-22285519/"
@@ -283,3 +283,14 @@ def test_api_product_fields() -> None:
         "https://www.eventim.co.il/obj/media/IL-eventim/teaser/222x222/2022/gidigovnew-teaser.jpg",
     ]
     assert gevatron.is_sold_out and gevatron.min_price is None
+
+
+def test_event_pages_are_read_soonest_first_by_their_listed_date() -> None:
+    site = "https://www.eventim.co.il/event/"
+    far, near, city, unlisted = (f"{site}{n}-{i}/" for i, n in enumerate(["far", "near", "city", "unlisted"], 1))
+    listed = {
+        "1": (far, {"productId": "1", "typeAttributes": {"liveEntertainment": {"startDate": "2027-02-01T20:00:00+02:00"}}}),
+        "2": (near, {"productId": "2", "typeAttributes": {"liveEntertainment": {"startDate": "2026-11-20T21:00:00+02:00"}}}),
+        "3": (city, {"startDate": "2026-12-01T20:00:00"}),
+    }
+    assert soonest_urls([unlisted, far, city, near], listed, TZ) == [near, city, far, unlisted]

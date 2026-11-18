@@ -36,7 +36,7 @@ async def check(name: str, show: int) -> int:
     enricher = Enricher(settings.enrichment, settings.timezone)
     pairs = []
     async with build_scraper(name, settings) as scraper:
-        async for event in scraper.scrape():
+        async for event in scraper.events():
             pairs.append((event, enricher.enrich(event)))
         failures = list(scraper.failures)
     kept = [e for _, e in pairs if e is not None]

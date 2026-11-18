@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterable
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -100,7 +100,8 @@ class XceedScraper(BaseScraper[XceedSettings]):
             url = event_url(item, s.site_url, s.lang)
             return parse_event(await self.get_text(url), item, url, s.default_genre, self.timezone)
 
-        async for event in self.stream_isolated(list(items.values()), fetch, label=lambda i: str(i["legacyId"])):
+        # Soonest first across cities (Nov 2026): a run cut half-way already holds the nearest nights.
+        async for event in self.stream_isolated(soonest_first(items.values()), fetch, label=lambda i: str(i["legacyId"])):
             if event and is_current(event.start_at, event.end_at, retention, self.timezone):
                 yield event
 
@@ -123,6 +124,11 @@ def city_events(page_html: str) -> list[dict[str, Any]]:
         for item in page.get("items") or []
         if isinstance(item, dict) and isinstance(item.get("legacyId"), int) and clean_str(item.get("slug"))
     ]
+
+
+def soonest_first(items: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Listing items by start time, ascending; one without a start last."""
+    return sorted(items, key=lambda i: s if isinstance(s := i.get("startingTime"), int | float) else float("inf"))
 
 
 def event_url(item: dict[str, Any], site_url: str, lang: str) -> str:

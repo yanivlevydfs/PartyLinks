@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
-from partylinks.scrapers.yotzim import category_genres, parse_event
+from partylinks.scrapers.yotzim import category_genres, parse_event, soonest_first
 
 TZ = "Asia/Jerusalem"
 SITE = "https://yotzim.com"
@@ -60,3 +61,13 @@ def test_koh_phangan_in_local_time_with_age() -> None:
     assert e is not None and e.country == "TH" and e.venue_name == "Than Sadet"
     assert e.start_at is not None
     assert e.start_at.isoformat() == "2026-12-31T21:00:00+07:00" and e.min_age == 18
+
+
+def test_event_pages_soonest_first_by_card_day() -> None:
+    pages = {p: (FIXTURES / f).read_text("utf-8") for p, f in [("/events", "events.html"), ("/events/nature", "nature.html")]}
+    urls = list(category_genres(pages, {"/events": [], "/events/nature": []}, SITE))
+    ordered = soonest_first([f"{SITE}/event/no-card", *reversed(urls)], pages, SITE, date(2026, 10, 28))
+    assert ordered.index(f"{SITE}/event/thursday-night-haoman-17-05-11") < ordered.index(
+        f"{SITE}/event/vortex-festival-12-13-nov-2026"
+    )  # Thursday 5.11 before Thursday 12.11
+    assert ordered[-2:] == [f"{SITE}/event/wtgl-off-script-10-12", f"{SITE}/event/no-card"]  # 10.12, then no day

@@ -40,6 +40,24 @@ How the seller's URL is handled:
 There is no affiliate commission or payment system yet. The tags are for attribution only. A
 seller's affiliate ID can be added per source in `utm.py` when there is one.
 
+## Other outbound links (content providers)
+
+Every other link to an outside site that supplies content is tagged in the browser by `outbound()` in
+`web/src/utm.ts`: `utm_source=spotx`, `utm_medium=referral`, `utm_campaign` = our page, `utm_content` =
+the link.
+
+| Campaign | Content | Link |
+| --- | --- | --- |
+| `stores` | `site`, `box-office` | Ticket sites' home pages and box offices on /stores |
+| `place` | `book`, `site`, `menu`, `instagram` | A restaurant / bar's booking (Ontopo...), site, menu, Instagram |
+| `artist` | service name (`spotify`, `youtube`...), `profile` | An artist's pages |
+| `venue` | `web`, `facebook`, `instagram` | A venue's own pages |
+| `event` | `description` | Links inside an event's description |
+
+Links to our own site, and to tools we only hand off to (maps, Waze, calendars, share buttons,
+WhatsApp, Telegram), are not tagged. A new external link to a content provider goes through
+`outbound()`.
+
 ## Where the click came from (`?at=`)
 
 | Value | Link |
@@ -48,6 +66,9 @@ seller's affiliate ID can be added per source in `utm.py` when there is one.
 | `alt` | The same event at another seller ("also at") |
 | `bar` | Mobile sticky buy bar |
 | `seo` | Server-rendered page for crawlers |
+| `map` | The event panel on the map |
+| `tg` | The Telegram bot's event cards |
+| `tg-app` | The site opened inside Telegram |
 
 Any other value is ignored and counted as `unknown`.
 

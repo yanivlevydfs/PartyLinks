@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -229,6 +230,13 @@ def test_mevalim_rows_deal_price_and_sold_out() -> None:
     assert not on_sale.is_sold_out
 
     assert sold.is_sold_out and str(sold.url) == region and sold.min_price is None
+
+
+def test_mevalim_artwork_pages_soonest_first() -> None:
+    rows = mevalim.parse_rows((FIXTURES / "mevalim_rows.html").read_text(encoding="utf-8"))
+    events = [mevalim.parse_row(r, "https://www.mevalim.co.il/central/", TZ) for r in rows]
+    events[0].start_at, events[1].start_at = events[1].start_at, None
+    assert mevalim.soonest_first(events[::-1]) == events  # dated before undated
 
 
 def test_mevalim_artwork_from_event_page() -> None:
@@ -458,3 +466,49 @@ def test_goout_reads_go_out_links_of_other_sources() -> None:
     assert goout.event_ref("https://www.go-out.co/artist/x/y") is None
     assert goout.event_ref("https://selector.org.il/e/x") is None
     assert goout.event_ref("https://evil-go-out.co/event/1") is None
+
+
+def test_barby_shows_soonest_first() -> None:
+    shows = [
+        {"showId": "1", "showDate": "05/01/2027", "showTime": "21:00"},
+        {"showId": "2", "showDate": ""},
+        {"showId": "3", "showDate": "20/11/2026", "showTime": "22:00"},
+        {"showId": "4", "showDate": "20/11/2026", "showTime": "20:00"},
+    ]
+    assert [s["showId"] for s in barby.soonest_first(shows)] == ["4", "3", "1", "2"]
+
+
+def test_selector_listing_soonest_first() -> None:
+    rows = [
+        {"id": 1, "startDate": "2027-02-01T20:00:00Z"},
+        {"id": 2},
+        {"id": 3, "startDate": "2026-11-20T21:00:00+02:00"},
+        {"id": 4, "startDate": "2026-12-01T20:00:00Z"},
+    ]
+    assert [r["id"] for r in selector.soonest_first(rows)] == [3, 4, 1, 2]
+
+
+def test_tickchak_events_soonest_first() -> None:
+    items = load("tickchak_section")["events"]
+    events = [tickchak.parse_event(item, "https://live.tickchak.co.il") for item in items]
+    events[0].start_at, events[1].start_at = None, datetime(2027, 1, 1, tzinfo=UTC)
+    events[2].start_at = datetime(2026, 11, 20, tzinfo=UTC)
+    assert tickchak.soonest_first(events) == [events[2], events[1], events[0]]
+
+
+def test_goout_listing_soonest_first() -> None:
+    rows = [
+        {"Url": "far", "StartingDate": "2027-01-10T20:00:00.000Z"},
+        {"Url": "none"},
+        {"Url": "today", "StartingDate": "2026-11-18T21:00:00.000Z"},
+    ]
+    assert [r["Url"] for r in goout.soonest_first(rows)] == ["today", "far", "none"]
+
+
+def test_zygo_listing_soonest_first() -> None:
+    rows = [
+        {"id": "far", "startDate": "2027-01-10T20:00:00.000Z"},
+        {"id": "none"},
+        {"id": "near", "startDate": "2026-11-19T21:00:00.000Z"},
+    ]
+    assert [r["id"] for r in zygo.soonest_first(rows)] == ["near", "far", "none"]

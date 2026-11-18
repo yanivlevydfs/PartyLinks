@@ -15,8 +15,10 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from collections.abc import AsyncIterator
+from datetime import date, datetime, timedelta
 from typing import Any
 from urllib.parse import urljoin, urlsplit
+from zoneinfo import ZoneInfo
 
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, has_time, html_to_text, jsonld_nodes, schema_types, to_decimal
@@ -31,6 +33,11 @@ _AGE = re.compile(r"\d+")
 # upcoming but not of the page's category. Each runs to the next heading or the end of its section.
 _PAST = re.compile(r"<h2[^>]*>\s*(?:היה לאחרונה|מה היה).*?(?=<h2|</section>|$)", re.DOTALL)
 _SUGGESTED = re.compile(r"<h2[^>]*>\s*(?:אירועים אחרים|בינתיים).*?(?=<h2|</section>|$)", re.DOTALL)
+# A category card: its link, then its line "חמישי 5.11 · venue" (tile__s; pshow__date on the featured ones).
+_CARD = re.compile(r'href="(/event/[^"#?]+)"[^>]*>(.*?)</a>', re.DOTALL)
+_CARD_DAY = re.compile(r'class="(?:tile__s|pshow__date)"[^>]*>([^<]*)')
+_DAY_MONTH = re.compile(r"(?<![\d.])(\d{1,2})\.(\d{1,2})(?![\d.])")
+_RUNNING_DAYS = 7  # a card day this far back is a festival still running, not next year's
 SITE_NAME = "יוצאים!"  # the guide itself, named as organizer of the nights it runs
 
 
@@ -58,11 +65,39 @@ class YotzimScraper(BaseScraper[YotzimSettings]):
         if not self._genres:
             raise ParseError("no category lists any upcoming event")
         self.log.debug("%d upcoming event pages", len(self._genres))
-        async for event in self.stream_isolated(self._genres, self._fetch_event, label=lambda u: u):
+        # Categories list theirs one after another: event pages soonest first by their card's day, so a
+        # cut run holds the nearest week (Nov 2026).
+        today = datetime.now(ZoneInfo(self.timezone)).date()
+        urls = soonest_first(list(self._genres), loaded, s.site_url, today)
+        async for event in self.stream_isolated(urls, self._fetch_event, label=lambda u: u):
             yield event
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
         return parse_event(await self.get_text(url), url, self.timezone, self._genres[url])
+
+
+def soonest_first(urls: list[str], pages: dict[str, str], site_url: str, today: date) -> list[str]:
+    """Event pages by the day their category card shows ("שישי 6.11", no year: the next one, a few days
+    back for a festival already running); pages without a card day last."""
+    days: dict[str, date] = {}
+    for raw in pages.values():
+        for href, card in _CARD.findall(_PAST.sub("", raw)):
+            line = _CARD_DAY.search(card)
+            found = _DAY_MONTH.search(line.group(1)) if line else None
+            if found and (day := _upcoming_day(int(found[1]), int(found[2]), today)):
+                days.setdefault(urljoin(site_url + "/", href), day)
+    return sorted(urls, key=lambda u: days.get(u, date.max))
+
+
+def _upcoming_day(day: int, month: int, today: date) -> date | None:
+    for year in (today.year, today.year + 1):
+        try:
+            found = date(year, month, day)
+        except ValueError:
+            return None
+        if found >= today - timedelta(days=_RUNNING_DAYS):
+            return found
+    return None
 
 
 def category_genres(pages: dict[str, str], categories: dict[str, list[str]], site_url: str) -> dict[str, list[str]]:

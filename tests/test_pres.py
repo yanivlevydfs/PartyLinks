@@ -157,3 +157,18 @@ def test_poster_fallback_reads_the_hero_image() -> None:
     assert pres._poster(pattern, page) == "https://cdn.example/uploads/%D7%94%D7%9C%D7%95-%D7%91%D7%98%D7%99.jpg?a=1&b=2"
     assert pres._poster(pattern, "<html></html>") is None
     assert pres._poster(None, page) is None
+
+
+def test_shows_of_all_hosts_are_priced_soonest_first() -> None:
+    kupat, lessin = pres.PresHost(key="kupat", url=KUPAT), pres.PresHost(key="lessin", url=LESSIN)
+
+    def show(host: pres.PresHost, fid: str, when: str) -> pres.Show:
+        return host, None, [{"id": 1, "featureId": fid, "dateTime": when}]
+
+    work = [
+        show(kupat, "far", "2027-01-10T20:00:00"),
+        show(kupat, "mid", "2026-12-01T20:00:00+02:00"),
+        show(lessin, "near", "2026-11-20T21:00:00"),
+    ]
+    ordered = pres.shows_soonest_first(work, TZ)
+    assert [s[2][0]["featureId"] for s in ordered] == ["near", "mid", "far"]

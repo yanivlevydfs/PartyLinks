@@ -1,8 +1,11 @@
 // Concerts and festivals abroad: their own feed, kept out of the Israeli one (API ?abroad=true).
 // /abroad/<country>: one country (its code and title come from the server, like the page crawlers get).
+// /abroad/<country>/<city>: one city there (its names come from the server too); .../tonight, .../weekend, .../<genre>: its sub-pages.
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { useCategories, useLandingInfo } from "../api";
+import { CityBar } from "../city/CityBar";
+import { whenParams } from "../Filters";
 import type { Facet } from "../types";
 import { EventGrid, Hero, Related, Select, useT, useTitle } from "../ui";
 import { useWeb } from "../site_params/useWeb";
@@ -11,7 +14,7 @@ const UNKNOWN = "ZZ"; // the server's code for an event abroad in an unknown cou
 
 export default function Abroad() {
   const { t, lang } = useT();
-  const { country } = useParams();
+  const { country, city: place, sub } = useParams();
   const { pathname } = useLocation();
   const info = useLandingInfo(pathname, lang).data;
   const title = (country && info?.title) || t.abroad.title;
@@ -35,6 +38,9 @@ export default function Abroad() {
   useEffect(() => setText(q), [q]);
 
   const code = country ? info?.country ?? undefined : pick || undefined;
+  // A city's page: the server's name for it (the API finds its other spellings: "Paris" is "פריז" too).
+  const where = place ? info?.city?.en : city || undefined;
+  const subParams = sub === "tonight" || sub === "weekend" ? whenParams(sub) : sub ? { genre: sub } : {};
   const all = useCategories({ abroad: "true" }).data;
   // A country's cities only: the list follows the chosen country.
   const cities = useCategories({ abroad: "true", country: code }).data?.cities ?? [];
@@ -59,7 +65,7 @@ export default function Abroad() {
           <input className="search" type="search" value={text} onChange={(e) => setText(e.target.value)}
             placeholder={t.abroad.searchHint} aria-label={t.search} />
           {suggest && all && (
-            <Suggestions text={text} countries={country ? [] : countries} cities={all.cities} artists={all.lineup} venues={all.venues}
+            <Suggestions text={text} countries={country ? [] : countries} cities={place ? [] : all.cities} artists={all.lineup} venues={all.venues}
               countryName={name} onCountry={(c) => go({ country: c, city: "", q: "" })} onCity={(c) => go({ city: c, q: "" })}
               onText={(v) => { setText(v); go({ q: v }); }} />
           )}
@@ -73,11 +79,13 @@ export default function Abroad() {
               options={[["", t.abroad.allCountries], ...countries.map((c): [string, string] => [c.value, `${name(c.value)} (${c.events})`])]} />
           </div>
         )}
-        <div className="sort">
-          <span className="sort-label">{t.abroad.city}</span>
-          <Select value={city} onChange={(v) => set({ city: v })} label={t.abroad.city}
-            options={[["", t.abroad.allCities], ...byName(cities).map((c): [string, string] => [c.value, `${c.value} (${c.events})`])]} />
-        </div>
+        {!place && (
+          <div className="sort">
+            <span className="sort-label">{t.abroad.city}</span>
+            <Select value={city} onChange={(v) => set({ city: v })} label={t.abroad.city}
+              options={[["", t.abroad.allCities], ...byName(cities).map((c): [string, string] => [c.value, `${c.value} (${c.events})`])]} />
+          </div>
+        )}
         <label className="sort">
           <span className="sort-label">{t.abroad.from}</span>
           <input type="date" value={from} max={to || undefined} onChange={(e) => set({ from: e.target.value })} aria-label={t.abroad.from} />
@@ -91,12 +99,13 @@ export default function Abroad() {
         )}
       </div>
       <main className="wrap">
-        {(!country || info?.country) && (
+        {place && <CityBar />}
+        {(!country || info?.country) && (!place || where) && (
           <EventGrid
             params={{
-              abroad: "true", country: code, city: city || undefined, q: q.length >= 2 ? q : undefined,
+              abroad: "true", country: code, city: where, q: q.length >= 2 ? q : undefined,
               date_from: from ? `${from}T00:00:00` : undefined, date_to: to ? `${to}T23:59:59` : undefined,
-              source: source || undefined,
+              source: source || undefined, ...subParams,
             }}
             empty={(page) => page?.did_you_mean ? (
               <div className="msg">

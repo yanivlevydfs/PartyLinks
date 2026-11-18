@@ -13,7 +13,7 @@ from partylinks.config import get_settings
 from partylinks.enrichment import Enricher
 from partylinks.models import TierStatus
 from partylinks.parsing import ParseError
-from partylinks.scrapers.xceed import city_events, event_url, parse_event
+from partylinks.scrapers.xceed import city_events, event_url, parse_event, soonest_first
 
 TZ = "Asia/Jerusalem"
 ITEM = {
@@ -103,3 +103,13 @@ def test_unpriced_night_without_genres_and_cancelled_event() -> None:
     assert (event.min_price, event.tickets, event.source_genres) == (None, [], ["nightlife"])
     cancelled = _event_page([]).replace("EventScheduled", "EventCancelled")
     assert parse_event(cancelled, ITEM, "u", "nightlife", TZ) is None
+
+
+def test_soonest_first_across_cities() -> None:
+    items = [
+        {"legacyId": 1, "startingTime": 300},
+        {"legacyId": 2},
+        {"legacyId": 3, "startingTime": 100},
+        {"legacyId": 4, "startingTime": 200},
+    ]
+    assert [i["legacyId"] for i in soonest_first(items)] == [3, 4, 1, 2]

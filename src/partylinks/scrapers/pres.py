@@ -33,7 +33,7 @@ import html as html_lib
 import json
 import re
 from collections.abc import AsyncIterator, Iterable
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 from urllib.parse import quote, unquote
 
@@ -100,6 +100,9 @@ class PresSettings(SourceSettings):
     skip_titles: list[str] = Field(default_factory=list)
 
 
+Show = tuple[PresHost, dict[str, Any] | None, list[dict[str, Any]]]  # host, feature, its performances
+
+
 def _now(timezone: str) -> datetime:
     return datetime.now(zone(timezone))
 
@@ -109,6 +112,9 @@ class PresScraper(BaseScraper[PresSettings]):
     settings_model = PresSettings
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
+        # Every host's listing first, then the shows of all hosts by their next performance: a run cut
+        # half-way already holds every host's nearest week, not the first hosts' whole season (Nov 2026).
+        work: list[Show] = []
         for host in self.settings.hosts:
             try:
                 shows, features = await self._list_host(host)
@@ -123,15 +129,16 @@ class PresScraper(BaseScraper[PresSettings]):
                 sum(map(len, shows.values())),
                 len(shows),
             )
-            async for events in self.stream_isolated(
-                [(host, features.get(fid), rows) for fid, rows in shows.items()],
-                self._show_events,
-                label=lambda item: f"{item[0].key} show {item[2][0].get('featureId')}",
-            ):
-                for event in events:
-                    yield event
+            work += [(host, features.get(fid), rows) for fid, rows in shows.items()]
+        async for events in self.stream_isolated(
+            shows_soonest_first(work, self.timezone),
+            self._show_events,
+            label=lambda item: f"{item[0].key} show {item[2][0].get('featureId')}",
+        ):
+            for event in events:
+                yield event
 
-    async def _show_events(self, item: tuple[PresHost, dict[str, Any] | None, list[dict[str, Any]]]) -> list[ScrapedEvent]:
+    async def _show_events(self, item: Show) -> list[ScrapedEvent]:
         """Every upcoming performance of one show, priced from its next performance."""
         host, feature, performances = item
         payload = await self.optional(
@@ -226,6 +233,13 @@ def _poster(pattern: re.Pattern[str] | None, page_html: str) -> str | None:
     """The poster ``src`` an ``artwork_image`` pattern finds on a page, percent-encoded."""
     m = pattern.search(page_html) if pattern else None
     return quote(html_lib.unescape(m.group(1)), safe=":/%?=&") if m else None
+
+
+def shows_soonest_first(work: list[Show], timezone: str) -> list[Show]:
+    """Shows of all hosts by their next performance (rows are soonest first): stream_isolated fetches
+    in input order."""
+    last = datetime.max.replace(tzinfo=UTC)
+    return sorted(work, key=lambda show: parse_iso(show[2][0].get("dateTime"), timezone) or last)
 
 
 def upcoming_shows(

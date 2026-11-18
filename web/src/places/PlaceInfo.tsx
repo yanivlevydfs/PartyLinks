@@ -3,6 +3,7 @@
 // One request for the page.
 import { useQuery } from "@tanstack/react-query";
 import { useT } from "../ui";
+import { outbound } from "../utm";
 import type { EventSummary } from "../types";
 import "./placeinfo.css";
 
@@ -96,12 +97,12 @@ export function PlaceInfo({ id }: { id: string }) {
         </p>
       )}
       <div className="pi-actions">
-        {d.ontopo_url && <a className="buy" href={d.ontopo_url} {...external}>📅 {p.book} ↗</a>}
-        {!d.ontopo_url && d.booking_url && <a className="buy" href={d.booking_url} {...external}>📅 {p.bookOther} ↗</a>}
+        {d.ontopo_url && <a className="buy" href={outbound(d.ontopo_url, "place", "book")} {...external}>📅 {p.book} ↗</a>}
+        {!d.ontopo_url && d.booking_url && <a className="buy" href={outbound(d.booking_url, "place", "book")} {...external}>📅 {p.bookOther} ↗</a>}
         {d.phone && <a href={`tel:${d.phone.replace(/[^\d+]/g, "")}`}>📞 {p.call}</a>}
-        {d.website && <a href={d.website} {...external}>🌐 {p.site} ↗</a>}
-        {d.menu_url && <a href={d.menu_url} {...external}>🍽️ {p.menu} ↗</a>}
-        {d.instagram && <a href={d.instagram} {...external}>Instagram ↗</a>}
+        {d.website && <a href={outbound(d.website, "place", "site")} {...external}>🌐 {p.site} ↗</a>}
+        {d.menu_url && <a href={outbound(d.menu_url, "place", "menu")} {...external}>🍽️ {p.menu} ↗</a>}
+        {d.instagram && <a href={outbound(d.instagram, "place", "instagram")} {...external}>Instagram ↗</a>}
       </div>
       {d.deal_note && <p className="pi-note" dir="auto">💡 {d.deal_note}</p>}
       <div className="pi-weeks">

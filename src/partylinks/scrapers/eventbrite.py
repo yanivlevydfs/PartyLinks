@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterable
 from datetime import UTC, datetime
 from typing import Any
 
@@ -102,7 +102,8 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
         for path in dict.fromkeys(s.listing_paths):
             if path != s.listing_path:
                 await self.optional(f"listing {path}", self._list_path(path, events))
-        return list(events.values())
+        # The listings are merged page by page (Nov 2026): soonest first, a cut run holds the nearest week.
+        return soonest_first(events.values())
 
     async def _list_path(self, path: str, events: dict[str, dict[str, Any]]) -> None:
         """Every page of one discovery listing into ``events`` (by id: one event, many listings)."""
@@ -143,6 +144,12 @@ def server_data(page_html: str) -> dict[str, Any]:
 def offer(page_html: str) -> dict[str, Any]:
     """The event page's schema.org (Aggregate)Offer ({} when missing)."""
     return next((n for n in jsonld_nodes(page_html) if schema_types(n) & {"aggregateoffer", "offer"}), {})
+
+
+def soonest_first(events: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Listing entries by start, ascending; one without a start last."""
+    far = datetime.max.replace(tzinfo=UTC)
+    return sorted(events, key=lambda e: _when(e, "start") or far)
 
 
 def _when(e: dict[str, Any], which: str) -> datetime | None:

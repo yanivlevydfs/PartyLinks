@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from functools import lru_cache
 from importlib import resources
@@ -92,7 +92,9 @@ class VibezScraper(BaseScraper[VibezSettings]):
                 ):
                     listed[item["id"]] = item
         self.log.debug("%d events with the producers' unlisted ones", len(listed))
-        async for event in self.stream_isolated(list(listed), self._fetch_event, label=lambda i: i):
+        # Listing pages, then the producers' catalogues (Nov 2026): soonest first, a cut run holds the nearest nights.
+        ids = [i["id"] for i in soonest_first(list(listed.values()), self.timezone)]
+        async for event in self.stream_isolated(ids, self._fetch_event, label=lambda i: i):
             yield event
 
     async def _fetch_event(self, event_id: str) -> ScrapedEvent | None:
@@ -110,6 +112,12 @@ def _coming(item: dict[str, Any], timezone: str) -> bool:
         end = None
     when = end or start
     return bool(when and when > datetime.now(when.tzinfo))
+
+
+def soonest_first(items: list[dict[str, Any]], timezone: str) -> list[dict[str, Any]]:
+    """Listing rows by ``start_time``, ascending; rows without one keep their order, last."""
+    far = datetime.max.replace(tzinfo=UTC)
+    return sorted(items, key=lambda i: parse_iso(i.get("start_time"), i.get("timezone") or timezone) or far)
 
 
 def parse_event(

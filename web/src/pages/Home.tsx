@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CityBar } from "../city/CityBar";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ForYouRow } from "../alerts/ForYouRow";
 import { holidayWhen, useCategories, useEvents, useHolidays, useLandingInfo, useRails, useSuggest, type Holiday } from "../api";
@@ -178,6 +179,7 @@ export default function Home({ landing }: { landing?: "now" | "tonight" | "weeke
           <>
             {!landing && !f.q && <button className="quiz-again" onClick={again}>✨ {t.quiz.again}</button>}
             {landing && info?.intro && <p className="landing-intro">{info.intro}</p>}
+            {landing === "city" && <CityBar />}
             <Filters />
             {/* A search keeps its results right under the filters. */}
             {!f.q && <ForYouRow />}

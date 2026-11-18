@@ -22,14 +22,16 @@ def test_sitemap_keeps_event_pages_from_today_on() -> None:
         f"<url><loc>{SITE}/{p}</loc></url>"
         for p in (
             "event/old-night-2026-11-16-1",
-            "event/tonight-2026-11-17-2",
+            "event/undated-4",
             "event/fest-2027-03-01-3",
+            "event/tonight-2026-11-17-2",
             "artist/yahel",
         )
     )
-    assert event_urls(xml, SITE, date(2026, 11, 17)) == [
+    assert event_urls(xml, SITE, date(2026, 11, 17)) == [  # soonest first, undated last
         f"{SITE}/event/tonight-2026-11-17-2",
         f"{SITE}/event/fest-2027-03-01-3",
+        f"{SITE}/event/undated-4",
     ]
 
 

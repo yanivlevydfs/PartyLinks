@@ -40,6 +40,12 @@ def test_one_event_per_movie_branch_day_within_days_ahead() -> None:
     assert e.image_url and e.image_url.startswith("https://cdn.presglobal.pro/")
 
 
+def test_soonest_first() -> None:
+    # Prices are fetched in this order, one at a time: a run cut midway keeps the nearest days.
+    starts = [e.start_at for e in parse_presentations(LISTING, FEATURES, SETTINGS, TZ, date(2026, 10, 22))]
+    assert starts == sorted(starts)  # type: ignore[type-var]
+
+
 def test_min_age_from_rating_and_missing_features() -> None:
     rated = parse_presentations(LISTING, [], SETTINGS, TZ, date(2026, 10, 22))
     adult = next(e for e in rated if e.source_event_id == "6433:1173:2026-10-23")

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import html as html_lib
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterable
 from datetime import UTC, datetime, time
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -85,7 +85,8 @@ class ShowsHappeningScraper(BaseScraper[ShowsHappeningSettings]):
                 entry = listed.setdefault(card["path"], {**card, "dates": []})
                 entry["dates"].append(card["date"])
         self.log.debug("listed %d events (%d shows)", len(listed), sum(len(e["dates"]) for e in listed.values()))
-        async for events in self.stream_isolated(list(listed.values()), self._fetch_event, label=lambda e: e["path"]):
+        events_by_date = soonest_first(listed.values())
+        async for events in self.stream_isolated(events_by_date, self._fetch_event, label=lambda e: e["path"]):
             for event in events:
                 yield event
 
@@ -120,6 +121,12 @@ def cards(page_html: str, country: str) -> list[dict[str, Any]]:
             "image": html_lib.unescape(image), "title": clean_str(html_lib.unescape(title)),
         })
     return out
+
+
+def soonest_first(listed: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Events by their first listed date: the countries' calendars are read one after another, and a run
+    cut short (a deploy) must hold every country's nearest shows, not Malta's whole season (Nov 2026)."""
+    return sorted(listed, key=lambda e: min(e["dates"]))
 
 
 def show_id(page_html: str) -> str | None:

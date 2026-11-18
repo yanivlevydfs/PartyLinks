@@ -204,3 +204,13 @@ def test_festival_cards_give_artwork_site_page_and_genres() -> None:
     ]  # fmt: skip
     enriched = Enricher(settings.enrichment, settings.timezone).enrich(film)
     assert enriched is not None and {"cinema", "festival", "punk"} <= set(enriched.genres)
+
+
+def test_movie_days_soonest_first() -> None:
+    rows = [
+        {"id": 1, "featureId": "a", "dateTime": "2026-10-24T20:00:00", "businessDate": "2026-10-24"},
+        {"id": 2, "featureId": "b", "dateTime": "2026-10-22T21:00:00", "businessDate": "2026-10-22"},
+        {"id": 3, "featureId": "a", "dateTime": "2026-10-22T18:00:00", "businessDate": "2026-10-22"},
+    ]
+    groups = group_screenings({"presentations": rows}, TZ, date(2026, 10, 22), 7)
+    assert list(groups) == [("a", date(2026, 10, 22)), ("b", date(2026, 10, 22)), ("a", date(2026, 10, 24))]

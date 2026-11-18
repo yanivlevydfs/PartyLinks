@@ -23,7 +23,7 @@ import asyncio
 import re
 from collections import defaultdict
 from collections.abc import AsyncIterator
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from urllib.parse import urljoin, urlsplit
 
@@ -87,7 +87,9 @@ class HotCinemaScraper(BaseScraper[HotCinemaSettings]):
             return parse_day(day, payload, movies, s, self.timezone)
 
         listed = self.stream_isolated(days, day_events, lambda d: f"day {d.isoformat()}")
-        events = [event async for day_list in listed for event in day_list]
+        # Days finish in any order; priced (and saved) soonest first, so a cut run holds the nearest
+        # shows (Nov 2026).
+        events = soonest_first([event async for day_list in listed for event in day_list])
         shop = BiggerPicture(self, s.tickets_api, s.sale_channel, s.tickets_language)
         sites: dict[int, asyncio.Task[int]] = {}
 
@@ -115,6 +117,12 @@ class HotCinemaScraper(BaseScraper[HotCinemaSettings]):
 
         async for event in self.stream_isolated(events, priced, lambda e: e.source_event_id):
             yield event
+
+
+def soonest_first(events: list[ScrapedEvent]) -> list[ScrapedEvent]:
+    """Events by start time, undated last: stream_isolated fetches in input order."""
+    last = datetime.max.replace(tzinfo=UTC)
+    return sorted(events, key=lambda e: e.start_at or last)
 
 
 def parse_movies(page_html: str, site_url: str) -> dict[int, Movie]:

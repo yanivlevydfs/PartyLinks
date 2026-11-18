@@ -33,3 +33,7 @@ def test_seller_params_are_kept_as_is_and_old_utm_replaced() -> None:
 
 def test_disabled_leaves_the_url_alone() -> None:
     assert tagged("https://s.example/a?x=1", UtmSettings(enabled=False), row()) == "https://s.example/a?x=1"
+
+
+def test_map_panel_clicks_keep_their_placement() -> None:
+    assert utm_params(UtmSettings(), row(), "map")["utm_content"] == "map"

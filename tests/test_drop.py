@@ -22,6 +22,18 @@ def test_sitemap_keeps_event_pages_dated_from_now_on() -> None:
     ]
 
 
+def test_sitemap_pages_soonest_first_undated_last() -> None:
+    sitemap = "".join(
+        f"<url><loc>https://tdrop.net/events/{i}</loc>{f'<lastmod>{d}</lastmod>' if d else ''}</url>"
+        for i, d in (("aaaaaaaa", "2027-01-05T00:00:00Z"), ("bbbbbbbb", None), ("cccccccc", "2026-11-20T00:00:00Z"))
+    )
+    assert upcoming_urls(sitemap, datetime(2026, 11, 18, tzinfo=UTC)) == [
+        "https://tdrop.net/events/cccccccc",
+        "https://tdrop.net/events/aaaaaaaa",
+        "https://tdrop.net/events/bbbbbbbb",
+    ]
+
+
 def test_event_page_without_trusting_the_zero_price() -> None:
     url = "https://tdrop.net/events/edb2b19a0dd34733"
     e = parse_event((FIXTURES / "event_edb2b19a0dd34733.html").read_text("utf-8"), url, TZ)

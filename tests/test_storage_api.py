@@ -478,6 +478,10 @@ def test_blog_weekly_post_and_dated_embeds(tmp_path: Path) -> None:
     english = blog._weekly(weekly / "week.html", "en", on)
     assert english and english.title == "This week 15.11–21.11" and english.lang == "en"
     assert blog.embed_params("from=12/2026 to=x", settings) == {"page_size": "6"}  # not a date: ignored
+    body = "<p>a<!--until 2026-12-05--> b<!--/until--> c</p>"
+    dated = blog.Post(slug="d", title="t", description="d", date=date(2026, 1, 1), body=body)
+    assert blog._dated(dated, date(2026, 12, 4)).body == "<p>a b c</p>"  # the festival is still ahead
+    assert blog._dated(dated, date(2026, 12, 5)).body == "<p>a c</p>" and dated.body == body  # over; the cache kept
 
 
 def test_blog_post_picture_looked_up_once_then_refreshed_behind(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1243,6 +1247,43 @@ def test_a_search_that_finds_nothing_is_logged(tmp_path: Path, caplog: pytest.Lo
     assert [r.getMessage() for r in caplog.records if "search miss" in r.getMessage()] == ["search miss: 'zzzqqq'"]
 
 
+def test_a_city_abroad_has_its_page_under_its_country(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    future = datetime.now(UTC) + timedelta(days=2)
+    seed(settings, [
+        event("p1", future, title="Paris night", city="Paris", country="FR", address=None, source_genres=["techno"]),
+        event("p2", future, title="Paris rave", city="פריז", country="FR", address=None, source_genres=["techno"]),
+        event("p3", future, title="Paris late", city="פריז, צרפת", country="FR", address=None, source_genres=["techno"]),
+        event("lyon", future, title="Lyon night", city="Lyon", country="FR", address=None),
+        *(event(f"tlv{i}", future, title=f"Tel Aviv night {i}") for i in range(3)),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        paris = client.get("/abroad/france/paris")
+        assert paris.status_code == 200 and "מה עושים בפריז" in paris.text and '"City"' in paris.text
+        assert "Paris night" in paris.text and "Paris late" in paris.text and "Lyon night" not in paris.text
+        assert client.get("/abroad/france/lyon").status_code == 410  # one event: no thin page
+        assert "What's on in Paris" in client.get("/abroad/france/paris?lang=en").text
+        info = client.get("/landing-info", params={"path": "/abroad/france/paris"}).json()
+        assert info["country"] == "FR" and info["city"]["en"] == "Paris"
+        assert info["zone"] == "Europe/Paris" and round(info["center"][0]) == 49  # the forecast strip's point
+        # Its sub-pages, as an Israeli city's: a genre with enough events; tonight has none (they are in 2 days).
+        techno = client.get("/abroad/france/paris/techno")
+        assert techno.status_code == 200 and "בפריז" in techno.text and "Paris night" in techno.text
+        assert "/abroad/france/paris/techno" in [link["path"] for link in info["links"]]
+        assert client.get("/abroad/france/paris/karaoke").status_code == 410
+        assert client.get("/abroad/france/paris/tonight").status_code == 410
+        assert client.get("/landing-info", params={"path": "/city/tel-aviv"}).json()["zone"] == settings.timezone
+        assert "/abroad/france" in [link["path"] for link in info["links"]]
+        assert 'href="/abroad/france/paris"' in client.get("/abroad/france").text
+        assert "/abroad/france/paris" in client.get("/sitemap-1.xml").text
+        index = client.get("/cities-index", params={"lang": "en"}).json()
+        assert index[0]["code"] == "IL" and index[0]["cities"][0]["path"] == "/city/tel-aviv"
+        assert index[1] == {"code": "FR", "name": "France", "path": "/abroad/france", "events": 4,
+                            "cities": [{"path": "/abroad/france/paris", "name": "Paris", "events": 3}]}  # fmt: skip
+        page = client.get("/cities")
+        assert page.status_code == 200 and 'href="/abroad/france/paris"' in page.text and 'href="/city/tel-aviv"' in page.text
+
+
 def test_abroad_filters_come_from_the_stored_events(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
     future = datetime.now(UTC) + timedelta(days=2)
@@ -1489,3 +1530,12 @@ def test_a_listing_with_no_point_takes_its_duplicates(tmp_path: Path) -> None:
     with db.session() as session:
         points = {r.source_event_id: (r.latitude, r.longitude) for r in session.query(EventRow)}
     assert points["bare"] == (32.0535, 34.7744) and points["alone"] == (None, None)
+
+
+def test_a_city_abroad_is_named_in_hebrew_not_yiddish() -> None:
+    from partylinks.places import city_abroad
+    from partylinks.seo import hebrew_city_name
+
+    names = {city: hebrew_city_name(city_abroad(city, code)[1]) for city, code in  # type: ignore[index]
+             [("Barcelona", "ES"), ("Paris", "FR"), ("London", "GB"), ("New York City", "US"), ("Dubai", "AE")]}  # fmt: skip
+    assert names == {"Barcelona": "ברצלונה", "Paris": "פריז", "London": "לונדון", "New York City": "ניו יורק", "Dubai": "דובאי"}

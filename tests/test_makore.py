@@ -9,7 +9,7 @@ from pathlib import Path
 
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
-from partylinks.scrapers.makore import listing_total, parse_item, parse_listing
+from partylinks.scrapers.makore import listing_total, parse_item, parse_listing, soonest_first
 
 TZ = "Asia/Jerusalem"
 PAGE = (Path(__file__).parent / "fixtures/makore/nightlife.html").read_text("utf-8")
@@ -18,6 +18,14 @@ PAGE = (Path(__file__).parent / "fixtures/makore/nightlife.html").read_text("utf
 def test_listing_items_and_category_total() -> None:
     assert len(parse_listing(PAGE)) == 4
     assert listing_total(PAGE) == 239
+
+
+def test_incomplete_events_completed_soonest_first() -> None:
+    events = [e for item in parse_listing(PAGE) if (e := parse_item(item, "חיי-לילה", TZ))]
+    undated = events[0].model_copy(update={"start_at": None})
+    ordered = soonest_first([undated, *reversed(events)])
+    starts = [e.start_at for e in ordered[:-1]]
+    assert starts == sorted(starts) and ordered[-1] is undated  # type: ignore[type-var]
 
 
 def test_item_venue_coordinates_and_box_office() -> None:

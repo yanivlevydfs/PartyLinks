@@ -1,4 +1,4 @@
-// "Share SPOTX" in the footer: shares the site itself, not one event.
+// "Share SPOTX" in the footer: shares the site itself, not one event. With `page`: that page (a city's).
 import { useState, type ReactNode } from "react";
 import { SHARE_ICONS, useT } from "../ui";
 import "./share.css";
@@ -13,6 +13,10 @@ const TEXT = {
     native: "שיתוף SPOTX",
     copy: "העתקת הקישור לאתר",
     copied: "הקישור הועתק",
+    pageLabel: "שתפו את העמוד",
+    pageOn: (name: string) => `שיתוף ב־${name}`,
+    pageNative: "שיתוף העמוד",
+    pageCopy: "העתקת הקישור לעמוד",
   },
   en: {
     label: "Like it? Share SPOTX with friends",
@@ -21,6 +25,10 @@ const TEXT = {
     native: "Share SPOTX",
     copy: "Copy the site link",
     copied: "Link copied",
+    pageLabel: "Share this page",
+    pageOn: (name: string) => `Share on ${name}`,
+    pageNative: "Share this page",
+    pageCopy: "Copy the page link",
   },
 };
 
@@ -37,11 +45,15 @@ const SHARE = (
   </g>
 );
 
-export function SiteShare() {
+export function SiteShare({ page }: { page?: { url: string; title: string } } = {}) {
   const { lang } = useT();
   const [copied, setCopied] = useState(false);
-  const s = TEXT[lang === "en" ? "en" : "he"];
-  const url = encodeURIComponent(SITE);
+  const base = TEXT[lang === "en" ? "en" : "he"];
+  const s = page
+    ? { ...base, label: base.pageLabel, message: `${page.title} · SPOTX`, shareOn: base.pageOn, native: base.pageNative, copy: base.pageCopy }
+    : base;
+  const link = page?.url ?? SITE;
+  const url = encodeURIComponent(link);
   const text = encodeURIComponent(s.message);
   const targets: [string, string, string, ReactNode][] = [
     ["whatsapp", "WhatsApp", `https://api.whatsapp.com/send?text=${text}%20${url}`, SHARE_ICONS.whatsapp],
@@ -50,16 +62,16 @@ export function SiteShare() {
     ["x", "X", `https://x.com/intent/post?text=${text}&url=${url}`, SHARE_ICONS.x],
   ];
   const copy = () =>
-    navigator.clipboard?.writeText(SITE).then(() => {
+    navigator.clipboard?.writeText(link).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }, () => {});
   return (
-    <div className="site-share">
+    <div className={"site-share" + (page ? " page-share" : "")}>
       <p className="site-share-label">{s.label}</p>
       <div className="share">
         {typeof navigator.share === "function" && (
-          <button type="button" className="share-btn native" onClick={() => navigator.share({ title: "SPOTX", text: s.message, url: SITE }).catch(() => {})} aria-label={s.native} title={s.native}>
+          <button type="button" className="share-btn native" onClick={() => navigator.share({ title: page?.title ?? "SPOTX", text: s.message, url: link }).catch(() => {})} aria-label={s.native} title={s.native}>
             <svg viewBox="0 0 24 24" aria-hidden>{SHARE}</svg>
           </button>
         )}

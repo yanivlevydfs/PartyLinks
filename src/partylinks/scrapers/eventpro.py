@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
-from datetime import datetime, time
+from datetime import UTC, datetime, time
 from decimal import Decimal
 from urllib.parse import urljoin
 
@@ -65,11 +65,23 @@ class EventProScraper(BaseScraper[EventProSettings]):
     settings_model = EventProSettings
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
+        # Every site's listing first (cheap, a few pages each), then the event pages of all sites
+        # soonest first: a run cut half-way already holds every site's nearest week (Nov 2026).
+        work: list[tuple[EventProSite, ScrapedEvent]] = []
         for site in self.settings.sites:
-            async for event in self._site(site):
-                yield event
+            work += [(site, e) for e in await self._listed(site)]
 
-    async def _site(self, site: EventProSite) -> AsyncIterator[ScrapedEvent]:
+        async def read(item: tuple[EventProSite, ScrapedEvent]) -> ScrapedEvent:
+            site, event = item
+            return add_details(event, await self.get_text(str(event.url)), site)
+
+        async for event in self.stream_isolated(
+            soonest_first(work), read, lambda i: f"{i[0].url} event {i[1].source_event_id}"
+        ):
+            yield event
+
+    async def _listed(self, site: EventProSite) -> list[ScrapedEvent]:
+        """The site's upcoming listing cards, with their category genres."""
         s = self.settings
         cards: dict[str, ScrapedEvent] = {}
         async for page_html in self._pages(site, site.listing_id):
@@ -89,17 +101,18 @@ class EventProScraper(BaseScraper[EventProSettings]):
                     cards[key].source_genres.append(genre)
         events = [e for e in cards.values() if is_current(e.start_at, e.end_at, RetentionSettings(), self.timezone)]
         self.log.debug("%s: listed %d upcoming events", site.url, len(events))
-
-        async def read(event: ScrapedEvent) -> ScrapedEvent:
-            return add_details(event, await self.get_text(str(event.url)), site)
-
-        async for event in self.stream_isolated(events, read, lambda e: f"{site.url} event {e.source_event_id}"):
-            yield event
+        return events
 
     async def _pages(self, site: EventProSite, listing_id: int | None) -> AsyncIterator[str]:
         """The pages of one listing (the home page alone without an id); the caller stops at no new card."""
         for page in range(self.settings.max_pages if listing_id else 1):
             yield await self.get_text(listing_url(site, page * self.settings.page_size + 1, listing_id))
+
+
+def soonest_first(work: list[tuple[EventProSite, ScrapedEvent]]) -> list[tuple[EventProSite, ScrapedEvent]]:
+    """(site, card) pairs of all sites by start time: input order is fetch order in stream_isolated."""
+    last = datetime.max.replace(tzinfo=UTC)  # a card with no date goes last
+    return sorted(work, key=lambda item: item[1].start_at or last)
 
 
 def listing_url(site: EventProSite, start: int, listing_id: int | None = None) -> str:

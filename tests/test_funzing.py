@@ -43,6 +43,16 @@ def test_experience_per_date() -> None:
     assert parse_funz({**FUNZ, "city": "אונליין"}, interests) == []
 
 
+def test_loose_wellness_interests_count_only_in_the_wellness_category() -> None:
+    interests = {"health_and_happiness": "בריאות ואושר", "yoga": "יוגה ומדיטציה"}
+    tags = {"funz_interests": "wellness,health_and_happiness,yoga,history"}
+    tour = parse_funz({**FUNZ, **tags}, interests)[0].source_genres
+    assert "wellness" not in tour and "בריאות ואושר" not in tour and "יוגה ומדיטציה" in tour  # a perfume workshop, a tour
+    spa = parse_funz({**FUNZ, **tags, "category_slug": "wellness"}, interests)[0].source_genres
+    assert "בריאות ואושר" in spa and "wellness" in spa
+    assert "wellness" in parse_funz({**FUNZ, "funz_interests": "alternative"}, {})[0].source_genres  # alternative medicine
+
+
 def test_package_priced_experience_reads_starting_price() -> None:
     # Funz 38332 (couple painting workshop, Caesarea): adult and kids price "₪0", the site's "from" price 650.
     funz = {**FUNZ, "id": 38332, "adult_price": "₪0", "kids_price": "₪0", "starting_price": "₪650"}

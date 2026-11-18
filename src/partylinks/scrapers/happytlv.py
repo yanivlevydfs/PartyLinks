@@ -89,7 +89,7 @@ class HappyTlvScraper(BaseScraper[HappyTlvSettings]):
         s = self.settings
         today = datetime.now(zone(self.timezone)).date()
         parties, bars, places = split_sitemap(await self.get_text(s.site_url + s.sitemap_path), s, today)
-        pages = [*parties, *bars, *places]
+        pages = nearest_first(parties, [*bars, *places], today)
         # The hub's tags ("דייט", "קוקטיילים"): one request for every bar.
         cards = happytlv_cards(await self.optional("hub", self.get_text(s.site_url + s.happy_hours_path.rstrip("/"))) or "")
         party_pages = set(parties)
@@ -132,6 +132,19 @@ def split_sitemap(sitemap: str, s: HappyTlvSettings, today: date) -> tuple[list[
         elif section := next((p for p in s.places if path.startswith(p)), None):
             places[url] = s.places[section]
     return list(parties), list(bars), places
+
+
+def nearest_first(parties: list[str], places: list[str], today: date) -> list[str]:
+    """Pages in fetch order, soonest first: parties by the date in their path; happy hours and places,
+    whose events start today, after today's parties and before tomorrow's. A run cut short (a deploy)
+    then holds this week, not next month's parties (Nov 2026)."""
+
+    def day(url: str) -> date:
+        match = _PARTY_DATE.search(urlsplit(url).path)
+        return date.fromisoformat(match.group(1)) if match else today
+
+    order = [(day(u), 0, u) for u in parties] + [(today, 1, u) for u in places]
+    return [u for _, _, u in sorted(order, key=lambda o: o[:2])]
 
 
 def _dict(value: Any) -> dict[str, Any]:

@@ -63,6 +63,8 @@ Each post is a file `content/blog/<slug>.html`: a YAML header between `---` line
   `<!--events genre=techno when=weekend city=tel-aviv limit=6-->` in the body is replaced by
   matching upcoming events. `venue=`, `artist=` and `free=true` also work.
   `from=2026-12-01 to=2026-12-31` (local days, both included) keeps a month's roundup to its month.
+- **Dated passages.** `<!--until 2027-01-01-->...<!--/until-->` around a sentence about a festival or a holiday
+  takes it out of the post on that day, so a guide doesn't keep advertising what is over.
 - **Weekly post.** A file in `content/blog/weekly/` (English in `weekly/en/`) is this week's post,
   Sunday to Saturday: dated this week's Sunday, so it is the newest post every week, with `{from}` /
   `{to}` (15.11) and `{from_iso}` / `{to_iso}` (for `from=` / `to=`) filled in. `this-week-in-israel` is one.

@@ -76,13 +76,17 @@ class DropScraper(BaseScraper[DropSettings]):
 
 
 def upcoming_urls(sitemap: str, since: datetime) -> list[str]:
-    """Event pages whose ``lastmod`` (the event date) is ``since`` or later; undated ones too."""
-    urls: dict[str, None] = {}
+    """Event pages whose ``lastmod`` (the event date) is ``since`` or later, soonest first; undated ones last.
+
+    The sitemap is in no date order (Nov 2026): sorted, a cut run and ``max_events`` keep the nearest.
+    """
+    urls: dict[str, datetime] = {}
+    far = datetime.max.replace(tzinfo=UTC)
     for url, _, lastmod in _URL.findall(sitemap):
         day = parse_iso(lastmod, "UTC")
         if day is None or day >= since:
-            urls[url] = None
-    return list(urls)
+            urls.setdefault(url, day or far)
+    return sorted(urls, key=urls.__getitem__)
 
 
 def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:

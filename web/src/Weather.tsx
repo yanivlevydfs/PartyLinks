@@ -8,22 +8,22 @@ import { useT } from "./ui";
  */
 
 // [time (UTC ISO), MET symbol ("rainshowers_day"), °C, mm, hours the slot covers]
-type Slot = [string, string, number | null, number | null, number];
+export type Slot = [string, string, number | null, number | null, number];
 
 // Only the sky icons, each its own file (not inlined into the bundle), fetched when shown.
 const ICONS = import.meta.glob(
   "/node_modules/@bybas/weather-icons/production/fill/all/{clear,cloudy,drizzle,fog,partly,rain,sleet,snow,thunderstorms}*.svg",
   { query: "?no-inline", import: "default", eager: true },
 ) as Record<string, string>;
-const iconUrl = (name: string) => ICONS[`/node_modules/@bybas/weather-icons/production/fill/all/${name}.svg`];
+export const iconUrl = (name: string) => ICONS[`/node_modules/@bybas/weather-icons/production/fill/all/${name}.svg`];
 
-const WORDS = {
+export const WX_WORDS = {
   he: { clear: "בהיר", partly: "מעונן חלקית", cloudy: "מעונן", fog: "ערפל", drizzle: "טפטוף", rain: "גשם",
         showers: "ממטרים", thunder: "סופות רעמים", snow: "שלג", sleet: "שלג וגשם", rainMm: "מ״מ גשם", forecast: "תחזית" },
   en: { clear: "Clear", partly: "Partly cloudy", cloudy: "Cloudy", fog: "Fog", drizzle: "Drizzle", rain: "Rain",
         showers: "Showers", thunder: "Thunderstorms", snow: "Snow", sleet: "Sleet", rainMm: "mm rain", forecast: "Forecast" },
 } as const; // prettier-ignore
-type Word = Exclude<keyof (typeof WORDS)["en"], "rainMm" | "forecast">;
+type Word = Exclude<keyof (typeof WX_WORDS)["en"], "rainMm" | "forecast">;
 
 /** MET symbol -> (Meteocons icon, description). Unsuffixed symbols take day or night from the hour. */
 export function iconFor(symbol: string, night: boolean): [string, Word] {
@@ -96,7 +96,7 @@ export function Weather({ lat, lng, city, start, zone, full = false }: {
   const [, symbol, temp, rain] = slot;
   const hour = Number(new Date(when).toLocaleString("en-GB", { timeZone: zone ?? "Asia/Jerusalem", hour: "numeric", hourCycle: "h23" }));
   const [icon, word] = iconFor(symbol, hour < 6 || hour >= 18);
-  const w = WORDS[lang];
+  const w = WX_WORDS[lang];
   const text = `${w[word]}${temp != null ? ` · ${Math.round(temp)}°` : ""}`;
   const img = <img src={iconUrl(icon)} alt={w[word]} loading="lazy" />;
   const deg = temp != null && <b>{Math.round(temp)}°</b>;

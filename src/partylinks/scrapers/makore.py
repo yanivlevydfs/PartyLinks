@@ -111,8 +111,10 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
             seen.add(event.source_event_id)
             incomplete.append(event)
         sellers = SellerLookup(self, self.settings)
+        # Soonest first: ~3 in 4 items wait here for their page and seller (Nov 2026), so a run cut midway
+        # (a deploy) must already have saved this week's, not the order categories and series came in.
         async for event in self.stream_isolated(
-            incomplete, lambda e: self._complete(e, sellers), label=lambda e: str(e.url)
+            soonest_first(incomplete), lambda e: self._complete(e, sellers), label=lambda e: str(e.url)
         ):
             yield event
         self.log.info(
@@ -168,6 +170,11 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
             return parse_listing(page_html), listing_total(page_html)
 
         return await self.paginate(page, s.page_size, s.max_pages)
+
+
+def soonest_first(events: list[ScrapedEvent]) -> list[ScrapedEvent]:
+    """Events by start, soonest first; undated ones last."""
+    return sorted(events, key=lambda e: (e.start_at is None, e.start_at.timestamp() if e.start_at else 0.0))
 
 
 def parse_listing(page_html: str) -> list[dict[str, Any]]:

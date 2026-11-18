@@ -109,10 +109,13 @@ def parse_presentations(
         if today <= day <= last_day:
             groups[(movie, branch, day)].append((start, row))
     by_id = {clean_str(f.get("id")): f for f in features if isinstance(f, dict)}
-    return [
+    events = [
         parse_movie_day(movie, branch, day, sorted(shows, key=lambda x: x[0]), by_id.get(movie) or {}, s)
         for (movie, branch, day), shows in groups.items()
     ]
+    # Soonest first: prices go one request at a time (~2,250 a run, Nov 2026), in this order, so a run cut
+    # midway (a deploy) must already have saved the next days' screenings, not the feed's movie order.
+    return sorted(events, key=lambda e: e.start_at.timestamp() if e.start_at else float("inf"))  # undated last
 
 
 def parse_movie_day(

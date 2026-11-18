@@ -96,16 +96,21 @@ class HypdScraper(BaseScraper[HypdSettings]):
 
 
 def event_urls(xml: str, site_url: str, today: date) -> list[str]:
-    """The sitemap's event pages not dated before today, once each, in order."""
-    out: list[str] = []
+    """The sitemap's event pages not dated before today, once each, soonest first (undated last).
+
+    The sitemap is not in date order (Nov 2026): sorted, a run a deploy cuts already holds the nearest nights.
+    """
+    out: dict[str, date] = {}
     prefix = site_url.rstrip("/") + "/event/"
     for url in _LOC.findall(xml):
         if not url.startswith(prefix):
             continue
-        if (m := _DATED.search(urlsplit(url).path)) and date(int(m[1]), int(m[2]), int(m[3])) < today:
+        m = _DATED.search(urlsplit(url).path)
+        on = date(int(m[1]), int(m[2]), int(m[3])) if m else date.max
+        if on < today:
             continue
-        out.append(url)
-    return list(dict.fromkeys(out))
+        out.setdefault(url, on)
+    return sorted(out, key=out.__getitem__)
 
 
 def parse_event(

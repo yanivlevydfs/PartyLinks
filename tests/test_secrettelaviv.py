@@ -116,3 +116,11 @@ def test_price_written_in_the_description() -> None:
     assert [(t.name, t.price) for t in event.tickets] == [("כרטיס", 40)]
     gagarin = secrettelaviv.parse_event(_page("event_gagarin.html"), url, CFG, TZ)
     assert gagarin.tickets == []  # no price in its text
+
+
+def test_event_pages_are_read_soonest_first() -> None:
+    feed = secrettelaviv.parse_feed(_page("feed.ics"), CFG, TZ)
+    undated = feed[0].model_copy(update={"source_event_id": "undated", "start_at": None})
+    ordered = secrettelaviv.soonest_first([undated, *reversed(feed)])
+    starts = [e.start_at for e in ordered[:-1] if e.start_at]
+    assert len(starts) == len(feed) and starts == sorted(starts) and ordered[-1] is undated

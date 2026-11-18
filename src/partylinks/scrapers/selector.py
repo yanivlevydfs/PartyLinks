@@ -85,7 +85,7 @@ class SelectorScraper(BaseScraper[SelectorSettings]):
         return list(
             dict.fromkeys(
                 item["id"]
-                for item in items
+                for item in soonest_first(items)
                 if item.get("id") is not None and (not allowed or allowed & set(item.get("type") or []))
             )
         )
@@ -108,6 +108,16 @@ class SelectorScraper(BaseScraper[SelectorSettings]):
         if event.extra.get("status") not in (None, "active") or event.extra.get("hidden"):
             return None
         return event
+
+
+def soonest_first(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Listing rows by ``startDate``, ascending; rows without one keep their order, last.
+
+    The listing's order is not promised to be by date (Nov 2026): sorted, a run cut half-way already
+    holds the nearest events.
+    """
+    far = datetime.max.replace(tzinfo=UTC)
+    return sorted(items, key=lambda i: parse_iso(i.get("startDate")) or far)
 
 
 def parse_event(event: dict[str, Any], page_url_template: str) -> ScrapedEvent:

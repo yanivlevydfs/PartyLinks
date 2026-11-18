@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from partylinks.scrapers.planet import parse_film_events, split_attributes
+from partylinks.scrapers.planet import day_jobs, parse_film_events, split_attributes
 
 TZ = "Asia/Jerusalem"
 FIXTURES = Path(__file__).parent / "fixtures/planet"
@@ -80,3 +80,11 @@ def test_prices_per_format_from_the_booking_host() -> None:
     fear = events["8328s2r:1025:2026-10-22"]
     assert [(t.name, t.total_price) for t in fear.tickets] == [("רגיל IMAX", Decimal(64)), ("רגיל", Decimal(54))]
     assert (fear.min_price, fear.max_price, fear.currency) == (Decimal(49), Decimal(59), "ILS")
+
+
+def test_every_branchs_today_before_any_branchs_tomorrow() -> None:
+    from datetime import date
+
+    a, b = {"id": "a"}, {"id": "b"}
+    days = [date(2026, 11, 18), date(2026, 11, 19)]
+    assert [(j[0]["id"], j[1].day) for j in day_jobs([a, b], days)] == [("a", 18), ("b", 18), ("a", 19), ("b", 19)]

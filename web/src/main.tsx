@@ -47,6 +47,7 @@ const SavedPage = lazy(() => import("./saved/SavedPage")); // saved events (its 
 const HolidaysPage = lazy(() => import("./holidays/HolidaysPage")); // Israeli holidays (its own files: holidays/)
 const TopPage = lazy(() => import("./top/TopPage")); // this week's most wanted (its own files: top/)
 const PlacesPage = lazy(() => import("./places/PlacesPage")); // the places hub (its own files: places/)
+const CitiesPage = lazy(() => import("./pages/Cities")); // every city with a page, by country
 const PlanPage = lazy(() => import("./plans/PlanPage")); // "who's coming with me?" (its own files: plans/)
 const GroupsPage = lazy(() => import("./plans/GroupsPage")); // the account's event groups (plans/)
 
@@ -91,6 +92,9 @@ const router = createBrowserRouter([
       { path: "/top", element: <Suspense fallback={<Loader />}><TopPage /></Suspense> },
       { path: "/abroad", element: <Abroad /> },
       { path: "/abroad/:country", element: <Abroad /> },
+      { path: "/abroad/:country/:city", element: <Abroad /> },
+      { path: "/abroad/:country/:city/:sub", element: <Abroad /> },
+      { path: "/cities", element: <Suspense fallback={<Loader />}><CitiesPage /></Suspense> },
       { path: "/venues", element: <VenuesIndex /> },
       { path: "/venue/:name", element: <VenuePage /> },
       { path: "/artists", element: <ArtistsIndex /> },

@@ -19,6 +19,7 @@ import asyncio
 import json
 import random
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -90,40 +91,29 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
                     labels.setdefault(entity_id, set()).add(label)
         if not loaded:
             raise ParseError("no listing page loaded")
+        self.log.debug("listed %d events", len(items))
+        # Smarticket box offices the smarticket source reads are left to it: it has the artwork, and
+        # Tickchak's copies can be stale (a removed show's link redirects to /404).
+        skip = covered_smarticket_hosts()
+        missing: list[tuple[ScrapedEvent, str]] = []  # no artwork here: the seller's page may have it
+        # The category pages' events go out before the sitemap's ~320 page reads, soonest first (Nov 2026):
+        # a run a deploy cuts there already holds every listed event.
+        for event in self._events(items, labels, skip, missing):
+            yield event
         if s.event_sitemap_path:
+            unlisted: dict[Any, dict[str, Any]] = {}
             sitemap = unlisted_items(self, s.site_url + s.event_sitemap_path, set(items))
             for item in await self.optional("event sitemap", sitemap) or []:
                 slug = item.get("categorySlug")
                 # A category we do not read (football) stays out; no category gets uncategorized_label.
                 label = s.categories.get(slug) if slug else s.uncategorized_label
-                if label is not None:
-                    items.setdefault(item["entityId"], item)
+                if label is not None and item["entityId"] not in items:
+                    unlisted.setdefault(item["entityId"], item)
                     if label:
                         labels.setdefault(item["entityId"], set()).add(label)
-        self.log.debug("listed %d events", len(items))
-        events: list[ScrapedEvent] = []
-        missing: list[tuple[ScrapedEvent, str]] = []  # no artwork here: the seller's page may have it
-        # Smarticket box offices the smarticket source reads are left to it: it has the artwork, and
-        # Tickchak's copies can be stale (a removed show's link redirects to /404).
-        skip = covered_smarticket_hosts()
-        for entity_id, item in items.items():
-            if urlsplit(clean_str(item.get("link")) or "").hostname in skip:
-                continue
-            try:
-                event = parse_event(item, s.site_url, self.name)
-            except Exception as exc:  # noqa: BLE001 - isolate per-item failures
-                self.record_failure(str(entity_id), exc)
-                continue
-            # Today's shows stay listed after they end (and the sitemap lists them too): over is not imported.
-            if not is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
-                continue
-            event.event_types = sorted({*event.event_types, *labels.get(entity_id, ())})
-            events.append(event)
-            if not event.images and (known := (self.known_images.get(event.source_event_id) or [None])[0]):
-                event.images, event.image_url = [known], known  # read on an earlier run
-            unpriced = event.min_price is None and not event.is_sold_out
-            if (not event.images or unpriced) and (link := clean_str(item.get("link"))):
-                missing.append((event, link))
+            self.log.debug("%d more events from the sitemap", len(unlisted))
+            for event in self._events(unlisted, labels, skip, missing):
+                yield event
         # In parallel (the client's concurrency bounds it), at most max_artwork_lookups new pages a run:
         # one by one, ~1,500 sellers' pages outlasted the 60-min run (Oct 2026). Found artwork is kept,
         # so the rest is read over the next runs. Shuffled: dead seller links (redirect to /404) are
@@ -131,14 +121,40 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         # (~100): a price is not remembered between runs as artwork is.
         random.shuffle(missing)
         missing.sort(key=lambda m: m[0].min_price is not None)
-        waiting = {id(e) for e, _ in missing[: s.max_artwork_lookups]}
-        for event in events:  # first everything that needs no lookup: a run timeout then keeps them
-            if id(event) not in waiting:
-                yield event
-        gate = asyncio.Semaphore(self.http.concurrency)  # own clients (fetch_seller_page): bound them here
-        await asyncio.gather(*(self._provider_page(e, link, gate) for e, link in missing[: s.max_artwork_lookups]))
-        for event, _ in missing[: s.max_artwork_lookups]:
+        looked_up = missing[: s.max_artwork_lookups]
+        for event in soonest_first([e for e, _ in missing[s.max_artwork_lookups :]]):  # no lookup: out first
             yield event
+        gate = asyncio.Semaphore(self.http.concurrency)  # own clients (fetch_seller_page): bound them here
+        await asyncio.gather(*(self._provider_page(e, link, gate) for e, link in looked_up))
+        for event in soonest_first([e for e, _ in looked_up]):
+            yield event
+
+    def _events(
+        self, items: dict[Any, dict[str, Any]], labels: dict[Any, set[str]], skip: frozenset[str],
+        missing: list[tuple[ScrapedEvent, str]],
+    ) -> list[ScrapedEvent]:  # fmt: skip
+        """The current events of ``items``, soonest first; those that need their seller's page go to ``missing``."""
+        ready: list[ScrapedEvent] = []
+        for entity_id, item in items.items():
+            if urlsplit(clean_str(item.get("link")) or "").hostname in skip:
+                continue
+            try:
+                event = parse_event(item, self.settings.site_url, self.name)
+            except Exception as exc:  # noqa: BLE001 - isolate per-item failures
+                self.record_failure(str(entity_id), exc)
+                continue
+            # Today's shows stay listed after they end (and the sitemap lists them too): over is not imported.
+            if not is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
+                continue
+            event.event_types = sorted({*event.event_types, *labels.get(entity_id, ())})
+            if not event.images and (known := (self.known_images.get(event.source_event_id) or [None])[0]):
+                event.images, event.image_url = [known], known  # read on an earlier run
+            unpriced = event.min_price is None and not event.is_sold_out
+            if (not event.images or unpriced) and (link := clean_str(item.get("link"))):
+                missing.append((event, link))
+            else:
+                ready.append(event)
+        return soonest_first(ready)
 
     async def _page_items(self, path: str) -> dict[Any, dict[str, Any]]:
         s = self.settings
@@ -190,6 +206,12 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
             return payload.get(key) or [], payload.get("count")
 
         return await self.paginate(page, size, self.settings.max_pages)
+
+
+def soonest_first(events: list[ScrapedEvent]) -> list[ScrapedEvent]:
+    """Events by start, ascending; one without a start last."""
+    far = datetime.max.replace(tzinfo=UTC)
+    return sorted(events, key=lambda e: e.start_at or far)
 
 
 def _profile(artist: dict[str, Any], site_url: str) -> ArtistProfile | None:

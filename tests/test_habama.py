@@ -62,3 +62,11 @@ def test_habama_show_picture_from_media_script() -> None:
     video = 'var resultSet = new String("]1]2]Upload/MediaFiles]a.jpg]b.mp4]clip|");'
     assert habama.show_images(video, "https://www.habama.co.il") == []
     assert habama.show_images("<html></html>", "https://www.habama.co.il") == []
+
+
+def test_habama_shows_soonest_first() -> None:
+    near, later = habama.parse_day(PAGE, DAY, TZ), habama.parse_day(PAGE, date(2026, 10, 26), TZ)
+    shows = {"later": later[:1], "both": [later[1], near[1]], "near": near[:1]}
+    shows["near"][0].start_at = datetime(2026, 10, 24, tzinfo=ZoneInfo(TZ))  # earliest on the day
+    shows["undated"] = [later[2].model_copy(update={"start_at": None})]
+    assert habama.shows_soonest_first(shows) == ["near", "both", "later", "undated"]

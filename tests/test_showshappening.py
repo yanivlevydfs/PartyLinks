@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from partylinks.models import TicketKind, TierStatus
-from partylinks.scrapers.showshappening import parse_event, show_id, ticket_tiers
+from partylinks.scrapers.showshappening import parse_event, show_id, soonest_first, ticket_tiers
 
 PAGE = """<input type="hidden" class="showdate" value="Thursday 05-Nov-2026 19:30" />
 <input type="hidden" id="EventVenueName" value="Follow the Sun Boutique Hostel" />
@@ -82,3 +82,13 @@ def test_sold_out_banner() -> None:
     listed = {"title": "Bach", "path": "/f/bach", "country": "MT", "dates": [day], "image": None, "categories": [], "tags": []}
     page = PAGE + "<p> All tickets are sold out! </p>"
     assert parse_event(listed, page, "https://www.showshappening.com", "Asia/Jerusalem")[0].is_sold_out
+
+
+def test_events_soonest_first_across_countries() -> None:
+    d = datetime.date
+    listed = [
+        {"path": "/mt-season", "dates": [d(2027, 3, 1), d(2026, 12, 20)]},
+        {"path": "/gb-tonight", "dates": [d(2026, 11, 18)]},
+        {"path": "/de-next-week", "dates": [d(2026, 11, 25)]},
+    ]
+    assert [e["path"] for e in soonest_first(listed)] == ["/gb-tonight", "/de-next-week", "/mt-season"]

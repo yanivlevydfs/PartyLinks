@@ -6,6 +6,7 @@ import { type BoxOffice, type TicketSite, useCategories, useTicketSites } from "
 import type { Lang } from "../i18n";
 import { DEFAULT_FILTERS, useStore } from "../store";
 import { Hero, Loader, sourceName, useT, useTitle } from "../ui";
+import { outbound } from "../utm";
 
 // In screen order: the sections the stores are grouped in, with their headings.
 type Kind = "tickets" | "culture" | "venue" | "cinema" | "guide" | "city" | "abroad";
@@ -254,7 +255,7 @@ export default function StoresPage() {
                           <small>{s.updated_at ? `${t.updated} ${ago(s.updated_at, strings.locale)}` : ""}</small>
                           {browsable.has(s.name) ? <button className="linkish" onClick={() => browse(s.name)}>{t.browse}</button>
                             : <Link className="linkish" to={`/abroad?source=${encodeURIComponent(s.name)}`}>{t.browse}</Link>}
-                          {url && <a href={url} target="_blank" rel="noopener noreferrer">{t.site} ↗</a>}
+                          {url && <a href={outbound(url, "stores", "site")} target="_blank" rel="noopener noreferrer">{t.site} ↗</a>}
                         </div>
                       </li>
                     ))}
@@ -283,7 +284,7 @@ export default function StoresPage() {
             <ul className="offices">
               {officesShown.map((o: BoxOffice) => (
                 <li key={o.url}>
-                  <a className="office" href={o.url} target="_blank" rel="noopener noreferrer">
+                  <a className="office" href={outbound(o.url, "stores", "box-office")} target="_blank" rel="noopener noreferrer">
                     <span className="office-name">
                       <b dir="auto">{o.name}</b>
                       <small>{o.city && <>{o.city} · </>}<span dir="ltr">{domain(o.url)}</span> ↗</small>

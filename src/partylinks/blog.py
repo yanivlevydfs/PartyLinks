@@ -51,6 +51,8 @@ CATEGORIES = {  # key -> (Hebrew, English)
     "tips": ("טיפים", "Tips"),
 }
 EMBED = re.compile(r"<!--\s*events\b(.*?)-->", re.DOTALL)
+# <!--until 2027-01-01-->...<!--/until-->: text about a dated thing (a festival, a holiday) that leaves the post that day.
+UNTIL = re.compile(r"<!--\s*until\s+(\d{4}-\d{2}-\d{2})\s*-->(.*?)<!--\s*/until\s*-->", re.DOTALL)
 H2 = re.compile(r"<h2>(.*?)</h2>", re.DOTALL)
 
 
@@ -130,7 +132,15 @@ def load_posts(cfg: Settings, content: Path | None = None, lang: str = "he") -> 
     found = [_parse_at(f, _mtimes(f), lang) for f in sorted(folder.glob("*.html"))]
     found += [_weekly(f, lang, today) for f in sorted((folder / "weekly").glob("*.html"))]
     posts = [p for p in found if p and not p.draft and p.date <= today and not (p.expires and p.expires <= today)]
-    return sorted(posts, key=lambda p: (p.date, p.slug), reverse=True)
+    return sorted((_dated(p, today) for p in posts), key=lambda p: (p.date, p.slug), reverse=True)
+
+
+def _dated(post: Post, today: date) -> Post:
+    """The post with its ``<!--until-->`` passages that are over taken out (the cached parse is left as is)."""
+    if "until" not in post.body:
+        return post
+    body = UNTIL.sub(lambda m: m[2] if today < date.fromisoformat(m[1]) else "", post.body)
+    return post.model_copy(update={"body": body})
 
 
 def _weekly(path: Path, lang: str, today: date) -> Post | None:

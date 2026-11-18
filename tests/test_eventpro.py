@@ -5,7 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
-from partylinks.scrapers.eventpro import EventProSite, add_details, listing_url, parse_listing
+from partylinks.scrapers.eventpro import EventProSite, add_details, listing_url, parse_listing, soonest_first
 
 FIX = Path(__file__).parent / "fixtures" / "eventpro"
 TZ = "Asia/Jerusalem"
@@ -88,3 +88,13 @@ def test_library_hall_is_the_venue_and_place_its_street() -> None:
     # A community centre's hall is a room of the place: the place stays the venue.
     other = add_details(event.model_copy(update={"address": None}), _read("sifrianet_show.html"), DN)
     assert other.venue_name == "שד' בנימין 60 נתניה" and other.address is None
+
+
+def test_event_pages_of_all_sites_soonest_first() -> None:
+    hefer = [(HEFER, e) for e in parse_listing(_read("hefer_listing.html"), HEFER, TZ, SKIP)]
+    dn = [(DN, e) for e in parse_listing(_read("hefer_listing.html"), DN, TZ, SKIP)]
+    ordered = soonest_first(list(reversed(hefer)) + dn)
+    starts = [e.start_at for _, e in ordered if e.start_at]
+    assert len(starts) == len(ordered)
+    assert starts == sorted(starts)
+    assert {s.did for s, _ in ordered[:2]} == {HEFER.did, DN.did}  # each site's nearest card up front

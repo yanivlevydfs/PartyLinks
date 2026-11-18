@@ -88,6 +88,9 @@ class SourceSettings(BaseModel):
     vpn: bool = False
     # A seasonal / small site with nothing listed now: a run with 0 events is healthy (no retries, no pause).
     may_be_empty: bool = False
+    # Titles holding any of these words (case-insensitive) are not events: classes, courses, rentals.
+    # Every source has it, applied once in BaseScraper.events(), so a source needs only the config line.
+    skip_title_words: list[str] = Field(default_factory=list)
 
     @field_validator("cron")
     @classmethod
@@ -339,6 +342,13 @@ class BaseScraper[S: SourceSettings](ABC):
     @abstractmethod
     def scrape(self) -> AsyncIterator[ScrapedEvent]:
         """Yield every event currently listed by the source, following all pagination."""
+
+    async def events(self) -> AsyncIterator[ScrapedEvent]:
+        """``scrape()`` without the titles ``skip_title_words`` names: what a run stores and checks."""
+        words = [w.casefold() for w in self.settings.skip_title_words if w.strip()]
+        async for event in self.scrape():
+            if not any(w in event.title.casefold() for w in words):
+                yield event
 
     # ----------------------------------------------------------------- transport
     def _wait(self, state: RetryCallState) -> float:

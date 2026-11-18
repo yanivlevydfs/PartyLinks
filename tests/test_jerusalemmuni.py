@@ -102,3 +102,15 @@ def test_mizrahi_surname_and_side_are_no_genre() -> None:
     assert sung is not None and "mizrahi" in detect(sung)
     declared = jm.build_event(jm.Card(**{**card.__dict__, "genres": ["מזרחי"]}), plain, S, TZ)
     assert declared is not None and "mizrahi" in detect(declared)
+
+
+def test_event_pages_are_fetched_soonest_first() -> None:
+    def card(slug: str, occ: int, day: date) -> jm.Card:
+        path = f"/he/experience/allevents/{slug}/?occ={occ}"
+        return jm.Card(path=path, title=slug, day=day, start=None, end=None, venue=None, teaser=None, image=None,
+                       free=False)  # fmt: skip
+
+    cards = [card("far", 0, date(2027, 3, 1)), card("tour", 0, date(2026, 12, 20)), card("tour", 1, date(2026, 11, 20))]
+    pages = jm.pages_soonest_first(cards)
+    assert list(pages) == ["/he/experience/allevents/tour/", "/he/experience/allevents/far/"]
+    assert [c.day for c in pages["/he/experience/allevents/tour/"]] == [date(2026, 11, 20), date(2026, 12, 20)]

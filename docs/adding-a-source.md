@@ -187,6 +187,7 @@ Only these lines change outside the new files:
     # israel_proxy: true                                   - Israeli IPs only (free Israeli proxies)
     # vpn: true                                            - only through our Israeli VPN (Railway production)
     # unlist_missing: false                                - the listing is not the full catalogue
+    skip_title_words: ["קורס", "חוג"]                     # every source: titles that are classes, not events
     http:
       # impersonate: chrome                                - TLS fingerprint blocks (curl_cffi)
       concurrency: 2
@@ -275,6 +276,7 @@ Other sessions commit to `master` at the same time:
 - [ ] Own module with a docstring; settings model with no hard-coded constants
 - [ ] No past event fetched or yielded (`is_current`), no past-URL file; no start more than `retention.max_future_days` ahead (`check_source.py` prints `TOO FAR`: a broken date the site sends)
 - [ ] Nearest events fetched and yielded first (a run cut half way holds this week)
+- [ ] `skip_title_words` set in the config block for the site's classes / courses / rentals (every source has it)
 - [ ] Every event on the map (coordinates or a geocodable address; venue coords for single-venue sites)
 - [ ] Every event has a site genre (`check_source.py` shows no `NO GENRE`)
 - [ ] Purchase links kept, social profiles dropped; artwork URLs passed

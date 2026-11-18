@@ -13,6 +13,7 @@ from partylinks.enrichment import Enricher
 from partylinks.scrapers.parks import (
     ParksSettings,
     _month,
+    by_day,
     open_dates,
     parse_activity,
     parse_event,
@@ -41,6 +42,11 @@ def test_open_dates_and_months() -> None:
     days = open_dates(json.loads((FIX / "calendar.json").read_text("utf-8")))
     assert days == [date(2026, 12, 5), date(2026, 12, 11), date(2026, 12, 12), date(2026, 12, 19)]
     assert [_month(date(2026, 11, 9), n) for n in range(3)] == [date(2026, 11, 9), date(2026, 12, 1), date(2027, 1, 1)]
+
+
+def test_open_dates_soonest_first_not_item_by_item() -> None:
+    days = {("100", date(2026, 12, 3)), ("100", date(2026, 11, 20)), ("7", date(2026, 11, 25))}
+    assert by_day(days) == [("100", date(2026, 11, 20)), ("7", date(2026, 11, 25)), ("100", date(2026, 12, 3))]
 
 
 def test_event_from_slots_with_park_and_booking() -> None:

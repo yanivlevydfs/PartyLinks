@@ -62,7 +62,7 @@ class BarbyScraper(BaseScraper[BarbySettings]):
         # showId 0 is a placeholder row ("אתר", no date) whose detail pages 404: every run ended partial (Nov 2026).
         shows = [show for show in shows if str(show.get("showId") or "").strip("0")]
         self.log.debug("listed %d events", len(shows))
-        async for event in self.stream_isolated(shows, self._fetch_event, label=lambda show: str(show.get("showId"))):
+        async for event in self.stream_isolated(soonest_first(shows), self._fetch_event, label=lambda show: str(show.get("showId"))):
             yield event
 
     async def _fetch_event(self, listed: dict[str, Any]) -> ScrapedEvent:
@@ -115,6 +115,22 @@ def parse_event(
             "tier_price_type": show.get("showTierPriceType"),
         },
     )
+
+
+def soonest_first(shows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Listing rows by ``showDate`` (dd/mm/yyyy), ascending; an undated or garbled one last.
+
+    The find payload's order is not promised (Nov 2026): sorted, a run cut half-way holds the nearest shows.
+    """
+
+    def key(show: dict[str, Any]) -> tuple[int, str]:
+        try:
+            day = datetime.strptime(clean_str(show.get("showDate")) or "", "%d/%m/%Y")
+        except ValueError:
+            return (1, "")
+        return (0, day.strftime("%Y-%m-%d") + (clean_str(show.get("showTime")) or ""))
+
+    return sorted(shows, key=key)
 
 
 def show_artists(show_name: Any, guests: Any) -> list[str]:

@@ -1062,7 +1062,7 @@ enrichment:
   # School-internal and closed events are no public event: a muni calendar listed "טיול שנתי שכבה ח'"
   # (Nov 2026). Grade / pupils / staff / parents' meetings, closed or private events, cancelled listings.
   skip_titles: [
-    "ticket management", "בדיקת מפה", "מכרז פומבי",
+    "ticket management", "בדיקת מפה", "מכרז פומבי", "דוגמה למחיקה",  # a municipality's sample listings (Kfar Yona, Nov 2026)
     "טיול שנתי", "טיולים שנתיים", "טיול שכבה", "טיולי שכבה", "שכבה א'", "שכבה ב'", "שכבה ג'", "שכבה ד'",
     "שכבה ה'", "שכבה ו'", "שכבה ז'", "שכבה ח'", "שכבה ט'", "שכבה י'", "שכבת ", "לתלמידי בית הספר",
     "אסיפת הורים", "ועד הורים", "השתלמות מורים", "השתלמות גננות", "לצוות בית הספר", "לעובדי העירייה",

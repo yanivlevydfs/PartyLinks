@@ -6,7 +6,9 @@ from pathlib import Path
 
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
-from partylinks.scrapers.easytix import EasytixSettings, Marketplace, add_tickets, parse_event
+from partylinks.models import ScrapedEvent
+from partylinks.parsing import zone
+from partylinks.scrapers.easytix import EasytixSettings, Marketplace, add_tickets, parse_event, soonest_first
 
 FIXTURES = Path(__file__).parent / "fixtures" / "easytix"
 TZ = "Asia/Jerusalem"
@@ -116,3 +118,14 @@ def test_an_unlisted_event_another_source_links_to_is_read() -> None:
         and found.venue_name == "Gagarin Club"
     )
     assert found.organizer == "BLACKOUT by Shirley"
+
+
+def test_tickets_are_read_soonest_first() -> None:
+    def show(i: str, day: int | None) -> ScrapedEvent:
+        start = datetime(2026, 11, day, 21, tzinfo=zone(TZ)) if day else None
+        return ScrapedEvent.model_validate(
+            {"source": "easytix", "source_event_id": i, "url": "https://easytix.co.il/", "title": i, "start_at": start}
+        )
+
+    ordered = soonest_first([show("far", 28), show("undated", None), show("near", 19)])
+    assert [e.source_event_id for e in ordered] == ["near", "far", "undated"]

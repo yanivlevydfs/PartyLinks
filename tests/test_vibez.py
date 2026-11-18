@@ -124,3 +124,12 @@ def test_a_configured_producer_is_read_with_no_event_in_the_listing() -> None:
             return [e async for e in scraper.scrape()]
 
     assert sorted(e.title for e in asyncio.run(run())) == ["BAMBOO PARTY", "OTHER"]
+
+
+def test_listing_and_catalogue_rows_soonest_first() -> None:
+    rows = [
+        {"id": "far", "start_time": "2027-01-10T22:00:00"},
+        {"id": "none"},
+        {"id": "near", "start_time": "2026-11-19T22:00:00", "timezone": "Asia/Jerusalem"},
+    ]
+    assert [r["id"] for r in vibez.soonest_first(rows, "Asia/Jerusalem")] == ["near", "far", "none"]

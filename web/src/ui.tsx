@@ -184,6 +184,7 @@ export function Layout() {
         <nav className="foot-links" aria-label={t.genres}>
           <Link to="/top">{t.top}</Link>
           <Link to="/places">{t.places}</Link>
+          <Link to="/cities">{lang === "he" ? "ערים" : "Cities"}</Link>
           <Link to="/holidays">{t.holidays}</Link>
           <Link to="/now">{t.now}</Link>
           <Link to="/tonight">{t.tonight}</Link>

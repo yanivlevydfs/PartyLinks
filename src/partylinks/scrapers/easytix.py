@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
-from datetime import datetime, time, timedelta
+from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
 from urllib.parse import urlsplit
@@ -145,8 +145,16 @@ class EasytixScraper(BaseScraper[EasytixSettings]):
             )
             return add_tickets(event, tickets or [], now)
 
-        async for event in self.stream_isolated(events, with_tickets, lambda e: e.source_event_id):
+        # Marketplaces list theirs one after another: the ticket requests (and saves) go soonest first,
+        # so a cut run holds the nearest week (Nov 2026).
+        async for event in self.stream_isolated(soonest_first(events), with_tickets, lambda e: e.source_event_id):
             yield event
+
+
+def soonest_first(events: list[ScrapedEvent]) -> list[ScrapedEvent]:
+    """Events by start time, undated last: stream_isolated fetches in input order."""
+    last = datetime.max.replace(tzinfo=UTC)
+    return sorted(events, key=lambda e: e.start_at or last)
 
 
 def _host(url: str) -> str:

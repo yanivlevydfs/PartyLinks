@@ -70,7 +70,7 @@ class PlanetScraper(BaseScraper[PlanetSettings]):
             body = await self._body(f"film-events/in-cinema/{branch.get('id')}/at-date/{day}")
             return [await self._priced(e) for e in parse_film_events(body, branch, self.name, self.timezone)]
 
-        jobs = [(b, d) for b in branches if isinstance(b, dict) for d in days]
+        jobs = day_jobs(branches, days)
         async for events in self.stream_isolated(jobs, day_events, label=lambda j: f"branch {j[0].get('id')} {j[1]}"):
             for event in events:
                 yield event
@@ -99,6 +99,12 @@ class RavHenScraper(PlanetScraper):
     """Rav-Hen (קולנוע חן): same platform, its own tenant and API path (see settings)."""
 
     name = "ravhen"
+
+
+def day_jobs(branches: list[Any], days: list[date]) -> list[tuple[dict[str, Any], date]]:
+    """(branch, day) requests, every branch's today before any branch's tomorrow: a run cut short
+    (a deploy) has the nearest screenings everywhere, not one branch's three days (Nov 2026)."""
+    return [(b, d) for d in days for b in branches if isinstance(b, dict)]
 
 
 def split_attributes(ids: list[str]) -> tuple[int | None, list[str], list[str], list[str]]:

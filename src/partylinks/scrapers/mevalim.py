@@ -25,7 +25,7 @@ import html
 import json
 import re
 from collections.abc import AsyncIterator
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import parse_qs, urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
@@ -88,7 +88,10 @@ class MevalimScraper(BaseScraper[MevalimSettings]):
             for event in events.values():
                 yield event
             return
-        async for event in self.stream_isolated(events.values(), self._with_artwork, label=lambda e: e.source_event_id):
+        # Regions are listed one after another: the artwork pages (and saves) go soonest first, so a
+        # cut run holds the nearest week (Nov 2026).
+        listed = soonest_first(list(events.values()))
+        async for event in self.stream_isolated(listed, self._with_artwork, label=lambda e: e.source_event_id):
             yield event
 
     async def _region_events(self, region: MevalimRegion) -> list[ScrapedEvent]:
@@ -165,6 +168,12 @@ class MevalimScraper(BaseScraper[MevalimSettings]):
             media = await self.optional("artist photos", self.get_json(s.site_url + s.media_api_path, params=params, expect=list))
             photos |= {m["id"]: m["source_url"] for m in media or [] if isinstance(m, dict) and m.get("source_url")}
         return [a for p in pages if (a := parse_artist_page(p, catalog.kind, photos))]
+
+
+def soonest_first(events: list[ScrapedEvent]) -> list[ScrapedEvent]:
+    """Events by start time, undated last: stream_isolated fetches in input order."""
+    last = datetime.max.replace(tzinfo=UTC)
+    return sorted(events, key=lambda e: e.start_at or last)
 
 
 def parse_artist_page(page: dict[str, Any], kind: str, photos: dict[int, str]) -> ArtistProfile | None:

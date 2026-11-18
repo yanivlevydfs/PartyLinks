@@ -1,0 +1,26 @@
+/* A city page's strip under its title (CityBar): forecast, quick links, sharing. Compact: the events
+   stay near the top of a phone screen. */
+.city-bar { display: grid; gap: 12px; margin: 16px 0 18px; }
+.city-bar-h { font: 700 14px/1.3 var(--display); margin: 0 0 6px; color: var(--muted); }
+.city-wx ol {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; max-width: 560px;
+  list-style: none; margin: 0; padding: 0;
+}
+.city-wx li {
+  display: grid; justify-items: center; gap: 1px; padding: 6px 2px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+}
+.city-wx-day { font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.city-wx img { width: 34px; height: 34px; }
+.city-wx-t { display: flex; gap: 5px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.city-wx-t b { font-size: 15px; }
+.city-wx-t small { font-size: 12px; color: var(--muted); }
+/* One row; on a phone it scrolls sideways instead of stacking lines above the events. */
+.city-quick { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-block: 2px; }
+.city-quick::-webkit-scrollbar { display: none; }
+.city-quick .chip { flex: none; text-decoration: none; }
+@media (min-width: 720px) { .city-quick { flex-wrap: wrap; overflow: visible; } }
+/* Sharing: its label and buttons on one line. */
+.city-bar .page-share { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
+.city-bar .page-share .site-share-label { color: var(--muted); font-size: 13px; }
+.city-bar .page-share .share { justify-content: flex-start; }

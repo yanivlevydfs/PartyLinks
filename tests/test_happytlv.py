@@ -37,6 +37,13 @@ def test_sitemap_keeps_upcoming_parties_and_happy_hour_pages() -> None:
     assert places == {f"{SITE}/escape-rooms/haifa": "escape rooms", f"{SITE}/work-spaces/quick": "work spaces"}
 
 
+def test_pages_soonest_first() -> None:
+    party = f"{SITE}/tel-aviv-parties/"
+    parties = [f"{party}kuli-alma-2026-12-01", f"{party}block-2026-11-18-7", f"{party}radio-2026-11-19"]
+    order = happytlv.nearest_first(parties, [BAR], date(2026, 11, 18))
+    assert order == [parties[1], BAR, parties[2], parties[0]]  # today's party, today's happy hour, then by date
+
+
 def test_party() -> None:
     url = f"{SITE}/tel-aviv-parties/jimmy-who-2026-10-29-30756"
     party = happytlv.parse_party(page("party.html"), url, "Asia/Jerusalem")

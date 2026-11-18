@@ -40,6 +40,9 @@ CATEGORIES = {
 # Interests whose Hebrew name reads as another genre: "אלטרנטיבי" is alternative medicine, not rock; music,
 # dance, films and shows are the subject of a workshop or a lecture (night-out events are shows by category).
 INTERESTS = {"alternative": "wellness", "music_and_dance": "", "films_and_shows": "קולנוע"}
+# Interests hosts add to tours, perfume and couples' workshops alike: wellness (yoga) only in the wellness category.
+# 2,300 of 2,700 yoga_wellness events were funzing's, mostly crafts (Nov 2026).
+LOOSE_WELLNESS = {"wellness", "בריאות ואושר"}
 
 ONLINE = {"אונליין", "online", "Online", "זום"}
 
@@ -104,7 +107,8 @@ def parse_funz(funz: dict[str, Any], interests: dict[str, str]) -> list[ScrapedE
     category = funz.get("category_slug") or ""
     keys = [k.strip() for k in (funz.get("funz_interests") or "").split(",") if k.strip()]
     genres = [g for g in (CATEGORIES.get(category), clean_str(funz.get("mobile_display_name"))) if g]
-    genres += [INTERESTS.get(k, interests.get(k, k.replace("_", " "))) for k in keys]
+    named = [(k, INTERESTS.get(k, interests.get(k, k.replace("_", " ")))) for k in keys]
+    genres += [g for k, g in named if category == "wellness" or k in INTERESTS or g not in LOOSE_WELLNESS]
     if funz.get("intended_for_children") or funz.get("funz_on_kids_category"):  # for_kids: kids may join
         genres.append("ילדים ומשפחה")
     prices = [p for p in (_price(funz.get("adult_price")), _price(funz.get("kids_price"))) if p]

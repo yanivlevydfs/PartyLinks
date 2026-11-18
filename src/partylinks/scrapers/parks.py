@@ -84,25 +84,27 @@ class ParksScraper(BaseScraper[ParksSettings]):
             and not any(w in (clean_str(i.get("title")) or "").lower() for w in s.skip_title_words)
         ]  # fmt: skip
         today = datetime.now(zone(self.timezone)).date()
-        months = [_month(today, n) for n in range(s.months_ahead)]
-        open_days: set[tuple[str, date]] = set()
-        async for days in self.stream_isolated(
-            [(str(i["chackfront_id"]), m) for i in items for m in months],
-            self._calendar,
-            label=lambda p: f"{p[0]} {p[1]}",
-        ):
-            open_days |= {d for d in days if d[1] >= today}
         by_id = {str(i["chackfront_id"]): i for i in items}
         retention = RetentionSettings()
-        async for event in self.stream_isolated(
-            sorted(open_days),
-            lambda d: self._date(by_id[d[0]], d[1], activities, parks),
-            label=lambda d: f"{d[0]} {d[1]}",
-        ):
-            if event and is_current(
-                event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known
+        seen: set[tuple[str, date]] = set()
+        # Month by month, each month's dates by day: a run cut short (a deploy) holds the nearest weeks
+        # of every activity, not the whole half-year of the first ones (Nov 2026).
+        for month in (_month(today, n) for n in range(s.months_ahead)):
+            open_days: set[tuple[str, date]] = set()
+            async for days in self.stream_isolated(
+                [(cf, month) for cf in by_id], self._calendar, label=lambda p: f"{p[0]} {p[1]}"
             ):
-                yield event
+                open_days |= {d for d in days if d[1] >= today} - seen
+            seen |= open_days
+            async for event in self.stream_isolated(
+                by_day(open_days),
+                lambda d: self._date(by_id[d[0]], d[1], activities, parks),
+                label=lambda d: f"{d[0]} {d[1]}",
+            ):
+                if event and is_current(
+                    event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known
+                ):
+                    yield event
 
     async def _pages(self, path: str, fields: str, parse: Any) -> list[dict[str, Any]]:
         s = self.settings
@@ -150,6 +152,11 @@ def _month(today: date, n: int) -> date:
         return today
     total = today.year * 12 + today.month - 1 + n
     return date(total // 12, total % 12 + 1, 1)
+
+
+def by_day(open_days: set[tuple[str, date]]) -> list[tuple[str, date]]:
+    """(item, date) pairs soonest first, not item by item."""
+    return sorted(open_days, key=lambda d: (d[1], d[0]))
 
 
 @cache

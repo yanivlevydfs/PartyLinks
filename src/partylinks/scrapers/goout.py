@@ -93,7 +93,9 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
         for feed in s.extra_feeds:
             extra = await self.optional(feed, self._list_feed(feed, received))
             items += [e for e in extra or [] if e.get("EventType") in s.event_types]
-        return list(dict.fromkeys(str(item["Url"]) for item in items if item.get("Url")))
+        # The main feed, then today's and the weekend's (Nov 2026): soonest first by the row's date, so a
+        # run a deploy cuts already holds the nearest events.
+        return list(dict.fromkeys(str(item["Url"]) for item in soonest_first(items) if item.get("Url")))
 
     async def _list_artists(self) -> list[ArtistProfile]:
         s = self.settings
@@ -139,6 +141,12 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
             self.optional(f"{url_id} tickets", self.get_json(s.base_url + s.tickets_endpoint, params={"eventUrl": url_id})),
         )
         return parse_event(next_data(page_html), page_url, self.timezone, tickets, s.image_url_templates)
+
+
+def soonest_first(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Listing rows by ``StartingDate``, ascending; rows without one keep their order, last."""
+    far = datetime.max.replace(tzinfo=UTC)
+    return sorted(items, key=lambda e: parse_iso(e.get("StartingDate")) or far)
 
 
 def event_ref(url: str) -> str | None:

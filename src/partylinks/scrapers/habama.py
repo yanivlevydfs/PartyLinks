@@ -18,9 +18,10 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from urllib.parse import quote
 
+from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.models import ScrapedEvent
@@ -36,6 +37,7 @@ class HabamaSettings(SourceSettings):
     site_url: str
     day_path: str  # the day page; d/m/y are added
     days: int = 45  # today plus this many days ahead
+    batch_days: int = Field(7, ge=1)  # days crawled before their shows' pictures are read and their events saved
 
 
 class HabamaScraper(BaseScraper[HabamaSettings]):
@@ -51,23 +53,34 @@ class HabamaScraper(BaseScraper[HabamaSettings]):
             url = f"{s.site_url}{s.day_path}?Subj=1&Area=1&d={day.day}&m={day.month}&y={day.year % 100}"
             return parse_day(await self.get_text(url), day, self.timezone)
 
-        shows: dict[str, list[ScrapedEvent]] = {}  # a show's performances share its picture
-        async for events in self.stream_isolated(days, day_events, lambda d: f"day {d.isoformat()}"):
-            for event in events:
-                shows.setdefault(event.extra["show_id"], []).append(event)
+        # A week of days at a time, its shows' pictures, its performances: a run cut half-way already holds
+        # the nearest weeks, not 80 crawled days and no event (Nov 2026).
+        images: dict[str, list[str]] = {}  # show id -> its pictures, read once per run
+        for first in range(0, len(days), s.batch_days):
+            shows: dict[str, list[ScrapedEvent]] = {}  # a show's performances share its picture
+            batch = days[first : first + s.batch_days]
+            async for events in self.stream_isolated(batch, day_events, lambda d: f"day {d.isoformat()}"):
+                for event in events:
+                    shows.setdefault(event.extra["show_id"], []).append(event)
 
-        async def with_images(show: str) -> list[ScrapedEvent]:
-            performances = shows[show]
-            page = await self.optional(f"show {show}", self.get_text(str(performances[0].url)))
-            for event in performances:
-                event.images = show_images(page or "", s.site_url)
-                event.image_url = event.images[0] if event.images else None
-            return performances
+            async def with_images(show: str, shows: dict[str, list[ScrapedEvent]] = shows) -> list[ScrapedEvent]:
+                if show not in images:
+                    page = await self.optional(f"show {show}", self.get_text(str(shows[show][0].url)))
+                    images[show] = show_images(page or "", s.site_url)
+                for event in shows[show]:
+                    event.images = list(images[show])
+                    event.image_url = event.images[0] if event.images else None
+                return shows[show]
 
-        # ponytail: performances wait for the whole day crawl (memory ~ a few thousand events).
-        async for events in self.stream_isolated(list(shows), with_images, lambda show: f"show {show}"):
-            for event in events:
-                yield event
+            async for events in self.stream_isolated(shows_soonest_first(shows), with_images, lambda sh: f"show {sh}"):
+                for event in events:
+                    yield event
+
+
+def shows_soonest_first(shows: dict[str, list[ScrapedEvent]]) -> list[str]:
+    """Show ids by their first performance, undated last: stream_isolated fetches in input order."""
+    last = datetime.max.replace(tzinfo=UTC)
+    return sorted(shows, key=lambda show: min((e.start_at or last for e in shows[show]), default=last))
 
 
 def show_images(page_html: str, site_url: str) -> list[str]:

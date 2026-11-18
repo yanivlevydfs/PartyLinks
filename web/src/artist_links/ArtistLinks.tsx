@@ -2,6 +2,7 @@
 // event (lineup_links) or the artist page's /landing-info: no request of their own.
 import type { ReactNode } from "react";
 import { SHARE_ICONS } from "../ui";
+import { outbound } from "../utm";
 import { useArtistLinksText } from "./i18n";
 import "./artist_links.css";
 
@@ -45,7 +46,7 @@ export function ArtistLinks({ links, name, small = false }: { links?: ArtistLink
       {shown.map((l) => {
         const label = t.on(name, t.services[l.service] ?? l.service);
         return (
-          <a key={l.service} className={"share-btn al-" + l.service} href={l.url} target="_blank" rel="noopener noreferrer" aria-label={label} title={label}>
+          <a key={l.service} className={"share-btn al-" + l.service} href={outbound(l.url, "artist", l.service)} target="_blank" rel="noopener noreferrer" aria-label={label} title={label}>
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>{ICONS[l.service]}</svg>
           </a>
         );

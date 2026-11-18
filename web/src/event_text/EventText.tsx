@@ -2,6 +2,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import type { DescriptionLayout, TextBlock } from "../types";
 import { useT } from "../ui";
+import { outbound } from "../utm";
 import "./event_text.css";
 
 // Bare links, Markdown links and bold, as sources write them; a link's trailing punctuation stays text.
@@ -16,7 +17,7 @@ const linkLabel = (url: string) => url.replace(/^https?:\/\//, "").replace(/^www
 
 function TextLink({ url, children }: { url: string; children: ReactNode }) {
   const href = url.startsWith("www.") ? `https://${url}` : url;
-  return <a href={href} title={url} target="_blank" rel="noopener noreferrer nofollow ugc">{children}</a>;
+  return <a href={outbound(href, "event", "description")} title={url} target="_blank" rel="noopener noreferrer nofollow ugc">{children}</a>;
 }
 
 function inline(text: string): ReactNode[] {

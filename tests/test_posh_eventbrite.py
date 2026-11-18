@@ -157,3 +157,11 @@ def test_posh_tickets_of_an_event_listed_without_a_price():
     expected = [(Decimal(15), True, False), (Decimal(0), False, True)]
     assert [(t.price, t.pay_at_door, t.is_free) for t in door] == expected
     assert posh.parse_tickets({}, "USD") == []
+
+
+def test_eventbrite_soonest_first():
+    def row(event_id: str, day: str | None) -> dict:
+        return {"id": event_id, "start_date": day, "start_time": "20:00", "timezone": "Asia/Jerusalem"}
+
+    rows = [row("far", "2027-03-01"), row("none", None), row("near", "2026-11-20"), row("mid", "2026-12-05")]
+    assert [e["id"] for e in eventbrite.soonest_first(rows)] == ["near", "mid", "far", "none"]
