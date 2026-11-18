@@ -1902,6 +1902,15 @@ geocoding:
     "פארק מכבית": [32.0680220, 34.8580109]  # Maccabit park, Kiryat Ono (OSM park)
     "חניון הפיתול": [32.9790457, 35.4423599]  # HaPitul campsite, Meron, Route 866 (OSM)
     "משתלות אייל": [31.9157850, 34.8499267]  # Eyal nurseries, Yashresh (OSM village point)
+    "אודיטוריום ראשל\"צ": [31.9627740, 34.8005569]  # the 250-seat auditorium in Rishon LeZion's culture hall, Jabotinsky 16 (htrl.co.il; OSM arts centre)
+    "היכל התרבות שדות נגב": [31.4315932, 34.5935445]  # Sdot Negev culture hall, the council compound by Netivot (council's directions page; OSM townhall)
+    "היכל התרבות נהריה": [33.0110789, 35.1010060]  # Nahariya culture hall, Derekh HaAtsmaut 7 (tickchak; OSM street by no. 1)
+    "אצטדיון דוחא": [32.8666966, 35.3108427]  # Doha Stadium, Sakhnin (OSM pitch)
+    "היכל התרבות עפולה": [32.6122447, 35.2879219]  # Afula culture hall, Hativa Tesha 9 (tickchak; OSM street)
+    "מלון מלכת שבא": [29.5501123, 34.9614808]  # Queen of Sheba hotel (ex-Hilton), Antib 8, Eilat (OSM hotel)
+    "ספריה אזורית כדורי": [32.7028194, 35.4077864]  # Lower Galilee regional library, Kadoorie centre (OSM campus)
+    "אשכול אל על": [32.8450731, 35.7928356]  # El Al cluster, Haspin (OSM village point)
+    "cafe lumiere": [32.8167554, 35.0000812]  # Cafe Lumiere, Sderot HaPalyam 2, Haifa (d.co.il; OSM house point)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
@@ -1943,6 +1952,7 @@ geocoding:
     "יד השמונה":
       "המתססה": [31.8094724, 35.0901961]  # המתססה, יד השמונה (OSM village point; a small moshav)
     "יבנה":
+      "תל יבנה": [31.8655986, 34.7469374]  # Tel Yavne, the Mamluk minaret on the mound (OSM archaeological site)
       "מועדון קפה אירופה": [31.8778543, 34.7429785]  # Cafe Europa club, HaAlon St (OSM street)
       "אולם תבור": [31.8168499, 34.7281236]  # אולם תבור, גבעת וושינגטון, גבעת וושינגטון, גבעת וושינגטון
     "יואב":
@@ -1996,6 +2006,8 @@ geocoding:
       "גריי יהוד": [32.029077, 34.8998321]  # מועדון הגריי יהוד, החרושת 2, יהוד-מונוסון
       "גן הפסגה": [32.0541002, 34.7531348]  # גן הפסגה (גן אברשה), יפו
     "באר שבע":
+      "קולנוע לב העיר": [31.7487001, 34.9844619]  # Lev HaIr cinema is in Beit Shemesh (Zinman hall, Simtat Wizo 8); smarticket files it under Be'er Sheva
+      "בית יהדות איראן": [31.2529928, 34.7949114]  # Iranian Jewry house, Lea Goldberg 24 (OSM street)
       "תמוז": [31.2402043, 34.7884438]  # Tamuz, Herzl 12, Old City (tickchak; OSM street, no house number)
       "המסגריה": [31.2404100, 34.7150744]  # Club HaMasgeria, Kibbutz Hatzerim (OSM village point; ogo)
     "קריית אתא":
@@ -2018,6 +2030,15 @@ geocoding:
       "דרך הים 9": [32.0641901, 34.8738161]  # Meitar high school sports hall, Derekh HaYam 9 (OSM school)
     "יקום":
       "אולם יקום": [32.2485734, 34.8420870]  # Kibbutz Yakum (OSM village point)
+    "חוף הכרמל":
+      "היכל התרבות": [32.6461390, 34.9649149]  # Muza culture hall, Mir'av centre, Kerem Maharal (OSM community centre)
+    "נשר":
+      "אשכול פיס": [32.7678425, 35.0378031]  # Pais cluster, HaShita 19, Nesher (OSM street)
+    "מבשרת ציון":
+      "מרכז הפיס": [31.8008956, 35.1473386]  # Pais community centre, HaYasmin 1 (OSM community centre)
+      "גימבורי": [31.8008956, 35.1473386]  # the council's gymboree, in the Pais centre, HaYasmin 1
+    "כוכב יאיר-צור יגאל":
+      "בית התרבות": [32.2230422, 34.9986992]  # Lev HaMakom culture house, Derekh HaMerkaz 3 (OSM street)
 
 retention:
   enabled: true
