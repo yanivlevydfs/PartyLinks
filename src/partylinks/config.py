@@ -570,6 +570,9 @@ class GeocodingSettings(BaseModel):
     # Manual pins, only for places OpenStreetMap doesn't know: venue-name / address keyword
     # (case-insensitive) -> [lat, lon]. Checked first.
     venues: dict[str, tuple[float, float]] = Field(default_factory=dict)
+    # Pins that hold in one town only: {town: {venue or address keyword: [lat, lon]}}, for names other towns'
+    # venues share ("אולם תרבות", "מרכז הפיס"). Matched against an event in that town, before ``venues``.
+    city_venues: dict[str, dict[str, tuple[float, float]]] = Field(default_factory=dict)
 
 
 class AccessibilitySettings(BaseModel):

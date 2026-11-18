@@ -369,6 +369,29 @@ def test_a_pinned_building_of_many_venues_is_no_placeholder(tmp_path: Path) -> N
         assert all(r.latitude == lat for r in session.query(EventRow))  # the new one placed on the pin too
 
 
+def test_a_town_pin_holds_in_its_town_only(tmp_path: Path) -> None:
+    from partylinks.geo import Geocoder
+
+    # "אולם תרבות" is Harish's hall in Harish and Kiryat Gat's there: one pin per town (Nov 2026).
+    settings = settings_for(tmp_path)
+    settings.geocoding.city_venues = {"חריש": {"אולם תרבות": (32.4600, 35.0440)}, "קריית גת": {"אולם תרבות": (31.6100, 34.7710)}}
+    future = datetime.now(UTC) + timedelta(days=2)
+    db = seed(settings, [
+        event("harish", future, venue_name="אולם תרבות", city="חריש", address=None),
+        event("gat", future, venue_name="אולם תרבות", city="קריית גת", address=None),
+        event("other", future, venue_name="אולם תרבות", city="דימונה", address=None),
+    ])  # fmt: skip
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    geo = Geocoder(
+        settings.geocoding, enricher.areas, settings.enrichment.target_city.aliases, db, settings.enrichment.cities
+    )
+    geo.locate_missing(network=False)
+    with db.session() as session:
+        points = {r.source_event_id: (r.latitude, r.longitude) for r in session.query(EventRow)}
+    assert points["harish"] == (32.46, 35.044) and points["gat"] == (31.61, 34.771)
+    assert points["other"] == (None, None)  # no pin of its own town
+
+
 def test_rescrape_tracks_offer_changes_and_unlists_vanished_events(tmp_path: Path) -> None:
     import time
 

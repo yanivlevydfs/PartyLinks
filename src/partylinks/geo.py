@@ -326,10 +326,14 @@ class Geocoder:
         self._city_keys = {_city_key(a) for a in target_city_aliases if a.strip()}
         self._target = next((c for c in self._cities.values() if _city_key(c.he) in self._city_keys), None)
         self._pins = {k.lower(): v for k, v in settings.venues.items()}
+        self._city_pins = {town: {k.lower(): v for k, v in pins.items()} for town, pins in settings.city_venues.items()}
         # A building of many venues (Rothschild 24: Jimmy Who, GOAT, John Doe; Holon's Mediatheque and its halls) has
         # one real point under many unrelated names. A pinned point is checked by hand: never a placeholder (511
         # events off the map, Nov 2026).
-        self._pin_points = {_rounded((float(v[0]), float(v[1]))) for v in settings.venues.values()}
+        self._pin_points = {
+            _rounded((float(v[0]), float(v[1])))
+            for v in [*settings.venues.values(), *(p for pins in settings.city_venues.values() for p in pins.values())]
+        }
 
     # ------------------------------------------------------------------ public
     def _from_duplicates(self) -> int:
@@ -485,8 +489,11 @@ class Geocoder:
 
     # ------------------------------------------------------------------ sources of coordinates
     def _pin(self, row: Place) -> tuple[float, float] | None:
+        """A hand-checked point: one of the event's town first (``city_venues``, names other towns share),
+        then one that holds anywhere (``venues``)."""
         text = f"{row.venue_name or ''} | {row.address or ''}".lower()
-        return next((tuple(v) for k, v in self._pins.items() if k in text), None)  # type: ignore[return-value]
+        local = self._city_pins.get(row.city or "", {})
+        return next((tuple(v) for pins in (local, self._pins) for k, v in pins.items() if k in text), None)  # type: ignore[return-value]
 
     def _known(self, session: object) -> tuple[Known, Known]:
         """Placed venues and streets per city; a point outside its own city teaches nothing."""
