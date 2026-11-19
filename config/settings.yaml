@@ -3299,11 +3299,14 @@ sources:
       request_delay_seconds: 0.5
 
   takeabreak:
-    # Take A Break (takebreaktravel.com): an Israeli agency's packages (flight + hotel + ticket) to club
-    # nights, concerts, festivals and matches abroad. /events (ItemList of the upcoming ones, card kind
-    # badges) + each event page (Event JSON-LD, hotels' per-person ILS prices): ~16 requests a run.
+    # Take A Break (takebreaktravel.com): an Israeli agency's packages (flight + hotel, often the ticket) to
+    # club nights, concerts, festivals and matches abroad. /events (ItemList of the upcoming ones, card kind
+    # badges) + each event page (Event JSON-LD, per-person ILS price), /artists + the new artists' pages
+    # (genre, picture, links), the destinations' lineup pages (dated nights with hour, venues' about) and
+    # the full-moon dates (lineup_pages in TakeABreakSettings): ~24 requests a run (37 the first time).
     enabled: true
     cron: "52 6,18 * * *"
+    skip_title_words: []  # no classes, courses or rentals among its events (Nov 2026)
     http:
       concurrency: 2
       request_delay_seconds: 1.0

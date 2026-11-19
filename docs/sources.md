@@ -179,7 +179,7 @@ many of them free.
 | `tickethouse` | Ticket House (ticket-house.com): tickets and packages to concerts and sports abroad | 05:48, 17:48 | yes |
 | `ticketeams` | Ticketeams (ticketeams.co.il): football, basketball, tennis, Formula 1 and concerts abroad | 05:49, 17:49 | yes |
 | `xplorer` | Xplorer (xplorer.co.il): a flights site's board of concerts and festivals abroad | 03:53, 15:53 | yes |
-| `takeabreak` | Take A Break (takebreaktravel.com): packages (flight + hotel + ticket) to club nights, concerts, festivals and matches abroad | 06:52, 18:52 | yes |
+| `takeabreak` | Take A Break (takebreaktravel.com): packages (flight + hotel, often the ticket) to club nights, concerts, festivals and matches abroad, plus the dated nights of its Dubai / Athens / Limassol / Mykonos / Ibiza lineups and Phangan's full moons; artist and venue profiles | 06:52, 18:52 | yes |
 | `dice` | DICE (dice.fm): club nights, DJ sets and gigs in London, Berlin, Paris, Barcelona, Madrid, Lisbon, Milan, Ibiza, New York, Rome, Miami, Los Angeles and Manchester (top ~30 per city and kind) | 05:14, 17:14 | yes |
 | `xceed` | Xceed (xceed.me): its whole upcoming catalogue from the site's public API - club nights, concerts, festivals and shows in every city it sells (~170 cities, ~23 countries; venue profiles weekly) | 06:01, 18:01 | yes |
 | `skiddle` | Skiddle (skiddle.com): UK club nights in London and Manchester (top 24 trending per city) | 07:28, 19:28 | yes |
