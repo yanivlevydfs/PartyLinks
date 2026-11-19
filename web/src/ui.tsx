@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { CardSources } from "./card_stores/CardSources";
 import sourceNames from "./sourceNames.json";
 import { Link, NavLink, Outlet, ScrollRestoration } from "react-router-dom";
@@ -591,13 +591,16 @@ export function Mark() {
   );
 }
 
-/** The brand loader: the mark bouncing on its ring over the SPOTX wordmark. `small` (mark only) sits inline in a button or bar. */
-export function Loader({ small }: { small?: boolean }) {
+/** The brand loader: the mark hopping on its shadow over the SPOTX wordmark and a progress bar with its
+ *  percent (an estimate, styles.css .load-bar). `small` (mark only) sits inline in a button or bar;
+ *  `seconds`: about how long this load takes to ~95% (the map's ~57k pins: longer than a page). */
+export function Loader({ small, seconds }: { small?: boolean; seconds?: number }) {
   const { t } = useT();
   return (
     <span className={small ? "loader small" : "loader"} role="status" aria-label={t.loading}>
       <Mark />
       {!small && <b className="word">SPOT<span>X</span></b>}
+      {!small && <span className="load-bar" aria-hidden style={seconds ? ({ "--load-s": `${seconds}s` } as CSSProperties) : undefined}><i /></span>}
     </span>
   );
 }

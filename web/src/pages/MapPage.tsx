@@ -143,7 +143,7 @@ export default function MapPage() {
         {me && <CircleMarker center={me} radius={8} pathOptions={{ color: "#fff", weight: 3, fillColor: "#19e3ff", fillOpacity: 1 }} interactive={false} />}
       </MapContainer>
       {/* ~57k pins take a few seconds to arrive: the map says so instead of looking empty. */}
-      {isPending && <div className="map-loading"><Loader /><span aria-hidden>{t.loading}</span></div>}
+      {isPending && <div className="map-loading"><Loader seconds={12} /></div>}
       {data && !heat && (
         <MapControls inView={inView.length} listOpen={listOpen && !spotList}
           onList={() => { setSpotKey(null); setListOpen(!listOpen || !!spotList); }}
