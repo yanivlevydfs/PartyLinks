@@ -1,0 +1,86 @@
+{
+ "success": true,
+ "data": {
+  "id": "7ce720fd-919c-11e9-846c-06b12363b88e",
+  "legacyId": 326,
+  "name": "City Hall",
+  "about": "City Hall is located in the heart of Barcelona, right next to Plaza Catalunya. It has retained its classical theater interior design with red velvet curtains, rigging system, high ceilings, decorations, and all this is now combined with an exceptional sound and lighting system.\r\n\r\n\r\nHere you will find the best music sessions with local and international DJs playing the best deep/tech house, dance, electro, techno and minimal music. It's the perfect place if you want to enjoy the night without leaving the center and listen to great music played by professional Dj's and artists. \r\n\r\n\r\nThe club reserves the right of admission.",
+  "slug": "city-hall",
+  "types": [
+   "CLUB"
+  ],
+  "coverUrl": "https://images.xceed.me/clubs/covers/city-hall-club-barcelona-xceed-61d2.jpg",
+  "logoUrl": "https://images.xceed.me/clubs/logos/city-hall-club-barcelona-xceed-logo.png",
+  "address": "Rambla de Catalunya, 4",
+  "coordinates": {
+   "latitude": 41.387721,
+   "longitude": 2.168269
+  },
+  "settings": {
+   "isPrivate": false,
+   "isArchived": false
+  },
+  "city": {
+   "id": "066b6cbb-1035-11ea-b000-06b880e08c2c",
+   "legacyId": 44,
+   "name": "Barcelona",
+   "slug": "barcelona",
+   "coverUrl": "https://images.xceed.me/cities/covers/barcelona-events-xceed-1e6d.jpg",
+   "currency": "EUR",
+   "timezone": "Europe/Madrid",
+   "coordinates": {
+    "latitude": 41.3833,
+    "longitude": 2.1833
+   },
+   "country": {
+    "id": "0a75d5ef-1035-11ea-b000-06b880e08c2c",
+    "name": "Spain",
+    "slug": "spain",
+    "coverUrl": "https://images.xceed.me/countries/covers/spain-country-xceed226f.jpeg",
+    "isoCode": "ES",
+    "isActive": true,
+    "coordinates": {
+     "latitude": 40.463667,
+     "longitude": -3.74922
+    }
+   },
+   "numEvents": null,
+   "isArchived": false
+  },
+  "followersCount": 567,
+  "musicGenres": [
+   {
+    "id": "0bce0d60-1035-11ea-b000-06b880e08c2c",
+    "name": "House",
+    "slug": "house"
+   },
+   {
+    "id": "0bce0e9a-1035-11ea-b000-06b880e08c2c",
+    "name": "Techno",
+    "slug": "techno"
+   }
+  ],
+  "vibes": [
+   {
+    "id": "08ee6206-1035-11ea-b000-06b880e08c2c",
+    "name": "Underground",
+    "slug": "underground"
+   },
+   {
+    "id": "08ee6554-1035-11ea-b000-06b880e08c2c",
+    "name": "International",
+    "slug": "international"
+   }
+  ],
+  "facilities": [],
+  "foodType": [],
+  "characteristics": [
+   {
+    "id": "44193fd0-a0fb-11ea-bb37-0242ac130002",
+    "name": "Club",
+    "slug": "club"
+   }
+  ],
+  "socialMedia": []
+ }
+}

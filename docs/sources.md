@@ -181,7 +181,7 @@ many of them free.
 | `xplorer` | Xplorer (xplorer.co.il): a flights site's board of concerts and festivals abroad | 03:53, 15:53 | yes |
 | `takeabreak` | Take A Break (takebreaktravel.com): packages (flight + hotel + ticket) to club nights, concerts, festivals and matches abroad | 06:52, 18:52 | yes |
 | `dice` | DICE (dice.fm): club nights, DJ sets and gigs in London, Berlin, Paris, Barcelona, Madrid, Lisbon, Milan, Ibiza, New York, Rome, Miami, Los Angeles and Manchester (top ~30 per city and kind) | 05:14, 17:14 | yes |
-| `xceed` | Xceed (xceed.me): clubs and club nights in Barcelona, Madrid, Milan, Rome, Lisbon, Porto, Berlin, Palma, Valencia, Tenerife and Naples (top ~24 per city) | 06:01, 18:01 | yes |
+| `xceed` | Xceed (xceed.me): its whole upcoming catalogue from the site's public API - club nights, concerts, festivals and shows in every city it sells (~170 cities, ~23 countries; venue profiles weekly) | 06:01, 18:01 | yes |
 | `skiddle` | Skiddle (skiddle.com): UK club nights in London and Manchester (top 24 trending per city) | 07:28, 19:28 | yes |
 | `megaevents` | Mega Events (mega-events.co.il): packages (flight + hotel + ticket) to concerts and matches abroad | 05:43, 17:43 | yes |
 

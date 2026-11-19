@@ -1,0 +1,63 @@
+{
+ "success": true,
+ "data": [
+  {
+   "eventId": "d261981a-a184-11f1-8304-0242ac110018",
+   "status": "available",
+   "lowestPriceOffer": {
+    "id": "ae4768e2-5b23-4d9b-b635-b1ef85b6fb22",
+    "eventId": "d261981a-a184-11f1-8304-0242ac110018",
+    "price": {
+     "amount": 15,
+     "currency": "EUR"
+    }
+   },
+   "ticketsAndPassesStatus": "available"
+  },
+  {
+   "eventId": "dc36c8b8-d6d3-11f1-a5e6-0242ac110004",
+   "status": "available",
+   "lowestPriceOffer": {
+    "id": "54fc26d2-70c5-40d2-9e8c-685c53b0fbed",
+    "eventId": "dc36c8b8-d6d3-11f1-a5e6-0242ac110004",
+    "price": {
+     "amount": 0,
+     "currency": "EUR"
+    }
+   },
+   "ticketsAndPassesStatus": "not_available"
+  },
+  {
+   "eventId": "51eaee70-e28e-11f1-9e29-0242ac110010",
+   "status": "available",
+   "lowestPriceOffer": {
+    "id": "e616a9e2-34fd-4b19-ab13-f8959737b5cc",
+    "eventId": "51eaee70-e28e-11f1-9e29-0242ac110010",
+    "price": {
+     "amount": 12,
+     "currency": "EUR"
+    }
+   },
+   "ticketsAndPassesStatus": "available"
+  },
+  {
+   "eventId": "78cb281e-dcd2-11f1-b5ea-0242ac110008",
+   "status": "sales_closed",
+   "lowestPriceOffer": null,
+   "ticketsAndPassesStatus": "not_available"
+  },
+  {
+   "eventId": "1e907056-c978-11f1-bc3d-0242ac11000b",
+   "status": "available",
+   "lowestPriceOffer": {
+    "id": "c0d898f4-1fd9-4e7e-89e0-3b4a441abc87",
+    "eventId": "1e907056-c978-11f1-bc3d-0242ac11000b",
+    "price": {
+     "amount": 25,
+     "currency": "EUR"
+    }
+   },
+   "ticketsAndPassesStatus": "available"
+  }
+ ]
+}

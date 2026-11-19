@@ -3319,14 +3319,17 @@ sources:
       request_delay_seconds: 1.5
 
   xceed:
-    # Xceed (xceed.me): clubs and club nights in Spain, Italy, Portugal and Germany, only the cities
-    # Israelis fly to most (cities in XceedSettings). Each city's events page (React state, ~24 top
-    # events with genres) + each event's page (JSON-LD: venue, coordinates, offers): ~270 requests.
+    # Xceed (xceed.me): its whole upcoming catalogue - every city and country (~2,400 events, ~170 cities,
+    # ~23 countries), every kind (club nights, concerts, festivals, shows) - from the site's own public API:
+    # the event list (200 a page, ~13), sale status + lowest price (25 events a request, ~95), one detail
+    # each (description, vibes, festival, age, private flag; ~2,400). Venue profiles rotate: each venue once
+    # a week (14 slots of 12 h, ~70 requests a run). ~2,600 small JSON requests a run.
     enabled: true
     cron: "1 6,18 * * *"
+    skip_title_words: ["corso di", "curso de", "course", "masterclass"]
     http:
-      concurrency: 2
-      request_delay_seconds: 1.0
+      concurrency: 4
+      request_delay_seconds: 0.5
 
   skiddle:
     # Skiddle (skiddle.com): UK club nights, only London and Manchester (cities in SkiddleSettings).

@@ -1,0 +1,603 @@
+{
+ "success": true,
+ "data": [
+  {
+   "id": "d261981a-a184-11f1-8304-0242ac110018",
+   "legacyId": 242783,
+   "name": "MABEMUSIK l SECRET ROOM l HOUSE / TECH HOUSE ALL NIGHT LONG",
+   "slug": "mabemusik-l-secret-room-l-house-tech-house-all-night-long",
+   "startingTime": 1795042740,
+   "endingTime": 1795060800,
+   "coverUrl": "https://images.xceed.me/events/banners/mabemusik-l-secret-room-l-house-tech-house-all-night-long-barcelona-xceed-square-1b0c.png",
+   "coverAspectRatio": "square",
+   "externalSalesUrl": null,
+   "isPreregistrationEnabled": false,
+   "hasActiveResaleListings": false,
+   "venue": {
+    "id": "7ce720fd-919c-11e9-846c-06b12363b88e",
+    "legacyId": 326,
+    "name": "City Hall",
+    "slug": "city-hall",
+    "types": [
+     "CLUB"
+    ],
+    "logoUrl": "https://images.xceed.me/clubs/logos/city-hall-club-barcelona-xceed-logo.png",
+    "coverUrl": "https://images.xceed.me/clubs/covers/city-hall-club-barcelona-xceed-61d2.jpg",
+    "address": "Rambla de Catalunya, 4",
+    "coordinates": {
+     "latitude": 41.387721,
+     "longitude": 2.168269
+    },
+    "city": {
+     "id": "066b6cbb-1035-11ea-b000-06b880e08c2c",
+     "legacyId": 44,
+     "name": "Barcelona",
+     "slug": "barcelona",
+     "coverUrl": "https://images.xceed.me/cities/covers/barcelona-events-xceed-1e6d.jpg",
+     "timezone": "Europe/Madrid",
+     "currency": "EUR",
+     "country": {
+      "id": "0a75d5ef-1035-11ea-b000-06b880e08c2c",
+      "legacyId": 724,
+      "name": "Spain",
+      "slug": "spain",
+      "coverUrl": "https://images.xceed.me/countries/covers/spain-country-xceed226f.jpeg",
+      "isoCode": "ES"
+     }
+    },
+    "characteristics": [
+     {
+      "id": "44193fd0-a0fb-11ea-bb37-0242ac130002",
+      "name": "Club",
+      "slug": "club"
+     }
+    ]
+   },
+   "venueIsSecret": false,
+   "settings": {
+    "hideEndingTime": false,
+    "endingTimeDisplayLabel": null
+   },
+   "lineup": [
+    {
+     "id": "9769532a-c343-11f1-ba65-0242ac110003",
+     "legacyId": 52600,
+     "name": "MABEMUSIK",
+     "slug": "mabemusik",
+     "coverUrl": "https://images.xceed.me/static/entities/artist-place-holder.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": null,
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": []
+    }
+   ],
+   "musicGenres": [
+    {
+     "id": "0bce12d6-1035-11ea-b000-06b880e08c2c",
+     "name": "Tech house",
+     "slug": "tech-house"
+    },
+    {
+     "id": "0bce0d60-1035-11ea-b000-06b880e08c2c",
+     "name": "House",
+     "slug": "house"
+    },
+    {
+     "id": "0bce0e9a-1035-11ea-b000-06b880e08c2c",
+     "name": "Techno",
+     "slug": "techno"
+    }
+   ]
+  },
+  {
+   "id": "dc36c8b8-d6d3-11f1-a5e6-0242ac110004",
+   "legacyId": 250782,
+   "name": "SUBVRS ✦ 18.11 ✷ Capodoglio ",
+   "slug": "subvrs-1811-capodoglio",
+   "startingTime": 1795032000,
+   "endingTime": 1795050000,
+   "coverUrl": "https://images.xceed.me/events/banners/subvrs-1811-capodoglio-torino-xceed-square-f5a1.jpg",
+   "coverAspectRatio": "square",
+   "externalSalesUrl": null,
+   "isPreregistrationEnabled": false,
+   "hasActiveResaleListings": false,
+   "venue": {
+    "id": "7ef93420-7a76-400c-9556-2b7bd04627f7",
+    "legacyId": 8402,
+    "name": "Capodoglio",
+    "slug": "capodoglio-1",
+    "types": [
+     "CLUB"
+    ],
+    "logoUrl": "https://images.xceed.me/clubs/logos/capodoglio-1-club-torino-xceed-logo-ba58.jpg",
+    "coverUrl": "https://images.xceed.me/clubs/covers/capodoglio-1-club-torino-xceed-ba33.jpg",
+    "address": "37 Murazzi del Po Gipo Farassino",
+    "coordinates": {
+     "latitude": 45.0616306,
+     "longitude": 7.6938512
+    },
+    "city": {
+     "id": "066c619a-1035-11ea-b000-06b880e08c2c",
+     "legacyId": 97,
+     "name": "Turin",
+     "slug": "torino",
+     "coverUrl": "https://images.xceed.me/cities/covers/torino-events-xceed-82ac.jpg",
+     "timezone": "Europe/Rome",
+     "currency": "EUR",
+     "country": {
+      "id": "0a758c4d-1035-11ea-b000-06b880e08c2c",
+      "legacyId": 380,
+      "name": "Italy",
+      "slug": "italy",
+      "coverUrl": "https://images.xceed.me/countries/covers/italy-country-xceedb389.jpeg",
+      "isoCode": "IT"
+     }
+    },
+    "characteristics": [
+     {
+      "id": "44193fd0-a0fb-11ea-bb37-0242ac130002",
+      "name": "Club",
+      "slug": "club"
+     },
+     {
+      "id": "ea58a048-a0fb-11ea-bb37-0242ac130002",
+      "name": "Restaurant",
+      "slug": "restaurant"
+     }
+    ]
+   },
+   "venueIsSecret": false,
+   "settings": {
+    "hideEndingTime": false,
+    "endingTimeDisplayLabel": null
+   },
+   "lineup": [
+    {
+     "id": "112100b0-7523-11f1-981c-0242ac110011",
+     "legacyId": 50747,
+     "name": "Mattia Gasparotto",
+     "slug": "mattia-gasparotto-2",
+     "coverUrl": "https://images.xceed.me/artists/covers/mattia-gasparotto-2-artist-xceed-cover-8900.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": "https://open.spotify.com/artist/401zsBg88IYDg1x0akeqO4",
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": []
+    },
+    {
+     "id": "d1721bfe-a5fe-11f1-a98e-0242ac110005",
+     "legacyId": 51850,
+     "name": "Gabriele Goduti",
+     "slug": "gabriele-goduti-1",
+     "coverUrl": "https://images.xceed.me/artists/covers/gabriele-goduti-1-artist-xceed-cover-9327.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": null,
+     "soundcloudProfileUrl": "https://soundcloud.com/user630755595",
+     "mixcloudProfileUrl": null,
+     "websiteUrl": "https://www.subvrs.it/artists",
+     "tracks": [],
+     "musicGenres": []
+    },
+    {
+     "id": "9553248e-860c-11ee-a63c-0242ac11001b",
+     "legacyId": 33258,
+     "name": "Pietro Ottonello",
+     "slug": "pietro-ottonello",
+     "coverUrl": "https://images.xceed.me/artists/covers/pietro-ottonello-artist-xceed-cover-5647.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": null,
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": []
+    }
+   ],
+   "musicGenres": [
+    {
+     "id": "0bce1bac-1035-11ea-b000-06b880e08c2c",
+     "name": "Disco",
+     "slug": "disco"
+    },
+    {
+     "id": "0bce0d60-1035-11ea-b000-06b880e08c2c",
+     "name": "House",
+     "slug": "house"
+    }
+   ]
+  },
+  {
+   "id": "51eaee70-e28e-11f1-9e29-0242ac110010",
+   "legacyId": 252823,
+   "name": "DISCO CRAWL V20",
+   "slug": "disco-crawl-v20",
+   "startingTime": 1795208400,
+   "endingTime": 1795233600,
+   "coverUrl": "https://images.xceed.me/events/banners/disco-crawl-v06-valencia-xceed-square-e294.jpg",
+   "coverAspectRatio": "square",
+   "externalSalesUrl": null,
+   "isPreregistrationEnabled": false,
+   "hasActiveResaleListings": false,
+   "venue": {
+    "city": {
+     "id": "066b45d0-1035-11ea-b000-06b880e08c2c",
+     "legacyId": 15,
+     "name": "Valencia",
+     "slug": "valencia",
+     "coverUrl": "https://images.xceed.me/cities/covers/valencia-events-xceed.jpg",
+     "timezone": "Europe/Madrid",
+     "currency": "EUR",
+     "country": {
+      "id": "0a75d5ef-1035-11ea-b000-06b880e08c2c",
+      "legacyId": 724,
+      "name": "Spain",
+      "slug": "spain",
+      "coverUrl": "https://images.xceed.me/countries/covers/spain-country-xceed226f.jpeg",
+      "isoCode": "ES"
+     }
+    }
+   },
+   "venueIsSecret": true,
+   "settings": {
+    "hideEndingTime": true,
+    "endingTimeDisplayLabel": "UNTIL LATE"
+   },
+   "lineup": [],
+   "musicGenres": [
+    {
+     "id": "0bce1013-1035-11ea-b000-06b880e08c2c",
+     "name": "Hits",
+     "slug": "hits"
+    },
+    {
+     "id": "5c8fa698-c962-11ed-8e91-0ac1b97f4b58",
+     "name": "Pop",
+     "slug": "pop"
+    },
+    {
+     "id": "0bce0d60-1035-11ea-b000-06b880e08c2c",
+     "name": "House",
+     "slug": "house"
+    }
+   ]
+  },
+  {
+   "id": "78cb281e-dcd2-11f1-b5ea-0242ac110008",
+   "legacyId": 251856,
+   "name": "Soul Shaker | 18/11",
+   "slug": "soul-shaker-18-11",
+   "startingTime": 1795017600,
+   "endingTime": 1795053600,
+   "coverUrl": "https://images.xceed.me/events/banners/soul-shaker-18-11-cape-town-xceed-square-8acd.jpg",
+   "coverAspectRatio": "square",
+   "externalSalesUrl": null,
+   "isPreregistrationEnabled": false,
+   "hasActiveResaleListings": false,
+   "venue": {
+    "id": "3c448f5a-d634-4476-a2b4-16908353d954",
+    "legacyId": 15771,
+    "name": "The Village Idiot",
+    "slug": "the-village-idiot",
+    "types": [
+     "CLUB"
+    ],
+    "logoUrl": "https://images.xceed.me/clubs/logos/the-village-idiot-club-cape-town-xceed-logo-aca6.jpg",
+    "coverUrl": "https://images.xceed.me/clubs/covers/the-village-idiot-club-cape-town-xceed-4c66.jpg",
+    "address": "32 Loop St, CBD, 8001",
+    "coordinates": {
+     "latitude": -33.9195093,
+     "longitude": 18.4210945
+    },
+    "city": {
+     "id": "1e184906-443f-11eb-9e37-0ac1b97f4b58",
+     "legacyId": 1244,
+     "name": "Cape Town",
+     "slug": "cape-town",
+     "coverUrl": "https://images.xceed.me/cities/covers/cape-town-events-xceed-c0b7.jpg",
+     "timezone": "Africa/Windhoek",
+     "currency": "ZAR",
+     "country": {
+      "id": "0a75d4da-1035-11ea-b000-06b880e08c2c",
+      "legacyId": 710,
+      "name": "South Africa",
+      "slug": "south-africa",
+      "coverUrl": "https://images.xceed.me/countries/covers/south-africa-country-xceed5855.jpg",
+      "isoCode": "ZA"
+     }
+    },
+    "characteristics": []
+   },
+   "venueIsSecret": false,
+   "settings": {
+    "hideEndingTime": false,
+    "endingTimeDisplayLabel": null
+   },
+   "lineup": [
+    {
+     "id": "c51919c0-d960-11ed-b5cf-0242ac11000b",
+     "legacyId": 29856,
+     "name": "Dylan Munro",
+     "slug": "dylan-munro",
+     "coverUrl": "https://images.xceed.me/artists/covers/dylan-munro-artist-xceed-cover-ad29.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": null,
+     "soundcloudProfileUrl": "https://soundcloud.com/djdylanmunroza",
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": []
+    },
+    {
+     "id": "83249962-1626-11f1-bf8f-0242ac110014",
+     "legacyId": 48049,
+     "name": "K-Linx",
+     "slug": "k-linx",
+     "coverUrl": "https://images.xceed.me/static/entities/artist-place-holder.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": null,
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": []
+    },
+    {
+     "id": "7079bdee-1250-11f1-af32-0242ac11000d",
+     "legacyId": 47939,
+     "name": "Thulani",
+     "slug": "thulani",
+     "coverUrl": "https://images.xceed.me/artists/covers/thulani-artist-xceed-cover-a75a.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": "https://open.spotify.com/artist/1SAu4xZ9D9T73deKyjF1U0",
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": []
+    },
+    {
+     "id": "68a8bf96-1626-11f1-ab6e-0242ac110014",
+     "legacyId": 48048,
+     "name": "IFE",
+     "slug": "ife",
+     "coverUrl": "https://images.xceed.me/static/entities/artist-place-holder.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": null,
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": []
+    }
+   ],
+   "musicGenres": [
+    {
+     "id": "33d07682-b4f1-11ec-8323-0ac1b97f4b58",
+     "name": "Afro House",
+     "slug": "afro-house"
+    },
+    {
+     "id": "0bce158c-1035-11ea-b000-06b880e08c2c",
+     "name": "Deep House",
+     "slug": "deep-house"
+    }
+   ]
+  },
+  {
+   "id": "1e907056-c978-11f1-bc3d-0242ac11000b",
+   "legacyId": 248797,
+   "name": "ONE NIGHT RAP FESTIVAL",
+   "slug": "one-night-rap-festival",
+   "startingTime": 1795204800,
+   "endingTime": 1795230000,
+   "coverUrl": "https://images.xceed.me/events/banners/one-night-festival-hamburg-xceed-square-755b.jpg",
+   "coverAspectRatio": "square",
+   "externalSalesUrl": null,
+   "isPreregistrationEnabled": false,
+   "hasActiveResaleListings": false,
+   "venue": {
+    "id": "58101610-4d36-4b78-b4a5-e154603e4990",
+    "legacyId": 6397,
+    "name": "Edelfettwerk",
+    "slug": "edelfettwerk",
+    "types": [
+     "CLUB"
+    ],
+    "logoUrl": "https://images.xceed.me/clubs/logos/edelfettwerk-club-hamburg-xceed-logo-1b1b.png",
+    "coverUrl": "https://images.xceed.me/clubs/covers/edelfettwerk-club-hamburg-xceed-5993.jpg",
+    "address": "Schnackenburgallee 202, 22525",
+    "coordinates": {
+     "latitude": 53.5947962,
+     "longitude": 9.905218
+    },
+    "city": {
+     "id": "a9543930-dc55-11ec-af75-0ac1b97f4b58",
+     "legacyId": 1531,
+     "name": "Hamburg",
+     "slug": "hamburg",
+     "coverUrl": "https://images.xceed.me/cities/covers/hamburg-events-xceed-9c76.jpg",
+     "timezone": "Europe/Berlin",
+     "currency": "EUR",
+     "country": {
+      "id": "0a752729-1035-11ea-b000-06b880e08c2c",
+      "legacyId": 276,
+      "name": "Germany",
+      "slug": "germany",
+      "coverUrl": "https://images.xceed.me/countries/covers/germany-country-xceed2a1f.jpeg",
+      "isoCode": "DE"
+     }
+    },
+    "characteristics": [
+     {
+      "id": "44193fd0-a0fb-11ea-bb37-0242ac130002",
+      "name": "Club",
+      "slug": "club"
+     },
+     {
+      "id": "693ce890-a0f9-11ea-bb37-0242ac130002",
+      "name": "Open-air",
+      "slug": "open-air"
+     }
+    ]
+   },
+   "venueIsSecret": false,
+   "settings": {
+    "hideEndingTime": false,
+    "endingTimeDisplayLabel": null
+   },
+   "lineup": [
+    {
+     "id": "4c687f8e-8948-11f1-8e45-0242ac11000a",
+     "legacyId": 51201,
+     "name": "Lucio 101",
+     "slug": "lucio-101",
+     "coverUrl": "https://images.xceed.me/artists/covers/lucio-101-artist-xceed-cover-c03e.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": null,
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": [
+      {
+       "name": "Hip Hop"
+      },
+      {
+       "name": "Rap"
+      },
+      {
+       "name": "Urban"
+      }
+     ]
+    },
+    {
+     "id": "a6f4a67a-cb11-11f1-b64a-0242ac11000b",
+     "legacyId": 52800,
+     "name": "Caney030",
+     "slug": "caney030",
+     "coverUrl": "https://images.xceed.me/artists/covers/caney030-artist-xceed-cover-6db8.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": "https://open.spotify.com/artist/0ZqNAlpzFTJI4tyK4UwJE2",
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": [
+      {
+       "name": "german hip hop"
+      }
+     ]
+    },
+    {
+     "id": "cb1ae53c-cb11-11f1-a26a-0242ac11000b",
+     "legacyId": 52801,
+     "name": "Yc",
+     "slug": "yc",
+     "coverUrl": "https://images.xceed.me/artists/covers/yc-artist-xceed-cover-b4b7.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": "https://open.spotify.com/artist/2F0M1eZ2BZFNFPCq3eKCtA",
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": [
+      {
+       "name": "german hip hop"
+      }
+     ]
+    },
+    {
+     "id": "e2f9cdd0-cb11-11f1-a437-0242ac11000a",
+     "legacyId": 52802,
+     "name": "Hoti",
+     "slug": "hoti",
+     "coverUrl": "https://images.xceed.me/artists/covers/hoti-artist-xceed-cover-184d.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": "https://open.spotify.com/artist/3JjV29S3jjRRqt82qdqVJC",
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": [
+      {
+       "name": "german hip hop"
+      }
+     ]
+    },
+    {
+     "id": "2b4f9948-cb12-11f1-a7de-0242ac11000a",
+     "legacyId": 52803,
+     "name": "Noé jr",
+     "slug": "noe-jr",
+     "coverUrl": "https://images.xceed.me/artists/covers/noe-jr-artist-xceed-cover-f015.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": "https://open.spotify.com/artist/0hCPrQ4xXYlfnTMfOkzgXk",
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": []
+    },
+    {
+     "id": "52fcc222-cb12-11f1-bee3-0242ac110003",
+     "legacyId": 52804,
+     "name": "Capré",
+     "slug": "capre",
+     "coverUrl": "https://images.xceed.me/artists/covers/capre-artist-xceed-cover-d7d9.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": "https://open.spotify.com/artist/1jnBvjukrwAykvQofDSkqu",
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [],
+     "musicGenres": [
+      {
+       "name": "german hip hop"
+      }
+     ]
+    },
+    {
+     "id": "56aacd2c-9c68-11ef-9ce7-0242ac110003",
+     "legacyId": 39690,
+     "name": "Charlize",
+     "slug": "charlize",
+     "coverUrl": "https://images.xceed.me/artists/covers/charlize-artist-xceed-cover-5ffa.jpg",
+     "isGeneric": false,
+     "spotifyProfileUrl": "https://open.spotify.com/artist/5RKUXG6hD3vVpakjwcK5IW",
+     "soundcloudProfileUrl": null,
+     "mixcloudProfileUrl": null,
+     "websiteUrl": null,
+     "tracks": [
+      {
+       "name": "Anomalie",
+       "url": "https://p.scdn.co/mp3-preview/9bde84c2b7bbcba47e14b3e6fed66cb6f222273f?cid=26fa853e56704f3a820c6f7ec8d59212"
+      }
+     ],
+     "musicGenres": []
+    }
+   ],
+   "musicGenres": [
+    {
+     "id": "0bce2b9a-1035-11ea-b000-06b880e08c2c",
+     "name": "Rap",
+     "slug": "rap"
+    },
+    {
+     "id": "0bce1436-1035-11ea-b000-06b880e08c2c",
+     "name": "Hip-hop",
+     "slug": "hip-hop"
+    },
+    {
+     "id": "0bce12d6-1035-11ea-b000-06b880e08c2c",
+     "name": "Tech house",
+     "slug": "tech-house"
+    }
+   ]
+  }
+ ]
+}

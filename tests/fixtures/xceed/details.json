@@ -1,0 +1,530 @@
+{
+ "242783": {
+  "id": "d261981a-a184-11f1-8304-0242ac110018",
+  "legacyId": 242783,
+  "name": "MABEMUSIK l SECRET ROOM l HOUSE / TECH HOUSE ALL NIGHT LONG",
+  "about": "Showcase en el club más importante de Barcelona. Un concepto donde lo mEl miércoles 18 de noviembre, SECRET ROOM se convierte en el punto de encuentro para los amantes del House y el Tech House.\n\nMABEMUSIK toma el control de la cabina con una sesión ALL NIGHT LONG, marcando el ritmo de una noche donde la electrónica, la actitud y la energía serán protagonistas.\n\nUna propuesta sonora sin interrupciones, en un espacio donde cada sesión tiene su propia identidad.\n\n**CITY HALL BARCELONA**\nSECRET ROOM\nRambla Catalunya 2-4, Barcelona.ás importante es la música.",
+  "slug": "mabemusik-l-secret-room-l-house-tech-house-all-night-long",
+  "startingTime": 1795042740,
+  "endingTime": 1795060800,
+  "doorsOpening": 1787781540,
+  "coverUrl": "https://images.xceed.me/events/banners/mabemusik-l-secret-room-l-house-tech-house-all-night-long-barcelona-xceed-square-1b0c.png",
+  "coverAspectRatio": "square",
+  "videoCover": null,
+  "isFestival": false,
+  "settings": {
+   "isPrivate": false,
+   "tableManagementEnabled": false,
+   "hideEndingTime": false,
+   "endingTimeDisplayLabel": null
+  },
+  "venue": {
+   "id": "7ce720fd-919c-11e9-846c-06b12363b88e",
+   "legacyId": 326,
+   "name": "City Hall",
+   "slug": "city-hall",
+   "types": [
+    "CLUB"
+   ],
+   "logoUrl": "https://images.xceed.me/clubs/logos/city-hall-club-barcelona-xceed-logo.png",
+   "coverUrl": "https://images.xceed.me/clubs/covers/city-hall-club-barcelona-xceed-61d2.jpg",
+   "address": "Rambla de Catalunya, 4",
+   "coordinates": {
+    "latitude": 41.387721,
+    "longitude": 2.168269
+   },
+   "city": {
+    "id": "066b6cbb-1035-11ea-b000-06b880e08c2c",
+    "legacyId": 44,
+    "name": "Barcelona",
+    "slug": "barcelona",
+    "coverUrl": "https://images.xceed.me/cities/covers/barcelona-events-xceed-1e6d.jpg",
+    "timezone": "Europe/Madrid",
+    "currency": "EUR",
+    "country": {
+     "id": "0a75d5ef-1035-11ea-b000-06b880e08c2c",
+     "legacyId": 724,
+     "name": "Spain",
+     "slug": "spain",
+     "coverUrl": "https://images.xceed.me/countries/covers/spain-country-xceed226f.jpeg",
+     "isoCode": "ES"
+    }
+   },
+   "characteristics": [
+    {
+     "id": "44193fd0-a0fb-11ea-bb37-0242ac130002",
+     "name": "Club",
+     "slug": "club"
+    }
+   ]
+  },
+  "venueIsSecret": false,
+  "company": {
+   "id": "04712857-5be6-11eb-8fa8-06a01c1e9f96",
+   "name": "City Hall",
+   "legalName": "ALTEA, S.A.",
+   "commercialName": "City Hall",
+   "privacyPolicyUrl": null,
+   "slug": null,
+   "logoUrl": null
+  },
+  "musicGenres": [
+   {
+    "id": "0bce12d6-1035-11ea-b000-06b880e08c2c",
+    "name": "Tech house",
+    "slug": "tech-house"
+   },
+   {
+    "id": "0bce0d60-1035-11ea-b000-06b880e08c2c",
+    "name": "House",
+    "slug": "house"
+   },
+   {
+    "id": "0bce0e9a-1035-11ea-b000-06b880e08c2c",
+    "name": "Techno",
+    "slug": "techno"
+   }
+  ],
+  "vibes": [],
+  "dressCode": null,
+  "agePolicy": {
+   "id": "96e5214c-1133-11ea-b000-06b880e08c2c",
+   "name": "18+",
+   "minimumAge": 18
+  },
+  "policyText": null,
+  "externalSalesUrl": null,
+  "checkoutTerms": null,
+  "floorplanId": null,
+  "preregistrationAvailable": false,
+  "hasActiveResaleListings": false,
+  "captchaVerification": false,
+  "allowTicketTransfers": false,
+  "allowsInternalResale": false,
+  "resaleMode": "always",
+  "resaleCloseOffsetHours": 0,
+  "allowsTicketAlerts": true
+ },
+ "250782": {
+  "id": "dc36c8b8-d6d3-11f1-a5e6-0242ac110004",
+  "legacyId": 250782,
+  "name": "SUBVRS ✦ 18.11 ✷ Capodoglio ",
+  "about": "SUBVRS presents ✦ 18.11 ✷ Capodoglio\n\n🎧 IN CONSOLE\nGabriele Goduti\nMatt\nPietro ottonello \n\n\n🕖 ORARI\nDalle 21:00 alle 02:00\n\n🍹 HAPPY HOUR fino alle 23\n3 birre o spritz → 12€\n3 long drink → 20€\n\n🎟️ INGRESSO\nLibero con accredito obbligatorio\n\n📍 IL POSTO\nCapodoglio, ai Murazzi: dehors interno ed esterno sul Po, bar con cucina raffinato e allestimento curato. Ping pong e biliardino gratis per tutta la durata dell'evento.\n\nSubvrs è un collettivo torinese di musica elettronica. Dj, promoter e organizzatori che producono i propri eventi da zero, con la musica nel dna e la cura del dettaglio come metodo.\n\nDall'aperitivo all'ultimo giro di piatti, un'unica lunga serata a firma Subvrs.",
+  "slug": "subvrs-1811-capodoglio",
+  "startingTime": 1795032000,
+  "endingTime": 1795050000,
+  "doorsOpening": 1793651400,
+  "coverUrl": "https://images.xceed.me/events/banners/subvrs-1811-capodoglio-torino-xceed-square-f5a1.jpg",
+  "coverAspectRatio": "square",
+  "videoCover": {
+   "source": "cloudflare",
+   "externalId": "a1a18404f87f65c66436aa2e6fc6a392",
+   "width": 1920,
+   "height": 1080
+  },
+  "isFestival": false,
+  "settings": {
+   "isPrivate": false,
+   "tableManagementEnabled": false,
+   "hideEndingTime": false,
+   "endingTimeDisplayLabel": null
+  },
+  "venue": {
+   "id": "7ef93420-7a76-400c-9556-2b7bd04627f7",
+   "legacyId": 8402,
+   "name": "Capodoglio",
+   "slug": "capodoglio-1",
+   "types": [
+    "CLUB"
+   ],
+   "logoUrl": "https://images.xceed.me/clubs/logos/capodoglio-1-club-torino-xceed-logo-ba58.jpg",
+   "coverUrl": "https://images.xceed.me/clubs/covers/capodoglio-1-club-torino-xceed-ba33.jpg",
+   "address": "37 Murazzi del Po Gipo Farassino",
+   "coordinates": {
+    "latitude": 45.0616306,
+    "longitude": 7.6938512
+   },
+   "city": {
+    "id": "066c619a-1035-11ea-b000-06b880e08c2c",
+    "legacyId": 97,
+    "name": "Turin",
+    "slug": "torino",
+    "coverUrl": "https://images.xceed.me/cities/covers/torino-events-xceed-82ac.jpg",
+    "timezone": "Europe/Rome",
+    "currency": "EUR",
+    "country": {
+     "id": "0a758c4d-1035-11ea-b000-06b880e08c2c",
+     "legacyId": 380,
+     "name": "Italy",
+     "slug": "italy",
+     "coverUrl": "https://images.xceed.me/countries/covers/italy-country-xceedb389.jpeg",
+     "isoCode": "IT"
+    }
+   },
+   "characteristics": [
+    {
+     "id": "44193fd0-a0fb-11ea-bb37-0242ac130002",
+     "name": "Club",
+     "slug": "club"
+    },
+    {
+     "id": "ea58a048-a0fb-11ea-bb37-0242ac130002",
+     "name": "Restaurant",
+     "slug": "restaurant"
+    }
+   ]
+  },
+  "venueIsSecret": false,
+  "company": {
+   "id": "a3a098c0-751d-11f1-a824-e7c2009c2ff9",
+   "name": "Subvrs",
+   "legalName": "Subvrs",
+   "commercialName": "Subvrs",
+   "privacyPolicyUrl": null,
+   "slug": null,
+   "logoUrl": "https://images.xceed.me/companies/logos/company-a3a098c0-751d-11f1-a824-e7c2009c2ff9-xceed-logo-e44f.png"
+  },
+  "musicGenres": [
+   {
+    "id": "0bce1bac-1035-11ea-b000-06b880e08c2c",
+    "name": "Disco",
+    "slug": "disco"
+   },
+   {
+    "id": "0bce0d60-1035-11ea-b000-06b880e08c2c",
+    "name": "House",
+    "slug": "house"
+   }
+  ],
+  "vibes": [],
+  "dressCode": {
+   "id": "9276e220-1133-11ea-b000-06b880e08c2c",
+   "name": "Come as you are"
+  },
+  "agePolicy": {
+   "id": "96e5214c-1133-11ea-b000-06b880e08c2c",
+   "name": "18+",
+   "minimumAge": 18
+  },
+  "policyText": null,
+  "externalSalesUrl": null,
+  "checkoutTerms": null,
+  "floorplanId": null,
+  "preregistrationAvailable": false,
+  "hasActiveResaleListings": false,
+  "captchaVerification": false,
+  "allowTicketTransfers": false,
+  "allowsInternalResale": false,
+  "resaleMode": "always",
+  "resaleCloseOffsetHours": 0,
+  "allowsTicketAlerts": true
+ },
+ "252823": {
+  "id": "51eaee70-e28e-11f1-9e29-0242ac110010",
+  "legacyId": 252823,
+  "name": "DISCO CRAWL V20",
+  "about": "IMPORTANT INFORMATION ❗\n-Our route starts from JAGGER (Gran Vía Marqués del Turia, 23 Valencia)\n-Punctual at 22:00h\n\nMeet new people, discover the city’s best nightlife spots and make unforgettable memories.\nThree welcome shots, free entry all night.",
+  "slug": "disco-crawl-v20",
+  "startingTime": 1795208400,
+  "endingTime": 1795233600,
+  "doorsOpening": 1793307600,
+  "coverUrl": "https://images.xceed.me/events/banners/disco-crawl-v06-valencia-xceed-square-e294.jpg",
+  "coverAspectRatio": "square",
+  "videoCover": null,
+  "isFestival": false,
+  "settings": {
+   "isPrivate": false,
+   "tableManagementEnabled": false,
+   "hideEndingTime": true,
+   "endingTimeDisplayLabel": "UNTIL LATE"
+  },
+  "venue": {
+   "city": {
+    "id": "066b45d0-1035-11ea-b000-06b880e08c2c",
+    "legacyId": 15,
+    "name": "Valencia",
+    "slug": "valencia",
+    "coverUrl": "https://images.xceed.me/cities/covers/valencia-events-xceed.jpg",
+    "timezone": "Europe/Madrid",
+    "currency": "EUR",
+    "country": {
+     "id": "0a75d5ef-1035-11ea-b000-06b880e08c2c",
+     "legacyId": 724,
+     "name": "Spain",
+     "slug": "spain",
+     "coverUrl": "https://images.xceed.me/countries/covers/spain-country-xceed226f.jpeg",
+     "isoCode": "ES"
+    }
+   }
+  },
+  "venueIsSecret": true,
+  "company": {
+   "id": "046f7c38-5be6-11eb-8fa8-06a01c1e9f96",
+   "name": "Salir en Valencia",
+   "legalName": "Ampliando Limites SL",
+   "commercialName": "Salir en Valencia",
+   "privacyPolicyUrl": null,
+   "slug": null,
+   "logoUrl": null
+  },
+  "musicGenres": [
+   {
+    "id": "0bce1013-1035-11ea-b000-06b880e08c2c",
+    "name": "Hits",
+    "slug": "hits"
+   },
+   {
+    "id": "5c8fa698-c962-11ed-8e91-0ac1b97f4b58",
+    "name": "Pop",
+    "slug": "pop"
+   },
+   {
+    "id": "0bce0d60-1035-11ea-b000-06b880e08c2c",
+    "name": "House",
+    "slug": "house"
+   }
+  ],
+  "vibes": [],
+  "dressCode": {
+   "id": "9276e183-1133-11ea-b000-06b880e08c2c",
+   "name": "Smart casual"
+  },
+  "agePolicy": {
+   "id": "96e5214c-1133-11ea-b000-06b880e08c2c",
+   "name": "18+",
+   "minimumAge": 18
+  },
+  "policyText": null,
+  "externalSalesUrl": null,
+  "checkoutTerms": null,
+  "floorplanId": null,
+  "preregistrationAvailable": false,
+  "hasActiveResaleListings": false,
+  "captchaVerification": false,
+  "allowTicketTransfers": false,
+  "allowsInternalResale": false,
+  "resaleMode": "always",
+  "resaleCloseOffsetHours": 0,
+  "allowsTicketAlerts": true
+ },
+ "251856": {
+  "id": "78cb281e-dcd2-11f1-b5ea-0242ac110008",
+  "legacyId": 251856,
+  "name": "Soul Shaker | 18/11",
+  "about": "Afro House Night \n🍸 Double Double Drinks Specials 6-9PM\n🍔 Burger + Dop for R140 | 3 Sliders + Jug for R230\n⚡️ R100 from 10PM\n🍀 Monkey Shoulder Specials All Night \n🚨 Soul shaker giveaway on Instagram",
+  "slug": "soul-shaker-18-11",
+  "startingTime": 1795017600,
+  "endingTime": 1795053600,
+  "doorsOpening": 1771948800,
+  "coverUrl": "https://images.xceed.me/events/banners/soul-shaker-18-11-cape-town-xceed-square-8acd.jpg",
+  "coverAspectRatio": "square",
+  "videoCover": null,
+  "isFestival": false,
+  "settings": {
+   "isPrivate": false,
+   "tableManagementEnabled": false,
+   "hideEndingTime": false,
+   "endingTimeDisplayLabel": null
+  },
+  "venue": {
+   "id": "3c448f5a-d634-4476-a2b4-16908353d954",
+   "legacyId": 15771,
+   "name": "The Village Idiot",
+   "slug": "the-village-idiot",
+   "types": [
+    "CLUB"
+   ],
+   "logoUrl": "https://images.xceed.me/clubs/logos/the-village-idiot-club-cape-town-xceed-logo-aca6.jpg",
+   "coverUrl": "https://images.xceed.me/clubs/covers/the-village-idiot-club-cape-town-xceed-4c66.jpg",
+   "address": "32 Loop St, CBD, 8001",
+   "coordinates": {
+    "latitude": -33.9195093,
+    "longitude": 18.4210945
+   },
+   "city": {
+    "id": "1e184906-443f-11eb-9e37-0ac1b97f4b58",
+    "legacyId": 1244,
+    "name": "Cape Town",
+    "slug": "cape-town",
+    "coverUrl": "https://images.xceed.me/cities/covers/cape-town-events-xceed-c0b7.jpg",
+    "timezone": "Africa/Windhoek",
+    "currency": "ZAR",
+    "country": {
+     "id": "0a75d4da-1035-11ea-b000-06b880e08c2c",
+     "legacyId": 710,
+     "name": "South Africa",
+     "slug": "south-africa",
+     "coverUrl": "https://images.xceed.me/countries/covers/south-africa-country-xceed5855.jpg",
+     "isoCode": "ZA"
+    }
+   },
+   "characteristics": []
+  },
+  "venueIsSecret": false,
+  "company": {
+   "id": "c52bdaee-fcec-11f0-8c85-87752d00ab21",
+   "name": "The Village Idiot",
+   "legalName": "The Village Idiot",
+   "commercialName": "The Village Idiot",
+   "privacyPolicyUrl": null,
+   "slug": null,
+   "logoUrl": null
+  },
+  "musicGenres": [
+   {
+    "id": "33d07682-b4f1-11ec-8323-0ac1b97f4b58",
+    "name": "Afro House",
+    "slug": "afro-house"
+   },
+   {
+    "id": "0bce158c-1035-11ea-b000-06b880e08c2c",
+    "name": "Deep House",
+    "slug": "deep-house"
+   }
+  ],
+  "vibes": [],
+  "dressCode": null,
+  "agePolicy": {
+   "id": "96e5214c-1133-11ea-b000-06b880e08c2c",
+   "name": "18+",
+   "minimumAge": 18
+  },
+  "policyText": null,
+  "externalSalesUrl": null,
+  "checkoutTerms": null,
+  "floorplanId": null,
+  "preregistrationAvailable": false,
+  "hasActiveResaleListings": false,
+  "captchaVerification": false,
+  "allowTicketTransfers": false,
+  "allowsInternalResale": false,
+  "resaleMode": "always",
+  "resaleCloseOffsetHours": 0,
+  "allowsTicketAlerts": true
+ },
+ "248797": {
+  "id": "1e907056-c978-11f1-bc3d-0242ac11000b",
+  "legacyId": 248797,
+  "name": "ONE NIGHT RAP FESTIVAL",
+  "about": "ONE NIGHT RAP FESTIVAL – HAMBURG\n\n20. NOVEMBER 2026 · EDELFETTWERK HAMBURG\n\nEine Nacht. Ein Festival. Hamburg.\n\nAm 20. November bringt LoJo das ONE NIGHT RAP FESTIVAL ins Edelfettwerk Hamburg.\n\nFreu dich auf ein außergewöhnliches Line-up mit Lucio101, Caney030, YC, Hoti, Noé Jr, Capré und Charlize\n\nDazu erwarten dich mehrere Floors, DJs, eine exklusive Outdoor-Area und ein Festival-Erlebnis, das weit über eine gewöhnliche Clubnacht hinausgeht.\n\nLIVE-STREAM!\n\nDer Hamburger Streamer 65 begleitet / moderiert den gesamten Abend und nimmt euch live auf Twitch mit.\n\nDAS ERWARTET DICH!\n- Live-Auftritte verschiedener Deutschrap-Artists\n- Mehrere Floors und DJs\n- Exklusive Outdoor-Area mit Bar\n- Moderation und Twitch-Livestream mit 65\n- Eine Nacht im Edelfettwerk Hamburg\n\nEVENT DETAILS\n\nFreitag, 20. November 2026  \nEinlass: 21:00 Uhr  \nEdelfettwerk Hamburg  \nSchnackenburgallee 202, 22525 Hamburg\n\nEinlass ab 18 Jahren.\n\nDie Verfügbaren Tickets und Preisphasen sind extrem limitiert. Sichere dir also dein Ticket frühzeitig und sei beim ONE NIGHT RAP FESTIVAL dabei.",
+  "slug": "one-night-rap-festival",
+  "startingTime": 1795204800,
+  "endingTime": 1795230000,
+  "doorsOpening": 1792350000,
+  "coverUrl": "https://images.xceed.me/events/banners/one-night-festival-hamburg-xceed-square-755b.jpg",
+  "coverAspectRatio": "square",
+  "videoCover": null,
+  "isFestival": false,
+  "settings": {
+   "isPrivate": false,
+   "tableManagementEnabled": false,
+   "hideEndingTime": false,
+   "endingTimeDisplayLabel": null
+  },
+  "venue": {
+   "id": "58101610-4d36-4b78-b4a5-e154603e4990",
+   "legacyId": 6397,
+   "name": "Edelfettwerk",
+   "slug": "edelfettwerk",
+   "types": [
+    "CLUB"
+   ],
+   "logoUrl": "https://images.xceed.me/clubs/logos/edelfettwerk-club-hamburg-xceed-logo-1b1b.png",
+   "coverUrl": "https://images.xceed.me/clubs/covers/edelfettwerk-club-hamburg-xceed-5993.jpg",
+   "address": "Schnackenburgallee 202, 22525",
+   "coordinates": {
+    "latitude": 53.5947962,
+    "longitude": 9.905218
+   },
+   "city": {
+    "id": "a9543930-dc55-11ec-af75-0ac1b97f4b58",
+    "legacyId": 1531,
+    "name": "Hamburg",
+    "slug": "hamburg",
+    "coverUrl": "https://images.xceed.me/cities/covers/hamburg-events-xceed-9c76.jpg",
+    "timezone": "Europe/Berlin",
+    "currency": "EUR",
+    "country": {
+     "id": "0a752729-1035-11ea-b000-06b880e08c2c",
+     "legacyId": 276,
+     "name": "Germany",
+     "slug": "germany",
+     "coverUrl": "https://images.xceed.me/countries/covers/germany-country-xceed2a1f.jpeg",
+     "isoCode": "DE"
+    }
+   },
+   "characteristics": [
+    {
+     "id": "44193fd0-a0fb-11ea-bb37-0242ac130002",
+     "name": "Club",
+     "slug": "club"
+    },
+    {
+     "id": "693ce890-a0f9-11ea-bb37-0242ac130002",
+     "name": "Open-air",
+     "slug": "open-air"
+    }
+   ]
+  },
+  "venueIsSecret": false,
+  "company": {
+   "id": "d3b4e610-26df-11f1-90e1-417928c7d15e",
+   "name": "LoJo",
+   "legalName": "LoJo",
+   "commercialName": "LoJo",
+   "privacyPolicyUrl": null,
+   "slug": null,
+   "logoUrl": null
+  },
+  "musicGenres": [
+   {
+    "id": "0bce2b9a-1035-11ea-b000-06b880e08c2c",
+    "name": "Rap",
+    "slug": "rap"
+   },
+   {
+    "id": "0bce1436-1035-11ea-b000-06b880e08c2c",
+    "name": "Hip-hop",
+    "slug": "hip-hop"
+   },
+   {
+    "id": "0bce12d6-1035-11ea-b000-06b880e08c2c",
+    "name": "Tech house",
+    "slug": "tech-house"
+   }
+  ],
+  "vibes": [
+   {
+    "id": "08ee6b38-1035-11ea-b000-06b880e08c2c",
+    "name": "Concert",
+    "slug": "concert"
+   },
+   {
+    "id": "dbdf1d56-aee5-11ea-b8e2-0ac1b97f4b58",
+    "name": "Live Show",
+    "slug": "live-show"
+   }
+  ],
+  "dressCode": {
+   "id": "9276e220-1133-11ea-b000-06b880e08c2c",
+   "name": "Come as you are"
+  },
+  "agePolicy": {
+   "id": "96e5214c-1133-11ea-b000-06b880e08c2c",
+   "name": "18+",
+   "minimumAge": 18
+  },
+  "policyText": null,
+  "externalSalesUrl": null,
+  "checkoutTerms": null,
+  "floorplanId": null,
+  "preregistrationAvailable": false,
+  "hasActiveResaleListings": false,
+  "captchaVerification": false,
+  "allowTicketTransfers": false,
+  "allowsInternalResale": false,
+  "resaleMode": "always",
+  "resaleCloseOffsetHours": 0,
+  "allowsTicketAlerts": true
+ }
+}
