@@ -184,3 +184,8 @@
 @media (prefers-reduced-motion: reduce) { .leaflet-interactive.pin-live { animation: none; } }
 .map-fab.on.free { background: var(--green); border-color: var(--green); color: #04140c; }
 .map-fab.on.free span { color: #04140c; }
+
+/* The pins on their way: over the map, which stays visible (and draggable) underneath. */
+.map-loading { position: absolute; inset: 0; z-index: 1000; display: grid; place-items: center; align-content: center; gap: 12px;
+  background: rgb(8 4 18 / .55); color: #fff; font-weight: 700; pointer-events: none; }
+.map-loading .loader { min-height: 0; padding: 0; }
