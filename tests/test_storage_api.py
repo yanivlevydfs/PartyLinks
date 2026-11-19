@@ -747,6 +747,8 @@ def test_cached_responses_follow_writes_and_map_returns_located_events(tmp_path:
             clock.sleep(0.05)
         answer = client.get("/events/map")
         assert answer.headers["x-body-length"] == str(len(answer.content))  # the map's real percent
+        again = client.get("/events/map")  # served by CachedPages, before the route: the header too
+        assert again.headers["x-body-length"] == str(len(again.content))
         pins = answer.json()
         assert "test:a" in [p["id"] for p in pins["items"]] and len(pins["items"]) + pins["unplaced"] == 2
         assert set(pins["items"][0]) == {

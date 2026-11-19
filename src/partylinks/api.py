@@ -665,8 +665,11 @@ class CachedPages:
                                     (state.response_cache, b"application/json", key)):  # fmt: skip
                 if cache and (hit := cache.peek(k)):
                     body, code = hit
+                    size = str(len(body)).encode()
+                    # x-body-length: the size before gzip (which rewrites content-length), as map_events
+                    # sends it: the map's loader counts the bytes against it for its real percent.
                     await send({"type": "http.response.start", "status": code, "headers": [
-                        (b"content-type", media), (b"content-length", str(len(body)).encode()),
+                        (b"content-type", media), (b"content-length", size), (b"x-body-length", size),
                     ]})  # fmt: skip
                     return await send({"type": "http.response.body", "body": body})
         await self.app(scope, receive, send)
