@@ -3377,6 +3377,10 @@ sources:
     # holiday pages: every sitemap page is read too, and their JSON-LD event links followed (~350 pages).
     sitemap_path: /sitemap-main.xml
     max_link_rounds: 3
+    # /clubs (~16 NightClub pages: address, pin, picture) -> venue profiles, read first so club nights get
+    # the club's pin; /artists (ItemList) -> artist pages (picture, genre, Spotify, Instagram).
+    clubs_path: /clubs
+    artists_path: /artists
     http:
       concurrency: 4
 

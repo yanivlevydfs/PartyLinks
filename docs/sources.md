@@ -28,7 +28,7 @@ pagination and what the listing and the event page provide.
 | `selector` | Selector (selector.org.il) | 08:06, 20:06 | yes |
 | `drop` | Drop (tdrop.net): self-serve ticketing for party producers: raves, house parties, festivals | 08:17, 20:17 | yes |
 | `agol` | AGOL (agol-join.vercel.app): organic & progressive house collective; its one-page sign-up site names the next party (guest list, no price) | 09:37, 21:37 | yes |
-| `airdrop` | Airdrop (airdrop.co.il): party guide for clubs, festivals and party trips abroad; listing + sitemap pages + their event links, artist catalog | 06:25, 18:25 | yes |
+| `airdrop` | Airdrop (airdrop.co.il): party guide for clubs, festivals and party trips abroad; listing + sitemap pages + their event links, artists (/artists, Spotify, links), clubs as venue profiles (/clubs: pin, address, logo) | 06:25, 18:25 | yes |
 | `hypd` | hypd (hypd.co.il): curated party board; events sitemap + each page's MusicEvent JSON-LD (coordinates, lineup, producer's seller link), genres from its /genre/ links | 07:39, 19:39 | yes |
 | `getin` | GETIN (get-in.com / getin.xyz): club-night and festival ticketing, mostly abroad (US, Canada, Dubai, Mexico) and a few Israeli nights; api/filter-events per filter + each event page for currency | 07:42, 19:42 | yes |
 | `popit` | Popit (popit.events): party board that aggregates events from ticketing sites | 07:03, 19:03 | yes |
