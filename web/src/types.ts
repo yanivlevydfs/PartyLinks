@@ -121,6 +121,8 @@ export interface EventImage {
 export interface EventDetail extends EventSummary {
   /** Lineup name -> its music / social links (artist_links); names without links left out. */
   lineup_links?: Record<string, { service: string; url: string }[]>;
+  /** Lineup name -> its photo (artist profiles); names without one left out. */
+  lineup_images?: Record<string, string>;
   /** The description in paragraphs, headings and lists (partylinks.event_text). */
   description_layout?: DescriptionLayout | null;
   description: string | null;

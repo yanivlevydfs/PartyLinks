@@ -259,6 +259,36 @@ def _summary(row: EventRow, cfg: Settings, lang: str) -> str:
     return " · ".join(p for p in parts if p)
 
 
+def event_faq(row: EventRow, cfg: Settings, lang: str) -> list[tuple[str, str]]:
+    """The event page's questions and answers, from its own fields (the page shows the same; FAQPage for search)."""
+    he = lang == "he"
+    where = ", ".join(x for x in [row.venue_name, row.address, row.city] if x)
+    genres = ", ".join(genre_label(g, lang) for g in (row.genres or [])[:3])
+    price = _price(row, lang)
+    faq = [
+        ("איפה מתקיים האירוע?" if he else "Where is the event?", where),
+        ("מתי מתקיים האירוע?" if he else "When is the event?", _when(row, cfg, lang)),
+        ("כמה עולה כרטיס?" if he else "How much is a ticket?", price),
+        ("איזה סגנון מוזיקה?" if he else "What music?", genres),
+        ("מי מופיע?" if he else "Who plays?", ", ".join((row.lineup or [])[:6])),
+        (
+            "מגיל כמה הכניסה?" if he else "What is the minimum age?",
+            (f"מגיל {row.min_age}" if he else f"{row.min_age}+") if row.min_age else "",
+        ),
+    ]
+    return [(q, a) for q, a in faq if a]
+
+
+def _faq_ld(faq: list[tuple[str, str]]) -> list[dict[str, Any]]:
+    if not faq:
+        return []
+    return [{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq],
+    }]
+
+
 def _clip(text: str | None, limit: int | None = None) -> str:
     limit = get_settings().seo.description_chars if limit is None else limit
     text = " ".join((text or "").split())
@@ -605,6 +635,8 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
     crumbs = [(row.venue_name, f"/venue/{quote(row.venue_name, safe='')}")] if row.venue_name else []
     place = place_seo(session, row, cfg.place_info, lang, _url(cfg, event_path(row)), _cover(cfg, row)) if (row.extra or {}).get(PLACE_LISTING) else None
     more = "" if place else _more_html(session, cfg, lang, row)
+    faq = [] if place else event_faq(row, cfg, lang)
+    faq_html = "".join(f"<h3>{escape(q)}</h3><p>{escape(a)}</p>" for q, a in faq)
     return Page(
         title=f"{row.title} · {_when(row, cfg, lang)} · {cfg.site.name}",
         description=_clip(f"{summary}. {own_text or ''}", cfg.seo.event_description_chars),
@@ -613,11 +645,11 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
         lang=lang,
         image=_cover(cfg, row),
         og_type="event",
-        jsonld=[place[0] if place else event_jsonld(row, cfg, artist_links_for(session, cfg.artist_links, row.lineup or []), own_text), _breadcrumbs(cfg, lang, *crumbs, (row.title, event_path(row)))],
+        jsonld=[place[0] if place else event_jsonld(row, cfg, artist_links_for(session, cfg.artist_links, row.lineup or []), own_text), _breadcrumbs(cfg, lang, *crumbs, (row.title, event_path(row))), *_faq_ld(faq)],
         body=(
             f"<article><h1>{escape(row.title)}</h1><p>{escape(_when(row, cfg, lang))}</p>"
             f"<p>{venue_link} {escape(where)}</p><p>{escape(_price(row, lang))}</p>{about}"
-            f"{place[1] if place else ''}{lineup}"
+            f"{place[1] if place else ''}{lineup}{faq_html}"
             f'<p><a href="{escape(go_path(row.id, row.code))}?at=seo" rel="nofollow noopener">{t["tickets"]} ({escape(row.source)})</a></p></article>'
             + more
         ),

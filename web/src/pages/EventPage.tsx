@@ -16,14 +16,15 @@ import { SaveButton } from "../saved/SaveButton";
 import { EventPinButton } from "../home_pins/PinButtons";
 import { EventStats } from "../popularity/EventStats";
 import { LineupPlayer } from "../artist_links/ArtistPlayer";
-import { AddToCalendar, countryName, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, Sources, useT, useTitle, venuePath, when } from "../ui";
+import { AddToCalendar, countryName, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, useT, useTitle, venuePath, when } from "../ui";
+import { cleanTitle, EventFaq, eventFaq, lede, relativeDay, shortAddress } from "./eventLook";
 
 export default function EventPage() {
   const { id = "" } = useParams();
   const { t, lang } = useT();
   const navigate = useNavigate();
   const { data: e, error, isError, isPending } = useEvent(id);
-  useTitle(e?.title);
+  useTitle(e ? cleanTitle(e.title, e.venue_name) : undefined);
   // One address per event: an old /event/<slug> link, or a duplicate listing's, shows as its short /e/<code>.
   const location = useLocation();
   const canonical = e?.code ? eventPath(e) : null;
@@ -76,6 +77,19 @@ export default function EventPage() {
   const cheapest = firsthand.filter((a) => !a.is_sold_out && a.min_price != null && (e.min_price == null || a.min_price < e.min_price))
     .sort((a, b) => a.min_price! - b.min_price!)[0]?.id;
   const time = { hour: "2-digit", minute: "2-digit" } as const;
+  const title = cleanTitle(e.title, e.venue_name);
+  const intro = lede(e);
+  const soon = relativeDay(e, t);
+  const street = shortAddress(e, lang);
+  // "Get tickets · from ₪119" when there is a price to pay; a free or unpriced event keeps "to the event's page".
+  const paid = !!price && (e.group_entry_type ?? e.entry_type) !== "free";
+  const dateTile = e.local_date && (
+    <span className="date-tile" aria-hidden>
+      <small>{new Date(e.local_date + "T12:00:00Z").toLocaleString(t.locale, { month: "short", timeZone: "UTC" })}</small>
+      <b>{Number(e.local_date.slice(8, 10))}</b>
+    </span>
+  );
+  const buyLabel = paid ? <>{t.buyTickets} <b className="buy-price">{price}</b></> : t.buy;
   const liveTickets = e.tickets.filter((k) => k.status !== "sold_out");
   const goneTickets = e.tickets.filter((k) => k.status === "sold_out");
   // "Cheapest" on a ticket only when there is a choice: two on-sale prices that differ.
@@ -108,12 +122,12 @@ export default function EventPage() {
               {e.entry_type !== "unknown" && <span className={"tag entry " + e.entry_type}>{label(t.entry, e.entry_type)}</span>}
               {e.is_sold_out && <span className="tag sold">{t.soldOut}</span>}
             </div>
-            <h1 dir="auto">{e.title}</h1>
-            <Sources e={e} />
+            <h1 dir="auto">{title}</h1>
+            {intro && <p className="e-lede" dir="auto">{intro}</p>}
             <EventStats e={e} />
 
             <ul className="facts">
-              <li><i>📅</i>{when(e, t, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</li>
+              <li><i>📅</i>{when(e, t, { weekday: "long", day: "numeric", month: "long" })}{soon && <em className="soon">{soon}</em>}</li>
               {e.time_known !== false && <li>
                 <i>🕘</i>
                 {/* Each time isolated, the range in the page's direction: in Hebrew the start sits on the right. */}
@@ -129,13 +143,10 @@ export default function EventPage() {
                   <i>📍</i>
                   <span>
                     {e.venue_name ? <Link to={venuePath(e.venue_name)}>{e.venue_name}</Link> : null}
-                    {[e.venue_name ? "" : null, e.address, e.city, countryName(e.country, lang) || null].filter((x) => x != null && x !== undefined).join(" · ")}{" "}
+                    {[e.venue_name ? "" : null, street, e.city, countryName(e.country, lang) || null].filter((x) => x != null && x !== undefined).join(" · ")}{" "}
                     <MapLinks place={e} label={t.map} />
                   </span>
                 </li>
-              )}
-              {price && (
-                <li className="f-price"><i>🎟</i>{price}{e.max_price && e.max_price !== e.min_price ? ` – ${money(e.max_price, e.currency, t.locale)}` : ""}</li>
               )}
               {e.organizer && <li><i>🎤</i>{t.organizer}: {e.organizer}</li>}
             </ul>
@@ -143,7 +154,7 @@ export default function EventPage() {
             {/* The ticket links in one block: the main site, the other box offices, second-hand folded, the terms. */}
             <div className="buy-box">
               <a className="buy" href={`${e.url}?at=buy`} target="_blank" rel="noopener noreferrer">
-                {t.buy} ↗ <small>{sourceName(e.source)}{e.extra?.resale ? ` · ${t.resaleTag}` : ""}</small>
+                {buyLabel} ↗ <small>{sourceName(e.source)}{e.extra?.resale ? ` · ${t.resaleTag}` : ""}</small>
               </a>
               {firsthand.length > 0 && (
                 <div className="alts">
@@ -181,6 +192,8 @@ export default function EventPage() {
           </div>
         </div>
 
+        <div className="e-body">
+        <div className="e-main">
         {e.description_layout && (
           <section>
             <h4>{t.about}</h4>
@@ -193,7 +206,7 @@ export default function EventPage() {
         {e.lineup.length > 0 && (
           <section>
             <h4>{t.lineup}</h4>
-            <LineupPlayer names={e.lineup} links={e.lineup_links}>
+            <LineupPlayer names={e.lineup} links={e.lineup_links} images={e.lineup_images}>
               <SaveAlertButton q={e.lineup[0]} label={alertText.artist(e.lineup[0])} />
             </LineupPlayer>
           </section>
@@ -220,14 +233,37 @@ export default function EventPage() {
         )}
 
         <EveningPlan eventId={e.id} />
+
+        <EventFaq items={eventFaq(e, t, lang)} title={t.faqTitle} />
+        </div>
+        {/* Desktop: the ticket link stays beside the page while reading (phones have the bottom bar). */}
+        <aside className="e-side">
+          <div className="e-side-card">
+            <div className="e-side-head">
+              {dateTile}
+              <div>
+                {soon && <em className="soon">{soon}</em>}
+                <small>{t.readyToGo}</small>
+                <b dir="auto">{title}</b>
+              </div>
+            </div>
+            <p className="e-side-meta" dir="auto">
+              {[e.time_known !== false && when(e, t, time), e.venue_name ?? e.city].filter(Boolean).join(" · ")}
+            </p>
+            {price && <p className="e-side-price">{e.is_sold_out ? t.soldOut : price}</p>}
+            <a className="buy" href={`${e.url}?at=side`} target="_blank" rel="noopener noreferrer">{paid ? t.buyTickets : t.buy} ↗</a>
+          </div>
+        </aside>
+        </div>
       </div>
       {/* Phones: price + the ticket link stay in reach while reading lineup, tickets and description. */}
       <div className="buy-bar">
+        {dateTile}
         <div>
           <b>{e.is_sold_out ? t.soldOut : price}</b>
-          <small>{sourceName(e.source)}</small>
+          <small>{soon && <em className="soon">{soon}</em>}{sourceName(e.source)}</small>
         </div>
-        <a className="buy" href={`${e.url}?at=bar`} target="_blank" rel="noopener noreferrer">{t.buy} ↗</a>
+        <a className="buy" href={`${e.url}?at=bar`} target="_blank" rel="noopener noreferrer">{paid ? t.buyTickets : t.buy} ↗</a>
       </div>
     </article>
   );

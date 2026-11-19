@@ -42,18 +42,27 @@ function Frame({ name, embed }: { name: string; embed: Embed }) {
   );
 }
 
-/** The event's lineup: each name links to its artist page, with a ▶ when it has something to play; the player opens below. */
-export function LineupPlayer({ names, links, children }: { names: string[]; links?: Record<string, ArtistLink[]>; children?: ReactNode }) {
+/** The event's lineup: each name links to its artist page, with a ▶ when it has something to play; the player opens below.
+ * When any of them has a photo, each name shows as a round picture (its initial when it has none). */
+export function LineupPlayer({ names, links, images, children }: {
+  names: string[]; links?: Record<string, ArtistLink[]>; images?: Record<string, string>; children?: ReactNode;
+}) {
   const [open, setOpen] = useState<string | null>(null);
   const playing = open ? embedOf(links?.[open]) : null;
+  const pictured = !!images && names.some((a) => images[a]);
   return (
     <>
-      <div className="lineup-list">
+      <div className={"lineup-list" + (pictured ? " pictured" : "")}>
         {names.map((a) => {
           const embed = embedOf(links?.[a]);
           return (
             <span key={a} className="lineup-item">
-              <Link to={artistPath(a)}>{a}</Link>
+              <Link to={artistPath(a)}>
+                {pictured && (images?.[a]
+                  ? <img className="lu-face" src={images[a]} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                  : <span className="lu-face" aria-hidden>{[...a][0]}</span>)}
+                <span>{a}</span>
+              </Link>
               {embed && <PlayButton name={a} embed={embed} on={a === open} toggle={() => setOpen(a === open ? null : a)} />}
             </span>
           );

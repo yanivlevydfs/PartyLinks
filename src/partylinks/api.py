@@ -41,6 +41,7 @@ from partylinks.admin import AdminDep, require_admin
 from partylinks.admin import router as admin_router
 from partylinks.ads import service as ads
 from partylinks.artist_links.models import links_for as artist_links_for
+from partylinks.artistdb import lineup_images
 from partylinks.artwork import service as artwork
 from partylinks.artwork.routes import router as artwork_router
 from partylinks.bot import install as install_bot
@@ -328,6 +329,8 @@ class EventOut(EventSummaryOut):
     watching: int = 0  # visitors on its page in the last few minutes (0 below popularity.min_watching)
     # Lineup name -> its music / social links [{service, url}] (partylinks.artist_links); names without links left out.
     lineup_links: dict[str, list[dict[str, str]]] = {}
+    # Lineup name -> its photo, from the artist profiles ticket sites curate (partylinks.artistdb); names without one left out.
+    lineup_images: dict[str, str] = {}
     description_layout: DescriptionLayout | None = None  # the description in paragraphs, headings, lists
 
 
@@ -1594,6 +1597,7 @@ def _register_routes(app: FastAPI) -> None:
                 "images": [ImageOut.model_validate(i) for i in live_images(row)],
                 "watching": popularity.watching(session, row.id, cfg.popularity),
                 "lineup_links": artist_links_for(session, cfg.artist_links, row.lineup or []),
+                "lineup_images": lineup_images(session, row.lineup or []),
                 "description": text,
                 "description_layout": description_layout(text, cfg.event_text),
             }

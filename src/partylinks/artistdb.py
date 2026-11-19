@@ -152,3 +152,16 @@ class ArtistBook:
                 write(own)
 
         with_db_retry("artists", save)
+
+
+def lineup_images(session: Session, names: list[str]) -> dict[str, str]:
+    """Lineup name -> its profile photo, for the names a ticket site pictured."""
+    keys = {n.strip().casefold(): n for n in names if n.strip()}
+    if not keys:
+        return {}
+    rows = session.execute(
+        select(ArtistProfileRow.key, ArtistProfileRow.image_url).where(
+            ArtistProfileRow.key.in_(list(keys)), ArtistProfileRow.image_url.is_not(None)
+        )
+    ).all()
+    return {keys[k]: url for k, url in rows if url}

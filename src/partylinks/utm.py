@@ -16,9 +16,9 @@ from partylinks.config import UtmSettings
 from partylinks.db import EventRow
 
 # Where on our site the click came from (?at= on /go/...): main button, another seller of the
-# same event, the mobile sticky bar, the server-rendered page, the map's event panel, the bot's cards (tg),
+# same event, the mobile sticky bar, the desktop side card (side), the server-rendered page, the map's event panel, the bot's cards (tg),
 # the site inside Telegram (tg-app). Anything else is dropped.
-PLACEMENTS = frozenset({"buy", "alt", "bar", "seo", "map", "tg", "tg-app"})
+PLACEMENTS = frozenset({"buy", "alt", "bar", "side", "seo", "map", "tg", "tg-app"})
 
 
 def utm_params(cfg: UtmSettings, row: EventRow, placement: str | None = None) -> dict[str, str]:

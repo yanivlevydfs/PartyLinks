@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import type { EventSummary } from "../types";
-import { eventPath, isOn, useT, when } from "../ui";
+import { eventPath, Img, isOn, sized, useT, when } from "../ui";
 import type { Lang } from "../i18n";
 
 interface Evening {
@@ -14,9 +14,10 @@ interface Evening {
   budget_max_level: number;
 }
 
-const TEXT: Record<Lang, { title: string; venue: string; budget: (cap: string) => string; steps: Record<string, string>; m: (n: number) => string }> = {
+const TEXT: Record<Lang, { title: string; venue: string; places: (n: number) => string; budget: (cap: string) => string; steps: Record<string, string>; m: (n: number) => string }> = {
   he: {
     title: "🗺️ תכננו את הערב",
+    places: (n) => `${n} מקומות ליד: לפני ואחרי`,
     budget: (cap) => `💸 רק מקומות זולים (עד ${cap})`,
     venue: "📅 השבוע במקום",
     steps: { drinks: "🥂 לפני: האפי האוור קרוב", dinner: "🍽️ לפני: ארוחה טובה", late: "🍻 אחרי: בר או אוכל בלילה" },
@@ -24,6 +25,7 @@ const TEXT: Record<Lang, { title: string; venue: string; budget: (cap: string) =
   },
   en: {
     title: "🗺️ Plan the evening",
+    places: (n) => `${n} places nearby: before and after`,
     budget: (cap) => `💸 Cheap places only (up to ${cap})`,
     venue: "📅 This week at the place",
     steps: { drinks: "🥂 Before: a happy hour nearby", dinner: "🍽️ Before: a good dinner", late: "🍻 After: a bar or late food" },
@@ -49,10 +51,23 @@ function Stop({ e, distance }: { e: EventSummary; distance?: string }) {
   );
 }
 
+/** Another event at the same place this week: a small poster card. */
+function VenueCard({ e }: { e: EventSummary }) {
+  const { t } = useT();
+  return (
+    <Link className="ev-card" to={eventPath(e)}>
+      <Img src={sized(e.image_url ?? e.cover_url, 640)} alt="" className="ev-img" text={e.title} />
+      <small>{when(e, t, { weekday: "short", day: "numeric", month: "numeric" })}</small>
+      <b dir="auto">{e.title}</b>
+    </Link>
+  );
+}
+
 export function EveningPlan({ eventId }: { eventId: string }) {
   const { lang } = useT();
   const p = TEXT[lang];
   const [budget, setBudget] = useState(false);
+  const [open, setOpen] = useState(false);
   const { data } = useQuery({
     queryKey: ["evening", eventId, budget],
     queryFn: async () => {
@@ -66,17 +81,23 @@ export function EveningPlan({ eventId }: { eventId: string }) {
   if (!data || (!data.steps.length && !data.venue.length && !budget)) return null;
   // Off, the toggle is offered only when a stop costs more than the cap: otherwise it would change nothing.
   const pricey = data.steps.some((s) => s.stops.some((x) => (x.event.price_level ?? 0) > data.budget_max_level));
+  const stops = data.steps.reduce((n, s) => n + s.stops.length, 0);
   return (
     <>
       {(data.steps.length > 0 || budget) && (
         <section className="evening">
-          <h4>{p.title}</h4>
-          {(budget || pricey) && (
+          {/* Folded to one line: the places are a side plan, not the event. */}
+          <button type="button" className="ev-toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+            <b>{p.title}</b>
+            <small>{p.places(stops)}</small>
+            <span aria-hidden>{open ? "▴" : "▾"}</span>
+          </button>
+          {open && (budget || pricey) && (
             <button className={"chip toggle" + (budget ? " on" : "")} aria-pressed={budget} onClick={() => setBudget(!budget)}>
               <span className="tick" aria-hidden /> {p.budget("₪".repeat(data.budget_max_level))}
             </button>
           )}
-          {data.steps.map((s) => (
+          {open && data.steps.map((s) => (
             <div key={s.key} className="evening-step">
               <h5>{p.steps[s.key] ?? s.key}</h5>
               <ul>{s.stops.map((x) => <Stop key={x.event.id} e={x.event} distance={p.m(x.distance_m)} />)}</ul>
@@ -87,7 +108,7 @@ export function EveningPlan({ eventId }: { eventId: string }) {
       {data.venue.length > 0 && (
         <section className="evening">
           <h4>{p.venue}</h4>
-          <ul>{data.venue.map((e) => <Stop key={e.id} e={e} />)}</ul>
+          <div className="ev-cards">{data.venue.map((e) => <VenueCard key={e.id} e={e} />)}</div>
         </section>
       )}
     </>

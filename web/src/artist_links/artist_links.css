@@ -27,3 +27,18 @@
 .ap-play.al-youtube:hover, .ap-play.al-youtube.on, .ap-listen.al-youtube:hover, .ap-listen.al-youtube.on { background: #f00; border-color: #f00; color: #fff; }
 .ap-frame { display: block; width: 100%; max-width: 720px; margin-top: 16px; border: 0; border-radius: 12px; }
 .artist-player { margin-bottom: 28px; }
+/* A lineup with photos: each name under its round picture (the initial when it has none). */
+.lineup-list.pictured { gap: 14px 18px; align-items: flex-start; }
+.lineup-list.pictured .lineup-item { position: relative; }
+.lineup-list.pictured .lineup-item > a {
+  display: grid; justify-items: center; gap: 8px; width: 96px; padding: 0; text-align: center;
+  background: none; border: 0; backdrop-filter: none; box-shadow: none; font-size: 13px; line-height: 1.25;
+}
+.lineup-list.pictured .lineup-item > a:hover { box-shadow: none; }
+.lu-face {
+  width: 84px; height: 84px; border-radius: 50%; object-fit: cover; display: grid; place-items: center;
+  border: 2px solid var(--line-hot); background: var(--panel); font: 800 30px/1 var(--display); color: var(--muted);
+  transition: border-color .2s, box-shadow .2s;
+}
+.lineup-item > a:hover .lu-face { border-color: var(--cyan); box-shadow: 0 0 22px rgb(25 227 255 / .35); }
+.lineup-list.pictured .ap-play { position: absolute; top: 56px; inset-inline-end: 0; width: 30px; height: 30px; }
