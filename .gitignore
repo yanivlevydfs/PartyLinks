@@ -16,3 +16,4 @@ web/dist/
 .impeccable/hook.cache.json
 
 .claude/settings.local.json
+.claude/worktrees/
