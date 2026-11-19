@@ -1,0 +1,95 @@
+{
+ "pageProps": {
+  "profile": {
+   "venue": {
+    "attributes": [],
+    "id": "1061",
+    "links": {
+     "facebook": "https://www.facebook.com/thegrandclapham/?rf=119020664914761",
+     "instagram": "https://www.instagram.com/thegrandclapham/",
+     "soundcloud": null,
+     "tiktok": "https://www.tiktok.com/@theclaphamgrand",
+     "twitter": "https://twitter.com/thegrandclapham?lang=en",
+     "website": "https://claphamgrand.com/",
+     "youtube": null
+    },
+    "name": "The Clapham Grand",
+    "address": "The Clapham Grand, 21-25 St John's Hill, London SW11 1TT, UK",
+    "description": "First opened in 1900, the Clapham Grand is London’s iconic palace of modern variety featuring live shows, comedy, movie nights, drag, sports, brunch, music and much more. Just a stone’s throw from Clapham Junction railway station, the venue is at the heart of London’s bustling entertainment space and places an emphasis on celebrating all forms of performance art.  \n  \nOur maximum seated capacity is 727, and our maximum standing capacity is 1,250.",
+    "location": {
+     "lat": 51.4629923,
+     "lng": -0.169368800000029
+    },
+    "image": {
+     "url": "https://dice-media.imgix.net/attachments/2026-07-03/e259969a-4ab9-4749-9fe1-18cf6d32bda9.jpg?rect=0%2C0%2C1080%2C1080"
+    },
+    "capacity": null,
+    "city": {
+     "code": "london",
+     "id": "54d8a23438fe5d27d500001c",
+     "name": "London",
+     "location": {
+      "lat": 51.507653,
+      "lng": -0.107722,
+      "place": "Europe/London"
+     },
+     "country_code": "GB",
+     "perm_name": "london",
+     "state_code": "ENG",
+     "country_id": "GB",
+     "country_name": "United Kingdom",
+     "country_perm_name": "united-kingdom",
+     "viewport": {
+      "northeast": {
+       "lat": 51.669993,
+       "lng": 0.153177
+      },
+      "southwest": {
+       "lat": 51.384527,
+       "lng": -0.351652
+      }
+     }
+    },
+    "contacts": {
+     "phone": "+442072235623",
+     "email": "info@claphamgrand.com"
+    },
+    "followers_count": 50264,
+    "branch_url": null,
+    "slug": "the-clapham-grand-ry8v",
+    "cover_image": {
+     "url": "https://dice-media.imgix.net/attachments/2024-06-12/66537b63-8fcd-4512-989c-c624c613b5aa.jpg?rect=0%2C13%2C1600%2C874"
+    },
+    "impression_id": null,
+    "following_info": {
+     "description": null,
+     "followers_count": 50264
+    },
+    "first_event_image": null,
+    "image_gallery": [
+     {
+      "url": "https://dice-media.imgix.net/attachments/2023-07-14/4df9595a-af2e-49ae-9dc0-f0bd4ad89603.jpg"
+     },
+     {
+      "url": "https://dice-media.imgix.net/attachments/2023-07-14/9a1fb7fe-8d6f-4326-acb5-0dc045a1d735.jpg"
+     },
+     {
+      "url": "https://dice-media.imgix.net/attachments/2023-07-14/4fa8186a-7a55-45f0-aa12-639d2a06ee07.jpg"
+     },
+     {
+      "url": "https://dice-media.imgix.net/attachments/2023-07-14/2996b9cb-1c31-45d2-9a8a-4ec270e741bd.jpg"
+     },
+     {
+      "url": "https://dice-media.imgix.net/attachments/2023-07-14/3281f343-1e14-4293-b403-edd30501a43f.jpg"
+     },
+     {
+      "url": "https://dice-media.imgix.net/attachments/2023-07-14/daa98a8b-b4c0-42c2-b0b2-e9e2fa60bd8c.jpg"
+     }
+    ]
+   },
+   "sections": [],
+   "profile_has_events": true
+  },
+  "statusCode": 200
+ }
+}

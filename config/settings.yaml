@@ -3286,7 +3286,8 @@ sources:
     # ~110 requests a run (first run more: every artist page once). Producers sell here: the page is the seller.
     enabled: true
     cron: "42 7,19 * * *"
-    skip_title_words: ["testing event", "test event", "stress test"]  # the platform's own test listings
+    skip_title_words: ["testing event", "test event", "stress test",  # the platform's own test listings
+                       "birthday", "יום הולדת", "יומולדת"]  # private birthdays ("Yuval's birthday", Nov 2026)
     http:
       concurrency: 2
       request_delay_seconds: 0.5
