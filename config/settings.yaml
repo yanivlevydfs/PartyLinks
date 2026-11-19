@@ -1371,6 +1371,10 @@ geocoding:
   #   "venue or address keyword": [lat, lon]
   venues:
     "room 48": [32.0743905, 34.7758641]                 # ROOM 48, King George 48, Tel Aviv (Ozen Bar's club; Airdrop / Makore name it alone)
+    "בויילר 02": [31.7665868, 35.2251920]                # Boiler 02 (Airdrop club), Derech Hevron 28, Jerusalem: JVP Media Quarter, as Zappa there
+    "חומה ומגדל 11": [32.0624340, 34.7858560]            # ECHO Tel Aviv (Airdrop club), Homa uMigdal 11 (OSM house)
+    "אקו תל אביב echo": [32.0624340, 34.7858560]          # same club, Airdrop's venue name
+    "הבוסתן secret garden": [32.0585967, 34.7616555]      # Secret Garden in HaTachana compound, Tel Aviv (Airdrop club; OSM "מתחם התחנה")
     "טיקוטין": [32.8093487, 34.9853850]                  # Tikotin Museum of Japanese Art, Haifa (Carmel centre)
     "טיקטין": [32.8093487, 34.9853850]                   # same hall as Haifa Museums spell it ("אודיטוריום טיקטין")
     "התאומים 4": [32.0528940, 34.7524660]                # Hasimta Theatre / JAR, Mazal Teomim 4, Old Jaffa (OSM names it "מזל תאומים" only)
