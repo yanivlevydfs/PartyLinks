@@ -182,7 +182,7 @@ many of them free.
 | `takeabreak` | Take A Break (takebreaktravel.com): packages (flight + hotel, often the ticket) to club nights, concerts, festivals and matches abroad, plus the dated nights of its Dubai / Athens / Limassol / Mykonos / Ibiza lineups and Phangan's full moons; artist and venue profiles | 06:52, 18:52 | yes |
 | `dice` | DICE (dice.fm): the whole catalogue (~19k events, every city and country, every kind: gigs, DJ, parties, comedy, talks, theatre, film...) from its sitemaps and event data routes; up to 5000 pages a run, every stored event re-read within 8 runs; venue and artist profiles | 05:14, 17:14 | yes |
 | `xceed` | Xceed (xceed.me): its whole upcoming catalogue from the site's public API - club nights, concerts, festivals and shows in every city it sells (~170 cities, ~23 countries; venue profiles weekly) | 06:01, 18:01 | yes |
-| `skiddle` | Skiddle (skiddle.com): UK club nights in London and Manchester (top 24 trending per city) | 07:28, 19:28 | yes |
+| `skiddle` | Skiddle (skiddle.com): every UK and Irish city it covers (~220) and every event type; official API with a key, else 5 city pages a run in rotation (~70 trending events each) | every 2 h at :28 (odd hours) | yes |
 | `megaevents` | Mega Events (mega-events.co.il): packages (flight + hotel + ticket) to concerts and matches abroad | 05:43, 17:43 | yes |
 
 ## Prices and availability: source quirks

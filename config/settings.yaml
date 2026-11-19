@@ -3345,14 +3345,22 @@ sources:
       request_delay_seconds: 0.5
 
   skiddle:
-    # Skiddle (skiddle.com): UK club nights, only London and Manchester (cities in SkiddleSettings).
-    # Each city's /clubs/<City>/ page embeds its 24 trending nights in __NEXT_DATA__ (venue coords,
-    # prices, artists): 2 requests a run, no event page. AWS WAF challenges from the 3rd quick page.
+    # Skiddle (skiddle.com): all of it - every city it covers (~220, UK and Ireland) and every event type
+    # (clubs, gigs, festivals, comedy, theatre & arts, experiences, food, family, sport, seasonal).
+    # With PARTYLINKS_SOURCES__SKIDDLE__API_KEY set: the official API pages through the whole catalogue.
+    # Without: each /whats-on/<City>/ page's __NEXT_DATA__ (~70 trending events of every type, venues),
+    # 5 cities a run in rotation (city list from the CDN sitemap), every city once in ~4 days. AWS WAF
+    # challenged the 7th page in ~6 minutes (Nov 2026): the first challenge ends the run, never bypassed.
     enabled: true
-    cron: "28 7,19 * * *"
+    cron: "28 1,3,5,7,9,11,13,15,17,19,21,23 * * *"
+    rotation_hours: 2          # = the cron's interval: each run reads the next 5 cities
+    pages_per_run: 5
+    page_gap_seconds: 60
+    unlist_missing: false      # a run reads a few cities, not the catalogue
+    skip_title_words: ["course", "masterclass", "workshop series", "lessons", "gift card", "gift voucher", "parking"]
     http:
       concurrency: 1
-      request_delay_seconds: 10.0
+      request_delay_seconds: 1.0
 
   airdrop:
     # Airdrop (airdrop.co.il): party guide for Israeli clubs and festivals and party trips abroad.
