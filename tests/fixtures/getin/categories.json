@@ -1,0 +1,211 @@
+{
+ "data": [
+  {
+   "id": 9,
+   "name": {
+    "he": "Techno",
+    "en": "Techno",
+    "es": "Techno",
+    "fr": "Techno",
+    "ar": "Techno",
+    "it": "Techno",
+    "ja": "Techno",
+    "pt": "Techno"
+   },
+   "sort": 0,
+   "status": 1,
+   "icon_url": "https://static.get-in.com/event_category_icons/uploaded/kNdZynPAtshI6Vq2BUoH8i3Kr5RLEQ9.png",
+   "icon_name": "kNdZynPAtshI6Vq2BUoH8i3Kr5RLEQ9.png",
+   "is_new_platform": false,
+   "collided": false,
+   "new_platform_slug": ""
+  },
+  {
+   "id": 32,
+   "name": {
+    "en": "Pacha",
+    "es": "Pacha",
+    "fr": "Pacha",
+    "ar": "Pacha",
+    "it": "Pacha",
+    "ja": "Pacha"
+   },
+   "sort": 1,
+   "status": 1,
+   "icon_url": "https://static.getin.xyz/event_category_icons/patcha.svg",
+   "icon_name": "patcha.svg",
+   "is_new_platform": true,
+   "collided": false,
+   "new_platform_slug": "pacha"
+  },
+  {
+   "id": 42,
+   "name": {
+    "en": "Melodic",
+    "es": "Melodic",
+    "fr": "Melodic",
+    "it": "Melodic",
+    "ar": "لحني / عذب النغم",
+    "ja": "メロディアスな",
+    "pt": "Melodic"
+   },
+   "sort": 2,
+   "status": 1,
+   "icon_url": "https://static.get-in.com/event_category_icons/uploaded/QJiKy0XuC1nwTSqv9dr3ERkgBfLV6M42.svg",
+   "icon_name": "QJiKy0XuC1nwTSqv9dr3ERkgBfLV6M42.svg",
+   "is_new_platform": false,
+   "collided": false,
+   "new_platform_slug": ""
+  },
+  {
+   "id": 37,
+   "name": {
+    "en": "House",
+    "es": "Casa",
+    "fr": "Maison",
+    "it": "Casa",
+    "ar": "منزل",
+    "ja": "家",
+    "pt": "House"
+   },
+   "sort": 4,
+   "status": 1,
+   "icon_url": "https://static.get-in.com/event_category_icons/uploaded/VLWndqoy7wxZE6KsCbaMfHlGjPYJUc37.png",
+   "icon_name": "VLWndqoy7wxZE6KsCbaMfHlGjPYJUc37.png",
+   "is_new_platform": false,
+   "collided": false,
+   "new_platform_slug": ""
+  },
+  {
+   "id": 41,
+   "name": {
+    "en": "Indie Dance",
+    "es": "Indie Dance",
+    "fr": "Indie Dance",
+    "it": "Indie Dance",
+    "ar": "إندي دانس"
+   },
+   "sort": 4,
+   "status": 1,
+   "icon_url": "https://static.getin.xyz/event_category_icons/avsGMW8pitJT3XR4AKgd5F60qzwnIZPDShNUxy1r.svg",
+   "icon_name": "avsGMW8pitJT3XR4AKgd5F60qzwnIZPDShNUxy1r.svg",
+   "is_new_platform": true,
+   "collided": false,
+   "new_platform_slug": "indie-dance"
+  },
+  {
+   "id": 23,
+   "name": {
+    "he": "מטיילים בעולם",
+    "en": "Travel destinations",
+    "es": "Travel destinations",
+    "fr": "Travel destinations",
+    "it": "Travel destinations",
+    "ar": "Travel destinations",
+    "ja": "Travel destinations",
+    "pt": "Travel destinations"
+   },
+   "sort": 5,
+   "status": 1,
+   "icon_url": "https://static.get-in.com/event_category_icons/uploaded/lREqi7uK8Wf2aSCbe4PHdI61MpUwAm23.svg",
+   "icon_name": "lREqi7uK8Wf2aSCbe4PHdI61MpUwAm23.svg",
+   "is_new_platform": false,
+   "collided": false,
+   "new_platform_slug": ""
+  },
+  {
+   "id": 1,
+   "name": {
+    "he": "חיי לילה",
+    "en": "Nightlife",
+    "es": "Nightlife",
+    "fr": "Nightlife",
+    "ar": "Nightlife",
+    "it": "Nightlife",
+    "ja": "Nightlife",
+    "pt": "Nightlife"
+   },
+   "sort": 6,
+   "status": 1,
+   "icon_url": "https://static.get-in.com/event_category_icons/uploaded/y7Nac0T35oZDhij8QwYmxHABWRzeFf1.svg",
+   "icon_name": "y7Nac0T35oZDhij8QwYmxHABWRzeFf1.svg",
+   "is_new_platform": false,
+   "collided": false,
+   "new_platform_slug": ""
+  },
+  {
+   "id": 39,
+   "name": {
+    "en": "Afro House",
+    "es": "Afro House",
+    "fr": "Afro House",
+    "it": "Afro House",
+    "ar": "أفرو هاوس"
+   },
+   "sort": 6,
+   "status": 1,
+   "icon_url": "https://static.getin.xyz/event_category_icons/aD3phRQlfZdtHT2Jx0UXEWmOqP4v7bM1LwzANk6S.svg",
+   "icon_name": "aD3phRQlfZdtHT2Jx0UXEWmOqP4v7bM1LwzANk6S.svg",
+   "is_new_platform": true,
+   "collided": false,
+   "new_platform_slug": "afro-house"
+  },
+  {
+   "id": 3,
+   "name": {
+    "he": "Festivals",
+    "en": "Festivals",
+    "es": "Festivals",
+    "fr": "Festivals",
+    "ar": "Festivals",
+    "it": "Festivals",
+    "ja": "Festivals",
+    "pt": "Festivals"
+   },
+   "sort": 7,
+   "status": 1,
+   "icon_url": "https://static.get-in.com/event_category_icons/uploaded/WYOX5JC9Vt61lyrdjMhGDFAixa4Z203.svg",
+   "icon_name": "WYOX5JC9Vt61lyrdjMhGDFAixa4Z203.svg",
+   "is_new_platform": false,
+   "collided": false,
+   "new_platform_slug": ""
+  },
+  {
+   "id": 5,
+   "name": {
+    "he": "Experiences",
+    "en": "Experiences",
+    "es": "Experiences",
+    "fr": "Experiences",
+    "ar": "Experiences",
+    "it": "Experiences",
+    "ja": "Experiences",
+    "pt": "Experiences"
+   },
+   "sort": 8,
+   "status": 1,
+   "icon_url": "https://static.get-in.com/event_category_icons/uploaded/xjrukmhtFc9YfEZ5SiGBdNgo68A3My5.svg",
+   "icon_name": "xjrukmhtFc9YfEZ5SiGBdNgo68A3My5.svg",
+   "is_new_platform": false,
+   "collided": false,
+   "new_platform_slug": ""
+  },
+  {
+   "id": 17,
+   "name": {
+    "en": "Live Shows",
+    "es": "Live Shows",
+    "fr": "Live Shows",
+    "it": "Live Shows",
+    "ar": "Live Shows"
+   },
+   "sort": 11,
+   "status": 1,
+   "icon_url": "https://static.getin.xyz/event_category_icons/Vj80CeMQuoan3JiSsqzYkUBZrh6OmgyLcPd7lRp2.svg",
+   "icon_name": "Vj80CeMQuoan3JiSsqzYkUBZrh6OmgyLcPd7lRp2.svg",
+   "is_new_platform": true,
+   "collided": false,
+   "new_platform_slug": "live-shows"
+  }
+ ]
+}

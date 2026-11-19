@@ -594,7 +594,7 @@ enrichment:
     electronic: ["electronic", "electronica", "electro", "underground", "dj-set", "dj set", "rave", "electronic music",
                  "idm", "live electronic", "electroclash", "אלקטרונית", "אלקטרוני", "אנדרגראונד", "רייב", "מוזיקה אלקטרונית",
                  "די ג'יי סט", "דיג'יי סט"]
-    indie_dance: ["indie dance", "אינדי דאנס"]
+    indie_dance: ["indie dance", "indiedance", "אינדי דאנס"]  # indiedance: getin's "Indie Dance" (category_labels)
     downtempo_chill: ["downtempo", "chill", "chillout", "chill out", "ambient music", "trip hop", "lo-fi", "lofi",
                       "chillhop", "psybient", "psychill", "psydub", "balearic", "chillwave", "צ'יל", "לאונג'", "טריפ הופ",
                       "אמביינט", "אמביאנט", "דאונטמפו", "צ'יל אאוט"]
@@ -841,7 +841,7 @@ enrichment:
     # Kosher bars and restaurants: HappyTLV's own FAQ answer on the place's page (happytlv.is_kosher),
     # declared with the place's category. Never read from text ("לא כשר" would match).
     kosher: ["kosher"]
-    nightclubs: ["nightclubs", "nightlife", "parties", "party", "מסיבה", "מסיבות", "מועדוני לילה", "חיי-לילה", "חיי לילה", "gala & ball", "discoteca & baile", "clubs en feesten"]  # parties: Secret Tel Aviv's category
+    nightclubs: ["nightclubs", "nightlife", "parties", "party", "מסיבה", "מסיבות", "מועדוני לילה", "חיי-לילה", "חיי לילה", "gala & ball", "discoteca & baile", "clubs en feesten", "pacha"]  # parties: Secret Tel Aviv's category; pacha: getin's Pacha club nights
     hi_tech: ["technology", "tech"]  # never as "tech house": see Enricher._detect_genres
     ai: ["ai"]
     cyber: ["security"]
@@ -3279,11 +3279,14 @@ sources:
 
   getin:
     # GETIN (get-in.com / getin.xyz): ticketing platform for club nights and festivals, mostly abroad
-    # (Miami, NYC, Toronto, Dubai, Mexico) plus a few Israeli nights. api/filter-events (the site's own
-    # call; ~32 a filter, so: none, Israel, week, trending, each category: ~15 requests, ~35 events) and
-    # each event's page for description and currency. Producers sell here: the page is the seller.
+    # (Miami, NYC, Toronto, Dubai, Mexico, Thailand, Ibiza) plus a few Israeli nights. api/filter-events
+    # (the site's own call; ~35 a filter, so: none, Israel, week, trending, each category: ~15 requests),
+    # getin.xyz's sitemap + its ~53 producer pages (upcoming events the API leaves out), each event's page
+    # (JSON-LD: performers, venue, currency, categories), each new artist's page and each venue picture.
+    # ~110 requests a run (first run more: every artist page once). Producers sell here: the page is the seller.
     enabled: true
     cron: "42 7,19 * * *"
+    skip_title_words: ["testing event", "test event", "stress test"]  # the platform's own test listings
     http:
       concurrency: 2
       request_delay_seconds: 0.5

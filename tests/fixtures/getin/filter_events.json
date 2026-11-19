@@ -1,0 +1,382 @@
+{
+ "events": [
+  {
+   "is_new_platform": true,
+   "new_platform_event_id": 41556,
+   "new_platform_url": "https://getin.xyz/event/41556?seller_code=getin",
+   "new_platform_images": {
+    "desktop": "https://static.getin.xyz/gallery/desktop_cover_20261109_160520_41556.png",
+    "tablet": "https://static.getin.xyz/gallery/tablet_cover_20261109_160520_41556.png",
+    "mobile": "https://static.getin.xyz/gallery/mobile_cover_20261109_160520_41556.png",
+    "carousel": "https://static.getin.xyz/gallery/mobile_cover_20261109_160520_41556.jpg"
+   },
+   "new_platform_image": "https://static.getin.xyz/gallery/mobile_cover_20261109_160520_41556.jpg",
+   "new_platform_producer_image": "https://static.getin.xyz/producer_profile/HcvISNdKZxe0WbokfE4r23iRtqXTzl1mDjaF79sJ.png",
+   "event_id": 41556,
+   "status": 1,
+   "user_id": null,
+   "title": "Surf Club: MIND AGAINST",
+   "url_friendly": "41556",
+   "start_date": "2026-11-21 20:00:00",
+   "end_date": "2026-11-22 02:00:00",
+   "start_time": "20:00",
+   "views": 127,
+   "file": "",
+   "carousel_image": "",
+   "blurhash": null,
+   "producer_name": "Surf Club",
+   "company": "",
+   "producer_url_identifier": "",
+   "profile_img": "",
+   "social_img": "",
+   "facebook_id": "0",
+   "isFollowing": false,
+   "venue": {
+    "id": 23884,
+    "name": "Surf Club",
+    "slug": "surf-club",
+    "address": "444V+J99 West Beach - Nakhlat Jumeira - Dubai - United Arab Emirates",
+    "city": "Dubai",
+    "postal_code": null,
+    "country_code": "AE",
+    "image_url": "https://static.getin.xyz/venue_files/yKUTc6Wh7kqneNfulEQ2vAMwSjdVg135927.jpeg",
+    "lat": "25.1065625",
+    "lon": "55.1434375"
+   },
+   "address": "444V+J99 West Beach - Nakhlat Jumeira - Dubai - United Arab Emirates",
+   "city": "Dubai",
+   "country_short_name": "AE",
+   "country": "",
+   "lat": "25.1065625",
+   "lon": "55.1434375",
+   "distance": null,
+   "time_zone": "Asia/Dubai",
+   "categories": [
+    1,
+    5
+   ],
+   "min_price": 100,
+   "max_price": 100,
+   "registration_mode": 0,
+   "artists": [
+    {
+     "genres": [
+      "melodic techno",
+      "melodic house",
+      "techno",
+      "minimal techno"
+     ]
+    }
+   ],
+   "isApproveLineup": 0,
+   "rates": 0,
+   "shares": 0,
+   "seatable": null,
+   "is_interested": false
+  },
+  {
+   "event_id": 425771,
+   "status": 1,
+   "user_id": 1861756,
+   "company": "",
+   "profile_img": "1861756_1773423540_69b44bb4d366032X32.png",
+   "social_img": "https://static.get-in.com/profile/1861756_1773423540_69b44bb4d3660.png",
+   "facebook_id": "0",
+   "title": "unKommon events Presents | Guy Gerber | Rumors",
+   "end_date": "2026-12-03 03:00:00",
+   "file": "_cover_20260819_162449_425771.png",
+   "rates": 0,
+   "views": 1831,
+   "shares": 0,
+   "address": "300 NE 71st St, Miami, FL 33138, USA",
+   "registration_mode": 0,
+   "time_zone": "America/New_York",
+   "lat": "25.8403145",
+   "lon": "-80.19001949999999",
+   "isApproveLineup": 1,
+   "min_price": "40.00",
+   "max_price": "225.00",
+   "producer_url_identifier": "1861756",
+   "producer_name": "Rumors",
+   "url_friendly": "",
+   "start_date": "2026-12-02 20:00:00",
+   "start_time": "20:00",
+   "country_short_name": "US",
+   "country": "United States",
+   "city": "Miami",
+   "blurhash": "L3DSdbM|00T0]~iw-:9v00Iq~AV@",
+   "categories": [
+    1,
+    5,
+    42
+   ],
+   "carousel_image": "_cover_20260819_162449_425771.jpg",
+   "artists": [
+    {
+     "id": 322,
+     "name": "Guy Gerber",
+     "followers": "123712",
+     "image": "https://i.scdn.co/image/ab6761610000e5eb61053f5ff12cfa5ed7d75c27",
+     "genres": [],
+     "isFollowed": false
+    },
+    {
+     "id": 4265,
+     "name": "Monobase",
+     "followers": "115",
+     "image": "https://i.scdn.co/image/ab6761610000e5ebf8900469950590f54869372b",
+     "genres": [],
+     "isFollowed": false
+    },
+    {
+     "id": 4553,
+     "name": "Monolink",
+     "followers": "617813",
+     "image": "https://i.scdn.co/image/ab6761610000e5ebf4f983d695fca092d6922224",
+     "genres": [
+      "techno melódico",
+      "house melódico",
+      "techno"
+     ],
+     "isFollowed": false
+    },
+    {
+     "id": 4704,
+     "name": "RICHE",
+     "followers": "211",
+     "image": "https://i.scdn.co/image/ab6761610000e5ebaad5277064544b5eb0589621",
+     "genres": [],
+     "isFollowed": false
+    }
+   ],
+   "is_new_platform": false,
+   "isFollowing": false
+  },
+  {
+   "is_new_platform": true,
+   "new_platform_event_id": 41581,
+   "new_platform_url": "https://getin.xyz/event/41581?seller_code=getin",
+   "new_platform_images": {
+    "desktop": "https://static.getin.xyz/gallery/desktop_cover_20261113_205554_41581.png",
+    "tablet": "https://static.getin.xyz/gallery/tablet_cover_20261113_205554_41581.png",
+    "mobile": "https://static.getin.xyz/gallery/mobile_cover_20261113_205554_41581.png",
+    "carousel": "https://static.getin.xyz/gallery/mobile_cover_20261113_205554_41581.jpg"
+   },
+   "new_platform_image": "https://static.getin.xyz/gallery/mobile_cover_20261113_205554_41581.jpg",
+   "new_platform_producer_image": "https://static.getin.xyz/producer_profile/A8HQj2pgWvzwhl1ebdCVGcXIJqksSi690Zy3mBnf.png",
+   "event_id": 41581,
+   "status": 1,
+   "user_id": null,
+   "title": "Mita Gami (Austin, TX)",
+   "url_friendly": "41581",
+   "start_date": "2026-12-04 21:00:00",
+   "end_date": "2026-12-05 02:00:00",
+   "start_time": "21:00",
+   "views": 52,
+   "file": "",
+   "carousel_image": "",
+   "blurhash": null,
+   "producer_name": "Stranger Than;",
+   "company": "",
+   "producer_url_identifier": "",
+   "profile_img": "",
+   "social_img": "",
+   "facebook_id": "0",
+   "isFollowing": false,
+   "venue": {
+    "id": 24198,
+    "name": "304 E 3rd St",
+    "slug": "304-e-3rd-st",
+    "address": "304 East 3rd Street, Austin, Texas 78701, United States, Austin, US",
+    "city": "Austin",
+    "postal_code": null,
+    "country_code": "US",
+    "image_url": null,
+    "lat": "30.264766",
+    "lon": "-97.740884"
+   },
+   "address": "304 East 3rd Street, Austin, Texas 78701, United States, Austin, US",
+   "city": "Austin",
+   "country_short_name": "US",
+   "country": "",
+   "lat": "30.264766",
+   "lon": "-97.740884",
+   "distance": null,
+   "time_zone": "America/Chicago",
+   "categories": [
+    1,
+    9,
+    37,
+    41,
+    42
+   ],
+   "min_price": 55,
+   "max_price": 80,
+   "registration_mode": 0,
+   "artists": [
+    {
+     "genres": [
+      "indie dance",
+      "house melódico"
+     ]
+    }
+   ],
+   "isApproveLineup": 0,
+   "rates": 0,
+   "shares": 0,
+   "seatable": null,
+   "is_interested": false
+  },
+  {
+   "event_id": 418639,
+   "status": 1,
+   "user_id": 1399781,
+   "company": "",
+   "profile_img": "1399781_1699894078_6552533e16e6132X32.png",
+   "social_img": "https://static.get-in.com/profile/1399781_1699894078_6552533e16e61.png",
+   "facebook_id": "0",
+   "title": "UTOPIA EVENTS presents ASTRIX | 22.12.2026 | KOH PHANGAN",
+   "end_date": "2026-12-23 07:00:00",
+   "file": "_cover_20261028_155219_418639.png",
+   "rates": 0,
+   "views": 4644,
+   "shares": 0,
+   "address": "Than Sadet-Ko Pha-Ngan National Park Office Ko Pha-ngan, Than sadet, Koh phangan, สุราษฎร์ธานี 84280, Thailand",
+   "registration_mode": 0,
+   "time_zone": "Asia/Bangkok",
+   "lat": "9.7409336",
+   "lon": "100.0517324",
+   "isApproveLineup": 1,
+   "min_price": "48.00",
+   "max_price": "177.00",
+   "producer_url_identifier": "utopia",
+   "producer_name": "UTOPIA",
+   "url_friendly": "utopia_events7",
+   "start_date": "2026-12-22 21:00:00",
+   "start_time": "21:00",
+   "country_short_name": "TH",
+   "country": "Thailand",
+   "city": "Tambon Ko Pha-ngan",
+   "blurhash": "L37^J,NY00xc=RWVE^oM1voJ|sS0",
+   "categories": [
+    3,
+    5,
+    23
+   ],
+   "carousel_image": "_cover_20261028_155219_418639.jpg",
+   "artists": [
+    {
+     "id": 109,
+     "name": "Adi Shabat",
+     "followers": "501",
+     "image": "https://i.scdn.co/image/ab67616d0000b27306c73cee2ee566f01d90fd30",
+     "genres": [],
+     "isFollowed": false
+    },
+    {
+     "id": 4580,
+     "name": "Hilight Tribe",
+     "followers": "213116",
+     "image": "https://i.scdn.co/image/ab6761610000e5ebb41b35f3d992fab58763916a",
+     "genres": [
+      "psytrance",
+      "trance"
+     ],
+     "isFollowed": false
+    },
+    {
+     "id": 62,
+     "name": "Astrix",
+     "followers": "558210",
+     "image": "https://i.scdn.co/image/ab6761610000e5eb9c426303d84dedd83417ac46",
+     "genres": [
+      "psytrance",
+      "trance",
+      "trance progresivo"
+     ],
+     "isFollowed": false
+    },
+    {
+     "id": 6367,
+     "name": "Void",
+     "followers": "3059",
+     "image": "https://i.scdn.co/image/ab6761610000e5eb588f4fea1eb092bfbfcfa48e",
+     "genres": [],
+     "isFollowed": false
+    },
+    {
+     "id": 6368,
+     "name": "Noam Leshem",
+     "followers": "99",
+     "image": null,
+     "genres": [],
+     "isFollowed": false
+    }
+   ],
+   "is_new_platform": false,
+   "isFollowing": false
+  },
+  {
+   "is_new_platform": true,
+   "new_platform_event_id": 41596,
+   "new_platform_url": "https://getin.xyz/event/41596?seller_code=getin",
+   "new_platform_images": {
+    "desktop": "https://static.getin.xyz/gallery/desktop_cover_20261116_155128_41596.png",
+    "tablet": "https://static.getin.xyz/gallery/tablet_cover_20261116_155128_41596.png",
+    "mobile": "https://static.getin.xyz/gallery/mobile_cover_20261116_155128_41596.png",
+    "carousel": "https://static.getin.xyz/gallery/mobile_cover_20261116_155128_41596.jpg"
+   },
+   "new_platform_image": "https://static.getin.xyz/gallery/mobile_cover_20261116_155128_41596.jpg",
+   "new_platform_producer_image": "",
+   "event_id": 41596,
+   "status": 1,
+   "user_id": null,
+   "title": "Yuval's birthday",
+   "url_friendly": "41596",
+   "start_date": "2026-11-21 17:00:00",
+   "end_date": "2026-11-21 23:00:00",
+   "start_time": "17:00",
+   "views": 4,
+   "file": "",
+   "carousel_image": "",
+   "blurhash": null,
+   "producer_name": "Elan Landau",
+   "company": "",
+   "producer_url_identifier": "",
+   "profile_img": "",
+   "social_img": "",
+   "facebook_id": "0",
+   "isFollowing": false,
+   "venue": {
+    "id": 24204,
+    "name": "רחוב מרטין בובר 6",
+    "slug": "6-3",
+    "address": "רחוב מרטין בובר 6, הרצליה, ישראל",
+    "city": "הרצליה",
+    "postal_code": null,
+    "country_code": "IL",
+    "image_url": null,
+    "lat": "32.1771732",
+    "lon": "34.8165729"
+   },
+   "address": "רחוב מרטין בובר 6, הרצליה, ישראל",
+   "city": "הרצליה",
+   "country_short_name": "IL",
+   "country": "",
+   "lat": "32.1771732",
+   "lon": "34.8165729",
+   "distance": null,
+   "time_zone": "Asia/Jerusalem",
+   "categories": [],
+   "min_price": null,
+   "max_price": null,
+   "registration_mode": 1,
+   "artists": [],
+   "isApproveLineup": 0,
+   "rates": 0,
+   "shares": 0,
+   "seatable": null,
+   "is_interested": false
+  }
+ ]
+}
