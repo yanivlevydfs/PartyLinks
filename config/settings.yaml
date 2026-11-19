@@ -3317,14 +3317,19 @@ sources:
       request_delay_seconds: 1.0
 
   dice:
-    # DICE (dice.fm): club nights, DJ sets and gigs abroad, only in the cities Israelis fly to most and
-    # only the DJ / party / gig kinds (cities and filters in DiceSettings). Each city's browse page per
-    # kind embeds its ~30 top events in __NEXT_DATA__: ~39 requests a run, no event page.
+    # DICE (dice.fm): its whole catalogue, every city and country and every kind (gigs, DJ, parties,
+    # comedy, talks, theatre, film, art, workshops...), ~19k upcoming events (Nov 2026). The sitemaps
+    # (~8 requests) list every event page; each event is one Next.js data route (~4 KB gzipped). A run
+    # reads at most 5000: events not stored yet, changed ones (sitemap lastmod), tomorrow's, then one
+    # rotation slot of 8, so every stored event is read again within 4 days (8 runs). Plus the slot's
+    # venue pages (<= 400) for venue profiles. A run sees part of the catalogue: unlist_missing off.
     enabled: true
     cron: "14 5,17 * * *"
+    unlist_missing: false
+    skip_title_words: ["gift card", "gift voucher", "membership", "course"]
     http:
-      concurrency: 1
-      request_delay_seconds: 1.5
+      concurrency: 3
+      request_delay_seconds: 0.5
 
   xceed:
     # Xceed (xceed.me): its whole upcoming catalogue - every city and country (~2,400 events, ~170 cities,
