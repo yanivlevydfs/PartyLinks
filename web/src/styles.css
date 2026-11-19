@@ -741,10 +741,44 @@ select option { background: var(--panel-solid); color: var(--text); }
 .ticket.off { opacity: .5; }
 .ticket > div { display: grid; gap: 3px; }
 .ticket small { color: var(--muted); font-size: 13px; }
-.t-price { text-align: end; flex: none; }
+.t-price { display: grid; justify-items: end; gap: 3px; text-align: end; flex: none; }
 .t-price b { font: 900 20px/1.1 var(--display); }
 .gallery { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr)); }
 .g-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); }
+/* The poster and the event's other pictures, one per swipe. */
+.e-poster { position: relative; }
+.e-shots { display: flex; align-items: center; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+.e-shots::-webkit-scrollbar { display: none; }
+.e-shots > * { flex: 0 0 100%; scroll-snap-align: start; }
+.e-dots { position: absolute; inset-inline: 0; bottom: 10px; display: flex; justify-content: center; gap: 6px; pointer-events: none; }
+.e-dots button {
+  pointer-events: auto; width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+  background: rgb(255 255 255 / .5); box-shadow: 0 0 0 1px rgb(0 0 0 / .35); transition: width .2s, background .2s;
+}
+.e-dots button.on { width: 20px; background: #fff; }
+/* The ticket links as one block. */
+.buy-box { display: grid; justify-items: start; gap: 4px; padding: 18px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(8px); }
+.buy-box .alts { margin-top: 12px; }
+.alts-used { margin-top: 10px; color: var(--muted); font-size: 14px; }
+.alts-used > summary { cursor: pointer; font-weight: 600; color: var(--text); list-style: none; }
+.alts-used > summary::-webkit-details-marker { display: none; }
+.alts-used > summary::after { content: " ▾"; color: var(--muted); }
+.alts-used[open] > summary::after { content: " ▴"; }
+.alts-used .alts { margin-top: 10px; }
+.e-more {
+  cursor: pointer; padding: 7px 14px; border-radius: 999px; font-size: 14px; color: var(--text);
+  background: rgb(255 255 255 / .06); border: 1px solid var(--line); transition: border-color .2s, background .2s;
+}
+.e-more:hover, .e-more[aria-expanded="true"] { border-color: var(--line-hot); background: rgb(255 46 147 / .14); }
+.e-more-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; flex-basis: 100%; }
+.e-admin { display: flex; gap: 10px; margin-top: 10px; }
+.e-admin:empty { display: none; }
+.ticket.cheap { border-color: #19c37d; }
+.t-price em { font-style: normal; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #19c37d; color: #04130c; }
+.t-gone { margin-top: 10px; }
+.t-gone > summary { cursor: pointer; color: var(--muted); font-size: 14px; padding: 6px 2px; list-style: none; }
+.t-gone > summary::-webkit-details-marker { display: none; }
+.t-gone[open] > summary { margin-bottom: 8px; }
 
 /* ------------------------------------------------------------------ venues / artists */
 .facet-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); }
@@ -1393,7 +1427,11 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .buy-bar small { color: var(--muted); font-size: 12px; }
   .buy-bar .buy { padding: 12px 20px; font-size: 15px; animation: none; white-space: nowrap; }
   .event { padding-bottom: 90px; }
-  .e-info > .buy { display: none; }
+  .buy-box > .buy { display: none; }
+  .buy-box { padding: 0; background: none; border: 0; backdrop-filter: none; }
+  .buy-box .alts { margin-top: 0; }
+  .f-price { display: none !important; } /* the sticky buy bar shows it */
+  .e-shots { align-items: stretch; }
   .e-poster { max-width: none; }
   /* A fixed box: the text below does not jump down when the poster arrives (layout shift). */
   .e-poster .e-img { aspect-ratio: 4 / 3; max-height: 44vh; object-fit: contain; background: rgb(0 0 0 / .35); }

@@ -616,8 +616,8 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
         jsonld=[place[0] if place else event_jsonld(row, cfg, artist_links_for(session, cfg.artist_links, row.lineup or []), own_text), _breadcrumbs(cfg, lang, *crumbs, (row.title, event_path(row)))],
         body=(
             f"<article><h1>{escape(row.title)}</h1><p>{escape(_when(row, cfg, lang))}</p>"
-            f"<p>{venue_link} {escape(where)}</p><p>{escape(_price(row, lang))}</p>{lineup}"
-            f"{about}{place[1] if place else ''}"
+            f"<p>{venue_link} {escape(where)}</p><p>{escape(_price(row, lang))}</p>{about}"
+            f"{place[1] if place else ''}{lineup}"
             f'<p><a href="{escape(go_path(row.id, row.code))}?at=seo" rel="nofollow noopener">{t["tickets"]} ({escape(row.source)})</a></p></article>'
             + more
         ),

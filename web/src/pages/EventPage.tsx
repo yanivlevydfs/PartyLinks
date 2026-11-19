@@ -1,11 +1,11 @@
 import { SponsorButton } from "../ads/SponsorSheet";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { SaveAlertButton } from "../alerts/SaveAlertButton";
 import { useAlertText } from "../alerts/i18n";
 import { isGone, useEvent } from "../api";
 import { genreLabel, type Strings } from "../i18n";
-import type { Ticket } from "../types";
+import type { Alternative, Ticket } from "../types";
 import { forecastAt, Weather } from "../Weather";
 import { PlanButton } from "../plans/PlanButton";
 import { EveningPlan } from "../evening/EveningPlan";
@@ -32,6 +32,7 @@ export default function EventPage() {
   }, [canonical]); // eslint-disable-line react-hooks/exhaustive-deps
   const back = () => (history.state?.idx > 0 ? navigate(-1) : navigate("/"));
   const alertText = useAlertText();
+  const [more, setMore] = useState(false);
 
   if (isError && isGone(error)) {
     // 410: the event is over (past events are purged); 404: no such event.
@@ -75,6 +76,14 @@ export default function EventPage() {
   const cheapest = firsthand.filter((a) => !a.is_sold_out && a.min_price != null && (e.min_price == null || a.min_price < e.min_price))
     .sort((a, b) => a.min_price! - b.min_price!)[0]?.id;
   const time = { hour: "2-digit", minute: "2-digit" } as const;
+  const liveTickets = e.tickets.filter((k) => k.status !== "sold_out");
+  const goneTickets = e.tickets.filter((k) => k.status === "sold_out");
+  // "Cheapest" on a ticket only when there is a choice: two on-sale prices that differ.
+  const onSalePriced = liveTickets.filter((k) => k.status === "on_sale" && (k.is_free || k.price != null));
+  const ticketPrice = (k: Ticket) => (k.is_free ? 0 : k.price!);
+  const cheapTicket = new Set(onSalePriced.map(ticketPrice)).size > 1
+    ? onSalePriced.reduce((a, b) => (ticketPrice(b) < ticketPrice(a) ? b : a))
+    : undefined;
 
   return (
     <article className="event">
@@ -90,9 +99,7 @@ export default function EventPage() {
         )}
 
         <div className="e-top">
-          <div className="e-poster">
-            <Img src={sized(hero, 1280)} alt={e.title} className="e-img" text={e.title} eager />
-          </div>
+          <Poster hero={hero} more={gallery} title={e.title} />
 
           <div className="e-info">
             <div className="tags">
@@ -128,37 +135,58 @@ export default function EventPage() {
                 </li>
               )}
               {price && (
-                <li><i>🎟</i>{price}{e.max_price && e.max_price !== e.min_price ? ` – ${money(e.max_price, e.currency, t.locale)}` : ""}</li>
+                <li className="f-price"><i>🎟</i>{price}{e.max_price && e.max_price !== e.min_price ? ` – ${money(e.max_price, e.currency, t.locale)}` : ""}</li>
               )}
               {e.organizer && <li><i>🎤</i>{t.organizer}: {e.organizer}</li>}
             </ul>
 
-            <a className="buy" href={`${e.url}?at=buy`} target="_blank" rel="noopener noreferrer">
-              {t.buy} ↗ <small>{sourceName(e.source)}{e.extra?.resale ? ` · ${t.resaleTag}` : ""}</small>
-            </a>
-            {([[t.alsoAt, firsthand, ""], [t.resale, secondhand, " used"]] as const).map(([title, alts, kind]) => !!alts.length && (
-              <div key={kind} className={"alts" + kind}>
-                <span>{title}</span>
-                {alts.map((a) => (
-                  <a key={a.id} className={"alt" + (a.id === cheapest ? " cheap" : "")} href={`${a.url}?at=alt`} target="_blank" rel="noopener noreferrer">
-                    <b>{sourceName(a.source)}</b>
-                    <small>{a.is_sold_out ? t.soldOut : priceLabel({ ...a, currency: e.currency }, t, a.tickets) || t.priceOnSite}</small>
-                    {a.id === cheapest && <em>{t.cheapest}</em>} ↗
-                  </a>
-                ))}
-              </div>
-            ))}
-            <p className="buy-note">{t.buyNote} <Link to="/terms">{t.terms}</Link></p>
+            {/* The ticket links in one block: the main site, the other box offices, second-hand folded, the terms. */}
+            <div className="buy-box">
+              <a className="buy" href={`${e.url}?at=buy`} target="_blank" rel="noopener noreferrer">
+                {t.buy} ↗ <small>{sourceName(e.source)}{e.extra?.resale ? ` · ${t.resaleTag}` : ""}</small>
+              </a>
+              {firsthand.length > 0 && (
+                <div className="alts">
+                  <span>{t.alsoAt}</span>
+                  {firsthand.map((a) => <AltLink key={a.id} a={a} cheap={a.id === cheapest} currency={e.currency} t={t} />)}
+                </div>
+              )}
+              {secondhand.length > 0 && (
+                <details className="alts-used">
+                  <summary>{t.resaleN(secondhand.length)}</summary>
+                  <div className="alts used">
+                    {secondhand.map((a) => <AltLink key={a.id} a={a} cheap={false} currency={e.currency} t={t} />)}
+                  </div>
+                </details>
+              )}
+              <p className="buy-note">{t.buyNote} <Link to="/terms">{t.terms}</Link></p>
+            </div>
+            {/* Save and share in reach; the calendar and a group plan behind "More". */}
             <div className="e-actions">
-              <Share path={eventPath(e)} title={e.title} />
-              {e.start_at && <AddToCalendar e={e} start={e.start_at} />}
-              <PlanButton eventId={e.id} />
               <SaveButton eventId={e.id} large />
+              <Share path={eventPath(e)} title={e.title} />
+              <button type="button" className="e-more" aria-expanded={more} onClick={() => setMore(!more)}>⋯ {t.moreActions}</button>
+              {more && (
+                <div className="e-more-row">
+                  {e.start_at && <AddToCalendar e={e} start={e.start_at} />}
+                  <PlanButton eventId={e.id} />
+                </div>
+              )}
+            </div>
+            {/* Admin only (each renders nothing for a visitor). */}
+            <div className="e-admin">
               <EventPinButton event={e} />
               <SponsorButton event={e} />
             </div>
           </div>
         </div>
+
+        {e.description_layout && (
+          <section>
+            <h4>{t.about}</h4>
+            <EventText layout={e.description_layout} />
+          </section>
+        )}
 
         {e.place && <PlaceInfo id={e.id} />}
 
@@ -175,28 +203,23 @@ export default function EventPage() {
           <section>
             <h4>{t.tickets}</h4>
             <ul className="tickets">
-              {e.tickets.map((k, i) => <TicketRow key={k.source_ticket_id ?? i} k={k} t={t} />)}
+              {(goneTickets.length && liveTickets.length ? liveTickets : e.tickets).map((k, i) => (
+                <TicketRow key={k.source_ticket_id ?? i} k={k} t={t} cheap={k === cheapTicket} />
+              ))}
             </ul>
+            {/* Sold-out tickets fold into one line, unless nothing else is left to show. */}
+            {goneTickets.length > 0 && liveTickets.length > 0 && (
+              <details className="t-gone">
+                <summary>{t.soldOutN(goneTickets.length)}</summary>
+                <ul className="tickets">
+                  {goneTickets.map((k, i) => <TicketRow key={k.source_ticket_id ?? i} k={k} t={t} />)}
+                </ul>
+              </details>
+            )}
           </section>
         )}
 
         <EveningPlan eventId={e.id} />
-
-        {e.description_layout && (
-          <section>
-            <h4>{t.about}</h4>
-            <EventText layout={e.description_layout} />
-          </section>
-        )}
-
-        {gallery.length > 0 && (
-          <section>
-            <h4>{t.gallery}</h4>
-            <div className="gallery">
-              {gallery.map((src) => <Img key={src} src={sized(src, 640)} alt="" className="g-img" />)}
-            </div>
-          </section>
-        )}
       </div>
       {/* Phones: price + the ticket link stay in reach while reading lineup, tickets and description. */}
       <div className="buy-bar">
@@ -210,7 +233,50 @@ export default function EventPage() {
   );
 }
 
-function TicketRow({ k, t }: { k: Ticket; t: Strings }) {
+/** The poster, and the event's other pictures behind it: swipe (or the dots) through them. */
+function Poster({ hero, more, title }: { hero: string | null | undefined; more: string[]; title: string }) {
+  const { t } = useT();
+  const strip = useRef<HTMLDivElement>(null);
+  const [at, setAt] = useState(0);
+  const n = more.length + 1;
+  const go = (i: number) => {
+    const el = strip.current;
+    const slide = el?.children[i] as HTMLElement | undefined;
+    if (el && slide) el.scrollTo({ left: slide.offsetLeft - el.offsetLeft, behavior: "smooth" });
+  };
+  const onScroll = () => {
+    const el = strip.current;
+    if (el) setAt(Math.round(Math.abs(el.scrollLeft) / el.clientWidth));
+  };
+  return (
+    <div className="e-poster">
+      <div className="e-shots" ref={strip} onScroll={n > 1 ? onScroll : undefined}>
+        <Img src={sized(hero, 1280)} alt={title} className="e-img" text={title} eager />
+        {more.map((src) => <Img key={src} src={sized(src, 1280)} alt="" className="e-img" />)}
+      </div>
+      {n > 1 && (
+        <div className="e-dots">
+          {Array.from({ length: n }, (_, i) => (
+            <button key={i} type="button" className={i === at ? "on" : undefined} aria-label={t.photoN(i + 1, n)}
+              aria-current={i === at || undefined} onClick={() => go(i)} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AltLink({ a, cheap, currency, t }: { a: Alternative; cheap: boolean; currency: string; t: Strings }) {
+  return (
+    <a className={"alt" + (cheap ? " cheap" : "")} href={`${a.url}?at=alt`} target="_blank" rel="noopener noreferrer">
+      <b>{sourceName(a.source)}</b>
+      <small>{a.is_sold_out ? t.soldOut : priceLabel({ ...a, currency }, t, a.tickets) || t.priceOnSite}</small>
+      {cheap && <em>{t.cheapest}</em>} ↗
+    </a>
+  );
+}
+
+function TicketRow({ k, t, cheap = false }: { k: Ticket; t: Strings; cheap?: boolean }) {
   const price = k.is_free || k.price === 0 ? t.free : k.price != null ? money(k.price, k.currency, t.locale) : "";
   const notes = [
     label(t.status, k.status),
@@ -220,7 +286,7 @@ function TicketRow({ k, t }: { k: Ticket; t: Strings }) {
     k.price_rounds.length > 1 && `${t.rounds}: ${k.price_rounds.map((p) => money(p, k.currency, t.locale)).join(" → ")}`,
   ].filter(Boolean);
   return (
-    <li className={"ticket" + (k.status !== "on_sale" ? " off" : "")}>
+    <li className={"ticket" + (k.status !== "on_sale" ? " off" : "") + (cheap ? " cheap" : "")}>
       <div>
         <b dir="auto">{k.name}</b>
         <small>{notes.join(" · ")}</small>
@@ -228,6 +294,7 @@ function TicketRow({ k, t }: { k: Ticket; t: Strings }) {
       </div>
       <div className="t-price">
         <b>{price}</b>
+        {cheap && <em>{t.cheapest}</em>}
         {k.service_fee ? <small>+{money(k.service_fee, k.currency, t.locale)} {t.fee}</small> : null}
       </div>
     </li>

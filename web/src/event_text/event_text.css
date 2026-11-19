@@ -20,8 +20,8 @@
 .etext a { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .etext-url { display: inline-block; max-width: min(34ch, 85%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
 .etext.shut {
-  max-height: 26em; overflow: hidden;
-  -webkit-mask-image: linear-gradient(#000 72%, transparent); mask-image: linear-gradient(#000 72%, transparent);
+  max-height: 9em; overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent);
 }
 .etext-more {
   display: inline-block; margin-top: 14px; padding: 8px 18px; cursor: pointer;
@@ -35,5 +35,5 @@
   .etext-card { padding: 16px; border-radius: 14px; }
   .etext { font-size: 16px; line-height: 1.7; }
   .etext h5 { font-size: 17px; }
-  .etext.shut { max-height: 22em; }
+  .etext.shut { max-height: 9em; }
 }
