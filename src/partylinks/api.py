@@ -1406,7 +1406,11 @@ def _register_routes(app: FastAPI) -> None:
             items = [MapEventOut.model_validate(r).model_copy(update={"sources": sources[r.id]}) for r in rows]
             return MapOut(items=items, unplaced=unplaced)
 
-        return _cached(request, build)
+        response = _cached(request, build)
+        # The JSON's size before gzip: the map counts the bytes as they arrive (unzipped) for its real
+        # percent; Content-Length is the zipped size, so it can't tell (MapPage, api.ts getJSONProgress).
+        response.headers["X-Body-Length"] = str(len(response.body))
+        return response
 
     @app.get("/go/{event_id:path}", include_in_schema=False)
     def go(event_id: str, request: Request, session: SessionDep, at: str | None = None) -> RedirectResponse:

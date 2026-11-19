@@ -592,15 +592,20 @@ export function Mark() {
 }
 
 /** The brand loader: the mark hopping on its shadow over the SPOTX wordmark and a progress bar with its
- *  percent (an estimate, styles.css .load-bar). `small` (mark only) sits inline in a button or bar;
- *  `seconds`: about how long this load takes to ~95% (the map's ~57k pins: longer than a page). */
-export function Loader({ small, seconds }: { small?: boolean; seconds?: number }) {
+ *  percent. `progress` (0-100): the real share loaded (the map counts its bytes); without it the percent
+ *  is an estimate (styles.css .load-bar). `small` (mark only) sits inline in a button or bar. */
+export function Loader({ small, progress }: { small?: boolean; progress?: number }) {
   const { t } = useT();
+  const real = progress !== undefined;
   return (
     <span className={small ? "loader small" : "loader"} role="status" aria-label={t.loading}>
       <Mark />
       {!small && <b className="word">SPOT<span>X</span></b>}
-      {!small && <span className="load-bar" aria-hidden style={seconds ? ({ "--load-s": `${seconds}s` } as CSSProperties) : undefined}><i /></span>}
+      {!small && (
+        <span className={real ? "load-bar real" : "load-bar"} aria-hidden style={real ? ({ "--p": Math.round(progress) } as CSSProperties) : undefined}>
+          <i />
+        </span>
+      )}
     </span>
   );
 }

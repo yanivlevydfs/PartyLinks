@@ -745,7 +745,9 @@ def test_cached_responses_follow_writes_and_map_returns_located_events(tmp_path:
         while client.get("/events").json()["total"] != 2:
             assert clock.monotonic() < deadline, "stale page never rebuilt"
             clock.sleep(0.05)
-        pins = client.get("/events/map").json()
+        answer = client.get("/events/map")
+        assert answer.headers["x-body-length"] == str(len(answer.content))  # the map's real percent
+        pins = answer.json()
         assert "test:a" in [p["id"] for p in pins["items"]] and len(pins["items"]) + pins["unplaced"] == 2
         assert set(pins["items"][0]) == {
             "id",

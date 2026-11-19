@@ -58,7 +58,9 @@ export default function MapPage() {
   const f = useStore((s) => s.filters);
   const setFilters = useStore((s) => s.setFilters);
   const params = filterParams({ ...f, sort: "start_at" });
-  const { data, isError, isPending } = useMapEvents(params);
+  // The loader's real percent: the share of the pins' JSON received so far (api.ts getJSONProgress).
+  const [loaded, setLoaded] = useState(0);
+  const { data, isError, isPending } = useMapEvents(params, (share) => setLoaded(Math.floor(share * 100)));
   useTitle(t.nav.map);
   // Tiles come from OpenStreetMap's servers (they see the visitor's IP): only with consent,
   // given in the cookie settings or here, for this visit or for good.
@@ -142,8 +144,8 @@ export default function MapPage() {
         {spotList && !heat && <EveningPins eventId={spotList[0].id} onOpen={(e) => navigate(eventPath(e))} />}
         {me && <CircleMarker center={me} radius={8} pathOptions={{ color: "#fff", weight: 3, fillColor: "#19e3ff", fillOpacity: 1 }} interactive={false} />}
       </MapContainer>
-      {/* ~57k pins take a few seconds to arrive: the map says so instead of looking empty. */}
-      {isPending && <div className="map-loading"><Loader seconds={12} /></div>}
+      {/* ~57k pins take a few seconds to arrive: the map says so, with the real percent, instead of looking empty. */}
+      {isPending && <div className="map-loading"><Loader progress={loaded} /></div>}
       {data && !heat && (
         <MapControls inView={inView.length} listOpen={listOpen && !spotList}
           onList={() => { setSpotKey(null); setListOpen(!listOpen || !!spotList); }}

@@ -132,6 +132,9 @@ button, input, select { font: inherit; color: inherit; }
 .load-bar::after { content: counter(p) "%"; position: absolute; top: 14px; left: 50%; translate: -50% 0; direction: ltr;
   font: 800 14px/1 var(--display); letter-spacing: .5px; color: #f7f2ff; font-variant-numeric: tabular-nums;
   text-shadow: 0 0 10px rgb(255 46 147 / .7); }
+/* A real percent (the map counts its bytes): set from the page, no estimate; the fill glides to it. */
+.load-bar.real { animation: none; }
+.load-bar.real i { transition: transform .25s ease-out; }
 @keyframes load-p { to { --p: 96; } }
 @keyframes load-flow { to { background-position: 300% 0; } }
 @media (prefers-reduced-motion: reduce) {

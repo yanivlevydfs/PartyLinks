@@ -11,6 +11,34 @@ export async function getJSON<T>(url: string, signal?: AbortSignal): Promise<T> 
   return res.json();
 }
 
+/** getJSON reading the body as it arrives, telling `onProgress` the share received (0-1). The server's
+ *  X-Body-Length is the JSON's size before gzip: Content-Length is the zipped size, while the stream
+ *  counts unzipped bytes. Without that header: plain getJSON, no progress. */
+export async function getJSONProgress<T>(url: string, onProgress: (share: number) => void, signal?: AbortSignal): Promise<T> {
+  onProgress(0);
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`${res.status} ${url}`);
+  const total = Number(res.headers.get("x-body-length"));
+  if (!total || !res.body) return res.json();
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    got += value.length;
+    onProgress(Math.min(1, got / total));
+  }
+  const body = new Uint8Array(got);
+  let at = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, at);
+    at += chunk.length;
+  }
+  return JSON.parse(new TextDecoder().decode(body)) as T;
+}
+
 export function toQuery(params: Params): string {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
@@ -63,10 +91,14 @@ export function useCitiesIndex(lang: string, enabled = true) {
   });
 }
 
-/** Every event matching the filter that has coordinates, in one request, for the map. */
-export function useMapEvents(params: Params = {}) {
+/** Every event matching the filter that has coordinates, in one request, for the map. `onProgress`:
+ *  the share of the answer received so far (0-1), for the loader's real percent. */
+export function useMapEvents(params: Params = {}, onProgress: (share: number) => void = () => {}) {
   const qs = toQuery(params);
-  return useQuery({ queryKey: ["events", "map", qs], queryFn: () => getJSON<MapPins>(`/events/map?${qs}`) });
+  return useQuery({
+    queryKey: ["events", "map", qs],
+    queryFn: ({ signal }) => getJSONProgress<MapPins>(`/events/map?${qs}`, onProgress, signal),
+  });
 }
 
 /** An event page's request answered 410 (the event is over) or 404 (no such event). */
