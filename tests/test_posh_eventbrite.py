@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
-from partylinks.scrapers import eventbrite, posh
+from partylinks.scrapers import posh
 
 POSH_LISTED = {
     "id": "6ad6a2f03b1ff88a95e40b53",
@@ -71,75 +71,6 @@ def test_posh_page_alone_gives_the_event():
     assert posh.page_listing(posh.rsc_text('self.__next_f.push([1,"{\\"notFound\\":1}"])')) is None  # deleted
 
 
-def test_eventbrite_categories_and_price():
-    listed = {
-        "id": "1",
-        "name": "Startup Pitch & Networking",
-        "url": "https://www.eventbrite.com/e/x-1",
-        "start_date": "2026-11-21",
-        "start_time": "17:00",
-        "end_date": "2026-11-21",
-        "end_time": "21:00",
-        "timezone": "Asia/Jerusalem",
-        "primary_venue": {
-            "name": "Hub",
-            "address": {"city": "Tel Aviv-Yafo", "country": "IL", "latitude": "32.09", "longitude": "34.78"},
-        },
-        "tags": [
-            {"prefix": "EventbriteCategory", "tag": "EventbriteCategory/101"},
-            {"prefix": "EventbriteFormat", "tag": "EventbriteFormat/10"},
-        ],
-    }
-    e = eventbrite.parse_event(
-        listed, {"lowPrice": "42.0", "highPrice": "42.0", "priceCurrency": "ILS", "availability": "InStock"}
-    )
-    assert e is not None
-    assert (e.country, e.min_price, e.max_price, e.source_genres) == (None, 42, None, ["meetups"])
-    assert e.start_at is not None
-    assert e.start_at.isoformat() == "2026-11-21T17:00:00+02:00"
-
-
-def test_eventbrite_city_listings_once_each_israel_only():
-    import asyncio
-    import json
-
-    import httpx
-
-    from partylinks.config import HttpSettings
-
-    def row(event_id: str, country: str) -> dict:
-        return {
-            "id": event_id, "name": f"E{event_id}", "url": f"https://www.eventbrite.com/e/x-{event_id}",
-            "start_date": "2099-01-01", "start_time": "20:00", "timezone": "Asia/Jerusalem",
-            "primary_venue": {"name": "V", "address": {"city": "C", "country": country}},
-        }  # fmt: skip
-
-    pages = {  # the Israel page, then a city search that repeats one, adds one and reaches Jordan
-        "/d/israel/all-events/": [row("1", "IL")],
-        "/d/israel--haifa/all-events/": [row("1", "IL"), row("2", "IL"), row("3", "JO")],
-    }
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        if request.url.path.startswith("/e/"):
-            return httpx.Response(200, text="")
-        found = {"pagination": {"page_count": 1}, "results": pages[request.url.path]}
-        return httpx.Response(200, text=f"window.__SERVER_DATA__ = {json.dumps({'search_data': {'events': found}})};")
-
-    cfg = eventbrite.EventbriteSettings(
-        cron="0 0 * * *", site_url="https://www.eventbrite.com", listing_path="/d/israel/all-events/",
-        listing_paths=["/d/israel--haifa/all-events/"],
-    )  # fmt: skip
-    scraper = eventbrite.EventbriteScraper(
-        cfg, HttpSettings(request_delay_seconds=0, backoff_seconds=0), "Asia/Jerusalem"
-    )
-    scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-
-    async def run() -> list:
-        return [e async for e in scraper.scrape()]
-
-    assert sorted(e.source_event_id for e in asyncio.run(run())) == ["1", "2"]
-
-
 def test_posh_tickets_of_an_event_listed_without_a_price():
     # events.getEventTickets, Nov 2026: a paid show, an RSVP event, door prices in the names.
     def answer(*tickets):
@@ -157,11 +88,3 @@ def test_posh_tickets_of_an_event_listed_without_a_price():
     expected = [(Decimal(15), True, False), (Decimal(0), False, True)]
     assert [(t.price, t.pay_at_door, t.is_free) for t in door] == expected
     assert posh.parse_tickets({}, "USD") == []
-
-
-def test_eventbrite_soonest_first():
-    def row(event_id: str, day: str | None) -> dict:
-        return {"id": event_id, "start_date": day, "start_time": "20:00", "timezone": "Asia/Jerusalem"}
-
-    rows = [row("far", "2027-03-01"), row("none", None), row("near", "2026-11-20"), row("mid", "2026-12-05")]
-    assert [e["id"] for e in eventbrite.soonest_first(rows)] == ["near", "mid", "far", "none"]

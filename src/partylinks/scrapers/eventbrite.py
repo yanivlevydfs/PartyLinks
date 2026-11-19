@@ -1,78 +1,74 @@
-"""Eventbrite (eventbrite.com) - conferences, meetups, workshops, parties and community events.
+"""Eventbrite (eventbrite.com) - concerts, club nights, festivals, stage, film and food events worldwide, and all of Israel.
 
-Listing: the Israel discovery pages ``/d/israel/all-events/?page=N`` (20 a page) and the city searches
-(``/d/israel--haifa/all-events/``...): the Israel page alone shows ~40 events, the union ~65 (November
-2026). A city search covers a radius, so Jordanian and Lebanese venues are dropped (``countries``); an
-event on several listings is kept once (its id). Each page carries its results in ``window.__SERVER_DATA__``: name, local start / end with the venue's
-zone, venue with address and coordinates, categories (``tags``), artwork, organizer and the full
-description. Details: the event page's schema.org ``AggregateOffer`` gives the price range,
-currency and whether it is sold out. Online events are skipped. robots.txt allows these pages.
+- **Discovery.** ``/d/<place>/<listing>/?page=N`` renders its results in ``window.__SERVER_DATA__``: 20
+  a page, at most 49 pages a listing, ranked by relevance (not by date). Each entry: name, local start /
+  end with the venue's zone, the venue (id, name, address, coordinates), the category, subcategory and
+  format (``tags``), artwork and the online / protected / cancelled flags. ``<listing>`` is
+  ``all-events`` or one category / format (``music--events``, ``parties``...: ``listings``).
+- **Israel** (``israel_paths``): the Israel page and the Israeli city searches, every category, every run
+  (~70 events, Nov 2026). A city search covers a radius, so Jordanian and Lebanese venues are dropped.
+- **Abroad** (``cities``, Eventbrite's place slugs of the cities SPOTX lists abroad): city ``i`` is read in
+  rotation slot ``i % cycle_runs`` (one slot per ``rotation_hours``), so the whole list is read once a
+  cycle. A city's all-events page 1 gives its size: one of up to ``small_city_pages`` pages is read whole
+  and kept by category (``relevant_tags``); a bigger one is read through ``listings`` instead, up to
+  ``max_pages`` pages each (its most relevant events). Business, tech, health and other categories
+  are left out abroad.
+- **Flaky search.** Many discovery pages (about half, Nov 2026) come back after ~11 s with no results and
+  no pagination: the search behind them timed out. Such a page is asked again, ``empty_retries`` times.
+- **Event page** (``/e/...``, Next.js ``__NEXT_DATA__``, ~200 KB, ~0.5 s): description, price range
+  (schema.org offers), sale status, organizer, the lineup (headliners and supporters; name, picture and
+  links of each artist) and the category / subcategory / format names. Read for every event the run
+  lists: Israel first, then each city in turn, soonest first (a run cut short keeps the places it read;
+  an event two nearby cities list is read once).
+- **Venues.** Every venue of the run becomes a venue profile (name, address, pin); one whose events are
+  organised by the venue itself (same name) also takes the organizer's about and page.
+
+Online, cancelled, password-protected and past events are skipped. robots.txt allows ``/d/`` and ``/e/``
+(it disallows the ``/api/v3/destination/events/`` API, which is not used).
 """
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
+import unicodedata
 from collections.abc import AsyncIterator, Iterable
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 
 from pydantic import Field
 
+from partylinks.artists import ArtistProfile
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, jsonld_nodes, parse_iso, schema_types, to_decimal, to_float
+from partylinks.parsing import (
+    ParseError,
+    clean_str,
+    html_to_text,
+    jsonld_nodes,
+    next_data,
+    parse_iso,
+    schema_types,
+    to_decimal,
+    to_float,
+)
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.venue_profiles import VENUE_PROFILE, VenueProfile
 
 _MARK = "window.__SERVER_DATA__ = "
-# Eventbrite's categories and formats as the category words the enrichment knows (its own names,
-# "Business & Professional", match nothing). Unlisted ones (Other, Gala, Home & Lifestyle...) add none;
-# music genres still come from the title / description.
-_CATEGORIES = {
-    "EventbriteCategory/101": "meetups",        # Business & Professional -> meetups
-    "EventbriteCategory/102": "technology",     # Science & Technology -> hi-tech
-    "EventbriteCategory/103": "concert",        # Music -> live shows
-    "EventbriteCategory/104": "screening",      # Film, Media & Entertainment -> cinema
-    "EventbriteCategory/105": "culture",        # Performing & Visual Arts
-    "EventbriteCategory/107": "wellness",       # Health & Wellness -> yoga & wellness
-    "EventbriteCategory/108": "sports",         # Sports & Fitness
-    "EventbriteCategory/109": "tours",          # Travel & Outdoor
-    "EventbriteCategory/110": "food",           # Food & Drink
-    "EventbriteCategory/111": "volunteering",   # Charity & Causes
-    "EventbriteCategory/113": "culture",        # Community & Culture
-    "EventbriteCategory/114": "religious",      # Religion & Spirituality
-    "EventbriteCategory/115": "family",         # Family & Education -> kids
-    "EventbriteCategory/116": "holidays",       # Seasonal & Holiday
-    "EventbriteFormat/1": "conference",         # Conference
-    "EventbriteFormat/2": "lecture",            # Seminar or Talk
-    "EventbriteFormat/3": "expo",               # Tradeshow, Consumer Show, or Expo -> conference
-    "EventbriteFormat/4": "conference",         # Convention
-    "EventbriteFormat/5": "festival",           # Festival or Fair
-    "EventbriteFormat/6": "concert",            # Concert or Performance
-    "EventbriteFormat/7": "screening",          # Screening
-    "EventbriteFormat/9": "workshop",           # Class, Training, or Workshop
-    "EventbriteFormat/10": "meetups",           # Meeting or Networking Event
-    "EventbriteFormat/11": "nightclubs",        # Party or Social Gathering
-    "EventbriteFormat/13": "sports",            # Tournament
-    "EventbriteFormat/15": "sports",            # Race or Endurance Event
-    "EventbriteFormat/16": "tours",             # Tour
-    "EventbriteFormat/17": "attractions",       # Attraction
-}
-# Events listed with no category at all: category words from the title (Hebrew or English).
-_TITLE_WORDS = [
-    (re.compile(r"workshop|סדנ", re.IGNORECASE), "workshop"),
-    (re.compile(r"\btours?\b|סיור|experience|מקרוב", re.IGNORECASE), "tours"),
-    (re.compile(r"lecture|\btalk\b|הרצא", re.IGNORECASE), "lecture"),
-    (re.compile(r"demo day|accelerator|startup|סטארט", re.IGNORECASE), "startups"),
-    (re.compile(r"conference|summit|כנס", re.IGNORECASE), "conference"),
-]
+_AGE = re.compile(r"(\d{1,2})\s*\+")
 
 
 class EventbriteSettings(SourceSettings):
-    site_url: str
-    listing_path: str  # /d/israel/all-events/
-    # The city searches read besides listing_path: each lists events the Israel page misses.
-    listing_paths: list[str] = Field(
+    site_url: str = "https://www.eventbrite.com"
+    # Read whole every run, every category: the Israel page, then the city searches (each lists events it misses).
+    israel_paths: list[str] = Field(
         default_factory=lambda: [
+            "/d/israel/all-events/",
             "/d/israel--tel-aviv/all-events/",
             "/d/israel--jerusalem/all-events/",
             "/d/israel--haifa/all-events/",
@@ -81,54 +77,290 @@ class EventbriteSettings(SourceSettings):
             "/d/israel--eilat/all-events/",
         ]
     )
-    # Venue countries kept: a city search covers a radius that reaches Jordan and Lebanon.
-    countries: list[str] = Field(default_factory=lambda: ["IL"])
-    max_pages: int = Field(30, ge=1)
+    # Venue countries kept from the Israeli searches: their radius reaches Jordan and Lebanon.
+    israel_countries: list[str] = Field(default_factory=lambda: ["IL"])
+    # Eventbrite's place slugs abroad ("germany--berlin", "ny--new-york"), busiest first: read in rotation.
+    cities: list[str] = Field(default_factory=list)
+    cycle_runs: int = Field(28, ge=1)
+    rotation_hours: int = Field(12, ge=1)
+    # A city whose all-events listing has at most this many pages is read whole and kept by category.
+    small_city_pages: int = Field(8, ge=1)
+    # A bigger city's listings: the path after /d/<place>/ -> the tag it lists.
+    listings: dict[str, str] = Field(
+        default_factory=lambda: {
+            "music--events": "EventbriteCategory/103",
+            "arts--events": "EventbriteCategory/105",
+            "film-and-media--events": "EventbriteCategory/104",
+            "food-and-drink--events": "EventbriteCategory/110",
+            "holiday--events": "EventbriteCategory/116",
+            "parties": "EventbriteFormat/11",
+            "festivals": "EventbriteFormat/5",
+        }
+    )
+    # Abroad, an event is kept when it carries one of these: the listings' tags, and concerts / shows.
+    relevant_tags: list[str] = Field(
+        default_factory=lambda: [
+            "EventbriteCategory/103", "EventbriteCategory/104", "EventbriteCategory/105", "EventbriteCategory/110",
+            "EventbriteCategory/116", "EventbriteFormat/5", "EventbriteFormat/6", "EventbriteFormat/11",
+        ]
+    )  # fmt: skip
+    max_pages: int = Field(10, ge=1, le=49)  # per listing (49 is the most Eventbrite pages)
+    empty_retries: int = Field(3, ge=0)
+    empty_retry_seconds: float = Field(5.0, ge=0)
+    # The event page's status values of an event that will not take place.
+    skip_statuses: list[str] = Field(default_factory=lambda: ["canceled", "cancelled", "postponed", "draft", "deleted"])
+    # Eventbrite's categories and formats (tag ids) as category words the enrichment knows (its own
+    # names, "Performing & Visual Arts", match nothing). A category counts only when its subcategory names
+    # no genre: "Comedy" under Film & Media is stand-up, not cinema.
+    tag_genres: dict[str, list[str]] = Field(
+        default_factory=lambda: {
+            "EventbriteCategory/101": ["meetups"],         # Business & Professional
+            "EventbriteCategory/102": ["technology"],      # Science & Technology -> hi-tech
+            "EventbriteCategory/103": ["music"],           # Music -> live shows (not a party's)
+            "EventbriteCategory/104": ["film"],            # Film, Media & Entertainment -> cinema
+            "EventbriteCategory/105": ["culture"],         # Performing & Visual Arts
+            "EventbriteCategory/106": ["culture"],         # Fashion & Beauty (shows)
+            "EventbriteCategory/107": ["wellness"],        # Health & Wellness
+            "EventbriteCategory/108": ["sports"],          # Sports & Fitness
+            "EventbriteCategory/109": ["tours"],           # Travel & Outdoor
+            "EventbriteCategory/110": ["food"],            # Food & Drink
+            "EventbriteCategory/111": ["volunteering"],    # Charity & Causes
+            "EventbriteCategory/112": ["lecture"],         # Government & Politics
+            "EventbriteCategory/113": ["community"],       # Community & Culture -> meetups
+            "EventbriteCategory/114": ["religious"],       # Religion & Spirituality
+            "EventbriteCategory/115": ["family"],          # Family & Education -> kids
+            "EventbriteCategory/116": ["holidays"],        # Seasonal & Holiday
+            "EventbriteCategory/117": ["workshop"],        # Home & Lifestyle
+            "EventbriteCategory/118": ["attractions"],     # Auto, Boat & Air (shows)
+            "EventbriteCategory/119": ["workshop"],        # Hobbies & Special Interest
+            "EventbriteCategory/120": ["family"],          # School Activities
+            "EventbriteFormat/1": ["conference"],          # Conference
+            "EventbriteFormat/2": ["lecture"],             # Seminar or Talk
+            "EventbriteFormat/3": ["expo"],                # Tradeshow, Consumer Show, or Expo
+            "EventbriteFormat/4": ["conference"],          # Convention
+            "EventbriteFormat/5": ["festival"],            # Festival or Fair
+            "EventbriteFormat/7": ["screening"],           # Screening
+            "EventbriteFormat/9": ["workshop"],            # Class, Training, or Workshop
+            "EventbriteFormat/10": ["meetups"],            # Meeting or Networking Event
+            "EventbriteFormat/11": ["party"],              # Party or Social Gathering -> club nights
+            "EventbriteFormat/13": ["sports"],             # Tournament
+            "EventbriteFormat/15": ["sports"],             # Race or Endurance Event
+            "EventbriteFormat/16": ["tours"],              # Tour
+            "EventbriteFormat/17": ["attractions"],        # Attraction
+        }
+    )  # fmt: skip
+    # A party's music category is no live show: these categories' words are dropped beside these formats.
+    party_formats: list[str] = Field(default_factory=lambda: ["EventbriteFormat/11"])
+    party_drops: list[str] = Field(default_factory=lambda: ["EventbriteCategory/103"])
+    # Subcategories (their name, lower case) as category words; unlisted ones ("Other") leave the category's.
+    subcategory_genres: dict[str, list[str]] = Field(
+        default_factory=lambda: {
+            # Music
+            "alternative": ["alternative"], "blues & jazz": ["blues", "jazz"], "classical": ["classical"],
+            "country": ["country music"], "edm / electronic": ["electronic"], "folk": ["folk"],
+            "hip hop / rap": ["hip hop"], "indie": ["indie"], "latin": ["latin"], "metal": ["metal"],
+            "opera": ["opera"], "pop": ["pop"], "r&b": ["r&b"], "reggae": ["reggae"], "rock": ["rock"],
+            "top 40": ["top 40"], "americana": ["country music"], "bluegrass": ["bluegrass"], "blues": ["blues"],
+            "dj/dance": ["dj set"], "edm": ["edm"], "electronic": ["electronic"], "jazz": ["jazz"],
+            "psychedelic": ["rock"], "punk/hardcore": ["punk"], "world": ["world music"], "k-pop": ["k-pop"],
+            "singer/songwriter": ["concert"], "acoustic": ["concert"], "experimental": ["concert"],
+            # Performing & Visual Arts
+            "theatre": ["theatre"], "musical": ["musical"], "ballet": ["ballet"], "dance": ["dance"],
+            "orchestra": ["classical music"], "fine art": ["exhibition"], "sculpture": ["exhibition"],
+            "literary arts": ["literature"], "comedy": ["comedy"],
+            # Film, Media & Entertainment
+            "film": ["film"], "gaming": ["esports"],
+            # Food & Drink
+            "beer": ["beer tasting"], "wine": ["wine tasting"], "spirits": ["whisky tasting"], "food": ["food"],
+            # Community, Health
+            "lgbt": ["lgbt"], "yoga": ["yoga"],
+        }
+    )  # fmt: skip
+
+
+@dataclass
+class _Venue:
+    """A venue of this run's events: what the listing says, and its organizer when that is the venue."""
+
+    name: str
+    address: str | None
+    latitude: float | None
+    longitude: float | None
+    profile_url: str | None
+    about: str | None = None
+    organizer_url: str | None = None
+
+
+@dataclass
+class RunStats:
+    cities: list[str] = field(default_factory=list)
+    pages: int = 0  # discovery pages with results
+    empty: int = 0  # discovery pages still empty after the retries
+    listed: int = 0
+    events: int = 0
 
 
 class EventbriteScraper(BaseScraper[EventbriteSettings]):
     name = "eventbrite"
     settings_model = EventbriteSettings
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.stats = RunStats()
+        self._venues: dict[str, _Venue] = {}
+
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
-        listed = await self._list()
-        self.log.debug("listed %d upcoming events", len(listed))
-        async for event in self.stream_isolated(listed, self._fetch_event, label=lambda e: e.get("url", "")):
-            yield event
-
-    async def _list(self) -> list[dict[str, Any]]:
-        s, events = self.settings, {}
-        await self._list_path(s.listing_path, events)  # the Israel page must answer
-        for path in dict.fromkeys(s.listing_paths):
-            if path != s.listing_path:
-                await self.optional(f"listing {path}", self._list_path(path, events))
-        # The listings are merged page by page (Nov 2026): soonest first, a cut run holds the nearest week.
-        return soonest_first(events.values())
-
-    async def _list_path(self, path: str, events: dict[str, dict[str, Any]]) -> None:
-        """Every page of one discovery listing into ``events`` (by id: one event, many listings)."""
         s, now = self.settings, datetime.now(UTC)
-        pages = 1
-        page = 1
-        while page <= min(pages, s.max_pages):
-            data = server_data(await self.get_text(s.site_url + path, params={"page": page}))
-            found = ((data.get("search_data") or {}).get("events") or {})
-            pages = int((found.get("pagination") or {}).get("page_count") or 1)
-            for e in found.get("results") or []:
-                end = _when(e, "end") or _when(e, "start")
-                country = ((e.get("primary_venue") or {}).get("address") or {}).get("country") or "IL"
-                if e.get("id") and e.get("url") and not e.get("is_online_event") and not e.get("is_cancelled") \
-                        and country in s.countries and (end is None or end > now):  # never past events
-                    events[e["id"]] = e
-            page += 1
+        due = cities_due(s.cities, now, s.rotation_hours, s.cycle_runs)
+        self.stats.cities = due
+        self.log.info(
+            "rotation slot %d of %d: %s",
+            rotation_slot(now, s.rotation_hours, s.cycle_runs),
+            s.cycle_runs,
+            ", ".join(due) or "-",
+        )
+        # Israel, then one city after the other, each listed and then read soonest first: a run cut short
+        # (a deploy) has saved the places it got to. An event listed by two nearby cities is read once.
+        seen: set[str] = set()
+        for place in ["israel", *due]:
+            events: dict[str, dict[str, Any]] = {}
+            if place == "israel":
+                await self._israel(events)
+            else:
+                await self.optional(f"city {place}", self._city(place, events))
+            listed = [e for e in soonest_first(events.values()) if str(e["id"]) not in seen]
+            seen.update(str(e["id"]) for e in listed)
+            self.stats.listed += len(listed)
+            self.log.debug("%s: %d new events listed", place, len(listed))
+            async for event in self._read(listed):
+                yield event
+        self.log.info(
+            "%d events listed, %d read (%d discovery pages, %d still empty after retries), %d venues",
+            self.stats.listed, self.stats.events, self.stats.pages, self.stats.empty, len(self._venues),
+        )  # fmt: skip
+        self.venue_profiles = [venue_profile(key, v) for key, v in self._venues.items()]
+
+    async def _read(self, listed: list[dict[str, Any]]) -> AsyncIterator[ScrapedEvent]:
+        retention = RetentionSettings()
+        async for event in self.stream_isolated(listed, self._event, label=lambda e: e.get("url", "")):
+            if is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known):
+                self.stats.events += 1
+                yield event
+
+    # ------------------------------------------------------------------ discovery
+    async def _israel(self, events: dict[str, dict[str, Any]]) -> None:
+        s = self.settings
+        first, *rest = list(dict.fromkeys(s.israel_paths)) or [""]
+        if first:
+            await self._listing(first, events, keep=self._in_israel, must_answer=True)  # the Israel page must answer
+        for path in rest:
+            await self.optional(f"listing {path}", self._listing(path, events, keep=self._in_israel))
+
+    async def _city(self, slug: str, events: dict[str, dict[str, Any]]) -> None:
+        s = self.settings
+        base = f"/d/{slug}/"
+        found = await self.optional(f"listing {base}all-events/", self._page(base + "all-events/", 1))
+        if found is None:
+            return
+        pages = page_count(found)
+        if pages <= s.small_city_pages:  # read whole, kept by category
+            self._keep(found, events, self._relevant)
+            more = await asyncio.gather(*(self._more(base + "all-events/", p) for p in range(2, pages + 1)))
+            for page in more:
+                self._keep(page, events, self._relevant)
+            return
+        await asyncio.gather(*(
+            self.optional(f"listing {base}{listing}/", self._listing(base + listing + "/", events, keep=self._relevant))
+            for listing in s.listings
+        ))  # fmt: skip
+
+    async def _listing(
+        self, path: str, events: dict[str, dict[str, Any]], keep: Any, must_answer: bool = False
+    ) -> None:
+        """Every page of one discovery listing (up to max_pages) into ``events``, by id."""
+        s = self.settings
+        first = await self._page(path, 1)
+        if first is None:
+            if must_answer:
+                raise ParseError(f"{path}: no results after {s.empty_retries + 1} tries")
+            return
+        self._keep(first, events, keep)
+        pages = page_count(first)
         if pages > s.max_pages:
-            self.log.warning("%s truncated at max_pages=%d (%d pages)", path, s.max_pages, pages)
+            self.log.debug("%s: %d pages, reading %d", path, pages, s.max_pages)
+        for page in await asyncio.gather(*(self._more(path, p) for p in range(2, min(pages, s.max_pages) + 1))):
+            self._keep(page, events, keep)
 
-    async def _fetch_event(self, listed: dict[str, Any]) -> ScrapedEvent | None:
-        page = await self.optional(listed["url"], self.get_text(listed["url"]))
-        return parse_event(listed, offer(page or ""))
+    async def _more(self, path: str, page: int) -> dict[str, Any] | None:
+        """A later page of a listing: its failure costs that page only."""
+        return await self.optional(f"{path} page {page}", self._page(path, page))
+
+    async def _page(self, path: str, page: int) -> dict[str, Any] | None:
+        """One discovery page's results ({pagination, results}); None when the search never answered."""
+        s = self.settings
+        for attempt in range(s.empty_retries + 1):
+            if attempt:
+                await asyncio.sleep(s.empty_retry_seconds)
+            found = search_results(await self.get_text(s.site_url + path, params={"page": page}))
+            if found is not None:
+                self.stats.pages += 1
+                return found
+        self.stats.empty += 1
+        self.log.info("%s page %d: no results after %d tries", path, page, s.empty_retries + 1)
+        return None
+
+    def _keep(self, found: dict[str, Any] | None, events: dict[str, dict[str, Any]], keep: Any) -> None:
+        now = datetime.now(UTC)
+        for e in (found or {}).get("results") or []:
+            if listable(e, now) and keep(e):
+                events[str(e["id"])] = e
+
+    def _in_israel(self, e: dict[str, Any]) -> bool:
+        return _country(e) in self.settings.israel_countries
+
+    def _relevant(self, e: dict[str, Any]) -> bool:
+        return bool(set(_tag_ids(e)) & set(self.settings.relevant_tags))
+
+    # ------------------------------------------------------------------ one event
+    async def _event(self, listed: dict[str, Any]) -> ScrapedEvent | None:
+        page = await self.get_text(listed["url"])
+        context = page_context(page)
+        event = parse_event(listed, context, offer(page), self.settings)
+        if event is not None and (vid := clean_str((listed.get("primary_venue") or {}).get("id"))):
+            self._note_venue(f"{self.name}-{vid}", listed, context)
+        return event
+
+    def _note_venue(self, key: str, listed: dict[str, Any], context: dict[str, Any]) -> None:
+        venue = listed.get("primary_venue") or {}
+        place = venue.get("address") or {}
+        name = clean_str(venue.get("name"))
+        if not name:
+            return
+        seen = self._venues.setdefault(key, _Venue(
+            name=name, address=clean_str(place.get("localized_address_display") or place.get("address_1")),
+            latitude=to_float(place.get("latitude")), longitude=to_float(place.get("longitude")),
+            profile_url=_http(venue.get("venue_profile_url")),
+        ))  # fmt: skip
+        organizer = (context.get("basicInfo") or {}).get("organizer") or {}
+        if seen.organizer_url is None and same_name(clean_str(organizer.get("name")), name):
+            seen.organizer_url = _http(organizer.get("url"))
+            seen.about = html_to_text(clean_str(organizer.get("description")))
 
 
+# ---------------------------------------------------------------------- rotation
+def rotation_slot(now: datetime, rotation_hours: int, cycle_runs: int) -> int:
+    """This run's slot: the ``rotation_hours`` window it falls in, counted modulo ``cycle_runs``."""
+    return int(now.timestamp() // (rotation_hours * 3600)) % cycle_runs
+
+
+def cities_due(cities: list[str], now: datetime, rotation_hours: int, cycle_runs: int) -> list[str]:
+    """The cities of this run's slot: city ``i`` is due in slot ``i % cycle_runs`` (busiest first spread
+    evenly over the cycle)."""
+    slot = rotation_slot(now, rotation_hours, cycle_runs)
+    return [c for i, c in enumerate(dict.fromkeys(cities)) if i % cycle_runs == slot]
+
+
+# ---------------------------------------------------------------------- discovery pages
 def server_data(page_html: str) -> dict[str, Any]:
     """The page's ``window.__SERVER_DATA__`` object ({} when missing)."""
     i = page_html.find(_MARK)
@@ -141,9 +373,23 @@ def server_data(page_html: str) -> dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
-def offer(page_html: str) -> dict[str, Any]:
-    """The event page's schema.org (Aggregate)Offer ({} when missing)."""
-    return next((n for n in jsonld_nodes(page_html) if schema_types(n) & {"aggregateoffer", "offer"}), {})
+def search_results(page_html: str) -> dict[str, Any] | None:
+    """A discovery page's ``{pagination, results}``; None when its search timed out (no pagination)."""
+    found = (server_data(page_html).get("search_data") or {}).get("events") or {}
+    return found if isinstance(found, dict) and found.get("pagination") else None
+
+
+def page_count(found: dict[str, Any]) -> int:
+    return int((found.get("pagination") or {}).get("page_count") or 1)
+
+
+def listable(e: dict[str, Any], now: datetime) -> bool:
+    """A public upcoming event at a place: not online, cancelled, password-protected or over."""
+    end = _when(e, "end") or _when(e, "start")
+    return bool(
+        e.get("id") and e.get("url") and not e.get("is_online_event") and not e.get("is_cancelled")
+        and not e.get("is_protected_event") and e.get("primary_venue") and (end is None or end > now)
+    )  # fmt: skip
 
 
 def soonest_first(events: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -157,24 +403,119 @@ def _when(e: dict[str, Any], which: str) -> datetime | None:
     return parse_iso(f"{day}T{clock or '00:00'}", e.get("timezone")) if day else None
 
 
-def parse_event(e: dict[str, Any], deal: dict[str, Any]) -> ScrapedEvent | None:
-    """One event from its listing entry and its page's offer."""
+def _country(e: dict[str, Any]) -> str:
+    return clean_str(((e.get("primary_venue") or {}).get("address") or {}).get("country")) or "IL"
+
+
+def _tag_ids(e: dict[str, Any]) -> list[str]:
+    return [t["tag"] for t in e.get("tags") or [] if isinstance(t, dict) and isinstance(t.get("tag"), str)]
+
+
+# ---------------------------------------------------------------------- event pages
+def page_context(page_html: str) -> dict[str, Any]:
+    """The event page's Next.js context (basicInfo, performers, artistInfo...); {} when missing."""
+    try:
+        context = next_data(page_html)["props"]["pageProps"]["context"]
+    except (ParseError, ValueError, KeyError, TypeError):
+        return {}
+    return context if isinstance(context, dict) else {}
+
+
+def offer(page_html: str) -> dict[str, Any]:
+    """The event page's schema.org (Aggregate)Offer ({} when missing)."""
+    return next((n for n in jsonld_nodes(page_html) if schema_types(n) & {"aggregateoffer", "offer"}), {})
+
+
+def categories(tags: list[dict[str, Any]], s: EventbriteSettings, subcategory: str | None = None) -> list[str]:
+    """The category words of an event's tags: its format's and subcategory's, else its category's. The
+    listing leaves out some subcategories its event page names (``subcategory``: "DJ/Dance")."""
+    tags = [t for t in tags if isinstance(t, dict)]
+    if subcategory and not any(t.get("prefix") == "EventbriteSubCategory" for t in tags):
+        tags.append({"prefix": "EventbriteSubCategory", "display_name": subcategory})
+    ids = [t.get("tag", "") for t in tags]
+    party = bool(set(ids) & set(s.party_formats))
+    formats = [w for i in ids if i.startswith("EventbriteFormat/") for w in s.tag_genres.get(i, [])]
+    subs = [
+        w
+        for t in tags
+        if t.get("prefix") == "EventbriteSubCategory"
+        for w in s.subcategory_genres.get((clean_str(t.get("display_name")) or "").casefold(), [])
+    ]
+    cats = [
+        w for i in ids if i.startswith("EventbriteCategory/") and not (party and i in s.party_drops)
+        for w in s.tag_genres.get(i, [])
+    ]  # fmt: skip
+    return list(dict.fromkeys([*formats, *(subs or cats)]))
+
+
+def lineup(context: dict[str, Any], source: str) -> tuple[list[str], list[ArtistProfile]]:
+    """The page's performers (headliners first) and the profiles of those with a picture or links."""
+    performers = context.get("performers") or {}
+    names = [
+        n for p in [*(performers.get("headliners") or []), *(performers.get("supporters") or [])]
+        if isinstance(p, dict) and (n := clean_str(p.get("name")))
+    ]  # fmt: skip
+    profiles = []
+    for a in (context.get("artistInfo") or {}).get("artists") or []:
+        if not isinstance(a, dict) or not (name := clean_str(a.get("name"))):
+            continue
+        names.append(name)
+        links = [u for m in a.get("socialMedia") or [] if isinstance(m, dict) and (u := _http(m.get("url")))]
+        image = _http(a.get("fullSizeImageUrl")) or _http(a.get("imageUrl"))
+        if image or links:
+            profiles.append(ArtistProfile(name=name, source=source, image_url=image, links=list(dict.fromkeys(links))))
+    unique: dict[str, str] = {}
+    for n in names:
+        unique.setdefault(n.casefold(), n)
+    return list(unique.values()), profiles
+
+
+def description(e: dict[str, Any], context: dict[str, Any]) -> str | None:
+    """The page's text modules, else the listing's summary."""
+    modules = (context.get("structuredContent") or {}).get("modules") or []
+    text = "".join(m.get("text") or "" for m in modules if isinstance(m, dict) and m.get("type") == "text")
+    return html_to_text(text) or clean_str(e.get("full_description") or e.get("summary"))
+
+
+def parse_event(
+    e: dict[str, Any], context: dict[str, Any], deal: dict[str, Any], s: EventbriteSettings
+) -> ScrapedEvent | None:
+    """One event from its listing entry and its page (context and offer); None for one that won't take place."""
     title, start = clean_str(e.get("name")), _when(e, "start")
     if not title or not start:
         raise ParseError(f"{e.get('id')}: event without name or start")
+    info = context.get("basicInfo") or {}
+    if (
+        (clean_str(info.get("status")) or "").casefold() in s.skip_statuses
+        or info.get("isProtected")
+        or info.get("isListed") is False
+        or info.get("isOnline")
+    ):
+        return None
     venue = e.get("primary_venue") or {}
     place = venue.get("address") or {}
-    country = clean_str(place.get("country")) or "IL"
-    image = ((e.get("image") or {}).get("original") or {}).get("url")
-    tags = list(dict.fromkeys(w for t in e.get("tags") or [] if (w := _CATEGORIES.get(t.get("tag", "")))))
-    tags = tags or [word for pattern, word in _TITLE_WORDS if pattern.search(title)]
-    low, high = to_decimal(deal.get("lowPrice") or deal.get("price")), to_decimal(deal.get("highPrice"))
+    country = _country(e)
+    image = clean_str(((e.get("image") or {}).get("original") or {}).get("url"))
+    offers = ((context.get("seo") or {}).get("offersSchema") or [None])[0] or deal
+    low, high = to_decimal(offers.get("lowPrice") or offers.get("price")), to_decimal(offers.get("highPrice"))
+    if low is None and info.get("isFree"):
+        low = Decimal(0)
+    sale = clean_str((context.get("salesStatus") or {}).get("salesStatus")) or ""
+    sold_out = sale == "sold_out" or "soldout" in str(offers.get("availability", "")).lower()
+    artists, profiles = lineup(context, EventbriteScraper.name)
+    organizer = clean_str((info.get("organizer") or {}).get("name"))
+    age = clean_str(((context.get("goodToKnow") or {}).get("highlights") or {}).get("ageRestriction"))
+    age_match = _AGE.search(age or "")
+    extra: dict[str, Any] = {"purchase_url": e["url"]}
+    if vid := clean_str(venue.get("id")):
+        extra[VENUE_PROFILE] = f"{EventbriteScraper.name}-{vid}"
+    abroad = country != "IL"
     return ScrapedEvent(
         source=EventbriteScraper.name,
         source_event_id=str(e["id"]),
         url=e["url"],
         title=title,
-        description=clean_str(e.get("full_description") or e.get("summary")),
+        description=description(e, context),
         start_at=start,
         end_at=_when(e, "end"),
         time_known=bool(e.get("start_time")),
@@ -183,12 +524,51 @@ def parse_event(e: dict[str, Any], deal: dict[str, Any]) -> ScrapedEvent | None:
         city=clean_str(place.get("city")),
         latitude=to_float(place.get("latitude")),
         longitude=to_float(place.get("longitude")),
-        country=None if country == "IL" else country,
-        source_genres=tags,
-        image_url=clean_str(image),
+        country=country if abroad else None,
+        time_zone=clean_str(e.get("timezone")) if abroad else None,
+        source_genres=categories(
+            e.get("tags") or [], s, clean_str((context.get("taxonomies") or {}).get("subcategory"))
+        ),
+        artists=artists,
+        artist_profiles=profiles,
+        min_age=int(age_match.group(1)) if age_match else None,
+        organizer=organizer,
+        image_url=image,
         images=[image] if image else [],
-        currency=clean_str(deal.get("priceCurrency")) or "ILS",
+        currency=clean_str(offers.get("priceCurrency")) or clean_str(info.get("currency")) or "ILS",
         min_price=low,
         max_price=high if high is not None and high != low else None,
-        is_sold_out="soldout" in str(deal.get("availability", "")).lower(),
+        is_sold_out=sold_out,
+        extra=extra,
     )
+
+
+# ---------------------------------------------------------------------- venues
+def same_name(a: str | None, b: str | None) -> bool:
+    """The same name, case, accents, spaces and punctuation aside ("LIDO Berlin" = "Lido-Berlin")."""
+
+    def key(text: str) -> str:
+        folded = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode() or text
+        return re.sub(r"[\W_]+", "", folded.casefold())
+
+    return bool(a and b and key(a) and key(a) == key(b))
+
+
+def venue_profile(key: str, v: _Venue) -> VenueProfile:
+    return VenueProfile(
+        key=key,
+        name=v.name,
+        source=EventbriteScraper.name,
+        aliases=[v.name],
+        about=v.about,
+        address=v.address,
+        latitude=v.latitude,
+        longitude=v.longitude,
+        links=[v.organizer_url] if v.organizer_url else [],
+        profile_url=v.profile_url or v.organizer_url,
+    )
+
+
+def _http(value: Any) -> str | None:
+    url = clean_str(value)
+    return url if url and url.startswith(("http://", "https://")) else None

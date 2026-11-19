@@ -3512,15 +3512,55 @@ sources:
       concurrency: 8
 
   eventbrite:
-    # Eventbrite (eventbrite.com): conferences, meetups, workshops, tours and parties in Israel. The
-    # Israel discovery pages (~75 events, 20 a page) carry every event's data in __SERVER_DATA__;
-    # each event page adds its price (schema.org AggregateOffer). Categories mapped in the scraper.
+    # Eventbrite (eventbrite.com): all of Israel (its discovery pages, every category, every run) and, abroad,
+    # the concerts, club nights, festivals, stage, film, food and holiday events of the cities SPOTX lists
+    # abroad (every city page with 40+ events, Nov 2026; suburbs left to their city's search radius). Each
+    # city's discovery pages (__SERVER_DATA__, 20 a page) are read in rotation: 28 slots of 12 h, so every
+    # city once in 14 days, 5-6 cities a run; then each listed event's page (price, lineup, organizer).
+    # Their search often times out (empty page): retried. Direct, not through the paid proxy (~0.7 MB a
+    # discovery page). A run reads part of the catalogue: unlist_missing off. Measured (slot 0, Nov 2026):
+    # ~400 discovery + ~2,900 event pages, ~2,900 events, ~63 min. A city's search covers ~100 km (Kiel's
+    # lists Hamburg).
     enabled: true
+    proxied: false
+    unlist_missing: false
     cron: "43 9,21 * * *"
-    site_url: https://www.eventbrite.com
-    listing_path: /d/israel/all-events/
+    rotation_hours: 12          # = the cron's interval
+    cycle_runs: 28
+    max_pages: 10               # per category listing of a big city: its 200 most relevant events
+    skip_title_words: ["course", "masterclass", "webinar", "gift card", "gift voucher", "certification", "bootcamp"]
+    cities: [dc--washington, france--paris, germany--berlin, tx--houston, ca--los-angeles, nv--las-vegas,
+             ga--atlanta, spain--madrid, ny--new-york, united-kingdom--london, germany--tübingen, germany--hamburg,
+             ma--boston, tx--dallas, germany--köln, fl--miami, netherlands--aalsmeer, pa--philadelphia, il--chicago,
+             italy--milano, nc--charlotte, germany--leipzig, united-kingdom--manchester, netherlands--amsterdam,
+             fl--orlando, spain--barcelona, germany--augsburg, tx--austin, switzerland--zürich, co--longmont,
+             germany--hannover, nc--durham, germany--stuttgart, ga--norcross, france--marseille,
+             germany--frankfurt-am-main, germany--düsseldorf, va--richmond, fl--tampa, fl--boca-raton,
+             fl--west-palm-beach, france--lyon, germany--kassel, germany--wiesbaden, fl--naples, italy--napoli,
+             germany--bochum, portugal--lisboa, germany--dortmund, md--laurel, italy--roma, germany--braunschweig,
+             germany--münchen, france--toulouse, md--baltimore, tn--nashville, germany--münster, france--bordeaux,
+             tx--fort-worth, mi--detroit, fl--gainesville, germany--essen, france--nantes, va--norfolk,
+             ca--san-francisco, united-kingdom--birmingham, germany--schwerin, germany--erfurt, portugal--porto,
+             la--new-orleans, germany--bremen, netherlands--maastricht, germany--bonn, germany--weimar,
+             germany--bayreuth, germany--dresden, germany--bielefeld, germany--freiburg-im-breisgau,
+             germany--kaiserslautern, czech-republic--praha, france--lille, united-kingdom--liverpool,
+             germany--heidelberg, germany--wuppertal, germany--kiel, oh--columbus, ca--san-diego, ireland--dublin,
+             france--montpellier, fl--fort-lauderdale, germany--duisburg, az--phoenix, nc--raleigh, ga--marietta,
+             united-kingdom--edinburgh, co--denver, germany--heilbronn, spain--valencia, germany--bad-tölz,
+             united-kingdom--glasgow, germany--potsdam, fl--jacksonville, germany--plauen, greece--athina,
+             germany--osnabrück, france--rennes, germany--karlsruhe, germany--magdeburg, spain--sevilla,
+             united-kingdom--coventry, wa--seattle, germany--rostock, germany--bamberg, germany--schweinfurt,
+             or--portland, austria--wien, ne--omaha, nj--newark, germany--oldenburg, tx--san-antonio,
+             canada--toronto, germany--mainz, va--virginia-beach, austria--graz, germany--mannheim,
+             netherlands--sassenheim, hungary--budapest, france--nice, germany--regensburg, united-kingdom--bristol,
+             united-kingdom--newcastle-upon-tyne, germany--halle-saale, germany--chemnitz, germany--lübeck,
+             denmark--copenhagen, switzerland--neuchâtel, united-kingdom--nottingham, belgium--brussel,
+             france--strasbourg, germany--übach-palenberg, mo--kansas-city, nc--greensboro, france--rouen,
+             germany--flensburg, brazil--são-paulo, germany--gera, france--avignon, mo--st-louis,
+             united-kingdom--leeds, germany--rastatt]
     http:
-      concurrency: 3
+      concurrency: 2
+      request_delay_seconds: 1.0
 
   showshappening:
     # ShowsHappening (showshappening.com): ticketing in Malta, the UK, Germany and Spain. Each

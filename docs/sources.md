@@ -161,7 +161,6 @@ many of them free.
 | Source | Site | Runs daily at | On |
 | --- | --- | --- | --- |
 | `luma` | Luma (luma.com): RSVP pages for tech meetups, hi-tech conferences, startup and community events | 07:23, 19:23 | yes |
-| `eventbrite` | Eventbrite (eventbrite.com/d/israel/all-events/): conferences, meetups, workshops, tours and parties in Israel; its categories and formats are mapped to the site's | 09:43, 21:43 | yes |
 | `meetup` | Meetup (meetup.com): community meetups: tech talks, developer groups, startup and social events | 07:41, 19:41 | yes |
 | `geektime` | Geektime (geektime.co.il/event/): the hi-tech events calendar: meetups, conferences, workshops | 07:29, 19:29 | yes |
 | `peoplecomputers` | People & Computers (anashim umahshevim, events.co.il): Israel's hi-tech conference organizer | 07:37, 19:37 | yes |
@@ -183,6 +182,7 @@ many of them free.
 | `dice` | DICE (dice.fm): the whole catalogue (~19k events, every city and country, every kind: gigs, DJ, parties, comedy, talks, theatre, film...) from its sitemaps and event data routes; up to 5000 pages a run, every stored event re-read within 8 runs; venue and artist profiles | 05:14, 17:14 | yes |
 | `xceed` | Xceed (xceed.me): its whole upcoming catalogue from the site's public API - club nights, concerts, festivals and shows in every city it sells (~170 cities, ~23 countries; venue profiles weekly) | 06:01, 18:01 | yes |
 | `skiddle` | Skiddle (skiddle.com): every UK and Irish city it covers (~220) and every event type; official API with a key, else 5 city pages a run in rotation (~70 trending events each) | every 2 h at :28 (odd hours) | yes |
+| `eventbrite` | Eventbrite (eventbrite.com): all of Israel every run, and abroad the concerts, club nights, festivals, stage, film, food and holiday events of 150 cities SPOTX lists (city discovery pages in rotation, every city once in 14 days); each event page adds price, lineup and organizer; categories, subcategories and formats mapped to the site's; artist and venue profiles | 09:43, 21:43 | yes |
 | `megaevents` | Mega Events (mega-events.co.il): packages (flight + hotel + ticket) to concerts and matches abroad | 05:43, 17:43 | yes |
 
 ## Prices and availability: source quirks
