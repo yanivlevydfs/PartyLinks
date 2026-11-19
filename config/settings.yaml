@@ -1241,7 +1241,7 @@ enrichment:
       places: ["עכו", "נהריה", "כרמיאל", "טבריה", "עפולה", "צפת", "ראש פינה", "נוף הגליל", "נצרת", "יקנעם", "מגדל העמק",
                "מעלות תרשיחא", "מעלו תרשיחא", "מעלות", "בית שאן", "שבי ציון", "כפר בלום", "הגושרים", "כנרת", "עין חרוד",
                "יפעת", "עין השופט", "רמת ישי", "תל עדשים", "מגדל", "יסוד המעלה", "כברי", "אל-רום", "אל רום",
-               "עמק המעיינות", "עמק הירדן", "צפון הארץ", "צפון", "north district", "החולה", "אגמון החולה", "חזון", "חמדיה", "קצרין", "מטולה", "קריית שמונה", "קרית שמונה", "גולן", "לוטם", "עמק יזרעאל",
+               "עמק המעיינות", "עמק הירדן", "צפון הארץ", "צפון", "north district", "החולה", "אגמון החולה", "מבואות החרמון", "חזון", "חמדיה", "קצרין", "מטולה", "קריית שמונה", "קרית שמונה", "גולן", "לוטם", "עמק יזרעאל",
                "akko", "acre", "nahariya", "karmiel", "tiberias", "afula", "safed", "tzfat", "rosh pina", "nazareth",
                "yokneam", "beit shean", "hagoshrim", "kinneret", "ramat yishai", "migdal", "lotem", "katzrin",
                "metula", "kiryat shmona", "golan"]
@@ -1704,6 +1704,9 @@ geocoding:
     "קיבוץ מורן, מורן": [32.921571, 35.393461]  # מבשלת הגליל, מורן
     "קיבות מורן, מורן": [32.921571, 35.393461]  # מבשלת הגליל, מורן
     "תיאטרון ראסל, רמת גן": [32.0686314, 34.8333087]  # תיאטרון ראסל, מנדל מתתיהו 11, רמת גן
+    "פסטורל": [33.174834, 35.61115]  # מלון פסטורל, כפר בלום (OSM tourism/hotel)
+    "בית העם כפר בלום": [33.172366, 35.610122]  # כפר בלום, the kibbutz's own point
+    "מארג, צומת כח": [33.120421, 35.57014]  # מארג, מתחם העסקים צומת כ"ח
     "agamon hula": [33.0511117, 35.6091616]  # אגמון החולה, חולתה
     "asper-huji innovate — מרכז היזמות של האוניברסיטה העברית": [31.7787414, 35.1969438]  # ASPER-HUJI Innovate - ספריית הרמן, קמפוס אדמונד י. ספרא, ירושלים
     "be'er milhan": [29.5812438, 34.962663]  # באר מילחן, אילות
@@ -1921,6 +1924,8 @@ geocoding:
   # Pins that hold in one town only, for names other towns' venues share ("אולם תרבות", "מרכז הפיס"):
   # matched against an event of that town before the venues above. Addresses found on the web (Nov 2026).
   city_venues:
+    "טירת כרמל":
+      "מתנ\"ס טירת כרמל": [32.761772, 34.962811]  # מתנ"ס, אלמוג, טירת כרמל
     "אופקים":
       "בית לגדול טוב": [31.2999286, 34.6152878]  # בית לגדול טוב, אגוז 7, אופקים
     "איל":
@@ -3174,6 +3179,13 @@ sources:
     enabled: true
     cron: "23 8,20 * * *"
     # Its communities (/com/<slug>, the organizer of every event), as the site's categories.
+      # Small-town box offices found in the Wayback Machine's index of *.smarticket.co.il (Nov 2026),
+      # whose shows no other source had: their halls are named per performance.
+      - {host: mvhr, venue_name: "מועצה אזורית מבואות החרמון", city: מבואות החרמון, skip_title_words: ["קורס", "חוג"]}
+      - {host: pastoral, venue_name: מלון פסטורל, city: כפר בלום, rooms: true}
+      - {host: migvanim, venue_name: "מגוונים - מרכזים קהילתיים רמת השרון", city: רמת השרון, skip_title_words: ["קורס", "אימונים", "פילאטיס", "מועדון של אימהות"]}
+      - {host: matnastc, venue_name: "מתנ\"ס טירת כרמל", city: טירת כרמל, skip_title_words: ["נינג'ה", "יום הולדת", "בית ספר לכדורסל", "הצהרת"]}
+      - {host: kikar-bialik, venue_name: כיכר ביאליק, city: תל אביב-יפו}
     community_genres:
       six: ["דייטינג"]
       reserved: ["דייטינג"]
