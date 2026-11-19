@@ -1091,6 +1091,7 @@ enrichment:
                 "החברה הישראלית", "בחברה הישראלית", "לחברה הישראלית", "והחברה הישראלית",  # society, not music
                 "conference centre", "conference center", "jungle joy",  # venues abroad (Malta), not a conference / jungle music
                 "eastern standard time", "eastern daylight time", "eastern time",  # US time zones, not mizrahi
+                "למחזיקי כרטיס למרוץ", "גאלה של ערב ראש השנה", "מסיבת הגאלה", "גאלת סילבסטר", "nye gala",  # race-ticket small print, NYE galas: no running / charity (Take A Break)
                 "non-commercial", "commercial or non", "potter forest", "organic choir",  # photo terms, a park, a choir
                 "תרגום סימולטני לאנגלית, ערבית", "בשפה הערבית", "בשפה הרוסית", "english, russian, arabic",  # a tour's language, not Arabic music
                 "מסיבה זו", "מסיבות שונות", "מסיבות טכניות", "מסיבות בטיחות", "מסיבות שאינן",  # "for this reason", not a party
