@@ -54,6 +54,25 @@ def test_an_address_names_its_town_last() -> None:
     assert enricher.canonical_city(None, "רחוב הרצל 5, חולון, Israel") == "חולון"
 
 
+def test_a_hall_or_address_naming_its_town_beats_the_sellers_city() -> None:
+    """Eventim filed Afula's culture hall under Haifa, Eventer the Sherover theatre under Tel Aviv (Nov 2026)."""
+    from partylinks.config import get_settings
+    from partylinks.enrichment import Enricher
+
+    cfg = get_settings()
+    city = Enricher(cfg.enrichment, cfg.timezone).canonical_city
+    assert city("חיפה", None, "היכל התרבות עפולה") == "עפולה"
+    assert city("באר שבע", None, "תיאטראות אילת") == "אילת"
+    assert city("תל אביב", None, "שרובר תיאטרון ירושלים") == "ירושלים"
+    assert city("כפר סבא", 'UpTown Music Club - קרית עתידים, ת"א', "UpTown") == "תל אביב"
+    # No town named whole: the city field stays.
+    assert city("תל אביב", None, "תיאטרון גשר") == "תל אביב"
+    assert city("גבעתיים", "שדה בוקר 10", "מרכז קהילתי שדה בוקר") == "גבעתיים"
+    assert city("חריש", "רח' שוהם 73", "אולם תרבות חריש") == "חריש"
+    # A village under its council keeps its name.
+    assert city("נווה ירק", None, "היכל התרבות דרום השרון") == "נווה ירק"
+
+
 def test_a_pinned_venue_name_decides_over_the_sellers_city() -> None:
     """The Khan theatre's shows at ZOA House (Tel Aviv) came with the Khan's city, Jerusalem; "גן לאומי מגדל צדק"
     (Rosh HaAyin) names the Galilee town Migdal. Both were refused as "region" though pinned by hand (Nov 2026)."""

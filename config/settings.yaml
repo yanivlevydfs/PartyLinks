@@ -1486,7 +1486,6 @@ geocoding:
     "ברנרוק (brennerock)": [31.8598754, 34.795409]  # ברנרוק – אולם המופעים, קיבוץ גבעת ברנר, גבעת ברנר
     "פארק המחזור חירייה": [32.0305264, 34.8206347]  # פארק המחזור חירייה, פארק אריאל שרון, פארק אריאל שרון
     "גינת הקסמים": [32.108841, 34.816484]  # גינת הקסמים, קהילת לודג' 20, תל אביב-יפו
-    "גן לאומי מגדל צדק": [32.0762932, 34.9585963]  # גן לאומי מגדל צדק, גן לאומי מגדל צדק, ראש העין
     "קפה בורמה": [31.7938835, 35.0360826]  # קפה בורמה, דרך בורמה (ליד בית מאיר), בית מאיר
     "קפה במשק": [31.8138222, 34.7190625]  # קפה במשק, מפעל שעוני עדי, קבוצת יבנה
     "אוליבס": [31.7482785, 34.6132454]  # אוליבס, אגם ניצנים, ניצנים
@@ -1871,7 +1870,6 @@ geocoding:
     "מיני ישראל": [31.8422518, 34.9689726]               # Mini Israel park, Latrun (OSM tourism point; makore's shows there)
     "עין המפרץ": [32.9036151, 35.0961117]                # Kibbutz Ein HaMifratz (OSM village point; Meitar music school, funzing)
     "d-one דרום השרון": [32.1333242, 34.9242354]         # D-ONE, Neve Yarak (OSM village point; a small moshav)
-    "תיאטרון דימונה": [31.0619717, 35.0371103]           # Dimona Theatre, Kovshei Eilat St, Dimona (OSM amenity)
     "ma'agan michael": [32.5553209, 34.9166572]          # Kibbutz Ma'agan Michael (OSM village point; ogo's venue name)
     "גן לאומי מגדל צדק": [32.0808421, 34.9570584]        # Migdal Tsedek (Migdal Afek) national park, Rosh HaAyin (OSM historic)
     "מלון נבל דוד": [32.8876963, 35.5769862]  # Nevel David hotel, Kfar Nahum (OSM building; tiuli.com/lodgings/974)

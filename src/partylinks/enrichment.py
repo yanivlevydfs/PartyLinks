@@ -83,6 +83,12 @@ ABROAD_AREA = "abroad"
 # ISO 3166 "unknown": an event abroad whose country the source does not give. Any country code
 # keeps an event out of the Israeli feed and in the abroad section.
 UNKNOWN_COUNTRY = "ZZ"
+# A venue's hall word; what follows it may be its town ("היכל התרבות עפולה").
+_HALL = re.compile(
+    r"(?:היכל\s+ה?(?:תרבות|תיאטרון|תאטרון)|אודיטוריום|משכן\s+(?:ה|ל)?אמנויות\s+הבמה|תיאטר(?:ון|אות)"
+    r"|(?:בית|אולם|מרכז)\s+ה?תרבות)\s+(.+)$"
+)
+_COUNTRY_WORDS = {"ישראל", "israel", "il"}
 LOCAL_COUNTRIES = {"IL", "PS", UNKNOWN_COUNTRY}  # an event in one of these is placed by its town
 
 
@@ -683,6 +689,13 @@ class Enricher:
         A prefix ("קיבוץ יגור") goes, a whole Latin field naming a small town gets its Hebrew name."""
         if city and self._city_prefix:
             city = self._city_prefix.sub("", city.strip()) or city
+        # A town the venue or address names outright beats the city field: sellers file a hall under their
+        # own hub (Eventim: Afula's and Nahariya's culture halls under Haifa) or the organizer's town (Eventer:
+        # the Sherover theatre under Tel Aviv), Nov 2026.
+        # Only one known town over another: a village under its council ("נווה ירק" in "היכל התרבות דרום
+        # השרון") keeps its own name.
+        if city and self._places.find(city) and (named := self._named_town(address, venue)):
+            return named
         # Per field, a configured city then any other Israeli town (GeoNames); a venue name only for the
         # configured ones ("מגדל המים" is no town). The city field is read whole before the venue: smarticket's
         # "אולם תרבות חריש - כתובת: רח' שוהם 73" with city חריש was filed under Shoham (Nov 2026).
@@ -707,6 +720,25 @@ class Enricher:
             return max(self._places.find(town[0]) or [(0, town[1])])[1]
         # One spelling of what is left: "קרית חיים" = "קריית חיים", "כרם מהר״ל" = "כרם מהר\"ל".
         return re.sub(r"^קרית ", "קריית ", city.strip().replace("״", '"').replace("׳", "'"))
+
+    def _named_town(self, address: str | None, venue: str | None) -> str | None:
+        """The town that is, whole, the last part of the address ("..., תל אביב-יפו, ישראל") or what
+        follows a hall word in the venue name ("היכל התרבות עפולה", "תיאטראות אילת"). Whole: "תיאטרון
+        הקאמרי" names no town, and a street ("שדה בוקר 10") has a number."""
+        parts = [p.strip(" .") for p in (address or "").split(",")]
+        while parts and (not parts[-1] or parts[-1].isdigit() or parts[-1].casefold() in _COUNTRY_WORDS):
+            parts.pop()
+        texts = [parts[-1]] if len(parts) >= 2 else []
+        if venue and (hall := _HALL.search(venue)):
+            texts.append(hall.group(1))
+        for text in texts:
+            text = text.strip(" .-–()")
+            for name, pattern in self._cities:
+                if (m := pattern.search(text.lower())) and m.start() == 0 and m.end() == len(text):
+                    return name
+            if self._places.is_place(text) and (hits := self._places.find(text)):
+                return hits[0][1]
+        return None
 
     def in_target_city(self, city: str | None, address: str | None, venue: str | None) -> bool | None:
         """Whether the event is in the target city. A city or address that names another place means no;
