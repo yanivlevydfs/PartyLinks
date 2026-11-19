@@ -2673,8 +2673,10 @@ sources:
     products_path: /wp-json/wc/store/v1/products
     category_ids: [8, 7]  # music, sport: read only when whole_catalogue is false
     http:
-      concurrency: 10  # 4 took longer than the 30-min run limit
-      request_delay_seconds: 0.2
+      # 10 at once, 0.2 s apart: the site answered 403 to 3,217 of 3,966 product pages (Nov 19 2026).
+      # No run length limit any more (run_timeout_seconds: 0), so the slower pace costs only time.
+      concurrency: 4
+      request_delay_seconds: 0.5
 
   teder:
     # Teder radio's nights at Beit Romano (Rafi room, yard, studio): no API; the homepage's events
