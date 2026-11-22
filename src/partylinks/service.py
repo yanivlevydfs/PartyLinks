@@ -634,16 +634,22 @@ class ScrapeService:
     def _artwork_by_title(self, source: str) -> dict[str, str]:
         """Stored primary artwork per title key; ``source``'s own listings win over other sources'."""
         found: dict[str, str] = {}
+        own: dict[str, str] = {}
+        # Read in pages (a server-side cursor: each fetch is its own short statement), unsorted. Read whole, the
+        # ~210k rows (0.5 s from an idle process) were cut by the 120 s statement timeout when the worker, busy
+        # parsing other runs' pages and planning the regroup, took them slower than the database sent them:
+        # makore, newacropolis, zygo and zoatlv failed before scraping anything (2026-11-21..23).
         with self.db.session(write=False) as session:
             rows = session.execute(
                 select(EventRow.source, EventRow.title, ImageRow.url)
                 .join(ImageRow, ImageRow.event_id == EventRow.id)
                 .where(ImageRow.position == 0, ImageRow.downloaded_at.is_not(None))
-                .order_by(EventRow.source == source)  # own source last, so it overwrites
+                .execution_options(yield_per=5000)
             )
-            for _, title, url in rows:
+            for row_source, title, url in rows:
                 if key := title_key(title):
-                    found[key] = url
+                    (own if row_source == source else found)[key] = url
+        found.update(own)  # the source's own listings win
         return found
 
     def _save_batch(self, events: list[ScrapedEvent]) -> int:

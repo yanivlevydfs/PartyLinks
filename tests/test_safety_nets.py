@@ -264,6 +264,33 @@ def test_event_without_artwork_keeps_or_borrows_one() -> None:
     assert unknown.images == [] and unknown.image_url is None
 
 
+def test_artwork_by_title_is_read_in_pages_and_the_source_s_own_wins(tmp_path: Path) -> None:
+    """Read whole, its ~210k rows were cut by the statement timeout while the worker was busy (2026-11-23)."""
+    from sqlalchemy import event as sa_event
+
+    from partylinks.db import ImageRow
+    from partylinks.service import title_key
+
+    service, db = make_service(tmp_path)
+    now = datetime.now(UTC)
+    with db.session() as s:
+        titles = {"a:1": "Yossi & Jagger - Habima", "b:1": "Yossi & Jagger", "b:2": "Only at b", "c:1": "No file"}
+        for eid, title in titles.items():
+            s.add(EventRow(id=eid, source=eid[0], source_event_id=eid[2:], url=f"https://x.example/{eid}", title=title,
+                           start_at=now + timedelta(days=1)))  # fmt: skip
+        s.flush()
+        for eid in ("a:1", "b:1", "b:2"):
+            s.add(ImageRow(event_id=eid, position=0, url=f"https://img/{eid}.jpg", downloaded_at=now))
+        s.add(ImageRow(event_id="c:1", position=0, url="https://img/c.jpg"))  # found, never downloaded
+    options: list[Any] = []
+    sa_event.listen(db.engine, "before_cursor_execute",
+                    lambda conn, cur, sql, params, ctx, many: "event_images" in sql and options.append(ctx.execution_options))  # fmt: skip
+    shared, only_b = title_key("Yossi & Jagger"), title_key("Only at b")
+    assert service._artwork_by_title("a") == {shared: "https://img/a:1.jpg", only_b: "https://img/b:2.jpg"}
+    assert service._artwork_by_title("b") == {shared: "https://img/b:1.jpg", only_b: "https://img/b:2.jpg"}
+    assert options and all(o.get("yield_per") and o.get("stream_results") for o in options)
+
+
 class _StuckSource(_SlowSource):
     """Yields one event, then hangs without ever finding another."""
 
