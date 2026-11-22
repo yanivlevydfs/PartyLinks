@@ -698,9 +698,16 @@ def _more_html(session: Session, cfg: Settings, lang: str, row: EventRow) -> str
 def like_contains(column: Any, value: str, *, whole: bool = False) -> ColumnElement[bool]:
     """Case-insensitive substring match with the visitor's % and _ taken literally ("100% club" is not every venue).
     ``whole``: the whole value, any case - a venue's page is that venue only ("היכל התרבות" is not every
-    היכל התרבות in the country)."""
+    היכל התרבות in the country).
+
+    ``whole`` is lower() = lower(), not ILIKE: an ILIKE can use no btree index, and the venue lookup of
+    every event page ("more at this venue", twice) scanned the whole events table, ~200 ms a page
+    (2026-11-22: crawler bursts of /e/ pages ran out of build slots and got 503s). On a venue_name column
+    it reads ix_events_venue_name_lower."""
+    if whole:
+        return func.lower(column) == func.lower(value)
     escaped = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    return column.ilike(escaped if whole else f"%{escaped}%", escape="\\")
+    return column.ilike(f"%{escaped}%", escape="\\")
 
 
 def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:

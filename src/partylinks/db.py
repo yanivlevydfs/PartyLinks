@@ -228,6 +228,9 @@ Index(
 )
 # The alert matcher's "already listed by this source?" check (same source and title, any date): one probe each.
 Index("ix_events_source_title", EventRow.source, EventRow.title)
+# A venue's events, any case (seo.like_contains whole=True): the event page's "more at this venue", the venue
+# page, /events?venue=. Without it each was a scan of the whole table (~200 ms, the costliest query in prod).
+Index("ix_events_venue_name_lower", func.lower(EventRow.venue_name))
 
 
 class TicketRow(Base):
