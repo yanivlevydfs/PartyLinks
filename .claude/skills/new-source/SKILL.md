@@ -7,6 +7,25 @@ description: Add a new SPOTX source / scraper / scanner (סורק, סקאנר) f
 
 Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill only says how to run it.
 
+## Mandatory for every source (none may be skipped)
+
+- **Categories:** every site category / chip mapped to our genres (`enrichment.genres` keywords, or
+  `declared_genres_only` when the site's own categories are precise). `check_source.py` shows no `NO GENRE`.
+- **WebP:** artwork URLs passed through; in production `https://spotx.fun/images/<id>/640.webp` answers
+  `200 image/webp`, and `event_images.content_type` is set in the DB.
+- **Scheduler:** its own `cron:` twice a day on a free minute (`check_source.py` shows no `CRON CLASH`).
+- **JSON + shops:** a display name in `web/src/sourceNames.json`, an entry in `STORES` in
+  `web/src/pages/Stores.tsx` (shop URL + kind: tickets / guide / venue / abroad), so it appears on
+  `/ticket-sites` and in the source filter; `search.source_aliases`; the `SCRAPERS` registry; the
+  `docs/sources.md` row and count.
+- **Existing coverage checked first:** `git grep -n -i -E "<domain>|<venue name>" -- config src`
+  (eventer `users:`, arenas venue slugs, Smarticket / PRES / Tickchak tenants). Name any overlap in the
+  config comment; dedup merges it.
+- **Config valid before every push (and after every rebase):**
+  `python -c "import yaml; yaml.safe_load(open('config/settings.yaml',encoding='utf-8'))"` and
+  `python -c "from partylinks.config import get_settings; get_settings()"`. A broken settings.yaml
+  stops prod from deploying. Files are CRLF: keep each line inside its own source's block.
+
 1. Read `docs/adding-a-source.md` in full before touching code.
 2. Recon (section 1): robots.txt, the data the page itself loads, platform already covered?, access
    (plain / `impersonate: chrome` / `israel_proxy` / `vpn: true` when even the free Israeli proxies fail). If the auto-mode classifier denies probing,
