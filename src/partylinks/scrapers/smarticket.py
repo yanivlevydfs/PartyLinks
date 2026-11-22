@@ -45,6 +45,9 @@ _SOON = re.compile(r"בקרוב|טרם\s+נפתח|תהיה\s+זמינה")
 _FREE = re.compile(r"כניסה\s+חופשית|ללא\s+(?:עלות|תשלום)|לא\s+בתשלום")  # "האירוע לא בתשלום, ..."
 # A hall named "מפגש ב-ZOOM": an online meeting, skipped like every source's online events.
 _ONLINE = re.compile(r"\bzoom\b|זום", re.IGNORECASE)
+# A street word and the name after it: "רח' שוהם", "שד' ירושלים" name a street, not the town.
+_STREET_NAME = re.compile(r"(?<![^\W\d_])(?:רחוב|רח['׳]|שדרות|שד['׳])\s+[^\W\d_][\w'׳\"״]*")
+_LETTER = re.compile(r"[^\W\d_]")
 
 
 class SmarticketTenant(BaseModel):
@@ -78,6 +81,9 @@ class SmarticketSettings(SourceSettings):
     # 6-month calendar windows read for a tenant whose /api/shows is empty.
     calendar_windows: int = Field(2, ge=1)
     calendar_window_days: int = Field(182, ge=1)  # days per calendar request
+    # Hall names that name no hall (seating, not a place): "אולם לא מסומן - הושבה במקום" (visitashdod) was the
+    # venue of its events, Nov 2026. A hall that is only these (and punctuation) is none: the tenant's venue_name.
+    placeholder_halls: list[str] = Field(default_factory=lambda: ["אולם לא מסומן", "הושבה במקום", "מקום לא מסומן"])
     tenants: list[SmarticketTenant]
 
 
@@ -214,7 +220,7 @@ def parse_event(
     prices = [t.price for t in tickets if t.price is not None]
 
     host = tenant_host(tenant.host, s.tenant_domain)
-    hall = None if tenant.rooms else clean_str(performance.get("event_place"))
+    hall = None if tenant.rooms else _real_hall(clean_str(performance.get("event_place")), s.placeholder_halls)
     category = clean_str(show.get("category")) or tenant.category
     image = clean_str(show.get("image"))
     return ScrapedEvent(
@@ -226,7 +232,7 @@ def parse_event(
         start_at=start,
         end_at=end,
         venue_name=hall or tenant.venue_name,
-        city=_hall_city(hall) or tenant.city,
+        city=_hall_city(hall, tenant.city) or tenant.city,
         source_genres=[category] if category else [],
         images=[f"https://{host}{s.uploads_path}{image}"] if image else [],
         min_price=min(prices, default=None),
@@ -250,12 +256,23 @@ def _localities() -> PlaceIndex:
     return PlaceIndex(all_cities(enrichment.cities, enrichment.places_min_population))
 
 
-def _hall_city(hall: str | None) -> str | None:
+def _real_hall(hall: str | None, placeholders: list[str]) -> str | None:
+    """The hall, or None when it is only placeholder words ("אולם לא מסומן - הושבה במקום")."""
+    rest = hall or ""
+    for words in placeholders:
+        rest = rest.replace(words, " ")
+    return hall if _LETTER.search(rest) else None
+
+
+def _hall_city(hall: str | None, tenant_city: str | None = None) -> str | None:
     """The town a touring show's hall names ("היכל התרבות יבנה"): the tenant's own city went with it,
     and Tzavta's or Yiddishpiel's road shows landed on Tel Aviv's culture hall (Nov 2026). The last town
-    named wins - "אולם תרבות נתיבות (שד' ירושלים 6 נתיבות)" is in Netivot."""
-    hits = _localities().find(hall)
-    return max(hits)[1] if hits else None
+    named wins - "אולם תרבות נתיבות (שד' ירושלים 6 נתיבות)" is in Netivot - but the tenant's own town when the
+    hall names it, and never a street's name: "אולם תרבות חריש - כתובת: רח' שוהם 73" was filed under Shoham
+    (21 events, Nov 2026)."""
+    hits = _localities().find(_STREET_NAME.sub(" ", hall or ""))
+    own = {town for _, town in _localities().find(tenant_city)}
+    return next((town for _, town in hits if town in own), None) or (max(hits)[1] if hits else None)
 
 
 def _status(performance: dict[str, Any], message: str | None) -> TierStatus:

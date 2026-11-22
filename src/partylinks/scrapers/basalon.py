@@ -23,15 +23,17 @@ import re
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
+from functools import cache
 from typing import Any
 from urllib.parse import quote, urljoin
 
 from pydantic import BaseModel, Field
 from selectolax.lexbor import LexborHTMLParser
 
-from partylinks.config import RetentionSettings
+from partylinks.config import RetentionSettings, get_settings
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import clean_str, html_to_text, jsonld_nodes, parse_iso, to_decimal, zone
+from partylinks.places import PlaceIndex, all_cities
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
@@ -150,6 +152,12 @@ def parse_cards(page_html: str, s: BasalonSettings, today: date) -> list[Card]:
     return cards
 
 
+@cache
+def _localities() -> PlaceIndex:
+    enrichment = get_settings().enrichment
+    return PlaceIndex(all_cities(enrichment.cities, enrichment.places_min_population))
+
+
 def _offers(node: dict[str, Any]) -> list[dict[str, Any]]:
     offers = node.get("offers")
     return [o for o in (offers if isinstance(offers, list) else [offers]) if isinstance(o, dict)]
@@ -176,6 +184,12 @@ def parse_event(page_html: str, card: Card, s: BasalonSettings, timezone: str) -
         street = street.removesuffix(suffix) if street else street
     if any(w in f"{place} {street} {card.title}" for w in s.home_words) or not street:
         return None
+    # The page's addressLocality is the place name's second comma part cut at a '"': "כנסיית בית החסד, שדרות
+    # הפלי"ם, חיפה" came as street "כנסיית בית החסד", locality "שדרות הפלי" - filed under the town Sderot (5
+    # events, Nov 2026). The name ends with the town: when that is a town, it is the city and the name the address.
+    parts = [p.strip() for p in (place or "").split(",") if p.strip()]
+    if len(parts) >= 2 and _localities().is_place(parts[-1]):
+        city, street = parts[-1], ", ".join(parts[:-1])
     tickets = [
         TicketTier(name=name, price=price, is_free=price == 0)
         for o in offers

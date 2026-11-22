@@ -69,6 +69,33 @@ def test_paid_show_tiers_and_genres() -> None:
     assert enriched is not None and enriched.genres
 
 
+def test_the_town_is_the_place_names_last_part() -> None:
+    """The page's addressLocality is the name's second part cut at the '"': "שדרות הפלי" (an avenue in Haifa)
+    filed Ensemble Meitar's church concerts under the town Sderot (5 events, Nov 2026)."""
+    import json
+
+    node = {
+        "@type": "Event",
+        "name": "אנסמבל מצו מארח בחיפה",
+        "startDate": "2026-12-05T20:00:00+02:00",
+        "location": {
+            "@type": "Place",
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "כנסיית בית החסד",
+                "addressLocality": "שדרות הפלי",
+            },
+            "name": 'כנסיית בית החסד, שדרות הפלי"ם, חיפה, ישראל',
+        },
+    }
+    html = f'<script type="application/ld+json">{json.dumps(node, ensure_ascii=False)}</script>'
+    show = basalon.parse_event(html, card("1", ["הופעות"]), CFG, TZ)
+    assert show is not None and show.city == "חיפה"
+    assert show.address == 'כנסיית בית החסד, שדרות הפלי"ם, חיפה'
+    enriched = Enricher(Settings().enrichment, TZ).enrich(show)
+    assert enriched is not None and enriched.city == "חיפה"
+
+
 def test_private_workshop_and_hidden_address_are_dropped() -> None:
     assert basalon.parse_event(page("1052068"), card("1052068", ["סדנאות"]), CFG, TZ) is None  # "סדנה פרטית לזוג"
     assert basalon.parse_event(page("1273829"), card("1273829", ["הרצאות"]), CFG, TZ) is None  # a locality only

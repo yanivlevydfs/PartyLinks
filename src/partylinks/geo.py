@@ -475,6 +475,14 @@ class Geocoder:
             # The venue itself is a hand-pinned place: its name decides over a seller's city fallback (the Khan
             # theatre's shows at ZOA House, Tel Aviv, came as Jerusalem, Nov 2026). The text still has to agree:
             # "קיבוץ הגושרים" pinned in Tel Aviv by mistake is refused.
+            # Within the city field's own town the text's place words are a street or the venue's name, not the
+            # place: "בית החזון איש" (Bnei Brak) read as the Galilee's Hazon, Kfar Saba's hall at "ירושלים 33" as
+            # Jerusalem - 424 correctly pinned events refused as "region" (Nov 2026). Only away from it the seller's
+            # city is dropped for the text. A pin whose key names the city field's town was set for that town:
+            # "בית התרבות בנימינה-גבעת עדה" (Omer 4, read as the Negev's Omer) is in Givat Ada, 4.7 km from the
+            # merged council's centre.
+            if self._at_its_town(row, point) or (row.city and row.city.lower() in match[0]):
+                return None
             row = SimpleNamespace(venue_name=row.venue_name, address=row.address, city=None,
                                   in_target_city=row.in_target_city)  # fmt: skip
         # Outside the target city the place in the text wins: "קיבוץ הגושרים" is in the Galilee.
@@ -489,10 +497,14 @@ class Geocoder:
     def _text_contradicts(self, row: Place, point: Point) -> bool:
         """areas.contradicts, except at the town the city field names: there a place word in the address is
         a street's name. "שוהם 73, חריש" (Shoham Street, Harish) was refused as "not in Shoham", Nov 2026."""
+        return not self._at_its_town(row, point) and self.areas.contradicts(
+            row.city, row.venue_name, row.address, *point
+        )
+
+    def _at_its_town(self, row: Place, point: Point) -> bool:
+        """Within the radius of the town the city field names (an unknown or empty city: False)."""
         town = self._cities.get(row.city or "")
-        if town is not None and town.center and meters(town.center, point) <= town.radius_m:
-            return False
-        return self.areas.contradicts(row.city, row.venue_name, row.address, *point)
+        return town is not None and bool(town.center) and meters(town.center, point) <= town.radius_m  # type: ignore[arg-type]
 
     def _in_its_city(self, row: Place, point: Point) -> bool:
         """Within the radius of the event's city, when that city is a known one. A row with no city but known

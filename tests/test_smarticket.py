@@ -62,7 +62,13 @@ def test_unbookable_without_tickets_or_message_is_sold_out() -> None:
     """Seller page: "רכישה טלפונית בלבד"; Tickchak: sold out. A message (an external link) still means
     sold elsewhere."""
     show, performance = iter_performances(parse_shows_body(_body(), "tzavta"))[0]
-    phone_only = {**performance, "availability": False, "tickets_available": False, "unavailability_msg": None, "pricelist": []}
+    phone_only = {
+        **performance,
+        "availability": False,
+        "tickets_available": False,
+        "unavailability_msg": None,
+        "pricelist": [],
+    }
     event = parse_event(show, phone_only, TZAVTA, SETTINGS, TZ)
     assert event is not None and event.is_sold_out and event.min_price is None
     elsewhere = parse_event(show, {**phone_only, "unavailability_msg": "לרכישה באתר המופע"}, TZAVTA, SETTINGS, TZ)
@@ -73,17 +79,23 @@ def test_venue_note_gives_free_entry_or_price() -> None:
     """No price list: the venue's note is the price ("כניסה חופשית" - htbeithaam, tcj, ramat-gan, Nov 2026)."""
     show, performance = iter_performances(parse_shows_body(_body(), "tzavta"))[0]
     bare = {**performance, "availability": False, "pricelist": []}
-    for note in ("כניסה חופשית", "כניסה חופשית ללא תשלום!", "האירוע לא בתשלום, נדרש ליצור קשר עם המנחה טרם ההגעה לאירוע."):
+    for note in (
+        "כניסה חופשית",
+        "כניסה חופשית ללא תשלום!",
+        "האירוע לא בתשלום, נדרש ליצור קשר עם המנחה טרם ההגעה לאירוע.",
+    ):
         event = parse_event(show, {**bare, "unavailability_msg": note}, TZAVTA, SETTINGS, TZ)
         assert event is not None and event.min_price == 0 and event.tickets[0].is_free, note
     priced = parse_event(show, {**bare, "unavailability_msg": "כרטיסים בכניסה: 40 ₪"}, TZAVTA, SETTINGS, TZ)
     assert priced is not None and priced.min_price == 40
-    unknown = parse_event(show, {**bare, "unavailability_msg": "כרטיסים בבוקר ההרצאה בכניסה לאולם."}, TZAVTA, SETTINGS, TZ)
+    unknown = parse_event(
+        show, {**bare, "unavailability_msg": "כרטיסים בבוקר ההרצאה בכניסה לאולם."}, TZAVTA, SETTINGS, TZ
+    )
     assert unknown is not None and unknown.min_price is None and unknown.tickets == []
 
 
 def test_online_meeting_is_skipped() -> None:
-    """"מפגש ב-ZOOM" is a hall name, not a place: never stored, so never geocoded or pinned."""
+    """ "מפגש ב-ZOOM" is a hall name, not a place: never stored, so never geocoded or pinned."""
     show, performance = iter_performances(parse_shows_body(_body(), "tzavta"))[0]
     assert parse_event(show, {**performance, "event_place": "מפגש ב-ZOOM"}, TZAVTA, SETTINGS, TZ) is None
     assert parse_event(show, {**performance, "event_place": "הרצאה בזום"}, TZAVTA, SETTINGS, TZ) is None
@@ -103,6 +115,35 @@ def test_touring_hall_in_another_town_takes_that_town() -> None:
     assert city("אולם תרבות נתיבות (שד' ירושלים 6 נתיבות)") == "נתיבות"
     assert city("היכל התרבות בית העם, בצלאל 11, ירושלים (ז'ראר בכר)") == "ירושלים"
     assert city("צוותא 2") == TZAVTA.city
+
+
+def test_a_street_named_after_a_town_is_not_the_halls_town() -> None:
+    """ "אולם תרבות חריש - כתובת: רח' שוהם 73" was filed under Shoham: the last town named was a street's
+    (21 events, Nov 2026). The tenant's own town, when named, wins too."""
+    show, performance = iter_performances(parse_shows_body(_body(), "tzavta"))[0]
+    harish = SmarticketTenant(host="harish", venue_name="אולם תרבות חריש", city="חריש")
+    hall = "אולם תרבות חריש - כתובת: רח' שוהם 73 (מסומן)"
+    event = parse_event(show, {**performance, "event_place": hall}, harish, SETTINGS, TZ)
+    assert event is not None and event.city == "חריש" and event.venue_name == hall
+    # Without the tenant's city the street still names no town.
+    event = parse_event(show, {**performance, "event_place": hall}, TZAVTA, SETTINGS, TZ)
+    assert event is not None and event.city == "חריש"
+    # A town hall in Sderot keeps its town: "שדרות" with no name after it is no street.
+    event = parse_event(show, {**performance, "event_place": "היכל התרבות שדרות"}, TZAVTA, SETTINGS, TZ)
+    assert event is not None and event.city == "שדרות"
+
+
+def test_a_placeholder_hall_is_no_hall() -> None:
+    """visitashdod's "אולם לא מסומן - הושבה במקום" (unmarked hall, seating on site) was BOSSAVITA's venue (Nov
+    2026): no hall named, so the tenant's venue."""
+    show, performance = iter_performances(parse_shows_body(_body(), "tzavta"))[0]
+    for hall in ("אולם לא מסומן - הושבה במקום", "אולם לא מסומן", "מקום לא מסומן"):
+        event = parse_event(show, {**performance, "event_place": hall}, TZAVTA, SETTINGS, TZ)
+        assert event is not None and event.venue_name == "צוותא" and event.city == "תל אביב", hall
+        assert event.extra["hall"] == hall
+    # A real hall with a seating note stays.
+    event = parse_event(show, {**performance, "event_place": "צוותא 2 - הושבה במקום"}, TZAVTA, SETTINGS, TZ)
+    assert event is not None and event.venue_name == "צוותא 2 - הושבה במקום"
 
 
 def test_tenant_host() -> None:

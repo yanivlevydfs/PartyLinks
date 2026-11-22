@@ -25,7 +25,7 @@ def test_country_alone_is_no_address() -> None:
 
 
 def test_a_street_named_after_another_town_is_no_contradiction() -> None:
-    """"שוהם 73, חריש" is Shoham Street in Harish: OSM's answer there was refused as "not in Shoham" (Nov 2026)."""
+    """ "שוהם 73, חריש" is Shoham Street in Harish: OSM's answer there was refused as "not in Shoham" (Nov 2026)."""
     from partylinks.config import get_settings
     from partylinks.enrichment import Enricher
     from partylinks.geo import Geocoder
@@ -43,7 +43,7 @@ def test_a_street_named_after_another_town_is_no_contradiction() -> None:
 
 
 def test_an_address_names_its_town_last() -> None:
-    """"כובשי אילת" is a street in Dimona: the town is the last part of the address (Nov 2026)."""
+    """ "כובשי אילת" is a street in Dimona: the town is the last part of the address (Nov 2026)."""
     from partylinks.config import get_settings
     from partylinks.enrichment import Enricher
 
@@ -88,3 +88,28 @@ def test_a_pinned_venue_name_decides_over_the_sellers_city() -> None:
         assert pin is not None and geo._bad(row, pin) is None
     # A pin found only in the address still answers to the city field.
     assert geo._bad(place("קיבוץ הגושרים"), (31.25, 34.79)) == "region"
+
+
+def test_a_pinned_venue_in_its_own_town_ignores_place_words_in_its_text() -> None:
+    """424 events pinned by hand were refused as "region": with the city dropped, "חזון" (the Galilee's Hazon) in
+    "בית החזון איש", Kfar Saba's hall at "ירושלים 33", Meitar's music school at Ein HaMifratz, Givat Ada's "עומר 4"
+    and Rosh HaAyin's "Ramat ha-Golan St" decided over the town (Nov 2026)."""
+    from partylinks.config import get_settings
+    from partylinks.enrichment import Enricher
+    from partylinks.geo import Geocoder
+
+    cfg = get_settings()
+    enricher = Enricher(cfg.enrichment, cfg.timezone)
+    geo = Geocoder(cfg.geocoding, enricher.areas, cfg.enrichment.target_city.aliases, None, cfg.enrichment.cities)  # type: ignore[arg-type]
+    for row in (
+        place(None, "חזון לדורות - בית החזון איש", "בני ברק"),
+        place("ירושלים 33", "היכל התרבות כפר סבא", "כפר סבא"),
+        place(None, "מיתר - בית ספר למוזיקה, עין המפרץ", "עין המפרץ"),
+        place(None, "בית התרבות בנימינה-גבעת עדה | עומר 4", "בנימינה"),
+        place("Ramat ha-Golan St 19", "מחלקת נוער וצעירים ראש העין", "ראש העין"),
+    ):
+        pin = geo._pin(row)
+        assert pin is not None and geo._bad(row, pin) is None, row.venue_name
+    # A pin in another town than the city field still answers to the text: the Galilee kibbutz pinned in Tel Aviv.
+    geo._pins["קיבוץ הגושרים"] = (32.0734714, 34.7800344)
+    assert geo._bad(place(None, "קיבוץ הגושרים", "באר שבע"), (32.0734714, 34.7800344)) == "region"
