@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 135 configured sources, 134 on. Each one has its own module in
+SPOTX collects from 136 configured sources, 135 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -77,6 +77,7 @@ pagination and what the listing and the event page provide.
 | `eventbuzz` | Eventbuzz (eventbuzz.co.il): independent productions and community events; unlisted events from the Wayback index, a `site:` search, other sources' ticket links, its own stored upcoming pages (so an archive.org outage misses only new links, not a partial run) and the show pages of venues selling through it (`venue_pages`: Hasimta Theatre, ~49 dates); past ones dropped before saving | 07:10, 19:10 | yes |
 | `standupist` | Standupist (standupist.co.il), stand-up portal and box office: its EventON API in one call (repeats, pin, prices), post tags name the artists, the listing page marks sold out | 05:47, 17:47 | yes |
 | `comy` | Comy (comy.co.il), stand-up box office. On beside the `comy` host under `pres` (prices, tickets left); dedup merges the two | 06:33, 18:33 | yes |
+| `concertevents` | Concert (concert-events.com): Mizrahi / Mediterranean shows and club nights nationwide; the sitemap is in date order, so a binary search finds the first upcoming page (~10 requests), then each upcoming page's MusicEvent JSON-LD, genre chips and contact block (phone, price). No coordinates (venues geocoded), mostly sold by phone | 08:55, 20:55 | yes |
 | `jerusalemtheatre` | Jerusalem Theatre (jerusalem-theatre.co.il): theatre, music, dance, festivals and children's shows | 07:33, 19:33 | yes |
 | `beershevatheatre` | Be'er Sheva Theatre (b7t.co.il): repertoire, guest shows and children's theatre | 06:53, 18:53 | yes |
 | `nikonitai` | Niko Nitai Theatre (nikonitai.smarticket.co.il), Jaffa: plays, festivals and talks; its Smarticket tenant's API is empty, so each performance's JSON-LD is read | 06:39, 18:39 | yes |

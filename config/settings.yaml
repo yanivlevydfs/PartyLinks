@@ -894,9 +894,9 @@ enrichment:
     # Muzi's genre slugs.
     israeli: ["hebrew", "אמנים ישראלים", "ישראלית", "ישראלי", "israeli"]
     # Bare "מזרחי" is a surname ("יצחק מזרחי") or a side ("הקרדו המזרחי") in text: trusted as a category only.
-    mizrahi: ["yam_tichoni", "eastern", "מזרחי"]
+    mizrahi: ["yam_tichoni", "eastern", "מזרחי", "ים תיכוני", "חפלה", "עיראקית"]  # concertevents chips
     rock_indie: ["אלטרנטיבי", "גל חדש", "rocknroll", "música alternativa", "alternative", "indie", "metal"]
-    world_balkan: ["world", "música del mundo", "folk", "ethnic", "אתני"]
+    world_balkan: ["world", "música del mundo", "folk", "ethnic", "אתני", "טורקית", "טורקי"]
     theatre: ["theater", "theatre", "גילי 3-18", "musicals", "cast recordings", "childrens_show", "תיאטרון", "הצגה", "הצגות", "מחזה", "מחזמר", "play", "plays", "תאטרון", "פרינג'", "הצגת סדרה", "théâtre", "teatro", "revue", "variete", "musical", "מחזות זמר", "zirkus", "תיאטראות", "مسرح", "teatteri", "kulttuuri: teatteri", "drama", "improvisation", "teater", "teatro & danza", "musikaali", "musiikkiteatteri"]
     kids: ["familie", "kinderveranstaltung", "הפעלה", "عائلة", "kids", "children", "גילי 3-18", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
            "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך", "רמתגנצ'יק", "שבת משפחתי", "שנה עד שנתיים", "זחילה עד שנה", "שלוש עד ארבע", "לידה עד זחילה", "שנתיים עד שלוש", "ארבע עד חמש", "אחר-צהריים ר\"גוע"]
@@ -1057,7 +1057,7 @@ enrichment:
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
   # Israel Music Festival: a concert's text is its programme, and piece names ("מדיטציה ראשונה", "Nostalgia") read as genres.
-  declared_genres_only: [funzing, ticketeams, standupist, israelmusicfest]
+  declared_genres_only: [funzing, ticketeams, standupist, israelmusicfest, concertevents]
   # Tel Aviv municipality's catch-all category: "אמנות", "מוזיקה", "קלאסית" in its name made every dance class
   # an exhibition, a concert and classical music too. Its events also carry the real category ("מחול").
   declared_ignore: ["מחול אמנות ומוזיקה"]
@@ -2145,6 +2145,7 @@ search:
     negev: ["דרום", "הדרום", "נגב", "הנגב", "south"]
   source_aliases:
     goout: ["go out", "go-out", "גו אאוט", "גואאוט"]
+    concertevents: ["concert events", "concert-events", "קונצרט איוונטס"]
     eventer: ["אוונטר", "איוונטר"]
     zygo: ["זייגו"]
     tickchak: ["טיקצ'אק", "טיקצאק"]
@@ -2814,6 +2815,19 @@ sources:
       # Akamai refuses Python's TLS handshake; Chrome's passes, Queue-it too (Oct 2026).
       impersonate: chrome
       concurrency: 4
+      request_delay_seconds: 0.5
+
+  concertevents:
+    # Concert (concert-events.com): Mizrahi / Mediterranean shows and club nights nationwide (Next.js, no API;
+    # robots.txt disallows /api/). The sitemap lists every event page in date order: a binary search finds
+    # the first current one (~10 pages), then each upcoming page (~50): MusicEvent JSON-LD, genre chips,
+    # contact block (phone, ticket link, price). No coordinates: venues geocoded from name + address.
+    enabled: true
+    cron: "55 8,20 * * *"
+    site_url: https://concert-events.com
+    skip_title_words: ["קורס", "סדנה", "סדנת", "חוג ", "חוגים", "חוגי "]  # with the space: "חוגגים" stays
+    http:
+      concurrency: 2
       request_delay_seconds: 0.5
 
   comy:
