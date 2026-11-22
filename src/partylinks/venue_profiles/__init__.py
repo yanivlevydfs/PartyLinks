@@ -34,10 +34,53 @@ LOGO_WIDTH = 960  # the venue page banner (~480px, 2x); cards show it smaller
 FAR_M = 1500.0  # the same name farther than this is another place (a chain, a namesake in another city)
 # Words that say nothing about which venue it is.
 _GENERIC = {
-    "club", "the", "tel", "aviv", "tlv", "telaviv", "yafo", "jaffa", "bar", "pub", "live", "music", "theatre", "theater",
-    "park", "beach", "hall", "center", "centre", "night", "day", "and", "eilat", "haifa", "jerusalem",
-    "מועדון", "תל", "אביב", "יפו", "בר", "פאב", "ה", "תיאטרון", "פארק", "אולם", "היכל", "בית", "מרכז", "קיבוץ", "חוף",
-    "אילת", "חיפה", "ירושלים", "באר", "שבע", "ראשון", "לציון",
+    "club",
+    "the",
+    "tel",
+    "aviv",
+    "tlv",
+    "telaviv",
+    "yafo",
+    "jaffa",
+    "bar",
+    "pub",
+    "live",
+    "music",
+    "theatre",
+    "theater",
+    "park",
+    "beach",
+    "hall",
+    "center",
+    "centre",
+    "night",
+    "day",
+    "and",
+    "eilat",
+    "haifa",
+    "jerusalem",
+    "מועדון",
+    "תל",
+    "אביב",
+    "יפו",
+    "בר",
+    "פאב",
+    "ה",
+    "תיאטרון",
+    "פארק",
+    "אולם",
+    "היכל",
+    "בית",
+    "מרכז",
+    "קיבוץ",
+    "חוף",
+    "אילת",
+    "חיפה",
+    "ירושלים",
+    "באר",
+    "שבע",
+    "ראשון",
+    "לציון",
 }
 
 
@@ -114,7 +157,9 @@ class VenueBook:
 
     def logo(self, key: str) -> tuple[bytes, datetime] | None:
         with self.db.session(write=False) as session:
-            row = session.execute(select(VenueProfileRow.logo, VenueProfileRow.updated_at).where(VenueProfileRow.key == key)).first()
+            row = session.execute(
+                select(VenueProfileRow.logo, VenueProfileRow.updated_at).where(VenueProfileRow.key == key)
+            ).first()
         return (row.logo, row.updated_at) if row and row.logo else None
 
     def save(self, profiles: Iterable[VenueProfile]) -> int:
@@ -123,7 +168,11 @@ class VenueBook:
         if not by_key:
             return 0
         with self.db.session(write=False) as session:
-            known = dict(session.execute(select(VenueProfileRow.key, VenueProfileRow.logo_url).where(VenueProfileRow.logo.is_not(None))).all())
+            known = dict(
+                session.execute(
+                    select(VenueProfileRow.key, VenueProfileRow.logo_url).where(VenueProfileRow.logo.is_not(None))
+                ).all()
+            )
         now = utcnow()
         rows = []
         for key in sorted(by_key):  # key order: lock order
@@ -180,11 +229,16 @@ def match(
     by_key = {p.key: p for p in profiles}
     out = {n: by_key[k] for n, k in (linked or {}).items() if k in by_key and n in venues}
     # A name left with under 3 letters ("חיפה 04" -> "04") says too little to be matched on its own.
-    spellings = [(p, {j for s in (p.aliases or [p.name]) if len(j := _joined(s)) >= 3}) for p in profiles]
+    # Spelling -> the profiles that have it, in profile order: a dict lookup per venue, not a scan of every
+    # profile (venues x profiles took over 5 minutes once the world catalogues came in; /categories timed out).
+    by_spelling: dict[str, list[VenueProfile]] = {}
+    for p in profiles:
+        for j in {j for s in (p.aliases or [p.name]) if len(j := _joined(s)) >= 3}:
+            by_spelling.setdefault(j, []).append(p)
     for name, where in venues.items():
         if name in out or not (joined := _joined(name)):
             continue
-        if found := next((p for p, names in spellings if _fits(p, names, joined, where)), None):
+        if found := next((p for p in by_spelling.get(joined, ()) if _fits(p, {joined}, joined, where)), None):
             out[name] = found
     return out
 
@@ -195,7 +249,9 @@ def linked_names(session: Session, names: Iterable[str] | None = None) -> dict[s
     from partylinks.db import EventRow, upcoming_filter
 
     key = EventRow.extra[VENUE_PROFILE].astext
-    query = select(EventRow.venue_name, key, func.count()).where(upcoming_filter(), key.is_not(None), EventRow.venue_name.is_not(None))
+    query = select(EventRow.venue_name, key, func.count()).where(
+        upcoming_filter(), key.is_not(None), EventRow.venue_name.is_not(None)
+    )
     if names is not None:
         query = query.where(EventRow.venue_name.in_(list(names)))
     out: dict[str, str] = {}
