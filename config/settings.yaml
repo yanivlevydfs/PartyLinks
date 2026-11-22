@@ -3170,11 +3170,9 @@ sources:
       - {host: kikar-bialik, venue_name: כיכר ביאליק, city: תל אביב-יפו}
       # Found by a web search of *.smarticket.co.il (Nov 2026). Left out: oryehuda (its page is ~3 years old;
       # the hall sells through arenas), raanana (= tickets.raanana.muni.il), hastam (museum entry),
-      # outsider / strauss (races and heritage tours), almaandarnon (2024 only).
-      - {host: pnay, venue_name: בית הפנאי נס ציונה, city: נס ציונה, skip_title_words: ["קורס", "חוג"]}
-      - {host: betgabriel, venue_name: בית גבריאל, city: עמק הירדן, rooms: true}
+      # outsider / strauss (races and heritage tours), almaandarnon (2024 only). Removed 22.11.2026 for returning no
+      # events: pnay and docaviv (empty /api/shows and calendar; Docaviv is a May festival), betgabriel (403, even via the VPN).
       - {host: mofa, venue_name: "מוזה - חוף הכרמל", category: הצגות ילדים}
-      - {host: docaviv, venue_name: פסטיבל דוקאביב, rooms: true, category: קולנוע}
 
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
