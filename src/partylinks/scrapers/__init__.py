@@ -16,6 +16,7 @@ from partylinks.scrapers.basalon import BasalonScraper
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.beatradar import BeatRadarScraper
 from partylinks.scrapers.beershevatheatre import BeerShevaTheatreScraper
+from partylinks.scrapers.beithagefen import BeitHagefenScraper
 from partylinks.scrapers.chillz import ChillzScraper
 from partylinks.scrapers.cinemacity import CinemaCityScraper
 from partylinks.scrapers.cinematheque_tlv import JerusalemCinemathequeScraper, TelAvivCinemathequeScraper
@@ -39,6 +40,7 @@ from partylinks.scrapers.friendshist import FriendsHistScraper
 from partylinks.scrapers.funzing import FunzingScraper
 from partylinks.scrapers.geektime import GeektimeScraper
 from partylinks.scrapers.getin import GetinScraper
+from partylinks.scrapers.glatticket import GlatticketScraper
 from partylinks.scrapers.goout import GoOutScraper
 from partylinks.scrapers.goshow import GoShowScraper
 from partylinks.scrapers.gototlv import GotoTlvScraper
@@ -49,6 +51,7 @@ from partylinks.scrapers.haezor import HaEzorScraper
 from partylinks.scrapers.haifamuni import HaifaMuniScraper
 from partylinks.scrapers.halutz import HalutzScraper
 from partylinks.scrapers.hamenagen import HamenagenScraper
+from partylinks.scrapers.hamesila import HaMesilaScraper
 from partylinks.scrapers.hangar11 import Hangar11Scraper
 from partylinks.scrapers.happytlv import HappyTlvScraper
 from partylinks.scrapers.hatarbut import HatarbutScraper
@@ -63,6 +66,7 @@ from partylinks.scrapers.israelmusicfest import IsraelMusicFestScraper
 from partylinks.scrapers.issta import IsstaScraper
 from partylinks.scrapers.iwant import IwantScraper
 from partylinks.scrapers.jaffatheatre import JaffaTheatreScraper
+from partylinks.scrapers.jerusalemarts import JerusalemArtsScraper
 from partylinks.scrapers.jerusalemmuni import JerusalemMuniScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
 from partylinks.scrapers.kikarhamusica import KikarHamusicaScraper
@@ -256,6 +260,10 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         HavanaClubScraper,
         Parties247Scraper,
         NewAcropolisScraper,
+        BeitHagefenScraper,
+        HaMesilaScraper,
+        JerusalemArtsScraper,
+        GlatticketScraper,
         BasalonScraper,
         RadicalScraper,
         HaEzorScraper,

@@ -945,6 +945,8 @@ enrichment:
     ticket4u: [kids]  # Shefa's products without a category are its Hanukkah kids' shows (Nov 2026)
     parties247: [nightclubs]  # a party guide: a party on no genre list is a club night
     newacropolis: [lectures]  # a philosophy school: no categories; talks and open evenings
+    hamesila: [culture]  # community house: lectures, shows, family events
+    glatticket: [culture]  # a few sellers' categories have no name on the hub (844: a Petah Tikva drama)
     tickchak: [nightclubs]  # the /parties/ box office
     tiktik: [live_show]
     livevents: [live_show]
@@ -1575,7 +1577,7 @@ geocoding:
     "מופ\"ת יהוד": [32.0305078, 34.8881508]  # מופ"ת יהוד, סעדיה חתוכה 25, יהוד-מונוסון
     "אולם אשכול פיס קריית חינוך דרור": [32.2618622, 34.900238]  # קריית חינוך דרור, צומת דרור, בני דרור
     "קפיטריה": [31.7777822, 35.2157371]  # בית אבי חי, המלך ג'ורג' 44, ירושלים
-    "מלבד הסלון של סנטה ב-10 ש\"ח": [32.5735385, 34.9470355]  # בית הגפן, הגפן 2, חיפה
+    "מלבד הסלון של סנטה ב-10 ש\"ח": [32.8165559, 34.9948903]  # בית הגפן, חיפה (the house's own map pin; was 27 km south)
     "בית העם, חרות": [32.2402969, 34.9150051]  # בית העם חרות, חרות
     "בית העם, כפר מונאש": [32.3475348, 34.9162242]  # בית העם כפר מונאש, כפר מונש
     "בית העם קיבוץ לביא": [32.7872253, 35.4416661]  # בית העם לביא, לביא
@@ -1830,6 +1832,7 @@ geocoding:
     "היכל התרבות נתניה": [32.3281532, 34.8624359]       # Netanya culture hall, Eliyahu HaGiladi
     "היכל התרבות לוד": [31.9431810, 34.8869670]         # Lod culture hall, Eliezer Kaplan 2
     "אודיטוריום חיפה": [32.8034907, 34.9850623]         # Haifa Auditorium, Carmel centre
+    "אודיטוריום / רפפורט": [32.8034907, 34.9850623]     # Beit HaGefen's name for the Haifa Auditorium's Rappaport hall
     "אודטורים חיפה": [32.8034907, 34.9850623]           # the same, misspelt by its seller
     "zappa herzliya": [32.1668998, 34.8107969]          # Zappa club, Medinat HaYehudim, Herzliya Pituach
     "היכל התרבות יבנה": [31.8743987, 34.7348735]        # Yavne culture hall, Jabotinsky Blvd
@@ -2262,6 +2265,10 @@ search:
     havanaclub: ["havana", "havana club", "הוואנה", "הוואנה קלאב", "האוונה"]
     parties247: ["parties247", "parties 24/7", "parties 247", "פרטיז 247", "מסיבות 24/7"]
     newacropolis: ["new acropolis", "newacropolis", "אקרופוליס החדשה", "אקרופוליס"]
+    beithagefen: ["beit hagefen", "beit ha'gefen", "בית הגפן", "חג החגים", "החג של החגים", "haifahag"]
+    hamesila: ["המסילה הרצליה", "המסילה ב", "hamesila herzliya"]
+    jerusalemarts: ["פסטיבל ירושלים לאמנויות", "jerusalem arts festival", "jerusalemarts"]
+    glatticket: ["גלאטיקט", "גלאט טיקט", "glat ticket"]
     bargiyora: ["bar giyora", "בר גיורא"]
     basalon: ["basalon", "בסלון"]
     radical: ["radical", "רדיקל", "בית רדיקל"]
@@ -3095,7 +3102,7 @@ sources:
       - {host: barrocade, venue_name: בארוקדה - קולקטיב הבארוק הישראלי}
       - {host: clipa, venue_name: תיאטרון קליפה}
       - {host: davidov, venue_name: דוידוב הפקות}
-      - {host: hamesila-bet, rooms: true, venue_name: "המסילה ב׳ - תרבות, פנאי וקהילה"}
+      - {host: hamesila-bet, rooms: true, venue_name: "המסילה ב׳ - תרבות, פנאי וקהילה", city: הרצליה}
       - {host: brener, venue_name: מועצה אזורית ברנר}
       - {host: hanadiv-farm, venue_name: חוות הנדיב, city: זכרון יעקב, skip_titles: ["כניסה לחווה"]}
       - {host: papi, venue_name: פאפי כרטיסים, category: הצגות ילדים}   # kids' shows producer, halls nationwide
@@ -4956,6 +4963,84 @@ sources:
     skip_title_words: ["התנדבות", "שיעור פרטי"]
     http:
       impersonate: chrome   # Cloudflare in front of Wix
+      concurrency: 2
+      request_delay_seconds: 0.5
+
+  beithagefen:
+    # Beit HaGefen (beit-hagefen.com), the Arab-Jewish culture centre in Wadi Nisnas, and its yearly "חג החגים"
+    # festival site (haifahag.com, December): one ASP.NET CMS, so one reader. Each site's AllEvents.aspx lists every
+    # coming item (one request), each item page its performances, hall, address, price, map pin and seller (~55
+    # requests in December, a few the rest of the year). Overlap: ~2/3 of the festival is sold on Eventer (eventer
+    # source, user "beithagefen") and the house's shows on Makore / Kupat Bravo: dedup merges them via purchase_url.
+    # The free yard shows, Santa's house and the exhibitions are sold nowhere else (Nov 2026).
+    enabled: true
+    cron: "13 6,18 * * *"
+    may_be_empty: true   # between festivals the house's site may list nothing
+    site_url: https://www.beit-hagefen.com
+    sites:   # the house's site first: its pages carry each performance's own ticket link and the right hour
+      - {key: beit-hagefen, site_url: "https://www.beit-hagefen.com", listing_path: "/AllEvents.aspx?lang=1", genres: [תרבות]}
+      - {key: haifahag, site_url: "https://haifahag.com", listing_path: "/AllEvents.aspx?lang=1", genres: [פסטיבל, חג החגים]}
+    venue_name: בית הגפן
+    address: שדרות הציונות 33
+    city: חיפה
+    latitude: 32.8165559     # the site's own map pin for the house's hall (Google Maps embed)
+    longitude: 34.9948903
+    organizer: בית הגפן
+    house_words: ["בית הגפן", "אלכרמה"]   # hall, lobby, yard, gallery, library, studio, Al-Karma: one venue
+    placeholder_venues: ["מיקום יימסר לאחר רכישת הכרטיס", "רחבי העיר"]   # tours: met at the house
+    generic_categories: ["כל האירועים", "אירועים קרובים", "אירועים שחלפו"]
+    social_hosts: ["linktr.ee", "instagram.com", "facebook.com"]
+    skip_title_words: ["קורס", "חוג", "השכרת"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
+
+  hamesila:
+    # HaMesila (hamesila.org.il), Herzliya's culture and community house (המסילה ב׳): lectures, family shows,
+    # tribute concerts. wp-json lists the `events` posts (1 call) and names their taxonomy (1 call); each event
+    # page (~10) gives the day, price and seller. Most are sold on its Smarticket box office (smarticket
+    # `hamesila-bet`: the link is kept as purchase_url, dedup merges); lectures sold on tarbuta.com are only here.
+    enabled: true
+    cron: "17 6,18 * * *"
+    site_url: https://hamesila.org.il
+    venue_name: "המסילה ב׳ - תרבות, פנאי וקהילה"   # = the smarticket tenant's venue_name
+    address: "הזמר העברי 5, הרצליה"
+    city: הרצליה
+    latitude: 32.1702435    # OSM way 1250701832 "המסילה" (amenity=community_centre)
+    longitude: 34.8189553
+    skip_title_words: ["קורס", "חוג ", "סדנה", "סדנת", "סדנא"]   # "חוג " not "חוג": "חוגגים" is a party
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+
+  jerusalemarts:
+    # Jerusalem Arts Festival (jerusalemarts.co.il, פסטיבל ירושלים לאמנויות): two December evenings of theatre,
+    # dance, performance and music at the Arts Campus (מנורה 3) and Nocturno. 2 calls: wp-json posts (each
+    # with its schema.org Event: start, end, hall, price, seller, artwork) and the tag names (the genres).
+    # Paid shows sell on Eventer / Tickchak (purchase_url; dedup merges); the free ones are only here.
+    enabled: true
+    cron: "36 9,21 * * *"
+    site_url: https://jerusalemarts.co.il
+    may_be_empty: true       # between festivals every show is past
+    places:                  # street (as the Event writes it) -> the building its halls are in
+      "מנורה 3": {venue_name: קמפוס האמנויות ירושלים, latitude: 31.7797237, longitude: 35.2125829}   # OSM: Menora St (70 m long)
+      "בצלאל 7": {venue_name: נוקטורנו, latitude: 31.7804823, longitude: 35.2138317}                 # OSM: Nocturno, amenity=cafe
+    skip_title_words: ["סדנה", "סדנת", "קורס", "כיתת אמן"]
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
+
+  glatticket:
+    # Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi / religious public, a Tickchak LIVE
+    # hub. Its search API (api-live.tickchak.co.il/hub/<id>/searchData, empty text) lists current events first:
+    # read until the first past item (2 requests, + 1 per organiser sub-hub such as tiferet.glatticket.co.il); each
+    # event's page (~60) adds the map pin, address, tiers and organiser. ~88% are also on ogo / jerusalemmuni /
+    # tickchak / makore, linking to the same glatticket.co.il/<eid> page: dedup merges them. robots.txt allows all.
+    enabled: true
+    cron: "23 6,18 * * *"
+    site_url: https://home.glatticket.co.il
+    skip_title_words: ["קורס", "ועד עובדי", "לעובדי"]   # not "חוג": "חוגגים גאולה"; a workers' committee's evening is closed
+    http:
       concurrency: 2
       request_delay_seconds: 0.5
 

@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 142 configured sources, 141 on. Each one has its own module in
+SPOTX collects from 146 configured sources, 145 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -97,6 +97,10 @@ pagination and what the listing and the event page provide.
 | `havanaclub` | Havana Music Club (havanaclub.co.il): salsa, bachata and kizomba nights on Yigal Alon, Tel Aviv; the Wix ticket page's repeater (styles, weekday, date, the night's /event/ page), each weekday's start from config, no price or artwork | 05:11, 17:11 | yes |
 | `parties247` | Parties24/7 (parties247.co.il): a national party guide, mostly Go-Out's parties; the lists its home page links (days, cities, clubs, genres), then each party page's schema.org Event (price, the seller's link: dedup merges it with `goout`) | 05:52, 17:52 | yes |
 | `newacropolis` | New Acropolis (newacropolis.org.il): philosophy talks, open evenings, fairs and trips at its branches; the Wix Events sitemap's recently updated pages, each its schema.org Event (the course's sessions and volunteering days left out) | 06:08, 18:08 | yes |
+| `beithagefen` | Beit HaGefen (beit-hagefen.com), the Arab-Jewish culture centre in Haifa, and its December festival "חג החגים" (haifahag.com): one CMS; each site's AllEvents cards, then each item page's performances, hall, price, map pin and seller link; the free yard shows and exhibitions are sold nowhere else | 06:13, 18:13 | yes |
+| `hamesila` | HaMesila B' (hamesila.org.il), Herzliya's culture and community house: lectures, family shows, concerts; wp-json `events` list + each event page (day, price, seller), the venue pinned in config | 06:17, 18:17 | yes |
+| `jerusalemarts` | Jerusalem Arts Festival (jerusalemarts.co.il): two December evenings of theatre, dance, performance and music at the Jerusalem Arts Campus; one wp-json call (each post's schema.org Event) + the tag names | 09:36, 21:36 | yes |
+| `glatticket` | Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi and religious public; Tickchak hub search API + each event's page (map pin, tiers, organiser) | 06:23, 18:23 | yes |
 | `basalon` | Basalon (basalon.co.il): talks, stand-up, shows, plays, kids' shows and workshops in living rooms, pubs and studios nationwide; the category pages' dated cards, then each event page's JSON-LD (no appointment-only, private or at-home listings) | 03:37, 15:37 | yes |
 | `radical` | Radical (radical.org.il, "בית רדיקל"): culture house in Jaffa, two halls (auditorium, basement): lectures, films, concerts, workshops, book clubs. WooCommerce behind Cloudflare (`impersonate: chrome`): the calendar's Elementor grids give date (no year: the weekday picks it), time and artwork, paged only while dates are still coming; the Store API adds categories, price range, stock and text (~6 requests). No end times | 09:44, 21:44 | yes |
 | `haezor` | HaEzor / The Zone (haezor.com): live-music club in Tel Aviv | 06:36, 18:36 | yes |
@@ -234,4 +238,10 @@ first in `PARTYLINKS_HTTP__ISRAEL_PROXY`.
 | OnTour | ontour.co.il (Issta Music) sells the same ~16 packages that `issta` already lists |
 | Netanya municipality | netanya.muni.il (SharePoint): the events list comes from SharePoint search, and the site blocks `/_api` with a Cloudflare firewall rule; its RSS feed has only the 25 latest-changed pages, without titles. Most of its events are community centres, libraries, Planetanya and the culture hall, which `matnasnet`, `eventpro` and `smarticket` already read (Nov 2026) |
 | Ra'anana municipality | raanana.muni.il (WordPress) has no events data of its own: its events block is the Smarticket tenant `tickets.raanana.muni.il` (= raanana.smarticket.co.il), already read by `smarticket`, as is `mishkan.raanana.muni.il` (Nov 2026) |
+| Stand Up Factory | standupfactory.co.il: every show page embeds GoShow's purchase frame; all 18 calendar dates already stored (15 by `goshow`), the club's pages are staler (Nov 2026) |
+| tarbut.events | An aggregator copying venue sites (~4,300 cards, admin-ajax only, robots.txt disallows ClaudeBot): 94.6% of a 720-card sample already stored, the rest mostly not events (Nov 2026) |
+| Cluberim | cluberim.co.il (WordPress): 9 listed events in all, each linking to Go-Out, Zygo or Eventer; all 9 already stored by goout / zygo / eventer (Nov 2026) |
+| Tickster | tickster.co.il (~930 event pages) resells Kupat Bravo's seances (tickster.kartisim.co.il white label, same seance ids) and Funzing experiences: 52/52 sampled events already stored by kupatbravo / funzing (Nov 2026) |
+| Ticketsi | ticketsi.co.il: an SEO magazine (977 show articles, mostly stale) copying Kupat Bravo / Mevalim titles; one date-only JSON-LD date per article, no seller link: 57/57 future articles sampled already stored (Nov 2026) |
+| Bimot | bimot.co.il does not answer (timeout direct, 502 via VPN); its box office tickets.bimot.co.il is an Eventim Israel white label (webId web__eventim-co-il): 50/50 listed events already stored by zappa / muzi / eventim (Nov 2026) |
 | Ashdod municipality | ashdod.muni.il's events archive has listed nothing since 2023; the city's events are on `ironit` and the Smarticket tenants `ashdod` / `mishkan-ashdod` (Nov 2026) |
