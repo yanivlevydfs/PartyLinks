@@ -29,7 +29,18 @@ from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _EVENT_LINK = re.compile(r'href="(/event/[^"#?]+)"')
-_COUNTRY = {"ישראל", "israel"}
+_COUNTRY = {"ישראל", "israel", "israël"}
+_NOT_VENUES = {
+    "מחוז הצפון",
+    "מחוז הדרום",
+    "מחוז המרכז",
+    "מחוז חיפה",
+    "מחוז ירושלים",
+    "מחוז תל אביב",
+    "מרכז",
+    "צפון",
+    "דרום",
+}
 
 
 class Parties247Settings(SourceSettings):
@@ -53,6 +64,7 @@ class Parties247Scraper(BaseScraper[Parties247Settings]):
         s = self.settings
         home = await self.get_text(s.site_url + "/")
         lists = listing_paths(home, s.listing_prefixes)
+        towns = _town_names()
         found: dict[str, set[str]] = {path: set() for path in event_paths(home)}  # event path -> its categories
         cities: dict[str, str] = {}  # event path -> the city list it is on
         for path in lists:
@@ -68,7 +80,7 @@ class Parties247Scraper(BaseScraper[Parties247Settings]):
         self.log.debug("listed %d events on %d lists", len(paths), len(lists))
 
         async def fetch(path: str) -> ScrapedEvent | None:
-            event = parse_event(await self.get_text(s.site_url + path), s.site_url + path, sorted(found[path]))
+            event = parse_event(await self.get_text(s.site_url + path), s.site_url + path, sorted(found[path]), towns)
             if event and not event.city and (city := cities.get(path)):
                 event.city = city
             return event
@@ -98,18 +110,36 @@ def category_of(path: str, prefixes: list[str]) -> str | None:
     return slug.replace("-", " ").lower() or None
 
 
-def split_location(text: str | None) -> tuple[str | None, str | None, str | None]:
-    """ "<venue>, <street>, <city>, ישראל" -> (venue, address, city). Two parts: venue (or a street) and city."""
+def _town_names() -> set[str]:
+    """Every configured city's names, casefolded: a location that is only a town is the city, not a venue."""
+    from partylinks.config import get_settings  # local: the module stays importable without settings
+
+    cities = get_settings().enrichment.cities
+    return {n.casefold() for c in cities for n in (c.he, c.en, *c.aliases) if n}
+
+
+def split_location(text: str | None, towns: set[str] | None = None) -> tuple[str | None, str | None, str | None]:
+    """ "<venue>, <street>, <city>, ישראל" -> (venue, address, city). Two parts: venue (or a street) and city.
+
+    A street ("שדרות רוטשילד 24", a number in it) is the address, not a venue, and a town, region or country
+    alone ("הרצליה", "Tel Aviv", "מחוז הצפון", "Israël") is the city: as venues they made a venue page each
+    and split one bar over two (production, 23.11.2026). ``towns``: casefolded town names (``_town_names``)."""
+    towns = towns if towns is not None else set()
     parts = [p for part in (text or "").split(",") if (p := part.strip())]
-    if parts and parts[-1].lower() in _COUNTRY:
+    while parts and (parts[-1].casefold() in _COUNTRY or parts[-1].casefold() in _NOT_VENUES):
         parts = parts[:-1]
     if not parts:
         return None, None, None
     if len(parts) == 1:
-        return parts[0], None, None
+        only = parts[0]
+        if only.casefold() in towns:
+            return None, None, only
+        return (None, only, None) if any(c.isdigit() for c in only) else (only, None, None)
     venue, city = parts[0], parts[-1]
-    address = ", ".join(parts[1:-1]) or (venue if any(c.isdigit() for c in venue) else None)
-    return venue, address, city
+    street = ", ".join(parts[1:-1]) or None
+    if any(c.isdigit() for c in venue) or venue.casefold() in towns:  # a street (or the town again), not a venue
+        return None, street or venue, city
+    return venue, street, city
 
 
 def _seller(url: Any) -> str | None:
@@ -121,7 +151,7 @@ def _seller(url: Any) -> str | None:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
 
 
-def parse_event(page_html: str, url: str, categories: list[str]) -> ScrapedEvent | None:
+def parse_event(page_html: str, url: str, categories: list[str], towns: set[str] | None = None) -> ScrapedEvent | None:
     """An event page -> its event (from the JSON-LD ``Event``); None without one, a name or a start, or cancelled."""
     node = next((n for n in jsonld_nodes(page_html) if n.get("@type") == "Event"), None)
     if node is None or "Cancelled" in str(node.get("eventStatus") or ""):
@@ -131,7 +161,9 @@ def parse_event(page_html: str, url: str, categories: list[str]) -> ScrapedEvent
         return None
     location = node.get("location") if isinstance(node.get("location"), dict) else {}
     address = location.get("address") if isinstance(location.get("address"), dict) else {}
-    venue, street, city = split_location(clean_str(location.get("name")) or clean_str(address.get("streetAddress")))
+    venue, street, city = split_location(
+        clean_str(location.get("name")) or clean_str(address.get("streetAddress")), towns
+    )
     offer = node.get("offers")
     offer = (offer[0] if offer else {}) if isinstance(offer, list) else offer if isinstance(offer, dict) else {}
     price = to_decimal(offer.get("price"))

@@ -3274,6 +3274,8 @@ sources:
       - {host: visitashdod, venue_name: Visit Ashdod, city: אשדוד,
          skip_title_words: ["הצעות נישואין", "מצפה עומרי כהן", "- new"]}   # proposal / lookout booking slots, a draft copy
       - {host: wikimedia-il}      # no shows on 23.11.2026
+      # The index's tiptaf..tm hosts: telfed and tikva are gone, tlv-beitbialik answers 403 (even via the VPN; = tlv-bialik).
+      - {host: tiptaf, rooms: true, venue_name: טיפ טף, city: חולון, skip_title_words: ["סדנת", "סדנה"]}   # toddlers' shows; parent-baby workshops left out
 
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
@@ -5024,7 +5026,7 @@ sources:
       "סירקין 15": [חיפה, אקרופוליס החדשה חיפה]
       "הירדן 1": [מנחמיה, אקרופוליס החדשה מנחמיה]
       "שביל חשוון 18": [כרמיאל, אקרופוליס החדשה כרמיאל]
-    skip_titles: ["קורס פילוסופיה בשביל החיים"]   # the course's sessions; its open evenings stay
+    skip_titles: ["קורס פילוסופיה בשביל החיים", "פתיחת קורס פילוסופיה בשביל החיים"]   # the course's sessions and its first one; its open evenings stay
     skip_title_words: ["התנדבות", "שיעור פרטי"]
     http:
       impersonate: chrome   # Cloudflare in front of Wix

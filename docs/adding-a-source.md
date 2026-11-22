@@ -256,7 +256,7 @@ Other sessions commit to `master` at the same time:
 3. **Check the stored events (read-only):** use a script inside the container (`railway ssh --service web`,
    `db.session(write=False)`) that counts the source's events, coordinates, genres, cities
    and `event_images.content_type`.
-4. **Check the WebP:** `curl -sI https://spotx.fun/images/<image id>/640.webp` must give
+4. **Check the WebP:** `curl -s -o /dev/null -w "%{http_code} %{content_type}" -A "Mozilla/5.0" https://spotx.fun/images/<image id>/640.webp` (a GET with a browser user agent: curl's own agent is blocked, 403, and a HEAD can answer 410 before the CDN has the copy) must give
    `200 image/webp`.
 5. **Check an event page:** `https://spotx.fun/event/<slug>` must return 200 and show the
    weather, the map pin and the ticket button.

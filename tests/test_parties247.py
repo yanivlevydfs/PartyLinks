@@ -48,9 +48,16 @@ def test_location_text_is_split_into_venue_street_and_city() -> None:
         "Tel Aviv-Yafo",
     )
     # A street address and a city: the street is the address too (geocoding reads it).
-    assert split_location("בן אביגדור 17, תל אביב-יפו, ישראל") == ("בן אביגדור 17", "בן אביגדור 17", "תל אביב-יפו")
+    # A street and a city: the street is the address, not a venue (no venue page per street address).
+    assert split_location("בן אביגדור 17, תל אביב-יפו, ישראל") == (None, "בן אביגדור 17", "תל אביב-יפו")
+    assert split_location("שדרות רוטשילד 24, תל אביב") == (None, "שדרות רוטשילד 24", "תל אביב")
     assert split_location("The Place, תל אביב") == ("The Place", None, "תל אביב")
-    assert split_location("משה בקר 11") == ("משה בקר 11", None, None)
+    assert split_location("משה בקר 11") == (None, "משה בקר 11", None)
+    # A town, region or country alone is the city, never a venue.
+    towns = {"הרצליה", "tel aviv"}
+    assert split_location("הרצליה", towns) == (None, None, "הרצליה")
+    assert split_location("Tel Aviv, Israël", towns) == (None, None, "Tel Aviv")
+    assert split_location("מחוז הצפון") == (None, None, None)
     assert split_location("") == (None, None, None)
 
 
