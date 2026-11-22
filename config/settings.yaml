@@ -3217,6 +3217,15 @@ sources:
       - {host: knesset, rooms: true, venue_name: הכנסת, city: ירושלים}
       - {host: knesset-museum, rooms: true, venue_name: מוזיאון הכנסת, city: ירושלים, keep_categories: ["סדרה"]}
       - {host: lgbtqcenter, rooms: true, venue_name: תיאטרון המשולש, city: תל אביב-יפו, category: תיאטרון}
+      # The Wayback index's p-s hosts (Nov 2026). Left out: shekel, sdo, sczefat, savyonalumim, saas, raanana-race,
+      # psik (Smarticket answers "לא נמצאה מערכת": gone) and ronenfoundation (403, like the disabled ones above).
+      - {host: reneshani, venue_name: ספריית רנה שני, city: חדרה}   # Hadera's libraries (Neve Haim): shows and meetings
+      - {host: poetryslam, venue_name: פואטרי סלאם, skip_title_words: ["סדנת", "סדנה", "קורס"]}
+      - {host: shachar, rooms: true, venue_name: תאטרון השחר}
+      - {host: rclub, venue_name: קאנטרי רמת רחל, city: ירושלים, skip_title_words: ["כרטיס כניסה", "מנוי"]}   # entry tickets are not events
+      - {host: sci-park}          # no shows on 23.11.2026; its events show when it lists some
+      - {host: rakiamission}      # no shows on 23.11.2026
+      - {host: policemuseum}      # no shows on 23.11.2026
 
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
