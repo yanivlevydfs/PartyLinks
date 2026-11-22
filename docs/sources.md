@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 136 configured sources, 135 on. Each one has its own module in
+SPOTX collects from 137 configured sources, 136 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -78,6 +78,7 @@ pagination and what the listing and the event page provide.
 | `standupist` | Standupist (standupist.co.il), stand-up portal and box office: its EventON API in one call (repeats, pin, prices), post tags name the artists, the listing page marks sold out | 05:47, 17:47 | yes |
 | `comy` | Comy (comy.co.il), stand-up box office. On beside the `comy` host under `pres` (prices, tickets left); dedup merges the two | 06:33, 18:33 | yes |
 | `concertevents` | Concert (concert-events.com): Mizrahi / Mediterranean shows and club nights nationwide; the sitemap is in date order, so a binary search finds the first upcoming page (~10 requests), then each upcoming page's MusicEvent JSON-LD, genre chips and contact block (phone, price). No coordinates (venues geocoded), mostly sold by phone | 08:55, 20:55 | yes |
+| `hangar11` | Hangar 11 (hangar11.co.il), Tel Aviv Port concert hall: the list view's iCal feed (every upcoming event, the hall's point) and each event page for the ticket link and price; Crawl-Delay 20 s. Also reached via eventer and arenas, merged in dedup | 09:20, 21:20 | yes |
 | `jerusalemtheatre` | Jerusalem Theatre (jerusalem-theatre.co.il): theatre, music, dance, festivals and children's shows | 07:33, 19:33 | yes |
 | `beershevatheatre` | Be'er Sheva Theatre (b7t.co.il): repertoire, guest shows and children's theatre | 06:53, 18:53 | yes |
 | `nikonitai` | Niko Nitai Theatre (nikonitai.smarticket.co.il), Jaffa: plays, festivals and talks; its Smarticket tenant's API is empty, so each performance's JSON-LD is read | 06:39, 18:39 | yes |

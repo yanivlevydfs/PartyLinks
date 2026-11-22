@@ -48,6 +48,7 @@ from partylinks.scrapers.haezor import HaEzorScraper
 from partylinks.scrapers.haifamuni import HaifaMuniScraper
 from partylinks.scrapers.halutz import HalutzScraper
 from partylinks.scrapers.hamenagen import HamenagenScraper
+from partylinks.scrapers.hangar11 import Hangar11Scraper
 from partylinks.scrapers.happytlv import HappyTlvScraper
 from partylinks.scrapers.hatarbut import HatarbutScraper
 from partylinks.scrapers.holon import HolonScraper
@@ -261,6 +262,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         ZoaTlvScraper,
         YellowSubmarineScraper,
         HalutzScraper,
+        Hangar11Scraper,
         MeetyScraper,
         SecretTelAvivAppScraper,
         KlikaScraper,

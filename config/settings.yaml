@@ -941,6 +941,7 @@ enrichment:
   source_default_genres:
     eventimlight: [culture]  # small organisers; most declare only "sonstiges" / "freizeit"
     issta: [live_show]  # concert trips abroad
+    hangar11: [live_show]  # a concert hall: every night is a show; its CATEGORIES are the site's ~50 tags
     tickchak: [nightclubs]  # the /parties/ box office
     tiktik: [live_show]
     livevents: [live_show]
@@ -2146,6 +2147,7 @@ search:
   source_aliases:
     goout: ["go out", "go-out", "גו אאוט", "גואאוט"]
     concertevents: ["concert events", "concert-events", "קונצרט איוונטס"]
+    hangar11: ["hangar 11", "hangar11", "האנגר 11", "האנגר"]
     eventer: ["אוונטר", "איוונטר"]
     zygo: ["זייגו"]
     tickchak: ["טיקצ'אק", "טיקצאק"]
@@ -2829,6 +2831,24 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 0.5
+
+  hangar11:
+    # Hangar 11 (hangar11.co.il), Tel Aviv Port concert hall: The Events Calendar with no REST API. The list
+    # view's iCal feed lists every upcoming event (one request, with the hall's point); each event page adds
+    # the ticket link (toMix / Eventer...) and price. robots.txt: Crawl-Delay 20, so one request every 20 s.
+    # Also read via eventer (users: hangar11) and arenas (hangar-11-tel-aviv); dedup merges them.
+    enabled: true
+    cron: "20 9,21 * * *"
+    site_url: https://hangar11.co.il
+    venue_name: האנגר 11
+    address: "נמל תל אביב"
+    city: תל אביב-יפו
+    latitude: 32.0964756   # the site's own GEO for the hall
+    longitude: 34.7740091
+    skip_title_words: ["קורס", "סדנה", "סדנת", "חוג ", "חוגים", "חוגי "]  # with the space: "חוגגים" stays
+    http:
+      concurrency: 1
+      request_delay_seconds: 20
 
   comy:
     # Comy stand-up box office (WordPress). Tickets are sold on PRES (tickets.comy.co.il), whose
