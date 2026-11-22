@@ -1700,12 +1700,17 @@ def _register_routes(app: FastAPI) -> None:
         upcoming: bool = True,
     ) -> Response:
         """Facet counts of the events matching the list's filters (none: every upcoming event)."""
-        return _cached(request, lambda session: build_categories(request, session, filters, upcoming), exclude_none=True)
+        cache: ResponseCache = request.app.state.response_cache
+
+        def body() -> bytes:  # not _cached: build_categories opens its own short session
+            built = build_categories(request, filters, upcoming)
+            return built.model_dump_json(by_alias=True, exclude_none=True).encode()
+
+        return Response(cache.get((request.url.path, request.url.query), body)[0], media_type="application/json")
 
     def anywhere_categories() -> bytes:
         """/categories?anywhere=true's JSON (the venue and artist indexes page it, partylinks.facet_list)."""
-        with app.state.db.session(write=False) as session:
-            built = build_categories(SimpleNamespace(app=app), session, build_event_filters(app.state.settings, anywhere=True), True)  # type: ignore[arg-type]
+        built = build_categories(SimpleNamespace(app=app), build_event_filters(app.state.settings, anywhere=True), True)  # type: ignore[arg-type]
         return built.model_dump_json(by_alias=True, exclude_none=True).encode()
 
     app.state.anywhere_categories = anywhere_categories
@@ -1780,16 +1785,27 @@ def _register_routes(app: FastAPI) -> None:
         known = region not in (ABROAD_AREA, OUTSIDE_AREA)
         return {"region": region if known else None, "city": city.he if city else None}
 
-    def build_categories(
-        request: Request, session: Session, filters: list[ColumnElement[bool]], upcoming: bool
-    ) -> Categories:
+    def build_categories(request: Request, filters: list[ColumnElement[bool]], upcoming: bool) -> Categories:
         # Only the facet columns (not descriptions/extra JSON); each real event counted once.
         query = select(
             EventRow.genres, EventRow.local_date, EventRow.day_of_week, EventRow.time_slot, EventRow.area,
             EventRow.group_entry_type, EventRow.venue_name, EventRow.city, EventRow.lineup, EventRow.event_types,
             EventRow.source, EventRow.in_target_city, EventRow.country, EventRow.latitude, EventRow.longitude,
         ).where(*filters)  # fmt: skip
-        rows = session.execute(query).all()
+        # Per ticket site: real events it sells (every listing of a group counts, once per group), within the
+        # request's filters: an artist's sites on its page, abroad sites abroad, only Israel's on the home page.
+        matching = select(EventRow.group_id).where(*filters)
+        where = [EventRow.group_id.in_(matching), *([upcoming_filter()] if upcoming else [])]
+        listings = select(EventRow.group_id, EventRow.source).where(*where, placecards.first_opening(where)).distinct()
+        # Every read in one short transaction, then the counting with none open: a read transaction held over
+        # the counting (minutes for every event, anywhere=true, on a busy server) was killed by
+        # idle_in_transaction_session_timeout, and the page answered 500 (2026-11-22, every few minutes).
+        db: Database = request.app.state.db
+        with db.session(write=False) as session:
+            rows = session.execute(query).all()
+            listed = session.execute(listings).all()
+            venue_profiles, linked = load_venue_profiles(session), linked_venue_names(session)
+        group_sources = Counter(source for _, source in listed)
 
         def facet(values: Callable[[Any], list[Any]]) -> list[FacetValue]:
             counts = Counter(str(v) for row in rows for v in values(row) if v not in (None, ""))
@@ -1814,13 +1830,6 @@ def _register_routes(app: FastAPI) -> None:
                 elif not request.app.state.settings.site.artists_verified_only:
                     out.append(FacetValue(value=name, events=n))
             return out
-
-        # Per ticket site: real events it sells (every listing of a group counts, once per group), within the
-        # request's filters: an artist's sites on its page, abroad sites abroad, only Israel's on the home page.
-        matching = select(EventRow.group_id).where(*filters)
-        where = [EventRow.group_id.in_(matching), *([upcoming_filter()] if upcoming else [])]
-        listings = select(EventRow.group_id, EventRow.source).where(*where, placecards.first_opening(where)).distinct()
-        group_sources = Counter(source for _, source in session.execute(listings))
 
         region_keys = request.app.state.service.enricher.areas.region_keys
 
@@ -1850,7 +1859,7 @@ def _register_routes(app: FastAPI) -> None:
             areas=facet(lambda r: [r.area]),
             regions=facet(lambda r: [region(r)]),
             entry_types=facet(lambda r: [r.group_entry_type]),
-            venues=venue_facets(facet(lambda r: [r.venue_name]), venue_area, rows, load_venue_profiles(session), linked_venue_names(session)),
+            venues=venue_facets(facet(lambda r: [r.venue_name]), venue_area, rows, venue_profiles, linked),
             cities=[FacetValue(value=c, events=n, area=city_region.get(c)) for c, n in _merged_cities(rows)],
             countries=facet(lambda r: [r.country]),
             lineup=artist_facet(),
