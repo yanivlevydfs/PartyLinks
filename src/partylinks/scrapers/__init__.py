@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from partylinks.config import Settings
 from partylinks.scrapers.agol import AgolScraper
 from partylinks.scrapers.airdrop import AirdropScraper
+from partylinks.scrapers.arthurmurray import ArthurMurrayScraper
 from partylinks.scrapers.barak import BarakScraper
 from partylinks.scrapers.barby import BarbyScraper
 from partylinks.scrapers.bargiyora import BarGiyoraScraper
@@ -111,6 +112,7 @@ from partylinks.scrapers.pres import PresIsraelScraper, PresScraper
 from partylinks.scrapers.radical import RadicalScraper
 from partylinks.scrapers.ramatganmuni import RamatGanMuniScraper
 from partylinks.scrapers.reading3 import Reading3Scraper
+from partylinks.scrapers.salsavida import SalsaVidaScraper
 from partylinks.scrapers.secrettelaviv import SecretTelAvivScraper
 from partylinks.scrapers.secrettelavivapp import SecretTelAvivAppScraper
 from partylinks.scrapers.selector import SelectorScraper
@@ -142,6 +144,7 @@ from partylinks.scrapers.viagogo import ViagogoScraper
 from partylinks.scrapers.vibez import VibezScraper
 from partylinks.scrapers.xceed import XceedScraper
 from partylinks.scrapers.xplorer import XplorerScraper
+from partylinks.scrapers.yadvashem import YadVashemScraper
 from partylinks.scrapers.yellowsubmarine import YellowSubmarineScraper
 from partylinks.scrapers.yotzim import YotzimScraper
 from partylinks.scrapers.zoatlv import ZoaTlvScraper
@@ -264,6 +267,9 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         HaMesilaScraper,
         JerusalemArtsScraper,
         GlatticketScraper,
+        SalsaVidaScraper,
+        ArthurMurrayScraper,
+        YadVashemScraper,
         BasalonScraper,
         RadicalScraper,
         HaEzorScraper,

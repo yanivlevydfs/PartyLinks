@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 146 configured sources, 145 on. Each one has its own module in
+SPOTX collects from 149 configured sources, 148 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -101,6 +101,7 @@ pagination and what the listing and the event page provide.
 | `hamesila` | HaMesila B' (hamesila.org.il), Herzliya's culture and community house: lectures, family shows, concerts; wp-json `events` list + each event page (day, price, seller), the venue pinned in config | 06:17, 18:17 | yes |
 | `jerusalemarts` | Jerusalem Arts Festival (jerusalemarts.co.il): two December evenings of theatre, dance, performance and music at the Jerusalem Arts Campus; one wp-json call (each post's schema.org Event) + the tag names | 09:36, 21:36 | yes |
 | `glatticket` | Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi and religious public; Tickchak hub search API + each event's page (map pin, tiers, organiser) | 06:23, 18:23 | yes |
+| `arthurmurray` | Arthur Murray Israel (arthurmurray.co.il): the ballroom school's public evening "The Salon" in Ra'anana; the Wix page's embedded landing (read through the page JSON): date, doors and start, single / couple tickets on PayMe | 07:44, 19:44 | yes |
 | `basalon` | Basalon (basalon.co.il): talks, stand-up, shows, plays, kids' shows and workshops in living rooms, pubs and studios nationwide; the category pages' dated cards, then each event page's JSON-LD (no appointment-only, private or at-home listings) | 03:37, 15:37 | yes |
 | `radical` | Radical (radical.org.il, "בית רדיקל"): culture house in Jaffa, two halls (auditorium, basement): lectures, films, concerts, workshops, book clubs. WooCommerce behind Cloudflare (`impersonate: chrome`): the calendar's Elementor grids give date (no year: the weekday picks it), time and artwork, paged only while dates are still coming; the Store API adds categories, price range, stock and text (~6 requests). No end times | 09:44, 21:44 | yes |
 | `haezor` | HaEzor / The Zone (haezor.com): live-music club in Tel Aviv | 06:36, 18:36 | yes |
@@ -164,6 +165,8 @@ many of them free.
 | `festivalim` | Festivalim (festivalim.co.il): festivals, carnivals and street celebrations | 04:26, 16:26 | yes |
 | `poalimatarim` | Poalim Atarim (poalimatarim.com): Bank Hapoalim's free entry to ~50 museums, parks, heritage sites (seasonal) | 09:54, 21:54 | yes |
 | `meety` | Meety (meety.co.il): social meetups: salsa and bachata nights, folk dancing, running groups, board games | 06:47, 18:47 | yes |
+| `salsavida` | Salsa Vida (salsavida.com): weekly salsa / bachata "Class & Social" nights in Israel (Petah Tikva, Haifa, Rehovot, Kfar Saba, Jerusalem, Tel Aviv); the guide's microdata cards and its load-more windows to 90 days, each series' page for venue and pin; Havana Club left to `havanaclub` | 05:58, 17:58 | yes |
+| `yadvashem` | Yad Vashem online reservations (online-reservations.yadvashem.org): the dated public tours (Friday museum tours in Hebrew / English / Russian, the "Living Memory" exhibition tour, synagogue tours) from the booking app's JSON API, places left per slot, 8 months ahead | 08:31, 20:31 | yes |
 | `funzing` | Funzing (il.funzing.com): experiences: workshops, tours, lectures, culinary evenings, family days | 07:19, 19:19 | yes |
 | `easytix` | EASYTIX (easytix.co.il): the nimi ticketing platform and its white-label box offices (Camel Comedy Club, ZOA House, Jerusalem Zoo / Israel Aquarium, Hormesis) | 08:43, 20:43 | yes |
 
@@ -244,4 +247,10 @@ first in `PARTYLINKS_HTTP__ISRAEL_PROXY`.
 | Tickster | tickster.co.il (~930 event pages) resells Kupat Bravo's seances (tickster.kartisim.co.il white label, same seance ids) and Funzing experiences: 52/52 sampled events already stored by kupatbravo / funzing (Nov 2026) |
 | Ticketsi | ticketsi.co.il: an SEO magazine (977 show articles, mostly stale) copying Kupat Bravo / Mevalim titles; one date-only JSON-LD date per article, no seller link: 57/57 future articles sampled already stored (Nov 2026) |
 | Bimot | bimot.co.il does not answer (timeout direct, 502 via VPN); its box office tickets.bimot.co.il is an Eventim Israel white label (webId web__eventim-co-il): 50/50 listed events already stored by zappa / muzi / eventim (Nov 2026) |
+| Jerooz Events | jeroozevents.co.il: Vercel "Deployment Paused" (402), no site (Nov 2026) |
+| iShow | ishow.co.il: a Cloudflare JS challenge for every client, VPN included (Nov 2026) |
+| IsraelShow | israelshow.co.il: an affiliate front of Kupat Bravo (israelshow.kartisim.co.il), shows as date ranges; 10/10 sampled already stored (Nov 2026) |
+| Kzat Tarbut | kzat-tarbut.com: ticket articles linking Kupat Bravo (5222.kartisim.co.il), date ranges only; 13/13 sampled already stored by kupatbravo (Nov 2026) |
+| Where to Dance Salsa | where-to-dance-salsa.com: Israel = Havana Music Club's weekly nights (read by havanaclub), last checked May 2026 (Nov 2026) |
+| Kol Sadna | kolsadna.co.il: workshops booked by appointment through a lead form; no dated public sessions (25/25 sampled, Nov 2026) |
 | Ashdod municipality | ashdod.muni.il's events archive has listed nothing since 2023; the city's events are on `ironit` and the Smarticket tenants `ashdod` / `mishkan-ashdod` (Nov 2026) |

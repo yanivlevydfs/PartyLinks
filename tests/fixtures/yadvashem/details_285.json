@@ -1,0 +1,19 @@
+{
+ "basicDetails": {
+  "tourCode": "285"
+ },
+ "additionalTourDetails": {
+  "reqiredProductList": [
+   {
+    "name": "סיורים מודרכים בתערוכת \"זיכרון חי – אוספי יד ושם בין עבר לעתיד\"",
+    "pricingMethod": 3,
+    "priceListItemOptions": [
+     {
+      "name": "סיור במוזיאון + ביקור בתערוכת זיכרון חי",
+      "price": 45.0
+     }
+    ]
+   }
+  ]
+ }
+}

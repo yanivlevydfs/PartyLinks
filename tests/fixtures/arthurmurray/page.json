@@ -1,0 +1,29 @@
+{
+ "data": {
+  "document_data": {
+   "dataItem-mvp41j8u": {
+    "type": "HtmlComponent",
+    "id": "dataItem-mvp41j8u",
+    "metaData": {
+     "isPreset": false,
+     "schemaVersion": "1.0",
+     "isHidden": false,
+     "sig": "mmb-25"
+    },
+    "url": "https://instant-ghgxhwlrqezc-sasha99886-140a.wix-site-host.com/",
+    "sourceType": "external",
+    "freezeFrame": false,
+    "allowFullScreen": true,
+    "componentConsentPolicy": "essential"
+   },
+   "rs0mh": {
+    "type": "Page",
+    "id": "rs0mh",
+    "title": "THE SALON",
+    "pageUriSEO": "the-salon"
+   }
+  }
+ },
+ "title": "THE SALON",
+ "pageUriSEO": "the-salon"
+}

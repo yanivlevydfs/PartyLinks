@@ -1063,7 +1063,7 @@ enrichment:
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
   # Israel Music Festival: a concert's text is its programme, and piece names ("מדיטציה ראשונה", "Nostalgia") read as genres.
-  declared_genres_only: [funzing, ticketeams, standupist, israelmusicfest, concertevents]
+  declared_genres_only: [funzing, ticketeams, standupist, israelmusicfest, concertevents, salsavida]
   # Tel Aviv municipality's catch-all category: "אמנות", "מוזיקה", "קלאסית" in its name made every dance class
   # an exhibition, a concert and classical music too. Its events also carry the real category ("מחול").
   declared_ignore: ["מחול אמנות ומוזיקה"]
@@ -2269,6 +2269,9 @@ search:
     hamesila: ["המסילה הרצליה", "המסילה ב", "hamesila herzliya"]
     jerusalemarts: ["פסטיבל ירושלים לאמנויות", "jerusalem arts festival", "jerusalemarts"]
     glatticket: ["גלאטיקט", "גלאט טיקט", "glat ticket"]
+    salsavida: ["salsa vida", "salsavida", "סלסה וידה"]
+    arthurmurray: ["arthur murray", "arthurmurray", "ארתור מארי", "ארתור מרי", "the salon"]
+    yadvashem: ["yad vashem", "yadvashem", "יד ושם", "יד-ושם"]
     bargiyora: ["bar giyora", "בר גיורא"]
     basalon: ["basalon", "בסלון"]
     radical: ["radical", "רדיקל", "בית רדיקל"]
@@ -3020,10 +3023,11 @@ sources:
       # Kivunim, Be'er Sheva's culture company (kivunim7.co.il): shows, Katedra, youth and seniors.
       - {host: kivunimb7, venue_name: כיוונים באר שבע, city: באר שבע, skip_categories: ["מוזאונים"],
          # Youth counselling, open "until 2027-12-31 00:00": services, not events.
-         skip_titles: ["התקבלתי - מפגשי ייעוץ בתחום התעסוקה", "ייעוץ והכוונה להכשרות מקצועיות ולימודי תעודה", "ייעוץ מלגות"]}
+         skip_titles: ["התקבלתי - מפגשי ייעוץ בתחום התעסוקה", "ייעוץ והכוונה להכשרות מקצועיות ולימודי תעודה", "ייעוץ מלגות",
+                       "ביקור במדבריום"]}   # Midbarium's timed entry slots (39 on 23.11.2026): zoo entry, not events
       # Holon Mediatheque (mediatheque.org.il): library, kids' theatre, comics. Courses and museum entry left out.
       - {host: mediatheque, venue_name: מדיטק חולון, city: חולון, rooms: true, skip_categories: ["קורסי", "מוזיאון", "בדיקה"],
-         skip_title_words: ["חוג"]}
+         skip_title_words: ["חוג", "בדיקה"]}   # "סינמטק בדיקה 1": uncategorised test shows (Nov 2026)
       # The Mediatheque's children's theatre (mediatheque-theater.org.il): its own box office, partly the same shows.
       - {host: mediatheque-theater, venue_name: תיאטרון המדיטק, city: חולון, rooms: true}
       - {host: mishkan-ashdod, venue_name: המשכן לאמנויות הבמה אשדוד, city: אשדוד}
@@ -3209,6 +3213,10 @@ sources:
       # outsider / strauss (races and heritage tours), almaandarnon (2024 only). Removed 22.11.2026 for returning no
       # events: pnay and docaviv (empty /api/shows and calendar; Docaviv is a May festival), betgabriel (403, even via the VPN).
       - {host: mofa, venue_name: "מוזה - חוף הכרמל", category: הצגות ילדים}
+      # Found in the Wayback Machine's index of *.smarticket.co.il, second pass (Nov 2026); timed museum tours left out.
+      - {host: knesset, rooms: true, venue_name: הכנסת, city: ירושלים}
+      - {host: knesset-museum, rooms: true, venue_name: מוזיאון הכנסת, city: ירושלים, keep_categories: ["סדרה"]}
+      - {host: lgbtqcenter, rooms: true, venue_name: תיאטרון המשולש, city: תל אביב-יפו, category: תיאטרון}
 
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
@@ -5043,6 +5051,64 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 0.5
+
+  salsavida:
+    # Salsa Vida (salsavida.com): a worldwide salsa / bachata calendar (WordPress); its Israel guide lists ~10 weekly
+    # "Class & Social" nights (a lesson, then the party) in Petah Tikva, Haifa, Rehovot, Kfar Saba, Jerusalem, Tel Aviv.
+    # The guide's microdata cards (14 days) + its "load more" admin-ajax windows to 90 days, and each series' page once
+    # (venue, pin, text): ~16 requests a run, ~240 nights. English titles: meety's Hebrew copies of Rotev / Baila /
+    # Latino Mind (this week only) do not merge. Havana Club is read at first hand by havanaclub; BGU's is students-only.
+    # Artwork: most series only have the site's generic dancers picture (not passed): ~6% of nights carry art.
+    enabled: true
+    cron: "58 5,17 * * *"
+    site_url: https://www.salsavida.com
+    guide_path: /guides/israel/
+    horizon_days: 90
+    skip_series:
+      - /event/israel/tel-aviv/havana-club-weekly-salsa-bachata/                   # havanaclub reads the club's ticket page
+      - /event/israel/be-er-sheva/salsa-and-bachata-tuesdays-at-ben-gurion-university/  # BGU students, via the union's app
+    skip_title_words: ["course", "bootcamp", "teacher training", "private lesson", "קורס", "חוג"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+
+  arthurmurray:
+    # Arthur Murray Israel (arthurmurray.co.il): ballroom dance school; its public evening "The Salon" (a talk with
+    # film clips, champagne and dancing) at the Ra'anana studio. A Wix site whose /events page is empty: the Salon
+    # page embeds a landing built per edition, found through the page's JSON (3 requests a run). Single and couple
+    # tickets (PayMe); the students' code-only price left out. Lessons, wedding dance, workshops: not read.
+    enabled: true
+    cron: "44 7,19 * * *"
+    may_be_empty: true   # between editions no Salon is embedded
+    site_url: https://www.arthurmurray.co.il
+    salon_path: /the-salon
+    venue_name: ארתור מארי רעננה
+    address: אחוזה 128, רעננה
+    city: רעננה
+    latitude: 32.1810665     # Nominatim: Ahuza 128 (the building), Ra'anana
+    longitude: 34.8732052
+    skip_title_words: ["קורס", "שיעור", "סדנה", "סדנת", "חוג", "ריקוד חתונה", "השכרת אולם"]
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
+
+  yadvashem:
+    # Yad Vashem's online reservations (online-reservations.yadvashem.org): the dated public tours (Friday museum
+    # tours in Hebrew, English and Russian, the "Living Memory" exhibition tour, synagogue tours). Its JSON API: the
+    # public's activity list, then per activity and month the slot template and closed days, and each open day's
+    # slots with places left (~250 small requests, 8 months ahead). Not on the Smarticket tenant `yadvashem`
+    # (lectures, ceremonies); ogo lists the English tour too. Private, group and school bookings: services, not read.
+    enabled: true
+    cron: "31 8,20 * * *"
+    venue_name: יד ושם
+    address: הר הזיכרון, ירושלים
+    city: ירושלים
+    latitude: 31.774157      # as geocoding.venues' pin for it
+    longitude: 35.177274
+    skip_title_words: ["קורס", "השתלמות", "סמינר", "הכשרה"]
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.2
 
   bargiyora:
     # Bar Giyora: live-show bar on Ibn Gabirol (music, stand-up, lectures), a WooCommerce shop.

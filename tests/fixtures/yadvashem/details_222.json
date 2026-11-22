@@ -1,0 +1,29 @@
+{
+ "basicDetails": {
+  "tourCode": "222"
+ },
+ "additionalTourDetails": {
+  "reqiredProductList": [
+   {
+    "name": "דמי רישום לסיורים בודדים",
+    "pricingMethod": 3,
+    "priceListItemOptions": [
+     {
+      "name": "דמי רישום לסיורים בודדים",
+      "price": 10.0
+     }
+    ]
+   },
+   {
+    "name": "סיור מודרך לקהל הרחב",
+    "pricingMethod": 3,
+    "priceListItemOptions": [
+     {
+      "name": "סיור מודרך לקהל הרחב",
+      "price": 35.0
+     }
+    ]
+   }
+  ]
+ }
+}
