@@ -97,8 +97,8 @@ from partylinks.security import SecurityMiddleware
 from partylinks.service import ScrapeService, SourceBusyError
 from partylinks.smartrails import rails as smartrails
 from partylinks.venue_profiles import VenueProfile
+from partylinks.venue_profiles import cached_profiles as cached_venue_profiles
 from partylinks.venue_profiles import linked_names as linked_venue_names
-from partylinks.venue_profiles import load_profiles as load_venue_profiles
 from partylinks.venue_profiles import logo_path as venue_logo_path
 from partylinks.venue_profiles import match as match_venue_profiles
 from partylinks.venues import PLACE_LISTING
@@ -1804,7 +1804,7 @@ def _register_routes(app: FastAPI) -> None:
         with db.session(write=False) as session:
             rows = session.execute(query).all()
             listed = session.execute(listings).all()
-            venue_profiles, linked = load_venue_profiles(session), linked_venue_names(session)
+            venue_profiles, linked = cached_venue_profiles(session), linked_venue_names(session)
         group_sources = Counter(source for _, source in listed)
 
         def facet(values: Callable[[Any], list[Any]]) -> list[FacetValue]:

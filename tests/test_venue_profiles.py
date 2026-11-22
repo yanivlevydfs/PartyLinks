@@ -1,8 +1,11 @@
 import io
+import os
 
 from PIL import Image
 
-from partylinks.venue_profiles import VenueProfile, match, to_webp
+from partylinks.db import Database, dialect_insert
+from partylinks.venue_profiles import VenueBook, VenueProfile, cached_profiles, match, to_webp
+from partylinks.venue_profiles import VenueProfileRow as Row
 from partylinks.venue_profiles.eventer import parse_venue
 
 MOON = VenueProfile(key="eventer-moon", name="מון צ׳יילד | Moon Child", source="eventer",
@@ -24,6 +27,35 @@ def test_names_are_tied_by_the_sites_link_or_the_whole_name() -> None:
     assert {n: p.key for n, p in found.items()} == {
         "Moonchild - מון צ'ילד": "eventer-moon", "מון צ'יילד": "eventer-moon", "הפארק": "eventer-park",
     }  # fmt: skip
+
+
+def test_match_is_the_same_with_its_lookup_kept_for_the_list() -> None:
+    profiles = [MOON, PARK]
+    venues: dict[str, tuple[float, float] | None] = {"מון צ'יילד": None, "הפארק": None, "Unknown": None}
+    first = match(profiles, venues)
+    assert match(profiles, venues) == first  # the second call reads the kept lookup
+    assert {n: p.key for n, p in match([PARK], venues).items()} == {"הפארק": "eventer-park"}  # another list: rebuilt
+
+
+def test_cached_profiles_are_kept_per_database_until_a_save() -> None:
+    db = Database(os.environ["PARTYLINKS_DATABASE__URL"])
+    db.create_schema()
+    book = VenueBook(db, quality=78)
+    book.save([PARK])
+    with db.session(write=False) as session:
+        first = cached_profiles(session)
+    assert [p.key for p in first] == ["eventer-park"]
+    with db.session() as session:  # another process saves a profile: this one sees it once the cache expires
+        session.execute(dialect_insert(session, Row).values(key="eventer-x", name="X", source="eventer"))
+    with db.session(write=False) as session:
+        assert cached_profiles(session) is first
+        assert {p.key for p in cached_profiles(session, max_age=0)} == {"eventer-park", "eventer-x"}
+    book.save([MOON])  # this process's own save drops the cache at once
+    with db.session(write=False) as session:
+        assert {p.key for p in cached_profiles(session)} == {"eventer-park", "eventer-x", "eventer-moon"}
+    other = Database(os.environ["PARTYLINKS_DATABASE__URL"])  # another engine: its own entry
+    with other.session(write=False) as session:
+        assert cached_profiles(session) is not first
 
 
 def test_logo_becomes_a_smaller_webp() -> None:

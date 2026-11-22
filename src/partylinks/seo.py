@@ -47,7 +47,7 @@ from partylinks.placecards import first_opening
 from partylinks.placeinfo.seo import place_seo
 from partylinks.places import all_cities, city_abroad, city_name, city_point, city_zone
 from partylinks.retention import is_current
-from partylinks.venue_profiles import load_profiles as load_venue_profiles
+from partylinks.venue_profiles import cached_profiles as cached_venue_profiles
 from partylinks.venue_profiles import logo_path as venue_logo_path
 from partylinks.venue_profiles import profile_for as venue_profile_for
 from partylinks.venues import PLACE_LISTING
@@ -722,7 +722,7 @@ def venue_page(session: Session, cfg: Settings, lang: str, name: str) -> Page:
         place["event"] = [_event_ref(r, cfg) for r in rows]
     spot = next((r for r in rows if (r.extra or {}).get(PLACE_LISTING)), None)
     details = place_seo(session, spot, cfg.place_info, lang, _url(cfg, path), _cover(cfg, spot)) if spot else None
-    profile = venue_profile_for(session, load_venue_profiles(session), name)
+    profile = venue_profile_for(session, cached_venue_profiles(session), name)
     about = (profile.about if profile else None) or t["venue_desc"].format(name=name)
     logo = cfg.site.base_url + logo if profile and (logo := venue_logo_path(profile)) else None
     place["description"] = about
@@ -1189,7 +1189,10 @@ def abroad_city_genres(session: Session, cfg: Settings, when: str | None = None)
     enough of them for a /abroad/<country>/<city>/<genre> page; "" holds the city's total."""
 
     def build() -> dict[str, dict[str, int]]:
-        paths = {(spelled, c.code): c.path for c in abroad_cities(session) for spelled in c.spellings}
+        # Keyed as the rows come (nullable columns, though the query keeps only rows with both).
+        paths: dict[tuple[str | None, str | None], str] = {
+            (spelled, c.code): c.path for c in abroad_cities(session) for spelled in c.spellings
+        }
         counts: dict[str, Counter[str]] = {}
         rows = session.execute(select(EventRow.city, EventRow.country, EventRow.genres).where(
             upcoming_filter(), EventRow.country.is_not(None), EventRow.city.is_not(None), *_when_where(when, cfg)))  # fmt: skip
@@ -1592,7 +1595,7 @@ def landing_info(session: Session, cfg: Settings, lang: str, path: str) -> dict[
     if land is None:
         intro = artist_bio(session, cfg, lang, unquote(path[len("/artist/"):])) if path.startswith("/artist/") else None
         if path.startswith("/venue/"):
-            profile = venue_profile_for(session, load_venue_profiles(session), unquote(path[len("/venue/"):]))
+            profile = venue_profile_for(session, cached_venue_profiles(session), unquote(path[len("/venue/"):]))
             intro = profile.about if profile else None
         info: dict[str, Any] = {"title": None, "intro": intro, "links": links, "country": None, "city": None}
         if path.startswith("/artist/"):  # the artist's Spotify / YouTube... (partylinks.artist_links), on the page's own request

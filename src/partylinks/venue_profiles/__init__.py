@@ -18,13 +18,16 @@ from __future__ import annotations
 import io
 import math
 import re
+import threading
+import time
 import unicodedata
+import weakref
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
 
 from PIL import Image, ImageOps
-from sqlalchemy import Float, LargeBinary, Text, func, select
+from sqlalchemy import Engine, Float, LargeBinary, Text, func, select
 from sqlalchemy.orm import Mapped, Session, defer, mapped_column
 
 from partylinks.db import Base, Database, NullableJSON, UTCDateTime, dialect_insert, utcnow, with_db_retry
@@ -132,6 +135,28 @@ def to_webp(data: bytes, quality: int, width: int = LOGO_WIDTH) -> bytes | None:
         return None
 
 
+PROFILES_MAX_AGE_S = 300.0  # cached_profiles: a profile another process saves shows within this
+# Per database (engine): a test's database never hands its profiles to the next one's.
+_profiles_cache: weakref.WeakKeyDictionary[Engine, tuple[float, list[VenueProfile]]] = weakref.WeakKeyDictionary()
+_profiles_lock = threading.Lock()
+
+
+def cached_profiles(session: Session, max_age: float = PROFILES_MAX_AGE_S) -> list[VenueProfile]:
+    """``load_profiles``, at most every ``max_age`` seconds per process and database. Every venue page loaded
+    all ~19k profiles twice (Hebrew and English): 0.75 s of Python each, and crawler bursts of venue pages held
+    every build slot until the other pages answered 503 (2026-11-22). The same list is returned until it
+    expires (``match`` keeps its lookup for it): callers never change it. ``VenueBook.save`` drops it."""
+    engine = session.get_bind().engine
+    if (hit := _profiles_cache.get(engine)) and time.monotonic() - hit[0] < max_age:
+        return hit[1]
+    with _profiles_lock:  # one load at a time; the others then take its result
+        if (hit := _profiles_cache.get(engine)) and time.monotonic() - hit[0] < max_age:
+            return hit[1]
+        profiles = load_profiles(session)
+        _profiles_cache[engine] = (time.monotonic(), profiles)
+        return profiles
+
+
 def load_profiles(session: Session) -> list[VenueProfile]:
     """Every profile, without the logo bytes (``logo_url`` is None when no logo is stored)."""
     rows = session.scalars(select(VenueProfileRow).options(defer(VenueProfileRow.logo))).all()
@@ -195,6 +220,7 @@ class VenueBook:
                     ))  # fmt: skip
 
         with_db_retry("venue profiles", write)
+        _profiles_cache.pop(self.db.engine, None)  # this process reads them fresh
         return len(rows)
 
 
@@ -221,13 +247,16 @@ def _fits(profile: VenueProfile, names: set[str], joined: str, where: tuple[floa
     return joined in names
 
 
-def match(
-    profiles: list[VenueProfile], venues: dict[str, tuple[float, float] | None], linked: dict[str, str] | None = None
-) -> dict[str, VenueProfile]:
-    """Our venue name -> its profile, for the names that have one. ``venues``: name -> a spot of its events;
-    ``linked``: name -> profile key, from the site's own events (``linked_names``)."""
+_lookup_cache: tuple[list[VenueProfile], dict[str, VenueProfile], dict[str, list[VenueProfile]]] | None = None
+
+
+def _lookup(profiles: list[VenueProfile]) -> tuple[dict[str, VenueProfile], dict[str, list[VenueProfile]]]:
+    """Profiles by key, and by spelling. Built once per profile list (``cached_profiles`` hands out the same
+    one): normalising every spelling of ~19k profiles took ~0.4 s of each venue page."""
+    global _lookup_cache
+    if (hit := _lookup_cache) and hit[0] is profiles:  # the list itself is kept: its id is never reused
+        return hit[1], hit[2]
     by_key = {p.key: p for p in profiles}
-    out = {n: by_key[k] for n, k in (linked or {}).items() if k in by_key and n in venues}
     # A name left with under 3 letters ("חיפה 04" -> "04") says too little to be matched on its own.
     # Spelling -> the profiles that have it, in profile order: a dict lookup per venue, not a scan of every
     # profile (venues x profiles took over 5 minutes once the world catalogues came in; /categories timed out).
@@ -235,6 +264,17 @@ def match(
     for p in profiles:
         for j in {j for s in (p.aliases or [p.name]) if len(j := _joined(s)) >= 3}:
             by_spelling.setdefault(j, []).append(p)
+    _lookup_cache = (profiles, by_key, by_spelling)
+    return by_key, by_spelling
+
+
+def match(
+    profiles: list[VenueProfile], venues: dict[str, tuple[float, float] | None], linked: dict[str, str] | None = None
+) -> dict[str, VenueProfile]:
+    """Our venue name -> its profile, for the names that have one. ``venues``: name -> a spot of its events;
+    ``linked``: name -> profile key, from the site's own events (``linked_names``)."""
+    by_key, by_spelling = _lookup(profiles)
+    out = {n: by_key[k] for n, k in (linked or {}).items() if k in by_key and n in venues}
     for name, where in venues.items():
         if name in out or not (joined := _joined(name)):
             continue
@@ -253,7 +293,9 @@ def linked_names(session: Session, names: Iterable[str] | None = None) -> dict[s
         upcoming_filter(), key.is_not(None), EventRow.venue_name.is_not(None)
     )
     if names is not None:
-        query = query.where(EventRow.venue_name.in_(list(names)))
+        # lower() reads ix_events_venue_name_lower (venue_name has no index: a scan of every event, ~170 ms on
+        # each venue page). Other spellings' rows are only extra keys: callers look their own name up.
+        query = query.where(func.lower(EventRow.venue_name).in_([func.lower(n) for n in names]))
     out: dict[str, str] = {}
     for name, profile, _ in session.execute(query.group_by(EventRow.venue_name, key).order_by(func.count().desc())):
         out.setdefault(name, profile)
@@ -266,7 +308,7 @@ def profile_for(session: Session, profiles: list[VenueProfile], name: str) -> Ve
 
     spot = session.execute(
         select(EventRow.latitude, EventRow.longitude)
-        .where(EventRow.venue_name == name, EventRow.latitude.is_not(None))
+        .where(func.lower(EventRow.venue_name) == func.lower(name), EventRow.latitude.is_not(None))  # the index
         .limit(1)
     ).first()  # fmt: skip
     where = (spot.latitude, spot.longitude) if spot else None
