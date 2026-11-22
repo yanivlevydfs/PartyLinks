@@ -37,6 +37,8 @@ const STORES: Record<string, [string | null, Kind]> = {
   pres: ["https://pres.global", "tickets"], pres_il: ["https://pres.global", "tickets"], smarticket_il: ["https://www.smarticket.co.il", "tickets"], drop: ["https://tdrop.net", "tickets"], vibez: ["https://web.vibez.io", "tickets"],
   shotgun: ["https://shotgun.live", "tickets"], luma: ["https://luma.com", "tickets"], meetup: ["https://www.meetup.com", "tickets"],
   arenas: ["https://live.tickchak.co.il", "tickets"], barak: ["https://www.barak-tickets.co.il", "tickets"],
+  ticket4u: ["https://www.ticket4u.co.il", "tickets"], havanaclub: ["https://www.havanaclub.co.il", "venue"],
+  parties247: ["https://www.parties247.co.il", "guide"], newacropolis: ["https://www.newacropolis.org.il", "culture"],
   comy: ["https://comy.co.il", "tickets"], concertevents: ["https://concert-events.com", "guide"], hangar11: ["https://hangar11.co.il", "venue"], eventbrite: ["https://www.eventbrite.com", "tickets"],
   posh: ["https://posh.vip", "abroad"], showshappening: ["https://www.showshappening.com", "abroad"], ticketingo: ["https://ticketingo.co.il/concerts", "abroad"],
   eventimlight: ["https://www.eventim-light.com", "abroad"],

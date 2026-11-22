@@ -942,6 +942,9 @@ enrichment:
     eventimlight: [culture]  # small organisers; most declare only "sonstiges" / "freizeit"
     issta: [live_show]  # concert trips abroad
     hangar11: [live_show]  # a concert hall: every night is a show; its CATEGORIES are the site's ~50 tags
+    ticket4u: [kids]  # Shefa's products without a category are its Hanukkah kids' shows (Nov 2026)
+    parties247: [nightclubs]  # a party guide: a party on no genre list is a club night
+    newacropolis: [lectures]  # a philosophy school: no categories; talks and open evenings
     tickchak: [nightclubs]  # the /parties/ box office
     tiktik: [live_show]
     livevents: [live_show]
@@ -2255,6 +2258,10 @@ search:
     sharepointmuni: ["עיריית ראשון לציון", "עיריית ראשל\"צ"]
     tickethouse: ["ticket house", "טיקט האוס"]
     barak: ["barak tickets", "ברק כרטיסים"]
+    ticket4u: ["ticket4u", "ticket 4 u", "שפע הפקות", "שפע כרטיסים"]
+    havanaclub: ["havana", "havana club", "הוואנה", "הוואנה קלאב", "האוונה"]
+    parties247: ["parties247", "parties 24/7", "parties 247", "פרטיז 247", "מסיבות 24/7"]
+    newacropolis: ["new acropolis", "newacropolis", "אקרופוליס החדשה", "אקרופוליס"]
     bargiyora: ["bar giyora", "בר גיורא"]
     basalon: ["basalon", "בסלון"]
     radical: ["radical", "רדיקל", "בית רדיקל"]
@@ -4867,6 +4874,90 @@ sources:
       impersonate: chrome
       concurrency: 1
       request_delay_seconds: 1.5
+
+  ticket4u:
+    # Ticket4U / Shefa (ticket4u.co.il): Shefa Productions' box office, an Eventim Israel tenant (T4U), read with
+    # the Eventim reader: its events sitemap (~530, robots.txt's sitemapindex.xml is a 404) and each event page's
+    # pageMeta, else Eventim's search API. Overlap: every event is also on eventim.co.il (same id) and ~500 are
+    # stored by zappa (its club shows are skipped here by URL); dedup merges the rest (Nov 2026).
+    enabled: true
+    # Direct, no proxy: Akamai challenges its event pages from any IP after a few (our VPN's at once, Nov 2026),
+    # so each refused page comes from Eventim's public search API instead, by its event id: the T4U web id is
+    # refused (400), eventim.co.il's lists every T4U event (same ids) with artwork, price and venue coordinates.
+    cron: "41 4,16 * * *"
+    site_url: https://www.ticket4u.co.il
+    sitemap_path: /staticsite/sitemap/T4U/events1_he.xml.gz
+    api_url: https://public-api.eventim.com/websearch/search/api/exploration/v1/products
+    api_web_id: web__eventim-co-il
+    skip_url_words: ["זאפה", "אמפי-שוני"]   # read by the zappa source
+    skip_title_words: ["שובר מתנה", "gift card", "גיפט כארד", "מנוי"]
+    # No city_paths: their ItemList items would overwrite the API's products (no artwork, no coordinates),
+    # and the API dates every event, so the pages are read soonest first all the same (as zappa).
+    challenge_markers: ["Access Denied", "bm-verify", "_sec/cp_challenge", "Please enable JavaScript", "captcha", "Pardon Our Interruption", "sec-if-cpt"]
+    diagnostic_markers: ["akamai", "_abck"]
+    http:
+      # Eventim's Akamai: Chrome, one request at a time.
+      impersonate: chrome
+      concurrency: 1
+      request_delay_seconds: 1.5
+
+  havanaclub:
+    # Havana Music Club (havanaclub.co.il): salsa, bachata and kizomba nights on Yigal Alon, a Wix site. The ticket
+    # page's repeater lists the next ~6 nights (styles, weekday, date, the /event/<uuid> page that sells them): one
+    # request a run. No time on it: each weekday's start is from the nights' pages (doors 21:00; Tuesday's first
+    # lesson 21:30), no end ("the small hours"), no price or artwork. Its store's products are courses: not read.
+    enabled: true
+    cron: "11 5,17 * * *"
+    site_url: https://www.havanaclub.co.il
+    listing_path: /רכישת-כרטיסים
+    venue_name: הוואנה מיוזיק קלאב
+    address: יגאל אלון 126
+    city: תל אביב-יפו
+    latitude: 32.0743385     # as geocoding.venues' pin for it
+    longitude: 34.7957614
+    start_times: {"שלישי": "21:30", "חמישי": "21:00", "שבת": "21:00"}
+    skip_title_words: ["קורס", "סדנה", "סדנת", "חוג", "שיעור פרטי"]
+    http:
+      impersonate: chrome   # Cloudflare in front of Wix
+      concurrency: 1
+      request_delay_seconds: 1.0
+
+  parties247:
+    # Parties24/7 (parties247.co.il): a national party guide (Next.js), mostly Go-Out's parties. Its events sitemap is
+    # empty, so the lists the home page links (days, cities, clubs, genres...) give the parties, and each party's
+    # page its schema.org Event (start, image, price, the seller's link): ~70 events, ~100 requests a run.
+    # Overlap: almost every party is also stored by goout (extra.purchase_url = its Go-Out page: dedup merges them).
+    enabled: true
+    cron: "52 5,17 * * *"
+    site_url: https://www.parties247.co.il
+    city_lists: {"/cities/tel-aviv": תל אביב-יפו, "/cities/haifa": חיפה, "/cities/eilat": אילת}
+    skip_title_words: ["קורס", "סדנה", "סדנת", "חוג", "שובר"]
+    http:
+      impersonate: chrome   # Cloudflare / Vercel
+      concurrency: 2
+      request_delay_seconds: 0.5
+
+  newacropolis:
+    # New Acropolis Israel (newacropolis.org.il): philosophy talks, open evenings, fairs and trips at its branches. A Wix
+    # site with Wix Events: the event-pages sitemap (~370, mostly past) gives the pages; only those updated within
+    # recent_days are read (~40 pages of ~1.3 MB), each its schema.org Event (start, end, address, image).
+    # The course's own sessions and volunteering days are not events. No categories: lectures by default.
+    enabled: true
+    cron: "8 6,18 * * *"
+    site_url: https://www.newacropolis.org.il
+    recent_days: 180
+    branches:   # the address as it starts -> [city, venue]
+      "סלומון 7": [תל אביב-יפו, בית אקרופוליס החדשה תל אביב]
+      "ברשבסקי 10": [ראשון לציון, אקרופוליס החדשה ראשון לציון]
+      "סירקין 15": [חיפה, אקרופוליס החדשה חיפה]
+      "הירדן 1": [מנחמיה, אקרופוליס החדשה מנחמיה]
+      "שביל חשוון 18": [כרמיאל, אקרופוליס החדשה כרמיאל]
+    skip_titles: ["קורס פילוסופיה בשביל החיים"]   # the course's sessions; its open evenings stay
+    skip_title_words: ["התנדבות", "שיעור פרטי"]
+    http:
+      impersonate: chrome   # Cloudflare in front of Wix
+      concurrency: 2
+      request_delay_seconds: 0.5
 
   bargiyora:
     # Bar Giyora: live-show bar on Ibn Gabirol (music, stand-up, lectures), a WooCommerce shop.

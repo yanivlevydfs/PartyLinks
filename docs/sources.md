@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 138 configured sources, 137 on. Each one has its own module in
+SPOTX collects from 142 configured sources, 141 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -91,8 +91,12 @@ pagination and what the listing and the event page provide.
 | `habama` | Habama (habama.co.il): performing-arts portal: theatre, dance, classical, kids, comedy | 06:11, 18:11 | yes |
 | `friendshist` | FRIENDS (friends-hist.co.il): the Histadrut's culture club, shows and plays in halls nationwide | 07:34, 19:34 | yes |
 | `barak` | Barak Tickets (barak-tickets.co.il): Haifa box office: concerts, theatre, stand-up, kids; Akamai refuses event pages after ~13: those events come from the city pages' ItemList (`eventim_listing.py`), the run then partial | 07:04, 19:04 | yes |
+| `ticket4u` | Ticket4U / Shefa (ticket4u.co.il): Shefa Productions' box office, an Eventim tenant read with the Eventim reader (events sitemap, city pages' ItemList for dates, each page's pageMeta); its Zappa shows are left to `zappa`, and every event is also on eventim.co.il | 04:41, 16:41 | yes |
 | `kikarhamusica` | Kikar HaMusica (kikar-hamusica.com): Jerusalem's music square, daily live sets | 03:33, 15:33 | yes |
 | `bargiyora` | Bar Giyora (bar-giyora.co.il): live-show bar in Tel Aviv: music, stand-up, lectures | 06:26, 18:26 | yes |
+| `havanaclub` | Havana Music Club (havanaclub.co.il): salsa, bachata and kizomba nights on Yigal Alon, Tel Aviv; the Wix ticket page's repeater (styles, weekday, date, the night's /event/ page), each weekday's start from config, no price or artwork | 05:11, 17:11 | yes |
+| `parties247` | Parties24/7 (parties247.co.il): a national party guide, mostly Go-Out's parties; the lists its home page links (days, cities, clubs, genres), then each party page's schema.org Event (price, the seller's link: dedup merges it with `goout`) | 05:52, 17:52 | yes |
+| `newacropolis` | New Acropolis (newacropolis.org.il): philosophy talks, open evenings, fairs and trips at its branches; the Wix Events sitemap's recently updated pages, each its schema.org Event (the course's sessions and volunteering days left out) | 06:08, 18:08 | yes |
 | `basalon` | Basalon (basalon.co.il): talks, stand-up, shows, plays, kids' shows and workshops in living rooms, pubs and studios nationwide; the category pages' dated cards, then each event page's JSON-LD (no appointment-only, private or at-home listings) | 03:37, 15:37 | yes |
 | `radical` | Radical (radical.org.il, "בית רדיקל"): culture house in Jaffa, two halls (auditorium, basement): lectures, films, concerts, workshops, book clubs. WooCommerce behind Cloudflare (`impersonate: chrome`): the calendar's Elementor grids give date (no year: the weekday picks it), time and artwork, paged only while dates are still coming; the Store API adds categories, price range, stock and text (~6 requests). No end times | 09:44, 21:44 | yes |
 | `haezor` | HaEzor / The Zone (haezor.com): live-music club in Tel Aviv | 06:36, 18:36 | yes |

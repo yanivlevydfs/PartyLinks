@@ -52,6 +52,7 @@ from partylinks.scrapers.hamenagen import HamenagenScraper
 from partylinks.scrapers.hangar11 import Hangar11Scraper
 from partylinks.scrapers.happytlv import HappyTlvScraper
 from partylinks.scrapers.hatarbut import HatarbutScraper
+from partylinks.scrapers.havanaclub import HavanaClubScraper
 from partylinks.scrapers.holon import HolonScraper
 from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
@@ -88,11 +89,13 @@ from partylinks.scrapers.mugics import MugicsScraper
 from partylinks.scrapers.munievents import MuniEventsScraper
 from partylinks.scrapers.music80s import Music80sScraper
 from partylinks.scrapers.muzi import MuziScraper
+from partylinks.scrapers.newacropolis import NewAcropolisScraper
 from partylinks.scrapers.nikonitai import NikoNitaiScraper
 from partylinks.scrapers.ogo import OgoScraper
 from partylinks.scrapers.ogo_abroad import OgoDeScraper, OgoUsScraper
 from partylinks.scrapers.onecity import OneCityScraper
 from partylinks.scrapers.parks import ParksScraper
+from partylinks.scrapers.parties247 import Parties247Scraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
 from partylinks.scrapers.petahtikvamuni import PetahTikvaMuniScraper
 from partylinks.scrapers.planet import PlanetScraper, RavHenScraper
@@ -119,6 +122,7 @@ from partylinks.scrapers.tamuseum import TaMuseumScraper
 from partylinks.scrapers.teder import TederScraper
 from partylinks.scrapers.telaviv import TelAvivScraper
 from partylinks.scrapers.tickchak import ArenasScraper, TickchakScraper
+from partylinks.scrapers.ticket4u import Ticket4uScraper
 from partylinks.scrapers.ticketeams import TicketeamsScraper
 from partylinks.scrapers.tickethouse import TicketHouseScraper
 from partylinks.scrapers.ticketingo import TicketingoScraper
@@ -247,7 +251,11 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         PoalimAtarimScraper,
         TicketHouseScraper,
         BarakScraper,
+        Ticket4uScraper,
         BarGiyoraScraper,
+        HavanaClubScraper,
+        Parties247Scraper,
+        NewAcropolisScraper,
         BasalonScraper,
         RadicalScraper,
         HaEzorScraper,
