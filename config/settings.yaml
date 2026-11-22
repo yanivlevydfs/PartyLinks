@@ -1925,6 +1925,44 @@ geocoding:
     "ספריה אזורית כדורי": [32.7028194, 35.4077864]  # Lower Galilee regional library, Kadoorie centre (OSM campus)
     "אשכול אל על": [32.8450731, 35.7928356]  # El Al cluster, Haspin (OSM village point)
     "cafe lumiere": [32.8167554, 35.0000812]  # Cafe Lumiere, Sderot HaPalyam 2, Haifa (d.co.il; OSM house point)
+    # The venues with the most upcoming events off the map, second audit (23 Nov 2026): the new sources' and
+    # Smarticket tenants' venues first. OSM (Nominatim) points, checked against the venue's own page.
+    "מוזיאון הכנסת": [31.7802500, 35.2156040]  # Knesset Museum, Beit Frumin, King George 24, Jerusalem (OSM museum)
+    "משכן הכנסת": [31.7764741, 35.2053830]  # the Knesset building, Kiryat HaMemshala, Jerusalem (OSM)
+    "תיאטרון המשולש": [32.0726331, 34.7724928]  # Triangle Theatre, in the Gay Centre, Gan Meir, Tel Aviv (OSM community centre)
+    "תאטרון השחר": [32.0608860, 34.7748080]  # HaShachar theatre studio, HaHashmal 6, Tel Aviv (its Tickchak page; OSM house)
+    "קאנטרי רמת רחל": [31.7374798, 35.2180350]  # Ramat Rachel country club, by the kibbutz hotel, Jerusalem (OSM hotel)
+    "רנה שני": [32.4392438, 34.9139189]  # Rene Shani hall, Rambam St, Hadera, as Hadera's box office names it
+    "סינמה סיטי חדרה": [32.4409501, 34.9312450]  # Cinema City Hadera, Tzahal St (OSM cinema)
+    "מיוזיק סיטי באר שבע": [31.2341780, 34.7993077]  # Music City, in Cinema City Be'er Sheva, Hita 1 (its Tickchak page; OSM cinema)
+    "גן שמואל אולם": [32.4518320, 34.9498546]  # Gan Shmuel regional hall (ticket4u), Kibbutz Gan Shmuel (OSM village point)
+    "מופעים יפעת": [32.6771965, 35.2238731]  # Yifat hall, Kibbutz Yifat (OSM village point; ticket4u, smarticket)
+    "בית העם קיבוץ כפר בלום": [33.172366, 35.610122]  # as "בית העם כפר בלום" above (ticket4u files it under Haifa)
+    "מערת צדקיהו": [31.7823311, 35.2312151]  # Zedekiah's Cave, Sultan Suleiman St, Jerusalem (OSM; glatticket)
+    "בנייני האומה": [31.7862562, 35.2026399]  # Binyanei HaUma = the International Convention Center, Jerusalem (glatticket)
+    "בניני האומה": [31.7862562, 35.2026399]  # the same, short spelling
+    "וונדרבר": [32.8100289, 35.0056788]  # Wunderbar, Hativat Golani 18, Haifa (OSM bar; Poetry Slam)
+    "נוקטורנו": [31.7804823, 35.2138317]  # Nocturno, Bezalel 7, Jerusalem (OSM cafe; Poetry Slam, jerusalemarts)
+    "לב אבן יהודה": [32.2691667, 34.8905573]  # Lev cinema, Even Yehuda mall, HaMeyasdim 41 (d.co.il; OSM mall)
+    "גינת אגוז, פרדס חנה": [32.4677334, 34.9560297]  # Ginat Egoz St, Pardes Hanna-Karkur (OSM street, 440 m; funzing gives no number)
+    "נמל עין גב": [32.7811125, 35.6388846]  # Ein Gev port, on the kibbutz's shore (OSM village point)
+    "hagoshrim": [33.2211258, 35.6230745]  # Kibbutz HaGoshrim (OSM village point; ogo files it under Kiryat Shmona)
+    "kabri": [33.0214987, 35.1485013]  # Kibbutz Kabri (OSM village point; ogo)
+    "קיבוץ כברי": [33.0214987, 35.1485013]  # the same (smarticket)
+    "beit keshet": [32.7190580, 35.3943311]  # Kibbutz Beit Keshet (OSM village point; ogo)
+    "קיבוץ מגן": [31.2990681, 34.4289248]  # Kibbutz Magen, Eshkol (OSM village point)
+    "ג'ונגל כיף": [32.6882909, 35.5733669]  # Jungle Fun, Kibbutz Beit Zera (OSM village point)
+    "מוזיאון חיל האוויר": [31.2385720, 34.6952959]  # Israeli Air Force Museum, Hatzerim (OSM museum)
+    "מאוזוליאום מזור": [32.0468437, 34.9464045]  # Mazor Mausoleum national park, by El'ad (OSM; ogo files it under Yehud)
+    "בית גבריאל על הכנרת": [32.7051807, 35.5894796]  # Beit Gabriel, Tzemach (OSM building)
+    "magdala hotel": [32.8267566, 35.5152961]  # Magdala hotel (Duc in Altum), Migdal (as city_venues' Tiberias pin)
+    "קריית חרושת": [32.6902570, 35.1097811]  # Kiryat Haroshet, Kiryat Tiv'on, as "קרית חרושת" above
+    "הסטודיו של תינויקי": [32.1645306, 34.8440874]  # Tinoyki's studio, HaAtzmaut 42, Herzliya (OSM building 42a)
+    "אולם המופעים מטולה": [33.2804492, 35.5751296]  # Metula's hall, HaArazim 7 (OSM street; ogo files it under Kiryat Shmona)
+    "בית התרבות בנימינה-גבעת עדה": [32.5165129, 35.0039930]  # Binyamina-Givat Ada culture house, Omer 4, Givat Ada (OSM street)
+    "בית התרבות גבעת עדה": [32.5165129, 35.0039930]  # the same
+    "נבי סמואל": [31.8341844, 35.1885040]  # Nebi Samuel national park (OSM protected area)
+    "эммаус никополис": [31.8392951, 34.9893645]  # Emmaus Nicopolis, Latrun (OSM archaeological site; ogo)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is
@@ -3214,7 +3252,7 @@ sources:
       # events: pnay and docaviv (empty /api/shows and calendar; Docaviv is a May festival), betgabriel (403, even via the VPN).
       - {host: mofa, venue_name: "מוזה - חוף הכרמל", category: הצגות ילדים}
       # Found in the Wayback Machine's index of *.smarticket.co.il, second pass (Nov 2026); timed museum tours left out.
-      - {host: knesset, rooms: true, venue_name: הכנסת, city: ירושלים}
+      - {host: knesset, rooms: true, venue_name: משכן הכנסת, city: ירושלים}   # not "הכנסת": it matches every "בית הכנסת"
       - {host: knesset-museum, rooms: true, venue_name: מוזיאון הכנסת, city: ירושלים, keep_categories: ["סדרה"]}
       - {host: lgbtqcenter, rooms: true, venue_name: תיאטרון המשולש, city: תל אביב-יפו, category: תיאטרון}
       # The Wayback index's p-s hosts (Nov 2026). Left out: shekel, sdo, sczefat, savyonalumim, saas, raanana-race,
@@ -3226,6 +3264,16 @@ sources:
       - {host: sci-park}          # no shows on 23.11.2026; its events show when it lists some
       - {host: rakiamission}      # no shows on 23.11.2026
       - {host: policemuseum}      # no shows on 23.11.2026
+      # The Wayback index's s-z hosts (Nov 2026). Left out: soreq, sportbinyamin, t, t-mara, teo, ycl, zion, zvi,
+      # womenwagepeace, smsite, staticb, the xn-- planetanya alias ("לא נמצאה מערכת": gone), training (Smarticket's
+      # demo shows), static / status / o2.trans-out (no box office), tamuseum (robots.txt), youtheater (403, even via
+      # the VPN), tarbutmodiin (empty; = modiin), studiobalance and team (empty, no public shows to go by).
+      - {host: studioact, rooms: true, venue_name: "אולם עבאס - הסטודיו למשחק יורם לוינשטיין", city: תל אביב-יפו}
+      - {host: to-mix, venue_name: TO-MIX הפקות}   # cover bands; the hall names the town
+      - {host: tziporela, venue_name: תיאטרון ציפורלה}   # touring: the hall names the town
+      - {host: visitashdod, venue_name: Visit Ashdod, city: אשדוד,
+         skip_title_words: ["הצעות נישואין", "מצפה עומרי כהן", "- new"]}   # proposal / lookout booking slots, a draft copy
+      - {host: wikimedia-il}      # no shows on 23.11.2026
 
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
