@@ -55,6 +55,15 @@ def test_event_without_address() -> None:
     assert event.extra.get("phone") == "053-2250699"
 
 
+def test_area_is_no_city() -> None:
+    # Dead Sea shows: "עין בוקק, אזור ים המלח" and no addressLocality. "אזור" alone is the town of Azor.
+    page = _page("galit").replace(
+        '"streetAddress":"פקריס 6 רחובות","addressLocality":"רחובות"', '"streetAddress":"עין בוקק, אזור ים המלח"'
+    )
+    event = parse_event(page, BASE + "x", SETTINGS, TZ)
+    assert event is not None and event.city == "ים המלח"
+
+
 def test_weekend_package_city_only() -> None:
     url = BASE + "רביד-גואטה-קוקו-מאילת-אילת"
     event = parse_event(_page("eilat"), url, SETTINGS, TZ)

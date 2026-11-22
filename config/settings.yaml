@@ -1371,6 +1371,7 @@ geocoding:
   # checked by hand; venues OSM does not know precisely are left off the map, not guessed.
   #   "venue or address keyword": [lat, lon]
   venues:
+    "דבלין הרצליה": [32.1605654, 34.8091309]             # Dublin Irish pub, Aryeh Shenkar 4, Herzliya Pituach (OSM; Concert names it alone)
     "room 48": [32.0743905, 34.7758641]                 # ROOM 48, King George 48, Tel Aviv (Ozen Bar's club; Airdrop / Makore name it alone)
     "בויילר 02": [31.7665868, 35.2251920]                # Boiler 02 (Airdrop club), Derech Hevron 28, Jerusalem: JVP Media Quarter, as Zappa there
     "חומה ומגדל 11": [32.0624340, 34.7858560]            # ECHO Tel Aviv (Airdrop club), Homa uMigdal 11 (OSM house)

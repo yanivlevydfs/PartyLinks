@@ -141,6 +141,10 @@ def parse_event(page_html: str, url: str, settings: ConcertEventsSettings, timez
     address = place.get("address") if isinstance(place.get("address"), dict) else {}
     venue = clean_str(place.get("name"))
     street = clean_str(address.get("streetAddress"))
+    # "עין בוקק, אזור ים המלח": "אזור" (area) is no city; read alone it is the town of Azor (Gush Dan),
+    # here and in enrichment's city-from-address, so the word leaves the address.
+    if street:
+        street = clean_str(re.sub(r"(^|,\s*)אזור\s+", r"\1", street))
     city = clean_str(address.get("addressLocality"))
     if not city and street:  # "אחי דקר 6, ראשון לציון" or the city alone ("תל אביב")
         city = clean_str(street.rsplit(",", 1)[-1])
