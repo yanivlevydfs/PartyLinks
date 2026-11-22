@@ -46,6 +46,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   yellowsubmarine: ["https://yellowsubmarine.org.il", "venue"], halutz: ["https://www.halutz.co.il", "venue"],
   haezor: ["https://haezor.com", "venue"], levontin7: ["https://levontin7.com", "venue"], reading3: ["https://www.reading3.co.il", "venue"], babebar: ["https://babebar.co.il", "venue"],
   bargiyora: ["https://bar-giyora.co.il", "venue"],
+  basalon: ["https://basalon.co.il", "tickets"],
   radical: ["https://radical.org.il/calendar/", "culture"],
   makore: ["https://www.makore.co.il", "culture"], jaffatheatre: ["https://www.jaffatheatre.org.il", "culture"], jerusalemtheatre: ["https://www.jerusalem-theatre.co.il", "culture"],
   beershevatheatre: ["https://b7t.co.il", "culture"], nikonitai: ["https://nikonitai.smarticket.co.il", "venue"], hatarbut: ["https://www.hatarbut.co.il", "culture"], zoatlv: ["https://zoatlv.co.il", "culture"],

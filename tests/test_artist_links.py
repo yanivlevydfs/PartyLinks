@@ -3,6 +3,8 @@ breaker, and the links on the event API, the artist page and the JSON-LD."""
 
 from __future__ import annotations
 
+import logging
+import threading
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -15,13 +17,14 @@ from sqlalchemy import select, update
 from partylinks.api import create_app
 from partylinks.artist_links import models
 from partylinks.artist_links.config import ArtistLinksSettings
-from partylinks.artist_links.lookup import MusicBrainz, pick, run_pass
+from partylinks.artist_links.lookup import MusicBrainz, Unavailable, pick, run_pass
 from partylinks.artist_links.models import ArtistLinkRow, name_key, service_of
 from partylinks.artistdb import ArtistBook
 from partylinks.artists import ArtistProfile
 from partylinks.db import Database, EventRow
 from tests.test_storage_api import event, seed, settings_for
 
+LOGGER = "partylinks.artist_links.lookup"
 MBID = "11111111-1111-1111-1111-111111111111"
 RELATIONS = {
     "relations": [
@@ -52,7 +55,9 @@ def test_service_of_knows_dj_stores_not_databases() -> None:
 
 
 def test_pick_accepts_only_one_exact_candidate() -> None:
-    assert (pick([cand("Infected Mushroom"), cand("Infected", mbid="x")], "INFECTED MUSHROOM", 90) or {}).get("id") == MBID
+    assert (pick([cand("Infected Mushroom"), cand("Infected", mbid="x")], "INFECTED MUSHROOM", 90) or {}).get(
+        "id"
+    ) == MBID
     assert pick([cand("Someone", aliases=[{"name": "Skazi"}])], "skazi", 90) is not None  # an alias counts
     assert pick([cand("Adam Ten")], "Adam", 90) is None  # not the same name
     assert pick([cand("Adam", score=80)], "Adam", 90) is None  # score too low
@@ -160,13 +165,49 @@ def test_retry_after_is_honoured(tmp_path: Path, sleeps: list[float]) -> None:
     assert fake.paths[:2] == ["/ws/2/artist", "/ws/2/artist"]
 
 
-def test_breaker_stops_the_pass_and_failures_are_not_misses(tmp_path: Path, sleeps: list[float]) -> None:
+def test_breaker_stops_the_pass_and_failures_are_not_misses(
+    tmp_path: Path, sleeps: list[float], caplog: pytest.LogCaptureFixture
+) -> None:
     db = _db(tmp_path, {"a": ["Alpha One"], "b": ["Bravo Two"], "c": ["Charlie Three"]})
     fake = FakeMB(fail=[503] * 100)
-    stats = _run(db, fake, attempts=2, max_consecutive_failures=2)
+    with caplog.at_level(logging.INFO, logger=LOGGER):
+        stats = _run(db, fake, attempts=2, max_consecutive_failures=2)
     assert len(fake.paths) == 4  # 2 names x 2 tries, then the pass stops
     assert (stats.errors, stats.pending) == (2, 1)
     assert _rows(db) == {}  # nothing stored: asked again next pass
+    warnings = [r.getMessage() for r in caplog.records if r.name == LOGGER and r.levelno >= logging.WARNING]
+    assert len(warnings) == 1 and "pass stopped" in warnings[0]  # MusicBrainz down: one warning, not one per name
+
+
+def test_one_failed_name_is_not_a_warning(
+    tmp_path: Path, sleeps: list[float], caplog: pytest.LogCaptureFixture
+) -> None:
+    db = _db(tmp_path, {"a": ["Alpha One"], "b": ["Bravo Two"]})
+    fake = FakeMB(fail=[503] * 2)  # Alpha One's 2 tries fail (MusicBrainz's rate limit), Bravo Two is answered
+    with caplog.at_level(logging.INFO, logger=LOGGER):
+        stats = _run(db, fake, attempts=2)
+    assert (stats.errors, stats.misses) == (1, 1)
+    assert set(_rows(db)) == {"bravo two"}  # Alpha One is asked again next pass
+    assert not [r for r in caplog.records if r.name == LOGGER and r.levelno >= logging.WARNING]
+
+
+def test_retries_wait_long_and_shutdown_ends_the_wait(sleeps: list[float]) -> None:  # sleeps: the 1 s rate limit
+    settings = ArtistLinksSettings()
+    waits: list[float | None] = []
+
+    class Shutdown(threading.Event):
+        def wait(self, timeout: float | None = None) -> bool:  # the shutdown arrives during the first wait
+            waits.append(timeout)
+            self.set()
+            return True
+
+    fake = FakeMB(fail=[503] * 100)
+    http = httpx.Client(
+        base_url=settings.url, transport=httpx.MockTransport(fake), headers={"User-Agent": settings.user_agent}
+    )
+    with pytest.raises(Unavailable):
+        MusicBrainz(settings, http, stop=Shutdown()).search("Alpha One")
+    assert waits == [settings.backoff_seconds] and len(fake.paths) == 2  # no further tries after the shutdown
 
 
 # --------------------------------------------------------------------------- the site

@@ -12,9 +12,10 @@ class ArtistLinksSettings(BaseModel):
     user_agent: str = "SPOTX/0.1 ( contact@spotx.fun )"
     min_interval_seconds: float = Field(1.1, ge=1)
     timeout_seconds: float = Field(20, gt=0)
-    # Tries per request on 429 / 5xx / network errors (Retry-After honoured, else exponential backoff).
-    attempts: int = Field(3, ge=1, le=6)
-    backoff_seconds: float = Field(2, ge=0)
+    # Tries per request on 429 / 5xx / network errors (Retry-After honoured, else exponential backoff:
+    # 5, 10, 20, 40 s). MusicBrainz's 503 is its rate limit and lasts up to a minute, so the waits are long.
+    attempts: int = Field(5, ge=1, le=6)
+    backoff_seconds: float = Field(5, ge=0)
     # Requests that failed after their retries, in a row, that end the pass (MusicBrainz down: don't hammer it).
     max_consecutive_failures: int = Field(3, ge=1)
     # The worker's pass: every this many minutes, at most this many MusicBrainz requests.

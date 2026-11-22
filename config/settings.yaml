@@ -321,8 +321,8 @@ artist_links:
   user_agent: "SPOTX/0.1 ( contact@spotx.fun )"   # MusicBrainz policy: app name + contact
   min_interval_seconds: 1.1    # MusicBrainz allows 1 request/second
   timeout_seconds: 20
-  attempts: 3                  # tries per request on 429 / 5xx / network errors (Retry-After honoured)
-  backoff_seconds: 2
+  attempts: 5                  # tries per request on 429 / 5xx / network errors (Retry-After honoured)
+  backoff_seconds: 5           # waits 5, 10, 20, 40 s: MusicBrainz's 503 (its rate limit) lasts up to a minute
   max_consecutive_failures: 3  # requests failed in a row that end the pass (MusicBrainz down)
   interval_minutes: 30         # the worker's pass
   max_lookups_per_run: 200     # MusicBrainz requests per pass (~4 min)
@@ -856,7 +856,7 @@ enrichment:
                 "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki", "קונצרטים", "מופעי מבוגרים", "קסמים וקרקס", "שובו של הקרקס", "موسيقى", "אנסמבל", "תזמורת המהפכה", "candlelight", "הפעלה מוזיקאלית", "magia", "cabaret"]  # concets: Eventer's spelling of its concerts category
     festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele", "חשיפה בינלאומית"]
     # Not "קהילה" / "קהילתי": community centres tag every event so (kids' shows, workshops), a place, not a meetup.
-    meetups: ["فعاليات اجتماعية", "meetups", "community", "meeting", "פעילות חברתית", "ערב חברתי", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות"]
+    meetups: ["فعاليات اجتماعية", "meetups", "community", "meeting", "פעילות חברתית", "ערב חברתי", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות", "מפגשים חברתיים"]
     culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית", "תרבות", "קהילה", "קהילות", "אירועים קהילתיים", "מרכזים קהילתיים", "אירועי מרכזים קהילתיים", "פעילות קהילתית", "המרכז לאומנויות", "אירוע", "אירועים", "תרבות מבוגרים", "שבת תרבות", "מפגשי שכונות", "הבוטיק מועדון תרבות", "החיים הטובים", "לא שיגרתי"]
     photography: ["צילום", "photography", "photo", "צילום ואמנות", "צילום ועריכה"]
     exhibitions: ["exhibitions", "exhibition", "art", "taidenäyttely", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum", "יום המוזיאונים", "אירועי קומיקס", "tentoonstellingen",
@@ -2256,6 +2256,7 @@ search:
     tickethouse: ["ticket house", "טיקט האוס"]
     barak: ["barak tickets", "ברק כרטיסים"]
     bargiyora: ["bar giyora", "בר גיורא"]
+    basalon: ["basalon", "בסלון"]
     radical: ["radical", "רדיקל", "בית רדיקל"]
     levontin7: ["levontin 7", "לבונטין 7"]
     yellowsubmarine: ["yellow submarine", "הצוללת הצהובה"]
@@ -4884,6 +4885,28 @@ sources:
     http:
       concurrency: 1
 
+  basalon:
+    # Basalon (basalon.co.il): talks, stand-up, shows, plays, kids' shows and workshops in living rooms, pubs and
+    # studios nationwide. The category pages (/page/N/, 45 cards, soonest first) give the dated cards; each one's
+    # event page adds its JSON-LD Event (start, end, street address, tickets). Cards booked by appointment, private
+    # workshops and the customer's home are left out. ~650 large pages a run (~20 min).
+    # Overlap: many of its shows are also sold by goshow / eventer / tickchak (pubs, Ozen bar): dedup merges them.
+    enabled: true
+    cron: "37 3,15 * * *"
+    site_url: https://basalon.co.il
+    categories:
+      - {path: /show/, label: הופעות}
+      - {path: /lectures/, label: הרצאות}
+      - {path: /הופעות-סטנדאפ/, label: סטנדאפ}
+      - {path: /הצגות/, label: הצגות}
+      - {path: /kids/, label: ילדים}
+      - {path: /workshop/, label: סדנאות}
+      - {path: /tour/, label: סיורים}
+      - {path: /מפגשים-חברתיים/, label: מפגשים חברתיים}
+    skip_title_words: ["פרטי", "פרטית", "בתיאום", "בבית הלקוח", "לקבוצות", "קורס", "חוג", "שובר", "גיפט כארד", "ליווי"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
   radical:
     # Radical (radical.org.il): culture house in Jaffa (lectures, films, concerts, workshops), a WooCommerce
     # shop behind Cloudflare (Chrome TLS). The calendar's Elementor grids give id, date (no year), time and

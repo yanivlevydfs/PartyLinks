@@ -21,7 +21,7 @@ from typing import Any
 
 import httpx
 from sqlalchemy import select
-from tenacity import Retrying, retry_if_exception, stop_after_attempt, wait_exponential
+from tenacity import Retrying, retry_if_exception, stop_after_attempt, stop_when_event_set, wait_exponential
 
 from partylinks.artist_links.config import ArtistLinksSettings
 from partylinks.artist_links.models import ArtistLinkRow, Link, clear_cache, merge, name_key
@@ -90,10 +90,16 @@ def url_links(artist: dict[str, Any], services: list[str]) -> list[Link]:
 
 
 class MusicBrainz:
-    """Rate-limited, retried WS/2 client. ``get`` raises Unavailable when a request fails for good."""
+    """Rate-limited, retried WS/2 client. ``get`` raises Unavailable when a request fails for good.
 
-    def __init__(self, cfg: ArtistLinksSettings, client: httpx.Client | None = None) -> None:
+    MusicBrainz answers 503 when it is over its rate limit (ours, a shared outgoing IP's or its global
+    one): short bursts, so the retries wait several seconds, doubling. ``stop`` (shutdown) ends a wait."""
+
+    def __init__(
+        self, cfg: ArtistLinksSettings, client: httpx.Client | None = None, stop: threading.Event | None = None
+    ) -> None:
         self.cfg = cfg
+        self.stop = stop
         self.client = client or httpx.Client(
             base_url=cfg.url,
             timeout=cfg.timeout_seconds,
@@ -106,6 +112,12 @@ class MusicBrainz:
     def _wait(self, state: Any) -> float:
         after = _retry_after(state.outcome.exception() if state.outcome else None)
         return after if after is not None else self._backoff(state)
+
+    def _sleep(self, seconds: float) -> None:
+        if self.stop is None:
+            time.sleep(seconds)
+        else:
+            self.stop.wait(seconds)
 
     def _throttle(self) -> None:
         global _last_request
@@ -127,11 +139,13 @@ class MusicBrainz:
             response.raise_for_status()
             return response.json()
 
+        stop = stop_after_attempt(self.cfg.attempts)
         try:
             for attempt in Retrying(
                 retry=retry_if_exception(_is_retryable),
-                stop=stop_after_attempt(self.cfg.attempts),
+                stop=stop if self.stop is None else stop | stop_when_event_set(self.stop),
                 wait=self._wait,
+                sleep=self._sleep,
                 reraise=True,
             ):
                 with attempt:
@@ -203,18 +217,23 @@ def run_pass(
             todo.append((name, row))
         else:
             stats.skipped += 1
-    mb = client or MusicBrainz(cfg)
+    mb = client or MusicBrainz(cfg, stop=stop)
     failures = 0
     try:
         for index, (name, row) in enumerate(todo):
             # A search may need a second request for the hit's links: start a name only with room for both.
             need = 1 if row is not None and row.found and row.mbid else 2
-            if (
-                (stop is not None and stop.is_set())
-                or mb.requests + need > cfg.max_lookups_per_run
-                or failures >= cfg.max_consecutive_failures
-            ):
+            if (stop is not None and stop.is_set()) or mb.requests + need > cfg.max_lookups_per_run:
                 stats.pending = len(todo) - index
+                break
+            if failures >= cfg.max_consecutive_failures:  # MusicBrainz down: don't hammer it
+                stats.pending = len(todo) - index
+                log.warning(
+                    "artist links: MusicBrainz unavailable (%d names failed in a row), pass stopped, %d names left"
+                    " for the next pass",
+                    failures,
+                    stats.pending,
+                )
                 break
             try:
                 mbid = row.mbid if need == 1 and row is not None else None
@@ -223,10 +242,10 @@ def run_pass(
                 links = mb.links(mbid) if mbid else None
                 if links is None:  # not found, or its MBID is gone: a miss (searched again after retry_failed_days)
                     mbid = None
-            except Unavailable as exc:
+            except Unavailable as exc:  # not stored: asked again next pass, so not an error on its own
                 failures += 1
                 stats.errors += 1
-                log.warning("artist links: MusicBrainz request for %r failed: %s", name, exc)
+                log.info("artist links: MusicBrainz request for %r failed, asked again next pass: %s", name, exc)
                 continue
             failures = 0
             stats.hits += mbid is not None
