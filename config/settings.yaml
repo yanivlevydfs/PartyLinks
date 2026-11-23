@@ -1101,6 +1101,7 @@ enrichment:
                 "non-commercial", "commercial or non", "potter forest", "organic choir",  # photo terms, a park, a choir
                 "תרגום סימולטני לאנגלית, ערבית", "בשפה הערבית", "בשפה הרוסית", "english, russian, arabic",  # a tour's language, not Arabic music
                 "מסיבה זו", "מסיבות שונות", "מסיבות טכניות", "מסיבות בטיחות", "מסיבות שאינן",  # "for this reason", not a party
+                "חורש ים תיכוני", "חורש ים-תיכוני", "חורש ים־תיכוני",  # Mediterranean woodland (a nature tour), not Mizrahi music
                 "טכנו-", "טכנו־"]  # "techno-" joined to a word ("שיווק טכנו-באנאלי", a lecture): a prefix, not techno
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
@@ -2323,6 +2324,7 @@ search:
     salsavida: ["salsa vida", "salsavida", "סלסה וידה"]
     arthurmurray: ["arthur murray", "arthurmurray", "ארתור מארי", "ארתור מרי", "the salon"]
     yadvashem: ["yad vashem", "yadvashem", "יד ושם", "יד-ושם"]
+    ganeyyehoshua: ["גני יהושע", "ganei yehoshua", "ganey yehoshua", "park.co.il"]
     bargiyora: ["bar giyora", "בר גיורא"]
     basalon: ["basalon", "בסלון"]
     radical: ["radical", "רדיקל", "בית רדיקל"]
@@ -5206,6 +5208,39 @@ sources:
     http:
       concurrency: 4
       request_delay_seconds: 0.2
+
+  ganeyyehoshua:
+    # Ganei Yehoshua (park.co.il, גני יהושע): the Yarkon Park company's own events in its Tel Aviv parks (Yarkon,
+    # Park Begin, Ganei HaTeva, Rosh Tzipor): birdwatching and nature tours, family days, sport, Lumagica. One listing
+    # page (every current card: type, park, first dates) + each event's page (~25: every date and time, prices, the
+    # meeting point, the seller): one event per session. Lumagica sells on Kupat Tel Aviv (`kupat`; dedup merges).
+    # No coordinates on the site: the meeting point -> `places`, else the park's pin (`parks`). robots.txt allows all.
+    enabled: true
+    cron: "52 9,21 * * *"
+    site_url: https://park.co.il
+    places:                  # words of the "היכן?" text / park-map point -> the spot (OSM), first match wins
+      - {match: ["ראש ציפור", "rosh tsipor", "rosh tzipor", "פארק הצפרות"], venue_name: מרכז הצפרות ראש ציפור, latitude: 32.0945101, longitude: 34.8049063}   # OSM way 470773720
+      - {match: ["בטיחות בדרכים"], venue_name: מרכז ההדרכה לבטיחות בדרכים, address: "גן הבנים, פארק הירקון, תל אביב-יפו", latitude: 32.0976031, longitude: 34.7816095}   # "צמוד לגן הבנים": OSM node 340382877
+      - {match: ["ירקון מזרח"], venue_name: טיילת ירקון מזרח, latitude: 32.1077132, longitude: 34.8379446}   # "behind Assuta": OSM Assuta parking entrance
+      - {match: ["אמפי תל", "רוקח 100"], venue_name: גני יהושע - מתחם אמפי, latitude: 32.1021103, longitude: 34.8116371}   # OSM: Rokach 100
+      - {match: ["ספורטק צפון", "רוקח 40"], venue_name: ספורטק צפון, latitude: 32.0980457, longitude: 34.7886259}   # OSM way 34333834
+      - {match: ["גני הטבע", "פנחס לבון"], venue_name: גני הטבע, latitude: 32.0486786, longitude: 34.7711271}   # OSM relation 16034344 (Lavon St)
+      - {match: ["איתן לבני", "פארק מנחם בגין", "שתולים"], venue_name: פארק מנחם בגין, latitude: 32.0439120, longitude: 34.8040420}   # OSM: Eitan Livni 19, the park's gate
+    parks:                   # the card's park, when the meeting point names no spot
+      "גני יהושע": {latitude: 32.1030349, longitude: 34.8167266}       # OSM relation 16022802
+      "פארק מנחם בגין": {latitude: 32.0439120, longitude: 34.8040420}  # Eitan Livni 19, the park's gate
+      "גני הטבע": {latitude: 32.0486786, longitude: 34.7711271}
+      "ראש ציפור": {latitude: 32.0945101, longitude: 34.8049063}
+      "החווה": {latitude: 32.0937554, longitude: 34.8071601}           # OSM way 98693394 "החווה"
+      "פרדס גולדברג": {latitude: 32.1054141, longitude: 34.8084224}    # as geocoding.venues
+      "ספורטק צפון": {latitude: 32.0980457, longitude: 34.7886259}
+    type_genres:             # the animals type is wildlife / birdwatching tours
+      animals: ["טבע"]
+    # Residents-only sessions (Digitaf card), the season-long nature course, the weekly free Pilates class.
+    skip_title_words: ["דיגיטף", "מחזור", "קורס", "פילאטיס"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
 
   bargiyora:
     # Bar Giyora: live-show bar on Ibn Gabirol (music, stand-up, lectures), a WooCommerce shop.

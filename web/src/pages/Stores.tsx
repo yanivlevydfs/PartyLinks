@@ -44,6 +44,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   bimot: ["https://bimotglobal.co.il", "culture"],
   salsavida: ["https://www.salsavida.com/guides/israel/", "guide"], arthurmurray: ["https://www.arthurmurray.co.il/the-salon", "venue"],
   yadvashem: ["https://online-reservations.yadvashem.org/he/home", "culture"],
+  ganeyyehoshua: ["https://park.co.il/events/", "venue"],
   comy: ["https://comy.co.il", "tickets"], concertevents: ["https://concert-events.com", "guide"], hangar11: ["https://hangar11.co.il", "venue"], eventbrite: ["https://www.eventbrite.com", "tickets"],
   posh: ["https://posh.vip", "abroad"], showshappening: ["https://www.showshappening.com", "abroad"], ticketingo: ["https://ticketingo.co.il/concerts", "abroad"],
   eventimlight: ["https://www.eventim-light.com", "abroad"],

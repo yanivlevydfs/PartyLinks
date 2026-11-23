@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 150 configured sources, 149 on. Each one has its own module in
+SPOTX collects from 151 configured sources, 150 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -168,6 +168,7 @@ many of them free.
 | `meety` | Meety (meety.co.il): social meetups: salsa and bachata nights, folk dancing, running groups, board games | 06:47, 18:47 | yes |
 | `salsavida` | Salsa Vida (salsavida.com): weekly salsa / bachata "Class & Social" nights in Israel (Petah Tikva, Haifa, Rehovot, Kfar Saba, Jerusalem, Tel Aviv); the guide's microdata cards and its load-more windows to 90 days, each series' page for venue and pin; Havana Club left to `havanaclub` | 05:58, 17:58 | yes |
 | `yadvashem` | Yad Vashem online reservations (online-reservations.yadvashem.org): the dated public tours (Friday museum tours in Hebrew / English / Russian, the "Living Memory" exhibition tour, synagogue tours) from the booking app's JSON API, places left per slot, 8 months ahead | 08:31, 20:31 | yes |
+| `ganeyyehoshua` | Ganei Yehoshua (park.co.il): the Yarkon Park company's own events in its Tel Aviv parks (Yarkon, Park Begin, Ganei HaTeva, Rosh Tzipor): birdwatching and nature tours, family days, sport, Lumagica; the listing page (type, park) + each event's page (every session, prices, meeting point), one event per session; pins from the meeting point (`places`) or the park; Lumagica's Kupat Tel Aviv link merges with `kupat` | 09:52, 21:52 | yes |
 | `funzing` | Funzing (il.funzing.com): experiences: workshops, tours, lectures, culinary evenings, family days | 07:19, 19:19 | yes |
 | `easytix` | EASYTIX (easytix.co.il): the nimi ticketing platform and its white-label box offices (Camel Comedy Club, ZOA House, Jerusalem Zoo / Israel Aquarium, Hormesis) | 08:43, 20:43 | yes |
 

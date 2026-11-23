@@ -79,6 +79,7 @@
 | 18 | ⛔ דילוג | israelshow.co.il, ishow.co.il, kzat-tarbut.com, jeroozevents.co.il | מאגדים | jerooz: אתר מושבת. ishow: Cloudflare חוסם. israelshow ו-kzat-tarbut: חזיתות של Kupat Bravo, והכל כבר במסד |
 | 19 | ✅ | salsavida.com, where-to-dance-salsa.com | סלסה/בצ'אטה שבועי | salsavida בייצור (`59d3bb4`): 237 ערבים מ-8 סדרות. where-to-dance: רק Havana, שכבר נקרא |
 | 20 | ⛔ דילוג | kolsadna.co.il | השוואת סדנאות | אין מועדים: הכל בתיאום |
+| 21 | ⏳ | park.co.il | גני יהושע: אירועי פארק הירקון, פארק בגין, גני הטבע וראש ציפור | נבדק 23.11: עונה ישיר. נבנה `ganeyyehoshua`: 45 מפגשים מ-18 אירועים (סיורי צפרות וטבע, ימי משפחה, ספורט, Lumagica), 100% מפה (פין לכל נקודת מפגש), ז'אנר ועיר. Lumagica נמכר בקופת ת"א, ו-dedup ממזג. דילוג: מפגשי דיגיטף לתושבים, הקורס העונתי, הפילאטיס השבועי, ופריטים בלי תאריך. ממתין לדחיפה |
 
 ## 3. עוד קופות Smarticket ✅
 

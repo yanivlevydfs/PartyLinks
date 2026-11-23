@@ -40,6 +40,7 @@ from partylinks.scrapers.festivalim import FestivalimScraper
 from partylinks.scrapers.fever import FeverScraper
 from partylinks.scrapers.friendshist import FriendsHistScraper
 from partylinks.scrapers.funzing import FunzingScraper
+from partylinks.scrapers.ganeyyehoshua import GaneyYehoshuaScraper
 from partylinks.scrapers.geektime import GeektimeScraper
 from partylinks.scrapers.getin import GetinScraper
 from partylinks.scrapers.glatticket import GlatticketScraper
@@ -297,6 +298,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         IsraelMusicFestScraper,
         FeelBeitScraper,
         TlvJazzFestScraper,
+        GaneyYehoshuaScraper,
         FunzingScraper,
         EasytixScraper,
         TicketeamsScraper,
