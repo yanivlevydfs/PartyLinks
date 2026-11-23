@@ -5842,6 +5842,7 @@ sources:
     # AGOL: organic & progressive house collective (parties at Art Club, Tel Aviv). A one-page Next.js
     # sign-up site naming the next party: title, when, where, flyer (lineup in its alt). One request a run.
     enabled: true
+    may_be_empty: true  # the one-page site names its next party only; between parties it lists none
     cron: "37 9,21 * * *"
     site_url: https://agol-join.vercel.app
     listing_path: /
@@ -5887,6 +5888,7 @@ sources:
     # /event/ (30 a page) lists upcoming events only; each event's page adds the text and the seller's link
     # (Leaan, EASYTIX...), which ties it to the seller's own listing. robots.txt allows everything.
     enabled: true
+    skip_title_words: ["קורס אסכולות", "קורס שנתי"]  # Askolot's semester lecture courses (one registration, many dates): ~47 dates, Nov 2026
     cron: "26 7,19 * * *"
     site_url: https://zoatlv.co.il
     listing_path: /event/
@@ -5968,7 +5970,6 @@ sources:
     cron: "37 8,20 * * *"
     site_url: https://easytix.co.il
     api_url: https://live.nimi.co.il
-    may_be_empty: true  # the one-page site names its next party only; between parties it lists none
     max_span_days: 31
     skip_accounts: [sarkis-12311, sarkis-1, haasam]  # test events; Haasam pub sells punch cards
     # Unlisted events (isPublic false) sold through a posted link; pages other sources link to come in anyway.
@@ -6004,4 +6005,3 @@ sources:
     cron: "49 5,17 * * *"
     http:
       concurrency: 8
-    skip_title_words: ["קורס אסכולות", "קורס שנתי"]  # Askolot's semester lecture courses (one registration, many dates): ~47 dates, Nov 2026
