@@ -38,14 +38,33 @@ def test_event_page_without_trusting_the_zero_price() -> None:
     url = "https://tdrop.net/events/edb2b19a0dd34733"
     e = parse_event((FIXTURES / "event_edb2b19a0dd34733.html").read_text("utf-8"), url, TZ)
     assert e is not None and e.source_event_id == "edb2b19a0dd34733" and e.title == "🦩TRANCELA⚔️"
-    assert e.start_at is not None and e.start_at.isoformat() == "2026-11-28T10:00:00+00:00"
+    # "2026-11-28T10:00:00.000Z" is the Israeli wall clock written as UTC (the texts say 10:00).
+    assert e.start_at is not None and e.start_at.isoformat() == "2026-11-28T10:00:00+02:00"
+    assert e.end_at is not None and e.end_at.isoformat() == "2026-11-29T00:00:00+02:00"
     assert e.venue_name == "שטח פרטי - מרכז הארץ" and e.address is None and e.country is None
+    assert e.time_zone is None
     assert e.organizer and "Dor’s Tribe" in e.organizer
     assert e.description and e.description.startswith("🦩⚔️ טראנסלה")  # "[HTMLDESC]" prefix dropped
     assert [t.name for t in e.tickets] == ["⚔️כרטיסים ראשונים מוזלים לקהילה וחברים🦩"]
     # Every offer reads price "0": unknown, not free.
     assert e.tickets[0].price is None and e.tickets[0].kind is TicketKind.UNKNOWN and e.min_price is None
     assert e.images[0].startswith("https://aykrrozfnlzuvrqovvlx.supabase.co/storage/")
+
+
+def test_an_event_abroad_keeps_the_clock_in_its_own_zone() -> None:
+    url = "https://tdrop.net/events/38bcef53e03547ca"
+    page = (FIXTURES / "event_edb2b19a0dd34733.html").read_text("utf-8")
+    page = page.replace("שטח פרטי - מרכז הארץ", "Hilltop - Goa - India").replace(
+        '"startDate":"2026-11-28T10:00:00.000Z"', '"startDate":"2026-12-27T10:00:00.000Z"'
+    )
+    e = parse_event(page, url, TZ)
+    assert e is not None and e.country == "IN" and e.time_zone == "Asia/Kolkata"
+    assert e.start_at is not None and e.start_at.isoformat() == "2026-12-27T10:00:00+05:30"
+
+
+def test_sitemap_reads_older_base62_ids_too() -> None:
+    sitemap = "<url><loc>https://tdrop.net/events/0Xl3KkiFx0qiZjoe</loc><lastmod>2027-01-05T00:00:00Z</lastmod></url>"
+    assert upcoming_urls(sitemap, datetime(2026, 11, 18, tzinfo=UTC)) == ["https://tdrop.net/events/0Xl3KkiFx0qiZjoe"]
 
 
 def test_api_tiers_give_prices_and_sold_out_rounds() -> None:

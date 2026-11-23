@@ -1,15 +1,19 @@
 """Drop (tdrop.net) - self-serve ticketing for party producers: raves, house parties, festivals.
 
 Next.js on Supabase; robots.txt allows everything. Listing: the sitemap lists every event page
-(``/events/<16 hex>``, ~850 all-time) with ``lastmod`` set to the event's date, so only pages
-dated from yesterday on are read (~50). Details: each page's schema.org ``Event`` JSON-LD gives
-name, start/end, image, place, organizer and one ``Offer`` per ticket tier. Every offer's price
-reads "0" whatever the tier costs, so the tiers come from the JSON the page itself loads
-(``/api/event/general/<id>``: ``eventTicketTypes`` with price, discount and round status
-current / soon / soldout / expired); the JSON-LD offers stay as a fallback, price unknown.
-The API adds the minimum age and the site's categories (few events have one). Many raves name only a
-region ("מרכז הארץ", "השרון") until the location is sent to ticket holders; the site has no city field, so
-the city comes from the place's name.
+(``/events/<16 hex>``, older ones base62; ~1,060 all-time) with ``lastmod`` set to the event's end
+date, so only pages ending from yesterday on are read (~50), all of them. It is the site's whole
+catalogue: the page's own ``/api/event/all`` (every section, "all" / "latest", total 1,066) holds
+the same upcoming events, plus 3 past ones whose sale the producer paused (Nov 2026). Details: each
+page's schema.org ``Event`` JSON-LD gives name, start/end, image, place, organizer and one ``Offer``
+per ticket tier. Its times are the venue's wall clock written as UTC ("22:00:00.000Z" is a 22:00
+party, as the API's ``eventStartTime`` and the texts say), so the clock is kept and the zone set.
+Every offer's price reads "0" whatever the tier costs, so the tiers come from the JSON the page
+itself loads (``/api/event/general/<id>``: ``eventTicketTypes`` with price, discount and round
+status current / soon / soldout / expired); the JSON-LD offers stay as a fallback, price unknown.
+The API adds the minimum age and the site's categories (Techno / Mainstream / Trance; few events
+have one). Many raves name only a region ("מרכז הארץ", "השרון") until the location is sent to
+ticket holders; the site has no city field, so the city comes from the place's name.
 """
 
 from __future__ import annotations
@@ -18,8 +22,6 @@ import re
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from typing import Any
-
-from pydantic import Field
 
 from partylinks.config import RetentionSettings
 from partylinks.countries import UNKNOWN_COUNTRY, country_code
@@ -36,11 +38,13 @@ from partylinks.parsing import (
     to_int,
 )
 from partylinks.retention import is_current
+from partylinks.scrapers.abroad import local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.standupist import find_city
 
-_URL = re.compile(r"<url>\s*<loc>\s*(https://[^<\s]+/events/([0-9a-f]{8,}))\s*</loc>\s*(?:<lastmod>\s*([^<\s]+))?")
+_URL = re.compile(r"<url>\s*<loc>\s*(https://[^<\s]+/events/([0-9A-Za-z]{8,}))\s*</loc>\s*(?:<lastmod>\s*([^<\s]+))?")
 _PREFIX = re.compile(r"^\s*\[HTMLDESC\]\s*")
+_AS_UTC = re.compile(r"(?:Z|[+-]00:?00)$")
 # A place named only for the country is no place; the site's stand-in artwork is no artwork.
 _NO_PLACE = {"israel", "ישראל", "to be announced"}
 _NO_IMAGE = "/defaults/"
@@ -49,7 +53,6 @@ _NO_IMAGE = "/defaults/"
 class DropSettings(SourceSettings):
     site_url: str
     sitemap_path: str
-    max_events: int = Field(300, ge=1)
 
 
 class DropScraper(BaseScraper[DropSettings]):
@@ -59,10 +62,8 @@ class DropScraper(BaseScraper[DropSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         urls = upcoming_urls(await self.get_text(s.site_url + s.sitemap_path), datetime.now(UTC) - timedelta(days=1))
-        if len(urls) > s.max_events:
-            self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
         self.log.debug("listed %d upcoming events", len(urls))
-        async for event in self.stream_isolated(urls[: s.max_events], self._fetch_event, label=lambda u: u):
+        async for event in self.stream_isolated(urls, self._fetch_event, label=lambda u: u):
             if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
                 yield event
 
@@ -76,9 +77,9 @@ class DropScraper(BaseScraper[DropSettings]):
 
 
 def upcoming_urls(sitemap: str, since: datetime) -> list[str]:
-    """Event pages whose ``lastmod`` (the event date) is ``since`` or later, soonest first; undated ones last.
+    """Event pages whose ``lastmod`` (the event's end date) is ``since`` or later, soonest first; undated ones last.
 
-    The sitemap is in no date order (Nov 2026): sorted, a cut run and ``max_events`` keep the nearest.
+    The sitemap is in no date order (Nov 2026): sorted, a cut run keeps the nearest.
     """
     urls: dict[str, datetime] = {}
     far = datetime.max.replace(tzinfo=UTC)
@@ -96,9 +97,6 @@ def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
         raise ParseError(f"{url}: no Event JSON-LD")
     if str(event.get("eventStatus") or "").endswith("EventCancelled"):
         return None
-    title, start = clean_str(event.get("name")), parse_iso(event.get("startDate"), timezone)
-    if not title or not start:
-        raise ParseError(f"{url}: Event without name or start")
     location = event.get("location") if isinstance(event.get("location"), dict) else {}
     address = location.get("address") if isinstance(location.get("address"), dict) else {}
     organizer = event.get("organizer") if isinstance(event.get("organizer"), dict) else {}
@@ -107,7 +105,13 @@ def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
     venue = clean_str(location.get("name"))
     venue = None if venue and venue.casefold() in _NO_PLACE else venue
     street = clean_str(address.get("streetAddress"))
+    city = clean_str(address.get("addressLocality")) or find_city(street, venue)
     country = (clean_str(address.get("addressCountry")) or "").upper()
+    country = _abroad(venue) if country in ("", "IL") else country
+    tz = local_zone(country, timezone, city) if country else timezone
+    title, start = clean_str(event.get("name")), _wall_clock(event.get("startDate"), tz)
+    if not title or not start:
+        raise ParseError(f"{url}: Event without name or start")
     return ScrapedEvent(
         source=DropScraper.name,
         source_event_id=url.rstrip("/").rsplit("/", 1)[-1],
@@ -116,16 +120,23 @@ def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
         description=html_to_text(_PREFIX.sub("", str(event.get("description") or ""))),
         start_at=start,
         time_known=has_time(event.get("startDate")),
-        end_at=parse_iso(event.get("endDate"), timezone),
+        end_at=_wall_clock(event.get("endDate"), tz),
+        time_zone=tz if country else None,
         venue_name=venue,
         address=street if street != venue else None,
-        city=clean_str(address.get("addressLocality")) or find_city(street, venue),
-        country=_abroad(venue) if country in ("", "IL") else country,
+        city=city,
+        country=country,
         organizer=clean_str(organizer.get("name")),
         images=[i for i in _list(event.get("image")) if isinstance(i, str) and _NO_IMAGE not in i],
         tickets=tickets,
         is_sold_out=bool(tickets) and all(t.status is TierStatus.SOLD_OUT for t in tickets),
     )
+
+
+def _wall_clock(value: Any, tz: str) -> datetime | None:
+    """The venue's clock reading: the page writes it as UTC ("2026-12-31T22:00:00.000Z" is a 22:00 party)."""
+    text = clean_str(value)
+    return parse_iso(_AS_UTC.sub("", text), tz) if text else None
 
 
 def _abroad(venue: str | None) -> str | None:

@@ -3529,14 +3529,25 @@ sources:
 
   drop:
     # Drop (tdrop.net): self-serve ticketing for party producers (raves, house parties, festivals).
-    # The sitemap's lastmod is each event's date, so only upcoming pages are read (~50); each page's
+    # The sitemap's lastmod is each event's end date, so only upcoming pages are read (~50); each page's
     # Event JSON-LD gives the details (its offers all read "0"); prices come from the page's own API
     # (tdrop.net/api/event/general/<id>: tiers, discounts, sold out), one request per event.
     # robots.txt allows everything.
+    # sections: read = the sitemap's every event page, no cap, no horizon (1,063 pages, 50 ending from
+    # yesterday on, to 23.03.2027); it is the whole catalogue: /api/event/all (behind /category/all and
+    # /category/latest, total 1,066 = the sitemap's 1,063 + 3 paused, all past) holds the same 50, and
+    # /category/new (58), /category/trending (4) and the homepage-config sections 1 Techno (11),
+    # 2 Mainstream (23), 3 Trance (26) (/category/0, 4-11 answer 404) are subsets of it, read as each
+    # event's categories (23.11.2026); every event has one date range. Not read: about / producer /
+    # create-event / accessibility / cancellation / app pages (no events), private-link events (not
+    # public), paused events (sale stopped; 3, all past). TUTIM (a 22.11-12.12 span from its creation
+    # time, no text) is dropped by retention.in_progress_max_hours (16 h), the rule every source follows.
     enabled: true
     cron: "17 8,20 * * *"
     site_url: https://tdrop.net
     sitemap_path: /sitemap.xml
+    # Producers' test listings and private birthday parties ("Adi's Birthday party", "יום הולדת לדור", Nov 2026).
+    skip_title_words: ["test event", "testing event", "בדיקה", "birthday", "יום הולדת", "יומולדת"]
     http:
       concurrency: 4
 
@@ -5047,21 +5058,10 @@ sources:
   efokulam:
     # EfoKulam (efokulam.co.il, "איפה כולם"): a nightlife guide (club nights, parties, festivals; mostly Tel Aviv).
     # WordPress: /wp-json/wp/v2/event-type (1 request) names the categories; /wp-json/wp/v2/events in pages of
-    # 100 with the image embedded (7 requests, 634 rows on 23.11.2026) gives date, gate time, address and the seller link
+    # 100 with the image embedded (~5 requests, ~460 rows) gives date, gate time, address and the seller link
     # (Go-Out, Eventer), kept as extra.purchase_url. Past rows dropped by their event-date. robots.txt: /wp-admin/ only.
-    # sections: the `events` post type, the site's only one with events, read whole to X-WP-Total (23.11.2026: 634 =
-    # /events/ archive "18 אירועים קרובים" + "616 אירועים" past; events-sitemap 626 = the same posts less 9 noindex past
-    # ones, + /events/), so the home page, /events/ (?when=today / weekend / past), every event-type page (6: היפ הופ,
-    # טכנו, טראנס, מיינסטרים, פסטיבלים והופעות חיות, רוק) and event-season page (16 holiday / festival terms) and the hub
-    # pages (/parties/*, /festivals/*, /purim-parties/*, /new-years-eve-celebrations/*, /festivals-and-live-shows/,
-    # אירועי הסופ"ש, האירועים הכי חמים, לאן יוצאים היום: 84 event links, all in the post type); one date a post, no date
-    # window, max_pages 500 x 100 never reached; scanner 18 = site 18 = prod 18. Not read: event-season names as genres
-    # (holiday tags, set loosely: a Silvester party carries "מסיבות פורים"), /clubs/*, /bars-and-pubs/* and the `bar`
-    # type (venue write-ups, no events), /blog/ (21 articles), 25 "דף סליקה" checkout pages (Go-Out / Eventer iframes
-    # of past parties, Purim 2025 to April 2026), about / contact / terms.
     enabled: true
     cron: "43 8,20 * * *"
-    skip_title_words: ["קורס", "סדנת", "אירוע פרטי", "אירוע סגור"]  # none of the 634 posts today (23.11)
     http:
       concurrency: 2
       request_delay_seconds: 1.0
