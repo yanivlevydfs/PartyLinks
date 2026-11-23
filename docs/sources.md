@@ -249,7 +249,6 @@ first in `PARTYLINKS_HTTP__ISRAEL_PROXY`.
 | Cluberim | cluberim.co.il (WordPress): 9 listed events in all, each linking to Go-Out, Zygo or Eventer; all 9 already stored by goout / zygo / eventer (Nov 2026) |
 | Tickster | tickster.co.il (~930 event pages) resells Kupat Bravo's seances (tickster.kartisim.co.il white label, same seance ids) and Funzing experiences: 52/52 sampled events already stored by kupatbravo / funzing (Nov 2026) |
 | Ticketsi | ticketsi.co.il: an SEO magazine (977 show articles, mostly stale) copying Kupat Bravo / Mevalim titles; one date-only JSON-LD date per article, no seller link: 57/57 future articles sampled already stored (Nov 2026) |
-| Bimot | bimot.co.il does not answer (timeout direct, 502 via VPN); its box office tickets.bimot.co.il is an Eventim Israel white label (webId web__eventim-co-il): 50/50 listed events already stored by zappa / muzi / eventim (Nov 2026) |
 | Jerooz Events | jeroozevents.co.il: Vercel "Deployment Paused" (402), no site (Nov 2026) |
 | iShow | ishow.co.il: a Cloudflare JS challenge for every client, VPN included (Nov 2026) |
 | IsraelShow | israelshow.co.il: an affiliate front of Kupat Bravo (israelshow.kartisim.co.il), shows as date ranges; 10/10 sampled already stored (Nov 2026) |
