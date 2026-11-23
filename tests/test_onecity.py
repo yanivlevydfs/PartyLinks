@@ -40,6 +40,7 @@ def test_karmiel_free_event_with_categories_and_place() -> None:
         "רח' משעול נורית 12",
     )
     second = events["karmiel:16989:202612162000"]
+    assert second.start_at is not None
     assert (
         second.start_at.isoformat() == "2026-12-16T20:00:00+02:00"
         and second.title == events["karmiel:16989:202611252000"].title
@@ -63,3 +64,26 @@ def test_skips_covered_smarticket_and_sample_posts() -> None:
     assert build_event(course, EVEN_YEHUDA, TZ, SKIP) is None
     tiberias = OneCitySite(url="https://www.tiberias.muni.il", city="טבריה")
     assert parse_rows(_rows("tiberias_sample.json"), tiberias, TZ, SKIP) == []  # the theme's undated sample
+
+
+def test_every_page_is_read_past_the_old_ten_page_cap(monkeypatch: Any) -> None:
+    """Pages of 1 with X-WP-Total 12: all 12 pages are asked (a cap of 10 pages cut the tail)."""
+    import asyncio
+
+    import httpx
+
+    from partylinks.config import HttpSettings
+    from partylinks.scrapers.onecity import OneCityScraper, OneCitySettings
+
+    settings = OneCitySettings.model_validate({"cron": "0 0 * * *", "sites": [KARMIEL.model_dump()], "page_size": 1})
+    scraper = OneCityScraper(settings, HttpSettings(), TZ)
+    row = _rows("karmiel_events.json")[0]
+    asked: list[int] = []
+
+    async def request(method: str, url: str, params: dict[str, int] | None = None, **_: object) -> httpx.Response:
+        asked.append((params or {})["page"])
+        return httpx.Response(200, json=[row], headers={"X-WP-Total": "12"}, request=httpx.Request(method, url))
+
+    monkeypatch.setattr(scraper, "request", request)
+    rows = asyncio.run(scraper._rows(KARMIEL))
+    assert sorted(asked) == list(range(1, 13)) and len(rows) == 12

@@ -46,7 +46,6 @@ class OneCitySite(BaseModel):
 class OneCitySettings(SourceSettings):
     sites: list[OneCitySite] = Field(min_length=1)
     page_size: int = Field(default=100, ge=1, le=100)
-    max_pages: int = Field(default=10, ge=1)
 
 
 class OneCityScraper(BaseScraper[OneCitySettings]):
@@ -78,7 +77,7 @@ class OneCityScraper(BaseScraper[OneCitySettings]):
             rows = response.json()
             return (rows if isinstance(rows, list) else []), response.headers.get("X-WP-Total")
 
-        return await self.paginate(fetch_page, size, self.settings.max_pages)
+        return await self.paginate(fetch_page, size, 100_000)  # no page cap: X-WP-Total sets the last page
 
 
 def _raw(row: dict[str, Any], key: str) -> str | None:
