@@ -60,3 +60,29 @@ def test_xplorer_festival_names_the_event() -> None:
     names = ["Fontaines D.C.", "פסטיבל פרימוורה", "FKA Twigs"]
     e = xplorer.parse_event(_page("event"), URL, "2325120", "Asia/Jerusalem", names)
     assert e is not None and e.title == "פסטיבל פרימוורה" and e.artists == ["Fontaines D.C.", "FKA Twigs"]
+
+
+def test_xplorer_sport_board_filters() -> None:
+    """Every sport board value lists its events: team / competition ids, ``type_*`` sports, cities, months."""
+    board = xplorer.board_filters(_page("sport"))
+    assert board["1040"] == ["2327212", "2326914", "2327226", "2327244"] and "2327212" in board["type_basketball"]
+    assert [v for v in board if xplorer.is_city(v)] == ["San Francisco_U.S"]
+
+
+def test_xplorer_match_page() -> None:
+    """A match: titled by its page (the repeated home team dropped), no performers, the sport as its genre;
+    the board's English city gives the US zone."""
+    url = "https://www.xplorer.co.il/sport/team/1040?ev=2327212"
+    e = xplorer.parse_event(
+        _page("match"), url, "2327212", "Asia/Jerusalem", [], sport="basketball", city_en="San Francisco"
+    )
+    assert e is not None and e.title == "גולדן סטייט ווריורס - לוס אנג'לס קליפרס"
+    assert e.start_at == datetime(2026, 11, 29, 17, 30, tzinfo=ZoneInfo("America/Los_Angeles"))
+    assert (e.artists, e.source_genres, e.city, e.country, e.venue_name) == (
+        [],
+        ["basketball"],
+        "סן פרנסיסקו",
+        "US",
+        "צ'ייס סנטר",
+    )
+    assert e.tickets and e.min_price is not None and e.currency == "USD"

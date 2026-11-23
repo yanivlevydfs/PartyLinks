@@ -208,7 +208,7 @@ many of them free.
 | `livetickets` | LiveTickets (livetickets.co.il): tickets to concerts, sports and festivals abroad | 05:37, 17:37 | yes |
 | `tickethouse` | Ticket House (ticket-house.com): tickets and packages to concerts and sports abroad | 05:48, 17:48 | yes |
 | `ticketeams` | Ticketeams (ticketeams.co.il): football, basketball, tennis, Formula 1 and concerts abroad | 05:49, 17:49 | yes |
-| `xplorer` | Xplorer (xplorer.co.il): a flights site's board of concerts and festivals abroad | 03:53, 15:53 | yes |
+| `xplorer` | Xplorer (xplorer.co.il): a flights site's boards of concerts, festivals and sports matches abroad | 03:53, 15:53 | yes |
 | `takeabreak` | Take A Break (takebreaktravel.com): packages (flight + hotel, often the ticket) to club nights, concerts, festivals and matches abroad, plus the dated nights of its Dubai / Athens / Limassol / Mykonos / Ibiza lineups and Phangan's full moons; artist and venue profiles | 06:52, 18:52 | yes |
 | `dice` | DICE (dice.fm): the whole catalogue (~19k events, every city and country, every kind: gigs, DJ, parties, comedy, talks, theatre, film...) from its sitemaps and event data routes; up to 5000 pages a run, every stored event re-read within 8 runs; venue and artist profiles | 05:14, 17:14 | yes |
 | `xceed` | Xceed (xceed.me): its whole upcoming catalogue from the site's public API - club nights, concerts, festivals and shows in every city it sells (~170 cities, ~23 countries; venue profiles weekly) | 06:01, 18:01 | yes |

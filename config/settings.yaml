@@ -4579,15 +4579,21 @@ sources:
     longitude: 35.2197779
 
   xplorer:
-    # Xplorer: tickets to concerts and festivals abroad (USD), on a flights site's shows board. ASP.NET,
-    # no API: the board's hidden filters give the artist ids (~50), each artist page its event ids, and
-    # each event page (?ev=) the local date and time, Hebrew city/country, venue and seat categories.
-    # ~390 GETs of ~350 KB. robots.txt is absent.
+    # Xplorer: tickets to concerts, festivals and sports matches abroad (USD), on a flights site. ASP.NET,
+    # no API: each board's hidden filters give its artist / team ids with their event ids (every board
+    # event is read), each artist page its event ids, and each event page (?ev=) the local date and time,
+    # Hebrew city/country, venue and seat categories. ~700 GETs of ~350 KB. robots.txt is absent.
+    # sections: the two ticket boards, /music (every artist value; its pages list 380 events on 23.11.2026,
+    # the board's filters 177) and /sport (every team / competition, type_soccer/basketball/tennis/races:
+    # 271 ids, 255 with an event panel), every artist page and event page; not read: team pages (the
+    # board lists every match), flights/hotels/deals/magazine menus (no events); no sitemap (404).
     enabled: true
     cron: "53 3,15 * * *"
     site_url: https://www.xplorer.co.il
     music_path: /music
     artist_path: /music/artist/
+    sport_path: /sport
+    team_path: /sport/team/
     http:
       concurrency: 4
       request_delay_seconds: 0.2
