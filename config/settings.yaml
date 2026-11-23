@@ -5399,7 +5399,7 @@ sources:
   kolsadna:
     # Kol Sadna (kolsadna.co.il, כל סדנה): a directory of ~1,400 workshops, mostly booked by groups on a date they
     # pick; only the dated sessions anyone can join are events here (a_partici_type can_join / both). wp-json
-    # lists the workshops changed in the last recent_days (~400, 5 requests) + the kind names (the genres); each
+    # lists the workshops changed in the last recent_days (~400, 5 requests) + the kind (genres) and area names; each
     # workshop's page (~450 KB) holds its sessions in the booking script (a_schedule.occurrences). Answers direct.
     enabled: true
     cron: "33 10,22 * * *"
