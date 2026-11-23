@@ -2819,6 +2819,12 @@ sources:
     site_url: https://www.tiktik-online.co.il
     products_path: /wp-json/wc/store/v1/products
     category_ids: [8, 7]  # music, sport: read only when whole_catalogue is false
+    sitemap_path: /product-sitemap.xml  # the ~860 live products the Store API hides
+    # sections: Store API whole catalogue (4,100 = its X-WP-Total, to the last page) + product sitemap's
+    # Hebrew /product/ pages (4,957: 857 more, Nov 23 2026); every menu page (music, sport, festivals, nba,
+    # wimbledon, leagues, bands/*, product_teams/*, events-by-city/month, top10, sportpackages) lists
+    # those products. not read: /en/ /fr/ /ru/ /ar/ (translations of the same products), blog / news /
+    # guides / reviews / press (articles), months/cities/bands sitemaps (index pages of the same products).
     http:
       # 10 at once, 0.2 s apart: the site answered 403 to 3,217 of 3,966 product pages (Nov 19 2026).
       # No run length limit any more (run_timeout_seconds: 0), so the slower pace costs only time.

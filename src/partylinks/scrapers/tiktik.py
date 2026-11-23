@@ -3,7 +3,9 @@
 WooCommerce shop. Listing: the public Store API (``/wp-json/wc/store/v1/products``), the whole
 catalogue (~2,900 products; Nov 2026: 52 Bundesliga matches sit in that league's category alone, in
 neither music nor sport), 100 products a page in id order, total in ``X-WP-Total``; ``whole_catalogue:
-false`` reads the configured categories only. Gift cards and merch have no event and are dropped. Its prices
+false`` reads the configured categories only. The Store API hides ~860 live products (packages and tickets
+the shop keeps out of its catalogue grid, Nov 2026: 857 of the product sitemap's 4,957 Hebrew pages): the
+product sitemap's Hebrew ``/product/`` pages (the /en/ /fr/ /ru/ /ar/ copies are translations) add them. Gift cards and merch have no event and are dropped. Its prices
 are labelled ILS but are euros, and it has no date or venue. Details: each product page carries
 a schema.org ``MusicEvent`` or, for a match, a ``SportsEvent`` (start, venue, city, country,
 performer, low/high price in EUR); a match is tagged "ספורט".
@@ -15,8 +17,10 @@ abroad), which keeps it out of the Israeli feed and in the abroad section.
 
 from __future__ import annotations
 
+import re
 from collections.abc import AsyncIterator
 from typing import Any
+from urllib.parse import unquote
 
 from pydantic import Field
 
@@ -44,10 +48,11 @@ class TiktikSettings(SourceSettings):
     category_ids: list[int] = Field(default_factory=list)  # WooCommerce product categories (music, sport)
     # Every product, not the categories alone: matches sit in league categories outside music and sport too.
     whole_catalogue: bool = True
-    # Listed by id, oldest first: at the cap the newest products were the ones left out. The catalogue passed
-    # 40 pages (4,114 products, every run since Nov 19 2026 "listing truncated at max_pages=40").
-    max_pages: int = Field(80, ge=1)
+    # A runaway guard only: paging follows the listing's X-WP-Total to its last page (41 pages, Nov 2026).
+    max_pages: int = Field(1000, ge=1)
     page_size: int = Field(100, ge=1, le=100)  # products per listing request (the Store API allows 100 at most)
+    # Rank Math's product sitemap: every published product, also those the Store API leaves out. Empty: not read.
+    sitemap_path: str = ""
 
 
 class TiktikScraper(BaseScraper[TiktikSettings]):
@@ -62,6 +67,12 @@ class TiktikScraper(BaseScraper[TiktikSettings]):
         for category in categories:
             products = await self.paginate(lambda index: self._listing_page(category, index), s.page_size, s.max_pages)  # noqa: B023 - awaited here
             by_url.update((p["permalink"], p) for p in products if isinstance(p, dict) and p.get("permalink"))
+        if s.sitemap_path:
+            listed = {_key(url) for url in by_url}
+            for url in await self._sitemap_products():
+                if _key(url) not in listed:
+                    listed.add(_key(url))
+                    by_url[url] = {"permalink": url}  # no listing entry: the page alone gives id, price, stock
         self.log.debug("listed %d products", len(by_url))
         async for event in self.stream_isolated(by_url.values(), self._fetch_product, label=lambda p: p["permalink"]):
             # Past dates, and the far placeholders some products carry ("20.5.32"): retention's rule.
@@ -85,9 +96,21 @@ class TiktikScraper(BaseScraper[TiktikSettings]):
             raise ParseError(f"{response.request.url}: expected a list")
         return items, to_int(response.headers.get("X-WP-Total"))
 
+    async def _sitemap_products(self) -> list[str]:
+        """The product sitemap's Hebrew product pages (the other languages' copies left out)."""
+        s = self.settings
+        prefix = s.site_url.rstrip("/") + "/product/"
+        xml = await self.get_text(s.site_url.rstrip("/") + s.sitemap_path)
+        return [url for url in re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", xml) if url.startswith(prefix)]
+
     async def _fetch_product(self, listed: dict[str, Any]) -> ScrapedEvent | None:
         url = listed["permalink"]
-        return parse_product(await self.get_text(url), url, self.timezone, listed)
+        return parse_product(await self.get_text(url), url, self.timezone, listed if "id" in listed else None)
+
+
+def _key(url: str) -> str:
+    """A product URL as the listing and the sitemap both spell it (percent-encoding, trailing slash)."""
+    return unquote(url).rstrip("/")
 
 
 def parse_product(page_html: str, url: str, timezone: str, listed: dict[str, Any] | None = None) -> ScrapedEvent | None:

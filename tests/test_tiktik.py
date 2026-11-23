@@ -134,4 +134,46 @@ def test_tiktik_reads_a_catalogue_past_forty_pages() -> None:
 
     assert asyncio.run(go()) == []
     assert sorted(pages) == list(range(1, 43))  # all 42 pages
-    assert read == ["https://x.example/newest/"]
+    assert read == [tiktik_sitemap(), "https://x.example/newest/"]
+
+
+def tiktik_sitemap() -> str:
+    from partylinks.config import Settings
+
+    return Settings().sources["tiktik"]["site_url"] + Settings().sources["tiktik"]["sitemap_path"]
+
+
+def test_tiktik_reads_the_products_the_store_api_hides() -> None:
+    # 857 of the product sitemap's 4,957 Hebrew pages were missing from the Store API (Nov 23 2026).
+    import asyncio
+
+    import httpx
+
+    from partylinks.config import Settings
+    from partylinks.scrapers import build_scraper
+
+    scraper = build_scraper("tiktik", Settings())
+    assert isinstance(scraper, tiktik.TiktikScraper)
+    scraper.http.request_delay_seconds = 0
+    listed = SITE + "%d7%a1%d7%98%d7%99%d7%a0%d7%92/"  # percent-encoded in the listing
+    sitemap = [SITE + "סטינג/", SITE + "sting-las-vegas-23-10-2027/", "https://www.tiktik-online.co.il/en/product/x/"]
+    read: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.startswith("/wp-json/"):
+            return httpx.Response(200, json=[{"id": 1, "permalink": listed}], headers={"X-WP-Total": "1"})
+        if request.url.path.endswith("sitemap.xml"):
+            return httpx.Response(200, text="".join(f"<url><loc>{u}</loc></url>" for u in sitemap))
+        read.append(str(request.url))
+        return httpx.Response(200, text="<p>no event</p>")
+
+    async def go() -> list[tiktik.ScrapedEvent]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.scrape()]
+
+    asyncio.run(go())
+    # The listed product once (not again from the sitemap), the hidden one added, the English copy left out.
+    assert sorted(httpx.URL(u).path for u in read) == sorted(
+        httpx.URL(u).path for u in [listed, SITE + "sting-las-vegas-23-10-2027/"]
+    )
