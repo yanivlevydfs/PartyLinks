@@ -3,7 +3,10 @@
 Public JSON API at ``api.lu.ma``. Listing: ``/discover/get-paginated-events`` near a point
 (``latitude``/``longitude``) pages with a cursor through every upcoming event in range; a
 point in Tel Aviv already reaches Jerusalem and Jordan, so a few centers cover the country and
-events abroad are dropped. Details: ``/event/get?event_api_id`` gives the description (a
+events abroad are dropped. The discovery lists only the events Luma features; each calendar it shows
+(a community's, or a host's "Personal" one) is then read too (``/calendar/get-items``, ``period=future``),
+which brings that community's other Israeli events (Nov 2026: 112 listed, 90 calendars, 16 more events).
+Details: ``/event/get?event_api_id`` gives the description (a
 ProseMirror document), the place, the categories ("ai", "tech", "crypto"...) and the ticket
 types with prices in cents (often USD). Most events are free with host approval. The street
 address is shown only for some events (``mode: shown``); for the rest only the city is known
@@ -38,6 +41,9 @@ class LumaSettings(SourceSettings):
     centers: list[Center]
     page_size: int = Field(50, ge=1, le=50)
     max_pages: int = Field(20, ge=1)
+    # Read the upcoming events of each calendar the discovery shows; pages per calendar.
+    follow_calendars: bool = True
+    calendar_pages: int = Field(5, ge=1)
 
 
 class LumaScraper(BaseScraper[LumaSettings]):
@@ -45,15 +51,38 @@ class LumaScraper(BaseScraper[LumaSettings]):
     settings_model = LumaSettings
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
-        ids: dict[str, None] = {}
-        for center in self.settings.centers:
-            ids.update(dict.fromkeys(await self._list(center)))
-        self.log.debug("listed %d upcoming events", len(ids))
-        async for event in self.stream_isolated(list(ids), self._fetch_event, label=lambda i: i):
+        s, ids, calendars = self.settings, dict[str, str](), dict[str, None]()
+        for center in s.centers:
+            for page in await self._list(center):
+                ids.update(listed_ids(page))
+                calendars.update(dict.fromkeys(listed_calendars(page)))
+        listed = len(ids)
+        if s.follow_calendars:
+            for calendar in calendars:
+                for page in await self.optional(f"calendar {calendar}", self._calendar(calendar)) or []:
+                    ids.update(listed_ids(page))
+        self.log.debug(
+            "listed %d upcoming events, %d more from %d calendars", listed, len(ids) - listed, len(calendars)
+        )
+        nearest = sorted(ids, key=lambda i: (ids[i], i))  # by start: nearest first
+        async for event in self.stream_isolated(nearest, self._fetch_event, label=lambda i: i):
             yield event
 
-    async def _list(self, center: Center) -> list[str]:
-        s, ids, cursor = self.settings, [], None
+    async def _calendar(self, calendar: str) -> list[dict[str, Any]]:
+        s, pages, cursor = self.settings, [], None
+        for _ in range(s.calendar_pages):
+            params: dict[str, Any] = {"calendar_api_id": calendar, "period": "future", "pagination_limit": s.page_size}
+            if cursor:
+                params["pagination_cursor"] = cursor
+            page = await self.get_json(s.api_url + "/calendar/get-items", expect=dict, params=params)
+            pages.append(page)
+            cursor = page.get("next_cursor")
+            if not page.get("has_more") or not cursor:
+                break
+        return pages
+
+    async def _list(self, center: Center) -> list[dict[str, Any]]:
+        s, pages, cursor = self.settings, [], None
         for _ in range(s.max_pages):
             params: dict[str, Any] = {
                 "latitude": center.latitude,
@@ -63,12 +92,12 @@ class LumaScraper(BaseScraper[LumaSettings]):
             if cursor:
                 params["pagination_cursor"] = cursor
             page = await self.get_json(s.api_url + "/discover/get-paginated-events", expect=dict, params=params)
-            ids += listed_ids(page)
+            pages.append(page)
             cursor = page.get("next_cursor")
             if not page.get("has_more") or not cursor:
-                return ids
+                return pages
         self.log.warning("listing truncated at max_pages=%d", s.max_pages)
-        return ids
+        return pages
 
     async def _fetch_event(self, event_id: str) -> ScrapedEvent | None:
         s = self.settings
@@ -76,15 +105,29 @@ class LumaScraper(BaseScraper[LumaSettings]):
         return parse_event(detail, s.site_url, self.timezone)
 
 
-def listed_ids(page: dict[str, Any]) -> list[str]:
-    """Ids of the in-person events in Israel on one listing page."""
-    ids = []
+def listed_ids(page: dict[str, Any]) -> dict[str, str]:
+    """The in-person events in Israel on one listing page (discovery or calendar): event id -> start.
+    A calendar's entry has an id of its own ("calev-"): the event's is inside it."""
+    ids = {}
     for entry in page.get("entries") or []:
         event = entry.get("event") or {}
         geo = event.get("geo_address_info") or {}
-        if event.get("location_type") == "offline" and geo.get("country_code") == "IL" and entry.get("api_id"):
-            ids.append(entry["api_id"])
+        event_id = event.get("api_id") or entry.get("api_id")
+        if event.get("location_type") == "offline" and geo.get("country_code") == "IL" and event_id:
+            ids[str(event_id)] = str(event.get("start_at") or entry.get("start_at") or "")
     return ids
+
+
+def listed_calendars(page: dict[str, Any]) -> list[str]:
+    """The calendars of a discovery page's in-person events in Israel."""
+    found = []
+    for entry in page.get("entries") or []:
+        event = entry.get("event") or {}
+        geo = event.get("geo_address_info") or {}
+        calendar = (entry.get("calendar") or {}).get("api_id") or event.get("calendar_api_id")
+        if event.get("location_type") == "offline" and geo.get("country_code") == "IL" and calendar:
+            found.append(str(calendar))
+    return found
 
 
 def parse_event(detail: dict[str, Any], site_url: str, timezone: str) -> ScrapedEvent | None:

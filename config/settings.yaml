@@ -3823,10 +3823,12 @@ sources:
 
   luma:
     # Luma (luma.com): RSVP pages for tech meetups, hi-tech conferences and startup events.
-    # Public JSON API: events near each center (cursor-paged, ~130 across Israel), then one
-    # /event/get per event for description, place, categories and ticket types.
+    # Public JSON API: events near each center (cursor-paged, ~110 across Israel), then the upcoming events of
+    # each calendar those events belong to (~90 calendars, +~16 events the discovery does not feature, Nov 2026),
+    # then one /event/get per event for description, place, categories and ticket types.
     enabled: true
     cron: "23 7,19 * * *"
+    follow_calendars: true
     api_url: https://api.lu.ma
     site_url: https://luma.com
     centers:
