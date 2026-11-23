@@ -1,10 +1,11 @@
-from datetime import date, time
+from datetime import date, datetime, time
 from decimal import Decimal
 from pathlib import Path
 
 from partylinks.config import get_settings
 from partylinks.enrichment import Enricher
 from partylinks.scrapers.ybz import (
+    Item,
     YbzSettings,
     hours,
     is_online,
@@ -16,6 +17,10 @@ from partylinks.scrapers.ybz import (
 
 FIXTURES = Path(__file__).parent / "fixtures" / "ybz"
 TZ = "Asia/Jerusalem"
+
+
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value is not None else None
 
 
 def _settings() -> YbzSettings:
@@ -30,7 +35,7 @@ def _settings() -> YbzSettings:
     )
 
 
-def _items() -> dict[str, object]:
+def _items() -> dict[str, Item]:
     html = (FIXTURES / "calendar.html").read_text(encoding="utf-8")
     return {i.url.rstrip("/").rsplit("/", 1)[-1]: i for i in parse_listing(html, "https://ybz.org.il")}
 
@@ -71,8 +76,8 @@ def test_event_at_the_institute() -> None:
     event = parse_event(item, (FIXTURES / "event.html").read_text(encoding="utf-8"), s, TZ)
     assert event is not None
     assert event.title.startswith("הורה מדינה")
-    assert event.start_at.isoformat() == "2026-11-29T19:00:00+02:00"
-    assert event.end_at.isoformat() == "2026-11-29T22:00:00+02:00"
+    assert _iso(event.start_at) == "2026-11-29T19:00:00+02:00"
+    assert _iso(event.end_at) == "2026-11-29T22:00:00+02:00"
     assert (event.venue_name, event.city, event.latitude) == ("יד יצחק בן-צבי", "ירושלים", 31.77555)
     assert event.images and event.images[0].startswith("https://ybz.org.il/wp-content/uploads/")
     assert event.extra["purchase_url"] == item.url
@@ -105,6 +110,6 @@ def test_coach_tour_leaves_from_town() -> None:
     assert event.venue_name == "יציאה מירושלים"
     assert event.city == "ירושלים"
     assert event.address is None and event.latitude is None
-    assert event.start_at.isoformat() == "2026-11-24T07:00:00+02:00"
+    assert _iso(event.start_at) == "2026-11-24T07:00:00+02:00"
     assert not event.is_sold_out  # "נותרו במלאי 5 כרטיסים"
     assert event.min_price == Decimal("250.00")

@@ -1,5 +1,5 @@
 import json
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -17,6 +17,14 @@ from partylinks.scrapers.kfarsabamuseum import (
 
 FIXTURES = Path(__file__).parent / "fixtures" / "kfarsabamuseum"
 TZ = "Asia/Jerusalem"
+
+
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value is not None else None
+
+
+def _day(value: datetime | None) -> date | None:
+    return value.date() if value is not None else None
 
 
 def _settings() -> KfarSabaMuseumSettings:
@@ -62,8 +70,8 @@ def test_concert_at_beit_habeer() -> None:
     event = parse_occurrence(_occurrence(2276), _post(2276), _load("products.json"), text, s, TZ)
     assert event is not None
     assert event.title == "דואו טל גור - מופע לחודש האזרח הותיק"
-    assert event.start_at.isoformat() == "2026-12-15T20:30:00+02:00"
-    assert event.end_at is not None and event.end_at > event.start_at
+    assert _iso(event.start_at) == "2026-12-15T20:30:00+02:00"
+    assert event.start_at is not None and event.end_at is not None and event.end_at > event.start_at
     assert (event.venue_name, event.city, event.latitude) == ("בית הבאר - מוזאון כפר סבא", "כפר סבא", 32.1746487)
     assert "אירועים קרובים" not in event.source_genres  # the home shelf, no category
     assert "מוזיקה" in event.source_genres
