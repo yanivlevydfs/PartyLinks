@@ -1,7 +1,7 @@
 """Vibez (vibez.io) - ticketing for communities and party producers: raves, ecstatic dance, club nights.
 
 A Next.js app on a public Rails JSON API (``api.vibez.io/api/v102/buyer``); robots.txt is absent.
-Listing: ``/events?page=N`` gives 20 upcoming events a page (5 pages, ~90): name, place, start/end,
+Listing: ``/events?page=N`` gives 20 upcoming events a page, read to the last (6 pages, 107, Nov 2026): name, place, start/end,
 cover and producer. Details: ``/events/{id}`` adds the description (HTML), and
 ``/events/{id}/products`` the ticket tiers with price, stock and sale window. The site has no
 categories (``tags`` is always empty), so genres come from the name and description.

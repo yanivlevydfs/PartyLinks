@@ -3712,10 +3712,16 @@ sources:
 
   vibez:
     # Vibez (vibez.io): ticketing for communities and party producers (raves, ecstatic dance, club
-    # nights). Public JSON API: 5 pages of 20 upcoming events, then each event's description and
+    # nights). Public JSON API: every page of 20 upcoming events (6 on 23.11.2026), then each event's description and
     # ticket tiers (2 requests an event, ~90 events). No categories: genres come from the text.
     # Unlisted events too: each producer's catalogue (/projects/{id}/events, ~40 requests) adds the
     # coming events it sells by link only (Dopamine's Sunday Sauna, Nov 2026). robots.txt is absent.
+    # sections: the site's menu (Home, Explore: events + communities) on the API: /events to its last page,
+    # each listed producer's catalogue (/projects/{id}/events), the projects below; no categories (tags
+    # always empty), no city filter. Not read: Explore's communities directory (/projects, 33 pages, 657
+    # producers): its 594 producers with no listed event hold 0 coming events (23.11.2026), ~630 requests
+    # a run for nothing; account pages (tickets, orders, balance) hold no events. 105 kept = site's 107
+    # listed (2 over) + catalogues; prod 101 upcoming.
     enabled: true
     cron: "36 8,20 * * *"
     site_url: https://web.vibez.io
