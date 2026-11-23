@@ -5471,6 +5471,11 @@ sources:
     # film clips, champagne and dancing) at the Ra'anana studio. A Wix site whose /events page is empty: the Salon
     # page embeds a landing built per edition, found through the page's JSON (3 requests a run). Single and couple
     # tickets (PayMe); the students' code-only price left out. Lessons, wedding dance, workshops: not read.
+    # sections: /the-salon (its embedded landing: the one dated public evening, one date per edition); not read:
+    # /events (empty, no Wix Events app installed), home, /raanana, /haifa, /dance-lessons, /wedding-dance,
+    # /organizations, /organizations-1 (classes, hall rental, corporate workshops), /אודות, /our-team, /media,
+    # /gallery, /gallery-1, /pictures, /customers-testimonies, /giftcard, /contact-us (no events). All 18 sitemap
+    # pages checked 23.11.2026: site 1 event, scanner 1, prod 1.
     enabled: true
     cron: "44 7,19 * * *"
     may_be_empty: true   # between editions no Salon is embedded
