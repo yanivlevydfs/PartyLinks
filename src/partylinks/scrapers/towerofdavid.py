@@ -7,12 +7,15 @@ WordPress with the museum's own ticketing namespace (no login, no cart needed to
 {"title": "HH:MM", "quantity": left}}}`` (upcoming only; a package with no dates answers 400);
 ``/wp-json/tickets/get_package_tickets?package_id=N`` the ticket types and prices. The package's post
 ``/wp-json/wp/v2/events/<post id>`` gives its page, summary, categories, artwork id and whether it is held
-on site. 1 + 4 requests per package, ~140 a run. Left out: plain admission and the Phasael tower lookout
+on site. 1 + 4 requests per package, ~140 a run. The events board (``/events/``) also shows a few posts whose
+package the listing leaves out (the King David show VIP evenings): their ``acf.package-code`` is read too
+(2 requests). Left out: plain admission and the Phasael tower lookout
 (open entry by time slot), courses and teachers' training. robots.txt disallows only cart and admin paths.
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any
@@ -35,6 +38,8 @@ class TowerOfDavidSettings(SourceSettings):
     post_path: str = "/wp-json/wp/v2/events/{id}"
     media_path: str = "/wp-json/wp/v2/media/{id}"
     categories_path: str = "/wp-json/wp/v2/events-categories"
+    board_path: str = "/events/"
+    posts_path: str = "/wp-json/wp/v2/events"
     # Admission by time slot, not events: museum entry (1), Phasael tower lookout (3).
     skip_packages: list[int] = Field(default_factory=lambda: [1, 3])
     # Packages filed under these categories are not public events (training, courses, school programmes).
@@ -57,6 +62,7 @@ class TowerOfDavidScraper(BaseScraper[TowerOfDavidSettings]):
         s = self.settings
         listing = await self.get_json(s.site_url + s.packages_path, expect=dict)
         packages = [p for p in (listing.get("packages") or {}).values() if isinstance(p, dict)]
+        packages += await self._board_packages(packages)
         packages = [p for p in packages if p.get("package_id") not in s.skip_packages]
         categories = await self.optional(
             "categories", self.get_json(s.site_url + s.categories_path, params={"per_page": 100}, expect=list)
@@ -89,6 +95,23 @@ class TowerOfDavidScraper(BaseScraper[TowerOfDavidSettings]):
             for event in events:
                 yield event
 
+    async def _board_packages(self, listed: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Packages of the events board's posts that the package listing leaves out."""
+        s = self.settings
+        html = await self.optional("events board", self.get_text(s.site_url + s.board_path))
+        slugs = sorted(set(re.findall(r"/event/([\w%-]+)/", html or "")))
+        if not slugs:
+            return []
+        posts = await self.optional(
+            "board posts",
+            self.get_json(
+                s.site_url + s.posts_path,
+                params={"slug": ",".join(slugs), "per_page": 100, "_fields": "id,title,acf.package-code"},
+                expect=list,
+            ),
+        )
+        return board_packages(posts or [], listed)
+
     async def _unless_400(self, path: str, package_id: int) -> dict[str, Any] | None:
         """A ticketing call for one package; None on the API's 400 for a package with no dates / prices."""
         try:
@@ -97,6 +120,25 @@ class TowerOfDavidScraper(BaseScraper[TowerOfDavidSettings]):
             if exc.response.status_code != 400:
                 raise
             return None
+
+
+def board_packages(posts: list[dict[str, Any]], listed: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Board posts whose own package (``acf.package-code``) is neither listed nor shared with a listed post.
+
+    A code already listed is an alias (the relaxed Night Spectacular page names the Night Spectacular's
+    package): reading it again would repeat those shows under another title.
+    """
+    known_ids = {p.get("package_id") for p in listed}
+    known_posts = {p.get("post_id") for p in listed}
+    out: list[dict[str, Any]] = []
+    for post in posts:
+        code = (post.get("acf") or {}).get("package-code") if isinstance(post, dict) else None
+        if not isinstance(code, int) or code in known_ids or post.get("id") in known_posts:
+            continue
+        known_ids.add(code)
+        title = clean_str(html_to_text((post.get("title") or {}).get("rendered") or ""))
+        out.append({"package_id": code, "post_id": post["id"], "title": title})
+    return out
 
 
 def package_events(

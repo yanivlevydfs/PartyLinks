@@ -8,7 +8,7 @@ from pathlib import Path
 
 from partylinks.config import get_settings
 from partylinks.enrichment import Enricher
-from partylinks.scrapers.towerofdavid import TowerOfDavidSettings, package_events
+from partylinks.scrapers.towerofdavid import TowerOfDavidSettings, board_packages, package_events
 
 FIXTURES = Path(__file__).parent / "fixtures" / "towerofdavid"
 TZ = "Asia/Jerusalem"
@@ -44,3 +44,14 @@ def test_tour_elsewhere_in_the_city_has_no_museum_pin_and_no_price_list() -> Non
     (event,) = package_events(PACKAGE, post, [], slots, None, None, SETTINGS, TZ)
     assert event.venue_name is None and event.latitude is None and event.city == "ירושלים"
     assert event.is_sold_out and event.min_price is None and event.images == []
+
+
+def test_board_adds_only_packages_the_listing_leaves_out() -> None:
+    listed = [PACKAGE, {"package_id": 5, "title": "מופע המלך דוד", "post_id": 1360}]
+    posts = [
+        {"id": 1369, "title": {"rendered": "מופע המלך דוד &#8211; VIP"}, "acf": {"package-code": 13}},
+        {"id": 3812, "title": {"rendered": "חיזיון בנחת"}, "acf": {"package-code": 4}},  # alias of a listed one
+        {"id": 1360, "title": {"rendered": "מופע המלך דוד"}, "acf": {"package-code": 99}},  # a listed post
+        {"id": 16446, "title": {"rendered": "גלריות תצוגת הקבע"}, "acf": {"package-code": ""}},
+    ]
+    assert board_packages(posts, listed) == [{"package_id": 13, "post_id": 1369, "title": "מופע המלך דוד – VIP"}]

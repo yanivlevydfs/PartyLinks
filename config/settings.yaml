@@ -5967,6 +5967,14 @@ sources:
     # Tower of David Museum, Jerusalem: Night Spectacular and King David shows, gallery talks, exhibition
     # and Old City tours, holiday tours, concerts. The museum's ticketing API: packages -> dated slots,
     # prices; each package's post gives page, summary, categories, artwork. ~140 requests a run.
+    # sections: read: every package the ticketing API lists (get_all_packages, 38; every dated slot, to the
+    # last date it sells, 22.11.2027) and the /events/ board's posts whose package the listing leaves out
+    # (King David show VIP); every category comes through its packages (night shows, museum / exhibition /
+    # Jerusalem tours, holidays, culture events, families). 465 = the site's slots (prod 467 before).
+    # not read: museum entry (1), Phasael lookout (3) and the exhibitions' daily "From-09:00" admission
+    # (זהב, אגם האין): open entry by time slot; courses, teachers' training, education (school / groups),
+    # private tours, jobs, online; the ~560 other event posts: past events, their packages no longer on
+    # sale (their codes answer stale or alias slots, e.g. the museum's admission days).
     enabled: true
     cron: "47 7,19 * * *"
     venue_name: מגדל דוד - מוזיאון ירושלים
