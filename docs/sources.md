@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 155 configured sources, 154 on. Each one has its own module in
+SPOTX collects from 156 configured sources, 155 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -162,6 +162,7 @@ many of them free.
 | `ogo_us` | OGO USA (us.ogo.events): the same guide for the USA, events abroad; no VPN (US site, our VPN is Israeli); robots.txt `Disallow: /`, read by the owner's choice | 09:33, 21:33 | yes |
 | `ogo_de` | OGO Germany (de.ogo.events): the same guide for Germany, events abroad; no VPN; same robots.txt | 07:49, 19:49 | yes |
 | `muzi` | Muzi (muzi.co.il): community-run guide to concerts and shows across Israel | 05:29, 17:29 | yes |
+| `tarbut` | tarbut.events: a culture guide for Tel Aviv and the towns around it, copied from the venues' and box offices' sites; its admin-ajax events list (10 dates a page, nearest first, ~430 pages) and each event's page once (~2,700: every date with its ticket link, genres, type, ages, min price, venue address and pin); exhibitions' runs kept once, rolling forward; ~3,100 requests a run, direct | 11:16, 23:16 | yes |
 | `mugics` | Mugics (mugics.com): live-music board where musicians and venues post shows; read from the map-pins API its pages call (30-day windows, ~25 requests, ~390 shows, coordinates on all); ticket links merge with the venues' own listings. robots.txt disallows `/api/` on www, read anyway by the owner's choice | 09:13, 21:13 | yes |
 | `efokulam` | EfoKulam (efokulam.co.il, "איפה כולם"): nightlife guide (club nights, parties, festivals, mostly Tel Aviv); read from its wp-json `events` post type (~6 requests, ~50 current events of ~460 rows); no coordinates (addresses geocoded), no venue field; prices from the article's highlighted chips, artists from its "ליינאפ" block (chips / ✓ list); seller links (Go-Out, Eventer) merge with those sources | 08:43, 20:43 | yes |
 | `liveisrael` | LiveIsrael (liveisrael.co): party guide (club nights, trance / nature parties, festivals, all of Israel); read from its wp-json `party_events` post type (~6 requests, ~45 current events of ~440 rows), Chrome TLS (Mod_Security refuses plain clients); lineup from its `lineup_artists` field, time / place / age from the article's details list; secret spots keep only the tag city; no price; seller links (Zygo, bit.ly) merge with Zygo | 09:53, 21:53 | yes |

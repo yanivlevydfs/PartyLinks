@@ -131,6 +131,7 @@ from partylinks.scrapers.standupist import StandupistScraper
 from partylinks.scrapers.swaptix import SwapTixScraper
 from partylinks.scrapers.takeabreak import TakeABreakScraper
 from partylinks.scrapers.tamuseum import TaMuseumScraper
+from partylinks.scrapers.tarbut import TarbutScraper
 from partylinks.scrapers.teder import TederScraper
 from partylinks.scrapers.telaviv import TelAvivScraper
 from partylinks.scrapers.tickchak import ArenasScraper, TickchakScraper
@@ -307,6 +308,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         TlvJazzFestScraper,
         GaneyYehoshuaScraper,
         StandupFactoryScraper,
+        TarbutScraper,
         FunzingScraper,
         EasytixScraper,
         TicketeamsScraper,

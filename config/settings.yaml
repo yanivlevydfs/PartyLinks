@@ -2337,6 +2337,7 @@ search:
     yadvashem: ["yad vashem", "yadvashem", "יד ושם", "יד-ושם"]
     ganeyyehoshua: ["גני יהושע", "ganei yehoshua", "ganey yehoshua", "park.co.il"]
     standupfactory: ["stand up factory", "standup factory", "סטנדאפ פקטורי", "סטנד אפ פקטורי", "סטנדאפ פאקטורי"]
+    tarbut: ["tarbut.events", "tarbut events", "טרבות איוונטס"]
     bargiyora: ["bar giyora", "בר גיורא"]
     basalon: ["basalon", "בסלון"]
     radical: ["radical", "רדיקל", "בית רדיקל"]
@@ -5409,6 +5410,35 @@ sources:
     http:
       concurrency: 3
       request_delay_seconds: 0.5
+  tarbut:
+    # tarbut.events: a culture guide for Tel Aviv and the towns around it, copied from the venues' and box offices'
+    # sites. Its events list (admin-ajax vm_get_events_by_filters, 10 date cards a page, nearest first, ~430 pages)
+    # + each event's page once (~2,700: every date with its ticket link, genres, type, ages, min price, the venue's
+    # address and pin). ~3,100 requests a run. Most events are also read at first hand (cameri / habima via mevalim,
+    # Smarticket tenants, hatarbut, t-g.co.il ...): the per-date ticket link is the purchase link, dedup merges.
+    # Access (23.11): direct from Railway (200; the source proxy answered 500 once): no proxy.
+    enabled: true
+    cron: "16 11,23 * * *"
+    site_url: https://www.tarbut.events
+    proxied: false
+    region_cities:            # the site's region -> a city, for an address that names none
+      "תל אביב-יפו": תל אביב-יפו
+    labels:                   # site category -> what is declared instead (ours read these otherwise / not at all)
+      "ג׳אם": ["ג׳אם", "הופעה"]
+      "הקרנה": ["הקרנה", "סרט"]
+      "ערב dj": ["ערב dj", "dj set"]
+      "ערב DJ": ["ערב dj", "dj set"]
+      "ערב ספרותי": ["ערב ספרותי", "ספרות"]
+      "תצוגה": ["תצוגה", "תערוכה"]
+      "וידאו ארט": ["וידאו ארט", "תערוכה"]
+      "מיצב": ["מיצב", "תערוכה"]
+      "פיסול": ["פיסול", "תערוכה"]
+      "מפגש עם יוצר": ["מפגש עם יוצר", "הרצאה"]
+    skip_title_words: ["קורס", "סדנת העשרה", "חוג ", "השתלמות"]
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.2
+
 
   bargiyora:
     # Bar Giyora: live-show bar on Ibn Gabirol (music, stand-up, lectures), a WooCommerce shop.
