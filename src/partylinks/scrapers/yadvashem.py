@@ -7,7 +7,10 @@ activities, Nov 2026). Only those with a scheduled event (``isNeedEvent`` and an
 dated public tours: the Friday guided tours of the Holocaust History Museum in Hebrew, English and Russian,
 the "Living Memory" exhibition tour with the Schapell Collections Center behind the scenes (the shows tab
 sells that event under a second code, 287: an event is kept once) and the synagogue tours around Holocaust
-Remembrance Day. The rest (private and group
+Remembrance Day. The shows tab (``GetAllShowsAndPlaysBasicDetails``) and the menu's "Touching Memories"
+pages (``menu_codes``: the theatre's three plays and the audiovisual show in the Valley of the Communities,
+read by code with ``GetSomeTourBasicDetails``) add their dated activities; no dates on them in Nov 2026. The
+poster competition (code 286, a registration form) is no event. The rest (private and group
 guiding, audio guides, bar / bat mitzvah tours, school activities) are booked for any day: services, not
 events. The lectures, ceremonies and film mornings Yad Vashem sells on Smarticket (the `smarticket` tenant
 ``yadvashem``) are not here; ``ogo`` lists the English Friday tour too.
@@ -58,6 +61,11 @@ class YadVashemSettings(SourceSettings):
         "activities-images-{lang}/{name}.jpg"
     )
     months_ahead: int = Field(8, ge=0)
+    # The menu's "Touching Memories" pages (the theatre's plays, the audiovisual show in the Valley of the
+    # Communities) list their activities by code (GetSomeTourBasicDetails), outside the visitors' listing.
+    menu_codes: list[str] = Field(default_factory=lambda: ["231", "233", "234", "235"])
+    # An activity without a tourCategory -> the category (235: the audiovisual show; 257: synagogue tours).
+    code_categories: dict[str, int] = Field(default_factory=lambda: {"235": 3, "257": 1})
     # The app's ActivityCategory (tourCategory) -> the category name.
     categories: dict[int, str] = Field(
         default_factory=lambda: {1: "סיור מודרך", 2: "ביקור במוזיאון", 3: "מופע אורקולי", 4: "תיאטרון", 5: "אירוע"}
@@ -86,7 +94,20 @@ class YadVashemScraper(BaseScraper[YadVashemSettings]):
             params={"instituitionType": s.visitor_type, "lang": s.lang},
             expect=list,
         )
-        activities = select_activities(tours)
+        shows = await self.optional(  # the shows tab ("מופעים והצגות")
+            "shows", self.get_json(self._api("GetAllShowsAndPlaysBasicDetails"), params={"lang": s.lang}, expect=list)
+        )
+        menu = (
+            await self.optional(
+                "menu codes",
+                self.post_json(
+                    self._api("GetSomeTourBasicDetails"), params={"lang": s.lang}, json=s.menu_codes, expect=list
+                ),
+            )
+            if s.menu_codes
+            else None
+        )
+        activities = select_activities([*tours, *(shows or []), *(menu or [])])
         self.log.debug("%d dated activities of %d", len(activities), len(tours))
         details = await gather_or_cancel(
             self.optional(
@@ -236,7 +257,7 @@ def parse_slot(
     left = to_int(places)
     tour = code(activity)
     url = s.site_url + s.activity_path.format(lang=s.lang, code=tour)
-    category = s.categories.get(to_int(basic.get("tourCategory")) or 0)
+    category = s.categories.get(to_int(basic.get("tourCategory")) or s.code_categories.get(tour) or 0)
     age = _AGE.search(basic.get("age") or "")
     amount, parts = price
     return ScrapedEvent(

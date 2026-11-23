@@ -5641,6 +5641,10 @@ sources:
     # public's activity list, then per activity and month the slot template and closed days, and each open day's
     # slots with places left (~250 small requests, 8 months ahead). Not on the Smarticket tenant `yadvashem`
     # (lectures, ceremonies); ogo lists the English tour too. Private, group and school bookings: services, not read.
+    # sections: read: the visitors' activity list (instituitionType 2: the dated ones), the shows tab
+    # (GetAllShowsAndPlaysBasicDetails), the menu's Touching Memories theatre + audiovisual show (codes 231/233/234/235,
+    # no dates in Nov 2026), every open day 8 months ahead (the app's range); not read: school groups (instituitionType 1),
+    # private / group / audio-guide / archive bookings (services, no dates), the poster competition (286, a contest form).
     enabled: true
     cron: "31 8,20 * * *"
     venue_name: יד ושם

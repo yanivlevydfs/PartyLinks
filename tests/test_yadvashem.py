@@ -42,6 +42,16 @@ TIMES_DEC = _load("arrival_times_222_2026_12.json")
 CLOSED_DEC = _load("close_dates_222_2026_12.json")
 
 
+def _menu(tour_code: str, event_id: str, category: int | None) -> dict[str, Any]:
+    """A menu activity (GetSomeTourBasicDetails) shaped as the listing's, its own code and event."""
+    basic = {**TOURS[1]["basicDetails"], "tourCode": tour_code, "id": f"id-{tour_code}", "tourCategory": category}
+    return {**TOURS[1], "basicDetails": basic, "eventReservationId": event_id}
+
+
+# The theatre's play (231, category 4) and the audiovisual show (235, no category), as served by code.
+MENU = [_menu("231", "ev-231", 4), _menu("235", "ev-235", None)]
+
+
 def _settings(**http: object) -> YadVashemSettings:
     """The config block's values (config/settings.yaml ``sources.yadvashem``)."""
     return YadVashemSettings(
@@ -123,9 +133,9 @@ def test_slot_event() -> None:
     assert full.start_at.isoformat() == "2026-11-27T09:30:00+02:00"
     assert full.end_at is not None and full.end_at.isoformat() == "2026-11-27T12:00:00+02:00"
     assert full.is_sold_out and full.tickets == [] and full.min_price is None
-    # No category given: no declared genre, but the text still names a tour.
+    # No category given: the code's (code_categories), and the text names a tour too.
     synagogue = parse_slot(_activity("257"), date(2027, 5, 5), "13:30", 175, (None, None), s, TZ)
-    assert synagogue is not None and synagogue.source_genres == []
+    assert synagogue is not None and synagogue.source_genres == ["סיור מודרך"]
     enriched = Enricher(Settings().enrichment, TZ).enrich(synagogue)
     assert enriched is not None and "tours" in enriched.genres
     assert parse_slot(_activity("222"), date(2026, 12, 4), "morning", 3, (None, None), s, TZ) is None
@@ -142,6 +152,11 @@ def test_run_yields_open_slots_nearest_first() -> None:
         if endpoint == "GetAllToursBasicDetails":
             assert (params["instituitionType"], params["lang"]) == ("2", "he")
             return httpx.Response(200, json=TOURS)
+        if endpoint == "GetAllShowsAndPlaysBasicDetails":  # the shows tab: listing activities again
+            return httpx.Response(200, json=TOURS[:4])
+        if endpoint == "GetSomeTourBasicDetails":  # the menu's Touching Memories pages, by code
+            assert request.method == "POST" and json.loads(request.content) == ["231", "233", "234", "235"]
+            return httpx.Response(200, json=MENU)
         if endpoint == "GetTourBasicAndAdditionalDetails":
             return httpx.Response(200, json=DETAILS.get(params["tourCode"], {}))
         if endpoint == "GetArrivalTimes":  # every Friday of the month at 10:00, as the app's template
@@ -162,14 +177,16 @@ def test_run_yields_open_slots_nearest_first() -> None:
 
     events = asyncio.run(go())
     assert not scraper.failures
-    assert asked.count("GetAllToursBasicDetails") == 1 and asked.count("GetTourBasicAndAdditionalDetails") == 5
-    assert asked.count("GetArrivalTimes") == asked.count("GetCloseDates") == 10  # 5 activities x 2 months
+    assert asked.count("GetAllToursBasicDetails") == 1 and asked.count("GetTourBasicAndAdditionalDetails") == 7
+    assert asked.count("GetArrivalTimes") == asked.count("GetCloseDates") == 14  # 7 activities x 2 months
     assert asked.count("GetDateArrivalTime") == len(events) > 0  # one slot a day
     starts = [e.start_at for e in events if e.start_at]
     assert starts == sorted(starts)  # nearest first
     assert {e.start_at.weekday() for e in events if e.start_at} == {4}
     assert len({e.source_event_id for e in events}) == len(events)
     assert {e.min_price for e in events if code_of(e) == "222"} == {Decimal(45)}
+    genres = {code_of(e): e.source_genres for e in events}
+    assert genres["231"] == ["תיאטרון"] and genres["235"] == ["מופע אורקולי"]  # 235: no tourCategory, by code
 
 
 def code_of(event: ScrapedEvent) -> str:
