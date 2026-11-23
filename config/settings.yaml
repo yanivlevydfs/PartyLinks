@@ -5766,6 +5766,13 @@ sources:
     # and each page's prerendered JSON-LD Event (start, hall, city, text, artwork, price, buy link): ~880 requests.
     # Every buy link is a Kupat Bravo seance or a Funzing experience: dedup merges with `kupatbravo` / `funzing`.
     # No coordinates (hall + city geocoded), no category (genres from the text). Answers direct.
+    # sections: the sitemap, the site's only prerendered list, whole (23.11: 947 URLs = 863 event pages, read to the
+    # last, 859 current; no cap reached, max_events 3000), so every list it names: /events, the 79 /events/category/*
+    # and /events/<city> pages (app shells, nothing prerendered) and /hanukkah (its ItemList 83 = 83 sitemap pages);
+    # not read: the app's /api/ and the tickster.kartisim.co.il white label (both robots-disallowed), so a show's
+    # page gives its next date only; its other dates come in through kupatbravo (every performance; e.g. Cameri's
+    # Cabaret: 1 page here, 140 coming rows via habama, mevalim, Kupat Bravo's white labels) and funzing;
+    # about / contact (no events).
     enabled: true
     cron: "28 7,19 * * *"
     site_url: https://www.tickster.co.il
