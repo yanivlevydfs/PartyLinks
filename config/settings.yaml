@@ -5913,6 +5913,7 @@ sources:
   agol:
     # AGOL: organic & progressive house collective (parties at Art Club, Tel Aviv). A one-page Next.js
     # sign-up site naming the next party: title, when, where, flyer (lineup in its alt). One request a run.
+    # sections: the one page (its next party); not read: nothing else (no menu, no sitemap: every other path is the login)
     enabled: true
     may_be_empty: true  # the one-page site names its next party only; between parties it lists none
     cron: "37 9,21 * * *"
