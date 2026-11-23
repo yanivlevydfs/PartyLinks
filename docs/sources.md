@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 149 configured sources, 148 on. Each one has its own module in
+SPOTX collects from 150 configured sources, 149 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -100,6 +100,7 @@ pagination and what the listing and the event page provide.
 | `beithagefen` | Beit HaGefen (beit-hagefen.com), the Arab-Jewish culture centre in Haifa, and its December festival "חג החגים" (haifahag.com): one CMS; each site's AllEvents cards, then each item page's performances, hall, price, map pin and seller link; the free yard shows and exhibitions are sold nowhere else | 06:13, 18:13 | yes |
 | `hamesila` | HaMesila B' (hamesila.org.il), Herzliya's culture and community house: lectures, family shows, concerts; wp-json `events` list + each event page (day, price, seller), the venue pinned in config | 06:17, 18:17 | yes |
 | `jerusalemarts` | Jerusalem Arts Festival (jerusalemarts.co.il): two December evenings of theatre, dance, performance and music at the Jerusalem Arts Campus; one wp-json call (each post's schema.org Event) + the tag names | 09:36, 21:36 | yes |
+| `bimot` | Bimot Global (bimotglobal.co.il, was bimot.co.il): a producer of dance, music, opera and theatre, mostly at the Israeli Opera; the wp-json show list without the archive + the show types + one page per current show (dates, hall, seller link) | 10:47, 22:47 | yes |
 | `glatticket` | Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi and religious public; Tickchak hub search API + each event's page (map pin, tiers, organiser) | 06:23, 18:23 | yes |
 | `arthurmurray` | Arthur Murray Israel (arthurmurray.co.il): the ballroom school's public evening "The Salon" in Ra'anana; the Wix page's embedded landing (read through the page JSON): date, doors and start, single / couple tickets on PayMe | 07:44, 19:44 | yes |
 | `basalon` | Basalon (basalon.co.il): talks, stand-up, shows, plays, kids' shows and workshops in living rooms, pubs and studios nationwide; the category pages' dated cards, then each event page's JSON-LD (no appointment-only, private or at-home listings) | 03:37, 15:37 | yes |

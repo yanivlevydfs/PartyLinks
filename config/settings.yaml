@@ -1063,7 +1063,7 @@ enrichment:
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
   # Israel Music Festival: a concert's text is its programme, and piece names ("מדיטציה ראשונה", "Nostalgia") read as genres.
-  declared_genres_only: [funzing, ticketeams, standupist, israelmusicfest, concertevents, salsavida]
+  declared_genres_only: [funzing, ticketeams, standupist, israelmusicfest, concertevents, salsavida, bimot]
   # Tel Aviv municipality's catch-all category: "אמנות", "מוזיקה", "קלאסית" in its name made every dance class
   # an exhibition, a concert and classical music too. Its events also carry the real category ("מחול").
   declared_ignore: ["מחול אמנות ומוזיקה"]
@@ -2318,6 +2318,7 @@ search:
     beithagefen: ["beit hagefen", "beit ha'gefen", "בית הגפן", "חג החגים", "החג של החגים", "haifahag"]
     hamesila: ["המסילה הרצליה", "המסילה ב", "hamesila herzliya"]
     jerusalemarts: ["פסטיבל ירושלים לאמנויות", "jerusalem arts festival", "jerusalemarts"]
+    bimot: ["בימות גלובל", "bimot global", "bimotglobal", "בימות הפקות"]
     glatticket: ["גלאטיקט", "גלאט טיקט", "glat ticket"]
     salsavida: ["salsa vida", "salsavida", "סלסה וידה"]
     arthurmurray: ["arthur murray", "arthurmurray", "ארתור מארי", "ארתור מרי", "the salon"]
@@ -5114,6 +5115,24 @@ sources:
     skip_title_words: ["סדנה", "סדנת", "קורס", "כיתת אמן"]
     http:
       concurrency: 1
+      request_delay_seconds: 1.0
+
+  bimot:
+    # Bimot Global (bimotglobal.co.il, בימות גלובל; was bimot.co.il, which no longer answers: time-outs direct, via
+    # the free Israeli proxies and the VPN, Nov 2026): a producer of dance, music, opera and theatre, mostly at the
+    # Israeli Opera. ~7 calls: the wp-json `show` list without the archive term, the show-type names (genres), and
+    # each current show's page (dates, hall, seller link, artwork). Sellers: the Opera's PRES box office (`pres`
+    # opera) and Barak (`barak`): purchase_url, dedup merges. Answers direct (plain httpx).
+    enabled: true
+    cron: "47 10,22 * * *"
+    site_url: https://bimotglobal.co.il
+    may_be_empty: true       # between seasons the producer lists no dates
+    places:                  # the hall as the site writes it -> the venue (dashes and spaces folded)
+      "האופרה הישראלית תל אביב": {venue_name: האופרה הישראלית, city: תל אביב, address: "שדרות שאול המלך 19, תל אביב", latitude: 32.0763543, longitude: 34.7847576}   # Tel Aviv Performing Arts Center (geocoding.venues "בית האופרה")
+      "אודיטוריום חיפה": {venue_name: אודיטוריום חיפה, city: חיפה, address: "שדרות הנשיא 138, חיפה", latitude: 32.8034907, longitude: 34.9850623}   # Haifa Auditorium, Carmel centre (geocoding.venues)
+    skip_title_words: ["סדנה", "סדנת", "קורס", "כיתת אמן", "מנוי"]
+    http:
+      concurrency: 2
       request_delay_seconds: 1.0
 
   glatticket:
