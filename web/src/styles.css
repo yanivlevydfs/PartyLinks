@@ -795,8 +795,9 @@ em.soon {
 }
 .buy .buy-price { font-weight: 900; }
 /* Below the header: the page, and on wide screens a sticky ticket card beside it. */
-.e-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 36px; align-items: start; }
-.e-side { position: sticky; top: 84px; margin-top: 30px; }
+/* Same 40px gutter as the header row; the card's top lines up with the first section's box (under its h4). */
+.e-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; align-items: start; }
+.e-side { position: sticky; top: 84px; margin-top: calc(36px + 13px + 14px); }
 .e-side-card {
   display: grid; gap: 12px; padding: 18px; border-radius: 20px; background: var(--panel); border: 1px solid var(--line-hot);
   backdrop-filter: blur(10px); box-shadow: 0 20px 50px -20px rgb(255 46 147 / .45);

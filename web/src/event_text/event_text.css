@@ -1,10 +1,11 @@
-/* An event's description: a calm reading column on the neon page. */
+/* An event's description: a calm reading column on the neon page. The card spans the column like the
+   ticket rows under it; only the text keeps a reading measure. */
 .etext-card {
-  max-width: 800px; padding: 24px 28px;
+  padding: 24px 28px;
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); backdrop-filter: blur(8px);
 }
 .etext {
-  color: #ddd3f5; font-size: 17px; line-height: 1.75;
+  color: #ddd3f5; font-size: 17px; line-height: 1.75; max-width: 75ch;
   overflow-wrap: break-word; text-wrap: pretty;
 }
 .etext > :first-child { margin-top: 0; }
