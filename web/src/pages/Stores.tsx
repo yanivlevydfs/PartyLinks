@@ -70,6 +70,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   basalon: ["https://basalon.co.il", "tickets"],
   radical: ["https://radical.org.il/calendar/", "culture"],
   makore: ["https://www.makore.co.il", "culture"], jaffatheatre: ["https://www.jaffatheatre.org.il", "culture"], jerusalemtheatre: ["https://www.jerusalem-theatre.co.il", "culture"],
+  tzavta: ["https://www.tzavta.co.il/shows", "venue"],
   beershevatheatre: ["https://b7t.co.il", "culture"], nikonitai: ["https://nikonitai.smarticket.co.il", "venue"], hatarbut: ["https://www.hatarbut.co.il", "culture"], zoatlv: ["https://zoatlv.co.il", "culture"],
   habama: ["https://www.habama.co.il", "culture"], friendshist: ["https://friends-hist.co.il", "culture"],
   hamenagen: ["https://hamenagen.net", "culture"], israelmusicfest: ["https://israelmusicfest.co.il", "culture"], feelbeit: ["https://feelbeit.com", "venue"], tlvjazzfest: ["https://tlvjazzfest26.com", "culture"], poalimatarim: ["https://poalimatarim.com", "culture"],

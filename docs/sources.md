@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 165 configured sources, 164 on. Each one has its own module in
+SPOTX collects from 166 configured sources, 165 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -125,6 +125,7 @@ pagination and what the listing and the event page provide.
 | `kfarsabamuseum` | Kfar Saba Museum (kfar-saba-museum.org, מוזאון כפר סבא): concerts and shows at Beit HaBe'er, family days and children's shows in Baron Menashe's garden and the archaeological garden, workshops at Beit Sapir; the Hello Tickets occurrences route (every dated performance), the event posts' categories and artwork, the store's tier prices and each event page's text | 08:09, 20:09 | yes |
 | `ybz` | Yad Izhak Ben-Zvi, Jerusalem (ybz.org.il, יד יצחק בן־צבי): lectures, book evenings, conferences, study days and culture evenings at the institute, and its guided tours in Jerusalem and around the country; the calendar page (every coming item, months ahead), then each product page (artwork, text, prices, a tour's town and meeting point); Zoom lectures left out | 07:43, 19:43 | yes |
 | `jaffatheatre` | Jaffa Theatre (jaffatheatre.org.il): the Arab-Hebrew stage in Jaffa, via its TicketTool box office | 07:18, 19:18 | yes |
+| `tzavta` | Tzavta, Tel Aviv (tzavta.co.il, צוותא): theatre, stand-up, music, children's shows, the opera and literary series and the Short Theatre Festival; every category page (ids 1..60), the board /shows and the home page, then each event page (every date, time and hall, artwork, texts) and one Smarticket /api/shows call for the buy page and prices per date | 08:32, 20:32 | yes |
 | `levontin7` | Levontin 7 (levontin7.com): live-music club in Tel Aviv | 06:46, 18:46 | yes |
 | `reading3` | Reading 3 (reading3.co.il): concert hall at the Tel Aviv port | 09:18, 21:18 | yes |
 | `zoatlv` | ZOA House (zoatlv.co.il): culture house in Tel Aviv: stand-up, plays, kids' shows, lectures, courses | 07:26, 19:26 | yes |

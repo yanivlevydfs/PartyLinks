@@ -1,0 +1,555 @@
+[
+ {
+  "id": 2854,
+  "category": "תיאטרון קצר",
+  "title": "קצר במשרד",
+  "image": "upld6af1ef3047c15893031710.jpg",
+  "content": null,
+  "brief": null,
+  "url": "קצר_במשרד",
+  "tags": null,
+  "video": null,
+  "permalink": "/show/2854",
+  "gallery": [],
+  "events": [
+   {
+    "show": 2854,
+    "id": 18388,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "18:20",
+    "duration": 20,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-24",
+    "show_time": "18:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא משרד",
+    "permalink": "/event/18388",
+    "time_label": "18:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 65,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "65"
+   },
+   {
+    "show": 2854,
+    "id": 18389,
+    "sale_exists": false,
+    "tickets_available": false,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "20:20",
+    "duration": 20,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-24",
+    "show_time": "20:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא משרד",
+    "permalink": "/event/18389",
+    "time_label": "20:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 65,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "65"
+   },
+   {
+    "show": 2854,
+    "id": 18390,
+    "sale_exists": false,
+    "tickets_available": false,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "12:20",
+    "duration": 20,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-25",
+    "show_time": "12:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא משרד",
+    "permalink": "/event/18390",
+    "time_label": "12:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 65,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "65"
+   },
+   {
+    "show": 2854,
+    "id": 18391,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "14:20",
+    "duration": 20,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-25",
+    "show_time": "14:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא משרד",
+    "permalink": "/event/18391",
+    "time_label": "14:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 65,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "65"
+   },
+   {
+    "show": 2854,
+    "id": 18392,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "18:50",
+    "duration": 20,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-26",
+    "show_time": "18:30",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא משרד",
+    "permalink": "/event/18392",
+    "time_label": "18:30",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 65,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "65"
+   },
+   {
+    "show": 2854,
+    "id": 18393,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "20:50",
+    "duration": 20,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-26",
+    "show_time": "20:30",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא משרד",
+    "permalink": "/event/18393",
+    "time_label": "20:30",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 65,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "65"
+   }
+  ]
+ },
+ {
+  "id": 3329,
+  "category": "פרינג'",
+  "title": "דמות אב",
+  "image": "upld6881fcd5714a6246539403.png",
+  "content": null,
+  "brief": null,
+  "url": "דמות_אב",
+  "tags": null,
+  "video": null,
+  "permalink": "/show/3329",
+  "gallery": [],
+  "events": [
+   {
+    "show": 3329,
+    "id": 18340,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": false,
+    "end_time": "22:00",
+    "duration": 60,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-06",
+    "show_time": "21:00",
+    "unavailability_msg": "בשל המצב הבטחוני  ההצגה לא תתקיים",
+    "title": null,
+    "content": null,
+    "event_place": "צוותא 2",
+    "permalink": "/event/18340",
+    "time_label": "21:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 742,
+      "name": "רגיל",
+      "price": 70,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "70"
+   }
+  ]
+ },
+ {
+  "id": 4394,
+  "category": "כל הארץ במה",
+  "title": "שוסטרמן",
+  "image": "upld6acdd863e8bea613584046.jpg",
+  "content": null,
+  "brief": null,
+  "url": "שוסטרמן",
+  "tags": null,
+  "video": null,
+  "permalink": "/show/4394",
+  "gallery": [],
+  "events": [
+   {
+    "show": 4394,
+    "id": 18311,
+    "sale_exists": false,
+    "tickets_available": false,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "21:30",
+    "duration": 60,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2027-01-09",
+    "show_time": "20:30",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא 2",
+    "permalink": "/event/18311",
+    "time_label": "20:30",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 60,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "60"
+   },
+   {
+    "show": 4394,
+    "id": 18415,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "21:00",
+    "duration": 60,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2027-01-23",
+    "show_time": "20:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא 2",
+    "permalink": "/event/18415",
+    "time_label": "20:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 60,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "60"
+   }
+  ]
+ },
+ {
+  "id": 4449,
+  "category": "תיאטרון קצר",
+  "title": "קצר על הבר #28",
+  "image": "upld6af1ef594e563213738573.jpg",
+  "content": null,
+  "brief": null,
+  "url": "קצר_על_הבר__28",
+  "tags": null,
+  "video": null,
+  "permalink": "/show/4449",
+  "gallery": [],
+  "events": [
+   {
+    "show": 4449,
+    "id": 18382,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "22:00",
+    "duration": 90,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-24",
+    "show_time": "20:30",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא BABU בר",
+    "permalink": "/event/18382",
+    "time_label": "20:30",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 97,
+      "name": "דיגיתל",
+      "price": 75,
+      "color": "#cfa3d7"
+     },
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 95,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "75 - 95"
+   },
+   {
+    "show": 4449,
+    "id": 18384,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "14:30",
+    "duration": 90,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-25",
+    "show_time": "13:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא BABU בר",
+    "permalink": "/event/18384",
+    "time_label": "13:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 97,
+      "name": "דיגיתל",
+      "price": 75,
+      "color": "#cfa3d7"
+     },
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 95,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "75 - 95"
+   },
+   {
+    "show": 4449,
+    "id": 18385,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "19:30",
+    "duration": 90,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-26",
+    "show_time": "18:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא BABU בר",
+    "permalink": "/event/18385",
+    "time_label": "18:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 97,
+      "name": "דיגיתל",
+      "price": 75,
+      "color": "#cfa3d7"
+     },
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 95,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "75 - 95"
+   },
+   {
+    "show": 4449,
+    "id": 18386,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "22:30",
+    "duration": 90,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-26",
+    "show_time": "21:00",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא BABU בר",
+    "permalink": "/event/18386",
+    "time_label": "21:00",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 97,
+      "name": "דיגיתל",
+      "price": 75,
+      "color": "#cfa3d7"
+     },
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 95,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "75 - 95"
+   }
+  ]
+ },
+ {
+  "id": 4456,
+  "category": "תיאטרון קצר",
+  "title": "השיפוץ",
+  "image": null,
+  "content": null,
+  "brief": null,
+  "url": "השיפוץ_",
+  "tags": null,
+  "video": null,
+  "permalink": "/show/4456",
+  "gallery": [],
+  "events": [
+   {
+    "show": 4456,
+    "id": 18403,
+    "sale_exists": false,
+    "tickets_available": true,
+    "visibility": true,
+    "availability": true,
+    "membership_availability": true,
+    "end_time": "21:30",
+    "duration": 60,
+    "addition_type": "purchase",
+    "addition": "0.00",
+    "addition_in_price_on": false,
+    "show_date": "2026-12-28",
+    "show_time": "20:30",
+    "unavailability_msg": null,
+    "title": null,
+    "content": null,
+    "event_place": "צוותא 2",
+    "permalink": "/event/18403",
+    "time_label": "20:30",
+    "memberships": [],
+    "pricelist": [
+     {
+      "id": 97,
+      "name": "דיגיתל",
+      "price": 65,
+      "color": "#cfa3d7"
+     },
+     {
+      "id": 648,
+      "name": "רגיל",
+      "price": 80,
+      "color": "#2aaacd"
+     }
+    ],
+    "price_range": "65 - 80"
+   }
+  ]
+ }
+]
