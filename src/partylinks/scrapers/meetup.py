@@ -2,8 +2,11 @@
 
 robots.txt only blocks feeds. Listing and details in one GraphQL query (``POST /gql2``, no login):
 ``recommendedEvents`` near a point, in-person only, cursor-paged; a point in Tel Aviv with a
-150 km radius covers Israel (~40 events) and reaches Jordan and Lebanon, so only venues in Israel
-are kept, and events with no venue (place sent to members) are dropped. Each event gives title,
+150 km radius covers Israel and reaches Jordan and Lebanon, so only venues in Israel
+are kept, and events with no venue (place sent to members) are dropped. Without a date range the
+search stops about 30 days ahead, so it is asked window by window (``window_days``, up to
+``days_ahead``); and it ranks the centre's events first, so a few smaller points (``centers``:
+Haifa, Beersheba, Jerusalem) bring the groups farther away (Nov 2026: 55 events in one query, 67 so). Each event gives title,
 start/end, markdown description, venue (name, address, city, coordinates), group, its group's
 topic category ("technology" marks a hi-tech event) and the fee, if any.
 """
@@ -11,17 +14,20 @@ topic category ("technology" marks a hi-tech event) and the fee, if any.
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from partylinks.models import ScrapedEvent, TicketTier
-from partylinks.parsing import ParseError, clean_str, parse_iso, to_decimal, to_float
+from partylinks.parsing import ParseError, clean_str, parse_iso, to_decimal, to_float, zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
-QUERY = """query($lat: Float!, $lon: Float!, $radius: Float, $first: Int, $after: String) {
-  recommendedEvents(filter: {lat: $lat, lon: $lon, eventType: PHYSICAL, radius: $radius},
+QUERY = """query($lat: Float!, $lon: Float!, $radius: Float, $first: Int, $after: String, $start: String,
+       $end: String) {
+  recommendedEvents(filter: {lat: $lat, lon: $lon, eventType: PHYSICAL, radius: $radius,
+                             startDateRange: $start, endDateRange: $end},
                     first: $first, after: $after, sort: {sortField: DATETIME}) {
     pageInfo { hasNextPage endCursor }
     edges { node {
@@ -35,11 +41,21 @@ QUERY = """query($lat: Float!, $lon: Float!, $radius: Float, $first: Int, $after
 }"""
 
 
+class Center(BaseModel):
+    latitude: float
+    longitude: float
+    radius_km: float = Field(gt=0)
+
+
 class MeetupSettings(SourceSettings):
     graphql_url: str
     latitude: float
     longitude: float
     radius_km: float = Field(150, gt=0)
+    # More points, each with its own radius, asked after the main one.
+    centers: list[Center] = Field(default_factory=list)
+    window_days: int = Field(30, ge=1)
+    days_ahead: int = Field(120, ge=1)
     page_size: int = Field(50, ge=1, le=50)
     max_pages: int = Field(10, ge=1)
 
@@ -49,10 +65,25 @@ class MeetupScraper(BaseScraper[MeetupSettings]):
     settings_model = MeetupSettings
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
-        s, cursor, seen = self.settings, None, set()
+        s, seen = self.settings, set[str]()
+        points = [Center(latitude=s.latitude, longitude=s.longitude, radius_km=s.radius_km), *s.centers]
+        start = datetime.now(zone(self.timezone)).replace(hour=0, minute=0, second=0, microsecond=0)
+        # Nearest first: window by window, every point in each.
+        for offset in range(0, s.days_ahead, s.window_days):
+            begin = start + timedelta(days=offset)
+            end = begin + timedelta(days=s.window_days)
+            for point in points:
+                async for event in self._search(point, begin, end, seen):
+                    yield event
+
+    async def _search(
+        self, point: Center, begin: datetime, end: datetime, seen: set[str]
+    ) -> AsyncIterator[ScrapedEvent]:
+        s, cursor = self.settings, None
         for _ in range(s.max_pages):
-            variables = {"lat": s.latitude, "lon": s.longitude, "radius": s.radius_km, "first": s.page_size,
-                         "after": cursor}  # fmt: skip
+            variables = {"lat": point.latitude, "lon": point.longitude, "radius": point.radius_km,
+                         "first": s.page_size, "after": cursor, "start": begin.isoformat(),
+                         "end": end.isoformat()}  # fmt: skip
             body = await self.post_json(s.graphql_url, expect=dict, json={"query": QUERY, "variables": variables})
             if body.get("errors"):
                 raise ParseError(f"meetup graphql: {str(body['errors'])[:300]}")

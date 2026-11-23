@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
+import httpx
+
+from partylinks.config import Settings
+from partylinks.parsing import zone
+from partylinks.scrapers import build_scraper
 from partylinks.scrapers.meetup import parse_event
 
 TZ = "Asia/Jerusalem"
@@ -35,3 +42,34 @@ def test_venue_named_for_its_street_and_a_fee() -> None:
 def test_abroad_and_unplaced_events_are_dropped() -> None:
     assert parse_event(NODES["316867243"], TZ) is None  # Amman
     assert parse_event(NODES["316801496"], TZ) is None  # no venue
+
+
+def test_run_asks_each_window_and_point_and_keeps_each_event_once() -> None:
+
+    scraper = build_scraper("meetup", Settings())
+    scraper.http.request_delay_seconds = 0
+    asked: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        variables = json.loads(request.content)["variables"]
+        asked.append(variables)
+        return httpx.Response(200, json=PAGE)  # the same page every time: its events are kept once
+
+    async def go() -> list:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.events()]
+
+    events = asyncio.run(go())
+    s = scraper.settings
+    points = 1 + len(s.centers)
+    windows = -(-s.days_ahead // s.window_days)
+    assert points == 4 and len(asked) == points * windows
+    # Window by window, the wide Tel Aviv search first in each.
+    assert [(a["lat"], a["radius"]) for a in asked[:points]] == [(32.07, 150), (32.8, 30), (31.25, 30), (31.78, 20)]
+    first, second = datetime.fromisoformat(asked[0]["start"]), datetime.fromisoformat(asked[points]["start"])
+    assert second - first == timedelta(days=s.window_days)
+    assert datetime.fromisoformat(asked[0]["end"]) == second
+    assert first.date() == datetime.now(zone(TZ)).date()
+    ids = [e.source_event_id for e in events]
+    assert ids and len(ids) == len(set(ids))

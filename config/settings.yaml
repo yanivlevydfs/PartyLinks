@@ -3865,14 +3865,22 @@ sources:
     feed_url: https://events.co.il/feed.rss
 
   meetup:
-    # Meetup: community meetups (tech talks, developer groups, startups). One GraphQL query, no login:
-    # in-person events near Tel Aviv within 150 km (~40), venues in Israel only. robots.txt only
-    # blocks feeds.
+    # Meetup: community meetups (tech talks, developer groups, startups, language exchange, board games).
+    # GraphQL, no login: in-person events near Tel Aviv within 150 km, venues in Israel only, asked in 30-day
+    # windows (the search alone stops ~30 days ahead) over 120 days, then near Haifa, Beersheba and Jerusalem
+    # (the wide search ranks Tel Aviv first): ~20 requests, ~67 events (Nov 2026; one query gave 55).
+    # robots.txt only blocks feeds.
     enabled: true
     cron: "41 7,19 * * *"
     graphql_url: https://www.meetup.com/gql2
     latitude: 32.07
     longitude: 34.77
+    window_days: 30
+    days_ahead: 120
+    centers:
+      - {latitude: 32.80, longitude: 35.00, radius_km: 30}   # Haifa
+      - {latitude: 31.25, longitude: 34.79, radius_km: 30}   # Beersheba
+      - {latitude: 31.78, longitude: 35.21, radius_km: 20}   # Jerusalem
 
   nbn:
     # Nefesh B'Nefesh (nbn.org.il): the community calendar for English-speaking olim (socials, young
