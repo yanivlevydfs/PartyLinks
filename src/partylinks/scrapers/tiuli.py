@@ -25,7 +25,6 @@ from datetime import date, datetime, time, timedelta
 from typing import NamedTuple
 from urllib.parse import urlsplit
 
-from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.config import RetentionSettings
@@ -45,7 +44,6 @@ _PAST_GRACE = timedelta(days=90)
 class TiuliSettings(SourceSettings):
     site_url: str
     list_path: str  # /events
-    max_events: int = Field(200, ge=1)
 
 
 class Card(NamedTuple):
@@ -66,8 +64,6 @@ class TiuliScraper(BaseScraper[TiuliSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         cards = parse_listing(await self.get_text(s.site_url + s.list_path))
-        if len(cards) > s.max_events:
-            self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(cards))
         self.log.debug("listed %d dated cards", len(cards))
         today = datetime.now(zone(self.timezone)).date()
 
@@ -76,9 +72,11 @@ class TiuliScraper(BaseScraper[TiuliSettings]):
             page = await self.optional(f"page {card.url}", self.get_text(card.url))
             return build_events(card, page, today, self.timezone)
 
-        async for events in self.stream_isolated(cards[: s.max_events], fetch, label=lambda c: c.url):
+        async for events in self.stream_isolated(cards, fetch, label=lambda c: c.url):
             for event in events:  # "29/10 , 05/11": the passed dates of a card are not yielded
-                if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known):
+                if is_current(
+                    event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known
+                ):
                     yield event
 
 

@@ -968,7 +968,7 @@ enrichment:
     jerusalemmuni: [culture]  # municipal calendar dates tagged only by audience or neighbourhood
     sharepointmuni: [culture]  # municipal lists: "תרבות ואומנות", seniors' month, untyped rows
     vibez: [culture]  # no categories; 7 of 88 (Nov 2026) name no genre in their text (performance, community night)
-    tiuli: [attractions]  # trips guide; its one category is "מיוחד"
+    tiuli: [attractions]  # trips guide; categories "מיוחד" and "פסטיבל" (keyword), some cards none
     pres_il: [culture]  # IPO chamber series ("מיוחד קאמרי") and Lessin specials name no genre
     onecity: [culture]  # municipal community events tagged only by audience ("גיל שלישי", "סטודנטים")
     milgammuni: [culture]  # municipal programme; the site's topic filter is not on its event pages
@@ -4661,8 +4661,11 @@ sources:
     vpn: true  # our Israeli VPN only (Railway production)
     cron: "39 4,16 * * *"
     site_url: https://www.tiuli.com
+    # sections: /events (the whole catalogue, 11 dated cards = the site's 11; no pagination: ?page=2
+    # is empty). not read: its filters (types=38..45, dests=1..45/1291..1295, features=52..66,
+    # dates=0..3) only narrow the same 11 cards (all probed); /articles (travel writing; the dated
+    # ones appear on /events), attractions / restaurants / camping / tracks / lodgings (places, no dates).
     list_path: /events
-    max_events: 200
     http:
       concurrency: 4
       request_delay_seconds: 0.5
