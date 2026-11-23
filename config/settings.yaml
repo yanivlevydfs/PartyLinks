@@ -5514,8 +5514,8 @@ sources:
     max_span_days: 31
     skip_accounts: [sarkis-12311, sarkis-1, haasam]  # test events; Haasam pub sells punch cards
     # Unlisted events (isPublic false) sold through a posted link; pages other sources link to come in anyway.
-    event_pages:
-      - https://easytix.co.il/event/BLACKOUT/BLACKOUTHALLOWEEN   # Gagarin, Nov 2026 (Facebook ad)
+    # (BLACKOUT/BLACKOUTHALLOWEEN, Gagarin: over, nimi answers 400 - removed 23.11.2026.)
+    event_pages: []
     marketplaces:
       - {domain: easytix.co.il}
       - {domain: comedyclub.co.il, genres: [סטנדאפ]}  # Camel; its locations name the city
