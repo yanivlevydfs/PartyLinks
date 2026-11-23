@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -16,6 +16,7 @@ from partylinks.scrapers import build_scraper
 from partylinks.scrapers.newacropolis import (
     NewAcropolisScraper,
     NewAcropolisSettings,
+    listed_pages,
     parse_event,
     place,
     recent_pages,
@@ -52,6 +53,31 @@ def test_only_recently_updated_event_pages_newest_first() -> None:
     )
     since = datetime(2026, 9, 1, tzinfo=UTC)
     assert recent_pages(xml, since) == [f"{SITE}/event-details/b", f"{SITE}/event-details/a"]
+
+
+def test_a_recurring_series_coming_occurrences_despite_an_old_lastmod() -> None:
+    # Nei Kung's monthly evening (Nov 2026): every occurrence's page keeps the series' Dec 2025 lastmod.
+    xml = (
+        f"<urlset><url><loc>{SITE}/event-details/nyy-qwng-kwh-pnymy-btnwh-2026-11-16-17-45</loc><lastmod>2025-12-27</lastmod></url>"
+        f"<url><loc>{SITE}/event-details/nyy-qwng-kwh-pnymy-btnwh-2026-12-14-17-45</loc><lastmod>2025-12-27</lastmod></url>"
+        f"<url><loc>{SITE}/event-details/nyy-qwng-ymwn-ptwh-2</loc><lastmod>2024-10-25</lastmod></url>"
+        f"<url><loc>{SITE}/event-details/a</loc><lastmod>2026-11-18</lastmod></url></urlset>"
+    )  # fmt: skip
+    since = datetime(2026, 9, 1, tzinfo=UTC)
+    assert recent_pages(xml, since, date(2026, 11, 24)) == [
+        f"{SITE}/event-details/a", f"{SITE}/event-details/nyy-qwng-kwh-pnymy-btnwh-2026-12-14-17-45",
+    ]  # fmt: skip
+
+
+def test_the_events_page_links_each_once_without_share_links() -> None:
+    html = (
+        f'<a href="{SITE}/event-details/boutique-fair-rishon-lezion">x</a>'
+        f'<a href="https://wa.me/?text={SITE}/event-details/boutique-fair-rishon-lezion&amp;text=Check">s</a>'
+        f'<a href="{SITE}/event-details/nyy-qwng-2026-12-14-17-45?lang=he">y</a>'
+    )
+    assert listed_pages(html, SITE) == [
+        f"{SITE}/event-details/boutique-fair-rishon-lezion", f"{SITE}/event-details/nyy-qwng-2026-12-14-17-45",
+    ]  # fmt: skip
 
 
 def test_places_from_the_address_text_and_the_branches() -> None:
@@ -110,7 +136,12 @@ def test_run_drops_the_course_sessions_and_volunteering() -> None:
         + "</urlset>"
     )
 
+    listing = f'<a href="{SITE}/event-details/listed">x</a><a href="{SITE}/event-details/talk">t</a>'
+    pages["listed"] = _page(name="ניי קונג - כוח פנימי בתנועה")  # on the events page, its sitemap lastmod old
+
     def handler(request: httpx.Request) -> httpx.Response:
+        if "event-details" not in request.url.path and not request.url.path.endswith(".xml"):
+            return httpx.Response(200, text=listing, headers={"content-type": "text/html"})
         if request.url.path.endswith(".xml"):
             return httpx.Response(200, text=xml, headers={"content-type": "application/xml"})
         return httpx.Response(
@@ -123,4 +154,4 @@ def test_run_drops_the_course_sessions_and_volunteering() -> None:
             return [e async for e in scraper.events()]  # events(): with skip_title_words, as a run stores them
 
     ids = sorted(e.source_event_id for e in asyncio.run(go()))
-    assert ids == ["open", "talk"] and not scraper.failures
+    assert ids == ["listed", "open", "talk"] and not scraper.failures
