@@ -144,3 +144,41 @@ def test_zoatlv_sitemap_pages_the_archive_lacks() -> None:
     yoga = events["yoga"]
     assert yoga.start_at == soon.replace(hour=19, minute=30, second=0, microsecond=0) and yoga.title == "יוגה שבועית"
     assert (yoga.extra or {})["hall"] == "מרתה" and yoga.images == ["https://zoatlv.co.il/wp-content/uploads/y.jpg"]
+
+
+def test_zoatlv_category_archives_add_what_the_archive_cuts_off() -> None:
+    # /type/<slug>/ archives (type-sitemap.xml) hold an upcoming show neither the archive nor a recent
+    # sitemap lists (November 2026); each is walked to its last page.
+    def card(slug: str, tags: str = "") -> str:
+        return f"""<a class="event-loop" href="https://zoatlv.co.il/event/{slug}/"><div class="event-date">
+            <span class="day">13</span><span class="my">פברואר 2099</span></div><div class="event-titles">
+            <h3>{slug}</h3></div><div class="event-tags">{tags}</div></a>"""
+
+    def pagination(base: str) -> str:
+        return f'<nav class="pagination"><a class="page-numbers" href="https://zoatlv.co.il{base}page/2/">2</a></nav>'
+
+    stand = "/type/%D7%A1%D7%98%D7%A0%D7%93%D7%90%D7%A4/"
+    pages = {
+        "/event/": card("listed"),
+        "/type-sitemap.xml": f"<url><loc>https://zoatlv.co.il{stand}</loc><lastmod>2026-11-23T00:00:00+00:00</lastmod>"
+        "</url><url><loc>https://zoatlv.co.il/type/empty/</loc></url>",
+        stand: card("listed") + card("feb", "הצגות") + pagination(stand),
+        f"{stand}page/2/": card("feb2", "הצגות"),
+        "/type/empty/": "",
+    }
+    asked: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        asked.append(request.url.raw_path.decode())
+        return httpx.Response(200, text=pages.get(request.url.raw_path.decode(), ""))
+
+    cfg = zoatlv.ZoaTlvSettings.model_validate(Settings().sources["zoatlv"])
+    scraper = zoatlv.ZoaTlvScraper(cfg, HttpSettings(request_delay_seconds=0, backoff_seconds=0), TZ)
+    scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+    async def run() -> list[ScrapedEvent]:
+        return [e async for e in scraper.scrape()]
+
+    events = {e.source_event_id: e for e in asyncio.run(run())}
+    assert set(events) == {"listed", "feb", "feb2"}
+    assert events["feb"].source_genres == ["הצגות"] and f"{stand}page/2/" in asked

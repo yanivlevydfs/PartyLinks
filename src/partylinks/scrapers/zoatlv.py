@@ -18,12 +18,17 @@ cards, November 2026), so later events (a weekly series into 2027) are missing. 
 ``event-sitemap*.xml`` files changed lately are read too, and each event page they list (``lastmod`` within
 ``sitemap_max_age_days``) that the archive lacks is read on its own: its page carries the same date, hall,
 time and artwork as a card (no categories). Past ones are dropped.
+
+The site's categories (``/type/<slug>/``, listed in ``type-sitemap.xml``: stand-up, shows, children,
+lectures...) are archives of their own, walked to their last page too: they hold upcoming events the main
+archive cuts off whose page has not changed lately (so no recent sitemap lists it), e.g. a February show
+posted in the summer (November 2026).
 """
 
 from __future__ import annotations
 
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from datetime import UTC, datetime, timedelta
 from urllib.parse import unquote, urlsplit
 
@@ -60,6 +65,8 @@ class ZoaTlvSettings(SourceSettings):
     # The Yoast sitemap index; its event-sitemap*.xml files list every event page (the archive stops short).
     sitemap_path: str = "/sitemap_index.xml"
     sitemap_prefix: str = "event-sitemap"
+    # The category archives' sitemap (``/type/<slug>/``); "" reads none.
+    type_sitemap_path: str = "/type-sitemap.xml"
     # Sitemap files and event pages changed within this many days are read (older ones are past events).
     sitemap_max_age_days: int = Field(120, ge=1)
     # The seller's white-label host -> the host its listing (another source) is read from:
@@ -86,15 +93,14 @@ class ZoaTlvScraper(BaseScraper[ZoaTlvSettings]):
         cards = {c["url"]: c for c in parse_listing(first)}
         if not cards:
             raise ParseError("no a.event-loop card on the listing page (markup changed?)")
-        for page in range(2, min(last_page(first), s.max_pages) + 1):
-            html = await self.optional(
-                f"listing page {page}", self.get_text(s.site_url + s.page_path.format(page=page))
-            )
-            new = [c for c in parse_listing(html or "") if c["url"] not in cards]
-            if not new:
-                break  # past the last real page (it redirects to page 1)
-            cards.update((c["url"], c) for c in new)
+        await self._walk(first, lambda page: s.site_url + s.page_path.format(page=page), cards)
         self.log.debug("listed %d events", len(cards))
+        for archive in await self._type_archives():
+            html = await self.optional(f"category {unquote(archive)}", self.get_text(archive))
+            if html:
+                cards.update((c["url"], c) for c in parse_listing(html) if c["url"] not in cards)
+                await self._walk(html, lambda page, a=archive: f"{a.rstrip('/')}/page/{page}/", cards)
+        self.log.debug("%d events with the category archives", len(cards))
         unlisted = [u for u in await self._sitemap_urls() if u not in cards]
         self.log.debug("%d more event pages in the sitemap", len(unlisted))
         events = []
@@ -135,6 +141,24 @@ class ZoaTlvScraper(BaseScraper[ZoaTlvSettings]):
         label = lambda i: unquote(i if isinstance(i, str) else str(i.url))
         async for event in self.stream_isolated(items, detail, label=label):
             yield event
+
+    async def _walk(self, first: str, page_url: Callable[[int], str], cards: dict[str, dict[str, str]]) -> None:
+        """An archive's pages 2.. (after ``first``) into ``cards``, until a page adds nothing."""
+        for page in range(2, min(last_page(first), self.settings.max_pages) + 1):
+            url = page_url(page)
+            html = await self.optional(f"listing {unquote(url)}", self.get_text(url))
+            new = [c for c in parse_listing(html or "") if c["url"] not in cards]
+            if not new:
+                break  # past the last real page (it redirects to page 1)
+            cards.update((c["url"], c) for c in new)
+
+    async def _type_archives(self) -> list[str]:
+        """The category archives (``/type/<slug>/``) the type sitemap lists."""
+        s = self.settings
+        if not s.type_sitemap_path:
+            return []
+        xml = await self.optional("type sitemap", self.get_text(s.site_url + s.type_sitemap_path))
+        return list(dict.fromkeys(u for u, _ in _LOC.findall(xml or "") if "/type/" in urlsplit(u).path))
 
     async def _sitemap_urls(self) -> list[str]:
         """Event pages in the event sitemaps changed within ``sitemap_max_age_days``."""

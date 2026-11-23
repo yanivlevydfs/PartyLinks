@@ -6235,6 +6235,12 @@ sources:
     # ZOA House / בית ציוני אמריקה: culture house (shows, stand-up, lectures, conferences), Tel Aviv. WordPress:
     # /event/ (30 a page) lists upcoming events only; each event's page adds the text and the seller's link
     # (Leaan, EASYTIX...), which ties it to the seller's own listing. robots.txt allows everything.
+    # sections: read: /event/ archive (6 real pages, 180 cards; later page numbers redirect to page 1), the 41
+    # category archives in type-sitemap.xml (/type/<slug>/, each to its last page: 212 upcoming, one Feb 2027
+    # show only there), the recent event-sitemap*.xml pages, each event's page. Not read: /exhibition/ (gallery
+    # shows with no run dates), /hall/ (hall rental pages, no events), the business-events pages (conferences,
+    # company events, streaming: rental offers), /blog/, /lp/, /en/ (no event listing), /course/ (sitemap of 2019).
+    # Nov 2026: site 212 upcoming (47 of them Askolot course dates, skipped) vs prod 160.
     enabled: true
     skip_title_words: ["קורס אסכולות", "קורס שנתי"]  # Askolot's semester lecture courses (one registration, many dates): ~47 dates, Nov 2026
     cron: "26 7,19 * * *"
