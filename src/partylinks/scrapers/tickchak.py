@@ -28,9 +28,9 @@ from pydantic import Field
 from partylinks.artists import ArtistProfile
 from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, from_unix, next_data, og_image, to_decimal
+from partylinks.parsing import ParseError, clean_str, from_unix, is_site_logo, next_data, og_image, to_decimal
 from partylinks.retention import is_current
-from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.matnasnet import covered_smarticket_hosts
 from partylinks.scrapers.seller_page import fetch_seller_page, seller_tiers
 from partylinks.scrapers.tickchak_sitemap import unlisted_items
@@ -147,8 +147,11 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
             if not is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
                 continue
             event.event_types = sorted({*event.event_types, *labels.get(entity_id, ())})
-            if not event.images and (known := (self.known_images.get(event.source_event_id) or [None])[0]):
-                event.images, event.image_url = [known], known  # read on an earlier run
+            # Read on an earlier run; a site logo stored then (Ticketmaster's favicon as a seller's og:image) is
+            # none, and is looked up again (Moshe Peretz at Menora kept it for weeks, Nov 2026).
+            known = next((u for u in self.known_images.get(event.source_event_id) or [] if not is_site_logo(u)), None)
+            if not event.images and known:
+                event.images, event.image_url = [known], known
             unpriced = event.min_price is None and not event.is_sold_out
             if (not event.images or unpriced) and (link := clean_str(item.get("link"))):
                 missing.append((event, link))
@@ -184,19 +187,37 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         return items
 
     async def _provider_page(self, event: ScrapedEvent, link: str, gate: asyncio.Semaphore) -> None:
-        """Listings copied from another box office carry no artwork, or no price ("0 / 0"), here; its page
-        may have them (og:image; JSON-LD offers on Tickchak's white labels and Go-Out: seller_page).
+        """Listings copied from another box office carry no artwork, or no price ("0 / 0"), here. The event's
+        own page here has its artists' photos (the listings' artists have none); the seller's page may have
+        artwork too (og:image) and the price (JSON-LD offers on Tickchak's white labels and Go-Out: seller_page).
         Artwork is read once and reused on later runs; a missing price is looked up every run."""
+        if not event.images and event.url:
+            async with gate:
+                own = await self._own_page_artwork(str(event.url))
+            if own:
+                event.images, event.image_url = own, own[0]
+        if event.images and (event.min_price is not None or event.is_sold_out):
+            return  # nothing left that the seller's page could add
         # Through a client of its own: a seller refusing us (429 / 403) moved Tickchak's own API to the next
         # proxy, three times a minute on 2026-11-10.
         async with gate:
             page = await fetch_seller_page(self, link)
         if page is None:
             return
-        if not event.images and (image := og_image(page)):
+        if not event.images and (image := og_image(page)) and not is_site_logo(image):
             event.images, event.image_url = [image], image
         if event.min_price is None and (tiers := seller_tiers(page, link)):
             event.tickets = tiers
+
+    async def _own_page_artwork(self, url: str) -> list[str]:
+        """The event page's pictures here; none when the page cannot be read (the seller's page is next)."""
+        try:
+            return own_page_artwork(await self.get_text(url))
+        except SourceBlockedError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - artwork only: the event is saved without it
+            self.log.debug("event page %s: %s", url, exc)
+            return []
 
     async def _paginate(self, url: str, key: str, params: list[tuple[str, Any]]) -> list[dict[str, Any]]:
         size = self.settings.page_size
@@ -310,6 +331,19 @@ def _artwork(item: dict[str, Any]) -> list[str]:
     """Default images are generic category illustrations, not the event's artwork."""
     image = item.get("image") or {}
     return [image["image"]] if image.get("image") and not image.get("isDefaultImage") else []
+
+
+def own_page_artwork(page_html: str) -> list[str]:
+    """An event page's pictures: the event's own (not the category illustration), else its artists' photos,
+    which only the page carries (Moshe Peretz at Menora: a default illustration, and his photo on the page)."""
+    event = _initial_state(next_data(page_html)).get("event") or {}
+    photos = [
+        image
+        for artist in event.get("artists") or []
+        if isinstance(artist, dict)
+        and (image := clean_str((((artist.get("image") or {}).get("main")) or {}).get("image")))
+    ]
+    return [u for u in dict.fromkeys([*_artwork(event), *photos]) if not is_site_logo(u)]
 
 
 class ArenasSettings(TickchakSettings):
