@@ -4063,6 +4063,11 @@ sources:
     # way. Their Tickchak LIVE venue pages gather every
     # seller's shows there; only the venue-scoped sliders are read. Slugs from
     # static.tickchak.co.il/sitemaps/venue.xml. robots.txt allows everything.
+    # sections: each listed venue's event slider to its reported count (every date its own item, no date
+    # window; its promoted slider is a subset) and customEventsNew (empty); 276 items = 221 events + 55 of
+    # Smarticket tenants the smarticket source reads (23.11.2026); not read: the venue pages' city-wide
+    # category loops and the other ~1,090 venues (the tickchak source's category pages and event sitemap
+    # have them: of 555 coming events at 71 hall-like ones, 289 in tickchak, 264 from other sources).
     enabled: true
     cron: "57 7,19 * * *"
     site_url: https://live.tickchak.co.il
