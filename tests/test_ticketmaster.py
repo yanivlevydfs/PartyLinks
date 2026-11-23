@@ -10,10 +10,13 @@ from pathlib import Path
 from partylinks.models import TierStatus
 from partylinks.scrapers.ticketmaster import (
     TicketmasterSettings,
+    _status,
+    listed_codes,
     parse_event,
     parse_sitemap,
     unwrap,
     upcoming,
+    venue_codes,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "ticketmaster"
@@ -75,3 +78,19 @@ def test_closed_and_sold_out_performances() -> None:
 def test_upcoming_skips_past() -> None:
     perfs = load("performances_MIO15.json")
     assert [p["performanceCode"] for p in upcoming(perfs, datetime(2026, 11, 5, 0, 0, tzinfo=UTC))] == ["002", "003"]
+
+
+def test_codes_beyond_the_sitemap() -> None:
+    venues: set[str] = set()
+    # Homepage picks: events (with their venue) and groups (no code).
+    assert listed_codes(load("top_events.json"), venues) == ["MTA71", "SMM02"]
+    assert venues == {"TA", "MM"}
+    assert listed_codes(load("spotlight_MUSIC.json"), venues) == ["MRG15"]
+    assert "RG" in venues
+    # A venue page lists every event playing there (MSH04 Solstars is in no sitemap).
+    assert venue_codes(load("venue_SH.json")) == ["MSH07", "MSH01", "MSH02", "MSH04", "MSH05", "MSH06", "MSH08"]
+
+
+def test_low_availability_still_sells() -> None:
+    assert _status("s18_low_availability") is TierStatus.ON_SALE
+    assert _status("s13_old_over") is TierStatus.CLOSED

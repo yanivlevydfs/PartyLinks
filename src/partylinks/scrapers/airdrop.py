@@ -1,8 +1,11 @@
 """Airdrop (airdrop.co.il) - party guide: Israeli clubs and festivals, and party trips abroad.
 
-robots.txt allows everything but ``/admin/``. Listing: ``/events?when=upcoming`` renders every
-upcoming event as a card (``a.wcard``, ~50) linking to its page: ``/<slug>`` for festivals and
-trips, ``/<club>/<slug>`` for club nights. (The sitemap is mostly past events, ~600 pages.)
+robots.txt disallows ``/admin/``, ``/api/``, ``/search.php`` and the account pages, none read.
+Listing: ``/events?when=upcoming`` renders every upcoming event as a card (``a.wcard``, 48 a page;
+"97 אירועים" over 3 pages on 2026-11-23) linking to its page: ``/<slug>`` for festivals and trips,
+``/<club>/<slug>`` for club nights. Every page of it is read, following its ``a.pagination__link``
+links (``&page=N``) until no new page turns up. Its genre / country / weekend / month filters
+narrow the same list, so the unfiltered pages hold them all.
 Details: each page's schema.org ``MusicEvent`` JSON-LD gives name, start/end with offset, place
 with a Hebrew city and country, images, genres, performers and one ``Offer`` /
 ``AggregateOffer`` with the price and the seller's link (Go-Out, Eventer, a travel agency),
@@ -11,9 +14,10 @@ own listing. Trips abroad are priced as packages (flight and hotel included).
 
 The listing misses events: a festival's or club's own nights ("/utopia/astrix-dec-22"), the
 holiday parties (Purim, New Year) and trips reached only from artist, club and holiday pages. So
-every page of ``/sitemap-main.xml`` (~320: events, artists, clubs, cities, holidays) is read
-too, and each page's JSON-LD event links (an artist's ``subjectOf``, a club's or holiday's list)
-are followed until no new page turns up. A page is an event when its own top-level node is one
+every page of ``/sitemap-main.xml`` (~350: events, artists, clubs, cities, holidays) is read
+too (``/sitemap-archive.xml``, ~560, holds ended events only, checked 2026-11-23), and each page's
+JSON-LD event links (an artist's ``subjectOf``, a club's or holiday's list) are followed until no
+new page turns up. A page is an event when its own top-level node is one
 (``@context`` or its own URL); past ones are dropped. Artist pages (``MusicArtist``: name,
 picture, genre, ``sameAs`` links with Spotify) feed the artist catalog; ``/artists`` (an ``ItemList``)
 is read too, so no listed artist depends on the sitemap.
@@ -31,8 +35,9 @@ import hashlib
 import re
 from collections.abc import AsyncIterator
 from datetime import datetime
+from html import unescape
 from typing import Any
-from urllib.parse import unquote, urljoin, urlsplit, urlunsplit
+from urllib.parse import quote, unquote, urljoin, urlsplit, urlunsplit
 
 from partylinks.artists import ArtistProfile
 from partylinks.config import RetentionSettings
@@ -58,6 +63,7 @@ _CARD = re.compile(r'<a\s+class="wcard\b[^"]*"\s+href="([^"#]+)"')
 _ANCHOR = re.compile(r"<a\b([^>]*)>", re.IGNORECASE)
 _CLASS = re.compile(r'\bclass\s*=\s*["\']([^"\']*)["\']', re.IGNORECASE)
 _HREF = re.compile(r'\bhref\s*=\s*["\']([^"\'#][^"\']*)["\']', re.IGNORECASE)
+_PAGER = re.compile(r'<a\s+class="pagination__link\b[^"]*"\s+href="([^"#]+)"')
 _LOC = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>")
 _EVENT_TYPES = {"event", "musicevent", "festival"}
 _CLUB_TYPES = {"nightclub", "musicvenue", "barorpub"}
@@ -71,8 +77,9 @@ class AirdropSettings(SourceSettings):
     # The active clubs (read first: their pins go on the club nights) and the artists, as ItemLists.
     clubs_path: str = "/clubs"
     artists_path: str = "/artists"
-    # Rounds of following event links found on pages (artist -> event -> club night...).
-    max_link_rounds: int = 3
+    # Rounds of following event links found on pages (artist -> event -> club night...); the rounds
+    # stop as soon as one finds no new page, so this is only a guard against an endless loop.
+    max_link_rounds: int = 10
 
 
 class AirdropScraper(BaseScraper[AirdropSettings]):
@@ -81,7 +88,7 @@ class AirdropScraper(BaseScraper[AirdropSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        urls = listing_urls(await self.get_text(s.site_url + s.listing_path), s.site_url)
+        urls = await self._listing()
         sitemap = await self.optional("sitemap", self.get_text(s.site_url + s.sitemap_path))
         mapped = sitemap_urls(sitemap or "", s.site_url)
         if not urls:
@@ -120,6 +127,26 @@ class AirdropScraper(BaseScraper[AirdropSettings]):
         self.artist_profiles += profiles.values()
         self.venue_profiles = await self._with_logos(list(clubs.values()))
 
+    async def _listing(self) -> list[str]:
+        """Every listing page's cards: page 1, then each pager link not read yet, until none is left
+        (a page past the last repeats the last one, so a page adding no card stops it too)."""
+        s = self.settings
+        first = s.site_url + s.listing_path
+        page = await self.get_text(first)
+        urls, read, queue = listing_urls(page, s.site_url), {first}, pager_urls(page, s.site_url)
+        while queue:
+            url = queue.pop(0)
+            if url in read:
+                continue
+            read.add(url)
+            page = await self.optional(f"listing {url}", self.get_text(url)) or ""
+            new = [u for u in listing_urls(page, s.site_url) if u not in urls]
+            if new:
+                urls += new
+                queue += [u for u in pager_urls(page, s.site_url) if u not in read]
+        self.log.debug("listing: %d cards on %d pages", len(urls), len(read))
+        return urls
+
     async def _fetch_club(self, url: str) -> VenueProfile | None:
         page = await self.get_text(url)
         self._club_pages[url] = page  # read once more for its events and links, without a second request
@@ -147,7 +174,21 @@ def listing_urls(page_html: str, site_url: str) -> list[str]:
             cls, href = _CLASS.search(attrs), _HREF.search(attrs)
             if cls and href and "card" in cls.group(1).lower() and not href.group(1).startswith("#"):
                 hrefs.append(href.group(1))
-    return list(dict.fromkeys(urljoin(site_url + "/", href) for href in hrefs))
+    return list(dict.fromkeys(_canonical(urljoin(site_url + "/", href)) for href in hrefs))
+
+
+def _canonical(url: str) -> str:
+    """One spelling per page, so each page is read and stored once: the path percent-encoded (the
+    listing's hrefs and the JSON-LD are, the sitemap's Hebrew ``<loc>``s are not: 4 parties were stored
+    under both spellings, 2026-11-23), no trailing slash, no fragment."""
+    parts = urlsplit(url)
+    path = quote(unquote(parts.path), safe="/:@!$&'()*+,;=-._~").rstrip("/") or "/"
+    return urlunsplit(parts._replace(path=path, fragment=""))
+
+
+def pager_urls(page_html: str, site_url: str) -> list[str]:
+    """The listing pages a listing page's pager links to (``&page=N``), once each."""
+    return list(dict.fromkeys(urljoin(site_url + "/", unescape(h)) for h in _PAGER.findall(page_html)))
 
 
 def item_list_urls(page_html: str, site_url: str) -> list[str]:
@@ -221,7 +262,7 @@ def at_club(event: ScrapedEvent, clubs: dict[str, VenueProfile]) -> ScrapedEvent
 def sitemap_urls(xml: str, site_url: str) -> list[str]:
     """The sitemap's pages on the guide itself, once each (the home page left out)."""
     home = site_url.rstrip("/") + "/"
-    return list(dict.fromkeys(u for u in _LOC.findall(xml) if u.startswith(home) and u != home))
+    return list(dict.fromkeys(_canonical(u) for u in _LOC.findall(xml) if u.startswith(home) and u != home))
 
 
 def parse_page(page_html: str, url: str, timezone: str) -> tuple[ScrapedEvent | None, ArtistProfile | None, list[str]]:
@@ -265,7 +306,7 @@ def _main_event(nodes: list[dict[str, Any]], url: str) -> dict[str, Any] | None:
 
 def _absolute(value: Any, base: str) -> str | None:
     href = clean_str(value) if isinstance(value, str) else None
-    return urlunsplit(urlsplit(urljoin(base, href))._replace(fragment="")) if href else None
+    return _canonical(urljoin(base, href)) if href else None
 
 
 def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:

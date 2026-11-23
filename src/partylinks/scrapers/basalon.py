@@ -3,29 +3,39 @@ many of them hosted in living rooms, pubs and studios nationwide.
 
 WordPress (the EventList plugin, no REST route for its events). Read in two steps:
 
-* The category pages (``/show/``, ``/lectures/``, ``/הופעות-סטנדאפ/`` ..., ``/page/N/``; robots.txt disallows
-  ``?page=``), 45 cards a page, soonest first. A card gives the post id (``tagid_<id>``), the page link, the title
-  and the next date ("היום ב- 11:00", "יום ו׳, 27.11 ב- 10:30", "15.1.27"). A card without a date is booked by
-  appointment ("בתיאום", a quote by WhatsApp): not an event, so it is not read further. A post in several
-  categories gets each category's label.
+* Each event category's listing (``music``, ``lecture``, ``show`` (stand-up), ``theater``, ``kids``, ``workshop``,
+  ``food``, ``body-mind``, ``tour``, ``group``: together the site's whole list, Nov 2026), through the plugin's own
+  pagination call ``admin-ajax.php?action=el_search_map`` (``cat``, ``sort``, ``paged``), 45 cards a page, to the
+  last page. The category pages (``/kids/page/N/``) stop at page 10 (450 cards) while ``kids`` holds ~1,075 and
+  ``workshop`` ~1,675 (Nov 2026), so they are not used. A card gives the post id (``tagid_<id>``), the page link,
+  the title and the next date ("היום ב- 11:00", "יום ו׳, 27.11 ב- 10:30", "15.1.27"). A card without a date is
+  booked by appointment ("בתיאום", a quote by WhatsApp): not an event, so it is not read further. A post in
+  several categories gets each category's label.
 * The event page's schema.org ``Event`` (JSON-LD): the next date's start and end with the zone, the address
-  (street + locality), the artwork, the text, the host (``organizer``) and the ticket rows (``offers``).
+  (street + locality), the artwork, the text, the host (``organizer``) and the ticket rows (``offers``); and its
+  booking calendar (``.fullcalendar[data-listevent]``, FullCalendar rows with ``start`` / ``end`` and the slot's
+  state ``avail`` / ``sold``): every coming date is one event. A calendar with more than ``booking_max_slots``
+  (8: two a week) in its first ``booking_window_days`` (28) is a studio's booking calendar of time slots, not
+  dated sessions: a couple's workshop every morning, a pottery yard 4 times a day (of 100 pages, Nov 2026: 20
+  such calendars of 12 to 132 slots in 4 weeks; the dated ones ran 1 to 2 a week, 2 to 8). It stays one event,
+  its next date.
 
 Not kept: gift cards (no Event on the page), private workshops (a ticket row "סדנה פרטית ..."), at the customer's
 home ("בבית הלקוח") and pages whose address is a locality only (the host's home, sent after booking: no place to
-pin). The site lists one date per event, its next one: the event id is the post and that date.
-About one page request per dated card (~650 a run, Nov 2026; the pages are ~1 MB), at low concurrency.
+pin). The event id is the post and the date (and the time, for a second slot on the same day).
+About one page request per dated card (~1,600 a run, Nov 2026; the pages are ~1 MB), at low concurrency.
 """
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from functools import cache
 from typing import Any
-from urllib.parse import quote, urljoin
+from urllib.parse import urljoin
 
 from pydantic import BaseModel, Field
 from selectolax.lexbor import LexborHTMLParser
@@ -39,17 +49,23 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _TAG_ID = re.compile(r"tagid_(\d+)")
 _DAY_MONTH = re.compile(r"(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?")
+_SLOT_STATE = re.compile(r'class="event_schedule ([^"]*)"')  # "avail" / "sold"
 
 
 class BasalonCategory(BaseModel):
-    path: str  # the category page (/show/), unquoted
+    slug: str  # the site's event category (the listing's ``cat``: "music" is /show/, "show" is stand-up)
     label: str  # its name, kept as the event's site category
 
 
 class BasalonSettings(SourceSettings):
     site_url: str = "https://basalon.co.il"
+    listing_path: str = "/wp-admin/admin-ajax.php"  # the plugin's pagination call (action el_search_map)
+    listing_sort: str = "start-date"
     categories: list[BasalonCategory]
-    max_pages: int = Field(20, ge=1)  # per category (the site shows at most 10)
+    # A calendar with more than booking_max_slots slots in booking_window_days from its first slot is a booking
+    # calendar of time slots (more than two a week), not dated sessions.
+    booking_window_days: int = Field(28, ge=1)
+    booking_max_slots: int = Field(8, ge=1)
     today_words: list[str] = Field(default_factory=lambda: ["היום"])
     tomorrow_words: list[str] = Field(default_factory=lambda: ["מחר"])
     # A ticket row naming one of these is a workshop for one party only.
@@ -77,36 +93,49 @@ class BasalonScraper(BaseScraper[BasalonSettings]):
         today = datetime.now(zone(self.timezone)).date()
         cards: dict[str, Card] = {}
         for category in s.categories:
-            found = await self.optional(f"category {category.path}", self._list_category(category, today)) or []
+            found = await self.optional(f"category {category.slug}", self._list_category(category, today)) or []
             for card in found:
                 kept = cards.setdefault(card.post_id, card)
                 if category.label not in kept.labels:
                     kept.labels.append(category.label)
         if not cards and self.failures:
-            raise RuntimeError(f"{self.name}: every category page failed")
+            raise RuntimeError(f"{self.name}: every category listing failed")
         skip = [w.lower() for w in s.skip_title_words]
         wanted = [c for c in cards.values() if c.when and not any(w in c.title.lower() for w in skip)]
         wanted.sort(key=lambda c: c.when or date.max)  # soonest first
         self.log.debug("%d cards, %d dated and kept", len(cards), len(wanted))
-        async for event in self.stream_isolated(wanted, self._fetch_event, label=lambda c: c.url):
-            if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
-                yield event
+        async for events in self.stream_isolated(wanted, self._fetch_events, label=lambda c: c.url):
+            for event in events:
+                if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone):
+                    yield event
 
     async def _list_category(self, category: BasalonCategory, today: date) -> list[Card]:
+        """Every page of the category's listing, to the first page with no new card (past the last)."""
         s = self.settings
-        base = urljoin(s.site_url, quote(category.path))
         cards: dict[str, Card] = {}
-        for page in range(1, s.max_pages + 1):
-            url = base if page == 1 else f"{base}page/{page}/"
-            page_html = await self.get_text(url) if page == 1 else await self.optional(f"{url}", self.get_text(url))
-            new = [c for c in parse_cards(page_html or "", s, today) if c.post_id not in cards]
+        page = 1
+        while True:
+            data = {
+                "action": "el_search_map",
+                "data[cat]": category.slug,
+                "data[sort]": s.listing_sort,
+                "data[type]": "type5",  # the category pages' card layout (what parse_cards reads)
+                "data[column]": "three-column",
+                "data[paged]": str(page),
+            }
+            call = self.post_json(
+                s.site_url + s.listing_path, data=data, headers={"X-Requested-With": "XMLHttpRequest"}, expect=dict
+            )
+            # The first page must answer; a later one failing keeps the pages read so far.
+            payload = await call if page == 1 else await self.optional(f"{category.slug} page {page}", call) or {}
+            new = [c for c in parse_cards(str(payload.get("result") or ""), s, today) if c.post_id not in cards]
             if not new:
-                break
+                return list(cards.values())
             cards.update((c.post_id, c) for c in new)
-        return list(cards.values())
+            page += 1
 
-    async def _fetch_event(self, card: Card) -> ScrapedEvent | None:
-        return parse_event(await self.get_text(card.url), card, self.settings, self.timezone)
+    async def _fetch_events(self, card: Card) -> list[ScrapedEvent]:
+        return parse_events(await self.get_text(card.url), card, self.settings, self.timezone)
 
 
 def card_date(text: str | None, s: BasalonSettings, today: date) -> date | None:
@@ -161,6 +190,62 @@ def _localities() -> PlaceIndex:
 def _offers(node: dict[str, Any]) -> list[dict[str, Any]]:
     offers = node.get("offers")
     return [o for o in (offers if isinstance(offers, list) else [offers]) if isinstance(o, dict)]
+
+
+@dataclass
+class Slot:
+    start: datetime
+    end: datetime | None
+    sold_out: bool
+
+
+def calendar_slots(page_html: str, timezone: str) -> list[Slot]:
+    """The booking calendar's dates (``.fullcalendar[data-listevent]``), in order; [] when the page has none."""
+    node = LexborHTMLParser(page_html).css_first(".fullcalendar[data-listevent]")
+    try:
+        rows = json.loads((node.attributes.get("data-listevent") or "[]") if node else "[]")
+    except ValueError:
+        return []
+    slots = []
+    for row in rows if isinstance(rows, list) else []:
+        start = parse_iso(row.get("start"), timezone) if isinstance(row, dict) else None
+        if start is not None:
+            state = _SLOT_STATE.search(str(row.get("title") or ""))
+            slots.append(Slot(start, parse_iso(row.get("end"), timezone), bool(state and "sold" in state[1].split())))
+    return sorted(slots, key=lambda slot: slot.start)
+
+
+def parse_events(
+    page_html: str, card: Card, s: BasalonSettings, timezone: str, now: datetime | None = None
+) -> list[ScrapedEvent]:
+    """The event page -> one event per coming date of its calendar (the JSON-LD's next date when it has none,
+    or when it is a booking calendar of time slots); [] when the page is not kept (see ``parse_event``)."""
+    event = parse_event(page_html, card, s, timezone)
+    if event is None:
+        return []
+    now = now or datetime.now(zone(timezone))
+    slots = [slot for slot in calendar_slots(page_html, timezone) if (slot.end or slot.start) >= now]
+    if not slots:
+        return [event]
+    window_end = slots[0].start + timedelta(days=s.booking_window_days)
+    if sum(1 for slot in slots if slot.start < window_end) > s.booking_max_slots:
+        return [event]  # a booking calendar of time slots: one event, its next date
+    events, days = [], set()
+    for slot in slots:
+        day = slot.start.date().isoformat()
+        key = f"{card.post_id}:{day}" if day not in days else f"{card.post_id}:{day}:{slot.start:%H%M}"
+        days.add(day)
+        events.append(
+            event.model_copy(
+                update={
+                    "source_event_id": key,
+                    "start_at": slot.start,
+                    "end_at": slot.end,
+                    "is_sold_out": slot.sold_out,
+                }
+            )
+        )
+    return events
 
 
 def parse_event(page_html: str, card: Card, s: BasalonSettings, timezone: str) -> ScrapedEvent | None:

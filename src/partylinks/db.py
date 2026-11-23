@@ -798,7 +798,7 @@ def upsert_events(session: Session, events: Sequence[ScrapedEvent]) -> tuple[int
             return old_at  # stored before fingerprints existed: no evidence of a change
         return old_at if old_hash == hashes[event_id] else now
 
-    event_rows = [
+    event_rows: list[dict[str, Any]] = [  # column -> value, of mixed types
         {"id": e.event_id, "url": str(e.url), "first_seen_at": now, "last_seen_at": now,
          "group_id": e.event_id, "is_primary": True, "group_size": 1, "group_min_price": e.min_price,
          "group_max_price": e.max_price, "group_has_free_entry": e.has_free_entry,

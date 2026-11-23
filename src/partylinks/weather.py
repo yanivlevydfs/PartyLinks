@@ -106,7 +106,8 @@ async def _get_met(cell: tuple[float, float], user_agent: str, cfg: WeatherSetti
                 response = await client.get(cfg.url, params={"lat": cell[0], "lon": cell[1]})
                 response.raise_for_status()
                 response.json()  # a cut-off body raises here, inside the retry
-    return response
+                return response
+    raise AssertionError("unreachable: the last try returns or raises")
 
 
 def _save(path: Path) -> None:

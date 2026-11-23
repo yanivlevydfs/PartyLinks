@@ -20,7 +20,7 @@ from datetime import datetime, time, timedelta, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import ColumnElement, Interval, func, literal, or_, select
+from sqlalchemy import ColumnElement, Interval, Select, func, literal, or_, select
 from sqlalchemy.orm import Session, defer, selectinload
 
 from partylinks.config import Settings
@@ -53,7 +53,7 @@ class Evening:
     venue: list[EventRow]  # the same place's other listings this week
 
 
-def _card(query: Any) -> Any:
+def _card[*Ts](query: Select[*Ts]) -> Select[*Ts]:
     return query.options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
 
 
@@ -91,7 +91,8 @@ def _open_after(r: EventRow, hours: Any, lo: datetime, hi: datetime, tz: tzinfo)
     """After the event: the place's opening in [lo, hi) by its hours when known (False: closed then); with no
     hours, whether the listing's own time is in it (no end: all day)."""
     if not hours:
-        return r.start_at < hi and (r.end_at or r.start_at + timedelta(days=1)) > lo
+        start = r.start_at  # no time at all: not in the window
+        return start is not None and start < hi and (r.end_at or start + DAY) > lo
     try:
         return _opening(hours, lo, hi, tz) or False
     except (AttributeError, TypeError, ValueError) as exc:  # odd hours: skip the place, not the plan

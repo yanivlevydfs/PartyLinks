@@ -696,7 +696,7 @@ def _venue_words(name: str | None) -> str:
 
 def named_artists(title: str, artists: dict[str, ArtistProfile], performers: list[Any]) -> list[ArtistProfile]:
     """The site's artists whose name stands as a word in the title and are not among the performers yet."""
-    have = {(p.get("name") if isinstance(p, dict) else p or "").strip().casefold() for p in performers}
+    have = {((p.get("name") if isinstance(p, dict) else p) or "").strip().casefold() for p in performers}
     low = title.casefold()
     found = {id(a): a for a in artists.values() if a.name.casefold() not in have}
     return [a for a in found.values() if re.search(rf"(?<!\w){re.escape(a.name.casefold())}(?!\w)", low)]

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from partylinks.scrapers import ticketplace
@@ -13,7 +14,7 @@ FIXTURES = Path(__file__).parent / "fixtures" / "ticketplace"
 URL = "https://ticketplace.co.il/product/x/"
 
 
-def _parse(name: str, **kwargs: bool) -> ticketplace.ScrapedEvent:
+def _parse(name: str, **kwargs: Any) -> ticketplace.ScrapedEvent:
     event = ticketplace.parse_product(
         (FIXTURES / f"{name}.html").read_text(encoding="utf-8"), URL, "Asia/Jerusalem", **kwargs
     )
@@ -38,3 +39,13 @@ def test_ticketplace_festival_english_country() -> None:
 
 def test_ticketplace_page_without_event() -> None:
     assert ticketplace.parse_product("<html></html>", URL, "Asia/Jerusalem") is None
+
+
+def test_ticketplace_sport_match() -> None:
+    sport = ["ספורט", "ליגה אנגלית", "ליברפול"]
+    e = _parse("liverpool", sport=sport)
+    assert e.title == "גביע הליגה רבע גמר: ליברפול – בורנמות'" and e.artists == []
+    assert e.source_genres == sport and e.source_event_id == "22566"
+    assert e.start_at == datetime(2026, 12, 15, 20, tzinfo=ZoneInfo("Europe/London"))
+    assert (e.venue_name, e.city, e.country) == ("אנפילד", "ליברפול", "GB")
+    assert (e.min_price, e.max_price, e.is_sold_out) == (Decimal(230), Decimal(320), False)

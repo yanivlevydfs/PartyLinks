@@ -122,7 +122,7 @@ async def press(conv: Conversation, chat_id: str, lang: str, data: str) -> Reply
             if found.extras.get(row.id, {}).get("place"):
                 continue
             planned = plan(session, cfg, row, lambda **kw: build_event_filters(cfg, **kw)).steps
-            stops = [(s.key, *s.items[0], s.opens.get(s.items[0][0].id)) for s in planned]
+            stops: list[Stop] = [(s.key, *s.items[0], s.opens.get(s.items[0][0].id)) for s in planned]
             if best is None or stops:
                 best = (n, row, stops)
             if stops:

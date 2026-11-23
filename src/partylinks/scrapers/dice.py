@@ -6,9 +6,11 @@ names three sitemap indexes: events, artists, venues.
 
 - **Catalogue.** ``/sitemaps/sitemap.xml`` points to ~7 files (~275 KB gzipped each) that list every
   public upcoming event page (``/event/<slug>``, with a ``<lastmod>``) and bundle pages (multi-event
-  passes, not events, skipped). ~19,300 events in Nov 2026, in ~520 towns. The slug ends in the day and
-  month (``...-18th-dec-the-clapham-grand-london-tickets``), so events are ordered nearest first and
-  recent past ones skipped before any event request.
+  passes whose events have their own pages, skipped). ~18,200 events on 23 Nov 2026, in ~520 towns; the
+  city browse pages (``/browse/<city>`` and its 16 type pages) are views of the same catalogue. The slug
+  ends in the day and month (``...-18th-dec-the-clapham-grand-london-tickets``), so events are ordered
+  nearest first and yesterday's skipped before any event request. A day further back is next year's (the
+  sitemaps list upcoming pages only): ``24th-sep`` listed in November is next September's gig.
 - **Event data.** Each event's Next.js data route (``/_next/data/<build>/en/event/<slug>.json``, ~4 KB
   gzipped, plain HTTP; the HTML page is ~360 KB) holds the event: start and end with the venue's zone,
   the venue (name, address, real coordinates, its page, its picture), the city and country, the "from"
@@ -81,7 +83,10 @@ class DiceSettings(SourceSettings):
     rotation_hours: int = 12
     changed_hours: int = 36  # the sitemap is rebuilt daily (~00:10 UTC): a change is seen by the next runs
     refresh_days: int = 1  # events this close are read every run (sold out, times moved)
-    past_days: int = 60  # a slug date this far back this year is past, not next year's
+    # A slug date this far back is past, not next year's. The sitemaps list upcoming pages only (rebuilt daily),
+    # so a date further back is next year's ("24th-sep" listed in November is September's gig next year, 224
+    # such pages on 23 Nov 2026) or a multi-day run already going; only yesterday's may be over.
+    past_days: int = 1
     venue_pages_per_run: int = 400
     # The venue's picture as its logo (a WebP of up to 960 px kept in the database per venue).
     venue_logos: bool = False
@@ -233,21 +238,22 @@ def sitemap_events(xml: str, site_url: str, today: date, past_days: int) -> list
             continue
         day = slug_date(slug, today, past_days)
         if day is not None and day < today:
-            # Yesterday's are over or ending (a dry run at 02:00 found 210 of 300 such pages already past);
-            # a late one was read by the runs before.
+            # Yesterday's are over or ending (a dry run at 02:00 found 210 of 300 such pages already past, 22
+            # of 25 on 23 Nov 2026); a late one was read by the runs before, next year's by tomorrow's runs.
             continue
         out.append(Listed(slug, parse_iso(lastmod) if lastmod else None, day))
     return out
 
 
 def slug_date(slug: str, today: date, past_days: int) -> date | None:
-    """The day a slug names (``...-18th-dec-...``): this year's, or next year's once it is over ``past_days``
-    behind. A slug names the first day of a run of dates; the event page has the real ones."""
+    """The day a slug names (``...-18th-dec-...``): the first one at most ``past_days`` behind (last year's
+    "31st-dec" on 1 January, else this year's, else next year's). A slug names the first day of a run of
+    dates; the event page has the real ones."""
     matches = _SLUG_DATE.findall(slug)
     if not matches:
         return None
     day, month = int(matches[-1][0]), _MONTHS[matches[-1][1]]
-    for year in (today.year, today.year + 1):
+    for year in (today.year - 1, today.year, today.year + 1):
         try:
             found = date(year, month, day)
         except ValueError:  # 29th feb in a common year, a typo

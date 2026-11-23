@@ -1,0 +1,78 @@
+{
+ "status": "SUCCESS",
+ "data": {
+  "elements": [
+   {
+    "event": {
+     "eventCode": "MRG15",
+     "eventName": "NEXT",
+     "image": "NEXT_610x336_2026-08-16_121106_5.jpg",
+     "wideImage": "NEXT_1220x300_2026-08-16_121106_3.jpg",
+     "dateInfo": "",
+     "venueId": "RG",
+     "venueName": "האצטדיון הלאומי",
+     "venueCity": "\tרמת גן\t",
+     "venueTown": "\tרמת גן\t",
+     "venueCountry": "ישראל",
+     "firstPerformanceDate": null,
+     "lastPerformanceDate": null,
+     "images": [],
+     "startShowDate": null,
+     "endShowDate": null,
+     "eventGroupId": null,
+     "eventGroupCustomUrl": null,
+     "eventGroupName": null,
+     "link": null,
+     "text": null,
+     "perfCode": null,
+     "customUrl": "https://discover.ticketmaster.co.il/event/next2026",
+     "redirectNewWebsite": false
+    },
+    "group": null,
+    "spotLightImage": "NEXT_1000x360_2026-11-10_102837_1.jpg",
+    "spotLightMobileImage": "NEXT_610x336_2026-11-10_102837_3.jpg"
+   },
+   {
+    "event": null,
+    "group": {
+     "id": 10132270,
+     "publishDate": 1777194000000,
+     "salesBeginDate": 1790845200000,
+     "salesEndDate": 1796464800000,
+     "groupImage": "",
+     "groupImages": "",
+     "dynamicGroup": false,
+     "status": "s01_onsale",
+     "boostTurkey": 0,
+     "boostIstanbul": 0,
+     "boostAnkara": 0,
+     "boostIzmir": 0,
+     "boostAntalya": 0,
+     "boostOther": 0,
+     "customURL": "https://discover.ticketmaster.co.il/event/avrahamosh2026/",
+     "videoURL": "",
+     "cartEnabled": false,
+     "hideVenue": false,
+     "hideSaleDate": false,
+     "showAllEventsBand": false,
+     "startShowDate": null,
+     "endShowDate": null,
+     "events": null,
+     "textId": 10132280,
+     "language": "iw",
+     "shortName": "אברהם טל | מוש בן ארי",
+     "name": "אברהם טל | מוש בן ארי",
+     "info": "1",
+     "guidesInfo": "",
+     "description": "",
+     "shortDescription": "",
+     "dateInfo": ""
+    },
+    "spotLightImage": "H11__3.jpg",
+    "spotLightMobileImage": "H11__2.jpg"
+   }
+  ]
+ },
+ "errors": null,
+ "warnings": null
+}

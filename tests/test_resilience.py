@@ -626,6 +626,44 @@ def test_a_refusal_on_the_fallback_proxy_blames_the_dead_israeli_pool() -> None:
     base._israel_good, base._israel_dead = None, {}
 
 
+def test_no_route_to_an_israeli_only_site_is_blocked_not_a_crash() -> None:
+    """holon (Nov 2026): every Israeli proxy dead, evomi's exits answer "500" (they cannot reach the site):
+    the run is blocked, naming the dead pool. Once the site has answered, a failed page stays the proxy error."""
+    from partylinks.scrapers import base
+
+    base._israel_good, base._israel_dead = None, {}
+    http = HttpSettings(source_proxy="http://pool:1, http://pool:2", israel_proxy="http://il1:1", max_retries=1, backoff_seconds=0)
+
+    def probe(reach_once: bool) -> _Probe:
+        scraper = _Probe(SourceSettings(cron="0 * * * *", israel_proxy=True), http, "UTC")
+        answered = [not reach_once]
+
+        def client(proxy: str | None) -> httpx.AsyncClient:
+            def answer(request: httpx.Request) -> httpx.Response:
+                if proxy == "http://il1:1":
+                    raise httpx.ConnectTimeout("proxy down", request=request)
+                if not answered[0]:
+                    answered[0] = True
+                    return httpx.Response(200)
+                raise httpx.ProxyError("500 Internal Server Error", request=request)
+
+            return httpx.AsyncClient(transport=httpx.MockTransport(answer))
+
+        scraper._new_client = client  # type: ignore[method-assign]
+        return scraper
+
+    async def run(scraper: _Probe, pages: int) -> None:
+        async with scraper:
+            for _ in range(pages):
+                await scraper.request("GET", "https://site.example/")
+
+    with pytest.raises(base.SourceBlockedError, match="no Israeli proxy answers, and the other routes cannot reach the site"):
+        asyncio.run(run(probe(reach_once=False), 1))
+    with pytest.raises(httpx.ProxyError):  # the first page came back: the second page's failure is that page's
+        asyncio.run(run(probe(reach_once=True), 2))
+    base._israel_good, base._israel_dead = None, {}
+
+
 def test_the_israeli_probe_goes_over_https() -> None:
     """A free proxy that intercepts TLS passes a plain-HTTP check, then fails every request with
     CERTIFICATE_VERIFY_FAILED: the probe asks over HTTPS, so it counts as dead there."""

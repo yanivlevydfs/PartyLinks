@@ -122,3 +122,11 @@ def test_a_region_city_becomes_the_town_at_the_venue_s_pin() -> None:
     assert town_at(32.803, 34.985, towns) == "חיפה"  # the Haifa Auditorium
     assert town_at(33.172, 35.611, towns) is None  # Kfar Blum: no town here within reach
     assert town_at(None, None, towns) is None
+
+
+def test_markup_in_an_event_name_is_left_out() -> None:
+    # 23.11.2026: "במה אחת, שני מופעים\n<br> \nמהמט דאש אריאל לוי" (pageMeta's event_name, the API's name too)
+    from partylinks.scrapers.eventim_api import plain_name
+
+    assert plain_name("במה אחת, שני מופעים\n<br> \nמהמט דאש אריאל לוי") == "במה אחת, שני מופעים מהמט דאש אריאל לוי"
+    assert plain_name("  ") is None and plain_name(None) is None

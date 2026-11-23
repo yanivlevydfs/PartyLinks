@@ -5,8 +5,16 @@
   end with the venue's zone, the venue (id, name, address, coordinates), the category, subcategory and
   format (``tags``), artwork and the online / protected / cancelled flags. ``<listing>`` is
   ``all-events`` or one category / format (``music--events``, ``parties``...: ``listings``).
-- **Israel** (``israel_paths``): the Israel page and the Israeli city searches, every category, every run
-  (~70 events, Nov 2026). A city search covers a radius, so Jordanian and Lebanese venues are dropped.
+- **Israel** (``israel_paths``): the Israel page and the Israeli city searches, every category, every run,
+  each to its last page (~50 listed events, Nov 2026; 20 more city pages checked list the same ones). A
+  city search covers a radius, so Jordanian and Lebanese venues are dropped.
+- **Every date in Israel.** A search shows a series once (its next date, ``num_children`` dates in all)
+  and one event of a group of same-name events (``dedup.count``: a weekly evening published one event a
+  date). The series' coming dates come from ``/api/v3/series/<id>/events/`` (one call, each date's id,
+  link, times and place; the dates share the listed date's page), the group's from its organizer's live
+  events (``/api/v3/organizers/<id>/events/``, 50 a page: those of the same name at an Israeli place,
+  each read like a listed one). ~50 listed events give ~700 dates (Nov 2026). Abroad only the listed
+  date (``every_date_abroad``): a New York listing's 20 events have ~500 dates.
 - **Abroad** (``cities``, Eventbrite's place slugs of the cities SPOTX lists abroad): city ``i`` is read in
   rotation slot ``i % cycle_runs`` (one slot per ``rotation_hours``), so the whole list is read once a
   cycle. A city's all-events page 1 gives its size: one of up to ``small_city_pages`` pages is read whole
@@ -23,8 +31,9 @@
 - **Venues.** Every venue of the run becomes a venue profile (name, address, pin); one whose events are
   organised by the venue itself (same name) also takes the organizer's about and page.
 
-Online, cancelled, password-protected and past events are skipped. robots.txt allows ``/d/`` and ``/e/``
-(it disallows the ``/api/v3/destination/events/`` API, which is not used).
+Online, cancelled, password-protected and past events are skipped. robots.txt allows ``/d/``, ``/e/``,
+``/api/v3/series/`` and ``/api/v3/organizers/`` (it disallows the ``/api/v3/destination/events/`` API,
+which is not used).
 """
 
 from __future__ import annotations
@@ -79,6 +88,13 @@ class EventbriteSettings(SourceSettings):
     )
     # Venue countries kept from the Israeli searches: their radius reaches Jordan and Lebanon.
     israel_countries: list[str] = Field(default_factory=lambda: ["IL"])
+    israel_max_pages: int = Field(49, ge=1, le=49)  # every page of an Israeli search (49 is Eventbrite's most)
+    # Every date of a listed event: its series' dates, and the organizer's same-name events (a dedup group).
+    series_path: str = "/api/v3/series/{id}/events/"
+    organizer_path: str = "/api/v3/organizers/{id}/events/"
+    series_page_size: int = Field(200, ge=1, le=200)
+    api_live_statuses: list[str] = Field(default_factory=lambda: ["live", "started"])
+    every_date_abroad: bool = False  # abroad, the listed date only (all of them: ~25 dates a listed event)
     # Eventbrite's place slugs abroad ("germany--berlin", "ny--new-york"), busiest first: read in rotation.
     cities: list[str] = Field(default_factory=list)
     cycle_runs: int = Field(28, ge=1)
@@ -197,6 +213,7 @@ class RunStats:
     pages: int = 0  # discovery pages with results
     empty: int = 0  # discovery pages still empty after the retries
     listed: int = 0
+    dates: int = 0  # other dates of listed events: series dates and same-name events
     events: int = 0
 
 
@@ -208,6 +225,8 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
         super().__init__(*args, **kwargs)
         self.stats = RunStats()
         self._venues: dict[str, _Venue] = {}
+        self._seen: set[str] = set()  # event ids of this run (listed, or a listed event's other date)
+        self._series: set[str] = set()  # series whose dates were asked for
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s, now = self.settings, datetime.now(UTC)
@@ -221,40 +240,47 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
         )
         # Israel, then one city after the other, each listed and then read soonest first: a run cut short
         # (a deploy) has saved the places it got to. An event listed by two nearby cities is read once.
-        seen: set[str] = set()
         for place in ["israel", *due]:
             events: dict[str, dict[str, Any]] = {}
             if place == "israel":
                 await self._israel(events)
             else:
                 await self.optional(f"city {place}", self._city(place, events))
-            listed = [e for e in soonest_first(events.values()) if str(e["id"]) not in seen]
-            seen.update(str(e["id"]) for e in listed)
+            listed = [e for e in soonest_first(events.values()) if str(e["id"]) not in self._seen]
+            self._seen.update(str(e["id"]) for e in listed)
             self.stats.listed += len(listed)
             self.log.debug("%s: %d new events listed", place, len(listed))
             async for event in self._read(listed):
                 yield event
         self.log.info(
-            "%d events listed, %d read (%d discovery pages, %d still empty after retries), %d venues",
-            self.stats.listed, self.stats.events, self.stats.pages, self.stats.empty, len(self._venues),
+            "%d events listed, %d other dates, %d read (%d discovery pages, %d still empty after retries), %d venues",
+            self.stats.listed, self.stats.dates, self.stats.events, self.stats.pages, self.stats.empty,
+            len(self._venues),
         )  # fmt: skip
         self.venue_profiles = [venue_profile(key, v) for key, v in self._venues.items()]
 
     async def _read(self, listed: list[dict[str, Any]]) -> AsyncIterator[ScrapedEvent]:
         retention = RetentionSettings()
-        async for event in self.stream_isolated(listed, self._event, label=lambda e: e.get("url", "")):
-            if is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known):
-                self.stats.events += 1
-                yield event
+        async for found in self.stream_isolated(listed, self._event, label=lambda e: e.get("url", "")):
+            for event in found:
+                if is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known):
+                    self.stats.events += 1
+                    yield event
+
+    def _every_date(self, e: dict[str, Any]) -> bool:
+        """Every date of this event is read: one in Israel (abroad with ``every_date_abroad``)."""
+        return self.settings.every_date_abroad or self._in_israel(e)
 
     # ------------------------------------------------------------------ discovery
     async def _israel(self, events: dict[str, dict[str, Any]]) -> None:
         s = self.settings
         first, *rest = list(dict.fromkeys(s.israel_paths)) or [""]
-        if first:
-            await self._listing(first, events, keep=self._in_israel, must_answer=True)  # the Israel page must answer
+        pages = s.israel_max_pages
+        if first:  # the Israel page must answer
+            await self._listing(first, events, keep=self._in_israel, must_answer=True, max_pages=pages)
         for path in rest:
-            await self.optional(f"listing {path}", self._listing(path, events, keep=self._in_israel))
+            await self.optional(f"listing {path}", self._listing(path, events, keep=self._in_israel, max_pages=pages))
+        await self.optional("same-name events", self._same_name(events, keep=self._in_israel))
 
     async def _city(self, slug: str, events: dict[str, dict[str, Any]]) -> None:
         s = self.settings
@@ -268,17 +294,25 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
             more = await asyncio.gather(*(self._more(base + "all-events/", p) for p in range(2, pages + 1)))
             for page in more:
                 self._keep(page, events, self._relevant)
-            return
-        await asyncio.gather(*(
-            self.optional(f"listing {base}{listing}/", self._listing(base + listing + "/", events, keep=self._relevant))
-            for listing in s.listings
-        ))  # fmt: skip
+        else:
+            await asyncio.gather(*(
+                self.optional(f"listing {base}{listing}/", self._listing(base + listing + "/", events, keep=self._relevant))
+                for listing in s.listings
+            ))  # fmt: skip
+        if s.every_date_abroad:
+            await self.optional(f"same-name events {slug}", self._same_name(events, keep=self._relevant))
 
     async def _listing(
-        self, path: str, events: dict[str, dict[str, Any]], keep: Any, must_answer: bool = False
+        self,
+        path: str,
+        events: dict[str, dict[str, Any]],
+        keep: Any,
+        must_answer: bool = False,
+        max_pages: int | None = None,
     ) -> None:
-        """Every page of one discovery listing (up to max_pages) into ``events``, by id."""
+        """Every page of one discovery listing (up to ``max_pages``, else the settings') into ``events``, by id."""
         s = self.settings
+        most = max_pages or s.max_pages
         first = await self._page(path, 1)
         if first is None:
             if must_answer:
@@ -286,9 +320,9 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
             return
         self._keep(first, events, keep)
         pages = page_count(first)
-        if pages > s.max_pages:
-            self.log.debug("%s: %d pages, reading %d", path, pages, s.max_pages)
-        for page in await asyncio.gather(*(self._more(path, p) for p in range(2, min(pages, s.max_pages) + 1))):
+        if pages > most:
+            self.log.debug("%s: %d pages, reading %d", path, pages, most)
+        for page in await asyncio.gather(*(self._more(path, p) for p in range(2, min(pages, most) + 1))):
             self._keep(page, events, keep)
 
     async def _more(self, path: str, page: int) -> dict[str, Any] | None:
@@ -321,14 +355,83 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
     def _relevant(self, e: dict[str, Any]) -> bool:
         return bool(set(_tag_ids(e)) & set(self.settings.relevant_tags))
 
+    # ------------------------------------------------------------------ every date
+    async def _api_events(self, path: str, params: dict[str, Any]) -> list[dict[str, Any]]:
+        """Every page of an API v3 events list (``{events, pagination}``)."""
+        rows: list[dict[str, Any]] = []
+        page = 1
+        while True:
+            data = await self.get_json(self.settings.site_url + path, params={**params, "page": page})
+            rows += [r for r in (data or {}).get("events") or [] if isinstance(r, dict)]
+            more = (data or {}).get("pagination") or {}
+            if not more.get("has_more_items") or page >= int(more.get("page_count") or page):
+                return rows
+            page += 1
+
+    async def _same_name(self, events: dict[str, dict[str, Any]], keep: Any) -> None:
+        """The other events of the listing's same-name groups (``dedup.count`` > 1, the search shows one):
+        each such organizer's live events of that name that ``keep`` takes, into ``events``."""
+        groups: dict[str, dict[str, dict[str, Any]]] = {}  # organizer -> name key -> listed event
+        for e in list(events.values()):
+            if self._every_date(e) and dedup_count(e) > 1 and (oid := clean_str(e.get("primary_organizer_id"))):
+                groups.setdefault(oid, {}).setdefault(name_key(e.get("name")), e)
+        path, params = self.settings.organizer_path, {"status": "live", "expand": "venue"}
+        found = await asyncio.gather(*(
+            self.optional(f"organizer {oid} events", self._api_events(path.format(id=oid), params)) for oid in groups
+        ))  # fmt: skip
+        now = datetime.now(UTC)
+        for named, rows in zip(groups.values(), found, strict=True):
+            for row in rows or []:
+                listed = named.get(name_key(api_name(row)))
+                entry = api_entry(row, listed, self.settings) if listed else None
+                if entry and entry["id"] not in events and listable(entry, now) and keep(entry):
+                    events[entry["id"]] = entry
+                    self.stats.dates += 1
+
+    async def _series_dates(self, listed: dict[str, Any]) -> list[dict[str, Any]]:
+        """The other coming dates of a listed series event, as listing entries (none for a single date)."""
+        s = self.settings
+        sid = clean_str(listed.get("series_id"))
+        if not sid or int(listed.get("num_children") or 1) <= 1 or sid in self._series:
+            return []
+        self._series.add(sid)
+        params = {"time_filter": "current_future", "page_size": s.series_page_size, "expand": "venue"}
+        rows = await self._api_events(s.series_path.format(id=sid), params)
+        now, dates = datetime.now(UTC), []
+        for row in rows:
+            entry = api_entry(row, listed, s)
+            if entry and entry["id"] not in self._seen and listable(entry, now) and self._every_date(entry):
+                self._seen.add(entry["id"])
+                dates.append(entry)
+        self.stats.dates += len(dates)
+        return dates
+
     # ------------------------------------------------------------------ one event
-    async def _event(self, listed: dict[str, Any]) -> ScrapedEvent | None:
+    async def _event(self, listed: dict[str, Any]) -> list[ScrapedEvent]:
+        """A listed event from its page, and in Israel its series' other dates (they share its page)."""
         page = await self.get_text(listed["url"])
-        context = page_context(page)
-        event = parse_event(listed, context, offer(page), self.settings)
-        if event is not None and (vid := clean_str((listed.get("primary_venue") or {}).get("id"))):
-            self._note_venue(f"{self.name}-{vid}", listed, context)
-        return event
+        context, deal = page_context(page), offer(page)
+        event = parse_event(listed, context, deal, self.settings)
+        if event is None:
+            return []
+        self._note(listed, context)
+        events = [event]
+        if not self._every_date(listed):
+            return events
+        for entry in await self.optional(f"series {listed.get('series_id')}", self._series_dates(listed)) or []:
+            try:
+                other = parse_event(entry, context, deal, self.settings)
+            except ParseError as exc:  # one bad date must not cost the others
+                self.record_failure(entry.get("url", ""), exc)
+                continue
+            if other is not None:
+                self._note(entry, context)
+                events.append(other.model_copy(update={"is_sold_out": False}))  # the page's sale is its own date's
+        return events
+
+    def _note(self, entry: dict[str, Any], context: dict[str, Any]) -> None:
+        if vid := clean_str((entry.get("primary_venue") or {}).get("id")):
+            self._note_venue(f"{self.name}-{vid}", entry, context)
 
     def _note_venue(self, key: str, listed: dict[str, Any], context: dict[str, Any]) -> None:
         venue = listed.get("primary_venue") or {}
@@ -409,6 +512,57 @@ def _country(e: dict[str, Any]) -> str:
 
 def _tag_ids(e: dict[str, Any]) -> list[str]:
     return [t["tag"] for t in e.get("tags") or [] if isinstance(t, dict) and isinstance(t.get("tag"), str)]
+
+
+def dedup_count(e: dict[str, Any]) -> int:
+    """How many same-name events the search folded into this one (1: none)."""
+    try:
+        return int((e.get("dedup") or {}).get("count") or 1)
+    except (TypeError, ValueError, AttributeError):
+        return 1
+
+
+def name_key(name: Any) -> str:
+    return re.sub(r"\s+", " ", clean_str(name) or "").casefold()
+
+
+def api_name(row: dict[str, Any]) -> str | None:
+    name = row.get("name")
+    return clean_str(name.get("text") if isinstance(name, dict) else name)
+
+
+def api_entry(row: dict[str, Any], listed: dict[str, Any], s: EventbriteSettings) -> dict[str, Any] | None:
+    """An API v3 event (a series date, a same-name event) as a listing entry: the listed event's, with the
+    date's own id, link, name, times, place and picture. None for one that is not live, unlisted, online
+    or at no place (or at another place the API did not describe)."""
+    start, end = row.get("start") or {}, row.get("end") or {}
+    rid, url, local = clean_str(row.get("id")), _http(row.get("url")), clean_str(start.get("local"))
+    vid = clean_str(row.get("venue_id"))
+    if not rid or not url or not local or not vid or row.get("is_series_parent") or row.get("online_event"):
+        return None
+    if (clean_str(row.get("status")) or "") not in s.api_live_statuses or row.get("listed") is False:
+        return None
+    day, _, clock = local.partition("T")
+    end_day, _, end_clock = (clean_str(end.get("local")) or "").partition("T")
+    entry = {
+        **listed, "id": rid, "eid": rid, "url": url, "name": api_name(row) or listed.get("name"),
+        "start_date": day, "start_time": clock[:5] or None, "end_date": end_day or None,
+        "end_time": end_clock[:5] or None, "timezone": clean_str(start.get("timezone")) or listed.get("timezone"),
+        "is_online_event": False, "is_cancelled": False, "dedup": None,
+        "series_id": clean_str(row.get("series_id")), "num_children": 2 if row.get("is_series") else 1,
+    }  # fmt: skip
+    if vid != clean_str((listed.get("primary_venue") or {}).get("id")):
+        place = row.get("venue")
+        if not isinstance(place, dict) or not isinstance(place.get("address"), dict):
+            return None
+        entry["primary_venue"] = {"id": vid, "name": clean_str(place.get("name")), "address": place["address"]}
+        entry["primary_venue_id"] = vid
+    logo_id = clean_str(row.get("logo_id"))
+    if logo_id and logo_id != clean_str(listed.get("image_id")):  # its own picture (else the listed one's file)
+        picture = _http(((row.get("logo") or {}).get("original") or {}).get("url"))
+        entry["image"] = {"original": {"url": picture}} if picture else {}
+        entry["image_id"] = logo_id
+    return entry
 
 
 # ---------------------------------------------------------------------- event pages

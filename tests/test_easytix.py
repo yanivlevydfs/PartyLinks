@@ -129,3 +129,70 @@ def test_tickets_are_read_soonest_first() -> None:
 
     ordered = soonest_first([show("far", 28), show("undated", None), show("near", 19)])
     assert [e.source_event_id for e in ordered] == ["near", "far", "undated"]
+
+
+def _slots(*days: tuple[str, str, str], weekly: bool = False) -> dict:
+    week = {
+        d: {"enabled": weekly and d == "monday", "startTime": "0900", "endTime": "1700"} for d in ("monday", "friday")
+    }
+    overrides = [{"date": d, "schedule": {"enabled": True, "startTime": a, "endTime": b}} for d, a, b in days]
+    return {"enabled": True, "daySchedules": week, "dateOverrides": overrides}
+
+
+def _penguin(slots: dict) -> dict:
+    return {
+        "_id": "6a5ce559fb2e7ae193e4fce3", "name": "אנשי הפינגווין ALIVE", "handler": "PENGUIN", "type": "music",
+        "account": {"name": "אנשי הפינגווין", "handler": "PENGUIN", "_id": "6a4fea6c67abb6fb75fbca57"},
+        "is_enabled": True, "isPublic": True, "location": "מועדון Lost & Found",
+        "start_date": "2026-12-03T12:00:00.000Z", "end_date": "2027-01-09T12:00:00.000Z",
+        "start_hour": "2026-12-03T19:00:00.000Z", "end_hour": "2027-01-09T00:00:00.000Z", "timeSlotConfig": slots,
+    }  # fmt: skip
+
+
+def test_a_run_of_dated_shows_is_one_event_per_date() -> None:
+    from partylinks.scrapers.easytix import parse_events
+
+    slots = _slots(("2026-12-07", "1700", "2200"), ("2026-12-03", "2100", "0100"), ("2027-02-01", "1700", "2200"))
+    slots["dateOverrides"].append({"date": "2026-12-08", "schedule": {"enabled": False, "startTime": "1700"}})
+    # Five weeks from the first day to the last: too long as one event, so it was dropped (Nov 2026).
+    assert parse_event(_penguin(slots), None, SETTINGS, TZ) is None
+    opening, evening = parse_events(_penguin(slots), None, SETTINGS, TZ)  # Feb 1 is after end_date, Dec 8 closed
+    assert opening.source_event_id == "6a5ce559fb2e7ae193e4fce3"  # start_date's day keeps the event's id
+    assert opening.start_at is not None and opening.end_at is not None
+    assert (opening.start_at.isoformat(), opening.end_at.isoformat()) == (
+        "2026-12-03T21:00:00+02:00",
+        "2026-12-04T01:00:00+02:00",
+    )
+    assert (
+        evening.source_event_id == "6a5ce559fb2e7ae193e4fce3:2026-12-07"
+        and evening.extra["event_id"] == opening.source_event_id
+    )
+    assert evening.start_at is not None and evening.start_at.isoformat() == "2026-12-07T17:00:00+02:00"
+    assert evening.end_at is not None and evening.end_at.isoformat() == "2026-12-07T22:00:00+02:00"
+    assert (
+        str(evening.url) == "https://easytix.co.il/event/PENGUIN/PENGUIN"
+        and evening.venue_name == "מועדון Lost & Found"
+    )
+    # One short arrival slot (the aquarium's sleepover tour, 17:30-18:00) is when it starts, not its end.
+    [night] = parse_events(_penguin(_slots(("2026-12-10", "1730", "1800"))), None, SETTINGS, TZ)
+    assert night.start_at is not None and night.start_at.hour == 17 and night.end_at is None
+
+
+def test_a_weekly_calendar_stays_one_event() -> None:
+    from partylinks.scrapers.easytix import parse_events, slot_days
+
+    weekly = _penguin(_slots(("2026-12-07", "1700", "2200"), weekly=True))  # an admission ticket, a weekly class
+    assert slot_days(weekly, TZ) == [] and parse_events(weekly, None, SETTINGS, TZ) == []
+    short = {**weekly, "end_date": "2026-12-20T12:00:00.000Z", "end_hour": ""}
+    [one] = parse_events(short, None, SETTINGS, TZ)
+    assert one.source_event_id == "6a5ce559fb2e7ae193e4fce3" and one.start_at is not None
+    assert one.start_at.isoformat() == "2026-12-03T21:00:00+02:00"
+
+
+def test_a_venue_named_alone_gets_its_town() -> None:
+    settings = SETTINGS.model_copy(update={"venue_cities": {"lost & found": "תל אביב-יפו"}})
+    opening = {**_penguin({}), "end_date": None, "end_hour": None}  # "מועדון Lost & Found": no town in it
+    show = parse_event(opening, None, settings, TZ)
+    assert show is not None and (show.venue_name, show.city) == ("מועדון Lost & Found", "תל אביב-יפו")
+    plain = parse_event(opening, None, SETTINGS, TZ)
+    assert plain is not None and plain.city is None

@@ -15,9 +15,14 @@ from __future__ import annotations
 from typing import Any
 
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import clean_str, parse_iso, to_decimal
+from partylinks.parsing import clean_str, html_to_text, parse_iso, to_decimal
 from partylinks.scrapers.base import BaseScraper
 from partylinks.scrapers.eventim_listing import Listed, event_id_of
+
+
+def plain_name(value: Any) -> str | None:
+    """An event name as one line of text: Eventim's can hold markup ("שני מופעים <br> מהמט דאש", ticket4u, Nov 2026)."""
+    return (" ".join((html_to_text(value) or "").split()) or None) if isinstance(value, str) else None
 
 
 async def list_products(scraper: BaseScraper[Any], api_url: str, web_id: str, language: str, page_size: int) -> Listed:
@@ -48,7 +53,7 @@ def artwork_of(teaser: str) -> str:
 def product_event(event_id: str, url: str, product: dict[str, Any], timezone: str, source: str) -> ScrapedEvent | None:
     """An event from its API product (its page was refused); None when cancelled or undated."""
     live = (product.get("typeAttributes") or {}).get("liveEntertainment") or {}
-    name, start = clean_str(product.get("name")), parse_iso(live.get("startDate"), timezone)
+    name, start = plain_name(product.get("name")), parse_iso(live.get("startDate"), timezone)
     if not name or start is None or product.get("status") == "Cancelled":
         return None
     place = live.get("location") or {}

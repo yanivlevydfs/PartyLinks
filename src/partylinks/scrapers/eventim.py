@@ -54,7 +54,7 @@ from partylinks.parsing import (
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.chillz import EVENT_TYPES, parse_page
-from partylinks.scrapers.eventim_api import list_products, product_event
+from partylinks.scrapers.eventim_api import list_products, plain_name, product_event
 from partylinks.scrapers.eventim_listing import (
     TYPE_GENRES,
     Listed,
@@ -327,7 +327,7 @@ def parse_event(page_html: str, url: str, timezone: str, source: str = "eventim"
         source=source,
         source_event_id=event_id,
         url=url,
-        title=clean_str(meta.get("event_name")) or clean_str(ld.get("name")) or "",
+        title=plain_name(meta.get("event_name")) or plain_name(ld.get("name")) or "",
         description=html_to_text(item.get("description") or ld.get("description")),
         start_at=start,
         end_at=parse_iso(meta.get("event_date_end"), timezone),

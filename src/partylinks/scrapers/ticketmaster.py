@@ -1,7 +1,12 @@
 """Ticketmaster Israel (ticketmaster.co.il) - concerts, shows and festivals nationwide.
 
-Listing: the event sitemap ``GET /wbtxapi/api/v1/siteMap/event`` links every on-sale event
-(``/event/<code>/ALL/iw`` and ``/en``); the event code is taken from the links.
+Listing: the event sitemap ``GET /wbtxapi/api/v1/siteMap/event`` links most on-sale events
+(``/event/<code>/ALL/iw`` and ``/en``); the event code is taken from the links. The sitemap
+misses some (Nov 2026: Gordon Fight Nights, Solstars, two Eilat 4PASS passes), so the homepage
+picks (``getAllTopEvent``), each category's spotlight (``getSpotLightData``) and every venue page
+seen (``getAllEventsDetailByVenueCode``: the venue's dates of every event) add theirs, venue
+pages repeated until no new event appears. The site's search API is closed (POST answers a 301
+to a 404 page) and event-group pages list no events, so neither is read.
 Details per event, fetched in parallel (all ``bxcached`` JSON, enveloped as
 ``{status: "SUCCESS", data}``):
 * ``getEventDetail/<code>/INTERNET/iw`` - name, HTML description, image file names, venue,
@@ -28,6 +33,8 @@ from typing import Any
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
+from pydantic import Field
+
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import (
     ParseError,
@@ -41,6 +48,7 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 AGOROT = Decimal(100)
 _EVENT_LINK = re.compile(r"/event/([A-Za-z0-9_-]+)/")
+_TEST_TITLE = re.compile(r"^test\b", re.IGNORECASE)  # the box office's own test listings ("Test MMISM 2")
 _ACTS = re.compile(r"\s+(?:\+|&|VS|x)\s+", re.IGNORECASE)
 
 
@@ -53,6 +61,10 @@ class TicketmasterSettings(SourceSettings):
     performance_page_path: str
     image_url_template: str
     wide_image_url_template: str
+    top_events_path: str = ""  # homepage picks; empty = not read
+    spotlight_path: str = ""  # per category: {category}
+    spotlight_categories: list[str] = Field(default_factory=list)
+    venue_path: str = ""  # a venue's performances: {venue}
 
 
 class TicketmasterScraper(BaseScraper[TicketmasterSettings]):
@@ -67,19 +79,42 @@ class TicketmasterScraper(BaseScraper[TicketmasterSettings]):
         codes = parse_sitemap(await self.get_text(s.site_url + s.sitemap_path))
         if not codes:
             raise ParseError("no /event/<code>/ link in the sitemap")
-        self.log.debug("listed %d events", len(codes))
-        async for events in self.stream_isolated(codes, self._fetch_event, label=str):
-            for event in events:
-                yield event
+        venues: set[str] = set()
+        if s.top_events_path:
+            top = await self.optional("top events", self._api(s.top_events_path))
+            codes += listed_codes(top, venues)
+        for category in s.spotlight_categories:
+            spot = await self.optional(f"{category} spotlight", self._api(s.spotlight_path.format(category=category)))
+            codes += listed_codes(spot, venues)
+        seen: set[str] = set()
+        read_venues: set[str] = set()
+        batch = list(dict.fromkeys(codes))
+        while batch:
+            seen.update(batch)
+            self.log.debug("listed %d events", len(batch))
+            async for venue, events in self.stream_isolated(batch, self._fetch_event, label=str):
+                venues.update([venue] if venue else [])
+                for event in events:
+                    yield event
+            more: list[str] = []
+            for venue in sorted(venues - read_venues) if s.venue_path else []:
+                read_venues.add(venue)
+                page = await self.optional(f"venue {venue}", self._api(s.venue_path.format(venue=venue)))
+                more += venue_codes(page)
+            batch = [c for c in dict.fromkeys(more) if c not in seen]
 
     async def _api(self, path: str) -> Any:
         return unwrap(await self.get_json(self.settings.site_url + path, expect=dict))
 
-    async def _fetch_event(self, code: str) -> list[ScrapedEvent]:
+    async def _fetch_event(self, code: str) -> tuple[str | None, list[ScrapedEvent]]:
+        """The event's venue code (its venue page may list more events) and its upcoming dates."""
         s = self.settings
         detail, performances = await asyncio.gather(
             self._api(s.event_path.format(code=code)), self._api(s.performances_path.format(code=code))
         )
+        venue = clean_str(detail.get("venueId")) if isinstance(detail, dict) else None
+        if _TEST_TITLE.match(clean_str((detail or {}).get("eventName")) or ""):
+            return venue, []
         events = []
         for perf in upcoming(performances, datetime.now(UTC)):
             event = parse_event(detail, perf, None, s, self.timezone)
@@ -91,7 +126,7 @@ class TicketmasterScraper(BaseScraper[TicketmasterSettings]):
                 if prices:
                     event = parse_event(detail, perf, prices, s, self.timezone)
             events.append(event)
-        return events
+        return venue, events
 
 
 def unwrap(payload: dict[str, Any]) -> Any:
@@ -103,6 +138,28 @@ def unwrap(payload: dict[str, Any]) -> Any:
 def parse_sitemap(xml: str) -> list[str]:
     """Event codes in sitemap order (each event is listed once per language)."""
     return list(dict.fromkeys(_EVENT_LINK.findall(xml)))
+
+
+def listed_codes(data: Any, venues: set[str]) -> list[str]:
+    """Event codes of the homepage picks / a spotlight (groups have none); their venues go to ``venues``."""
+    items = data.get("elements") if isinstance(data, dict) else data
+    codes = []
+    for item in items if isinstance(items, list) else []:
+        event = item.get("event") if isinstance(item, dict) and "event" in item else item
+        if not isinstance(event, dict):
+            continue
+        if code := clean_str(event.get("btxEventId") or event.get("eventCode")):
+            codes.append(code)
+        if venue := clean_str(event.get("venueCode") or event.get("venueId")):
+            venues.add(venue)
+    return codes
+
+
+def venue_codes(data: Any) -> list[str]:
+    """Event codes of a venue page's performances, in order."""
+    items = data.get("performanceItems") if isinstance(data, dict) else None
+    codes = (clean_str(p.get("eventCode")) for p in items or [] if isinstance(p, dict))
+    return list(dict.fromkeys(c for c in codes if c))
 
 
 def upcoming(performances: Any, now: datetime) -> list[dict[str, Any]]:
@@ -171,7 +228,8 @@ def _status(raw: Any) -> TierStatus:
     value = str(raw or "")
     if "soldout" in value:
         return TierStatus.SOLD_OUT
-    return TierStatus.ON_SALE if "onsale" in value else TierStatus.CLOSED
+    # s18_low_availability still sells (last seats); s00_closed / s13_old_over do not.
+    return TierStatus.ON_SALE if "onsale" in value or "low_availability" in value else TierStatus.CLOSED
 
 
 def _parse_tiers(prices: Any, status: TierStatus) -> list[TicketTier]:

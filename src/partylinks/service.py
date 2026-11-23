@@ -34,6 +34,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from pydantic import HttpUrl
 from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import Session
@@ -233,14 +234,14 @@ class ScrapeService:
             if not force and flag_on(session, key):
                 return 0
             rows = session.execute(
-                select(EventRow.id, EventRow.source, EventRow.title, EventRow.description, EventRow.source_genres,
-                       EventRow.event_types, EventRow.genres)
+                select(EventRow.id, EventRow.source, EventRow.source_event_id, EventRow.url, EventRow.title,
+                       EventRow.description, EventRow.source_genres, EventRow.event_types, EventRow.genres)
             ).all()  # fmt: skip
         updates = []
-        for r in rows:
+        for r in rows:  # the stored event (validated when scraped), every required field set
             probe = ScrapedEvent.model_construct(
-                source=r.source, title=r.title, description=r.description,
-                source_genres=r.source_genres or [], event_types=r.event_types or [],
+                source=r.source, source_event_id=r.source_event_id, url=HttpUrl(r.url), title=r.title,
+                description=r.description, source_genres=r.source_genres or [], event_types=r.event_types or [],
             )  # fmt: skip
             genres = self.enricher._detect_genres(probe)
             if genres != (r.genres or []):

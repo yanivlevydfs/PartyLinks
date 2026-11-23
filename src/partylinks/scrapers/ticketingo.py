@@ -1,9 +1,11 @@
-"""Ticketingo (ticketingo.co.il): the Hebrew storefront of Sportsevents365, tickets abroad. Only its
-entertainment type is read: concerts, opera, ballet, theatre, musicals and festivals. Sport is not.
+"""Ticketingo (ticketingo.co.il): the Hebrew storefront of Sportsevents365, tickets abroad. Every event
+type is read: entertainment (concerts, opera, ballet, theatre, musicals, festivals) and every sport
+(football, tennis, basketball, motor racing, baseball, American football, ice hockey, handball,
+boxing, cricket, rugby, skiing, volleyball, golf, fighting...).
 
 robots.txt allows the site and asks for a 10 s crawl delay. The page itself calls
 ``/api/events/type/<id>?page&perPage&dateType=1&homeAway=3`` (dateType 1 = upcoming), 100 a page
-with ``links.next``: ~11 requests a run. Each row has the name, the date and local time
+with ``links.next`` to the last page: ~115 requests a run. Each row has the name, the date and local time
 (``dateISO`` carries the venue's wall clock with a "+00:00" that is not UTC), the venue with
 address and coordinates, the city and country in Hebrew, and the lowest price in shekels.
 No artwork in the rows.
@@ -28,6 +30,8 @@ from partylinks.scrapers.abroad import country_code, local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _IN_PARENS = re.compile(r"\(([^()]+)\)")
+# "| הופעות לאחר המרוץ:": the lead-in of the lines below, cut with them.
+_LEAD_IN = re.compile(r"\s*\|[^|]*:\s*$")
 
 
 class TicketingoSettings(SourceSettings):
@@ -36,8 +40,9 @@ class TicketingoSettings(SourceSettings):
     event_path: str = "/event/{id}"
     # Event types read: 1023 is "בידור" (concerts, opera, ballet, theatre); every other type is a sport.
     types: list[int] = Field(default_factory=lambda: [1023])
+    entertainment_type: int = 1023
     per_page: int = Field(100, ge=1, le=100)
-    max_pages: int = Field(50, ge=1)
+    max_pages: int = Field(500, ge=1)  # a guard only: pages follow links.next to the last one
     unknown_venues: list[str] = Field(default_factory=lambda: ["To be decided", "TBD", "TBA"])
 
 
@@ -80,7 +85,9 @@ def _country(name: str | None) -> str | None:
 
 
 def parse_event(row: dict[str, Any], s: TicketingoSettings, timezone: str) -> ScrapedEvent | None:
-    title, when = clean_str(row.get("name")), clean_str(row.get("dateISO"))
+    # The first line: a grand prix lists its after-race concerts on the lines below.
+    title = clean_str(_LEAD_IN.sub("", next(iter((row.get("name") or "").strip().splitlines()), "")))
+    when = clean_str(row.get("dateISO"))
     if not row.get("id") or not title or not when or not row.get("finalDate", True):
         return None
     venue = row.get("venue") if isinstance(row.get("venue"), dict) else {}
@@ -95,6 +102,15 @@ def parse_event(row: dict[str, Any], s: TicketingoSettings, timezone: str) -> Sc
     start = datetime.fromisoformat(when).replace(tzinfo=ZoneInfo(zone_name))
     price = to_decimal((row.get("minTicketPrice") or {}).get("price"))
     tournament = clean_str((row.get("tournament") or {}).get("name"))
+    kind = row.get("eventType") if isinstance(row.get("eventType"), dict) else {}
+    sport = kind.get("id") not in (None, s.entertainment_type)
+    if sport:  # "ספורט", the sport ("כדורגל") and the league: a match names no performer
+        genres = list(dict.fromkeys(g for g in ("ספורט", clean_str(kind.get("name")), tournament) if g))
+        # A race day or a grand prix names only itself ("היום הראשון"): the competition goes first.
+        if tournament and not kind.get("isTeamSport") and tournament.lower() not in title.lower():
+            title = f"{tournament} - {title}"
+    else:
+        genres = [tournament.lower()] if tournament else []  # the type, "בידור", is every row's
     url = s.site_url + s.event_path.format(id=row["id"])
     return ScrapedEvent(
         source=TicketingoScraper.name,
@@ -110,8 +126,10 @@ def parse_event(row: dict[str, Any], s: TicketingoSettings, timezone: str) -> Sc
         time_zone=zone_name,
         latitude=lat if lat and lng else None,
         longitude=lng if lat and lng else None,
-        source_genres=[tournament.lower()] if tournament else [],  # the type, "בידור", is every row's
-        lineup=[n for p in row.get("participants") or [] if isinstance(p, dict) and (n := clean_str(p.get("name")))],
+        source_genres=genres,
+        lineup=[]
+        if sport
+        else [n for p in row.get("participants") or [] if isinstance(p, dict) and (n := clean_str(p.get("name")))],
         currency="ILS",
         min_price=price,
         extra={"purchase_url": url},

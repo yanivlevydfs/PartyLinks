@@ -255,3 +255,99 @@ def test_a_run_reads_israel_and_its_slot_cities():
     lido = next(p for p in scraper.venue_profiles if p.key == "eventbrite-vLido")
     assert (lido.about, lido.profile_url) == ("Club", "https://www.eventbrite.de/o/lido-1")
     assert all(p.about is None for p in scraper.venue_profiles if p.key != "eventbrite-vLido")
+
+
+LATER = (datetime.now(UTC) + timedelta(days=17)).date().isoformat()
+
+
+def _api(event_id: str, day: str, venue_id: str = "vV", name: str = "Pub Crawl", **more: Any) -> dict[str, Any]:
+    """An API v3 event (a series date, an organizer's event)."""
+    return {
+        "id": event_id, "url": f"https://www.eventbrite.com/e/x-{event_id}", "name": {"text": name},
+        "start": {"local": f"{day}T21:00:00", "timezone": "Asia/Jerusalem"},
+        "end": {"local": f"{day}T23:30:00", "timezone": "Asia/Jerusalem"},
+        "status": "live", "listed": True, "online_event": False, "venue_id": venue_id, **more,
+    }  # fmt: skip
+
+
+def test_an_api_date_is_the_listed_event_with_its_own_id_times_place_and_picture():
+    listed = {**_row("1", "IL", ["EventbriteFormat/11"]), "name": "Pub Crawl", "image_id": "7",
+              "image": {"original": {"url": "https://img.evbuc.com/a.jpg"}}, "num_children": 3, "series_id": "S"}  # fmt: skip
+    entry = eventbrite.api_entry(_api("2", LATER, logo_id="7", is_series=True, series_id="S"), listed, CFG)
+    assert entry is not None
+    assert (entry["id"], entry["url"], entry["name"]) == ("2", "https://www.eventbrite.com/e/x-2", "Pub Crawl")
+    assert (entry["start_date"], entry["start_time"], entry["end_time"]) == (LATER, "21:00", "23:30")
+    assert entry["primary_venue"] == listed["primary_venue"] and entry["tags"] == listed["tags"]
+    assert entry["image"] == listed["image"] and entry["num_children"] == 2  # the same picture: the same file
+    other = {"name": "Bar 2", "address": {"city": "Tel Aviv", "country": "IL", "latitude": "32.1", "longitude": "34.8"}}
+    moved = eventbrite.api_entry(_api("3", LATER, venue_id="v2", venue=other, logo_id="8", logo={"original": {"url": "https://img.evbuc.com/b.jpg"}}), listed, CFG)  # fmt: skip
+    assert moved is not None and moved["primary_venue"] == {"id": "v2", **other}
+    assert moved["image"] == {"original": {"url": "https://img.evbuc.com/b.jpg"}}
+    # A place the API did not describe:
+    assert eventbrite.api_entry(_api("4", LATER, venue_id="v2"), listed, CFG) is None
+    assert eventbrite.api_entry(_api("5", LATER, status="canceled"), listed, CFG) is None
+    assert eventbrite.api_entry(_api("6", LATER, online_event=True), listed, CFG) is None
+    assert eventbrite.api_entry(_api("7", LATER, listed=False), listed, CFG) is None
+    assert eventbrite.api_entry(_api("8", LATER, is_series_parent=True), listed, CFG) is None
+    assert eventbrite.api_entry({**_api("9", LATER), "venue_id": None}, listed, CFG) is None  # no place yet
+    assert eventbrite.dedup_count({"dedup": {"count": 4}}) == 4 and eventbrite.dedup_count({}) == 1
+
+
+def test_every_date_of_an_israeli_series_and_same_name_group_is_read_not_abroad():
+    party, music = "EventbriteFormat/11", "EventbriteCategory/103"
+    crawl = {**_row("1", "IL", [party]), "name": "Pub Crawl", "series_id": "S1", "num_children": 5}
+    sound = {**_row("50", "IL", [music]), "name": "Sound  Night", "dedup": {"count": 2}, "primary_organizer_id": "O1"}
+    lille = {**_row("90", "FR", [music]), "series_id": "S9", "num_children": 4}
+    pages = {"/d/israel/all-events/": [crawl, sound], "/d/france--lille/all-events/": [lille]}
+    bar2 = {"name": "Bar 2", "address": {"city": "Tel Aviv", "country": "IL"}}
+    aqaba = {"name": "Club", "address": {"city": "Aqaba", "country": "JO"}}
+    api = {  # path -> page -> (events, more pages)
+        "/api/v3/series/S1/events/": {
+            1: ([_api("1", SOON), _api("2", LATER)], True),
+            2: ([_api("3", LATER, venue_id="v2", venue=bar2), _api("4", LATER, status="canceled"),
+                 _api("5", LATER, online_event=True)], False),
+        },
+        "/api/v3/organizers/O1/events/": {
+            1: ([_api("50", SOON, name="Sound Night"), _api("51", LATER, name="sound night"),
+                 _api("52", LATER, venue_id="vJ", venue=aqaba, name="Sound Night"), _api("53", LATER, name="Other")], False),
+        },
+    }  # fmt: skip
+    asked: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        asked.append(path)
+        if path.startswith("/e/"):
+            context = {"basicInfo": {"status": "live"}, "salesStatus": {"salesStatus": "sold_out"}}
+            body = json.dumps({"props": {"pageProps": {"context": context}}})
+            return httpx.Response(200, text=f'<script id="__NEXT_DATA__" type="application/json">{body}</script>')
+        page = int(request.url.params.get("page", "1"))
+        if path in api:
+            assert request.url.params.get("expand") == "venue"
+            rows, more = api[path][page]
+            return httpx.Response(200, json={"events": rows, "pagination": {"has_more_items": more, "page_count": 2}})
+        if path not in pages:
+            return httpx.Response(404, text="")
+        return httpx.Response(200, text=_page(pages[path] if page == 1 else []))
+
+    cfg = eventbrite.EventbriteSettings(
+        cron="0 0 * * *", israel_paths=["/d/israel/all-events/"], cities=["france--lille"], cycle_runs=1,
+        empty_retry_seconds=0,
+    )  # fmt: skip
+    scraper = eventbrite.EventbriteScraper(
+        cfg, HttpSettings(request_delay_seconds=0, backoff_seconds=0), "Asia/Jerusalem"
+    )
+    scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+    async def run() -> list[ScrapedEvent]:
+        return [e async for e in scraper.scrape()]
+
+    events = {e.source_event_id: e for e in asyncio.run(run())}
+    assert sorted(events) == ["1", "2", "3", "50", "51", "90"]
+    assert events["2"].start_at is not None and events["2"].start_at.date().isoformat() == LATER
+    assert str(events["2"].url) == "https://www.eventbrite.com/e/x-2" == events["2"].extra["purchase_url"]
+    assert (events["3"].venue_name, events["3"].city) == ("Bar 2", "Tel Aviv")
+    assert events["1"].is_sold_out and not events["2"].is_sold_out  # the page's sale is the listed date's
+    assert "/e/x-2" not in asked and "/e/x-51" in asked  # a series date shares its page; a same-name event has its own
+    assert asked.count("/api/v3/series/S1/events/") == 2 and "/api/v3/series/S9/events/" not in asked  # not abroad
+    assert (scraper.stats.listed, scraper.stats.dates, scraper.stats.events) == (4, 3, 6)

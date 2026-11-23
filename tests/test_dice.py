@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -49,7 +50,7 @@ def _genres(event: Any) -> list[str]:
 
 def test_sitemap_lists_event_pages_with_lastmod_and_slug_date_but_no_bundle() -> None:
     xml = (FIXTURES / "sitemap_events.xml").read_text(encoding="utf-8")
-    items = sitemap_events(xml, "https://dice.fm", date(2026, 11, 19), 60)
+    items = sitemap_events(xml, "https://dice.fm", date(2026, 11, 19), S.past_days)
     assert [i.slug for i in items][:2] == [
         "kxpvvp-hit-anatomy-the-cube-guys-21st-nov-cinema-teatro-wagner-milano-tickets",
         "g7o225-lexmas-thursdays-with-djs-till-3am-17th-dec-the-lexington-london-tickets",
@@ -58,17 +59,27 @@ def test_sitemap_lists_event_pages_with_lastmod_and_slug_date_but_no_bundle() ->
     assert items[0].lastmod == datetime(2026, 11, 13, 15, 4, 8, 967688, tzinfo=UTC)
     assert items[0].day == date(2026, 11, 21)
     assert items[3].day == date(2027, 5, 14)  # "14th-may" is next year's
-    # Seen on 25 Nov, the 21st's show is over: not read at all.
-    assert len(sitemap_events(xml, "https://dice.fm", date(2026, 11, 25), 60)) == 2
+    # Seen on 22 Nov, the 21st's shows are over: not read at all.
+    assert len(sitemap_events(xml, "https://dice.fm", date(2026, 11, 22), S.past_days)) == 2
+    # Still listed on 25 Nov, a "21st-nov" page is next year's (the sitemaps list upcoming pages only).
+    later = sitemap_events(xml, "https://dice.fm", date(2026, 11, 25), S.past_days)
+    assert len(later) == 4
+    assert {i.day for i in later if "21st-nov" in i.slug} == {date(2027, 11, 21)}
 
 
 def test_slug_dates() -> None:
-    today = date(2026, 11, 19)
-    assert slug_date("abc-the-show-18th-dec-venue-london-tickets", today, 60) == date(2026, 12, 18)
-    assert slug_date("abc-show-1st-oct-venue-tickets", today, 60) == date(2026, 10, 1)  # recently past
-    assert slug_date("abc-show-3rd-feb-venue-tickets", today, 60) == date(2027, 2, 3)
-    assert slug_date("abc-show-29th-feb-venue-tickets", today, 60) is None  # neither 2026 nor 2027 has one
-    assert slug_date("abc-nye-party-tickets", today, 60) is None
+    today = date(2026, 11, 23)
+    past = S.past_days
+    assert slug_date("abc-the-show-18th-dec-venue-london-tickets", today, past) == date(2026, 12, 18)
+    assert slug_date("abc-show-22nd-nov-venue-tickets", today, past) == date(2026, 11, 22)  # yesterday's
+    # Listed in November, September's and October's dates are next year's (224 such pages on 23 Nov 2026).
+    assert slug_date("abc-show-24th-sep-venue-tickets", today, past) == date(2027, 9, 24)
+    assert slug_date("abc-show-1st-oct-venue-tickets", today, past) == date(2027, 10, 1)
+    assert slug_date("abc-show-3rd-feb-venue-tickets", today, past) == date(2027, 2, 3)
+    assert slug_date("abc-show-31st-dec-venue-tickets", date(2027, 1, 1), past) == date(2026, 12, 31)  # yesterday
+    assert slug_date("abc-show-20th-dec-venue-tickets", date(2027, 1, 15), past) == date(2027, 12, 20)
+    assert slug_date("abc-show-29th-feb-venue-tickets", today, past) is None  # 2025-2027 have none
+    assert slug_date("abc-nye-party-tickets", today, past) is None
 
 
 def test_build_id_and_known_slugs() -> None:
@@ -240,6 +251,31 @@ def test_venue_page_profile() -> None:
     assert (profile.latitude, profile.longitude) == pytest.approx((51.4629923, -0.1693688))
     assert profile.logo_url and profile.logo_url.startswith("https://dice-media.imgix.net/")
     assert venue_profile({"pageProps": {"profile": {"venue": {"name": "x"}}}}, "https://dice.fm") is None
+
+
+def test_config_skips_courses_and_memberships_but_not_a_concourse_ticket() -> None:
+    from partylinks.scrapers import build_scraper
+
+    scraper = build_scraper("dice", get_settings())
+    party = parse_event(_row("event_party.json"), S, TZ)
+    assert party is not None
+    titles = [
+        "Hit & Run [Concourse Only]",  # a club night's ticket for the concourse (Depot Mayfield, Dec 2026)
+        "Beginners Stand-Up Comedy Course",
+        "Music Promoter Training Course Part 1",
+        "The Grayston Unity Membership",
+        "Lexmas Thursdays",
+    ]
+
+    async def scrape() -> Any:
+        for title in titles:
+            yield party.model_copy(update={"title": title})
+
+    async def kept() -> list[str]:
+        return [e.title async for e in scraper.events()]
+
+    scraper.scrape = scrape  # type: ignore[method-assign]
+    assert asyncio.run(kept()) == ["Hit & Run [Concourse Only]", "Lexmas Thursdays"]
 
 
 def test_a_city_without_a_country_code_keeps_the_venue_zone() -> None:

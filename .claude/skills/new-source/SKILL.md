@@ -69,6 +69,8 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
   `python -c "import yaml; yaml.safe_load(open('config/settings.yaml',encoding='utf-8'))"` and
   `python -c "from partylinks.config import get_settings; get_settings()"`. A broken settings.yaml
   stops prod from deploying. Files are CRLF: keep each line inside its own source's block.
+- **Types:** `python -m pyrefly check <your files>` shows no ERROR (the owner's IDE shows them; a None
+  attribute access is a crash waiting).
 
 1. Read `docs/adding-a-source.md` in full before touching code.
 2. Recon (section 1): robots.txt, the data the page itself loads, platform already covered?, access

@@ -1,12 +1,19 @@
 """Chillz (chillz.com).
 
 Discovery: the public ``sitemap.xml`` (sitemap indexes supported), filtered to
-the configured locale path and to pages modified within ``recent_days``.
+the configured locale path and to pages modified within ``recent_days``; the ``listing_paths``
+pages (the home page's carousels: featured, LGBTQ+ Events, Get Tickets) are read first and
+their events fetched soonest first. The sitemap lacks some upcoming events (Mama Africa's
+April 2027 festival, Nov 2026), so every organizer page it holds is also read for its
+"org-upcoming" cards (the past ones are left out), and each event listed there that the
+sitemap lacks is fetched after it.
 Details: each page's schema.org ``Event`` JSON-LD (name, dates, venue, artwork,
 performers and every ``Offer`` -> ticket tiers); pages without an Event are
 profiles/venues and are skipped. An event with no Offer (no ticketing on Chillz, e.g. Callas
 bar nights) whose page description (``.prose``) says "כניסה חופשית" / "Free Entrance!" /
-"כניסה עלינו" gets a price-0 tier.
+"כניסה עלינו" gets a price-0 tier. An event with no venue has no Event JSON-LD (only a WebPage
+node; ~7% of upcoming events, Nov 2026): it is read from the rendered page (the ``<h1>``, the hero's
+date line, the flight data's ``ticketTypes`` with each day ticket's own day and hours).
 
 Inbox: event pages a person opened in a browser and saved (Ctrl+S) into
 ``inbox_dir`` are imported first, through the same parser. Saved pages carry
@@ -24,20 +31,22 @@ from __future__ import annotations
 
 import asyncio
 import html as html_lib
+import json
 import re
 import xml.etree.ElementTree as ET
-from collections.abc import AsyncIterator
-from datetime import UTC, datetime, timedelta
+from collections.abc import AsyncIterator, Iterable
+from datetime import UTC, date, datetime, time, timedelta
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import quote, unquote, urlparse
 
 import httpx
 from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser
 
 from partylinks.artists import ArtistProfile
-from partylinks.config import project_path
+from partylinks.config import RetentionSettings, project_path
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import (
     ParseError,
@@ -49,6 +58,7 @@ from partylinks.parsing import (
     schema_types,
     to_decimal,
 )
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 EVENT_TYPES = {"event", "musicevent", "festival", "socialevent", "danceevent", "theaterevent", "comedyevent"}
@@ -60,6 +70,20 @@ _AVAILABILITY = {
     "discontinued": TierStatus.CLOSED,
 }
 _FREE_ENTRY = re.compile(r"כניסה (?:חופשית|חינם|ללא תשלום|עלינו)|\bfree (?:entrance|entry|admission)\b", re.IGNORECASE)
+# One Next.js flight row of the page: self.__next_f.push([1,"<JSON string>"]).
+_FLIGHT = re.compile(r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)')
+_TICKET_TYPES = '"ticketTypes":['
+# A listing page's grid of event cards and the section it belongs to (home carousels, organizer grids).
+_ITEMS = '"items":['
+_SECTION = re.compile(r'"sectionId":"([^"]*)"')
+_PAST_SECTIONS = {"org-past"}
+# The hero's date line: "Thursday, 24 December 2026 · 19:30 – 22:30" or
+# "Wednesday, 25 November 2026 · 20:00 – Friday, 11 December 2026 · 16:00" (event's own time zone).
+_DAY = re.compile(r"(\d{1,2}) ([A-Za-z]+) (\d{4})")
+_CLOCK = re.compile(r"(\d{1,2}):(\d{2})\s*([AaPp][Mm])?")
+_MONTHS = {m: i for i, m in enumerate(
+    ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"], 1
+)}  # fmt: skip
 
 
 class ChillzSettings(SourceSettings):
@@ -68,6 +92,8 @@ class ChillzSettings(SourceSettings):
     # Only sitemap URLs under this path (e.g. "/en/") and not under these prefixes.
     include_path_prefix: str
     exclude_path_prefixes: list[str] = Field(default_factory=list)
+    # Listing pages read before the sitemap; their upcoming event cards are fetched first.
+    listing_paths: list[str] = Field(default_factory=list)
     # Skip pages whose sitemap <lastmod> is older than this (past events / dormant profiles).
     recent_days: int = Field(120, ge=1)
     max_pages: int = Field(3000, ge=1)
@@ -83,6 +109,10 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
     name = "chillz"
     settings_model = ChillzSettings
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._listed: dict[str, datetime | None] = {}  # event URL -> its card's start, from listing pages
+
     def is_blocked(self, response: httpx.Response) -> bool:
         head = response.content[:200_000].decode("utf-8", errors="ignore").lower()
         return any(marker.lower() in head for marker in self.settings.checkpoint_markers)
@@ -93,14 +123,37 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
         if not self.settings.live:
             return
         pages = await self._discover(self.settings.site_url + self.settings.sitemap_path, set())
-        # Past events are left out by the sitemap's <lastmod> (recent_days) and by their page's date;
-        # no list of past URLs is kept (the never-past-events rule).
-        urls = [url for url, _ in pages][: self.settings.max_pages]
-        self.log.debug("discovered %d candidate pages", len(urls))
+        # The home page's cards first, soonest first (a cut run already holds this week), then the
+        # sitemap's other pages. Past events are left out by the cards' dates, the sitemap's <lastmod>
+        # (recent_days) and their page's date; no list of past URLs is kept (the never-past-events rule).
+        self._listed.clear()
+        for path in self.settings.listing_paths:
+            url = self.settings.site_url + path
+            if (listing := await self.optional(f"listing {url}", self.get_text(url))) is not None:
+                self._list(listing)
+        listed = self._soonest(self._listed)
+        urls = list(dict.fromkeys([*listed, *(url for url, _ in pages)]))[: self.settings.max_pages]
+        self.log.debug("discovered %d candidate pages (%d from listings)", len(urls), len(listed))
         if not urls:
             return
         async for event in self._fetch_all(urls):
             yield event
+        # Events an organizer page lists that neither the sitemap nor the listings hold.
+        done = set(urls)
+        while extra := self._soonest(set(self._listed) - done):
+            self.log.debug("%d events listed by organizer pages only", len(extra))
+            done.update(extra)
+            async for event in self.stream_isolated(extra, self._fetch_event, label=lambda u: u):
+                yield event
+
+    def _soonest(self, urls: Iterable[str]) -> list[str]:
+        latest = datetime.max.replace(tzinfo=UTC)
+        return sorted(urls, key=lambda url: (self._listed.get(url) or latest, url))
+
+    def _list(self, page_html: str) -> None:
+        """Queue the upcoming events a listing or organizer page shows."""
+        for slug, start in listed_events(page_html, self.timezone):
+            self._listed.setdefault(self.settings.site_url + self.settings.include_path_prefix + quote(slug, safe=""), start)
 
     async def _fetch_all(self, urls: list[str]) -> AsyncIterator[ScrapedEvent]:
         # Probe one page first: a checkpoint stops the run here (SourceBlockedError);
@@ -126,7 +179,8 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
                 event = parse_page(page_html, url, self.timezone)
                 if event is None:
                     raise ValueError("no schema.org Event on the page (profile/venue page?)")
-                events.append(event)
+                if self._current(event):
+                    events.append(event)
             except Exception as exc:  # noqa: BLE001 - one bad file never blocks the rest
                 self.failures.append(f"inbox/{path.name}: {exc}")
                 self.log.warning("inbox file %s skipped: %s", path.name, exc)
@@ -182,11 +236,16 @@ class ChillzScraper(BaseScraper[ChillzSettings]):
         )
 
     async def _fetch_event(self, url: str) -> ScrapedEvent | None:
-        event = parse_page(await self.get_text(url), url, self.timezone)
-        when = (event.end_at or event.start_at) if event is not None else None
-        if when is not None and when < datetime.now(UTC) - timedelta(days=1):
-            return None  # over (the service never stores it either)
-        return event
+        page_html = await self.get_text(url)
+        event = parse_page(page_html, url, self.timezone)
+        if event is None:  # an organizer (or listing) page: its upcoming cards
+            self._list(page_html)
+            return None
+        return event if self._current(event) else None  # an ended one is over
+
+    def _current(self, event: ScrapedEvent) -> bool:
+        """Not over, today's ended hours included (the service's own retention rule)."""
+        return is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known)
 
 
 _SAVED_FROM = re.compile(r"<!--\s*saved from url=\(\d+\)(\S+?)\s*-->", re.IGNORECASE)
@@ -205,8 +264,13 @@ def saved_page_url(page_html: str) -> str | None:
 
 
 def parse_page(page_html: str, url: str, default_tz: str) -> ScrapedEvent | None:
-    """The page's schema.org Event as a ScrapedEvent, or None for non-event pages."""
+    """The page's schema.org Event as a ScrapedEvent, or None for non-event pages.
+
+    An event with no venue has no Event JSON-LD on its page (only a WebPage node): it is read from
+    the rendered page instead (``_rendered_event``), the same fields shaped as schema.org."""
     event = next((n for n in jsonld_nodes(page_html) if schema_types(n) & EVENT_TYPES and n.get("name")), None)
+    if event is None:
+        event = _rendered_event(page_html, url)
     if event is None:
         return None
     location = _first(event.get("location"))
@@ -247,6 +311,147 @@ def parse_page(page_html: str, url: str, default_tz: str) -> ScrapedEvent | None
         tickets=tickets,
         extra={"event_status": clean_str(event.get("eventStatus")), "attendance_mode": clean_str(event.get("eventAttendanceMode"))},
     )
+
+
+def _rendered_event(page_html: str, url: str) -> dict[str, Any] | None:
+    """A schema.org-shaped Event from the rendered page, for event pages without Event JSON-LD.
+
+    The page is an event page when its flight data names it (``"event_slug"``) and the hero under
+    the ``<h1>`` has the calendar line; organizer and venue pages have neither. Tickets come from
+    the flight data's ``ticketTypes`` (agorot; the fee is added, as in the JSON-LD's Offers)."""
+    slug = unquote(urlparse(url).path.rstrip("/").rsplit("/", 1)[-1])
+    flight = _flight(page_html)
+    if f'"event_slug":{json.dumps(slug, ensure_ascii=False)}' not in flight:
+        return None
+    tree = LexborHTMLParser(page_html)
+    h1 = tree.css_first("h1")
+    calendar = h1.parent.css_first("svg.lucide-calendar") if h1 is not None and h1.parent is not None else None
+    if h1 is None or calendar is None or calendar.parent is None:
+        return None
+    start, end = _date_line(calendar.parent.text(separator=" "))
+    if start is None:
+        return None
+    meta = tree.css_first('meta[property="og:description"]')
+    description = meta.attributes.get("content") if meta else None
+    organizer = re.search(r'"organization_name":("(?:[^"\\]|\\.)*")', flight)
+    return {
+        "@type": "Event",
+        "name": h1.text(separator=" "),
+        "startDate": start,
+        "endDate": end,
+        # Without a text of its own the page says "Explore <name>. View event details and registration…".
+        "description": None if description and "View event details" in description else description,
+        "organizer": {"name": json.loads(organizer.group(1))} if organizer else None,
+        "offers": [_offer(t) for t in _ticket_types(flight, slug) if isinstance(t, dict) and not t.get("isAddon")],
+    }
+
+
+def _flight(page_html: str) -> str:
+    """The page's Next.js flight data (``self.__next_f`` rows), decoded and joined."""
+    rows = []
+    for raw in _FLIGHT.findall(page_html):
+        try:
+            rows.append(json.loads(raw))
+        except ValueError:
+            continue
+    return "".join(rows)
+
+
+def _ticket_types(flight: str, slug: str) -> list[Any]:
+    """The ``ticketTypes`` list of this event's ticket box (the one followed by its ``eventSlug``)."""
+    decoder = json.JSONDecoder()
+    start = flight.find(_TICKET_TYPES)
+    while start >= 0:
+        try:
+            types, end = decoder.raw_decode(flight, start + len(_TICKET_TYPES) - 1)
+        except ValueError:
+            types, end = None, start + len(_TICKET_TYPES)
+        if isinstance(types, list) and f'"eventSlug":{json.dumps(slug, ensure_ascii=False)}' in flight[end : end + 400]:
+            return types
+        start = flight.find(_TICKET_TYPES, end)
+    return []
+
+
+def listed_events(page_html: str, default_tz: str) -> list[tuple[str, datetime | None]]:
+    """(slug, start) of each upcoming event card a listing page shows: the home page's carousels, an
+    organizer page's "org-upcoming" grid. Its "org-past" grid and the cards already over are left out.
+
+    Each grid is an ``"items":[...]`` list in the flight data, followed by its ``sectionId``."""
+    flight = _flight(page_html)
+    decoder = json.JSONDecoder()
+    found: dict[str, datetime | None] = {}
+    start = flight.find(_ITEMS)
+    while start >= 0:
+        try:
+            items, end = decoder.raw_decode(flight, start + len(_ITEMS) - 1)
+        except ValueError:
+            items, end = None, start + len(_ITEMS)
+        section = _SECTION.search(flight, end, end + 1000)
+        if isinstance(items, list) and (section is None or section.group(1) not in _PAST_SECTIONS):
+            for item in items:
+                if not isinstance(item, dict) or not str(item.get("id") or "").startswith("evt_"):
+                    continue
+                slug, begins = clean_str(item.get("slug")), parse_iso(item.get("startsAt"), default_tz)
+                ends = parse_iso(item.get("endsAt"), default_tz)
+                if slug and is_current(begins, ends, RetentionSettings(), default_tz):
+                    found.setdefault(slug, begins)
+        start = flight.find(_ITEMS, end)
+    return list(found.items())
+
+
+def _offer(ticket: dict[str, Any]) -> dict[str, Any]:
+    """One ``ticketTypes`` entry as a schema.org Offer (price with the fee the buyer pays)."""
+    price = ticket.get("price")
+    fee = ticket.get("checkoutFees") if ticket.get("serviceFeeMode") == "pass-to-customer" else 0
+    total = (Decimal(price) + Decimal(fee or 0)) / 100 if isinstance(price, int) else None
+    status = f"{ticket.get('currentStatus')} {ticket.get('effectiveAvailability')}".lower()
+    availability = "SoldOut" if "sold-out" in status else "PreOrder" if "soon" in status else "InStock"
+    when = ticket.get("experienceDate")  # a day ticket of a multi-day event names its own day and hours
+    when = when if isinstance(when, dict) else {}
+    day = " ".join(c for k in ("startDate", "startTime") if (c := clean_str(when.get(k))))
+    hours = "–".join(c for c in (day, clean_str(when.get("endTime"))) if c) if day else None
+    return {
+        "@type": "Offer",
+        "name": ticket.get("name"),
+        "description": "\n".join(c for c in (hours, clean_str(ticket.get("description"))) if c) or None,
+        "price": 0 if ticket.get("isRsvp") else total,
+        "priceCurrency": ticket.get("currency") or "ILS",
+        "availability": f"https://schema.org/{availability}",
+    }
+
+
+def _date_line(text: str) -> tuple[str | None, str | None]:
+    """ISO start / end (local, no offset) of the hero's date line; a date alone has no time."""
+    first, _, second = (part.strip() for part in text.partition("–"))
+    start_day, start_clock = _day(first), _clock(first)
+    if start_day is None:
+        return None, None
+    start = datetime.combine(start_day, start_clock) if start_clock else None
+    end_day, end_clock = _day(second) or start_day, _clock(second)
+    end = datetime.combine(end_day, end_clock) if end_clock else None
+    if start is not None and end is not None and end <= start and _day(second) is None:
+        end += timedelta(days=1)  # "21:00 – 02:00": past midnight
+    return (start.isoformat() if start else start_day.isoformat()), (end.isoformat() if end else None)
+
+
+def _day(text: str) -> date | None:
+    match = _DAY.search(text)
+    month = _MONTHS.get(match.group(2).lower()) if match else None
+    if match is None or month is None:
+        return None
+    try:
+        return date(int(match.group(3)), month, int(match.group(1)))
+    except ValueError:
+        return None
+
+
+def _clock(text: str) -> time | None:
+    match = _CLOCK.search(_DAY.sub("", text))
+    if match is None:
+        return None
+    hour, minute, half = int(match.group(1)), int(match.group(2)), (match.group(3) or "").lower()
+    hour = hour % 12 + (12 if half == "pm" else 0) if half else hour
+    return time(hour, minute) if hour < 24 and minute < 60 else None
 
 
 def _offers(value: Any) -> list[dict[str, Any]]:

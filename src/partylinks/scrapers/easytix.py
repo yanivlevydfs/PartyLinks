@@ -4,13 +4,21 @@ Biblical Zoo and Israel Aquarium, and others. Every page is a React app fed by o
 
 * ``/user/marketplace/getMarketplaceIdByDomainRegex?domain=<domain>`` - a marketplace's id;
 * ``/event/public-events/marketplace/<id>`` - every public event of that marketplace (no paging);
-* ``/event/public-events/featured?limit=50`` - the easytix home page rail, across marketplaces;
+* ``/event/public-events/featured?limit=1000`` - the easytix home page rail, across marketplaces, whole
+  (the home page shows 16; 57 on 23.11.2026, so 50 cut it);
 * ``/event/ticket/getTickets/<account id>/<event id>`` - the ticket types with prices and stock.
 
 An event carries its title, HTML description, poster (``design.image``), free-text ``location``
 ("venue, street, city"), the day (``start_date``) and the time (``start_hour``), both UTC instants.
 Disabled, password, members-only and test events are skipped, and so are season passes and admission
 tickets that run for months (``max_span_days``). robots.txt allows everything.
+
+A run of dated shows sells as one event with a time-slot calendar (``timeSlotConfig``): its own dates
+(``dateOverrides``, each with its first and last slot) and no weekly days. Each open date is one event,
+from its first slot to the end of its last, no end after one short arrival slot (Penguin People ALIVE at
+Lost & Found: the opening night and 15 evenings, Dec 2026; the Israel Aquarium's sleepover tours), the
+date of ``start_date`` under the event's id. A calendar that opens every week is an admission ticket or a
+weekly class: read as the one event (and so skipped when it runs for months).
 
 An organiser can keep an event out of every listing (``isPublic: false``) and sell it through a link
 it posts (BLACKOUT HALLOWEEN at Gagarin, Nov 2026). The event pages other sources link to
@@ -21,17 +29,20 @@ it posts (BLACKOUT HALLOWEEN at Gagarin, Nov 2026). The event pages other source
 
 from __future__ import annotations
 
+import asyncio
 import re
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import clean_str, html_to_text, parse_iso, to_decimal, zone
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 # nimi's event ``type`` -> words the enrichment reads as site genres. "electronic-party" is the form's
@@ -51,7 +62,7 @@ class Marketplace(BaseModel):
 class EasytixSettings(SourceSettings):
     site_url: str = "https://easytix.co.il"
     api_url: str = "https://live.nimi.co.il"
-    featured_limit: int = 50
+    featured_limit: int = 1000  # the whole rail: the API answers this many when it has them
     marketplaces: list[Marketplace] = Field(default_factory=list)
     # Longer than this from first to last day: a season pass or an admission ticket, not an event.
     max_span_days: int = 31
@@ -59,6 +70,8 @@ class EasytixSettings(SourceSettings):
     skip_accounts: list[str] = Field(default_factory=list)
     # Event pages read even when no listing has them: unlisted events organisers sell through a posted link.
     event_pages: list[str] = Field(default_factory=list)
+    # The town of a venue a location names alone ("מועדון Lost & Found"): venue keyword (any case) -> town.
+    venue_cities: dict[str, str] = Field(default_factory=dict)
 
 
 class EasytixScraper(BaseScraper[EasytixSettings]):
@@ -121,29 +134,36 @@ class EasytixScraper(BaseScraper[EasytixSettings]):
             )
             if e and e.get("_id") and e["_id"] not in found:
                 # Unlisted (isPublic false) but sold through the link someone published: public.
-                e = {**e, "account": account, "isPublic": True}
-                found[e["_id"]] = (e, by_id.get(_marketplace_id(e) or ""))
+                linked: dict[str, Any] = {**e, "account": account, "isPublic": True}
+                found[str(e["_id"])] = (linked, by_id.get(_marketplace_id(linked) or ""))
         self.log.debug("%d event pages linked from other sources and not listed", len(pages))
         now = datetime.now().astimezone()
         events: list[ScrapedEvent] = []
         for event_id, (e, m) in found.items():
             try:
-                ev = parse_event(e, m, s, self.timezone)
+                dated = parse_events(e, m, s, self.timezone)
             except Exception as exc:  # noqa: BLE001 - one odd event never drops the others
                 self.record_failure(f"event {event_id}", exc)
                 continue
-            if ev and _upcoming(ev, now):
-                events.append(ev)
-        self.log.debug("%d events listed, %d coming and public", len(found), len(events))
+            events.extend(
+                ev for ev in dated
+                if is_current(ev.start_at, ev.end_at, RetentionSettings(), self.timezone, time_known=ev.time_known)
+            )  # fmt: skip
+        self.log.debug("%d events listed, %d coming and public dates", len(found), len(events))
+        # One ticket request per nimi event, shared by its dates.
+        asked: dict[str, asyncio.Task[list[Any] | None]] = {}
+
+        async def tickets_of(account_id: str, event_id: str) -> list[Any] | None:
+            return await self.optional(
+                f"tickets of {event_id}",
+                self.get_json(f"{api}/event/ticket/getTickets/{account_id}/{event_id}", expect=list),
+            )
 
         async def with_tickets(event: ScrapedEvent) -> ScrapedEvent:
-            tickets = await self.optional(
-                f"tickets of {event.source_event_id}",
-                self.get_json(
-                    f"{api}/event/ticket/getTickets/{event.extra['account_id']}/{event.source_event_id}", expect=list
-                ),
-            )
-            return add_tickets(event, tickets or [], now)
+            eid = event.extra["event_id"]
+            if eid not in asked:
+                asked[eid] = asyncio.ensure_future(tickets_of(event.extra["account_id"], eid))
+            return add_tickets(event, await asked[eid] or [], now)
 
         # Marketplaces list theirs one after another: the ticket requests (and saves) go soonest first,
         # so a cut run holds the nearest week (Nov 2026).
@@ -170,11 +190,6 @@ def linked_pages(urls: list[str], hosts: set[str]) -> list[tuple[str, str]]:
 def _marketplace_id(event: dict[str, Any]) -> str | None:
     market = event.get("marketplace")
     return market.get("_id") if isinstance(market, dict) else market if isinstance(market, str) else None
-
-
-def _upcoming(event: ScrapedEvent, now: datetime) -> bool:
-    last = event.end_at or (event.start_at + timedelta(days=1) if event.start_at else None)
-    return last is not None and last > now
 
 
 def _at(day: Any, clock: Any, tz: str) -> tuple[datetime | None, bool]:
@@ -233,6 +248,8 @@ def parse_event(e: dict[str, Any], market: Marketplace | None, s: EasytixSetting
     if end is not None and (end - start).days > s.max_span_days:
         return None
     venue, address, city = split_location(e.get("location"), market.city if market else None)
+    if city is None and venue:
+        city = next((town for key, town in s.venue_cities.items() if key.casefold() in venue.casefold()), None)
     genres = list(market.genres) if market else []
     if genre := TYPES.get(e.get("type") or ""):
         genres.append(genre)
@@ -252,8 +269,76 @@ def parse_event(e: dict[str, Any], market: Marketplace | None, s: EasytixSetting
         source_genres=list(dict.fromkeys(genres)),
         organizer=clean_str(account.get("name")),
         images=[image] if isinstance(image, str) and image.startswith("https://") else [],
-        extra={"account_id": account["_id"], "marketplace": market.domain if market else None},
+        extra={
+            "account_id": account["_id"],
+            "event_id": str(e["_id"]),
+            "marketplace": market.domain if market else None,
+        },
     )
+
+
+def _clock(hhmm: Any) -> time | None:
+    """nimi's slot clock "1700" -> 17:00."""
+    text = str(hhmm or "")
+    if len(text) != 4 or not text.isdigit() or int(text[:2]) > 23 or int(text[2:]) > 59:
+        return None
+    return time(int(text[:2]), int(text[2:]))
+
+
+def slot_days(e: dict[str, Any], tz: str) -> list[tuple[date, time, time | None]]:
+    """The days a time-slot event opens on dates of its own (``dateOverrides``), each with its first and
+    last slot, as the event page's calendar shows them; [] when it has none, or opens every week."""
+    cfg = e.get("timeSlotConfig")
+    if not isinstance(cfg, dict) or not cfg.get("enabled"):
+        return []
+    weekly = cfg.get("daySchedules")
+    if isinstance(weekly, dict) and any(isinstance(d, dict) and d.get("enabled") for d in weekly.values()):
+        return []  # an admission ticket or a weekly class, not a run of dates
+    local = zone(tz)
+    first, last = parse_iso(e.get("start_date")), parse_iso(e.get("end_date"))
+    days: dict[date, tuple[time, time | None]] = {}
+    for o in cfg.get("dateOverrides") or []:
+        sched = o.get("schedule") if isinstance(o, dict) else None
+        if not isinstance(sched, dict) or sched.get("enabled") is False:  # the site: unset is open
+            continue
+        try:
+            day = date.fromisoformat(str(o.get("date")))
+        except ValueError:
+            continue
+        start = _clock(sched.get("startTime"))
+        if start is None or (first and day < first.astimezone(local).date()):
+            continue
+        if last and day > last.astimezone(local).date():
+            continue
+        days[day] = (start, _clock(sched.get("endTime")))
+    return [(day, start, end) for day, (start, end) in sorted(days.items())]
+
+
+def parse_events(e: dict[str, Any], market: Marketplace | None, s: EasytixSettings, tz: str) -> list[ScrapedEvent]:
+    """Every date of one API event: each open day of a run of dated shows, else the event itself."""
+    days = slot_days(e, tz)
+    if not days:
+        event = parse_event(e, market, s, tz)
+        return [event] if event else []
+    base = parse_event({**e, "end_date": None, "end_hour": None}, market, s, tz)  # each day is its own span
+    if base is None or base.start_at is None:
+        return []
+    local, first = zone(tz), base.start_at.date()
+    events = []
+    for day, opens, closes in days:
+        start = datetime.combine(day, opens, local)
+        end = datetime.combine(day, closes, local) if closes else None
+        if end is not None and end <= start:
+            end += timedelta(days=1)  # "2100"-"0100": past midnight
+        if end is not None and end - start < timedelta(hours=1):
+            end = None  # one short arrival slot ("1730"-"1800" for a night at the aquarium), not the end
+        events.append(base.model_copy(update={
+            "source_event_id": base.source_event_id if day == first else f"{base.source_event_id}:{day.isoformat()}",
+            "start_at": start,
+            "end_at": end,
+            "time_known": True,
+        }))  # fmt: skip
+    return events
 
 
 def add_tickets(event: ScrapedEvent, tickets: list[Any], now: datetime) -> ScrapedEvent:

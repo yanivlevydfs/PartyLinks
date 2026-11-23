@@ -261,6 +261,7 @@ class BaseScraper[S: SourceSettings](ABC):
         self._retired_clients: list[httpx.AsyncClient] = []  # replaced after a proxy failure; closed at exit
         self._pace = Pace(self.http.concurrency, self.http.request_delay_seconds, self.http.pace, self.log)
         self._probe: asyncio.Task[None] | None = None  # the Israeli pool's one parallel check (see _probe_israeli)
+        self._reached = False  # the site answered at least once this run (any status), on whatever route
         self._backoff = wait_exponential(multiplier=self.http.backoff_seconds, max=self.http.backoff_max_seconds)
 
     # ----------------------------------------------------------------- lifecycle
@@ -370,6 +371,15 @@ class BaseScraper[S: SourceSettings](ABC):
             return await self._request(method, url, **kwargs)
         except _RefusedByProxyIP as exc:
             raise SourceBlockedError(f"{self.name}: access denied by the site on every proxy ({exc})") from exc
+        except (httpx.ProxyError, httpx.ConnectError, httpx.ConnectTimeout) as exc:
+            # An Israeli-only site, every Israeli proxy dead, and what is left (evomi's US exits: "500", our
+            # VPN, whose CyberGhost IPs it drops: "502") never got through: blocked, not a crash (holon, Nov 2026).
+            # Once the site has answered, a failed page stays the plain error the scraper may skip.
+            if self._israeli and self._proxy not in self._israeli and not self._reached:
+                raise SourceBlockedError(
+                    f"{self.name}: no Israeli proxy answers, and the other routes cannot reach the site ({type(exc).__name__}: {first_line(exc)[:120]})"
+                ) from exc
+            raise
 
     async def _probe_israeli(self, url: str) -> None:
         """Try every Israeli proxy of the pool at once on the source's first URL, and keep only those that
@@ -449,6 +459,7 @@ class BaseScraper[S: SourceSettings](ABC):
                     except SOCKSError as exc:  # a broken SOCKS proxy ("Malformed reply"): httpx lets it through raw
                         switches[0] += self._next_proxy(client, exc)
                         raise httpx.ProxyError(f"SOCKS: {exc}") from exc
+                self._reached = True
                 self.progress()
                 if response.status_code in THROTTLED:
                     self._pace.throttled()

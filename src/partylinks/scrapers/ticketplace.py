@@ -1,11 +1,12 @@
-"""Ticket Place (ticketplace.co.il) - resale tickets to concerts and festivals abroad.
+"""Ticket Place (ticketplace.co.il) - resale tickets to concerts, festivals and sport abroad.
 
 WordPress/WooCommerce. Listing: the WP REST products endpoint (``/wp-json/wp/v2/product``,
-the Store API answers 500 here) filtered to the shows and festivals categories, 100 a page,
-total in ``X-WP-Total``. Details: each product page's heading gives the local date and time,
+the Store API answers 500 here), the whole catalogue (shows, festivals, sport: ~1,000), 100 a
+page, total in ``X-WP-Total``; the product categories endpoint names each product's sections
+(a match's league / team / competition become its declared genres). Details: each product page's heading gives the local date and time,
 the location line "venue, city, country" (Hebrew country name), the seat categories'
 prices (euros) and the artwork. One ``ScrapedEvent`` per product (= one performance);
-products of past shows stay listed and are dropped by the service. ~4 + ~300 requests.
+products of past shows stay listed and are dropped by the service. ~12 + ~1,000 requests.
 robots.txt is absent (404).
 """
 
@@ -42,9 +43,10 @@ _POST_ID = re.compile(r"postid-(\d+)")
 class TicketPlaceSettings(SourceSettings):
     site_url: str
     products_path: str  # WP REST products endpoint
-    category_ids: list[int]  # shows, festivals
+    categories_path: str  # WP REST product categories endpoint
     festival_category_id: int
-    max_pages: int = Field(10, ge=1)
+    sport_category_id: int
+    max_pages: int = Field(100, ge=1)  # a safety net only (10 pages on 23.11.2026)
     page_size: int = Field(100, ge=1, le=100)  # products per listing request (WordPress allows 100 at most)
 
 
@@ -55,18 +57,32 @@ class TicketPlaceScraper(BaseScraper[TicketPlaceSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
+        categories = await self._categories()
         products = await self.paginate(self._listing_page, s.page_size, s.max_pages)
-        festivals = {
-            p["link"]: s.festival_category_id in (p.get("product_cat") or [])
+        cats = {
+            p["link"]: [c for c in p.get("product_cat") or [] if isinstance(c, int)]
             for p in products
             if isinstance(p, dict) and p.get("link")
         }
-        self.log.debug("listed %d products", len(festivals))
+        self.log.debug("listed %d products", len(cats))
+
+        def root(cat: int) -> int:
+            seen: set[int] = set()
+            while cat in categories and categories[cat][1] and cat not in seen:
+                seen.add(cat)
+                cat = categories[cat][1]
+            return cat
 
         async def fetch(url: str) -> ScrapedEvent | None:
-            return parse_product(await self.get_text(url), url, self.timezone, festival=festivals[url])
+            roots = {root(c) for c in cats[url]}
+            sport = None
+            if s.sport_category_id in roots:  # the match's sections: "ספורט", "ליגה אנגלית", "ווימבלדון"...
+                names = [categories[c][0] for c in cats[url] if c in categories and root(c) == s.sport_category_id]
+                sport = list(dict.fromkeys([categories.get(s.sport_category_id, ("ספורט", 0))[0], *names]))
+            festival = s.festival_category_id in roots
+            return parse_product(await self.get_text(url), url, self.timezone, festival=festival, sport=sport)
 
-        async for event in self.stream_isolated(festivals, fetch, label=lambda u: u):
+        async for event in self.stream_isolated(cats, fetch, label=lambda u: u):
             yield event
 
     async def _listing_page(self, index: int) -> tuple[list[Any], int | None]:
@@ -74,7 +90,6 @@ class TicketPlaceScraper(BaseScraper[TicketPlaceSettings]):
         params = {
             "per_page": s.page_size,
             "page": index + 1,
-            "product_cat": ",".join(map(str, s.category_ids)),
             "_fields": "id,link,product_cat",
         }
         response = await self.request("GET", s.site_url + s.products_path, params=params)
@@ -86,13 +101,40 @@ class TicketPlaceScraper(BaseScraper[TicketPlaceSettings]):
             raise ParseError(f"{response.request.url}: expected a list")
         return items, to_int(response.headers.get("X-WP-Total"))
 
+    async def _categories(self) -> dict[int, tuple[str, int]]:
+        """Every product category: id -> (name, parent id)."""
+        s = self.settings
+
+        async def page(index: int) -> tuple[list[Any], int | None]:
+            params = {"per_page": 100, "page": index + 1, "_fields": "id,name,parent"}
+            response = await self.request("GET", s.site_url + s.categories_path, params=params)
+            try:
+                items = response.json()
+            except ValueError as exc:
+                raise ParseError(f"{response.request.url}: expected JSON") from exc
+            if not isinstance(items, list):
+                raise ParseError(f"{response.request.url}: expected a list")
+            return items, to_int(response.headers.get("X-WP-Total"))
+
+        rows = await self.paginate(page, 100, s.max_pages)
+        return {
+            r["id"]: (clean_str(htmllib.unescape(str(r.get("name") or ""))) or "", to_int(r.get("parent")) or 0)
+            for r in rows
+            if isinstance(r, dict) and isinstance(r.get("id"), int)
+        }
+
 
 def _text(fragment: str) -> str:
     return re.sub(r"\s+", " ", htmllib.unescape(re.sub(r"<[^>]+>", " ", fragment))).strip()
 
 
-def parse_product(page_html: str, url: str, timezone: str, *, festival: bool = False) -> ScrapedEvent | None:
-    """The product's performance; None for a page without a dated heading (not an event)."""
+def parse_product(
+    page_html: str, url: str, timezone: str, *, festival: bool = False, sport: list[str] | None = None
+) -> ScrapedEvent | None:
+    """The product's performance; None for a page without a dated heading (not an event).
+
+    ``sport``: a match's section names (its declared genres); a match names no performer.
+    """
     heading = _HEADING.search(page_html)
     date = _DATE.search(heading.group(1)) if heading else None
     if not heading or not date or date.group(2).lower() not in MONTHS:
@@ -132,8 +174,8 @@ def parse_product(page_html: str, url: str, timezone: str, *, festival: bool = F
         venue_name=venue,
         city=city,
         country=country,
-        source_genres=["פסטיבל"] if festival else [],
-        artists=[artist] if artist and not festival else [],
+        source_genres=sport if sport else ["פסטיבל"] if festival else [],
+        artists=[artist] if artist and not festival and not sport else [],
         images=[image.group(1)] if image else [],
         currency=currency,
         min_price=min(prices) if prices else None,

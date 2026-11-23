@@ -129,14 +129,13 @@ def parse_listing(page_html: str, site_url: str, timezone: str) -> tuple[list[Pa
             continue
         classes = (item.attributes.get("class") or "").split()
         park_node = item.css_first(".park-event-location")
+        desc_node = item.css_first(".park-event-desc")
         cards.append(
             ParkCard(
                 post_id=str(item.attributes.get("data-id")),
                 url=urljoin(site_url, href),
                 title=clean_str(unescape(link.text())) or "",
-                subtitle=clean_str(item.css_first(".park-event-desc").text())
-                if item.css_first(".park-event-desc")
-                else None,
+                subtitle=clean_str(desc_node.text()) if desc_node else None,
                 park=clean_str(park_node.text())
                 if park_node
                 else next((parks[c] for c in classes if c in parks), None),
@@ -181,7 +180,7 @@ def parse_event_page(
     genres += [g.lower() for g in s.type_genres.get(card.event_type or "", [])]
     images = [i for i in (card.image, _largest(tree.css_first(".park-single-event-image img"))) if i]
     extra: dict[str, Any] = {}
-    if seller is not None and (href := seller.attributes.get("href", "")).startswith(("http://", "https://")):
+    if seller is not None and (href := seller.attributes.get("href") or "").startswith(("http://", "https://")):
         extra["purchase_url"] = href
     if card.subtitle:
         extra["subtitle"] = card.subtitle

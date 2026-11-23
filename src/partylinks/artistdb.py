@@ -12,6 +12,7 @@ another source's photo / links are never wiped by a sparser profile.
 
 from __future__ import annotations
 
+import builtins
 import logging
 from collections import Counter
 from collections.abc import Iterable
@@ -59,7 +60,7 @@ class ArtistBook:
     def __init__(self, db: Database) -> None:
         self.db = db
 
-    def load(self) -> tuple[set[str], set[str]]:
+    def load(self) -> tuple[builtins.set[str], builtins.set[str]]:  # builtins: the class's own set() shadows it
         """(known names, blocked names), both casefolded. Profiled artists are always known."""
         with self.db.session(write=False) as session:
             rows = session.execute(select(ArtistRow.key, ArtistRow.blocked)).all()
@@ -72,9 +73,10 @@ class ArtistBook:
         with self.db.session(write=False) as session:
             rows = session.scalars(select(ArtistProfileRow)).all()
         return {
-            r.key: ArtistProfile(**{c: getattr(r, c) for c in _PROFILE_COLUMNS} | {"links": list(r.links or [])})
+            r.key: ArtistProfile(name=r.name, source=r.source, kind=r.kind, genre=r.genre, image_url=r.image_url,
+                                 spotify_url=r.spotify_url, profile_url=r.profile_url, links=list(r.links or []))
             for r in rows
-        }
+        }  # fmt: skip
 
     def save_profiles(self, profiles: Iterable[ArtistProfile]) -> int:
         now = utcnow()

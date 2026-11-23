@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
+import asyncio
 from decimal import Decimal
 from pathlib import Path
 
-from partylinks.config import Settings
+from partylinks.config import HttpSettings, Settings
 from partylinks.enrichment import Enricher
 from partylinks.scrapers.airdrop import (
+    AirdropScraper,
+    AirdropSettings,
     at_club,
     club_key,
     club_profile,
     item_list_urls,
     listing_urls,
+    pager_urls,
     parse_event,
     parse_page,
     sitemap_urls,
@@ -42,6 +46,42 @@ def test_listing_cards_in_another_markup() -> None:
         '<a class="nav" href="/clubs">Clubs</a><a class="card" href="#top">up</a>'
     )
     assert listing_urls(page, SITE) == [f"{SITE}/wtgl-marina", f"{SITE}/goat/backstage-records-tuesday"]
+
+
+def _pager(*pages: int) -> str:
+    """The site's pager: page 1 is the plain listing URL, the others ``&amp;page=N``."""
+    hrefs = ["/events?when=upcoming" + (f"&amp;page={p}" if p > 1 else "") for p in pages]
+    links = "".join(f'<a class="pagination__link" href="{h}">p</a>' for h in hrefs)
+    return f'<nav class="pagination">{links}<span class="pagination__link pagination__link--current">x</span></nav>'
+
+
+def test_pager_links_unescaped_once_each() -> None:
+    assert pager_urls(_pager(1, 3, 3), SITE) == [
+        f"{SITE}/events?when=upcoming",
+        f"{SITE}/events?when=upcoming&page=3",
+    ]
+
+
+def test_listing_reads_every_page_to_the_last() -> None:
+    # 2026-11-23: "97 אירועים" on 3 pages (48 + 48 + 1); only page 1 used to be read.
+    listing = f"{SITE}/events?when=upcoming"
+    pages = {
+        listing: '<a class="wcard glass" href="/a"></a><a class="wcard" href="/b"></a>' + _pager(2),
+        f"{listing}&page=2": '<a class="wcard" href="/c"></a>' + _pager(1, 3),
+        f"{listing}&page=3": '<a class="wcard" href="/d"></a>' + _pager(2, 4),
+        f"{listing}&page=4": '<a class="wcard" href="/d"></a>' + _pager(3, 5),  # past the last: repeats it
+    }
+    read: list[str] = []
+
+    async def get_text(url: str, **_: object) -> str:
+        read.append(url)
+        return pages[url]
+
+    settings = AirdropSettings(cron="25 6,18 * * *", site_url=SITE, listing_path="/events?when=upcoming")
+    scraper = AirdropScraper(settings, HttpSettings(), TZ)
+    scraper.get_text = get_text  # type: ignore[method-assign]
+    assert asyncio.run(scraper._listing()) == [f"{SITE}/{p}" for p in "abcd"]
+    assert read == [listing, f"{listing}&page=2", f"{listing}&page=3", f"{listing}&page=4"]
 
 
 def test_club_night_with_price_range_and_seller_link() -> None:
@@ -87,6 +127,19 @@ def test_artist_page_gives_profile_and_event_links_not_an_event() -> None:
 def test_sitemap_pages_without_home() -> None:
     xml = f"<urlset><url><loc>{SITE}/</loc></url><url><loc>{SITE}/utopia</loc></url><url><loc>{SITE}/utopia</loc></url></urlset>"
     assert sitemap_urls(xml, SITE) == [f"{SITE}/utopia"]
+
+
+def test_hebrew_page_has_one_spelling_in_listing_sitemap_and_json_ld() -> None:
+    # 2026-11-23: the listing's href was percent-encoded, the sitemap's <loc> Hebrew: 4 parties stored twice.
+    encoded = f"{SITE}/%D7%90%D7%A8%D7%98-%D7%A7%D7%9C%D7%90%D7%91"
+    xml = f"<urlset><url><loc>{SITE}/ארט-קלאב</loc></url><url><loc>{SITE}/ארט-קלאב/</loc></url></urlset>"
+    assert sitemap_urls(xml, SITE) == [encoded]
+    assert listing_urls(f'<a class="wcard" href="{encoded[len(SITE) :]}"></a>', SITE) == [encoded]
+    page = (
+        '<script type="application/ld+json">{"@context": "https://schema.org", "@type": "ItemList",'
+        ' "itemListElement": [{"@type": "ListItem", "url": "/ארט-קלאב#top"}]}</script>'
+    )
+    assert item_list_urls(page, SITE) == [encoded]
 
 
 def test_clubs_list_names_every_club_page() -> None:
