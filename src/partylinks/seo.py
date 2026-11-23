@@ -656,22 +656,28 @@ def event_page(session: Session, cfg: Settings, lang: str, ref: str) -> Page | N
     )
 
 
-def event_redirect(request: Request, ref: str) -> Response | None:
-    """Where an event page's address is not its canonical short link, the 301 to it: the old
-    ``/event/<slug>`` (or ``/event/<id>``), a code in another case or with a tail, a duplicate listing's
-    code (to its group's primary). None: serve the page here (or its 410, when there is no such event)."""
+def moved_to(session: Session, request: Request, ref: str) -> str | None:
+    """The short link an event page's address answers 301 to (see event_redirect), or None."""
     short = request.url.path.startswith("/e/")
     code = shortlinks.normalize(ref) if short else None
     if short and code is None:
         return None
+    where = EventRow.code == code if short else or_(EventRow.id == ref, EventRow.slug == ref)
+    row = session.scalar(select(EventRow).where(where))
+    target = row and primary_listing(session, row)
+    if target is None or not target.code:
+        return None  # gone (410), or not given a code yet: the page as it is
+    dest = shortlinks.path(target.code)
+    return None if request.url.path == dest else dest
+
+
+def event_redirect(request: Request, ref: str) -> Response | None:
+    """Where an event page's address is not its canonical short link, the 301 to it: the old
+    ``/event/<slug>`` (or ``/event/<id>``), a code in another case or with a tail, a duplicate listing's
+    code (to its group's primary). None: serve the page here (or its 410, when there is no such event)."""
     with request.app.state.db.session(write=False) as session:
-        where = EventRow.code == code if short else or_(EventRow.id == ref, EventRow.slug == ref)
-        row = session.scalar(select(EventRow).where(where))
-        target = row and primary_listing(session, row)
-        if target is None or not target.code:
-            return None  # gone (410), or not given a code yet: the page as it is
-        dest = shortlinks.path(target.code)
-    if request.url.path == dest:
+        dest = moved_to(session, request, ref)
+    if dest is None:
         return None
     query = f"?{request.url.query}" if request.url.query else ""
     # A day in caches, not forever: a regroup may make another listing the primary.
@@ -1947,7 +1953,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
     # Rendered pages are the same for every visitor; building one runs several whole-table queries
     # (~1.5 s for the home page at prod size, ~12 s for /artists). Served from the same kind of cache
     # as the API (stale entries are rebuilt in the background), so a visitor waits only on a first visit.
-    from partylinks.api import CacheBusy, ResponseCache  # local: api imports this module
+    from partylinks.api import CacheBusy, ResponseCache, Uncached  # local: api imports this module
 
     api_cfg = app.state.settings.api
     rendered = ResponseCache(  # scrapes write all day
@@ -1998,8 +2004,19 @@ def register(app: FastAPI, site_dir: Path) -> None:
     def event_html(ref: str, request: Request) -> Response:
         if (moved := event_redirect(request, ref)) is not None:
             return moved
-        # An event over is deleted (never kept past its date): 410 tells crawlers it is gone for good.
-        return page(request, lambda s, c, lang: event_page(s, c, lang, ref))
+
+        def build(session: Session, settings: Settings, lang: str) -> Page | None:
+            # Merged into another listing's group since its page was cached: the copy goes, so the next visit
+            # gets the 301 above. Rebuilt in place, the old page stayed up a day past each visit (Nov 2026).
+            if moved_to(session, request, ref) is not None:
+                raise Uncached(request.url.path)
+            # An event over is deleted (never kept past its date): 410 tells crawlers it is gone for good.
+            return event_page(session, settings, lang, ref)
+
+        try:
+            return page(request, build)
+        except Uncached:  # merged between the check above and the build
+            return event_redirect(request, ref) or page(request, lambda s, c, lang: event_page(s, c, lang, ref))
 
     @app.get("/event/{ref}", include_in_schema=False)
     def event(ref: str, request: Request) -> Response:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -52,9 +53,7 @@ def test_stored_events_get_codes_and_a_clash_takes_the_next_one(tmp_path: Path) 
         session.execute(update(EventRow).where(EventRow.id == "test:b").values(code=shortlinks.candidate("test:c")))
     enricher = Enricher(settings.enrichment, settings.timezone)
     with db.session() as session:
-        upsert_events(
-            session, [enricher.enrich(event("c", soon)), enricher.enrich(event("a", soon, title="New title"))]
-        )
+        upsert_events(session, [e for e in map(enricher.enrich, [event("c", soon), event("a", soon, title="New title")]) if e])
     with db.session() as session:
         codes = dict(session.execute(select(EventRow.id, EventRow.code)).all())
     assert codes["test:c"] == shortlinks.candidate("test:c", 1)
@@ -124,3 +123,21 @@ def test_the_short_link_is_the_one_address_of_an_event_page(tmp_path: Path) -> N
         items = client.get("/events", headers=UA).json()["items"]
         assert {e["id"]: e["code"] for e in items}["test:a"] == code
         assert short in client.get("/sitemap-1.xml", headers=UA).text
+
+
+def test_a_cached_page_of_a_listing_merged_since_answers_its_301(tmp_path: Path) -> None:
+    """Nov 2026: Ticketmaster's "נסרין", merged into Eventer's copy, kept its page (200) while visits refreshed it."""
+    settings = settings_for(tmp_path)
+    settings.seo.html_ttl_seconds = 0.01
+    soon = datetime.now(UTC) + timedelta(days=3)
+    db = seed(settings, [event("a", soon), event("dup", soon)])
+    with db.session() as session:
+        code, dup_code = session.get_one(EventRow, "test:a").code, session.get_one(EventRow, "test:dup").code
+    with TestClient(create_app(settings, start_scheduler=False), follow_redirects=False) as client:
+        assert client.get(f"/e/{dup_code}", headers=UA).status_code == 200  # its own page, cached
+        with db.session() as session:
+            session.execute(update(EventRow).where(EventRow.id == "test:dup").values(group_id="test:a", is_primary=False))
+        deadline = time.monotonic() + 10
+        while (moved := client.get(f"/e/{dup_code}", headers=UA)).status_code == 200 and time.monotonic() < deadline:
+            time.sleep(0.05)  # the stale copy is served once while the refresh finds the merge
+        assert moved.status_code == 301 and moved.headers["location"] == f"/e/{code}"

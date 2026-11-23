@@ -542,6 +542,11 @@ class CacheBusy(Exception):
     """No build slot freed within ``build_wait``: the request gets a quick 503 instead of holding a thread."""
 
 
+class Uncached(Exception):
+    """A builder's word that its page is no longer served at its address (an event merged into another's group
+    answers 301 now): the cached copy goes, so the next request reaches the route instead of the old page."""
+
+
 class ResponseCache:
     """Bodies of public reads (JSON, rendered pages). An entry goes stale when a write commits
     (``Database.changes``, unless ``follow_writes`` is off; never before ``min_fresh``, so a scrape committing
@@ -617,6 +622,9 @@ class ResponseCache:
         try:
             changes, now = Database.changes, time.monotonic()  # read before building: a write during it wins
             out = build()
+        except Uncached:
+            self.forget(key)
+            raise
         finally:
             self._builds.release()
         body, code = out if isinstance(out, tuple) else (out, 200)
@@ -634,6 +642,12 @@ class ResponseCache:
             self._bytes += len(body)
         return body, code
 
+    def forget(self, key: tuple[str, str]) -> None:
+        with self._lock:
+            if old := self._items.pop(key, None):
+                self._bytes -= len(old[2])
+            self._builders.pop(key, None)
+
     def _refresh(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> None:
         with self._lock:
             if key in self._refreshing:
@@ -643,6 +657,8 @@ class ResponseCache:
         def run() -> None:
             try:
                 self._build(key, build)
+            except Uncached:
+                pass  # forgotten: the next request is routed
             except Exception:
                 log.exception("cache refresh of %s failed", key[0])
             finally:
