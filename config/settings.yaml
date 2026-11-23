@@ -1009,6 +1009,7 @@ enrichment:
     eventbrite: [culture]
     popit: [culture]
     eventim: [live_show]    # box office: shows and concerts
+    barak: [live_show]      # box office: shows and concerts (a product without categories, not on an ItemList)
     mevalim: [live_show]
     muzi: [live_show]       # music listings
     jerusalemtheatre: [theatre]
@@ -5127,9 +5128,14 @@ sources:
     # Shares Eventim's event ids: most events are also stored by `eventim`. Not yet seen live (Oct 2026).
     enabled: true
     israel_proxy: true  # Eventim's Akamai: unreachable from abroad; refused a free IL proxy (Oct 2026)
-    # No vpn: Akamai challenges the VPN's IP (0 events); the free IL proxies got up to 83 (Nov 2026)
+    # No vpn: Akamai refuses the VPN's IP (403 on the first event page, Nov 2026)
     cron: "4 7,19 * * *"
     site_url: https://www.barak-tickets.co.il
+    # Akamai challenges the event and group pages (200, sec-if-cpt) after ~10 from every IP we have (Railway,
+    # evomi, free IL proxies), however slowly (Nov 2026): each refused one comes from Eventim's public search
+    # API, which the site's own search calls with eventim.co.il's web id; it lists every Barak event (305 of 305).
+    api_url: https://public-api.eventim.com/websearch/search/api/exploration/v1/products
+    api_web_id: web__eventim-co-il
     city_paths:   # the site's nav regions (Jan 2026)
       - /city/באר-שבע-308/
       - /city/בנימינה-1957/
