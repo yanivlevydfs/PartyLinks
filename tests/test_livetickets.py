@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from partylinks.scrapers import livetickets
@@ -61,7 +63,9 @@ def test_livetickets_listing_links() -> None:
 def test_livetickets_category_names():
     assert livetickets.category_name("https://www.livetickets.co.il/Category1/CONCERTS.aspx") == "concerts"
     assert livetickets.category_name("https://www.livetickets.co.il/Category2/SOCCER.aspx") == "soccer"
-    assert livetickets.category_name("https://www.livetickets.co.il/Category3/English%20Premier%20League.aspx") == "soccer"
+    assert (
+        livetickets.category_name("https://www.livetickets.co.il/Category3/English%20Premier%20League.aspx") == "soccer"
+    )
 
 
 def test_livetickets_performer_banner_is_the_picture() -> None:
@@ -77,3 +81,54 @@ def test_livetickets_performer_banner_is_the_picture() -> None:
     page = (FIXTURES / "berlin.html").read_text(encoding="utf-8")
     event = livetickets.parse_rows(page, EVENT_URL, "Asia/Jerusalem", image=image)[0]
     assert (event.image_url, event.images) == (image, [image])
+
+
+def _row(eid: int, title: str) -> str:
+    return (
+        '<li class="list_tickets_item"><div class="tickets_date_year">2029</div>'
+        '<div class="tickets_date_day">5 מרץ</div> 19:30 '
+        f'<div class="tickets_name_txt">{title}</div><div class="tickets_place_txt">Apollo</div>'
+        '<div class="tickets_place_txt">לונדון</div><div class="tickets_place_txt">בריטניה</div>'
+        f'<a href="/events/events.aspx?eid={eid}">x</a></li>'
+    )
+
+
+def test_livetickets_reads_the_unlinked_categories_every_page_and_years_ahead(monkeypatch: Any) -> None:
+    """The theatre category page (linked from no page, Nov 2026) is read from the config; its footer's popular
+    performers get no "theatre"; a listing is read to its last page, asked for years ahead (the site stops at
+    ~18 months by default)."""
+    from partylinks.config import HttpSettings, Settings
+
+    raw = {**(Settings().sources["livetickets"] or {}), "categories": ["Category1/THEATRE.aspx"]}
+    scraper = livetickets.LiveTicketsScraper(livetickets.LiveTicketsSettings.model_validate(raw), HttpSettings(), "UTC")
+    window = livetickets.window_query(datetime.now(ZoneInfo("UTC")), 10)
+    assert window.startswith("?pn=0&EndDate=") and window.endswith("&PageNum=1")
+    wicked = SITE + "performers/Wicked.aspx"
+    pages = {
+        SITE: f'<a class="footer_autolink" href="{SITE}performers/Billie%20Eilish.aspx">Billie</a>',
+        SITE + "Category1/THEATRE.aspx": (
+            f'<a class="category_list_link w-inline-block" href="/performers/Wicked.aspx">Wicked</a>'
+            f'<a class="footer_autolink" href="{SITE}performers/Billie%20Eilish.aspx">Billie</a>'
+            f'<a class="top_navlink_2 w-dropdown-link" href="{SITE}performers/FC%20Barcelona.aspx">FCB</a>'
+        ),
+        wicked + window: _row(1, "Wicked") + '<a id="hplNext" href="?pn=0&amp;PageNum=2">next</a>',
+        wicked + "?pn=0&PageNum=2": _row(2, "Wicked") + f'<a id="hplNext" href="{window.replace("&", "&amp;")}">x</a>',
+        SITE + "performers/Billie%20Eilish.aspx" + window: _row(3, "Billie Eilish"),
+    }
+    asked: list[str] = []
+
+    async def get_text(url: str, **_: Any) -> str:
+        asked.append(url)
+        return pages[url]
+
+    monkeypatch.setattr(scraper, "get_text", get_text)
+
+    async def run() -> list[livetickets.ScrapedEvent]:
+        return [e async for e in scraper.scrape()]
+
+    events = {e.source_event_id: e for e in asyncio.run(run())}
+    assert sorted(events) == ["1", "2", "3"]  # page 2's next link back to page 1 ends the listing
+    assert events["2"].source_genres == ["theatre"]
+    assert events["3"].source_genres == []  # a footer link is no theatre
+    assert events["1"].start_at == datetime(2029, 3, 5, 19, 30, tzinfo=ZoneInfo("Europe/London"))
+    assert len(asked) == len(set(asked))

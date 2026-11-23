@@ -3,7 +3,10 @@
 ASP.NET site with no API or sitemap (``/sitemap.xml`` is a 404). Listing pages are crawled
 in two hops: the home page and the category pages it links (``/Category1-3/...``) link every
 performer page (``/performers/``, ``/DT_performers/``) and the city and venue pages (~600).
-Each of those lists its events 15 a page, next pages by the "next page" link (``PageNum=``).
+The category pages the home page does not link (theatre, "other", fairs / festivals) come from
+``categories``. Each listing shows its events 15 a page, next pages by the "next page" link
+(``PageNum=``) to the last; by default a listing ends ~18 months ahead (``EndDate=``), so the
+first page asks for ``horizon_years`` instead (the next links keep it).
 A row gives the event's date and local time (Hebrew month), name, venue, Hebrew city and
 country, the "from" price with its currency sign and the event id (``events.aspx?eid=``).
 No detail requests: the event page adds only the seat categories. A row with an empty price box
@@ -11,7 +14,7 @@ is out of stock (its event page has no seats, only a "leave your details" form):
 A performer page's banner (``h_search_section`` background) is the performer's picture
 (``HebBackground_<id>``) that its event pages show too; ``HebCatBackground_`` is the category's
 stock banner shared by every performer without one, so it is not taken.
-~700 requests per run.
+~730 requests per run.
 robots.txt disallows only ``/bin/``, ``/nrereco/`` and ``/search/`` (the "all events" links).
 """
 
@@ -20,7 +23,7 @@ from __future__ import annotations
 import html as htmllib
 import re
 from collections.abc import AsyncIterator
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import unquote, urljoin
 
 from pydantic import Field
@@ -53,14 +56,17 @@ _PRICE = re.compile(r'tickets_price_currency">([^<]*)</div>\s*<div>([^<]*)</div>
 # The banner: the performer's own picture, or the category's stock one (HebCatBackground_).
 _BANNER = re.compile(r'h_search_section[^"]*"\s+style="background-image:\s*url\(([^)]+)\)')
 _NEXT = re.compile(r'id="hplNext"[^>]*href="([^"]+)"')
-# The top menu links popular performers of every kind from every page: not the category's own.
-_MENU_LINK = re.compile(r'<a\b[^>]*class="[^"]*navlink[^"]*"[^>]*>', re.IGNORECASE)
+# The top menu and the footer link popular performers of every kind from every page (Billie Eilish
+# and FC Barcelona from the theatre page): not the category's own.
+_MENU_LINK = re.compile(r'<a\b[^>]*class="[^"]*(?:navlink|footer_)[^"]*"[^>]*>', re.IGNORECASE)
 
 
 class LiveTicketsSettings(SourceSettings):
     site_url: str
     event_path: str  # must contain "{eid}"
-    max_pages: int = Field(30, ge=1)  # pages per listing
+    # Category pages no other page links (paths under site_url), read like the linked ones.
+    categories: list[str] = Field(default_factory=list)
+    horizon_years: int = Field(10, ge=1)  # a listing's own window ends ~18 months ahead
 
 
 class LiveTicketsScraper(BaseScraper[LiveTicketsSettings]):
@@ -98,6 +104,9 @@ class LiveTicketsScraper(BaseScraper[LiveTicketsSettings]):
         page carries the categories of the category pages that link it ("concerts", "soccer"...)."""
         home = self.settings.site_url + "/"
         found = {k: (u, []) for k, u in listing_links(await self.get_text(home), home).items()}
+        for path in self.settings.categories:
+            url = self.settings.site_url + "/" + path.lstrip("/")
+            found.setdefault(url.casefold(), (url, []))
         categories = [u for u, _ in found.values() if "/category" in u.lower()]
         for url, page in zip(categories, await self._pages(categories), strict=True):
             category = category_name(url)
@@ -112,17 +121,24 @@ class LiveTicketsScraper(BaseScraper[LiveTicketsSettings]):
         pages = dict(zip(urls, await gather_or_cancel(self.optional(u, self.get_text(u)) for u in urls), strict=True))
         return [pages[u] or "" for u in urls]
 
-    async def _listing_events(self, url: str) -> list[ScrapedEvent]:
-        s, events, start = self.settings, [], url
-        for _ in range(s.max_pages):
+    async def _listing_events(self, start: str) -> list[ScrapedEvent]:
+        s, events, seen = self.settings, [], set()
+        url: str | None = start + window_query(datetime.now(zone(self.timezone)), s.horizon_years)
+        while url and url not in seen:  # every page to the last (a next link back to a read page ends it)
+            seen.add(url)
             page = await self.get_text(url)
-            events += parse_rows(page, s.site_url + s.event_path, self.timezone, listing=start, image=banner(page, start))
+            events += parse_rows(
+                page, s.site_url + s.event_path, self.timezone, listing=start, image=banner(page, start)
+            )
             next_link = _NEXT.search(page)
-            if not next_link:
-                return events
-            url = urljoin(url, htmllib.unescape(next_link.group(1)))
-        self.log.warning("%s truncated at max_pages=%d", url, s.max_pages)
+            url = urljoin(url, htmllib.unescape(next_link.group(1))) if next_link else None
         return events
+
+
+def window_query(today: datetime, years: int) -> str:
+    """A listing's first page from today to ``years`` ahead (dd/mm/yyyy, the site's own spelling)."""
+    end = today + timedelta(days=365 * years)
+    return f"?pn=0&EndDate={end:%d/%m/%Y}&stratingDate={today:%d/%m/%Y}&PageNum=1"
 
 
 def listing_links(page_html: str, base: str) -> dict[str, str]:
