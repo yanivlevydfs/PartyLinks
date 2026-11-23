@@ -4,12 +4,14 @@ A WordPress site whose ``events`` post type is public in wp-json; this source re
 own REST links do:
 - ``/wp-json/wp/v2/event-type`` (one request): the site's music categories (טכנו, מיינסטרים, היפ הופ...),
   id -> name, kept as source genres. About half the events carry none; those get ``base_genre`` (a party).
-- ``/wp-json/wp/v2/events`` in pages of 100 with the featured image embedded (~5 requests, ~460 rows):
+- ``/wp-json/wp/v2/events`` in pages of 100 with the featured image embedded (7 requests, 634 rows on
+  23.11.2026, every page to ``X-WP-Total``; the archive grows ~300 rows a month, ``max_pages`` sits far above it):
   ``meta`` gives the date (``event-date``: the local wall clock written as a UTC epoch, so 23:00 reads
   23:00 UTC), the start (``event-gate_open``), a Google-formatted address and the seller's link
   (``ticket_link``: Go-Out, Eventer...), kept as ``extra["purchase_url"]`` so dedup merges the event with
   that seller's own listing. REST has no date filter, so past rows are dropped from the listing by their
-  ``event-date`` and ``is_current`` (~50 current events); no event page is fetched.
+  ``event-date`` and ``is_current`` (18 current = the /events/ archive's "18 אירועים קרובים"); no event page
+  is fetched. One date a post (a weekly night is a new post each week; ``event-info`` holds only text).
 Prices: the article (``content``) opens with a row of chips; the highlighted ones (``price_chip_selector``)
 state the entry: "החל מ-₪80", "מוקדמות 60 ₪ · רגיל 70 ₪", "הרשמה חינם עד 00:00" (a free tier), or a drink deal
 ("בקבוק אבסולוט 99 ₪", skipped by ``drink_words``). Each "·" / "/" part is one tier; ~2/3 of current events have one.
@@ -54,7 +56,9 @@ class EfoKulamSettings(SourceSettings):
     events_api_path: str = "/wp-json/wp/v2/events"
     types_api_path: str = "/wp-json/wp/v2/event-type"
     per_page: int = 100  # the REST API maximum
-    max_pages: int = Field(50, ge=1)
+    # A runaway guard only: REST lists newest posts first and has no date filter, so every page is read; a cap
+    # inside the archive would drop the oldest posts, a far-ahead festival among them.
+    max_pages: int = Field(500, ge=1)
     # Events without a category on a nightlife guide are club nights: this declared genre maps to nightclubs.
     base_genre: str = "מסיבה"
     # Title prefixes left over from the seller's "duplicate event" button.
