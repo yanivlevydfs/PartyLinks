@@ -39,6 +39,8 @@
 @media (max-width: 760px) {
   .tg-fab { bottom: calc(76px + env(safe-area-inset-bottom)); }
   body:has(.buy-bar) .tg-fab { bottom: calc(136px + env(safe-area-inset-bottom)); }
+  /* An event page: the bubble covered the text being read above the buy bar; the round button stays. */
+  body:has(.buy-bar) .tg-fab-bubble, body:has(.buy-bar) .tg-fab-dot { display: none; }
   .tg-fab-btn { width: 46px; height: 46px; }
   .tg-fab-btn svg { width: 24px; height: 24px; }
   .tg-fab-bubble { font-size: 13px; }

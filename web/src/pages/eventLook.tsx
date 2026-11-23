@@ -1,4 +1,4 @@
-// How an event's page reads: a clean title, a one-line lede, a short address, "today" / "tomorrow", and its FAQ.
+// How an event's page reads: a clean title, a short address, "today" / "tomorrow", and its FAQ.
 import type { Lang, Strings } from "../i18n";
 import { genreLabel } from "../i18n";
 import type { EventDetail } from "../types";
@@ -39,14 +39,6 @@ export function relativeDay(e: Pick<EventDetail, "local_date" | "time_zone" | "t
   if (e.local_date === israelDay(now, zone)) return e.time_slot === "evening" || e.time_slot === "night" ? t.tonight : t.dayToday;
   if (e.local_date === israelDay(new Date(now.getTime() + 864e5), zone)) return t.tomorrow;
   return null;
-}
-
-/** The description's first sentence (up to ~200 characters), for a lede under the title. */
-export function lede(e: Pick<EventDetail, "description_layout">): string | null {
-  const first = e.description_layout?.blocks.find((b) => b.kind === "p")?.text.replace(/\*\*/g, "").trim();
-  if (!first) return null;
-  const sentence = first.match(/^.{20,200}?[.!?](\s|$)/)?.[0].trim() ?? first;
-  return sentence.length > 200 ? sentence.slice(0, 197).replace(/\s+\S*$/, "") + "…" : sentence;
 }
 
 /** Questions a visitor asks, answered from the event's own fields (the server sends the same as FAQPage, partylinks.seo). */

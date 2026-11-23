@@ -17,7 +17,7 @@ import { EventPinButton } from "../home_pins/PinButtons";
 import { EventStats } from "../popularity/EventStats";
 import { LineupPlayer } from "../artist_links/ArtistPlayer";
 import { AddToCalendar, countryName, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, useT, useTitle, venuePath, when } from "../ui";
-import { cleanTitle, EventFaq, eventFaq, lede, relativeDay, shortAddress } from "./eventLook";
+import { cleanTitle, EventFaq, eventFaq, relativeDay, shortAddress } from "./eventLook";
 
 export default function EventPage() {
   const { id = "" } = useParams();
@@ -78,7 +78,6 @@ export default function EventPage() {
     .sort((a, b) => a.min_price! - b.min_price!)[0]?.id;
   const time = { hour: "2-digit", minute: "2-digit" } as const;
   const title = cleanTitle(e.title, e.venue_name);
-  const intro = lede(e);
   const soon = relativeDay(e, t);
   const street = shortAddress(e, lang);
   // "Get tickets · from ₪119" when there is a price to pay; a free or unpriced event keeps "to the event's page".
@@ -123,7 +122,6 @@ export default function EventPage() {
               {e.is_sold_out && <span className="tag sold">{t.soldOut}</span>}
             </div>
             <h1 dir="auto">{title}</h1>
-            {intro && <p className="e-lede" dir="auto">{intro}</p>}
             <EventStats e={e} />
 
             <ul className="facts">

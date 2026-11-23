@@ -779,7 +779,7 @@ select option { background: var(--panel-solid); color: var(--text); }
 .t-gone > summary { cursor: pointer; color: var(--muted); font-size: 14px; padding: 6px 2px; list-style: none; }
 .t-gone > summary::-webkit-details-marker { display: none; }
 .t-gone[open] > summary { margin-bottom: 8px; }
-/* The header's facts as chips; a one-line lede under the title; "Tonight" / "Tomorrow". */
+/* The header's facts as chips; "Tonight" / "Tomorrow". */
 .e-info .facts { display: flex; flex-wrap: wrap; gap: 8px; }
 .e-info .facts li {
   align-items: center; gap: 8px; padding: 7px 14px; border-radius: 14px; font-size: 14px;
@@ -788,7 +788,6 @@ select option { background: var(--panel-solid); color: var(--text); }
 .e-info .facts i { width: auto; }
 .e-info .facts .wx-full { font-size: 14px; }
 .e-info .facts .wx-full img { width: 30px; height: 30px; margin: -8px -6px; }
-.e-lede { margin: -6px 0 16px; color: var(--muted); font-size: 17px; line-height: 1.6; max-width: 62ch; }
 em.soon {
   font-style: normal; font-size: 12px; font-weight: 800; padding: 2px 9px; border-radius: 999px; margin-inline-start: 8px;
   background: var(--pink); color: #fff; box-shadow: 0 0 14px rgb(255 46 147 / .5);
@@ -844,7 +843,6 @@ em.soon {
 .ev-card small { color: var(--pink); font-size: 12px; font-weight: 700; }
 .ev-card b { font-size: 13px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 @media (max-width: 760px) {
-  .e-lede { font-size: 15px; margin: -4px 0 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
   .e-info .facts { gap: 6px; }
   .e-info .facts li { font-size: 13px; padding: 6px 11px; gap: 6px; }
   .lineup-list.pictured { gap: 12px; }
