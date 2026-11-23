@@ -988,8 +988,6 @@ enrichment:
     rabincenter: [culture]  # Israeli-culture shows and artist meetings; no categories
     ybz: [lectures]  # Yad Ben-Zvi: lectures, book evenings and study days; the type tag maps the rest (labels)
     kfarsabamuseum: [culture]  # Kfar Saba Museum: concerts, family days and workshops; categories map the rest
-    shimur: [museums]  # heritage sites' days and tours; the text names shows, tours and workshops
-    mjc: [culture]  # North African heritage centre: piyut evenings, lectures, book launches; no categories
     eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
@@ -2241,8 +2239,6 @@ search:
     rabincenter: ["מרכז רבין", "מרכז יצחק רבין", "rabin center", "המוזיאון הישראלי"]
     ybz: ["יד בן צבי", "יד בן-צבי", "יד יצחק בן צבי", "יד יצחק בן-צבי", "yad ben zvi", "yad ben-zvi"]
     kfarsabamuseum: ["מוזאון כפר סבא", "מוזיאון כפר סבא", "kfar saba museum", "בית הבאר כפר סבא"]
-    shimur: ["המועצה לשימור אתרים", "המועצה לשימור אתרי מורשת", "שימור אתרים", "שישי מורשת", "shimur"]
-    mjc: ["מורשת יהדות צפון אפריקה", "יהדות צפון אפריקה", "המרכז העולמי למורשת", "mjc jerusalem"]
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
@@ -2823,12 +2819,6 @@ sources:
     site_url: https://www.tiktik-online.co.il
     products_path: /wp-json/wc/store/v1/products
     category_ids: [8, 7]  # music, sport: read only when whole_catalogue is false
-    sitemap_path: /product-sitemap.xml  # the ~860 live products the Store API hides
-    # sections: Store API whole catalogue (4,100 = its X-WP-Total, to the last page) + product sitemap's
-    # Hebrew /product/ pages (4,957: 857 more, Nov 23 2026); every menu page (music, sport, festivals, nba,
-    # wimbledon, leagues, bands/*, product_teams/*, events-by-city/month, top10, sportpackages) lists
-    # those products. not read: /en/ /fr/ /ru/ /ar/ (translations of the same products), blog / news /
-    # guides / reviews / press (articles), months/cities/bands sitemaps (index pages of the same products).
     http:
       # 10 at once, 0.2 s apart: the site answered 403 to 3,217 of 3,966 product pages (Nov 19 2026).
       # No run length limit any more (run_timeout_seconds: 0), so the slower pace costs only time.
@@ -3539,25 +3529,14 @@ sources:
 
   drop:
     # Drop (tdrop.net): self-serve ticketing for party producers (raves, house parties, festivals).
-    # The sitemap's lastmod is each event's end date, so only upcoming pages are read (~50); each page's
+    # The sitemap's lastmod is each event's date, so only upcoming pages are read (~50); each page's
     # Event JSON-LD gives the details (its offers all read "0"); prices come from the page's own API
     # (tdrop.net/api/event/general/<id>: tiers, discounts, sold out), one request per event.
     # robots.txt allows everything.
-    # sections: read = the sitemap's every event page, no cap, no horizon (1,063 pages, 50 ending from
-    # yesterday on, to 23.03.2027); it is the whole catalogue: /api/event/all (behind /category/all and
-    # /category/latest, total 1,066 = the sitemap's 1,063 + 3 paused, all past) holds the same 50, and
-    # /category/new (58), /category/trending (4) and the homepage-config sections 1 Techno (11),
-    # 2 Mainstream (23), 3 Trance (26) (/category/0, 4-11 answer 404) are subsets of it, read as each
-    # event's categories (23.11.2026); every event has one date range. Not read: about / producer /
-    # create-event / accessibility / cancellation / app pages (no events), private-link events (not
-    # public), paused events (sale stopped; 3, all past). TUTIM (a 22.11-12.12 span from its creation
-    # time, no text) is dropped by retention.in_progress_max_hours (16 h), the rule every source follows.
     enabled: true
     cron: "17 8,20 * * *"
     site_url: https://tdrop.net
     sitemap_path: /sitemap.xml
-    # Producers' test listings and private birthday parties ("Adi's Birthday party", "יום הולדת לדור", Nov 2026).
-    skip_title_words: ["test event", "testing event", "בדיקה", "birthday", "יום הולדת", "יומולדת"]
     http:
       concurrency: 4
 
@@ -4041,11 +4020,6 @@ sources:
     # Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni. Zappa belongs to
     # Eventim (zappa-club.co.il is Eventim's Akamai), so this reads zappa-club's own events sitemap
     # (~600 pages) and the Eventim sitemap's Zappa pages with the Eventim parser. Same Akamai limits.
-    # sections: zappa-club.co.il's events sitemap (511 shows on 23.11.2026 = every event behind its menu: the
-    # categories /events/ (live, stand-up, family, lectures, festivals, theatre and their sub-pages), /cities/, every
-    # Zappa venue incl. Amphi Shuni and Amphi Mini Israel), the Eventim sitemap's Zappa pages (154, all in it) and
-    # the search API's shows at a Zappa venue that neither sitemap lists (1 of 532: added); prod 498 upcoming.
-    # Not read: /eventseries/ and /artist/ pages (the same event pages), gift cards, help, account pages.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
     vpn: true  # our Israeli VPN only (Railway production)
@@ -4114,6 +4088,8 @@ sources:
     # have them: of 555 coming events at 71 hall-like ones, 289 in tickchak, 264 from other sources).
     enabled: true
     cron: "57 7,19 * * *"
+    # Halls and community centres may list their courses and classes; with the space, "חוגגים" stays.
+    skip_title_words: ["קורס", "חוג ", "חוגים", "חוגי ", "אירוע סגור", "אירוע פרטי"]  # none of the 221 today (23.11)
     site_url: https://live.tickchak.co.il
     api_url: https://api-live.tickchak.co.il
     section_data_path: /sectionData/{section_id}
@@ -4339,7 +4315,6 @@ sources:
     # cinematheque_tlv, on its own box office host (no robots.txt). PRES has almost no posters, so the
     # films' pictures come from the cinematheque's own film pages, at its robots.txt Crawl-delay 180:
     # every event is saved first, then up to max_pictures_per_run films (one page / 180 s) get theirs.
-    # sections: the whole PRES feed, which every www section sells through (every order button on them is in it, 23.11.2026; the rest are today's started screenings, TICKETING_ENDED): לוח הקרנות / החודש (day calendars 14.12 / 17.12 / 22.12: 1 / 1 / 0 = the feed's 1 / 1 / 0), אירועי החודש, מטרופוליטן אופרה (6 operas to 05.06.2027 = feed 6), קונצ׳רטו לקולנוע (13 = feed 13), התיאטרון הלאומי לונדון (NT Live, feed 7), קורסים / מדברים קולנוע (the series' meetings, sold one by one = feed 22), פסטיבל הקולנוע היהודי 5-10.12 (האירועים: 28 buttons, all in the feed's 54), פסטיבל נשים, ילדים, קאלט ברביעי, הקרנות קבועות, /en; 157 coming screenings to 05.06.2027 = 155 movie-days (days_ahead 120 read 145). not read: סינמטק אונליין (online only), תערוכות (past exhibitions; the festival's gallery talks are in the feed), the teachers' course (closed, external registration), ANINATION 2026 and the anthropology festival 2026 (over; no rows in the feed), פסטיבל הקולנוע ירושלים (July; its screenings join this feed when sold), מנויים, GIFT CARD, השכרת אולמות, ארכיון / מרכז המולטימדיה, about pages; sitemap.xml is 404.
     enabled: true
     cron: "17 10,22 * * *"
     crawl_delay_seconds: 180
@@ -4350,19 +4325,7 @@ sources:
     features_path: /api/features/
     ticket_groups_path: /api/presentations/{id}/ticketGroups
     order_url: https://jer-cin.pres.global/order/{id}
-    days_ahead: 730  # the whole feed (to 05.06.2027 on 23.11.2026; = retention.max_future_days): 120 days cut 10 screenings
-    # Courses sold whole; "קורס " with the space: "סקורסזה", "וקורסיקה" stay. The קורסים category's meetings are
-    # sold one by one (90 ₪): kept, as lectures.
-    skip_title_words: ["קורס "]
-    # PRES categories (exact names) -> source genres; the rest stay קולנוע, series names in extra.series.
-    category_genres:
-      קורסים: [הרצאה, קולנוע]  # מדברים קולנוע: lecture series with film, and מועדון טרום בכורה (guided premieres)
-      ילדים: [קולנוע, ילדים]
-      "קונצ'רטו": [קולנוע, הרצאה, הופעה חיה]  # קונצ׳רטו לקולנוע: a short concert, a lecture and a film (Saturdays 11:00)
-      מטרופוליטן: [קולנוע, אופרה]  # Met Opera Live
-      national theatre: [קולנוע, תיאטרון]  # NT Live
-      פסטיבל יהודי: [קולנוע, פסטיבל]
-      פסטיבל נשים: [קולנוע, פסטיבל]
+    days_ahead: 120  # the feed lists more days than 3/7 (audit, Nov 2026)
     branch_id: jlm
     venue_name: סינמטק ירושלים
     address: דרך חברון 11
@@ -4618,21 +4581,15 @@ sources:
     longitude: 35.2197779
 
   xplorer:
-    # Xplorer: tickets to concerts, festivals and sports matches abroad (USD), on a flights site. ASP.NET,
-    # no API: each board's hidden filters give its artist / team ids with their event ids (every board
-    # event is read), each artist page its event ids, and each event page (?ev=) the local date and time,
-    # Hebrew city/country, venue and seat categories. ~700 GETs of ~350 KB. robots.txt is absent.
-    # sections: the two ticket boards, /music (every artist value; its pages list 380 events on 23.11.2026,
-    # the board's filters 177) and /sport (every team / competition, type_soccer/basketball/tennis/races:
-    # 271 ids, 255 with an event panel), every artist page and event page; not read: team pages (the
-    # board lists every match), flights/hotels/deals/magazine menus (no events); no sitemap (404).
+    # Xplorer: tickets to concerts and festivals abroad (USD), on a flights site's shows board. ASP.NET,
+    # no API: the board's hidden filters give the artist ids (~50), each artist page its event ids, and
+    # each event page (?ev=) the local date and time, Hebrew city/country, venue and seat categories.
+    # ~390 GETs of ~350 KB. robots.txt is absent.
     enabled: true
     cron: "53 3,15 * * *"
     site_url: https://www.xplorer.co.il
     music_path: /music
     artist_path: /music/artist/
-    sport_path: /sport
-    team_path: /sport/team/
     http:
       concurrency: 4
       request_delay_seconds: 0.2
@@ -5084,21 +5041,10 @@ sources:
   efokulam:
     # EfoKulam (efokulam.co.il, "איפה כולם"): a nightlife guide (club nights, parties, festivals; mostly Tel Aviv).
     # WordPress: /wp-json/wp/v2/event-type (1 request) names the categories; /wp-json/wp/v2/events in pages of
-    # 100 with the image embedded (7 requests, 634 rows on 23.11.2026) gives date, gate time, address and the seller link
+    # 100 with the image embedded (~5 requests, ~460 rows) gives date, gate time, address and the seller link
     # (Go-Out, Eventer), kept as extra.purchase_url. Past rows dropped by their event-date. robots.txt: /wp-admin/ only.
-    # sections: the `events` post type, the site's only one with events, read whole to X-WP-Total (23.11.2026: 634 =
-    # /events/ archive "18 אירועים קרובים" + "616 אירועים" past; events-sitemap 626 = the same posts less 9 noindex past
-    # ones, + /events/), so the home page, /events/ (?when=today / weekend / past), every event-type page (6: היפ הופ,
-    # טכנו, טראנס, מיינסטרים, פסטיבלים והופעות חיות, רוק) and event-season page (16 holiday / festival terms) and the hub
-    # pages (/parties/*, /festivals/*, /purim-parties/*, /new-years-eve-celebrations/*, /festivals-and-live-shows/,
-    # אירועי הסופ"ש, האירועים הכי חמים, לאן יוצאים היום: 84 event links, all in the post type); one date a post, no date
-    # window, max_pages 500 x 100 never reached; scanner 18 = site 18 = prod 18. Not read: event-season names as genres
-    # (holiday tags, set loosely: a Silvester party carries "מסיבות פורים"), /clubs/*, /bars-and-pubs/* and the `bar`
-    # type (venue write-ups, no events), /blog/ (21 articles), 25 "דף סליקה" checkout pages (Go-Out / Eventer iframes
-    # of past parties, Purim 2025 to April 2026), about / contact / terms.
     enabled: true
     cron: "43 8,20 * * *"
-    skip_title_words: ["קורס", "סדנת", "אירוע פרטי", "אירוע סגור"]  # none of the 634 posts today (23.11)
     http:
       concurrency: 2
       request_delay_seconds: 1.0
@@ -5909,7 +5855,6 @@ sources:
     # probe_ahead past it are read from their checkout page; published, on-sale Israeli ones are kept.
     probe_back: 800
     probe_ahead: 30
-    # sections: the whole /api/v5/filter-events listing to hasMore=false (84 Israeli events, every category, to 30.12; the API's own params are category_slug/city_slug/country_code, a from/to range to 2028 adds no Israeli event; prod 91 = 84 + 7 unlisted ids from the probe); /en/discover is this same API (its events-discover component); the 38 /en/categories/N pages are sliders of the same events, past ones included. not read: courses (lessons, not events); Jordan / PA events (abroad)
     http:
       concurrency: 2
       request_delay_seconds: 0.5
@@ -5980,14 +5925,6 @@ sources:
     # Tower of David Museum, Jerusalem: Night Spectacular and King David shows, gallery talks, exhibition
     # and Old City tours, holiday tours, concerts. The museum's ticketing API: packages -> dated slots,
     # prices; each package's post gives page, summary, categories, artwork. ~140 requests a run.
-    # sections: read: every package the ticketing API lists (get_all_packages, 38; every dated slot, to the
-    # last date it sells, 22.11.2027) and the /events/ board's posts whose package the listing leaves out
-    # (King David show VIP); every category comes through its packages (night shows, museum / exhibition /
-    # Jerusalem tours, holidays, culture events, families). 465 = the site's slots (prod 467 before).
-    # not read: museum entry (1), Phasael lookout (3) and the exhibitions' daily "From-09:00" admission
-    # (זהב, אגם האין): open entry by time slot; courses, teachers' training, education (school / groups),
-    # private tours, jobs, online; the ~560 other event posts: past events, their packages no longer on
-    # sale (their codes answer stale or alias slots, e.g. the museum's admission days).
     enabled: true
     cron: "47 7,19 * * *"
     venue_name: מגדל דוד - מוזיאון ירושלים
@@ -6064,51 +6001,6 @@ sources:
     http:
       concurrency: 1
       request_delay_seconds: 1.0
-
-  mjc:
-    # The World Centre for North African Jewish Heritage, Jerusalem (mjc-jerusalem.com, המרכז העולמי למורשת יהדות
-    # צפון אפריקה): piyut and song evenings, lectures, book launches, exhibition openings, hilulot. A Webydo blog:
-    # /events (one request) lists every post with a one-line summary (day, time); each coming post's page gives its
-    # text (~2 requests). Sections: אירועים במרכז /events (read: the menu's only events page; it lists every post).
-    # Not read: האירוע שלכם אצלנו (venue hire), the museum's visit / about / donation pages, the women's piyut
-    # group and courses (weekly classes), the school programmes (גפ"ן) and weekday exhibitions (no one day).
-    # Answers direct; robots.txt allows all but /api/ and /temp/.
-    enabled: true
-    cron: "22 7,19 * * *"
-    venue_name: המרכז העולמי למורשת יהדות צפון אפריקה
-    address: "המערבים 13"
-    city: ירושלים
-    latitude: 31.7768653    # Nominatim: HaMa'aravim St (the centre's lane, off David HaMelech 14)
-    longitude: 35.2212822
-    may_be_empty: true      # one or two evenings a month
-    skip_title_words: ["קורס", "חוג", "סדנת הכנה"]
-    http:
-      concurrency: 1
-      request_delay_seconds: 1.0
-
-  shimur:
-    # The Council for the Preservation of Heritage Sites (shimur.org, המועצה לשימור אתרי מורשת): the dated events of
-    # the heritage museums and sites it runs and partners with (Ayalon Institute, Minkov, Old Yishuv Court, Kinneret
-    # Courtyard, Nahalal police, Beit HaMeiri, the Circassian centre, ...): heritage Fridays, Hanukkah and
-    # heritage-week days, study days, shows, family days, tours. WordPress; the /events/ archive (one request, ~90
-    # cards with first / last day), each event page (site, text with time and price, artwork) and each site page
-    # once (its point): ~150 requests. Sections: פעילויות קרובות /events/ (read: the archive lists every coming
-    # item of every events_cat term, the menu's category pages are filters of it). Not read: online meetings
-    # (זומורשת, מקוון), guides' training (השתלמויות מורי דרך), "הזמנת סיור" (bookable on request, months long),
-    # spans over 12 days (a museum's monthly digest), the sites / signs / news / projects / donations / shop pages
-    # (no dated events). Answers Railway direct; refuses foreign IPs (F5 "Request Rejected"); robots.txt allows it.
-    enabled: true
-    cron: "38 6,18 * * *"
-    max_span_days: 12
-    site_towns:             # a site whose name holds no known town, or whose page's point is off its place
-      "ליבלינג": תל אביב-יפו      # Beit Liebling, Idelson 29
-      "נהריים": גשר               # Naharayim / Old Gesher (its page's point is at Kiryat Tivon)
-      "חצר כנרת": כנרת            # Kinneret Courtyard, by Kvutzat Kinneret
-      "עיינות": עיינות            # Ayanot youth village (the name ends "- נעמת", the organisation)
-    skip_title_words: ["השתלמות", "השתלמויות", "קורס", "הזמנת סיור"]
-    http:
-      concurrency: 2
-      request_delay_seconds: 0.7
 
   kfarsabamuseum:
     # Kfar Saba Museum (kfar-saba-museum.org, מוזאון כפר סבא): concerts and shows at Beit HaBe'er, family days and
@@ -6293,12 +6185,6 @@ sources:
     # ZOA House / בית ציוני אמריקה: culture house (shows, stand-up, lectures, conferences), Tel Aviv. WordPress:
     # /event/ (30 a page) lists upcoming events only; each event's page adds the text and the seller's link
     # (Leaan, EASYTIX...), which ties it to the seller's own listing. robots.txt allows everything.
-    # sections: read: /event/ archive (6 real pages, 180 cards; later page numbers redirect to page 1), the 41
-    # category archives in type-sitemap.xml (/type/<slug>/, each to its last page: 212 upcoming, one Feb 2027
-    # show only there), the recent event-sitemap*.xml pages, each event's page. Not read: /exhibition/ (gallery
-    # shows with no run dates), /hall/ (hall rental pages, no events), the business-events pages (conferences,
-    # company events, streaming: rental offers), /blog/, /lp/, /en/ (no event listing), /course/ (sitemap of 2019).
-    # Nov 2026: site 212 upcoming (47 of them Askolot course dates, skipped) vs prod 160.
     enabled: true
     skip_title_words: ["קורס אסכולות", "קורס שנתי"]  # Askolot's semester lecture courses (one registration, many dates): ~47 dates, Nov 2026
     cron: "26 7,19 * * *"
