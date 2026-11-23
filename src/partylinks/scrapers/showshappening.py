@@ -27,8 +27,11 @@ from zoneinfo import ZoneInfo
 
 from pydantic import Field
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, to_decimal
+from partylinks.places import city_point
+from partylinks.retention import is_current
 from partylinks.scrapers.abroad import local_zone
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
@@ -71,6 +74,11 @@ class ShowsHappeningSettings(SourceSettings):
     # The site's API (its own pages' app key): an event's details, the venue of pages without hidden fields.
     api_url: str = "https://apicore.showshappening.com/showshappening/1"
     api_key: str = "0d3184c9-9437-4f17-af6a-6192491bb700"
+    # Address parts that name the country or the island, not the town ("Triq Telghet, San Giljan, Malta").
+    country_names: list[str] = Field(
+        default_factory=lambda: ["malta", "gozo", "uk", "united kingdom", "england", "scotland", "wales",
+                                 "germany", "deutschland", "spain", "españa", "espana"]
+    )  # fmt: skip
 
 
 class ShowsHappeningScraper(BaseScraper[ShowsHappeningSettings]):
@@ -88,7 +96,9 @@ class ShowsHappeningScraper(BaseScraper[ShowsHappeningSettings]):
         events_by_date = soonest_first(listed.values())
         async for events in self.stream_isolated(events_by_date, self._fetch_event, label=lambda e: e["path"]):
             for event in events:
-                yield event
+                # Today's dates whose hour has passed too (a morning tour seen in the afternoon), not only past days.
+                if is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known):
+                    yield event
 
     async def _fetch_event(self, listed: dict[str, Any]) -> list[ScrapedEvent]:
         s = self.settings
@@ -102,7 +112,8 @@ class ShowsHappeningScraper(BaseScraper[ShowsHappeningSettings]):
             headers = {"appkey": s.api_key, "accept": "application/json"}
             details = await self.optional("venue", self.get_json(f"{s.api_url}/events/{m.group(1)}", expect=dict, headers=headers))
             venue = (details or {}).get("venue")
-        return parse_event(listed, page, s.site_url, self.timezone, types, venue if isinstance(venue, dict) else None)
+        venue = venue if isinstance(venue, dict) else None
+        return parse_event(listed, page, s.site_url, self.timezone, types, venue, s.country_names)
 
 
 def cards(page_html: str, country: str) -> list[dict[str, Any]]:
@@ -166,12 +177,36 @@ def categories(listed: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(w for w in words if w))
 
 
+def address_city(address: str | None, country_names: Iterable[str] = (), country: str | None = None) -> str | None:
+    """The town an address ends in: "venue, street, town[, country]" ("Black Bull,St Julian's",
+    "St Mary le Strand,Strand, London", "Triq Telghet, San Giljan, Malta"). Post codes are dropped
+    ("London WC2R 1LS"), and so is a country word ending the part; a part without commas ("Triq San Gwann
+    Il-Belt Valletta Malta") gives the GeoNames town it ends in (in ``country``). The venue alone names no town."""
+    countries = {c.casefold() for c in country_names}
+    parts = [p.strip() for p in (address or "").split(",") if p.strip()][1:]
+    towns = []
+    for part in parts:
+        words = [w for w in part.split() if not any(ch.isdigit() for ch in w)]
+        while words and words[-1].casefold() in countries:
+            words.pop()
+        if words:
+            towns.append(words)
+    if not towns:
+        return None
+    last = towns[-1]
+    for size in (3, 2, 1):  # the longest known town the part ends in
+        if len(last) > size and city_point(" ".join(last[-size:]), country):
+            return " ".join(last[-size:])
+    return " ".join(last)
+
+
 def parse_event(
     listed: dict[str, Any], page_html: str, site_url: str, default_tz: str, types: list[Any] | None = None,
-    venue: dict[str, Any] | None = None,
+    venue: dict[str, Any] | None = None, country_names: Iterable[str] = (),
 ) -> list[ScrapedEvent]:
     """One event per listed date that is not over yet. ``venue``: the API's (name, address, coordinates),
-    for pages without the hidden venue fields."""
+    for pages without the hidden venue fields. The town is the page's hidden ``city`` field, else the
+    address's last part (the pages lost that field: 846 of 876 dates had no city, Nov 2026)."""
     meta = {k: html_lib.unescape(v) for k, v in _META.findall(page_html)}
     # UK pages are drawn by JavaScript: their og:title is the site's ("ShowsHappening | Tickets in Malta").
     title = listed["title"] or clean_str((meta.get("og:title") or "").removesuffix("| ShowsHappening"))
@@ -184,6 +219,7 @@ def parse_event(
     hidden = {k: clean_str(html_lib.unescape(v)) for k, v in _HIDDEN.findall(page_html)}
     for field, key in (("EventVenueName", "name"), ("EventVenueAddress", "address"), ("EventVenueGoogleLocation", "coordinates")):
         hidden[field] = hidden.get(field) or clean_str((venue or {}).get(key))
+    city = city or address_city(hidden.get("EventVenueAddress"), country_names, "GB" if country == "UK" else country)
     point = _POINT.match(hidden.get("EventVenueGoogleLocation") or "")
     lat, lng = (float(point.group(1)), float(point.group(2))) if point else (None, None)
     show = _SHOWDATE.search(page_html)

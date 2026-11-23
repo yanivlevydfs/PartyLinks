@@ -4,7 +4,14 @@ from decimal import Decimal
 from pathlib import Path
 
 from partylinks.models import TicketKind, TierStatus
-from partylinks.scrapers.showshappening import parse_event, show_id, soonest_first, ticket_tiers
+from partylinks.scrapers.showshappening import (
+    ShowsHappeningSettings,
+    address_city,
+    parse_event,
+    show_id,
+    soonest_first,
+    ticket_tiers,
+)
 
 PAGE = """<input type="hidden" class="showdate" value="Thursday 05-Nov-2026 19:30" />
 <input type="hidden" id="EventVenueName" value="Follow the Sun Boutique Hostel" />
@@ -21,6 +28,9 @@ def test_venue_address_and_point_from_hidden_fields() -> None:
     assert event.venue_name == "Follow the Sun Boutique Hostel"
     assert event.address == "Follow the Sun Boutique Hostel,Triq Telghet, San Giljan, Malta"
     assert (event.latitude, event.longitude) == (35.9127531, 14.4933634)
+    countries = ShowsHappeningSettings(cron="0 0 * * *", site_url="https://www.showshappening.com").country_names
+    event = parse_event(listed, PAGE, "https://www.showshappening.com", "Asia/Jerusalem", country_names=countries)[0]
+    assert event.city == "San Giljan"  # the address's last part but the country
     assert event.start_at is not None
     assert event.start_at.hour == 19 and str(event.start_at.tzinfo) == "Europe/Malta"
 
@@ -92,3 +102,18 @@ def test_events_soonest_first_across_countries() -> None:
         {"path": "/de-next-week", "dates": [d(2026, 11, 25)]},
     ]
     assert [e["path"] for e in soonest_first(listed)] == ["/gb-tonight", "/de-next-week", "/mt-season"]
+
+
+def test_town_from_the_address() -> None:
+    # The pages lost their hidden "city" field (Nov 2026): the venue address ends in the town.
+    countries = ShowsHappeningSettings(cron="0 0 * * *", site_url="https://www.showshappening.com").country_names
+    assert address_city("St Mary le Strand,Strand, London", countries) == "London"
+    assert address_city("Black Bull,St Julian's", countries) == "St Julian's"
+    assert address_city("Liquid Club,Triq Hal-Gharghur, L-Iklin", countries) == "L-Iklin"
+    assert address_city("The Magical Illuminated Trail, Triq Il-Buskett, Dingli, Malta", countries) == "Dingli"
+    assert address_city("Mdina,Mdina", countries) == "Mdina"
+    assert address_city("Somewhere Hall, 1 High St, London WC2R 1LS", countries) == "London"
+    # No commas: the GeoNames town the part ends in, the country word dropped.
+    assert address_city("St. John's Co-Cathedral, Triq San Gwann Il-Belt Valletta Malta", countries, "MT") == "Valletta"
+    assert address_city("Liquid Club", countries) is None  # the venue alone
+    assert address_city(None, countries) is None
