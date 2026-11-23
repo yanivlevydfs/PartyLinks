@@ -5666,6 +5666,12 @@ sources:
     # and embedded terms (style / holiday, kind, area, artists) and artwork; ~10 coming events. Every ticket link is a
     # Go-Out / Zygo / Eventer page: dedup merges with those sources. No coordinates (places geocoded); a secret
     # location ("ישראל") is not imported. Answers direct.
+    # sections: the `events` post type, the site's only one with events, whole in one call (23.11: X-WP-Total 9 =
+    # events-sitemap 9 = /events/ archive 9 = type terms parties 7 + festivals 2; max_pages 10 x 100 never reached; one
+    # date a post, a festival's two days kept), so the home page, /upcoming-events/, /events/ and every event-genre
+    # (15), event-area (81), event-type (3) and artist (137) term page; not read: the blog (5 articles), the ended-events
+    # page (past), about / contact / terms; left out: the secret-location Purim festival (post 5197, "ישראל", no place),
+    # stored by goout from the same Go-Out link (and makore, hypd, airdrop).
     enabled: true
     cron: "24 9,21 * * *"
     site_url: https://cluberim.co.il
