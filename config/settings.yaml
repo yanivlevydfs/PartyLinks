@@ -4114,6 +4114,8 @@ sources:
     # have them: of 555 coming events at 71 hall-like ones, 289 in tickchak, 264 from other sources).
     enabled: true
     cron: "57 7,19 * * *"
+    # Halls and community centres may list their courses and classes; with the space, "חוגגים" stays.
+    skip_title_words: ["קורס", "חוג ", "חוגים", "חוגי ", "אירוע סגור", "אירוע פרטי"]  # none of the 221 today (23.11)
     site_url: https://live.tickchak.co.il
     api_url: https://api-live.tickchak.co.il
     section_data_path: /sectionData/{section_id}
