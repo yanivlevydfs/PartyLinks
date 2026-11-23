@@ -17,6 +17,11 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
   read" only for what truly is no event (a blog, a shop, a gift card, past archive). Tzavta's
   Short Theatre Festival (`/category/17`) was missing because only some categories were read. This
   applies to existing scanners too: when touching one, check its site's sections again.
+- **Every event in every section is extracted.** Pagination runs to the last page (no `max_pages` / limit
+  caps that cut it off; "load more" / infinite-scroll APIs followed to the end); no fixed N-day horizon
+  when the site lists further ahead (planet / ravhen read only 14 days); every date / performance of an
+  event is read, not only the first. Where the site shows a count per category, the scanner's count
+  matches it: write both numbers in the report.
 - **Categories:** every site category / chip mapped to our genres (`enrichment.genres` keywords, or
   `declared_genres_only` when the site's own categories are precise). `check_source.py` shows no `NO GENRE`.
 - **WebP:** artwork URLs passed through; in production `https://spotx.fun/images/<id>/640.webp` answers
