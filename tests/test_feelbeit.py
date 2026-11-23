@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
-from partylinks.config import Settings
+import pytest
+
+from partylinks.config import HttpSettings, Settings
 from partylinks.enrichment import Enricher
 from partylinks.scrapers import feelbeit
 
@@ -39,3 +43,25 @@ def test_dj_set_genres_and_bad_posts() -> None:
     assert enriched is not None and "festival" in enriched.genres
     assert feelbeit.parse_post({**POSTS[47], "date": "soon"}, CFG, TZ) is None
     assert feelbeit.parse_post({**POSTS[47], "status": "draft"}, CFG, TZ) is None
+
+
+def test_every_page_is_read_to_the_last(monkeypatch: pytest.MonkeyPatch) -> None:
+    """2 posts a page: pages 1-2 are full, page 3 is short and the last; the Hebrew shows of all three are kept."""
+    scraper = feelbeit.FeelBeitScraper(CFG.model_copy(update={"per_page": 2}), HttpSettings(), TZ)
+    posts = list(POSTS.values())
+    calls: list[str] = []
+
+    async def get_json(url: str, **_: object) -> Any:
+        calls.append(url)
+        page = int(url.split("&page=")[1].split("&")[0])
+        return posts[(page - 1) * 2 : page * 2]
+
+    scraper.get_json = get_json  # type: ignore[method-assign]
+    monkeypatch.setattr(feelbeit, "is_current", lambda *_: True)
+
+    async def collect() -> list[str]:
+        async with scraper:
+            return [e.source_event_id async for e in scraper.scrape()]
+
+    assert sorted(asyncio.run(collect())) == ["102", "139", "47"] and not scraper.failures
+    assert len(calls) == 3 and "per_page=2&page=3" in calls[-1]

@@ -2,9 +2,9 @@
 festival (שכבות): a few free nights of concerts and DJ sets.
 
 The festival is a WordPress site of its own per year (``/layers2026/``, in Hebrew, English and Arabic). Its
-custom post type ``layers_event`` lists every show in one wp-json call (``_embed`` for the artwork): the post's
-``date`` is the show's start, local time; the title, the text (``content``) and the language (the link's
-``/he/`` / ``/en/`` / ``/ar/``). Each show is three posts, one per language: the Hebrew ones are kept. Entry is
+custom post type ``layers_event`` lists every show in wp-json (``_embed`` for the artwork; 100 a page, read to
+the last page: 36 posts in November 2026): the post's ``date`` is the show's start, local time; the title, the
+text (``content``) and the language (the link's ``/he/`` / ``/en/`` / ``/ar/``). Each show is three posts, one per language: the Hebrew ones are kept. Entry is
 free for every show and there is no seller. One venue: its pin is in config. The main site's robots.txt sends
 to a holding page; the festival site has none.
 """
@@ -27,7 +27,9 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 class FeelBeitSettings(SourceSettings):
     site_url: str = "https://feelbeit.com/layers2026"  # this year's festival site
-    events_path: str = "/wp-json/wp/v2/layers_event?per_page=100&_embed=wp:featuredmedia"
+    events_path: str = "/wp-json/wp/v2/layers_event?per_page={per_page}&page={page}&_embed=wp:featuredmedia"
+    per_page: int = 100  # WordPress's maximum
+    max_pages: int = 50  # a runaway guard only: the festival has a few dozen posts
     language_path: str = "/he/"  # the Hebrew posts (one post per show and language)
     venue_name: str = "FeelBeit"
     address: str = "נעמי 4"
@@ -44,7 +46,12 @@ class FeelBeitScraper(BaseScraper[FeelBeitSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        posts = await self.get_json(s.site_url + s.events_path, expect=list)
+        posts: list[Any] = []
+        for page in range(1, s.max_pages + 1):  # every page, to the last (a short one)
+            batch = await self.get_json(s.site_url + s.events_path.format(per_page=s.per_page, page=page), expect=list)
+            posts.extend(batch)
+            if len(batch) < s.per_page:
+                break
         events = []
         for post in posts:
             try:
