@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 152 configured sources, 151 on. Each one has its own module in
+SPOTX collects from 153 configured sources, 152 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -102,6 +102,7 @@ pagination and what the listing and the event page provide.
 | `hamesila` | HaMesila B' (hamesila.org.il), Herzliya's culture and community house: lectures, family shows, concerts; wp-json `events` list + each event page (day, price, seller), the venue pinned in config | 06:17, 18:17 | yes |
 | `jerusalemarts` | Jerusalem Arts Festival (jerusalemarts.co.il): two December evenings of theatre, dance, performance and music at the Jerusalem Arts Campus; one wp-json call (each post's schema.org Event) + the tag names | 09:36, 21:36 | yes |
 | `bimot` | Bimot Global (bimotglobal.co.il, was bimot.co.il): a producer of dance, music, opera and theatre, mostly at the Israeli Opera; the wp-json show list without the archive + the show types + one page per current show (dates, hall, seller link) | 10:47, 22:47 | yes |
+| `israelshow` | IsraelShow (israelshow.co.il): a national listings site selling through its Kupat Bravo white label; ~50 genre / theatre pages list the show ids (the genre pages are its categories), and each show's performances come from the same id on kupatbravo.co.il (the white label's robots.txt disallows all) | 10:19, 22:19 | yes |
 | `glatticket` | Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi and religious public; Tickchak hub search API + each event's page (map pin, tiers, organiser) | 06:23, 18:23 | yes |
 | `arthurmurray` | Arthur Murray Israel (arthurmurray.co.il): the ballroom school's public evening "The Salon" in Ra'anana; the Wix page's embedded landing (read through the page JSON): date, doors and start, single / couple tickets on PayMe | 07:44, 19:44 | yes |
 | `basalon` | Basalon (basalon.co.il): talks, stand-up, shows, plays, kids' shows and workshops in living rooms, pubs and studios nationwide; the category pages' dated cards, then each event page's JSON-LD (no appointment-only, private or at-home listings) | 03:37, 15:37 | yes |
@@ -251,7 +252,6 @@ first in `PARTYLINKS_HTTP__ISRAEL_PROXY`.
 | Ticketsi | ticketsi.co.il: an SEO magazine (977 show articles, mostly stale) copying Kupat Bravo / Mevalim titles; one date-only JSON-LD date per article, no seller link: 57/57 future articles sampled already stored (Nov 2026) |
 | Jerooz Events | jeroozevents.co.il: Vercel "Deployment Paused" (402), no site (Nov 2026) |
 | iShow | ishow.co.il: a Cloudflare JS challenge for every client, VPN included (Nov 2026) |
-| IsraelShow | israelshow.co.il: an affiliate front of Kupat Bravo (israelshow.kartisim.co.il), shows as date ranges; 10/10 sampled already stored (Nov 2026) |
 | Kzat Tarbut | kzat-tarbut.com: ticket articles linking Kupat Bravo (5222.kartisim.co.il), date ranges only; 13/13 sampled already stored by kupatbravo (Nov 2026) |
 | Where to Dance Salsa | where-to-dance-salsa.com: Israel = Havana Music Club's weekly nights (read by havanaclub), last checked May 2026 (Nov 2026) |
 | Kol Sadna | kolsadna.co.il: workshops booked by appointment through a lead form; no dated public sessions (25/25 sampled, Nov 2026) |

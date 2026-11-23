@@ -2328,6 +2328,7 @@ search:
     hamesila: ["המסילה הרצליה", "המסילה ב", "hamesila herzliya"]
     jerusalemarts: ["פסטיבל ירושלים לאמנויות", "jerusalem arts festival", "jerusalemarts"]
     bimot: ["בימות גלובל", "bimot global", "bimotglobal", "בימות הפקות"]
+    israelshow: ["ישראל שואו", "israel show", "israelshow", "израиль шоу"]
     glatticket: ["גלאטיקט", "גלאט טיקט", "glat ticket"]
     salsavida: ["salsa vida", "salsavida", "סלסה וידה"]
     arthurmurray: ["arthur murray", "arthurmurray", "ארתור מארי", "ארתור מרי", "the salon"]
@@ -5167,6 +5168,83 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 1.0
+
+  israelshow:
+    # IsraelShow (israelshow.co.il): a national listings site (Hebrew / Russian) selling through its Kupat Bravo
+    # white label (israelshow.kartisim.co.il). ~50 listing pages (genre pages = its categories, theatre and
+    # orchestra pages) give ~500 show ids; the white label's robots.txt disallows all, so each show's performances
+    # come from the same id on kupatbravo.co.il (robots allows /announce/; 1 request per show, nearest first).
+    # Overlaps `kupatbravo` (same seances): purchase_url is the seance's buy page, dedup merges. Answers direct.
+    enabled: true
+    cron: "19 10,22 * * *"
+    site_url: https://israelshow.co.il
+    pages:                   # listing page -> the site's category ("" = lists without one: a theatre, a holiday, a top list)
+      standup.asp: "סטנד אפ"
+      comedy-bar.asp: "סטנד אפ"
+      commedy.asp: "הצגות בידור"
+      performance.asp: "הצגות"
+      musical.asp: "מחזמר"
+      forkids.asp: "הצגות ילדים"
+      forkids-music.asp: "מוסיקה לילדים"
+      puppet-show.asp: "תיאטרון בובות"
+      festival-puppets.asp: "תיאטרון בובות"
+      music.asp: "הופעות מוזיקה"
+      rock.asp: "הופעות רוק"
+      jazz.asp: "ג'אז ובלוז"
+      hot-jazz.asp: "ג'אז"
+      classic.asp: "מוזיקה קלאסית"
+      concert_series.asp: "סדרות קונצרטים"
+      candlelight.asp: "קונצרטים לאור נרות"
+      koncert-a-tribute-to.asp: "הופעות מחווה"
+      christmas.asp: "קונצרטים לחג המולד"
+      flamenco.asp: "פלמנקו"
+      folklore.asp: "מוזיקת עולם"
+      opera.asp: "אופרה"
+      ballet_and_dance.asp: "מחול ובלט"
+      Boris_Eifman_ballet.asp: "בלט"
+      circus.asp: "קרקס"
+      exhibitions.asp: "תערוכות"
+      movies.asp: "סרטים"
+      atractions.asp: "אטרקציות למשפחה"
+      lecture.asp: "הרצאות"
+      sport.asp: "ספורט"
+      festival.asp: "פסטיבל"
+      silvester.asp: "סילבסטר"
+      hanuka.asp: "חנוכה"
+      pesah.asp: ""
+      top20.asp: ""
+      popular.asp: ""
+      tour.asp: ""
+      gil-shohat.asp: ""
+      tel-aviv-soloists-ensemble.asp: ""
+      orchestra_baroque_jerusalem.asp: ""
+      orchestra_chamber_israelian.asp: ""
+      theater-orna-porat.asp: ""
+      theater-habima.asp: ""
+      theater-beitlesin.asp: ""
+      theater-kamery.asp: ""
+      theater-gesher.asp: ""
+      theater-hasimta.asp: ""
+      theater-tmuna.asp: ""
+      theater-tzavta.asp: ""
+      theater-hebrew.asp: ""
+      theater-idish.asp: ""
+      theater-nalagat.asp: ""
+      theater-jerusalem.asp: ""
+      theater-haifa.asp: ""
+      theater-beer-sheva.asp: ""
+      theater-malenky.asp: ""
+      theater-mediteck.asp: ""
+      theater-micro.asp: ""
+      theater-black_kids.asp: ""
+      theater-shelanu.asp: ""
+      theater-park.asp: ""
+      theater-classy.asp: ""
+      theater-incubator.asp: ""
+    skip_title_words: ["סדנה", "סדנת", "קורס", "כיתת אמן", "מנוי", "שובר מתנה", "גיפט קארד"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
 
   glatticket:
     # Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi / religious public, a Tickchak LIVE

@@ -76,7 +76,8 @@
 | 15 | ⏳ | bimot.co.il → bimotglobal.co.il | בימות גלובל: מפיק מחול, מוזיקה, אופרה | נבדק 23.11: bimot.co.il מת מכל הכיוונים (ישיר, הפרוקסי, ה-VPN). האתר עבר ל-bimotglobal.co.il, שעונה ישיר. נבנה `bimot`: 14 מופעים ב-5 הפקות, 100% מפה, ז'אנר ועיר. הקופות הן PRES של האופרה ו-Barak, ו-dedup ממזג. ממתין לדחיפה |
 | 16 | ⛔ דילוג | cluberim.co.il | מדריך מסיבות לפי ז'אנר | 9 אירועים, וכל ה-9 כבר במסד |
 | 17 | ⛔ דילוג | tickster.co.il | מאגד | 52 מתוך 52 כבר במסד (kupatbravo/funzing) |
-| 18 | ⛔ דילוג | israelshow.co.il, ishow.co.il, kzat-tarbut.com, jeroozevents.co.il | מאגדים | jerooz: אתר מושבת. ishow: Cloudflare חוסם. israelshow ו-kzat-tarbut: חזיתות של Kupat Bravo, והכל כבר במסד |
+| 18 | ⏳ | israelshow.co.il | מאגד, חזית של Kupat Bravo | נבדק 23.11: עונה ישיר. נבנה `israelshow`: כ-50 עמודי ז'אנר ותיאטרון נותנים כ-500 מופעים, והמועדים נקראים מאותו מזהה ב-kupatbravo.co.il (ה-robots של ה-white label חוסם הכל). 1,938 מועדים, 100% מפה, ז'אנר ועיר. חופף ל-kupatbravo, ו-dedup ממזג לפי מזהה המועד. ממתין לדחיפה |
+| 18 | ⏳ בבדיקה | ishow.co.il, kzat-tarbut.com, jeroozevents.co.il | מאגדים | jerooz: אתר מושבת. ishow: Cloudflare חוסם. kzat-tarbut: חזית של Kupat Bravo |
 | 19 | ✅ | salsavida.com, where-to-dance-salsa.com | סלסה/בצ'אטה שבועי | salsavida בייצור (`59d3bb4`): 237 ערבים מ-8 סדרות. where-to-dance: רק Havana, שכבר נקרא |
 | 20 | ⛔ דילוג | kolsadna.co.il | השוואת סדנאות | אין מועדים: הכל בתיאום |
 | 21 | ⏳ | park.co.il | גני יהושע: אירועי פארק הירקון, פארק בגין, גני הטבע וראש ציפור | נבדק 23.11: עונה ישיר. נבנה `ganeyyehoshua`: 45 מפגשים מ-18 אירועים (סיורי צפרות וטבע, ימי משפחה, ספורט, Lumagica), 100% מפה (פין לכל נקודת מפגש), ז'אנר ועיר. Lumagica נמכר בקופת ת"א, ו-dedup ממזג. דילוג: מפגשי דיגיטף לתושבים, הקורס העונתי, הפילאטיס השבועי, ופריטים בלי תאריך. ממתין לדחיפה |

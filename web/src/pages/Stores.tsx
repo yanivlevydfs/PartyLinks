@@ -42,6 +42,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   beithagefen: ["https://www.beit-hagefen.com", "culture"], hamesila: ["https://hamesila.org.il", "venue"],
   jerusalemarts: ["https://jerusalemarts.co.il", "culture"], glatticket: ["https://home.glatticket.co.il", "tickets"],
   bimot: ["https://bimotglobal.co.il", "culture"],
+  israelshow: ["https://israelshow.co.il", "tickets"],
   salsavida: ["https://www.salsavida.com/guides/israel/", "guide"], arthurmurray: ["https://www.arthurmurray.co.il/the-salon", "venue"],
   yadvashem: ["https://online-reservations.yadvashem.org/he/home", "culture"],
   ganeyyehoshua: ["https://park.co.il/events/", "venue"],
