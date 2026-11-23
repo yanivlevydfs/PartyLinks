@@ -985,6 +985,7 @@ enrichment:
     tamuseum: [exhibitions]
     hechtmuseum: [culture]  # concerts and talks in the auditorium; most posts carry a series term
     agnonhouse: [literature]  # Agnon's house: lectures and evenings on literature; no categories
+    rabincenter: [culture]  # Israeli-culture shows and artist meetings; no categories
     eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
@@ -1107,6 +1108,7 @@ enrichment:
                 "תרגום סימולטני לאנגלית, ערבית", "בשפה הערבית", "בשפה הרוסית", "english, russian, arabic",  # a tour's language, not Arabic music
                 "מסיבה זו", "מסיבות שונות", "מסיבות טכניות", "מסיבות בטיחות", "מסיבות שאינן",  # "for this reason", not a party
                 "חורש ים תיכוני", "חורש ים-תיכוני", "חורש ים־תיכוני",  # Mediterranean woodland (a nature tour), not Mizrahi music
+                "כולל סיור מודרך",  # a show's add-on ("המפגש כולל סיור מודרך במוזיאון", Rabin Center), not a tour
                 "טכנו-", "טכנו־"]  # "techno-" joined to a word ("שיווק טכנו-באנאלי", a lecture): a prefix, not techno
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
@@ -2231,6 +2233,7 @@ search:
     tamuseum: ["מוזיאון תל אביב", "tel aviv museum of art"]
     hechtmuseum: ["מוזיאון הכט", "hecht museum", "ארכיאולוגיה עכשיו"]
     agnonhouse: ["בית עגנון", "agnon house", "עגנון"]
+    rabincenter: ["מרכז רבין", "מרכז יצחק רבין", "rabin center", "המוזיאון הישראלי"]
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
@@ -5858,6 +5861,26 @@ sources:
     longitude: 35.2238491
     may_be_empty: true      # a small programme: some weeks list only online lectures
     skip_title_words: ["קורס", "סדנת כתיבה", "השתלמות"]
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
+
+  rabincenter:
+    # Yitzhak Rabin Center, Tel Aviv (rabincenter.org.il): the shows, artist meetings and family days of its Israeli
+    # Museum. One wp-json call: the `event` post type (~60 posts, nearly all past). The ACF date fields are empty:
+    # the date and time come from the post text (a post without a full date is skipped), with the price and the
+    # AttractiNet ticket link (an order form, linked only). Exhibition posts are no events. Answers direct.
+    enabled: true
+    cron: "38 10,22 * * *"
+    venue_name: מרכז יצחק רבין
+    address: "חיים לבנון 8"
+    city: תל אביב-יפו
+    latitude: 32.1029090    # Nominatim: מרכז יצחק רבין (public building)
+    longitude: 34.7997091
+    may_be_empty: true      # a few shows a season
+    labels:                 # the series heading (the text's first line) -> words our genres read
+      "תרבות ישראלית": [מופע]
+    skip_title_words: ["הטבה לעובדי", "קורס", "השתלמות"]
     http:
       concurrency: 1
       request_delay_seconds: 1.0
