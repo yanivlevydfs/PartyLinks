@@ -5662,6 +5662,9 @@ sources:
     # Bar Giyora: live-show bar on Ibn Gabirol (music, stand-up, lectures), a WooCommerce shop.
     # Listing pages /tickets/page/N/ give date, door time and show type; the Store API adds price,
     # stock and description for those products in one call.
+    # sections: /tickets/ to its last page (23.11: 54 shows, 6 pages, to 06.03.2027; equals the three product
+    # categories הופעות 23 + הרצאות 15 + סטנדאפ 16, the menu's "רכישת כרטיסים" and the home page's shows; one date a
+    # product); not read: /events/ (private-event hire, no shows), menu / about / terms, product tags (same products).
     enabled: true
     cron: "26 6,18 * * *"
     site_url: https://bar-giyora.co.il
@@ -5672,6 +5675,7 @@ sources:
     city: תל אביב-יפו
     latitude: 32.0750
     longitude: 34.7820
+    skip_title_words: ["קורס", "חוג", "אירוע פרטי"]
     http:
       concurrency: 1
 
