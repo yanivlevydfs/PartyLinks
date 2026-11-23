@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import secrets
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -44,6 +45,17 @@ def visitor(ip: str | None, agent: str) -> str | None:
     if not ip or not agent or CRAWLER.search(agent):
         return None
     return hashlib.sha256(_SALT + f"{ip}|{agent}".encode()).hexdigest()[:16]
+
+
+# Views are written here, at most two at a time, never on the request's own thread: the request already holds
+# a connection (SessionDep), and taking a second from the same pool deadlocked it whenever ~40 event pages
+# opened at once (QueuePool limit reached, the whole site 500/503 for 30 s at a time, 2026-11-24).
+_WRITER = ThreadPoolExecutor(max_workers=2, thread_name_prefix="views")
+
+
+def record_later(db: Database, event_id: str, who: str, timezone: str) -> None:
+    """``record`` in the background: the page never waits for it nor holds a second connection."""
+    _WRITER.submit(record, db, event_id, who, timezone)
 
 
 def record(db: Database, event_id: str, who: str, timezone: str) -> None:

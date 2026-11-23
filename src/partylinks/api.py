@@ -1598,7 +1598,7 @@ def _register_routes(app: FastAPI) -> None:
         if who := popularity.visitor(
             request.client.host if request.client else None, request.headers.get("user-agent", "")
         ):
-            popularity.record(request.app.state.db, row.id, who, cfg.timezone)
+            popularity.record_later(request.app.state.db, row.id, who, cfg.timezone)
         alternatives = (
             session.scalars(
                 select(EventRow)
