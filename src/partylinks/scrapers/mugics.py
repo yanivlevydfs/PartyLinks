@@ -47,15 +47,18 @@ class MugicsSettings(SourceSettings):
     min_window_hours: int = 12
     # Countries the site writes for Israel; a pin elsewhere is skipped (the site is Israeli, times are Israel's).
     israel_names: list[str] = Field(default_factory=lambda: ["ישראל", "israel", "il"])
-    # The site's category ids -> its own Hebrew names (kept as source genres).
+    # The site's liveMusic category ids (its bundle's list, Nov 2026; party / inahous are hidden from the
+    # filter bar) -> its own Hebrew names, kept as source genres.
     categories: dict[str, str] = Field(
         default_factory=lambda: {
-            "musicclub": "מועדון הופעות",
-            "intimatespace": "הופעות אינטימיות",
-            "festival": "פסטיבלים והופעות ענק",
             "openmic": "במות פתוחות",
-            "street": "הופעות רחוב",
-            "singersongwriter": "אומן יוצר",
+            "intimatespace": "הופעות אינטימיות",
+            "musicclub": "מועדון הופעות",
+            "party": "מסיבות",
+            "inahous": "הופעות בבתים",
+            "streetjam": "הופעות רחוב",
+            "festival": "פסטיבלים והופעות ענק",
+            "hugeconcert": "אומן יוצר",
         }
     )
     # Every pin is a live show: this genre is added to the site's own ones.

@@ -58,7 +58,9 @@ def test_free_range_social_link_city_venue_and_skips() -> None:
     town = parse_event(ROW | {"location": ROW["location"] | {"revenueName": "פרדס-חנה"}}, S, TZ)
     assert town is not None and town.venue_name is None
     no_time = parse_event(ROW | {"time": None}, S, TZ)
-    assert no_time is not None and not no_time.time_known and no_time.start_at is not None and no_time.start_at.hour == 0
+    assert (
+        no_time is not None and not no_time.time_known and no_time.start_at is not None and no_time.start_at.hour == 0
+    )
     assert parse_event(ROW | {"type": "band"}, S, TZ) is None
     assert parse_event(ROW | {"date": None}, S, TZ) is None
     assert parse_event(ROW | {"location": ROW["location"] | {"country": "Greece"}}, S, TZ) is None
@@ -70,3 +72,15 @@ def test_venue_spellings_and_town_spelled_otherwise() -> None:
     tivon = ROW["location"] | {"city": "קריית טבעון", "revenueName": "קרית טבעון"}
     town = parse_event(ROW | {"location": tivon}, S, TZ)
     assert town is not None and town.venue_name is None
+
+
+def test_every_site_category_id_is_named_and_maps_to_a_genre() -> None:
+    settings = Settings()
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    ids = ["openmic", "intimatespace", "musicclub", "party", "inahous", "streetjam", "festival", "hugeconcert"]
+    assert set(S.categories) == set(ids)
+    for cid in ids:
+        event = parse_event(ROW | {"category": cid, "subCategories": []}, S, TZ)
+        assert event is not None and event.source_genres == ["הופעה חיה", S.categories[cid]]
+        enriched = enricher.enrich(event)
+        assert enriched is not None and enriched.genres, cid
