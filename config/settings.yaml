@@ -4947,6 +4947,9 @@ sources:
     # One request: /events embeds its query cache (queryClientState), whose "events" query is every upcoming
     # event (~160) with kind, venue, street, city, price, age and poster. The seller link sits behind a
     # sign-up, so none is kept. robots.txt disallows /api/, /auth and /account: not read.
+    # sections: /events (all 182, every kind and region); the menu's category, region and town pages
+    # (mesibot, hofaot, festivalim, trance, teva, wine, 30/40+, tzafon/merkaz/darom, TLV/Haifa/Eilat) list
+    # only events /events holds (Nov 2026); not read: blog, past-events.
     enabled: true
     cron: "19 9,21 * * *"
     http:
