@@ -943,6 +943,7 @@ enrichment:
     issta: [live_show]  # concert trips abroad
     hangar11: [live_show]  # a concert hall: every night is a show; its CATEGORIES are the site's ~50 tags
     ticket4u: [kids]  # Shefa's products without a category are its Hanukkah kids' shows (Nov 2026)
+    tickster: [culture]  # no category on the site (its app's API is off limits): a quartet or a tarot evening names none
     parties247: [nightclubs]  # a party guide: a party on no genre list is a club night
     newacropolis: [lectures]  # a philosophy school: no categories; talks and open evenings
     hamesila: [culture]  # community house: lectures, shows, family events
@@ -2339,6 +2340,7 @@ search:
     standupfactory: ["stand up factory", "standup factory", "סטנדאפ פקטורי", "סטנד אפ פקטורי", "סטנדאפ פאקטורי"]
     tarbut: ["tarbut.events", "tarbut events", "טרבות איוונטס"]
     ticketsi: ["טיקטסי", "ticketsi"]
+    tickster: ["טיקסטר", "tickster"]
     bargiyora: ["bar giyora", "בר גיורא"]
     basalon: ["basalon", "בסלון"]
     radical: ["radical", "רדיקל", "בית רדיקל"]
@@ -5468,6 +5470,20 @@ sources:
     http:
       concurrency: 3
       request_delay_seconds: 0.3
+
+  tickster:
+    # Tickster (tickster.co.il): a ticket guide selling through its Kupat Bravo white label (tickster.kartisim.co.il)
+    # and Funzing affiliate links. The app's /api/ is disallowed by robots.txt: read the sitemap (~880 event pages)
+    # and each page's prerendered JSON-LD Event (start, hall, city, text, artwork, price, buy link): ~880 requests.
+    # Every buy link is a Kupat Bravo seance or a Funzing experience: dedup merges with `kupatbravo` / `funzing`.
+    # No coordinates (hall + city geocoded), no category (genres from the text). Answers direct.
+    enabled: true
+    cron: "28 7,19 * * *"
+    site_url: https://www.tickster.co.il
+    skip_title_words: ["קורס", "סדנת העשרה", "השתלמות"]
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.2
 
 
   bargiyora:
