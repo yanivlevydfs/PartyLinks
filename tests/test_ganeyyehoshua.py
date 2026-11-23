@@ -177,3 +177,9 @@ def test_run_reads_the_listing_then_each_dated_event() -> None:
     assert not any("פילאטיס" in e.title or "דיגיטף" in e.title for e in events)
     assert {e.source_event_id.split(":")[0] for e in events} <= {"75009", "69062", "78710"}
     assert not scraper.failures
+
+
+def test_cloudflare_refusal_is_a_block() -> None:
+    scraper = build_scraper("ganeyyehoshua", Settings())
+    assert scraper.is_blocked(httpx.Response(403, headers={"cf-mitigated": "challenge"}, text="<html></html>"))
+    assert not scraper.is_blocked(httpx.Response(200, text="<html></html>"))

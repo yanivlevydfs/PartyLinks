@@ -5215,6 +5215,7 @@ sources:
     # page (every current card: type, park, first dates) + each event's page (~25: every date and time, prices, the
     # meeting point, the seller): one event per session. Lumagica sells on Kupat Tel Aviv (`kupat`; dedup merges).
     # No coordinates on the site: the meeting point -> `places`, else the park's pin (`parks`). robots.txt allows all.
+    # Access (23.11, from Railway): its own IP and the VPN get Cloudflare's challenge (403), the source proxy 200.
     enabled: true
     cron: "52 9,21 * * *"
     site_url: https://park.co.il

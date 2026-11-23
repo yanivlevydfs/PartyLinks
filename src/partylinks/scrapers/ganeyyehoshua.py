@@ -12,7 +12,8 @@ elsewhere (Lumagica on Kupat Tel Aviv), the seller's link. One event per date an
 
 The site gives no coordinates: the meeting point (the "היכן?" text and the park-map point) is matched to a
 pin (``places``), else the park's own pin (``parks``); the parking directions are kept in ``extra``. Undated items (an open-air exhibition, a self-guided
-sculpture trail) are not events. Residents-only ("בלעדי לדיגיטף") sessions and courses are skipped by title.
+sculpture trail) are not events. Cloudflare challenges Railway's own IP and the VPN (403, ``cf-mitigated:
+challenge``), not the source proxy: a challenge is a block, so the run moves to the next proxy. Residents-only ("בלעדי לדיגיטף") sessions and courses are skipped by title.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from html import unescape
 from typing import Any
 from urllib.parse import quote, urljoin
 
+import httpx
 from pydantic import BaseModel, Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
@@ -85,6 +87,10 @@ class ParkCard:
 class GaneyYehoshuaScraper(BaseScraper[GaneyYehoshuaSettings]):
     name = "ganeyyehoshua"
     settings_model = GaneyYehoshuaSettings
+
+    def is_blocked(self, response: httpx.Response) -> bool:
+        """Cloudflare's challenge (Railway's own IP and the VPN get it; the source proxy gets the pages)."""
+        return response.headers.get("cf-mitigated") == "challenge"
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
