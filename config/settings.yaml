@@ -1095,7 +1095,7 @@ enrichment:
   # Small print that names a genre word in passing, removed from the text before genres are read.
   # Nov 2026 genre audit: phrases whose words are no genre ("open house", "pop art", the evening prayer,
   # "the eastern gate", a Mediterranean menu).
-  text_ignore: ["pop art", "pop culture", "פופ ארט", "open house", "full house", "opera house", "guest house", "coffee house", "in-house", "house of blues", "house of", "agnon house", "רוטב סלסה", "salsa verde", "hi-tech psy", "hitech psy", "מגדל האופרה", "opera tower", "soap opera", "תפילת ערבית", "מנחה וערבית", "מנחה ומעריב", "תפילת מנחה", "הכניסה המזרחית", "בכניסה המזרחית", "ירושלים המזרחית", "השער המזרחי", "החוף המזרחי", "מטבח ים תיכוני", "המטבח הים תיכוני", "ארוחה ים תיכונית", "מסעדה ים תיכונית", "אוכל ים תיכוני",
+  text_ignore: ["pop art", "pop culture", "פופ ארט", "open house", "full house", "opera house", "guest house", "coffee house", "in-house", "house of blues", "house of", "agnon house", "רוטב סלסה", "salsa verde", "hi-tech psy", "hitech psy", "מגדל האופרה", "opera tower", "soap opera", "תפילת ערבית", "מנחה וערבית", "מנחה ומעריב", "תפילת מנחה", "שירת הבארוק", "שירה בארוקית", "הבארוק העברית", "הכניסה המזרחית", "בכניסה המזרחית", "ירושלים המזרחית", "השער המזרחי", "החוף המזרחי", "מטבח ים תיכוני", "המטבח הים תיכוני", "ארוחה ים תיכונית", "מסעדה ים תיכונית", "אוכל ים תיכוני",
                 "הורים וילדים יוצרים", "כרטיס אלקטרוני", "כרטיסים אלקטרוניים", "הכרטיס האלקטרוני", "הכרטיסים האלקטרוניים",
                 "בכרטיס האלקטרוני", "דואר אלקטרוני", "בדואר אלקטרוני", "הדואר האלקטרוני", "בדואר האלקטרוני",
                 "כתובת דואר אלקטרוני", "תשלום אלקטרוני", "חתימה אלקטרונית", "ארנק אלקטרוני",
