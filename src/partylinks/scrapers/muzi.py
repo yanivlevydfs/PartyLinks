@@ -23,7 +23,7 @@ from collections.abc import AsyncIterator
 from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Any
-from urllib.parse import unquote, urlsplit
+from urllib.parse import quote, unquote, urlsplit
 
 import json_repair
 from pydantic import Field
@@ -51,6 +51,12 @@ _SHEKELS = re.compile(r"₪\s*([\d,]+(?:\.\d+)?)")
 _TICKET_LINK = re.compile(r'<a href="([^"]+)"[^>]*>\s*המשך בלי להרשם')
 _DESCRIPTION = re.compile(r'"description":\s*"(.*?)",(\s*\n\s*"[@\w]+":)', re.DOTALL)
 _JSONLD = re.compile(r'<script type="application/ld\+json"[^>]*>(.*?)</script>', re.DOTALL)
+_CONCERT_PIC = re.compile(r'<img\b[^>]*\bclass="concert_pic"[^>]*>')
+_SRC = re.compile(r'\bsrc="([^"]+)"')
+_OG_META = re.compile(r'<meta property="og:image:(width|height|type)" content="([^"]*)"')
+_THUMB_SIZE = re.compile(r"-\d+x\d+$")  # WordPress's resized copy: "<upload>-100x100.jpg"
+# Every suffix WordPress adds to one upload's name: "-scaled" (big originals), "-e1654170851666" (an edit), "-100x100".
+_COPY_SUFFIXES = re.compile(r"(?:-scaled|-e\d{9,}|-\d+x\d+)+$")
 
 
 class MuziSettings(SourceSettings):
@@ -133,6 +139,31 @@ def _row(page_html: str, label: str) -> str:
     return page_html[start : end if end > 0 else start + 2000]
 
 
+def artwork(page_html: str) -> list[str]:
+    """The show's pictures. The details' artist photo ("concert_pic", a 100x100 copy) tells: the theme's stand-in
+    there means the page has no picture, and its og:image is then a genre's icon (a drum for ים תיכוני, a keyboard,
+    a menorah: 24 icons on ~1,000 listings, which other sources borrowed by title, Nov 2026) or the site icon. With
+    a photo there, og:image is that photo, the event's own poster, or again a genre icon (a 512x512 PNG)."""
+    tag = _CONCERT_PIC.search(page_html)
+    src = _SRC.search(tag.group(0)) if tag else None
+    photo = html.unescape(src.group(1)) if src else ""
+    if "/wp-content/uploads/" not in photo:
+        return []
+    stem, dot, ext = photo.rpartition(".")
+    photo = quote(_THUMB_SIZE.sub("", stem) + dot + ext, safe=":/%?=&")  # the full upload
+    og = og_image(page_html)
+    meta = dict(_OG_META.findall(page_html))
+    icon = (meta.get("type"), meta.get("width"), meta.get("height")) == ("image/png", "512", "512")
+    if og and _upload_name(og) == _upload_name(photo):
+        return [og]  # the same picture, as the page's big copy
+    return [og, photo] if og and "/wp-content/uploads/" in og and not icon else [photo]
+
+
+def _upload_name(url: str) -> str:
+    """One upload's name whatever copy: "a-scaled.jpg", "a-e1654170851666-100x100.jpg" and "a.jpg" are all "a"."""
+    return _COPY_SUFFIXES.sub("", unquote(urlsplit(url).path).rsplit("/", 1)[-1].rpartition(".")[0])
+
+
 def parse_event(
     page_html: str, url: str, timezone: str, today: date | None = None, placeholders: list[str] | None = None
 ) -> ScrapedEvent | None:
@@ -183,7 +214,6 @@ def parse_event(
     purchase_url = html.unescape(ticket_link.group(1)) if ticket_link else None
     if purchase_url and urlsplit(purchase_url).hostname in (None, urlsplit(url).hostname):
         purchase_url = None  # "tickets soon": the link points back to a muzi page
-    image = og_image(page_html)
     return ScrapedEvent(
         source=MuziScraper.name,
         source_event_id=post_id.group(1) if post_id else urlsplit(url).path.rstrip("/").rsplit("/", 1)[-1],
@@ -200,8 +230,7 @@ def parse_event(
         artists=[
             n for p in _list(node.get("performer")) if (n := clean_str(html.unescape(str(_dict(p).get("name") or ""))))
         ],
-        # The JSON-LD images are the theme's placeholder; og:image is the event's artwork or the site icon.
-        images=[image] if image and "/themes/" not in image and "favicon" not in image else [],
+        images=artwork(page_html),
         min_price=min(prices, default=None),
         max_price=max(prices, default=None),
         tickets=tickets,

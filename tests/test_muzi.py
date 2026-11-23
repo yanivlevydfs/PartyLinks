@@ -5,8 +5,9 @@ from __future__ import annotations
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from urllib.parse import quote
 
-from partylinks.scrapers.muzi import event_urls, parse_event, sitemap_urls
+from partylinks.scrapers.muzi import artwork, event_urls, parse_event, sitemap_urls
 
 FIXTURES = Path(__file__).parent / "fixtures" / "muzi"
 TZ = "Asia/Jerusalem"
@@ -42,7 +43,11 @@ def test_paid_event() -> None:
     assert event.artists == ["בלקן ביט בוקס"]
     assert event.source_genres == ["jazz"]
     assert event.min_price == event.max_price == Decimal(229)
-    assert event.image_url == "https://muzi.co.il/wp-content/uploads/2025/02/67b1a0b24ed57.webp"
+    # The event's poster first, then the artist photo of the details as its full upload.
+    assert event.images == [
+        "https://muzi.co.il/wp-content/uploads/2025/02/67b1a0b24ed57.webp",
+        "https://muzi.co.il/wp-content/uploads/2024/01/65b3a31a335e9.jpg",
+    ]
     assert event.extra == {
         "purchase_url": "https://www.ticketmaster.co.il/performance/MEP29/001/ALL/iw",
         "doors_open": "13:30",
@@ -79,7 +84,9 @@ def test_unescaped_backslash_and_quotes_in_description() -> None:
 
 def test_unescaped_quotes_outside_the_description() -> None:
     """A place written with a plain ASCII gershayim ("ויצ"ו חיפה") broke the whole block: the show was lost."""
-    page = _page("event_raw_newlines.html").replace('"@type": "Place",', '"@type": "Place", "alternateName": "ויצ"ו חיפה",')
+    page = _page("event_raw_newlines.html").replace(
+        '"@type": "Place",', '"@type": "Place", "alternateName": "ויצ"ו חיפה",'
+    )
     assert '"ויצ"ו' in page
     event = parse_event(page, URL, TZ)
     assert event is not None and event.title == "Bayz Rooftop The Last Dance"
@@ -94,3 +101,55 @@ def test_placeholder_place_takes_the_visible_where_row() -> None:
     fixed = parse_event(placeholder, URL, TZ, placeholders=["Hall"])
     # The page's own "איפה?" row: "<p>קמפוס הטכניון <span>חיפה</span></p>".
     assert fixed is not None and (fixed.venue_name, fixed.city) == ("קמפוס הטכניון", "חיפה")
+
+
+_OG = '<meta property="og:image" content="https://muzi.co.il/wp-content/uploads/{}" />\n'
+_ICON_META = (
+    '<meta property="og:image:width" content="512" />\n<meta property="og:image:height" content="512" />\n'
+    '<meta property="og:image:type" content="image/png" />\n'
+)
+_PIC = '<img class="concert_pic" src="https://muzi.co.il/wp-content/{}"  alt="x" title="x">\n'
+
+
+def test_theme_stand_in_means_no_picture() -> None:
+    """Moshe Peretz at Menora (Nov 2026): no photo of its own, so og:image was the genre's drum icon, which
+    eventer, tickchak, ogo and others then borrowed by title. Every snippet is the real page's."""
+    page = (
+        _OG.format("2026/07/6a9d837a2ed1c.png")
+        + _ICON_META
+        + _PIC.format("themes/muzi-theme/assets/images/s_artist-100x100.webp")
+    )
+    assert artwork(page) == []
+    # The site icon of other pages without a photo, and the family icon (1024 WebP): no picture either.
+    assert (
+        artwork(
+            _OG.format("2022/06/cropped-muzi-favicon.png")
+            + _PIC.format("themes/muzi-theme/assets/images/s_artist-100x100.webp")
+        )
+        == []
+    )
+    assert (
+        artwork(
+            _OG.format("2024/07/670f825135ba1.webp")
+            + _PIC.format("themes/muzi-theme/assets/images/s_artist-100x100.webp")
+        )
+        == []
+    )
+
+
+def test_artist_photo_wins_over_a_genre_icon() -> None:
+    name = "דני רובס - צילום גבריאל בהרליה - 2022"
+    page = _OG.format("2026/07/6a9d83e464bed.png") + _ICON_META + _PIC.format(f"uploads/2023/10/{name}-100x100.jpg")
+    assert artwork(page) == [f"https://muzi.co.il/wp-content/uploads/2023/10/{quote(name)}.jpg"]
+
+
+def test_og_image_of_the_same_upload_is_kept() -> None:
+    """og:image is the photo's big copy ("-scaled", or an edit "-e<stamp>" in another month's folder)."""
+    scaled = _OG.format("2024/11/672b72b8d9346-scaled.jpg") + _PIC.format("uploads/2024/11/672b72b8d9346-100x100.jpg")
+    assert artwork(scaled) == ["https://muzi.co.il/wp-content/uploads/2024/11/672b72b8d9346-scaled.jpg"]
+    edited = _OG.format("2022/05/נינט2-ליאור-כתר.jpg") + _PIC.format(
+        "uploads/2022/06/נינט2-ליאור-כתר-e1654170851666-100x100.jpg"
+    )
+    assert artwork(edited) == [
+        "https://muzi.co.il/wp-content/uploads/2022/05/%D7%A0%D7%99%D7%A0%D7%982-%D7%9C%D7%99%D7%90%D7%95%D7%A8-%D7%9B%D7%AA%D7%A8.jpg"
+    ]
