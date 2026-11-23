@@ -12,6 +12,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+import httpx
 import PIL.features
 from fastapi import Request
 from fastapi.testclient import TestClient
@@ -145,7 +146,7 @@ def test_animations_become_animated_webp_and_broken_files_keep_only_the_original
     broken.write_bytes(b"\xff\xd8\xff not really a jpeg")
     assert make_variants(gif, 78) and not make_variants(broken, 78)
     with Image.open(gif.with_name("loop.gif.640.webp")) as im:
-        assert im.format == "WEBP" and im.n_frames == 2  # still animated
+        assert im.format == "WEBP" and getattr(im, "n_frames", 1) == 2  # still animated
     assert sorted(p.name for p in tmp_path.iterdir()) == ["broken.jpg", "loop.gif", "loop.gif.640.webp", "loop.gif.960.webp"]
 
 
@@ -421,3 +422,25 @@ def test_image_requests_release_their_db_connection_before_sending_the_file(tmp_
         assert client.get(f"/images/{image_id}/640.webp").status_code == 200
         assert client.get(f"/images/{image_id}").status_code == 200
     assert seen_while_sending == [0, 0]
+
+
+def test_an_image_curl_refuses_for_its_content_encoding_is_fetched_with_a_plain_client(tmp_path: Path) -> None:
+    """PRES labels plain JPEGs "Content-Encoding: base64": curl error 61 -> one retry without impersonation."""
+    _, _, media, _ = stored(tmp_path, picture((100, 100)))
+    jpeg = picture((120, 80))
+
+    class Refusing(httpx.AsyncBaseTransport):
+        async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+            raise httpx.TransportError("curl: (61) Unrecognized content encoding type")
+
+    def plain(timeout: httpx.Timeout) -> httpx.AsyncClient:
+        return httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200, content=jpeg)))
+
+    media._plain_client = plain  # type: ignore[method-assign]
+
+    async def run() -> tuple[bytes, str]:
+        async with httpx.AsyncClient(transport=Refusing()) as client:
+            return await media._fetch(client, "https://example.org/a.jpg")
+
+    data, content_type = asyncio.run(run())
+    assert data == jpeg and content_type == "image/jpeg"

@@ -524,6 +524,22 @@ class MediaStore:
         return moved
 
     async def _fetch(self, client: httpx.AsyncClient, url: str) -> tuple[bytes, str]:
+        try:
+            return await self._fetch_with(client, url)
+        except Exception as exc:
+            # PRES's storage labels plain JPEGs "Content-Encoding: base64": curl (the Chrome-impersonating
+            # client) refuses them with error 61, plain httpx ignores the header (cinematheque_tlv: 72 of
+            # 142 pictures, Nov 2026). Only that error is retried, with a plain client.
+            if "(61)" not in str(exc) and "content encoding" not in str(exc).lower():
+                raise
+            async with self._plain_client(client.timeout) as plain:
+                return await self._fetch_with(plain, url)
+
+    @staticmethod
+    def _plain_client(timeout: httpx.Timeout) -> httpx.AsyncClient:
+        return httpx.AsyncClient(timeout=timeout, follow_redirects=True)
+
+    async def _fetch_with(self, client: httpx.AsyncClient, url: str) -> tuple[bytes, str]:
         async with client.stream("GET", url) as response:
             response.raise_for_status()
             declared = response.headers.get("content-type", "").split(";")[0].strip().lower()
