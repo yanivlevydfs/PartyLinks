@@ -6,7 +6,7 @@ robots.txt only blocks feeds. Listing and details in one GraphQL query (``POST /
 are kept, and events with no venue (place sent to members) are dropped. Without a date range the
 search stops about 30 days ahead, so it is asked window by window (``window_days``, up to
 ``days_ahead``); and it ranks the centre's events first, so a few smaller points (``centers``:
-Haifa, Beersheba, Jerusalem) bring the groups farther away (Nov 2026: 55 events in one query, 67 so). Each event gives title,
+Haifa, Beersheba, Jerusalem) bring the groups farther away (Nov 2026: 55 events in one query, 63 so). Each event gives title,
 start/end, markdown description, venue (name, address, city, coordinates), group, its group's
 topic category ("technology" marks a hi-tech event) and the fee, if any.
 """
