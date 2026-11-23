@@ -2514,8 +2514,10 @@ sources:
     probe_ahead: 60
 
   barby:
+    # sections: /api/shows/find = home + /events + /promotion-360 (360_1 seating), every coming performance as its own row, no paging or date window (77 rows 23.11.2026 = placeholder 0 + customer-service row 3298 "מייל שירות הלקוחות" dated 2029, dropped by skip_title_words, + 75 shows); not read: /ticket-bundle (bundle-options: 49 shows, all in find), /show/history (past archive), /giftcard-screen, /info, /contact, /mailing-list, /private-invite (closed).
     enabled: true
     cron: "7 6,18 * * *"
+    skip_title_words: ["שירות הלקוחות"]  # the site's contact row in the shows list, not a show
     site_url: https://barby.co.il
     list_path: /api/shows/find
     show_path: /api/shows/show/{show_id}

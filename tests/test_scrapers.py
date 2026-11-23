@@ -181,6 +181,31 @@ def test_barby_skips_the_placeholder_show_0() -> None:
     assert asyncio.run(run()) == [] and asked == [] and not scraper.failures
 
 
+def test_barby_drops_the_customer_service_row() -> None:
+    import asyncio
+
+    from partylinks.config import HttpSettings, Settings
+    from partylinks.scrapers import barby
+
+    cfg = barby.BarbySettings.model_validate(Settings().sources["barby"])
+    scraper = barby.BarbyScraper(cfg, HttpSettings(), TZ)
+    rows = [
+        {"showId": "3298", "showDate": "31/12/2029", "showTime": "21:00", "showName": "מייל שירות הלקוחות"},
+        {"showId": "5593", "showDate": "02/02/2027", "showTime": "21:00", "showName": "דודו טסה - מופע 360"},
+    ]
+
+    async def fake_get_json(url: str, **_: object) -> Any:
+        return {"returnShow": {"show": rows}} if url.endswith(cfg.list_path) else {}
+
+    scraper.get_json = fake_get_json  # type: ignore[method-assign]
+
+    async def run() -> list[Any]:
+        return [e async for e in scraper.events()]
+
+    # The shows list carries the site's contact row ("מייל שירות הלקוחות", dated 2029): not a show (Nov 2026).
+    assert [e.source_event_id for e in asyncio.run(run())] == ["5593"]
+
+
 def test_grayclub_cards_and_event_page() -> None:
     from partylinks.config import Settings
     from partylinks.scrapers import grayclub
