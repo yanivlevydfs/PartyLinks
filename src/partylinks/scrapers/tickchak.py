@@ -37,6 +37,7 @@ from partylinks.scrapers.tickchak_sitemap import unlisted_items
 
 SLIDER_SECTION = "eventSlider"
 LOOP_SECTION = "loopSections"
+ONLINE_WORDS = ("zoom", "בזום")
 
 
 class TickchakSettings(SourceSettings):
@@ -136,7 +137,7 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
         """The current events of ``items``, soonest first; those that need their seller's page go to ``missing``."""
         ready: list[ScrapedEvent] = []
         for entity_id, item in items.items():
-            if urlsplit(clean_str(item.get("link")) or "").hostname in skip:
+            if urlsplit(clean_str(item.get("link")) or "").hostname in skip or is_online(item):
                 continue
             try:
                 event = parse_event(item, self.settings.site_url, self.name)
@@ -227,6 +228,13 @@ class TickchakScraper(BaseScraper[TickchakSettings]):
             return payload.get(key) or [], payload.get("count")
 
         return await self.paginate(page, size, self.settings.max_pages)
+
+
+def is_online(item: dict[str, Any]) -> bool:
+    """A Zoom session (venue "אירוע ב ZOOM", or "מפגש ב-Zoom" in the title): online only, not imported.
+    Yaara Kedar's museum talks are listed both at the museum and on Zoom (Nov 2026)."""
+    text = f"{item.get('title') or ''} {(item.get('venue') or {}).get('title') or ''}".casefold()
+    return any(word in text for word in ONLINE_WORDS)
 
 
 def soonest_first(events: list[ScrapedEvent]) -> list[ScrapedEvent]:

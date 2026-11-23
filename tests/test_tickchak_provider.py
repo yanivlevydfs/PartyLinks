@@ -113,3 +113,9 @@ def test_a_stored_logo_is_looked_up_again() -> None:
     ready = scraper._events({"eBjWlQMmn": item}, {}, frozenset(), missing)
     assert ready == [] and [e.source_event_id for e, _ in missing] == ["eBjWlQMmn"]
     assert missing[0][0].images == []
+
+
+def test_a_zoom_session_is_not_imported() -> None:
+    assert tickchak.is_online({"title": "מי מפחד מאנה וינטור? | יערה קידר - מפגש ב-Zoom", "venue": {"title": "x"}})
+    assert tickchak.is_online({"title": "שמלת הסקנדל", "venue": {"title": "אירוע ב ZOOM"}})
+    assert not tickchak.is_online({"title": "שמלת הסקנדל", "venue": {"title": "מוזיאון ארץ־ישראל, תל־אביב"}})

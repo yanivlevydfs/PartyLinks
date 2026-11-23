@@ -2479,6 +2479,7 @@ sources:
   tickchak:
     # Tickchak LIVE gathers the box offices of all of Israel. Every category page except football
     # (matches are not events here), each tagged so its events land in the site's category.
+    # sections: the 12 main categories (/shows 756, /standup 658, /concerts 112, /Lectures 111, /theater 100, /childrens-shows 94, /musical 51, /exhibitions 41, /parties 16, /toursandattractions 11, /performances-for-women 9, /cantorial-music 8; every slider and loop paginated to its count) + the event sitemap (1,647 pages; those on no category page read one by one) = the site's own count (1,825 on the home page, 23.11.2026); the city / area / date / tag / artist / venue / hub pages (/tel-aviv, /today, /weekend, /hanukkah, /omer-adam, /ICC-Jerusalem...) are subsets of these. not read: /football (matches, 0 now), Zoom sessions (online only), museum admission slots, /artists and /cities (indexes).
     enabled: true
     cron: "45 7,19 * * *"
     site_url: https://live.tickchak.co.il
@@ -2495,6 +2496,7 @@ sources:
       Lectures: lectures
       cantorial-music: מוזיקה יהודית
       performances-for-women: shows
+      exhibitions: exhibitions   # museum gallery talks and exhibitions (41; 34 on no other category page)
     # Empty = the category page for all of Israel; a slug such as tel-aviv narrows it.
     city_slug: ""
     section_data_path: /sectionData/{section_id}
@@ -2504,6 +2506,7 @@ sources:
     # ~320 events on no category page (municipal halls, museums): one page each from the event sitemap.
     event_sitemap_path: /api/sitemap/event.xml
     uncategorized_label: culture   # their seller set no category: a general culture event
+    skip_title_words: ["כניסה למוזאון", "כניסה למוזיאון"]   # a museum's daily admission slot, not an event
 
   selector:
     enabled: true
