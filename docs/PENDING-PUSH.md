@@ -78,7 +78,8 @@
 | 17 | ⛔ דילוג | tickster.co.il | מאגד | 52 מתוך 52 כבר במסד (kupatbravo/funzing) |
 | 18 | ⏳ | israelshow.co.il | מאגד, חזית של Kupat Bravo | נבדק 23.11: עונה ישיר. נבנה `israelshow`: כ-50 עמודי ז'אנר ותיאטרון נותנים כ-500 מופעים, והמועדים נקראים מאותו מזהה ב-kupatbravo.co.il (ה-robots של ה-white label חוסם הכל). 1,938 מועדים, 100% מפה, ז'אנר ועיר. חופף ל-kupatbravo, ו-dedup ממזג לפי מזהה המועד. ממתין לדחיפה |
 | 18 | ⛔ לא נקרא | ishow.co.il | מאגד | נבדק שוב 23.11: Cloudflare JS challenge (403, "Just a moment...") לכל לקוח: ישיר, TLS של Chrome, ה-VPN הישראלי והפרוקסים הישראליים החינמיים. ומאחוריו השרת עצמו מושבת: נתיבים בלי challenge (‏/favicon.ico) מחזירים 522 של Cloudflare ("origin timed out") מאמסטרדם, מפרנקפורט ומ-IP ישראלי. אין מה לסרוק |
-| 18 | ⏳ בבדיקה | kzat-tarbut.com, jeroozevents.co.il | מאגדים | jerooz: אתר מושבת. kzat-tarbut: חזית של Kupat Bravo |
+| 18 | ⛔ לא נקרא | jeroozevents.co.il | מאגד | נבדק שוב 23.11: 402 `DEPLOYMENT_DISABLED` של Vercel ("Deployment Paused") ישיר, דרך ה-VPN ודרך הפרוקסים החינמיים, עם TLS של Chrome ובלי. זה מתג החיוב של האחסון, לא חסימה. אין עותק ב-Wayback ואין אתר אחר בשם הזה |
+| 18 | ⏳ בבדיקה | kzat-tarbut.com | מגזין תרבות, חזית של Kupat Bravo | |
 | 19 | ✅ | salsavida.com, where-to-dance-salsa.com | סלסה/בצ'אטה שבועי | salsavida בייצור (`59d3bb4`): 237 ערבים מ-8 סדרות. where-to-dance: רק Havana, שכבר נקרא |
 | 20 | ⛔ דילוג | kolsadna.co.il | השוואת סדנאות | אין מועדים: הכל בתיאום |
 | 21 | ⏳ | park.co.il | גני יהושע: אירועי פארק הירקון, פארק בגין, גני הטבע וראש ציפור | נבדק 23.11: עונה ישיר. נבנה `ganeyyehoshua`: 45 מפגשים מ-18 אירועים (סיורי צפרות וטבע, ימי משפחה, ספורט, Lumagica), 100% מפה (פין לכל נקודת מפגש), ז'אנר ועיר. Lumagica נמכר בקופת ת"א, ו-dedup ממזג. דילוג: מפגשי דיגיטף לתושבים, הקורס העונתי, הפילאטיס השבועי, ופריטים בלי תאריך. ממתין לדחיפה |

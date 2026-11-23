@@ -250,7 +250,7 @@ first in `PARTYLINKS_HTTP__ISRAEL_PROXY`.
 | Cluberim | cluberim.co.il (WordPress): 9 listed events in all, each linking to Go-Out, Zygo or Eventer; all 9 already stored by goout / zygo / eventer (Nov 2026) |
 | Tickster | tickster.co.il (~930 event pages) resells Kupat Bravo's seances (tickster.kartisim.co.il white label, same seance ids) and Funzing experiences: 52/52 sampled events already stored by kupatbravo / funzing (Nov 2026) |
 | Ticketsi | ticketsi.co.il: an SEO magazine (977 show articles, mostly stale) copying Kupat Bravo / Mevalim titles; one date-only JSON-LD date per article, no seller link: 57/57 future articles sampled already stored (Nov 2026) |
-| Jerooz Events | jeroozevents.co.il: Vercel "Deployment Paused" (402), no site (Nov 2026) |
+| Jerooz Events | jeroozevents.co.il: Vercel "Deployment Paused" (402 `DEPLOYMENT_DISABLED`, the host's billing switch, not a block) direct, through the Israeli VPN and the free Israeli proxies, with or without Chrome's TLS; no Wayback capture, no other site under the name (re-checked 23 Nov 2026) |
 | iShow | ishow.co.il: a Cloudflare JS challenge (403 "Just a moment...") for every client: direct, Chrome's TLS, the Israeli VPN, the free Israeli proxies; behind it the origin is down: challenge-free paths (/favicon.ico) answer Cloudflare 522 "origin timed out" from the Amsterdam and Frankfurt edges and from an Israeli IP (re-checked 23 Nov 2026) |
 | Kzat Tarbut | kzat-tarbut.com: ticket articles linking Kupat Bravo (5222.kartisim.co.il), date ranges only; 13/13 sampled already stored by kupatbravo (Nov 2026) |
 | Where to Dance Salsa | where-to-dance-salsa.com: Israel = Havana Music Club's weekly nights (read by havanaclub), last checked May 2026 (Nov 2026) |
