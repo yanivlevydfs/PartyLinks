@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 161 configured sources, 160 on. Each one has its own module in
+SPOTX collects from 162 configured sources, 161 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -120,6 +120,7 @@ pagination and what the listing and the event page provide.
 | `parks` | Israel Nature and Parks Authority (parks.org.il): guided tours, family activities and shows in national parks and nature reserves, by date (its Checkfront booking pages) | 10:13, 22:13 | yes |
 | `tamuseum` | Tel Aviv Museum of Art: concerts, gallery talks, tours, lectures, films, workshops | 07:53, 19:53 | yes |
 | `hechtmuseum` | Hecht Museum, University of Haifa (mushecht.haifa.ac.il): the "ארכיאולוגיה עכשיו" lecture series months ahead, swing nights, classical / organ / family concerts and stand-up in its auditorium; one wp-json call to the `event` post type (ACF day, series terms; time, price and Eventer link from the text) | 08:51, 20:51 | yes |
+| `agnonhouse` | Agnon House, Jerusalem (agnonhouse.org.il, בית עגנון): lectures, literary evenings and talks; the coming-events listing, then each event page (subtitle, date and time, place, artwork, price); online (Zoom) lectures left out | 09:57, 21:57 | yes |
 | `jaffatheatre` | Jaffa Theatre (jaffatheatre.org.il): the Arab-Hebrew stage in Jaffa, via its TicketTool box office | 07:18, 19:18 | yes |
 | `levontin7` | Levontin 7 (levontin7.com): live-music club in Tel Aviv | 06:46, 18:46 | yes |
 | `reading3` | Reading 3 (reading3.co.il): concert hall at the Tel Aviv port | 09:18, 21:18 | yes |

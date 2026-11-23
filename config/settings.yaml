@@ -984,6 +984,7 @@ enrichment:
     towerofdavid: [culture]
     tamuseum: [exhibitions]
     hechtmuseum: [culture]  # concerts and talks in the auditorium; most posts carry a series term
+    agnonhouse: [literature]  # Agnon's house: lectures and evenings on literature; no categories
     eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
@@ -2229,6 +2230,7 @@ search:
     towerofdavid: ["מגדל דוד", "tower of david", "החיזיון הלילי"]
     tamuseum: ["מוזיאון תל אביב", "tel aviv museum of art"]
     hechtmuseum: ["מוזיאון הכט", "hecht museum", "ארכיאולוגיה עכשיו"]
+    agnonhouse: ["בית עגנון", "agnon house", "עגנון"]
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
@@ -5838,6 +5840,24 @@ sources:
       "אוצר מוזיקלי מהאגדות": [קונצרט, לכל המשפחה]
     may_be_empty: true     # a small programme between seasons
     skip_title_words: ["קורס", "השתלמות"]
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
+
+  agnonhouse:
+    # Agnon House (agnonhouse.org.il, בית עגנון), Talpiot, Jerusalem: lectures, literary evenings and talks. WordPress;
+    # /events/ lists the coming events (~5, one request), each event page gives subtitle, date and time, place,
+    # artwork, text and price (~6 requests). Registration is the page's own form. Online (Zoom) lectures are not
+    # imported. Answers direct; robots.txt allows all but /wp-admin/.
+    enabled: true
+    cron: "57 9,21 * * *"
+    venue_name: בית עגנון
+    address: "קלאוזנר 16, תלפיות"
+    city: ירושלים
+    latitude: 31.7486205    # Nominatim: בית עגנון (tourism=museum), Klausner St
+    longitude: 35.2238491
+    may_be_empty: true      # a small programme: some weeks list only online lectures
+    skip_title_words: ["קורס", "סדנת כתיבה", "השתלמות"]
     http:
       concurrency: 1
       request_delay_seconds: 1.0

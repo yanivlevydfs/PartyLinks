@@ -54,6 +54,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   tickster: ["https://www.tickster.co.il", "tickets"],
   cluberim: ["https://cluberim.co.il", "guide"],
   hechtmuseum: ["https://mushecht.haifa.ac.il/%d7%90%d7%99%d7%a8%d7%95%d7%a2%d7%99%d7%9d/", "venue"],
+  agnonhouse: ["https://agnonhouse.org.il/events/", "venue"],
   comy: ["https://comy.co.il", "tickets"], concertevents: ["https://concert-events.com", "guide"], hangar11: ["https://hangar11.co.il", "venue"], eventbrite: ["https://www.eventbrite.com", "tickets"],
   posh: ["https://posh.vip", "abroad"], showshappening: ["https://www.showshappening.com", "abroad"], ticketingo: ["https://ticketingo.co.il/concerts", "abroad"],
   eventimlight: ["https://www.eventim-light.com", "abroad"],
