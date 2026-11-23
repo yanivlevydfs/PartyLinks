@@ -1433,6 +1433,9 @@ geocoding:
     "מוזיאון העיר תל אביב-יפו": [32.0734915, 34.7710702] # Beit Ha'ir, Bialik 27, Tel Aviv
     "מוזיאון העיצוב חולון": [32.0109043, 34.7777856]     # Design Museum Holon, Pinhas Eilon
     "גן המדע ע\"ש קלור": [31.9103193, 34.8128814]        # Clore Garden of Science, Weizmann Institute, Rehovot
+    "תיאטרון יפו - במה לתרבות ערבית-עברית": [32.0548894, 34.7539944]  # Jaffa Theatre, Mifratz Shlomo 10 (Nominatim amenity=theatre, as the jaffatheatre source; smarticket tenant)
+    "בית פרסקו": [32.1102870, 34.8411160]                # Beit Fresco for dance, HaBarzel 31 (RAD building), Ramat HaHayal, Tel Aviv (fresco.org.il; Nominatim house; smarticket)
+    "אודיטוריום אריסון": [32.0657741, 34.7816521]        # Arison Arts Center, Saadia Gaon 7, Tel Aviv (OSM node 761906585; Fresco's smarticket hall name)
     "מוזיאון יעקב אגם": [31.9680623, 34.7822385]         # Yaacov Agam Museum, Mishar 1, Rishon LeZion
     "מוזיאון מורשת החשמונאים": [31.9078625, 35.0071423]  # Hasmonean Heritage Museum, Dam HaMaccabim 24, Modi'in
     "משכן לאמנות עין חרוד": [32.5610011, 35.3932473]     # Mishkan Museum of Art, Ein Harod
@@ -3284,6 +3287,13 @@ sources:
       - {host: wikimedia-il}      # no shows on 23.11.2026
       # The index's tiptaf..tm hosts: telfed and tikva are gone, tlv-beitbialik answers 403 (even via the VPN; = tlv-bialik).
       - {host: tiptaf, rooms: true, venue_name: טיפ טף, city: חולון, skip_title_words: ["סדנת", "סדנה"]}   # toddlers' shows; parent-baby workshops left out
+      # Found by guessing tenant names on Smarticket (23.11.2026; an unknown name answers "לא נמצאה מערכת").
+      # Left out: weizmann (= davidson-weizmann), bgu / tarbuta (403, even via the VPN), muza / hatarbut / ganrave
+      # (no shows), ikesher (Hanukkah visitor-centre slots), convention-ashkelon (untitled subscription premieres).
+      # jaffatheatre: its 2027 dates (Jan-Mar) are sold here, the `jaffatheatre` source's TicketTool links end in December.
+      - {host: jaffatheatre, rooms: true, venue_name: תיאטרון יפו - במה לתרבות ערבית-עברית, city: תל אביב-יפו, category: תיאטרון,
+         skip_titles: ["אירוע לדוגמא"]}   # Smarticket's sample show
+      - {host: fresco, venue_name: בית פרסקו, city: תל אביב}   # Fresco dance company: Beit Fresco, Arison hall; Givatayim's theatre names its town
 
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
