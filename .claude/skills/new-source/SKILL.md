@@ -23,7 +23,7 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
   config comment; dedup merges it.
 - **Audit before it is called finished (mandatory, both runs):**
   1. Static, before the commit: `python scripts/audit_sources.py <name>` shows `PASS` in every column
-     (registry, sourceNames.json, STORES, alias, docs row and its times, free cron, test file,
+     (registry, sourceNames.json, STORES, alias, docs row and its times, free cron, test file, no key in its fixtures,
      skip_title_words, tenants with a city or venue).
   2. Production, after the deploy and the source's first finished run (read-only):
      `railway ssh --service web -- "PYTHONIOENCODING=utf-8 python - --db --json" < scripts/audit_sources.py > prod.txt`,
@@ -48,6 +48,10 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
   - An event abroad has a city: when the site has no city field, the venue address's town.
   - A site that is empty between editions or parties (a festival, a two-week guide, a one-party
     page, an app with test rows only) sets `may_be_empty: true`, or 0-event runs get it paused.
+  - Pages saved as test fixtures carry the site's third-party keys and tokens (a Google Maps `AIza...`
+    embed key, analytics IDs with secrets, any `key=` / `token=` value). Blank each one
+    (`key=REDACTED_THIRD_PARTY_KEY`) before the commit: GitHub secret scanning flagged tarbut.events'
+    Maps key (`6c06079`). The audit's `keys` column greps `tests/fixtures` for them.
 - **Config valid before every push (and after every rebase):**
   `python -c "import yaml; yaml.safe_load(open('config/settings.yaml',encoding='utf-8'))"` and
   `python -c "from partylinks.config import get_settings; get_settings()"`. A broken settings.yaml

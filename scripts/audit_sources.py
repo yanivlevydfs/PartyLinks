@@ -21,6 +21,10 @@ Static checks (this checkout):
   test   ``tests/test_<name>.py`` or the test file of its module
   skip   ``skip_title_words`` in its block (WARN without; with --db, FAIL when titles hold class words)
   subs   tenants / hosts / sites with neither a city nor a venue (WARN; --db decides per tenant)
+  keys   no third-party key or token in its saved pages (``tests/fixtures/<name>/``, its module's too): a
+         Google ``AIza...`` key, a JWT, AWS / Stripe / GitHub / Slack tokens, a ``key=`` / ``token=`` value.
+         Blank them before the commit (``key=REDACTED_THIRD_PARTY_KEY``): GitHub secret scanning flags
+         them. Every other file under tests/fixtures is swept too (a FAIL line under the table).
 
 Production checks (``--db``; read-only: one READ ONLY transaction of SELECTs, and file stats), over the
 source's upcoming events (``db.upcoming_filter``):
@@ -78,7 +82,19 @@ TENANT_MIN = 5
 CLASS_WORDS = ["קורס", "קורסים", "חוג", "חוגי", "חוגים", "השכרת", "שיעור פרטי", "weekly class"]
 CLASS_FAIL = 2.0
 _LETTERS = "a-zA-Zא-ת"
-STATIC = ["reg", "name", "store", "alias", "docs", "cron", "test", "skip", "subs"]
+STATIC = ["reg", "name", "store", "alias", "docs", "cron", "test", "skip", "subs", "keys"]
+# Third-party keys and tokens a saved page may carry. A key=/token= value counts when it is 20+ characters
+# with a digit and a letter, so a blanked "REDACTED_THIRD_PARTY_KEY" does not.
+SECRET_PATTERNS = {
+    "Google API key": r"AIza[0-9A-Za-z_-]{35}",
+    "JWT": r"eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}",
+    "AWS key": r"AKIA[0-9A-Z]{16}",
+    "Stripe key": r"(?:sk|rk)_live_[0-9A-Za-z]{16,}",
+    "GitHub token": r"gh[pousr]_[0-9A-Za-z]{36}",
+    "Slack token": r"xox[abprs]-[0-9A-Za-z-]{10,}",
+    "key= / token= value": r"(?i)[?&;](?:api[_-]?key|apikey|key|access[_-]?token|token|secret|client_secret|sig|signature)"
+    r"=(?=[0-9A-Za-z_-]*\d)(?=[0-9A-Za-z_-]*[A-Za-z])[0-9A-Za-z_-]{20,}",
+}
 PROD = ["events", "genre", "city", "map", "art", "ctype", "dlerr", "webp", "run", "pins", "cats", "tenant"]
 SUB_ID = ("host", "url", "domain", "key")  # what names a tenant / host / site
 SUB_PLACE = ("city", "venue_name", "venue", "address", "latitude")
@@ -234,6 +250,8 @@ def static_checks(results: dict[str, Result], settings: Any, enabled: dict[str, 
     aliases = settings.search.source_aliases
     crons = {n: str(b.get("cron") or "") for n, b in enabled.items()}
     tracked = _tracked()
+    secrets = fixture_secrets(ROOT / "tests" / "fixtures")
+    claimed: set[str] = set()
 
     if docs and (m := re.search(r"collects from (\d+) configured sources, (\d+) on", docs)):
         configured, on = len(settings.sources), len(enabled)
@@ -312,7 +330,40 @@ def static_checks(results: dict[str, Result], settings: Any, enabled: dict[str, 
             )
         else:
             r.set("subs", "PASS")
+        dirs = {name, Path(module).stem if module else name}
+        found = {f: kinds for f, kinds in secrets.items() if f.split("/")[0] in dirs}
+        claimed |= set(found)
+        if not (ROOT / "tests" / "fixtures").is_dir():
+            r.set("keys", "-")
+        elif found:
+            r.set(
+                "keys",
+                "FAIL",
+                "blank before the commit: " + "; ".join(f"{f} ({', '.join(k)})" for f, k in found.items()),
+            )
+        else:
+            r.set("keys", "PASS")
+    for f, kinds in secrets.items():
+        if f not in claimed:
+            notes.append(f"FAIL keys: tests/fixtures/{f} holds {', '.join(kinds)}: blank it before the commit")
     return notes
+
+
+def fixture_secrets(root: Path) -> dict[str, list[str]]:
+    """Files under ``root`` (path relative to it) holding a third-party key or token, and which kinds."""
+    found: dict[str, list[str]] = {}
+    if not root.is_dir():
+        return found
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        try:
+            body = path.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if kinds := [kind for kind, pattern in SECRET_PATTERNS.items() if re.search(pattern, body)]:
+            found[path.relative_to(root).as_posix()] = kinds
+    return found
 
 
 # ---------------------------------------------------------------------------------------- production
