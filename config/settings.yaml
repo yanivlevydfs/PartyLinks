@@ -4002,8 +4002,12 @@ sources:
 
   beershevatheatre:
     # Be'er Sheva Theatre: its Smarticket tenant (b7t) answers /api/shows and the calendar empty, so
-    # the performances are taken from the links on the theatre's home and schedule pages (~40),
+    # the performances are taken from the links on the theatre's home and schedule pages (~30),
     # each read from its iframe page's Event JSON-LD. robots.txt allows everything.
+    # sections: b7t.co.il home + /לוח-הצגות/ (both tabs, all shows and children & youth, every month
+    # it lists; 28 performances on 23.11.2026 = every ?id= on the tenant's category pages, show pages
+    # add none); not read: tenant coupon/club pages and season_ subscriptions (the same performances),
+    # courses, camps, gift cards.
     enabled: true
     cron: "53 6,18 * * *"
     listing_urls: ["https://b7t.co.il/", "https://b7t.co.il/לוח-הצגות/"]
