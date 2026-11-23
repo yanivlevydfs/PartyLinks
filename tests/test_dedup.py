@@ -354,6 +354,21 @@ def test_second_venue_and_group_pass_rewrites_nothing(tmp_path: Path) -> None:
         assert Deduplicator(settings.dedup).plan(session)[1] == []
 
 
+def test_the_plan_reads_the_events_in_pages(tmp_path: Path) -> None:
+    """Read whole, the busy worker took its ~220k rows past the statement timeout (2026-11-22): server-side pages."""
+    from sqlalchemy import event as sa_event
+
+    settings, groups = grouped(tmp_path, [listing("a", "1", "Techno Night"), listing("b", "2", "TECHNO NIGHT")])
+    assert groups["a:1"][0] == groups["b:2"][0]
+    db = Database(settings.database.url)
+    options: list[Any] = []
+    sa_event.listen(db.engine, "before_cursor_execute",
+                    lambda conn, cur, sql, params, ctx, many: "text_link" in sql and options.append(ctx.execution_options))  # fmt: skip
+    with db.session(write=False) as session:
+        assert Deduplicator(settings.dedup).plan(session)[1] == []  # same groups from the paged read
+    assert options and all(o.get("yield_per") and o.get("stream_results") for o in options)
+
+
 ZOA = (32.074601, 34.7845)
 
 

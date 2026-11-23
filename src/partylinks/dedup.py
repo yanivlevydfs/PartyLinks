@@ -482,7 +482,9 @@ class Deduplicator:
     def plan(self, session: Session) -> tuple[int, list[dict[str, Any]]]:
         """(merged groups, rows whose grouping changed): reads only, so it can run outside the write lock."""
         # Same input order, same groups on every pass, on any database: sorted here by code point (the
-        # database's own order of text depends on its collation).
+        # database's own order of text depends on its collation). Read in pages (each fetch its own short
+        # statement): read whole, the busy worker took its ~220k rows slower than the 120 s statement timeout
+        # (QueryCanceled, "regroup failed" in ~18 runs, 2026-11-20..22).
         rows = sorted(session.execute(
             select(
                 EventRow.id, EventRow.source, EventRow.title, EventRow.local_date, EventRow.start_at,
@@ -491,8 +493,8 @@ class Deduplicator:
                 EventRow.has_free_entry, EventRow.free_entry_until, EventRow.is_listed, EventRow.is_sold_out,
                 EventRow.time_known, EventRow.country, EventRow.address,
                 func.substring(EventRow.description, _TEXT_LINK).label("text_link"),  # in the database: no whole texts read
-            )
-        ).all(), key=lambda r: r.id)  # fmt: skip
+            ).execution_options(yield_per=5000)
+        ), key=lambda r: r.id)  # fmt: skip
         tier_counts = _tier_counts(session)
         by_day: dict[Any, list[_Listing]] = defaultdict(list)
         updates: list[dict[str, Any]] = []
