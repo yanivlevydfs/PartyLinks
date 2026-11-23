@@ -988,6 +988,7 @@ enrichment:
     rabincenter: [culture]  # Israeli-culture shows and artist meetings; no categories
     ybz: [lectures]  # Yad Ben-Zvi: lectures, book evenings and study days; the type tag maps the rest (labels)
     kfarsabamuseum: [culture]  # Kfar Saba Museum: concerts, family days and workshops; categories map the rest
+    shimur: [museums]  # heritage sites' days and tours; the text names shows, tours and workshops
     eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
@@ -2239,6 +2240,7 @@ search:
     rabincenter: ["מרכז רבין", "מרכז יצחק רבין", "rabin center", "המוזיאון הישראלי"]
     ybz: ["יד בן צבי", "יד בן-צבי", "יד יצחק בן צבי", "יד יצחק בן-צבי", "yad ben zvi", "yad ben-zvi"]
     kfarsabamuseum: ["מוזאון כפר סבא", "מוזיאון כפר סבא", "kfar saba museum", "בית הבאר כפר סבא"]
+    shimur: ["המועצה לשימור אתרים", "המועצה לשימור אתרי מורשת", "שימור אתרים", "שישי מורשת", "shimur"]
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
@@ -6057,6 +6059,30 @@ sources:
     http:
       concurrency: 1
       request_delay_seconds: 1.0
+
+  shimur:
+    # The Council for the Preservation of Heritage Sites (shimur.org, המועצה לשימור אתרי מורשת): the dated events of
+    # the heritage museums and sites it runs and partners with (Ayalon Institute, Minkov, Old Yishuv Court, Kinneret
+    # Courtyard, Nahalal police, Beit HaMeiri, the Circassian centre, ...): heritage Fridays, Hanukkah and
+    # heritage-week days, study days, shows, family days, tours. WordPress; the /events/ archive (one request, ~90
+    # cards with first / last day), each event page (site, text with time and price, artwork) and each site page
+    # once (its point): ~150 requests. Sections: פעילויות קרובות /events/ (read: the archive lists every coming
+    # item of every events_cat term, the menu's category pages are filters of it). Not read: online meetings
+    # (זומורשת, מקוון), guides' training (השתלמויות מורי דרך), "הזמנת סיור" (bookable on request, months long),
+    # spans over 12 days (a museum's monthly digest), the sites / signs / news / projects / donations / shop pages
+    # (no dated events). Answers Railway direct; refuses foreign IPs (F5 "Request Rejected"); robots.txt allows it.
+    enabled: true
+    cron: "38 6,18 * * *"
+    max_span_days: 12
+    site_towns:             # a site whose name holds no known town, or whose page's point is off its place
+      "ליבלינג": תל אביב-יפו      # Beit Liebling, Idelson 29
+      "נהריים": גשר               # Naharayim / Old Gesher (its page's point is at Kiryat Tivon)
+      "חצר כנרת": כנרת            # Kinneret Courtyard, by Kvutzat Kinneret
+      "עיינות": עיינות            # Ayanot youth village (the name ends "- נעמת", the organisation)
+    skip_title_words: ["השתלמות", "השתלמויות", "קורס", "הזמנת סיור"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.7
 
   kfarsabamuseum:
     # Kfar Saba Museum (kfar-saba-museum.org, מוזאון כפר סבא): concerts and shows at Beit HaBe'er, family days and

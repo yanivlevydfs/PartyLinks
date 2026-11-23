@@ -117,6 +117,8 @@ REASONS: dict[str, dict[str, Any]] = {
     "airdrop": {"map": "festivals abroad named in Hebrew (Koh Phangan, Tulum, Brazil), and secret spots"},
     "ybz": {"map": "coach day tours that leave from a town ('יציאה מירושלים', 'כל הארץ'): no meeting place to pin; "
             "walking tours are geocoded from their meeting point"},
+    "shimur": {"map": "heritage sites whose page has no map point (a redirect loop, no marker): geocoded by "
+               "the site's name and town"},
     "posh": {"city": "secret locations ('revealed on the event date / after approval') and venues abroad named "
                      "by state or country only"},
     "megaevents": {"city": "packages abroad listed by country only (no venue, no town)"},
@@ -459,9 +461,11 @@ def production(settings: Any, enabled: dict[str, dict[str, Any]], sample: int) -
                 ranked.c.source, ranked.c.status, ranked.c.started_at, ranked.c.events_found, ranked.c.error
             ).where(ranked.c.n == 1)
 
-        for source, status, started, found, error in session.execute(latest()).all():
+        last_runs: Any = session.execute(latest()).all()  # rows of (source, status, started, found, error)
+        for source, status, started, found, error in last_runs:
             per[source]["last_run"] = {"status": status, "started": started.isoformat(), "found": found}
-        for source, status, started, found, error in session.execute(latest(ScrapeRunRow.status != "running")).all():
+        done_runs: Any = session.execute(latest(ScrapeRunRow.status != "running")).all()
+        for source, status, started, found, error in done_runs:
             per[source]["last_done"] = {"status": status, "started": started.isoformat(), "found": found,
                                         "error": (error or "")[:160]}  # fmt: skip
         for (key,) in session.execute(select(FlagRow.key).where(FlagRow.key.like("paused:%"), FlagRow.on.is_(True))):
