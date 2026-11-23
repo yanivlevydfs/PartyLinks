@@ -1589,3 +1589,14 @@ def test_a_city_abroad_is_named_in_hebrew_not_yiddish() -> None:
     names = {city: hebrew_city_name(city_abroad(city, code)[1]) for city, code in  # type: ignore[index]
              [("Barcelona", "ES"), ("Paris", "FR"), ("London", "GB"), ("New York City", "US"), ("Dubai", "AE")]}  # fmt: skip
     assert names == {"Barcelona": "ברצלונה", "Paris": "פריז", "London": "לונדון", "New York City": "ניו יורק", "Dubai": "דובאי"}
+
+
+def test_every_routed_json_answer_carries_its_size_before_gzip(tmp_path: Path) -> None:
+    """x-body-length on a cache miss too (CachedPages._body_length): every page's loader shows a real percent."""
+    settings = settings_for(tmp_path)
+    seed(settings, [event("a", datetime.now(UTC) + timedelta(days=1), description="x" * 3000)])
+    with TestClient(create_app(settings)) as client:
+        for path in ("/events?q=nothing-cached", "/events/test:a"):
+            answer = client.get(path, headers={"Accept-Encoding": "gzip"})
+            assert answer.status_code == 200, path
+            assert answer.headers["x-body-length"] == str(len(answer.content)), path

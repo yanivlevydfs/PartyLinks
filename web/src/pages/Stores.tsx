@@ -2,7 +2,7 @@
 // Crawlers without JavaScript get a summary from seo.py (INFO_PAGES).
 import { type CSSProperties, type ReactNode, useDeferredValue, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { type BoxOffice, type TicketSite, useCategories, useTicketSites } from "../api";
+import { type BoxOffice, type TicketSite, useCategories, useLoadShare, useTicketSites } from "../api";
 import type { Lang } from "../i18n";
 import { DEFAULT_FILTERS, useStore } from "../store";
 import { Hero, Loader, sourceName, useT, useTitle } from "../ui";
@@ -172,7 +172,8 @@ export default function StoresPage() {
   const { t: strings, lang } = useT();
   const t = TEXT[lang];
   useTitle(t.title);
-  const sites = useTicketSites();
+  const [loaded, onProgress] = useLoadShare();
+  const sites = useTicketSites(onProgress);
   const cats = useCategories();
   // Stores with events in Israel are browsed on the home page (its ?source= filter), the rest on /abroad.
   const browsable = new Set(cats.data?.sources.map((s) => s.value));
@@ -243,7 +244,7 @@ export default function StoresPage() {
         )}
       </Hero>
       <main className="wrap stores-page">
-        {!stores && (failed ? <p className="msg">{strings.error}</p> : <Loader />)}
+        {!stores && (failed ? <p className="msg">{strings.error}</p> : <Loader progress={loaded || undefined} />)}
         {stores && (
           <section id="sites" className="stores-section">
             <h2 className="stores-h">{t.sitesTitle}</h2>

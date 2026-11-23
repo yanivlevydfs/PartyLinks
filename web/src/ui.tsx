@@ -2,7 +2,7 @@ import { Fragment, useEffect, useId, useRef, useState, type CSSProperties, type 
 import { CardSources } from "./card_stores/CardSources";
 import sourceNames from "./sourceNames.json";
 import { Link, NavLink, Outlet, ScrollRestoration } from "react-router-dom";
-import { useCategories, useEvents, useLandingInfo, type Params } from "./api";
+import { useCategories, useEvents, useLandingInfo, useLoadShare, type Params } from "./api";
 import { CITIES, STRINGS, genreLabel, type Lang, type Strings } from "./i18n";
 import { CookieConsent, useConsent } from "./consent";
 import { InstallBanner } from "./Install";
@@ -619,13 +619,14 @@ export function GridLoading() {
 /** Paged event grid for any /events filter set; matching paid placements first, marked. */
 export function EventGrid({ params, empty }: { params: Params; empty?: (page?: EventPage) => ReactNode }) {
   const { t } = useT();
-  const q = useEvents({ ...params, sponsored: "true" });
+  const [loaded, onProgress] = useLoadShare();
+  const q = useEvents({ ...params, sponsored: "true" }, onProgress);
   const items = q.data?.pages.flatMap((p) => p.items) ?? [];
   const first = q.data?.pages[0];
   const total = first?.total ?? 0;
 
   if (q.isError) return <p className="msg">{t.error}</p>;
-  if (q.isPending) return <GridLoading />;
+  if (q.isPending) return <Loader progress={loaded || undefined} />;
   return (
     <>
       <p className="count">{t.results(total)}</p>

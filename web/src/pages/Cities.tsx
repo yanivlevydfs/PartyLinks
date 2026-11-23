@@ -3,7 +3,7 @@
 // GET /cities-index, the same list the server renders for crawlers (seo.cities_page). ?country=FR keeps the choice.
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useCitiesIndex, type CityLink, type CountryCities as Country } from "../api";
+import { useCitiesIndex, useLoadShare, type CityLink, type CountryCities as Country } from "../api";
 import { Hero, Loader, useT, useTitle } from "../ui";
 import "../city/city.css";
 
@@ -28,7 +28,8 @@ export default function CitiesPage() {
   useTitle(p.title);
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState("");
-  const { data } = useCitiesIndex(lang);
+  const [loaded, onProgress] = useLoadShare();
+  const { data } = useCitiesIndex(lang, true, onProgress);
   const country = data?.find((c) => c.code === params.get("country")) ?? data?.[0];
   const pick = (code: string) => {
     setQ("");
@@ -49,7 +50,7 @@ export default function CitiesPage() {
         <input className="search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={p.search} aria-label={p.search} />
       </Hero>
       <div className="wrap cities">
-        {!data || !country ? <Loader /> : needle ? (
+        {!data || !country ? <Loader progress={loaded || undefined} /> : needle ? (
           found.length ? (
             <div className="cities-tiles">
               {found.map((c) => (

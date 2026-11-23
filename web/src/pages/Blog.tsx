@@ -2,7 +2,7 @@
 // The server renders the same URLs (title, BlogPosting / FAQ JSON-LD) for crawlers.
 import type { MouseEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useEvents, usePost, usePosts } from "../api";
+import { useEvents, useLoadShare, usePost, usePosts } from "../api";
 import type { PostBlock, PostSummary } from "../types";
 import { Card, Hero, Img, Loader, sized, useT, useTitle } from "../ui";
 import NotFound from "./NotFound";
@@ -30,7 +30,8 @@ export function BlogIndex() {
   const { category } = useParams();
   const { t, lang } = useT();
   const all = usePosts(lang).data; // categories (with counts) come from the unfiltered list
-  const q = usePosts(lang, category);
+  const [loaded, onProgress] = useLoadShare();
+  const q = usePosts(lang, category, onProgress);
   const name = all?.categories.find((c) => c.key === category)?.[lang];
   useTitle(name ? `${name} · ${t.blog.title}` : t.blog.title);
   const [first, ...rest] = q.data?.items ?? [];
@@ -48,7 +49,7 @@ export function BlogIndex() {
             </Link>
           ))}
         </nav>
-        {q.isPending && <Loader />}
+        {q.isPending && <Loader progress={loaded || undefined} />}
         {q.isError && <p className="msg">{t.error}</p>}
         {q.data?.items.length === 0 && <p className="msg">{t.blog.empty}</p>}
         {first && <PostCard p={first} featured />}
@@ -73,7 +74,8 @@ export function BlogPost() {
   const { slug = "" } = useParams();
   const { t, lang } = useT();
   const navigate = useNavigate();
-  const q = usePost(slug, lang);
+  const [loaded, onProgress] = useLoadShare();
+  const q = usePost(slug, lang, onProgress);
   const p = q.data;
   const dir = p?.lang === "he" ? "rtl" : "ltr";
   useTitle(p?.title);
@@ -90,7 +92,7 @@ export function BlogPost() {
   };
 
   if (q.isError) return <NotFound />;
-  if (!p) return <Loader />;
+  if (!p) return <Loader progress={loaded || undefined} />;
   return (
     <>
       <Hero title={p.title}>

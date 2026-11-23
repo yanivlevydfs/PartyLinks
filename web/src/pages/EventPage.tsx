@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { SaveAlertButton } from "../alerts/SaveAlertButton";
 import { useAlertText } from "../alerts/i18n";
-import { isGone, useEvent } from "../api";
+import { isGone, useEvent, useLoadShare } from "../api";
 import { genreLabel, type Strings } from "../i18n";
 import type { Alternative, Ticket } from "../types";
 import { forecastAt, Weather } from "../Weather";
@@ -23,7 +23,8 @@ export default function EventPage() {
   const { id = "" } = useParams();
   const { t, lang } = useT();
   const navigate = useNavigate();
-  const { data: e, error, isError, isPending } = useEvent(id);
+  const [loaded, onProgress] = useLoadShare();
+  const { data: e, error, isError, isPending } = useEvent(id, onProgress);
   useTitle(e ? cleanTitle(e.title, e.venue_name) : undefined);
   // One address per event: an old /event/<slug> link, or a duplicate listing's, shows as its short /e/<code>.
   const location = useLocation();
@@ -46,7 +47,7 @@ export default function EventPage() {
     );
   }
   if (isError) return <p className="msg wrap">{t.error}</p>;
-  if (isPending) return <Loader />;
+  if (isPending) return <Loader progress={loaded || undefined} />;
 
   const images = e.images.map((i) => i.stored_url ?? i.url);
   const hero = images[0] ?? e.image_url ?? e.cover_url;

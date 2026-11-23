@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useWeb } from "./site_params/useWeb";
 import type { Categories, EventDetail, EventPage, EventSummary, MapPins, Post, PostList, SponsoredRails } from "./types";
 
@@ -39,6 +39,16 @@ export async function getJSONProgress<T>(url: string, onProgress: (share: number
   return JSON.parse(new TextDecoder().decode(body)) as T;
 }
 
+/** The loader's real percent (0-100) and the onProgress that sets it: `<Loader progress={loaded || undefined} />`. */
+export function useLoadShare(): [number, (share: number) => void] {
+  const [loaded, setLoaded] = useState(0);
+  return [loaded, useCallback((share: number) => setLoaded(Math.floor(share * 100)), [])];
+}
+
+/** getJSONProgress when there is an onProgress, else getJSON. */
+const getWith = <T,>(url: string, onProgress?: (share: number) => void, signal?: AbortSignal) =>
+  onProgress ? getJSONProgress<T>(url, onProgress, signal) : getJSON<T>(url, signal);
+
 export function toQuery(params: Params): string {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
@@ -47,12 +57,13 @@ export function toQuery(params: Params): string {
   return qs.toString();
 }
 
-export function useEvents(params: Params) {
+/** `onProgress`: the first page's share received (0-1), for the loader's real percent. */
+export function useEvents(params: Params, onProgress?: (share: number) => void) {
   const qs = toQuery({ page_size: String(useWeb().events_page_size), ...params });
   return useInfiniteQuery({
     queryKey: ["events", qs],
     // signal: a request overtaken by the next keystroke or filter is cancelled, not left to load the server.
-    queryFn: ({ pageParam, signal }) => getJSON<EventPage>(`/events?${qs}&page=${pageParam}`, signal),
+    queryFn: ({ pageParam, signal }) => getWith<EventPage>(`/events?${qs}&page=${pageParam}`, pageParam === 1 ? onProgress : undefined, signal),
     placeholderData: (prev) => prev, // the old results stay (dimmed) while the new ones load: no flash of skeletons
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < 40 && last.page * last.page_size < last.total ? last.page + 1 : undefined), // 40: the API's max_page
@@ -82,10 +93,10 @@ export interface CityLink { path: string; name: string; events: number; region?:
 export interface CountryCities { code: string; name: string; path: string; events: number; cities: CityLink[]; regions?: { key: string; name: string }[] }
 
 /** Every city with a page, by country, Israel first (GET /cities-index): the /cities page and the search box's suggestions. */
-export function useCitiesIndex(lang: string, enabled = true) {
+export function useCitiesIndex(lang: string, enabled = true, onProgress?: (share: number) => void) {
   return useQuery({
     queryKey: ["cities-index", lang],
-    queryFn: ({ signal }) => getJSON<CountryCities[]>(`/cities-index?lang=${lang}`, signal),
+    queryFn: ({ signal }) => getWith<CountryCities[]>(`/cities-index?lang=${lang}`, onProgress, signal),
     staleTime: 5 * 60_000,
     enabled,
   });
@@ -104,10 +115,10 @@ export function useMapEvents(params: Params = {}, onProgress: (share: number) =>
 /** An event page's request answered 410 (the event is over) or 404 (no such event). */
 export const isGone = (error: Error | null) => /^(404|410) /.test(error?.message ?? "");
 
-export const useEvent = (id: string) =>
+export const useEvent = (id: string, onProgress?: (share: number) => void) =>
   useQuery({
     queryKey: ["event", id],
-    queryFn: () => getJSON<EventDetail>(`/events/${encodeURIComponent(id)}`),
+    queryFn: ({ signal }) => getWith<EventDetail>(`/events/${encodeURIComponent(id)}`, onProgress, signal),
     retry: (count, error) => !isGone(error) && count < 1, // an ended event will not come back on a retry
   });
 
@@ -122,10 +133,10 @@ export function useCategories(params: Params = {}) {
   });
 }
 
-export const usePosts = (lang: string, category?: string) =>
+export const usePosts = (lang: string, category?: string, onProgress?: (share: number) => void) =>
   useQuery({
     queryKey: ["posts", lang, category],
-    queryFn: () => getJSON<PostList>(`/posts?lang=${lang}${category ? `&category=${encodeURIComponent(category)}` : ""}`),
+    queryFn: ({ signal }) => getWith<PostList>(`/posts?lang=${lang}${category ? `&category=${encodeURIComponent(category)}` : ""}`, onProgress, signal),
   });
 
 /** A query kept in localStorage too: a return visit draws the last copy at once while a fresh one loads. */
@@ -170,11 +181,11 @@ export interface TicketSite { name: string; events: number; updated_at: string |
 export interface BoxOffice { source: string; name: string; city: string | null; url: string; events: number }
 
 /** The stores page: upcoming events per ticket site, with its last scrape. */
-export const useTicketSites = () =>
-  useQuery({ queryKey: ["ticket-sites"], queryFn: () => getJSON<{ stores: TicketSite[]; total?: number; box_offices?: BoxOffice[] }>("/ticket-sites"), staleTime: 5 * 60_000 });
+export const useTicketSites = (onProgress?: (share: number) => void) =>
+  useQuery({ queryKey: ["ticket-sites"], queryFn: ({ signal }) => getWith<{ stores: TicketSite[]; total?: number; box_offices?: BoxOffice[] }>("/ticket-sites", onProgress, signal), staleTime: 5 * 60_000 });
 
-export const usePost = (slug: string, lang: string) =>
-  useQuery({ queryKey: ["post", slug, lang], queryFn: () => getJSON<Post>(`/posts/${encodeURIComponent(slug)}?lang=${lang}`) });
+export const usePost = (slug: string, lang: string, onProgress?: (share: number) => void) =>
+  useQuery({ queryKey: ["post", slug, lang], queryFn: ({ signal }) => getWith<Post>(`/posts/${encodeURIComponent(slug)}?lang=${lang}`, onProgress, signal) });
 
 export interface LandingInfo { title: string | null; intro: string | null; links: { path: string; label: string }[]; country: string | null; city: { he: string; en: string } | null;
   /** City pages: the city's centre [lat, lng] and its time zone (the forecast strip) */
