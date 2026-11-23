@@ -2330,6 +2330,7 @@ search:
     bimot: ["בימות גלובל", "bimot global", "bimotglobal", "בימות הפקות"]
     israelshow: ["ישראל שואו", "israel show", "israelshow", "израиль шоу"]
     kzattarbut: ["קצת תרבות", "kzat tarbut", "kzat-tarbut", "kzattarbut"]
+    kolsadna: ["כל סדנה", "kol sadna", "kolsadna"]
     glatticket: ["גלאטיקט", "גלאט טיקט", "glat ticket"]
     salsavida: ["salsa vida", "salsavida", "סלסה וידה"]
     arthurmurray: ["arthur murray", "arthurmurray", "ארתור מארי", "ארתור מרי", "the salon"]
@@ -5262,6 +5263,26 @@ sources:
       concurrency: 2
       request_delay_seconds: 1.0
       timeout_seconds: 120
+
+  kolsadna:
+    # Kol Sadna (kolsadna.co.il, כל סדנה): a directory of ~1,400 workshops, mostly booked by groups on a date they
+    # pick; only the dated sessions anyone can join are events here (a_partici_type can_join / both). wp-json
+    # lists the workshops changed in the last recent_days (~400, 5 requests) + the kind names (the genres); each
+    # workshop's page (~450 KB) holds its sessions in the booking script (a_schedule.occurrences). Answers direct.
+    enabled: true
+    cron: "33 10,22 * * *"
+    site_url: https://kolsadna.co.il
+    recent_days: 180         # every workshop with open sessions in a 274-page sample had changed within 45 days
+    towns: ["פרדס חנה"]      # a whole a_location that is only a town (GeoNames has "פרדס חנה-כרכור")
+    town_aliases: {"כרכור": "פרדס חנה-כרכור", "נווה שלום": "נווה שלום", "דיזינגוף סנטר": "תל אביב"}   # towns GeoNames spells otherwise, landmarks
+    regions: ["מרכז", "צפון", "דרום", "איזור השרון", "מדבר", "חוץ לארץ", "קריות", "גליל", "גולן", "שומרון", "עמק יזרעאל", "עמק האלה", "ים המלח"]   # location terms that are no town
+    may_be_empty: true       # open sessions come and go
+    unlist_missing: false    # a session can stay on sale after its page leaves the 180-day window
+    skip_title_words: ["קורס", "חוג", "מסלול הכשרה", "שובר מתנה", "גיפט קארד", "לחברות", "יום גיבוש", "כרטיס מתנה"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+      timeout_seconds: 60
 
   glatticket:
     # Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi / religious public, a Tickchak LIVE

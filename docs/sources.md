@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 154 configured sources, 153 on. Each one has its own module in
+SPOTX collects from 155 configured sources, 154 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -173,6 +173,7 @@ many of them free.
 | `yadvashem` | Yad Vashem online reservations (online-reservations.yadvashem.org): the dated public tours (Friday museum tours in Hebrew / English / Russian, the "Living Memory" exhibition tour, synagogue tours) from the booking app's JSON API, places left per slot, 8 months ahead | 08:31, 20:31 | yes |
 | `ganeyyehoshua` | Ganei Yehoshua (park.co.il): the Yarkon Park company's own events in its Tel Aviv parks (Yarkon, Park Begin, Ganei HaTeva, Rosh Tzipor): birdwatching and nature tours, family days, sport, Lumagica; the listing page (type, park) + each event's page (every session, prices, meeting point), one event per session; pins from the meeting point (`places`) or the park; Lumagica's Kupat Tel Aviv link merges with `kupat` | 09:52, 21:52 | yes |
 | `funzing` | Funzing (il.funzing.com): experiences: workshops, tours, lectures, culinary evenings, family days | 07:19, 19:19 | yes |
+| `kolsadna` | Kol Sadna (kolsadna.co.il): a directory of ~1,400 workshops; only the dated sessions anyone can join (the booking script's `a_schedule` on each recently changed workshop page), with the site's kinds as genres | 10:33, 22:33 | yes |
 | `easytix` | EASYTIX (easytix.co.il): the nimi ticketing platform and its white-label box offices (Camel Comedy Club, ZOA House, Jerusalem Zoo / Israel Aquarium, Hormesis) | 08:43, 20:43 | yes |
 
 ## Tech and community
@@ -254,5 +255,4 @@ first in `PARTYLINKS_HTTP__ISRAEL_PROXY`.
 | Jerooz Events | jeroozevents.co.il: Vercel "Deployment Paused" (402 `DEPLOYMENT_DISABLED`, the host's billing switch, not a block) direct, through the Israeli VPN and the free Israeli proxies, with or without Chrome's TLS; no Wayback capture, no other site under the name (re-checked 23 Nov 2026) |
 | iShow | ishow.co.il: a Cloudflare JS challenge (403 "Just a moment...") for every client: direct, Chrome's TLS, the Israeli VPN, the free Israeli proxies; behind it the origin is down: challenge-free paths (/favicon.ico) answer Cloudflare 522 "origin timed out" from the Amsterdam and Frankfurt edges and from an Israeli IP (re-checked 23 Nov 2026) |
 | Where to Dance Salsa | where-to-dance-salsa.com: Israel = Havana Music Club's weekly nights (read by havanaclub), last checked May 2026 (Nov 2026) |
-| Kol Sadna | kolsadna.co.il: workshops booked by appointment through a lead form; no dated public sessions (25/25 sampled, Nov 2026) |
 | Ashdod municipality | ashdod.muni.il's events archive has listed nothing since 2023; the city's events are on `ironit` and the Smarticket tenants `ashdod` / `mishkan-ashdod` (Nov 2026) |
