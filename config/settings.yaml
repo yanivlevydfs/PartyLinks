@@ -5861,6 +5861,7 @@ sources:
     # probe_ahead past it are read from their checkout page; published, on-sale Israeli ones are kept.
     probe_back: 800
     probe_ahead: 30
+    # sections: the whole /api/v5/filter-events listing to hasMore=false (84 Israeli events, every category, to 30.12; the API's own params are category_slug/city_slug/country_code, a from/to range to 2028 adds no Israeli event; prod 91 = 84 + 7 unlisted ids from the probe); /en/discover is this same API (its events-discover component); the 38 /en/categories/N pages are sliders of the same events, past ones included. not read: courses (lessons, not events); Jordan / PA events (abroad)
     http:
       concurrency: 2
       request_delay_seconds: 0.5
