@@ -3,16 +3,18 @@
 The WordPress site sells through PRES (cintlv.pres.global, redirecting to cintlv.presglobal.store),
 the same JSON API as the ``pres`` and ``cinemacity`` sources:
 
-* ``GET /api/presentations/`` - every screening in one call (~450 rows, ~0.6 MB, old VOD rows
+* ``GET /api/presentations/`` - every screening in one call (~630 rows, ~0.6 MB, old VOD rows
   included): id, local ``dateTime``, ``businessDate``, feature id/name/category/duration, hall
   (``venueName``: "אולם 1".."אולם 6", "ספריה"), ``languageISO``, ``soldout``.
 * ``GET /api/features/`` - every feature's synopsis HTML and ``imageData`` (poster; ~15% have
   none). Optional: without it events keep everything but synopsis and poster.
 * ``GET /api/presentations/<id>/ticketGroups`` - prices, read once per feature from its first
-  screening in the window (~80 requests a week) and applied to all its days. Optional.
+  screening in the window and applied to all its days, ``price_batch`` movie-days at a time in date
+  order (the whole feed: ~370 features, Nov 2026), so the soonest are yielded first. Optional.
 
-One event per (feature, business day) within ``days_ahead`` days; ``start_at`` is that day's
-first screening, every time is listed in the description and ``extra.showtimes``. The site's
+One event per (feature, business day) within ``days_ahead`` days (Tel Aviv: the whole feed, ~8 months
+ahead); ``start_at`` is that day's first screening, every time is listed in the description and
+``extra.showtimes``; an event whose day is over is not yielded (``is_current``). The site's
 event pages are WordPress slugs the API does not give, so ``url`` is the PRES order page of the
 first screening. Film + talk screenings ("+ הרצאה") stay films; lecture-course meetings
 ("... - מפגש 7", "2026-2027" course categories) are tagged ``הרצאה`` instead of ``קולנוע``.
@@ -24,6 +26,9 @@ section filters ("פאנק", "ילדים"...); the cards come from the theme's o
 call, paged until empty, once for the festival and once per section (~20 requests). A screening whose id
 is on a card gets the card's artwork (PRES has almost none), its site page as ``url``, the festival's
 genres and the mapped section genres. Optional: without it the PRES events are saved as they are.
+A card with no order button is an event the box office does not sell, mostly free entry (Solidarity 2026:
+"כניסה חופשית – יום ה׳ 10.12, 15:00, אולם 6"): it is an event of its own, its day from the card's date
+heading and its hour from the card's text, or from its own site page when the card's text is cut short.
 """
 
 from __future__ import annotations
@@ -32,14 +37,17 @@ import asyncio
 import re
 from collections import defaultdict
 from collections.abc import AsyncIterator
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 from selectolax.lexbor import LexborHTMLParser
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import ParseError, clean_str, html_to_text, og_image, parse_iso, to_int, zone
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.pres import parse_ticket_groups
 
@@ -51,6 +59,14 @@ _FILM_BUTTON = re.compile(r'data-event-id="(\d+)"\s+data-event-node="(\d+)"')
 # A festival card's order button: https://cintlv.pres.global/order/135449 (a PRES screening id).
 _ORDER_ID = re.compile(r"/order/(\d+)")
 _SECTION = re.compile(r"movie-cat-(\d+)")
+# A card without an order button: its post id ("event_id-119841"), date heading ("10.12, חמישי"), length
+# ("אורך:180"), hall and free entry.
+_CARD_ID = re.compile(r"\bevent_id-(\d+)")
+_CARD_DAY = re.compile(r"\b(\d{1,2})[./](\d{1,2})\b")
+_MINUTES = re.compile(r"אורך:\s*(\d+)")
+_HALL = re.compile(r"אולם\s*\d+")
+_FREE = re.compile(r"כניסה חופשית|free entrance", re.IGNORECASE)
+_WEEKDAYS = {"שני": 0, "שלישי": 1, "רביעי": 2, "חמישי": 3, "שישי": 4, "שבת": 5, "ראשון": 6}
 
 
 class CinemathequeFestival(BaseModel):
@@ -70,6 +86,7 @@ class TelAvivCinemathequeSettings(SourceSettings):
     ticket_groups_path: str  # formatted with ``id`` (a presentation id)
     order_url: str  # formatted with ``id``
     days_ahead: int = Field(7, ge=1)
+    price_batch: int = Field(40, ge=1)  # movie-days whose features' prices are fetched before they are yielded
     default_runtime_minutes: int = Field(120, ge=1)  # a screening without durationInMinutes
     branch_id: str = "tlv"
     venue_name: str = "סינמטק תל אביב"
@@ -94,48 +111,85 @@ class TelAvivCinemathequeScraper(BaseScraper[TelAvivCinemathequeSettings]):
         today = datetime.now(zone(self.timezone)).date()
         groups = group_screenings(listing, self.timezone, today, s.days_ahead)
         self.log.debug("listed %d movie-days", len(groups))
+        by_id = {clean_str(f.get("id")): f for f in features or [] if isinstance(f, dict)}
+        cards: dict[str, FestivalCard] = {}
+        free_cards: dict[str, FreeCard] = {}
+        for festival in s.festivals:
+            sold, free = await self.optional(f"festival {festival.page_url}", self.festival_cards(festival)) or ({}, {})
+            cards.update(sold)
+            free_cards.update(free)
+        retention = RetentionSettings()
 
-        # Prices from each feature's first screening in the window.
+        def current(event: ScrapedEvent) -> bool:  # today's past screenings too
+            return is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known)
+
+        unsold: list[ScrapedEvent] = []  # festival events PRES does not sell (free entry), soonest first
+        for card in free_cards.values():
+            event = build_free_event(card, today, s, self.name, self.timezone)
+            if event and not event.time_known and card.url:  # the card's text cut short before the hour
+                page = await self.optional(f"festival event {card.url}", self.get_text(card.url))
+                event = build_free_event(card, today, s, self.name, self.timezone, page) or event
+            if event and current(event):
+                unsold.append(event)
+        unsold.sort(key=_start)
+
+        # Prices from each feature's first screening, fetched for one batch of movie-days at a time in date
+        # order: the whole feed is ~370 features (~0.75 s a call), and a run cut half way must hold this week.
         first: dict[str, Any] = {}
-        for (movie, _), shows in groups.items():
-            first.setdefault(movie, shows[0][1].get("id"))
 
         async def prices(movie: str) -> tuple[str, list[TicketTier]]:
             url = s.api_url + s.ticket_groups_path.format(id=first[movie])
             return movie, parse_ticket_groups(await self.get_json(url, expect=dict))
 
-        tiers = dict([x async for x in self.stream_isolated(first, prices, lambda m: f"prices of feature {m}")])
-        by_id = {clean_str(f.get("id")): f for f in features or [] if isinstance(f, dict)}
-        cards: dict[str, FestivalCard] = {}
-        for festival in s.festivals:
-            cards.update(await self.optional(f"festival {festival.page_url}", self.festival_cards(festival)) or {})
-        for (movie, day), shows in groups.items():
-            event = build_event(movie, day, shows, by_id.get(movie) or {}, tiers.get(movie, []), s, self.name)
-            yield apply_festival(event, cards)
+        tiers: dict[str, list[TicketTier]] = {}
+        days = list(groups.items())
+        for at in range(0, len(days), s.price_batch):
+            batch = days[at : at + s.price_batch]
+            new = [movie for movie in dict.fromkeys(movie for (movie, _day), _shows in batch) if movie not in first]
+            for (movie, _day), shows in batch:
+                first.setdefault(movie, shows[0][1].get("id"))
+            tiers.update([x async for x in self.stream_isolated(new, prices, lambda m: f"prices of feature {m}")])
+            for (movie, day), shows in batch:
+                event = build_event(movie, day, shows, by_id.get(movie) or {}, tiers.get(movie, []), s, self.name)
+                event = apply_festival(event, cards)
+                while unsold and _start(unsold[0]) <= _start(event):
+                    yield unsold.pop(0)
+                if current(event):
+                    yield event
+        for event in unsold:
+            yield event
 
-    async def festival_cards(self, festival: CinemathequeFestival) -> dict[str, FestivalCard]:
-        """PRES screening id -> its festival card, with the sections it is listed under."""
+    async def festival_cards(
+        self, festival: CinemathequeFestival
+    ) -> tuple[dict[str, FestivalCard], dict[str, FreeCard]]:
+        """PRES screening id -> its festival card, and the cards no PRES screening sells (by post id), each with
+        the sections it is listed under."""
         s = self.settings
         main, sections = festival_sections(await self.get_text(festival.page_url))
         if not main:
             raise ParseError("festival page without its category filter")
         cards: dict[str, FestivalCard] = {}
+        free: dict[str, FreeCard] = {}
         for category in [main, *sections]:
             for paged in range(1, s.max_festival_pages + 1):
                 form = {"action": s.festival_action, "paged": str(paged), "category_id": category}
-                page = parse_festival_cards((await self.request("POST", s.ajax_url, data=form)).text)
-                if not page:
+                html = (await self.request("POST", s.ajax_url, data=form)).text
+                page, listed = parse_festival_cards(html), parse_free_cards(html)
+                if not page and not listed:  # a page of free cards only is not the end
                     break
                 for order_id, card in page.items():
-                    known = cards.setdefault(order_id, card)
-                    if category in sections:
+                    cards.setdefault(order_id, card)
+                for post_id, free_card in listed.items():
+                    free.setdefault(post_id, free_card)
+                if category in sections:
+                    for known in [*(cards[k] for k in page), *(free[k] for k in listed)]:
                         known.sections.append(sections[category])
-        for card in cards.values():
+        for card in [*cards.values(), *free.values()]:
             card.genres = list(dict.fromkeys(
                 [*festival.genres, *(festival.section_genres[n] for n in card.sections if n in festival.section_genres)]
             ))  # fmt: skip
-        self.log.debug("festival %s: %d screenings", festival.page_url, len(cards))
-        return cards
+        self.log.debug("festival %s: %d screenings, %d free events", festival.page_url, len(cards), len(free))
+        return cards, free
 
 
 class JerusalemCinemathequeSettings(TelAvivCinemathequeSettings):
@@ -202,6 +256,16 @@ class FestivalCard(BaseModel):
     genres: list[str] = Field(default_factory=list)
 
 
+class FreeCard(FestivalCard):
+    """A festival card with no PRES order button: an event of its own (free entry, "כניסה חופשית")."""
+
+    post_id: str
+    title: str
+    day: str  # the date heading: "10.12, חמישי"
+    text: str = ""  # the card's paragraph: "סולידריות עכשיו כניסה חופשית – יום ה׳ 10.12, 15:00, אולם 6"
+    minutes: int | None = None  # "אורך:180"
+
+
 def festival_sections(page_html: str) -> tuple[str | None, dict[str, str]]:
     """The festival page's filters: its own category id (the active one) and section id -> name."""
     tree = LexborHTMLParser(page_html)
@@ -233,9 +297,101 @@ def parse_festival_cards(cards_html: str) -> dict[str, FestivalCard]:
         image = img and (img.attributes.get("data-src") or img.attributes.get("src"))
         cards[m.group(1)] = FestivalCard(
             url=clean_str(link.attributes.get("href")) if link else None,
-            image=image if image and image.startswith("http") else None,  # not the lazy-load data: placeholder
+            image=_artwork(image),
         )
     return cards
+
+
+def _artwork(url: str | None) -> str | None:
+    """A card's picture: not the lazy-load data: placeholder, nor the theme's own "no picture" image
+    (wp-content/themes/.../event_d2_new.png on free-entry cards)."""
+    return url if url and url.startswith("http") and "/wp-content/themes/" not in url else None
+
+
+def parse_free_cards(cards_html: str) -> dict[str, FreeCard]:
+    """One page of festival cards: the cards with no PRES order button, by their post id."""
+    cards: dict[str, FreeCard] = {}
+    for box in LexborHTMLParser(cards_html).css("div.alm-listing"):
+        post = _CARD_ID.search(box.attributes.get("class") or "")
+        if box.css_first("a.order-btn") or not post:
+            continue
+        link, heading = box.css_first(".title a"), box.css_first(".by-date-title")
+        href = clean_str(link.attributes.get("href")) if link else None
+        title = clean_str(link.text(strip=True)) if link else None
+        day = clean_str(heading.text(strip=True)) if heading else None
+        if not (href and href.startswith("http") and title and day):
+            continue
+        img, length, paragraph = (
+            box.css_first(".img-wraper img"),
+            box.css_first(".title p"),
+            box.css_first(".paragraph"),
+        )
+        minutes = _MINUTES.search(length.text() if length else "")
+        cards[post.group(1)] = FreeCard(
+            post_id=post.group(1),
+            url=href,
+            image=_artwork((img.attributes.get("data-src") or img.attributes.get("src")) if img else None),
+            title=title,
+            day=day,
+            text=html_to_text(paragraph.html) or "" if paragraph else "",
+            minutes=int(minutes.group(1)) if minutes else None,
+        )
+    return cards
+
+
+def build_free_event(
+    card: FreeCard, today: date, s: TelAvivCinemathequeSettings, source: str, timezone: str,
+    page_html: str | None = None,
+) -> ScrapedEvent | None:  # fmt: skip
+    """A free card's event: the day from its heading (the year nearest ``today`` on that weekday), the hour
+    from its text ("... 10.12, 15:00, אולם 6") or else from its own page; no hour found: all-day."""
+    m = _CARD_DAY.search(card.day)
+    if not m:
+        return None
+    weekday = next((n for name, n in _WEEKDAYS.items() if name in card.day.split(",", 1)[-1].split()), None)
+    days = []
+    for year in (today.year - 1, today.year, today.year + 1):
+        try:
+            days.append(date(year, int(m.group(2)), int(m.group(1))))
+        except ValueError:
+            continue
+    days = [d for d in days if weekday is None or d.weekday() == weekday] or days
+    if not days:
+        return None
+    day = min(days, key=lambda d: abs((d - today).days))
+    page = html_to_text(page_html) or "" if page_html else ""
+    hour = re.compile(rf"\b0?{day.day}[./]0?{day.month}(?:[./]\d{{2,4}})?\s*,\s*(\d{{1,2}}):(\d{{2}})\b")
+    found = hour.search(card.text) or hour.search(page)
+    hh, mm = (int(found.group(1)), int(found.group(2))) if found else (0, 0)
+    start = datetime(day.year, day.month, day.day, hh, mm, tzinfo=zone(timezone))
+    free = bool(_FREE.search(card.text) or _FREE.search(page))
+    hall = _HALL.search(card.text) or _HALL.search(page)
+    extra = {"festival_card": card.post_id, "series": card.sections, "halls": [hall.group(0)] if hall else []}
+    return ScrapedEvent(
+        source=source,
+        source_event_id=f"card{card.post_id}:{s.branch_id}:{day.isoformat()}",
+        url=HttpUrl(card.url or ""),
+        title=card.title,
+        description=card.text or None,
+        start_at=start,
+        end_at=start + timedelta(minutes=card.minutes) if found and card.minutes else None,
+        time_known=bool(found),
+        venue_name=s.venue_name,
+        address=s.address,
+        city=s.city,
+        source_genres=card.genres,
+        image_url=card.image,
+        images=[card.image] if card.image else [],
+        min_price=Decimal(0) if free else None,
+        max_price=Decimal(0) if free else None,
+        tickets=[TicketTier(name="כניסה חופשית", price=Decimal(0), is_free=True)] if free else [],
+        extra={k: v for k, v in extra.items() if v not in (None, [])},
+    )
+
+
+def _start(event: ScrapedEvent) -> datetime:
+    """The order events are yielded in (every event here has a start)."""
+    return event.start_at or datetime.max.replace(tzinfo=UTC)
 
 
 def apply_festival(event: ScrapedEvent, cards: dict[str, FestivalCard]) -> ScrapedEvent:

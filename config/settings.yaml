@@ -4318,9 +4318,11 @@ sources:
 
   cinematheque_tlv:
     # Tel Aviv Cinematheque (cinema.co.il): its PRES box office (cintlv), the same JSON API as pres /
-    # cinemacity. /api/presentations/ (every screening, ~450 rows) + /api/features/ (synopsis, poster)
-    # + one ticketGroups request per film in the window (~80/week) for prices. One event per film and
-    # business day; lecture-course meetings are tagged הרצאה. robots.txt allows all but /wp-admin.
+    # cinemacity. /api/presentations/ (every screening, ~630 rows) + /api/features/ (synopsis, poster)
+    # + one ticketGroups request per film (~370 for the whole feed, Nov 2026), in date-ordered batches, for
+    # prices. One event per film and business day; lecture-course meetings are tagged הרצאה. robots.txt allows all but /wp-admin.
+    # Festival cards with no order button (free entry) are events of their own (~1 page request each when the card cuts the hour).
+    # sections: the whole PRES feed (23.11.2026: 525 coming screenings to 14.07.2027 = 489 movie-days of 368 films; days_ahead 14 read 189), which every www section sells through: every order id on 35 pages is in it but tonight's started shows (home + mega menu, לוח הקרנות /shown/ and its get_cal_data days, הסרטים שלנו / חופשי למנויים, טרום בכורה, חדשים, סרט פלוס, לילדים / lobby-kids, מועדון אנגלית לקטנטנים, אפטר בסינמטק, Teen Screen, קולנוע ישראלי, תכניות מיוחדות and its series pages: לפרק ולהרכיב, מורדים לנצח / קולנוע ואנרכיה, במראה הישראלית, ויידה, החלל האחרון, שפה זרה, המערב הפרוע, נארוסה; סדרות עונת 26/27 = lecture series, /en/), plus the festivals' cards (festivals below: סאונדטראק 52, ילדים /ticff26/ 57, סולידריות /solidarity2026/ 45 = 41 PRES + 4 free-entry events PRES does not sell); the newest event-sitemap pages missing from the feed are all over (16 checked). not read: VOD (online rentals: past-dated feed rows, skip_title_words), קורסים / סדנאות ליוצרים / מכון תל אביב לקולנוע (courses, a study group, a family film contest; none in the feed), חינוך (school programmes), אירועים (hall rental), פרויקטים קולנועיים, מנוי, gift card, כתב העת / blog, category-sitemap (journal issues).
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
     vpn: true  # our Israeli VPN only (Railway production)
@@ -4331,13 +4333,29 @@ sources:
     features_path: /api/features/
     ticket_groups_path: /api/presentations/{id}/ticketGroups
     order_url: https://cintlv.presglobal.store/order/{id}
-    days_ahead: 14  # the feed lists more days than 3/7 (audit, Nov 2026)
+    days_ahead: 730  # the whole feed (to 14.07.2027 on 23.11.2026; = retention.max_future_days): 14 days cut 300 of 499 movie-days
+    # Online rentals ("... VOD") and courses; "קורס " with the space: "סקורסזה", "וקורסיקה" stay.
+    skip_title_words: [" VOD", "קורס "]
+    # PRES categories that name an audience or a festival (exact names); the rest stay קולנוע, series names in extra.series.
+    category_genres:
+      ילדים: [קולנוע, ילדים]
+      "מועדון אנגלית - שעת סיפור": [קולנוע, ילדים]
+      "פסטיבל הילדים 2026": [קולנוע, ילדים, פסטיבל]  # 4-12.12.2026, /ticff26/ below
+      "פסטיבל סולידריות 2026": [קולנוע, פסטיבל]
+      "פסטיבל סאונדטרק": [קולנוע, פסטיבל]  # also when its festival page below fails
+      "צעירים סינמטק": [קולנוע, צעירים]  # אפטר בסינמטק, סינמטוקיו
     # Festival pages on www: their cards (admin-ajax load_more_posts, per section) give each PRES
-    # screening its artwork, site page and festival genres. Remove a festival once it is over.
+    # screening its artwork, site page and festival genres; a card no PRES screening sells is an event
+    # of its own. Remove a festival once it is over.
     festivals:
       - page_url: https://www.cinema.co.il/soundtracktelaviv2026/  # Soundtrack Tel Aviv, 24-28.11.2026
         genres: [פסטיבל, סאונדטראק]
         section_genres: {פאנק: punk, ילדים: ילדים}
+      - page_url: https://www.cinema.co.il/ticff26/  # Tel Aviv children's film festival, 4-12.12.2026
+        genres: [פסטיבל, ילדים]
+        section_genres: {סדנאות: סדנאות, חידונים: חידון}  # age filters (3+ .. 12+) stay in extra.series
+      - page_url: https://www.cinema.co.il/solidarity2026/  # Solidarity, film and human rights, 10-19.12.2026
+        genres: [פסטיבל, קולנוע]  # its free-entry talks and student screenings too
 
   cinematheque_jlm:
     # Jerusalem Cinematheque (jer-cin.org.il, דרך חברון 11): the same PRES reader as

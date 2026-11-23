@@ -254,3 +254,178 @@ def test_movie_days_soonest_first() -> None:
     ]
     groups = group_screenings({"presentations": rows}, TZ, date(2026, 10, 22), 7)
     assert list(groups) == [("a", date(2026, 10, 22)), ("b", date(2026, 10, 22)), ("a", date(2026, 10, 24))]
+
+
+def test_whole_feed_read_nearest_first_with_prices_per_batch_and_over_screenings_dropped() -> None:
+    import asyncio
+    from datetime import datetime, time, timedelta
+
+    import httpx
+
+    from partylinks.config import Settings
+    from partylinks.parsing import zone
+    from partylinks.scrapers import build_scraper
+
+    now = datetime.now(zone(TZ)).replace(tzinfo=None)
+    base = LISTING["presentations"][0]
+
+    def row(rid: int, feature: int, start: datetime, minutes: int = 100, day: date | None = None) -> dict:
+        when = {"dateTime": start.strftime("%Y-%m-%d %H:%M"), "businessDate": str(day or start.date())}
+        return dict(base) | {"id": rid, "featureId": feature, "durationInMinutes": minutes} | when
+
+    tomorrow = datetime.combine(now.date() + timedelta(days=1), time(20, 0))
+    far = tomorrow + timedelta(days=200)  # beyond any short window: the whole feed is read
+    rows = [
+        row(3, 300, far + timedelta(hours=1)),
+        row(2, 200, far),
+        row(1, 100, tomorrow),
+        row(4, 100, tomorrow + timedelta(days=1)),  # the same film's next day: its price is not asked again
+        row(5, 400, now - timedelta(hours=3), minutes=1, day=now.date()),  # today's only screening, over
+    ]
+    scraper = build_scraper("cinematheque_tlv", Settings())
+    scraper.http.request_delay_seconds = 0
+    scraper.http.impersonate = None
+    scraper.settings.festivals = []  # type: ignore[attr-defined]
+    scraper.settings.days_ahead = 730  # type: ignore[attr-defined]
+    scraper.settings.price_batch = 1  # type: ignore[attr-defined]
+    log: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if path == "/api/presentations/":
+            return httpx.Response(200, json={"presentations": rows})
+        if path == "/api/features/":
+            return httpx.Response(200, json=[])
+        if path.endswith("ticketGroups"):
+            log.append("price " + path.split("/")[3])
+            return httpx.Response(200, json={})
+        return httpx.Response(404)
+
+    async def go() -> None:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            async for event in scraper.scrape():
+                log.append("event " + event.extra["movie_id"])
+
+    asyncio.run(go())
+    # Each batch's prices just before its events, soonest first; the over screening of today is never yielded.
+    assert log == ["price 5", "price 1", "event 100", "event 100", "price 2", "event 200", "price 3", "event 300"]
+
+
+HEBREW_DAYS = ["שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת", "ראשון"]  # Python's weekday() order
+PLACEHOLDER = "https://www.cinema.co.il/wp-content/themes/cinematheque_new_theme/images/event_d2_new.png"
+
+
+def free_card(post_id: int, day: date, text: str, image: str = PLACEHOLDER, minutes: int = 180) -> str:
+    """A festival card with no order button, as /solidarity2026/'s load_more_posts gives it (Nov 2026)."""
+    return f"""<div class="fest-box-parent-wrapper alm-listing event_id-{post_id} movie-cat-623">
+<h4 class="by-date-title">{day:%d.%m}, {HEBREW_DAYS[day.weekday()]}</h4><div class="festival-grid-box">
+<div class="img-wraper"><img src="{image}" alt="img"></div><div class="text-content"><ul></ul><div class="title">
+<h3 class="21852"><a href="https://www.cinema.co.il/event/free-{post_id}/">סולידריות עכשיו | סולידריות 2026</a></h3>
+<p> אורך:{minutes}</p></div><div class="paragraph"> {text} </div><div class="content-detail"><div class="text-left">
+<a href="https://www.cinema.co.il/event/free-{post_id}/" class="underline">לפרטים ותאריכים נוספים</a></div></div>
+</div></div></div>"""
+
+
+def test_free_festival_cards_are_events_of_their_own() -> None:
+    from partylinks.scrapers.cinematheque_tlv import build_free_event, parse_festival_cards, parse_free_cards
+
+    today = date(2026, 11, 23)
+    upload = "https://www.cinema.co.il/wp-content/uploads/2026/11/solidarity-2026-21849.jpg"
+    cards = parse_free_cards(
+        free_card(119841, date(2026, 12, 10), "סולידריות עכשיו כניסה חופשית – יום ה׳ 10.12, 15:00, אולם 6")
+        + free_card(119853, date(2026, 12, 12), "בתום ההקרנה תתקיים שיחה כניסה חופשית – יום ש׳...", upload, 150)
+        + festival_card(1, 135449)  # sold by PRES: not a free card
+    )
+    assert set(cards) == {"119841", "119853"}
+    now, cut = cards["119841"], cards["119853"]
+    assert now.image is None and cut.image == upload  # the theme's "no picture" image is no artwork
+    assert parse_festival_cards(festival_card(1, 135449, image_attr="src").replace(
+        "https://www.cinema.co.il/wp-content/uploads/2026/11/nofx.jpg", PLACEHOLDER
+    ))["135449"].image is None  # fmt: skip
+    now.genres = ["פסטיבל", "קולנוע"]
+    event = build_free_event(now, today, SETTINGS, "cinematheque_tlv", TZ)
+    assert event is not None and event.start_at is not None and event.end_at is not None
+    assert (event.start_at.isoformat(), event.end_at.isoformat()) == (
+        "2026-12-10T15:00:00+02:00",
+        "2026-12-10T18:00:00+02:00",
+    )
+    assert event.time_known and event.title == "סולידריות עכשיו | סולידריות 2026"
+    assert (
+        str(event.url) == "https://www.cinema.co.il/event/free-119841/"
+        and event.source_event_id == "card119841:tlv:2026-12-10"
+    )
+    assert event.min_price == 0 and event.tickets[0].is_free and event.extra["halls"] == ["אולם 6"]
+    assert event.source_genres == ["פסטיבל", "קולנוע"] and event.venue_name == "סינמטק תל אביב"
+    # The card's text is cut before the hour: all-day until its own page gives it (not the menu's "היום 20:45").
+    bare = build_free_event(cut, today, SETTINGS, "cinematheque_tlv", TZ)
+    assert bare is not None and not bare.time_known and bare.end_at is None
+    page = "<div>23.11.26 היום 20:45 מתוך אהבה</div><p>כניסה חופשית – יום ש׳ 12.12, 10:00, אולם 2</p>"
+    timed = build_free_event(cut, today, SETTINGS, "cinematheque_tlv", TZ, page)
+    assert timed is not None and timed.start_at is not None and timed.time_known
+    assert timed.start_at.isoformat() == "2026-12-12T10:00:00+02:00" and timed.extra["halls"] == ["אולם 2"]
+    # The year is the nearest one on the card's weekday: in late December, 05.01 (a Tuesday) is next January.
+    january = parse_free_cards(free_card(7, date(2027, 1, 5), "כניסה חופשית – 05.01, 18:00, אולם 1"))["7"]
+    late = build_free_event(january, date(2026, 12, 30), SETTINGS, "cinematheque_tlv", TZ)
+    assert late is not None and late.start_at is not None and late.start_at.date() == date(2027, 1, 5)
+
+
+def test_free_festival_events_yielded_in_date_order_and_paging_goes_past_free_cards() -> None:
+    import asyncio
+    from datetime import datetime, timedelta
+    from urllib.parse import parse_qs
+
+    import httpx
+
+    from partylinks.config import Settings
+    from partylinks.scrapers import build_scraper
+    from partylinks.scrapers.cinematheque_tlv import CinemathequeFestival
+
+    today = datetime.now().date()
+    d1, d2, d3 = (today + timedelta(days=n) for n in (1, 2, 3))
+    base = LISTING["presentations"][0]
+    rows = [
+        dict(base) | {"id": 135449, "featureId": 1, "dateTime": f"{d1} 20:00", "businessDate": str(d1)},
+        dict(base) | {"id": 135450, "featureId": 2, "dateTime": f"{d3} 20:00", "businessDate": str(d3)},
+    ]
+    pages = {  # page 1 holds free cards only: the next page is still read
+        "1": free_card(5, d2, f"כניסה חופשית – {d2:%d.%m}, 15:00, אולם 6") + free_card(6, d2, "כניסה חופשית..."),
+        "2": festival_card(1, 135449),
+    }
+    scraper = build_scraper("cinematheque_tlv", Settings())
+    scraper.http.request_delay_seconds = 0
+    scraper.http.impersonate = None
+    scraper.settings.festivals = [CinemathequeFestival(page_url="https://www.cinema.co.il/solidarity2026/")]  # type: ignore[attr-defined]
+    asked: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        asked.append(path)
+        if path == "/api/presentations/":
+            return httpx.Response(200, json={"presentations": rows})
+        if path in ("/api/features/",) or path.endswith("ticketGroups"):
+            return httpx.Response(200, json=[] if path == "/api/features/" else {})
+        if path == "/solidarity2026/":
+            page = '<li data-filters="movie-cat-623" class="my-active"> סולידריות 2026 </li>'
+            return httpx.Response(200, text=page, headers={"content-type": "text/html"})
+        if path == "/wp-admin/admin-ajax.php":
+            paged = parse_qs(request.content.decode())["paged"][0]
+            return httpx.Response(200, text=pages.get(paged, ""), headers={"content-type": "text/html"})
+        if path == "/event/free-6/":
+            return httpx.Response(
+                200, text=f"<p>כניסה חופשית – {d2:%d.%m}, 11:00, אולם 2</p>", headers={"content-type": "text/html"}
+            )
+        return httpx.Response(404)
+
+    async def go() -> list[ScrapedEvent]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.scrape()]
+
+    events = asyncio.run(go())
+    assert [(e.extra.get("movie_id") or e.extra["festival_card"], e.start_at and e.start_at.strftime("%H:%M")) for e in events] == [
+        ("1", "20:00"), ("6", "11:00"), ("5", "15:00"), ("2", "20:00"),
+    ]  # fmt: skip
+    assert str(events[0].url) == "https://www.cinema.co.il/event/nofx-2026/"  # the paid card found on page 2
+    assert asked.count("/event/free-6/") == 1 and "/event/free-5/" not in asked  # only the card without its hour
+    assert all(e.source_genres == ["פסטיבל"] for e in events[1:3])
