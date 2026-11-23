@@ -6,6 +6,7 @@ import json
 from datetime import UTC, date
 from decimal import Decimal
 from pathlib import Path
+from typing import Any
 
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
@@ -112,3 +113,33 @@ def test_event_page_price_kinds() -> None:
     assert prices({"kind": "unknown", "rawText": 'מחיר כרטיס:\xa090 ש"ח'}) == [(Decimal(90), False)]
     assert prices({"kind": "unknown", "rawText": None}) == []  # no price anywhere: left unknown
     assert prices(None) == []
+
+
+def test_every_page_of_a_category_is_read_at_the_first_pages_size(monkeypatch: Any) -> None:
+    """Pages of 4 with a stated total of 10: pages 2 and 3 are read too (a fixed 28 for 24 skipped the tail)."""
+    import asyncio
+
+    import httpx
+
+    from partylinks.config import HttpSettings
+    from partylinks.scrapers.makore import MakoreScraper, MakoreSettings
+
+    settings = MakoreSettings.model_validate(Settings().sources["makore"] or {})
+    scraper = MakoreScraper(settings, HttpSettings(), TZ)
+    asked: list[int] = []
+
+    async def get_text(url: str, params: dict[str, int] | None = None, **_: object) -> str:
+        asked.append((params or {}).get("pages", 1))
+        if params and params["pages"] > 3:
+            raise httpx.HTTPStatusError("gone", request=httpx.Request("GET", url), response=httpx.Response(404))
+        return PAGE.replace("239 ", "10 ", 1)
+
+    monkeypatch.setattr(scraper, "get_text", get_text)
+    found = asyncio.run(scraper._category("/browse/category/חיי-לילה"))
+    assert sorted(asked) == [1, 2, 3] and len(found) == 12
+
+
+def test_sport_category_carries_our_sport_word() -> None:
+    item = parse_listing(PAGE)[1]
+    assert parse_item(item, "פעילות-ספורטיבית", TZ).source_genres == ["ספורט"]  # type: ignore[union-attr]
+    assert parse_item(item, "חיי-לילה", TZ).source_genres == []  # type: ignore[union-attr]

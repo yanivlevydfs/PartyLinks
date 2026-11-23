@@ -1,9 +1,10 @@
 """Makore (makore.co.il, "מה קורה") - an events guide for all of Israel.
 
 Next.js site; robots.txt allows everything but /admin. Listing: each configured category page
-(``/browse/category/<name>``) carries a schema.org ``ItemList`` of ~28 ``Event`` items in its
+(``/browse/category/<name>``) carries a schema.org ``ItemList`` of 24 ``Event`` items in its
 JSON-LD, page N at ``?pages=N``; the meta description states the category total ("239 אירועי
-חיי לילה..."), so every page is fetched in parallel. Items already have name, description,
+חיי לילה..."), so every page to the last is fetched in parallel. The page size is the first page's and
+there is no page cap (a fixed 28 for pages of 24 left the last ~14% of every category unread, Nov 2026). Items already have name, description,
 start/end, image, venue with street, city and coordinates, and the box office link and price
 (``offers``). ~3 in 4 items have no price there (Nov 2026): the event's own page holds the site's
 reading of the seller's text in its React Server Components state (``event.pricing``: fixed, from,
@@ -48,14 +49,14 @@ _EVENT_ID = re.compile(r"(?:--|/event/)([0-9a-f]{6,})/?$")
 _TOTAL = re.compile(r"^\s*([\d,]+)\s")
 # One RSC row: self.__next_f.push([1,"<JSON string>"])
 _FLIGHT = re.compile(r'self\.__next_f\.push\(\[1,("(?:[^"\\]|\\.)*")\]\)')
+# Our genre word for a category whose name no genre keyword matches ("ספורטיבית" is not "ספורט").
+_CATEGORY_GENRES = {"פעילות-ספורטיבית": ["ספורט"]}
 
 
 class MakoreSettings(SourceSettings, SellerLookupSettings):
     site_url: str
     # Category pages read, e.g. /browse/category/חיי-לילה (nightlife), /browse/category/הופעות-חיות.
     categories: list[str] = Field(min_length=1)
-    page_size: int = Field(28, ge=1)
-    max_pages: int = Field(200, ge=1)
     # Read the event's own page for an item listed without a price (one request each).
     page_prices: bool = True
 
@@ -159,9 +160,14 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
         s = self.settings
         url = s.site_url + path
 
+        first_html = await self.get_text(url)
+        first = parse_listing(first_html), listing_total(first_html)
+
         async def page(index: int) -> tuple[list[dict[str, Any]], int | None]:
+            if not index:
+                return first
             try:
-                page_html = await self.get_text(url, params={"pages": index + 1} if index else None)
+                page_html = await self.get_text(url, params={"pages": index + 1})
             except httpx.HTTPStatusError as exc:
                 # The stated total counts more than the pages hold: a page past the last is a 404.
                 if index and exc.response.status_code == 404:
@@ -169,7 +175,10 @@ class MakoreScraper(BaseScraper[MakoreSettings]):
                 raise
             return parse_listing(page_html), listing_total(page_html)
 
-        return await self.paginate(page, s.page_size, s.max_pages)
+        # The page size is the first page's (24 in Nov 2026), and every page to the stated total is read
+        # (no total: pages until a short one or a 404, uncapped).
+        size, total = len(first[0]) or 1, first[1]
+        return await self.paginate(page, size, -(-total // size) + 1 if total else 100_000)
 
 
 def soonest_first(events: list[ScrapedEvent]) -> list[ScrapedEvent]:
@@ -284,6 +293,7 @@ def parse_item(item: dict[str, Any], category: str, timezone: str) -> ScrapedEve
         latitude=geo.get("latitude") if isinstance(geo.get("latitude"), (int, float)) else None,
         longitude=geo.get("longitude") if isinstance(geo.get("longitude"), (int, float)) else None,
         event_types=[category],
+        source_genres=_CATEGORY_GENRES.get(category, []),
         images=images,
         currency=clean_str(offer.get("priceCurrency")) or "ILS",
         min_price=price,
