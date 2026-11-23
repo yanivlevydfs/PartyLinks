@@ -5852,6 +5852,7 @@ sources:
     # /events/ lists the coming events (~5, one request), each event page gives subtitle, date and time, place,
     # artwork, text and price (~6 requests). Registration is the page's own form. Online (Zoom) lectures are not
     # imported. Answers direct; robots.txt allows all but /wp-admin/.
+    # sections: /events/ (every coming event; /english-events/ lists the same ones); not read: ?past=1 (past), private-events and tours / shows for groups (booked, no dates), VOD, research, prize, books (no events)
     enabled: true
     cron: "57 9,21 * * *"
     venue_name: בית עגנון
