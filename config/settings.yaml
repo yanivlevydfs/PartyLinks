@@ -1963,6 +1963,7 @@ geocoding:
     "בית התרבות גבעת עדה": [32.5165129, 35.0039930]  # the same
     "נבי סמואל": [31.8341844, 35.1885040]  # Nebi Samuel national park (OSM protected area)
     "эммаус никополис": [31.8392951, 34.9893645]  # Emmaus Nicopolis, Latrun (OSM archaeological site; ogo)
+    "הקימרון": [32.494997, 35.51472]  # אולם הקימרון, עמק המעיינות (ticket4u's bare name; ogo, pres, kupatbravo pins)
 
 # Only current events exist: today (local) onwards. Yesterday and earlier are never
 # imported, never shown and purged. Exception: a party that started last night and is

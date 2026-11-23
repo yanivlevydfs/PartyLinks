@@ -18,18 +18,29 @@ which lists every T4U event by the same id. The API's product links to eventim.c
 own ticket4u.co.il page (the sitemap's, by id), so the ticket button sells through Shefa.
 
 Every event here is also on eventim.co.il (same id): dedup merges the two listings.
+
+The API's ``location.city`` is often a region ("חיפה והצפון"): stored as Haifa, it filed Kiryat Motzkin's,
+Yagur's and Kfar Blum's halls under Haifa (25 shows, Nov 2026). A region city becomes the town nearest the
+venue's pin (``town_at``), or none without a pin; the venue name can still name it.
 """
 
 from __future__ import annotations
 
+import math
+import re
 from collections.abc import AsyncIterator
+from functools import cache
 from typing import Any
 
 from pydantic import HttpUrl
 
+from partylinks.config import CitySettings
 from partylinks.models import ScrapedEvent
 from partylinks.scrapers.eventim import EventimScraper
 from partylinks.scrapers.eventim_listing import event_id_of
+
+# "חיפה והצפון", "תל אביב והמרכז", "באר שבע והדרום", "ירושלים והסביבה": a region, not a town.
+_REGION = re.compile(r"\sו\s*ה?(צפון|דרום|מרכז|סביבה|סביבתה|שרון|שפלה|גליל|עמקים|קריות)$")
 
 
 class Ticket4uScraper(EventimScraper):
@@ -49,4 +60,34 @@ class Ticket4uScraper(EventimScraper):
             page = self._pages.get(event.source_event_id)
             if page and not str(event.url).startswith(self.settings.site_url):  # built from the API's product
                 event = event.model_copy(update={"url": HttpUrl(page)})
+            if event.city and _REGION.search(event.city):
+                event = event.model_copy(update={"city": town_at(event.latitude, event.longitude)})
             yield event
+
+
+def _distance_m(a: tuple[float, float], b: tuple[float, float]) -> float:
+    lat1, lng1, lat2, lng2 = map(math.radians, (*a, *b))
+    h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lng2 - lng1) / 2) ** 2
+    return 6_371_000 * 2 * math.asin(math.sqrt(h))
+
+
+@cache
+def _towns() -> tuple[CitySettings, ...]:
+    """The configured cities and every Israeli locality GeoNames has (kibbutzim too: Yagur, Kfar Blum)."""
+    from partylinks.config import get_settings  # local: the module stays importable without settings
+    from partylinks.places import israeli_places
+
+    return tuple(c for c in (*get_settings().enrichment.cities, *israeli_places(0)) if c.center)
+
+
+def town_at(lat: float | None, lon: float | None, towns: tuple[CitySettings, ...] | None = None) -> str | None:
+    """The town whose centre is nearest the point, among those it lies within; None without a point or a town."""
+    if lat is None or lon is None:
+        return None
+    near = [
+        (d, c.he)
+        for c in (towns if towns is not None else _towns())
+        if c.center
+        if (d := _distance_m((lat, lon), c.center)) <= c.radius_m
+    ]
+    return min(near)[1] if near else None

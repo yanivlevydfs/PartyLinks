@@ -104,3 +104,21 @@ def test_site_genres_and_the_kids_default_for_an_uncategorised_show() -> None:
     # A Hanukkah kids' show whose API product has no category (Nov 2026): the source's default.
     donuts = enricher.enrich(event("חנות סופגניות קטנה ומצחיקה - חנוכה 2026", []))
     assert donuts is not None and donuts.genres == ["kids"]
+
+
+def test_a_region_city_becomes_the_town_at_the_venue_s_pin() -> None:
+    from partylinks.config import CitySettings
+    from partylinks.scrapers.ticket4u import _REGION, town_at
+
+    towns = (
+        CitySettings(key="haifa", he="חיפה", en="Haifa", center=(32.80, 35.00), radius_m=10000),
+        CitySettings(
+            key="kiryat-motzkin", he="קריית מוצקין", en="Kiryat Motzkin", center=(32.837, 35.077), radius_m=2500
+        ),
+    )
+    assert _REGION.search("חיפה והצפון") and _REGION.search("תל אביב והמרכז")
+    assert not _REGION.search("חיפה") and not _REGION.search("ראשון לציון")
+    assert town_at(32.8447, 35.0799, towns) == "קריית מוצקין"  # היכל תיאטרון מוצקין: inside Haifa's radius too
+    assert town_at(32.803, 34.985, towns) == "חיפה"  # the Haifa Auditorium
+    assert town_at(33.172, 35.611, towns) is None  # Kfar Blum: no town here within reach
+    assert town_at(None, None, towns) is None
