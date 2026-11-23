@@ -6194,6 +6194,7 @@ sources:
     cron: "58 6,18 * * *"
     site_url: https://yellowsubmarine.org.il
     listing_path: /event/
+    # sections: /event/ (every upcoming show at once, 26 = the site's 26 on 2026-11-23; /event/page/N/ repeats it) + each show's page; not read: the home slider, לוח הופעות and לוח הופעות חודשי (the same shows; the monthly board adds only this month's past ones), /en/ and /calendar (English copies of the same shows), ארכיון הופעות (past), festival / projects / school / plus pages (no event links).
     venue_name: הצוללת הצהובה
     address: הרכבים 13
     city: ירושלים
