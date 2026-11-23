@@ -6,7 +6,11 @@ and every other slider is read with ``/sliders/<linkName>/byLink.js``. Each retu
 complete slide list in one response. Only event slides are kept (sliders also hold
 venues, artists, articles). ``categories`` from the config are always read as well, and
 so is every event of each producer in ``users`` (``/user/<linkName>/getData``, the profile
-page a producer embeds on its own site; e.g. toMix, whose shows are mostly not on sliders).
+page a producer embeds on its own site; e.g. toMix, whose shows are mostly not on sliders),
+every page of each event container in ``containers`` (``/eventContainer/<type>/listByType.js``:
+categories, productions) and every venue page of the venue catalog. Then the sitemap
+(eventer_sitemap): its newest ``sitemap_newest`` pages, and on in batches until ``sitemap_gap``
+pages in a row held no current event.
 Details: ``/events/explainNames/<linkName>.js`` (event + JSON-LD) and
 ``/events/<id>/ticketTypes.js`` (all ticket tiers incl. free registrations).
 """
@@ -34,7 +38,7 @@ from partylinks.parsing import (
 )
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
-from partylinks.scrapers.eventer_sitemap import is_over, sitemap_link_names
+from partylinks.scrapers.eventer_sitemap import is_over, private_names, public_names
 from partylinks.venue_profiles import VENUE_PROFILE
 from partylinks.venue_profiles.eventer import eventer_venues
 
@@ -57,10 +61,18 @@ class EventerSettings(SourceSettings):
     # Producer profiles (user linkNames) whose whole event list is read on top of the sliders.
     users: list[str] = Field(default_factory=list)
     user_events_path: str = "/user/{user}/getData"
-    # The newest `sitemap_newest` event pages of the sitemap, read on top of the rest (eventer_sitemap). Empty path = off.
+    # Event container types whose every page's events are read (Category, Production; venues come with venues_path).
+    containers: list[str] = Field(default_factory=list)
+    container_list_path: str = "/eventContainer/{type}/listByType.js"
+    container_path: str = "/{type}/{link_name}/byLink.js"
+    # The sitemap's event pages, newest first, read on top of the rest (eventer_sitemap). Empty path = off.
     sitemap_path: str = ""
     robots_path: str = "/robots.txt"
-    sitemap_newest: int = Field(12000, ge=0)
+    # Always read this many; past them, batches of sitemap_batch until sitemap_gap pages in a row held no
+    # current event (0: stop at sitemap_newest).
+    sitemap_newest: int = Field(6000, ge=0)
+    sitemap_gap: int = Field(0, ge=0)
+    sitemap_batch: int = Field(500, ge=1)
     # The newest private (robots.txt-listed, link-only) event names read too; 0 = off.
     private_newest: int = Field(3000, ge=0)
     event_details_path: str
@@ -85,23 +97,47 @@ class EventerSettings(SourceSettings):
 class EventerScraper(BaseScraper[EventerSettings]):
     name = "eventer"
     settings_model = EventerSettings
+    venue_events: tuple[str, ...] = ()  # event names on the venue pages (set by eventer_venues)
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
-        link_names = await self._list_link_names()
+        if self.settings.venues_path:  # first: each venue page lists its events too
+            self.venue_profiles = await self.optional("venues", eventer_venues(self)) or []
+        link_names, deeper = await self._list_link_names()
         self.log.debug("listed %d events", len(link_names))
         if self.settings.artists_path:
             self.artist_profiles = await self.optional("artists", self._list_artists()) or []
             self.log.debug("listed %d artists", len(self.artist_profiles))
-        if self.settings.venues_path:
-            self.venue_profiles = await self.optional("venues", eventer_venues(self)) or []
         async for event in self.stream_isolated(link_names, self._fetch_event, label=lambda n: n):
             yield event
+        if deeper is not None and self.settings.sitemap_gap:
+            async for event in self._read_deeper(deeper, set(link_names)):
+                yield event
+
+    async def _read_deeper(self, names: AsyncIterator[str], skip: set[str]) -> AsyncIterator[ScrapedEvent]:
+        """The sitemap past its newest pages, a batch at a time, until ``sitemap_gap`` pages in a row held no
+        current event: season shows and next year's concerts put on sale months ago (~50 events between
+        pages 6,000 and 15,000 on 23.11.2026; none sampled past 15,000 of 134,000)."""
+        s = self.settings
+        read = without = 0
+        while without < s.sitemap_gap:
+            batch = await self.optional("sitemap", _take(names, s.sitemap_batch))
+            if not batch:
+                break
+            batch = [n for n in batch if n not in skip]
+            found = 0
+            async for event in self.stream_isolated(batch, self._fetch_event, label=lambda n: n):
+                found += 1
+                yield event
+            read += len(batch)
+            without = 0 if found else without + len(batch)
+        self.log.debug("read %d sitemap pages past the newest %d", read, s.sitemap_newest)
 
     def is_gone(self, response: httpx.Response) -> bool:
         # A deleted event (old sitemap pages): 403 {"message":"Event does not exist"}.
         return response.status_code == 403 and b"does not exist" in response.content
 
-    async def _list_link_names(self) -> list[str]:
+    async def _list_link_names(self) -> tuple[list[str], AsyncIterator[str] | None]:
+        """Every listed event name, and the sitemap's names past its newest ``sitemap_newest`` (None: no sitemap)."""
         s = self.settings
         categories, sliders = list(s.categories), []
         if s.discover:
@@ -116,8 +152,16 @@ class EventerScraper(BaseScraper[EventerSettings]):
         listings += [(f"slider {n}", s.base_url + s.slider_path.format(link_name=n), list) for n in dict.fromkeys(sliders)]
         # A profile set to open one event answers with that event's path ("/rc82f") instead.
         listings += [(f"user {u}", s.base_url + s.user_events_path.format(user=u), dict | str) for u in dict.fromkeys(s.users)]
+        for kind in dict.fromkeys(s.containers):  # byLink.js: the page with its "events"
+            url = s.base_url + s.container_list_path.format(type=kind)
+            catalog = await self.optional(f"{kind} list", self.get_json(url, expect=dict)) or {}
+            links = [str(c["linkName"]) for c in catalog.get("slides") or [] if isinstance(c, dict) and c.get("linkName")]
+            listings += [
+                (f"{kind} {n}", s.base_url + s.container_path.format(type=kind, link_name=quote(n)), dict)
+                for n in dict.fromkeys(links)
+            ]
 
-        seen: dict[str, None] = {}
+        seen: dict[str, None] = dict.fromkeys(self.venue_events)
         for label, url, shape in listings:
             try:  # one renamed/broken listing must not hide the others
                 payload = await self.get_json(url, expect=shape)
@@ -137,14 +181,18 @@ class EventerScraper(BaseScraper[EventerSettings]):
                 for slide in payload.get("slides") or payload.get("events") or []  # user getData: events
                 if isinstance(slide, dict) and slide.get("linkName") and slide.get("slideType", EVENT_SLIDE) == EVENT_SLIDE
             )
+        deeper: AsyncIterator[str] | None = None
         if s.sitemap_path:
-            newest = sitemap_link_names(
-                self, s.base_url, s.sitemap_path, s.robots_path, s.sitemap_newest, s.private_newest
-            )
-            seen.update(dict.fromkeys(await self.optional("sitemap", newest) or []))
+            private = await self.optional("robots", private_names(self, s.base_url, s.robots_path)) or []
+            seen.update(dict.fromkeys(private[: s.private_newest]))
+            deeper = public_names(self, s.base_url, s.sitemap_path, set(private))
+            newest = await self.optional("sitemap", _take(deeper, s.sitemap_newest))
+            if newest is None:  # the sitemap failed: nothing deeper either
+                deeper = None
+            seen.update(dict.fromkeys(newest or []))
         if not seen and self.failures:
             raise ParseError("every listing failed")
-        return list(seen)
+        return list(seen), deeper
 
     async def _fetch_event(self, link_name: str) -> ScrapedEvent | None:
         s = self.settings
@@ -202,6 +250,17 @@ class EventerScraper(BaseScraper[EventerSettings]):
             path = s.artist_path.format(link_name=quote(link))
             details[link] = await self.optional(f"artist {link}", self.get_json(s.base_url + path, expect=dict)) or {}
         return [p for a in slides for p in parse_artist(a, details.get(str(a["linkName"])) or {}, s.base_url + s.artist_page_path)]
+
+
+async def _take(names: AsyncIterator[str], count: int) -> list[str]:
+    """The next ``count`` names (fewer at the end); the iterator stays open for the next call."""
+    out: list[str] = []
+    while len(out) < count:
+        try:
+            out.append(await anext(names))
+        except StopAsyncIteration:
+            break
+    return out
 
 
 def artist_names(title: str) -> list[str]:

@@ -1,7 +1,7 @@
 """Eventbrite (eventbrite.com) - concerts, club nights, festivals, stage, film and food events worldwide, and all of Israel.
 
 - **Discovery.** ``/d/<place>/<listing>/?page=N`` renders its results in ``window.__SERVER_DATA__``: 20
-  a page, at most 49 pages a listing, ranked by relevance (not by date). Each entry: name, local start /
+  a page, at most 49 pages a listing (980 events), ranked by relevance (not by date). Each entry: name, local start /
   end with the venue's zone, the venue (id, name, address, coordinates), the category, subcategory and
   format (``tags``), artwork and the online / protected / cancelled flags. ``<listing>`` is
   ``all-events`` or one category / format (``music--events``, ``parties``...: ``listings``).
@@ -13,14 +13,18 @@
   date). The series' coming dates come from ``/api/v3/series/<id>/events/`` (one call, each date's id,
   link, times and place; the dates share the listed date's page), the group's from its organizer's live
   events (``/api/v3/organizers/<id>/events/``, 50 a page: those of the same name at an Israeli place,
-  each read like a listed one). ~50 listed events give ~700 dates (Nov 2026). Abroad only the listed
-  date (``every_date_abroad``): a New York listing's 20 events have ~500 dates.
+  each read like a listed one). ~50 listed events give ~700 dates (Nov 2026). Abroad the same, up to
+  the city's next read (``cycle_runs`` x ``rotation_hours`` ahead, a slot more): a later date is read
+  by a later visit, when it comes that close (a New York listing's 20 events have ~500 dates, most of
+  them months away).
 - **Abroad** (``cities``, Eventbrite's place slugs of the cities SPOTX lists abroad): city ``i`` is read in
   rotation slot ``i % cycle_runs`` (one slot per ``rotation_hours``), so the whole list is read once a
   cycle. A city's all-events page 1 gives its size: one of up to ``small_city_pages`` pages is read whole
-  and kept by category (``relevant_tags``); a bigger one is read through ``listings`` instead, up to
-  ``max_pages`` pages each (its most relevant events). Business, tech, health and other categories
-  are left out abroad.
+  and kept by category (``relevant_tags``); a bigger one is read through ``listings`` instead, each to
+  its last page. Business, tech, health and other categories are left out abroad.
+- **Past 980.** A listing with more events than its 49 pages show (New York's music: 3,420, Nov 2026) is
+  read by date windows (``start_date`` / ``end_date``, both days included), each halved until it fits,
+  from yesterday to ``window_days`` ahead.
 - **Flaky search.** Many discovery pages (about half, Nov 2026) come back after ~11 s with no results and
   no pagination: the search behind them timed out. Such a page is asked again, ``empty_retries`` times.
 - **Event page** (``/e/...``, Next.js ``__NEXT_DATA__``, ~200 KB, ~0.5 s): description, price range
@@ -44,7 +48,7 @@ import re
 import unicodedata
 from collections.abc import AsyncIterator, Iterable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -69,6 +73,7 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.venue_profiles import VENUE_PROFILE, VenueProfile
 
 _MARK = "window.__SERVER_DATA__ = "
+MOST_PAGES, PAGE_SIZE = 49, 20  # a discovery listing shows at most 49 pages of 20
 _AGE = re.compile(r"(\d{1,2})\s*\+")
 
 
@@ -88,13 +93,12 @@ class EventbriteSettings(SourceSettings):
     )
     # Venue countries kept from the Israeli searches: their radius reaches Jordan and Lebanon.
     israel_countries: list[str] = Field(default_factory=lambda: ["IL"])
-    israel_max_pages: int = Field(49, ge=1, le=49)  # every page of an Israeli search (49 is Eventbrite's most)
     # Every date of a listed event: its series' dates, and the organizer's same-name events (a dedup group).
     series_path: str = "/api/v3/series/{id}/events/"
     organizer_path: str = "/api/v3/organizers/{id}/events/"
     series_page_size: int = Field(200, ge=1, le=200)
     api_live_statuses: list[str] = Field(default_factory=lambda: ["live", "started"])
-    every_date_abroad: bool = False  # abroad, the listed date only (all of them: ~25 dates a listed event)
+    every_date_abroad: bool = True  # abroad too, up to the city's next read (False: the listed date only)
     # Eventbrite's place slugs abroad ("germany--berlin", "ny--new-york"), busiest first: read in rotation.
     cities: list[str] = Field(default_factory=list)
     cycle_runs: int = Field(28, ge=1)
@@ -111,6 +115,7 @@ class EventbriteSettings(SourceSettings):
             "holiday--events": "EventbriteCategory/116",
             "parties": "EventbriteFormat/11",
             "festivals": "EventbriteFormat/5",
+            "performances": "EventbriteFormat/6",  # concerts and shows of any category (2,283 in New York)
         }
     )
     # Abroad, an event is kept when it carries one of these: the listings' tags, and concerts / shows.
@@ -120,7 +125,9 @@ class EventbriteSettings(SourceSettings):
             "EventbriteCategory/116", "EventbriteFormat/5", "EventbriteFormat/6", "EventbriteFormat/11",
         ]
     )  # fmt: skip
-    max_pages: int = Field(10, ge=1, le=49)  # per listing (49 is the most Eventbrite pages)
+    # A listing past its 49 pages is read by date windows, from yesterday up to this many days ahead
+    # (New York's music: none past 5 months, Nov 2026).
+    window_days: int = Field(1100, ge=1)
     empty_retries: int = Field(3, ge=0)
     empty_retry_seconds: float = Field(5.0, ge=0)
     # The event page's status values of an event that will not take place.
@@ -275,12 +282,19 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
     async def _israel(self, events: dict[str, dict[str, Any]]) -> None:
         s = self.settings
         first, *rest = list(dict.fromkeys(s.israel_paths)) or [""]
-        pages = s.israel_max_pages
         if first:  # the Israel page must answer
-            await self._listing(first, events, keep=self._in_israel, must_answer=True, max_pages=pages)
+            await self._listing(first, events, keep=self._in_israel, must_answer=True)
         for path in rest:
-            await self.optional(f"listing {path}", self._listing(path, events, keep=self._in_israel, max_pages=pages))
+            await self.optional(f"listing {path}", self._listing(path, events, keep=self._in_israel))
         await self.optional("same-name events", self._same_name(events, keep=self._in_israel))
+
+    def _date_due(self, e: dict[str, Any]) -> bool:
+        """An other date of an event to read now: any in Israel, abroad one before the city's next read."""
+        if self._in_israel(e):
+            return True
+        s, start = self.settings, _when(e, "start")
+        ahead = timedelta(hours=s.rotation_hours * (s.cycle_runs + 1))
+        return start is None or start <= datetime.now(UTC) + ahead
 
     async def _city(self, slug: str, events: dict[str, dict[str, Any]]) -> None:
         s = self.settings
@@ -303,39 +317,59 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
             await self.optional(f"same-name events {slug}", self._same_name(events, keep=self._relevant))
 
     async def _listing(
-        self,
-        path: str,
-        events: dict[str, dict[str, Any]],
-        keep: Any,
-        must_answer: bool = False,
-        max_pages: int | None = None,
+        self, path: str, events: dict[str, dict[str, Any]], keep: Any, must_answer: bool = False
     ) -> None:
-        """Every page of one discovery listing (up to ``max_pages``, else the settings') into ``events``, by id."""
+        """Every event of one discovery listing into ``events``, by id: every page, and past 49 pages
+        by date windows."""
         s = self.settings
-        most = max_pages or s.max_pages
         first = await self._page(path, 1)
         if first is None:
             if must_answer:
                 raise ParseError(f"{path}: no results after {s.empty_retries + 1} tries")
             return
+        today = datetime.now(UTC).date()
+        days = (today - timedelta(days=1), today + timedelta(days=s.window_days))
+        await self._window(path, first, events, keep, days)
+
+    async def _window(
+        self,
+        path: str,
+        first: dict[str, Any],
+        events: dict[str, dict[str, Any]],
+        keep: Any,
+        days: tuple[date, date],
+        dated: bool = False,
+    ) -> None:
+        """A listing (its ``dated`` window ``days``) from its first page: every page when they hold all
+        its events, else its two halves (a single day too full: its 49 pages)."""
         self._keep(first, events, keep)
-        pages = page_count(first)
-        if pages > most:
-            self.log.debug("%s: %d pages, reading %d", path, pages, most)
-        for page in await asyncio.gather(*(self._more(path, p) for p in range(2, min(pages, most) + 1))):
+        window = window_params(days) if dated else {}
+        pages, (start, end) = page_count(first), days
+        if overflows(first) and start < end:
+            middle = start + (end - start) / 2
+            halves = [(start, middle), (middle + timedelta(days=1), end)]
+            firsts = await asyncio.gather(*(self._more(path, 1, window_params(h)) for h in halves))
+            await asyncio.gather(*(
+                self._window(path, f, events, keep, h, dated=True) for f, h in zip(firsts, halves, strict=True) if f
+            ))  # fmt: skip
+            return
+        if overflows(first):
+            self.log.info("%s %s: more than %d pages in one day", path, window, pages)
+        for page in await asyncio.gather(*(self._more(path, p, window) for p in range(2, pages + 1))):
             self._keep(page, events, keep)
 
-    async def _more(self, path: str, page: int) -> dict[str, Any] | None:
-        """A later page of a listing: its failure costs that page only."""
-        return await self.optional(f"{path} page {page}", self._page(path, page))
+    async def _more(self, path: str, page: int, window: dict[str, str] | None = None) -> dict[str, Any] | None:
+        """A later page (or a date window's first) of a listing: its failure costs that page only."""
+        return await self.optional(f"{path} {window or ''} page {page}", self._page(path, page, window))
 
-    async def _page(self, path: str, page: int) -> dict[str, Any] | None:
+    async def _page(self, path: str, page: int, window: dict[str, str] | None = None) -> dict[str, Any] | None:
         """One discovery page's results ({pagination, results}); None when the search never answered."""
         s = self.settings
         for attempt in range(s.empty_retries + 1):
             if attempt:
                 await asyncio.sleep(s.empty_retry_seconds)
-            found = search_results(await self.get_text(s.site_url + path, params={"page": page}))
+            params = {**(window or {}), "page": page}
+            found = search_results(await self.get_text(s.site_url + path, params=params))
             if found is not None:
                 self.stats.pages += 1
                 return found
@@ -384,7 +418,8 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
             for row in rows or []:
                 listed = named.get(name_key(api_name(row)))
                 entry = api_entry(row, listed, self.settings) if listed else None
-                if entry and entry["id"] not in events and listable(entry, now) and keep(entry):
+                due = entry and listable(entry, now) and keep(entry) and self._date_due(entry)
+                if entry and due and entry["id"] not in events:
                     events[entry["id"]] = entry
                     self.stats.dates += 1
 
@@ -400,7 +435,8 @@ class EventbriteScraper(BaseScraper[EventbriteSettings]):
         now, dates = datetime.now(UTC), []
         for row in rows:
             entry = api_entry(row, listed, s)
-            if entry and entry["id"] not in self._seen and listable(entry, now) and self._every_date(entry):
+            due = entry and listable(entry, now) and self._every_date(entry) and self._date_due(entry)
+            if entry and due and entry["id"] not in self._seen:
                 self._seen.add(entry["id"])
                 dates.append(entry)
         self.stats.dates += len(dates)
@@ -484,6 +520,16 @@ def search_results(page_html: str) -> dict[str, Any] | None:
 
 def page_count(found: dict[str, Any]) -> int:
     return int((found.get("pagination") or {}).get("page_count") or 1)
+
+
+def overflows(found: dict[str, Any]) -> bool:
+    """More events than the listing's pages show (49 pages of 20)."""
+    total = int((found.get("pagination") or {}).get("object_count") or 0)
+    return page_count(found) >= MOST_PAGES and total > MOST_PAGES * PAGE_SIZE
+
+
+def window_params(days: tuple[date, date]) -> dict[str, str]:
+    return {"start_date": days[0].isoformat(), "end_date": days[1].isoformat()}
 
 
 def listable(e: dict[str, Any], now: datetime) -> bool:

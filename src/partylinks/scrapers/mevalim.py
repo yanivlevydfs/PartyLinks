@@ -1,11 +1,15 @@
-"""Mevalim (mevalim.co.il) - show listings for every configured region (theatre, stand-up, concerts...).
+"""Mevalim (mevalim.co.il) - show listings for every region, city, category and holiday page.
 
-Each region page (e.g. ``/central/``, ``/north/``) holds a table of upcoming performances fed by
-``admin-ajax.php`` (``action=mevalim_load_more_events``, 20 rows per page, 1-based
-``page``). The request needs the ``mevalimAjax.nonce`` printed on the region page.
+Each page (e.g. ``/central/``, ``/rehovot/``, ``/stand-up/``) holds tables of upcoming performances
+fed by ``admin-ajax.php`` (``action=mevalim_load_more_events``, 20 rows per page, 1-based ``page``),
+plus thumbnail carousels served by the same call. The request needs the ``mevalimAjax.nonce``
+printed on the page. The region tables are curated: a city's own table holds shows its region's
+table misses (Rehovot, Ness Ziona, Gedera: Nov 2026), and a carousel can hold a show no table
+lists. So every single-segment page linked from the index pages (home menu, /cities/, /holidays/)
+is read with every table on it; each table once.
 Each row carries everything we keep: performance id, title, date+time, hall, city,
 category, producer, deal + original price (base64 JSON in ``data-item``) and the
-purchase link (``#updates`` when sold out).
+purchase link (``#updates`` when sold out). A carousel item has no hall: a table row wins.
 Artwork: each event's own page (tickets.mevalim.co.il, Next.js) is fetched in parallel
 for its main image (the ``/_next/image?url=`` source) and ``og:image``; a page that
 fails only leaves that event without artwork. Sold-out rows have no page to fetch.
@@ -25,7 +29,7 @@ import html
 import json
 import re
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import parse_qs, urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
@@ -36,15 +40,19 @@ from selectolax.lexbor import LexborHTMLParser, LexborNode
 from partylinks.artists import ArtistProfile
 from partylinks.models import ScrapedEvent, TicketTier, TierStatus
 from partylinks.parsing import ParseError, clean_str, to_decimal
-from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.base import BaseScraper, SourceSettings, gather_or_cancel
 
 _NONCE = re.compile(r'var mevalimAjax\s*=\s*\{[^}]*"nonce"\s*:\s*"([^"]+)"')
 _PRICE = re.compile(r"\d+(?:\.\d+)?")
+# Load-more buttons (data-table-id) and the rows / carousel items of every table (data-mvlm-table-id).
+_TABLE_ID = re.compile(r'data-(?:mvlm-)?table-id="(\d+)"')
+_ROWS = "tr[data-mvlm-event-id], a[data-mvlm-event-id]"
 
 
 class MevalimRegion(BaseModel):
     path: str
-    table_id: int  # data-table-id on the region's load-more button
+    # data-table-id on the page's load-more button; None reads every table on the page.
+    table_id: int | None = None
 
 
 class MevalimArtistCatalog(BaseModel):
@@ -57,6 +65,9 @@ class MevalimSettings(SourceSettings):
     regions: list[MevalimRegion]
     ajax_path: str
     ajax_action: str
+    # Pages whose single-segment links (/<slug>/: cities, categories, holidays) are read too.
+    index_pages: list[str] = Field(default_factory=list)
+    skip_paths: list[str] = Field(default_factory=list)  # linked pages with no events (terms, contact)
     page_size: int = Field(20, ge=1)
     max_pages: int = Field(100, ge=1)
     # Fetch each event page for its artwork (one extra request per event)...
@@ -76,9 +87,10 @@ class MevalimScraper(BaseScraper[MevalimSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         events: dict[str, ScrapedEvent] = {}
-        for region in self.settings.regions:  # regions overlap (a Tel Aviv show is also "central")
-            for event in await self.optional(f"region {region.path}", self._region_events(region)) or []:
-                events.setdefault(event.source_event_id, event)
+        for event in await self._list_events():  # pages overlap (a Tel Aviv show is also "central")
+            known = events.get(event.source_event_id)
+            if known is None or (not known.venue_name and event.venue_name):  # a table row over a carousel item
+                events[event.source_event_id] = event
         self.log.debug("listed %d events", len(events))
         for catalog in self.settings.artist_catalogs:
             self.artist_profiles += await self.optional(f"artists {catalog.kind}", self._list_artists(catalog)) or []
@@ -94,13 +106,44 @@ class MevalimScraper(BaseScraper[MevalimSettings]):
         async for event in self.stream_isolated(listed, self._with_artwork, label=lambda e: e.source_event_id):
             yield event
 
-    async def _region_events(self, region: MevalimRegion) -> list[ScrapedEvent]:
+    async def _list_events(self) -> list[ScrapedEvent]:
         s = self.settings
-        region_url = s.site_url + region.path
-        match = _NONCE.search(await self.get_text(region_url))
-        if not match:
-            raise ParseError("mevalimAjax nonce not found on region page")
-        nonce = match.group(1)
+        pages: dict[str, int | None] = {r.path: r.table_id for r in s.regions}
+        html_of: dict[str, str] = {}
+        for index in s.index_pages:
+            page_html = await self.optional(f"index {index}", self.get_text(s.site_url + index))
+            if page_html is None:
+                continue
+            html_of[index] = page_html
+            pages.setdefault(index, None)
+            for path in linked_pages(page_html, s.site_url):
+                if path not in s.skip_paths:
+                    pages.setdefault(path, None)
+        self.log.debug("reading %d pages", len(pages))
+
+        async def tables(path: str, table_id: int | None) -> list[tuple[int, str, str]]:
+            page_html = html_of.get(path) or await self.get_text(s.site_url + path)
+            ids = [table_id] if table_id is not None else list(dict.fromkeys(map(int, _TABLE_ID.findall(page_html))))
+            if not ids:  # a link list (/cities/, /holidays/): no table, no nonce
+                return []
+            match = _NONCE.search(page_html)
+            if not match:
+                raise ParseError("mevalimAjax nonce not found on the page")
+            return [(t, match.group(1), s.site_url + path) for t in ids]
+
+        found = await gather_or_cancel(self.optional(f"page {p}", tables(p, t)) for p, t in pages.items())
+        todo: dict[int, tuple[str, str]] = {}
+        for page_tables in found:
+            for table_id, nonce, page_url in page_tables or []:
+                todo.setdefault(table_id, (nonce, page_url))  # a table shared by several pages is read once
+        self.log.debug("reading %d tables", len(todo))
+        listed = await gather_or_cancel(
+            self.optional(f"table {t}", self._table_events(t, nonce, url)) for t, (nonce, url) in todo.items()
+        )
+        return [event for table in listed for event in table or []]
+
+    async def _table_events(self, table_id: int, nonce: str, page_url: str) -> list[ScrapedEvent]:
+        s = self.settings
 
         async def page(index: int) -> tuple[list[LexborNode], None]:
             payload = await self.post_json(
@@ -109,7 +152,7 @@ class MevalimScraper(BaseScraper[MevalimSettings]):
                     "action": s.ajax_action,
                     "nonce": nonce,
                     "is_passed": 0,
-                    "post_id": region.table_id,
+                    "post_id": table_id,
                     "page": index + 1,
                     "source_type": "mevalim",
                 },
@@ -123,11 +166,12 @@ class MevalimScraper(BaseScraper[MevalimSettings]):
         events: dict[str, ScrapedEvent] = {}
         for row in await self.paginate(page, s.page_size, s.max_pages):
             try:
-                event = parse_row(row, region_url, self.timezone)
+                event = parse_row(row, page_url, self.timezone)
             except Exception as exc:  # noqa: BLE001 - one bad row never drops the listing
                 self.record_failure(row.attributes.get("data-mvlm-event-id") or "row", exc)
                 continue
-            events[event.source_event_id] = event  # pages overlap by a row or two
+            if not is_past(event):
+                events[event.source_event_id] = event  # pages overlap by a row or two
         return list(events.values())
 
     async def _with_artwork(self, event: ScrapedEvent) -> ScrapedEvent:
@@ -170,6 +214,11 @@ class MevalimScraper(BaseScraper[MevalimSettings]):
         return [a for p in pages if (a := parse_artist_page(p, catalog.kind, photos))]
 
 
+def is_past(event: ScrapedEvent) -> bool:
+    """A row of an "upcoming" table dated before yesterday is a typo (a Nahariya show on 19.02.00)."""
+    return event.start_at is not None and event.start_at < datetime.now(UTC) - timedelta(days=1)
+
+
 def soonest_first(events: list[ScrapedEvent]) -> list[ScrapedEvent]:
     """Events by start time, undated last: stream_isolated fetches in input order."""
     last = datetime.max.replace(tzinfo=UTC)
@@ -206,9 +255,17 @@ def parse_artwork(page_html: str) -> list[str]:
     return list(dict.fromkeys(found))
 
 
+def linked_pages(page_html: str, site_url: str) -> list[str]:
+    """The site's single-segment pages linked from a page (``/rehovot/``, ``/stand-up/``), in order."""
+    pattern = 'href="' + re.escape(site_url) + r'(/[^/"#?\s]+/)"'
+    return list(dict.fromkeys(p for p in re.findall(pattern, page_html) if not p.startswith("/wp-")))
+
+
 def parse_rows(fragment: str) -> list[LexborNode]:
-    # Bare <tr> outside a table is dropped by the HTML parser.
-    return LexborHTMLParser(f"<table><tbody>{fragment}</tbody></table>").css("tr[data-mvlm-event-id]")
+    """Table rows and carousel items. A table fragment is bare <tr>s, dropped outside a table."""
+    if "<tr" in fragment and "<table" not in fragment:
+        fragment = f"<table><tbody>{fragment}</tbody></table>"
+    return LexborHTMLParser(fragment).css(_ROWS)
 
 
 def parse_row(row: LexborNode, region_url: str, timezone: str) -> ScrapedEvent:
@@ -216,7 +273,7 @@ def parse_row(row: LexborNode, region_url: str, timezone: str) -> ScrapedEvent:
     event_id = clean_str(attrs.get("data-mvlm-event-id"))
     if not event_id:
         raise ParseError("event id missing")
-    link = row.css_first("a[href]")
+    link = row if row.tag == "a" else row.css_first("a[href]")  # a carousel item is the link itself
     href = (link.attributes.get("href") or "") if link else ""
     sold_out = link is not None and "link-sold" in (link.attributes.get("class") or "")
     item = _item(attrs.get("data-item"))
@@ -232,7 +289,7 @@ def parse_row(row: LexborNode, region_url: str, timezone: str) -> ScrapedEvent:
         title=clean_str(attrs.get("data-mvlm-event-name")) or "",
         start_at=_parse_start(attrs.get("data-mvlm-event-date"), timezone),
         venue_name=_text(row, ".rgbcode_table_shortcode_table_hall"),
-        city=_text(row, ".rgbcode_table_shortcode_table_city"),
+        city=_text(row, ".rgbcode_table_shortcode_table_city") or _text(row, ".rgbcode_table_shortcode_thumbnail_city"),
         event_types=categories,
         organizer=clean_str(attrs.get("data-mvlm-brand")),
         min_price=price,
@@ -260,8 +317,10 @@ def _item(raw: str | None) -> dict[str, Any]:
 
 
 def _price_text(row: LexborNode) -> Any:
-    match = _PRICE.search(_text(row, ".rgbcode_table_shortcode_table_link_price") or "")
-    return to_decimal(match.group(0)) if match else None
+    """The row's price, or a carousel badge's (``<s>65₪</s> 45₪``: the last number is the deal)."""
+    text = _text(row, ".rgbcode_table_shortcode_table_link_price") or _text(row, ".mevalim_badge__text") or ""
+    found = _PRICE.findall(text)
+    return to_decimal(found[-1]) if found else None
 
 
 def _text(row: LexborNode, selector: str) -> str | None:

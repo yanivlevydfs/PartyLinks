@@ -61,8 +61,9 @@ def test_package_priced_experience_reads_starting_price() -> None:
     assert parse_funz({**funz, "starting_price": None}, {})[0].min_price is None
 
 
-def test_all_dates_read_when_page_holds_fewer_within_horizon() -> None:
-    # The page gives the first 10 dates; /funz/<id>/events gives all. Funz 1037 has 20, the page 10.
+def test_listing_read_to_total_pages_and_every_date() -> None:
+    # The page gives the first 10 dates; /funz/<id>/events gives all, months ahead. Funz 1037 has 20, the page 10.
+    # The listing runs to its total_pages (32 on 23.11.2026), never stopping early.
     now = datetime.now().astimezone()
 
     def ev(i: int, days: int) -> dict[str, Any]:
@@ -75,20 +76,24 @@ def test_all_dates_read_when_page_holds_fewer_within_horizon() -> None:
         f"{api}/funz/1037/events": {"events": [ev(0, -1), ev(1, 5), ev(2, 10), ev(3, 200)]},
         f"{api}/funz/2": {"funz": {**FUNZ, "id": 2, "events": [ev(9, 3)]}},
     }
-    listing = [{"id": 1037, "number_of_upcoming_dates": 3}, {"id": 2, "number_of_upcoming_dates": 1}, {"id": 3}]
+    pages = {1: [{"id": 1037, "number_of_upcoming_dates": 3}], 2: [{"id": 2, "number_of_upcoming_dates": 1}]}
+    bodies[f"{api}/funz/3"] = {"funz": {**FUNZ, "id": 3, "events": []}}
+    pages[3] = [{"id": 3}]
     asked: list[str] = []
 
     async def fake_get_json(url: str, *, params: dict[str, Any] | None = None, **_: object) -> Any:
         asked.append(url)
         if url.endswith("search.json"):
-            return {"funzes": listing if params and params["page"] == 1 else []}
+            assert params is not None and "all" not in params  # all=true adds ~410 dateless pages, not dated-first
+            return {"funzes": pages.get(params["page"], []), "total_pages": 3}
         return bodies[url]
 
-    scraper = FunzingScraper(FunzingSettings(cron="0 4 * * *", days_ahead=120), HttpSettings(), "Asia/Jerusalem")
+    scraper = FunzingScraper(FunzingSettings(cron="0 4 * * *"), HttpSettings(), "Asia/Jerusalem")
     scraper.get_json = fake_get_json  # type: ignore[method-assign]
 
     async def collect() -> list[str]:
         return [e.source_event_id async for e in scraper.scrape()]
 
-    assert sorted(asyncio.run(collect())) == ["1", "2", "9"]  # not the past one, not 200 days ahead
+    assert sorted(asyncio.run(collect())) == ["1", "2", "3", "9"]  # not the past one; 200 days ahead too
+    assert sum(url.endswith("search.json") for url in asked) == 3
     assert f"{api}/funz/2/events" not in asked  # the page held every date: no extra request

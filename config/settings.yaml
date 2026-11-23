@@ -2604,6 +2604,18 @@ sources:
       - {path: /kids-shows/, table_id: 210695}
       - {path: /movies/, table_id: 639535}
       - {path: /dance/, table_id: 505881}
+    # Region tables are curated: Rehovot / Ness Ziona / Gedera shows sit only in their city's table, Tel
+    # Aviv's table holds shows /central/ lacks, a home carousel held a lecture no table lists (27 shows
+    # missed, Nov 2026). So every /<slug>/ page these link to is read too, with every table and carousel on it.
+    index_pages: [/, /cities/, /holidays/]
+    skip_paths: [/accessibility/, /cancellation-policy/, /contact/, /feed/, /privacy-policy/, /terms/, /halls/]
+    # sections: read: home + its carousels, the 13 region/category pages above, every city page of /cities/
+    #   (~60), every category of the menu (concerts, stand-up, theater, musicals, lectures, kids-shows, movies,
+    #   dance, hanuka, weekend, vacation, dates, discount), every holiday page of /holidays/ (sylvester,
+    #   passover, purim, sukkot, shavuot, independence-day, tu-beav, valentines-day, ...), each with every
+    #   table to its last page; not read: /halls/ venue pages (each a subset of its city's table: sampled,
+    #   0 extra), single show pages under /theater/ /shows/ /kids-shows/ (their dates are in the tables),
+    #   terms / contact / accessibility / feed; the sitemap holds only pages and tags.
     ajax_path: /wp-admin/admin-ajax.php
     ajax_action: mevalim_load_more_events
     # Artist pages (WordPress children of /shows/ and /stand-up/): name, photo, page link.
@@ -2640,8 +2652,10 @@ sources:
     # grid (the sitemap lacked mamanniversary, Mama Africa's April 2027 festival, Nov 2026), events
     # without a venue (no Event JSON-LD) read from the page; not read: /en/explore/* (tlv-tickets,
     # lgbt-tel-aviv, lgbt-events, tlv-weekend, tonight-tel-aviv, chillz-feat, home-chillz-il: the
-    # same 88 events as the home carousels, Nov 2026), organizer pages' "org-past" grids (past),
-    # /he/ (the same slugs), /en/legal/* (no events).
+    # same 88 events as the home carousels, every one also in the sitemap; their "load more" is a
+    # Next.js server action with sealed args, re-checked 24.11.2026), /en/explore and /en/search
+    # (client-side search over /api/, robots-disallowed; no cards in the page), organizer pages'
+    # "org-past" grids (past), /he/ (the same slugs), /en/legal/* (no events).
     cron: "31 7,19 * * *"
     site_url: https://chillz.com
     sitemap_path: /sitemap.xml
@@ -2667,14 +2681,20 @@ sources:
     cron: "0 6,18 * * *"
     site_url: https://www.megatickets.co.il
     # robots.txt disallows /api/ and /search: listing and details come from public pages only.
+    # sections: read /events (the one listing, every Israeli event; 5 on the site = 5 in prod,
+    #   Nov 2026; ?page= / ?city= return the same list, the sitemap's /events/ links are the same 5);
+    #   not read: /festivals and /packages (travel packages abroad, flight + hotel), /magazine (blog),
+    #   /artists, /venues, /destinations (indexes without event links), /ticketing, /about, /contact,
+    #   /terms (no events), /search and /api/ (robots-disallowed).
     list_path: /events
     event_page_path: /events/{slug}
-    max_events: 5000
 
   eventbuzz:
     enabled: true
     cron: "10 7,19 * * *"
     site_url: https://eventbuzz.co.il
+    # sections: /events (the site's only listing: 4 cards on 23.11.2026, no pagination, categories or filters; the home page and ?lang=en list no events), every /lp/event/<slug> page found elsewhere (the Wayback index of the last 120 days with no row limit: 1036 slugs; 0 of 36 dated slugs archived only 4-12 months ago is still upcoming), other sources' ticket links, Hasimta's show pages and extra_slugs = prod 99 upcoming; not read: /backoffice and /d1/signup (producer login / sign-up), /lp/cancellation (refund form), the date / time-slot pickers (timed slots); the site has no other menu, no categories, sitemap or robots.txt (unknown paths answer the home page). DuckDuckGo answers 202 with no results from prod (23.11), so search_pages adds nothing today.
+    skip_title_words: ["קורס", "אירוע פרטי", "אירוע סגור"]  # multi-week courses ("קורס צילום למתחילים/ות", 23.11), private bookings
     # Single server-rendered listing page (no API, no pagination).
     listing_path: /events
     event_path_prefix: /lp/event/
@@ -2695,7 +2715,7 @@ sources:
       location: מיקום
     # Most events are not on /events (producers share /lp/event/<slug> links): every link the Wayback
     # Machine archived in the last wayback_days, and a DuckDuckGo site: search (search_pages pages).
-    wayback_url: "https://web.archive.org/cdx/search/cdx?url=eventbuzz.co.il/lp/event/&matchType=prefix&output=txt&fl=original&collapse=urlkey&limit=3000&from={since}"
+    wayback_url: "https://web.archive.org/cdx/search/cdx?url=eventbuzz.co.il/lp/event/&matchType=prefix&output=txt&fl=original&collapse=urlkey&from={since}"
     wayback_days: 120
     search_url: "https://html.duckduckgo.com/html/?q={q}&s={offset}"
     search_query: "site:eventbuzz.co.il/lp/event"
@@ -2897,6 +2917,11 @@ sources:
     # Gagarin club (gagarin.co.il): WordPress + The Events Calendar, whose JSON API lists every
     # upcoming night. The site leaves the venue empty, so it is set here; the description's link to
     # the seller (GO-OUT, Eventbuzz...) merges this listing with the seller's own.
+    # sections: the events API from today with no end date (all 15 categories: parties, the series tags
+    # INSOMNIA / BLACKOUT / sin..., the status labels; the home page, /events month view and the
+    # tribe_events sitemap: 7 = 7 on 23.11.2026, one page of the 10 x 50 allowed); not read: WooCommerce
+    # /product (ticket tiers of the same events), the tribe_venue / organizer sitemaps, the old one-off
+    # Elementor landing pages (past shows), affiliate / vendor / account pages, recurring sitemap (empty).
     enabled: true
     cron: "46 8,20 * * *"
     site_url: https://gagarin.co.il
@@ -2934,6 +2959,10 @@ sources:
     # URL index (each crawl read once) and are kept in known_file, growing run by run. One request per shop:
     # its page carries every upcoming event as JSON (venue with country and coordinates, category, lowest
     # price, sold out). Israeli venues to Israel, the rest abroad. Akamai + Queue-it pass as Chrome.
+    # sections: every known shop's page (all its events, no paging: 140 items on one shop page, 24.11.2026),
+    # each series' page (/s/<id>, every date), bundles (eventSet, /b/<id>) as their events; discovery from
+    # every Common Crawl since the site began (shops back to 2015; was the newest 12); not read: /robots.txt
+    # and /sitemap.xml (404), /<country>/ (the organizers' sign-up page), checkout / help / lost-tickets.
     enabled: true
     cron: "33 4,16 * * *"
     site_url: https://www.eventim-light.com
@@ -2943,7 +2972,7 @@ sources:
     countries: [de, at, ch, uk, nl, it, es, dk, se, "no", fi, fr, be, pl, cz, pt, ie, lu, hu, il]
     seed_shops: [de/6395bc712f27c4432c8bda66]
     cdx_url: https://index.commoncrawl.org
-    cdx_collections: 12
+    cdx_collections: 1000   # every crawl, newest first, each read once (older ones over the next runs)
     cdx_timeout_seconds: 300
     cdx_attempts: 6
     cdx_budget_seconds: 1800
@@ -3067,6 +3096,15 @@ sources:
     # after ~20 (Nov 2026): each event it refuses comes from the site's public search API instead (eventim_api:
     # artwork, lowest price, venue with coordinates, artists; it lists every sitemap event), so the run stays
     # clean. It replaced the city pages' ItemList (no artwork, no coordinates). Empty api_url: no API.
+    # sections: read = the events sitemap (531 performance pages, every date its own page, no cap or date window) +
+    # the search API's every city (53 city facets, each paged to totalPages: 532 products = the site's count; the
+    # 20 /categories/ pages (live, international, Israeli, music, lectures, family, kids, exhibitions, stand-up,
+    # sport, festivals, theatre, plays, dance, musicals) are its category facets, all within); 0 non-Zappa
+    # products missing from the sitemap (23.11.2026). not read: Zappa / Amphi Shuni pages (the zappa source),
+    # artist / eventseries / city / venue / city-category sitemaps and menu pages (the same events, subsets),
+    # the "שובר מתנה" gift-card product, closed shows for a company's staff and season subscriptions
+    # (skip_title_words), the home page's club-shop teasers (external sites), help / cart / newsletter / app.
+    skip_title_words: ["מופע סגור", "מנוי"]
     api_url: https://public-api.eventim.com/websearch/search/api/exploration/v1/products
     api_web_id: web__eventim-co-il
     sitemap_path: /staticsite/sitemap/EIL/events1_he.xml.gz
@@ -3510,19 +3548,28 @@ sources:
 
   makore:
     # Makore ("מה קורה"): an events guide for all of Israel (workshops, tours, kids' activities too),
-    # so only these category pages are read. Each page's JSON-LD ItemList gives ~28 events with venue,
-    # coordinates, price and box office link; page N is ?pages=N. robots.txt allows all but /admin.
+    # so its category pages are read. Each page's JSON-LD ItemList gives 24 events with venue,
+    # coordinates, price and box office link; page N is ?pages=N, every page to the stated total (no cap).
+    # robots.txt allows all but /admin.
+    # sections: all 13 categories of the menu, /site-map and the API's category enum (nightlife 252, live
+    # shows 3038, theatre 3825, stand-up 1170, dance 275, cinema 1314, kids 5409, talks 1942, workshops
+    # 1827, tours 3653, culinary 1365, exhibitions 1081, sport 980, 23.11.2026), each to its last page,
+    # and every series page's dates; not read: /browse/time|city|district|venue/* (filters of the same
+    # categories), /hanukkah and /weekly (picks / a newsletter of the same events), /performers and
+    # /venues (directories), api.makore.co.il/v1/events (the same catalogue; API terms bar commercial use).
     enabled: true
     # Direct, no proxy: from Railway a page answers in ~0.1 s; through the proxy runs slowed to ~14k
     # events in 3 h (20k in 41 min before). 120 pages 4 at once, all 200 (2026-11-11).
     proxied: false
     cron: "41 9,21 * * *"
     site_url: https://www.makore.co.il
-    # Every category but sport (Nov 2026: 2 of 13 read, ~16k events left out).
+    # Every category. Sport (open trainings, races, hikes; ~1 in 5 not in another category, 23.11.2026)
+    # gets our "ספורט" word in the scraper: no genre keyword matches "פעילות-ספורטיבית".
     categories: ["/browse/category/חיי-לילה", "/browse/category/הופעות-חיות", "/browse/category/תיאטרון",
                  "/browse/category/סטנדאפ", "/browse/category/מחול", "/browse/category/קולנוע",
                  "/browse/category/ילדים-ומשפחה", "/browse/category/אירועי-תוכן", "/browse/category/סדנה",
-                 "/browse/category/סיור-מודרך", "/browse/category/קולינריה", "/browse/category/תערוכה"]
+                 "/browse/category/סיור-מודרך", "/browse/category/קולינריה", "/browse/category/תערוכה",
+                 "/browse/category/פעילות-ספורטיבית"]
     http:
       concurrency: 4
 
@@ -3546,6 +3593,10 @@ sources:
     # 80sMusic (80smusic.co.il): guide to 80s / 90s / new wave / dark 80s parties in Tel Aviv. One request:
     # the parties page's JSON-LD MusicEvents (genres, DJs, poster, IWANT ticket link); IWANT short links
     # are read once each for their canonical event URL, so the listings merge. robots.txt allows it.
+    # sections: read /pages/parties (the site's whole upcoming board: 5 parties = 5 in prod, 23.11.2026);
+    # not read: 80s/90s/2000s/electronic-parties, decades-party, events-tel-aviv-2026 (subsets of the same
+    # board), lectures (one past lecture), shows / shows-israel (link hubs, no dates), events-archive,
+    # party-archive, events/* (past), clubs, artists, albums, tracks, today, genres, en (articles, no events).
     enabled: true
     cron: "15 10,22 * * *"
     site_url: https://80smusic.co.il
@@ -3643,6 +3694,10 @@ sources:
     # and its 16 type pages are views of that catalogue (London's 139 = 132 stored + 2 next-year pages, read
     # since past_days 1, + 5 created after the day's sitemap build). Not read: /bundles (5,737 passes whose
     # events have their own pages, stored), the artists sitemap (profiles), /blog, /help, /about (no events).
+    # Prod on 23 Nov 2026 (Israel time): 17,857 of the sitemaps' 18,118 current pages stored; of the 241
+    # never stored, 230 are Sep-Nov 2027 pages that the old past_days 60 dropped (the first run on 8c825b6
+    # reads them as new), 8 are today's (over) and the rest are courses / memberships (skip_title_words).
+    # No cap cuts coverage: new pages come first and a run plans ~3,100 of its 5000.
     enabled: true
     cron: "14 5,17 * * *"
     unlist_missing: false
@@ -3695,7 +3750,7 @@ sources:
     # /search.php /pages/ /preview/ /profile (none read).
     # sections: /events?when=upcoming (all 3 pages, 97 = the site's "97 אירועים", 23.11.2026; when=all /
     # status=* give the same 97, when=month 36 / weekend 16 and every genre=1..6 and country=* filter are
-    # subsets of it), sitemap-main (345 pages: events, club nights, artists, clubs, cities, regions, genres,
+    # subsets of it), sitemap-main (348 pages: events, club nights, artists, clubs, cities, regions, genres,
     # holidays, /worldwide, magazine) + their JSON-LD event links (10 more nights / dates in prod), /clubs
     # (16, every night their pages link is in sitemap-main), /artists; not read: sitemap-archive (564,
     # ended: 0 of 30 sampled incl. the 20 newest), /weekend /nearby (views of the same events), /about
@@ -3877,14 +3932,21 @@ sources:
     # Their search often times out (empty page): retried. Direct, not through the paid proxy (~0.7 MB a
     # discovery page). A run reads part of the catalogue: unlist_missing off. Measured (slot 0, Nov 2026):
     # ~400 discovery + ~2,900 event pages, ~2,900 events, ~63 min. A city's search covers ~100 km (Kiel's
-    # lists Hamburg).
+    # lists Hamburg). Every listing to its last page; one past Eventbrite's 49 pages (980) by date windows
+    # (New York music 3,420, London parties 4,237); every date of a series / same-name group, abroad up to
+    # the city's next read. Slot 8 (New York, Toronto, Leeds...): ~7,600 listed before, ~39,000 now (Nov 2026).
+    # sections: Israel (/d/israel + 6 city searches, all-events, every page; 7 more city searches probed
+    # 24.11.2026 list the same 75-98); abroad, per city: all-events (small cities, kept by category) or the
+    # music, arts, film-and-media, food-and-drink, holiday, parties, festivals and performances (Format 6:
+    # concerts and shows of any category, 2,283 in New York) listings; not read: business, science-tech,
+    # health, sports, travel, charity, government, religion, family, home, auto, hobbies, school categories
+    # abroad (not SPOTX's abroad scope), online events, classes/courses (skip_title_words).
     enabled: true
     proxied: false
     unlist_missing: false
     cron: "43 9,21 * * *"
     rotation_hours: 12          # = the cron's interval
     cycle_runs: 28
-    max_pages: 10               # per category listing of a big city: its 200 most relevant events
     skip_title_words: ["course", "masterclass", "webinar", "gift card", "gift voucher", "certification", "bootcamp"]
     cities: [dc--washington, france--paris, germany--berlin, tx--houston, ca--los-angeles, nv--las-vegas,
              ga--atlanta, spain--madrid, ny--new-york, united-kingdom--london, germany--tübingen, germany--hamburg,
@@ -3916,8 +3978,8 @@ sources:
              germany--flensburg, brazil--são-paulo, germany--gera, france--avignon, mo--st-louis,
              united-kingdom--leeds, germany--rastatt]
     http:
-      concurrency: 2
-      request_delay_seconds: 1.0
+      concurrency: 4                # 48 event pages 6 at once, no delay: all 200 (24.11.2026)
+      request_delay_seconds: 0.5
 
   showshappening:
     # ShowsHappening (showshappening.com): ticketing in Malta, the UK, Germany and Spain. Each
@@ -3997,10 +4059,14 @@ sources:
 
   meetup:
     # Meetup: community meetups (tech talks, developer groups, startups, language exchange, board games).
-    # GraphQL, no login: in-person events near Tel Aviv within 150 km, venues in Israel only, asked in 30-day
-    # windows (the search alone stops ~30 days ahead) over 120 days, then near Haifa, Beersheba and Jerusalem
-    # (the wide search ranks Tel Aviv first): ~20 requests, ~63 events (Nov 2026; one query gave 55).
-    # robots.txt only blocks feeds.
+    # GraphQL, no login, venues in Israel only: every topic category's groups near Tel Aviv (150 km) with their
+    # upcoming events, the in-person event search (every date of a series) in 30-day windows near Tel Aviv,
+    # Haifa, Beersheba and Jerusalem, then each group's whole upcoming list when it runs past one page or
+    # the group came only from the search: ~70 requests, ~250 events (Nov 2026; the event search alone: 60).
+    # sections: all 20 topic categories (read live from topicCategories), event search, group lists;
+    # not read: online events (not in-person), the search past ~45 days (it returns none; the group lists
+    # carry the later dates), Technology groups past the 200 the group search returns (their events come
+    # in once within the event search's ~45 days). robots.txt only blocks feeds.
     enabled: true
     cron: "41 7,19 * * *"
     graphql_url: https://www.meetup.com/gql2
@@ -4019,6 +4085,13 @@ sources:
     # iCal feed (the whole archive, ~2.5 MB), then each upcoming event's page (venue, cost, registration link):
     # ~100 requests. Online events (Zoom / Virtual) are not imported. Many are reposts of ESRA, AACI, JTLV and
     # Eventbrite / Tickchak listings: dedup merges them through the registration link.
+    # sections: The Israel Calendar (MEC: every category and area, iCal holds every published event; the 200
+    # newest wp-json mec-events all match it), repeating events (a rule with an end or a date list: every
+    # occurrence; an open rule: recurrence_days, at least the next one); not read: All Events (/all-events/,
+    # the "event" type: its Israel cards are reposts of calendar entries, the rest are Zoom webinars, abroad
+    # NBN On Tour and Aliyah fairs with no date / place), Pre Aliyah Events (Zoom), NBN On Tour (USA), Aliyah
+    # Planning Meetings (virtual, by appointment), Previously Recorded Webinars (videos), Translation Station /
+    # Employment Guidance (weekly one-on-one help desks).
     enabled: true
     cron: "14 7,19 * * *"
     site_url: https://www.nbn.org.il
@@ -4063,6 +4136,9 @@ sources:
       Lower Galilee: []
       "Ashdod/Ashkelon": []
       "Operation Iron Swords / Rising Lion": []
+      Elementary School: []
+      "It's Shayech": []
+      Translation Station: []
       Employment: [lectures]
       Finances: [lectures]
       Education in Israel: [lectures]
@@ -4143,8 +4219,15 @@ sources:
     # Niko Nitai Theatre, Jaffa: its Smarticket tenant answers /api/shows and the calendar empty, so the
     # performances are the ?id= links on its home page (~35, upcoming only), each read from its
     # /event/<id> page's Event JSON-LD. Tenant hosts have no robots.txt.
+    # sections: home page ?id= links (36 = 34 upcoming performances, all in prod, + old 307/312 that 404;
+    # 24.11.2026), which hold every ?id= of the menu pages (פסטיבל_2026, פסטיבל_האזרח_כאן, סדנאות,
+    # פעילות_חברתית, gallery / exhibition pages, /en, /ru) and of sitemap.xml; ids 595-604, 624, 630-640
+    # 404; not read: /calendar and /api/shows (empty), /api/calendar /api/events (403), coupon / club
+    # pages, about, hall rental, donations (no events).
     enabled: true
     cron: "39 6,18 * * *"
+    # Its סדנאות / פעילות_חברתית menu pages may list courses or closed group nights; none of the 34 today.
+    skip_title_words: ["קורס", "חוג ", "חוגי ", "אירוע סגור", "אירוע פרטי"]
     tenant_url: https://nikonitai.smarticket.co.il
     venue_name: תיאטרון ניקו ניתאי
     address: תל גיבורים 5, תל אביב-יפו
@@ -4448,12 +4531,17 @@ sources:
     # 05:00 = previous day). No synopsis. Prices: the BiggerPicture shop of the booking links (one
     # login per branch, one request per event and kind). The feed has no addresses: branches are
     # listed here by TheaterId. robots.txt allows everything.
+    # sections: /api/Events (every movie on sale, every screening, all 6 branches, no day window:
+    # pre-sales and special screenings months ahead, e.g. the Classic club 12.2.27); it covers the
+    # home page's now-showing list, /movies and the series pages /page/2226-2259 (special screenings,
+    # Classic club, MovieNights, 60+, Retro, festivals: their booking codes are all in the feed);
+    # not read: the home page's coming-soon movies (no screenings yet), VOD rentals (online),
+    # /page/2250 (past, 7.2025), /birthday (private parties), info pages (prices, terms, contact).
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
     vpn: true  # our Israeli VPN only (Railway production)
     cron: "2 8,20 * * *"
     site_url: https://movieland.co.il
-    days_ahead: 30  # the feed carries ~5 days of screenings plus pre-sales weeks ahead; 3 cut both
     branches:
       "1291": {venue_name: מובילנד חיפה, address: "משה פלימן 4, קניון עזריאלי", city: חיפה}
       "1293": {venue_name: מובילנד הצוק, address: "יוניצמן 21", city: תל אביב}
@@ -4496,8 +4584,16 @@ sources:
 
   livevents:
     # Live Events: packages (flight + hotel + ticket) and tickets to shows in Europe. Its shows
-    # calendar loads one table per month from admin-ajax.php (24 POSTs): artist, Hebrew city,
-    # dates, and a link and "from" price when an offer exists. robots.txt is absent.
+    # calendar loads one table per month from admin-ajax.php (one POST per month the /events/ page
+    # lists, 24 in Nov 2026): artist, Hebrew city, dates, and a link and "from" price when an offer
+    # exists. robots.txt allows all but /wp-admin/ (admin-ajax.php allowed).
+    # sections: /events/ (every month it lists; the "count" param caps nothing: 117 rows either way,
+    # months past the 24th are empty; covers every /tour/ page: 693 upcoming rows, all in it, and the
+    # /packages/ cards: 106 dates, all in it); the sport tables (scraper `tables`): /matches/ (176
+    # match dates, Nov 2026; every /league/ and /team/ page and /game/ page a subset of it) and
+    # /formula1/ (9 race weekends x 3 days); /artists/ (pictures). not read: /festivals/ and
+    # /tennis/ (empty, Nov 2026), /cities/ /place/ /show/ /package/ (the same shows by city / offer),
+    # /blog/ /hotel/ /hall/ /about/ /faq/ /contact/ /terms/ /uk-eta/ (no events).
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
     vpn: true  # our Israeli VPN only (Railway production)
@@ -4555,9 +4651,16 @@ sources:
   megaevents:
     # Mega Events: packages (flight + hotel + ticket) and tickets to concerts abroad (Next.js). The
     # home page's page data lists every event (~400, most of them football, which is skipped):
-    # date, "city, country" in Hebrew, ticket prices and markups. robots.txt allows all; one request.
+    # date, "city, country" in Hebrew, ticket prices and markups. robots.txt allows all (1 s crawl
+    # delay); one request, plus one per music genre page to tag its events (~6 a run).
+    # sections: home page (all 447 events = every /order/ id in sitemap.xml; 229 not football, 2026-11-23),
+    # /c/music/genres/<slug> (pop, rock, classical, classic-rock, country: genre tags only, no new ids);
+    # not read: /c/music, /c/music/artists/*, /c/destinations/* (subsets of the home page, no new ids),
+    # /c/football/* (football, skipped), /club, /blog, /about, /faq, legal pages (no events).
     enabled: true
     cron: "43 5,17 * * *"
+    http:
+      request_delay_seconds: 1
     site_url: https://www.mega-events.co.il
     event_page_path: /order/{event_id}
     # package_fee: 175  # USD the site adds to every package; a price-mismatch warning means it changed
@@ -4596,6 +4699,9 @@ sources:
     # FeelBeit (feelbeit.com), a Jerusalem arts space at the Planet complex, and its yearly LAYERS festival (שכבות):
     # free concerts and DJ sets. The year's festival site lists every show in one wp-json call (layers_event,
     # Hebrew / English / Arabic posts; the Hebrew ones kept): start, title, text, artwork. One venue, pinned here.
+    # sections: layers2026 wp-json layers_event, every page (36 posts = 12 shows x he/en/ar = the he sitemap's 12;
+    # prod 12 upcoming, 23.11.2026); not read: its pages (home, about: no events), layers_tag (6 tags, 0 posts), the
+    # main site feelbeit.com (redirects to /underconstruction/; its wp-json pages and blog last edited Jan 2026, past).
     enabled: true
     cron: "22 6,18 * * *"
     site_url: https://feelbeit.com/layers2026
@@ -4720,7 +4826,17 @@ sources:
     # LiveTickets: tickets to concerts, sports and festivals abroad (ASP.NET, no API or sitemap).
     # The home and category pages link ~590 performer, city and venue pages; each lists its events
     # 15 a page (followed by the "next page" link) with local date and time, venue, Hebrew city and
-    # country, and a "from" price. ~700 GETs, no detail requests. robots.txt disallows /search/ only.
+    # country, and a "from" price. ~730 GETs, no detail requests. robots.txt disallows /search/ only.
+    # sections: home (menu: holidays Hanuka / Purim / Passover, 14 cities, leagues; footer performers),
+    # Category1 (the search's 4 kinds: 1 SPORTS, 2 CONCERTS, 3 THEATRE, 4 OTHER), Category2 SOCCER /
+    # TENNIS / basketball / FAIRS/FESTIVALS, Category3 leagues, DT_performers/Festivals, every
+    # performer / DT_performer / city / venue page they link, every page to the last, from today to
+    # horizon_years ahead (a listing's own window ends ~18 months ahead: Euro 2028, LA 2028 hidden).
+    # Nov 2026 the theatre pages (21 musicals, Cirque du Soleil) list no dates yet (0 rows).
+    # not read: Category1/SPORTS (~400 more sport pages: matches, races and Olympics, skipped like the
+    # soccer / basketball / tennis ones), /search/ (robots.txt), /page/ (articles), /members/,
+    # ticketnetonline.com (another site, USA).
+    categories: [Category1/THEATRE.aspx, Category1/OTHER.aspx, Category2/FAIRS/FESTIVALS.aspx]
     enabled: true
     cron: "37 5,17 * * *"
     site_url: https://www.livetickets.co.il
@@ -4755,6 +4871,11 @@ sources:
     # their days ("from - to", no times); paging stops at the first page without a date (~4 pages).
     # Each festival page adds the full description, image and the festival's own site (purchase_url).
     # Abroad festivals (most of the site) are not collected. robots.txt allows all but /wp-admin/.
+    # sections: the search with every category (search_category=-1, all 40 menu categories) and every
+    # Israeli city, from today, paged to the end (no page cap; 22 dated festivals on 3 pages = the 22
+    # dated upcoming ones on /country/ישראל/, Nov 2026). not read: /category/* and /city/* pages (the
+    # same posts, already in the search); undated entries ("שנתי באוגוסט", "לא נמצא מידע": no date);
+    # the other countries / US states (abroad); about / contact / blog pages (no events).
     enabled: true
     cron: "26 4,16 * * *"
     site_url: https://www.festivalim.co.il
@@ -4788,13 +4909,18 @@ sources:
     # Events linking off the site (Smarticket, Tickchak) are skipped. `regional: true`: the event's city
     # is the locality its place names, else the council. `category`: for events filed under none
     # (default קהילה). Mostly no robots.txt. golan.org.il: links to mkgolan; hod-hasharon: Milgam shop.
+    # sections: read: /events/json/ (every category, ±feed_days), /events/ (category=0: all categories;
+    # month views followed by "חודש הבא" up to feed_days, Nov 2026: +10 givat-shmuel, +3 tamra, +1 eshkol,
+    # +1 sng), each /events/<id>/; not read: ?category= / ?audience= / ?domain= / daterange= filters (subsets
+    # of the same listing), /events/calendar/ (same feed), weekly repeats of a class (kept once: classes),
+    # menu content pages (articles, culture-department info), no sitemap (404).
     enabled: true
     # Not israel_proxy: some municipal sites refuse the evomi IPs, but the free Israeli proxies are
     # mostly dead - the run spent its hour on them and saved 0 (102 on evomi), Oct 2026.
     # Nov 2026: ~25 sites (rehovot, kfar-saba, herzliya, eilat, bat-yam...) answer evomi with 403 and our
     # VPN with 200. rosh-haayin, nahariya: no answer from any datacenter IP, VPN included (home IPs only).
     vpn: true  # our Israeli VPN only (Railway production)
-    skip_title_words: ["קורס", "חוג ", "חוגי", "סדנאות שבועיות", "מחזור ", "תנועה עם", "זחילה", "משחק מודרך"]
+    skip_title_words: ["קורס", "חוג ", "חוגי", "סדנאות שבועיות", "מחזור ", "תנועה עם", "זחילה", "משחק מודרך", "הכשרת חובת"]  # a staff training
     http:
       concurrency: 3   # 8 at once drew 429s from rehovot.muni.il (Cloudflare), 4 event pages lost a run (Nov 2026)
       request_delay_seconds: 0.3
@@ -5090,7 +5216,18 @@ sources:
     site_url: https://www.ogo.co.il
     sitemap_path: /sitemap.xml
     locale: he
+    # sections: the sitemap index (sitemap/0..5.xml, ~19k event pages: every event the menu, the
+    # category pages (concerts, theater, standup, cinema, exhibitions, lectures, kids, classes, tours,
+    # food, matches, free, deals, festivals, holidays, outdoor), today / weekend / month / calendar
+    # and the city pages list: their cards were all in the sitemap but one added that day, Nov 2026),
+    # each date its own page; not read: /anyday and /experience (bookable any-day experiences and
+    # timed slots, no event date), /online (online only), performer / organizer / places / video /
+    # digest pages (no events of their own).
+    # days_ahead = retention.max_future_days: beyond it the sitemap has 3 pages, broken dates (a
+    # donation drive in 2030, a 2038-01-19 03:14:07 epoch-max placeholder). Every page dated back is
+    # read (to 2021): recurring_days_back 120 left 46 unread, 1 of them current (Nov 2026).
     days_ahead: 730
+    recurring_days_back: 2500
     max_events: 30000
     http:
       concurrency: 4
@@ -5118,6 +5255,12 @@ sources:
 
   ogo_de:
     # OGO Germany (de.ogo.events): as ogo_us, for Germany.
+    # sections: sitemap index (0.xml pages, 1.xml every event page: 209 dated URLs, each date of a repeated
+    # show its own URL), all dates to days_ahead 730 (furthest 2027, none past it), no cap hit: scanner 209 =
+    # sitemap 209, prod 197 upcoming (24.11.2026). The menu (today, weekend, month, concerts, theater, standup,
+    # cinema, exhibitions, lectures, conferences, kids, classes, tours, food, free, holidays), the 13 city
+    # pages and their sub-pages, performer / organizer pages hold only sitemap events (0 extra). Not read:
+    # online (3 webinars, VirtualLocation: online only, dropped by parse_event), video (a clip, no events).
     enabled: true
     proxied: false
     vpn: false  # our VPN exits in Israel
@@ -5140,6 +5283,12 @@ sources:
     # date window gives full rows (date + time, coordinates, venue, price, artwork, ticket link, category and
     # styles). At most 200 pins a call, so 30-day windows from today (halved when full): ~25 requests a run.
     # robots.txt on www disallows /api/; read anyway by the owner's choice (Nov 2026).
+    # sections: map-pins type liveMusic, every category (category "" = all 8 ids of the site's bundle: openmic,
+    # intimatespace, musicclub, party, inahous, streetjam, festival, hugeconcert; upcoming 23.11.2026 only the first
+    # three hold shows), all of Israel (location null), today to 730 days (the last show is ~9 months out, 0 past
+    # 720 days), windows split under the 200-pin cap: scanner 277 = API 277, prod 272. A weekly pin (isRepeat, ~10)
+    # carries only its next date; each run rolls it on. Not read: types service / band / musician (profiles, no
+    # dates), /packages (price list), user-panel; the sitemap holds only these pins and pages.
     enabled: true
     cron: "13 9,21 * * *"
     http:
@@ -5200,13 +5349,18 @@ sources:
     # page gives a MusicEvent JSON-LD (date, venue, city, performer), time and price from its details table,
     # and the seller's link (Eventim, To-Mix, Comy...) kept as extra.purchase_url. Muzi sells nothing.
     # robots.txt allows all but /wp-admin/ and /tag/.
+    # sections: read: event-sitemap.xml + event-sitemap2.xml (1,384 pages = 1,378 upcoming in prod, Nov 2026),
+    # which hold every event of the menu's listings: home, events-by-date, events-by-genre/* (15), events-by-city/*,
+    # events-by-region/* (incl. international: abroad tours), events-by-hall/*, events-cost/*, event-type/*,
+    # hanuka / purim / silvester / u2-europe-tour-2027 (all their /event/ links are in the sitemaps); no cap.
+    # not read: event-type/online + events-by-region/live-online (promo / deal posts and online courses,
+    # skip_classes), blog / post / page / artist / author sitemaps (no events), category-sitemap (empty).
     enabled: true
     cron: "29 5,17 * * *"
     site_url: https://muzi.co.il
     sitemap_path: /sitemap_index.xml
     event_sitemap_prefix: /event-sitemap
     event_path: /event/
-    max_events: 3000
     http:
       concurrency: 4
       request_delay_seconds: 0.5
@@ -5215,12 +5369,18 @@ sources:
     # Matnasnet (מתנסנט / atarix) community-centre and council sites: page.php?type=events links,
     # each event page's JSON-LD + theme fields (time, place, tags, seller link). Events sold by a
     # Smarticket box office the smarticket source reads are skipped. robots: only /manager/ disallowed.
+    # sections: read: each site's type=events listing (upcoming part; Arad's ?page=N is client-side,
+    # page 2 = page 1), every event group's type=events&gr=N page (all its dates), Elkana's month
+    # pages (calendar theme, 12 months ahead). not read: the archive (past), calendario (the same ids
+    # as the listing), month=N filters (subsets), hug / hugSearch / mat / shluha / requireds (courses,
+    # council pages, jobs - no events), "אין תאריך" punch cards (no date), events a covered Smarticket
+    # box office sells (smarticket reads them: m-sdotnegev, matnasky shows). Audited 24.11.2026.
     enabled: true
     israel_proxy: true  # gan yavne, binyamina, akko answer 403 to non-Israeli IPs (Nov 2026)
     vpn: true  # our Israeli VPN only (Railway production)
     cron: "41 5,17 * * *"
     sites:
-      - {url: https://www.elkana.org.il, city: אלקנה, months: 2}
+      - {url: https://www.elkana.org.il, city: אלקנה, months: 12}
       - {url: https://www.givatzeev.org.il, city: גבעת זאב}
       - {url: https://www.yeruham.org.il, city: ירוחם}
       - {url: https://www.atlit.org.il, city: עתלית}
@@ -5262,8 +5422,15 @@ sources:
 
   milgammuni:
     # Metropolinet's city multisite (WordPress + Elementor; REST API 401, no feed): the events grid page
-    # (one request, every events post newest first, no dates), then event pages in that order until 3
-    # past ones in a row (~5 requests a run): date and time, place, description, registration link.
+    # (one request, every events post newest first, no dates), then every event's page (~72 requests a
+    # run; the grid's order only roughly follows the dates, so no early stop): date and time, place,
+    # description, registration link.
+    # sections: the events grid /אירועים/ (72 cards = the sitemap's 72 events posts, one date each; 1
+    # upcoming = 1 in prod, Nov 2026); not read: the topic and age_group archives (/topic/..,
+    # /age_group/..: loose tags over the same posts, a stand-up under music, lectures under tours),
+    # news posts and categories (news), the menu's department / community-centre / museum / library /
+    # conservatory / youth-centre / חוגים pages (static info, no events; matnas-bs.org.il is another site),
+    # tenders and the footer (no events).
     enabled: true
     vpn: true  # bet-shean.org.il: no answer to production directly or via the proxies, 200 via our VPN (Nov 2026)
     cron: "32 6,18 * * *"
@@ -5297,6 +5464,11 @@ sources:
     # city and address from each hall page's EventVenue JSON-LD (hall sitemap, ~180 GETs).
     # The admin-ajax "load more" listing answers 403 to server and proxy IPs (Oct 2026), so not used.
     # robots.txt allows all. Replaces the tickets.friends-hist.co.il tenant under `smarticket`.
+    # sections: read = the whole /api/shows feed, which every menu section sells through (23.11.2026: 470 shows,
+    # 1619 performances to 15.12.2027 = the 8 show_cat categories: הופעות נוספות 160, תיאטרון 81, הצגות ילדים 70,
+    # הופעות 58, סטנדאפ 43, סינמה 32, מדברים - הרצאות/מפגשים 14, הצגות ילדים לחנוכה 12; show-sitemap.xml 470 shows),
+    # every performance, no page cap or date window; hall-sitemap.xml every hall page. not read: blog / article pages,
+    # gift card, WhatsApp groups, about / FAQ / terms (no events); city_cat / location_cat (filters of the same shows).
     enabled: true
     cron: "34 7,19 * * *"
     site_url: https://friends-hist.co.il
@@ -5452,6 +5624,13 @@ sources:
     # site with Wix Events: the event-pages sitemap (~370, mostly past) gives the pages; only those updated within
     # recent_days are read (~40 pages of ~1.3 MB), each its schema.org Event (start, end, address, image).
     # The course's own sessions and volunteering days are not events. No categories: lectures by default.
+    # sections (24.11): the event-pages sitemap (pages updated within recent_days + every occurrence whose slug's date
+    # is ahead: Nei Kung's monthly evening 14.12 was cut, its series kept a Dec 2025 lastmod) and the events page
+    # /אירועים (Wix Events widget, all coming events, hasMore false: 10 = 10 read, 6 kept: the course's 3 sessions and its Haifa opening skipped);
+    # the branch pages (תל-אביב, חיפה, ראשון-לציון, כרמיאל, מנחמיה, פרדס-חנה-כרכור) and living-philosophy show the
+    # same widget, filtered; not read: מעגל-ידידים (the friends circle's members' meetings, an annual membership; not on
+    # the public events page), philosophy-day (2025's, past), מסעות, הרמס, חוות-נופר, מכונים, התנדבות, intro-course
+    # (texts and forms, no dated events), the store (books), blog / podcast / groups / member pages (no events)
     enabled: true
     cron: "8 6,18 * * *"
     site_url: https://www.newacropolis.org.il
@@ -5762,6 +5941,11 @@ sources:
     # meeting point, the seller): one event per session. Lumagica sells on Kupat Tel Aviv (`kupat`; dedup merges).
     # No coordinates on the site: the meeting point -> `places`, else the park's pin (`parks`). robots.txt allows all.
     # Access (23.11, from Railway): its own IP and the VPN get Cloudflare's challenge (403), the source proxy 200.
+    # sections: the listing (אירועים: 26 cards = the site's 26, all its type and park filters, no paging), every
+    # "אירועי שיא" bundle (6, from /events_bundle/; 24.11 one extra card, unpublished: its page 404s), each dated
+    # event's page (every date and time); not read: the park pages and event_type archives (the listing's own
+    # cards, 0 extra, checked 24.11), the events sitemap (past posts only beyond the listing), /en/events (0 cards),
+    # activites (permanent attractions), the shop (tenders), blog / news / albums / tenders (no events).
     enabled: true
     cron: "52 9,21 * * *"
     site_url: https://park.co.il
@@ -5946,7 +6130,7 @@ sources:
     # each dated card's event page adds its JSON-LD Event (street address, tickets) and its booking calendar: every
     # coming date is one event (a calendar of more than one slot a day is time slots: its next date only). Cards
     # booked by appointment, private workshops and the customer's home are left out. ~1,700 requests a run.
-    # sections: music (/show/), lecture, show (/הופעות-סטנדאפ/), theater (/הצגות/), kids, workshop, food (/סדנת-בישול/), body-mind (/גוף-ונפש/), tour, group (/מפגשים-חברתיים/) = 3,550 cards, the site's whole list (cat "" = 3,550, Nov 2026); not read: /all-workshops/ and the region / city / sub-type pages (filters of these), /product/gift-card/ (a voucher), /בלוג/ (articles)
+    # sections: music (/show/), lecture, show (/הופעות-סטנדאפ/), theater (/הצגות/), kids, workshop, food (/סדנת-בישול/), body-mind (/גוף-ונפש/), tour, group (/מפגשים-חברתיים/) = 3,548 cards, the site's whole list ("3548 Results Found" for cat "", 23 Nov 2026); not read: /all-workshops/ and the region / city / sub-type pages (filters of these), the event_cat tags join-group / kosher / vision-board (every card already in the categories above, 0 more) and hide-dates / private / groups / at-home (by appointment, private, groups only, the customer's home), /product/gift-card/ (a voucher), /בלוג/ (articles)
     # Overlap: many of its shows are also sold by goshow / eventer / tickchak (pubs, Ozen bar): dedup merges them.
     enabled: true
     cron: "37 3,15 * * *"
@@ -6035,10 +6219,16 @@ sources:
       request_delay_seconds: 0.5
 
   fever:
-    # Fever (feverup.com) in Israel: Candlelight concerts at the Tel Aviv Museum of Art, the Eretz Israel
-    # Museum, the Jerusalem Theatre and the Rappaport Center. 3 city pages + ~60 plan pages; only plans
-    # with a dated Event JSON-LD (place coordinates, ILS offers) are events, one per session of the
-    # plan's ticket selector (~55).
+    # Fever (feverup.com) in Israel: Candlelight concerts (Tel Aviv, Jerusalem, Haifa, Netanya, Ashdod) and the
+    # party nights Fever sells itself (MITZI). 6 city pages + their ~45 visible categories + ~85 plan pages;
+    # one event per session of a plan's ticket selector (~95).
+    # sections: the 6 Israeli city pages (tel-aviv, jerusalem, haifa, beer-sheva, netanya, ashdod; every -israel city
+    # they link is followed) and every visible category of each city's own taxonomy (36 pages, e.g. nightlife-clubs,
+    # night-clubs, city-tours, music-events; a category page lists plans its city page leaves out, total_plans <= the
+    # plans listed); plans with an Event JSON-LD and the Product ones Fever sells itself with dated sessions.
+    # not read: no sitemap (404/403), search-list = the city page; hidden / redirected categories (no page);
+    # "mix" plans (resold tours, rentals, tastings, Lucid Dreams' 30-min timed entry), gift cards, waitlists
+    # (no sessions) and month-long open tickets (outdoor games): no events.
     enabled: true
     cron: "13 7,19 * * *"
     site_url: https://feverup.com
@@ -6515,6 +6705,7 @@ sources:
   meety:
     # Meety (meety.co.il): social meetups all over Israel - salsa / bachata, folk dancing, running groups,
     # karaoke. /events lists the coming week; each /events?i=<category> listing tags its events' genres.
+    # sections: /events (the site's whole window: 7 days from now, no paging; 23.11.2026: 134) + all 20 "תחום עניין" /events?i= listings (genres; every card tagged, 0 beyond /events); not read: the event_date filter (the server ignores dates past the 7th day; earlier today = started), area / city filters (8 areas, 0 new), /groups/* (96 group pages, sampled 16: 0 new), /categories/* and /b/* (business directory, no events), /reviews, is_online (online-only), the next dates of weekly meetups (the site shows only the next one; the rolling window brings each).
     enabled: true
     cron: "47 6,18 * * *"
     site_url: https://meety.co.il
@@ -6524,6 +6715,7 @@ sources:
   funzing:
     # Funzing (il.funzing.com): workshops, tours, lectures, culinary evenings, shows and family days all
     # over Israel, from the JSON API its own pages read (api-il.funzing.com/api/v2).
+    # sections: the whole dated search (funz/search.json, no all=true, to total_pages: 32 pages, 316 experiences on 23.11.2026; all=true was cut at its first dateless page and missed e.g. the Florentin graffiti tour, 21 dated experiences absent in prod) = every category box (lectures, food-and-drink, tours, independent-tours, workshops, family-and-kids, wellness, outdoors, night-out, new-experiences, funzing-boutique: the API ignores a category filter, all are in this one listing), every date of each (funz/<id>/events, no day cap: was 120 days, ~2,700 dates up to May 2027 dropped); not read: online experiences (10, skipped), the ~410 dateless pages of all=true, the sitemap (the same funz pages), gift cards / blog (no events).
     enabled: true
     cron: "19 7,19 * * *"
     http:

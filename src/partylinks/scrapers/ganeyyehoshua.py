@@ -5,7 +5,9 @@ Yehoshua (the Yarkon), Park Menachem Begin, Ganei HaTeva, Rosh Tzipor, the Farm,
 The site is WordPress (its own theme; the events post type is not in wp-json). One request lists every
 current event (``listing_path``, "אירועים"): each ``div.grid-item`` card carries the post id, its event type
 and park as classes (``animals location-136``, named by the page's two filter menus), the title, the
-subtitle, the artwork and the first dates. Each event's page (~25) adds every date and time (the dates field,
+subtitle, the artwork and the first dates. The "אירועי שיא" menu (``bundles_path``) groups events into
+bundles (Senior November, the Amphi season): each bundle's page carries the same cards, and a card the
+listing lacks is read too (24.11: only an unpublished one, whose page is a 404, logged as gone). Each event's page (~25) adds every date and time (the dates field,
 "05.12.26 09:00, 11:00"; sold-out times in the ticket form's ``data-tickets``), the prices ("מחיר לכרטיס",
 the residents' "דיגיתל"), whether it is free, the text, where it meets ("היכן?") and, for events sold
 elsewhere (Lumagica on Kupat Tel Aviv), the seller's link. One event per date and time.
@@ -61,6 +63,7 @@ class GaneyYehoshuaPin(BaseModel):
 class GaneyYehoshuaSettings(SourceSettings):
     site_url: str = "https://park.co.il"
     listing_path: str = "/%d7%90%d7%99%d7%a8%d7%95%d7%a2%d7%99%d7%9d/"  # /אירועים/
+    bundles_path: str = "/events_bundle/"  # "אירועי שיא": its index links every bundle page
     city: str = "תל אביב-יפו"
     organizer: str = "גני יהושע"
     # Meeting points, first match wins; then the park the card names (``parks``, by its name).
@@ -96,6 +99,12 @@ class GaneyYehoshuaScraper(BaseScraper[GaneyYehoshuaSettings]):
         s = self.settings
         page = await self.get_text(s.site_url + s.listing_path)
         cards, types = parse_listing(page, s.site_url, self.timezone)
+        seen = {c.post_id for c in cards}
+        index = await self.get_text(s.site_url + s.bundles_path)
+        for url in bundle_links(index, s.site_url, s.bundles_path):
+            bundle, _ = parse_listing(await self.get_text(url), s.site_url, self.timezone, types)
+            cards += [c for c in bundle if c.post_id not in seen]
+            seen |= {c.post_id for c in bundle}
         self.log.debug("listed %d cards", len(cards))
         now = datetime.now(zone(self.timezone))
         # Nearest first: cards by their first date; an undated card is no event.
@@ -112,10 +121,13 @@ class GaneyYehoshuaScraper(BaseScraper[GaneyYehoshuaSettings]):
                 yield event
 
 
-def parse_listing(page_html: str, site_url: str, timezone: str) -> tuple[list[ParkCard], dict[str, str]]:
-    """The listing's cards, and the event-type filter's names (class -> "טבע וקיימות")."""
+def parse_listing(
+    page_html: str, site_url: str, timezone: str, known_types: dict[str, str] | None = None
+) -> tuple[list[ParkCard], dict[str, str]]:
+    """The listing's cards, and the event-type filter's names (class -> "טבע וקיימות"). A bundle page has
+    no filter menus: ``known_types`` (the listing's) names its cards' types."""
     tree = LexborHTMLParser(page_html)
-    types: dict[str, str] = {}
+    types: dict[str, str] = dict(known_types or {})
     parks: dict[str, str] = {}
     for link in tree.css("nav a[data-filter]"):
         key, name = link.attributes.get("data-filter") or "", clean_str(link.text())
@@ -145,6 +157,18 @@ def parse_listing(page_html: str, site_url: str, timezone: str) -> tuple[list[Pa
             )
         )
     return [c for c in cards if c.title], types
+
+
+def bundle_links(page_html: str, site_url: str, bundles_path: str) -> list[str]:
+    """The bundle index's links to each bundle page (``/events_bundle/vatikim/``), in page order."""
+    root = urljoin(site_url, bundles_path)
+    out: list[str] = []
+    for link in LexborHTMLParser(page_html).css("a[href]"):
+        url = urljoin(site_url, (link.attributes.get("href") or "").split("#")[0])
+        rest = url[len(root) :].strip("/") if url.startswith(root) else ""
+        if rest and "/" not in rest and rest != "feed" and url not in out:
+            out.append(url)
+    return out
 
 
 def parse_sessions(text: str, timezone: str) -> list[datetime]:

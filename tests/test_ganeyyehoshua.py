@@ -3,7 +3,8 @@
 Fixtures (23.11.2026), trimmed to the parts read: the listing's two filter menus and six of its cards
 (Lumagica, the lake sail, the free Pilates class, an undated exhibition, aerial yoga, a residents-only
 session), and the pages of Lumagica (sold on Kupat Tel Aviv), the lake sail (on-site tickets, two times a
-day) and aerial yoga (one sold-out time).
+day) and aerial yoga (one sold-out time). 24.11.2026: the "אירועי שיא" bundle index (its links) and the
+Senior November bundle (one card the listing lacks, whose page is a 404: unpublished).
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ from partylinks.scrapers.ganeyyehoshua import (
     GaneyYehoshuaScraper,
     GaneyYehoshuaSettings,
     ParkCard,
+    bundle_links,
     parse_event_page,
     parse_listing,
     parse_sessions,
@@ -159,6 +161,12 @@ def test_run_reads_the_listing_then_each_dated_event() -> None:
         asked.append(path)
         if path == "/אירועים/":
             return httpx.Response(200, text=LISTING)
+        if path == "/events_bundle/":
+            return httpx.Response(200, text=(FIXTURES / "bundles.html").read_text("utf-8"))
+        if path == "/events_bundle/vatikim/":
+            return httpx.Response(200, text=(FIXTURES / "bundle-vatikim.html").read_text("utf-8"))
+        if path == "/events/migration-adults-begin/":
+            return httpx.Response(404, text="<html></html>")  # in a bundle, unpublished
         if path in pages:
             return httpx.Response(200, text=(FIXTURES / pages[path]).read_text("utf-8"))
         return httpx.Response(200, text="<html><body></body></html>")  # the card's own dates
@@ -170,6 +178,8 @@ def test_run_reads_the_listing_then_each_dated_event() -> None:
 
     events = asyncio.run(go())
     assert asked[0] == "/אירועים/"
+    assert "/events_bundle/vatikim/" in asked and "/events_bundle/amphitlv/" in asked
+    assert "/events/migration-adults-begin/" in asked  # the bundle's card the listing lacks
     assert "/events/plaot/" not in asked and not any("66566" in a for a in asked)  # undated: no page fetched
     starts = [e.start_at.timestamp() for e in events if e.start_at]
     assert starts == sorted(starts)  # nearest first
@@ -177,6 +187,16 @@ def test_run_reads_the_listing_then_each_dated_event() -> None:
     assert not any("פילאטיס" in e.title or "דיגיטף" in e.title for e in events)
     assert {e.source_event_id.split(":")[0] for e in events} <= {"75009", "69062", "78710"}
     assert not scraper.failures
+
+
+def test_bundles() -> None:
+    links = bundle_links((FIXTURES / "bundles.html").read_text("utf-8"), SITE, "/events_bundle/")
+    assert links[0] == f"{SITE}/events_bundle/vatikim/" and len(links) == 6 == len(set(links))
+    page = (FIXTURES / "bundle-vatikim.html").read_text("utf-8")
+    assert parse_listing(page, SITE, TZ)[0][0].event_type is None  # no filter menus on a bundle page
+    (card,) = parse_listing(page, SITE, TZ, _cards()[1])[0]
+    assert card.post_id == "74757" and card.park == "פארק מנחם בגין" and card.event_type == "animals"
+    assert card.sessions == [datetime(2026, 11, 25, 9, 0, tzinfo=IL)]
 
 
 def test_cloudflare_refusal_is_a_block() -> None:

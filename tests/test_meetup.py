@@ -44,16 +44,24 @@ def test_abroad_and_unplaced_events_are_dropped() -> None:
     assert parse_event(NODES["316801496"], TZ) is None  # no venue
 
 
-def test_run_asks_each_window_and_point_and_keeps_each_event_once() -> None:
+GROUPS = json.loads((Path(__file__).parent / "fixtures/meetup/groups.json").read_text("utf-8"))
+GROUP = json.loads((Path(__file__).parent / "fixtures/meetup/group.json").read_text("utf-8"))
+CATEGORIES = {"data": {"topicCategories": {"edges": [{"node": {"id": "535", "urlkey": "games"}}]}}}
 
+
+def test_run_reads_the_groups_the_event_search_and_each_long_group_list_once() -> None:
     scraper = build_scraper("meetup", Settings())
     scraper.http.request_delay_seconds = 0
-    asked: list[dict] = []
+    asked: list[tuple[str, dict]] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
-        variables = json.loads(request.content)["variables"]
-        asked.append(variables)
-        return httpx.Response(200, json=PAGE)  # the same page every time: its events are kept once
+        body = json.loads(request.content)
+        field = next(
+            f for f in ("topicCategories", "groupSearch", "recommendedEvents", "groupByUrlname") if f in body["query"]
+        )
+        asked.append((field, body.get("variables") or {}))
+        pages = {"topicCategories": CATEGORIES, "groupSearch": GROUPS, "groupByUrlname": GROUP}
+        return httpx.Response(200, json=pages.get(field, PAGE))  # the same search page every time: kept once
 
     async def go() -> list:
         async with scraper:
@@ -62,14 +70,22 @@ def test_run_asks_each_window_and_point_and_keeps_each_event_once() -> None:
 
     events = asyncio.run(go())
     s = scraper.settings
+    fields = [f for f, _ in asked]
     points = 1 + len(s.centers)
     windows = -(-s.days_ahead // s.window_days)
-    assert points == 4 and len(asked) == points * windows
+    assert fields[:2] == ["topicCategories", "groupSearch"] and asked[1][1]["category"] == "535"
+    assert fields.count("recommendedEvents") == points * windows
+    search = [v for f, v in asked if f == "recommendedEvents"]
     # Window by window, the wide Tel Aviv search first in each.
-    assert [(a["lat"], a["radius"]) for a in asked[:points]] == [(32.07, 150), (32.8, 30), (31.25, 30), (31.78, 20)]
-    first, second = datetime.fromisoformat(asked[0]["start"]), datetime.fromisoformat(asked[points]["start"])
+    assert [(a["lat"], a["radius"]) for a in search[:points]] == [(32.07, 150), (32.8, 30), (31.25, 30), (31.78, 20)]
+    first, second = datetime.fromisoformat(search[0]["start"]), datetime.fromisoformat(search[points]["start"])
     assert second - first == timedelta(days=s.window_days)
-    assert datetime.fromisoformat(asked[0]["end"]) == second
+    assert datetime.fromisoformat(search[0]["end"]) == second
     assert first.date() == datetime.now(zone(TZ)).date()
+    # The chess club's list goes on past its first page, and each group met only by the event search
+    # is read whole: once each.
+    groups = [v["urlname"] for f, v in asked if f == "groupByUrlname"]
+    assert groups[0].endswith("chess-tel-aviv-️") and len(groups) == len(set(groups)) == 1 + 3
     ids = [e.source_event_id for e in events]
     assert ids and len(ids) == len(set(ids))
+    assert {"317520097", "317285900", "jklsstyjcqbdc", "316958546"} <= set(ids)  # groups, group list, search

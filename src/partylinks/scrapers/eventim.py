@@ -73,7 +73,8 @@ _PRICE = re.compile(r"\d[\d,]*(?:\.\d+)?")
 class EventimSettings(SourceSettings):
     site_url: str
     sitemap_path: str
-    max_events: int = Field(1500, ge=1)
+    # A cap on the event pages read: none by default (the owner's rule: every event; the sitemap held 531, Nov 2026).
+    max_events: int | None = Field(None, ge=1)
     # Event pages whose (decoded) URL holds one of these words: all when empty. Zappa uses it to
     # read only its own clubs, and Eventim skips the same words so no event is read twice.
     url_words: list[str] = Field(default_factory=list)
@@ -87,7 +88,7 @@ class EventimSettings(SourceSettings):
     # City pages (/city/<slug>-<id>/, Akamai never challenges them): the events Akamai refused the pages of
     # come from their ItemList item instead (eventim_listing). Empty: no fallback.
     city_paths: list[str] = Field(default_factory=list)
-    max_city_pages: int = Field(20, ge=1)
+    max_city_pages: int | None = Field(None, ge=1)  # none: to the last page
     type_genres: dict[str, str] = Field(default_factory=lambda: dict(TYPE_GENRES))
     # The site's public search API (eventim_api): every event Akamai refused the page of comes from its
     # product (artwork, price, venue with coordinates, artists). Empty: no API.
@@ -154,7 +155,7 @@ class EventimScraper(BaseScraper[EventimSettings]):
         url = urllib.parse.urljoin(s.site_url, path)
         page_html = await self.get_text(url)
         found, last = parse_listing(page_html, s.site_url), last_page(page_html)
-        for page in range(2, min(last, s.max_city_pages) + 1):
+        for page in range(2, min(last, s.max_city_pages or last) + 1):
             more = await self.optional(f"city {path} page {page}", self.get_text(url, params={"page": page}))
             found.update(parse_listing(more or "", s.site_url))
         return found
@@ -162,9 +163,7 @@ class EventimScraper(BaseScraper[EventimSettings]):
     async def _list_urls(self) -> list[str]:
         s = self.settings
         urls = pick_urls(await self._sitemap(s.site_url + s.sitemap_path), s.url_words, s.skip_url_words)
-        if len(urls) > s.max_events:
-            self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(urls))
-        return urls[: s.max_events]
+        return _capped(self, urls)
 
     async def _sitemap(self, url: str) -> list[str]:
         body = (await self.request("GET", url)).content
@@ -214,9 +213,7 @@ class ZappaScraper(EventimScraper):
             return urls
         club = await self._sitemap(s.club_sitemap_url)
         by_id = {_event_id(url): url for url in urls} | {_event_id(url): url for url in club}  # the club's page wins
-        if len(by_id) > s.max_events:
-            self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(by_id))
-        return list(by_id.values())[: s.max_events]
+        return _capped(self, list(by_id.values()))
 
     def _add_listed(self, urls: list[str], listed: Listed) -> list[str]:
         """The API's shows at a Zappa venue that neither sitemap lists (23.11.2026: 1 of 532, a Zappa Haifa night)."""
@@ -226,6 +223,14 @@ class ZappaScraper(EventimScraper):
         if extra:
             self.log.info("%d Zappa shows from the API that the sitemaps lack", len(extra))
         return urls + extra
+
+
+def _capped(scraper: EventimScraper, urls: list[str]) -> list[str]:
+    cap = scraper.settings.max_events
+    if cap is None or len(urls) <= cap:
+        return urls
+    scraper.log.warning("listing truncated at max_events=%d (%d found)", cap, len(urls))
+    return urls[:cap]
 
 
 def _at_zappa(page: str, item: dict[str, Any], s: EventimSettings) -> bool:

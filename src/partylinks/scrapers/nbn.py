@@ -5,7 +5,9 @@ WordPress with Modern Events Calendar (MEC). Listing: MEC's iCal feed (``/?mec-i
 calendar subscriptions) lists every event in one request (~2.5 MB, the whole archive; PHP warnings before
 ``BEGIN:VCALENDAR`` are cut off): UID, start / end in Asia/Jerusalem, title, description, page URL, categories,
 the place as one line ("30 Yom Tov Street, Tel Aviv"), the artwork (``ATTACH``) and, for repeating events, an
-``RRULE`` / ``RDATE``. Repeating events give one event per occurrence over ``recurrence_days``.
+``RRULE`` / ``RDATE``. Repeating events give one event per occurrence: every one of a rule with an end
+(``UNTIL`` / ``COUNT``) or a list of dates (a lecture series to May, a comedy tour's four nights); an open-ended
+rule ("every Tuesday", no end) its occurrences over ``recurrence_days``, and at least its next one.
 Online events (place "Zoom" / "Virtual" / "Online", or no place and an online category) are not imported.
 MEC writes most ends a day late ("19:45" to the next day's "20:45"): a span of one to two days whose end
 clock is after the start clock ends on the start day.
@@ -43,8 +45,10 @@ _AMOUNT = re.compile(r"(\d+(?:[.,]\d+)?)")
 class NbnSettings(SourceSettings):
     site_url: str = "https://www.nbn.org.il"
     ical_path: str = "/?mec-ical-feed=1"
-    # A repeating event: its occurrences this many days ahead.
+    # An open-ended repeating event (a rule with no UNTIL / COUNT): its occurrences this many days ahead.
     recurrence_days: int = Field(60, ge=1)
+    # A rule with an end, or a list of dates: every occurrence up to this many days ahead (a guard, not a window).
+    bounded_recurrence_days: int = Field(1100, ge=1)
     # A place line naming one of these is an online event (lower case).
     online_words: list[str] = Field(default_factory=lambda: ["zoom", "virtual", "online", "webinar", "livestream"])
     # Categories that make an event with no place online.
@@ -116,8 +120,11 @@ def _end(start: datetime, end: datetime | None) -> datetime | None:
     return end
 
 
-def occurrences(item: icalendar.Event, start: datetime, now: datetime, days: int) -> list[datetime]:
-    """The start, or for a repeating event its starts from now to ``days`` ahead."""
+def occurrences(
+    item: icalendar.Event, start: datetime, now: datetime, days: int, bounded_days: int = 1100
+) -> list[datetime]:
+    """The start, or for a repeating event its starts from now on: all of them when the rule ends (``UNTIL`` /
+    ``COUNT``) or there is only a list of dates, else those up to ``days`` ahead and at least the next one."""
     rule, extra = item.get("RRULE"), item.get("RDATE")
     if not rule and not extra:
         return [start]
@@ -130,7 +137,12 @@ def occurrences(item: icalendar.Event, start: datetime, now: datetime, days: int
         for value in getattr(group, "dts", []):
             if (when := _local(value.dt, str(start.tzinfo))) is not None:
                 rules.rdate(when)
-    return list(rules.between(now - timedelta(days=1), now + timedelta(days=days), inc=True))
+    bounded = not rule or any(key in rule for key in ("UNTIL", "COUNT"))
+    since = now - timedelta(days=1)
+    found = list(rules.between(since, now + timedelta(days=bounded_days if bounded else days), inc=True))
+    if not found and (upcoming := rules.after(since, inc=True)) is not None:
+        found = [upcoming]  # an open rule whose next date is past the window (twice a year)
+    return found
 
 
 def parse_vevent(item: icalendar.Event, s: NbnSettings, timezone: str, now: datetime) -> list[ScrapedEvent]:
@@ -162,7 +174,7 @@ def parse_vevent(item: icalendar.Event, s: NbnSettings, timezone: str, now: date
     )
     base = uid.split("@", 1)[0].removeprefix("MEC-")
     events = []
-    for when in occurrences(item, start, now, s.recurrence_days):
+    for when in occurrences(item, start, now, s.recurrence_days, s.bounded_recurrence_days):
         events.append(
             ScrapedEvent(
                 source=NbnScraper.name,

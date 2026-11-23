@@ -213,8 +213,9 @@ def test_zappa_reads_the_zappa_club_sitemap_too() -> None:
         "https://www.zappa-club.co.il/event/נונו-זאפה-ירושלים-1/",
         "https://www.zappa-club.co.il/event/חנוכה-היכל-3/",
     ]
-    scraper = build_scraper("zappa", Settings())
-    assert isinstance(scraper, ZappaScraper)
+    built = build_scraper("zappa", Settings())
+    assert isinstance(built, ZappaScraper)
+    scraper: ZappaScraper = built  # narrowed for the closure below
     scraper.http.request_delay_seconds = 0
     scraper.settings.url_words = ["זאפה"]
 
@@ -313,3 +314,57 @@ def test_zappa_adds_the_api_shows_at_zappa_venues_the_sitemaps_lack() -> None:
         "4": (elsewhere, item("היכל התרבות")),
     }
     assert scraper._add_listed(sitemap, listed) == [*sitemap, in_name, at_venue]  # type: ignore[attr-defined]
+
+
+def test_every_sitemap_page_is_listed_with_no_cap() -> None:
+    """No max_events by default (the owner's rule: every event); a configured cap still cuts and warns."""
+    xml = "".join(f"<url><loc>https://www.eventim.co.il/event/e-{i}/</loc></url>" for i in range(2000))
+    scraper = build_scraper("eventim", Settings())
+    assert isinstance(scraper, EventimScraper) and scraper.settings.max_events is None
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, text=f"<urlset>{xml}</urlset>", headers={"content-type": "application/xml"})
+
+    async def go() -> tuple[int, int]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            everything = len(await scraper._list_urls())
+            scraper.settings.max_events = 10
+            return everything, len(await scraper._list_urls())
+
+    assert asyncio.run(go()) == (2000, 10)
+
+
+def test_closed_shows_and_subscriptions_are_dropped() -> None:
+    """Config skip_title_words: a show closed to a company's staff and a season subscription are no public event."""
+    import yaml
+
+    config = yaml.safe_load((Path(__file__).parents[1] / "config" / "settings.yaml").read_text(encoding="utf-8"))
+    words = EventimSettings.model_validate(config["sources"]["eventim"]).skip_title_words
+    assert words
+
+    def meta(name: str) -> str:
+        return PAGE_META.replace("לירון אופיר", name) % "1|0"
+
+    pages = {
+        "a-1": _html(meta("קסם של פסטיבל - חנוכה 2026")),
+        "b-2": _html(meta("קסם של פסטיבל - חנוכה 2026 | מופע סגור לעובדי מזרחי טפחות")),
+        "c-3": _html(meta("אנסמבל מצו - מנוי ל3 מופעים")),
+    }
+    sitemap = "".join(f"<url><loc>https://www.eventim.co.il/event/{p}/</loc></url>" for p in pages)
+    scraper = build_scraper("eventim", Settings())
+    scraper.http.request_delay_seconds = 0
+    scraper.settings.api_url = ""
+    scraper.settings.skip_title_words = words
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith(".xml.gz"):
+            return httpx.Response(200, text=f"<urlset>{sitemap}</urlset>", headers={"content-type": "application/xml"})
+        return pages[request.url.path.strip("/").rsplit("/", 1)[-1]]
+
+    async def go() -> list[str]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e.title async for e in scraper.events()]
+
+    assert asyncio.run(go()) == ["קסם של פסטיבל - חנוכה 2026"]

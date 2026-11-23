@@ -7,7 +7,8 @@ the site's advanced search is read instead: ``/?s=&search_country=116`` (Israel)
 (``/page/N/?...``), soonest first: title, link, categories, city, the date line ("יום רביעי, 11
 בנובמבר, 2026 - יום שבת, 14  בנובמבר, 2026", days only) and an excerpt. Undated entries
 ("לא נמצא מידע", "שנתי באוגוסט") follow the dated ones, so paging stops at the first page
-without a date. Each festival page adds the full description, the full-size image and the
+without a date or with only festivals already listed (the paging loops back over the undated
+entries); no page cap. Each festival page adds the full description, the full-size image and the
 festival's own site ("מידע נוסף הקשור לאירוע" > "קישורים:"), kept as ``extra["purchase_url"]``.
 No page lists ticket prices (they point to the festival's site); a description saying the entry
 is free ("הכניסה חופשית למופעים") with nothing "בתשלום" becomes a price-0 tier.
@@ -25,7 +26,6 @@ from collections.abc import AsyncIterator
 from datetime import date, datetime, timedelta
 from urllib.parse import unquote
 
-from pydantic import Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
 
 from partylinks.models import ScrapedEvent, TicketTier
@@ -47,7 +47,6 @@ _FREE = re.compile(r"כניסה (?:חופשית|חינם|ללא תשלום)")
 
 class FestivalimSettings(SourceSettings):
     site_url: str
-    max_pages: int = Field(30, ge=1)
 
 
 class FestivalimScraper(BaseScraper[FestivalimSettings]):
@@ -67,16 +66,18 @@ class FestivalimScraper(BaseScraper[FestivalimSettings]):
             "search_city": -1,
         }
         events: list[ScrapedEvent] = []
-        for index in range(s.max_pages):
+        seen: set[str] = set()
+        index = 0
+        while True:
             path = f"/page/{index + 1}/" if index else "/"
             fetch = self.get_text(s.site_url + path, params=params)  # the first page must load
             page = await (self.optional(f"search page {index + 1}", fetch) if index else fetch)
-            listed = parse_listing(page, self.timezone) if page else []
-            events += listed
-            if not listed:  # undated entries only from here on
+            listed = [e for e in parse_listing(page, self.timezone) if e.source_event_id not in seen] if page else []
+            if not listed:  # undated entries only from here on (or the paging loops back)
                 break
-        else:
-            self.log.warning("listing truncated at max_pages=%d", s.max_pages)
+            seen.update(e.source_event_id for e in listed)
+            events += listed
+            index += 1
         self.log.debug("listed %d dated festivals", len(events))
 
         async def detail(event: ScrapedEvent) -> ScrapedEvent:

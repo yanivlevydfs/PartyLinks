@@ -2,7 +2,8 @@
 
 The entries are real (feed of 23.11.2026, descriptions cut): a singles mixer at a Tel Aviv cafe, a weekly chess
 club in Herzliya (RRULE), a Zoom lecture series (RDATE), an all-day workshop on four dates (RDATE of dates) and a
-comedy tour with no place. The page is the mixer's, cut to its JSON-LD and the MEC cost / booking markup.
+comedy tour with no place, a weekly Torah class with an end (RRULE UNTIL) and a twice-yearly shoe sale (an open
+RRULE). The page is the mixer's, cut to its JSON-LD and the MEC cost / booking markup.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from partylinks.enrichment import Enricher
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import zone
 from partylinks.scrapers import build_scraper
-from partylinks.scrapers.nbn import NbnScraper, feed_events, parse_vevent, with_page
+from partylinks.scrapers.nbn import NbnScraper, NbnSettings, feed_events, parse_vevent, with_page
 
 TZ = "Asia/Jerusalem"
 IL = zone(TZ)
@@ -93,6 +94,30 @@ URL:https://www.nbn.org.il/events/eitan-levine-vs-the-ayatollah-a-comedy-tour/
 CATEGORIES:Film, Television &amp; Theater,Jerusalem,Modiin,Performance,Tel Aviv
 END:VEVENT
 """
+THINK = r"""BEGIN:VEVENT
+UID:MEC-f2f4206564e1cf5e7bc27a320800b3fb@nbn.org.il
+DTSTART;TZID=Asia/Jerusalem:20261109T200000
+DTEND;TZID=Asia/Jerusalem:20261109T210000
+RRULE:FREQ=WEEKLY;UNTIL=20270509T210000Z
+SUMMARY:THINK: Sefer Bereshit
+DESCRIPTION:Back to learning Torah again together tonight!
+URL:https://www.nbn.org.il/events/think-sefer-bereshit/
+ORGANIZER;CN=JLIC TLV:MAILTO:
+CATEGORIES:Lectures &amp; Workshops,Tel Aviv
+LOCATION:126 Ben Yehudah St. Tel Aviv
+END:VEVENT
+"""
+SALE = r"""BEGIN:VEVENT
+UID:MEC-5f65e79fbb284d4f2e01decff61c03d8@nbn.org.il
+DTSTART;TZID=Asia/Jerusalem:20260430T190000
+DTEND;TZID=Asia/Jerusalem:20260430T220000
+RRULE:FREQ=MONTHLY;INTERVAL=6
+SUMMARY:Barefoot Shoe Sale &amp; Community Meet up
+URL:https://www.nbn.org.il/events/barefoot-shoe-sale-community-meet-up-2/
+CATEGORIES:Health &amp; Wellness,Jerusalem,Social,Sport/Excercise
+LOCATION:King George 37
+END:VEVENT
+"""
 TAIL = "END:VCALENDAR\n"
 PAGE = """<html><head><script type="application/ld+json">
 {
@@ -110,7 +135,7 @@ PAGE = """<html><head><script type="application/ld+json">
 <a class="mec-booking-button mec-bg-color" target="_blank" href="https://forms.gle/JPc62QhterPC7gGeA">Register Here</a>
 </body></html>"""
 
-CFG = NbnScraper.settings_model.model_validate(Settings().sources["nbn"])
+CFG = NbnSettings.model_validate(Settings().sources["nbn"])
 
 
 def _parse(entry: str) -> list[ScrapedEvent]:
@@ -143,7 +168,7 @@ def test_mixer_from_the_feed_and_its_page() -> None:
 
 def test_weekly_club_gives_its_occurrences() -> None:
     games = _parse(CHESS)
-    assert len(games) == 8  # Tuesdays from 1.12 to 60 days ahead (22.1)
+    assert len(games) == 8  # an open rule: Tuesdays from 1.12 to 60 days ahead (22.1)
     assert games[0].start_at == datetime(2026, 12, 1, 15, 0, tzinfo=IL)
     assert games[1].start_at == datetime(2026, 12, 8, 15, 0, tzinfo=IL)
     assert games[1].end_at == datetime(2026, 12, 8, 16, 30, tzinfo=IL)
@@ -153,6 +178,19 @@ def test_weekly_club_gives_its_occurrences() -> None:
     assert games[0].source_genres == ["english", "meetups"]  # audiences (40+, retirees) declare nothing
     enriched = Enricher(Settings().enrichment, TZ).enrich(games[0])
     assert enriched is not None and "meetups" in enriched.genres
+
+
+def test_rule_with_an_end_gives_every_occurrence() -> None:
+    classes = _parse(THINK)  # weekly to 9.5.2027: every Monday, not only the open rules' 60 days
+    assert len(classes) == 24
+    assert classes[0].start_at == datetime(2026, 11, 23, 20, 0, tzinfo=IL)
+    assert classes[-1].start_at == datetime(2027, 5, 3, 20, 0, tzinfo=IL)
+    assert classes[0].city == "תל אביב"
+
+
+def test_open_rule_past_the_window_gives_its_next_date() -> None:
+    (sale,) = _parse(SALE)  # every six months from 30.4.2026: the next one, 30.10.2026 being past
+    assert sale.start_at == datetime(2027, 4, 30, 19, 0, tzinfo=IL)
 
 
 def test_online_and_placeless_events() -> None:

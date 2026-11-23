@@ -84,3 +84,25 @@ def test_details_free_entry_text_is_a_free_tier() -> None:
     free = festivalim.with_details(listed, _page("event_free.html")).tickets
     assert len(free) == 1 and free[0].is_free and free[0].price == 0
     assert festivalim.with_details(listed, _page("event.html")).tickets == []
+
+
+def test_scrape_stops_when_paging_repeats_listed_festivals() -> None:
+    """No page cap: paging ends when a page brings no festival not listed already."""
+    requested: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested.append(request.url.path)
+        if request.url.path in ("/", "/page/2/"):  # page 2 loops back to page 1
+            return httpx.Response(200, text=_page("listing.html"))
+        return httpx.Response(500)
+
+    scraper = festivalim.FestivalimScraper(
+        CFG, HttpSettings(request_delay_seconds=0, backoff_seconds=0, max_retries=0), TZ
+    )
+    scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+    async def run() -> list[festivalim.ScrapedEvent]:
+        return [e async for e in scraper.scrape()]
+
+    assert sorted(e.source_event_id for e in asyncio.run(run())) == ["15706-2026", "16923-2026"]
+    assert "/page/3/" not in requested

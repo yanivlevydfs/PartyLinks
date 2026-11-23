@@ -64,7 +64,9 @@ class MuziSettings(SourceSettings):
     sitemap_path: str  # the Yoast sitemap index
     event_sitemap_prefix: str  # the index's event sitemaps: /event-sitemap
     event_path: str  # /event/
-    max_events: int = Field(3000, ge=1)
+    # Page taxonomy classes of what is no event in a hall: the site's promo / deal posts filed as events
+    # ("רוצה לדעת על הופעות...", "earplugs-deal") and its live-online courses (Nov 2026).
+    skip_classes: list[str] = Field(default_factory=lambda: ["event_type-online", "events_by_region-live-online"])
     # JSON-LD place names that are the theme's placeholder, not a venue: the page's "איפה?" row names it then
     # ("Hall" for המשכן לאמנות עין חרוד, Nov 2026).
     placeholder_venues: list[str] = Field(default_factory=lambda: ["Hall"])
@@ -82,16 +84,16 @@ class MuziScraper(BaseScraper[MuziSettings]):
         for sitemap in sitemaps:
             page = await self.optional(f"sitemap {sitemap}", self.get_text(sitemap))
             urls.update(dict.fromkeys(event_urls(page or "", s.event_path)))
-        pages = list(urls)
-        if len(pages) > s.max_events:
-            self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(pages))
+        pages = list(urls)  # every event page, no cap
         self.log.debug("listed %d event pages from %d sitemaps", len(pages), len(sitemaps))
         today = datetime.now(zone(self.timezone)).date()
 
         async def fetch(url: str) -> ScrapedEvent | None:
-            return parse_event(await self.get_text(url), url, self.timezone, today, s.placeholder_venues)
+            return parse_event(
+                await self.get_text(url), url, self.timezone, today, s.placeholder_venues, s.skip_classes
+            )
 
-        async for event in self.stream_isolated(pages[: s.max_events], fetch, label=unquote):
+        async for event in self.stream_isolated(pages, fetch, label=unquote):
             yield event
 
 
@@ -165,9 +167,18 @@ def _upload_name(url: str) -> str:
 
 
 def parse_event(
-    page_html: str, url: str, timezone: str, today: date | None = None, placeholders: list[str] | None = None
+    page_html: str,
+    url: str,
+    timezone: str,
+    today: date | None = None,
+    placeholders: list[str] | None = None,
+    skip_classes: list[str] | None = None,
 ) -> ScrapedEvent | None:
-    """The page's event; None when cancelled or already over."""
+    """The page's event; None when cancelled, already over, or tagged online / a promo (``skip_classes``)."""
+    page_classes = _PAGE_CLASSES.search(page_html)
+    classes = set(page_classes.group(1).split()) if page_classes else set()
+    if classes & set(skip_classes or []):
+        return None
     objects = _jsonld_objects(page_html)
     node = next((n for n in objects if schema_types(n) & {"musicevent", "event"}), None)
     if node is None and objects:  # a promo post filed as an event ("רוצה לדעת על הופעות..."): Yoast graph, no Event
@@ -209,7 +220,6 @@ def parse_event(
         street = None if street and street.casefold() in {p.casefold() for p in placeholders or ["Hall"]} else street
     country = clean_str(address.get("addressCountry"))
     post_id = _POST_ID.search(page_html)
-    page_classes = _PAGE_CLASSES.search(page_html)
     ticket_link = _TICKET_LINK.search(page_html)
     purchase_url = html.unescape(ticket_link.group(1)) if ticket_link else None
     if purchase_url and urlsplit(purchase_url).hostname in (None, urlsplit(url).hostname):

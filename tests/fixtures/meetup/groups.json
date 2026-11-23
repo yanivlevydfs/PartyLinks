@@ -1,0 +1,190 @@
+{
+ "data": {
+  "groupSearch": {
+   "pageInfo": {
+    "hasNextPage": false,
+    "endCursor": null
+   },
+   "edges": [
+    {
+     "node": {
+      "urlname": "game-club-tlv-meetup-group",
+      "country": "il",
+      "events": {
+       "pageInfo": {
+        "hasNextPage": false
+       },
+       "edges": [
+        {
+         "node": {
+          "id": "317520097",
+          "title": "December's Game Night",
+          "dateTime": "2026-12-06T19:30:00+02:00",
+          "endTime": "2026-12-07T00:00:00+02:00",
+          "eventUrl": "https://www.meetup.com/game-club-tlv-meetup-group/events/317520097/",
+          "eventType": "PHYSICAL",
+          "status": "ACTIVE",
+          "description": "**🎲🕎 ערב המשחקים של דצמבר - ספיישל חנוכה 🎲**\nיום ראשון ה- 6.12 החל מ- 19:30!\n\nבואו לחגוג יחד חנוכה באירוע מיוחד! 🕎🎉\n\nמה בתוכנית?\n🎲 מפגש המועדון הרגיל והאהוב.\n🏆 אליפות שם-קוד 2026! טורניר קבוצתי מיוחד נושא פרסים שווים. הטורניר בהרשמה מראש בלבד עד ה- 4.12.\n🕎 ספיישל חנוכה, עם כיבוד באווירת החג.\n\n📆 מתי? יום ראשון, 6.12\n🕗 שעה: 19:30-00:00\n📍 איפה? בית בני ברית, רחוב מאיר בעל הנס 14, רמת גן,\n💵 כניסה ללא הטורניר: 40ש״ח בהרשמה מוקדמת עד ה- 4.12 וסימון באירוע בפייסבוק, 50ש\"ח אחר כך.\n💲 Tournament Buy-in: תוספת 20ש\"ח (סה\"כ 60ש\"ח) — בהרשמה מוקדמת בלבד עד ה- 4.12.\n✨ מה להביא? אווירה טובה ואת המשחקים האהובים עליכם! (לא חובה, יש גם אוסף גדול במקום).\n🥐 מלא חטיפים ושתייה חופשי. 🍕 פיצה ובירה בעלות נוספת.\n\n**קבוצת העידכונים בוואטסאפ:**\nhttps://chat.whatsapp.com/ETCOIJkx3rQLHxKPx8PmJS\n\n**🔗הרשמה לערב משחקים ללא הטורניר:**\nhttps://www.facebook.com/events/1845003876820124\n\n**🥇הרשמה (עד ה- 4.12) ופרטים נוספים על הטורניר:**\nhttps://www.facebook.com/events/1534951618474105\n\n**🌐 ניתן להירשם גם דרך האתר שלנו:**\nhttps://game-club-tlv.github.io/events/\n\n**היכונו לאליפות ה-CodeNames הגדול של Game Club TLV!**\n**!מי יהיה אלוף שם-קוד? 🏆 בואו לזכות בפרס שווה! 🎁**\n🕵️‍♀️ חושבים שאף אחד לא יכול עליכם בשם-קוד?\n🕵️‍♀️ האם גם אתם תצליחו לתת רמז של 6 מילים?\n🕵️‍♀️ חושבים שאתם והפרטנר/ית שלכם קוראים מחשבות?\nהגיע הזמן להוכיח מי הרב-מרגלים המבריק ביותר!!!\n\n**🏆 פורמט ופרסים**\nטורניר קבוצתי: קבוצות של 2-3 אנשים. אין לכם קבוצה? ניתן גם להירשם לבד ואנו נצוות אתכם לקבוצה במקום.\nניתן לשחק במספר וריאציות של שם-קוד: מילים בעברית (ברירת המחדל), תמונות ודיסני — בהסכמת שני הצדדים.\nפרס: הקבוצה המנצחת בוחרת משחק ממאגר הפרסים שלנו — שם-קוד, קטאן: ערים ואבירים ועוד!\nשימו לב! מספר המקומות מוגבל.\n\n**⏱️ לוח זמנים**\n19:30: התכנסות, רישום והגרלת מקומות.\n20:00: יריית הפתיחה לסיבובים המוקדמים.\n22:30: הגמר הגדול! (זמן משוער)\n\n**🎲 מפגש המועדון החודשי 🎲**\nאוהבים קטאן? מכורים לשם קוד? חושבים שאתם אסטרטגיים מומחים? 👑\nבואו להנות ממגוון רחב של משחקי קופסה. זוהי הזדמנות מצוינת להכיר אנשים ומשחקים חדשים. 🎯\nלא משנה אם אתם מחפשים ערב מהנה עם חברים, משפחה, דייט או לבד ולהכיר אנשים חדשים – המשחקים הם דרך מעולה לשבור את הקרח ולבנות קשרים. 🧑‍🤝‍🧑💬\nאין צורך בידע מוקדם! האירוע מתאים לכל הרמות:\n💠 שחקנים מתחילים – אל דאגה, נלמד אתכם את כל מה שצריך!\n💠 שחקנים ותיקים – אתם מוזמנים גם לגלות משחקים חדשים וגם להביא את הלהיטים המובחרים שלכם מהבית.\nמוזמנים להצטרף לאירוע מלא באתגרים, תחרות, אסטרטגיה ובעיקר כיף! עם אוסף משחקי קופסה גדול של מעל 150 משחקים – כולל אהובים ומוכרים. 🧩",
+          "venue": {
+           "name": "מאיר בעל הנס, רמת גן",
+           "address": "מאיר בעל הנס",
+           "city": "Ramat Gan",
+           "lat": 32.074146,
+           "lon": 34.830666,
+           "country": "IL"
+          },
+          "group": {
+           "urlname": "game-club-tlv-meetup-group",
+           "name": "Game Club TLV Meetup Group",
+           "topicCategory": {
+            "urlkey": "games",
+            "name": "Games"
+           }
+          },
+          "featuredEventPhoto": {
+           "highResUrl": "https://secure.meetupstatic.com/photos/event/b/2/7/5/highres_537225685.jpeg"
+          },
+          "feeSettings": null
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "urlname": "️-chess-tel-aviv-️",
+      "country": "il",
+      "events": {
+       "pageInfo": {
+        "hasNextPage": true
+       },
+       "edges": [
+        {
+         "node": {
+          "id": "317285900",
+          "title": "ChessBar Israel Chess @Masaryk Wine & Flowers #Tuesdays",
+          "dateTime": "2026-11-24T18:15:00+02:00",
+          "endTime": "2026-11-24T20:15:00+02:00",
+          "eventUrl": "https://www.meetup.com/%EF%B8%8F-chess-tel-aviv-%EF%B8%8F/events/317285900/",
+          "eventType": "PHYSICAL",
+          "status": "ACTIVE",
+          "description": "## Details\n\nHi everyone,\n\n⚠️ You need to join the Whatssapp community and get a confirmation on WhatssApp that there are still spots available in order to be able to attend.\nYou can join the chess community here by filling the form:\nhttps://chessbarisrael.com/#join-us\n\nThe next edition tournament will take place on **Tuesday.**\n📍 **Where:** Masaryk Wine & Flowers, **80 King George St, Tel Aviv**\n📅 **When:** 6:15 PM - 8:30 PM\n♟️ **Format:** 5 rounds of 8+2 (Rapid) OR Meet & Play (depends on which Tuesday)\n🥇 **Prizes:**\n\n* **Top Winners:** bottles of wine\n* **Best Under 1500/800:** 1 hour of private chess lesson\n* **Sandwich for a randomly picked player**\n\n✨ **How does it work?**\nThis is a friendly, unofficial event (not reported to FIDE) and part of a **bi-weekly series of tournaments** held in bars around Tel Aviv.\n\n⚠️ There is an entrance fee for the event including the first free drink and prizes!\n**Spots are limited!**\n\n⚠️ You need to join the Whatssapp community and get a confirmation on WhatssApp that there are still spots available in order to be able to attend.\n\nOlivier 🎉",
+          "venue": {
+           "name": "Masaryk Wine & Flowers",
+           "address": "King Georges St 80",
+           "city": "Tel Aviv",
+           "lat": 32.076878,
+           "lon": 34.777653,
+           "country": "il"
+          },
+          "group": {
+           "urlname": "️-chess-tel-aviv-️",
+           "name": "Chess Tel Aviv",
+           "topicCategory": {
+            "urlkey": "games",
+            "name": "Games"
+           }
+          },
+          "featuredEventPhoto": {
+           "highResUrl": "https://secure.meetupstatic.com/photos/event/b/9/7/e/highres_526067486.jpeg"
+          },
+          "feeSettings": null
+         }
+        },
+        {
+         "node": {
+          "id": "317383377",
+          "title": "ChessBar Israel Chess @Masaryk Wine & Flowers #Tuesdays",
+          "dateTime": "2026-12-01T18:15:00+02:00",
+          "endTime": "2026-12-01T20:15:00+02:00",
+          "eventUrl": "https://www.meetup.com/%EF%B8%8F-chess-tel-aviv-%EF%B8%8F/events/317383377/",
+          "eventType": "PHYSICAL",
+          "status": "ACTIVE",
+          "description": "## Details\n\nHi everyone,\n\n⚠️ You need to join the Whatssapp community and get a confirmation on WhatssApp that there are still spots available in order to be able to attend.\nYou can join the chess community here by filling the form:\nhttps://chessbarisrael.com/#join-us\n\nThe next edition tournament will take place on **Tuesday.**\n📍 **Where:** Masaryk Wine & Flowers, **80 King George St, Tel Aviv**\n📅 **When:** 6:15 PM - 8:30 PM\n♟️ **Format:** 5 rounds of 8+2 (Rapid) OR Meet & Play (depends on which Tuesday)\n🥇 **Prizes:**\n\n* **Top Winners:** bottles of wine\n* **Best Under 1500/800:** 1 hour of private chess lesson\n* **Sandwich for a randomly picked player**\n\n✨ **How does it work?**\nThis is a friendly, unofficial event (not reported to FIDE) and part of a **bi-weekly series of tournaments** held in bars around Tel Aviv.\n\n⚠️ There is an entrance fee for the event including the first free drink and prizes!\n**Spots are limited!**\n\n⚠️ You need to join the Whatssapp community and get a confirmation on WhatssApp that there are still spots available in order to be able to attend.\n\nOlivier 🎉",
+          "venue": {
+           "name": "Masaryk Wine & Flowers",
+           "address": "King Georges St 80",
+           "city": "Tel Aviv",
+           "lat": 32.076878,
+           "lon": 34.777653,
+           "country": "il"
+          },
+          "group": {
+           "urlname": "️-chess-tel-aviv-️",
+           "name": "Chess Tel Aviv",
+           "topicCategory": {
+            "urlkey": "games",
+            "name": "Games"
+           }
+          },
+          "featuredEventPhoto": {
+           "highResUrl": "https://secure.meetupstatic.com/photos/event/b/9/7/e/highres_526067486.jpeg"
+          },
+          "feeSettings": null
+         }
+        },
+        {
+         "node": {
+          "id": "317484053",
+          "title": "ChessBar Israel Chess @Masaryk Wine & Flowers #Tuesdays",
+          "dateTime": "2026-12-08T18:15:00+02:00",
+          "endTime": "2026-12-08T20:15:00+02:00",
+          "eventUrl": "https://www.meetup.com/%EF%B8%8F-chess-tel-aviv-%EF%B8%8F/events/317484053/",
+          "eventType": "PHYSICAL",
+          "status": "ACTIVE",
+          "description": "## Details\n\nHi everyone,\n\n⚠️ You need to join the Whatssapp community and get a confirmation on WhatssApp that there are still spots available in order to be able to attend.\nYou can join the chess community here by filling the form:\nhttps://chessbarisrael.com/#join-us\n\nThe next edition tournament will take place on **Tuesday.**\n📍 **Where:** Masaryk Wine & Flowers, **80 King George St, Tel Aviv**\n📅 **When:** 6:15 PM - 8:30 PM\n♟️ **Format:** 5 rounds of 8+2 (Rapid) OR Meet & Play (depends on which Tuesday)\n🥇 **Prizes:**\n\n* **Top Winners:** bottles of wine\n* **Best Under 1500/800:** 1 hour of private chess lesson\n* **Sandwich for a randomly picked player**\n\n✨ **How does it work?**\nThis is a friendly, unofficial event (not reported to FIDE) and part of a **bi-weekly series of tournaments** held in bars around Tel Aviv.\n\n⚠️ There is an entrance fee for the event including the first free drink and prizes!\n**Spots are limited!**\n\n⚠️ You need to join the Whatssapp community and get a confirmation on WhatssApp that there are still spots available in order to be able to attend.\n\nOlivier 🎉",
+          "venue": {
+           "name": "Masaryk Wine & Flowers",
+           "address": "King Georges St 80",
+           "city": "Tel Aviv",
+           "lat": 32.076878,
+           "lon": 34.777653,
+           "country": "il"
+          },
+          "group": {
+           "urlname": "️-chess-tel-aviv-️",
+           "name": "Chess Tel Aviv",
+           "topicCategory": {
+            "urlkey": "games",
+            "name": "Games"
+           }
+          },
+          "featuredEventPhoto": {
+           "highResUrl": "https://secure.meetupstatic.com/photos/event/b/9/7/e/highres_526067486.jpeg"
+          },
+          "feeSettings": null
+         }
+        }
+       ]
+      }
+     }
+    },
+    {
+     "node": {
+      "urlname": "haifa-board-games",
+      "country": "il",
+      "events": {
+       "pageInfo": {
+        "hasNextPage": false
+       },
+       "edges": []
+      }
+     }
+    },
+    {
+     "node": {
+      "urlname": "kanyamakan",
+      "country": "jo",
+      "events": {
+       "pageInfo": {
+        "hasNextPage": false
+       },
+       "edges": []
+      }
+     }
+    }
+   ]
+  }
+ }
+}

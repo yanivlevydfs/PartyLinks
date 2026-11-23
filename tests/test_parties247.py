@@ -19,6 +19,7 @@ from partylinks.scrapers.parties247 import (
     event_paths,
     listing_paths,
     parse_event,
+    sitemap_paths,
     split_location,
 )
 
@@ -90,6 +91,9 @@ def test_lists_and_their_labels() -> None:
     assert category_of("/genre/techno-music", ["/genre/", "/audience/"]) == "techno music"
     assert category_of("/audience/24plus-parties", ["/genre/", "/audience/"]) == "24plus parties"
     assert category_of("/day/today", ["/genre/", "/audience/"]) is None
+    xml = f"<urlset><url><loc>{SITE}/purim</loc></url><url><loc>{SITE}/about</loc></url><url><loc>{SITE}/event/%D7%90-1</loc></url></urlset>"
+    assert sitemap_paths(xml, prefixes) == ["/purim"]
+    assert sitemap_paths(xml, ["/event/"]) == ["/event/א-1"] and sitemap_paths(None, ["/event/"]) == []
 
 
 def test_run_labels_parties_by_their_lists_and_fills_a_missing_city() -> None:
@@ -100,6 +104,10 @@ def test_run_labels_parties_by_their_lists_and_fills_a_missing_city() -> None:
         "/": '<a href="/genre/techno-music">x</a><a href="/cities/tel-aviv">x</a><a href="/event/goat-1">x</a>',
         "/genre/techno-music": '<a href="/event/goat-1">x</a>',
         "/cities/tel-aviv": '<a href="/event/street-2">x</a>',
+        "/sitemaps/static.xml": f"<urlset><url><loc>{SITE}/genre/hip-hop-music</loc></url><url><loc>{SITE}/about</loc></url></urlset>",
+        "/genre/hip-hop-music": '<a href="/event/goat-1">x</a>',
+        "/sitemaps/events.xml": f"<urlset><url><loc>{SITE}/event/goat-1</loc></url><url><loc>{SITE}/event/purim-3</loc></url></urlset>",
+        "/event/purim-3": _page(name="Purim 2027"),
         "/event/goat-1": _page(),
         "/event/street-2": _page(name="Free Alcohol", location={"@type": "Place", "name": "משה בקר 11"}),
     }
@@ -113,6 +121,9 @@ def test_run_labels_parties_by_their_lists_and_fills_a_missing_city() -> None:
             return [e async for e in scraper.scrape()]
 
     events = {e.source_event_id: e for e in asyncio.run(go())}
-    assert set(events) == {"goat-1", "street-2"} and not scraper.failures
-    assert events["goat-1"].source_genres == ["techno music"] and events["goat-1"].city == "Tel Aviv-Yafo"
+    # purim-3 is on no list, only in the events sitemap; hip-hop is a genre list only the static sitemap links.
+    assert set(events) == {"goat-1", "street-2", "purim-3"} and not scraper.failures
+    assert (
+        events["goat-1"].source_genres == ["hip hop music", "techno music"] and events["goat-1"].city == "Tel Aviv-Yafo"
+    )
     assert events["street-2"].city == "תל אביב-יפו"  # from the city list it is on

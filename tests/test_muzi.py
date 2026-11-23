@@ -63,6 +63,16 @@ def test_free_and_range_prices() -> None:
     assert ranged.source_genres == ["electronic"]
 
 
+def test_online_and_promo_posts_skipped() -> None:
+    """event_type-online (the site's promo / deal posts) and events_by_region-live-online (online courses)."""
+    skip = ["event_type-online", "events_by_region-live-online"]
+    page = _page("event_range.html")
+    assert parse_event(page, URL, TZ, skip_classes=skip) is not None
+    for tag in skip:
+        tagged = page.replace("event_type-standing", tag)
+        assert parse_event(tagged, URL, TZ, skip_classes=skip) is None
+
+
 def test_past_event_skipped() -> None:
     assert parse_event(_page("event_free.html"), URL, TZ, today=date(2026, 10, 29)) is None
 

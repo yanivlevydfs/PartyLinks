@@ -25,6 +25,7 @@
        "country": "il"
       },
       "group": {
+       "urlname": "corecpp",
        "name": "Core C++",
        "topicCategory": {
         "urlkey": "technology",
@@ -56,6 +57,7 @@
        "country": "il"
       },
       "group": {
+       "urlname": "openai-codex-israel-user-group",
        "name": "Codex Israel User Group",
        "topicCategory": {
         "urlkey": "technology",
@@ -87,6 +89,7 @@
        "country": "il"
       },
       "group": {
+       "urlname": "makelab-israel-for-innovation-making-and-creativity",
        "name": "Makelab Israel for Innovation, Making and Creativity",
        "topicCategory": {
         "urlkey": "technology",
@@ -121,6 +124,7 @@
        "country": "JO"
       },
       "group": {
+       "urlname": "gdg-amman",
        "name": "GDG Amman",
        "topicCategory": {
         "urlkey": "technology",
@@ -143,6 +147,7 @@
       "description": "Hares: Tipsy Gipsy and Pervarotti\n\nAlright, slacker-hashers, you got your September break. Back to work!\nYou get a treat: A Halloween Hash! That means: Scary costumes! (or just come naked)\n\nOn after @ Tipsy Gipsy's!\n\n**When:** Saturday 31 Oct, 3 pm (tentative)\n**Where:** TBA\n\nJoin us wankers! (It costs 25 shekel)\nMagic Dyke",
       "venue": null,
       "group": {
+       "urlname": "the-holy-hash-house-harriers-h4",
        "name": "Holyland Hash House Harriers (H4)",
        "topicCategory": {
         "urlkey": "travel-outdoor",

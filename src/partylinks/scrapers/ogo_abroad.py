@@ -23,10 +23,11 @@ import geonamescache
 import httpx
 
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, zone
+from partylinks.parsing import ParseError, jsonld_nodes, schema_types, zone
 from partylinks.places import city_zone
 from partylinks.scrapers import ogo
 from partylinks.scrapers.abroad import local_zone
+from partylinks.scrapers.chillz import EVENT_TYPES
 from partylinks.scrapers.ogo import OgoScraper, OgoSettings
 from partylinks.scrapers.seller_offers import SellerLookup
 
@@ -94,6 +95,19 @@ def upcoming_event_urls(sitemaps: list[str], locale: str, first: date, last: dat
     return sorted(found, key=found.__getitem__)
 
 
+_ONLINE = "https://schema.org/OnlineEventAttendanceMode"
+
+
+def is_online(page_html: str) -> bool:
+    """The page's event is online only (JSON-LD ``OnlineEventAttendanceMode``: a webinar on the
+    "online" menu page, Nov 2026); a mixed one is kept for its venue."""
+    return any(
+        str(n.get("eventAttendanceMode") or "").replace("http://", "https://") == _ONLINE
+        for n in jsonld_nodes(page_html)
+        if schema_types(n) & EVENT_TYPES
+    )
+
+
 _STATE = re.compile(r",\s*([A-Z]{2})\b")  # "..., Tenafly, NJ 07670", "..., St. Petersburg, FL, USA"
 
 
@@ -146,10 +160,13 @@ def address_city(address: str | None) -> str | None:
 
 
 def parse_event(page_html: str, url: str, source: str, default_zone: str, currency: str = "USD") -> ScrapedEvent | None:
-    """The page's event via ``ogo.parse_event``, in the venue's country and zone; None when cancelled."""
+    """The page's event via ``ogo.parse_event``, in the venue's country and zone; None when cancelled
+    or online only."""
     match = _EVENT_URL.match(url)
     if match is None:
         raise ParseError(f"{url}: not an OGO event page")
+    if is_online(page_html):
+        return None
     country, city = match.group(3).upper(), match.group(4).replace("-", " ")
     tz = local_zone(country, default_zone, city)
     # ogo.parse_event reads the city and id from an Israeli path: same layout, country segment swapped.

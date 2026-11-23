@@ -1,4 +1,4 @@
-"""Eventer's venue catalog: one request for the list, one per venue for its page, one per logo."""
+"""Eventer's venue catalog: one request for the list, one per venue for its page (its events too), one per logo."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ _LINKS = ("webSiteLink", "instagramLink", "facebookLink")
 async def eventer_venues(scraper: EventerScraper) -> list[VenueProfile]:
     s = scraper.settings
     catalog = await scraper.get_json(s.base_url + s.venues_path, expect=dict)
-    out = []
+    out, events = [], []
     for slide in catalog.get("slides") or []:
         if not (isinstance(slide, dict) and slide.get("linkName") and slide.get("title")):
             continue
@@ -25,11 +25,14 @@ async def eventer_venues(scraper: EventerScraper) -> list[VenueProfile]:
         page = await scraper.optional(f"venue {link}", scraper.get_json(s.base_url + s.venue_path.format(link_name=quote(link)), expect=dict))
         if page is not None and page.get("isDeleted"):
             continue
+        # The venue's own upcoming events (barby, mikro_theatre...): read by the scraper too.
+        events += [str(e["linkName"]) for e in (page or {}).get("events") or [] if isinstance(e, dict) and e.get("linkName")]
         profile = parse_venue(slide, page or {}, s.base_url + s.venue_page_path.format(link_name=quote(link)))
         if profile.logo_url:
             response = await scraper.optional(f"venue logo {link}", scraper.request("GET", profile.logo_url))
             profile.logo = response.content if response is not None else None
         out.append(profile)
+    scraper.venue_events = tuple(dict.fromkeys(events))
     return out
 
 

@@ -132,3 +132,12 @@ def test_address_city_for_any_city_pages() -> None:
     assert address_city("JCC, 400 Main St, Tenafly, NJ 07670, USA") == "tenafly"
     assert address_city("Jüdische Gemeinde, Zietenstraße 50, 40476 Düsseldorf") == "düsseldorf"
     assert address_city("Online") is None and address_city(None) is None
+
+
+def test_online_only_event_is_dropped() -> None:
+    # de.ogo.events' "online" menu page: webinars (VirtualLocation), not public events at a venue.
+    url = "https://de.ogo.events/he/event/de/any-city/2026/11/30/history-halakh-from-sinai-internet-ovCsPKxGq4CWuWQJD97RH5"
+    page = _read("event_date_only.html").replace("OfflineEventAttendanceMode", "OnlineEventAttendanceMode")
+    assert parse_event(page, url, "ogo_de", "Europe/Berlin") is None
+    mixed = _read("event_date_only.html").replace("OfflineEventAttendanceMode", "MixedEventAttendanceMode")
+    assert parse_event(mixed, url, "ogo_de", "Europe/Berlin") is not None

@@ -4,6 +4,7 @@ import asyncio
 import json
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -332,7 +333,7 @@ def test_every_date_of_an_israeli_series_and_same_name_group_is_read_not_abroad(
 
     cfg = eventbrite.EventbriteSettings(
         cron="0 0 * * *", israel_paths=["/d/israel/all-events/"], cities=["france--lille"], cycle_runs=1,
-        empty_retry_seconds=0,
+        empty_retry_seconds=0, every_date_abroad=False,
     )  # fmt: skip
     scraper = eventbrite.EventbriteScraper(
         cfg, HttpSettings(request_delay_seconds=0, backoff_seconds=0), "Asia/Jerusalem"
@@ -351,3 +352,74 @@ def test_every_date_of_an_israeli_series_and_same_name_group_is_read_not_abroad(
     assert "/e/x-2" not in asked and "/e/x-51" in asked  # a series date shares its page; a same-name event has its own
     assert asked.count("/api/v3/series/S1/events/") == 2 and "/api/v3/series/S9/events/" not in asked  # not abroad
     assert (scraper.stats.listed, scraper.stats.dates, scraper.stats.events) == (4, 3, 6)
+
+
+def test_a_listing_past_49_pages_is_read_by_date_windows_to_its_end():
+    """980 events show; the rest come from date windows, halved until each fits its pages."""
+    today = datetime.now(UTC).date()
+    asked: list[tuple[str | None, str | None, int]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        params = request.url.params
+        start, end, page = params.get("start_date"), params.get("end_date"), int(params.get("page", "1"))
+        asked.append((start, end, page))
+        if start is None:  # the whole listing: 1,500 events, 49 pages shown
+            return httpx.Response(
+                200, text=_page([_row(f"a{page}", "DE", [])], 49).replace('"object_count": 1', '"object_count": 1500')
+            )
+        first = datetime.fromisoformat(start).date()
+        # A window starting within 10 days holds 1,200 (too many) unless it is short; later ones fit.
+        near = first <= today + timedelta(days=10)
+        span = (datetime.fromisoformat(end or start).date() - first).days
+        total, pages = (1200, 49) if near and span > 200 else (60, 3)
+        body = _page([_row(f"{start}-{end}-{page}", "DE", [])], pages).replace(
+            '"object_count": 1', f'"object_count": {total}'
+        )
+        return httpx.Response(200, text=body)
+
+    cfg = eventbrite.EventbriteSettings(cron="0 0 * * *", empty_retry_seconds=0, window_days=1000)
+    scraper = eventbrite.EventbriteScraper(cfg, HttpSettings(request_delay_seconds=0, backoff_seconds=0), "UTC")
+    scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    events: dict[str, dict[str, Any]] = {}
+    asyncio.run(scraper._listing("/d/germany--berlin/music--events/", events, keep=lambda e: True))
+    windows = {(s, e) for s, e, _ in asked if s}
+    assert (today - timedelta(days=1)).isoformat() in {s for s, _ in windows}  # from yesterday
+    assert max(e for _, e in windows if e) == (today + timedelta(days=1000)).isoformat()  # to window_days
+    assert [p for s, _, p in asked if s is None] == [1]  # the whole listing's page 1 only
+    leaves = [(s, e) for s, e in windows if s and e and (s, e, 3) in asked]  # windows read to their last page
+    assert leaves and all((s, e, 2) in asked for s, e in leaves)
+    assert len(events) == 1 + 3 * len(leaves) + len(windows - set(leaves))
+    # A window's days follow the last: no day left out between them.
+    spans = sorted((datetime.fromisoformat(s).date(), datetime.fromisoformat(e).date()) for s, e in leaves)
+    assert all(b[0] - a[1] == timedelta(days=1) for a, b in pairwise(spans))
+
+
+def test_abroad_a_series_date_is_read_up_to_the_city_next_read():
+    music = "EventbriteCategory/103"
+    lille = {**_row("90", "FR", [music]), "series_id": "S9", "num_children": 3}
+    far = (datetime.now(UTC) + timedelta(days=40)).date().isoformat()
+    api = {"/api/v3/series/S9/events/": [_api("90", SOON), _api("91", LATER), _api("92", far)]}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if path.startswith("/e/"):
+            body = json.dumps({"props": {"pageProps": {"context": {"basicInfo": {"status": "live"}}}}})
+            return httpx.Response(200, text=f'<script id="__NEXT_DATA__" type="application/json">{body}</script>')
+        if path in api:
+            return httpx.Response(200, json={"events": api[path], "pagination": {"has_more_items": False}})
+        if path == "/d/france--lille/all-events/":
+            return httpx.Response(200, text=_page([lille]))
+        return httpx.Response(200, text=_page([]))
+
+    # Each city once in 28 slots of 12 h: dates up to 14.5 days ahead now, later ones on a later visit.
+    cfg = eventbrite.EventbriteSettings(
+        cron="0 0 * * *", israel_paths=["/d/israel/all-events/"], cities=["france--lille"], cycle_runs=1,
+        rotation_hours=12 * 28, empty_retry_seconds=0,
+    )  # fmt: skip
+    scraper = eventbrite.EventbriteScraper(cfg, HttpSettings(request_delay_seconds=0, backoff_seconds=0), "UTC")
+    scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+    async def run() -> list[ScrapedEvent]:
+        return [e async for e in scraper.scrape()]
+
+    assert sorted(e.source_event_id for e in asyncio.run(run())) == ["90", "91"]

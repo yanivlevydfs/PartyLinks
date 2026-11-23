@@ -1,9 +1,11 @@
 """Parties24/7 (parties247.co.il) - a national party guide (Next.js on Vercel), mostly Go-Out's parties.
 
-robots.txt allows everything but ``/admin/``. Its events sitemap (``/sitemaps/events.xml``) came back empty
-(Nov 2026; the ``archive-*`` ones are past events), so the listing is its own pages: the home page links
-every list (``listing_prefixes``: days, cities, clubs, carousels, audiences, genres, ``/all-parties``), each
-of which links its parties (``/event/<slug>``): ~70 events over ~25 pages, ~100 requests a run.
+robots.txt allows everything but ``/admin/``. The parties are its events sitemap (``/sitemaps/events.xml``,
+every coming party: 96 on 24.11.2026, the holiday ones months ahead; the ``archive-*`` ones are past) and
+the lists the home page and the static sitemap link (``listing_prefixes``: days, cities, clubs, carousels,
+audiences, genres, DJs, the SEO ``/parties/`` lists, the holiday pages, ``/all-parties``), each of which
+links its parties (``/event/<slug>``): ~100 events over ~55 pages, ~160 requests a run. The lists give the
+categories and a city; the sitemap the parties no list shows yet (Purim 2027, New Year's Eve...).
 
 Each event page carries a schema.org ``Event`` (JSON-LD): name, start (with its offset), image, a short
 description, ``eventStatus`` (cancelled ones are dropped) and an ``Offer``: price and the seller's page,
@@ -47,13 +49,19 @@ class Parties247Settings(SourceSettings):
     site_url: str = "https://www.parties247.co.il"
     # The home page's links to lists of parties: every path starting with one of these is read.
     listing_prefixes: list[str] = Field(
-        default_factory=lambda: ["/all-parties", "/day/", "/cities/", "/club/", "/carousels/", "/audience/", "/genre/"]
-    )
+        default_factory=lambda: [
+            "/all-parties", "/day/", "/cities/", "/club/", "/carousels/", "/audience/", "/genre/", "/dj/", "/parties/",
+            "/friday-parties", "/saturday-parties", "/thursday-parties", "/weekend-parties", "/boutique-parties",
+            "/rosh-hashana", "/sukkot", "/halloween", "/hanukkah", "/sylvester", "/purim", "/yom-haatzmaut",
+        ]
+    )  # fmt: skip
+    # Sitemaps: the events one lists every coming party; the static one the lists (read when a prefix matches).
+    events_sitemap: str = "/sitemaps/events.xml"
+    static_sitemap: str = "/sitemaps/static.xml"
     # Lists whose name is a category of the parties on them (their slug, "techno-music" -> "techno music").
     category_prefixes: list[str] = Field(default_factory=lambda: ["/genre/", "/audience/"])
     # City lists -> their city: a party whose location names a street only takes it from the list it is on.
     city_lists: dict[str, str] = Field(default_factory=dict)
-    max_events: int = Field(1000, ge=1)
 
 
 class Parties247Scraper(BaseScraper[Parties247Settings]):
@@ -63,7 +71,8 @@ class Parties247Scraper(BaseScraper[Parties247Settings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         home = await self.get_text(s.site_url + "/")
-        lists = listing_paths(home, s.listing_prefixes)
+        static = await self.optional("static sitemap", self.get_text(s.site_url + s.static_sitemap))
+        lists = list(dict.fromkeys(listing_paths(home, s.listing_prefixes) + sitemap_paths(static, s.listing_prefixes)))
         towns = _town_names()
         found: dict[str, set[str]] = {path: set() for path in event_paths(home)}  # event path -> its categories
         cities: dict[str, str] = {}  # event path -> the city list it is on
@@ -74,9 +83,10 @@ class Parties247Scraper(BaseScraper[Parties247Settings]):
                 found.setdefault(event_path, set()).update([label] if label else [])
                 if city := s.city_lists.get(path.rstrip("/")):
                     cities.setdefault(event_path, city)
-        paths = list(found)[: s.max_events]
-        if len(found) > s.max_events:
-            self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(found))
+        sitemap = await self.optional("events sitemap", self.get_text(s.site_url + s.events_sitemap))
+        for event_path in sitemap_paths(sitemap, ["/event/"]):
+            found.setdefault(event_path, set())
+        paths = list(found)
         self.log.debug("listed %d events on %d lists", len(paths), len(lists))
 
         async def fetch(path: str) -> ScrapedEvent | None:
@@ -96,6 +106,12 @@ class Parties247Scraper(BaseScraper[Parties247Settings]):
 def listing_paths(home_html: str, prefixes: list[str]) -> list[str]:
     """The lists the home page links (in its order, each once)."""
     paths = (unquote(p) for p in re.findall(r'href="(/[^"#?]+)"', home_html))
+    return list(dict.fromkeys(p for p in paths if any(p.startswith(x) for x in prefixes)))
+
+
+def sitemap_paths(xml: str | None, prefixes: list[str]) -> list[str]:
+    """A sitemap's pages on this site whose path starts with one of ``prefixes`` (in its order, each once)."""
+    paths = (unquote(urlsplit(loc.strip()).path) for loc in re.findall(r"<loc>([^<]+)</loc>", xml or ""))
     return list(dict.fromkeys(p for p in paths if any(p.startswith(x) for x in prefixes)))
 
 
