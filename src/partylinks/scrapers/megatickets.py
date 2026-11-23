@@ -14,8 +14,6 @@ from __future__ import annotations
 import re
 from collections.abc import AsyncIterator
 
-from pydantic import Field
-
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, jsonld_nodes, schema_types, to_int
 from partylinks.scrapers.base import BaseScraper, SourceSettings
@@ -30,7 +28,6 @@ class MegaticketsSettings(SourceSettings):
     site_url: str
     list_path: str
     event_page_path: str  # must contain "{slug}"
-    max_events: int = Field(500, ge=1)
 
 
 class MegaticketsScraper(BaseScraper[MegaticketsSettings]):
@@ -47,10 +44,8 @@ class MegaticketsScraper(BaseScraper[MegaticketsSettings]):
         s = self.settings
         prefix = re.escape(s.event_page_path.split("{slug}")[0])
         page = await self.get_text(s.site_url + s.list_path)
-        slugs = list(dict.fromkeys(re.findall(rf'href="{prefix}([^"/?#]+)"', page)))
-        if len(slugs) > s.max_events:
-            self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(slugs))
-        return slugs[: s.max_events]
+        # The one listing holds every event (no pagination, filters or categories).
+        return list(dict.fromkeys(re.findall(rf'href="{prefix}([^"/?#]+)"', page)))
 
     async def _fetch_event(self, slug: str) -> ScrapedEvent:
         url = self.settings.site_url + self.settings.event_page_path.format(slug=slug)
