@@ -1503,6 +1503,8 @@ geocoding:
     # Venues off the map, their addresses found on the web by research agents (Nov 2026) and placed through OSM
     # (Photon): a house, building or named place in the right town, or a kibbutz / moshav's own point for a hall
     # inside it; keys whose text is stored in more than one town were left out.
+    "הרפת הרובוטית - משק עסיס": [32.8246384, 35.7667337]  # the same dairy as Makore names it (50 tours, source audit Nov 2026)
+    "זומו- הזרחן 13": [31.5946871, 34.7829160]          # Zumu Kiryat Gat, HaZarhan 13, the industrial park (OSM; a Smarticket tenant's 53 events)
     "אולם \"עבאס\"- רחוב חנוך 19": [32.052014, 34.78903]  # אולם "עבאס", חנוך 19, תל אביב-יפו
     "אולם בית ציזלינג": [32.5571697, 35.3878886]  # אולם בית ציזלינג, קיבוץ עין חרוד מאוחד, עין חרוד מאוחד
     "נתניה aaci": [32.3308717, 34.8567212]  # AACI נתניה, שמואל הנציב 28, נתניה
@@ -3126,13 +3128,13 @@ sources:
       - {host: mishkan-ashdod, venue_name: המשכן לאמנויות הבמה אשדוד, city: אשדוד}
       - {host: matnasgan, venue_name: מרכז קהילתי מזרח נתניה, city: נתניה}
       - {host: makombalev, venue_name: היכל התרבות ראש העין, city: ראש העין}
-      - {host: t-hazafon, venue_name: תיאטרון הצפון}
+      - {host: t-hazafon, venue_name: תיאטרון הצפון, city: חיפה}   # its one stage, Kiryat Haim (Haifa)
       - {host: betshemesh, venue_name: היכל התרבות בית שמש, city: בית שמש}
       - {host: htjer, venue_name: היכל פיס לתרבות ולאמנויות ירושלים, city: ירושלים}
       - {host: eyz, venue_name: תרבות בעמק יזרעאל}
       - {host: phk, venue_name: מרכז אמנויות הבמה פרדס חנה כרכור, city: פרדס חנה-כרכור}
       - {host: eilatmuni, venue_name: עיריית אילת, city: אילת}
-      - {host: yadal, venue_name: תיאטרון יד למגינים}
+      - {host: yadal, venue_name: תיאטרון יד למגינים, city: יגור}   # its hall in Kibbutz Yagur
       - {host: htma, venue_name: היכל התרבות מעלה אדומים, city: מעלה אדומים}
       - {host: ofektivi, venue_name: היכל התרבות אופקים, city: אופקים}
       - {host: galil-elion, venue_name: תרבות גליל עליון}
@@ -3211,8 +3213,8 @@ sources:
       - {host: thehebrewtheater, venue_name: התיאטרון העברי}
       - {host: papi, venue_name: פאפי - תיאטרון ילדים}
       - {host: m-zion, venue_name: מבשרת ציון, city: מבשרת ציון}
-      - {host: symphonette, venue_name: סימפונט רעננה}
-      - {host: nifgashim, venue_name: נפגשים}
+      - {host: symphonette, venue_name: סימפונט רעננה, city: רעננה}   # plays at Ra'anana's municipal music centre
+      - {host: nifgashim, venue_name: נפגשים, city: אור יהודה}   # Or Yehuda's halls (music centre, library, Kazaz)
       - {host: shamayim, venue_name: שמים הפקות מוזיקה}
       - {host: zfatarbut, venue_name: היכל התרבות צפת, city: צפת}
       - {host: andalusit, venue_name: המרכז לתרבות האנדלוסית}
@@ -3280,14 +3282,14 @@ sources:
       - {host: htk.co.il, venue_name: היכל התרבות כרמיאל, city: כרמיאל}
       - {host: mishkan.raanana.muni.il, venue_name: המשכן למוסיקה ואמנויות רעננה, city: רעננה, rooms: true}
       - {host: tarbutiberias.co.il, venue_name: היכל התרבות טבריה, city: טבריה, skip_title_words: ["תשלום", "קורס"]}
-      - {host: htc, venue_name: היכל התרבות חוף הכרמל, rooms: true}
+      - {host: htc, venue_name: היכל התרבות חוף הכרמל, city: חוף הכרמל, rooms: true}   # one hall (Muza, Mir'av centre)
       - {host: weilcenter, venue_name: מרכז וייל, city: כפר שמריהו, rooms: true}
       # "מתנ״ס בית שמש" (bs = Beit Shemesh): it was filed under Be'er Sheva until Nov 2026.
       - {host: matnasbs, venue_name: המרכזים הקהילתיים בית שמש, city: בית שמש, skip_title_words: ["קורס", "חוג", "בדיקות", "דוכנים", "שיעור ניסיון"]}
       - {host: matnaskazrin, venue_name: היכל התרבות קצרין, city: קצרין, skip_title_words: ["ייעוץ"]}
       - {host: jaffacinema, venue_name: קולנוע יפו, city: תל אביב-יפו, rooms: true, category: קולנוע}
       - {host: tickets.nalagaat.org.il, venue_name: מרכז נא לגעת, city: תל אביב-יפו, rooms: true, skip_title_words: ["קורס"]}
-      - {host: psefas-matnasim, venue_name: רשת המרכזים הקהילתיים פסיפס, skip_title_words: ["כרטיסיי", "פעילויות בית לגדול"]}
+      - {host: psefas-matnasim, venue_name: רשת המרכזים הקהילתיים פסיפס, city: נוף הגליל, skip_title_words: ["כרטיסיי", "פעילויות בית לגדול"]}
       - {host: matnas-ramla.co.il, venue_name: היכל התרבות רמלה, city: רמלה, rooms: true}
       - {host: shelanu-kids, venue_name: התיאטרון שלנו}
       - {host: ngvth, venue_name: בית הספר לתיאטרון חזותי}
