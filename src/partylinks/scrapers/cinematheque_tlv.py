@@ -76,6 +76,8 @@ class TelAvivCinemathequeSettings(SourceSettings):
     address: str | None = "הארבעה 5"
     city: str | None = "תל אביב"
     festivals: list[CinemathequeFestival] = Field(default_factory=list)
+    # PRES category name (featureCategoryName) -> the event's source genres; the rest stay "קולנוע".
+    category_genres: dict[str, list[str]] = Field(default_factory=dict)
     ajax_url: str = "https://www.cinema.co.il/wp-admin/admin-ajax.php"
     festival_action: str = "load_more_posts"  # the festival page's own "load more" call: paged cards
     max_festival_pages: int = Field(50, ge=1)  # a guard against a site that never answers empty
@@ -161,12 +163,11 @@ class JerusalemCinemathequeScraper(TelAvivCinemathequeScraper):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         assert isinstance(s, JerusalemCinemathequeSettings)
-        events = [event async for event in super().scrape()]
         stored: dict[str, list[str]] = {}  # movie id -> its stored picture (event ids are "movie:branch:day")
         for event_id, images in self.known_images.items():
             stored.setdefault(event_id.split(":", 1)[0], images)
         missing: dict[str, list[ScrapedEvent]] = defaultdict(list)
-        for event in events:
+        async for event in super().scrape():  # yielded as they come, soonest first: a cut run keeps this week
             movie = str(event.extra.get("movie_id") or "")
             if not event.image_url and (known := stored.get(movie)):
                 event.image_url, event.images = known[0], known
@@ -298,6 +299,8 @@ def build_event(
         "הקרנות: " + ", ".join(t.strftime("%H:%M") for t in times),
     ]
     priced = [t.price for t in tiers if t.price is not None]
+    categories = [c.strip() for c in (category or "").split(",") if c.strip()]
+    mapped = list(dict.fromkeys(g for c in categories for g in s.category_genres.get(c, [])))
     extra = {
         "showtimes": [t.isoformat() for t in times],
         "movie_id": movie,
@@ -307,7 +310,7 @@ def build_event(
         "original_title": clean_str(first.get("featureAdditionalName")),
         "runtime_minutes": to_int(first.get("durationInMinutes")),
         "language": clean_str(first.get("languageISO")) or clean_str(feature.get("originalLanguageISO")),
-        "series": [c.strip() for c in (category or "").split(",") if c.strip() and c.strip() != "כללי"],
+        "series": [c for c in categories if c != "כללי"],
         "halls": list(dict.fromkeys(h for _, r in shows if (h := clean_str(r.get("venueName"))))),
         "trailer": clean_str(feature.get("trailer")),
     }
@@ -323,8 +326,9 @@ def build_event(
         venue_name=s.venue_name,
         address=s.address,
         city=s.city,
-        # Series names ("פסטיבל גאה ריכוז") would map to wrong categories: kept in extra only.
-        source_genres=["הרצאה"] if course else ["קולנוע"],
+        # Series names ("פסטיבל גאה ריכוז") would map to wrong categories: kept in extra only, unless
+        # category_genres names the category ("קורסים" -> הרצאה, "מטרופוליטן" -> קולנוע + אופרה).
+        source_genres=["הרצאה"] if course else mapped or ["קולנוע"],
         image_url=clean_str(feature.get("imageData")),
         min_price=min(priced, default=None),
         max_price=max(priced, default=None),

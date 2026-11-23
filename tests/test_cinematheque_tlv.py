@@ -112,6 +112,46 @@ def test_jerusalem_film_picture_from_its_own_site_at_the_crawl_delay() -> None:
     assert asked.count("/he/event/99048") == 1  # one film page per film
 
 
+def test_cinematheque_jlm_reads_the_whole_feed_and_maps_its_categories() -> None:
+    from partylinks.config import RetentionSettings, Settings
+    from partylinks.enrichment import Enricher
+    from partylinks.scrapers import build_scraper
+
+    settings = Settings()
+    s = build_scraper("cinematheque_jlm", settings).settings
+    assert isinstance(s, TelAvivCinemathequeSettings)
+    # The feed lists months ahead (Met Opera to 05.06.2027 on 23.11.2026): no window shorter than retention's.
+    assert s.days_ahead >= RetentionSettings().max_future_days
+    base = LISTING["presentations"][0]
+    shows = [  # (feature, PRES category, day) as jer-cin.pres.global lists them
+        (18479, "קורסים", "2026-11-27"),  # a lecture-course meeting, sold one by one
+        (18408, "מטרופוליטן", "2027-06-05"),  # 194 days ahead
+        (19024, "national theatre", "2026-12-26"),
+        (19082, "ילדים", "2026-12-07"),
+        (19101, "פסטיבל יהודי", "2026-12-05"),
+        (19027, "קונצ'רטו", "2026-12-05"),  # a short concert, a lecture and a film
+        (19065, "סרטים", "2026-11-28"),
+    ]
+    rows = [
+        dict(base) | {"id": i, "featureId": f, "featureCategoryName": c, "dateTime": f"{d} 19:00", "businessDate": d}
+        for i, (f, c, d) in enumerate(shows, 1)
+    ]
+    groups = group_screenings({"presentations": rows}, TZ, date(2026, 11, 23), s.days_ahead)
+    built = {m: build_event(m, d, x, {}, [], s, "cinematheque_jlm") for (m, d), x in groups.items()}
+    assert set(built) == {str(f) for f, _, _ in shows}
+    enricher = Enricher(settings.enrichment, settings.timezone)
+    enriched = {m: enricher.enrich(e) for m, e in built.items()}
+    genres = {m: e.genres for m, e in enriched.items() if e is not None}
+    assert set(genres) == set(built)
+    assert built["18479"].source_genres == ["הרצאה", "קולנוע"] and "lectures" in genres["18479"]
+    assert {"cinema", "classical_opera"} <= set(genres["18408"])
+    assert {"cinema", "theatre"} <= set(genres["19024"])
+    assert {"cinema", "kids"} <= set(genres["19082"])
+    assert {"cinema", "festival"} <= set(genres["19101"])
+    assert {"cinema", "lectures", "live_show"} <= set(genres["19027"])
+    assert built["19065"].source_genres == ["קולנוע"] and built["19065"].extra["series"] == ["סרטים"]
+
+
 FESTIVAL_PAGE = """<ul>
 <li data-filters="movie-cat-588" id="588" class="my-active"> סאונדטראק 2026 </li>
 <li data-filters="movie-cat-597" id="597" class=""> פאנק </li>

@@ -4329,6 +4329,7 @@ sources:
     # cinematheque_tlv, on its own box office host (no robots.txt). PRES has almost no posters, so the
     # films' pictures come from the cinematheque's own film pages, at its robots.txt Crawl-delay 180:
     # every event is saved first, then up to max_pictures_per_run films (one page / 180 s) get theirs.
+    # sections: the whole PRES feed, which every www section sells through (every order button on them is in it, 23.11.2026; the rest are today's started screenings, TICKETING_ENDED): לוח הקרנות / החודש (day calendars 14.12 / 17.12 / 22.12: 1 / 1 / 0 = the feed's 1 / 1 / 0), אירועי החודש, מטרופוליטן אופרה (6 operas to 05.06.2027 = feed 6), קונצ׳רטו לקולנוע (13 = feed 13), התיאטרון הלאומי לונדון (NT Live, feed 7), קורסים / מדברים קולנוע (the series' meetings, sold one by one = feed 22), פסטיבל הקולנוע היהודי 5-10.12 (האירועים: 28 buttons, all in the feed's 54), פסטיבל נשים, ילדים, קאלט ברביעי, הקרנות קבועות, /en; 157 coming screenings to 05.06.2027 = 155 movie-days (days_ahead 120 read 145). not read: סינמטק אונליין (online only), תערוכות (past exhibitions; the festival's gallery talks are in the feed), the teachers' course (closed, external registration), ANINATION 2026 and the anthropology festival 2026 (over; no rows in the feed), פסטיבל הקולנוע ירושלים (July; its screenings join this feed when sold), מנויים, GIFT CARD, השכרת אולמות, ארכיון / מרכז המולטימדיה, about pages; sitemap.xml is 404.
     enabled: true
     cron: "17 10,22 * * *"
     crawl_delay_seconds: 180
@@ -4339,7 +4340,19 @@ sources:
     features_path: /api/features/
     ticket_groups_path: /api/presentations/{id}/ticketGroups
     order_url: https://jer-cin.pres.global/order/{id}
-    days_ahead: 120  # the feed lists more days than 3/7 (audit, Nov 2026)
+    days_ahead: 730  # the whole feed (to 05.06.2027 on 23.11.2026; = retention.max_future_days): 120 days cut 10 screenings
+    # Courses sold whole; "קורס " with the space: "סקורסזה", "וקורסיקה" stay. The קורסים category's meetings are
+    # sold one by one (90 ₪): kept, as lectures.
+    skip_title_words: ["קורס "]
+    # PRES categories (exact names) -> source genres; the rest stay קולנוע, series names in extra.series.
+    category_genres:
+      קורסים: [הרצאה, קולנוע]  # מדברים קולנוע: lecture series with film, and מועדון טרום בכורה (guided premieres)
+      ילדים: [קולנוע, ילדים]
+      "קונצ'רטו": [קולנוע, הרצאה, הופעה חיה]  # קונצ׳רטו לקולנוע: a short concert, a lecture and a film (Saturdays 11:00)
+      מטרופוליטן: [קולנוע, אופרה]  # Met Opera Live
+      national theatre: [קולנוע, תיאטרון]  # NT Live
+      פסטיבל יהודי: [קולנוע, פסטיבל]
+      פסטיבל נשים: [קולנוע, פסטיבל]
     branch_id: jlm
     venue_name: סינמטק ירושלים
     address: דרך חברון 11
