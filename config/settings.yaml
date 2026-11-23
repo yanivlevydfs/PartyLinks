@@ -4182,18 +4182,28 @@ sources:
 
   cinemacity:
     # Cinema City: the chain's 8 multiplexes. The Wix site reads showtimes from its PRES ticketing
-    # host; 2 requests: /api/presentations/ (every screening of every branch, ~4000 rows, ~6 MB) and
+    # host; 2 requests: /api/presentations/ (every screening of every branch, 1,500-4,000 rows, 2-6 MB) and
     # /api/features/ (synopsis + poster), then one /ticketGroups (prices) per event and hall type.
     # Addresses from the site's /locations page. robots.txt allows all but ?lightbox=; the tickets host has none.
+    # sections: the whole PRES feed, every screening of all 8 branches (= the sitemap's 8 /city/ pages) to its last day
+    # (23.11: 1,503 screenings to 13.02.2027, 686 movie-days); it is what every menu section lists: now playing,
+    # coming soon, VIP / Lounge / Prime / Onyx halls, kids, shows and the 10 Cinema+ pages (stand-up, show, kidshow,
+    # kids, teen, parents, Onyx, Russian, horror, Israeli cinema; their live shows declared as "show"); not read:
+    # coming-soon films with no screening yet (60 of /api/features/' 128: no date or branch until sales open),
+    # zman-eshkol (a course centre's classes, sold on its own site), birthdays / lounge hire / cinemaevents.co.il
+    # (private hire), gift cards, prices, about, policy and giveaway /page/s (no events).
     enabled: true
     cron: "23 9,21 * * *"
+    skip_title_words: ["קורס", "סדנה", "סדנת"]  # Zman Eshkol's courses meet in these halls
     # ~2,250 ticketGroups requests a run: 3 at a time the host refused them (429), proxy after proxy (Nov 2026).
     http: {concurrency: 1, request_delay_seconds: 0.5}
     api_url: https://tickets.cinema-city.co.il
     presentations_path: /api/presentations/
     features_path: /api/features/
     movie_url: https://www.cinema-city.co.il/movie/{id}
-    days_ahead: 45  # the feed lists more days than 3/7 (audit, Nov 2026)
+    # The whole feed (= retention.max_future_days): it lists only what is on sale; 45 cut a premiere's Ashdod
+    # screening (10.01.2027) and a Glilot kids' show (13.02.2027) on 23.11.2026.
+    days_ahead: 730
     branches:
       "1170": {address: "בניין הרב מכר, צומת גלילות", city: רמת השרון}
       "1173": {address: "שדרות משה דיין 32", city: ראשון לציון}
