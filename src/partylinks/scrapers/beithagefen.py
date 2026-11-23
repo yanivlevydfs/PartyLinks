@@ -5,11 +5,14 @@ Both sites run one ASP.NET CMS (Fusion Studio), so one reader serves both (``sit
 sitemap; robots.txt has only Cloudflare's content signals. Listing: ``AllEvents.aspx`` holds every coming item
 as a card (``li.item``: title, first date and time, hall, artwork, its category in the link's
 ``CategoryItemId``); the page's own filter buttons name the categories ("מופעים", "מתחם משפחות", "תערוכות",
-"סיורים", "קונצרטים"), generic ones ("כל האירועים") left out. Each item's page (``EventDetalis.aspx``) gives one
-line per performance ("תאריך, שעה - 18-12-2026 - 13:00", each with its own ticket link on the house's site),
-the hall, street address, price ("50 ₪", "0 ₪" = free), the seller's button (mostly Eventer: kept as
-``extra["purchase_url"]``, so dedup ties it to the eventer source's listing), the venue's map pin (Google Maps
-embed) and the text. One request per site plus one per item (~55 in December, a few the rest of the year).
+"סיורים", "קונצרטים"), generic ones ("כל האירועים") left out. A card's link names one category only (or the
+generic one), so each named category's filtered page (``AllEvents.aspx?CategoryItemId=2``: its items only) is read
+too and every category an item is in is kept ("Silent Light": מופעים and קונצרטים). Each item's page
+(``EventDetalis.aspx``) gives one line per performance ("תאריך, שעה - 18-12-2026 - 13:00", each with its own
+ticket link on the house's site), the hall, street address, price ("50 ₪", "0 ₪" = free), the seller's button
+(mostly Eventer: kept as ``extra["purchase_url"]``, so dedup ties it to the eventer source's listing), the venue's
+map pin (Google Maps embed) and the text. One request per site and per named category plus one per item (~60 in
+December, a few the rest of the year).
 
 The house's halls (hall, lobby, yard, gallery, library, studio, Al-Karma) are one venue; tours whose meeting
 point is given "after buying" are placed at the house, as Eventer places them. The free yard shows, Santa's
@@ -86,7 +89,9 @@ class BeitHagefenScraper(BaseScraper[BeitHagefenSettings]):
         for site in s.sites:
             try:
                 page = await self.get_text(site.site_url + site.listing_path)
-                cards += parse_listing(page, site, tuple(s.generic_categories))
+                listed = parse_listing(page, site, tuple(s.generic_categories))
+                await self._add_categories(listed, category_pages(page, site, tuple(s.generic_categories)))
+                cards += listed
             except SourceBlockedError:
                 raise
             except Exception as exc:  # noqa: BLE001 - one site down must not cost the other
@@ -111,6 +116,20 @@ class BeitHagefenScraper(BaseScraper[BeitHagefenSettings]):
                 event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known
             ):
                 yield event
+
+    async def _add_categories(self, cards: list[Card], pages: dict[str, str]) -> None:
+        """Every named category an item is in (one filtered page each); one page failing costs only its label."""
+        for label, url in pages.items():
+            try:
+                found = listed_item_ids(await self.get_text(url))
+            except SourceBlockedError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - the cards keep the category their own link names
+                self.record_failure(f"category {label}", exc)
+                continue
+            for card in cards:
+                if card.item_id in found and label not in card.categories:
+                    card.categories.append(label)
 
 
 def one_page_per_show(events: list[ScrapedEvent], s: BeitHagefenSettings, timezone: str) -> list[ScrapedEvent]:
@@ -144,16 +163,40 @@ def _image(node: LexborNode | None, page_url: str) -> str | None:
     return urljoin(page_url, found.group(1).strip()) if found else None
 
 
-def parse_listing(page_html: str, site: BeitHagefenSite, generic: tuple[str, ...] = ()) -> list[Card]:
-    """AllEvents.aspx -> one card per item, each once, with its category named by the page's filter buttons."""
-    tree = LexborHTMLParser(page_html)
-    page_url = site.site_url + site.listing_path
-    labels: dict[str, str] = {}
+def _labels(tree: LexborHTMLParser, generic: tuple[str, ...]) -> dict[str, tuple[str, str]]:
+    """The page's filter buttons: category id -> (label, href), generic ones ("כל האירועים") left out."""
+    labels: dict[str, tuple[str, str]] = {}
     for button in tree.css("a.filter[href]"):
-        category = parse_qs(urlparse(button.attributes.get("href") or "").query).get("CategoryItemId", [""])[0]
+        href = button.attributes.get("href") or ""
+        category = parse_qs(urlparse(href).query).get("CategoryItemId", [""])[0]
         label = _text(button)
         if category and label and label not in generic:
-            labels.setdefault(category, label)
+            labels.setdefault(category, (label, href))
+    return labels
+
+
+def category_pages(page_html: str, site: BeitHagefenSite, generic: tuple[str, ...] = ()) -> dict[str, str]:
+    """AllEvents.aspx -> each named category's filtered page: label -> URL."""
+    page_url = site.site_url + site.listing_path
+    pages: dict[str, str] = {}
+    for label, href in _labels(LexborHTMLParser(page_html), generic).values():
+        pages.setdefault(label, urljoin(page_url, href))
+    return pages
+
+
+def listed_item_ids(page_html: str) -> set[str]:
+    """A (filtered) AllEvents page -> the ids of the items its cards link to."""
+    ids = set()
+    for link in LexborHTMLParser(page_html).css("li.item a.item_container[href]"):
+        ids.update(parse_qs(urlparse(link.attributes.get("href") or "").query).get("EventItemId", []))
+    return ids
+
+
+def parse_listing(page_html: str, site: BeitHagefenSite, generic: tuple[str, ...] = ()) -> list[Card]:
+    """AllEvents.aspx -> one card per item, each once, with the category its own link names (filter buttons)."""
+    tree = LexborHTMLParser(page_html)
+    page_url = site.site_url + site.listing_path
+    labels = {category: label for category, (label, _) in _labels(tree, generic).items()}
     cards: dict[str, Card] = {}
     for item in tree.css("li.item"):
         link = item.css_first("a.item_container[href]")

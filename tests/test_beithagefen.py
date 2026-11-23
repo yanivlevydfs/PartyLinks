@@ -19,6 +19,8 @@ from partylinks.scrapers.beithagefen import (
     BeitHagefenScraper,
     BeitHagefenSettings,
     Card,
+    category_pages,
+    listed_item_ids,
     one_page_per_show,
     parse_event,
     parse_listing,
@@ -81,6 +83,20 @@ def test_listing_cards_take_their_category_from_the_filter_buttons() -> None:
     )
     assert cards["1633"].categories == []  # category 7's button reads "כל האירועים": no category
     assert all(c.categories == [] for c in _cards("house").values())  # "אירועים קרובים" is generic too
+
+
+def test_each_named_category_has_its_filtered_page() -> None:
+    page = (FIXTURES / "haifahag_listing.html").read_text("utf-8")
+    assert category_pages(page, FESTIVAL, tuple(SETTINGS.generic_categories)) == {
+        "מופעים": "https://haifahag.com/AllEvents.aspx?CategoryItemId=2",
+        "מתחם משפחות": "https://haifahag.com/AllEvents.aspx?CategoryItemId=6",
+        "תערוכות": "https://haifahag.com/AllEvents.aspx?CategoryItemId=1",
+        "סיורים": "https://haifahag.com/AllEvents.aspx?CategoryItemId=5",
+        "קונצרטים": "https://haifahag.com/AllEvents.aspx?CategoryItemId=3",
+    }  # "כל האירועים" (8 and 7) and the past events are no category
+    assert listed_item_ids(page) == {"1383", "1600", "1633", "1645", "1656", "1663", "1664"}
+    house = (FIXTURES / "house_listing.html").read_text("utf-8")
+    assert list(category_pages(house, HOUSE, tuple(SETTINGS.generic_categories))) == ["גלריה בית הגפן", "תרבות"]
 
 
 def test_show_in_a_hall_of_the_house() -> None:
@@ -166,6 +182,17 @@ def test_run_reads_both_listings_and_yields_soonest_first() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         asked.append(str(request.url))
         prefix = "house" if "beit-hagefen" in request.url.host else "haifahag"
+        category = parse_qs(request.url.query.decode()).get("CategoryItemId", [""])[0]
+        if request.url.path.endswith("AllEvents.aspx") and category:
+            if prefix == "house" and category == "1":
+                return httpx.Response(400)  # one category page failing costs only its label
+            items = {"3": ["1664"], "6": ["1633", "1600"]}.get(category, []) if prefix == "haifahag" else []
+            cards = "".join(
+                f'<li class="item"><a class="item_container" href="EventDetalis.aspx?EventItemId={i}&CategoryItemId=7">'
+                "</a></li>"
+                for i in items
+            )
+            return httpx.Response(200, text=f"<ul>{cards}</ul>", headers={"content-type": "text/html; charset=utf-8"})
         if request.url.path.endswith("AllEvents.aspx"):
             name = f"{prefix}_listing.html"
         else:
@@ -180,11 +207,16 @@ def test_run_reads_both_listings_and_yields_soonest_first() -> None:
             return [e async for e in scraper.scrape()]
 
     events = asyncio.run(go())
-    assert len(asked) == 2 + 2 + 7  # two listings, one page per item
-    assert not scraper.failures
+    assert len(set(asked)) == 2 + (2 + 5) + (2 + 7)  # two listings, each named category's page, one page per item
+    assert len(scraper.failures) == 1 and scraper.failures[0].startswith("category גלריה בית הגפן")
     starts = [e.start_at.timestamp() for e in events if e.start_at]
     assert starts == sorted(starts)  # nearest first; past ones (once the fixture's dates pass) are left out
     assert len(events) <= 11 and not any(e.source_event_id.startswith("haifahag:1645:") for e in events)
+    genres = {e.source_event_id.split(":")[1]: e.source_genres for e in events}
+    if "1664" in genres:  # its card names מופעים; the concerts page lists it too
+        assert genres["1664"] == ["מופעים", "קונצרטים", "פסטיבל", "חג החגים"]
+    if "1633" in genres:  # its card names "כל האירועים" only; the families page lists it
+        assert genres["1633"] == ["מתחם משפחות", "פסטיבל", "חג החגים"]
 
 
 def test_config_block() -> None:

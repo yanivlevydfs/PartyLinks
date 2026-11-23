@@ -5261,6 +5261,12 @@ sources:
     # requests in December, a few the rest of the year). Overlap: ~2/3 of the festival is sold on Eventer (eventer
     # source, user "beithagefen") and the house's shows on Makore / Kupat Bravo: dedup merges them via purchase_url.
     # The free yard shows, Santa's house and the exhibitions are sold nowhere else (Nov 2026).
+    # sections (23.11): both sites' AllEvents.aspx (every coming item, one page: house 3, festival 53, all read), each
+    # named category's filtered page (house: גלריה בית הגפן, תרבות; festival: מופעים, מתחם משפחות, תערוכות, סיורים,
+    # קונצרטים: an item's every category), every performance line of each item page; not read: the house's menu
+    # pages (BeitHagefenCategoryID / SubCategoryID: Al-Karma repertoire, gallery projects, groups, classes, library,
+    # youth club, studio, cafe: texts without dated shows, their shows are on AllEvents), lang=2/3 (the same items in
+    # English / Arabic), AllPastEvents (past), HappeningToday (answers 500; a subset), About, gallery, media (no events)
     enabled: true
     cron: "13 6,18 * * *"
     may_be_empty: true   # between festivals the house's site may list nothing
