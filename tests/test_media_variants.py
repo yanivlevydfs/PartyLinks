@@ -113,7 +113,7 @@ def test_a_scraped_events_artwork_has_both_copies_right_after_the_run(tmp_path: 
     with db.session() as session:
         relative = session.query(ImageRow.local_path).scalar()
     original = service.media.path_for(relative)
-    assert [width_of(original.with_name(variant_path(original.name, w))) for w in (640, 1280)] == [640, 1280]
+    assert [width_of(original.with_name(variant_path(original.name, w))) for w in (640, 960)] == [640, 960]
     assert not original.exists()  # converted at import: only the WebP copies are kept
 
 
@@ -134,7 +134,7 @@ def test_copies_keep_alpha_never_upscale_and_follow_exif(tmp_path: Path) -> None
 
     cmyk = tmp_path / "print.jpg"
     cmyk.write_bytes(picture((800, 600), "CMYK"))
-    assert make_variants(cmyk, 78) and width_of(cmyk.with_name("print.jpg.1280.webp")) == 800
+    assert make_variants(cmyk, 78) and width_of(cmyk.with_name("print.jpg.960.webp")) == 800
 
 
 def test_animations_become_animated_webp_and_broken_files_keep_only_the_original(tmp_path: Path) -> None:
@@ -146,7 +146,7 @@ def test_animations_become_animated_webp_and_broken_files_keep_only_the_original
     assert make_variants(gif, 78) and not make_variants(broken, 78)
     with Image.open(gif.with_name("loop.gif.640.webp")) as im:
         assert im.format == "WEBP" and im.n_frames == 2  # still animated
-    assert sorted(p.name for p in tmp_path.iterdir()) == ["broken.jpg", "loop.gif", "loop.gif.1280.webp", "loop.gif.640.webp"]
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["broken.jpg", "loop.gif", "loop.gif.640.webp", "loop.gif.960.webp"]
 
 
 def test_heic_and_mpo_photos_are_converted(tmp_path: Path) -> None:
@@ -177,14 +177,36 @@ def test_backfill_makes_missing_copies_once(tmp_path: Path) -> None:
     assert media.build_missing_variants() == (0, 0)  # resumable: converted originals are gone
 
 
-def test_the_original_url_serves_the_1280_copy_once_converted(tmp_path: Path) -> None:
+def test_the_original_url_serves_the_960_copy_once_converted(tmp_path: Path) -> None:
     settings, _, media, image_id = stored(tmp_path, picture((1600, 900)))
     media.build_missing_variants()
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         response = client.get(f"/images/{image_id}")
     assert response.status_code == 200 and response.headers["content-type"] == "image/webp"
     with Image.open(io.BytesIO(response.content)) as im:
-        assert im.width == 1280
+        assert im.width == 960
+
+
+def test_old_1280_copies_are_served_until_shrunk_to_960(tmp_path: Path) -> None:
+    settings, _, media, image_id = stored(tmp_path, picture((1600, 900)))
+    original = media.path_for("test/flyer.jpg")
+    legacy = original.with_name("flyer.jpg.1280.webp")  # a copy made before 2026-11-23
+    assert make_variants(original, 78, {640: original.with_name("flyer.jpg.640.webp"), 1280: legacy})
+    original.unlink()
+    aged(legacy), aged(original.with_name("flyer.jpg.640.webp"))
+    assert media.sweep_orphans()["files"] == 0  # still the event page's picture: not an orphan
+    settings.media.variant_threads = 0  # the app's startup backfill must not shrink it yet
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        for url in (f"/images/{image_id}/960.webp", f"/images/{image_id}/1280.webp", f"/images/{image_id}"):
+            with Image.open(io.BytesIO(client.get(url).content)) as im:
+                assert im.width == 1280, url
+        assert media.build_missing_variants(threads=1) == (0, 0)  # nothing was downloaded again
+        assert not legacy.exists()
+        for url in (f"/images/{image_id}/960.webp", f"/images/{image_id}/1280.webp", f"/images/{image_id}"):
+            with Image.open(io.BytesIO(client.get(url).content)) as im:
+                assert im.width == 960, url
+    with media.db.session(write=False) as session:
+        assert session.query(ImageRow.local_path).scalar() == "test/flyer.jpg"  # kept, not queued to download again
 
 
 def test_copy_route_serves_webp_immutable_and_falls_back_to_the_original(tmp_path: Path) -> None:
@@ -192,7 +214,7 @@ def test_copy_route_serves_webp_immutable_and_falls_back_to_the_original(tmp_pat
     settings, _, media, image_id = stored(tmp_path, original)
     with TestClient(create_app(settings, start_scheduler=False)) as client:
         settings.media.variant_threads = 0  # (the app's own backfill already ran; this keeps it explicit)
-        for path in ("test/flyer.jpg.640.webp", "test/flyer.jpg.1280.webp"):
+        for path in ("test/flyer.jpg.640.webp", "test/flyer.jpg.960.webp"):
             media.path_for(path).unlink(missing_ok=True)
         fallback = client.get(f"/images/{image_id}/640.webp")
         assert fallback.status_code == 200 and fallback.content == original
@@ -264,13 +286,31 @@ def test_retention_deletes_a_past_events_original_and_both_copies(tmp_path: Path
     assert not list(original.parent.iterdir())  # original and both copies gone
 
 
+def test_retention_deletes_an_event_its_source_unlisted_two_weeks_ago(tmp_path: Path) -> None:
+    settings, db, media, _ = stored(tmp_path, picture((900, 600)))
+    media.build_missing_variants()
+
+    def seen(days: float, listed: bool) -> int:
+        with db.session() as session:
+            session.execute(update(EventRow).values(is_listed=listed, last_seen_at=datetime.now(UTC) - timedelta(days=days)))
+        return purge_expired(db, media, settings.retention, settings.timezone)
+
+    assert seen(15, listed=True) == 0  # still listed (a source scanning slowly): kept until its date
+    assert seen(3, listed=False) == 0  # unlisted lately: it may come back
+    settings.retention.keep_unlisted_days = 0
+    assert seen(15, listed=False) == 0  # 0: kept until its date passes
+    settings.retention.keep_unlisted_days = 14
+    assert seen(15, listed=False) == 1
+    assert not list(media.path_for("test/flyer.jpg").parent.iterdir())  # its artwork went with it
+
+
 def test_orphan_sweep_removes_only_what_no_row_claims(tmp_path: Path) -> None:
     _, db, media, _ = stored(tmp_path, picture((900, 600)))
     with db.session() as session:  # a second event shares the same flyer file
         upsert_events(session, [event("b")])
         session.execute(text("UPDATE event_images SET local_path = 'test/flyer.jpg', downloaded_at = CURRENT_TIMESTAMP"))
     media.build_missing_variants()
-    for name in ("test/flyer.jpg.640.webp", "test/flyer.jpg.1280.webp"):
+    for name in ("test/flyer.jpg.640.webp", "test/flyer.jpg.960.webp"):
         aged(media.path_for(name))
     orphan = media.path_for("test/gone.jpg")
     orphan.write_bytes(b"x" * 1000)

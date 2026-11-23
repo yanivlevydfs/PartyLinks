@@ -105,7 +105,8 @@ def _current_until(settings: RetentionSettings, timezone: str, now: datetime) ->
 def purge_expired(
     db: Database, media: MediaStore, settings: RetentionSettings, timezone: str, drop_other_cities: bool = False
 ) -> int:
-    """Delete events that are over (see :func:`is_current`) with their tickets and artwork.
+    """Delete events that are over (see :func:`is_current`), or unlisted by their source for
+    ``keep_unlisted_days``, with their tickets and artwork.
 
     The start date decides, not a far end date: some listings carry an end weeks later
     (e.g. a recurring "season" page) and must not linger as if they were upcoming.
@@ -120,6 +121,14 @@ def purge_expired(
                     and_(EventRow.start_at.is_(None), EventRow.last_seen_at < cutoff),
                     # Out of the target city (only when the config focuses on one city).
                     EventRow.in_target_city.is_(False) if drop_other_cities else false(),
+                    # Gone from its source (a complete run no longer found it: see service._track_changes) and
+                    # not back for keep_unlisted_days: cancelled or taken down, hidden since and only filling the volume.
+                    and_(
+                        EventRow.is_listed.is_(False),
+                        EventRow.last_seen_at < datetime.now(UTC) - timedelta(days=settings.keep_unlisted_days),
+                    )
+                    if settings.keep_unlisted_days > 0
+                    else false(),
                 )
             )
         ).all()

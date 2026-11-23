@@ -1,4 +1,4 @@
-"""Serving drawn cards: ``/artwork/{id}`` (1280 wide) and ``/artwork/{id}/640.webp`` / ``1280.webp``."""
+"""Serving drawn cards: ``/artwork/{id}`` (1280 wide) and ``/artwork/{id}/640.webp`` / ``960.webp`` / ``1280.webp``."""
 
 from __future__ import annotations
 
@@ -9,7 +9,8 @@ from sqlalchemy.orm import undefer
 from partylinks.artwork.models import EventArtworkRow
 
 router = APIRouter(tags=["events"], include_in_schema=False)
-SIZES = {640: "webp_640", 1280: "webp_1280"}
+# 960: what the event page asks for (stored pictures' big copy, media.VARIANT_WIDTHS); a drawn card is small, in the database.
+SIZES = {640: "webp_640", 960: "webp_1280", 1280: "webp_1280"}
 
 
 def _card(request: Request, card_id: int, width: int) -> Response:

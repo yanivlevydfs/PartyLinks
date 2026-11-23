@@ -72,7 +72,7 @@ from partylinks.home_rails import log_once as broken_home_rail
 from partylinks.lines.weekly import weekly as lines_weekly
 from partylinks.logs import setup_logging
 from partylinks.mail.images import router as mail_images_router
-from partylinks.media import VARIANT_WIDTHS, variant_path
+from partylinks.media import LEGACY_WIDTHS, VARIANT_WIDTHS
 from partylinks.models import EntryType
 from partylinks.parsing import TidyText, is_site_logo
 from partylinks.pictures import live_image_url, live_images
@@ -1651,9 +1651,11 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.get("/images/{image_id}/{width}.webp", tags=["events"], response_class=Response)
     def get_image_copy(image_id: int, width: int, request: Request, session: ReleasedSessionDep) -> Response:
-        """The artwork resized to ``width`` (640 cards, 1280 event page) as WebP. A copy not made
+        """The artwork resized to ``width`` (640 cards, 960 event page; 1280, the old size, serves the 960) as WebP. A copy not made
         yet (or never: animations, unreadable files) serves the original, cached for an hour only,
         so the edge picks up the copy once it exists. Never converts on request."""
+        if width in LEGACY_WIDTHS:
+            width = VARIANT_WIDTHS[-1]
         if width not in VARIANT_WIDTHS:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "no such size")
         return _image_response(image_id, request, session, width)
@@ -1669,7 +1671,7 @@ def _register_routes(app: FastAPI) -> None:
         # og:image, JSON-LD all point at the full size).
         headers = {"Cache-Control": "public, max-age=31536000, immutable", "ETag": etag}
         if width is not None:
-            copy = request.app.state.service.media.path_for(variant_path(meta.local_path, width)) if meta.local_path else None
+            copy = request.app.state.service.media.copy_path(meta.local_path, width) if meta.local_path else None
             if copy is not None and copy.is_file():
                 # An id's picture never changes (a new URL is a new row), so its copy is immutable.
                 headers = {"Cache-Control": "public, max-age=31536000, immutable", "ETag": f'"{image_id}-{width}"'}
@@ -1687,8 +1689,8 @@ def _register_routes(app: FastAPI) -> None:
             return Response(content=image.data, media_type=media_type, headers=headers)
         media = request.app.state.service.media
         path = media.path_for(image.local_path or "")
-        if image.local_path and not path.is_file():  # converted: the original is gone, its 1280 copy stands in
-            path, media_type = media.path_for(variant_path(image.local_path, VARIANT_WIDTHS[-1])), "image/webp"
+        if image.local_path and not path.is_file():  # converted: the original is gone, its big copy stands in
+            path, media_type = media.big_copy(image.local_path), "image/webp"
         if not image.local_path or not path.is_file():
             raise HTTPException(status.HTTP_404_NOT_FOUND, "image file missing")
         return FileResponse(path, media_type=media_type, headers=headers)

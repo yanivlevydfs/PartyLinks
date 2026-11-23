@@ -6,11 +6,13 @@ them at ``/images/{id}``. Each source downloads with its own client after its ow
 run, so artwork fetching stays isolated per source like scraping.
 
 Every stored file becomes two resized WebP copies, ``<file>.640.webp`` (cards) and
-``<file>.1280.webp`` (the event page), served at ``/images/{id}/{width}.webp``, and the original
-is deleted: ``/images/{id}`` then serves the 1280 copy. Animations become animated WebP. Only a
+``<file>.960.webp`` (the event page), served at ``/images/{id}/{width}.webp``, and the original
+is deleted: ``/images/{id}`` then serves the 960 copy. Animations become animated WebP. Only a
 picture that can't be converted (too many pixels to decode, unreadable) keeps its original. Copies
 are made when the file is stored (every source goes through ``_store``); ``build_missing_variants``
-converts the files stored before and downloads again stored rows whose files are gone.
+converts the files stored before and downloads again stored rows whose files are gone. Copies
+1280 wide (before 2026-11-23: 11 GB of the 17 GB volume) are shrunk to 960 by ``shrink_legacy_copies``
+and served until then.
 """
 
 from __future__ import annotations
@@ -65,7 +67,10 @@ _HEIF_BRANDS = (b"heic", b"heix", b"heim", b"heis", b"hevc", b"hevx", b"mif1", b
 
 
 PERSIST_CHUNK = 50
-VARIANT_WIDTHS = (640, 1280)  # cards (296px wide on desktop, 166px at 3x on phones) / event page (420px, 2x-3x)
+VARIANT_WIDTHS = (640, 960)  # cards (296px wide on desktop, 166px at 3x on phones) / event page (420px, 2x)
+# The event page's copy used to be 1280 wide (2.2x the bytes of 960): such a file stands in for the 960 copy
+# until shrink_legacy_copies replaces it, and /images/{id}/1280.webp (old pages, mails) serves the 960 one.
+LEGACY_WIDTHS = (1280,)
 # media.max_pixels (bigger pictures are not resized, the original is served) replaces PIL's own guard (warn past ~89M pixels, raise past ~179M): that one fires on open and
 # filled the log, while make_variants reads only the header before the check below. PIL is used nowhere else.
 Image.MAX_IMAGE_PIXELS = None
@@ -94,13 +99,16 @@ def _animated(im: Image.Image) -> bool:
     return bool(getattr(im, "is_animated", False)) and im.format != "MPO"
 
 
-def make_variants(path: Path, quality: int) -> bool:
-    """Write the resized WebP copies of ``path`` beside it (animated WebP for an animation). Returns
-    False (the original stays the only version) for pictures too big to decode or unreadable; never raises."""
+def make_variants(path: Path, quality: int, targets: dict[int, Path] | None = None) -> bool:
+    """Write the resized WebP copies of ``path`` beside it (animated WebP for an animation), or to
+    ``targets`` (width -> file). Returns False (the original stays the only version) for pictures too
+    big to decode or unreadable; never raises."""
     max_pixels = get_settings().media.max_pixels
+    targets = targets or {w: path.with_name(variant_path(path.name, w)) for w in VARIANT_WIDTHS}
+    biggest = max(targets)
     try:
         with Image.open(path) as im:
-            im.draft(im.mode, (VARIANT_WIDTHS[-1], VARIANT_WIDTHS[-1]))  # JPEG: decode at 1/2-1/8 scale, still >= 1280
+            im.draft(im.mode, (biggest, biggest))  # JPEG: decode at 1/2-1/8 scale, still >= the biggest copy
             animated = _animated(im)
             frames = im.n_frames if animated else 1  # pyrefly: ignore[missing-attribute]
             if im.width * im.height * frames > max_pixels:  # after draft: a huge JPEG decodes small
@@ -116,13 +124,12 @@ def make_variants(path: Path, quality: int) -> bool:
             else:
                 alpha = im.mode in _ALPHA_MODES or (im.mode == "P" and "transparency" in im.info)
                 pictures = [ImageOps.exif_transpose(im).convert("RGBA" if alpha else "RGB")]
-        for width in VARIANT_WIDTHS:
+        for width, target in targets.items():
             copies = []
             for picture in pictures:
                 copy = picture.copy()
                 copy.thumbnail((width, width * 4), Image.Resampling.LANCZOS)  # never upscales; tall posters stay whole
                 copies.append(copy)
-            target = path.with_name(variant_path(path.name, width))
             tmp = target.with_name(f"{target.name}.{os.getpid()}-{threading.get_ident()}.tmp")
             if animated:
                 copies[0].save(tmp, "WEBP", quality=quality, method=4, save_all=True, append_images=copies[1:],
@@ -192,6 +199,18 @@ class MediaStore:
     def path_for(self, relative: str) -> Path:
         return self.root / relative
 
+    def big_copy(self, relative: str) -> Path:
+        """The event page's copy of ``relative``: the 960 one, or a 1280 one not shrunk yet."""
+        path = self.path_for(variant_path(relative, VARIANT_WIDTHS[-1]))
+        if not path.is_file():
+            for width in LEGACY_WIDTHS:
+                if (old := self.path_for(variant_path(relative, width))).is_file():
+                    return old
+        return path
+
+    def copy_path(self, relative: str, width: int) -> Path:
+        return self.big_copy(relative) if width == VARIANT_WIDTHS[-1] else self.path_for(variant_path(relative, width))
+
     def delete_files(self, relative_paths: Iterable[str | None]) -> int:
         """Delete artwork files no image row still references.
 
@@ -211,7 +230,7 @@ class MediaStore:
         for relative in (p for p in candidates if p not in still_used):
             try:
                 self.path_for(relative).unlink(missing_ok=True)
-                for width in VARIANT_WIDTHS:
+                for width in VARIANT_WIDTHS + LEGACY_WIDTHS:
                     self.path_for(variant_path(relative, width)).unlink(missing_ok=True)
                 removed += 1
             except OSError as exc:
@@ -235,7 +254,8 @@ class MediaStore:
             result["skipped"] = "no stored image rows: refusing to sweep"
             log.warning("artwork sweep: %s", result["skipped"])
             return result
-        claimed = claimed_paths | {variant_path(p, w) for p in claimed_paths for w in VARIANT_WIDTHS}
+        # A 1280 copy is still claimed: until shrink_legacy_copies replaces it, it is the event page's picture.
+        claimed = claimed_paths | {variant_path(p, w) for p in claimed_paths for w in VARIANT_WIDTHS + LEGACY_WIDTHS}
         cutoff = time.time() - min_age_seconds
         for directory, _, names in os.walk(self.root):
             for name in names:
@@ -367,15 +387,15 @@ class MediaStore:
         threads = self.settings.variant_threads if threads is None else threads
         if self.settings.storage != "filesystem" or threads < 1:
             return 0, 0
-        with self.db.session(write=False) as session:
-            relatives = [
-                r for r in session.scalars(select(ImageRow.local_path).where(ImageRow.local_path.is_not(None)).distinct())
-                if r is not None
-            ]
+        relatives = self._stored_paths()
+        self.shrink_legacy_copies(threads, relatives)
         todo = [p for p in (self.path_for(r) for r in relatives) if p.is_file()]
         # Stored rows with neither the file nor its copies: a broken picture that also blocks the drawn
-        # card. Download them again (posh, 2026-11-15: 12 such rows).
-        gone = [r for r in relatives if not self.path_for(r).is_file() and not has_variants(self.path_for(r))]
+        # card. Download them again (posh, 2026-11-15: 12 such rows). A 1280 copy that couldn't be shrunk counts.
+        gone = [
+            r for r in relatives
+            if not self.path_for(r).is_file() and not has_variants(self.path_for(r)) and not self.big_copy(r).is_file()
+        ]
         if gone:
             self._refetch(gone)
         if not todo:
@@ -410,6 +430,53 @@ class MediaStore:
         if broken:  # cut-off downloads stored before they were checked: fetch them again
             self._refetch([p.relative_to(self.root).as_posix() for p in broken])
         return made, failed
+
+    def _stored_paths(self) -> list[str]:
+        with self.db.session(write=False) as session:
+            return [
+                r for r in session.scalars(select(ImageRow.local_path).where(ImageRow.local_path.is_not(None)).distinct())
+                if r is not None
+            ]
+
+    def shrink_legacy_copies(self, threads: int, relatives: list[str]) -> tuple[int, int]:
+        """Replace each 1280-wide copy with a 960 one made from it, then delete it (a 960 copy already
+        there: just delete it). Resumable: shrunk copies are gone. A copy that can't be re-encoded stays
+        and keeps being served. Returns (shrunk, failed)."""
+        todo = [
+            (relative, old)
+            for relative in relatives
+            for width in LEGACY_WIDTHS
+            if (old := self.path_for(variant_path(relative, width))).is_file()
+        ]
+        if not todo:
+            return 0, 0
+        log.info("artwork copies: shrinking %d copies to %d wide, %d threads", len(todo), VARIANT_WIDTHS[-1], threads)
+        started = time.monotonic()
+
+        def one(item: tuple[str, Path]) -> bool | None:
+            relative, old = item
+            if self._stop.is_set():
+                return None
+            big = self.path_for(variant_path(relative, VARIANT_WIDTHS[-1]))
+            if not big.is_file():
+                with self._converting:
+                    if not make_variants(old, self.settings.webp_quality, {VARIANT_WIDTHS[-1]: big}):
+                        return False
+            old.unlink(missing_ok=True)
+            return True
+
+        shrunk = failed = 0
+        with ThreadPoolExecutor(threads, thread_name_prefix="artwork-shrink") as pool:
+            for done, ok in enumerate(pool.map(one, todo), 1):
+                if ok is not None:
+                    shrunk, failed = shrunk + ok, failed + (not ok)
+                if done % 5000 == 0:
+                    log.info("artwork copies: %d/%d shrunk (%d kept at 1280), %.0fs", done, len(todo), failed, time.monotonic() - started)
+        log.info(
+            "artwork copies: %s, %d shrunk to %d wide, %d kept at 1280, %.0fs",
+            "stopped" if self._stop.is_set() else "done", shrunk, VARIANT_WIDTHS[-1], failed, time.monotonic() - started,
+        )
+        return shrunk, failed
 
     def _refetch(self, relatives: list[str]) -> None:
         with self.db.session() as session:

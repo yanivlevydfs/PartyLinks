@@ -2113,6 +2113,9 @@ retention:
   max_future_days: 730
   # Scrape run history (scrape_runs) older than this many days is deleted as well.
   keep_runs_days: 30
+  # An event a complete run no longer found (cancelled, taken down) is hidden at once and deleted, with its
+  # artwork, this many days after it was last seen (0 = kept until its date passes).
+  keep_unlisted_days: 14
 
 # Event artwork. Source URLs are always stored; image files are fetched only if
 # `download` is on and kept either inside the database (BLOB in event_images) or on disk.
@@ -2124,7 +2127,7 @@ media:
   directory: data/media      # used when storage = filesystem
   max_bytes: 15000000
   allowed_content_types: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/heic", "image/heif"]
-  # Resized WebP copies beside each file (640 wide for cards, 1280 for the event page): encoder
+  # Resized WebP copies beside each file (640 wide for cards, 960 for the event page): encoder
   # quality, and the threads that make the copies older files still lack (0 = none).
   webp_quality: 78
   variant_threads: 2

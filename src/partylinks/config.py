@@ -521,6 +521,9 @@ class RetentionSettings(BaseModel):
 
     # Scrape run history older than this is deleted too.
     keep_runs_days: int = Field(30, ge=1)
+    # An event a complete run no longer found (is_listed false: cancelled, sold off, taken down) is hidden at once
+    # and deleted, with its artwork, this many days after it was last seen (0 = kept until its date passes).
+    keep_unlisted_days: int = Field(14, ge=0)
 
 
 class MediaSettings(BaseModel):
@@ -533,7 +536,7 @@ class MediaSettings(BaseModel):
     max_pixels: int = Field(50_000_000, ge=1_000_000)
     # A failed download (timeout, 503...) is retried on runs after this many hours.
     retry_failed_after_hours: float = Field(6, gt=0)
-    # Resized WebP copies (640 / 1280 wide) stored beside each file: their encoder quality, and how
+    # Resized WebP copies (640 / 960 wide) stored beside each file: their encoder quality, and how
     # many threads make the copies files from before still lack (0 = none; startup, in the background).
     webp_quality: int = Field(78, ge=1, le=100)
     variant_threads: int = Field(2, ge=0)

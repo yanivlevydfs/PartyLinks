@@ -22,7 +22,6 @@ from sqlalchemy.orm import undefer
 
 from partylinks.artwork.models import EventArtworkRow
 from partylinks.db import ImageRow
-from partylinks.media import VARIANT_WIDTHS, variant_path
 
 HERO = (1104, 552)  # the lead card's 552x276 frame, at 2x
 THUMB = (224, 168)  # a row's 112x84 frame, at 2x
@@ -91,9 +90,10 @@ def stored_picture(image_id: int, width: int, height: int, request: Request) -> 
             if image.data is not None:
                 return image.data
             media = request.app.state.service.media
-            for relative in (variant_path(image.local_path or "", VARIANT_WIDTHS[-1]), image.local_path or ""):
-                if image.local_path and (path := media.path_for(relative)).is_file():
-                    return path
+            if image.local_path:
+                for path in (media.big_copy(image.local_path), media.path_for(image.local_path)):
+                    if path.is_file():
+                        return path
         raise HTTPException(status.HTTP_404_NOT_FOUND, "image file missing")
 
     return _serve(request, f"i{image_id}-{width}x{height}.jpg", size, source)

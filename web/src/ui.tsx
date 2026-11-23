@@ -295,10 +295,10 @@ export function Chip({ on, onClick, children, className }: { on: boolean; onClic
   );
 }
 
-/** Our stored artwork (``/images/123``) resized to ``width`` as WebP (640 cards, 1280 event page);
+/** Our stored artwork (``/images/123``) resized to ``width`` as WebP (640 cards, 960 event page);
  *  the sellers' own image URLs pass through. og:image keeps the original (server side). */
-export function sized<T extends string | null | undefined>(src: T, width: 640 | 1280): T | string {
-  // Stored pictures and drawn cards (events with no picture) both come in 640 and 1280 WebP.
+export function sized<T extends string | null | undefined>(src: T, width: 640 | 960): T | string {
+  // Stored pictures and drawn cards (events with no picture) both come in 640 and 960 WebP.
   // Blog posts send them absolute ("https://spotx.fun/images/123", kept for their JSON-LD).
   const path = src?.startsWith(location.origin + "/") ? src.slice(location.origin.length) : src;
   return path && /^\/(images|artwork)\/\d+$/.test(path) ? `${path}/${width}.webp` : src;

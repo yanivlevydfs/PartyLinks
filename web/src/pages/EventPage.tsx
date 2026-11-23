@@ -285,8 +285,8 @@ function Poster({ hero, more, title }: { hero: string | null | undefined; more: 
   return (
     <div className="e-poster">
       <div className="e-shots" ref={strip} onScroll={n > 1 ? onScroll : undefined}>
-        <Img src={sized(hero, 1280)} alt={title} className="e-img" text={title} eager />
-        {more.map((src) => <Img key={src} src={sized(src, 1280)} alt="" className="e-img" />)}
+        <Img src={sized(hero, 960)} alt={title} className="e-img" text={title} eager />
+        {more.map((src) => <Img key={src} src={sized(src, 960)} alt="" className="e-img" />)}
       </div>
       {n > 1 && (
         <div className="e-dots">
