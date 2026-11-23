@@ -1,5 +1,6 @@
-/* The map page's panel, floating buttons and legend (map/*.tsx). Desktop: a panel over the map's side.
-   Phone: a bottom sheet above the tab bar, half the screen, the handle opens it taller. */
+/* The map page's panel, floating buttons and legend (map/*.tsx). Desktop: a place opens in a centered modal,
+   the view's list in a panel over the map's side. Phone: both are a bottom sheet above the tab bar, half the
+   screen, the handle opens it taller. */
 .map-wrap { position: relative; }
 
 .map-ctrls {
@@ -130,8 +131,47 @@
   /* The sheet covers the map's lower half: its controls stay above it. */
   .map-wrap.has-panel .leaflet-control-attribution { display: none; }
 }
+/* ---- a place: a centered modal on desktop, its events as poster cards */
+.mp-backdrop { display: none; }
+@media (min-width: 761px) {
+  .mp-backdrop {
+    display: block; position: fixed; inset: 0; z-index: 1500;
+    background: rgb(6 3 14 / .66); backdrop-filter: blur(3px); animation: mp-fade .18s ease-out;
+  }
+  @keyframes mp-fade { from { opacity: 0; } }
+  .spot-panel.modal {
+    position: fixed; z-index: 1501; inset: auto; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: min(860px, calc(100vw - 48px)); max-height: min(88dvh, 900px);
+    box-shadow: 0 30px 80px -20px rgb(0 0 0 / .9), 0 0 60px -10px rgb(255 46 147 / .45);
+    animation: mp-pop .2s ease-out;
+  }
+  @keyframes mp-pop { from { opacity: 0; transform: translate(-50%, -47%) scale(.98); } }
+  .spot-panel.modal .mp-head { padding: 22px 24px 10px; }
+  .spot-panel.modal .mp-venue { font-size: 26px; }
+  .spot-panel.modal .mp-title small { font-size: 14px; }
+  .spot-panel.modal .mp-actions, .spot-panel.modal .mp-tabs { padding-inline: 24px; }
+  .spot-panel.modal .mp-tabs { padding-bottom: 14px; }
+  .spot-panel.modal .mp-body { padding: 18px 24px 24px; }
+  .spot-panel.modal .mp-list { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+  .spot-panel.modal .mp-row {
+    display: flex; flex-direction: column; gap: 10px; padding: 0 0 12px; overflow: hidden;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px; transition: border-color .12s, transform .12s;
+  }
+  .spot-panel.modal .mp-row + .mp-row { border-top: 1px solid var(--line); }
+  .spot-panel.modal .mp-row:hover { background: var(--panel); border-color: var(--line-hot); transform: translateY(-2px); }
+  .spot-panel.modal .mp-link { grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: start; }
+  .spot-panel.modal .mp-img { width: 100%; height: auto; aspect-ratio: 16 / 10; border-radius: 0; }
+  .spot-panel.modal .mp-img.noimg { font-size: 15px; padding: 14px; }
+  .spot-panel.modal .mp-info { padding-inline: 12px; }
+  .spot-panel.modal .mp-info b { font-size: 16px; }
+  .spot-panel.modal .mp-side {
+    margin-top: auto; padding-inline: 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .spot-panel, .mp-ghost { animation: none; }
+  .spot-panel, .mp-ghost, .mp-backdrop { animation: none; }
+  .spot-panel.modal .mp-row { transition: none; }
   .spot-panel { transition: none; }
 }
 
@@ -163,7 +203,7 @@
 .map-hours-x { background: var(--panel); border: 1px solid var(--line); }
 .map-hours-label { flex: none; font-size: 13px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .map-hours-label b { color: var(--text); }
-.map-wrap.has-panel .map-hours { left: calc(50% - min(200px, 21%)); width: min(460px, calc(58% - 64px)); }
+.map-wrap.has-side .map-hours { left: calc(50% - min(200px, 21%)); width: min(460px, calc(58% - 64px)); }
 
 /* ---- the panel's extras: plan the evening around the place, an alert for its city */
 .mp-evening .evening { margin: 14px 4px 0; }

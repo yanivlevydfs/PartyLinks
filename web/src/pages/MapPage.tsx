@@ -97,7 +97,7 @@ export default function MapPage() {
   const unplaced = data?.unplaced ?? 0;
   const [heat, setHeat] = useState(false);
 
-  // The side panel: a pin's place, or the list of everything inside the map's view.
+  // The panel: a pin's place (a modal), or the list of everything inside the map's view (a side panel).
   const [spotKey, setSpotKey] = useState<string | null>(link.spot);
   const [listOpen, setListOpen] = useState(false);
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
@@ -133,7 +133,7 @@ export default function MapPage() {
           </>
         )}
       </div>
-      <div className={"wrap map-wrap" + (panel ? " has-panel" : "")}>
+      <div className={"wrap map-wrap" + (panel ? " has-panel" : "") + (panel?.kind === "view" ? " has-side" : "")}>
       {/* A phone pinches to zoom: the +/- buttons only covered pins there. */}
       <MapContainer center={link.at ? [link.at[0], link.at[1]] : ISRAEL} zoom={link.at?.[2] ?? 8} className="map" scrollWheelZoom zoomControl={!TOUCH}>
         {showTiles && <Tiles lang={lang} />}

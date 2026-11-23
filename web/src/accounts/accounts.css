@@ -37,7 +37,7 @@
 .fb-btn, .fb-btn:hover { background: #1877f2; color: #fff; border-color: #1877f2; }
 .signin-btns { display: grid; gap: 10px; justify-items: start; }
 
-.sheet-back { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / .6); }
+.sheet-back { position: fixed; inset: 0; z-index: 2050; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / .6); }
 .sheet {
   width: min(420px, 100%); padding: 24px; border-radius: 18px; background: var(--panel-solid); border: 1px solid var(--line);
   box-shadow: 0 20px 60px rgb(0 0 0 / .6); display: grid; gap: 12px;

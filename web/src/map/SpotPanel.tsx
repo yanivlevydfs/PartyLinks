@@ -1,8 +1,10 @@
-// The map's side panel (a bottom sheet on phones): one place's events, or every event in the map's view.
+// The map's panel: a place's events open in a centered modal (a bottom sheet on phones); the list of every
+// event in the map's view stays a side panel, so the map can still move under it.
 // Rows start from the map's light pins and fill in from GET /events/cards (picture, price, genres), a page at a time
 // (site.web.map_popup_events, admin config): a panel never asks for more cards than it shows.
 import { useQueries } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { SaveButton } from "../saved/SaveButton";
 import { genreLabel } from "../i18n";
@@ -81,8 +83,27 @@ export function SpotPanel({ mode, me, onClose, onHover, onFocus }: {
   const place = first ? [first.address, first.city].filter(Boolean).join(", ") : "";
   const filters = useStore((s) => s.filters);
 
-  return (
-    <aside className={"spot-panel" + (expanded ? " expanded" : "")} aria-label={spot?.venue_name ?? m.inView(mode.list.length)}>
+  // A place is a modal: Esc closes it (not while a dialog opened from inside it, e.g. sign in, is on top),
+  // and on desktop the page behind it stops scrolling.
+  const modal = mode.kind === "spot";
+  useEffect(() => {
+    if (!modal) return;
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && document.querySelectorAll('[aria-modal="true"]').length < 2) onClose();
+    };
+    document.addEventListener("keydown", esc);
+    return () => document.removeEventListener("keydown", esc);
+  }, [modal, onClose]);
+  useEffect(() => {
+    if (!modal || !window.matchMedia("(min-width: 761px)").matches) return;
+    const root = document.documentElement, was = root.style.overflow;
+    root.style.overflow = "hidden";
+    return () => { root.style.overflow = was; };
+  }, [modal]);
+
+  const box = (
+    <aside className={"spot-panel" + (modal ? " modal" : "") + (expanded ? " expanded" : "")}
+      role={modal ? "dialog" : undefined} aria-modal={modal || undefined} aria-label={spot?.venue_name ?? m.inView(mode.list.length)}>
       <button className="mp-handle" onClick={() => setExpanded(!expanded)} aria-label={m.expand} aria-expanded={expanded} />
       <header className="mp-head">
         <div className="mp-title">
@@ -98,7 +119,7 @@ export function SpotPanel({ mode, me, onClose, onHover, onFocus }: {
             <b className="mp-venue">{m.inView(mode.list.length)}</b>
           )}
         </div>
-        <button className="mp-x" onClick={onClose} aria-label={m.close}>✕</button>
+        <button className="mp-x" onClick={onClose} aria-label={m.close} autoFocus={modal}>✕</button>
       </header>
 
       {spot && (
@@ -142,6 +163,9 @@ export function SpotPanel({ mode, me, onClose, onHover, onFocus }: {
       </div>
     </aside>
   );
+  if (!modal) return box;
+  // At the page's root, over the header and the floating buttons; a click on the dimmed map closes it.
+  return createPortal(<><div className="mp-backdrop" onClick={onClose} aria-hidden />{box}</>, document.body);
 }
 
 function Row({ e, card, dist, onHover, onFocus }: {
