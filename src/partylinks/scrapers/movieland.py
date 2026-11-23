@@ -51,8 +51,9 @@ class MovielandSettings(SourceSettings):
     events_path: str = "/api/Events"
     images_path: str = "/images/"
     movie_path: str = "/movie/{id}"
-    # Today plus the next days_ahead - 1 days.
-    days_ahead: int = 3
+    # Today plus the next days_ahead - 1 days; None (the default) reads every screening the feed lists
+    # (it carries pre-sales and special screenings months ahead).
+    days_ahead: int | None = None
     night_hour: int = Field(5, ge=0, le=23)  # a screening before this hour belongs to the previous business day
     # By the feed's TheaterId; an unlisted branch is still read, named after the feed.
     branches: dict[str, MovielandBranch] = Field(default_factory=dict)
@@ -74,7 +75,7 @@ class MovielandScraper(BaseScraper[MovielandSettings]):
         s = self.settings
         movies = await self.get_json(s.site_url + s.events_path, params={"isHideVODRent": "true"}, expect=list)
         today = datetime.now(ZoneInfo(self.timezone)).date()
-        days = {today + timedelta(days=i) for i in range(s.days_ahead)}
+        days = None if s.days_ahead is None else {today + timedelta(days=i) for i in range(s.days_ahead)}
         self.log.debug("listed %d movies", len(movies))
         shop = BiggerPicture(self, s.tickets_api, s.sale_channel, s.tickets_language)
 
@@ -98,10 +99,10 @@ def business_day(start: datetime, night_hour: int) -> date:
 
 
 def parse_events(
-    movies: list[Any], settings: MovielandSettings, days: set[date], timezone: str, now: datetime | None = None
+    movies: list[Any], settings: MovielandSettings, days: set[date] | None, timezone: str, now: datetime | None = None
 ) -> list[ScrapedEvent]:
-    """The ``/api/Events`` list -> one event per movie, branch and business day in ``days``; screenings
-    that already started (before ``now``) are left out, so the day starts at its next screening."""
+    """The ``/api/Events`` list -> one event per movie, branch and business day in ``days`` (None: every
+    day); screenings that already started (before ``now``) are left out, so the day starts at its next one."""
     tz = ZoneInfo(timezone)
     events = []
     for movie in movies:
@@ -113,7 +114,8 @@ def parse_events(
                 start = datetime.fromisoformat(show["Date"]).replace(tzinfo=tz)
             except (KeyError, TypeError, ValueError):
                 continue
-            if (day := business_day(start, settings.night_hour)) in days and (now is None or start >= now):
+            day = business_day(start, settings.night_hour)
+            if (days is None or day in days) and (now is None or start >= now):
                 groups[(str(show.get("TheaterId")), day)].append((start, show))
         for (branch_id, day), shows in groups.items():
             shows.sort(key=lambda x: x[0])

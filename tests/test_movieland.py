@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from partylinks.models import ScrapedEvent
 from partylinks.scrapers.movieland import MovielandBranch, MovielandSettings, parse_events
 
 TZ = "Asia/Jerusalem"
@@ -82,7 +83,7 @@ def test_scrape_prices_each_event_from_the_shop(monkeypatch) -> None:
     morning = datetime(2026, 10, 22, 8, tzinfo=ZoneInfo(TZ))
     monkeypatch.setattr(movieland, "datetime", type("D", (datetime,), {"now": staticmethod(lambda tz=None: morning)}))
 
-    async def collect() -> list[object]:
+    async def collect() -> list[ScrapedEvent]:
         async with scraper:
             return [e async for e in scraper.scrape()]
 
@@ -94,3 +95,10 @@ def test_scrape_prices_each_event_from_the_shop(monkeypatch) -> None:
     assert len([c for c in calls if c.endswith("/min")]) == len(events) + 1 + sum(
         len({(s["vip"], s["three_d"]) for s in e.extra["screenings"]}) - 1 for e in events.values()
     )
+
+
+def test_no_day_window_reads_every_listed_day() -> None:
+    """days=None (the default days_ahead) keeps every business day the feed lists, pre-sales included."""
+    events = parse_events(MOVIES, SETTINGS, None, TZ)
+    assert {e.source_event_id for e in parse_events(MOVIES, SETTINGS, DAYS, TZ)} < {e.source_event_id for e in events}
+    assert MovielandSettings(cron="0 0 * * *", site_url="https://movieland.co.il").days_ahead is None
