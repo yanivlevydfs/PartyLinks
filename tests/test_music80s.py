@@ -38,6 +38,7 @@ def test_listing_and_event() -> None:
     assert event is not None
     assert event.title == "ALL NIGHT LONG · חוזרים לפינגווין"
     # The site's "+03:00" in winter is dropped: 22:00 Israel time.
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-11-27T22:00:00+02:00"
     assert (event.venue_name, event.address, event.city) == ("OZEN", "קינג ג'ורג' 48, תל אביב", "תל אביב")
     assert event.source_genres == ["80s", "new wave", "dark 80s", "ebm"]
