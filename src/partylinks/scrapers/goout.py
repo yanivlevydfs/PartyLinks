@@ -132,7 +132,7 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
 
         return await self.paginate(page, s.extra_page_size, s.max_pages)
 
-    async def _fetch_event(self, url_id: str) -> ScrapedEvent:
+    async def _fetch_event(self, url_id: str) -> ScrapedEvent | None:
         s = self.settings
         page_url = s.base_url + s.event_page_path.format(url=url_id)
         page_html, tickets = await asyncio.gather(
@@ -140,7 +140,18 @@ class GoOutScraper(BaseScraper[GoOutSettings]):
             # Tiers endpoint down -> still save the event with schema.org offers.
             self.optional(f"{url_id} tickets", self.get_json(s.base_url + s.tickets_endpoint, params={"eventUrl": url_id})),
         )
-        return parse_event(next_data(page_html), page_url, self.timezone, tickets, s.image_url_templates)
+        data = next_data(page_html)
+        if is_removed(data):
+            self.log.info("gone %s: removed from GO-OUT", url_id)
+            return None
+        return parse_event(data, page_url, self.timezone, tickets, s.image_url_templates)
+
+
+def is_removed(data: dict[str, Any]) -> bool:
+    """A removed event's page answers 200 with ``pageProps.notFound`` and an empty event (only ``Tickets: [{}]``,
+    no ``_id``): gone, not a parse failure (1793615364112, tribebraziltourf, linked from other sites, Nov 2026)."""
+    props = data.get("props", {}).get("pageProps") or {}
+    return bool(props.get("notFound")) and not (props.get("event") or {}).get("_id")
 
 
 def soonest_first(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
