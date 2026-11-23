@@ -21,6 +21,18 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+/* Every scrollbar on the site (the page, panels, modals, lists): thin, a pink thumb on a dark track, not the
+   system's grey bar with arrows. scrollbar-color inherits; scrollbar-width doesn't, hence "*" (a class that
+   hides its scrollbar, e.g. scrollbar-width: none, still wins). Safari has neither: the -webkit- rules. */
+html { scrollbar-color: rgb(255 46 147 / .5) rgb(255 255 255 / .03); }
+* { scrollbar-width: thin; }
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: rgb(255 255 255 / .03); }
+  ::-webkit-scrollbar-thumb { background: rgb(255 46 147 / .5); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgb(255 46 147 / .8); }
+  ::-webkit-scrollbar-button { display: none; }
+}
 /* Phones scroll the page sideways if anything pokes past the edge, body overflow alone doesn't stop it. clip, not hidden: keeps the sticky header working. */
 html { overflow-x: clip; }
 /* No selecting the listings (main.tsx blocks copy too); text fields and the admin page stay selectable. */
