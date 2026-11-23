@@ -99,6 +99,7 @@ from partylinks.scrapers.megatickets import MegaticketsScraper
 from partylinks.scrapers.mevalim import MevalimScraper
 from partylinks.scrapers.milgammuni import MilgamMuniScraper
 from partylinks.scrapers.mjc import MjcScraper
+from partylinks.scrapers.motj import MotjScraper
 from partylinks.scrapers.movieland import MovielandScraper
 from partylinks.scrapers.mugics import MugicsScraper
 from partylinks.scrapers.munievents import MuniEventsScraper
@@ -333,6 +334,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         KfarSabaMuseumScraper,
         ShimurScraper,
         MjcScraper,
+        MotjScraper,
         FunzingScraper,
         EasytixScraper,
         TicketeamsScraper,

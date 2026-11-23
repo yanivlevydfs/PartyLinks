@@ -990,6 +990,7 @@ enrichment:
     kfarsabamuseum: [culture]  # Kfar Saba Museum: concerts, family days and workshops; categories map the rest
     shimur: [museums]  # heritage sites' days and tours; the text names shows, tours and workshops
     mjc: [culture]  # North African heritage centre: piyut evenings, lectures, book launches; no categories
+    motj: [culture]  # Museum of Tolerance: concerts, plays, lectures; no categories (kinds label most)
     eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
@@ -2246,6 +2247,7 @@ search:
     kfarsabamuseum: ["מוזאון כפר סבא", "מוזיאון כפר סבא", "kfar saba museum", "בית הבאר כפר סבא"]
     shimur: ["המועצה לשימור אתרים", "המועצה לשימור אתרי מורשת", "שימור אתרים", "שישי מורשת", "shimur"]
     mjc: ["מורשת יהדות צפון אפריקה", "יהדות צפון אפריקה", "המרכז העולמי למורשת", "mjc jerusalem"]
+    motj: ["מוזיאון הסובלנות", "museum of tolerance"]
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
@@ -6202,6 +6204,40 @@ sources:
     skip_title_words: ["קורס", "חוג", "סדנת הכנה"]
     http:
       concurrency: 1
+      request_delay_seconds: 1.0
+
+  motj:
+    # Museum of Tolerance Jerusalem (motj.org.il, מוזיאון הסובלנות ירושלים), Hillel 32: concerts, shows, plays,
+    # lectures, stand-up, children's shows. wp-json `event` post type, every page (~140 posts, 2 requests; ACF day,
+    # clock line, text, ticket link), then Castilia's museum page (castilia.co.il/he/ShowType/15) and each coming
+    # show's page there (every performance, its Smarticket eventId: ~8 requests). No categories: `kinds` labels them.
+    # Sections: אירועים /events/ (read: the wp-json post type behind it; /en/events/ are WPML copies of the same
+    # posts), Castilia ShowType/15 (read). Not read: אירועים קודמים /past-events/ (past), תערוכות /exhibitions/
+    # (exhibitions, no dated events), סיורים /tours/ + the `tour` type (guided tours of the permanent exhibitions and
+    # Jerusalem walks, timed slots on tickets.motj.org.il: the Smarticket `motj` tenant), חינוך /education/ and בית
+    # הספר לתרבות המחלוקת (school programmes), venues (hall hire), plan-your-visit (admission), חדשות (news), about /
+    # team / board / donation / newsletter, `activity` (empty). Overlap: Smarticket `castilia` (the same performances,
+    # joined by the castilia.smarticket.co.il/event/<id> link) and `motj` (tours), makore. Answers direct.
+    enabled: true
+    cron: "40 9,21 * * *"
+    venue_name: מוזיאון הסובלנות ירושלים
+    address: "הלל 32"
+    city: ירושלים
+    latitude: 31.7791314    # geocoding.venues "מוזיאון הסובלנות" (Hillel 32)
+    longitude: 35.2200716
+    may_be_empty: true      # a few evenings a month, none between seasons
+    kinds:
+      "הרצאה": ["הרצאה", "הרצאת", "ההרצאה"]
+      "הצגה": ["הצגה", "ההצגה", "בהצגה", "תיאטרון"]
+      "ילדים": ["לכל המשפחה", "לילדים", "ילדים ומשפחות"]
+      "סטנד אפ": ["סטנד אפ", "סטנדאפ"]
+      "סדנה": ["סדנה", "סדנת"]
+      "כנס": ["כנס", "רב־שיח", "רב-שיח"]
+      "הקרנת סרט": ["הקרנת", "הקרנה"]
+      "הופעה חיה": ["המופע", "מופע", "ההופעה", "הופעה", "תזמורת", "מארח", "מארחת", "מארחים", "שרות", "שרים"]
+    skip_title_words: ["בדיקה", "שעות פעילות", "הרשמה ל", "בשידור החי", "סיורים ללא עלות", "סיור", "קורס"]   # not "חוג": "חוגג 80"
+    http:
+      concurrency: 2
       request_delay_seconds: 1.0
 
   shimur:

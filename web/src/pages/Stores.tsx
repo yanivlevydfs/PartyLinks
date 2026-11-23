@@ -58,6 +58,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   kfarsabamuseum: ["https://kfar-saba-museum.org/yoman-eruim/", "venue"],
   shimur: ["https://shimur.org/events/", "venue"],
   mjc: ["https://mjc-jerusalem.com/events", "venue"],
+  motj: ["https://motj.org.il/events/", "venue"],
   ybz: ["https://ybz.org.il/%d7%aa%d7%a8%d7%91%d7%95%d7%aa/%d7%9c%d7%95%d7%97-%d7%90%d7%99%d7%a8%d7%95%d7%a2%d7%99%d7%9d/", "venue"],
   rabincenter: ["https://www.rabincenter.org.il/%d7%90%d7%99%d7%a8%d7%95%d7%a2%d7%99%d7%9d-%d7%95%d7%aa%d7%a2%d7%a8%d7%95%d7%9b%d7%95%d7%aa/", "venue"],
   comy: ["https://comy.co.il", "tickets"], concertevents: ["https://concert-events.com", "guide"], hangar11: ["https://hangar11.co.il", "venue"], eventbrite: ["https://www.eventbrite.com", "tickets"],
