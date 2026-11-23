@@ -103,12 +103,13 @@ def build_scheduler(settings: Settings, service: ScrapeService) -> AsyncIOSchedu
         log.warning("starting %d sources whose scheduled run never started: %s", len(overdue), ", ".join(overdue))
     # Interrupted first, then overdue oldest first: each gets the next stagger slot.
     slot = {n: i for i, n in enumerate([*sorted(resume), *overdue])}
+    first = now + timedelta(seconds=settings.scheduler.startup_delay_seconds)  # the site's pages build first
     for index, (name, source) in enumerate(enabled):
         # Startup runs are spread out so a deploy never fires every source at once.
         # APScheduler treats an explicit next_run_time=None as "paused", so only pass it when set.
-        startup = {"next_run_time": now + index * stagger} if settings.scheduler.run_on_startup else {}
+        startup = {"next_run_time": first + index * stagger} if settings.scheduler.run_on_startup else {}
         if not startup and name in slot:
-            startup = {"next_run_time": now + slot[name] * stagger}
+            startup = {"next_run_time": first + slot[name] * stagger}
         try:  # one bad trigger skips only that source
             scheduler.add_job(
                 _scheduled_run,

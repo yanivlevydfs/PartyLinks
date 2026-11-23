@@ -155,6 +155,12 @@ class ApiSettings(BaseModel):
     # once while it is rebuilt in the background: a page built once never makes a visitor wait again that day.
     html_cache_mb: int = Field(128, ge=8)
     html_max_stale_seconds: float = Field(86400, ge=0)
+    # The hottest cached pages are written here on shutdown (and every cache_snapshot_minutes) and read back at
+    # startup as stale copies, served at once and rebuilt behind: a deploy no longer starts with an empty cache
+    # (10-15 min of 503s after each deploy, 2026-11-23). On Railway data/ is the volume. "": off.
+    cache_snapshot_dir: str = "data/page-cache"
+    cache_snapshot_mb: int = Field(64, ge=0)  # per cache, most recently used first
+    cache_snapshot_minutes: float = Field(15, ge=0)  # 0: only on shutdown
 
 
 class SchedulerSettings(BaseModel):
@@ -195,6 +201,9 @@ class SchedulerSettings(BaseModel):
     worker_hung_after_seconds: float = Field(300, gt=0)
     worker_commands_keep_hours: float = Field(24, gt=0)  # answered admin commands are deleted after this
     startup_stagger_seconds: float = Field(180, ge=0)  # run_on_startup: each source this long after the previous
+    # The first startup run (resumed, overdue or run_on_startup) waits this long, so a deploy's first minutes
+    # go to building the site's pages, not to scans.
+    startup_delay_seconds: float = Field(300, ge=0)
     # Run manager (partylinks.runs): at most this many sources run at once, the rest wait in a queue.
     max_parallel_runs: int = Field(6, ge=1)
     # A bad run (failed, blocked, no events, or under low_count_ratio of the usual count) is run again

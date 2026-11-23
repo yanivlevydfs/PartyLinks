@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import gzip
 import json
 import logging
+import os
 import re
 import threading
 import time
@@ -648,6 +650,52 @@ class ResponseCache:
                 self._bytes -= len(old[2])
             self._builders.pop(key, None)
 
+    def save(self, path: Path, max_bytes: int) -> int:
+        """Write the most recently used entries (up to ``max_bytes`` of bodies) to ``path``; returns how many.
+        Each entry is a JSON header line (path, query, age in seconds, status, size) and then its body."""
+        with self._lock:
+            items = list(self._items.items())
+        mono, wall, total, kept = time.monotonic(), time.time(), 0, []
+        for key, (built_at, _, body, code) in reversed(items):  # the most recently used are last
+            if total + len(body) > max_bytes:
+                break
+            total += len(body)
+            kept.append((key, wall - (mono - built_at), body, code))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        part = path.with_name(path.name + ".part")
+        with gzip.open(part, "wb", compresslevel=1) as out:
+            for (route, query), built, body, code in kept:
+                head = {"path": route, "query": query, "built": built, "status": code, "size": len(body)}
+                out.write(json.dumps(head).encode() + b"\n" + body)
+        os.replace(part, path)  # a crash mid-write leaves the previous snapshot whole
+        return len(kept)
+
+    def load(self, path: Path) -> int:
+        """Read a ``save`` snapshot back as stale entries: served at once, rebuilt in the background on their
+        first visit (when a route hands over its builder). Entries past ``max_stale`` are dropped."""
+        mono, wall, loaded = time.monotonic(), time.time(), 0
+        with gzip.open(path, "rb") as src:
+            entries = []
+            while head := src.readline():
+                meta = json.loads(head)
+                body = src.read(meta["size"])
+                if len(body) != meta["size"]:
+                    break  # a cut-off file: what came before it is still good
+                age = max(wall - meta["built"], self.ttl)  # stale, so the first visit rebuilds it
+                if age < self.max_stale:
+                    entries.append(((meta["path"], meta["query"]), mono - age, body, meta["status"]))
+        with self._lock:
+            fits, room = [], self.max_bytes - self._bytes
+            for entry in entries:  # most recently used first get the room
+                if entry[0] not in self._items and len(entry[2]) <= room:  # a page built since startup is newer
+                    fits.append(entry)
+                    room -= len(entry[2])
+            for key, built_at, body, code in reversed(fits):  # stored least recently used first
+                self._items[key] = (built_at, -1, body, code)
+                self._bytes += len(body)
+                loaded += 1
+        return loaded
+
     def _refresh(self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]]) -> None:
         with self._lock:
             if key in self._refreshing:
@@ -666,6 +714,31 @@ class ResponseCache:
                     self._refreshing.discard(key)
 
         self._pool.submit(run)
+
+
+def snapshot_caches(app: Any, settings: Settings, action: str) -> None:
+    """Save or load (``action``) the JSON and rendered-page caches under ``api.cache_snapshot_dir``. Never
+    raises: without a snapshot the site only starts cold, as before."""
+    if not settings.api.cache_snapshot_dir:
+        return
+    folder = Path(settings.api.cache_snapshot_dir)
+    for name in ("response_cache", "html_cache"):
+        cache: ResponseCache | None = getattr(app.state, name, None)
+        if cache is None:
+            continue
+        path = folder / f"{name}.gz"
+        started = time.monotonic()
+        try:
+            if action == "save":
+                count = cache.save(path, settings.api.cache_snapshot_mb << 20)
+            elif path.exists():
+                count = cache.load(path)
+            else:
+                continue
+        except Exception:
+            log.exception("cache snapshot: %s of %s failed", action, name)
+            continue
+        log.info("cache snapshot: %s %d %s entries in %.1fs", action, count, name, time.monotonic() - started)
 
 
 class CachedPages:
@@ -935,9 +1008,20 @@ def create_app(
                     except Exception:  # a cold page is only slower
                         log.exception("cache warm-up of %s failed", path)
 
+        async def snapshots() -> None:
+            """The cached pages saved every cache_snapshot_minutes: a crash, not only a deploy, keeps them."""
+            while True:
+                await asyncio.sleep(settings.api.cache_snapshot_minutes * 60)
+                await asyncio.to_thread(snapshot_caches, app, settings, "save")
+
+        visitors = run_scheduler or worker_process  # the server that serves visitors
+        if visitors:  # last deploy's pages, before the first request
+            await asyncio.to_thread(snapshot_caches, app, settings, "load")
         jobs = [] if worker_process else [maintenance()]  # the worker runs the startup passes itself
-        if run_scheduler or worker_process:  # the server that serves visitors
+        if visitors:
             jobs.append(warm())
+            if settings.api.cache_snapshot_minutes:
+                jobs.append(snapshots())
         if app.state.worker:
             jobs.append(app.state.worker.follow_writes())
         for job in jobs:
@@ -960,6 +1044,8 @@ def create_app(
                 scheduler.shutdown(wait=False)
             for task in app.state.tasks:
                 task.cancel()
+            if visitors:
+                snapshot_caches(app, settings, "save")
             service.shutdown()
             db.engine.dispose()
 
