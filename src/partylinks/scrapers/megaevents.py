@@ -10,8 +10,11 @@ The site's own "from" price (USD) is rebuilt from those fields: ticket-only even
 ``ticket_only_markup`` to the cheapest available ticket; packages add the event markup, base
 flight and hotel prices and a site-wide fee that is not in the payload (``package_fee``). The home
 page's JSON-LD prices ~10 featured events; a mismatch with them is logged so a changed fee shows.
-Football matches (most of the catalogue) are skipped. Every event gets ``country`` (ISO; "ZZ"
-when the name is unknown), which keeps it out of the Israeli feed and in the abroad section.
+Football matches (half the catalogue) are skipped. The music genre pages linked from the home page
+(``/c/music/genres/<slug>``: pop, rock, classical, classic-rock, country, Nov 2026) are read too, one
+request each, only to tag their events with the genre; they list no event the home page lacks.
+Every event gets ``country`` (ISO; "ZZ" when the name is unknown), which keeps it out of the Israeli
+feed and in the abroad section.
 """
 
 from __future__ import annotations
@@ -30,6 +33,7 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.popit import flight_payload
 
 _EVENT_START = re.compile(r'\{"id":\d+,"(?:created_at|name)"')
+_GENRE_LINK = re.compile(r'href="/c/music/genres/([a-z0-9-]+)"')
 
 
 class MegaeventsSettings(SourceSettings):
@@ -51,9 +55,20 @@ class MegaeventsScraper(BaseScraper[MegaeventsSettings]):
             raise ParseError("no event objects in the home page payload")
         self.log.debug("listed %d events", len(raw_events))
         featured = featured_prices(page)
+        genres: dict[int, list[str]] = {}
+        for slug in dict.fromkeys(_GENRE_LINK.findall(page)):
+            try:
+                genre_page = await self.get_text(f"{s.site_url}/c/music/genres/{slug}")
+            except Exception as exc:  # noqa: BLE001 - a missing genre tag never drops the events
+                self.record_failure(f"genre {slug}", exc)
+                continue
+            for raw in event_objects(flight_payload(genre_page)):
+                genres.setdefault(raw["id"], []).append(slug.replace("-", " "))
         for raw in raw_events:
             try:
                 event = parse_event(raw, s.site_url + s.event_page_path, self.timezone, s.package_fee)
+                if event is not None:
+                    event.source_genres.extend(genres.get(raw["id"], []))
             except Exception as exc:  # noqa: BLE001 - one bad item never drops the rest
                 self.record_failure(f"event {raw.get('id')}", exc)
                 continue
@@ -149,7 +164,8 @@ def parse_event(
             extras = ("event_additional_markup", "base_flight_price", "base_hotel_price")
             min_price = cheapest + sum((to_decimal(raw.get(k)) or Decimal(0) for k in extras), package_fee)
     artist = _artist(raw.get("name_english"))
-    images = [u for k in ("card_image_url", "campaign_banner_url") if (u := clean_str(raw.get(k)))]
+    # art_image_url: the artist cut-out the card draws on a coloured shape (the only picture on most slim rows).
+    images = [u for k in ("card_image_url", "campaign_banner_url", "art_image_url") if (u := clean_str(raw.get(k)))]
     return ScrapedEvent(
         source=MegaeventsScraper.name,
         source_event_id=str(raw["id"]),
