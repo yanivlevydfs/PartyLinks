@@ -2992,11 +2992,18 @@ sources:
     # is parsed for its performances (date, time, place, PRES/Gray Club link, sold-out badge).
     # On (owner's choice, 2026-10-29) beside the comy host under `pres`, which reads the same shows with
     # city, prices and tickets left; dedup merges the two listings of each show.
+    # sections (23.11): the home page's show cards + slider (88 /event/ links, 87 shows; it is the whole catalogue:
+    # the site's own search, admin-ajax comy_search "anywhere" and each of its 5 areas, lists the same 87 shows /
+    # 538 performances the scanner reads; max_events 300 does not bind), every performance row of each show page;
+    # not read: event-sitemap.xml's 198 other pages (past shows, no performance rows), the /event/ archive (the
+    # same posts), the pages אירועים (the same 87 cards), ארגון עובדי צה"ל / cellcom / 77at / tubeav / kupata77
+    # (member and campaign pages: home's shows or none), terms, privacy, accessibility, waitlist, account (no events)
     enabled: true
     cron: "33 6,18 * * *"
     site_url: https://comy.co.il
     listing_path: /
     event_page_prefix: /event/
+    skip_title_words: ["קורס", "סדנה", "סדנת", "חוג ", "חוגים", "חוגי "]  # none of the 87 shows today (23.11)
     http:
       concurrency: 4
 
