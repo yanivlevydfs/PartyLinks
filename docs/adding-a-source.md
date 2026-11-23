@@ -286,3 +286,4 @@ Other sessions commit to `master` at the same time:
 - [ ] Committed with only my hunks, pushed, deploy `SUCCESS`
 - [ ] Prod run `success`; events, coords, genres in the DB; `640.webp` is `image/webp`; event page 200
 - [ ] Its venues open under `/venue/<name>` and in `/venues` (one venue per building); an `/artist/` page when the site names artists
+- [ ] `python scripts/audit_sources.py <name>` all `PASS`, and after its first production run the read-only `--db` run (inside the container, see the script's docstring) shows no `FAIL` for it

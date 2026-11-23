@@ -21,6 +21,33 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
 - **Existing coverage checked first:** `git grep -n -i -E "<domain>|<venue name>" -- config src`
   (eventer `users:`, arenas venue slugs, Smarticket / PRES / Tickchak tenants). Name any overlap in the
   config comment; dedup merges it.
+- **Audit before it is called finished (mandatory, both runs):**
+  1. Static, before the commit: `python scripts/audit_sources.py <name>` shows `PASS` in every column
+     (registry, sourceNames.json, STORES, alias, docs row and its times, free cron, test file,
+     skip_title_words, tenants with a city or venue).
+  2. Production, after the deploy and the source's first finished run (read-only):
+     `railway ssh --service web -- "PYTHONIOENCODING=utf-8 python - --db --json" < scripts/audit_sources.py > prod.txt`,
+     then `python scripts/audit_sources.py <name> --prod prod.txt`. No `FAIL` for the source: genres,
+     city, map, artwork stored, `content_type`, failed downloads, the 640 / 960 WebP copies, the run,
+     unpinned venues, unmapped categories, tenants. A `WARN` gets a fix or a line in the report. A low
+     city / map coverage the site itself causes (secret spots, region-only listings) goes into the
+     script's `REASONS` with the evidence; a pinned venue without a city is our gap, never a reason.
+- **Rules the source audit of 23.11.2026 found missing (each one broke a live source):**
+  - An alias is never an everyday word ("לאן", "מה קורה", "יוצאים", "פרס", "הבמה"): an alias in a query
+    turns the whole search into "sold on that site".
+  - A category that is a genre only as the site's own label ("מלודיק", "דאנס", "טברנה") goes into
+    `enrichment.declared_genres`, not `enrichment.genres` (which also reads titles and texts).
+  - A tenant / host whose halls are all in one town gets `city:`: hall names that name a village
+    under `places_min_population` never give a city. A council or company playing in several towns
+    gets none.
+  - One tenant, site or listing page that fails costs only its own events: wrap each one in
+    `optional()` / `stream_isolated` (one site's 503 failed a whole eventpro run).
+  - Every yielded event passes `is_current`, today's past hours too (not only `date < today`).
+  - Artwork URLs must download: after the first run `art` and `dlerr` are clean (a listing's other
+    picture path answered 404 for every Barak event; an S3 header broke curl for the cinematheque).
+  - An event abroad has a city: when the site has no city field, the venue address's town.
+  - A site that is empty between editions or parties (a festival, a two-week guide, a one-party
+    page, an app with test rows only) sets `may_be_empty: true`, or 0-event runs get it paused.
 - **Config valid before every push (and after every rebase):**
   `python -c "import yaml; yaml.safe_load(open('config/settings.yaml',encoding='utf-8'))"` and
   `python -c "from partylinks.config import get_settings; get_settings()"`. A broken settings.yaml
@@ -51,5 +78,7 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
 5. Commit only your hunks (other sessions share master), push, wait for the Railway deploy
    `SUCCESS`, then verify in production (section 8): run, `--runs`, read-only DB counts, `640.webp`
    is `image/webp`, event page 200.
-6. Report to the user in Hebrew: counts from production (events, map, genres), what the site lacks,
-   commits. Tick every box of section 9; a source with an unticked box is not finished.
+6. Audit it (the mandatory step above): `scripts/audit_sources.py <name>` static before the commit,
+   the production `--db` run after its first run. Fix every `FAIL` before calling it finished.
+7. Report to the user in Hebrew: counts from production (events, map, genres), what the site lacks,
+   the audit line, commits. Tick every box of section 9; a source with an unticked box is not finished.
