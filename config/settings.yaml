@@ -3662,8 +3662,14 @@ sources:
 
   beatradar:
     # Beat Radar (beatradar.co.il): a party guide gathering Go-Out and Selector parties. One JSON
-    # request lists every upcoming party (~120) with tiers, artists and genre tags; the ticket link
-    # (Go-Out / Selector) is kept, so dedup merges it with those sources. robots.txt is absent.
+    # request lists every upcoming party (40-120) with tiers, artists and genre tags; the ticket link
+    # (Go-Out / Selector) is kept, so dedup merges it with those sources. robots.txt (Cloudflare's)
+    # allows all but AI-training bots.
+    # sections: the one page (/), i.e. /api/events: every upcoming party, all areas / genres / types (the
+    # site's filters run in the browser over that list; no pages, limit or date window; 43 on site = 43
+    # read, 23.11.2026); not read: /event/:id (the same record), /about /terms /privacy /accessibility (no
+    # events), /api/genres /api/cities /api/venues (lookup tables). metadata.alternativeUrls (7 parties) link other
+    # Go-Out pages of the same night / venue: the goout source's events (7 of 8 in our DB, 23.11.2026).
     enabled: true
     # Cloudflare lets only Israeli home connections in (Oct 2026): Railway, the Evomi IPs (USA) and Israeli
     # datacenter proxies get its 403 page, which is recorded as a blocked run. Speaks as Chrome (as Chillz) so

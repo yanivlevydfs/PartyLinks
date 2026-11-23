@@ -1,11 +1,14 @@
 """Beat Radar (beatradar.co.il) - a party guide that gathers Go-Out and Selector parties in one list.
 
-A React app on a public JSON API; robots.txt is absent. Listing: ``/api/events`` returns every
-upcoming party in one request (~120): Hebrew and English title and summary, start/end, venue and
-city, ticket tiers with prices, artists, minimum age and the site's genre tags. Each party links to
-its ticket page on Go-Out or Selector (``metadata.url``), which is the link kept here; dedup merges
-it with the same party scraped from that site. Genre tags and event types (``danceParty``,
-``djSet``...) become source genres in plain words.
+A React app on a public JSON API; robots.txt (Cloudflare's) allows every crawler but AI-training bots.
+The site is one page: ``/api/events`` returns every upcoming party in one request (40-120), and its
+area / genre / type filters run in the browser over that list (no categories, pages or limits).
+Each party: Hebrew and English title and summary, start/end, venue and city, ticket tiers with prices,
+artists (names, or ``{"name", "genres"}`` objects), minimum age and the site's genre tags.
+Each party links to its ticket page on Go-Out or Selector (``metadata.url``), which is the link kept
+here; dedup merges it with the same party scraped from that site. Genre tags, the artists' own
+genres (the site's genre filter counts them too) and event types (``danceParty``, ``djSet``...)
+become source genres in plain words.
 """
 
 from __future__ import annotations
@@ -73,6 +76,7 @@ def parse_event(item: dict[str, Any], timezone: str) -> ScrapedEvent | None:
     tickets = [_tier(t) for t in item.get("tickets") or [] if isinstance(t, dict)]
     prices = [t.price for t in tickets if t.price is not None]
     genres = item.get("genres") or {}
+    artists = [a for a in item.get("artists") or [] if isinstance(a, (str, dict))]
     types = [_CAMEL.sub(" ", t).lower() for t in item.get("eventType") or [] if isinstance(t, str)]
     image = ((item.get("images") or {}).get("main") or {}).get("original")
     return ScrapedEvent(
@@ -91,12 +95,13 @@ def parse_event(item: dict[str, Any], timezone: str) -> ScrapedEvent | None:
         source_genres=list(
             dict.fromkeys(
                 _GENRE_WORDS.get(g.lower(), g)
-                for g in [*genres.get("en", []), *genres.get("he", [])]
-                if isinstance(g, str)
+                for g in [*_tags(genres), *(t for a in artists if isinstance(a, dict) for t in _tags(a.get("genres")))]
             )
         ),
         event_types=[_GENRE_WORDS.get(t, t) for t in types if t != "other"],
-        artists=[a for a in (clean_str(a) for a in item.get("artists") or []) if a],
+        artists=list(
+            dict.fromkeys(n for n in (clean_str(a.get("name") if isinstance(a, dict) else a) for a in artists) if n)
+        ),
         min_age=item.get("minAgeLimit") if isinstance(item.get("minAgeLimit"), int) else None,
         organizer=", ".join(
             n for n in (clean_str(p.get("name")) for p in item.get("producers") or [] if isinstance(p, dict)) if n
@@ -124,6 +129,13 @@ def _tier(ticket: dict[str, Any]) -> TicketTier:
         sale_start=parse_iso(ticket.get("validFrom")),
         sale_end=parse_iso(ticket.get("validThrough")),
     )
+
+
+def _tags(genres: Any) -> list[str]:
+    """The English then Hebrew tags of a {"en": [..], "he": [..]} genres field (a party's or an artist's)."""
+    if not isinstance(genres, dict):
+        return []
+    return [g for lang in ("en", "he") for g in genres.get(lang) or [] if isinstance(g, str) and g.strip()]
 
 
 def _text(value: Any, *langs: str) -> str | None:

@@ -60,3 +60,16 @@ def test_cloudflare_403_is_a_blocked_run() -> None:
     assert scraper.is_blocked(page)
     assert not scraper.is_blocked(httpx.Response(403, headers={"server": "nginx"}))
     assert not scraper.is_blocked(httpx.Response(200, headers={"server": "cloudflare"}, json=[]))
+
+
+def test_artist_objects_give_names_and_their_genres() -> None:
+    moon = beatradar.parse_event(ITEMS[11], TZ)  # artists as {"name", "origin", "genres"} objects
+    mixed = beatradar.parse_event(ITEMS[2], TZ)  # {"name"} objects without genres
+    assert moon is not None and mixed is not None
+    assert moon.artists[:2] == ["IDO YOSEF", "SEAN ALONI"] and all("{" not in a for a in moon.artists)
+    assert "House" in moon.source_genres and moon.source_genres.count("Electronic") == 1
+    assert mixed.artists[0] == "Dor Hadad"
+    no_tags = {**ITEMS[7], "genres": None}  # no party tags, artists with empty genre lists
+    event = beatradar.parse_event(no_tags, TZ)
+    assert event is not None and event.artists[:3] == ["TAIR ALON", "OFEK ASAF", "AMIT ORIN"]
+    assert event.source_genres == []  # empty artist genre lists add nothing
