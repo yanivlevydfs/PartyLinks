@@ -178,7 +178,7 @@ many of them free.
 | `ganeyyehoshua` | Ganei Yehoshua (park.co.il): the Yarkon Park company's own events in its Tel Aviv parks (Yarkon, Park Begin, Ganei HaTeva, Rosh Tzipor): birdwatching and nature tours, family days, sport, Lumagica; the listing page (type, park) + each event's page (every session, prices, meeting point), one event per session; pins from the meeting point (`places`) or the park; Lumagica's Kupat Tel Aviv link merges with `kupat` | 09:52, 21:52 | yes |
 | `funzing` | Funzing (il.funzing.com): experiences: workshops, tours, lectures, culinary evenings, family days | 07:19, 19:19 | yes |
 | `kolsadna` | Kol Sadna (kolsadna.co.il): a directory of ~1,400 workshops; only the dated sessions anyone can join (the booking script's `a_schedule` on each recently changed workshop page), with the site's kinds as genres | 10:33, 22:33 | yes |
-| `easytix` | EASYTIX (easytix.co.il): the nimi ticketing platform and its white-label box offices (Camel Comedy Club, ZOA House, Jerusalem Zoo / Israel Aquarium, Hormesis) | 08:43, 20:43 | yes |
+| `easytix` | EASYTIX (easytix.co.il): the nimi ticketing platform and its white-label box offices (Camel Comedy Club, ZOA House, Jerusalem Zoo / Israel Aquarium, Hormesis) | 08:37, 20:37 | yes |
 
 ## Tech and community
 
