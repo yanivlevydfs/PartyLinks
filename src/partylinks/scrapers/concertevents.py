@@ -4,10 +4,15 @@ page now and then.
 
 A Next.js site with no public API (robots.txt disallows ``/api/``). Read per run:
 
+* ``/events``: the site's full upcoming catalogue in date order ("מציגים 24 מתוך 36 אירועים": the
+  first cards, then an index linking every other one), so one request lists every upcoming event page.
+  The region / city / genre / "when" pages (``/אזור/``, ``/עיר/``, ``/זאנר/``, ``/מתי/``), series and
+  venue pages are subsets of it (checked Nov 2026). The page's own count is checked against its links.
 * ``/sitemap.xml``: every event page ever listed (~700, ``/events/<hebrew slug>``), **in event-date
-  order** (checked Nov 2026: 686 URLs, no inversion). The upcoming catalogue is its tail, so a binary
-  search over the event pages finds the first current one (~10 pages, the only past pages read).
-* Each event page from there to the end, nearest first:
+  order** (checked Nov 2026: 686 URLs, no inversion). It lags behind the site (23.11.2026: 35 of the 36
+  listed events; the newest one was missing), so it is the backstop: a binary search over its event
+  pages finds the first current one (~10 pages, the only past pages read) and its tail joins the list.
+* Each event page, nearest first:
   - schema.org ``MusicEvent`` JSON-LD: title, local ``startDate`` (date alone when the time is not
     set), place name, street address, city (``addressLocality``), performers, image, description;
   - the genre chips (``div.rounded-full.bg-secondary``): the site's categories (מזרחית, ים תיכוני...);
@@ -45,6 +50,9 @@ _PRICE = re.compile(r'"event":\{"id":"[^"]*","slug":"[^"]*",.*?"price":"([^"]*)"
 
 class ConcertEventsSettings(SourceSettings):
     site_url: str = "https://concert-events.com"
+    listing_path: str = "/events"
+    # The listing's own total: "מציגים 24 מתוך 36 אירועים".
+    listing_count_pattern: str = r"מתוך\s+(\d+)\s+אירועים"
     sitemap_path: str = "/sitemap.xml"
     event_path_prefix: str = "/events/"
     genre_chip_selector: str = "div.rounded-full.bg-secondary"
@@ -61,17 +69,28 @@ class ConcertEventsScraper(BaseScraper[ConcertEventsSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        urls = sitemap_event_urls(await self.get_text(s.site_url + s.sitemap_path), s.event_path_prefix)
+        listing = await self.optional(f"listing {s.listing_path}", self.get_text(s.site_url + s.listing_path))
+        listed = listing_event_urls(listing, s) if listing else []
+        total = listing_total(listing, s) if listing else None
+        self.log.debug("listing links %d event pages (site count %s)", len(listed), total)
+        if total is not None and len(listed) < total:
+            self.log.warning("listing links %d event pages, the site counts %d", len(listed), total)
+        # With the listing read, the sitemap is a backstop; without it, the sitemap is the catalogue.
+        sitemap_call = self.get_text(s.site_url + s.sitemap_path)
+        sitemap = await (self.optional(f"sitemap {s.sitemap_path}", sitemap_call) if listed else sitemap_call)
+        urls = sitemap_event_urls(sitemap, s.event_path_prefix) if sitemap else []
         self.log.debug("sitemap lists %d event pages", len(urls))
         pages: dict[int, ScrapedEvent | None] = {}
         first = await self._first_current(urls, pages)
         self.log.debug("upcoming from sitemap index %d: %d events", first, len(urls) - first)
-        todo = [i for i in range(first, len(urls)) if i not in pages]
         for i in range(first, len(urls)):  # the search's own current pages, nearest first
             event = pages.get(i)
             if event is not None and self._current(event):
                 yield event
-        async for event in self.stream_isolated(todo, lambda i: self._fetch(urls[i]), label=lambda i: urls[i]):
+        read = {unquote(urls[i]) for i in pages}
+        # The listing's pages in its date order, then any sitemap page it lacks; each page read once.
+        todo = [u for k, u in {unquote(u): u for u in [*listed, *urls[first:]]}.items() if k not in read]
+        async for event in self.stream_isolated(todo, self._fetch, label=lambda u: u):
             if self._current(event):
                 yield event
 
@@ -101,6 +120,27 @@ class ConcertEventsScraper(BaseScraper[ConcertEventsSettings]):
 def sitemap_event_urls(sitemap: str, prefix: str) -> list[str]:
     """Event page URLs in sitemap order (= event date order)."""
     return list(dict.fromkeys(u for u in _LOC.findall(sitemap) if prefix in u))
+
+
+def listing_event_urls(page_html: str, settings: ConcertEventsSettings) -> list[str]:
+    """Event page URLs the listing links (its cards, then its index of the rest), in its date order."""
+    site_host = urlsplit(settings.site_url).hostname
+    urls: list[str] = []
+    for link in LexborHTMLParser(page_html).css("a[href]"):
+        parts = urlsplit(link.attributes.get("href") or "")
+        path = unquote(parts.path)
+        if parts.hostname not in (None, site_host) or not path.startswith(settings.event_path_prefix):
+            continue
+        if path.rstrip("/") != settings.event_path_prefix.rstrip("/"):
+            urls.append(settings.site_url + path)
+    return list(dict.fromkeys(urls))
+
+
+def listing_total(page_html: str, settings: ConcertEventsSettings) -> int | None:
+    """The listing's own count of upcoming events ("מציגים 24 מתוך 36 אירועים"), if it shows one."""
+    text = LexborHTMLParser(page_html).body
+    match = re.search(settings.listing_count_pattern, text.text(separator=" ") if text else "")
+    return int(match.group(1)) if match else None
 
 
 def rsc_payload(page_html: str) -> str:

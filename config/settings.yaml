@@ -2957,9 +2957,11 @@ sources:
 
   concertevents:
     # Concert (concert-events.com): Mizrahi / Mediterranean shows and club nights nationwide (Next.js, no API;
-    # robots.txt disallows /api/). The sitemap lists every event page in date order: a binary search finds
-    # the first current one (~10 pages), then each upcoming page (~50): MusicEvent JSON-LD, genre chips,
-    # contact block (phone, ticket link, price). No coordinates: venues geocoded from name + address.
+    # robots.txt disallows /api/). /events lists every upcoming event page (cards + an index of the rest), and
+    # the date-ordered sitemap backs it up (a binary search finds its first current page, ~10 pages); then
+    # each upcoming page: MusicEvent JSON-LD, genre chips, contact block (phone, ticket link, price).
+    # No coordinates: venues geocoded from name + address.
+    # sections: /events (36 = the site's "מתוך 36 אירועים", 23.11.2026) + sitemap tail (35: lags, missed the newest); not read: /אזור/* /עיר/* /זאנר/* /מתי/* /series/* /venues/* /artist/* (subsets of /events; venue / series pages add past events only), /search /contact /privacy (no events)
     enabled: true
     cron: "55 8,20 * * *"
     site_url: https://concert-events.com

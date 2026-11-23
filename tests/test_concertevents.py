@@ -92,23 +92,48 @@ def test_sitemap_event_urls_keep_order() -> None:
     assert concertevents.sitemap_event_urls(sitemap, "/events/") == [BASE + "a", BASE + "b"]
 
 
-def test_scrape_reads_only_the_upcoming_tail() -> None:
-    """The sitemap is in date order: a binary search finds the first current page, past ones are not read."""
-    now = datetime.now(ZoneInfo(TZ))
-    starts = [now - timedelta(days=60 - i) for i in range(40)] + [now + timedelta(days=i + 1) for i in range(8)]
-    urls = [f"{BASE}e{i}" for i in range(len(starts))]
-    sitemap = "<urlset>" + "".join(f"<url><loc>{u}</loc></url>" for u in urls) + "</urlset>"
+def test_listing_links_every_upcoming_event() -> None:
+    """/events: the first cards, then an index linking the rest; the menu's /events link is no event."""
+    page = _page("listing")
+    urls = concertevents.listing_event_urls(page, SETTINGS)
+    assert len(urls) == 15  # the fixture keeps 3 of the 24 cards and the index of the other 12
+    assert urls[0] == BASE + "לצלילי-הבוזוקי-המעיין-בית-הבירה-חולון"
+    assert urls[3] == BASE + "צביקה-אברהם-גוקר"  # the index follows the cards, in date order
+    assert urls[-1] == BASE + "מופע-מחווה-לדקלון-וצלילי-הכרם-היכל-התרבות-פתח-תקווה"
+    assert all(u.startswith(BASE) and len(u) > len(BASE) for u in urls)
+    assert concertevents.listing_total(page, SETTINGS) == 36  # "מציגים 24 מתוך 36 אירועים"
+    assert concertevents.listing_total("<html><body><p>אין אירועים</p></body></html>", SETTINGS) is None
+
+
+# 40 past events, then 8 upcoming, in date order (as the sitemap lists them).
+_NOW = datetime.now(ZoneInfo(TZ))
+_STARTS = [_NOW - timedelta(days=60 - i) for i in range(40)] + [_NOW + timedelta(days=i + 1) for i in range(8)]
+
+
+def _scrape(
+    sitemap_urls: list[str], listed: list[str], *, listing_fails: bool = False, sitemap_fails: bool = False
+) -> tuple[list[ScrapedEvent], list[int]]:
+    """Run scrape() with the listing and sitemap given; page e<i> starts at _STARTS[i]."""
+    sitemap = "<urlset>" + "".join(f"<url><loc>{u}</loc></url>" for u in sitemap_urls) + "</urlset>"
+    listing = "<html><body>" + "".join(f'<a href="{u.removeprefix(SETTINGS.site_url)}">x</a>' for u in listed)
+    listing += f"<p>מציגים {len(listed)} מתוך {len(listed)} אירועים</p></body></html>"
     scraper = ConcertEventsScraper(SETTINGS, HttpSettings(max_retries=0), TZ)
     fetched: list[int] = []
 
     async def get_text(url: str, **kwargs: object) -> str:
+        if url == SETTINGS.site_url + SETTINGS.listing_path:
+            if listing_fails:
+                raise RuntimeError("listing down")
+            return listing
         assert url == SETTINGS.site_url + SETTINGS.sitemap_path
+        if sitemap_fails:
+            raise RuntimeError("sitemap down")
         return sitemap
 
     async def fetch(url: str) -> ScrapedEvent:
-        i = urls.index(url)
+        i = int(url.removeprefix(BASE + "e"))
         fetched.append(i)
-        return ScrapedEvent(source="concertevents", source_event_id=str(i), url=url, title=f"e{i}", start_at=starts[i])
+        return ScrapedEvent(source="concertevents", source_event_id=str(i), url=url, title=f"e{i}", start_at=_STARTS[i])
 
     scraper.get_text = get_text  # type: ignore[method-assign]
     scraper._fetch = fetch  # type: ignore[method-assign]
@@ -117,7 +142,31 @@ def test_scrape_reads_only_the_upcoming_tail() -> None:
         async with scraper:
             return [e async for e in scraper.scrape()]
 
-    events = asyncio.run(collect())
+    return asyncio.run(collect()), fetched
+
+
+def test_scrape_reads_only_the_upcoming_tail() -> None:
+    """The sitemap is in date order: a binary search finds the first current page, past ones are not read."""
+    urls = [f"{BASE}e{i}" for i in range(len(_STARTS))]
+    events, fetched = _scrape(urls, [], listing_fails=True)
     assert sorted(int(e.source_event_id) for e in events) == list(range(40, 48))
     assert len(set(fetched)) == len(fetched)  # no page read twice
     assert len([i for i in fetched if i < 40]) <= 6  # only the search's probes touch past pages
+
+
+def test_scrape_adds_listed_events_the_sitemap_lacks() -> None:
+    """The sitemap lags (23.11.2026: 35 of the 36 listed): the newest listed pages are read too."""
+    urls = [f"{BASE}e{i}" for i in range(len(_STARTS))]
+    sitemap_urls = urls[:46]  # e46 and e47 are listed on /events only
+    listed = urls[40:]
+    events, fetched = _scrape(sitemap_urls, listed)
+    assert sorted(int(e.source_event_id) for e in events) == list(range(40, 48))
+    assert len(set(fetched)) == len(fetched)  # a page in both lists is read once
+    assert len([i for i in fetched if i < 40]) <= 6
+
+
+def test_scrape_listing_alone_when_the_sitemap_fails() -> None:
+    urls = [f"{BASE}e{i}" for i in range(len(_STARTS))]
+    events, fetched = _scrape(urls, urls[40:], sitemap_fails=True)
+    assert sorted(int(e.source_event_id) for e in events) == list(range(40, 48))
+    assert all(i >= 40 for i in fetched)  # no past page read at all
