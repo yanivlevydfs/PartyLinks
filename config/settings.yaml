@@ -735,7 +735,7 @@ enrichment:
                   # Not a bare "photography": in English texts it is the small print ("photography & videography").
                   "photography exhibition", "photo exhibition", "photo festival", "photography festival", "photo walk",
                   "photowalk", "photography workshop", "photography tour", "analog photography", "fine art photography"]
-    kids: ["משחקייה", "ג'ימבורי", "לגיל הרך", "הצגת ילדים", "פעוטות"]
+    kids: ["משחקייה", "ג'ימבורי", "לגיל הרך", "הצגת ילדים", "פעוטות", "ילדידה"]  # ילדידה: Dida theatre's kids' series (Smarticket dida)
     theatre: ["הצגה", "מחזה", "מחזמר"]
     lectures: ["הרצאה", "הרצאת"]
     festival: ["אוקטוברפסט", "oktoberfest"]  # a beer festival by its name (Hadera's ".אוקטוברפסט.")
