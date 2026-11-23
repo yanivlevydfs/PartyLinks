@@ -7,7 +7,8 @@ shop and event URLs it has seen; every ``/<country>/a/<id>`` in it is a shop. Kn
 ``known_file`` (on the data volume) and grow run by run; each Common Crawl collection is read once.
 Details: one request per shop. Its server-rendered page carries the shop's upcoming events as JSON
 (``<script id="vike_pageContext">``, ``data``): title, start/end with offset, category, teaser, artwork,
-lowest price, sold out, and the venue with its address, country and coordinates. A series (``"type":
+lowest price, sold out, and the venue with its address, country and coordinates. A bundle (``eventSet``)
+gives its events, not itself. A series (``"type":
 "series"``: dates at several venues) carries no venue there: its own page (``/s/<seriesId>``) lists its
 dates, each with its venue, one request per series. Cancelled and past events are skipped. Israeli venues go to Israel, the rest abroad (the venue's country).
 
@@ -225,11 +226,26 @@ def series_in_shop(page_html: str, shop: str) -> list[str]:
     return [str(item["id"]) for item in _shop_items(page_html, shop) if _is_series(item) and item.get("id")]
 
 
+def _is_bundle(item: dict) -> bool:
+    return str(item.get("type") or "").lower() == "eventset"
+
+
 def parse_shop(
     page_html: str, shop: str, settings: EventimLightSettings, now: datetime | None = None
 ) -> list[ScrapedEvent]:
-    """A shop page's upcoming events (not cancelled, not over). Series come from parse_series."""
-    items = [item for item in _shop_items(page_html, shop) if not _is_series(item)]
+    """A shop page's upcoming events (not cancelled, not over). Series come from parse_series.
+
+    A bundle (``"type": "eventSet"``, its page ``/b/<id>``: one ticket for several events) is no event
+    of its own: its events (``events``) come instead, each once (they are usually listed by themselves too).
+    """
+    shop_items = _shop_items(page_html, shop)
+    items = [item for item in shop_items if not _is_series(item) and not _is_bundle(item)]
+    listed = {str(item.get("id")) for item in items}
+    for bundle in filter(_is_bundle, shop_items):
+        for member in bundle.get("events") or []:
+            if isinstance(member, dict) and str(member.get("id")) not in listed and not _is_series(member):
+                listed.add(str(member.get("id")))
+                items.append(member)
     return _events(items, page_html, shop, settings, now)
 
 

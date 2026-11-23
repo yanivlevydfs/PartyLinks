@@ -86,6 +86,26 @@ def test_series_dates_come_from_the_series_page_each_at_its_venue() -> None:
     assert str(events[0].url).endswith("/fi/a/6448d3a428d7201d6aa70b26/e/6a32b3c6de5334af227a3674")
 
 
+def _with_bundle(page: str, keep_event: bool) -> str:
+    # A bundle ("eventSet", /b/<id>: one ticket for several events) holds its events in full.
+    start = page.index('<script id="vike_pageContext" type="application/json">') + len(
+        '<script id="vike_pageContext" type="application/json">'
+    )
+    end = page.index("</script>", start)
+    context = json.loads(page[start:end])
+    [event] = context["data"]
+    bundle = {**event, "id": "6a6769af9dabbb058ec15ae9", "type": "eventSet", "title": "Bundle", "events": [event]}
+    context["data"] = [event, bundle] if keep_event else [bundle]
+    return page[:start] + json.dumps(context) + page[end:]
+
+
+def test_bundle_gives_its_events_once_not_itself() -> None:
+    settings = _scraper().settings
+    for keep_event in (True, False):
+        events = parse_shop(_with_bundle(_shop(), keep_event), SHOP, settings, now=BEFORE)
+        assert [e.source_event_id for e in events] == ["69cd89f7bca63b14867bb35c"]
+
+
 def test_cookie_test_page_is_followed_once_on_its_own_host(tmp_path: Path) -> None:
     cookie_page = (FIXTURES / "cookie_test.html").read_text(encoding="utf-8")
     target = cookie_redirect(cookie_page)
