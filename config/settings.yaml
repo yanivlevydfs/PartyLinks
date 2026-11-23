@@ -1972,6 +1972,10 @@ geocoding:
   city_venues:
     "טירת כרמל":
       "מתנ\"ס טירת כרמל": [32.761772, 34.962811]  # מתנ"ס, אלמוג, טירת כרמל
+      # matnastc's halls: the arts centre is the central branch (Jabotinsky 43) and the Pais hall is Weizmann 21,
+      # at the corner of the two (OSM bus stops "מתנ״ס/ז׳בוטינסקי", "מתנ״ס/ויצמן"; addresses from matnastc.co.il).
+      "מרכז אומנויות": [32.7602, 34.9692]
+      "אולם מפעל הפיס": [32.7602, 34.9692]
     "אופקים":
       "בית לגדול טוב": [31.2999286, 34.6152878]  # בית לגדול טוב, אגוז 7, אופקים
     "איל":
