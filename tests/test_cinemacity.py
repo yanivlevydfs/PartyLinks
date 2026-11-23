@@ -94,3 +94,32 @@ def test_scrape_prices_per_event_and_hall_type(monkeypatch) -> None:
     ]
     assert (glilot.min_price, glilot.max_price) == (Decimal("49.9"), Decimal(159))
     assert all(e.tickets and e.min_price == Decimal("49.9") for e in events.values())
+
+
+def test_live_show_declares_the_site_show_label_and_the_whole_feed_is_read() -> None:
+    """A stand-up show ("SHOW", the Cinema+ STAND-UP page) and a kids' musical are not films; a kids' film stays
+    cinema although it carries KIDSHOW. days_ahead 730 reads a show weeks past the films' week."""
+    from partylinks.config import Settings
+    from partylinks.enrichment import Enricher
+
+    rows = [dict(r) for r in LISTING["presentations"] if r["featureId"] == 6433]
+    for row, (category, day) in zip(
+        rows,
+        [("SHOW", "2027-01-31"), ("מופע/הצגה,KIDSHOW,SHOW", "2026-12-30"), ("ילדים,אנימציה,KIDSHOW", "2026-10-22")],
+        strict=False,
+    ):
+        row.update(featureId=row["id"], featureCategoryName=category, businessDate=day, dateTime=f"{day}T21:30:00")
+    wide = SETTINGS.model_copy(update={"days_ahead": 730})
+    events = {
+        e.extra["movie_id"]: e for e in parse_presentations({"presentations": rows}, [], wide, TZ, date(2026, 10, 22))
+    }
+    standup, musical, film = (events[str(r["id"])] for r in rows[:3])
+    assert standup.source_genres == ["show"] and standup.start_at and standup.start_at.year == 2027
+    assert musical.source_genres == ["מופע/הצגה", "show"]
+    assert film.source_genres == ["קולנוע"]
+    enricher = Enricher(Settings().enrichment, TZ)
+    standup.description = "סטנדאפ אלי פיניש מגיע לראשונה לבמות במופע סטנדאפ מצחיק ואישי"
+    show = enricher.enrich(standup)
+    assert show is not None and "stand_up" in show.genres and "cinema" not in show.genres
+    kids_film = enricher.enrich(film)
+    assert kids_film is not None and kids_film.genres == ["cinema"]

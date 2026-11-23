@@ -1072,7 +1072,7 @@ enrichment:
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
   # Israel Music Festival: a concert's text is its programme, and piece names ("מדיטציה ראשונה", "Nostalgia") read as genres.
-  declared_genres_only: [funzing, ticketeams, standupist, israelmusicfest, concertevents, salsavida, bimot]
+  declared_genres_only: [funzing, ticketeams, standupist, israelmusicfest, concertevents, salsavida, bimot, tzavta]  # tzavta: its own categories (its texts named sports for a comedian)
   # Tel Aviv municipality's catch-all category: "אמנות", "מוזיקה", "קלאסית" in its name made every dance class
   # an exhibition, a concert and classical music too. Its events also carry the real category ("מחול").
   declared_ignore: ["מחול אמנות ומוזיקה"]
@@ -2242,6 +2242,7 @@ search:
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
+    tzavta: ["צוותא", "tzavta"]
     smarticket: ["סמרטיקט"]
     smarticket_il: ["פריינדס", "friends"]
     barby: ["בארבי"]
@@ -6024,6 +6025,62 @@ sources:
     city: תל אביב-יפו
     latitude: 32.0548894   # Nominatim: the theatre itself (amenity=theatre)
     longitude: 34.7539944
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
+
+  tzavta:
+    # Tzavta (tzavta.co.il, צוותא), Ibn Gabirol 30, Tel Aviv: theatre, stand-up, music, children's shows, the opera
+    # and literary series and the Short Theatre Festival. ASP.NET, answers direct; ~175 requests a run: categories
+    # 1..60 (unused ids 404), the board /shows, the home page, each event page (its `model` script: texts, artwork,
+    # every date, time and hall) and one tzavta.smarticket.co.il /api/shows call (the purchase page per date).
+    # Sections (23.11.2026): read with events: 1 תיאטרון (46), 2 מוזיקה (14), 4 סטנד אפ (41), 5 הורים וילדים (5),
+    # 7 צוותא 2 (31, a hall: no genre), 9 מיוחדים (15), 10 האופרה שרה בצוותא (1), 12 באים, רואים ובסוף משלמים כמה
+    # שרוצים (1), 17 פסטיבל תיאטרון קצר #28 (12), 18 דיגיתל לילדים (4), 21 טור פרידה (1), 26 האופרה שרה - עונה
+    # #12 (8), 28 זה הכל בינתיים? (2); read, empty now: 6 שחרית 11:11, 11 קבלת שבת ישראלית, 13 אני גיטרה, 16 צלילי
+    # קסם, 19 קול צועק - תיאטרון קצר, 20 כמו ילד בקיבוץ, 22 שבוע האישה, 23 יש לי סימפטיה לתל אביב, 24 פסטיבל
+    # מיתרים, 25 סדרת הרסיטלים, 27 / 30 פסטיבל החופש ליצור (he / ar), 29 ארכיון, 31 שבעה באוקטובר; 3, 8, 15 and
+    # 32+ answer 404. The board /shows (144 dates, 101 events, its month pages are slices) and the home page: read.
+    # No events: 14 שוברי מתנה (a gift voucher, no date), umbrella pages without dates (the festival's, the opera
+    # season's, a call for entries: the pages they link are read), /page/* (about, contact, terms, parking),
+    # 70.tzavta.co.il (the 70-years archive, past) and /Search (a form over the board). No sitemap (404).
+    # Coverage before it (prod, 23.11.2026): all 144 dates were already stored (smarticket 135, makore 126, tarbut
+    # 99, ...), 0 new; 142 of them shown under "תיאטרון הקאמרי" (venue names merged by pin). This source adds the
+    # site's categories (the festival as festival + theatre), its halls and a Smarticket buy link per date.
+    enabled: true
+    cron: "32 8,20 * * *"
+    venue_name: צוותא
+    address: "אבן גבירול 30"
+    city: תל אביב
+    latitude: 32.0751750    # Nominatim: אבן גבירול 30, תל אביב (the London Ministor building)
+    longitude: 34.7820500
+    halls: [צוותא 1, צוותא 2, משרד, BABU בר]   # Show_Place values in the building ("משרד": the festival's office stage)
+    hall_categories: [צוותא 2]
+    places:                 # Show_Place values elsewhere
+      "יגור": {venue_name: תיאטרון יד למגינים, city: יגור, latitude: 32.7429373, longitude: 35.0739470}
+    labels:                 # a word in a category's name -> words our genres read beside it
+      "הורים וילדים": [ילדים]
+      "דיגיתל": [ילדים, הצגה]
+      "תיאטרון קצר": [תיאטרון]
+      "מיוחדים": [מופע]
+      "שחרית": [מופע]
+      "קבלת שבת": [מופע]
+      "באים, רואים": [מופע]
+      "גיטרה": [מוזיקה]
+      "צלילי קסם": [מוזיקה]
+      "כמו ילד בקיבוץ": [מופע]
+      "טור פרידה": [מופע]
+      "שבוע האישה": [מופע]
+      "סימפטיה": [מוזיקה]
+      "מיתרים": [מוזיקה]
+      "רסיטלים": [מוזיקה קלאסית]
+      "בינתיים זה הכל": [מופע]
+      "החופש ליצור": [פסטיבל]
+      "مهرجان": [פסטיבל]
+      "שבעה באוקטובר": [מופע]
+      "ארכיון": [מופע]
+      "שוברי מתנה": [מופע]
+    skip_title_words: ["קול קורא", "סדנה", "קורס", "שובר מתנה"]
     http:
       concurrency: 2
       request_delay_seconds: 0.5

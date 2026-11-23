@@ -19,6 +19,11 @@ day's first screening, every time is listed in the description and ``extra.showt
 movie page is ``www.cinema-city.co.il/movie/<featureId>``; branch addresses (from the site's
 /locations JSON-LD) are a settings mapping. robots.txt of www allows everything but
 ``?lightbox=`` URLs; the tickets host has none (404).
+
+Every section of the Wix site (now playing, coming soon, VIP, kids, the Cinema+ pages: stand-up,
+shows, kids' shows, Onyx, Russian, horror, Israeli cinema...) lists features of this one feed.
+Its live shows in the halls (a comedian, a kids' musical) carry the site's category "SHOW" /
+"מופע/הצגה" (``show_categories``): that label is declared instead of "קולנוע".
 """
 
 from __future__ import annotations
@@ -56,6 +61,9 @@ class CinemaCitySettings(SourceSettings):
     movie_url: str  # formatted with ``id`` (the feature id)
     days_ahead: int = Field(3, ge=1)
     default_runtime_minutes: int = Field(120, ge=1)  # a screening without durationInMinutes
+    # featureCategoryName parts that mark a live show in a hall (the Cinema+ SHOW / STAND-UP / KIDSHOW pages);
+    # not "KIDSHOW", which every kids' film carries too.
+    show_categories: list[str] = Field(default_factory=lambda: ["SHOW", "מופע/הצגה"])
     # venueLocationId -> address / city (the API names the branch only).
     branches: dict[str, Branch] = Field(default_factory=dict)
 
@@ -130,6 +138,8 @@ def parse_movie_day(
     age = _MIN_AGE.search(rating or "")
     place = s.branches.get(branch) or Branch()
     image = clean_str(feature.get("imageData"))
+    categories = [c.strip() for c in (clean_str(first.get("featureCategoryName")) or "").split(",")]
+    live = [c.lower() for c in categories if c in s.show_categories]
     extra = {
         "showtimes": [t.isoformat() for t in times],
         "movie_id": movie,
@@ -161,7 +171,8 @@ def parse_movie_day(
         city=place.city,
         latitude=place.latitude,
         longitude=place.longitude,
-        source_genres=["קולנוע"],  # movie genres ("קומדיה") would map to wrong categories
+        # Movie genres ("קומדיה") would map to wrong categories; a live show is the site's show label.
+        source_genres=live or ["קולנוע"],
         min_age=int(age.group(1)) if age else None,
         image_url=image,
         is_sold_out=all(r.get("soldout") for _, r in shows),
