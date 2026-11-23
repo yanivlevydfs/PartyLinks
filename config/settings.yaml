@@ -2325,6 +2325,7 @@ search:
     arthurmurray: ["arthur murray", "arthurmurray", "ארתור מארי", "ארתור מרי", "the salon"]
     yadvashem: ["yad vashem", "yadvashem", "יד ושם", "יד-ושם"]
     ganeyyehoshua: ["גני יהושע", "ganei yehoshua", "ganey yehoshua", "park.co.il"]
+    standupfactory: ["stand up factory", "standup factory", "סטנדאפ פקטורי", "סטנד אפ פקטורי", "סטנדאפ פאקטורי"]
     bargiyora: ["bar giyora", "בר גיורא"]
     basalon: ["basalon", "בסלון"]
     radical: ["radical", "רדיקל", "בית רדיקל"]
@@ -5241,6 +5242,26 @@ sources:
     skip_title_words: ["דיגיטף", "מחזור", "קורס", "פילאטיס"]
     http:
       concurrency: 2
+      request_delay_seconds: 0.5
+
+  standupfactory:
+    # Stand Up Factory (standupfactory.co.il, סטנדאפ פקטורי): Tel Aviv's stand-up club, a show every night. The show
+    # board (~6 pages of 18 dates, nearest first) + each date's post page (~100: GoShow's sale iframe = the purchase
+    # link) + 2 wp-json calls (the posts' permalinks and categories: the comedian, or the night's series). Every date
+    # is also on `goshow` (text, prices), and dedup merges them by that link. robots.txt allows all.
+    # Access (23.11, from Railway): its own IP gets Cloudflare's empty 202, the source proxy and the VPN 200.
+    enabled: true
+    cron: "27 10,22 * * *"
+    site_url: https://www.standupfactory.co.il
+    venue_name: סטנדאפ פקטורי
+    address: שביל המרץ 5, תל אביב-יפו
+    city: תל אביב-יפו
+    latitude: 32.0506683     # OSM node 13374016467 "Standup Factory" (GoShow's map point is 30 m off)
+    longitude: 34.7726901
+    series_categories: ["ערב גסויות", "סטנדאפ באנגלית"]   # the rest name the comedian
+    skip_title_words: ["סדנת", "קורס", "סדנה"]
+    http:
+      concurrency: 3
       request_delay_seconds: 0.5
 
   bargiyora:

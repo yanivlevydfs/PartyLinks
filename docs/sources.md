@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 151 configured sources, 150 on. Each one has its own module in
+SPOTX collects from 152 configured sources, 151 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -76,6 +76,7 @@ pagination and what the listing and the event page provide.
 | `iwant` | IWANT (iwant.co.il): Tel Aviv party box office (80s / new wave / dark eighties, grunge, trance) | 09:22, 21:22 | yes |
 | `eventbuzz` | Eventbuzz (eventbuzz.co.il): independent productions and community events; unlisted events from the Wayback index, a `site:` search, other sources' ticket links, its own stored upcoming pages (so an archive.org outage misses only new links, not a partial run) and the show pages of venues selling through it (`venue_pages`: Hasimta Theatre, ~49 dates); past ones dropped before saving | 07:10, 19:10 | yes |
 | `standupist` | Standupist (standupist.co.il), stand-up portal and box office: its EventON API in one call (repeats, pin, prices), post tags name the artists, the listing page marks sold out | 05:47, 17:47 | yes |
+| `standupfactory` | Stand Up Factory (standupfactory.co.il): Tel Aviv's stand-up club (שביל המרץ 5), a show every night; the show board (~6 pages, nearest first), each date's post (GoShow's sale iframe: the purchase link, so it merges with `goshow`) and 2 wp-json calls (permalinks, categories: the comedian as artist, the series as genre); no price or text (GoShow's) | 10:27, 22:27 | yes |
 | `comy` | Comy (comy.co.il), stand-up box office. On beside the `comy` host under `pres` (prices, tickets left); dedup merges the two | 06:33, 18:33 | yes |
 | `concertevents` | Concert (concert-events.com): Mizrahi / Mediterranean shows and club nights nationwide; the sitemap is in date order, so a binary search finds the first upcoming page (~10 requests), then each upcoming page's MusicEvent JSON-LD, genre chips and contact block (phone, price). No coordinates (venues geocoded), mostly sold by phone | 08:55, 20:55 | yes |
 | `hangar11` | Hangar 11 (hangar11.co.il), Tel Aviv Port concert hall: the list view's iCal feed (every upcoming event, the hall's point) and each event page for the ticket link and price; Crawl-Delay 20 s. Also reached via eventer and arenas, merged in dedup | 09:20, 21:20 | yes |
