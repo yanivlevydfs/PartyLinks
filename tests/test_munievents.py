@@ -269,3 +269,48 @@ def test_event_pages_soonest_first_undated_last() -> None:
         Card(url="u/near", event_id="near", title="near", start=datetime(2026, 10, 21, 20, tzinfo=tz), end=None),
     ]
     assert [c.event_id for c in sorted(cards, key=by_start)] == ["near", "far", "none"]
+
+
+def test_month_view_listing_reads_the_next_months() -> None:
+    import asyncio
+    from datetime import timedelta
+
+    import httpx
+
+    from partylinks.config import Settings
+    from partylinks.scrapers import build_scraper
+    from partylinks.scrapers.munievents import EMPTY_MONTHS, next_month
+
+    scraper = build_scraper("munievents", Settings())
+    host = "www.month.muni.il"
+    scraper.settings.sites = [MuniSite(url=f"https://{host}", city="גבעת שמואל", feed=False)]  # type: ignore[attr-defined]
+    scraper.http.max_retries, scraper.http.backoff_seconds, scraper.http.request_delay_seconds = 0, 0, 0
+    soon = datetime.now(zone(TZ)).date() + timedelta(days=2)
+    events_by_month = {0: [1], 1: [], 2: [3]}  # this month, an empty one, then one more ("Tamra: Dec 1, Jan 0, Feb 1")
+    asked: list[int] = []
+
+    def page(n: int) -> str:
+        cards = "".join(
+            f'<div class="item"><a href="./events/{i}/"><h3>מופע {i}</h3>'
+            f'<div class="date">{(soon + timedelta(days=31 * n)).strftime("%d.%m.%Y")}</div></a></div>'
+            for i in events_by_month.get(n, [])
+        )
+        return f'<html><body>{cards}<a href="./events/?category=0&y=2030&m={n + 1}">חודש הבא</a></body></html>'
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/events/":
+            n = int(request.url.params.get("m", "0"))
+            asked.append(n)
+            return httpx.Response(200, text=page(n), headers={"content-type": "text/html"})
+        return httpx.Response(404)
+
+    async def go() -> list:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.scrape()]
+
+    events = asyncio.run(go())
+    assert sorted(e.source_event_id for e in events) == ["month:1", "month:3"]
+    assert asked == [0, 1, 2, 3, 4, 5][: 3 + EMPTY_MONTHS]  # stops after EMPTY_MONTHS months adding nothing
+    assert next_month(page(0), f"https://{host}") == f"https://{host}/events/?category=0&y=2030&m=1"
+    assert next_month("<html><a href='./events/?m=2'>חודש קודם</a></html>", f"https://{host}") is None

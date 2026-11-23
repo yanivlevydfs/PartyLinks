@@ -9,7 +9,7 @@ locationName and categoryName (older ones give a category id only; the listing's
 next date, so its id rolls forward instead of flooding the calendar. Where the feed is missing
 (500 / HTML: Herzliya, Lod, Givat Shmuel, Eshkol, Ganei Tikva, ...) the listing page is parsed
 instead: whatever the layout (``a.event-promo`` grid, ``.events-list``, council ``a.event`` cards,
-month calendar), each link to ``./events/<id>/`` is a card, read for title, date, time, place and
+month calendar, read month by month through its "חודש הבא" link), each link to ``./events/<id>/`` is a card, read for title, date, time, place and
 tags. Each event's page ``/events/<id>/`` adds the description, the full-size image, the place
 when the listing lacks it and, when the site sells tickets itself, a tickets row
 ("40 ₪ • אירוע בתשלום"); without one, the price its "הזמנת כרטיסים" button's seller page states
@@ -61,6 +61,7 @@ _HEBREW = re.compile(r"[א-ת]")
 _BG_URL = re.compile(r"url\(['\"]?([^'\")]+)")
 
 
+EMPTY_MONTHS = 3  # month pages in a row adding no event: the month view's end (Tamra: Dec 1, Jan 0, Feb 1, Nov 2026)
 BROKEN_PAGES = 3  # event pages failing 5xx in a row: the site's page template is down, the rest from the listing
 
 
@@ -134,6 +135,8 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
                     self.record_failure(f"{site.url} feed", exc)
             page = await self.optional(f"{site.url} listing", self.get_text(site.url + "/events/")) or ""
             listed = parse_listing(page, site.url, self.timezone, today)
+            if not feed:
+                listed += await self._later_months(page, site, today)
             if feed:
                 cards = parse_feed(feed, site.url, parse_categories(page), self.timezone, today)
                 tags = {c.url: c.tags for c in listed}  # the grid's #tags add to the feed's category
@@ -189,6 +192,34 @@ class MuniEventsScraper(BaseScraper[MuniEventsSettings]):
         for url, broken in sites_broken:
             if broken["listing_only"]:
                 self.log.warning("%s: event pages answer 5xx; %d events kept from the listing only", url, broken["listing_only"])
+
+
+    async def _later_months(self, page: str, site: MuniSite, today: date) -> list[Card]:
+        """A month-view listing (Givat Shmuel, Eshkol, Tamra, Sha'ar HaNegev: "חודש הבא") shows this month only:
+        the next months' pages, up to ``feed_days`` ahead, until EMPTY_MONTHS in a row add no event."""
+        seen = {c.url for c in parse_listing(page, site.url, self.timezone, today)}
+        cards: list[Card] = []
+        empty = 0
+        for _ in range(self.settings.feed_days // 30):
+            url = next_month(page, site.url)
+            if not url or empty >= EMPTY_MONTHS:
+                break
+            page = await self.optional(f"{url} listing", self.get_text(url)) or ""
+            new = [c for c in parse_listing(page, site.url, self.timezone, today) if c.url not in seen]
+            seen |= {c.url for c in new}
+            cards += new
+            empty = 0 if new else empty + 1
+        return cards
+
+
+def next_month(page_html: str, base: str) -> str | None:
+    """The month view's "חודש הבא" link (``./events/?category=0&y=2026&m=12``), absolute."""
+    if not page_html:
+        return None
+    for a in LexborHTMLParser(page_html).css('a[href*="m="]'):
+        if "חודש הבא" in _text(a):
+            return urljoin(base + "/", a.attributes.get("href") or "")
+    return None
 
 
 def by_start(card: Card) -> datetime:
