@@ -7,10 +7,11 @@ title and artwork. Each event page gives, in Elementor icon boxes, "תאריך �
 "מיקום האירוע" (``בית יד לבנים | רחוב דוד רמז 6``, ``מרכז הנוער - רח' הרב לסרי 2`` or a bare place),
 "מה קורה באירוע" (the description, which states the price when there is one: "כרטיסים ברכישה מוקדמת:
 40 ₪") and a "לפרטים והרשמה" button (a registration / ticket link, often a did.li short link, kept as
-``extra["purchase_url"]``). Posts are listed in publishing order, which follows the event dates, so
-pages are read until ``stop_after_past`` past events in a row: a run reads the current events and a
-few past ones, never the archive. The site's topic filter (``topic`` taxonomy) is not on the event
-pages, so genres come from the title and description (source default: culture). robots.txt is empty.
+``extra["purchase_url"]``). Posts are listed in publishing order, which only roughly follows the event
+dates (an event announced early sits among past ones), so every card's page is read (~70, one date
+each); ``stop_after_past`` can cut a site's run after that many past events in a row. The site's topic
+filter (``topic`` taxonomy) is a loose tag over the same posts and is not on the event pages, so genres
+come from the title and description (source default: culture). robots.txt is empty.
 """
 
 from __future__ import annotations
@@ -47,8 +48,9 @@ class MilgamSite(BaseModel):
 
 class MilgamMuniSettings(SourceSettings):
     sites: list[MilgamSite] = Field(min_length=1)
-    # Past events in a row (in the grid's newest-first order) after which a site's pages stop being read.
-    stop_after_past: int = Field(default=3, ge=1)
+    # Past events in a row (in the grid's newest-first order) after which a site's pages stop being read;
+    # None (the default) reads every card, as the grid's order only roughly follows the event dates.
+    stop_after_past: int | None = Field(default=None, ge=1)
 
 
 class MilgamMuniScraper(BaseScraper[MilgamMuniSettings]):
@@ -81,7 +83,7 @@ class MilgamMuniScraper(BaseScraper[MilgamMuniSettings]):
                     time_known=event.time_known,
                 ):
                     past_in_row += 1
-                    if past_in_row >= self.settings.stop_after_past:
+                    if self.settings.stop_after_past and past_in_row >= self.settings.stop_after_past:
                         break
                     continue
                 past_in_row = 0
