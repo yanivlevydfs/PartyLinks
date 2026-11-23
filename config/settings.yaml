@@ -983,6 +983,7 @@ enrichment:
     nikonitai: [theatre]  # a theatre hall; festival nights and talks name no genre
     towerofdavid: [culture]
     tamuseum: [exhibitions]
+    hechtmuseum: [culture]  # concerts and talks in the auditorium; most posts carry a series term
     eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
@@ -2227,6 +2228,7 @@ search:
     fever: ["פיבר", "candlelight", "קנדללייט"]
     towerofdavid: ["מגדל דוד", "tower of david", "החיזיון הלילי"]
     tamuseum: ["מוזיאון תל אביב", "tel aviv museum of art"]
+    hechtmuseum: ["מוזיאון הכט", "hecht museum", "ארכיאולוגיה עכשיו"]
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
@@ -5813,6 +5815,32 @@ sources:
       impersonate: chrome   # Cloudflare refuses Python's TLS handshake (403); curl and Chrome get 200
       concurrency: 2
       request_delay_seconds: 0.5
+
+  hechtmuseum:
+    # Hecht Museum, University of Haifa (mushecht.haifa.ac.il): the "ארכיאולוגיה עכשיו" lecture series (monthly,
+    # months ahead), swing nights, classical / organ / family concerts, stand-up. One wp-json call: the `event`
+    # post type (ACF day; the text gives time, price and the Eventer link: dedup merges with `eventer`) with its
+    # embedded series terms and artwork. All in the museum's auditorium. Answers direct; robots.txt allows all.
+    enabled: true
+    cron: "51 8,20 * * *"
+    venue_name: מוזיאון הכט
+    address: "שדרות אבא חושי 199, אוניברסיטת חיפה"
+    city: חיפה
+    latitude: 32.763218    # the geocoding pin "אודיטוריום הכט" (the museum's building)
+    longitude: 35.018062
+    labels:                # the series terms -> words our genres read
+      "ארכיאולוגיה עכשיו": [הרצאה]
+      "לילות סווינג": [סווינג]
+      "רביעי הגדול": [סטנדאפ]
+      "הסדרה הקלאסית": [מוזיקה קלאסית]
+      "סדרת העוגב": [מוזיקה קלאסית]
+      "הרפתקה בקול וקצב": [קונצרט, לכל המשפחה]
+      "אוצר מוזיקלי מהאגדות": [קונצרט, לכל המשפחה]
+    may_be_empty: true     # a small programme between seasons
+    skip_title_words: ["קורס", "השתלמות"]
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
 
   jaffatheatre:
     # Jaffa Theatre: the Arab-Hebrew stage at Mifratz Shlomo. The home page links every upcoming

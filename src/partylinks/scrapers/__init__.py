@@ -60,6 +60,7 @@ from partylinks.scrapers.hangar11 import Hangar11Scraper
 from partylinks.scrapers.happytlv import HappyTlvScraper
 from partylinks.scrapers.hatarbut import HatarbutScraper
 from partylinks.scrapers.havanaclub import HavanaClubScraper
+from partylinks.scrapers.hechtmuseum import HechtMuseumScraper
 from partylinks.scrapers.holon import HolonScraper
 from partylinks.scrapers.hotcinema import HotCinemaScraper
 from partylinks.scrapers.hulyo import HulyoScraper
@@ -317,6 +318,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         TicketsiScraper,
         TicksterScraper,
         CluberimScraper,
+        HechtMuseumScraper,
         FunzingScraper,
         EasytixScraper,
         TicketeamsScraper,
