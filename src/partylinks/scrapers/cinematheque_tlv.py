@@ -293,10 +293,11 @@ def parse_festival_cards(cards_html: str) -> dict[str, FestivalCard]:
         if not m:
             continue
         link = box.css_first(".title a")
+        href = clean_str(link.attributes.get("href")) if link else None
         img = box.css_first(".img-wraper img")
-        image = img and (img.attributes.get("data-src") or img.attributes.get("src"))
+        image = (img.attributes.get("data-src") or img.attributes.get("src")) if img else None
         cards[m.group(1)] = FestivalCard(
-            url=clean_str(link.attributes.get("href")) if link else None,
+            url=href if href and href.startswith("http") else None,  # an event's url must be absolute
             image=_artwork(image),
         )
     return cards
@@ -400,7 +401,7 @@ def apply_festival(event: ScrapedEvent, cards: dict[str, FestivalCard]) -> Scrap
     if card is None:
         return event
     if card.url:
-        event.url = card.url
+        event.url = HttpUrl(card.url)
     if card.image and not event.image_url:
         event.image_url, event.images = card.image, [card.image]
     event.source_genres = list(dict.fromkeys([*event.source_genres, *card.genres]))
