@@ -109,7 +109,7 @@ pagination and what the listing and the event page provide.
 | `tickster` | Tickster (tickster.co.il): a ticket guide selling through its Kupat Bravo white label and Funzing affiliate links; its /api/ is disallowed, so the sitemap (~880 event pages) and each page's prerendered JSON-LD Event (start, hall, city, price, buy link); no coordinates (geocoded) and no category (genres from the text); buy links merge with `kupatbravo` / `funzing` | 07:28, 19:28 | yes |
 | `glatticket` | Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi and religious public; Tickchak hub search API + each event's page (map pin, tiers, organiser) | 06:23, 18:23 | yes |
 | `arthurmurray` | Arthur Murray Israel (arthurmurray.co.il): the ballroom school's public evening "The Salon" in Ra'anana; the Wix page's embedded landing (read through the page JSON): date, doors and start, single / couple tickets on PayMe | 07:44, 19:44 | yes |
-| `basalon` | Basalon (basalon.co.il): talks, stand-up, shows, plays, kids' shows and workshops in living rooms, pubs and studios nationwide; the category pages' dated cards, then each event page's JSON-LD (no appointment-only, private or at-home listings) | 03:37, 15:37 | yes |
+| `basalon` | Basalon (basalon.co.il): talks, stand-up, shows, plays, kids' shows and workshops in living rooms, pubs and studios nationwide; every category's dated cards (the site's own pagination call, to the last page), then each event page's JSON-LD and booking calendar, every coming date (no appointment-only, private or at-home listings) | 03:37, 15:37 | yes |
 | `radical` | Radical (radical.org.il, "בית רדיקל"): culture house in Jaffa, two halls (auditorium, basement): lectures, films, concerts, workshops, book clubs. WooCommerce behind Cloudflare (`impersonate: chrome`): the calendar's Elementor grids give date (no year: the weekday picks it), time and artwork, paged only while dates are still coming; the Store API adds categories, price range, stock and text (~6 requests). No end times | 09:44, 21:44 | yes |
 | `haezor` | HaEzor / The Zone (haezor.com): live-music club in Tel Aviv | 06:36, 18:36 | yes |
 | `goshow` | GoShow (goshow.co.il): box office of AMAMA, Stand Up Factory, Comedy Bar and small stages and pubs | 07:21, 19:21 | yes |
@@ -204,7 +204,7 @@ many of them free.
 | --- | --- | --- | --- |
 | `tiktik` | TikTik Online (tiktik-online.co.il): tickets and packages for concerts and festivals abroad | 04:27, 16:27 | yes |
 | `kishreyteufa` | Kishrey Teufa (kishrey-teufa.co.il): tickets to concerts and festivals abroad | 03:07, 15:07 | yes |
-| `ticketplace` | Ticket Place (ticketplace.co.il): resale tickets to concerts and festivals abroad | 03:19, 15:19 | yes |
+| `ticketplace` | Ticket Place (ticketplace.co.il): resale tickets to concerts, festivals and sport abroad | 03:19, 15:19 | yes |
 | `livevents` | Live Events (livevents.co.il): packages (flight + hotel + ticket) and tickets to shows in Europe | 03:31, 15:31 | yes |
 | `issta` | Issta (issta.co.il): packages (flight + hotel + ticket) to concerts abroad | 04:47, 16:47 | yes |
 | `livetickets` | LiveTickets (livetickets.co.il): tickets to concerts, sports and festivals abroad | 05:37, 17:37 | yes |
