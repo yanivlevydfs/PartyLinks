@@ -2341,6 +2341,7 @@ search:
     tarbut: ["tarbut.events", "tarbut events", "טרבות איוונטס"]
     ticketsi: ["טיקטסי", "ticketsi"]
     tickster: ["טיקסטר", "tickster"]
+    cluberim: ["קלאברים", "cluberim"]
     bargiyora: ["bar giyora", "בר גיורא"]
     basalon: ["basalon", "בסלון"]
     radical: ["radical", "רדיקל", "בית רדיקל"]
@@ -5485,6 +5486,28 @@ sources:
       concurrency: 4
       request_delay_seconds: 0.2
 
+  cluberim:
+    # Cluberim (cluberim.co.il, קלאברים): a party guide (club nights, festivals, holiday parties, all of Israel), WordPress
+    # + JetEngine. One wp-json call: the `events` post type with its meta (place, date text, day stamp, ticket link)
+    # and embedded terms (style / holiday, kind, area, artists) and artwork; ~10 coming events. Every ticket link is a
+    # Go-Out / Zygo / Eventer page: dedup merges with those sources. No coordinates (places geocoded); a secret
+    # location ("ישראל") is not imported. Answers direct.
+    enabled: true
+    cron: "24 9,21 * * *"
+    site_url: https://cluberim.co.il
+    may_be_empty: true       # a small guide: some days list nothing
+    labels:                  # the site's holiday terms -> what is declared instead (ours name these "חגים")
+      "האלווין": ["האלווין", "halloween"]
+      'ל"ג בעומר': ['ל"ג בעומר', "חגים"]
+      "סוכות": ["סוכות", "חגים"]
+      "עצמאות": ["עצמאות", "חגים"]
+      "פסח": ["פסח", "חגים"]
+      "ראש השנה": ["ראש השנה", "חגים"]
+      "שבועות": ["שבועות", "חגים"]
+    skip_title_words: ["קורס", "סדנת"]
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
 
   bargiyora:
     # Bar Giyora: live-show bar on Ibn Gabirol (music, stand-up, lectures), a WooCommerce shop.

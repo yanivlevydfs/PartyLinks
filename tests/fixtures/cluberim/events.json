@@ -1,0 +1,468 @@
+[
+ {
+  "id": 5203,
+  "link": "https://cluberim.co.il/events/bkush-festival-nye-2027-01-01/",
+  "title": {
+   "rendered": "B’KUSH FESTIVAL | NYE 2027 | 01.01"
+  },
+  "content": {
+   "rendered": "<h2>B’KUSH FESTIVAL NYE 2027: פסטיבל המיינסטרים חוזר לסילבסטר בעמק חפר עם OMRI SMADAR 🎉</h2>\n<p>פסטיבל בקוש חוזר אחרי תקופה ארוכה של שקט, והפעם במהדורת סילבסטר מיוחדת לכבוד השנה החדשה. ההפקה מגדירה אותו כ<a href=\"https://cluberim.co.il/event-genre/%d7%9e%d7%99%d7%99%d7%a0%d7%a1%d7%98%d7%a8%d7%99%d7%9d/\">פסטיבל המיינסטרים</a> הגדול בישראל, ומבטיחה ליינאפ של מיטב האמנים והפקה בקנה מידה גדול. הלילה נפתח ביום שישי, 1 בינואר 2027, ב-22:00, ונמשך עד 05:00 לפנות בוקר.</p>\n<h3>🎧 הליינאפ</h3>\n<p>בראש הליינאפ עומד OMRI SMADAR, ואחריו שורה ארוכה של צמדי B2B שמחליפים ביניהם את העמדה לאורך כל הלילה. ALMØG "
+  },
+  "meta": {
+   "event_adrs": "עמק חפר",
+   "event_dates": "1 בינואר 2027, שישי, 22:00",
+   "event_date_sort": 1798761600,
+   "exp_date": 1798761600,
+   "event_link": "https://go-out.co/event/1794764339320?ref=a390321i0f"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://cluberim.co.il/wp-content/uploads/2026/11/cluberim-bkush-nye-0101.webp"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "event-genre",
+      "name": "מיינסטרים"
+     },
+     {
+      "taxonomy": "event-genre",
+      "name": "סילבסטר"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-area",
+      "name": "במרכז"
+     },
+     {
+      "taxonomy": "event-area",
+      "name": "בעמק חפר"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-type",
+      "name": "פסטיבלים"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ {
+  "id": 5201,
+  "link": "https://cluberim.co.il/events/forum-teenagers-hannukah-festival-07-12/",
+  "title": {
+   "rendered": "Forum Teenagers | HANNUKAH FESTIVAL | 07.12"
+  },
+  "content": {
+   "rendered": "<h2>Forum Teenagers | HANNUKAH FESTIVAL: מסיבת חנוכה לנוער עם RISING DUST בפורום באר שבע 🎉</h2>\n<p>פורום נוער חוגגים את חג האורות בלילה אחד גדול, ביום שני 7 בדצמבר, במועדון הפורום בבאר שבע. ההפקה מבטיחה חוויית חנוכה מיוחדת וליינאפ שנבנה לרחבה מלאה, כשבמרכז הערב עומד צמד שהופיע בבמות ובפסטיבלים ברחבי העולם. השערים נפתחים ב-23:00 והמסיבה נמשכת עד 05:00 לפנות בוקר.</p>\n<h3>🎧 הליינאפ</h3>\n<p>הכותרת של הערב היא <a href=\"https://cluberim.co.il/artist/rising-dust/\">הצמד RISING DUST</a>, ולצידם הדיג׳יי והמפיקה AƉELLA, עם סט שמשלב האוס, אפרו האוס וטק האוס. איתם עולה לעמדה נבחרת אמנים שמלווה את הרחבה לא"
+  },
+  "meta": {
+   "event_adrs": "מועדון הפורום, נסים אלקיים 10, באר שבע",
+   "event_dates": "7 בדצמבר, שני, 23:00",
+   "event_date_sort": 1796601600,
+   "exp_date": 1796601600,
+   "event_link": "https://www.eventer.co.il/event/qgp4f/bfQ9L"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://cluberim.co.il/wp-content/uploads/2026/11/cluberim-forum-hanukkah-0712.webp"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "event-genre",
+      "name": "חנוכה"
+     },
+     {
+      "taxonomy": "event-genre",
+      "name": "מיינסטרים"
+     },
+     {
+      "taxonomy": "event-genre",
+      "name": "נוער"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-area",
+      "name": "בבאר שבע"
+     },
+     {
+      "taxonomy": "event-area",
+      "name": "בדרום"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-type",
+      "name": "חיי לילה ומסיבות"
+     }
+    ],
+    [
+     {
+      "taxonomy": "artist",
+      "name": "Rising Dust"
+     }
+    ]
+   ]
+  }
+ },
+ {
+  "id": 5197,
+  "link": "https://cluberim.co.il/events/maskadelic-purim-experience-26-27-03/",
+  "title": {
+   "rendered": "Maskadelic Purim Experience | 26-27.03"
+  },
+  "content": {
+   "rendered": "<h2>Maskadelic Purim Experience: פסטיבל פורים של תרבות הטראנס 🎭</h2>\n<p>אחלה הפקות מכריזים על המהדורה הבאה של Maskadelic, והפעם תחת הכותרת The Culture Of Purim. הפסטיבל יתקיים ב-26 וב-27 במרץ 2027, מיום שישי ועד שבת ב-14:00, ומיועד לקהל של <a href=\"https://cluberim.co.il/event-genre/%d7%98%d7%a8%d7%90%d7%a0%d7%a1/\">מסיבות טראנס</a> ולקהילה הפסיכדלית. בהודעה שלהם ההפקה מדברת על המשך של סיפור שהתחיל קודם, ועל שלב חדש שפותח את הראש ומרחיב את התודעה.</p>\n<h3>🎧 הליינאפ</h3>\n<p>שמות האמנים עוד לא פורסמו. בפוסטר יש רק את שם הפסטיבל, התאריכים והסלוגן &quot;מִדְבָּרִים תַּרְבּוּת&quot;, כך שמי שמחכה לל"
+  },
+  "meta": {
+   "event_adrs": "ישראל",
+   "event_dates": "26-27 במרץ 2027, שישי-שבת",
+   "event_date_sort": 1806019200,
+   "exp_date": 1806105600,
+   "event_link": "https://www.go-out.co/event/1794237161981?tl=vse0g9fi0if9f"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://cluberim.co.il/wp-content/uploads/2026/11/cluberim-maskadelic-purim.webp"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "event-genre",
+      "name": "טראנס"
+     },
+     {
+      "taxonomy": "event-genre",
+      "name": "פורים"
+     }
+    ],
+    [],
+    [
+     {
+      "taxonomy": "event-type",
+      "name": "פסטיבלים"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ {
+  "id": 5195,
+  "link": "https://cluberim.co.il/events/saturday-jimmywho-x-mainstream-28-11/",
+  "title": {
+   "rendered": "SATURDAY JIMMYwHO x MAINSTREAM | 28.11"
+  },
+  "content": {
+   "rendered": "<h2>SATURDAY JIMMYwHO x MAINSTREAM: סוגרים את נובמבר במוצ״ש 🌴</h2>\n<p>28.11 הוא מוצאי השבת האחרון של החודש, וג׳ימי הו מסיים אותו עם MOTZASH MAINSTREAM. ברוטשילד 24 פותחים דלתות ב-22:30, והמיינסטרים מתנגן עד 05:00. מי שרוצה לפתוח את דצמבר עם זיכרון טוב מהסופ״ש, זה הערב.</p>\n<h3>🎧 מי מנגן</h3>\n<p>MATAN DINO ו-RONEN LA-V חוזרים לעמוד יחד מאחורי העמדה. הצמד כבר מוכר לקהל של המוצ״שים במועדון, ובסט שלהם הלהיטים מגיעים אחד אחרי השני.</p>\n<ul>\n<li>MATAN DINO</li>\n<li>RONEN LA-V</li>\n</ul>\n<h3>📍 ג׳ימי הו, שדרות רוטשילד 24</h3>\n<p>מועדון במרכז תל אביב, על השדרה. במוצאי שבת, מעטים <a href=\"https://cluber"
+  },
+  "meta": {
+   "event_adrs": "ג'ימי הו, שדרות רוטשילד 24, תל אביב",
+   "event_dates": "28 בנובמבר, שבת, 22:30",
+   "event_date_sort": 1795824000,
+   "exp_date": 1795824000,
+   "event_link": "https://go-out.co/event/1794223589887?ref=a390321i0f"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://cluberim.co.il/wp-content/uploads/2026/11/cluberim-jimmy-sat28.webp"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "event-genre",
+      "name": "מיינסטרים"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-area",
+      "name": "במרכז"
+     },
+     {
+      "taxonomy": "event-area",
+      "name": "בתל אביב"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-type",
+      "name": "חיי לילה ומסיבות"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ {
+  "id": 5193,
+  "link": "https://cluberim.co.il/events/%d7%a9%d7%99%d7%a9%d7%99-%d7%97%d7%95%d7%a4%d7%a9%d7%99-free-alcohol-27-11/",
+  "title": {
+   "rendered": "שישי חופשי | FREE ALCOHOL | 27.11"
+  },
+  "content": {
+   "rendered": "<h2>שישי חופשי | FREE ALCOHOL: TOMER SHEYMAN ו-ARI VE JURGEN בפתח תקווה 🎉</h2>\n<p>השישי האחרון של נובמבר מגיע עם בר חופשי. ב-27.11 נפתחות הדלתות ב-23:00 בברקת 9, והשתייה חופשית לאורך כל האירוע, עד 05:00. מי שמכיר את הליין יודע למה לצפות: מקום יפה ופתוח, קהל שבא לחגוג ואווירה של חופש אחרי שבוע ארוך.</p>\n<h3>🎧 על העמדה</h3>\n<p>TOMER SHEYMAN חוזר לעמדה, והפעם לצד ARI VE JURGEN. יחד הם בונים <a href=\"https://cluberim.co.il/event-genre/%d7%9e%d7%99%d7%99%d7%a0%d7%a1%d7%98%d7%a8%d7%99%d7%9d/\">ערב מיינסטרים</a> של שירים שאפשר לשיר בקול, עם כוס ביד.</p>\n<ul>\n<li>TOMER SHEYMAN</li>\n<li>ARI VE JURGEN</l"
+  },
+  "meta": {
+   "event_adrs": "ברקת 9, פתח תקווה",
+   "event_dates": "27 בנובמבר, שישי, 23:00",
+   "event_date_sort": 1795737600,
+   "exp_date": 1795737600,
+   "event_link": "https://go-out.co/event/1794223159509?ref=a390321i0f"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://cluberim.co.il/wp-content/uploads/2026/11/cluberim-chofshi-fri27.webp"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "event-genre",
+      "name": "מיינסטרים"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-area",
+      "name": "במרכז"
+     },
+     {
+      "taxonomy": "event-area",
+      "name": "בפתח תקווה"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-type",
+      "name": "חיי לילה ומסיבות"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ {
+  "id": 5191,
+  "link": "https://cluberim.co.il/events/%d7%97%d7%9e%d7%99%d7%a9%d7%99-%d7%97%d7%95%d7%a4%d7%a9%d7%99-%d7%91%d7%a8-%d7%a4%d7%aa%d7%95%d7%97-%d7%91-99-26-11/",
+  "title": {
+   "rendered": "חמישי חופשי | בר פתוח ב-99₪ | 26.11"
+  },
+  "content": {
+   "rendered": "<h2>חמישי חופשי | בר פתוח ב-99₪ בפתח תקווה 🍸</h2>\n<p>סוף נובמבר, וחמישי חופשי ממשיך לעשות את מה שהוא יודע: כרטיס אחד של 99 ש״ח, ואלכוהול חופשי מהרגע שנכנסים. ב-26.11 המסיבה בברקת 9 בפתח תקווה מתחילה ב-23:00 ומסתיימת ב-04:30. ההפקה מגדירה את הליין כחזרה למקורות של פתיחת סוף השבוע: ערב חגיגי, שתייה חופשית ולוקיישן מרכזי.</p>\n<h3>🎧 הליינאפ</h3>\n<p>הדיג׳ייז של הערב עוד לא הוכרזו, והפוסטר מציג TBA. ברגע שהשמות יתפרסמו, הם יופיעו גם בעמוד של ההפקה ב-GO-OUT.</p>\n<h3>📍 הלוקיישן</h3>\n<p>ברקת 9, פתח תקווה. למי שרוצה לשתות בלי לספור ולרקוד קרוב לבית, אין הרבה <a href=\"https://cluberim.co.il/event-area/%d"
+  },
+  "meta": {
+   "event_adrs": "ברקת 9, פתח תקווה",
+   "event_dates": "26 בנובמבר, חמישי, 23:00",
+   "event_date_sort": 1795651200,
+   "exp_date": 1795651200,
+   "event_link": "https://go-out.co/event/1794223125459?ref=a390321i0f"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://cluberim.co.il/wp-content/uploads/2026/11/cluberim-chofshi-thu26.webp"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "event-genre",
+      "name": "מיינסטרים"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-area",
+      "name": "במרכז"
+     },
+     {
+      "taxonomy": "event-area",
+      "name": "בפתח תקווה"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-type",
+      "name": "חיי לילה ומסיבות"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ {
+  "id": 5189,
+  "link": "https://cluberim.co.il/events/thursday-jimmywho-x-mainstream-26-11/",
+  "title": {
+   "rendered": "THURSDAY JIMMYwHO x MAINSTREAM | 26.11"
+  },
+  "content": {
+   "rendered": "<h2>THURSDAY JIMMYwHO x MAINSTREAM: חמישי אחרון של נובמבר ברוטשילד 🍋</h2>\n<p>החמישי האחרון של נובמבר נופל ב-26.11, וג׳ימי הו חוגג אותו עם HAMISHI MAINSTREAM. הדלתות בשדרות רוטשילד 24 נפתחות ב-22:30, והלילה מתחלק לשניים: מיינסטרים לחלק המרכזי, ואפטר היפ הופ שמחזיק עד 05:00.</p>\n<h3>🎧 הליינאפ</h3>\n<p>RONEN LA-V ו-SEGEV מנגנים את הסט המרכזי, ובשעות הקטנות INFINITY לוקח את העמדה ל<a href=\"https://cluberim.co.il/event-genre/%d7%94%d7%99%d7%a4-%d7%94%d7%95%d7%a4/\">אפטר היפ הופ</a>. מי שאוהב את שני הסגנונות מקבל את שניהם באותו כרטיס.</p>\n<ul>\n<li>RONEN LA-V</li>\n<li>SEGEV</li>\n<li>INFINITY (After Hip"
+  },
+  "meta": {
+   "event_adrs": "ג'ימי הו, שדרות רוטשילד 24, תל אביב",
+   "event_dates": "26 בנובמבר, חמישי, 22:30",
+   "event_date_sort": 1795651200,
+   "exp_date": 1795651200,
+   "event_link": "https://go-out.co/event/1794223093585?ref=a390321i0f"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://cluberim.co.il/wp-content/uploads/2026/11/cluberim-jimmy-thu26.webp"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "event-genre",
+      "name": "היפ הופ"
+     },
+     {
+      "taxonomy": "event-genre",
+      "name": "מיינסטרים"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-area",
+      "name": "במרכז"
+     },
+     {
+      "taxonomy": "event-area",
+      "name": "בתל אביב"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-type",
+      "name": "חיי לילה ומסיבות"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ {
+  "id": 5156,
+  "link": "https://cluberim.co.il/events/thursday-mainstream-26-11/",
+  "title": {
+   "rendered": "THURSDAY MAINSTREAM | 26.11"
+  },
+  "content": {
+   "rendered": "<h2>THURSDAY MAINSTREAM &#8211; פסטיבל מיינסטרים והיפ הופ בנמל 🌊</h2>\n<p>מון צ׳ילד מביא את Thursday Mainstream &#8211; Mainstream &amp; Hip Hop Festival לנמל תל אביב בחמישי 26.11, מ-22:00. שתי במות, שני עולמות וקהל שבא לשמוח.</p>\n<h2>🎧 הליינאפ</h2>\n<p>בבמה הראשית מיינסטרים ו-EDM עם TAIR ALON, OFEK ASAF ו-AMIT ORIN, ובבמה השנייה היפ הופ עם MAX DAVID לכל הלילה. רחבה פתוחה מול הגלים, הלהיטים הנכונים והקצב שמחזיק עד השעות הקטנות.</p>\n<h3><strong>Main Stage &#8211; Mainstream &amp; EDM:</strong></h3>\n<ul>\n<li>TAIR ALON</li>\n<li>OFEK ASAF</li>\n<li>AMIT ORIN</li>\n</ul>\n<h3><strong>2nd Stage &#8211; H"
+  },
+  "meta": {
+   "event_adrs": "מון צ׳ילד, נמל תל אביב",
+   "event_dates": "26 בנובמבר, חמישי, 22:00",
+   "event_date_sort": 1795651200,
+   "exp_date": 1795651200,
+   "event_link": "https://zygo.co.il/event/951001118658273774/ZF10b15u3"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://cluberim.co.il/wp-content/uploads/2026/10/cluberim-thums26.webp"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "event-genre",
+      "name": "היפ הופ"
+     },
+     {
+      "taxonomy": "event-genre",
+      "name": "מיינסטרים"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-area",
+      "name": "במרכז"
+     },
+     {
+      "taxonomy": "event-area",
+      "name": "בתל אביב"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-type",
+      "name": "חיי לילה ומסיבות"
+     }
+    ],
+    []
+   ]
+  }
+ },
+ {
+  "id": 5160,
+  "link": "https://cluberim.co.il/events/say-less-rising-dust-27-11/",
+  "title": {
+   "rendered": "Say Less &#8211; RISING DUST | 27.11"
+  },
+  "content": {
+   "rendered": "<h2>Say Less &#8211; RISING DUST מול הים בנמל תל אביב 🌊</h2>\n<p>מון צ׳ילד מביא את <a href=\"https://cluberim.co.il/artist/rising-dust/\">RISING DUST</a> ל-Say Less &#8211; A Life Experience By The Sea, בשישי 27.11 מ-23:00 בנמל תל אביב. הצמד הכי אהוב בישראל, באוויר הפתוח ומול הגלים.</p>\n<h2>🎧 הליינאפ</h2>\n<p>עמי דהן וג׳ון אהרון נפגשו במסיבה ב-2012 והקימו את Rising Dust &#8211; מה-EP ״Dust Everywhere״ ב-Blue Tunes Records, דרך האלבום ״The Resistance״ ב-Mushy Records ועד סט הבכורה באוזורה. לפניהם ואחריהם YANKA, RIMO ו-DANKA.</p>\n<h3><strong>ליינאפ:</strong></h3>\n<ul>\n<li>RISING DUST</li>\n<li>Before"
+  },
+  "meta": {
+   "event_adrs": "מון צ׳ילד, נמל תל אביב",
+   "event_dates": "27 בנובמבר, שישי, 23:00",
+   "event_date_sort": 1795737600,
+   "exp_date": 1795737600,
+   "event_link": "https://zygo.co.il/event/001015110503080294/ZF10b15u3"
+  },
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "source_url": "https://cluberim.co.il/wp-content/uploads/2026/10/cluberim-rising27.webp"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "taxonomy": "event-genre",
+      "name": "טראנס"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-area",
+      "name": "במרכז"
+     },
+     {
+      "taxonomy": "event-area",
+      "name": "בתל אביב"
+     }
+    ],
+    [
+     {
+      "taxonomy": "event-type",
+      "name": "חיי לילה ומסיבות"
+     }
+    ],
+    [
+     {
+      "taxonomy": "artist",
+      "name": "Rising Dust"
+     }
+    ]
+   ]
+  }
+ }
+]

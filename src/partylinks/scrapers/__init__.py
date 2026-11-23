@@ -22,6 +22,7 @@ from partylinks.scrapers.bimot import BimotScraper
 from partylinks.scrapers.chillz import ChillzScraper
 from partylinks.scrapers.cinemacity import CinemaCityScraper
 from partylinks.scrapers.cinematheque_tlv import JerusalemCinemathequeScraper, TelAvivCinemathequeScraper
+from partylinks.scrapers.cluberim import CluberimScraper
 from partylinks.scrapers.comy import ComyScraper
 from partylinks.scrapers.concertevents import ConcertEventsScraper
 from partylinks.scrapers.dice import DiceScraper
@@ -313,6 +314,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         TarbutScraper,
         TicketsiScraper,
         TicksterScraper,
+        CluberimScraper,
         FunzingScraper,
         EasytixScraper,
         TicketeamsScraper,
