@@ -1502,11 +1502,11 @@ geocoding:
     "חזון לדורות - בית החזון איש": [32.0814534, 34.8348904]  # Beit Chazon Ish heritage centre, Chazon Ish 37, Bnei Brak (OSM house)
     "מוזיאון הלוחם היהודי": [31.8384617, 34.9798783]      # Jewish Soldier in WWII museum, Latrun, beside Yad LaShiryon (OSM: Yad LaShiryon)
     'הרפת הרובוטית במושב אבנ"י אית"ן': [32.8246384, 35.7667337]  # the robotic dairy in Moshav Avnei Eitan, Golan (the moshav, OSM)
+    "הרפת הרובוטית - משק עסיס": [32.8246384, 35.7667337]  # the same dairy as Makore names it (50 tours, source audit Nov 2026)
+    "זומו- הזרחן 13": [31.5946871, 34.7829160]          # Zumu Kiryat Gat, HaZarhan 13, the industrial park (OSM; a Smarticket tenant's 53 events)
     # Venues off the map, their addresses found on the web by research agents (Nov 2026) and placed through OSM
     # (Photon): a house, building or named place in the right town, or a kibbutz / moshav's own point for a hall
     # inside it; keys whose text is stored in more than one town were left out.
-    "הרפת הרובוטית - משק עסיס": [32.8246384, 35.7667337]  # the same dairy as Makore names it (50 tours, source audit Nov 2026)
-    "זומו- הזרחן 13": [31.5946871, 34.7829160]          # Zumu Kiryat Gat, HaZarhan 13, the industrial park (OSM; a Smarticket tenant's 53 events)
     "אולם \"עבאס\"- רחוב חנוך 19": [32.052014, 34.78903]  # אולם "עבאס", חנוך 19, תל אביב-יפו
     "אולם בית ציזלינג": [32.5571697, 35.3878886]  # אולם בית ציזלינג, קיבוץ עין חרוד מאוחד, עין חרוד מאוחד
     "נתניה aaci": [32.3308717, 34.8567212]  # AACI נתניה, שמואל הנציב 28, נתניה
@@ -2259,9 +2259,6 @@ search:
     lev: ["סינמה לב"]
     zappa: ["זאפה"]
     zoatlv: ["zoa tlv", "zoa house"]
-    eventimlight: ["eventim light", "eventim-light"]
-    selector: ["סלקטור"]
-    grayclub: ["gray club", "גריי קלאב"]
     # Source audit (2026-11-23): the sources that had no alias. Brand words that are also plain words ("לאן",
     # "מה קורה", "יוצאים", "פרס", "הבמה", "האזור", "פסטיבלים") are left out: a query holding one would be
     # read as "sold on that site".
@@ -2285,6 +2282,9 @@ search:
     friendshist: ["friends-hist", "מועדון פריינדס", "פריינדס ההסתדרות"]
     poalimatarim: ["פועלים אתרים", "poalim atarim"]
     haezor: ["מועדון האזור", "the zone"]
+    eventimlight: ["eventim light", "eventim-light"]
+    selector: ["סלקטור"]
+    grayclub: ["gray club", "גריי קלאב"]
     chillz: ["צ'ילז", "צילז"]
     megatickets: ["mega tickets", "מגה טיקטס"]
     eventbuzz: ["event buzz", "איוונט באז"]
@@ -3344,7 +3344,6 @@ sources:
       - {host: jaffatheatre, rooms: true, venue_name: תיאטרון יפו - במה לתרבות ערבית-עברית, city: תל אביב-יפו, category: תיאטרון,
          skip_titles: ["אירוע לדוגמא"]}   # Smarticket's sample show
       - {host: fresco, venue_name: בית פרסקו, city: תל אביב}   # Fresco dance company: Beit Fresco, Arison hall; Givatayim's theatre names its town
-
       # Third pass (23.11.2026): Wayback, passive DNS (subdomain.center, hackertarget, rapiddns), urlscan, ~3,300 guessed
       # names and every Israeli domain in this repo (tickets./kupa. too). Aliases of tenants above (same performance ids):
       # bhm / tickets.anumuseum, heichalbair, htyavne, raanana, nalagaat, nz (= tarbut-nz), matnaso (= ofektivi),
@@ -3366,6 +3365,7 @@ sources:
       - {host: donkeyland, venue_name: Donkeyland, city: תל אביב-יפו, category: בידור}
       # HaSifriya theatre at Beit Zvi (= beit-zvi's venue). "תראו אותי" plays for school classes (grades 4-6).
       - {host: hasifriya, rooms: true, venue_name: בית צבי - בית הספר לאמנויות הבמה, city: רמת גן, category: תיאטרון, skip_titles: ["תראו אותי"]}
+
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
     # event in one request; each event page adds the full description and the original-event link.
@@ -3413,12 +3413,12 @@ sources:
     # request per new event for the linked page's og:image (the guide has no images). No coordinates:
     # the street is geocoded in Tel Aviv. Party rows link to Go-Out / Eventer / Chillz (merged by dedup).
     enabled: true
+    may_be_empty: true  # a two-week guide: between editions events.json holds only past dates (Nov 2026: last edition ended 21.11)
     # The linked pages (namalyafo.co.il 403, tel-aviv.gov.il 472) refuse the evomi IPs and answer an
     # Israeli one; through the pool the run stalled retrying them (Nov 2026).
     vpn: true  # our Israeli VPN only (Railway production)
     cron: "50 9,21 * * *"
     http:
-    may_be_empty: true  # a two-week guide: between editions events.json holds only past dates (Nov 2026: last edition ended 21.11)
       concurrency: 2
       request_delay_seconds: 1.0
 
@@ -3429,12 +3429,12 @@ sources:
     # genres) and public_ticket_page_v2 per event (tiers, artwork, lineup). 2 + N requests a run; no
     # coordinates, the street address is geocoded.
     enabled: true
+    may_be_empty: true  # a young app: its only coming rows are is_test demos now (Nov 2026)
     cron: "53 11,23 * * *"
     http:
       concurrency: 2
       request_delay_seconds: 1.0
 
-    may_be_empty: true  # a young app: its only coming rows are is_test demos now (Nov 2026)
   makore:
     # Makore ("מה קורה"): an events guide for all of Israel (workshops, tours, kids' activities too),
     # so only these category pages are read. Each page's JSON-LD ItemList gives ~28 events with venue,
@@ -4409,6 +4409,7 @@ sources:
     # 3 requests: the home page's Festival JSON-LD (first day, venue), data.js (the schedule: stage, minutes, kind)
     # and artists-info.js (press bios and photos). One event per day (its programme) and one per headliner.
     enabled: true
+    may_be_empty: true  # a three-day festival: nothing listed between editions
     cron: "31 6,18 * * *"
     site_url: https://tlvjazzfest26.com
     skip_title_words: ["קורס"]
@@ -4491,7 +4492,6 @@ sources:
   xplorer:
     # Xplorer: tickets to concerts and festivals abroad (USD), on a flights site's shows board. ASP.NET,
     # no API: the board's hidden filters give the artist ids (~50), each artist page its event ids, and
-    may_be_empty: true  # a three-day festival: nothing listed between editions
     # each event page (?ev=) the local date and time, Hebrew city/country, venue and seat categories.
     # ~390 GETs of ~350 KB. robots.txt is absent.
     enabled: true
@@ -4820,6 +4820,7 @@ sources:
     # then one listing per category below labels the dates it returns; one page per event adds its
     # text, map pin, prices and ticket link. Online (Zoom) events are skipped.
     enabled: true
+    skip_title_words: ["קורס "]  # the community centres' courses (Arabic, bridal make-up, smartphone): ~20 dates, Nov 2026
     vpn: true  # Akamai refuses Railway's IP; our Israeli VPN only (Railway production)
     cron: "37 4,16 * * *"
     # Our labels for the site's filters ("תרבות ובידור" would read as stand-up, "יזמות" as startups).
@@ -4864,6 +4865,7 @@ sources:
     # the 3 h limit with 11,141; from Railway the site answered 600 pages at 4 at once (5.4/s) and 8 at
     # once (6.3/s) without a 429 (Nov 2026), so 4 at once, no delay: ~1 h.
     enabled: true
+    skip_title_words: ["קורס אסכולות", "קורס שנתי"]  # ZOA's Askolot semester courses, copied from zoatlv (source audit, Nov 2026)
     proxied: false  # Cloudflare 403s the evomi pool's IPs
     # Cloudflare began 403-ing Railway's own IP on event pages mid-run (sitemap still 200); our Israeli
     # VPN with Chrome's fingerprint gets 200 (2026-11-14).
@@ -4904,7 +4906,6 @@ sources:
     proxied: false
     vpn: false  # our VPN exits in Israel
     cron: "49 7,19 * * *"
-    skip_title_words: ["קורס "]  # the community centres' courses (Arabic, bridal make-up, smartphone): ~20 dates, Nov 2026
     site_url: https://de.ogo.events
     sitemap_path: /sitemap.xml
     locale: he
@@ -4949,7 +4950,6 @@ sources:
     cron: "43 8,20 * * *"
     http:
       concurrency: 2
-    skip_title_words: ["קורס אסכולות", "קורס שנתי"]  # ZOA's Askolot semester courses, copied from zoatlv (source audit, Nov 2026)
       request_delay_seconds: 1.0
 
   liveisrael:
