@@ -251,7 +251,7 @@ first in `PARTYLINKS_HTTP__ISRAEL_PROXY`.
 | Tickster | tickster.co.il (~930 event pages) resells Kupat Bravo's seances (tickster.kartisim.co.il white label, same seance ids) and Funzing experiences: 52/52 sampled events already stored by kupatbravo / funzing (Nov 2026) |
 | Ticketsi | ticketsi.co.il: an SEO magazine (977 show articles, mostly stale) copying Kupat Bravo / Mevalim titles; one date-only JSON-LD date per article, no seller link: 57/57 future articles sampled already stored (Nov 2026) |
 | Jerooz Events | jeroozevents.co.il: Vercel "Deployment Paused" (402), no site (Nov 2026) |
-| iShow | ishow.co.il: a Cloudflare JS challenge for every client, VPN included (Nov 2026) |
+| iShow | ishow.co.il: a Cloudflare JS challenge (403 "Just a moment...") for every client: direct, Chrome's TLS, the Israeli VPN, the free Israeli proxies; behind it the origin is down: challenge-free paths (/favicon.ico) answer Cloudflare 522 "origin timed out" from the Amsterdam and Frankfurt edges and from an Israeli IP (re-checked 23 Nov 2026) |
 | Kzat Tarbut | kzat-tarbut.com: ticket articles linking Kupat Bravo (5222.kartisim.co.il), date ranges only; 13/13 sampled already stored by kupatbravo (Nov 2026) |
 | Where to Dance Salsa | where-to-dance-salsa.com: Israel = Havana Music Club's weekly nights (read by havanaclub), last checked May 2026 (Nov 2026) |
 | Kol Sadna | kolsadna.co.il: workshops booked by appointment through a lead form; no dated public sessions (25/25 sampled, Nov 2026) |
