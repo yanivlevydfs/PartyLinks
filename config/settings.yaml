@@ -4494,6 +4494,9 @@ sources:
     # Tel Aviv-Yafo Jazz Festival: three free days at Beit Romano (and Park HaMesila), a static site per year.
     # 3 requests: the home page's Festival JSON-LD (first day, venue), data.js (the schedule: stage, minutes, kind)
     # and artists-info.js (press bios and photos). One event per day (its programme) and one per headliner.
+    # sections: home (#days, #schedule = data.js's 84 slots of 3 days, #artists = lineup.js, no name outside data.js;
+    # artists-info.js bios), /en (the same schedule in English); not read: #info (address, partners), accessibility.html
+    # (no events). 23.11.2026: the 2026 edition (19-21.11) is over, prod 0 upcoming; next year's site is a new domain.
     enabled: true
     may_be_empty: true  # a three-day festival: nothing listed between editions
     cron: "31 6,18 * * *"
