@@ -127,6 +127,7 @@ class EventimScraper(BaseScraper[EventimSettings]):
             listed.update(products or {})
         for path in s.city_paths:
             listed.update(await self.optional(f"city {path}", self._list_city(path)) or {})
+        urls = self._add_listed(urls, listed)
 
         def build(event_id: str, url: str, item: dict[str, Any]) -> ScrapedEvent | None:
             if "productId" in item:
@@ -143,6 +144,10 @@ class EventimScraper(BaseScraper[EventimSettings]):
                 event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known
             ):
                 yield event
+
+    def _add_listed(self, urls: list[str], listed: Listed) -> list[str]:
+        """The sitemap's event pages, plus listed events it lacks that this source should read (none here)."""
+        return urls
 
     async def _list_city(self, path: str) -> Listed:
         s = self.settings
@@ -212,6 +217,23 @@ class ZappaScraper(EventimScraper):
         if len(by_id) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(by_id))
         return list(by_id.values())[: s.max_events]
+
+    def _add_listed(self, urls: list[str], listed: Listed) -> list[str]:
+        """The API's shows at a Zappa venue that neither sitemap lists (23.11.2026: 1 of 532, a Zappa Haifa night)."""
+        s = self.settings
+        have = {_event_id(url) for url in urls}
+        extra = [page for event_id, (page, item) in listed.items() if event_id not in have and _at_zappa(page, item, s)]
+        if extra:
+            self.log.info("%d Zappa shows from the API that the sitemaps lack", len(extra))
+        return urls + extra
+
+
+def _at_zappa(page: str, item: dict[str, Any], s: EventimSettings) -> bool:
+    """A listed show at a Zappa venue: its page or venue name holds a ``url_words`` word (dashes as spaces too)."""
+    live = (item.get("typeAttributes") or {}).get("liveEntertainment") or {}
+    venue = str((live.get("location") or {}).get("name") or "")
+    words = [*s.url_words, *(w.replace("-", " ") for w in s.url_words)]
+    return bool(pick_urls([page], words, s.skip_url_words) or pick_urls([venue], words, s.skip_url_words))
 
 
 def _event_id(url: str) -> str:

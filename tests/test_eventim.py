@@ -294,3 +294,22 @@ def test_event_pages_are_read_soonest_first_by_their_listed_date() -> None:
         "3": (city, {"startDate": "2026-12-01T20:00:00"}),
     }
     assert soonest_urls([unlisted, far, city, near], listed, TZ) == [near, city, far, unlisted]
+
+
+def test_zappa_adds_the_api_shows_at_zappa_venues_the_sitemaps_lack() -> None:
+    scraper = build_scraper("zappa", Settings())
+    scraper.settings.url_words, scraper.settings.skip_url_words = ["זאפה", "אמפי-שוני"], []
+    sitemap = ["https://www.eventim.co.il/event/נונו-זאפה-ירושלים-1/"]
+    in_name = "https://www.eventim.co.il/event/הגבעטרון-זאפה-חיפה-21335195/"
+    at_venue, elsewhere = "https://www.eventim.co.il/event/ערב-3/", "https://www.eventim.co.il/event/מופע-היכל-4/"
+
+    def item(venue: str) -> dict[str, object]:
+        return {"productId": "x", "typeAttributes": {"liveEntertainment": {"location": {"name": venue}}}}
+
+    listed = {
+        "1": (sitemap[0], item("זאפה ירושלים")),
+        "21335195": (in_name, item("")),
+        "3": (at_venue, item("זאפה אמפי שוני")),
+        "4": (elsewhere, item("היכל התרבות")),
+    }
+    assert scraper._add_listed(sitemap, listed) == [*sitemap, in_name, at_venue]  # type: ignore[attr-defined]

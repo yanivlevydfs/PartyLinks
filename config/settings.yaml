@@ -4020,6 +4020,11 @@ sources:
     # Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni. Zappa belongs to
     # Eventim (zappa-club.co.il is Eventim's Akamai), so this reads zappa-club's own events sitemap
     # (~600 pages) and the Eventim sitemap's Zappa pages with the Eventim parser. Same Akamai limits.
+    # sections: zappa-club.co.il's events sitemap (511 shows on 23.11.2026 = every event behind its menu: the
+    # categories /events/ (live, stand-up, family, lectures, festivals, theatre and their sub-pages), /cities/, every
+    # Zappa venue incl. Amphi Shuni and Amphi Mini Israel), the Eventim sitemap's Zappa pages (154, all in it) and
+    # the search API's shows at a Zappa venue that neither sitemap lists (1 of 532: added); prod 498 upcoming.
+    # Not read: /eventseries/ and /artist/ pages (the same event pages), gift cards, help, account pages.
     enabled: true
     israel_proxy: true  # refuses the proxy's and Railway's IPs (Oct 2026)
     vpn: true  # our Israeli VPN only (Railway production)
