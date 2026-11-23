@@ -4055,6 +4055,7 @@ sources:
     # robots.txt allows everything.
     enabled: true
     cron: "37 7,19 * * *"
+    listing_url: https://events.co.il/events?locale=he
     feed_url: https://events.co.il/feed.rss
 
   meetup:
