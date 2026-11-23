@@ -9,6 +9,14 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
 
 ## Mandatory for every source (none may be skipped)
 
+- **Full coverage: every category and every menu (the owner's rule, 23.11.2026).** List every
+  section the site has: the main menu and its sub-menus, every category / genre / tag page (try the
+  ids or slugs around the known ones, e.g. `/category/1..60`), the footer links, the sitemap, the
+  calendar and any events API. The scanner reads all of them, and every section that holds events is
+  read. Write the list (section → read / not read and why) in the source's config comment. "Not
+  read" only for what truly is no event (a blog, a shop, a gift card, past archive). Tzavta's
+  Short Theatre Festival (`/category/17`) was missing because only some categories were read. This
+  applies to existing scanners too: when touching one, check its site's sections again.
 - **Categories:** every site category / chip mapped to our genres (`enrichment.genres` keywords, or
   `declared_genres_only` when the site's own categories are precise). `check_source.py` shows no `NO GENRE`.
 - **WebP:** artwork URLs passed through; in production `https://spotx.fun/images/<id>/640.webp` answers
