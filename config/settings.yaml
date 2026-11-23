@@ -3415,6 +3415,7 @@ sources:
     vpn: true  # our Israeli VPN only (Railway production)
     cron: "50 9,21 * * *"
     http:
+    may_be_empty: true  # a two-week guide: between editions events.json holds only past dates (Nov 2026: last edition ended 21.11)
       concurrency: 2
       request_delay_seconds: 1.0
 
@@ -3430,6 +3431,7 @@ sources:
       concurrency: 2
       request_delay_seconds: 1.0
 
+    may_be_empty: true  # a young app: its only coming rows are is_test demos now (Nov 2026)
   makore:
     # Makore ("מה קורה"): an events guide for all of Israel (workshops, tours, kids' activities too),
     # so only these category pages are read. Each page's JSON-LD ItemList gives ~28 events with venue,
@@ -4399,6 +4401,7 @@ sources:
   xplorer:
     # Xplorer: tickets to concerts and festivals abroad (USD), on a flights site's shows board. ASP.NET,
     # no API: the board's hidden filters give the artist ids (~50), each artist page its event ids, and
+    may_be_empty: true  # a three-day festival: nothing listed between editions
     # each event page (?ev=) the local date and time, Hebrew city/country, venue and seat categories.
     # ~390 GETs of ~350 KB. robots.txt is absent.
     enabled: true
@@ -5873,6 +5876,7 @@ sources:
     cron: "37 8,20 * * *"
     site_url: https://easytix.co.il
     api_url: https://live.nimi.co.il
+    may_be_empty: true  # the one-page site names its next party only; between parties it lists none
     max_span_days: 31
     skip_accounts: [sarkis-12311, sarkis-1, haasam]  # test events; Haasam pub sells punch cards
     # Unlisted events (isPublic false) sold through a posted link; pages other sources link to come in anyway.
