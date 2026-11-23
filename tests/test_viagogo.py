@@ -14,9 +14,8 @@ SETTINGS = ViagogoSettings(
     site_url="https://www.viagogo.com",
     explore_path="/explore",
     locale_path="/il",
-    latitude=31.4,
-    longitude=34.9,
-    radius_m=300000,
+    areas=[(32.1, 34.5), (29.6, 35.0)],
+    radius_m=40000,
 )
 TODAY = date(2026, 10, 23)
 

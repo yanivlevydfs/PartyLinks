@@ -8,8 +8,13 @@ page sorted by date with ``total``/``remaining`` counts (a page may come back on
 paging follows ``total``). Each row has the name, the event page URL, venue name and
 "City, [Region,] Country", category id and artwork, but the date only as ``"Oct 24"`` +
 ``"8:50 PM"`` + weekday - the year is the next one whose weekday matches. No prices or
-addresses; ``hasActiveListings`` false (no seller has tickets up) is sold out here. The circle around Israel also catches neighbouring countries: only rows whose
-location ends in ", Israel" are kept. The feed is always English; URLs are rewritten to the
+addresses; ``hasActiveListings`` false (no seller has tickets up) is sold out here.
+
+One wide circle does not list everything: the feed answers ~75 of a radius's events at most
+(central Israel's 300 km circle missed Eilat, Be'er Sheva, Haifa and Jerusalem shows seen in
+smaller circles, 2026-11). So the country is read as a grid of smaller circles (``areas``),
+each paged to its own ``total``, and merged by event id. The circles also catch neighbouring
+countries: only rows whose location ends in ", Israel" are kept. The feed is always English; URLs are rewritten to the
 Hebrew site (``/il``).
 """
 
@@ -18,6 +23,7 @@ from __future__ import annotations
 import base64
 from collections.abc import AsyncIterator
 from datetime import date, datetime, timedelta
+from functools import partial
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -35,10 +41,10 @@ class ViagogoSettings(SourceSettings):
     site_url: str
     explore_path: str
     locale_path: str = ""  # inserted before event paths, e.g. "/il" for the Hebrew site
-    latitude: float
-    longitude: float
+    # Circle centres (latitude, longitude), each read to its last page; together they cover Israel.
+    areas: list[tuple[float, float]] = Field(..., min_length=1)
     radius_m: int = Field(..., ge=1000)
-    max_pages: int = Field(50, ge=1)
+    max_pages: int = Field(1000, ge=1)  # a runaway guard only: paging follows the feed's total
 
 
 class ViagogoScraper(BaseScraper[ViagogoSettings]):
@@ -49,8 +55,10 @@ class ViagogoScraper(BaseScraper[ViagogoSettings]):
         return {"Accept": "application/json", "Referer": self.settings.site_url + "/explore"}
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
-        rows = await self.paginate(self._page, PAGE_SIZE, self.settings.max_pages)
-        self.log.debug("listed %d events", len(rows))
+        rows: list[dict[str, Any]] = []
+        for lat, lon in self.settings.areas:
+            rows += await self.paginate(partial(self._page, lat, lon), PAGE_SIZE, self.settings.max_pages)
+        self.log.debug("listed %d rows over %d areas", len(rows), len(self.settings.areas))
         today = datetime.now(ZoneInfo(self.timezone)).date()
         seen: set[str] = set()
         for row in rows:
@@ -63,12 +71,12 @@ class ViagogoScraper(BaseScraper[ViagogoSettings]):
                 seen.add(event.source_event_id)
                 yield event
 
-    async def _page(self, index: int) -> tuple[list[dict[str, Any]], Any]:
+    async def _page(self, lat: float, lon: float, index: int) -> tuple[list[dict[str, Any]], Any]:
         s = self.settings
         params = {
             "method": "getExploreEvents",
-            "lat": _b64(s.latitude),
-            "lon": _b64(s.longitude),
+            "lat": _b64(lat),
+            "lon": _b64(lon),
             "radius": s.radius_m,
             "page": index,
         }

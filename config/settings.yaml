@@ -4444,7 +4444,12 @@ sources:
 
   viagogo:
     # viagogo (international resale): event pages answer a captcha (403), so events come from the
-    # explore page's public JSON feed: every event within radius_m of central Israel, Israel only.
+    # explore page's public JSON feed, read over a grid of 40 km circles across Israel, Israel only:
+    # one 300 km circle answered 75 (69 in Israel), the grid 84 (83 in Israel: Eilat, Be'er Sheva,
+    # Haifa and Jerusalem shows the wide circle left out), 2026-11-23. ~30 requests a run.
+    # sections: the explore feed (every category: Concert, Theater, Festival; tlcId 1/2/3 add nothing
+    # beyond it), every area of Israel to each circle's last page; not read: Sports (matches, not the
+    # site's parties and shows), event pages (403 captcha), abroad rows (Jordan, Egypt in the circles).
     # The feed's total jumps between calls (127 vs 278 seen), so a short run must not unlist events.
     enabled: true
     cron: "44 6,18 * * *"
@@ -4452,9 +4457,11 @@ sources:
     site_url: https://www.viagogo.com
     explore_path: /explore
     locale_path: /il
-    latitude: 31.4
-    longitude: 34.9
-    radius_m: 300000
+    areas: [[29.6, 34.5], [29.6, 35.0], [29.6, 35.5], [30.1, 34.5], [30.1, 35.0], [30.1, 35.5],
+            [30.6, 34.5], [30.6, 35.0], [30.6, 35.5], [31.1, 34.5], [31.1, 35.0], [31.1, 35.5],
+            [31.6, 34.5], [31.6, 35.0], [31.6, 35.5], [32.1, 34.5], [32.1, 35.0], [32.1, 35.5],
+            [32.6, 34.5], [32.6, 35.0], [32.6, 35.5], [33.1, 34.5], [33.1, 35.0], [33.1, 35.5]]
+    radius_m: 40000
 
   feelbeit:
     # FeelBeit (feelbeit.com), a Jerusalem arts space at the Planet complex, and its yearly LAYERS festival (שכבות):
