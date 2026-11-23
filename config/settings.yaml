@@ -2863,6 +2863,10 @@ sources:
   babebar:
     # BaBe Bar (הבאBE בר), Hod HaSharon: music and stand-up club on WordPress + The Events Calendar.
     # The API names the venue but has no point; stand-up nights link to standupist.co.il.
+    # sections: the events API from today with no end date (all 4 categories music / comedy / lectures /
+    # more-shows, the menu's /events /music /standup and the recurring series' occurrences: 38 = 38 on 23.11.2026,
+    # one page of the 10 x 50 allowed); not read: /shop + /product (ticket products of the same events),
+    # /corporate (private bookings), /concerts-tickets + /stand-up-comedian (theme demo pages), blog / gallery / menu.
     enabled: true
     cron: "6 9,21 * * *"
     site_url: https://babebar.co.il
@@ -2873,6 +2877,7 @@ sources:
     longitude: 34.8934
     ticket_hosts: [standupist.co.il, go-out.co, eventbuzz.co.il, eventer.co.il, smarticket.co.il, tickchak.co.il]
     price_hosts: [standupist.co.il, tickchak.co.il]   # no price in the API: read the seller's page once (JSON-LD / microdata)
+    skip_title_words: ["קורס", "סדנה", "סדנת", "חוג ", "חוגים", "חוגי "]  # with the space: "חוגגים" stays
 
   eventimlight:
     # Eventim Light (eventim-light.com): CTS Eventim's self-service box office, a shop per organizer and
