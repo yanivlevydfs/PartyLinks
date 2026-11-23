@@ -98,3 +98,34 @@ def test_event_pages_of_all_sites_soonest_first() -> None:
     assert len(starts) == len(ordered)
     assert starts == sorted(starts)
     assert {s.did for s, _ in ordered[:2]} == {HEFER.did, DN.did}  # each site's nearest card up front
+
+
+def test_a_site_that_is_down_costs_only_its_own_events() -> None:
+    import asyncio
+
+    import httpx
+
+    from partylinks.config import Settings
+    from partylinks.scrapers import build_scraper
+
+    scraper = build_scraper("eventpro", Settings())
+    scraper.http.request_delay_seconds = 0
+    scraper.http.backoff_seconds = 0
+    down = EventProSite(url="https://www.evenyehuda.org.il", did=4467, listing_id=10359, name="אבן יהודה", city="אבן יהודה")
+    scraper.settings.sites = [down, HEFER]
+    asked: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        asked.append(request.url.host)
+        if request.url.host == "www.evenyehuda.org.il":
+            return httpx.Response(503, text="Service Unavailable")
+        return httpx.Response(200, text="<html></html>")  # Hefer's listing: no card
+
+    async def go() -> int:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return len([e async for e in scraper.scrape()])
+
+    assert asyncio.run(go()) == 0  # no exception: the run went on
+    assert "www.mk-hefer.org.il" in asked  # to the next site
+    assert any("evenyehuda" in f for f in scraper.failures)  # and is partial, not failed

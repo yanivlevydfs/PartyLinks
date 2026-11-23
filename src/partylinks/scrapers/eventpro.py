@@ -69,7 +69,8 @@ class EventProScraper(BaseScraper[EventProSettings]):
         # soonest first: a run cut half-way already holds every site's nearest week (Nov 2026).
         work: list[tuple[EventProSite, ScrapedEvent]] = []
         for site in self.settings.sites:
-            work += [(site, e) for e in await self._listed(site)]
+            # One site down costs its own events only: Even Yehuda's 503 failed the whole run (0 events, 22.11.2026).
+            work += [(site, e) for e in await self.optional(f"site {site.url}", self._listed(site)) or []]
 
         async def read(item: tuple[EventProSite, ScrapedEvent]) -> ScrapedEvent:
             site, event = item
