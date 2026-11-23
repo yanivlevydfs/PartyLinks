@@ -718,3 +718,38 @@ def test_a_name_with_its_latin_spelling_is_the_name_alone(tmp_path: Path) -> Non
     # A translation is another title, not a spelling: its words stay.
     assert title_key("זכרונות של חילזון Memoir of a Snail", set()) == "a memoir of snail זכרונות חילזון של"
     assert title_key("עומר אדם Omer Adam", set()) == title_key("עומר אדם", set())
+
+
+def test_candidate_pairs_are_every_pair_the_place_does_not_part() -> None:
+    """The regroup compares a day's pairs except two cities' listings that _contradict parts anyway (not both
+    pinned within max_distance_meters): every other pair once, so the groups are the ones all pairs gave."""
+    import random
+    from itertools import combinations
+
+    from partylinks.dedup import _candidate_pairs, _distance_m, _Listing
+
+    rng = random.Random(7)
+    cities = ["תל אביב", "רמת גן", "Berlin", "", None]
+    listings = []
+    for i in range(400):
+        # Pins in a few km of one corner (Tel Aviv / Ramat Gan's border), some none: close pairs of two cities too.
+        pinned = rng.random() < 0.8
+        lat, lng = (32.08 + rng.uniform(0, 0.03), 34.80 + rng.uniform(0, 0.03)) if pinned else (None, None)
+        listings.append(_Listing(
+            id=str(i), source="s", title_key="t", start=None, lat=lat, lng=lng, venue_slug=None, city=rng.choice(cities),
+            kinds=frozenset(), numbers=frozenset(), url_key="", links_to=None, tiers=0, first_seen=datetime(2026, 1, 1),
+            min_price=None, max_price=None, entry_type="unknown", has_free_entry=False,
+        ))  # fmt: skip
+    got = list(_candidate_pairs(listings, 300))
+    assert len(got) == len(set(got)) and all(i < j for i, j in got)
+
+    def parted(a: _Listing, b: _Listing) -> bool:  # _contradict's place rule
+        if not (a.city and b.city and a.city != b.city):
+            return False
+        distance = _distance_m(a, b)
+        return distance is None or distance > 300
+
+    wanted = {(i, j) for i, j in combinations(range(len(listings)), 2) if not parted(listings[i], listings[j])}
+    assert wanted <= set(got)  # none missing; the grid's neighbours a bit further off are parted by _contradict
+    assert all(parted(listings[i], listings[j]) for i, j in set(got) - wanted)
+    assert any(listings[i].city != listings[j].city and listings[i].city and listings[j].city for i, j in got)

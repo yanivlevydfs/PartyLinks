@@ -20,10 +20,12 @@ import logging
 import math
 import re
 from collections import Counter, defaultdict
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from difflib import SequenceMatcher
+from itertools import combinations, product
 from typing import Any
 from urllib.parse import parse_qsl, unquote, urlparse
 
@@ -165,12 +167,15 @@ def named_link(url: str | None, stopwords: set[str]) -> tuple[str, str] | None:
     return (host, name) if len(name.split()) >= 3 else None
 
 
+_EARTH_M = 6_371_000  # the haversine's radius
+
+
 def _distance_m(a: _Listing, b: _Listing) -> float | None:
     if None in (a.lat, a.lng, b.lat, b.lng):
         return None
     lat1, lng1, lat2, lng2 = map(math.radians, (a.lat, a.lng, b.lat, b.lng))  # type: ignore[arg-type]
     h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lng2 - lng1) / 2) ** 2
-    return 6_371_000 * 2 * math.asin(math.sqrt(h))
+    return _EARTH_M * 2 * math.asin(math.sqrt(h))
 
 
 class Deduplicator:
@@ -508,6 +513,11 @@ class Deduplicator:
 
     def plan(self, session: Session) -> tuple[int, list[dict[str, Any]]]:
         """(merged groups, rows whose grouping changed): reads only, so it can run outside the write lock."""
+        return self.compute(self.read(session))
+
+    def read(self, session: Session) -> Snapshot:
+        """All the grouping needs, so the caller can end the transaction before ``compute``: a pass computes for
+        minutes, and a transaction idle for 30 was cut, retried and cut again, so nothing was grouped (Nov 2026)."""
         # Same input order, same groups on every pass, on any database: sorted here by code point (the
         # database's own order of text depends on its collation). Read in pages (each fetch its own short
         # statement): read whole, the busy worker took its ~220k rows slower than the 120 s statement timeout
@@ -522,7 +532,25 @@ class Deduplicator:
                 func.substring(EventRow.description, _TEXT_LINK).label("text_link"),  # in the database: no whole texts read
             ).execution_options(yield_per=5000)
         ), key=lambda r: r.id)  # fmt: skip
-        tier_counts = _tier_counts(session)
+        current = {
+            r.id: tuple(r[1:])
+            for r in session.execute(select(EventRow.id, *(getattr(EventRow, c) for c in _GROUP_FIELDS)))
+        }
+        return Snapshot(rows, _tier_counts(session), current)
+
+    def compute(self, snapshot: Snapshot) -> tuple[int, list[dict[str, Any]]]:
+        """(merged groups, rows whose grouping changed) from ``read``'s snapshot; no database needed."""
+        merged, updates = self.group(snapshot.rows, snapshot.tier_counts)
+        # Write only rows whose grouping changed: short writer lock, no churn, no deadlocks.
+        changed = [
+            u for u in updates
+            if (now := snapshot.current.get(u["id"])) is not None and now != tuple(u[c] for c in _GROUP_FIELDS)
+        ]  # fmt: skip
+        log.debug("dedup: %d listings, %d merged groups, %d rows changed", len(snapshot.rows), merged, len(changed))
+        return merged, changed
+
+    def group(self, rows: Sequence[Any], tier_counts: dict[str, int]) -> tuple[int, list[dict[str, Any]]]:
+        """(merged groups, every row's grouping) of the rows ``read`` gives."""
         by_day: dict[Any, list[_Listing]] = defaultdict(list)
         updates: list[dict[str, Any]] = []
         for r in rows:
@@ -572,9 +600,9 @@ class Deduplicator:
             # Closest matches first (hour, then distance): a site's 20:00 copy joins the other site's 20:00
             # session, not its 21:30 one.
             pairs = sorted(
-                (_closeness(a, b), i, j)
-                for i, a in enumerate(listings) for j, b in enumerate(listings[i + 1 :], i + 1)
-                if self.same_event(a, b, shared)
+                (_closeness(listings[i], listings[j]), i, j)
+                for i, j in _candidate_pairs(listings, self.settings.max_distance_meters)
+                if self.same_event(listings[i], listings[j], shared)
             )  # fmt: skip
             for _, i, j in pairs:
                 ra, rb = find(listings[i].id), find(listings[j].id)
@@ -587,13 +615,65 @@ class Deduplicator:
             for members in groups.values():
                 merged += len(members) > 1
                 updates += self._group_rows(members)
-        # Write only rows whose grouping changed: short writer lock, no churn, no deadlocks.
-        current = {r.id: r for r in session.execute(select(EventRow.id, *(getattr(EventRow, c) for c in _GROUP_FIELDS)))}
-        changed = [
-            u for u in updates if u["id"] in current and any(getattr(current[u["id"]], c) != u[c] for c in _GROUP_FIELDS)
-        ]
-        log.debug("dedup: %d listings, %d merged groups, %d rows changed", len(rows), merged, len(changed))
-        return merged, changed
+        return merged, updates
+
+
+@dataclass(frozen=True)
+class Snapshot:
+    """What ``Deduplicator.read`` reads: the listings' rows, their ticket tier counts, the stored groupings."""
+
+    rows: list[Any]
+    tier_counts: dict[str, int]
+    current: dict[str, tuple[Any, ...]]  # id -> the _GROUP_FIELDS values stored now
+
+
+def _candidate_pairs(listings: list[_Listing], max_distance_m: float) -> Iterator[tuple[int, int]]:
+    """Every index pair (i < j) that place alone does not part: _contradict parts two cities' listings unless both
+    are pinned within ``max_distance_m``. So: same city, no city on one side, or two cities pinned in neighbouring
+    cells of a grid that size (a few of those a bit further off: _contradict parts them). All pairs of a day were 325M a pass, ~9 in 10 of two cities, and
+    the pass outran the 30-minute transaction cut-off (Nov 2026); this is ~30M, with the same groups."""
+    by_city: dict[str, list[int]] = defaultdict(list)
+    placeless: list[int] = []
+    cells: dict[tuple[int, int, int], list[int]] = defaultdict(list)
+    size = max_distance_m + 1  # a metre to spare: float error never puts two close pins two cells apart
+    for i, item in enumerate(listings):
+        if not item.city:
+            placeless.append(i)
+            continue
+        by_city[item.city].append(i)
+        if item.lat is not None and item.lng is not None:
+            cells[_cell(item.lat, item.lng, size)].append(i)
+    for members in by_city.values():
+        yield from combinations(members, 2)  # ascending indexes: i < j
+    is_placeless = [False] * len(listings)
+    for i in placeless:
+        is_placeless[i] = True
+    for i in placeless:
+        for j in range(len(listings)):
+            if j != i and not (is_placeless[j] and j < i):  # two placeless ones: once, from the first
+                yield (i, j) if i < j else (j, i)
+    for cell, members in cells.items():
+        for near in _neighbour_cells(cell):
+            if near < cell or near not in cells:  # each pair of cells once
+                continue
+            for i in members:
+                for j in cells[near]:
+                    if (near != cell or i < j) and listings[i].city != listings[j].city:
+                        yield (i, j) if i < j else (j, i)
+
+
+def _cell(lat: float, lng: float, size: float) -> tuple[int, int, int]:
+    """The pin's cell of a grid in space (metres): two pins ``size`` apart on the ground (haversine) are at most
+    that far apart in a straight line, so their cells are next to each other on every axis."""
+    la, ln = math.radians(lat), math.radians(lng)
+    x, y, z = math.cos(la) * math.cos(ln), math.cos(la) * math.sin(ln), math.sin(la)
+    return math.floor(_EARTH_M * x / size), math.floor(_EARTH_M * y / size), math.floor(_EARTH_M * z / size)
+
+
+def _neighbour_cells(cell: tuple[int, int, int]) -> Iterator[tuple[int, int, int]]:
+    x, y, z = cell
+    for dx, dy, dz in product((-1, 0, 1), repeat=3):
+        yield x + dx, y + dy, z + dz
 
 
 def agreed_listing(session: Session, row: EventRow, settings: DedupSettings) -> EventRow:

@@ -323,7 +323,8 @@ class ScrapeService:
                 bulk_update_by_id(session, EventRow, renames)
         log.debug("venues: renamed %d events", len(renames))
         with self._planning() as session:
-            merged, changed = self.deduplicator.plan(session)
+            snapshot = self.deduplicator.read(session)
+        merged, changed = self.deduplicator.compute(snapshot)  # no transaction open while it computes
         if changed:
             with self.db.session() as session:
                 bulk_update_by_id(session, EventRow, changed)
