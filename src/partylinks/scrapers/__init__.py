@@ -100,6 +100,7 @@ from partylinks.scrapers.mugics import MugicsScraper
 from partylinks.scrapers.munievents import MuniEventsScraper
 from partylinks.scrapers.music80s import Music80sScraper
 from partylinks.scrapers.muzi import MuziScraper
+from partylinks.scrapers.nbn import NbnScraper
 from partylinks.scrapers.newacropolis import NewAcropolisScraper
 from partylinks.scrapers.nikonitai import NikoNitaiScraper
 from partylinks.scrapers.ogo import OgoScraper
@@ -218,6 +219,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         PeopleComputersScraper,
         ParksScraper,
         MeetupScraper,
+        NbnScraper,
         ZappaScraper,
         BeerShevaTheatreScraper,
         NikoNitaiScraper,

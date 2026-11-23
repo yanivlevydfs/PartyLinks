@@ -782,7 +782,8 @@ enrichment:
                     "baking class", "baking workshop", "kochkurs", "grillkurs"]
     singles_dating: ["רווקים ורווקות", "היכרויות מהירות", "ערב היכרויות", "מפגש היכרויות", "דייטינג מהיר", "רווקות ורווקים", "לרווקים", "פנויים פנויות", "פנויים ופנויות", "ספיד דייט",
                      "ספיד דייטינג", "ערב היכרויות", "מפגש היכרויות", "אירוע היכרויות", "speed dating",
-                     "singles party", "singles night", "singles event", "singles mixer"]
+                     "singles party", "singles night", "singles event", "singles mixer", "for singles", "singles meetup",
+                     "singles evening", "singles hanukkah", "jerusalem singles", "tel aviv singles"]
     women_only: ["לנשים בלבד", "מסיבת נשים", "ערב נשים", "ערב לנשים", "מעגל נשים", "קבוצה לנשים", "סדנה לנשים", "women only",
                  "women-only", "for women only", "ladies only"]
     accessible: ["מופע מונגש", "הצגה מונגשת", "שפת סימנים", "בשפת הסימנים", "לכבדי שמיעה",
@@ -1011,6 +1012,7 @@ enrichment:
     standupist: [stand_up]  # stand-up portal: its types are formats ("full show", "marathon")
     luma: [meetups]
     meetup: [meetups]
+    nbn: [meetups]          # olim's community calendar: socials, mixers, talks
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
@@ -1085,7 +1087,7 @@ enrichment:
   # Small print that names a genre word in passing, removed from the text before genres are read.
   # Nov 2026 genre audit: phrases whose words are no genre ("open house", "pop art", the evening prayer,
   # "the eastern gate", a Mediterranean menu).
-  text_ignore: ["pop art", "pop culture", "פופ ארט", "open house", "full house", "opera house", "guest house", "coffee house", "in-house", "house of blues", "house of", "רוטב סלסה", "salsa verde", "hi-tech psy", "hitech psy", "מגדל האופרה", "opera tower", "soap opera", "תפילת ערבית", "הכניסה המזרחית", "בכניסה המזרחית", "ירושלים המזרחית", "השער המזרחי", "החוף המזרחי", "מטבח ים תיכוני", "המטבח הים תיכוני", "ארוחה ים תיכונית", "מסעדה ים תיכונית", "אוכל ים תיכוני",
+  text_ignore: ["pop art", "pop culture", "פופ ארט", "open house", "full house", "opera house", "guest house", "coffee house", "in-house", "house of blues", "house of", "agnon house", "רוטב סלסה", "salsa verde", "hi-tech psy", "hitech psy", "מגדל האופרה", "opera tower", "soap opera", "תפילת ערבית", "הכניסה המזרחית", "בכניסה המזרחית", "ירושלים המזרחית", "השער המזרחי", "החוף המזרחי", "מטבח ים תיכוני", "המטבח הים תיכוני", "ארוחה ים תיכונית", "מסעדה ים תיכונית", "אוכל ים תיכוני",
                 "הורים וילדים יוצרים", "כרטיס אלקטרוני", "כרטיסים אלקטרוניים", "הכרטיס האלקטרוני", "הכרטיסים האלקטרוניים",
                 "בכרטיס האלקטרוני", "דואר אלקטרוני", "בדואר אלקטרוני", "הדואר האלקטרוני", "בדואר האלקטרוני",
                 "כתובת דואר אלקטרוני", "תשלום אלקטרוני", "חתימה אלקטרונית", "ארנק אלקטרוני",
@@ -2311,6 +2313,7 @@ search:
     peoplecomputers: ["people and computers", "אנשים ומחשבים"]
     parks: ["רשות הטבע והגנים", "רט\"ג", "גנים לאומיים", "שמורות טבע", "parks authority"]
     meetup: ["מיטאפ"]
+    nbn: ["nefesh b'nefesh", "nefesh bnefesh", "nbn", "נפש בנפש"]
     beershevatheatre: ["תיאטרון באר שבע"]
     nikonitai: ["ניקו ניתאי", "niko nitai"]
     planet: ["yes planet", "יס פלאנט"]
@@ -3870,6 +3873,83 @@ sources:
     graphql_url: https://www.meetup.com/gql2
     latitude: 32.07
     longitude: 34.77
+
+  nbn:
+    # Nefesh B'Nefesh (nbn.org.il): the community calendar for English-speaking olim (socials, young
+    # professionals' mixers, networking, singles evenings, language exchange, talks, tours). One request: MEC's
+    # iCal feed (the whole archive, ~2.5 MB), then each upcoming event's page (venue, cost, registration link):
+    # ~100 requests. Online events (Zoom / Virtual) are not imported. Many are reposts of ESRA, AACI, JTLV and
+    # Eventbrite / Tickchak listings: dedup merges them through the registration link.
+    enabled: true
+    cron: "14 7,19 * * *"
+    site_url: https://www.nbn.org.il
+    recurrence_days: 60
+    skip_title_words: ["course", "preparatory", "league", "academy", "ulpan", "beit midrash", "support group",
+                       "night seder", "licensing exam", "workshop series"]
+    labels:
+      Social: [meetups]
+      Young Professionals: [meetups]
+      Networking: [meetups]
+      Cafe Oleh: [meetups]
+      Shuk Olim: [markets]
+      "Ulpan/Language Exchange": [meetups]
+      "Lectures & Workshops": [lectures]
+      "Arts/Creativity": [workshops]
+      Performance: [shows]
+      Film: [film]
+      "Television & Theater": [theater]
+      "Tiyulim/Tours": [tours]
+      Family Fun: [family]
+      "Sport/Excercise": [sport]
+      "Health & Wellness": [wellness]
+      "Shabbat Meals & Activities": [religious]
+      "Shiurim/Torah": [religious]
+      "Masorti/Conservative Community": [religious]
+      "Chol HaMoed / Holidays": [holidays]
+      LGBTQ: [pride]
+      Dance: [dance]
+      "Environmental/Sustainability": [environmental]
+      Volunteer Opportunies: [volunteering]
+      # Audiences and areas the calendar tags broadly (a young professionals' mixer is also "50+"): no kind.
+      "Empty Nesters/Retirees": []
+      40+: []
+      50+: []
+      NBN Sponsored: []
+      "NBN TLV Center (Azrieli)": []
+      Virtual: []
+      Zoom: []
+      "Region/City": []
+      Northern Israel: []
+      Southern Israel: []
+      Lower Galilee: []
+      "Ashdod/Ashkelon": []
+      "Operation Iron Swords / Rising Lion": []
+      Employment: [lectures]
+      Finances: [lectures]
+      Education in Israel: [lectures]
+      Higher Education: [lectures]
+    city_categories:
+      Tel Aviv: תל אביב
+      Jerusalem: ירושלים
+      Haifa: חיפה
+      Netanya: נתניה
+      Herzliya: הרצליה
+      Raanana: רעננה
+      Ramat Gan: רמת גן
+      Modiin: מודיעין
+      Beit Shemesh: בית שמש
+      Kfar Saba: כפר סבא
+      Rehovot: רחובות
+      Rishon Lezion: ראשון לציון
+      Givat Shmuel: גבעת שמואל
+      Tiberias: טבריה
+      Tzfat: צפת
+      Nahariya: נהריה
+      "Efrat & Gush Etzion": אפרת
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
+      timeout_seconds: 120  # the feed is built per request: ~35 s
 
   zappa:
     # Zappa clubs (Herzliya, Tel Aviv Midtown, Jerusalem, Haifa) and Amphi Shuni. Zappa belongs to

@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 159 configured sources, 158 on. Each one has its own module in
+SPOTX collects from 160 configured sources, 159 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -188,6 +188,7 @@ many of them free.
 | `meetup` | Meetup (meetup.com): community meetups: tech talks, developer groups, startup and social events | 07:41, 19:41 | yes |
 | `geektime` | Geektime (geektime.co.il/event/): the hi-tech events calendar: meetups, conferences, workshops | 07:29, 19:29 | yes |
 | `peoplecomputers` | People & Computers (anashim umahshevim, events.co.il): Israel's hi-tech conference organizer | 07:37, 19:37 | yes |
+| `nbn` | Nefesh B'Nefesh (nbn.org.il): the community calendar for English-speaking olim: socials, young professionals' mixers, networking, singles evenings, language exchange, talks, tours; MEC's iCal feed (repeating events one per date, 60 days ahead), then each event's page for the venue, cost and registration link; online events not imported; no coordinates (the address is geocoded) | 07:14, 19:14 | yes |
 
 ## Abroad
 
