@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 156 configured sources, 155 on. Each one has its own module in
+SPOTX collects from 157 configured sources, 156 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -104,6 +104,7 @@ pagination and what the listing and the event page provide.
 | `bimot` | Bimot Global (bimotglobal.co.il, was bimot.co.il): a producer of dance, music, opera and theatre, mostly at the Israeli Opera; the wp-json show list without the archive + the show types + one page per current show (dates, hall, seller link) | 10:47, 22:47 | yes |
 | `israelshow` | IsraelShow (israelshow.co.il): a national listings site selling through its Kupat Bravo white label; ~50 genre / theatre pages list the show ids (the genre pages are its categories), and each show's performances come from the same id on kupatbravo.co.il (the white label's robots.txt disallows all) | 10:19, 22:19 | yes |
 | `kzattarbut` | Kzat Tarbut (kzat-tarbut.com): a culture magazine linking the shows it writes about to its Kupat Bravo white label; the wp-json posts (categories + show links), then each show's performances from the same id / slug on kupatbravo.co.il (the white label's robots.txt disallows all) | 10:29, 22:29 | yes |
+| `ticketsi` | Ticketsi (ticketsi.co.il): a show-guide magazine selling through its Kupat Bravo white label; ~14 show calendars (JSON-LD: show ids, the run's days; category pages = its categories) and each current show's performances from the same id on kupatbravo.co.il (start, hall, pin, prices, tickets left); purchase link = the seance's buy page, so dedup merges with `kupatbravo` / `israelshow` | 08:14, 20:14 | yes |
 | `glatticket` | Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi and religious public; Tickchak hub search API + each event's page (map pin, tiers, organiser) | 06:23, 18:23 | yes |
 | `arthurmurray` | Arthur Murray Israel (arthurmurray.co.il): the ballroom school's public evening "The Salon" in Ra'anana; the Wix page's embedded landing (read through the page JSON): date, doors and start, single / couple tickets on PayMe | 07:44, 19:44 | yes |
 | `basalon` | Basalon (basalon.co.il): talks, stand-up, shows, plays, kids' shows and workshops in living rooms, pubs and studios nationwide; the category pages' dated cards, then each event page's JSON-LD (no appointment-only, private or at-home listings) | 03:37, 15:37 | yes |

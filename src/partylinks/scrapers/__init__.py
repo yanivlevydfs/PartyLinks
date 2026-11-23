@@ -141,6 +141,7 @@ from partylinks.scrapers.tickethouse import TicketHouseScraper
 from partylinks.scrapers.ticketingo import TicketingoScraper
 from partylinks.scrapers.ticketmaster import TicketmasterScraper
 from partylinks.scrapers.ticketplace import TicketPlaceScraper
+from partylinks.scrapers.ticketsi import TicketsiScraper
 from partylinks.scrapers.tiktik import TiktikScraper
 from partylinks.scrapers.tiuli import TiuliScraper
 from partylinks.scrapers.tlvjazzfest import TlvJazzFestScraper
@@ -309,6 +310,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         GaneyYehoshuaScraper,
         StandupFactoryScraper,
         TarbutScraper,
+        TicketsiScraper,
         FunzingScraper,
         EasytixScraper,
         TicketeamsScraper,

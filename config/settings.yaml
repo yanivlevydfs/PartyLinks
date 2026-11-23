@@ -2338,6 +2338,7 @@ search:
     ganeyyehoshua: ["גני יהושע", "ganei yehoshua", "ganey yehoshua", "park.co.il"]
     standupfactory: ["stand up factory", "standup factory", "סטנדאפ פקטורי", "סטנד אפ פקטורי", "סטנדאפ פאקטורי"]
     tarbut: ["tarbut.events", "tarbut events", "טרבות איוונטס"]
+    ticketsi: ["טיקטסי", "ticketsi"]
     bargiyora: ["bar giyora", "בר גיורא"]
     basalon: ["basalon", "בסלון"]
     radical: ["radical", "רדיקל", "בית רדיקל"]
@@ -5438,6 +5439,35 @@ sources:
     http:
       concurrency: 4
       request_delay_seconds: 0.2
+
+  ticketsi:
+    # Ticketsi (ticketsi.co.il): a show-guide magazine selling through its Kupat Bravo white label (2005.kartisim.co.il).
+    # ~14 show calendars (JSON-LD Events: show id, the run's days; the category pages = its categories) give ~580
+    # show ids; the white label's robots.txt disallows all, so each current show's performances come from the same
+    # id on kupatbravo.co.il (robots allows /announce/; 1 request per show, nearest first). Overlaps `kupatbravo`
+    # and `israelshow` (same seances): purchase_url is the seance's buy page, dedup merges. Answers direct.
+    enabled: true
+    cron: "14 8,20 * * *"
+    site_url: https://www.ticketsi.co.il
+    pages:                   # calendar page -> the site's category ("" = the general calendars)
+      "לוח-הופעות": ""
+      "הופעות-היום": ""
+      "הצגות-לפי-תאריך": "הצגות תיאטרון"
+      "לוח-הופעות-חול": "הופעות מוזיקה"
+      "הופעות-סטנדאפ-כרטיסים": "סטנדאפ"
+      "הצגות-ילדים": "הצגות ילדים"
+      "הופעות-גאז-ובלוז": "ג'אז ובלוז"
+      "הופעות-מוזיקה-קלאסית": "מוזיקה קלאסית"
+      "מופעי-אופרה": "אופרה"
+      "מופעי-מחול-ובלט": "מחול ובלט"
+      "מחזות-זמר": "מחזמר"
+      "מופעי-קרקס": "קרקס"
+      "לוח-הרצאות": "הרצאות"
+      "לוח-תערוכות": "תערוכות"
+    skip_title_words: ["קורס", "סדנת העשרה", "השתלמות"]
+    http:
+      concurrency: 3
+      request_delay_seconds: 0.3
 
 
   bargiyora:
