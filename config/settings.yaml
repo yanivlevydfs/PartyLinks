@@ -986,6 +986,7 @@ enrichment:
     hechtmuseum: [culture]  # concerts and talks in the auditorium; most posts carry a series term
     agnonhouse: [literature]  # Agnon's house: lectures and evenings on literature; no categories
     rabincenter: [culture]  # Israeli-culture shows and artist meetings; no categories
+    ybz: [lectures]  # Yad Ben-Zvi: lectures, book evenings and study days; the type tag maps the rest (labels)
     eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
@@ -2234,6 +2235,7 @@ search:
     hechtmuseum: ["מוזיאון הכט", "hecht museum", "ארכיאולוגיה עכשיו"]
     agnonhouse: ["בית עגנון", "agnon house", "עגנון"]
     rabincenter: ["מרכז רבין", "מרכז יצחק רבין", "rabin center", "המוזיאון הישראלי"]
+    ybz: ["יד בן צבי", "יד בן-צבי", "יד יצחק בן צבי", "יד יצחק בן-צבי", "yad ben zvi", "yad ben-zvi"]
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
@@ -5893,6 +5895,33 @@ sources:
     http:
       concurrency: 1
       request_delay_seconds: 1.0
+
+  ybz:
+    # Yad Izhak Ben-Zvi (ybz.org.il, יד יצחק בן־צבי), Rehavia, Jerusalem: lectures, book evenings, conferences, study
+    # days and culture evenings at the institute, and its guided tours in Jerusalem and around the country. WordPress +
+    # WooCommerce: the calendar page (one request) lists every coming item months ahead (~160), each product page
+    # (one request each) the artwork, text, prices, sold-out line and a tour's town and meeting point.
+    # Sections: תרבות > יומן אירועים (read: it holds every item of "אירועים והרצאות" and "כל הסיורים", whose
+    # pages list the same products; series pages are parents of the dated items), מרתון הסיורים (no dated items
+    # now). Not read: קורסים (courses), חינוך (school programmes), סיורים בהתאמה אישית / האירוע שלכם אצלנו (private
+    # bookings), publications and the shop. Zoom lectures are not imported. Answers direct; robots.txt allows it.
+    enabled: true
+    cron: "43 7,19 * * *"
+    venue_name: יד יצחק בן-צבי
+    address: "אבן גבירול 14, רחביה"
+    city: ירושלים
+    latitude: 31.7755500    # Nominatim: ספריית יד יצחק בן-צבי (Abarbanel 10 / Ibn Gabirol 14)
+    longitude: 35.2146406
+    labels:                 # the calendar's type tag -> words our genres read
+      "הרצאה": [הרצאה]
+      "ערב ספר": [השקת ספר]
+      "סיור": [סיור מודרך]
+      "כנס": [כנס]
+      "יום עיון": [הרצאה]
+    skip_title_words: ["השתלמות", "קורס", "סדנת כתיבה"]   # guides' licence days, courses
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
 
   jaffatheatre:
     # Jaffa Theatre: the Arab-Hebrew stage at Mifratz Shlomo. The home page links every upcoming

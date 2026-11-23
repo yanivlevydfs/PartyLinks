@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 163 configured sources, 162 on. Each one has its own module in
+SPOTX collects from 164 configured sources, 163 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -122,6 +122,7 @@ pagination and what the listing and the event page provide.
 | `hechtmuseum` | Hecht Museum, University of Haifa (mushecht.haifa.ac.il): the "ארכיאולוגיה עכשיו" lecture series months ahead, swing nights, classical / organ / family concerts and stand-up in its auditorium; one wp-json call to the `event` post type (ACF day, series terms; time, price and Eventer link from the text) | 08:51, 20:51 | yes |
 | `agnonhouse` | Agnon House, Jerusalem (agnonhouse.org.il, בית עגנון): lectures, literary evenings and talks; the coming-events listing, then each event page (subtitle, date and time, place, artwork, price); online (Zoom) lectures left out | 09:57, 21:57 | yes |
 | `rabincenter` | Yitzhak Rabin Center, Tel Aviv (rabincenter.org.il): the shows, artist meetings and family days of its Israeli Museum; one wp-json call to the `event` post type, the date, time, price and AttractiNet ticket link read from each post's text (posts without a full date and exhibition posts skipped) | 10:38, 22:38 | yes |
+| `ybz` | Yad Izhak Ben-Zvi, Jerusalem (ybz.org.il, יד יצחק בן־צבי): lectures, book evenings, conferences, study days and culture evenings at the institute, and its guided tours in Jerusalem and around the country; the calendar page (every coming item, months ahead), then each product page (artwork, text, prices, a tour's town and meeting point); Zoom lectures left out | 07:43, 19:43 | yes |
 | `jaffatheatre` | Jaffa Theatre (jaffatheatre.org.il): the Arab-Hebrew stage in Jaffa, via its TicketTool box office | 07:18, 19:18 | yes |
 | `levontin7` | Levontin 7 (levontin7.com): live-music club in Tel Aviv | 06:46, 18:46 | yes |
 | `reading3` | Reading 3 (reading3.co.il): concert hall at the Tel Aviv port | 09:18, 21:18 | yes |

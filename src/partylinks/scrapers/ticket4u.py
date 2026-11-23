@@ -60,9 +60,14 @@ class Ticket4uScraper(EventimScraper):
             page = self._pages.get(event.source_event_id)
             if page and not str(event.url).startswith(self.settings.site_url):  # built from the API's product
                 event = event.model_copy(update={"url": HttpUrl(page)})
-            if event.city and _REGION.search(event.city):
+            if is_region(event.city):
                 event = event.model_copy(update={"city": town_at(event.latitude, event.longitude)})
             yield event
+
+
+def is_region(city: str | None) -> bool:
+    """An Eventim region ("חיפה והצפון"), not a town."""
+    return bool(city and _REGION.search(city))
 
 
 def _distance_m(a: tuple[float, float], b: tuple[float, float]) -> float:

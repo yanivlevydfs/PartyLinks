@@ -10,9 +10,15 @@ group page (``/artist/...`` or ``/eventseries/...``) then its ``/event/<slug>-<i
 pages (~330 events over the ten regions against ~130 in the ItemLists, Nov 2026). Binyamina, Zichron
 Yaakov and Caesarea answer every ``?page=N`` with the same 32 events.
 Details: every event page is an Eventim page (``dataLayer`` pageMeta, ticket rows, og:image), read with
-the Eventim parser. Pages Akamai refuses are built from a listing item (``eventim_listing``): the
-ItemList's, else one from the show's group page, whose JSON-LD ``EventSeries.subEvent`` (not guarded by
-Akamai; an artist page carries its first 20 dates) gives name, dates, venue, city, kind and a teaser image.
+the Eventim parser. Akamai's behavioural challenge (200, "sec-if-cpt") answers the event and group pages
+after ~10 from any IP: Railway's, evomi's, a free Israeli proxy's, a home IP in Germany; our VPN gets 403 at
+once (Nov 2026). Each refused page is built from Eventim's public search API (``api_url``, eventim_api), which
+the site's own search widget calls with eventim.co.il's web id: it lists every Barak event by the same id
+(305 of 305, Nov 2026), with artwork, venue pin, artists and the lowest price, so a refusal loses nothing
+and the run stays clean. The event keeps its barak-tickets.co.il page; a region city ("חיפה והצפון") becomes
+the ItemList's town, else the town at the venue's pin (as ticket4u). Without the API (or for an event it
+lacks): the ItemList item, else one from the show's group page, whose JSON-LD ``EventSeries.subEvent`` (an
+artist page carries its first 20 dates) gives name, dates, venue, city, kind and a teaser image.
 """
 
 from __future__ import annotations
@@ -31,14 +37,17 @@ from partylinks.parsing import clean_str, jsonld_nodes
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSettings
 from partylinks.scrapers.eventim import parse_event
+from partylinks.scrapers.eventim_api import list_products, product_event
 from partylinks.scrapers.eventim_listing import (
     TYPE_GENRES,
     Listed,
     details_or_listing,
     event_id_of,
     last_page,
+    listing_event,
     parse_listing,
 )
+from partylinks.scrapers.ticket4u import is_region, town_at
 
 __all__ = ["BarakScraper", "BarakSettings", "last_page", "listing_image", "parse_city", "parse_group", "widget_links"]
 
@@ -60,6 +69,12 @@ class BarakSettings(SourceSettings):
     # A listing item's picture path -> the one served: the "galery" copy answers 404 for every Barak event
     # (104 of 104 stored rows, Nov 2026), the same file under "teaser" is there.
     image_paths: dict[str, str] = Field(default_factory=lambda: {"/IL-eventim/galery/": "/IL-eventim/teaser/"})
+    # Eventim's public search API (eventim_api): each event whose page Akamai refuses comes from its product.
+    # Empty: no API (refused events come from the ItemList / group pages, and the run is partial).
+    api_url: str = ""
+    api_web_id: str = ""
+    api_language: str = "iw"
+    api_page_size: int = Field(100, ge=1, le=100)
 
 
 class BarakScraper(BaseScraper[BarakSettings]):
@@ -73,21 +88,52 @@ class BarakScraper(BaseScraper[BarakSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        listed: Listed = {}  # regions overlap
+        items: Listed = {}  # the ItemLists' (regions overlap)
         links: Links = {}
         for path in s.city_paths:
             found, more = await self.optional(f"city {path}", self._list_city(path)) or ({}, {})
-            listed.update(found)
+            items.update(found)
             links.update(more)
         if not links and self.failures:
             raise RuntimeError(f"{self.name}: every city page failed")
+        products: Listed = {}
+        if s.api_url:
+            api = list_products(self, s.api_url, s.api_web_id, s.api_language, s.api_page_size)
+            products = await self.optional("api", api) or {}
+        # The API's product first (artwork, pin), under the Barak page (the product links to eventim.co.il).
+        listed: Listed = {i: (page, products[i][1]) for i, (page, _) in links.items() if i in products}
+        for event_id, entry in items.items():
+            listed.setdefault(event_id, entry)
         if s.read_groups:
             await self._read_groups(links, listed)
         urls = [url for url, _ in links.values()][: s.max_events]
         if len(links) > s.max_events:
             self.log.warning("listing truncated at max_events=%d (%d found)", s.max_events, len(links))
-        self.log.debug("listed %d events (%d with a listing item)", len(links), len(listed))
-        async for event in details_or_listing(self, urls, self._fetch_event, listed, s.type_genres):
+        self.log.debug(
+            "listed %d events (%d with a listing item, %d from the API)", len(links), len(listed), len(products)
+        )
+
+        def build(event_id: str, url: str, item: dict[str, Any]) -> ScrapedEvent | None:
+            if "productId" not in item:
+                return listing_event(event_id, url, item, self.timezone, self.name, s.type_genres)
+            event = product_event(event_id, url, item, self.timezone, self.name)
+            if event is None:
+                return None
+            local = items.get(event_id, ("", {}))[1]  # the ItemList's item, when it lists the event
+            # A product without categories (26 of 303, Nov 2026): the ItemList's schema.org kind.
+            if not event.source_genres and (kind := s.type_genres.get(str(local.get("@type") or ""))):
+                event.source_genres = [kind]
+            if is_region(event.city):
+                place = local.get("location")
+                address = place.get("address") if isinstance(place, dict) else None
+                town = clean_str(address.get("addressLocality")) if isinstance(address, dict) else None
+                event.city = town if town and not is_region(town) else town_at(event.latitude, event.longitude)
+            return event
+
+        # With the API every refused page has its product: a refusal loses nothing, the run stays clean.
+        lost_only = bool(products)
+        events = details_or_listing(self, urls, self._fetch_event, listed, s.type_genres, build, lost_only=lost_only)
+        async for event in events:
             # No stored artwork: the group's teaser.
             item = listed[event.source_event_id][1] if event.extra.get("from_listing") and not event.images else {}
             if image := clean_str(item.get("image")):

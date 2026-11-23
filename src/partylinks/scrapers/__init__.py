@@ -159,6 +159,7 @@ from partylinks.scrapers.vibez import VibezScraper
 from partylinks.scrapers.xceed import XceedScraper
 from partylinks.scrapers.xplorer import XplorerScraper
 from partylinks.scrapers.yadvashem import YadVashemScraper
+from partylinks.scrapers.ybz import YbzScraper
 from partylinks.scrapers.yellowsubmarine import YellowSubmarineScraper
 from partylinks.scrapers.yotzim import YotzimScraper
 from partylinks.scrapers.zoatlv import ZoaTlvScraper
@@ -323,6 +324,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         HechtMuseumScraper,
         AgnonHouseScraper,
         RabinCenterScraper,
+        YbzScraper,
         FunzingScraper,
         EasytixScraper,
         TicketeamsScraper,

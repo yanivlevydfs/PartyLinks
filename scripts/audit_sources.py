@@ -115,6 +115,8 @@ REASONS: dict[str, dict[str, Any]] = {
     "efokulam": {"city": "one party at a club named without its town"},
     "liveisrael": {"city": _SECRET, "map": "docs/sources.md: secret spots keep only the tag city"},
     "airdrop": {"map": "festivals abroad named in Hebrew (Koh Phangan, Tulum, Brazil), and secret spots"},
+    "ybz": {"map": "coach day tours that leave from a town ('יציאה מירושלים', 'כל הארץ'): no meeting place to pin; "
+            "walking tours are geocoded from their meeting point"},
     "posh": {"city": "secret locations ('revealed on the event date / after approval') and venues abroad named "
                      "by state or country only"},
     "megaevents": {"city": "packages abroad listed by country only (no venue, no town)"},

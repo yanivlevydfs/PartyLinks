@@ -8,6 +8,8 @@ import json
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
+
 from partylinks.models import ScrapedEvent
 from partylinks.scrapers.barak import last_page, parse_city
 from partylinks.scrapers.eventim import parse_event
@@ -187,6 +189,7 @@ def test_run_reads_every_page_and_builds_refused_events_from_group_pages() -> No
     scraper.http.request_delay_seconds = 0
     scraper.http.backoff_seconds = 0
     scraper.settings.city_paths = ["/city/x-307/"]
+    scraper.settings.api_url = ""  # no API: the group pages' items
 
     def handler(request: httpx.Request) -> httpx.Response:
         path = request.url.path
@@ -208,3 +211,79 @@ def test_run_reads_every_page_and_builds_refused_events_from_group_pages() -> No
         ("22030761", "תמיר גל", "זאפה חיפה", f"{SITE}/obj/media/tamirgal-teaser.jpg")
     ]
     assert scraper.failures  # the refused event page: a partial run
+
+
+def test_refused_pages_come_from_the_api_and_the_run_stays_clean(monkeypatch: pytest.MonkeyPatch) -> None:
+    import asyncio
+    from urllib.parse import unquote
+
+    import httpx
+
+    from partylinks.config import Settings
+    from partylinks.scrapers import build_scraper
+    from partylinks.scrapers.barak import BarakScraper
+
+    api = "https://public-api.eventim.com/websearch/search/api/exploration/v1/products"
+    item = {"@type": "MusicEvent", "name": "תמיר גל", "startDate": "2027-01-10T21:30:00+02:00",
+            "location": {"name": "זאפה חיפה", "address": {"addressLocality": "חיפה"}},
+            "offers": {"url": f"{SITE}/event/תמיר-גל-זאפה-חיפה-22030761/"}}  # fmt: skip
+    city = (
+        f'<script id="eventMarkup" type="application/ld+json">'
+        f"{json.dumps({'@type': 'ItemList', 'itemListElement': [{'item': item}]}, ensure_ascii=False)}</script>"
+        '<a href="/eventseries/x-1/">הצג</a><a href="/event/תמיר-גל-זאפה-חיפה-22030761/">כרטיסים</a>'
+        '<a href="/artist/y/">הצג</a><a href="/event/שומרי-הדרקונים-אולם-יגור-22032075/">כרטיסים</a>'
+    )
+
+    def product(pid: str, name: str, venue: str, link: str, geo: dict[str, float] | None = None) -> dict[str, object]:
+        place: dict[str, object] = {"city": "חיפה והצפון", "name": venue} | ({"geoLocation": geo} if geo else {})
+        return {
+            "productId": pid, "name": name, "link": f"https://www.eventim.co.il/event/{link}/", "status": "Available",
+            "imageUrl": f"https://www.eventim.co.il/obj/media/IL-eventim/teaser/222x222/2026/{pid}-teaser.jpg",
+            "price": 89.0, "inStock": True, "categories": [{"name": "מופעי ילדים", "parentCategory": {"name": "לכל המשפחה"}}],
+            "typeAttributes": {"liveEntertainment": {"startDate": "2027-01-11T11:00:00+02:00", "location": place}},
+        }  # fmt: skip
+
+    products = [
+        product("22030761", "תמיר גל", "זאפה חיפה", "תמיר-גל-22030761") | {"categories": []},
+        product(
+            "22032075", "שומרי הדרקונים", "אולם יגור", "שומרי-הדרקונים-22032075", {"latitude": 1.0, "longitude": 2.0}
+        ),
+        product("99999999", "elsewhere", "x", "elsewhere-99999999"),  # not a Barak event: not read
+    ]
+    scraper = build_scraper("barak", Settings())
+    assert isinstance(scraper, BarakScraper)
+    scraper.http.request_delay_seconds = 0
+    scraper.http.backoff_seconds = 0
+    scraper.settings.city_paths = ["/city/x-307/"]
+    scraper.settings.api_url = api
+    asked: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        asked.append(request.url.path)
+        if request.url.host == "public-api.eventim.com":
+            if request.url.params["city_names"] == "*":
+                return httpx.Response(200, json={"facets": [{"name": "cities", "facetItems": [{"value": "חיפה"}]}]})
+            return httpx.Response(200, json={"totalPages": 1, "products": products})
+        if request.url.path.startswith("/city/"):
+            return httpx.Response(200, text=city)
+        return httpx.Response(200, text="<html>sec-if-cpt</html>")  # Akamai refuses every event page
+
+    async def go() -> list[ScrapedEvent]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.scrape()]
+
+    town = {(1.0, 2.0): "יגור"}
+    monkeypatch.setattr("partylinks.scrapers.barak.town_at", lambda lat, lon: town.get((lat, lon)))
+    events = {e.source_event_id: e for e in asyncio.run(go())}
+    assert sorted(events) == ["22030761", "22032075"]
+    gal, dragons = events["22030761"], events["22032075"]
+    # The Barak page, not the product's eventim.co.il link; the product's artwork and price.
+    assert unquote(str(gal.url)) == f"{SITE}/event/תמיר-גל-זאפה-חיפה-22030761/"
+    assert gal.images[1].endswith("22030761-teaser.jpg") and gal.min_price == Decimal("89.0")
+    assert dragons.source_genres == ["לכל המשפחה", "מופעי ילדים"]
+    assert gal.source_genres == ["concert"]  # no categories: the ItemList's kind (MusicEvent)
+    # A region city: the ItemList's town, else the town at the venue's pin.
+    assert (gal.city, dragons.city) == ("חיפה", "יגור")
+    assert not any(p.startswith(("/artist/", "/eventseries/")) for p in asked)  # the API had them: no group page
+    assert scraper.failures == []  # the API lists every refused event: the run is clean
