@@ -989,6 +989,7 @@ enrichment:
     ybz: [lectures]  # Yad Ben-Zvi: lectures, book evenings and study days; the type tag maps the rest (labels)
     kfarsabamuseum: [culture]  # Kfar Saba Museum: concerts, family days and workshops; categories map the rest
     shimur: [museums]  # heritage sites' days and tours; the text names shows, tours and workshops
+    mjc: [culture]  # North African heritage centre: piyut evenings, lectures, book launches; no categories
     eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
@@ -2241,6 +2242,7 @@ search:
     ybz: ["יד בן צבי", "יד בן-צבי", "יד יצחק בן צבי", "יד יצחק בן-צבי", "yad ben zvi", "yad ben-zvi"]
     kfarsabamuseum: ["מוזאון כפר סבא", "מוזיאון כפר סבא", "kfar saba museum", "בית הבאר כפר סבא"]
     shimur: ["המועצה לשימור אתרים", "המועצה לשימור אתרי מורשת", "שימור אתרים", "שישי מורשת", "shimur"]
+    mjc: ["מורשת יהדות צפון אפריקה", "יהדות צפון אפריקה", "המרכז העולמי למורשת", "mjc jerusalem"]
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
@@ -6056,6 +6058,27 @@ sources:
     labels:                 # the series heading (the text's first line) -> words our genres read
       "תרבות ישראלית": [מופע]
     skip_title_words: ["הטבה לעובדי", "קורס", "השתלמות"]
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
+
+  mjc:
+    # The World Centre for North African Jewish Heritage, Jerusalem (mjc-jerusalem.com, המרכז העולמי למורשת יהדות
+    # צפון אפריקה): piyut and song evenings, lectures, book launches, exhibition openings, hilulot. A Webydo blog:
+    # /events (one request) lists every post with a one-line summary (day, time); each coming post's page gives its
+    # text (~2 requests). Sections: אירועים במרכז /events (read: the menu's only events page; it lists every post).
+    # Not read: האירוע שלכם אצלנו (venue hire), the museum's visit / about / donation pages, the women's piyut
+    # group and courses (weekly classes), the school programmes (גפ"ן) and weekday exhibitions (no one day).
+    # Answers direct; robots.txt allows all but /api/ and /temp/.
+    enabled: true
+    cron: "22 7,19 * * *"
+    venue_name: המרכז העולמי למורשת יהדות צפון אפריקה
+    address: "המערבים 13"
+    city: ירושלים
+    latitude: 31.7768653    # Nominatim: HaMa'aravim St (the centre's lane, off David HaMelech 14)
+    longitude: 35.2212822
+    may_be_empty: true      # one or two evenings a month
+    skip_title_words: ["קורס", "חוג", "סדנת הכנה"]
     http:
       concurrency: 1
       request_delay_seconds: 1.0

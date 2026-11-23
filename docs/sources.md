@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 167 configured sources, 166 on. Each one has its own module in
+SPOTX collects from 168 configured sources, 167 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -122,6 +122,7 @@ pagination and what the listing and the event page provide.
 | `hechtmuseum` | Hecht Museum, University of Haifa (mushecht.haifa.ac.il): the "ארכיאולוגיה עכשיו" lecture series months ahead, swing nights, classical / organ / family concerts and stand-up in its auditorium; one wp-json call to the `event` post type (ACF day, series terms; time, price and Eventer link from the text) | 08:51, 20:51 | yes |
 | `agnonhouse` | Agnon House, Jerusalem (agnonhouse.org.il, בית עגנון): lectures, literary evenings and talks; the coming-events listing, then each event page (subtitle, date and time, place, artwork, price); online (Zoom) lectures left out | 09:57, 21:57 | yes |
 | `rabincenter` | Yitzhak Rabin Center, Tel Aviv (rabincenter.org.il): the shows, artist meetings and family days of its Israeli Museum; one wp-json call to the `event` post type, the date, time, price and AttractiNet ticket link read from each post's text (posts without a full date and exhibition posts skipped) | 10:38, 22:38 | yes |
+| `mjc` | The World Centre for North African Jewish Heritage, Jerusalem (mjc-jerusalem.com): piyut and song evenings, lectures, book launches, exhibition openings and hilulot; the /events blog listing (a summary with day and time per post), then each coming post's text; classes, groups and weekday exhibitions left out | 07:22, 19:22 | yes |
 | `shimur` | The Council for the Preservation of Heritage Sites (shimur.org, המועצה לשימור אתרי מורשת): the dated events of the heritage museums and sites it runs and partners with (heritage Fridays, Hanukkah and heritage-week days, study days, shows, family days, tours); the /events/ archive, each event page (site, time, price, artwork) and each site's page once (its point); online meetings, guides' training, bookable tours and month-long digests left out | 06:38, 18:38 | yes |
 | `kfarsabamuseum` | Kfar Saba Museum (kfar-saba-museum.org, מוזאון כפר סבא): concerts and shows at Beit HaBe'er, family days and children's shows in Baron Menashe's garden and the archaeological garden, workshops at Beit Sapir; the Hello Tickets occurrences route (every dated performance), the event posts' categories and artwork, the store's tier prices and each event page's text | 08:09, 20:09 | yes |
 | `ybz` | Yad Izhak Ben-Zvi, Jerusalem (ybz.org.il, יד יצחק בן־צבי): lectures, book evenings, conferences, study days and culture evenings at the institute, and its guided tours in Jerusalem and around the country; the calendar page (every coming item, months ahead), then each product page (artwork, text, prices, a tour's town and meeting point); Zoom lectures left out | 07:43, 19:43 | yes |
