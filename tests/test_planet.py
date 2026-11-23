@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from partylinks.scrapers.planet import day_jobs, parse_film_events, split_attributes
+from partylinks.scrapers.planet import branch_days, day_jobs, parse_film_events, split_attributes
 
 TZ = "Asia/Jerusalem"
 FIXTURES = Path(__file__).parent / "fixtures/planet"
@@ -87,4 +87,14 @@ def test_every_branchs_today_before_any_branchs_tomorrow() -> None:
 
     a, b = {"id": "a"}, {"id": "b"}
     days = [date(2026, 11, 18), date(2026, 11, 19)]
-    assert [(j[0]["id"], j[1].day) for j in day_jobs([a, b], days)] == [("a", 18), ("b", 18), ("a", 19), ("b", 19)]
+    jobs = day_jobs([(a, days), (b, [*days, date(2027, 1, 5)])])
+    assert [(j[0]["id"], j[1].day) for j in jobs] == [("a", 18), ("b", 18), ("a", 19), ("b", 19), ("b", 5)]
+
+
+def test_branch_days_reads_the_listed_days_in_the_window() -> None:
+    from datetime import date
+
+    body = {"dates": ["2026-11-17", "2026-11-23", "2026-11-23", "2027-01-05", "2027-12-01", "bad"]}
+    days = branch_days(body, date(2026, 11, 23), date(2027, 6, 1))
+    assert days == [date(2026, 11, 23), date(2027, 1, 5)]
+    assert branch_days(None, date(2026, 11, 23), date(2027, 6, 1)) == []

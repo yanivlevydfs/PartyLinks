@@ -4122,6 +4122,8 @@ sources:
     # per film, branch and day with that day's showtimes; no synopsis. Prices: one PRES ticketGroups
     # request per event and format (2D/IMAX/4DX/VIP) on the booking link's host (tickets5.<site>).
     # robots.txt allows everything but /booking, /club and asset paths.
+    # sections: all 6 branches (cinemas/with-event), every day each branch lists (dates/in-cinema), every
+    # film and special screening of that day (film-events); not read: club, gift cards, food (no events).
     enabled: true
     cron: "11 9,21 * * *"
     # ~2,000 ticketGroups requests a run: 3 at a time drew ~1,300 "429 Too Many Requests" (Nov 2026).
@@ -4129,19 +4131,22 @@ sources:
     site_url: https://www.planetcinema.co.il
     api_path: /il/data-api-service
     tenant_id: "10100"
-    days_ahead: 14  # the feed lists more days than 3/7 (audit, Nov 2026)
+    # Each branch's own days up to this far: premieres and pre-sales reach 7 weeks out (Nov 2026).
+    days_ahead: 120
 
   ravhen:
     # Rav-Hen (rav-hen.co.il, קולנוע חן; Theaters Israel): same platform as planet, its own tenant.
     # One request lists the 2 branches (Givatayim, Dizengoff), then one per branch and day: 7 requests.
     # robots.txt allows everything but /booking and asset paths.
+    # sections: both branches, every day each lists (dates/in-cinema), every film of the day; not read:
+    # club, gift cards (no events).
     enabled: true
     cron: "45 6,18 * * *"
     http: {concurrency: 3}
     site_url: https://www.rav-hen.co.il
     api_path: /rh/data-api-service
     tenant_id: "10104"
-    days_ahead: 14  # the feed lists more days than 3/7 (audit, Nov 2026)
+    days_ahead: 120  # each branch's own days (dates/in-cinema), pre-sales included
 
   cinemacity:
     # Cinema City: the chain's 8 multiplexes. The Wix site reads showtimes from its PRES ticketing

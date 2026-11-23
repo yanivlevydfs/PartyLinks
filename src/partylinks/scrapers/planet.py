@@ -5,8 +5,9 @@ Both chains belong to Theaters Israel and run Cinema City International's site, 
 One request lists the branches with screenings until the last wanted day (name, address, city,
 coordinates), then one ``film-events`` request per branch and day gives that day's films (name,
 length, poster, page link, attribute ids: rating, genres, format, language) and screenings
-(local time, booking link, hall, sold-out flag). Planet: 6 branches x 3 days = 19 requests;
-Rav-Hen: 2 x 3 = 7. Screenings group into one event per film, branch and day. No synopsis.
+(local time, booking link, hall, sold-out flag). The days come from each branch's own
+``dates/in-cinema`` list (premieres and pre-sales reach weeks past the dense first fortnight), so
+Planet's 6 branches take ~140 day requests and Rav-Hen's 2 about 17. Screenings group into one event per film, branch and day. No synopsis.
 Prices: each screening's booking link is a PRES box office (``tickets5.<site>/api/order/<id>``),
 whose ``/api/presentations/<id>/ticketGroups`` gives the price levels (see ``pres``). Read once per
 event and screening format (2D, IMAX, 4DX, VIP...: each has its own price), from its first such
@@ -39,7 +40,7 @@ class PlanetSettings(SourceSettings):
     api_path: str
     tenant_id: str
     lang: str = "he_IL"
-    # Today plus the next days_ahead - 1 days.
+    # Today plus the next days_ahead - 1 days; only the days each branch lists screenings on are read.
     days_ahead: int = 3
     # On the PRES host of each screening's booking link.
     ticket_groups_path: str = "/api/presentations/{id}/ticketGroups"
@@ -61,16 +62,26 @@ class PlanetScraper(BaseScraper[PlanetSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         today = datetime.now(zone(self.timezone)).date()
-        days = [today + timedelta(days=i) for i in range(self.settings.days_ahead)]
-        branches = (await self._body(f"cinemas/with-event/until/{days[-1]}")).get("cinemas") or []
+        until = today + timedelta(days=self.settings.days_ahead - 1)
+        branches = (await self._body(f"cinemas/with-event/until/{until}")).get("cinemas") or []
         self.log.debug("listed %d branches", len(branches))
+        # Each branch's own screening days: premieres and pre-sales run weeks past the dense first
+        # fortnight (Dune 3, Doomsday: 130 Planet events past day 14, Nov 2026).
+        dated: list[tuple[dict[str, Any], list[date]]] = []
+        for branch in branches:
+            if not isinstance(branch, dict):
+                continue
+            body = await self.optional(
+                f"dates {branch.get('id')}", self._body(f"dates/in-cinema/{branch.get('id')}/until/{until}")
+            )
+            dated.append((branch, branch_days(body, today, until)))
 
         async def day_events(item: tuple[dict[str, Any], date]) -> list[ScrapedEvent]:
             branch, day = item
             body = await self._body(f"film-events/in-cinema/{branch.get('id')}/at-date/{day}")
             return [await self._priced(e) for e in parse_film_events(body, branch, self.name, self.timezone)]
 
-        jobs = day_jobs(branches, days)
+        jobs = day_jobs(dated)
         async for events in self.stream_isolated(jobs, day_events, label=lambda j: f"branch {j[0].get('id')} {j[1]}"):
             for event in events:
                 yield event
@@ -101,10 +112,24 @@ class RavHenScraper(PlanetScraper):
     name = "ravhen"
 
 
-def day_jobs(branches: list[Any], days: list[date]) -> list[tuple[dict[str, Any], date]]:
+def branch_days(body: dict[str, Any] | None, today: date, until: date) -> list[date]:
+    """The days a branch lists screenings on (``dates/in-cinema``), today to ``until``."""
+    days: set[date] = set()
+    for value in (body or {}).get("dates") or []:
+        try:
+            day = date.fromisoformat(str(value)[:10])
+        except ValueError:
+            continue
+        if today <= day <= until:
+            days.add(day)
+    return sorted(days)
+
+
+def day_jobs(dated: list[tuple[dict[str, Any], list[date]]]) -> list[tuple[dict[str, Any], date]]:
     """(branch, day) requests, every branch's today before any branch's tomorrow: a run cut short
     (a deploy) has the nearest screenings everywhere, not one branch's three days (Nov 2026)."""
-    return [(b, d) for d in days for b in branches if isinstance(b, dict)]
+    jobs = [(b, d) for b, days in dated for d in days]
+    return sorted(jobs, key=lambda job: job[1])
 
 
 def split_attributes(ids: list[str]) -> tuple[int | None, list[str], list[str], list[str]]:
