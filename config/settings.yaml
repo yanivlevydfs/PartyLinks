@@ -2700,9 +2700,11 @@ sources:
   epgb:
     # Radio EPGB club: public Supabase table read with the anon key embedded in the homepage
     # (extracted each run; supabase_url is a fallback only). No prices in the data.
+    # sections: the events table behind every page of the site (home = this week, its +8..+14 strip, event.html per night), every published night from tonight with no date window or row limit (36 on 23.11.2026, to 12.02.2027 = prod 36; the site's own pages show 14 days); not read: jobs.html (job ads), privacy / terms / accessibility (legal), staff-hub / admin (staff only), free-ticket / success (checkout steps); the site has no menu, categories, sitemap or robots.txt (unknown paths answer the homepage).
     enabled: true
     cron: "38 7,19 * * *"
     site_url: https://epgb.co.il
+    skip_title_words: ["קורס", "סדנת", "אירוע פרטי", "אירוע סגור"]  # none of the 36 nights today (23.11)
     page_path: /
     event_page_path: /event.html?id={id}
     events_path: /rest/v1/events

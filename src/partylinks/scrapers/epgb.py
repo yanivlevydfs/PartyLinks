@@ -8,18 +8,27 @@ Only the public columns the site itself renders are selected - the table also
 holds internal columns (attendance etc.) that are never requested. Every event is
 at the club, so the venue comes from settings. Tickets are sold in an on-site
 checkout (or an external link) whose prices are not in the table.
+
+One request reads every published row from the current night on, with no date
+window and no row limit: the site's own pages show only this week (homepage) and
+the next one (its +8..+14 strip), the table holds every night already planned.
+The site's night runs to 06:00 (``night_cutoff_hour``): a start before it is the
+next calendar day of the row's ``date``, and before it the previous date is still
+"tonight".
 """
 
 from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent
 from partylinks.parsing import ParseError, clean_str, html_to_text, to_int
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 # Public columns only (what the site's own pages read). Never add internal ones.
@@ -45,6 +54,8 @@ class EpgbSettings(SourceSettings):
     city: str
     latitude: float | None = None
     longitude: float | None = None
+    # The site's rule (index.html loadEvents / eventStartMs): a night lasts until this hour.
+    night_cutoff_hour: int = 6
 
 
 class EpgbScraper(BaseScraper[EpgbSettings]):
@@ -54,24 +65,29 @@ class EpgbScraper(BaseScraper[EpgbSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
         project, key = await self._credentials()
-        today = datetime.now(ZoneInfo(self.timezone)).date().isoformat()
+        # Before the cutoff hour last night's row is still tonight, as on the site.
+        tonight = (datetime.now(ZoneInfo(self.timezone)) - timedelta(hours=s.night_cutoff_hour)).date().isoformat()
         rows = await self.get_json(
             project + s.events_path,
             expect=list,
             params={
                 "select": COLUMNS,
-                "date": f"gte.{today}",
+                "date": f"gte.{tonight}",
                 "is_published": "eq.true",
                 "order": "date.asc,start_time.asc",
             },
             headers={"apikey": key, "Authorization": f"Bearer {key}"},
         )
         self.log.debug("listed %d events", len(rows))
+        retention = RetentionSettings()
         for row in rows:
             try:
-                yield parse_event(row, s, self.timezone)
+                event = parse_event(row, s, self.timezone)
             except Exception as exc:  # noqa: BLE001 - one bad row never drops the listing
                 self.record_failure(str(row.get("id") if isinstance(row, dict) else row)[:80], exc)
+                continue
+            if is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known):
+                yield event
 
     async def _credentials(self) -> tuple[str, str]:
         s = self.settings
@@ -92,13 +108,15 @@ def parse_event(row: dict[str, Any], s: EpgbSettings, timezone: str) -> ScrapedE
     image = clean_str(row.get("image_url"))
     genre = clean_str(row.get("genre"))
     show_description = row.get("show_description") is not False
+    time = clean_str(row.get("start_time")) or clean_str(row.get("open_time"))
     return ScrapedEvent(
         source=EpgbScraper.name,
         source_event_id=event_id,
         url=clean_str(row.get("external_ticket_url")) or s.site_url + s.event_page_path.format(id=event_id),
         title=clean_str(row.get("title")) or clean_str(row.get("title_en")) or "",
         description=html_to_text(row.get("description")) if show_description else None,
-        start_at=_parse_start(row.get("date"), row.get("start_time") or row.get("open_time"), timezone),
+        start_at=_parse_start(row.get("date"), time, timezone, s.night_cutoff_hour),
+        time_known=bool(time),
         venue_name=s.venue_name,
         address=s.address,
         city=s.city,
@@ -127,10 +145,12 @@ def lineup(row: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(n for p in parts if (n := clean_str(p))))
 
 
-def _parse_start(day: Any, time: Any, timezone: str) -> datetime | None:
-    """Local ``yyyy-mm-dd`` + ``HH:MM[:SS]``."""
+def _parse_start(day: Any, time: str | None, timezone: str, cutoff_hour: int) -> datetime | None:
+    """Local ``yyyy-mm-dd`` + ``HH:MM[:SS]``; a time before ``cutoff_hour`` is the night's next day."""
     day_s = clean_str(day)
     if not day_s:
         return None
-    time_s = (clean_str(time) or "00:00")[:5]
-    return datetime.strptime(f"{day_s} {time_s}", "%Y-%m-%d %H:%M").replace(tzinfo=ZoneInfo(timezone))
+    start = datetime.strptime(f"{day_s} {(time or '00:00')[:5]}", "%Y-%m-%d %H:%M")
+    if time and start.hour < cutoff_hour:
+        start += timedelta(days=1)
+    return start.replace(tzinfo=ZoneInfo(timezone))

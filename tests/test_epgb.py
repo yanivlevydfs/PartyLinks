@@ -54,6 +54,18 @@ def test_lineup_prefers_artist_lineup() -> None:
     assert event.artists == ["A", "B"] and event.description is None
 
 
+def test_start_before_the_night_cutoff_is_the_next_day() -> None:
+    # The site's rule: a night runs to 06:00, so 01:30 on the row's date is the morning after it.
+    late = parse_event({**_rows()[0], "start_time": "01:30:00", "open_time": None}, SETTINGS, "Asia/Jerusalem")
+    assert late.start_at is not None and late.start_at.isoformat() == "2026-10-21T01:30:00+03:00"
+    assert late.time_known
+
+    # No time at all: the date itself, not shifted, and marked as a date without a time.
+    untimed = parse_event({**_rows()[0], "start_time": None, "open_time": None}, SETTINGS, "Asia/Jerusalem")
+    assert untimed.start_at is not None and untimed.start_at.isoformat() == "2026-10-20T00:00:00+03:00"
+    assert not untimed.time_known
+
+
 def test_credentials_from_page_with_fallback() -> None:
     scraper = EpgbScraper(SETTINGS.model_copy(update={"anon_key": "eyJcfg.eyJcfg.cfg"}), HttpSettings(), "Asia/Jerusalem")
     pages = iter([
