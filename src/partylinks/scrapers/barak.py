@@ -40,7 +40,7 @@ from partylinks.scrapers.eventim_listing import (
     parse_listing,
 )
 
-__all__ = ["BarakScraper", "BarakSettings", "last_page", "parse_city", "parse_group", "widget_links"]
+__all__ = ["BarakScraper", "BarakSettings", "last_page", "listing_image", "parse_city", "parse_group", "widget_links"]
 
 _HREF = re.compile(r'href="(/(?:event|artist|eventseries)/[^"?#]+/)')
 
@@ -57,6 +57,9 @@ class BarakSettings(SourceSettings):
     read_groups: bool = True
     # A listing item's schema.org kind -> a declared genre, for events built from the listing.
     type_genres: dict[str, str] = Field(default_factory=lambda: dict(TYPE_GENRES))
+    # A listing item's picture path -> the one served: the "galery" copy answers 404 for every Barak event
+    # (104 of 104 stored rows, Nov 2026), the same file under "teaser" is there.
+    image_paths: dict[str, str] = Field(default_factory=lambda: {"/IL-eventim/galery/": "/IL-eventim/teaser/"})
 
 
 class BarakScraper(BaseScraper[BarakSettings]):
@@ -88,6 +91,7 @@ class BarakScraper(BaseScraper[BarakSettings]):
             # No stored artwork: the group's teaser.
             item = listed[event.source_event_id][1] if event.extra.get("from_listing") and not event.images else {}
             if image := clean_str(item.get("image")):
+                image = listing_image(image, s.image_paths)
                 event.image_url, event.images = image, [image]
             if is_current(
                 event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known
@@ -140,6 +144,13 @@ def widget_links(page_html: str, site_url: str) -> Links:
         elif event_id := event_id_of(href):
             found.setdefault(event_id, (urljoin(site_url, href), group))
     return found
+
+
+def listing_image(url: str, paths: dict[str, str]) -> str:
+    """The listing item's picture at the path the site serves it (``image_paths``)."""
+    for listed, served in paths.items():
+        url = url.replace(listed, served)
+    return url
 
 
 def parse_group(page_html: str, site_url: str) -> Listed:

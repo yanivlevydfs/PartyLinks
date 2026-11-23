@@ -155,6 +155,17 @@ def test_group_page_dates_become_listing_items() -> None:
     assert item["image"].endswith("dragons.jpg")
 
 
+def test_listing_picture_is_read_from_the_teaser_path() -> None:
+    from partylinks.scrapers.barak import BarakSettings, listing_image
+
+    paths = BarakSettings(cron="0 0 * * *", site_url=SITE, city_paths=[]).image_paths
+    # The "galery" copy answers 404 (every Barak event, Nov 2026); the teaser path serves the same file.
+    assert listing_image(f"{SITE}/obj/media/IL-eventim/galery/222x222/2026/dragons.jpg", paths) == (
+        f"{SITE}/obj/media/IL-eventim/teaser/222x222/2026/dragons.jpg"
+    )
+    assert listing_image(f"{SITE}/obj/media/tamirgal-teaser.jpg", paths) == f"{SITE}/obj/media/tamirgal-teaser.jpg"
+
+
 def test_run_reads_every_page_and_builds_refused_events_from_group_pages() -> None:
     import asyncio
 
