@@ -15,6 +15,7 @@ from collections import Counter
 from collections.abc import AsyncGenerator, Callable, Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
@@ -584,6 +585,9 @@ class ResponseCache:
         # A crawler opening dozens of cold pages at once builds them a few at a time, so the GIL is
         # left for the event loop serving cached pages (a link preview gives up after a few seconds).
         self._builds = threading.BoundedSemaphore(4)
+        # Crawlers build cold pages on slots of their own: Yandex opening dozens of long-tail pages at once took
+        # all four, and visitors behind it got 503s (2026-11-24). A visitor's page never waits on a crawler's.
+        self._crawler_builds = threading.BoundedSemaphore(2)
 
     def peek(
         self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]] | None = None
@@ -619,7 +623,8 @@ class ResponseCache:
     def _build(
         self, key: tuple[str, str], build: Callable[[], bytes | tuple[bytes, int]], wait: float = 0
     ) -> tuple[bytes, int]:
-        if not self._builds.acquire(timeout=wait or None):
+        slots = self._crawler_builds if wait and CRAWLING.get() else self._builds  # background refreshes: shared
+        if not slots.acquire(timeout=wait or None):
             raise CacheBusy(key[0])
         try:
             changes, now = Database.changes, time.monotonic()  # read before building: a write during it wins
@@ -628,7 +633,7 @@ class ResponseCache:
             self.forget(key)
             raise
         finally:
-            self._builds.release()
+            slots.release()
         body, code = out if isinstance(out, tuple) else (out, 200)
         with self._lock:
             if old := self._items.pop(key, None):
@@ -764,7 +769,24 @@ class CachedPages:
                         (b"content-type", media), (b"content-length", size), (b"x-body-length", size),
                     ]})  # fmt: skip
                     return await send({"type": "http.response.body", "body": body})
+        if scope["type"] == "http":  # a page this request builds takes a crawler's slot or a visitor's
+            agent = dict(scope.get("headers") or []).get(b"user-agent", b"").decode("latin-1")
+            CRAWLING.set(is_crawler(agent))
         await self.app(scope, receive, _body_length(send) if scope["type"] == "http" else send)
+
+
+# Set per request by CachedPages; the sync routes' threads see it (Starlette copies the context into them).
+CRAWLING: ContextVar[bool] = ContextVar("crawling", default=False)
+_CRAWLER_AGENT = re.compile(r"bot|crawl|spider|slurp|externalagent|lightpanda|headless", re.IGNORECASE)
+# Link previews fetch a page because a person just shared it: they stay on the visitors' slots.
+_PREVIEW_AGENT = re.compile(
+    r"whatsapp|telegrambot|facebookexternalhit|twitterbot|slackbot|discordbot|linkedinbot|skypeuripreview",
+    re.IGNORECASE,
+)
+
+
+def is_crawler(agent: str) -> bool:
+    return bool(_CRAWLER_AGENT.search(agent)) and not _PREVIEW_AGENT.search(agent)
 
 
 def _body_length(send: Any) -> Any:

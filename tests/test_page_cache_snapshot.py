@@ -57,3 +57,32 @@ def test_a_page_built_since_startup_wins_over_the_snapshot(tmp_path: Path) -> No
     _filled(("/", b"old")).save(file, 1 << 20)
     fresh = _filled(("/", b"new"))
     assert fresh.load(file) == 0 and fresh.peek(("/", "")) == (b"new", 200)
+
+
+def test_crawlers_never_take_a_visitors_build_slot() -> None:
+    import pytest
+
+    from partylinks.api import CRAWLING, CacheBusy
+
+    cache = ResponseCache(build_wait=0.05)
+    cache._crawler_builds.acquire()
+    cache._crawler_builds.acquire()  # a crawler burst holds both of its slots
+    token = CRAWLING.set(True)
+    try:
+        with pytest.raises(CacheBusy):
+            cache.get(("/artist/x", ""), lambda: b"x")  # the next crawler page waits on its own slots
+    finally:
+        CRAWLING.reset(token)
+    assert cache.get(("/", ""), lambda: b"home") == (b"home", 200)  # a visitor is built at once
+
+
+def test_link_previews_count_as_visitors() -> None:
+    from partylinks.api import is_crawler
+
+    assert is_crawler("Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)")
+    assert is_crawler("Mozilla/5.0 (compatible; meta-externalagent/1.1)")
+    assert is_crawler("Lightpanda/1.0")
+    assert not is_crawler("WhatsApp/2.23.20.0")
+    assert not is_crawler("facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)")
+    assert not is_crawler("TelegramBot (like TwitterBot)")
+    assert not is_crawler("Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) Safari/604.1")
