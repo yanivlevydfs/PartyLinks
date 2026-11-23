@@ -691,7 +691,22 @@ class CachedPages:
                         (b"content-type", media), (b"content-length", size), (b"x-body-length", size),
                     ]})  # fmt: skip
                     return await send({"type": "http.response.body", "body": body})
-        await self.app(scope, receive, send)
+        await self.app(scope, receive, _body_length(send) if scope["type"] == "http" else send)
+
+
+def _body_length(send: Any) -> Any:
+    """``send`` adding x-body-length (as a cache hit has it) to a routed JSON answer with a content-length:
+    every page's loader counts the bytes against it for its real percent (web/src/api.ts getJSONProgress)."""
+
+    async def sized(message: dict[str, Any]) -> None:
+        if message["type"] == "http.response.start":
+            headers = {bytes(k).lower(): bytes(v) for k, v in message.get("headers", [])}
+            size = headers.get(b"content-length")
+            if size and b"x-body-length" not in headers and headers.get(b"content-type", b"").startswith(b"application/json"):
+                message = {**message, "headers": [*message.get("headers", []), (b"x-body-length", size)]}
+        await send(message)
+
+    return sized
 
 
 def _cached(request: Request, build: Callable[[Session], BaseModel], *, exclude_none: bool = False) -> Response:
@@ -910,7 +925,11 @@ def create_app(
             """The busiest pages built once right after a deploy, so the first visitors don't wait for them."""
             await asyncio.sleep(1)  # let startup finish first
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost") as client:
-                for path in WARM_PATHS:
+                # The JSON the first screens fetch, with the exact query the web app sends (the cache is keyed
+                # by it): the venues / artists index's first page and the map's pins (7-8 s cold after a deploy).
+                size = settings.site.web.index_page_size
+                api = [f"/facets/{kind}?page_size={size}&page=1" for kind in ("venues", "artists")] + ["/events/map"]
+                for path in (*WARM_PATHS, *api):
                     try:
                         await client.get(path)
                     except Exception:  # a cold page is only slower
