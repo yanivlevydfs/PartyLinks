@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from partylinks.api import create_app
 from partylinks.config import Settings
 from partylinks.db import Database, EventRow, upsert_events
-from partylinks.dedup import Deduplicator
+from partylinks.dedup import Deduplicator, title_key
 from partylinks.enrichment import Enricher
 from partylinks.models import ScrapedEvent, TicketTier
 
@@ -705,3 +705,16 @@ def test_a_link_to_a_box_office_show_by_its_name_joins_that_show_at_that_minute(
     ])  # fmt: skip
     assert groups["smarticket:tlv-citymuseum:7888"][0] == groups["ogo:a"][0] == groups["ogo:b"][0]
     assert groups["ogo:c"][0] == groups["smarticket:tlv-citymuseum:7849"][0] != groups["smarticket:tlv-citymuseum:7848"][0]
+
+
+def test_a_name_with_its_latin_spelling_is_the_name_alone(tmp_path: Path) -> None:
+    """Menora, Nov 2026: Eventer's "נסרין NASRIN" stood apart from Ticketmaster's "נסרין" at the same minute."""
+    menora = {"venue_name": "היכל מנורה מבטחים", "city": "תל אביב"}
+    _, groups = grouped(tmp_path, [
+        listing("eventer", "a", "נסרין NASRIN", where=(32.0612909, 34.7913803), source_genres=["culture"], **menora),
+        listing("ticketmaster", "b", "נסרין", where=(32.061455, 34.791993), source_genres=["live_show", "rock_indie"], **menora),
+    ])  # fmt: skip
+    assert groups["eventer:a"][0] == groups["ticketmaster:b"][0]
+    # A translation is another title, not a spelling: its words stay.
+    assert title_key("זכרונות של חילזון Memoir of a Snail", set()) == "a memoir of snail זכרונות חילזון של"
+    assert title_key("עומר אדם Omer Adam", set()) == title_key("עומר אדם", set())

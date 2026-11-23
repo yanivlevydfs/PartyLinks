@@ -88,10 +88,37 @@ class _Listing:
 
 
 def title_key(title: str | None, stopwords: set[str]) -> str:
-    """Title reduced to its words: no dates (22.10), emojis, punctuation or stopwords; sorted."""
+    """Title reduced to its words: no dates (22.10), emojis, punctuation or stopwords; sorted. A name followed
+    by its own Latin spelling ("נסרין NASRIN") is the Hebrew name alone: another site writes only that."""
     text = _DATE_TOKEN.sub(" ", (title or "").lower())
     words = [w for w in _NON_WORD.sub(" ", text).split() if w not in stopwords and not w.isdigit()]
+    hebrew = [w for w in words if _HEBREW_WORD.match(w)]
+    latin = [w for w in words if _LATIN_WORD.match(w)]
+    if hebrew and latin and len(hebrew) + len(latin) == len(words) and _spell_alike(hebrew, latin):
+        words = hebrew
     return " ".join(sorted(set(words)))
+
+
+_HEBREW_WORD = re.compile(r"^[א-ת]+$")
+_LATIN_WORD = re.compile(r"^[a-z]+$")
+# One consonant skeleton for both scripts: vowel letters (אהוי"ע, a e i o u y w h) go, and what one sound is
+# written as in either folds into one letter (כ ק ח "ch" "kh" "c" "q" -> k, צ ז "tz" "ts" -> z, פ "f" "ph" -> p).
+_HEBREW_SOUNDS = str.maketrans("אהויעבגדזחטכךלמםנןסצץפףקרשת", "_____bgdzktkklmmnnszzppkrst")
+_LATIN_DIGRAPHS = (("sh", "s"), ("ch", "k"), ("kh", "k"), ("ck", "k"), ("ph", "p"), ("th", "t"), ("tz", "z"), ("ts", "z"))  # fmt: skip
+_LATIN_SOUNDS = str.maketrans("aeiouywhvcqfjx", "________bkkpgk")
+_REPEATS = re.compile(r"(.)\1+")
+_SPELLING_LIKENESS = 0.8  # a 5-letter skeleton may differ in one letter; shorter ones must be equal
+
+
+def _spell_alike(hebrew: list[str], latin: list[str]) -> bool:
+    """The Latin words are the Hebrew ones spelled out ("נסרין" / "nasrin": n-s-r-n both), not a translation."""
+    he = "".join(hebrew).translate(_HEBREW_SOUNDS).replace("_", "")
+    la = "".join(latin)
+    for digraph, sound in _LATIN_DIGRAPHS:
+        la = la.replace(digraph, sound)
+    la = la.translate(_LATIN_SOUNDS).replace("_", "")
+    he, la = _REPEATS.sub(r"\1", he), _REPEATS.sub(r"\1", la)
+    return min(len(he), len(la)) >= 3 and SequenceMatcher(None, he, la).ratio() >= _SPELLING_LIKENESS
 
 
 def title_numbers(title: str | None) -> frozenset[str]:
