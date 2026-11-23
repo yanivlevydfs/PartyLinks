@@ -25,9 +25,29 @@ BATCH = 10_000  # the protocol's per-request limit
 LOC = re.compile(r"<loc>([^<]+)</loc>")
 
 
+def _sent(state: Path) -> set[str]:
+    return set(state.read_text(encoding="utf-8").split()) if state.is_file() else set()
+
+
 def new_urls(urls: list[str], state: Path) -> list[str]:
-    sent = set(state.read_text(encoding="utf-8").split()) if state.is_file() else set()
+    sent = _sent(state)
     return [u for u in dict.fromkeys(urls) if u not in sent]
+
+
+def prune(urls: list[str], state: Path) -> int:
+    """Keep only the sent URLs still in the sitemap: a past event's page is gone and never comes back,
+    so the file stays the sitemap's size instead of growing forever (113 MB, 1.15M lines, 2026-11-23).
+    Returns how many were dropped."""
+    if not urls or not state.is_file():  # an empty sitemap is a problem, not a reason to forget everything
+        return 0
+    sent = _sent(state)
+    keep = [u for u in dict.fromkeys(urls) if u in sent]
+    if len(keep) == len(sent):
+        return 0
+    tmp = state.with_name(state.name + ".tmp")
+    tmp.write_text("".join(u + "\n" for u in keep), encoding="utf-8")
+    tmp.replace(state)  # atomic: a crash leaves the old file, never a half-written one
+    return len(sent) - len(keep)
 
 
 def submit(settings: Settings, db: Database) -> int:
@@ -40,6 +60,9 @@ def submit(settings: Settings, db: Database) -> int:
     with db.session(write=False) as session:
         urls = [html.unescape(m) for entry in sitemap_urls(session, settings) for m in LOC.findall(entry)]
     state = Path(cfg.indexnow.state_file)
+    dropped = prune(urls, state)
+    if dropped:
+        log.info("indexnow: forgot %d URLs no longer in the sitemap", dropped)
     todo = new_urls(urls, state)
     host = cfg.base_url.split("://", 1)[1]
     sent = 0
@@ -66,4 +89,7 @@ if __name__ == "__main__":  # self-check: only unseen URLs, in order, without du
         state.write_text("https://a/1\nhttps://a/2\n", encoding="utf-8")
         assert new_urls(["https://a/2", "https://a/3", "https://a/1", "https://a/3"], state) == ["https://a/3"]
         assert new_urls(["https://a/9"], Path(tmp) / "missing.txt") == ["https://a/9"]
+        assert prune(["https://a/2", "https://a/3"], state) == 1  # a/1 left the sitemap
+        assert state.read_text(encoding="utf-8").split() == ["https://a/2"]
+        assert prune(["https://a/2"], state) == 0
     print("ok")
