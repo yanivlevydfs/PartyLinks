@@ -84,6 +84,9 @@ class XceedSettings(SourceSettings):
     default_genre: str = "nightlife"
     # Xceed's stand-in pictures ("event-place-holder.jpg", "artist-place-holder.jpg").
     placeholder: str = "/static/entities/"
+    # Xceed's own test city: its "events" (Secret Sessions, Pulse Club Techno Event (1)..) are QA fixtures
+    # the public API lists with the real ones (8 on 2026-11-23), not public events.
+    test_cities: list[str] = Field(default_factory=lambda: ["01test-city"])
 
 
 class XceedScraper(BaseScraper[XceedSettings]):
@@ -130,7 +133,7 @@ class XceedScraper(BaseScraper[XceedSettings]):
                 raise ParseError(f"events page {index}: not a list")
             return rows, None  # unfiltered: a short page is what ends the listing
 
-        found = listed_events(await self.paginate(page, s.page_size, s.max_pages))
+        found = listed_events(await self.paginate(page, s.page_size, s.max_pages), s.test_cities)
         return list({i["legacyId"]: i for i in found}.values())  # a page shifted by a new event repeats one
 
     async def _sales(self, items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -172,14 +175,16 @@ def unwrap(payload: Any) -> Any:
     return payload.get("data")
 
 
-def listed_events(data: Any) -> list[dict[str, Any]]:
-    """The listing's items that can be read: an id, a slug, a start and a city."""
+def listed_events(data: Any, test_cities: Iterable[str] = ()) -> list[dict[str, Any]]:
+    """The listing's items that can be read: an id, a slug, a start and a city (not a test city)."""
     rows = data if isinstance(data, list) else []
+    skip = set(test_cities)
     return [
         i
         for i in rows
         if isinstance(i, dict) and isinstance(i.get("legacyId"), int) and clean_str(i.get("slug"))
         and isinstance(i.get("startingTime"), int | float) and isinstance(_city(i).get("slug"), str)
+        and _city(i)["slug"] not in skip
     ]  # fmt: skip
 
 

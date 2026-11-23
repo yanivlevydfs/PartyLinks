@@ -74,6 +74,12 @@ def test_listing_envelope_order_and_event_url() -> None:
         unwrap({"success": False, "error": {"message": "Limit must be less than or equal to 200"}})
 
 
+def test_events_of_xceeds_test_city_are_dropped() -> None:
+    qa = {"legacyId": 213411, "slug": "secret-sessions-5", "startingTime": 1806703140}
+    qa["venue"] = {"city": {"slug": "01test-city", "name": "01Test City"}}
+    assert listed_events([qa, ITEMS[242783]], S.test_cities) == [ITEMS[242783]]
+
+
 def test_club_night_in_the_venue_zone_with_its_place_price_lineup_and_profile_key() -> None:
     event = _event(242783)
     madrid = ZoneInfo("Europe/Madrid")

@@ -3600,6 +3600,10 @@ sources:
     # the event list (200 a page, ~13), sale status + lowest price (25 events a request, ~95), one detail
     # each (description, vibes, festival, age, private flag; ~2,400). Venue profiles rotate: each venue once
     # a week (14 slots of 12 h, ~70 requests a run). ~2,600 small JSON requests a run.
+    # sections: the whole /v1/events catalogue to its last page (2,201 on 2026-11-23, to 31.10.2027 = prod
+    # 2,200; the site's city / venue pages list the same events, its city/venue filters are ignored by the
+    # API), sales and details of each; not read: the site has no category menu (cities, venues, artists
+    # only), /v1/cities and /v1/countries (no events), Xceed's '01test-city' (QA fixtures, test_cities).
     enabled: true
     cron: "1 6,18 * * *"
     skip_title_words: ["corso di", "curso de", "course", "masterclass"]
