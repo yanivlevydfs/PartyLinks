@@ -164,6 +164,28 @@ kupat (קופת ת"א), comedybar.
 
 - לינק פייסבוק `facebook.com/share/1FCNdDWfNW`: לא נפתח. צריך שם אירוע או מקום.
 
+## 8. הייטק על הבר ומפגשים על הבר (סקר 23.11)
+
+בייצור, אירועים קרובים בישראל: hi_tech 150 (luma 86, geektime 22, meetup 20), startups 108, ai 119, meetups 7,057 (funzing 5,695). באולם ששמו בר / פאב: hi_tech 0, startups 0, ai 1, meetups 14. סדרות לפי כותרת: "startup grind" 0, "women in tech" 0, "hackers & founders" 0, "language exchange" 0, סדרות "על הבר" 1 (Haifa BeerTech, ב-meetup).
+
+| סדרה / אתר | פלטפורמה | כיסוי עכשיו | החלטה |
+|---|---|---|---|
+| Meetup: כל הקבוצות בישראל | meetup.com GraphQL | `meetup` 55 (שאילתה אחת, עד ~30 יום קדימה) | ✅ הורחב: חלונות של 30 יום עד 120 יום, ועוד נקודות בחיפה, באר שבע וירושלים. 55 ← 63, hi_tech 22 ← 27 (`75d2643`, `07f0861`) |
+| Luma: לוחות הקהילות (Claude Community, LGBT Olim, The Table, Web3 Devs, Fusion VC, Yazamut360, "מדע על הבר" של רובע החדשנות ב"ש) | api.lu.ma | `luma` 112 (רק מה ש-Luma מקדמת ב-discover) | ✅ הורחב: גם האירועים הקרובים של כל לוח שמופיע ב-discover (~90 לוחות). 112 ← 128, hi_tech 88 ← 96 (`a3bdde7`) |
+| Nefesh B'Nefesh: לוח הקהילה לעולים דוברי אנגלית (מפגשים חברתיים, young professionals, נטוורקינג, ערבי רווקים, חילופי שפות, הרצאות) | nbn.org.il, MEC iCal | 0 | ✅ מקור חדש `nbn`: 190 אירועים (meetups 122, english 190, singles 3), עיר 98%, ישיר (`7eda086`) |
+| "חדשנות על הבר" של רשות החדשנות (ברים בת"א, ירושלים, חיפה, הרצליה, ב"ש) | innovationisrael.org.il (WordPress) | 0 | ⏸ לא נבנה: העונה של 2026 נגמרה ב-10.11 (ירושלים). באתר עכשיו 2 אירועים קרובים, ושניהם וובינרים. גישה: מפת האתר עונה ל-`impersonate: chrome` (גם מכאן), `wp-json` חסום ב-Cloudflare בכל הדרכים. לבנות כשתפורסם עונת 2027 (`event_series/barevents2027`) |
+| Startup Grind Tel Aviv | startupgrind.com (Bevy) + meetup.com | 0 קרובים | ⏸ לא נבנה: ~1 אירוע בחודש, ומתפרסם גם בקבוצת ה-Meetup שלהם (`startup-grind-tel-aviv`), ש-`meetup` קורא |
+| GDG / Angular TLV | gdg.community.dev (Bevy) + meetup.com | ב-`meetup` (Angular TLV) | מכוסה דרך Meetup |
+| Haifa BeerTech, ChessBar (Masaryk), Fluent language exchange (Abraham), Game Club TLV, TAMI | meetup.com | `meetup` | מכוסה |
+| Geektime, אנשים ומחשבים, HappyTLV | אתרים שלהם | `geektime` 22, `peoplecomputers` 8, `happytlv` | מכוסה |
+| dev.events (כנסי פיתוח: Reversim, DevFest, Devopsdays TLV) | dev.events, JSON-LD | חלקי | ⏸ לא נבנה: אגרגטור של ~5 כנסים בישראל, מקשר לאתרי הכנסים. לא ברים |
+| Polyglot Club (חילופי שפות בת"א) | polyglotclub.com | 0 | ⛔ אתגר JS של Cloudflare ("Just a moment") ישיר, ב-Chrome, ודרך ה-VPN |
+| Product Tank / Women in Tech / Hackers & Founders | Meetup / Luma | 0-1 | אין עכשיו אירועים קרובים בשום פלטפורמה. אם יחזרו, יגיעו דרך `meetup` / `luma` |
+| ESRA, AACI, JTLV, The Right Time (רווקים) | האתרים שלהם | דרך `nbn` | רוב האירועים שלהם מתפרסמים בלוח של NBN. לא נבנה מקור נפרד |
+| InterNations, Couchsurfing hangouts, קבוצות פייסבוק | — | 0 | ⛔ דורשים התחברות |
+| Calcalist / TheMarker | כנסים בתשלום | — | לא ברים ולא מפגשים, לא נבנה |
+| טריוויה / פאב קוויז בברים | אינסטגרם ופייסבוק של הברים | quiz_games 122 (ogo, smarticket, happytlv) | אין פלטפורמה פתוחה לקרוא. מה שנמכר ב-Eventer / Tickchak כבר נקרא |
+
 ## בדיקה לפני כל push
 
 ```bash
