@@ -3648,6 +3648,13 @@ sources:
     # Yotzim (yotzim.com): party guide (Tel Aviv nights, nature parties, festivals, Koh Phangan).
     # Each category page links its events; an event takes the genre words of every category listing
     # it. Event pages carry MusicEvent JSON-LD. robots.txt disallows /api/, /profile, /t/ (tickets).
+    # sections: the 26 category pages below (all events, genres, nature / open bar / 40+ / youth / wine /
+    # artists, festivals, Phangan, every holiday): 39 upcoming events = the home page's 39 = /events' 37 plus
+    # 2 (23.11.2026; no pagination: ?page=2 is the same list; prod 37 upcoming); not read: /parties/* (today,
+    # weekend, days, areas), /series/*, /venues/*, /events/artist-*, /events/picks, /free, /vip-tables,
+    # /next-weekend, /phangan/full-moon|half-moon (filters of the same events, 0 more), /events/archive and
+    # the sitemap's other /event/ pages (past), /news /guides /phangan/guide|groups|villas /villa/*
+    # /greece-cyprus (no events).
     enabled: true
     cron: "12 9,21 * * *"
     site_url: https://yotzim.com
