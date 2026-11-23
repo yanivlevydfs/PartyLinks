@@ -4814,6 +4814,7 @@ sources:
     proxied: false
     vpn: false  # our VPN exits in Israel
     cron: "49 7,19 * * *"
+    skip_title_words: ["קורס "]  # the community centres' courses (Arabic, bridal make-up, smartphone): ~20 dates, Nov 2026
     site_url: https://de.ogo.events
     sitemap_path: /sitemap.xml
     locale: he
@@ -4858,6 +4859,7 @@ sources:
     cron: "43 8,20 * * *"
     http:
       concurrency: 2
+    skip_title_words: ["קורס אסכולות", "קורס שנתי"]  # ZOA's Askolot semester courses, copied from zoatlv (source audit, Nov 2026)
       request_delay_seconds: 1.0
 
   liveisrael:
@@ -5912,3 +5914,4 @@ sources:
     cron: "49 5,17 * * *"
     http:
       concurrency: 8
+    skip_title_words: ["קורס אסכולות", "קורס שנתי"]  # Askolot's semester lecture courses (one registration, many dates): ~47 dates, Nov 2026
