@@ -1524,10 +1524,9 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .e-info h1 { margin: 8px 0 12px; font-size: clamp(24px, 7vw, 32px); }
   .e-top { grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 14px; }
   .facts { gap: 8px; font-size: 15px; margin-bottom: 18px; }
-  .alts { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; font-size: 13px; }
-  .alts::-webkit-scrollbar { display: none; }
-  .alts > span { flex: none; }
-  .alt { flex: none; padding: 5px 12px; gap: 6px; }
+  /* The other sites wrap under their label: a side-scrolling row hid the second site entirely off-screen. */
+  .alts { gap: 8px; font-size: 13px; }
+  .alt { padding: 5px 12px; gap: 6px; }
   .event section h4 { margin: 26px 0 10px; }
   .lineup-list { gap: 6px; }
   .lineup-list a { padding: 8px 12px; font-size: 14px; }
