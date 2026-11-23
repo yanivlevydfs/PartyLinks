@@ -1,0 +1,71 @@
+[
+ {
+  "id": "124",
+  "title": "דיאלוג בין מיתרים - גיטרה קלאסית וקונטרבס (הסתיים)",
+  "start": "2026-11-05 20:30:00",
+  "end": "2026-11-05 22:30:00",
+  "allDay": false,
+  "eventId": 2053,
+  "location": "בית הבאר",
+  "status": "active",
+  "extendedProps": {
+   "event_id": 2053,
+   "occurrence_id": "124",
+   "description": "",
+   "excerpt": "",
+   "image": "https://kfar-saba-museum.org/wp-content/uploads/2026/08/בין-מיתרים-300x300.png",
+   "location": "בית הבאר",
+   "has_passed": true,
+   "availability_status": "",
+   "availability_label": ""
+  },
+  "url": "https://kfar-saba-museum.org/events/meitarim/",
+  "classNames": [
+   "hello-event-passed"
+  ]
+ },
+ {
+  "id": "160",
+  "title": "הענק, הברון וגנו",
+  "start": "2026-12-07 09:30:00",
+  "end": "2026-12-07 11:30:00",
+  "allDay": false,
+  "eventId": 2724,
+  "location": "גן הברון מנשה",
+  "status": "active",
+  "extendedProps": {
+   "event_id": 2724,
+   "occurrence_id": "160",
+   "description": "",
+   "excerpt": "",
+   "image": "https://kfar-saba-museum.org/wp-content/uploads/2026/11/פלייר-חנוכה-לנגישות-300x300.png",
+   "location": "גן הברון מנשה",
+   "has_passed": false,
+   "availability_status": "available",
+   "availability_label": ""
+  },
+  "url": "https://kfar-saba-museum.org/events/hanukah_menashe/"
+ },
+ {
+  "id": "127",
+  "title": "דואו טל גור - מופע לחודש האזרח הותיק",
+  "start": "2026-12-15 20:30:00",
+  "end": "2026-12-15 22:30:00",
+  "allDay": false,
+  "eventId": 2276,
+  "location": "בית הבאר",
+  "status": "active",
+  "extendedProps": {
+   "event_id": 2276,
+   "occurrence_id": "127",
+   "description": "",
+   "excerpt": "",
+   "image": "https://kfar-saba-museum.org/wp-content/uploads/2026/10/טל-גור-לעמוד-מכירה-300x300.png",
+   "location": "בית הבאר",
+   "has_passed": false,
+   "availability_status": "available",
+   "availability_label": ""
+  },
+  "url": "https://kfar-saba-museum.org/events/tal_gur_duo/"
+ }
+]

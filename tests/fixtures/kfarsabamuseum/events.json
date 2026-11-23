@@ -1,0 +1,213 @@
+[
+ {
+  "id": 2724,
+  "date": "2026-11-17T06:55:26",
+  "date_gmt": "2026-11-17T06:55:26",
+  "guid": {
+   "rendered": "https://kfar-saba-museum.org/?post_type=hello_event&#038;p=2724"
+  },
+  "modified": "2026-11-22T10:35:03",
+  "modified_gmt": "2026-11-22T10:35:03",
+  "slug": "hanukah_menashe",
+  "status": "publish",
+  "type": "hello_event",
+  "link": "https://kfar-saba-museum.org/events/hanukah_menashe/",
+  "title": {
+   "rendered": "הענק, הברון וגנו"
+  },
+  "content": {
+   "rendered": "",
+   "protected": false
+  },
+  "excerpt": {
+   "rendered": "",
+   "protected": false
+  },
+  "featured_media": 2760,
+  "template": "",
+  "event_category": [
+   54,
+   27,
+   43
+  ],
+  "event_location": [
+   41
+  ],
+  "class_list": [
+   "post-2724",
+   "hello_event",
+   "type-hello_event",
+   "status-publish",
+   "has-post-thumbnail",
+   "hentry",
+   "event_category-upcoming",
+   "event_category-27",
+   "event_category-workshops",
+   "event_location-41"
+  ],
+  "acf": [],
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "id": 2760,
+     "source_url": "https://kfar-saba-museum.org/wp-content/uploads/2026/11/פלייר-חנוכה-לנגישות.png"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "id": 54,
+      "name": "אירועים קרובים",
+      "taxonomy": "event_category"
+     },
+     {
+      "id": 27,
+      "name": "ילדים",
+      "taxonomy": "event_category"
+     },
+     {
+      "id": 43,
+      "name": "סדנה",
+      "taxonomy": "event_category"
+     }
+    ],
+    [
+     {
+      "id": 41,
+      "name": "גן הברון מנשה",
+      "taxonomy": "event_location"
+     }
+    ]
+   ]
+  }
+ },
+ {
+  "id": 2276,
+  "date": "2026-10-06T08:27:49",
+  "date_gmt": "2026-10-06T08:27:49",
+  "guid": {
+   "rendered": "https://kfar-saba-museum.org/?post_type=hello_event&#038;p=2276"
+  },
+  "modified": "2026-11-23T07:47:13",
+  "modified_gmt": "2026-11-23T07:47:13",
+  "slug": "tal_gur_duo",
+  "status": "publish",
+  "type": "hello_event",
+  "link": "https://kfar-saba-museum.org/events/tal_gur_duo/",
+  "title": {
+   "rendered": "דואו טל גור &#8211; מופע לחודש האזרח הותיק"
+  },
+  "content": {
+   "rendered": "",
+   "protected": false
+  },
+  "excerpt": {
+   "rendered": "",
+   "protected": false
+  },
+  "featured_media": 2593,
+  "template": "",
+  "event_category": [
+   54,
+   45,
+   28
+  ],
+  "event_location": [
+   29
+  ],
+  "class_list": [
+   "post-2276",
+   "hello_event",
+   "type-hello_event",
+   "status-publish",
+   "has-post-thumbnail",
+   "hentry",
+   "event_category-upcoming",
+   "event_category-45",
+   "event_category-music",
+   "event_location-29"
+  ],
+  "acf": [],
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "id": 2593,
+     "source_url": "https://kfar-saba-museum.org/wp-content/uploads/2026/10/טל-גור-לעמוד-מכירה.png"
+    }
+   ],
+   "wp:term": [
+    [
+     {
+      "id": 54,
+      "name": "אירועים קרובים",
+      "taxonomy": "event_category"
+     },
+     {
+      "id": 45,
+      "name": "מבוגרים",
+      "taxonomy": "event_category"
+     },
+     {
+      "id": 28,
+      "name": "מוזיקה",
+      "taxonomy": "event_category"
+     }
+    ],
+    [
+     {
+      "id": 29,
+      "name": "בית הבאר",
+      "taxonomy": "event_location"
+     }
+    ]
+   ]
+  }
+ },
+ {
+  "id": 2568,
+  "date": "2026-10-05T05:36:52",
+  "date_gmt": "2026-10-05T05:36:52",
+  "guid": {
+   "rendered": "https://kfar-saba-museum.org/?post_type=hello_event&#038;p=2568"
+  },
+  "modified": "2026-10-22T09:35:52",
+  "modified_gmt": "2026-10-22T09:35:52",
+  "slug": "the_electronic_journey_of_sayed_darwish",
+  "status": "publish",
+  "type": "hello_event",
+  "link": "https://kfar-saba-museum.org/events/the_electronic_journey_of_sayed_darwish/",
+  "title": {
+   "rendered": "**נדחה** המסע האלקטרוני של סייד דרוויש"
+  },
+  "content": {
+   "rendered": "",
+   "protected": false
+  },
+  "excerpt": {
+   "rendered": "",
+   "protected": false
+  },
+  "featured_media": 2632,
+  "template": "",
+  "event_category": [],
+  "event_location": [],
+  "class_list": [
+   "post-2568",
+   "hello_event",
+   "type-hello_event",
+   "status-publish",
+   "has-post-thumbnail",
+   "hentry"
+  ],
+  "acf": [],
+  "_embedded": {
+   "wp:featuredmedia": [
+    {
+     "id": 2632,
+     "source_url": "https://kfar-saba-museum.org/wp-content/uploads/2026/10/IMG-20261019-WA0080.jpg"
+    }
+   ],
+   "wp:term": []
+  }
+ }
+]

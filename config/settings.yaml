@@ -987,6 +987,7 @@ enrichment:
     agnonhouse: [literature]  # Agnon's house: lectures and evenings on literature; no categories
     rabincenter: [culture]  # Israeli-culture shows and artist meetings; no categories
     ybz: [lectures]  # Yad Ben-Zvi: lectures, book evenings and study days; the type tag maps the rest (labels)
+    kfarsabamuseum: [culture]  # Kfar Saba Museum: concerts, family days and workshops; categories map the rest
     eventpro: [culture]  # community-centre programme: the title names the genre, a show otherwise
     goshow: [live_show]  # stand-up, jazz and talks: the title names most; a show otherwise
     matnasnet: [culture]  # community centres tag events only "קהילה"; the title names the rest
@@ -2237,6 +2238,7 @@ search:
     agnonhouse: ["בית עגנון", "agnon house", "עגנון"]
     rabincenter: ["מרכז רבין", "מרכז יצחק רבין", "rabin center", "המוזיאון הישראלי"]
     ybz: ["יד בן צבי", "יד בן-צבי", "יד יצחק בן צבי", "יד יצחק בן-צבי", "yad ben zvi", "yad ben-zvi"]
+    kfarsabamuseum: ["מוזאון כפר סבא", "מוזיאון כפר סבא", "kfar saba museum", "בית הבאר כפר סבא"]
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
@@ -5930,6 +5932,32 @@ sources:
     labels:                 # the series heading (the text's first line) -> words our genres read
       "תרבות ישראלית": [מופע]
     skip_title_words: ["הטבה לעובדי", "קורס", "השתלמות"]
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
+
+  kfarsabamuseum:
+    # Kfar Saba Museum (kfar-saba-museum.org, מוזאון כפר סבא): concerts and shows at Beit HaBe'er, family days and
+    # children's shows in Baron Menashe's garden and the archaeological garden, workshops at Beit Sapir. WordPress +
+    # the Hello Tickets plugin: one call to its public occurrences route (every dated performance, a year ahead),
+    # one wp/v2/hello_event call (categories, artwork), the WooCommerce store API (1-2 pages: the tiers' prices)
+    # and each event page (its text): ~10 requests. Sections: לוח פעילויות ואירועי תרבות /yoman-eruim/ (read: the
+    # occurrences route is its data; the category pages /event-category/* list the same posts). Not read: כרטיסי
+    # כניסה לאתרים (admission tickets), חוגים (classes), חינוך (school programmes), השתלמויות, הפקות לחברות
+    # (private), תערוכות (exhibitions, no dates), the shop and the books. Answers direct; robots.txt allows it.
+    enabled: true
+    cron: "9 8,20 * * *"
+    city: כפר סבא
+    places:                 # the occurrence's place name -> venue, address, point
+      "בית הבאר": {venue_name: "בית הבאר - מוזאון כפר סבא", address: "ויצמן 135", latitude: 32.1746487, longitude: 34.9123102}   # behind the city hall (Nominatim: עיריית כפר סבא)
+      "גן הברון מנשה": {venue_name: גן הברון מנשה, address: "מול אנגל 37", latitude: 32.1960436, longitude: 34.8981185}   # Nominatim: leisure=park
+      "הגן הארכיאולוגי": {venue_name: הגן הארכיאולוגי כפר סבא, address: "האילנות, יוספטל", latitude: 32.1817998, longitude: 34.9369124}   # Nominatim: tourism=museum
+      "סדנת המוזאון בבית ספיר": {venue_name: "סדנת המוזאון בבית ספיר", address: "ירושלים 33"}
+    labels:                 # a category -> words our genres read beside it
+      "פסטיבל בתים פתוחים": [פסטיבל]
+      "גאווה": ["להט\"ב"]
+    may_be_empty: true      # a small programme: some months have no performance
+    skip_title_words: ["חוג", "קורס", "שיעור ניסיון", "השתלמות", "כרטיס כניסה"]
     http:
       concurrency: 1
       request_delay_seconds: 1.0
