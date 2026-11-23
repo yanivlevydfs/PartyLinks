@@ -4,9 +4,10 @@ councils run (givatzeev.org.il, mymatnas.org.il, hof-hasharon.atarix.co.il, ...)
 Every site has ``page.php?type=events`` and one page per event ``page.php?type=event&id=N``, but
 each site picks one of a dozen themes, so the listing is read only for its event links (the ones
 above "ארכיון אירועים", the archive; a calendar theme lists one month, so ``months`` more month
-pages are read). The event page is read the same way on every theme: its schema.org ``Event``
-JSON-LD gives the title, days, image, price and description; the time comes from the "add to
-calendar" link (``dates=20261027T173000/...``) or the page's "שעה" / "בשעות" line, the place from
+pages are read; an event group's card links ``type=events&gr=N``, whose page lists every date of
+the group, so each group page is read too). The event page is read the same way on every theme:
+its schema.org ``Event`` JSON-LD gives the title, days, image, price and description; the time comes
+from the "add to calendar" link (``dates=20261027T173000/...``) or the page's "שעה" / "בשעות" line, the place from
 the calendar file's ``LOCATION:`` or the theme's place field, categories from the theme's tags
 (only some themes show them; enrichment reads the title for the rest). The seller's link (Tickchak,
 hugim.org.il...) is kept as ``extra["purchase_url"]``; an event sold by a Smarticket box office the
@@ -31,6 +32,7 @@ from partylinks.scrapers.base import BaseScraper, SourceBlockedError, SourceSett
 from partylinks.scrapers.smarticket import tenant_host
 
 _EVENT_LINK = re.compile(r"page\.php\?type=event&(?:amp;)?id=(\d+)")
+_GROUP_LINK = re.compile(r"page\.php\?type=events&(?:amp;)?gr=(\d+)")
 _ARCHIVE = "ארכיון אירועים"
 # "add to calendar": dates=20261027T173000/20261027T193000 (the end is a default, not the site's)
 _CAL_START = re.compile(r"dates=(\d{8})T(\d{2})(\d{2})")
@@ -85,8 +87,14 @@ class MatnasnetScraper(BaseScraper[MatnasnetSettings]):
 
     async def _site(self, site: MatnasnetSite, skip: frozenset[str]) -> AsyncIterator[ScrapedEvent]:
         ids: dict[str, None] = {}
+        groups: dict[str, None] = {}
         for page_url in listing_urls(site, datetime.now(zone(self.timezone)).date()):
             page = await self.optional(f"{page_url} listing", self.get_text(page_url))
+            ids.update(dict.fromkeys(parse_listing(page or "")))
+            groups.update(dict.fromkeys(parse_groups(page or "")))
+        for group in groups:  # every date of an event group (the listing shows one card per group)
+            page_url = f"{site.url}/page.php?type=events&gr={group}"
+            page = await self.optional(f"{page_url} group", self.get_text(page_url))
             ids.update(dict.fromkeys(parse_listing(page or "")))
         self.log.debug("%s: listed %d events", site.city, len(ids))
 
@@ -94,7 +102,9 @@ class MatnasnetScraper(BaseScraper[MatnasnetSettings]):
             url = f"{site.url}/page.php?type=event&id={event_id}"
             event = build_event(url, await self.get_text(url), site, self.timezone, skip)
             # The listing's upcoming part still shows today's past shows and courses that began months ago.
-            current = event and is_current(event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known)
+            current = event and is_current(
+                event.start_at, event.end_at, RetentionSettings(), self.timezone, time_known=event.time_known
+            )
             return event if current else None
 
         async for event in self.stream_isolated(ids, fetch, label=lambda i: f"{site.url} event {i}"):
@@ -112,6 +122,11 @@ def listing_urls(site: MatnasnetSite, today: date) -> list[str]:
 def parse_listing(page_html: str) -> list[str]:
     """Event ids linked from the upcoming part of a listing (the archive below it is left out)."""
     return list(dict.fromkeys(_EVENT_LINK.findall(page_html.split(_ARCHIVE)[0])))
+
+
+def parse_groups(page_html: str) -> list[str]:
+    """Event-group ids linked from the upcoming part of a listing."""
+    return list(dict.fromkeys(_GROUP_LINK.findall(page_html.split(_ARCHIVE)[0])))
 
 
 def _text(node: LexborNode | None) -> str:

@@ -12,6 +12,7 @@ from partylinks.scrapers.matnasnet import (
     build_event,
     covered_smarticket_hosts,
     listing_urls,
+    parse_groups,
     parse_listing,
 )
 
@@ -34,6 +35,13 @@ def test_listing_leaves_out_the_archive_and_month_pages() -> None:
         "https://www.elkana.org.il/page.php?type=events&m=1&y=2027",
         "https://www.elkana.org.il/page.php?type=events&m=2&y=2027",
     ]
+
+
+def test_event_group_pages_list_every_date() -> None:
+    listing = (FIXTURES / "atlit_events.html").read_text("utf-8")
+    assert parse_listing(listing) == ["112769", "6229"] and parse_groups(listing) == ["71", "148"]
+    # the group's later date (6729) is linked only from the group page
+    assert parse_listing((FIXTURES / "atlit_group71.html").read_text("utf-8")) == ["6229", "6729"]
 
 
 def test_card_theme_with_tickchak_link() -> None:
