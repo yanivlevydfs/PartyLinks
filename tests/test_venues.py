@@ -95,3 +95,42 @@ def test_a_name_found_all_over_town_ties_no_halls_together() -> None:
         VenueInput("d", "מועדון ב", "מועדון ב", "דיזנגוף 9", 32.09, 34.77, "תל אביב"),
     ]
     assert infer_venues(rows) == {}
+
+
+def test_no_chain_from_one_building_to_the_next() -> None:
+    """Prod, Nov 2026: Tzavta's dates showed as "תיאטרון הקאמרי". Ibn Gabirol 30 holds Tzavta, Gray and Bar Giyora;
+    a form's placeholder name sat at that address and at Beit Ariela's, and one Cameri show at Beit Ariela's
+    address chained the street keys into one venue."""
+    tlv = "תל אביב"
+
+    def at(id: str, name: str, address: str | None, lat: float | None = None, lng: float | None = None) -> VenueInput:
+        return VenueInput(id, name, name, address, lat, lng, tlv)
+
+    rows = [
+        *[at(f"tz{i}", "צוותא", "שלמה אבן גבירול 30") for i in range(4)],
+        at("tz-hall1", "צוותא 1", None, 32.0767, 34.7863),  # a hall, on Beit Ariela's pin
+        at("tz-hall2", "צוותא 2, תל אביב", "אבן גבירול 30"),
+        *[at(f"gray{i}", "מועדון GRAY", "שלמה אבן גבירול 30") for i in range(3)],
+        *[at(f"bg{i}", "בר גיורא", "אבן גבירול 30") for i in range(3)],
+        at("babu", "באבו בר", "אבן גבירול 30"),
+        # a placeholder name at both buildings and elsewhere: it is in no one place
+        at("form1", "הוספת ערך משלך ידנית", "אבן גבירול 30"),
+        at("form2", "הוספת ערך משלך ידנית", "שאול המלך 25"),
+        at("form3", "הוספת ערך משלך ידנית", "מרון חנה 2"),
+        *[at(f"ariela{i}", "בית אריאלה", "שאול המלך 25") for i in range(3)],
+        *[at(f"cameri{i}", "תיאטרון הקאמרי", "שאול המלך 19") for i in range(5)],
+        at("cameri-away", "תיאטרון הקאמרי", "שאול המלך 25"),  # one show at another address
+        at("cameri-hall", "תיאטרון הקאמרי - אולם 2", "שאול המלך 19"),
+    ]
+    assert infer_venues(rows) == {"tz-hall1": "צוותא", "tz-hall2": "צוותא", "cameri-hall": "תיאטרון הקאמרי"}
+
+
+def test_spellings_at_one_place_still_merge() -> None:
+    """One venue in two scripts and two spellings at one address is still one venue."""
+    rows = [
+        *[VenueInput(f"b{i}", "בארבי", "בארבי", "נמל יפו 1", None, None, "תל אביב") for i in range(3)],
+        VenueInput("latin", "Barby", "Barby", "Jaffa Port 1, Tel Aviv", 32.0535, 34.7627, "תל אביב"),
+        VenueInput("pin", "בארבי", "בארבי", "נמל יפו 1", 32.0535, 34.7627, "תל אביב"),
+        VenueInput("club", "מועדון הבארבי", "מועדון הבארבי", "נמל יפו 1", None, None, "תל אביב"),
+    ]
+    assert infer_venues(rows) == {"latin": "בארבי", "club": "בארבי"}
