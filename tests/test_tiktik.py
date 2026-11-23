@@ -98,3 +98,40 @@ def test_tiktik_lists_the_whole_catalogue() -> None:
 
     assert asyncio.run(go()) == []
     assert len(seen) == 1 and "category" not in seen[0]  # one listing, not one per category
+
+
+def test_tiktik_reads_a_catalogue_past_forty_pages() -> None:
+    # 4,114 products by Nov 2026, listed oldest first: a 40-page cap left the newest ~100 out.
+    import asyncio
+
+    import httpx
+
+    from partylinks.config import Settings
+    from partylinks.scrapers import build_scraper
+
+    scraper = build_scraper("tiktik", Settings())
+    assert isinstance(scraper, tiktik.TiktikScraper)
+    scraper.http.request_delay_seconds = 0
+    pages: list[int] = []
+    read: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.startswith("/wp-json/"):
+            page = int(request.url.params["page"])
+            pages.append(page)
+            # Only the newest product (the last page's) links to a page: the rest are not fetched.
+            items: list[dict[str, object]] = [{"id": page * 100 + i} for i in range(100 if page < 42 else 14)]
+            if page == 42:
+                items[-1]["permalink"] = "https://x.example/newest/"
+            return httpx.Response(200, json=items, headers={"X-WP-Total": "4114"})
+        read.append(str(request.url))
+        return httpx.Response(200, text="<p>no event</p>")
+
+    async def go() -> list[tiktik.ScrapedEvent]:
+        async with scraper:
+            scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            return [e async for e in scraper.scrape()]
+
+    assert asyncio.run(go()) == []
+    assert sorted(pages) == list(range(1, 43))  # all 42 pages
+    assert read == ["https://x.example/newest/"]

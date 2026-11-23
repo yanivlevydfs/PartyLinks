@@ -44,7 +44,9 @@ class TiktikSettings(SourceSettings):
     category_ids: list[int] = Field(default_factory=list)  # WooCommerce product categories (music, sport)
     # Every product, not the categories alone: matches sit in league categories outside music and sport too.
     whole_catalogue: bool = True
-    max_pages: int = Field(40, ge=1)
+    # Listed by id, oldest first: at the cap the newest products were the ones left out. The catalogue passed
+    # 40 pages (4,114 products, every run since Nov 19 2026 "listing truncated at max_pages=40").
+    max_pages: int = Field(80, ge=1)
     page_size: int = Field(100, ge=1, le=100)  # products per listing request (the Store API allows 100 at most)
 
 
