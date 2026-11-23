@@ -803,10 +803,10 @@ enrichment:
                    "benefit concert", "גאלה", "גאלת", "פילנתרופיה"]  # community galas (ogo_us, Nov 2026)
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
-    reggaeton_latin: ["música latina"]
+    reggaeton_latin: ["música latina", "urban kiz", "אורבן קיז"]  # Havana Club's urban kizomba nights
     flamenco: ["música flamenca"]
-    melodic_techno: ["melodic"]  # beatradar / getin's genre label
-    electronic: ["música electrónica"]
+    melodic_techno: ["melodic", "מלודיק", "מלודי"]  # beatradar / getin's genre label; hypd's and beatradar's Hebrew tags
+    electronic: ["música electrónica", "אלקטרו", "אלקטרוניקה", "דאנס"]  # iwant / beatradar tags (source audit, Nov 2026)
     happy_hour: ["happy hour", "happy-hour", "happyhour", "האפי האוור", "האפי אוור", "הפי האוור"]
     # HappyTLV's place sections (see happytlv.places): one word each, declared by the scraper.
     escape_rooms: ["escape rooms", "מרחב בריחה", "מרחבי בריחה", "חדר בריחה", "חדרי בריחה"]
@@ -851,12 +851,12 @@ enrichment:
     # Secret Tel Aviv's categories (its parties are told apart by their music genres), widened with the
     # category names other sources declare: municipal calendars (Tel Aviv, Holon, Haifa, Bina cities),
     # box offices, guides (OGO tags, some in Russian), viagogo / abroad sellers.
-    live_show: ["konsert", "konserter", "koncert", "konzerte", "clubkonzerte", "schlager & volksmusik", "במות פתוחות", "קרקס", "live music", "livemusic", "international artists", "concert", "concerts", "other concerts", "מופעי לילה",
+    live_show: ["konsert", "konserter", "koncert", "konzerte", "singer-songwriter", "clubkonzerte", "schlager & volksmusik", "במות פתוחות", "קרקס", "live music", "livemusic", "international artists", "concert", "concerts", "other concerts", "מופעי לילה",
                 "show", "shows", "performances", "music", "הופעות", "הופעה", "הופעות מוזיקה", "מופע", "מופעים",
                 "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki", "קונצרטים", "מופעי מבוגרים", "קסמים וקרקס", "שובו של הקרקס", "موسيقى", "אנסמבל", "תזמורת המהפכה", "candlelight", "הפעלה מוזיקאלית", "magia", "cabaret"]  # concets: Eventer's spelling of its concerts category
-    festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele", "חשיפה בינלאומית"]
+    festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele", "חשיפה בינלאומית", "tomorrowland"]
     # Not "קהילה" / "קהילתי": community centres tag every event so (kids' shows, workshops), a place, not a meetup.
-    meetups: ["فعاليات اجتماعية", "meetups", "community", "meeting", "פעילות חברתית", "ערב חברתי", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות", "מפגשים חברתיים"]
+    meetups: ["فعاليات اجتماعية", "meetups", "community", "meeting", "פעילות חברתית", "ערב חברתי", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות", "מפגשים חברתיים", "митап"]
     culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית", "תרבות", "קהילה", "קהילות", "אירועים קהילתיים", "מרכזים קהילתיים", "אירועי מרכזים קהילתיים", "פעילות קהילתית", "המרכז לאומנויות", "אירוע", "אירועים", "תרבות מבוגרים", "שבת תרבות", "מפגשי שכונות", "הבוטיק מועדון תרבות", "החיים הטובים", "לא שיגרתי"]
     photography: ["צילום", "photography", "photo", "צילום ואמנות", "צילום ועריכה"]
     exhibitions: ["exhibitions", "exhibition", "art", "taidenäyttely", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum", "יום המוזיאונים", "אירועי קומיקס", "tentoonstellingen",
@@ -865,7 +865,7 @@ enrichment:
     cinema: ["kino", "film", "סרט", "أفلام", "movies", "sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב", "מזרח אסיה על המסך הגדול"]
     stand_up: ["kabarett", "comedia", "komödie", "comedy club", "ستاند اب كوميدي", "comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ", "comy", "סאטירה", "קומדי בר", "סטנד-אפ", "סטנדאפ", "stand-up", "kleinkunst", "monólogo", "comédie"]
     markets: ["كريسمس ماركت", "shopping", "יריד", "ירידים", "שוק", "שווקים", "ярмарка", "fair"]
-    food: ["קולינריה", "culinary", "comida & bebida", "essen & trinken", "food events", "food", "אוכל", "מזון", "מפגשים קולינריים", "טעימות יין", "טעימות בירה", "tastings", "בישול ואפייה", "אלכוהול", "מאכלי עדות", "צמחוני וטבעוני", "מתוקים", "מטבח אסייתי", "ארוחה משותפת"]
+    food: ["קולינריה", "culinary", "comida & bebida", "essen & trinken", "food events", "food", "אוכל", "מזון", "מפגשים קולינריים", "טעימות יין", "טעימות בירה", "tastings", "בישול ואפייה", "אלכוהול", "מאכלי עדות", "צמחוני וטבעוני", "מתוקים", "מטבח אסייתי", "ארוחה משותפת", "eten en drinken"]
     environment: ["חודש האקלים", "אקלים", "climate", "environmental", "סביבה", "איכות הסביבה", "קיימות", "טבע", "גינות"]
     religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат", "chassidic", "religion"]
     holidays: ["טו בשבט", "عروض عيد الميلاد", "holidays", "halloween", "חגים", "חג", "праздник", "hanukkah", "chanukah", "christmas", "new year",
@@ -878,7 +878,7 @@ enrichment:
     classical_opera: ["oper & operette", "oper", "operette", "klassik", "classical", "קלאסי", "música clásica", "opéra", "opérette", "קלאסית", "קאמרית"]
     # Genres only as a source's own category: in text these are plain words ("folk tales", "organic wine",
     # "VIP lounge", "garage sale", "tourist trap", "hardcore fans", "Jungle Book", "Greek salad").
-    psytrance: ["psy", "goa", "forest", "psychedelic"]
+    psytrance: ["psy", "goa", "forest", "psychedelic", "פסיכדליה"]
     minimal_deep_tech: ["minimal"]
     downtempo_chill: ["organic", "lounge"]
     ambient: ["ambient"]
@@ -887,7 +887,7 @@ enrichment:
     bass_dubstep: ["garage", "breaks"]
     hardstyle: ["hardcore", "uptempo"]
     drum_and_bass: ["jungle"]
-    greek: ["greek", "יווני", "יוונית"]
+    greek: ["greek", "יווני", "יוונית", "טברנה"]  # Concert's "טברנה" (Greek taverna nights)
     metal: ["hard & heavy", "metal"]
     punk: ["punk"]
     country: ["country", "קאנטרי"]
