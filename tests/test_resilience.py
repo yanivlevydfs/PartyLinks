@@ -854,3 +854,14 @@ def test_impersonating_transport_asks_again_when_curl_hands_over_103_early_hints
     response = asyncio.run(transport.handle_async_request(httpx.Request("GET", "https://chillz.com/en/x")))
     assert response.status_code == 200 and response.content == b"ok"
     assert calls == [None, CurlHttpVersion.V1_1]
+
+
+def test_cloudflare_unable_to_reach_the_site_is_retried() -> None:
+    """tarbut.events, Nov 2026: one 522 (Cloudflare timed out on the site's server) ended a run of 3,600 events."""
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(522) if len(calls) == 1 else httpx.Response(200, json={})
+
+    assert asyncio.run(probe(handler).get_json("https://x.example/api")) == {} and len(calls) == 2

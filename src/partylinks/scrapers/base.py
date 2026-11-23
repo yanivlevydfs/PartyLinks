@@ -54,16 +54,21 @@ from partylinks.parsing import ParseError, cf_emails, to_int
 T = TypeVar("T")
 R = TypeVar("R")
 
-RETRYABLE_STATUS = frozenset({408, 425, 429, 500, 502, 503, 504})
+# Cloudflare could not get the page from the site's own server (520 unknown, 521 down, 522 / 524 timed out, 523
+# unreachable): the site's trouble, mostly gone in a minute, not a refusal (tarbut.events: one 522 after 3,600
+# events ended the run, Nov 2026).
+CLOUDFLARE_ORIGIN = frozenset({520, 521, 522, 523, 524})
+RETRYABLE_STATUS = frozenset({408, 425, 429, 500, 502, 503, 504}) | CLOUDFLARE_ORIGIN
 THROTTLED = (429, 503)  # a proxied source moves to the next proxy on these
 
 
 def _firewall_code(status: int) -> bool:
-    """A status no HTTP spec defines (haifa.muni.il 482, tel-aviv.gov.il 472 / 571): a firewall refusing the IP."""
+    """A status no HTTP spec defines (haifa.muni.il 482, tel-aviv.gov.il 472 / 571): a firewall refusing the IP.
+    Not Cloudflare's own codes for an unreachable site: another IP would meet the same."""
     try:
         HTTPStatus(status)
     except ValueError:
-        return status >= 400
+        return status >= 400 and status not in CLOUDFLARE_ORIGIN
     return False
 
 
