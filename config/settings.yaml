@@ -1437,6 +1437,14 @@ geocoding:
     "תיאטרון יפו - במה לתרבות ערבית-עברית": [32.0548894, 34.7539944]  # Jaffa Theatre, Mifratz Shlomo 10 (Nominatim amenity=theatre, as the jaffatheatre source; smarticket tenant)
     "בית פרסקו": [32.1102870, 34.8411160]                # Beit Fresco for dance, HaBarzel 31 (RAD building), Ramat HaHayal, Tel Aviv (fresco.org.il; Nominatim house; smarticket)
     "אודיטוריום אריסון": [32.0657741, 34.7816521]        # Arison Arts Center, Saadia Gaon 7, Tel Aviv (OSM node 761906585; Fresco's smarticket hall name)
+    "גודמן - בית ספר למשחק": [31.2485556, 34.8009722]    # Goodman acting school, old Beit HaAm, Shazar Blvd 8, Be'er Sheva (he.wikipedia; smarticket act-b7)
+    "מורשת יהדות בבל": [32.0261069, 34.8543649]          # Babylonian Jewry Heritage Center, Or Yehuda (Nominatim tourism; smarticket bjhc)
+    "מצוקי דרגות": [31.5909351, 35.3933274]              # Metzoke Dragot (OSM village point; smarticket deadsea)
+    "מועדון קליה": [31.7498072, 35.4661484]              # Kibbutz Kalya's club (OSM village point; smarticket deadsea)
+    "תיאטרון דידה": [32.1710239, 34.8256263]             # Dida, Yosef Nevo 18, Herzliya (OSM building "הכוכב השמיני", its youth club; smarticket dida)
+    "בית צבי - בית הספר לאמנויות הבמה": [32.0784961, 34.8216731]  # Beit Zvi, Ramat Gan (Nominatim amenity; smarticket beit-zvi, hasifriya)
+    "פארק קרסו למדע": [31.2418329, 34.7859019]           # Carasso Science Park, HaAtzmaut 79, Be'er Sheva (Nominatim tourism; smarticket sci-park)
+    "בית מורשת משטרת ישראל": [31.7390676, 34.9499198]    # Police Heritage Center, in the National Police College, Beit Shemesh (Nominatim amenity; smarticket)
     "מוזיאון יעקב אגם": [31.9680623, 34.7822385]         # Yaacov Agam Museum, Mishar 1, Rishon LeZion
     "מוזיאון מורשת החשמונאים": [31.9078625, 35.0071423]  # Hasmonean Heritage Museum, Dam HaMaccabim 24, Modi'in
     "משכן לאמנות עין חרוד": [32.5610011, 35.3932473]     # Mishkan Museum of Art, Ein Harod
@@ -3277,9 +3285,10 @@ sources:
       - {host: poetryslam, venue_name: פואטרי סלאם, skip_title_words: ["סדנת", "סדנה", "קורס"]}
       - {host: shachar, rooms: true, venue_name: תאטרון השחר, city: תל אביב-יפו}   # HaHashmal 6
       - {host: rclub, venue_name: קאנטרי רמת רחל, city: ירושלים, skip_title_words: ["כרטיס כניסה", "מנוי"]}   # entry tickets are not events
-      - {host: sci-park}          # no shows on 23.11.2026; its events show when it lists some
-      - {host: rakiamission}      # no shows on 23.11.2026
-      - {host: policemuseum}      # no shows on 23.11.2026
+      # No shows on 23.11.2026; their events show when they list some. rakiamission (the Rakia space mission) was
+      # removed 23.11.2026: no shows and no hall of its own to place them.
+      - {host: sci-park, rooms: true, venue_name: פארק קרסו למדע, city: באר שבע, skip_title_words: ["כרטיס כניסה", "כניסה לפארק"]}
+      - {host: policemuseum, rooms: true, venue_name: בית מורשת משטרת ישראל, city: בית שמש, skip_title_words: ["כרטיס כניסה", "כניסה למוזיאון"]}
       # The Wayback index's s-z hosts (Nov 2026). Left out: soreq, sportbinyamin, t, t-mara, teo, ycl, zion, zvi,
       # womenwagepeace, smsite, staticb, the xn-- planetanya alias ("לא נמצאה מערכת": gone), training (Smarticket's
       # demo shows), static / status / o2.trans-out (no box office), tamuseum (robots.txt), youtheater (403, even via
@@ -3289,7 +3298,7 @@ sources:
       - {host: tziporela, venue_name: תיאטרון ציפורלה}   # touring: the hall names the town
       - {host: visitashdod, venue_name: Visit Ashdod, city: אשדוד,
          skip_title_words: ["הצעות נישואין", "מצפה עומרי כהן", "- new"]}   # proposal / lookout booking slots, a draft copy
-      - {host: wikimedia-il}      # no shows on 23.11.2026
+      # wikimedia-il removed 23.11.2026: no shows, and its meetups have no hall of their own.
       # The index's tiptaf..tm hosts: telfed and tikva are gone, tlv-beitbialik answers 403 (even via the VPN; = tlv-bialik).
       - {host: tiptaf, rooms: true, venue_name: טיפ טף, city: חולון, skip_title_words: ["סדנת", "סדנה"]}   # toddlers' shows; parent-baby workshops left out
       # Found by guessing tenant names on Smarticket (23.11.2026; an unknown name answers "לא נמצאה מערכת").
@@ -3300,6 +3309,27 @@ sources:
          skip_titles: ["אירוע לדוגמא"]}   # Smarticket's sample show
       - {host: fresco, venue_name: בית פרסקו, city: תל אביב}   # Fresco dance company: Beit Fresco, Arison hall; Givatayim's theatre names its town
 
+      # Third pass (23.11.2026): Wayback, passive DNS (subdomain.center, hackertarget, rapiddns), urlscan, ~3,300 guessed
+      # names and every Israeli domain in this repo (tickets./kupa. too). Aliases of tenants above (same performance ids):
+      # bhm / tickets.anumuseum, heichalbair, htyavne, raanana, nalagaat, nz (= tarbut-nz), matnaso (= ofektivi),
+      # mediatheque-kids-cinema / -main-library (= mediatheque), midbarium (= kivunimb7), tickets.tziporela.com,
+      # tickets.mishkan7.co.il, tickets.act-b7.co.il. Left out: imj / tamuseum (robots.txt disallows all), histadrut
+      # (union members' seminars), dorledor (an Afula seniors' club: trips, classes, its members' outings), la-zug
+      # (trips abroad), outsider (a race), freshpaint (an art club's museum tour), lunada (entry slots), demo / training
+      # (Smarticket's samples). 403 with an empty body directly, via the VPN, evomi and the free Israeli proxies (closed):
+      # beresheet, chabad, galileemusic, givatzeev, hay-kef, hod-hasharon, hof-hasharon, kannot, keshet, m-hagilboa,
+      # mariaarberevents, nidev.
+      - {host: act-b7, rooms: true, venue_name: "גודמן - בית ספר למשחק בנגב", city: באר שבע, category: תיאטרון,   # the students' productions
+         skip_categories: ["אודישנים"], skip_title_words: ["מרכז מצוינות", "תשלום", "הרשמה"]}   # auditions, enrolment
+      - {host: bjhc, rooms: true, venue_name: מרכז מורשת יהדות בבל, city: אור יהודה}   # Babylonian Jewry Heritage Center: talks, evenings
+      # Megilot Dead Sea council: shows and talks in its villages (the hall names the village); its nature walks left out.
+      - {host: deadsea, venue_name: מועצה אזורית מגילות ים המלח, city: מועצה אזורית מגילות ים המלח, skip_title_words: ["סיור"]}
+      # Dida, Herzliya's children's theatre (dida.org.il, Yosef Nevo 18). A show "סגור לילדי ..." is a school's own.
+      - {host: dida, rooms: true, venue_name: תיאטרון דידה, city: הרצליה, category: הצגות ילדים, skip_title_words: ["סגור ל"]}
+      # A comedy show at ZOA House (Beit Zionei America, also read by `zoatlv`; dedup merges); the hall names the place.
+      - {host: donkeyland, venue_name: Donkeyland, city: תל אביב-יפו, category: בידור}
+      # HaSifriya theatre at Beit Zvi (= beit-zvi's venue). "תראו אותי" plays for school classes (grades 4-6).
+      - {host: hasifriya, rooms: true, venue_name: בית צבי - בית הספר לאמנויות הבמה, city: רמת גן, category: תיאטרון, skip_titles: ["תראו אותי"]}
   secrettelaviv:
     # Curated city listings (WordPress Events Manager). The iCal feed (/?ical=1) lists every upcoming
     # event in one request; each event page adds the full description and the original-event link.
