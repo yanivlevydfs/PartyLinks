@@ -2,7 +2,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { getJSON, type Params, toQuery, useCategories, useEvents, useLandingInfo } from "../api";
+import { getJSON, getJSONProgress, type Params, toQuery, useCategories, useEvents, useLandingInfo } from "../api";
 import type { Facet } from "../types";
 import { ArtistLinks } from "../artist_links/ArtistLinks";
 import { ArtistPlayer } from "../artist_links/ArtistPlayer";
@@ -12,7 +12,7 @@ import { MapLinks } from "../places/MapLinks";
 import { ScopedEvents } from "../filter_scope/ScopedEvents";
 import { useWeb } from "../site_params/useWeb";
 import { outbound } from "../utm";
-import { artistPath, Chip, countryName, Hero, Img, label, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
+import { artistPath, Chip, countryName, Hero, Img, label, Loader, Related, SHARE_ICONS, useT, useTitle, venuePath } from "../ui";
 
 // The name's first letter, drawn when there is no picture.
 const initial = (s: string) => {
@@ -62,6 +62,7 @@ function FacetIndex({ title, kind, path, logos, extra, toolbar }: {
   const [typed, setTyped] = useState(""); // the box, ahead of the search while the user types
   const [area, setArea] = useState<string | null>(null);
   const [view, setView] = useState<View>(savedView);
+  const [loaded, setLoaded] = useState(0); // the first page's share received: the loader's real percent
   useTitle(title);
   useEffect(() => {
     const id = setTimeout(() => setQ(typed.trim()), web.search_debounce_ms);
@@ -71,7 +72,10 @@ function FacetIndex({ title, kind, path, logos, extra, toolbar }: {
   const qs = toQuery({ q: q || undefined, area: area ?? undefined, page_size: String(web.index_page_size), ...extra });
   const list = useInfiniteQuery({
     queryKey: ["facets", kind, qs],
-    queryFn: ({ pageParam, signal }) => getJSON<FacetPage>(`/facets/${kind}?${qs}&page=${pageParam}`, signal),
+    queryFn: ({ pageParam, signal }) =>
+      pageParam === 1
+        ? getJSONProgress<FacetPage>(`/facets/${kind}?${qs}&page=1`, (share) => setLoaded(Math.floor(share * 100)), signal)
+        : getJSON<FacetPage>(`/facets/${kind}?${qs}&page=${pageParam}`, signal),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page * web.index_page_size < last.total ? last.page + 1 : undefined),
     placeholderData: (prev) => prev, // the old list stays while the next search loads: no flash
@@ -109,14 +113,7 @@ function FacetIndex({ title, kind, path, logos, extra, toolbar }: {
           </div>
         )}
         {!first && list.isError && <p className="msg">{t.empty}</p>}
-        {!first && !list.isError && (
-          // Placeholders in the list's own shape while the first page loads (no logo, no spinner)
-          <div className={"facets sk-facets " + view} aria-busy="true" aria-label={t.loading}>
-            {Array.from({ length: view === "grid" ? 12 : 10 }, (_, i) => (
-              <div key={i} className="fi" aria-hidden><span className="fi-av sk" /><span className="sk sk-line" /><span className="sk sk-line short" /></div>
-            ))}
-          </div>
-        )}
+        {!first && !list.isError && <Loader progress={loaded || undefined} />}
         {first && !shown.length && <p className="msg">{q ? t.noMatch(q) : t.empty}</p>}
         {first?.fuzzy && <p className="msg">{t.closest(q)}</p>}
         <div className={"facets " + view + (searching ? " stale" : "")}>
