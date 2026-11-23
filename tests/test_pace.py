@@ -15,7 +15,9 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 LOG = logging.getLogger("test")
 
 
-def test_throttled_halves_the_requests_and_doubles_the_pause_up_to_the_cap() -> None:
+def test_throttled_halves_the_requests_and_doubles_the_pause_up_to_the_cap(monkeypatch: Any) -> None:
+    # One clock reading for the burst: on a busy machine the two calls were > 10 ms apart, a second burst.
+    monkeypatch.setattr("partylinks.pace.time.monotonic", lambda: 1000.0)
     pace = Pace(8, 0.0, PaceSettings(max_delay_seconds=1.0, min_delay_seconds=0.01), LOG)
     pace.throttled()
     pace.throttled()  # the same burst's second 429: no second slow-down
