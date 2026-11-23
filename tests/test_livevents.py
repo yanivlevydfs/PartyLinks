@@ -55,9 +55,44 @@ def test_sold_out_status() -> None:
     events = livevents.parse_table(tour, CALENDAR, "Asia/Jerusalem")
     munich = next(e for e in events if e.city == "מינכן")
     assert (str(munich.url), munich.currency, munich.min_price) == (
-        "https://livevents.co.il/package/oasis-muc-gold/", "EUR", Decimal(1299)
+        "https://livevents.co.il/package/oasis-muc-gold/",
+        "EUR",
+        Decimal(1299),
     )
     rome = [e for e in events if e.city == "רומא"]
     assert rome and all(e.is_sold_out and e.min_price is None for e in rome)
     assert not munich.is_sold_out
 
+
+def test_sport_tables() -> None:
+    """The sport section's tables (Nov 2026): football matches and Formula 1 weekends, no artist, a declared genre."""
+    fixtures = Path(__file__).parent / "fixtures" / "livevents"
+    matches_url = "https://livevents.co.il/matches/"
+    matches = livevents.parse_table(
+        (fixtures / "matches.html").read_text(encoding="utf-8"), matches_url, "Asia/Jerusalem", genre="כדורגל"
+    )
+    assert len(matches) == 8  # November 2026's eight match dates
+    city = matches[0]
+    assert (city.title, city.city, city.country, city.artists, city.source_genres, str(city.url)) == (
+        "צ'מפיונס: מנצ'סטר סיטי - נאפולי",
+        "מנצ'סטר",
+        "GB",
+        [],
+        ["כדורגל"],
+        matches_url,
+    )
+    assert city.start_at == datetime(2026, 11, 24, tzinfo=ZoneInfo("Asia/Jerusalem"))
+    assert city.extra == {"day": "מועד סופי"}
+    races = livevents.parse_table(
+        (fixtures / "formula1.html").read_text(encoding="utf-8"),
+        "https://livevents.co.il/formula1/",
+        "Asia/Jerusalem",
+        genre="motorsport",
+    )
+    assert len(races) == 27  # nine race weekends, three days each
+    abu = [e for e in races if e.title == "פורמולה 1 אבו דאבי"]
+    assert [e.extra["day"] for e in abu] == ["חימום", "חימום ודירוג", "יום המירוץ"]
+    assert {(str(e.url), e.currency, e.min_price, e.country) for e in abu} == {
+        ("https://livevents.co.il/race/formula-1-abu-dhabi/", "USD", Decimal(2499), "AE")
+    }
+    assert all(e.country != "ZZ" for e in races)
