@@ -20,6 +20,7 @@ from typing import Any
 
 from pydantic import Field
 
+from partylinks.config import RetentionSettings
 from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import (
     ParseError,
@@ -32,6 +33,7 @@ from partylinks.parsing import (
     to_float,
     to_int,
 )
+from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 CENTS = Decimal("0.01")
@@ -60,7 +62,11 @@ class ZygoScraper(BaseScraper[ZygoSettings]):
         linked = [url for url in self.linked_urls if url.startswith(prefix)]
         self.log.debug("listed %d events, %d more linked from other sites", len(ids), len(linked))
         seen: set[str] = set()  # a linked page can be a listed event under its other id
+        retention = RetentionSettings()
         async for event in self.stream_isolated([*ids, *linked], self._fetch_event, label=lambda i: i):
+            # A weeks-long "every Friday" promo that began earlier, or a placeholder date years ahead.
+            if not is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known):
+                continue
             if event.source_event_id not in seen:
                 seen.add(event.source_event_id)
                 yield event

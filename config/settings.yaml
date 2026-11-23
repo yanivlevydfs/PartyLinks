@@ -2465,6 +2465,7 @@ sources:
     city_slug: ""
     list_path: /v1/event/{city_slug}
     event_page_path: /event/{event_id}/zygo
+    # sections: /v1/event (all of Israel, 124 = the site's own total on /nightlife-israel, 23.11.2026) covers every menu page: home carousels, /tel-aviv (67), /weekend (112), /today, /explore (28 tags: artists, regions, genres), /holidays (9 tags), /venues and the 23 venue pages - each a subset of the list (0 missing); not read: /blog, /faq, /at-media, login/register/terms (no events).
     # The API caps pages at 10 and returns a shuffled order, so the list is
     # re-walked until a full pass yields no new ids.
     page_size: 10
