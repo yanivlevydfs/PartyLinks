@@ -107,7 +107,7 @@ accounts:
 community:
   enabled: true
   captcha_required: true
-  turnstile_site_key: ""
+  turnstile_site_key: "0x4AAAAAAGRPiakb-3c82K5X"   # public (the widget); the secret is in Railway only
   auto_publish: false      # every event and edit waits for an admin's approval (the owner's rule, 24.11.2026)
   trusted_after: 1         # with auto_publish: an account's events go live without review after this many approvals
   max_per_day: 5           # events one account may post in 24 hours
