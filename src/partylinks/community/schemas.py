@@ -103,14 +103,16 @@ class EventIn(BaseModel):
 
 
 class SubmitIn(EventIn):
-    """The form as sent: the event, the CAPTCHA's answer, the public-event promise and the hidden field."""
+    """The form as sent: the event, the CAPTCHA's answer, the poster's agreement to the terms and the hidden field."""
 
     captcha_token: Annotated[str, StringConstraints(max_length=4096)] = ""
-    public_event: Literal[True]  # "this is a public event, open to everyone"
+    # "I agree to the Terms and the Privacy Policy; the event is mine to answer for, SPOTX bears no responsibility
+    # for it" (web/src/community, the terms' user-events section). Saved with the event as terms_accepted_at.
+    accept_terms: Literal[True]
     website: str = ""  # hidden from people: a bot that fills it gets a quiet "thanks" and nothing is saved
 
     def event(self) -> EventIn:
-        return EventIn.model_validate(self.model_dump(exclude={"captcha_token", "public_event", "website"}))
+        return EventIn.model_validate(self.model_dump(exclude={"captcha_token", "accept_terms", "website"}))
 
 
 def zone(event: EventIn, default: str) -> ZoneInfo:

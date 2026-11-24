@@ -169,3 +169,4 @@ html[dir="rtl"] .cm-input[dir="ltr"] { text-align: right; }
   .cm-pics { grid-template-columns: repeat(2, 1fr); }
   .cm-send { max-width: none; }
 }
+.cm-toggle a { color: var(--cyan); text-decoration: underline; }

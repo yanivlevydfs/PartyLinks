@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Hero, HiddenEmail, useT, useTitle } from "../ui";
 
-const UPDATED = "2026-10-29";
+const UPDATED = "2026-11-24";
 
 type Section = { title: string; body: string[]; list?: string[] };
 
@@ -56,6 +56,22 @@ const TEXT = {
           "התראות ועדכונים נשלחים כמיטב יכולתנו (best effort): אירוע עלול שלא להופיע בהתראה, להגיע באיחור או להשתנות לאחר השליחה. הפרטים הקובעים הם אלה שבאתר הכרטיסים.",
           "מותר לנו להשעות או לחסום חשבון שמשמש לפגיעה באתר, לאיסוף מידע אוטומטי או בניגוד לתנאים אלה.",
           "אפשר למחוק את החשבון בכל עת בעמוד \"החשבון שלי\", ולהפסיק מיילים בקישור שבכל מייל. השימוש במידע מתואר במדיניות הפרטיות.",
+        ],
+      },
+      {
+        title: "אירועים שמשתמשים מפרסמים",
+        body: [
+          "משתמש מחובר יכול לפרסם אירוע בעמוד \"הוספת אירוע\". כל אירוע נבדק ומאושר על ידינו לפני שהוא מופיע באתר, ואנו רשאים לסרב לאירוע, לערוך את הצגתו או להסירו בכל עת ובלי לנמק.",
+          "מי שמפרסם אירוע מצהיר ומתחייב כי:",
+        ],
+        list: [
+          "הוא המארגן, המפיק או בעל המקום, או מורשה מטעמם, וכל הפרטים שמסר נכונים, מלאים ומעודכנים.",
+          "יש לו את כל הזכויות בתוכן ובתמונות שהעלה, והם אינם מפרים זכויות יוצרים, סימני מסחר, פרטיות או זכות אחרת של אדם כלשהו.",
+          "האירוע חוקי, מתקיים בפועל, ובעל כל הרישיונות, ההיתרים, הביטוחים ואישורי הבטיחות הנדרשים.",
+          "האחריות לאירוע כולו היא שלו בלבד: קיומו, ביטולו או שינויו, הכניסה אליו ומדיניות הסלקציה, מחירים, החזרים ותשלומים, הבטיחות והאבטחה, איכות האירוע והתוכן, הקהל והאנשים הנוכחים בו, וכל מה שקורה בו.",
+          "SPOTX ובעליו אינם מארגנים, מפיקים, מוכרים או מפקחים על האירוע, ואינם נושאים בכל אחריות כלפיו, כלפי המשתתפים בו או כלפי צד שלישי לכל נזק, הפסד, תביעה או הוצאה שייגרמו בקשר אליו.",
+          "הוא ישפה את SPOTX ובעליו על כל נזק, הוצאה או תביעה (כולל שכר טרחת עורך דין) שייגרמו להם בשל האירוע, התוכן שפורסם או הפרת התנאים.",
+          "הוא מעניק ל-SPOTX רישיון חינם להציג את פרטי האירוע ואת התמונות באתר, בשיתופים, בהתראות ובמיילים, כל עוד האירוע מופיע באתר.",
         ],
       },
       {
@@ -137,6 +153,22 @@ const TEXT = {
           "Alerts and updates are sent on a best-effort basis: an event may be missed, arrive late or change after it was sent. The ticketing site's details are the ones that count.",
           "We may suspend or block an account used to harm the site, to collect data automatically, or against these terms.",
           "You can delete your account at any time on \"My account\", and stop emails with the link in every email. How we use the data is described in the privacy policy.",
+        ],
+      },
+      {
+        title: "Events posted by users",
+        body: [
+          "A signed-in user can post an event on \"Add an event\". We review and approve every event before it appears on the site, and we may refuse, edit the display of, or remove any event at any time without giving a reason.",
+          "Whoever posts an event declares and undertakes that:",
+        ],
+        list: [
+          "They are the organizer, producer or venue owner, or authorized on their behalf, and every detail they gave is true, complete and up to date.",
+          "They hold all rights to the content and pictures they uploaded, which infringe no copyright, trademark, privacy or other right of anyone.",
+          "The event is lawful, actually takes place, and holds every licence, permit, insurance and safety approval it needs.",
+          "They alone are responsible for the whole event: whether it happens, is cancelled or changed, entry and door policy, prices, refunds and payments, safety and security, the quality of the event and its content, the audience and the people attending, and everything that happens there.",
+          "SPOTX and its owners do not organize, produce, sell or supervise the event, and bear no responsibility toward it, its attendees or any third party for any damage, loss, claim or expense arising in connection with it.",
+          "They will indemnify SPOTX and its owners for any damage, expense or claim (including legal fees) arising from the event, the posted content or a breach of these terms.",
+          "They grant SPOTX a free licence to show the event's details and pictures on the site, in shares, alerts and emails, for as long as the event is listed.",
         ],
       },
       {

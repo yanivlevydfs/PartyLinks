@@ -1015,3 +1015,11 @@ writer lock פעיל גם על PG (Q4), שינוי שורה אחת ב-`db.py:571
 - **Backfill:** `shortlinks.backfill` רץ פעם אחת ברקע בהפעלת ה-worker (לא חוסם את הסורקים): batches של 2000 (`SELECT id FROM events WHERE code IS NULL ORDER BY id LIMIT 2000`, ואז `UPDATE events SET code = v.code FROM (VALUES ...) v WHERE events.id = v.id AND events.code IS NULL`), transaction לכל batch והפסקה של 0.5 ש' ביניהם. על כ-170k שורות: כ-85 batches, פעם אחת; אחר כך ה-SELECT מחזיר 0 שורות מהאינדקס. ה-UPDATE לא HOT (עמודה מאונדקסת), כלומר פעם אחת entry חדש בכל אינדקס לכל שורה, כמו סבב סריקה מלא אחד. התנגשות עם סריקה במקביל (`IntegrityError`) מחזירה את ה-batch לסבב הבא.
 - **עמוד אחד לאירוע:** `dedup.primary_listing` מחליף את `agreed_listing` ב-`seo.event_page` וב-`api.get_event`: עמוד של listing כפול מציג את ה-primary של הקבוצה (ה-listing הכפול ברשימת המוכרים), וב-HTML הוא 301 לקוד של ה-primary. אין query חדש (`session.get` לפי PK, כמו קודם).
 - **Tests:** `tests/test_shortlinks.py`, `tests/test_storage_api.py` (ה-sitemap).
+
+### 2026-11-24 (`users.terms_accepted_at`: agreeing to the terms on sign-up)
+- **New column `users.terms_accepted_at`** (timestamptz, nullable, no default: `ADD COLUMN` in `create_schema`, no rewrite). Set on every
+  sign-in made with the "I agree to the Terms and the Privacy policy" box ticked (`/auth/google|facebook/login?terms=true`); a new
+  account without it is not created (`/?signin=terms`). Accounts from before stay NULL until their next sign-in.
+- **No new query:** the value is written in the sign-in's existing transaction (`UPDATE users` of the row already loaded).
+- **Community events:** each post and edit stores `terms_accepted_at` inside `community_events.data` (JSON, no schema change).
+- **Tests:** `tests/test_accounts.py::test_a_new_account_needs_the_terms`, `tests/test_community.py`.

@@ -14,6 +14,7 @@ from starlette.concurrency import run_in_threadpool
 from partylinks.accounts import sessions
 from partylinks.accounts.guard import limited
 from partylinks.accounts.service import Blocked, EmailTaken, Provider, sign_in
+from partylinks.db import utcnow
 
 log = logging.getLogger(__name__)
 router = APIRouter(tags=["accounts"], include_in_schema=False, dependencies=[limited("auth", "auth")])
@@ -47,8 +48,9 @@ def _with(target: str, param: str) -> str:
 
 
 @router.get("/auth/google/login")
-async def login(request: Request, next: str | None = None) -> Response:
+async def login(request: Request, next: str | None = None, terms: bool = False) -> Response:
     request.session["next"] = safe_next(next)
+    request.session["terms"] = terms  # the "I agree to the Terms and the Privacy Policy" box (finish)
     base = request.app.state.settings.site.base_url.rstrip("/")
     return await client(request).authorize_redirect(request, f"{base}/auth/google/callback")
 
@@ -56,6 +58,7 @@ async def login(request: Request, next: str | None = None) -> Response:
 def finish(request: Request, provider: Provider, info: dict[str, Any], target: str) -> Response:
     """Sign the user in (or say why not) and go back to ``target``. Shared with the Facebook sign-in."""
     cfg = request.app.state.settings
+    agreed = bool(request.session.pop("terms", False))
     with request.app.state.db.session() as session:
         try:
             user, is_new = sign_in(
@@ -67,6 +70,11 @@ def finish(request: Request, provider: Provider, info: dict[str, Any], target: s
             return RedirectResponse(_with(target, "signin=blocked"), 303)
         except EmailTaken:
             return RedirectResponse(_with(target, "signin=taken"), 303)
+        if is_new and not agreed:
+            session.rollback()  # no account without agreeing to the terms
+            return RedirectResponse(_with(target, "signin=terms"), 303)
+        if agreed:
+            user.terms_accepted_at = utcnow()
         response = RedirectResponse(_with(target, "welcome=1") if is_new else target, 303)
         sessions.start(session, response, user.id, cfg.accounts.session_days, cfg.site.base_url.startswith("https://"))
         log.info("sign-in (%s): user %s%s", provider, user.id, " (new)" if is_new else "")

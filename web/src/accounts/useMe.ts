@@ -53,9 +53,10 @@ export function useMe() {
   });
 }
 
-/** Where "Continue with Google / Facebook" goes: back to this page afterwards. */
-export const signInUrl = (next = location.pathname + location.search, provider: Provider = "google") =>
-  `/auth/${provider}/login?next=${encodeURIComponent(next)}`;
+/** Where "Continue with Google / Facebook" goes: back to this page afterwards. ``terms``: the visitor ticked
+ *  "I agree to the Terms and the Privacy policy" (the server opens no new account without it). */
+export const signInUrl = (next = location.pathname + location.search, provider: Provider = "google", terms = true) =>
+  `/auth/${provider}/login?next=${encodeURIComponent(next)}${terms ? "&terms=true" : ""}`;
 
 export function useSignOut() {
   const qc = useQueryClient();

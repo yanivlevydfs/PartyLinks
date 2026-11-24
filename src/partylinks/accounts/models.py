@@ -40,6 +40,9 @@ class UserRow(Base):
     last_digest_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     last_instant_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     welcome_sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # The last time they ticked "I agree to the Terms and the Privacy Policy" before signing in (the sign-in
+    # buttons' box; a new account can't be opened without it). None: an account from before 24.11.2026.
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow, index=True)
     last_login_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 

@@ -48,6 +48,10 @@ const TEXT = {
         body: ["בעל אירוע מחובר שממלא את טופס הקידום בעמוד \"קידום אירוע\" שולח לנו את שמו, שם ההפקה או העסק (לא חובה), כתובת דוא\"ל, טלפון נייד, האירועים שבחר, מה הוא רוצה לקדם והערות. המידע משמש רק כדי לחזור אליו בעניין הקידום ונשמר עד שהבקשה נמחקת. אפשר לבקש מחיקה בכל עת בכתובת שלמטה."],
       },
       {
+        title: "פרסום אירוע (רשות)",
+        body: ["משתמש מחובר שמפרסם אירוע בעמוד \"הוספת אירוע\" שולח לנו את פרטי האירוע (שם, תיאור, מועד, מקום, מארגן, אמנים, קישורי כרטיסים) והתמונות שהעלה, ואם ביקש קישור ממומן גם טלפון נייד. פרטי האירוע והתמונות מתפרסמים באתר אחרי אישורנו; השם, הדוא\"ל והטלפון של המפרסם אינם מתפרסמים. מהתמונות נשמרים רק עותקי WebP, והמידע הנלווה להן (EXIF, כולל מיקום GPS של טלפון) נמחק. אנחנו שומרים גם את מועד ההסכמה לתנאי השימוש. לבדיקת \"אני לא רובוט\" אנו משתמשים ב-Cloudflare Turnstile (Cloudflare, Inc., ארה\"ב), שמקבל לשם כך את כתובת ה-IP ונתונים טכניים של הדפדפן. המפרסם יכול למחוק אירוע שפרסם בכל עת באותו עמוד."],
+      },
+      {
         title: "טופס צור קשר (רשות)",
         body: ["מי ששולח הודעה בטופס שבעמוד \"צור קשר\" שולח לנו את שמו, כתובת דוא\"ל, נושא, קישור (לא חובה) וההודעה. המידע משמש רק כדי לענות לפונה, ונשמר עד שההודעה נמחקת. אפשר לבקש מחיקה בכל עת בכתובת שלמטה."],
       },
@@ -163,6 +167,10 @@ const TEXT = {
       {
         title: "Event promotion requests (optional)",
         body: ["A signed-in event owner who fills in the form on \"Promote your event\" sends us their name, production or business name (optional), email address, mobile number, the events they picked, what they want promoted and their notes. We use it only to get back to them about the promotion, and keep it until the request is deleted. You can ask for deletion at any time at the address below."],
+      },
+      {
+        title: "Posting an event (optional)",
+        body: ["A signed-in user who posts an event on \"Add an event\" sends us the event's details (name, description, date, place, organizer, artists, ticket links) and the pictures they uploaded, and a mobile number if they ask for a sponsored link. The event's details and pictures are published once we approve them; the poster's name, email and phone are never published. Only WebP copies of the pictures are kept, and their metadata (EXIF, including a phone's GPS position) is deleted. We also keep when the poster agreed to the terms. The \"I'm not a robot\" check is Cloudflare Turnstile (Cloudflare, Inc., USA), which receives your IP address and technical browser data for that purpose. The poster can delete their event at any time on the same page."],
       },
       {
         title: "Contact form (optional)",

@@ -36,11 +36,14 @@ const he = {
   welcomeAlerts: "יצירת התראה ראשונה",
   close: "סגירה",
   failed: "משהו השתבש, נסו שוב",
+  agree: ["אני מסכים/ה ל", "תנאי השימוש", " ול", "מדיניות הפרטיות"],
+  agreeFirst: "סמנו את התיבה כדי להמשיך",
   signin: {
     failed: "הכניסה בוטלה או נכשלה.",
     unverified: "חשבון ה-Google לא אומת. נסו חשבון אחר.",
     blocked: "החשבון הזה חסום. לפרטים כתבו לנו דרך עמוד צור קשר.",
     taken: "כתובת הדוא״ל הזו כבר מחוברת לחשבון אחר. כתבו לנו דרך עמוד צור קשר.",
+    terms: "כדי לפתוח חשבון צריך לאשר את תנאי השימוש ומדיניות הפרטיות. סמנו את התיבה ונסו שוב.",
     noemail: "לחשבון ה-Facebook אין כתובת דוא״ל מאושרת (או שלא אישרתם לשתף אותה). התראות ועדכונים נשלחים במייל, אז נסו שוב עם אישור הדוא״ל, או המשיכו עם Google.",
   } as Record<string, string>,
 };
@@ -80,11 +83,14 @@ const en: typeof he = {
   welcomeAlerts: "Create a first alert",
   close: "Close",
   failed: "Something went wrong, try again",
+  agree: ["I agree to the ", "Terms of use", " and the ", "Privacy policy"],
+  agreeFirst: "Tick the box to continue",
   signin: {
     failed: "Signing in was cancelled or failed.",
     unverified: "That Google account isn't verified. Try another one.",
     blocked: "This account is blocked. Write to us through the contact page.",
     taken: "That email is already linked to another account. Write to us through the contact page.",
+    terms: "To open an account, agree to the Terms of use and the Privacy policy. Tick the box and try again.",
     noemail: "That Facebook account has no confirmed email (or you chose not to share it). Alerts and updates come by email, so try again and allow the email, or continue with Google.",
   },
 };

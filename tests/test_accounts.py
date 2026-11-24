@@ -61,7 +61,7 @@ def sign_in(
         "name": "Dana",
         "picture": "https://lh3.googleusercontent.com/a",
     }
-    c.get("/auth/google/login", params={"next": nxt}, follow_redirects=False)
+    c.get("/auth/google/login", params={"next": nxt, "terms": "true"}, follow_redirects=False)
     return c.get("/auth/google/callback", follow_redirects=False)
 
 
@@ -103,6 +103,19 @@ def test_refused_sign_ins(tmp_path: Path, fake: FakeGoogle) -> None:
         with db.session() as s:
             s.scalars(select(UserRow).where(UserRow.google_sub == "g-3")).one().blocked_at = utcnow()
         assert sign_in(c, fake, email="same@example.com", sub="g-3", nxt="/").headers["location"] == "/?signin=blocked"
+
+
+def test_a_new_account_needs_the_terms(tmp_path: Path, fake: FakeGoogle) -> None:
+    app, db = _app(tmp_path)
+    with TestClient(app) as c:
+        fake.info = {"sub": "g-9", "email": "new@example.com", "email_verified": True, "name": "New"}
+        c.get("/auth/google/login", params={"next": "/"}, follow_redirects=False)  # the box not ticked
+        assert c.get("/auth/google/callback", follow_redirects=False).headers["location"] == "/?signin=terms"
+        with db.session() as s:
+            assert s.scalar(select(UserRow).where(UserRow.google_sub == "g-9")) is None
+        sign_in(c, fake, email="new@example.com", sub="g-9", nxt="/")
+        with db.session() as s:
+            assert s.scalars(select(UserRow).where(UserRow.google_sub == "g-9")).one().terms_accepted_at is not None
 
 
 def test_safe_next() -> None:
@@ -293,7 +306,7 @@ FB = {"facebook_app_id": "fb-app", "facebook_app_secret": "fb-secret"}
 
 def fb_sign_in(c: TestClient, fb: FakeFacebook, me: dict[str, Any], nxt: str = "/") -> Any:
     fb.me = me
-    c.get("/auth/facebook/login", params={"next": nxt}, follow_redirects=False)
+    c.get("/auth/facebook/login", params={"next": nxt, "terms": "true"}, follow_redirects=False)
     return c.get("/auth/facebook/callback", follow_redirects=False)
 
 

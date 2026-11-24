@@ -57,7 +57,7 @@ def form(**over: Any) -> dict[str, Any]:
             {"name": "Early bird", "url": "https://tickets.example.com/a?x=1", "price": 80, "original_price": 120},
             {"name": "Door", "url": "https://other.example.org/b", "price": 120, "sold_out": True},
         ],
-        "public_event": True,
+        "accept_terms": True,
     } | over  # fmt: skip
 
 
@@ -131,7 +131,7 @@ def test_free_entry_with_no_ticket_points_at_our_own_page(site: TestClient) -> N
         {"event_types": ["rave in space"]},
         {"pictures": ["0" * 32]},  # not an upload of this user
         {"description": "short"},
-        {"public_event": False},
+        {"accept_terms": False},
         {"wants_sponsored": True, "sponsor_phone": "03-6123456"},  # a landline
         {"country": "DE"},  # abroad needs its time zone
     ],

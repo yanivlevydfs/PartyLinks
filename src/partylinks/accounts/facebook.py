@@ -50,8 +50,9 @@ def client(request: Request) -> Any:
 
 
 @router.get("/auth/facebook/login", dependencies=SIGN_IN)
-async def login(request: Request, next: str | None = None) -> Response:
+async def login(request: Request, next: str | None = None, terms: bool = False) -> Response:
     request.session["next"] = safe_next(next)
+    request.session["terms"] = terms  # the "I agree to the Terms and the Privacy Policy" box (finish)
     base = request.app.state.settings.site.base_url.rstrip("/")
     return await client(request).authorize_redirect(request, f"{base}/auth/facebook/callback")
 

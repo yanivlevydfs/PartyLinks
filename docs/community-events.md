@@ -9,9 +9,13 @@ listings of the same event). Code: `src/partylinks/community/`. Tests: `tests/te
 
 1. The form calls `GET /api/community/config` for the categories, the limits and the Turnstile site key.
 2. Pictures go to `POST /api/community/uploads`, one file at a time. Each returns an id and a preview URL.
-3. `POST /api/community/events` sends the event with the CAPTCHA token and the "public event" promise.
+3. `POST /api/community/events` sends the event with the CAPTCHA token and `accept_terms: true` (the poster agrees to the Terms and
+   the Privacy policy: the event, its content, entry, prices, safety, quality, audience and people are theirs to answer for, SPOTX
+   bears no responsibility). Its time is stored as `terms_accepted_at` in the event's data. Signing up needs the same agreement
+   (the sign-in buttons' box; `users.terms_accepted_at`).
 4. Every event, and every edit, is saved as `pending` until an admin approves it
-   (`POST /admin/api/community/{id}/approve`); only then is it listed. Only an admin's own events go live at once
+   (`POST /admin/api/community/{id}/approve`; the admin's "submissions" tab, `web/src/community/AdminCommunity.tsx`, approves,
+   rejects with a reason, takes down or deletes); only then is it listed. Only an admin's own events go live at once
    (the owner's rule, 24.11.2026: nothing is listed without our approval). `community.auto_publish: true` would
    trust an account after `community.trusted_after` approvals; it is off.
 5. A rejected event shows its reason to the owner. After the owner edits it, it waits for review again.

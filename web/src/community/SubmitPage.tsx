@@ -160,10 +160,10 @@ function Step({ n, title, hint, children }: { n: number; title: string; hint?: s
 }
 
 /** A labelled field: the label above, an optional note below, a star when it is required. */
-function Field({ label, need, note, wide, children }: { label: string; need?: boolean; note?: string; wide?: boolean; children: ReactNode }) {
+function Field({ label, need, note, count, wide, children }: { label: string; need?: boolean; note?: string; count?: string; wide?: boolean; children: ReactNode }) {
   return (
     <label className={`cm-field${wide ? " wide" : ""}`}>
-      <span className="cm-label">{label}{need && <b className="cm-need" aria-hidden="true"> *</b>}</span>
+      <span className="cm-label">{label}{need && <b className="cm-need" aria-hidden="true"> *</b>}{count && <small className="cm-count" dir="ltr">{count}</small>}</span>
       {children}
       {note && <small className="cm-note-s">{note}</small>}
     </label>
@@ -186,8 +186,10 @@ function Genres({ valid, value, onChange, most }: { valid: string[]; value: stri
   const [open, setOpen] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const fam = families.find((f) => f.key === open) ?? families[0];
-  const needle = q.trim().toLowerCase();
-  const shown = needle ? valid.filter((g) => name(g).toLowerCase().includes(needle) || g.includes(needle)).slice(0, 40) : fam?.genres ?? [];
+  // ג'אז / ג׳אז / ג`אז: the apostrophe people type and the geresh the names use are one letter here.
+  const fold = (x: string) => x.toLowerCase().replace(/['׳`’"״]/g, "");
+  const needle = fold(q.trim());
+  const shown = needle ? valid.filter((g) => fold(name(g)).includes(needle) || g.includes(needle)).slice(0, 40) : fam?.genres ?? [];
   const toggle = (g: string) => onChange(value.includes(g) ? value.filter((x) => x !== g) : value.length >= most ? value : [...value, g]);
   return (
     <div className="cm-genres">
@@ -270,7 +272,7 @@ function SubmitForm({ cfg }: { cfg: FormConfig }) {
     const real = tickets.filter((t) => t.url.trim());
     const problems: string[] = [];
     if (!free && !real.length) problems.push(s.needTicket);
-    if (!f.get("public_event")) problems.push(s.needPublic);
+    if (!f.get("accept_terms")) problems.push(s.needTerms);
     if (cfg.captcha_required && !token) problems.push(s.needCaptcha);
     if (problems.length) return setErrors(problems);
     const body = {
@@ -287,7 +289,7 @@ function SubmitForm({ cfg }: { cfg: FormConfig }) {
       })),
       free_entry: free, pictures: pictures.map((p) => p.id),
       wants_sponsored: sponsored, sponsor_phone: sponsored ? str("sponsor_phone") : "", sponsor_note: sponsored ? str("sponsor_note") : "",
-      captcha_token: token, public_event: true, website: str("website"),
+      captcha_token: token, accept_terms: true, website: str("website"),
     };
     setSending(true);
     setErrors([]);
@@ -348,24 +350,24 @@ function SubmitForm({ cfg }: { cfg: FormConfig }) {
         <Step n={1} title={s.stepWhat}>
           <div className="cm-grid">
             <Field label={s.name} need wide>
-              <input className="cm-input" name="title" required minLength={3} maxLength={L.title_max} dir="auto" placeholder={s.namePh} />
+              <input className="cm-input" name="title" required minLength={3} maxLength={L.title_max} placeholder={s.namePh} />
             </Field>
-            <Field label={s.description} need={L.description_min > 0} wide note={`${descLen} / ${L.description_max} · ${s.descriptionHint(L.description_min)}`}>
+            <Field label={s.description} need={L.description_min > 0} wide note={s.descriptionHint(L.description_min)} count={`${descLen}/${L.description_max}`}>
               <textarea className="cm-input" name="description" rows={6} minLength={L.description_min} maxLength={L.description_max}
-                required={L.description_min > 0} dir="auto" placeholder={s.descriptionPh} onChange={(e) => setDescLen(e.target.value.length)} />
+                required={L.description_min > 0} placeholder={s.descriptionPh} onChange={(e) => setDescLen(e.target.value.length)} />
             </Field>
             <Field label={s.organizer}>
-              <input className="cm-input" name="organizer" maxLength={160} dir="auto" autoComplete="organization" />
+              <input className="cm-input" name="organizer" maxLength={160} autoComplete="organization" />
             </Field>
             <Field label={s.minAge}>
               <input className="cm-input" name="min_age" type="number" min={0} max={99} inputMode="numeric" placeholder="18" />
             </Field>
             <Field label={s.artists} note={s.artistsNote} wide>
-              <input className="cm-input" name="artists" maxLength={2000} dir="auto" />
+              <input className="cm-input" name="artists" maxLength={2000} />
             </Field>
           </div>
           <div className="cm-sub">
-            <span className="cm-label">{s.types}<small className="cm-count">{types.length}/{L.max_event_types}</small></span>
+            <span className="cm-label">{s.types}<small className="cm-count" dir="ltr">{types.length}/{L.max_event_types}</small></span>
             <div className="cm-types">
               {cfg.event_types.map((t) => (
                 <button type="button" key={t} className={`cm-type${types.includes(t) ? " on" : ""}`} aria-pressed={types.includes(t)}
@@ -376,7 +378,7 @@ function SubmitForm({ cfg }: { cfg: FormConfig }) {
             </div>
           </div>
           <div className="cm-sub">
-            <span className="cm-label">{s.genres}<small className="cm-count">{genres.length}/{L.max_genres}</small></span>
+            <span className="cm-label">{s.genres}<small className="cm-count" dir="ltr">{genres.length}/{L.max_genres}</small></span>
             <small className="cm-note-s">{s.genresHint}</small>
             <Genres valid={cfg.genres} value={genres} onChange={setGenres} most={L.max_genres} />
           </div>
@@ -394,9 +396,9 @@ function SubmitForm({ cfg }: { cfg: FormConfig }) {
 
         <Step n={3} title={s.stepWhere}>
           <div className="cm-grid">
-            <Field label={s.venue} need><input className="cm-input" name="venue_name" required minLength={2} maxLength={120} dir="auto" placeholder={s.venuePh} /></Field>
-            <Field label={s.city} need><input className="cm-input" name="city" required minLength={2} maxLength={60} dir="auto" autoComplete="address-level2" placeholder={s.cityPh} /></Field>
-            <Field label={s.address} note={s.addressNote} wide><input className="cm-input" name="address" maxLength={160} dir="auto" autoComplete="street-address" /></Field>
+            <Field label={s.venue} need><input className="cm-input" name="venue_name" required minLength={2} maxLength={120} placeholder={s.venuePh} /></Field>
+            <Field label={s.city} need><input className="cm-input" name="city" required minLength={2} maxLength={60} autoComplete="address-level2" placeholder={s.cityPh} /></Field>
+            <Field label={s.address} note={s.addressNote} wide><input className="cm-input" name="address" maxLength={160} autoComplete="street-address" /></Field>
           </div>
         </Step>
 
@@ -419,7 +421,7 @@ function SubmitForm({ cfg }: { cfg: FormConfig }) {
                         placeholder="https://" dir="ltr" required={i === 0} inputMode="url" />
                     </Field>
                     <Field label={s.ticketName}>
-                      <input className="cm-input" value={t.name} onChange={(e) => setTicket(i, { name: e.target.value })} maxLength={80} placeholder={s.ticketNamePh} dir="auto" />
+                      <input className="cm-input" value={t.name} onChange={(e) => setTicket(i, { name: e.target.value })} maxLength={80} placeholder={s.ticketNamePh} />
                     </Field>
                     <Field label={s.ticketPrice}>
                       <input className="cm-input" value={t.is_free ? "0" : t.price} onChange={(e) => setTicket(i, { price: e.target.value })} type="number"
@@ -467,12 +469,15 @@ function SubmitForm({ cfg }: { cfg: FormConfig }) {
           {sponsored && (
             <div className="cm-grid">
               <Field label={s.phone} need><input className="cm-input" name="sponsor_phone" type="tel" required minLength={9} maxLength={40} inputMode="tel" dir="ltr" placeholder="05X-XXXXXXX" autoComplete="tel" /></Field>
-              <Field label={s.sponsorNote}><input className="cm-input" name="sponsor_note" maxLength={L.sponsor_note_max} dir="auto" /></Field>
+              <Field label={s.sponsorNote}><input className="cm-input" name="sponsor_note" maxLength={L.sponsor_note_max} /></Field>
             </div>
           )}
           <label className="cm-toggle cm-promise">
-            <input type="checkbox" name="public_event" required />
-            <span><b>{s.publicEvent}</b><small>{s.publicNote}</small></span>
+            <input type="checkbox" name="accept_terms" required />
+            <span>
+              <b>{s.terms[0]}<Link to="/terms" target="_blank">{s.terms[1]}</Link>{s.terms[2]}<Link to="/privacy" target="_blank">{s.terms[3]}</Link></b>
+              <small>{s.termsNote}</small>
+            </span>
           </label>
           {/* Hidden from people; a bot that fills it is thanked and nothing is saved. */}
           <input className="cm-hp" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
@@ -515,7 +520,7 @@ function MyEvents() {
         {mine.data.map((e) => (
           <li key={e.id}>
             <div>
-              <b dir="auto">{e.event_path ? <Link to={e.event_path}>{e.title}</Link> : e.title}</b>
+              <b>{e.event_path ? <Link to={e.event_path}>{e.title}</Link> : e.title}</b>
               <small>{new Date(e.start_date).toLocaleDateString(s.locale)}</small>
               {e.reject_reason && <small className="cm-reason">{s.reason}{e.reject_reason}</small>}
             </div>

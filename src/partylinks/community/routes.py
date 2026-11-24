@@ -48,6 +48,11 @@ def _cfg(request: Request) -> CommunitySettings:
     return cfg
 
 
+def _with_terms(event: EventIn) -> dict[str, Any]:
+    """The event as stored, with when its poster agreed to the terms (every post and edit agrees again)."""
+    return {**event.model_dump(mode="json"), "terms_accepted_at": utcnow().isoformat()}
+
+
 def _host(request: Request) -> str | None:
     """Our site's host name: the one a CAPTCHA token must have been solved on."""
     return urlsplit(request.app.state.settings.site.base_url).hostname
@@ -243,7 +248,7 @@ def create(body: SubmitIn, request: Request, user: UserDep) -> dict[str, Any]:
         if (today or 0) >= cfg.max_per_day:
             raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, f"events: at most {cfg.max_per_day} a day")
         event = _checked(request, session, user, body, None)
-        row = CommunityEventRow(user_id=user.id, data=event.model_dump(mode="json"), status="pending",
+        row = CommunityEventRow(user_id=user.id, data=_with_terms(event), status="pending",
                                 wants_sponsored=event.wants_sponsored)  # fmt: skip
         session.add(row)
         session.flush()
@@ -267,7 +272,7 @@ def edit(row_id: int, body: SubmitIn, request: Request, user: UserDep) -> dict[s
         if row.status == "removed":
             raise HTTPException(status.HTTP_403_FORBIDDEN, "this event was taken down by the site")
         event = _checked(request, session, user, body, row.id)
-        row.data, row.updated_at, row.reject_reason = event.model_dump(mode="json"), utcnow(), None
+        row.data, row.updated_at, row.reject_reason = _with_terms(event), utcnow(), None
         row.wants_sponsored = row.wants_sponsored or event.wants_sponsored
         if _trusted(session, user, cfg):
             _go_live(request, session, row)
@@ -324,7 +329,7 @@ def _admin_row(session: Session, row_id: int) -> CommunityEventRow:
 
 @admin.post("/{row_id}/approve")
 def approve(row_id: int, request: Request, user: OptionalUserDep) -> dict[str, Any]:
-    """List the event; its account is trusted from now on (CommunitySettings.trusted_after)."""
+    """List the event (the admin's "submissions" tab, web/src/community/AdminCommunity.tsx)."""
     with request.app.state.db.session() as session:
         row = _admin_row(session, row_id)
         _go_live(request, session, row)

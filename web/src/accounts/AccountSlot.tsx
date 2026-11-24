@@ -1,7 +1,7 @@
 // The header's account corner: "Sign in" (the Google / Facebook choice) when signed out, the avatar menu
 // when signed in, nothing when sign-in is off. Plain links to our server, which redirects to Google or
 // Facebook: no Google or Facebook script.
-import { useEffect, useRef, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BellMenuItem } from "../alerts/Bell";
 import { useBell } from "../alerts/useAlerts";
@@ -37,18 +37,34 @@ function FacebookF() {
 }
 
 /** One button per configured provider ("Continue with Google", "Continue with Facebook"). */
+/** "Continue with Google / Facebook", behind the required "I agree to the Terms and the Privacy policy" box
+ *  (the owner's rule, 24.11.2026): until it is ticked the buttons say so instead of signing in. */
 export function SignInButton({ next, label }: { next?: string; label?: string }) {
   const t = useAccountText();
   const providers = useProviders();
+  const [agreed, setAgreed] = useState(false);
+  const [nudge, setNudge] = useState(false);
+  const guard = (e: MouseEvent) => {
+    if (agreed) return;
+    e.preventDefault();
+    setNudge(true);
+  };
   return (
     <div className="signin-btns">
+      <label className={`signin-terms${nudge && !agreed ? " nudge" : ""}`}>
+        <input type="checkbox" checked={agreed} onChange={(e) => { setAgreed(e.target.checked); setNudge(false); }} />
+        <span>
+          {t.agree[0]}<Link to="/terms" target="_blank">{t.agree[1]}</Link>{t.agree[2]}<Link to="/privacy" target="_blank">{t.agree[3]}</Link>
+        </span>
+      </label>
+      {nudge && !agreed && <small className="signin-nudge" role="alert">{t.agreeFirst}</small>}
       {providers.includes("google") && (
-        <a className="google-btn" href={signInUrl(next)} rel="nofollow">
+        <a className={`google-btn${agreed ? "" : " off"}`} href={signInUrl(next)} rel="nofollow" aria-disabled={!agreed} onClick={guard}>
           <GoogleG /> <span>{label ?? t.google}</span>
         </a>
       )}
       {providers.includes("facebook") && (
-        <a className="google-btn fb-btn" href={signInUrl(next, "facebook")} rel="nofollow">
+        <a className={`google-btn fb-btn${agreed ? "" : " off"}`} href={signInUrl(next, "facebook")} rel="nofollow" aria-disabled={!agreed} onClick={guard}>
           <FacebookF /> <span>{t.facebook}</span>
         </a>
       )}
