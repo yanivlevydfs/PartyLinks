@@ -398,7 +398,8 @@ def test_eventer_profile_that_opens_one_event_lists_that_event() -> None:
     )
     scraper = eventer.EventerScraper(settings, HttpSettings(request_delay_seconds=0, backoff_seconds=0), "UTC")
     scraper._client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-    assert asyncio.run(scraper._list_link_names()) == ["rc82f", "x1"] and scraper.failures == []
+    names, _ = asyncio.run(scraper._list_link_names())  # (listed names, the sitemap's deeper ones)
+    assert names == ["rc82f", "x1"] and scraper.failures == []
 
 
 def test_ogo_follows_a_next_redirect_in_the_body() -> None:

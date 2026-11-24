@@ -43,6 +43,7 @@ def test_night_event_from_config_schedule() -> None:
     s = _settings()
     tuesday, thursday = (parse_night(n, s, TZ) for n in parse_listing(PAGE)[:2])
     assert tuesday is not None and thursday is not None
+    assert tuesday.start_at is not None and thursday.start_at is not None
     assert tuesday.start_at.isoformat() == "2026-11-24T21:30:00+02:00"  # Tuesday's first lesson
     assert thursday.start_at.isoformat() == "2026-11-26T21:00:00+02:00"  # doors
     assert tuesday.end_at is None and tuesday.time_known
@@ -65,7 +66,7 @@ def test_items_without_a_date_link_or_style_are_skipped() -> None:
     assert parse_night({**night, "styles": ""}, s, TZ) is None
     # A weekday with no configured start: the default (doors at 21:00).
     friday = parse_night({**night, "weekday": "יום שישי"}, s, TZ)
-    assert friday is not None and (friday.start_at.hour, friday.start_at.minute) == (21, 0)
+    assert friday is not None and friday.start_at is not None and (friday.start_at.hour, friday.start_at.minute) == (21, 0)
 
 
 def test_run_reads_one_page_and_yields_upcoming_nights_soonest_first() -> None:
@@ -86,7 +87,9 @@ def test_run_reads_one_page_and_yields_upcoming_nights_soonest_first() -> None:
             return [e async for e in scraper.scrape()]
 
     events = asyncio.run(go())
-    assert len(asked) == 1  # one request a run
+    # The ticket page, then each show page (the live-shows board, the New Year page).
+    assert isinstance(scraper.settings, HavanaClubSettings)
+    assert len(asked) == 1 + len(scraper.settings.show_paths)
     starts = [e.start_at.timestamp() for e in events if e.start_at]
     assert starts == sorted(starts)  # nearest first; past nights (once the fixture's dates pass) are left out
     assert len(events) <= 6 and not scraper.failures
