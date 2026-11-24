@@ -6942,6 +6942,8 @@ sources:
     # post (8) and page (22) add nothing over the posts + home page; events/herteva25 is password-protected.
     # Links out: 4lev.org / 4web.co.il (sister sites, no events), Google Forms (the sign-up = purchase_url).
     # ~13 requests a run. No platform we read covers it. Answers direct. Courses are kept (the owner asked).
+    # Undated offers are listed too (the owner's call, 24.11.2026): the course and the trainings (home page, "בית ספר
+    # לטבע") and /events/'s coming lecture series, each linked to its sign-up / details page; one per link.
     enabled: true
     may_be_empty: true  # a few events a year; nothing dated may be coming
     cron: "2 6,18 * * *"

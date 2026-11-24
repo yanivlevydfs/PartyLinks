@@ -61,6 +61,12 @@ class FourNatureSettings(SourceSettings):
     city: str = "הרצליה"
     places: list[Place] = Field(default_factory=list)
     yearless_grace_days: int = 30
+    # Home page sections whose undated blocks (a heading and a sign-up / details button, no date: the course, the
+    # trainings for organisations) are listed as undated events (the owner's call, 24.11.2026).
+    undated_sections: list[str] = Field(default_factory=lambda: ["סיורים ואירועי קהילה", "בית ספר לטבע"])
+    # /events/ (``listing_paths[0]``): its undated offers are the sections between these two headings.
+    listing_future: str = "אירועים עתידיים"
+    listing_past: str = "אירועים קודמים"
     rain_date_words: list[str] = Field(default_factory=lambda: ["חלופי", "חלופית"])
     # Words just before a post's own date ("יום ב' 8.7.24", "פתיחת הקורס: 5.9.25"), not a date it mentions.
     date_cues: list[str] = Field(
@@ -128,9 +134,10 @@ class FourNatureScraper(BaseScraper[FourNatureSettings]):
                 written[link.rstrip("/") + "/"] = day.date() if day else today
 
         links = set(written)
-        for html in [home or ""] + [
+        listings = [
             await self.optional(f"listing {p}", self.get_text(urljoin(s.site_url, p))) or "" for p in s.listing_paths
-        ]:
+        ]
+        for html in [home or "", *listings]:
             links.update(event_links(html, s))
 
         async def fetch(url: str) -> Page:
@@ -154,6 +161,22 @@ class FourNatureScraper(BaseScraper[FourNatureSettings]):
                         kept = event
                     event = kept.model_copy(update={"images": images})
                 events[event.source_event_id] = event
+        dated = [
+            e
+            for e in events.values()
+            if is_current(e.start_at, e.end_at, RetentionSettings(), self.timezone, time_known=e.time_known)
+        ]
+        # The undated offers (the home page's sections, /events/'s coming events), unless their page has a coming
+        # date; one offer named on both pages is one event (by its link).
+        seen = {str(e.url) for e in dated} | {str(e.extra.get("purchase_url")) for e in dated}
+        others = {q.url: q.html for q in pages}
+        offers = undated(pages[0], others, s) if home else []
+        if listings and listings[0]:
+            offers += undated_listing(Page(urljoin(s.site_url, s.listing_paths[0]), listings[0], today), others, s)
+        for event in offers:
+            if event.extra["page"] not in seen and str(event.url) not in seen:
+                seen |= {event.extra["page"], str(event.url)}
+                events.setdefault(event.source_event_id, event)
         for event in sorted(
             events.values(), key=lambda e: e.start_at or datetime.max.replace(tzinfo=zone(self.timezone))
         ):
@@ -244,6 +267,108 @@ def parse_page(page: Page, s: FourNatureSettings, timezone: str) -> list[Scraped
     return out
 
 
+def undated(page: Page, others: dict[str, str], s: FourNatureSettings) -> list[ScrapedEvent]:
+    """The home page's undated offers in ``undated_sections``: each heading (h3) with a button and no date. The link
+    is the button's (the sign-up / details page); the place comes from that page when the block names none."""
+    tree = LexborHTMLParser(page.html)
+    art = og_image(page.html)
+    out: list[ScrapedEvent] = []
+    section, name, parts = "", "", []
+
+    def flush() -> None:
+        # A dated offer is parse_block's (the wasp lecture); one with no button is no offer.
+        dated = any(DATE.search(p.text(separator=" ")) for p in parts)
+        if name and parts and not dated and (event := offer(name, parts, page, others, s, art)):
+            out.append(event)
+
+    # Elementor's widgets in page order: an h2 opens a section, an h3 an offer; the text, button and picture
+    # widgets after it are that offer's (two offers can share one container: the course and the trainings).
+    for widget in tree.css(".elementor-widget"):
+        if h2 := widget.css_first("h2"):
+            flush()
+            section, name, parts = clean_str(h2.text()) or "", "", []
+        elif section not in s.undated_sections:
+            continue
+        elif h3 := widget.css_first("h3"):
+            flush()
+            name, parts = clean_str(h3.text()) or "", [widget]  # the heading's widget often holds the text too
+        elif name:
+            parts.append(widget)
+            if "elementor-widget-button" in (widget.attributes.get("class") or ""):
+                flush()  # an offer ends at its button: what follows (a dated lecture with no heading) is not its
+                name, parts = "", []
+    flush()
+    return out
+
+
+def undated_listing(page: Page, others: dict[str, str], s: FourNatureSettings) -> list[ScrapedEvent]:
+    """/events/'s coming events with no date (a course whose round is not set, a lecture booked on request): the
+    sections between ``listing_future`` and ``listing_past``, each titled by its own page's heading."""
+    tree = LexborHTMLParser(page.html)
+    pattern = re.compile(s.event_link)
+    out: list[ScrapedEvent] = []
+    coming = False
+    for box in tree.css("section.elementor-top-section, .e-con.e-parent"):
+        text = box.text(separator=" ")
+        if s.listing_past in text:
+            break
+        if s.listing_future in text:
+            coming = True
+            continue
+        if not coming or DATE.search(text):
+            continue
+        hrefs = [urljoin(page.url, a.attributes.get("href") or "") for a in box.css("a[href]")]
+        link = next((u for u in hrefs if pattern.match(u)), None)
+        if not link:
+            continue
+        lines = [t for t in (clean_str(x) for x in box.text(separator="\n").split("\n")) if t]
+        name = lines[0] if lines else ""  # the listing's own title ("ערב טבע עירוני – סדרת הרצאות על טבע בעיר")
+        if name and (event := offer(name, [box], page, others, s, og_image(page.html))):
+            out.append(event)
+    return out
+
+
+def offer(
+    name: str, parts: list[LexborNode], page: Page, others: dict[str, str], s: FourNatureSettings, art: str | None
+) -> ScrapedEvent | None:
+    """One undated offer from its widgets: its button's link (the sign-up / details page), the place they or that
+    page name, their picture or that page's."""
+    hrefs = [urljoin(page.url, a.attributes.get("href") or "") for p in parts for a in p.css("a[href]")]
+    link = next((u for u in hrefs if u.startswith(("https://", "http://"))), None)
+    if not link:
+        return None
+    lines = [t for p in parts for t in (clean_str(x) for x in p.text(separator="\n").split("\n")) if t]
+    text = re.sub(r"\s+", " ", " ".join(lines))
+    linked_html = others.get(link.split("#")[0].rstrip("/") + "/") or others.get(link) or ""
+    linked_text = LexborHTMLParser(linked_html).text(separator=" ") if linked_html else ""
+    place = next((p for p in s.places if any(w in text for w in p.match)), None) or next(
+        (p for p in s.places if any(w in linked_text for w in p.match)), None
+    )
+    images = [urljoin(page.url, i.attributes.get("src") or "") for p in parts for i in p.css("img")]
+    images = [re.sub(r"-\d+x\d+(?=\.\w+$)", "", u) for u in images if not any(w in u.lower() for w in s.skip_images)]
+    if not images and (picture := og_image(linked_html) if linked_html else None):
+        images = [picture]
+    key = re.sub(r"\W+", "-", name)[:60].strip("-")
+    return ScrapedEvent(
+        source=FourNatureScraper.name,
+        source_event_id=f"undated-{key}",
+        url=link,
+        title=name,
+        start_at=None,
+        time_known=False,
+        venue_name=place.venue_name if place else None,
+        address=place.address if place else None,
+        city=s.city,
+        latitude=place.latitude if place else None,
+        longitude=place.longitude if place else None,
+        description="\n".join(linked(parts, lines, page.url)),
+        source_genres=kinds(name, text, s) or kinds("", linked_text, s),
+        images=list(dict.fromkeys(images or ([art] if art else []))),
+        organizer="קהילה למען הטבע",
+        extra={"purchase_url": link, "page": link},
+    )
+
+
 def pictures(block: LexborNode) -> list[LexborNode]:
     """The block's pictures; with none, those of the nearest container around it that holds no other event."""
     node: LexborNode | None = block
@@ -259,11 +384,11 @@ def pictures(block: LexborNode) -> list[LexborNode]:
     return []
 
 
-def linked(block: LexborNode, lines: list[str], base: str) -> list[str]:
+def linked(parts: list[LexborNode], lines: list[str], base: str) -> list[str]:
     """The text with each link's address: a button's label ("להרשמה", "לפרטים") becomes a Markdown link to where it
     leads (the event page renders those), else the link is added at the end ("בהרשמה מראש בקישור:" then the form)."""
     out = list(lines)
-    for a in block.css("a[href]"):
+    for a in (a for p in parts for a in p.css("a[href]")):
         href = urljoin(base, a.attributes.get("href") or "")
         label = clean_str(a.text())
         if not href.startswith(("https://", "http://")) or not label or href in "\n".join(out):
@@ -339,7 +464,7 @@ def parse_block(
         city=s.city,
         latitude=place.latitude if place else None,
         longitude=place.longitude if place else None,
-        description="\n".join(linked(block, lines, page.url)),
+        description="\n".join(linked([block], lines, page.url)),
         source_genres=kinds(title, text, s),
         images=list(dict.fromkeys(images)),
         organizer="קהילה למען הטבע",

@@ -92,3 +92,23 @@ def test_enricher_gives_site_genres() -> None:
     enriched = Enricher(Settings().enrichment, TZ).enrich(wasp)
     assert enriched is not None
     assert "lectures" in enriched.genres
+
+
+def test_undated_offers_of_the_home_page_and_the_listing() -> None:
+    from partylinks.scrapers.fournature import undated, undated_listing
+
+    listing = (FIXTURES / "events.html").read_text(encoding="utf-8")  # /events/ (24.11.2026)
+    others = {"https://www.4nature.org.il/events/rescue-course/": "<p>מרכז הקיימות, נתן אלטרמן 31</p>"}
+    home = {
+        e.title: e for e in undated(Page("https://www.4nature.org.il/", HOME, date(2026, 11, 18)), others, SETTINGS)
+    }
+    course = home["קורס הכרות, שמירה והצלת בעלי חיים עירוניים"]
+    assert course.start_at is None and not course.time_known
+    assert str(course.url) == "https://www.4nature.org.il/events/rescue-course/"
+    assert course.venue_name == "מרכז הקיימות הרצליה"  # named on the course's own page
+    assert "הכשרות, קורסים וסדנאות לארגונים, קבוצות ורשויות: חיות, עיר וקהילה" in home  # shares the course's box
+    assert "להכיר את הצרעה – מפגש קהילה, טבע ועיר מס 4" not in home  # dated: parse_page's
+    assert not any("אריאלה" in t for t in home)  # the dated volunteers' lecture after the trainings' button
+    page = Page("https://www.4nature.org.il/events/", listing, date(2026, 11, 24))
+    titles = [e.title for e in undated_listing(page, others, SETTINGS)]
+    assert "ערב טבע עירוני – סדרת הרצאות על טבע בעיר" in titles
