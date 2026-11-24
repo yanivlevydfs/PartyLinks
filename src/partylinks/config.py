@@ -532,6 +532,10 @@ class RetentionSettings(BaseModel):
     # A start further ahead than this is a source's broken date (2038-01-19 03:14:07 is the 32-bit clock's end,
     # "EXIT FESTIVAL 2025" sent as 2032): never imported, never shown, purged. Real tours sell ~1.5 years ahead.
     max_future_days: int = Field(730, ge=1)
+    # Sources whose undated listings (no start: a course with no round set, a lecture booked on request) are
+    # current while their source lists them, but are found by search only (a text query, ``q``): date-ordered
+    # lists would put them first. Other sources' undated rows stay hidden (eventbuzz's are past pages).
+    undated_sources: list[str] = Field(default_factory=list)
 
     @field_validator("cron")
     @classmethod

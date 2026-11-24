@@ -2173,6 +2173,9 @@ retention:
   # A start further ahead than this many days is a broken date (2038-01-19, a 2025 festival sent as 2032):
   # never imported, never shown, purged. Real tours sell ~1.5 years ahead.
   max_future_days: 730
+  # Undated listings (a course with no round set, a lecture booked on request) of these sources are found by search
+  # only (never in date-ordered lists, where they'd come first); every other source's undated rows stay hidden.
+  undated_sources: [fournature]
   # Scrape run history (scrape_runs) older than this many days is deleted as well.
   keep_runs_days: 30
   # An event a complete run no longer found (cancelled, taken down) is hidden at once and deleted, with its

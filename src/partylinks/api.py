@@ -956,7 +956,15 @@ def build_event_filters(
     if open_now:
         filters += open_now_filters(tz)
     if upcoming:
-        filters.append(upcoming_filter())
+        current = upcoming_filter()
+        if q and q.strip() and cfg.retention.undated_sources:  # a search also finds those sources' undated offers
+            undated = and_(
+                EventRow.start_at.is_(None),
+                EventRow.is_listed.is_not(False),
+                EventRow.source.in_(cfg.retention.undated_sources),
+            )
+            current = or_(current, undated)
+        filters.append(current)
     if not include_duplicates:
         filters.append(EventRow.is_primary.is_(True))
     if date_from:
