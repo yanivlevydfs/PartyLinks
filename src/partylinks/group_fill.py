@@ -45,6 +45,8 @@ def plan(
     (the enrichment's name rule) cleans what stored lineups hold from before a rule was tightened: "01] DJ IAGO"
     -> "DJ IAGO", "00h00 - 06h30" dropped. ``title_word`` drops a plain word the old title spotting took
     ("Winter" of "WINTER EDITION"): else a listing no longer scraped kept it, and filled it into the others."""
+    # Read in pages (each fetch its own short statement), as dedup.read: read whole, the busy worker took the
+    # listed rows slower than the 120 s statement timeout (QueryCanceled, "regroup" partial runs, 2026-11-24).
     rows = session.execute(
         select(
             EventRow.id,
@@ -53,7 +55,9 @@ def plan(
             EventRow.source,
             EventRow.title,
             *(getattr(EventRow, c) for c in _COLUMNS),
-        ).where(EventRow.is_listed.is_(True))
+        )
+        .where(EventRow.is_listed.is_(True))
+        .execution_options(yield_per=5000)
     ).all()
     current = {r.id: {c: getattr(r, c) for c in _COLUMNS} for r in rows}
     groups: dict[str, list[Any]] = defaultdict(list)

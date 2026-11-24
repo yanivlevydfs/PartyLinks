@@ -534,7 +534,9 @@ class Deduplicator:
         ), key=lambda r: r.id)  # fmt: skip
         current = {
             r.id: tuple(r[1:])
-            for r in session.execute(select(EventRow.id, *(getattr(EventRow, c) for c in _GROUP_FIELDS)))
+            for r in session.execute(
+                select(EventRow.id, *(getattr(EventRow, c) for c in _GROUP_FIELDS)).execution_options(yield_per=5000)
+            )
         }
         return Snapshot(rows, _tier_counts(session), current)
 

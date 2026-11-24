@@ -411,11 +411,13 @@ def resolve_venues(session: Session) -> int:
 
 def venue_updates(session: Session) -> list[dict[str, Any]]:
     """The rows :func:`infer_venues` changes (read only: the caller writes them)."""
+    # Read in pages (each fetch its own short statement), as dedup.read: read whole, the busy worker took the
+    # table slower than the 120 s statement timeout (QueryCanceled, "regroup" partial runs, 2026-11-23..24).
     db_rows = session.execute(
         select(
             EventRow.id, EventRow.venue_name, EventRow.address, EventRow.latitude, EventRow.longitude, EventRow.extra,
             EventRow.city, EventRow.venue_slug,
-        )
+        ).execution_options(yield_per=5000)
     ).all()
     extras: dict[str, dict[str, Any]] = {r.id: dict(r.extra or {}) for r in db_rows}
     enrichment = get_settings().enrichment
