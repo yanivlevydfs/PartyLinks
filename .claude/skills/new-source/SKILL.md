@@ -32,6 +32,13 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
   has none of these. Count what each one adds over the categories and write it in the config comment.
   toMix: 132 of 540 products were in no category (only `/sitemap/` named them, Anafaza among them), and
   BiggerPicture master 30 (a February show) has no app page (only the id scan finds it).
+  **Links from other sources too:** a box office / ticket site whose events can be link-only (a
+  link-in-bio party, a private Eventbuzz / Go-Out / Ticket Tailor page) reads `self.linked_urls` (other
+  sources' `purchase_url`s + its own stored pages) and sets `link_hosts = ("<its host>", ...)` on the
+  scraper class, so links to it inside other sources' descriptions (a municipality's page) are read too.
+  A link the owner sends that nothing names goes in the source's `extra_slugs` / `event_pages` config
+  with its date (eventbuzz `rainn26`, `dmrt66`). The stored `url` is the page the owner knows (iwant's
+  `/<slug>`, not `event.php?id=N`) when the site has one.
 - **Categories:** every site category / chip mapped to our genres (`enrichment.genres` keywords, or
   `declared_genres_only` when the site's own categories are precise). `check_source.py` shows no `NO GENRE`.
 - **WebP:** artwork URLs passed through; in production `https://spotx.fun/images/<id>/640.webp` answers

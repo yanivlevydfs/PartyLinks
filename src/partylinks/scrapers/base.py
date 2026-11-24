@@ -23,12 +23,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import re
 import threading
 import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Awaitable, Callable, Coroutine, Iterable
 from http import HTTPStatus
 from typing import Any, ClassVar, Self, TypeVar, cast
+from urllib.parse import urlsplit
 
 import httpx
 from curl_cffi import CurlHttpVersion
@@ -60,6 +62,21 @@ R = TypeVar("R")
 CLOUDFLARE_ORIGIN = frozenset({520, 521, 522, 523, 524})
 RETRYABLE_STATUS = frozenset({408, 425, 429, 500, 502, 503, 504}) | CLOUDFLARE_ORIGIN
 THROTTLED = (429, 503)  # a proxied source moves to the next proxy on these
+
+
+_TEXT_URL = re.compile(r"https?://[^\s\"'<>)\]]+")
+
+
+def links_to_hosts(texts: Iterable[str | None], hosts: tuple[str, ...]) -> list[str]:
+    """The links in ``texts`` to one of ``hosts`` (or a subdomain), once each, in order; trailing punctuation off."""
+    found = []
+    for text in texts:
+        for link in _TEXT_URL.findall(text or ""):
+            link = link.rstrip(".,;:!")
+            host = (urlsplit(link).hostname or "").lower().removeprefix("www.")
+            if any(host == h or host.endswith("." + h) for h in hosts):
+                found.append(link)
+    return list(dict.fromkeys(found))
 
 
 def _firewall_code(status: int) -> bool:
@@ -188,6 +205,9 @@ class BaseScraper[S: SourceSettings](ABC):
     settings_model: ClassVar[type[SourceSettings]]
     # Sells only events abroad: a stored event of this source with no country is abroad too.
     abroad_only: ClassVar[bool] = False
+    # Hosts whose links in other sources' texts join ``linked_urls`` (an event in no index, linked only in a
+    # municipality's or aggregator's description: eventbuzz, Ticket Tailor, Nov 2026).
+    link_hosts: ClassVar[tuple[str, ...]] = ()
 
     def __init__(self, settings: S, http: HttpSettings, timezone: str) -> None:
         self.settings = settings

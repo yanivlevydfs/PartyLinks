@@ -35,7 +35,7 @@ from datetime import datetime
 from typing import Any
 
 from pydantic import HttpUrl
-from sqlalchemy import delete, func, select, text, update
+from sqlalchemy import delete, func, or_, select, text, update
 from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm import Session
 
@@ -70,7 +70,7 @@ from partylinks.popularity import models as popularity
 from partylinks.retention import is_current, purge_expired
 from partylinks.runs.health import RunHealth
 from partylinks.scrapers import SCRAPERS, build_scraper, source_settings
-from partylinks.scrapers.base import SourceBlockedError
+from partylinks.scrapers.base import SourceBlockedError, links_to_hosts
 from partylinks.venue_profiles import VenueBook
 from partylinks.venues import venue_updates
 
@@ -442,7 +442,7 @@ class ScrapeService:
                 self.enricher.learn_artists(known, blocked, featured=[p.name for p in profiles.values()])
                 scraper = build_scraper(source, self.settings)
                 scraper.known_images = await asyncio.to_thread(self._known_images, source)
-                scraper.linked_urls = await asyncio.to_thread(self._linked_urls, source)
+                scraper.linked_urls = await asyncio.to_thread(self._linked_urls, source, scraper.link_hosts)
                 resumed = await asyncio.to_thread(self.db.resumed_since, source, self.settings.scheduler.resume_skip_hours)
                 if resumed is not None:
                     scraper.fresh_ids = await asyncio.to_thread(self.db.seen_since, source, resumed)
@@ -623,13 +623,23 @@ class ScrapeService:
                 known.setdefault(event_id, []).append(url)
         return known
 
-    def _linked_urls(self, source: str) -> list[str]:
-        """Ticket links of other sources' upcoming events (aggregators such as Popit link out), then this
-        source's own upcoming event pages: an unlisted event found once (archive.org, a search, a link) is read
-        again even on a run where that discovery fails (eventbuzz: archive.org 503/504, Nov 2026)."""
+    def _linked_urls(self, source: str, hosts: tuple[str, ...] = ()) -> list[str]:
+        """Ticket links of other sources' upcoming events (aggregators such as Popit link out), then the links
+        to ``hosts`` in their texts (a municipality's page naming the eventbuzz link), then this source's own
+        upcoming event pages: an unlisted event found once (archive.org, a search, a link) is read again even
+        on a run where that discovery fails (eventbuzz: archive.org 503/504, Nov 2026)."""
         url = EventRow.extra["purchase_url"].as_string()
         with self.db.session(write=False) as session:
             rows = list(session.scalars(select(url).where(EventRow.source != source, url.is_not(None), upcoming_filter())))
+            if hosts:
+                texts = session.scalars(
+                    select(EventRow.description).where(
+                        EventRow.source != source,
+                        upcoming_filter(),
+                        or_(*(EventRow.description.ilike(f"%{h}/%") for h in hosts)),
+                    )
+                )
+                rows += links_to_hosts(texts, hosts)
             rows += session.scalars(select(EventRow.url).where(EventRow.source == source, upcoming_filter()))
             return list(dict.fromkeys(rows))
 

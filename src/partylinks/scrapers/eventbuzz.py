@@ -83,6 +83,7 @@ class EventbuzzSettings(SourceSettings):
 class EventbuzzScraper(BaseScraper[EventbuzzSettings]):
     name = "eventbuzz"
     settings_model = EventbuzzSettings
+    link_hosts = ("eventbuzz.co.il",)
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings

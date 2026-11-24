@@ -134,3 +134,19 @@ def test_places_without_a_town() -> None:
     assert [e.city for e in parse_page(_page("x", [sky]), URL, "yehudi1", cfg, "Asia/Jerusalem")] == ["Aventura"]
     [event] = parse_page(_page("x", [hub]), URL, "kii", cfg, "Asia/Jerusalem")
     assert (event.venue_name, event.city, event.country) == ("Kii Hub in LES", "New York", "US")
+
+
+def test_links_in_texts_name_new_organizers() -> None:
+    from partylinks.scrapers.base import links_to_hosts
+
+    texts = [
+        "Tickets: https://www.tickettailor.com/events/7uavesoires/2480804?utm_source=ig. See you!",
+        None,
+        "https://buytickets.at/yehudi1/2543540, https://example.com/x https://tickettailor.com.evil.io/a",
+    ]
+    links = links_to_hosts(texts, ("tickettailor.com", "buytickets.at"))
+    assert links == [
+        "https://www.tickettailor.com/events/7uavesoires/2480804?utm_source=ig",
+        "https://buytickets.at/yehudi1/2543540",
+    ]
+    assert organizers(links, CFG) == ["gilliaptercomedy", "7uavesoires", "yehudi1"]

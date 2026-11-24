@@ -59,6 +59,7 @@ class GoOutSettings(SourceSettings):
 class GoOutScraper(BaseScraper[GoOutSettings]):
     name = "goout"
     settings_model = GoOutSettings
+    link_hosts = ("go-out.co",)
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         refs = await self._list_event_urls()

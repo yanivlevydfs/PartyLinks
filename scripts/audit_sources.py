@@ -117,6 +117,10 @@ REASONS: dict[str, dict[str, Any]] = {
     "airdrop": {"map": "festivals abroad named in Hebrew (Koh Phangan, Tulum, Brazil), and secret spots"},
     "ybz": {"map": "coach day tours that leave from a town ('יציאה מירושלים', 'כל הארץ'): no meeting place to pin; "
             "walking tours are geocoded from their meeting point"},
+    "kolsadna": {"map": "workshops whose place is a town only ('טבריה', 'מודיעין') or told on sign-up ('כתובת מדוייקת "
+                 "תינתן לנרשמים', 'בריכה מחוממת ליד בנימינה', 'תל אביב וכל הארץ'): a_location names no venue; "
+                 "never a town centre as a pin (24.11.2026)"},
+    "cluberim": {"map": "a festival named by its region only (B'KUSH, 'עמק חפר'): no venue on the page (24.11.2026)"},
     "buki": {"map": "night tours whose meeting point is told by phone on sign-up: buki.co.il gives no place, "
              "time or price (wp-json pages, 24.11.2026); the city only, never its centre as a pin"},
     "shimur": {"map": "heritage sites whose page has no map point (a redirect loop, no marker): geocoded by "

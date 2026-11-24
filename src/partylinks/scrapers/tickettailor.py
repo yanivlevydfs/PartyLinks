@@ -165,6 +165,7 @@ def parse_page(page_html: str, url: str, organizer: str, s: TicketTailorSettings
 class TicketTailorScraper(BaseScraper[TicketTailorSettings]):
     name = "tickettailor"
     settings_model = TicketTailorSettings
+    link_hosts = ("tickettailor.com", "buytickets.at")
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings

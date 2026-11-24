@@ -53,6 +53,7 @@ class ZygoSettings(SourceSettings):
 class ZygoScraper(BaseScraper[ZygoSettings]):
     name = "zygo"
     settings_model = ZygoSettings
+    link_hosts = ("zygo.co.il",)
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         ids = await self._list_event_ids()
