@@ -112,3 +112,39 @@ def test_undated_offers_of_the_home_page_and_the_listing() -> None:
     page = Page("https://www.4nature.org.il/events/", listing, date(2026, 11, 24))
     titles = [e.title for e in undated_listing(page, others, SETTINGS)]
     assert "ערב טבע עירוני – סדרת הרצאות על טבע בעיר" in titles
+
+
+def test_a_catalogue_page_gives_one_undated_course_each() -> None:
+    from partylinks.scrapers.fournature import undated_catalogue
+
+    html = (FIXTURES / "teva-city.html").read_text(encoding="utf-8")  # /events/teva-city/ (24.11.2026)
+    courses = undated_catalogue(
+        Page("https://www.4nature.org.il/events/teva-city/", html, date(2026, 11, 24)), SETTINGS
+    )
+    assert [c.title for c in courses] == [
+        "חיות ואנשים בעיר הגדולה",
+        "ציפורי העיר והעצים המופלאים",
+        "חתולים, בני אדם וחיות אחרות",
+        'פינוי והצלת בע"ח לפני הריסה',
+        'גינון ושצ"פים ידידותיים לטבע',
+        "תכנון נוף עירוני ידידותי לטבע",
+    ]  # the page's opening "להרשמה" (no text) and the full course (no button) are not courses here
+    first = courses[0]
+    assert first.start_at is None and "קורס" in first.source_genres
+    assert str(first.url) == "https://www.4nature.org.il/events/teva-city/#form"  # the page's order form
+    assert first.venue_name is None and first.images  # booked on request: no place; its own picture
+    assert len({c.extra["page"] for c in courses}) == 6  # one form for all, still six events
+
+
+def test_an_offer_links_to_its_page_sign_up_form() -> None:
+    from partylinks.scrapers.fournature import undated
+
+    course_page = '<a href="#content">דילוג לתוכן</a><p>מרכז הקיימות</p><a href="#form">להרשמה</a>'
+    others = {"https://www.4nature.org.il/events/rescue-course/": course_page}
+    home = {
+        e.title: e for e in undated(Page("https://www.4nature.org.il/", HOME, date(2026, 11, 18)), others, SETTINGS)
+    }
+    course = home["קורס הכרות, שמירה והצלת בעלי חיים עירוניים"]
+    assert str(course.url) == "https://www.4nature.org.il/events/rescue-course/#form"  # straight to the form
+    assert course.extra["purchase_url"] == "https://www.4nature.org.il/events/rescue-course/#form"
+    assert "[להרשמה](https://www.4nature.org.il/events/rescue-course/#form)" in (course.description or "")

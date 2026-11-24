@@ -67,6 +67,11 @@ class FourNatureSettings(SourceSettings):
     # /events/ (``listing_paths[0]``): its undated offers are the sections between these two headings.
     listing_future: str = "אירועים עתידיים"
     listing_past: str = "אירועים קודמים"
+    # Pages that are catalogues of courses booked on request (teva-city: six courses for organisations, each a
+    # heading, a picture, "פירוט המפגשים" and a "לפרטים והזמנה" button to the page's order form): one undated
+    # event per course. Read from the post pages already fetched.
+    catalogue_paths: list[str] = Field(default_factory=lambda: ["/events/teva-city/"])
+    catalogue_kind: str = "קורס"  # their source genre when the text names none
     rain_date_words: list[str] = Field(default_factory=lambda: ["חלופי", "חלופית"])
     # Words just before a post's own date ("יום ב' 8.7.24", "פתיחת הקורס: 5.9.25"), not a date it mentions.
     date_cues: list[str] = Field(
@@ -173,9 +178,13 @@ class FourNatureScraper(BaseScraper[FourNatureSettings]):
         offers = undated(pages[0], others, s) if home else []
         if listings and listings[0]:
             offers += undated_listing(Page(urljoin(s.site_url, s.listing_paths[0]), listings[0], today), others, s)
+        for path in s.catalogue_paths:
+            url = urljoin(s.site_url, path)
+            if html := others.get(url):
+                offers += undated_catalogue(Page(url, html, today), s)
         for event in offers:
-            if event.extra["page"] not in seen and str(event.url) not in seen:
-                seen |= {event.extra["page"], str(event.url)}
+            if event.extra["page"] not in seen:  # a catalogue's courses share one form: each has its own "page" key
+                seen.add(event.extra["page"])
                 events.setdefault(event.source_event_id, event)
         for event in sorted(
             events.values(), key=lambda e: e.start_at or datetime.max.replace(tzinfo=zone(self.timezone))
@@ -328,6 +337,31 @@ def undated_listing(page: Page, others: dict[str, str], s: FourNatureSettings) -
     return out
 
 
+def undated_catalogue(page: Page, s: FourNatureSettings) -> list[ScrapedEvent]:
+    """A catalogue page's courses (``catalogue_paths``): Elementor's widgets in page order, a heading opens a course,
+    its button ("לפרטים והזמנה", to the page's order form) closes it; one with no text of its own (the page's
+    opening "להרשמה") or no button (the full course, listed from its own page) is none. No place: they come to you."""
+    tree = LexborHTMLParser(page.html)
+    out: list[ScrapedEvent] = []
+    name, parts = "", []
+    for widget in tree.css(".elementor-widget"):
+        kind = widget.attributes.get("class") or ""
+        if head := widget.css_first("h1, h2, h3"):
+            name, parts = clean_str(head.text()) or "", []  # the last heading before the text names the course
+        elif name and "elementor-widget-button" in kind:
+            texts = [p for p in parts if "elementor-widget-text-editor" in (p.attributes.get("class") or "")]
+            if texts and (event := offer(name, [*parts, widget], page, {}, s, None)):
+                found = list(dict.fromkeys([s.catalogue_kind, *event.source_genres]))
+                page_key = f"{event.url}#{event.source_event_id}"  # one form for all: dedup by the course
+                out.append(event.model_copy(update={"source_genres": found, "venue_name": None, "address": None,
+                                                    "latitude": None, "longitude": None,
+                                                    "extra": {**event.extra, "page": page_key}}))  # fmt: skip
+            name, parts = "", []
+        elif name:
+            parts.append(widget)
+    return out
+
+
 def offer(
     name: str, parts: list[LexborNode], page: Page, others: dict[str, str], s: FourNatureSettings, art: str | None
 ) -> ScrapedEvent | None:
@@ -348,11 +382,16 @@ def offer(
     images = [re.sub(r"-\d+x\d+(?=\.\w+$)", "", u) for u in images if not any(w in u.lower() for w in s.skip_images)]
     if not images and (picture := og_image(linked_html) if linked_html else None):
         images = [picture]
+    # The page the button opens has its own sign-up button (rescue-course: "להרשמה" -> its #form): that is the link.
+    signup = signup_link(linked_html, link.split("#")[0], s) if linked_html else None
+    lines = linked(parts, lines, page.url)
+    if signup and signup not in "\n".join(lines):
+        lines.append(f"[{s.signup_words[1]}]({signup})")
     key = re.sub(r"\W+", "-", name)[:60].strip("-")
     return ScrapedEvent(
         source=FourNatureScraper.name,
         source_event_id=f"undated-{key}",
-        url=link,
+        url=signup or link,
         title=name,
         start_at=None,
         time_known=False,
@@ -361,12 +400,22 @@ def offer(
         city=s.city,
         latitude=place.latitude if place else None,
         longitude=place.longitude if place else None,
-        description="\n".join(linked(parts, lines, page.url)),
+        description="\n".join(lines),
         source_genres=kinds(name, text, s) or kinds("", linked_text, s),
         images=list(dict.fromkeys(images or ([art] if art else []))),
         organizer="קהילה למען הטבע",
-        extra={"purchase_url": link, "page": link},
+        extra={"purchase_url": signup or link, "page": link},
     )
+
+
+def signup_link(html: str, base: str, s: FourNatureSettings) -> str | None:
+    """A page's own sign-up button ("להרשמה", "הרשמה"): where it leads, absolute (an anchor on the page: its form)."""
+    for a in LexborHTMLParser(html).css("a[href]"):
+        label = clean_str(a.text()) or ""
+        href = urljoin(base, a.attributes.get("href") or "")
+        if label in s.signup_words and href.startswith(("https://", "http://")):
+            return href
+    return None
 
 
 def pictures(block: LexborNode) -> list[LexborNode]:
