@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 171 configured sources, 170 on. Each one has its own module in
+SPOTX collects from 172 configured sources, 171 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -128,6 +128,7 @@ pagination and what the listing and the event page provide.
 | `shimur` | The Council for the Preservation of Heritage Sites (shimur.org, המועצה לשימור אתרי מורשת): the dated events of the heritage museums and sites it runs and partners with (heritage Fridays, Hanukkah and heritage-week days, study days, shows, family days, tours); the /events/ archive, each event page (site, time, price, artwork) and each site's page once (its point); online meetings, guides' training, bookable tours and month-long digests left out | 06:38, 18:38 | yes |
 | `kfarsabamuseum` | Kfar Saba Museum (kfar-saba-museum.org, מוזאון כפר סבא): concerts and shows at Beit HaBe'er, family days and children's shows in Baron Menashe's garden and the archaeological garden, workshops at Beit Sapir; the Hello Tickets occurrences route (every dated performance), the event posts' categories and artwork, the store's tier prices and each event page's text | 08:09, 20:09 | yes |
 | `ybz` | Yad Izhak Ben-Zvi, Jerusalem (ybz.org.il, יד יצחק בן־צבי): lectures, book evenings, conferences, study days and culture evenings at the institute, and its guided tours in Jerusalem and around the country; the calendar page (every coming item, months ahead), then each product page (artwork, text, prices, a tour's town and meeting point); Zoom lectures left out | 07:43, 19:43 | yes |
+| `buki` | Buki Naeh (buki.co.il, בוקי נאה): the crime reporter's night tours of Tel Aviv's back yard; one wp-json call (every page), each dated line of the "התאריכים הקרובים" block is one tour; no time, meeting point or price on the site (date and city only, no pin); the London / Sicily trips have no dates (sold by Natour) | 07:11, 19:11 | yes |
 | `jaffatheatre` | Jaffa Theatre (jaffatheatre.org.il): the Arab-Hebrew stage in Jaffa, via its TicketTool box office | 07:18, 19:18 | yes |
 | `tzavta` | Tzavta, Tel Aviv (tzavta.co.il, צוותא): theatre, stand-up, music, children's shows, the opera and literary series and the Short Theatre Festival; every category page (ids 1..60), the board /shows and the home page, then each event page (every date, time and hall, artwork, texts) and one Smarticket /api/shows call for the buy page and prices per date | 08:32, 20:32 | yes |
 | `levontin7` | Levontin 7 (levontin7.com): live-music club in Tel Aviv | 06:46, 18:46 | yes |

@@ -2353,6 +2353,7 @@ search:
     israelmusicfest: ["חג המוזיקה הישראלית", "חג המוסיקה הישראלית", "israel music fest"]
     feelbeit: ["feelbeit", "פילבית", "פיל בית", "layers", "שכבות"]
     ozen: ["ozen", "ozen bar", "אוזן בר", "בר אוזן", "ozentelaviv"]
+    buki: ["בוקי נאה", "buki naeh", "buki.co.il"]
     tlvjazzfest: ["פסטיבל הג'אז", "פסטיבל הגאז", "tlv jazz fest", "tel aviv jazz festival"]
     hatarbut: ["היכל התרבות"]
     kikarhamusica: ["כיכר המוזיקה"]
@@ -6549,6 +6550,22 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 0.5
+
+  buki:
+    # Buki Naeh (buki.co.il, בוקי נאה): the crime reporter's night tours of Tel Aviv's back yard. WordPress +
+    # Elementor, no events type: one wp-json call (/wp/v2/pages, all 15 pages) and every "יום חמישי – 24.12.26"
+    # line is one tour (2 coming on 24.11.2026 = the home page's "התאריכים הקרובים" block; older 2020 blocks are past).
+    # sections: every page (menu: home, סיורי לילה בתל אביב, London, Sicily x2, TV x3, about, contact; footer:
+    # accessibility, privacy; the sitemap: + sample / portfolio / old home pages). Not read as tours: London and
+    # Sicily trips abroad (no dates on the site, sold by Natour; a dated line there is logged), TV clips, about.
+    # No start time, meeting point or price on the site (by phone on sign-up): date-only, city only, no pin.
+    # Overlap: none (git grep buki / בוקי). Answers direct; robots.txt allows /wp-json.
+    enabled: true
+    cron: "11 7,19 * * *"
+    site_url: https://buki.co.il
+    skip_title_words: ["קורס"]
+    http:
+      concurrency: 1
 
   jaffatheatre:
     # Jaffa Theatre: the Arab-Hebrew stage at Mifratz Shlomo. The home page links every upcoming

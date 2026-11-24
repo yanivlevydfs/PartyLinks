@@ -20,6 +20,7 @@ from partylinks.scrapers.beatradar import BeatRadarScraper
 from partylinks.scrapers.beershevatheatre import BeerShevaTheatreScraper
 from partylinks.scrapers.beithagefen import BeitHagefenScraper
 from partylinks.scrapers.bimot import BimotScraper
+from partylinks.scrapers.buki import BukiScraper
 from partylinks.scrapers.chillz import ChillzScraper
 from partylinks.scrapers.cinemacity import CinemaCityScraper
 from partylinks.scrapers.cinematheque_tlv import JerusalemCinemathequeScraper, TelAvivCinemathequeScraper
@@ -324,6 +325,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         IsraelMusicFestScraper,
         FeelBeitScraper,
         OzenScraper,
+        BukiScraper,
         TlvJazzFestScraper,
         GaneyYehoshuaScraper,
         StandupFactoryScraper,
