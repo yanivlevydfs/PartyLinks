@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 173 configured sources, 172 on. Each one has its own module in
+SPOTX collects from 174 configured sources, 173 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -27,6 +27,7 @@ pagination and what the listing and the event page provide.
 | `tickchak` | Tickchak LIVE (live.tickchak.co.il): an aggregator across ticketing providers; events on no category page (municipal halls, museums) from its event sitemap (`tickchak_sitemap.py`) | 07:45, 19:45 | yes |
 | `selector` | Selector (selector.org.il) | 08:06, 20:06 | yes |
 | `drop` | Drop (tdrop.net): self-serve ticketing for party producers: raves, house parties, festivals | 08:17, 20:17 | yes |
+| `dungeon` | The Dungeon (dungeon.co.il), HaArba'a 10, Tel Aviv: the fetish / BDSM club's party nights (WooCommerce Store API; promoters' ticket links left out) | 07:12, 19:12 | yes |
 | `agol` | AGOL (agol-join.vercel.app): organic & progressive house collective; its one-page sign-up site names the next party (guest list, no price) | 09:37, 21:37 | yes |
 | `cluberim` | Cluberim (cluberim.co.il, קלאברים): a party guide (club nights, festivals, holiday parties); one wp-json call to its `events` post type (JetEngine meta: place, date, ticket link; embedded terms: style / holiday, kind, area, artists); ~10 coming events, each linking its Go-Out / Zygo / Eventer page (dedup merges); places geocoded, secret locations left out | 09:24, 21:24 | yes |
 | `airdrop` | Airdrop (airdrop.co.il): party guide for clubs, festivals and party trips abroad; listing + sitemap pages + their event links, artists (/artists, Spotify, links), clubs as venue profiles (/clubs: pin, address, logo) | 06:25, 18:25 | yes |

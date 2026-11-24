@@ -29,6 +29,7 @@ from partylinks.scrapers.comy import ComyScraper
 from partylinks.scrapers.concertevents import ConcertEventsScraper
 from partylinks.scrapers.dice import DiceScraper
 from partylinks.scrapers.drop import DropScraper
+from partylinks.scrapers.dungeon import DungeonScraper
 from partylinks.scrapers.easytix import EasytixScraper
 from partylinks.scrapers.efokulam import EfoKulamScraper
 from partylinks.scrapers.epgb import EpgbScraper
@@ -218,6 +219,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         Music80sScraper,
         JerusalemTheatreScraper,
         DropScraper,
+        DungeonScraper,
         AirdropScraper,
         HypdScraper,
         GetinScraper,

@@ -1006,6 +1006,7 @@ enrichment:
     ogo: [culture]          # city guide: talks, circles, community events
     ogo_us: [culture]       # same guide, USA
     ogo_de: [culture]       # same guide, Germany
+    dungeon: [kink, nightclubs]  # the fetish club: every product is a party night
     tickettailor: [culture] # organizers' box offices (stand-up tours, community nights): no categories
     makore: [culture]
     music80s: [throwback]   # 80s / 90s party guide
@@ -2352,6 +2353,7 @@ search:
     hamenagen: ["המנגן"]
     israelmusicfest: ["חג המוזיקה הישראלית", "חג המוסיקה הישראלית", "israel music fest"]
     feelbeit: ["feelbeit", "פילבית", "פיל בית", "layers", "שכבות"]
+    dungeon: ["dungeon", "the dungeon", "dungeon club", "הדאנג'ן", "דאנג'ן", "מועדון הדאנג'ן"]
     ozen: ["ozen", "ozen bar", "אוזן בר", "בר אוזן", "ozentelaviv"]
     tomix: ["tomix", "to-mix", "טומיקס", "טו מיקס"]
     buki: ["בוקי נאה", "buki naeh", "buki.co.il"]
@@ -4717,6 +4719,22 @@ sources:
     latitude: 31.7618346    # Planet Jerusalem, Naomi 4 (OSM), "The Planet Complex"
     longitude: 35.2261141
     skip_title_words: ["קורס"]
+    http:
+      concurrency: 1
+
+  dungeon:
+    # The Dungeon (dungeon.co.il, "הדאנג'ן"), HaArba'a 10, Tel Aviv: the fetish / BDSM club's parties (Thursday,
+    # Friday; 18+, a dress code). WordPress + WooCommerce: every party is a product in the Store API, read to the last
+    # page (33 products on 24.11.2026 = the product sitemap's 33). Sections: product categories ציבורי (11: read)
+    # and יחצנים (22: the promoters' own ticket links for the same nights and a test product: not read). Not read:
+    # /shop (the same products), /toys and the concept shop (no events), galleries (past nights), guides, articles,
+    # personal stories, FAQ, club procedures. The night is the name's DD.MM; the hour is the description's
+    # "פתיחה בשעה" / "פתיחה בחצות" ("פרטים בקרוב": the date only). Overlap: none (no seller elsewhere).
+    enabled: true
+    cron: "12 7,19 * * *"
+    latitude: 32.0703426    # HaArba'a 10 (the pin other sources store for the address)
+    longitude: 34.7836319
+    skip_title_words: ["אירוע ניסיון", "אירוע פרטי", "אירוע סגור"]
     http:
       concurrency: 1
 
