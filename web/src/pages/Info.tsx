@@ -11,6 +11,7 @@ export const INFO_LINKS: { path: string; label: Record<Lang, string> }[] = [
   { path: "/about", label: { he: "אודות", en: "About" } },
   { path: "/faq", label: { he: "שאלות נפוצות", en: "FAQ" } },
   { path: "/contact", label: { he: "צור קשר", en: "Contact us" } },
+  { path: "/submit", label: { he: "הוספת אירוע", en: "Add an event" } },
   { path: "/partners", label: { he: "פרסום ושיתופי פעולה", en: "Advertise with us" } },
   { path: "/stores", label: { he: "חנויות הכרטיסים", en: "Ticket stores" } },
 ];

@@ -181,7 +181,8 @@ PUBLIC_WRITES = {"/events/sponsored/hit", "/plans", "/plans/{plan_id}/votes", "/
                  "/bot/telegram"}  # Telegram's webhook: its own secret header (tests/test_bot_telegram.py)
 # A signed-in user's own writes: refused without a session cookie (403 first when not from our pages).
 USER_WRITES = ("/api/me", "/api/auth/", "/api/passkeys/", "/plans/{plan_id}",  # the last: a group's rename, by its creator
-               "/api/promote-requests")  # the /promote form (tests/test_promote_requests.py)
+               "/api/promote-requests",  # the /promote form (tests/test_promote_requests.py)
+               "/api/community")  # the /submit form (tests/test_community.py)
 
 
 def _open_app(tmp_path: Path) -> Any:

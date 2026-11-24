@@ -13,7 +13,10 @@ class CommunitySettings(BaseModel):
     turnstile_site_key: str = ""  # public: the page's widget
     turnstile_secret: SecretStr | None = None
     turnstile_verify_url: str = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
-    # An account's events go live without review once this many of its events were approved by an admin.
+    # Off (the owner's rule, 24.11.2026): every event and every edit waits for an admin's approval; only an
+    # admin's own events go live at once. On: an account is trusted after ``trusted_after`` approvals.
+    auto_publish: bool = False
+    # An account's events go live without review once this many of its events were approved (auto_publish only).
     trusted_after: int = Field(1, ge=0, le=100)  # 0: every event goes live at once
     max_per_day: int = Field(5, ge=1, le=100)  # events one account may post in 24 hours
     max_days_ahead: int = Field(365, ge=1, le=1000)  # how far ahead an event may start

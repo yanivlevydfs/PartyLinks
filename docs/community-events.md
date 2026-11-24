@@ -1,6 +1,6 @@
 # Events users post (community)
 
-A signed-in user posts an event on `/submit`. The site sells no tickets: an event has ticket links, or free
+A signed-in user posts an event on `/submit` (`web/src/community/SubmitPage.tsx`, linked in the footer). The site sells no tickets: an event has ticket links, or free
 entry with no ticket. Each posted event is listed as the `community` source and goes through the same
 enrichment and upsert as every scraped event (genres, lineup, entry type, slug, area, grouping with other
 listings of the same event). Code: `src/partylinks/community/`. Tests: `tests/test_community.py`.
@@ -10,9 +10,10 @@ listings of the same event). Code: `src/partylinks/community/`. Tests: `tests/te
 1. The form calls `GET /api/community/config` for the categories, the limits and the Turnstile site key.
 2. Pictures go to `POST /api/community/uploads`, one file at a time. Each returns an id and a preview URL.
 3. `POST /api/community/events` sends the event with the CAPTCHA token and the "public event" promise.
-4. An account's first event is saved as `pending`. An admin approves it (`POST /admin/api/community/{id}/approve`)
-   and it is listed. From then on the account is trusted (`community.trusted_after` approvals) and its
-   events and edits go live at once. An admin is always trusted.
+4. Every event, and every edit, is saved as `pending` until an admin approves it
+   (`POST /admin/api/community/{id}/approve`); only then is it listed. Only an admin's own events go live at once
+   (the owner's rule, 24.11.2026: nothing is listed without our approval). `community.auto_publish: true` would
+   trust an account after `community.trusted_after` approvals; it is off.
 5. A rejected event shows its reason to the owner. After the owner edits it, it waits for review again.
    An event an admin took down (`take_down: true`), or one from a blocked account, is `removed` and can't be
    edited.
@@ -45,7 +46,12 @@ owner's events uses is deleted after `community.unused_upload_hours`.
 ## Protection
 
 - Sign-in is required. A blocked or deleted account's events are taken off the site.
-- Cloudflare Turnstile checks every post and edit on our server. Set `community.turnstile_site_key` and the
+- Nothing goes live without an admin's approval (`auto_publish: false`), so a script or an AI agent that gets
+  through every other check still publishes nothing.
+- `/api/community` is an app path (`security.APP_API_PATHS`): script user agents (python-requests, curl,
+  headless browsers...) are refused before the route runs.
+- Cloudflare Turnstile checks every post and edit on our server, and the token must have been solved on our own
+  host name (a token solved on another site is refused). Set `community.turnstile_site_key` and the
   environment variable `PARTYLINKS_COMMUNITY__TURNSTILE_SECRET`. Until both are set, posting answers 503.
 - Writes are rate-limited per IP (`accounts.rate_limits.community`, `community_upload`) and per account
   (`community.max_per_day`, `uploads_per_day`). Writes must come from our pages (`SameOrigin`), and the form

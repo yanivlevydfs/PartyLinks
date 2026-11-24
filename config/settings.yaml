@@ -108,7 +108,8 @@ community:
   enabled: true
   captcha_required: true
   turnstile_site_key: ""
-  trusted_after: 1         # an account's events go live without review once this many were approved
+  auto_publish: false      # every event and edit waits for an admin's approval (the owner's rule, 24.11.2026)
+  trusted_after: 1         # with auto_publish: an account's events go live without review after this many approvals
   max_per_day: 5           # events one account may post in 24 hours
 
 # Email through Resend (src/partylinks/mail). Off until PARTYLINKS_MAIL__RESEND_API_KEY is set.

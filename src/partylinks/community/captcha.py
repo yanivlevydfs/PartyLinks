@@ -14,8 +14,9 @@ log = logging.getLogger(__name__)
 TIMEOUT = httpx.Timeout(8.0)
 
 
-def verify(cfg: CommunitySettings, token: str, ip: str | None) -> None:
-    """Return when the token is good; 400 when it is not, 503 when the check can't be made."""
+def verify(cfg: CommunitySettings, token: str, ip: str | None, hostname: str | None = None) -> None:
+    """Return when the token is good; 400 when it is not, 503 when the check can't be made. ``hostname``: our
+    site's; a token solved on another site (a farm's own page) is refused."""
     if not cfg.captcha_required:
         return
     if cfg.turnstile_secret is None or not cfg.turnstile_secret.get_secret_value():
@@ -36,3 +37,7 @@ def verify(cfg: CommunitySettings, token: str, ip: str | None) -> None:
     if not answer.get("success"):
         log.info("community: captcha refused (%s)", ",".join(answer.get("error-codes") or []) or "-")
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "captcha: not solved, try again")
+    solved_on = answer.get("hostname")
+    if hostname and hostname not in ("localhost", "127.0.0.1") and solved_on and solved_on != hostname:
+        log.warning("community: captcha solved on %s, not %s", solved_on, hostname)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "captcha: not solved on this site")

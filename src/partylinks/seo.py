@@ -940,6 +940,11 @@ INFO_PAGES = {
         "מפיקים, מקומות, אתרי כרטיסים ומותגים: בואו נעבוד יחד כדי שהאירועים שלכם יגיעו לעוד אנשים ב-{name}.",
         "Promoters, venues, ticketing sites and brands: let's work together to bring your events to more people on {name}.",
     )),
+    # Events users post (web/src/community/SubmitPage.tsx, partylinks.community).
+    "/submit": (("הוספת אירוע", "Add an event"), (
+        "מפיקים, מקומות ואמנים: פרסמו את האירוע הציבורי שלכם ב-{name} בחינם, עם קישור לכרטיסים או כניסה חופשית.",
+        "Promoters, venues and artists: list your public event on {name} for free, with a ticket link or free entry.",
+    )),
     # The request form (web/src/promote/PromotePage.tsx, partylinks.promote).
     "/promote": (("קידום אירוע", "Promote your event"), (
         "האירוע שלכם כבר ב-{name}? בחרו אותו, ספרו לנו מה תרצו לקדם, ונחזור אליכם עם הצעת מחיר לפרסום ממומן.",

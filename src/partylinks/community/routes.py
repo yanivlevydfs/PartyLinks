@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 from typing import Annotated, Any, Literal
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, RedirectResponse
@@ -47,6 +48,11 @@ def _cfg(request: Request) -> CommunitySettings:
     return cfg
 
 
+def _host(request: Request) -> str | None:
+    """Our site's host name: the one a CAPTCHA token must have been solved on."""
+    return urlsplit(request.app.state.settings.site.base_url).hostname
+
+
 def _ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 
@@ -75,8 +81,13 @@ def _own(session: Session, user: UserRow, row_id: int) -> CommunityEventRow:
 
 
 def _trusted(session: Session, user: UserRow, cfg: CommunitySettings) -> bool:
-    """An admin, or an account with ``trusted_after`` events approved: its events go live without review."""
-    if user.role == "admin" or cfg.trusted_after == 0:
+    """An admin; with ``auto_publish`` also an account with ``trusted_after`` events approved: its events go live
+    without review. Otherwise every event waits for an admin."""
+    if user.role == "admin":
+        return True
+    if not cfg.auto_publish:
+        return False  # every event waits for an admin
+    if cfg.trusted_after == 0:
         return True
     approved = session.scalar(select(func.count()).select_from(CommunityEventRow).where(
         CommunityEventRow.user_id == user.id, CommunityEventRow.approved_at.is_not(None)))  # fmt: skip
@@ -225,7 +236,7 @@ def create(body: SubmitIn, request: Request, user: UserDep) -> dict[str, Any]:
     if body.website:
         log.info("community event dropped: the hidden field was filled")
         return {"id": 0, "status": "pending"}
-    captcha.verify(cfg, body.captcha_token, _ip(request))
+    captcha.verify(cfg, body.captcha_token, _ip(request), _host(request))
     with request.app.state.db.session() as session:
         today = session.scalar(select(func.count()).select_from(CommunityEventRow).where(
             CommunityEventRow.user_id == user.id, CommunityEventRow.created_at > utcnow() - DAY))  # fmt: skip
@@ -250,7 +261,7 @@ def edit(row_id: int, body: SubmitIn, request: Request, user: UserDep) -> dict[s
     cfg = _cfg(request)
     if body.website:
         return {"id": 0, "status": "pending"}
-    captcha.verify(cfg, body.captcha_token, _ip(request))
+    captcha.verify(cfg, body.captcha_token, _ip(request), _host(request))
     with request.app.state.db.session() as session:
         row = _own(session, user, row_id)
         if row.status == "removed":

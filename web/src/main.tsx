@@ -13,6 +13,7 @@ import { BlogIndex, BlogPost } from "./pages/Blog";
 import { AboutPage, ContactPage, FaqPage } from "./pages/Info";
 import { PartnersPage } from "./partners/PartnersPage";
 import { PromotePage } from "./promote/PromotePage";
+import { SubmitPage } from "./community/SubmitPage";
 import PrivacyPage from "./pages/Privacy";
 import StoresPage from "./pages/Stores";
 import TermsPage from "./pages/Terms";
@@ -115,6 +116,7 @@ const router = createBrowserRouter([
       { path: "/contact", element: <ContactPage /> },
       { path: "/partners", element: <PartnersPage /> },
       { path: "/promote", element: <PromotePage /> }, // promotion request form (its own files: promote/)
+      { path: "/submit", element: <SubmitPage /> }, // a signed-in user posts an event (its own files: community/)
       { path: "/stores", element: <StoresPage /> },
     ],
   },

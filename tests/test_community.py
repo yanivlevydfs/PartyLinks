@@ -77,6 +77,7 @@ def picture(width: int = 800, height: int = 600, fmt: str = "JPEG") -> bytes:
 
 
 def test_first_event_waits_for_review_then_the_account_is_trusted(site: TestClient) -> None:
+    site.settings.community.auto_publish = True  # type: ignore[attr-defined]
     res = site.post(API, json=form(), headers=OURS)
     assert res.status_code == 201, res.text
     first = res.json()
@@ -106,6 +107,7 @@ def test_first_event_waits_for_review_then_the_account_is_trusted(site: TestClie
 
 
 def test_free_entry_with_no_ticket_points_at_our_own_page(site: TestClient) -> None:
+    site.settings.community.auto_publish = True  # type: ignore[attr-defined]
     site.settings.community.trusted_after = 0  # type: ignore[attr-defined]
     row = site.post(API, json=form(tickets=[], free_entry=True, start_time=None, end_time=None, doors_open=None),
                     headers=OURS).json()  # fmt: skip
@@ -170,6 +172,40 @@ def test_the_captcha_is_checked_on_our_server(site: TestClient, monkeypatch: pyt
     assert sent[-1]["secret"] == "secret" and sent[-1]["response"] == "good"
 
 
+def test_a_token_solved_on_another_site_is_refused(site: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    cfg = site.settings.community  # type: ignore[attr-defined]
+    cfg.captcha_required, cfg.turnstile_secret = True, SecretStr("secret")
+    site.settings.site = site.settings.site.model_copy(update={"base_url": "https://spotx.fun"})  # type: ignore[attr-defined]
+
+    def post(url: str, data: dict[str, Any], timeout: Any) -> httpx.Response:
+        return httpx.Response(200, json={"success": True, "hostname": "farm.example"}, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(httpx, "post", post)
+    headers = {**OURS, "Origin": "https://spotx.fun"}
+    res = site.post(API, json=form(captcha_token="t"), headers=headers)
+    assert res.status_code == 400 and "this site" in res.text
+
+
+def test_every_event_waits_for_an_admin_by_default(site: TestClient) -> None:
+    assert site.settings.community.auto_publish is False  # type: ignore[attr-defined]
+    first = site.post(API, json=form(), headers=OURS).json()
+    site.settings.community.trusted_after = 0  # type: ignore[attr-defined]  # no effect without auto_publish
+    as_admin(site).post(f"{ADMIN_API}/{first['id']}/approve", headers=OURS)
+    sign_in(site, site.fake)  # type: ignore[attr-defined]
+    second = site.post(API, json=form(title="Second Night Of Techno"), headers=OURS).json()
+    assert second["status"] == "pending" and second["event_path"] is None
+    edited = site.put(f"{API}/{first['id']}", json=form(title="Warehouse Techno Night II"), headers=OURS).json()
+    assert edited["status"] == "pending"  # an edit of a listed event goes back to review
+
+
+def test_scripts_and_other_sites_are_refused(site: TestClient) -> None:
+    assert site.post(API, json=form()).status_code == 403  # no X-Requested-With: not our page
+    assert site.post(API, json=form(), headers={**OURS, "Origin": "https://evil.example"}).status_code == 403
+    from partylinks.security import APP_API_PATHS  # script user agents are refused there (local test clients are not)
+
+    assert API.startswith(APP_API_PATHS) and "/api/community/uploads".startswith(APP_API_PATHS)
+
+
 def test_pictures_are_stored_as_webp_only_and_shown_on_the_listing(site: TestClient) -> None:
     res = site.post("/api/community/uploads", files={"file": ("p.jpg", picture(), "image/jpeg")}, headers=OURS)
     assert res.status_code == 201, res.text
@@ -187,6 +223,7 @@ def test_pictures_are_stored_as_webp_only_and_shown_on_the_listing(site: TestCli
         assert site.post("/api/community/uploads", files={"file": ("x.jpg", bad, "image/jpeg")},
                          headers=OURS).status_code == 422  # fmt: skip
 
+    site.settings.community.auto_publish = True  # type: ignore[attr-defined]
     site.settings.community.trusted_after = 0  # type: ignore[attr-defined]
     row = site.post(API, json=form(pictures=[up["id"]]), headers=OURS).json()
     event = listing(site, row["event_path"])

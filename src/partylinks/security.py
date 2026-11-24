@@ -47,7 +47,8 @@ DATA_PATHS = ("/events", "/categories", "/posts", "/ticket-sites", "/locate",
               "/places/categories", "/holidays/list", "/top/list", "/artists/similar", "/artists/tags", "/facets", "/cities-index")
 # The app's own JSON (group plans, a user's account): only our pages call it, so script clients are
 # refused there too. Not /plan/<id>: WhatsApp's link preview reads that page.
-APP_API_PATHS = ("/plans", "/api/me", "/api/promote-requests")  # the last: the /promote form and its event picker
+# "/api/community": the /submit form's API (posting events, pictures): script clients refused before sign-in is read.
+APP_API_PATHS = ("/plans", "/api/me", "/api/promote-requests", "/api/community")  # promote: the /promote form
 # Card artwork and the site's own files: one home page draws well over a hundred, so they don't
 # count toward the general rate limit (a few reloads banned a visitor).
 STATIC_PATHS = ("/images/", "/artwork/", "/assets/", "/icons/", "/favicon")
@@ -59,7 +60,8 @@ CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "default-src 'self'",
     # Google Analytics, after consent (consent.tsx); Cloudflare injects its cookieless Web Analytics beacon.
     # Telegram's Mini App script, loaded only inside the bot's Web App (web/src/bot/telegramApp.ts).
-    "script-src 'self' https://www.googletagmanager.com https://static.cloudflareinsights.com https://telegram.org",
+    # Cloudflare Turnstile, the /submit form's CAPTCHA (web/src/community/SubmitPage.tsx): its script and its frame.
+    "script-src 'self' https://www.googletagmanager.com https://static.cloudflareinsights.com https://telegram.org https://challenges.cloudflare.com",
     # Leaflet positions tiles with inline styles. Fonts are self-hosted (no Google Fonts: privacy).
     "style-src 'self' 'unsafe-inline'",
     # The accessibility widget fetches its language packs and dyslexia font from jsDelivr (URLs hardcoded).
@@ -69,7 +71,7 @@ CSP = "; ".join([  # noqa: FLY002 - one directive per line
     ("connect-src 'self' https://tiles.openfreemap.org https://cdn.jsdelivr.net/npm/sienna-accessibility/ https://*.google-analytics.com "
     "https://*.analytics.google.com https://*.googletagmanager.com https://cloudflareinsights.com"),
     # The lineup player (artist_links/ArtistPlayer.tsx), loaded only when a visitor clicks an artist.
-    "frame-src https://w.soundcloud.com https://open.spotify.com https://www.youtube-nocookie.com",
+    "frame-src https://w.soundcloud.com https://open.spotify.com https://www.youtube-nocookie.com https://challenges.cloudflare.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
