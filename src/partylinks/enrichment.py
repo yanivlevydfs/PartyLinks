@@ -78,6 +78,8 @@ def _keyword_pattern(keywords: list[str]) -> re.Pattern[str] | None:
 _LINKS = re.compile(r"\S+@\S+|https?://\S+|www\.\S+|\b[\w-]+(?:\.[\w-]+)*\.(?:com|org|net|co|io|il|info|me|app)\b\S*")
 
 OUTSIDE_AREA = "outside"
+# The genre of an online-only event (Zoom, a webinar): never in a row of places to go out to.
+ONLINE_GENRE = "online"
 # A city name with no country is taken for a city abroad only when that city is this big (no village guesses).
 ABROAD_AREA = "abroad"
 # ISO 3166 "unknown": an event abroad whose country the source does not give. Any country code
@@ -243,6 +245,7 @@ class Enricher:
             if (pattern := _genre_pattern(_unquoted(words)))  # a declared "organic house" is no "organic" chill
         }
         self._talk = _place_pattern(_unquoted(settings.talk_keywords), prefixes=2)
+        self._online_titles = _place_pattern(settings.online_titles, prefixes=0)
         self._fallback = {
             genre: pattern
             for genre, words in settings.fallback_genres.items()
@@ -296,6 +299,20 @@ class Enricher:
         """True when enrich() would drop the event (another city while focusing on one)."""
         return self.settings.target_city.drop_other_cities and self.in_target_city(event.city, event.address, event.venue_name) is False
 
+    def _is_online(self, event: ScrapedEvent) -> bool:
+        """An online-only event (settings ``online_*``): a Zoom place line, or a title that says Zoom."""
+        s = self.settings
+        venue = (event.venue_name or "").strip().casefold()
+        address = (event.address or "").casefold()
+        if any(p.casefold() in f"{venue} {address}" for p in s.online_places):
+            return True
+        if venue in {v.casefold() for v in s.online_venues} and not re.search(r"\d", address):
+            return True
+        title = event.title.casefold()
+        return bool(
+            self._online_titles and self._online_titles.search(title) and not any(h.casefold() in title for h in s.online_hybrid)
+        )
+
     def enrich(self, event: ScrapedEvent) -> ScrapedEvent | None:
         """Return the enriched event, or ``None`` if config says to drop it."""
         title = event.title.casefold()
@@ -305,6 +322,8 @@ class Enricher:
         event.description = drop_lost_emails(event.description)
         self._drop_social_purchase(event)
         event.genres = self._detect_genres(event)
+        if ONLINE_GENRE not in event.genres and self._is_online(event):
+            event.genres.append(ONLINE_GENRE)  # Zoom: told apart from events people go out to
         event.lineup = self._lineup(event)
         self._mark_free_tiers(event)
         free_for_some = _free_from_text(event)

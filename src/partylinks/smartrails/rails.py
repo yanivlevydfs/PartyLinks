@@ -13,11 +13,12 @@ from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from sqlalchemy import ColumnElement, func, or_, select
+from sqlalchemy import ColumnElement, String, cast, func, or_, select
 from sqlalchemy.orm import Session, aliased
 
 from partylinks.config import Settings
 from partylinks.db import DealChangeRow, EventRow
+from partylinks.enrichment import ONLINE_GENRE
 from partylinks.popularity.models import EventViewRow
 from partylinks.saved.models import SavedEventRow
 
@@ -73,10 +74,12 @@ def _weather_rails(cfg: Settings, now: datetime, filters: Filters, slots: list[l
         return {}
     _, _, temp, rain, _ = slot
     tonight = {"on_date": now.date()}
+    # A Zoom talk filed as a tour is no evening outside (nor a dry place on a rainy one).
+    in_person = cast(EventRow.genres, String).not_ilike(f'%"{ONLINE_GENRE}"%')
     if rain is not None and rain >= s.rain_mm and s.indoor_genres:
-        return {"rainy": filters(genre=s.indoor_genres, **tonight)}
+        return {"rainy": [*filters(genre=s.indoor_genres, **tonight), in_person]}
     if (rain or 0) < s.rain_mm and temp is not None and s.outdoor_min_c <= temp <= s.outdoor_max_c and s.outdoor_genres:
-        return {"outside": filters(genre=s.outdoor_genres, **tonight)}
+        return {"outside": [*filters(genre=s.outdoor_genres, **tonight), in_person]}
     return {}
 
 

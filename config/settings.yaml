@@ -514,6 +514,8 @@ enrichment:
     # "deep house" is house and deep house. Bare words that are also plain words ("indie" games, "folk"
     # tales, "metal" sculpture, "הקאנטרי" the sports club, "ישראלי" any adjective) are trusted only as a
     # source's own category (declared_genres).
+    # Online only (Zoom, webinars): no place to go out to. A Zoom place line or title adds it too (online_*).
+    online: ["וובינר", "וובינרים", "webinar", "webinars"]
     techno: ["techno", "melodic techno", "hard techno", "peak time", "peak time techno", "industrial techno", "acid techno",
              "minimal techno", "detroit techno", "dub techno", "hypnotic techno", "deep techno", "dark techno", "raw techno",
              "driving techno", "schranz", "hardgroove", "טכנו", "מלודיק טכנו", "טכנו מלודי", "הארד טכנו", "דיפ טכנו",
@@ -807,6 +809,7 @@ enrichment:
                    "benefit concert", "גאלה", "גאלת", "פילנתרופיה"]  # community galas (ogo_us, Nov 2026)
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
+    online: ["online", "אונליין", "zoom", "זום", "virtual", "וירטואלי", "webinar", "וובינר", "online events", "אירועים מקוונים"]
     reggaeton_latin: ["música latina", "urban kiz", "אורבן קיז"]  # Havana Club's urban kizomba nights
     flamenco: ["música flamenca"]
     melodic_techno: ["melodic", "מלודיק", "מלודי"]  # beatradar / getin's genre label; hypd's and beatradar's Hebrew tags
@@ -1066,7 +1069,7 @@ enrichment:
     g_live: [live_show, israeli, rock_indie, jazz, classical_opera, world_balkan, greek, arabic, jewish_music]
     g_stage: [theatre, stand_up, cinema, dance, circus_magic, drag_cabaret]
     g_culture: [culture, exhibitions, photography, lectures, literature, workshops, tours, religious, holidays, markets,
-                jewish_music, conference]
+                jewish_music, conference, online]
     g_kids: [kids, attractions, pools, escape_rooms]
     g_food: [food, happy_hour, fine_dining, kosher, coffee_carts, open_bar]
     g_leisure: [attractions, pools, escape_rooms, sport, yoga_wellness, quiz_games, environment, volunteering,
@@ -1098,6 +1101,17 @@ enrichment:
     "אסיפת הורים", "ועד הורים", "השתלמות מורים", "השתלמות גננות", "לצוות בית הספר", "לעובדי העירייה",
     "אירוע סגור", "אירוע פרטי", "סגור לקהל", "canceled event", "cancelled event", "האירוע בוטל",
   ]
+  # Online-only events (Zoom) get the genre "online" from every source, told apart from events people go out to
+  # (and kept out of the weather rows): telaviv's "מפגש באפליקציית זום - Zoom" (a parents' talk filed as a tour)
+  # showed in "perfect evening outside" (24.11.2026). Prod then had ~60 such listings
+  # (telaviv, ogo, tickchak, munievents, eventer, eventbuzz, makore, smarticket, ogo_us, posh). Not online: the
+  # clubs ZOOM Frankfurt / "Zoom" at Carl-Benz-Str. 21, ZOOM Erlebniswelt, Zoomers, Zoomies, the venue "זום אאוט".
+  # online_places: inside the venue or address; online_venues: the whole venue, with no street number;
+  # online_titles: whole words of the title; online_hybrid: a title with these is on stage too (kept).
+  online_places: ["אפליקציית זום", "אירוע ב zoom", "הרצאת זום", "מפגש מקוון", "virtual link", "zoom link", "zoom.us", "webinar", "וובינר"]
+  online_venues: ["zoom", "זום", "online", "אונליין", "virtual"]
+  online_titles: ["בזום", "ב zoom", "ב זום", "on zoom", "via zoom", "וובינר", "webinar"]
+  online_hybrid: ["פרונטלי", "in person", "in-person", "hybrid", "היברידי"]
   # Small print that names a genre word in passing, removed from the text before genres are read.
   # Nov 2026 genre audit: phrases whose words are no genre ("open house", "pop art", the evening prayer,
   # "the eastern gate", a Mediterranean menu).

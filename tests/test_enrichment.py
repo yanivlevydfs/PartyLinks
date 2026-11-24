@@ -198,6 +198,26 @@ def test_entry_type_from_price_range_without_tiers() -> None:
     assert event is not None and event.entry_type is EntryType.PAID
 
 
+def _online(**overrides: Any) -> bool:
+    event = ENRICHER.enrich(make(**overrides))
+    assert event is not None
+    return "online" in event.genres
+
+
+def test_online_events_get_their_genre() -> None:
+    """A Zoom meeting is told apart from events people go out to (it showed in "perfect evening outside")."""
+    assert _online(venue_name="מפגש באפליקציית זום - Zoom", address="מפגש מקוון 1")
+    assert _online(venue_name="זום", address="מפגש מקוון 1")
+    assert _online(venue_name="ZOOM", address=None)
+    assert _online(title="סדנת הורים בזום להורי עירוני ה'", venue_name="הקאמרי")
+    assert _online(title='חצות בפריז | ד"ר חיים שפירא מפגש ב-Zoom', venue_name="זום אאוט")
+    # Real places named Zoom, and a stage show that is streamed too, are in person.
+    assert not _online(venue_name="Zoom", address="Carl-Benz-Str. 21, 60386 Frankfurt am Main, DE")
+    assert not _online(venue_name="ZOOM Frankfurt", address="Carl-Benz-Straße 21, 60386 Frankfurt am Main")
+    assert not _online(title="קונצרט פסח ביידיש – תוכנית פרונטלית ושידור חי בזום")
+    assert not _online(venue_name="בית יזום")
+
+
 def test_target_city_matching() -> None:
     assert ENRICHER.enrich(make()).in_target_city is True  # type: ignore[union-attr]
     haifa = ENRICHER.enrich(make(address="Haifa, Israel"))  # every city is kept, flagged outside

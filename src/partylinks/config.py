@@ -401,6 +401,15 @@ class EnrichmentSettings(BaseModel):
     # Pages that are not an event, from any source ("MAKE SENSE | Ticket Management": a promoter's page of
     # passes to several parties, past ones included). Case-insensitive, anywhere in the title: dropped.
     skip_titles: list[str] = Field(default_factory=list)
+    # Online-only events get the genre "online", told apart from events people go out to (telaviv's "מפגש
+    # באפליקציית זום - Zoom" came in as a tour and showed in "perfect evening outside", Nov 2026). A venue or address containing one of
+    # ``online_places``; a venue that is exactly one of ``online_venues`` with no street number (a real club named
+    # "Zoom" has one); a title with one of ``online_titles`` (whole words, "בזום") unless it also has one of
+    # ``online_hybrid`` (a show on stage, streamed too). All case-insensitive.
+    online_places: list[str] = Field(default_factory=list)
+    online_venues: list[str] = Field(default_factory=list)
+    online_titles: list[str] = Field(default_factory=list)
+    online_hybrid: list[str] = Field(default_factory=list)
     # A title with one of these is a talk, not a party: genres it describes ("the birth of house and
     # techno") are its subject, so only the genres its source declares are kept.
     talk_keywords: list[str] = Field(default_factory=list)
