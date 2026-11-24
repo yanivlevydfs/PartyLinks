@@ -407,7 +407,10 @@ scheduler:
   worker_stop_seconds: 30       # on shutdown: time for running sources to stop
   worker_hung_after_seconds: 300   # running but no heartbeat this long: hung, stopped and restarted
   worker_commands_keep_hours: 24   # answered admin commands are deleted after this
-  startup_stagger_seconds: 180     # run_on_startup: sources start this far apart, never all at once
+  # After a restart, interrupted / overdue sources start this far apart (max_parallel_runs still caps how
+  # many run at once; the rest queue). 180 s took 5 h for ~100 overdue sources, and the next deploy dropped
+  # what had not started yet (96 still overdue at 17:57, 24.11.2026): 20 s starts them all in ~35 min.
+  startup_stagger_seconds: 20
 
 # Transport defaults. Each source gets its own isolated HTTP client built from
 # these values; any key can be overridden per source under `sources.<name>.http`.
