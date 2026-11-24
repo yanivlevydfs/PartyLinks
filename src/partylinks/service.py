@@ -446,6 +446,8 @@ class ScrapeService:
                 scraper = build_scraper(source, self.settings)
                 scraper.known_images = await asyncio.to_thread(self._known_images, source)
                 scraper.linked_urls = await asyncio.to_thread(self._linked_urls, source, scraper.link_hosts)
+                if scraper.reads_own_pages:
+                    scraper.own_pages = await asyncio.to_thread(self._own_pages, source)
                 resumed = await asyncio.to_thread(self.db.resumed_since, source, self.settings.scheduler.resume_skip_hours)
                 if resumed is not None:
                     scraper.fresh_ids = await asyncio.to_thread(self.db.seen_since, source, resumed)
@@ -645,6 +647,14 @@ class ScrapeService:
                 rows += links_to_hosts(texts, hosts)
             rows += session.scalars(select(EventRow.url).where(EventRow.source == source, upcoming_filter()))
             return list(dict.fromkeys(rows))
+
+    def _own_pages(self, source: str) -> dict[str, str]:
+        """``source``'s upcoming stored events: source_event_id -> stored url."""
+        with self.db.session(write=False) as session:
+            rows = session.execute(
+                select(EventRow.source_event_id, EventRow.url).where(EventRow.source == source, upcoming_filter())
+            )
+            return {event_id: url for event_id, url in rows}
 
     def _artwork_by_title(self, source: str) -> dict[str, str]:
         """Stored primary artwork per title key; ``source``'s own listings win over other sources'."""

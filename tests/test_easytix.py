@@ -120,6 +120,95 @@ def test_an_unlisted_event_another_source_links_to_is_read() -> None:
     assert found.organizer == "BLACKOUT by Shirley"
 
 
+def test_a_stored_event_whose_handler_changed_gets_its_new_link() -> None:
+    """BLACKOUT turned BLACKOUTHALLOWEEN into VELVET BLACKOUT, then renamed its handler VELVETBLACKOUT
+    (Nov 2026): the stored link sent buyers to the old Halloween page. The stored event is read by id."""
+    import asyncio
+    from datetime import UTC, timedelta
+
+    import httpx
+
+    from partylinks.config import HttpSettings
+    from partylinks.scrapers.easytix import EasytixScraper
+
+    day = (datetime.now(UTC) + timedelta(days=5)).strftime("%Y-%m-%d")
+    account = {"_id": "69f31312fe790994a454aba2", "handler": "BLACKOUT", "name": "BLACKOUT by Shirley"}
+    event = {
+        "_id": "6ae9e56663fe1e1943d8b207", "handler": "VELVETBLACKOUT", "name": "VELVET BLACKOUT",
+        "account": account["_id"], "marketplace": "m1", "is_enabled": True, "isPublic": False,
+        "start_date": f"{day}T12:00:00.000Z", "start_hour": f"{day}T21:30:00.000Z", "location": "Gagarin Club",
+    }  # fmt: skip
+    old = "https://easytix.co.il/event/BLACKOUT/BLACKOUTHALLOWEEN"
+    asked: list[str] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        asked.append(path)
+        if path.endswith("getMarketplaceIdByDomainRegex"):
+            return httpx.Response(200, json="m1")
+        if path.startswith("/event/public-events/"):
+            return httpx.Response(200, json=[])
+        if path == "/user/account/getByHandler/BLACKOUT":
+            return httpx.Response(200, json=account)
+        if path == f"/event/getPublicEventById/{event['_id']}":
+            return httpx.Response(200, json=event)
+        if path.startswith("/event/getEventByHandler/"):
+            return httpx.Response(400, json={"error": "event_not_found_handler"})
+        if path.startswith("/event/ticket/getTickets/"):
+            return httpx.Response(200, json=[])
+        return httpx.Response(404)
+
+    settings = EasytixSettings(cron="0 * * * *", proxied=False, marketplaces=[Marketplace(domain="easytix.co.il")])
+    scraper = EasytixScraper(settings, HttpSettings(max_retries=0), TZ)
+    scraper._new_client = lambda proxy: httpx.AsyncClient(transport=httpx.MockTransport(answer))  # type: ignore[method-assign]
+    scraper.own_pages = {event["_id"]: old}
+    scraper.linked_urls = [old + "?utm=29da6376"]  # another source still links the old page
+
+    async def run() -> list:
+        async with scraper:
+            return [e async for e in scraper.scrape()]
+
+    [found] = asyncio.run(run())
+    assert str(found.url) == "https://easytix.co.il/event/BLACKOUT/VELVETBLACKOUT"
+    assert found.title == "VELVET BLACKOUT" and found.organizer == "BLACKOUT by Shirley"
+    assert not any("getEventByHandler" in p for p in asked)  # the old address is not asked again
+    assert scraper.failures == []
+
+
+def test_a_link_to_a_handler_no_event_has_is_not_a_failure() -> None:
+    import asyncio
+
+    import httpx
+
+    from partylinks.config import HttpSettings
+    from partylinks.scrapers.easytix import EasytixScraper
+
+    account = {"_id": "a1", "handler": "BLACKOUT", "name": "BLACKOUT by Shirley"}
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if path.endswith("getMarketplaceIdByDomainRegex"):
+            return httpx.Response(200, json="m1")
+        if path.startswith("/event/public-events/"):
+            return httpx.Response(200, json=[])
+        if path == "/user/account/getByHandler/BLACKOUT":
+            return httpx.Response(200, json=account)
+        if path.startswith("/event/getEventByHandler/"):
+            return httpx.Response(400, json={"error": "event_not_found_handler"})
+        return httpx.Response(404)
+
+    settings = EasytixSettings(cron="0 * * * *", proxied=False, marketplaces=[Marketplace(domain="easytix.co.il")])
+    scraper = EasytixScraper(settings, HttpSettings(max_retries=0), TZ)
+    scraper._new_client = lambda proxy: httpx.AsyncClient(transport=httpx.MockTransport(answer))  # type: ignore[method-assign]
+    scraper.linked_urls = ["https://easytix.co.il/event/BLACKOUT/BLACKOUTHALLOWEEN"]
+
+    async def run() -> list:
+        async with scraper:
+            return [e async for e in scraper.scrape()]
+
+    assert asyncio.run(run()) == [] and scraper.failures == []
+
+
 def test_tickets_are_read_soonest_first() -> None:
     def show(i: str, day: int | None) -> ScrapedEvent:
         start = datetime(2026, 11, day, 21, tzinfo=zone(TZ)) if day else None

@@ -37,6 +37,7 @@ from decimal import Decimal
 from typing import Any
 from urllib.parse import urlsplit
 
+import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from partylinks.config import RetentionSettings
@@ -77,6 +78,20 @@ class EasytixSettings(SourceSettings):
 class EasytixScraper(BaseScraper[EasytixSettings]):
     name = "easytix"
     settings_model = EasytixSettings
+    reads_own_pages = True
+
+    async def _by_handler(self, account_id: str, handler: str) -> dict[str, Any] | None:
+        """The event at /event/<account>/<handler>; None when no event has that handler any more (nimi
+        answers 400 "event_not_found_handler": renamed or deleted, a stale link, not a scraper fault)."""
+        try:
+            return await self.get_json(
+                f"{self.settings.api_url}/event/getEventByHandler/{account_id}/{handler}", expect=dict
+            )
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 400 and "not_found" in exc.response.text:
+                self.log.info("gone: event %s of account %s", handler, account_id)
+                return None
+            raise
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s, api = self.settings, self.settings.api_url
@@ -115,27 +130,46 @@ class EasytixScraper(BaseScraper[EasytixSettings]):
             if isinstance(e, dict) and e.get("_id") and e["_id"] not in found:
                 found[e["_id"]] = (e, by_id.get(_marketplace_id(e) or ""))
         hosts = {_host(s.site_url), *(_host("https://" + m.domain) for m in s.marketplaces)}
-        listed_pages = {
-            (str((e.get("account") or {}).get("handler")), str(e.get("handler"))) for e, _ in found.values()
-        }
-        pages = [p for p in linked_pages([*s.event_pages, *self.linked_urls], hosts) if p not in listed_pages]
         accounts: dict[str, dict[str, Any] | None] = {}
-        for acc, handler in pages:
+
+        async def account_of(acc: str) -> dict[str, Any] | None:
             if acc not in accounts:
                 accounts[acc] = await self.optional(
                     f"account {acc}", self.get_json(f"{api}/user/account/getByHandler/{acc}", expect=dict)
                 )
             account = accounts[acc]
-            if not account or not account.get("_id"):
+            return account if account and account.get("_id") else None
+
+        def add_unlisted(e: dict[str, Any], account: dict[str, Any]) -> None:
+            # Unlisted (isPublic false) but sold through the link someone published: public.
+            linked: dict[str, Any] = {**e, "account": account, "isPublic": True}
+            found[str(e["_id"])] = (linked, by_id.get(_marketplace_id(linked) or ""))
+
+        # Our own stored events no listing has, read again by id: the event keeps its id but its page address
+        # (handler) can change. BLACKOUT's BLACKOUTHALLOWEEN became VELVET BLACKOUT (20.11.2026), then its
+        # handler VELVETBLACKOUT: read by the stored address, nimi answered 400 and the stored ticket link
+        # kept sending buyers to the old Halloween page.
+        resolved: set[tuple[str, str]] = set()  # stored addresses whose event was found by id
+        for stored_id, url in self.own_pages.items():
+            event_id, page = stored_id.split(":")[0], linked_pages([url], hosts)
+            if event_id in found or not page or not (account := await account_of(page[0][0])):
                 continue
             e = await self.optional(
-                f"linked event {acc}/{handler}",
-                self.get_json(f"{api}/event/getEventByHandler/{account['_id']}/{handler}", expect=dict),
+                f"stored event {event_id}", self.get_json(f"{api}/event/getPublicEventById/{event_id}", expect=dict)
             )
+            if e and str(e.get("_id")) == event_id and _account_id(e) == account["_id"]:
+                add_unlisted(e, account)
+                resolved.add(page[0])
+        listed_pages = resolved | {
+            (str((e.get("account") or {}).get("handler")), str(e.get("handler"))) for e, _ in found.values()
+        }
+        pages = [p for p in linked_pages([*s.event_pages, *self.linked_urls], hosts) if p not in listed_pages]
+        for acc, handler in pages:
+            if not (account := await account_of(acc)):
+                continue
+            e = await self.optional(f"linked event {acc}/{handler}", self._by_handler(account["_id"], handler))
             if e and e.get("_id") and e["_id"] not in found:
-                # Unlisted (isPublic false) but sold through the link someone published: public.
-                linked: dict[str, Any] = {**e, "account": account, "isPublic": True}
-                found[str(e["_id"])] = (linked, by_id.get(_marketplace_id(linked) or ""))
+                add_unlisted(e, account)
         self.log.debug("%d event pages linked from other sources and not listed", len(pages))
         now = datetime.now().astimezone()
         events: list[ScrapedEvent] = []
@@ -185,6 +219,12 @@ def linked_pages(urls: list[str], hosts: set[str]) -> list[tuple[str, str]]:
     """(account, event) handlers of the event pages among ``urls`` on these box offices, once each."""
     found = (_PAGE.match(urlsplit(u).path) for u in urls if _host(u) in hosts)
     return list(dict.fromkeys((m.group(1), m.group(2)) for m in found if m))
+
+
+def _account_id(event: dict[str, Any]) -> str | None:
+    """The event's account id: getPublicEventById gives the id, the listings the account itself."""
+    acc = event.get("account")
+    return str(acc.get("_id")) if isinstance(acc, dict) else acc if isinstance(acc, str) else None
 
 
 def _marketplace_id(event: dict[str, Any]) -> str | None:

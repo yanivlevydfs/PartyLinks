@@ -208,6 +208,9 @@ class BaseScraper[S: SourceSettings](ABC):
     # Hosts whose links in other sources' texts join ``linked_urls`` (an event in no index, linked only in a
     # municipality's or aggregator's description: eventbuzz, Ticket Tailor, Nov 2026).
     link_hosts: ClassVar[tuple[str, ...]] = ()
+    # Reads its own upcoming stored events again by id (``own_pages``): a site whose event page address can
+    # change under the same event (easytix: an organiser renames the event's handler, Nov 2026).
+    reads_own_pages: ClassVar[bool] = False
 
     def __init__(self, settings: S, http: HttpSettings, timezone: str) -> None:
         self.settings = settings
@@ -267,6 +270,9 @@ class BaseScraper[S: SourceSettings](ABC):
         # Ticket links that other sources' upcoming events point to (extra.purchase_url; filled by the
         # service), so a site whose list hides some events (private ones) can still read those pages.
         self.linked_urls: list[str] = []
+        # This source's upcoming stored events, source_event_id -> stored url (filled by the service when
+        # ``reads_own_pages``).
+        self.own_pages: dict[str, str] = {}
         # Ids of events already read since the interrupted run(s) this run follows (set by the service). A
         # source with one request per event may skip those pages: the service counts them as still listed.
         self.fresh_ids: frozenset[str] = frozenset()
