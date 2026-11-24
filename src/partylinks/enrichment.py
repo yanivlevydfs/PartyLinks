@@ -18,7 +18,7 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from partylinks.config import AreaSettings, CitySettings, EnrichmentSettings, RegionSettings
-from partylinks.models import EntryType, ScrapedEvent, TicketKind, TicketTier
+from partylinks.models import ONLINE_GENRE, EntryType, ScrapedEvent, TicketKind, TicketTier
 from partylinks.parsing import drop_lost_emails, slugify
 from partylinks.places import PlaceIndex, all_cities, city_name, city_point, israeli_places, latin_town
 
@@ -78,8 +78,6 @@ def _keyword_pattern(keywords: list[str]) -> re.Pattern[str] | None:
 _LINKS = re.compile(r"\S+@\S+|https?://\S+|www\.\S+|\b[\w-]+(?:\.[\w-]+)*\.(?:com|org|net|co|io|il|info|me|app)\b\S*")
 
 OUTSIDE_AREA = "outside"
-# The genre of an online-only event (Zoom, a webinar): never in a row of places to go out to.
-ONLINE_GENRE = "online"
 # A city name with no country is taken for a city abroad only when that city is this big (no village guesses).
 ABROAD_AREA = "abroad"
 # ISO 3166 "unknown": an event abroad whose country the source does not give. Any country code
@@ -299,6 +297,13 @@ class Enricher:
         """True when enrich() would drop the event (another city while focusing on one)."""
         return self.settings.target_city.drop_other_cities and self.in_target_city(event.city, event.address, event.venue_name) is False
 
+    def genres_of(self, event: ScrapedEvent) -> list[str]:
+        """The event's genres: enrich() and the stored events' re-read (ScrapeService.recompute_genres)."""
+        genres = self._detect_genres(event)
+        if ONLINE_GENRE not in genres and self._is_online(event):
+            genres.append(ONLINE_GENRE)  # Zoom: told apart from events people go out to
+        return genres
+
     def _is_online(self, event: ScrapedEvent) -> bool:
         """An online-only event (settings ``online_*``): a Zoom place line, or a title that says Zoom."""
         s = self.settings
@@ -321,9 +326,7 @@ class Enricher:
         self._slugs(event)
         event.description = drop_lost_emails(event.description)
         self._drop_social_purchase(event)
-        event.genres = self._detect_genres(event)
-        if ONLINE_GENRE not in event.genres and self._is_online(event):
-            event.genres.append(ONLINE_GENRE)  # Zoom: told apart from events people go out to
+        event.genres = self.genres_of(event)
         event.lineup = self._lineup(event)
         self._mark_free_tiers(event)
         free_for_some = _free_from_text(event)

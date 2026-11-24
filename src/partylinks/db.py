@@ -54,7 +54,7 @@ from sqlalchemy.exc import TimeoutError as PoolTimeout
 from sqlalchemy.orm import DeclarativeBase, Mapped, ORMExecuteState, Session, mapped_column, relationship, sessionmaker
 
 from partylinks.config import DatabaseSettings, get_settings
-from partylinks.models import ScrapedEvent
+from partylinks.models import ONLINE_GENRE, ScrapedEvent
 
 log = logging.getLogger(__name__)
 
@@ -435,14 +435,19 @@ def upcoming_filter() -> ColumnElement[bool]:
     return EventRow.is_listed.is_not(False) & current_clause(settings.retention, settings.timezone)
 
 
+def in_person() -> ColumnElement[bool]:
+    """Not an online-only event (genre ``ONLINE_GENRE``: Zoom, a webinar), one people go out to."""
+    return func.cast(EventRow.genres, String).not_ilike(f'%"{ONLINE_GENRE}"%')
+
+
 def open_now_filters(tz: tzinfo, now: datetime | None = None) -> list[ColumnElement[bool]]:
     """Started and not over yet, with ``upcoming_filter`` (which knows when an event is over): /now and
     the "open now" filter. A listing with no hours (a place open "all day", a 00:00 start with no end) is
-    not known to be open at this hour, so it is left out."""
+    not known to be open at this hour, so it is left out; so is a Zoom talk (nowhere to go)."""
     now = now or datetime.now(UTC)
     midnight = datetime.combine(now.astimezone(tz).date(), dt_time(), tz)
     timed = EventRow.time_known.is_(True) & (EventRow.start_at != midnight)
-    return [EventRow.start_at <= now, EventRow.end_at.is_not(None) | timed]
+    return [EventRow.start_at <= now, EventRow.end_at.is_not(None) | timed, in_person()]
 
 
 def offers_hash(event: ScrapedEvent) -> str:

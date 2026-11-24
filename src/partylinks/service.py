@@ -227,7 +227,8 @@ class ScrapeService:
         """
         fields = {"genres", "declared_genres", "genre_families", "detect_genres_from_text", "text_ignore",
                   "talk_keywords", "talk_genres", "declared_text_genres", "declared_genres_beside", "source_default_genres", "title_genres", "fallback_genres",
-                  "declared_genres_only", "declared_ignore", "extra_genres"}  # fmt: skip
+                  "declared_genres_only", "declared_ignore", "extra_genres",
+                  "online_places", "online_venues", "online_titles", "online_hybrid"}  # fmt: skip
         config = json.dumps(self.settings.enrichment.model_dump(include=fields), sort_keys=True, ensure_ascii=False)
         key = "genres:" + hashlib.sha256(config.encode()).hexdigest()[:16]
         with self.db.session(write=False) as session:
@@ -235,15 +236,17 @@ class ScrapeService:
                 return 0
             rows = session.execute(
                 select(EventRow.id, EventRow.source, EventRow.source_event_id, EventRow.url, EventRow.title,
-                       EventRow.description, EventRow.source_genres, EventRow.event_types, EventRow.genres)
+                       EventRow.description, EventRow.source_genres, EventRow.event_types, EventRow.genres,
+                       EventRow.venue_name, EventRow.address)
             ).all()  # fmt: skip
         updates = []
         for r in rows:  # the stored event (validated when scraped), every required field set
             probe = ScrapedEvent.model_construct(
                 source=r.source, source_event_id=r.source_event_id, url=HttpUrl(r.url), title=r.title,
                 description=r.description, source_genres=r.source_genres or [], event_types=r.event_types or [],
+                venue_name=r.venue_name, address=r.address,
             )  # fmt: skip
-            genres = self.enricher._detect_genres(probe)
+            genres = self.enricher.genres_of(probe)
             if genres != (r.genres or []):
                 updates.append({"id": r.id, "genres": genres})
         with self.db.session() as session:

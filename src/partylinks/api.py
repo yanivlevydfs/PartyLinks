@@ -60,6 +60,7 @@ from partylinks.db import (
     EventRow,
     ImageRow,
     ScrapeRunRow,
+    in_person,
     lineup_has,
     open_now_filters,
     upcoming_filter,
@@ -1540,7 +1541,8 @@ def _register_routes(app: FastAPI) -> None:
         """All matching events with coordinates at once (the list's filters, no paging)."""
 
         def build(session: Session) -> MapOut:
-            located = and_(EventRow.latitude.is_not(None), EventRow.longitude.is_not(None))
+            # A Zoom talk has no place: never a pin, even with its organiser's address (counted as unplaced).
+            located = and_(EventRow.latitude.is_not(None), EventRow.longitude.is_not(None), in_person())
             rows = session.execute(
                 select(
                     EventRow.id, EventRow.slug, EventRow.code, EventRow.title, EventRow.start_at, EventRow.end_at, EventRow.time_known,

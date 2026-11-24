@@ -30,3 +30,21 @@ def test_open_now_lists_what_runs_at_this_hour(tmp_path: Path) -> None:
         page = client.get("/now")
         assert page.status_code == 200 and "Happy hour running" in page.text and "Party later" not in page.text
         assert "/now" in client.get("/sitemap-1.xml").text
+
+
+def test_a_zoom_talk_is_never_open_now_nor_on_the_map(tmp_path: Path) -> None:
+    """An online-only event (genre "online") has nowhere to go: not "open now", no pin, counted as unplaced."""
+    settings = settings_for(tmp_path)
+    now = datetime.now(UTC).replace(microsecond=0)
+    here = {"latitude": 32.08, "longitude": 34.78, "end_at": now + timedelta(hours=2)}
+    seed(settings, [
+        event("bar", now - timedelta(hours=1), title="Happy hour running", **here),
+        event("zoom", now - timedelta(hours=1), title="סדנת הורים בזום", venue_name="מפגש באפליקציית זום - Zoom", **here),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        items = client.get("/events").json()["items"]
+        assert "online" in next(e for e in items if e["id"] == "test:zoom")["genres"]
+        titles = {e["title"] for e in client.get("/events", params={"open_now": "true"}).json()["items"]}
+        assert titles == {"Happy hour running"}
+        pins = client.get("/events/map").json()
+        assert [p["id"] for p in pins["items"]] == ["test:bar"] and pins["unplaced"] == 1

@@ -20,6 +20,10 @@ from pydantic import (
 from partylinks.artists import ArtistProfile
 from partylinks.parsing import TidyText, is_site_logo
 
+# The genre of an online-only event (Zoom, a webinar): no place to go out to, so never "open now", on the map
+# or in a weather row (enrichment.Enricher._is_online, settings enrichment.online_*).
+ONLINE_GENRE = "online"
+
 
 def without_nul(value: Any) -> Any:
     """``value`` with every NUL character removed from its strings (nested lists / dicts too). Sites

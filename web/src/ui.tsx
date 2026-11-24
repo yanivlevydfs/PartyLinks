@@ -374,7 +374,8 @@ export function Card({ e }: { e: EventSummary }) {
         <p className="meta">{when(e, t, { weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}
           {/* A place's opening: until when ("18:00–20:00"). */}
           {e.place && e.end_at && e.time_known !== false && `–${when(e, t, { hour: "2-digit", minute: "2-digit" }, e.end_at)}`}</p>
-        {isOn(e) && <p className="meta now">{e.place ? t.now : t.happeningNow}</p>}
+        {/* A Zoom talk is not "on" anywhere to go: it is streaming. */}
+        {isOn(e) && <p className="meta now">{e.place ? t.now : e.genres?.includes("online") ? t.onlineNow : t.happeningNow}</p>}
         {e.deal && <p className="meta deal" dir="auto">🥂 {e.deal}</p>}
         {e.place && !!e.price_level && <p className="meta">{"₪".repeat(e.price_level)}</p>}
         {e.place && <PlaceLine e={e} />}
