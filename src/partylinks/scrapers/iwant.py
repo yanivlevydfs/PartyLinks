@@ -49,10 +49,12 @@ class IwantScraper(BaseScraper[IwantSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         data = await self.get_json(self.settings.site_url + self.settings.listing_path, expect=dict)
         retention = RetentionSettings()
+        rows = data.get("events") or []
+        slugs = unique_slugs(rows)
         current: list[ScrapedEvent] = []
-        for row in data.get("events") or []:
+        for row in rows:
             try:
-                event = parse_event(row, self.settings, self.timezone)
+                event = parse_event(row, self.settings, self.timezone, slugs)
             except Exception as exc:  # noqa: BLE001 - one bad row must not cost the others
                 self.record_failure(f"event {row.get('id')}", exc)
                 continue
@@ -67,7 +69,8 @@ class IwantScraper(BaseScraper[IwantSettings]):
 
     async def _with_tiers(self, event: ScrapedEvent) -> ScrapedEvent:
         """The event with its page's ticket tiers; without them when the page fails."""
-        page = await self.optional(f"tiers {event.source_event_id}", self.get_text(str(event.url)))
+        page_url = event_page(self.settings, event.source_event_id)
+        page = await self.optional(f"tiers {event.source_event_id}", self.get_text(page_url))
         tiers = parse_tiers(page) if page else []
         prices = [t.price for t in tiers if t.price is not None and t.price > 0]
         if not prices:
@@ -75,8 +78,22 @@ class IwantScraper(BaseScraper[IwantSettings]):
         return event.model_copy(update={"tickets": tiers, "min_price": min(prices), "max_price": max(prices)})
 
 
-def parse_event(row: dict[str, Any], settings: IwantSettings, timezone: str) -> ScrapedEvent | None:
-    """One listing row; None when the site does not show it (status other than active)."""
+def unique_slugs(rows: list[dict[str, Any]]) -> set[str]:
+    """The feed's slugs (lowercased) that name one event only. The site reuses a slug for a later date
+    ("grungenoon": ids 11 and 50) and /<slug> then opens the oldest (24.11.2026), so those keep /event.php."""
+    names = [str(r.get("slug") or "").strip().lower() for r in rows]
+    return {n for n in names if n and names.count(n) == 1}
+
+
+def event_page(settings: IwantSettings, event_id: object) -> str:
+    return f"{settings.site_url}{settings.event_path}?id={event_id}"
+
+
+def parse_event(
+    row: dict[str, Any], settings: IwantSettings, timezone: str, slugs: set[str] | None = None
+) -> ScrapedEvent | None:
+    """One listing row; None when the site does not show it (status other than active). Its link is the
+    site's own short one, /<slug> (what the producers share and /go opens), when no other event has that slug."""
     if row.get("status") != "active":
         return None
     event_id, title = row.get("id"), clean_str(row.get("name"))
@@ -95,7 +112,8 @@ def parse_event(row: dict[str, Any], settings: IwantSettings, timezone: str) -> 
     genres = [g.strip().lower() for g in str(row.get("genre") or "").split(",")]
     image = clean_str(row.get("image_url"))
     price = to_decimal(row.get("price"))
-    url = f"{settings.site_url}{settings.event_path}?id={event_id}"
+    slug = str(row.get("slug") or "").strip()
+    url = f"{settings.site_url}/{slug}" if slugs and slug.lower() in slugs else event_page(settings, event_id)
     return ScrapedEvent(
         source=IwantScraper.name,
         source_event_id=str(event_id),
@@ -112,7 +130,8 @@ def parse_event(row: dict[str, Any], settings: IwantSettings, timezone: str) -> 
         min_price=price if price else None,
         max_price=price if price else None,
         is_sold_out=bool(int(row.get("sold_out") or 0) or int(row.get("manual_sold_out") or 0)),
-        extra={"purchase_url": url},
+        # The id link stays the merge key: 80sMusic turns IWANT's short links into it (rel=canonical).
+        extra={"purchase_url": event_page(settings, event_id)},
     )
 
 

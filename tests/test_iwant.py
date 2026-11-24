@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
-from partylinks.scrapers.iwant import IwantSettings, parse_event, parse_tiers
+from partylinks.scrapers.iwant import IwantSettings, parse_event, parse_tiers, unique_slugs
 
 ROW = {
     "id": 52,
@@ -38,6 +38,7 @@ def test_row() -> None:
     assert event is not None
     assert event.source_event_id == "52"
     assert str(event.url) == "https://iwant.co.il/event.php?id=52"
+    assert event.start_at is not None
     assert event.start_at.isoformat() == "2026-11-27T22:00:00+02:00"
     assert event.time_known
     assert (event.venue_name, event.city) == ("WAVE CLUB רחוב שבח 1", "תל אביב")
@@ -70,3 +71,22 @@ def test_venue_with_street_other_city_and_inactive() -> None:
 def test_tiers() -> None:
     [tier] = parse_tiers(PAGE)
     assert (tier.name, tier.price, tier.original_price) == ("מחיר מלא", Decimal(54), Decimal(70))
+
+
+def test_short_link_when_the_slug_is_unique() -> None:
+    """/allnightlong is the link producers share; a reused slug ("grungenoon": 11 and 50) opens the oldest."""
+    rows = [
+        ROW | {"slug": "allnightlong"},
+        {"id": 11, "slug": "grungenoon"},
+        {"id": 50, "slug": "GrungeNoon"},
+        {"id": 9, "slug": ""},
+    ]
+    slugs = unique_slugs(rows)
+    assert slugs == {"allnightlong"}
+    event = parse_event(rows[0], CFG, "Asia/Jerusalem", slugs)
+    assert event is not None
+    assert str(event.url) == "https://iwant.co.il/allnightlong"
+    assert event.extra["purchase_url"] == "https://iwant.co.il/event.php?id=52"  # the merge key 80sMusic links to
+    reused = parse_event(ROW | {"id": 50, "slug": "GrungeNoon"}, CFG, "Asia/Jerusalem", slugs)
+    assert reused is not None
+    assert str(reused.url) == "https://iwant.co.il/event.php?id=50"
