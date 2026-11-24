@@ -2351,6 +2351,7 @@ search:
     hamenagen: ["המנגן"]
     israelmusicfest: ["חג המוזיקה הישראלית", "חג המוסיקה הישראלית", "israel music fest"]
     feelbeit: ["feelbeit", "פילבית", "פיל בית", "layers", "שכבות"]
+    ozen: ["ozen", "ozen bar", "אוזן בר", "בר אוזן", "ozentelaviv"]
     tlvjazzfest: ["פסטיבל הג'אז", "פסטיבל הגאז", "tlv jazz fest", "tel aviv jazz festival"]
     hatarbut: ["היכל התרבות"]
     kikarhamusica: ["כיכר המוזיקה"]
@@ -4712,6 +4713,27 @@ sources:
     latitude: 31.7618346    # Planet Jerusalem, Naomi 4 (OSM), "The Planet Complex"
     longitude: 35.2261141
     skip_title_words: ["קורס"]
+    http:
+      concurrency: 1
+
+  ozen:
+    # Ozen Bar (ozentelaviv.com), King George 48, Tel Aviv: parties, live shows, stand-up and listening sessions.
+    # WordPress + Tickera: one wp-json call (tc_events, _embed) gives every event: start / end (meta), category,
+    # artwork, and the seller link in the text (Go-Out, IWANT, Ticket Tailor: also sold there, dedup merges them).
+    # sections: tc_events, every page (22 posts on 24.11.2026 = the 4 categories' 6 + 7 + 4 + 5 = the home page's
+    # 22 event links; prod: see the report); categories מסיבות / הופעות / סטנד-אפ / הרצאות (6 more have 0 posts);
+    # not read: /product (WooCommerce: 100 ticket types of past events), /cart, /terms, accessibility and contact
+    # pages, posts (none), the sitemap (ozentlv.com, an older domain: the same tc_events). Overlap: standupist
+    # ("אוזן תל אביב"), goout, iwant, eventer and music80s sell or list its nights.
+    enabled: true
+    cron: "4 6,18 * * *"
+    site_url: https://ozentelaviv.com
+    venue_name: אוזן בר
+    address: קינג ג'ורג' 48
+    city: תל אביב
+    latitude: 32.0743905    # ROOM 48 / Ozen Bar, King George 48 (geocoding.venues "room 48")
+    longitude: 34.7758641
+    skip_title_words: ["קורס", "סדנת", "אירוע פרטי", "אירוע סגור"]
     http:
       concurrency: 1
 

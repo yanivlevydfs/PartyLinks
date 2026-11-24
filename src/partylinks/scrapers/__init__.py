@@ -111,6 +111,7 @@ from partylinks.scrapers.nikonitai import NikoNitaiScraper
 from partylinks.scrapers.ogo import OgoScraper
 from partylinks.scrapers.ogo_abroad import OgoDeScraper, OgoUsScraper
 from partylinks.scrapers.onecity import OneCityScraper
+from partylinks.scrapers.ozen import OzenScraper
 from partylinks.scrapers.parks import ParksScraper
 from partylinks.scrapers.parties247 import Parties247Scraper
 from partylinks.scrapers.peoplecomputers import PeopleComputersScraper
@@ -320,6 +321,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         InpersonScraper,
         IsraelMusicFestScraper,
         FeelBeitScraper,
+        OzenScraper,
         TlvJazzFestScraper,
         GaneyYehoshuaScraper,
         StandupFactoryScraper,
