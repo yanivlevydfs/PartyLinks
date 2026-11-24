@@ -85,8 +85,8 @@ class TomixSettings(SourceSettings):
     checkout_query: str = "?eventbuzz=true"
     talents_path: str = "/talents/"  # an artist's section: names the artist, not a genre
     category_root: str = "/product-category/"
-    # Sections that are offers, not a kind of show (club benefits, holidays, gifts, "all experiences"): their
-    # names are not passed as categories (the show's own sections are).
+    # Sections (at any depth) that are offers or places, not a kind of show (club benefits, holidays, gifts,
+    # "all experiences", a club's or an artist's page): their names are not passed as categories.
     plain_sections: list[str] = Field(default_factory=list)
     default_labels: list[str] = Field(default_factory=lambda: ["במה ומופעים"])  # shows no product lists
     # Eventer
@@ -313,8 +313,8 @@ class TomixScraper(BaseScraper[TomixSettings]):
 
     def _plain(self, path: str) -> bool:
         s = self.settings
-        section = path.removeprefix(s.category_root).strip("/").split("/")[0]
-        return section in s.plain_sections
+        sections = path.removeprefix(s.category_root).strip("/").split("/")
+        return any(section in s.plain_sections for section in sections)
 
     # ------------------------------------------------------------------ products
     async def _categories(self) -> dict[str, list[tuple[str, str]]]:

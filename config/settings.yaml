@@ -4762,7 +4762,8 @@ sources:
     site_url: https://www.to-mix.co.il
     plain_sections: [כללי, brands, max, pelephone, samsung, amex, fnx-benefits, ולנס, israel2024, valentines-day,
                      hanukkah-christmas, passover, shavuot, summer, זוגות, מיוחדים, מתנות-לחג, black-november,
-                     bachelorette-party, חנוכה-10-12, mamiclub-sh26, shalosh, צהל, דוגמא-שיתופי-פעולה]
+                     bachelorette-party, חנוכה-10-12, mamiclub-sh26, shalosh, צהל, דוגמא-שיתופי-פעולה,
+                     tox, elmaz-yaakov, volume-acoustic, בן-בן-ברוך]   # clubs / halls / an artist: no genre
     skip_title_words: ["test mixcard", "עותק - ", "קורס", "סדנת", "אירוע פרטי", "אירוע סגור"]
     venues:
       "tox - ראשון לציון": {venue_name: tox, address: "שדרות יוסף לישנסקי 3", city: ראשון לציון, latitude: 31.9876287, longitude: 34.763967}
