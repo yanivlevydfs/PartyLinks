@@ -2353,6 +2353,7 @@ search:
     israelmusicfest: ["חג המוזיקה הישראלית", "חג המוסיקה הישראלית", "israel music fest"]
     feelbeit: ["feelbeit", "פילבית", "פיל בית", "layers", "שכבות"]
     ozen: ["ozen", "ozen bar", "אוזן בר", "בר אוזן", "ozentelaviv"]
+    tomix: ["tomix", "to-mix", "טומיקס", "טו מיקס"]
     buki: ["בוקי נאה", "buki naeh", "buki.co.il"]
     tlvjazzfest: ["פסטיבל הג'אז", "פסטיבל הגאז", "tlv jazz fest", "tel aviv jazz festival"]
     hatarbut: ["היכל התרבות"]
@@ -4739,6 +4740,53 @@ sources:
     skip_title_words: ["קורס", "סדנת", "אירוע פרטי", "אירוע סגור"]
     http:
       concurrency: 1
+
+  tomix:
+    # toMix (to-mix.co.il): WooCommerce shop of shows (its productions, the tox and UpTown clubs, Anafaza, touring
+    # musicals) and of vouchers (spa, food, tours: dated nowhere, not events). Every product from every place the
+    # site lists one, then each show's box office (its ?eventbuzz=true page): Eventer (an event, a table of dates,
+    # or a profile tag: /user/<user>/getData lists the profile with tags) or toMix's BiggerPicture shop (site 886,
+    # tickets.to-mix.co.il / app.to-mix.co.il): every event master by id, its dates, performances and prices.
+    # sections (24.11.2026): read: all 201 product categories of product_cat-sitemap.xml with every ?page=N
+    # (432 products; "כללי" 21 pages, "במה ומופעים" 12, every talents/<artist> page = the show's artist), /sitemap/
+    # (540 product links, 132 in no category), the home page, every page of page/post/specialty-sitemap.xml
+    # (landing pages: chiquititas, genesis, legends...), the Eventer profiles tomix + mixcard (193 + events), the
+    # shop's 52 event masters (ids 1..52; app.to-mix.co.il mb_event-sitemap.xml names 44 of them) = 75
+    # performances. Not read: /wp-json, /wp-admin (the "load more" ajax), /shop, /my-account (robots.txt), /mixcard
+    # (gift card), /drushim, /faq, contact / policy pages, product-sitemap2..5.xml (answer the home page's HTML),
+    # mb_cinema / mb_movie sitemaps (one test page each). Vouchers (spa, wine, food, delivery, hotels, tours with
+    # an open date: 299 products) are no events. Overlap: eventer (users: tomix), smarticket (host to-mix: its
+    # cover bands); dedup merges them on the Eventer page / shop link (purchase_url).
+    enabled: true
+    cron: "29 9,21 * * *"
+    site_url: https://www.to-mix.co.il
+    plain_sections: [כללי, brands, max, pelephone, samsung, amex, fnx-benefits, ולנס, israel2024, valentines-day,
+                     hanukkah-christmas, passover, shavuot, summer, זוגות, מיוחדים, מתנות-לחג, black-november,
+                     bachelorette-party, חנוכה-10-12, mamiclub-sh26, shalosh, צהל, דוגמא-שיתופי-פעולה]
+    skip_title_words: ["test mixcard", "עותק - ", "קורס", "סדנת", "אירוע פרטי", "אירוע סגור"]
+    venues:
+      "tox - ראשון לציון": {venue_name: tox, address: "שדרות יוסף לישנסקי 3", city: ראשון לציון, latitude: 31.9876287, longitude: 34.763967}
+      "UPTOWN קריית עתידים ת\"א": {venue_name: UpTown Music Club, address: "קריית עתידים", city: תל אביב-יפו, latitude: 32.1145035, longitude: 34.8434712}
+      "המשכן לאומנויות הבמה - תל אביב": {venue_name: המשכן לאמנויות הבמה, address: "שדרות שאול המלך 19", city: תל אביב-יפו, latitude: 32.0764325, longitude: 34.7847985}
+      "המשכן לאמנויות הבמה באר שבע": {venue_name: המשכן לאמנויות הבמה באר שבע, address: "שדרות יצחק רגר 41", city: באר שבע, latitude: 31.2518416, longitude: 34.7973116}
+      "היכל התרבות ראשון לציון": {venue_name: היכל התרבות ראשון לציון, address: "ז'בוטינסקי 16", city: ראשון לציון, latitude: 31.962774, longitude: 34.8005569}
+      "היכל התרבות נס ציונה": {venue_name: היכל התרבות נס ציונה, city: נס ציונה, latitude: 31.9307476, longitude: 34.7962655}
+      "היכל התרבות חבל מודיעין - איירפורט סיטי": {venue_name: היכל התרבות חבל מודיעין, address: איירפורט סיטי, city: איירפורט סיטי, latitude: 31.9899, longitude: 34.9131}
+      "היכל התרבות פתח תקווה": {venue_name: היכל התרבות פתח תקווה, city: פתח תקווה, latitude: 32.09518, longitude: 34.888604}
+      "היכל התרבות אשקלון": {venue_name: היכל התרבות אשקלון, city: אשקלון, latitude: 31.6647673, longitude: 34.5620223}
+      "היכל התיאטרון מוצקין": {venue_name: היכל התיאטרון קריית מוצקין, city: קריית מוצקין, latitude: 32.8447546, longitude: 35.0798714}
+      "היכל אמנויות הבמה הרצליה": {venue_name: היכל אמנויות הבמה הרצליה, city: הרצליה}
+      "היכל התרבות כפר סבא": {venue_name: היכל התרבות כפר סבא, address: "ירושלים 33", city: כפר סבא, latitude: 32.1766984, longitude: 34.9052622}
+      "צוותא - ישיבה לא מסומן": {venue_name: צוותא, address: "אבן גבירול 30", city: תל אביב-יפו, latitude: 32.0752405, longitude: 34.7822687}
+      "מעיין חרוד שבגלבוע - ג'נסיס": {venue_name: גן לאומי מעיין חרוד, address: "גן לאומי מעיין חרוד", city: גדעונה}
+      "קיוב - אלמא זכרון יעקב": {venue_name: "אולם הקיוב, מרכז לאמנויות אלמא", city: זכרון יעקב, latitude: 32.5783546, longitude: 34.9457471}
+      "רדינג": {venue_name: רידינג 3, address: "נמל תל אביב", city: תל אביב-יפו, latitude: 32.1050861, longitude: 34.7790248}
+    places:
+      "כפר הנוקדים": {venue_name: כפר הנוקדים, city: ערד}   # the desert camp by Arad (Eventer: no town)
+      "קיבוץ מגן": {venue_name: קיבוץ מגן, city: מגן}   # Eshkol's "אור ואדמה" festival square
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.2
 
   tlvjazzfest:
     # Tel Aviv-Yafo Jazz Festival: three free days at Beit Romano (and Park HaMesila), a static site per year.

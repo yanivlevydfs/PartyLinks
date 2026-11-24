@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 172 configured sources, 171 on. Each one has its own module in
+SPOTX collects from 173 configured sources, 172 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -87,6 +87,7 @@ pagination and what the listing and the event page provide.
 | `arenas` | Arenas, stadiums and amphitheaters, from Tickchak LIVE (`tickchak.py`) | 07:57, 19:57 | yes |
 | `hamenagen` | HaMenagen (hamenagen.net): Jewish and Hasidic music concert calendar | 04:43, 16:43 | yes |
 | `feelbeit` | FeelBeit (feelbeit.com): a Jerusalem arts space and its yearly LAYERS festival of free concerts and DJ sets; one wp-json call (`layers_event`, the Hebrew posts), the venue pinned in config | 06:22, 18:22 | yes |
+| `tomix` | toMix (to-mix.co.il): the shows of a WooCommerce experiences shop (its productions, the tox and UpTown clubs, touring musicals); every product of all ~200 categories (`?page=N`), the HTML site map and the landing pages, each show's box office: Eventer (an event, a table of dates or a profile tag: `/user/<user>/getData`) or its BiggerPicture shop (site 886: every event master by id, its dates, halls and prices); vouchers (spa, food, tours) left out | 09:29, 21:29 | yes |
 | `ozen` | Ozen Bar (ozentelaviv.com), King George 48, Tel Aviv: parties, live shows, stand-up and listening sessions; one wp-json call (Tickera `tc_events`: start / end, category, artwork, the seller link), the venue pinned in config | 06:04, 18:04 | yes |
 | `tlvjazzfest` | Tel Aviv-Yafo Jazz Festival (tlvjazzfest26.com): three free days at Beit Romano; the home page's Festival JSON-LD, the schedule (`data.js`) and the press bios (`artists-info.js`): one event per day with its programme, one per headliner | 06:31, 18:31 | yes |
 | `israelmusicfest` | Israel Music Festival (israelmusicfest.co.il, חג המוזיקה הישראלית): the Culture Ministry's week of free Israeli-music concerts; wp-json list, each concert's page, and its Wix registration page's JSON-LD (time, address, SoldOut) | 05:53, 17:53 | yes |

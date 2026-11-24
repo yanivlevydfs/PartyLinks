@@ -22,6 +22,16 @@ Follow `docs/adding-a-source.md` step by step. It is the procedure; this skill o
   when the site lists further ahead (planet / ravhen read only 14 days); every date / performance of an
   event is read, not only the first. Where the site shows a count per category, the scanner's count
   matches it: write both numbers in the report.
+- **Every slug, not only the listed ones (the owner's rule, 24.11.2026).** Events / products that no
+  category or menu lists still have a page: collect their slugs from every place that names one, and
+  read each: the XML sitemaps (every entry of the index; one that answers HTML is broken, say so), the
+  HTML site map page (`/sitemap/`, `/site-map/`), landing pages (every page of the page / post sitemaps),
+  the home page, sibling subdomains and their sitemaps (`app.`, `tickets.`, `shop.`), the box office's
+  own lists (an Eventer profile `/user/<u>/getData`, a Smarticket tenant), sequential ids in the backing
+  API (scan 1, 2, 3... to a gap of misses past the highest known id), the Wayback index when the site
+  has none of these. Count what each one adds over the categories and write it in the config comment.
+  toMix: 132 of 540 products were in no category (only `/sitemap/` named them, Anafaza among them), and
+  BiggerPicture master 30 (a February show) has no app page (only the id scan finds it).
 - **Categories:** every site category / chip mapped to our genres (`enrichment.genres` keywords, or
   `declared_genres_only` when the site's own categories are precise). `check_source.py` shows no `NO GENRE`.
 - **WebP:** artwork URLs passed through; in production `https://spotx.fun/images/<id>/640.webp` answers

@@ -52,12 +52,17 @@ sources are never changed to make room for a new one.
    | Refuses the free Israeli proxies too | `vpn: true`: our Israeli VPN only (Railway production, `vpn/`) |
    | Cloudflare JS challenge for every client | Stop and tell the user; the tool's permission classifier may block bypass work |
 
-5. **Count the requests per run.** The site's own rate limits matter; set `http.concurrency` and
+5. **Collect every slug, not only the listed ones.** Events no category lists still have a page: take
+   slugs from every XML sitemap entry, the HTML site map page, landing pages, the home page, sibling
+   subdomains and their sitemaps, the box office's own lists (an Eventer profile, a tenant) and
+   sequential API ids (scan to a gap of misses past the highest known one). Write in the config comment
+   what each adds (toMix: `/sitemap/` named 132 products no category lists).
+6. **Count the requests per run.** The site's own rate limits matter; set `http.concurrency` and
    `http.request_delay_seconds` to match.
-6. **Before any probing that may be read as circumvention** (a hidden API, a blocked site),
+7. **Before any probing that may be read as circumvention** (a hidden API, a blocked site),
    the auto-mode classifier may deny it. Ask the user for a narrow `autoMode.allow` rule in
    `.claude/settings.local.json` naming the site, then continue.
-7. **Israeli-only sites from abroad:** a request from a machine outside Israel proves nothing.
+8. **Israeli-only sites from abroad:** a request from a machine outside Israel proves nothing.
    Run the dry run inside the production container, through the Israeli VPN (it writes nothing):
 
    ```bash
@@ -273,6 +278,7 @@ Other sessions commit to `master` at the same time:
 ## 9. Done checklist
 
 - [ ] Data read from the site's own API / feed / JSON-LD; `robots.txt` respected
+- [ ] Every slug read: sitemaps, the HTML site map, landing pages, subdomains, box-office lists, id scans (what each adds is in the config comment)
 - [ ] Own module with a docstring; settings model with no hard-coded constants
 - [ ] No past event fetched or yielded (`is_current`), no past-URL file; no start more than `retention.max_future_days` ahead (`check_source.py` prints `TOO FAR`: a broken date the site sends)
 - [ ] Nearest events fetched and yielded first (a run cut half way holds this week)
