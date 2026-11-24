@@ -18,6 +18,7 @@ import { EventStats } from "../popularity/EventStats";
 import { LineupPlayer } from "../artist_links/ArtistPlayer";
 import { AddToCalendar, countryName, eventPath, freshness, Img, label, Loader, money, priceLabel, Share, sized, sourceName, useT, useTitle, venuePath, when } from "../ui";
 import { cleanTitle, EventFaq, eventFaq, relativeDay, shortAddress } from "./eventLook";
+import { Trending } from "./Home";
 
 export default function EventPage() {
   const { id = "" } = useParams();
@@ -41,8 +42,21 @@ export default function EventPage() {
     const ended = error.message.startsWith("410");
     return (
       <main className="wrap">
-        <p className="msg">{ended ? t.eventEnded : t.eventMissing}</p>
-        <Link className="f-pill" to="/">{t.eventGoneCta}</Link>
+        <section className="ended" role="status">
+          <div className="ended-ticket" aria-hidden>
+            <span className="ended-stub" />
+            <span className="ended-lines"><i /><i /><i /></span>
+            {ended && <b className="ended-stamp">{t.endedStamp}</b>}
+          </div>
+          <h1>{ended ? t.endedTitle : t.missingTitle}</h1>
+          <p>{ended ? t.endedSub : t.eventMissing}</p>
+          <div className="ended-cta">
+            <Link className="buy" to="/">{t.eventGoneCta}</Link>
+            <Link className="f-pill" to="/tonight">{t.endedTonight}</Link>
+            <Link className="f-pill" to="/weekend">{t.endedWeekend}</Link>
+          </div>
+        </section>
+        <Trending rows={3} />
       </main>
     );
   }

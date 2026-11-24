@@ -1823,3 +1823,40 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .logo .word { font-size: 20px; }
   .top-row .lang { padding: 0 10px; }
 }
+
+/* An event that is over (410): a torn, greyed ticket stamped "ended", then where to go instead. */
+.ended {
+  display: grid; justify-items: center; text-align: center; gap: 14px;
+  margin: 40px auto 8px; padding: 40px 20px 34px; max-width: 640px;
+  border-radius: 28px; border: 1px solid var(--line); background: var(--panel);
+  background-image: radial-gradient(ellipse at 50% 0, rgb(255 46 147 / .14), transparent 70%);
+}
+.ended h1 { margin: 6px 0 0; font: 800 clamp(26px, 6vw, 40px)/1.15 var(--display); }
+.ended p { margin: 0; max-width: 46ch; color: var(--muted); font-size: 16px; line-height: 1.6; }
+.ended-cta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin-top: 10px; }
+.ended-cta .f-pill { min-height: 40px; padding: 4px 16px; font-size: 14px; }
+.ended-ticket {
+  position: relative; display: flex; align-items: center; gap: 14px; width: 220px; height: 96px; padding: 0 18px;
+  border-radius: 14px; background: linear-gradient(135deg, #2a2338, #18131f); border: 1px dashed rgb(179 166 212 / .35);
+  transform: rotate(-4deg); direction: ltr; /* the stub on the left, where the notches are */
+  /* the punched notches on the stub's edges */
+  -webkit-mask: radial-gradient(circle 11px at 62px 0, #0000 98%, #000) top / 100% 51% no-repeat,
+                radial-gradient(circle 11px at 62px 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+          mask: radial-gradient(circle 11px at 62px 0, #0000 98%, #000) top / 100% 51% no-repeat,
+                radial-gradient(circle 11px at 62px 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+}
+.ended-stub { width: 30px; height: 56px; border-inline-end: 2px dashed rgb(179 166 212 / .35); }
+.ended-lines { display: grid; gap: 9px; flex: 1; }
+.ended-lines i { display: block; height: 8px; border-radius: 4px; background: rgb(179 166 212 / .28); }
+.ended-lines i:nth-child(2) { width: 75%; }
+.ended-lines i:nth-child(3) { width: 45%; }
+.ended-ticket + h1 { margin-top: 18px; }
+.ended-stamp {
+  position: absolute; inset: 50% auto auto 50%; translate: -50% -50%; rotate: -14deg;
+  padding: 4px 14px; border: 3px solid var(--red); border-radius: 8px; color: var(--red);
+  font: 900 26px/1.1 var(--display); letter-spacing: 3px; text-transform: uppercase; white-space: nowrap;
+  background: rgb(6 4 11 / .55); box-shadow: 0 0 18px rgb(255 77 109 / .5), inset 0 0 10px rgb(255 77 109 / .35);
+  animation: stamp .5s cubic-bezier(.2, 1.6, .4, 1) .2s both;
+}
+@keyframes stamp { from { scale: 2.4; opacity: 0; } to { scale: 1; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ended-stamp { animation: none; } }

@@ -196,10 +196,10 @@ export default function Home({ landing }: { landing?: "now" | "tonight" | "weeke
 
 /** "Trending" (sold on the most ticket sites in two weeks), then a row per audience for the month ahead:
  *  all from one cached request (/events/rails), drawn from the visitor's last copy until it arrives. */
-function Trending() {
+export function Trending({ rows }: { rows?: number } = {}) {
   const { t, lang } = useT();
   const q = useRails();
-  const rails = Object.entries(q.data?.rails ?? {});
+  const rails = Object.entries(q.data?.rails ?? {}).slice(0, rows);
   if (q.isPending) return <Rail title={t.trending} sub={t.trendingSub} pool={undefined} />;
   const holiday = q.data?.holiday;
   return <>{rails.map(([key, pool]) => key === "trending"
