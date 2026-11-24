@@ -101,6 +101,16 @@ accounts:
   max_hits_per_pass: 30    # new bell notifications per user per matcher pass (soonest kept): a flood guard
   max_hits_per_day: 10     # ...and per user in any 24 hours (a source back after failing dumps its backlog)
 
+# Events signed-in users post on /submit (src/partylinks/community, docs/community-events.md): listed as the
+# "community" source. The CAPTCHA is Cloudflare Turnstile: the site key here, the secret in
+# PARTYLINKS_COMMUNITY__TURNSTILE_SECRET; until both are set, posting answers 503.
+community:
+  enabled: true
+  captcha_required: true
+  turnstile_site_key: ""
+  trusted_after: 1         # an account's events go live without review once this many were approved
+  max_per_day: 5           # events one account may post in 24 hours
+
 # Email through Resend (src/partylinks/mail). Off until PARTYLINKS_MAIL__RESEND_API_KEY is set.
 mail:
   from_address: "SPOTX <events@spotx.fun>"   # sender only (no inbox); replies go to site.email (contact@spotx.fun)
@@ -953,6 +963,7 @@ enrichment:
     tickster: [culture]  # no category on the site (its app's API is off limits): a quartet or a tarot evening names none
     parties247: [nightclubs]  # a party guide: a party on no genre list is a club night
     newacropolis: [lectures]  # a philosophy school: no categories; talks and open evenings
+    fournature: [lectures]  # a nature community: its categories are upcoming / past; meetings are lectures
     hamesila: [culture]  # community house: lectures, shows, family events
     glatticket: [culture]  # a few sellers' categories have no name on the hub (844: a Petah Tikva drama)
     tickchak: [nightclubs]  # the /parties/ box office

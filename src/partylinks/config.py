@@ -30,6 +30,7 @@ from partylinks.artist_filter.config import ArtistFilterSettings
 from partylinks.artist_links.config import ArtistLinksSettings
 from partylinks.artwork.config import ArtworkSettings
 from partylinks.bot.config import BotSettings
+from partylinks.community.config import CommunitySettings
 from partylinks.config_store.source import OverridesSource
 from partylinks.contact.config import ContactSettings
 from partylinks.evening.config import EveningSettings
@@ -880,6 +881,7 @@ class Settings(BaseSettings):
     artwork: ArtworkSettings = Field(default_factory=ArtworkSettings)  # drawn cards for events with no picture
     ads: AdsSettings = Field(default_factory=AdsSettings)  # paid placements' side rails (partylinks.ads)
     promote: PromoteSettings = Field(default_factory=PromoteSettings)  # the /promote request form (partylinks.promote)
+    community: CommunitySettings = Field(default_factory=CommunitySettings)  # events users post (partylinks.community)
     contact: ContactSettings = Field(default_factory=ContactSettings)  # the /contact form (partylinks.contact)
     place_info: PlaceInfoSettings = Field(default_factory=PlaceInfoSettings)  # hours, booking of places (partylinks.placeinfo)
     artist_links: ArtistLinksSettings = Field(default_factory=ArtistLinksSettings)  # artists' Spotify / YouTube... (MusicBrainz)

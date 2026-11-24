@@ -35,6 +35,7 @@ from PIL import Image, ImageFile, ImageOps, ImageSequence, UnidentifiedImageErro
 from pillow_heif import register_heif_opener
 from sqlalchemy import or_, select, update
 
+from partylinks.community.models import CommunityUploadRow
 from partylinks.config import HttpSettings, MediaSettings, get_settings, project_path
 from partylinks.db import Database, EventRow, ImageRow, bulk_update_by_id, utcnow, with_db_retry
 
@@ -215,7 +216,8 @@ class MediaStore:
         """Delete artwork files no image row still references.
 
         Files are named by URL, so recurring flyers and per-promoter listings share one
-        file; deleting it for one purged event must not break the others.
+        file; deleting it for one purged event must not break the others. A picture a user sent
+        (community_uploads) is theirs until its row goes: never deleted with a listing.
         """
         candidates: list[str] = sorted({p for p in relative_paths if p is not None and p})
         if not candidates:
@@ -225,6 +227,13 @@ class MediaStore:
                 p
                 for chunk in _chunks(candidates, 500)
                 for p in session.scalars(select(ImageRow.local_path).where(ImageRow.local_path.in_(chunk)))
+            }
+            still_used |= {
+                p
+                for chunk in _chunks(candidates, 500)
+                for p in session.scalars(
+                    select(CommunityUploadRow.local_path).where(CommunityUploadRow.local_path.in_(chunk))
+                )
             }
         removed = 0
         for relative in (p for p in candidates if p not in still_used):
@@ -250,11 +259,13 @@ class MediaStore:
             return result
         with self.db.session(write=False) as session:
             claimed_paths = {p for p in session.scalars(select(ImageRow.local_path).where(ImageRow.local_path.is_not(None))) if p is not None}
+            uploads = set(session.scalars(select(CommunityUploadRow.local_path)))  # users' pictures, posted or not
         if not claimed_paths:
             result["skipped"] = "no stored image rows: refusing to sweep"
             log.warning("artwork sweep: %s", result["skipped"])
             return result
         # A 1280 copy is still claimed: until shrink_legacy_copies replaces it, it is the event page's picture.
+        claimed_paths |= uploads
         claimed = claimed_paths | {variant_path(p, w) for p in claimed_paths for w in VARIANT_WIDTHS + LEGACY_WIDTHS}
         cutoff = time.time() - min_age_seconds
         for directory, _, names in os.walk(self.root):

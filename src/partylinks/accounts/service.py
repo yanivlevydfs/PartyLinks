@@ -63,18 +63,23 @@ def sign_in(
 
 
 def block(session: Session, user_id: str, blocked: bool) -> None:
+    from partylinks.community.publish import unlist_user  # local: community imports accounts
+
     user = session.get(UserRow, user_id)
     if user is None:
         return
     user.blocked_at = utcnow() if blocked else None
     if blocked:
         revoke_all(session, user_id)
+        unlist_user(session, user_id, "removed", "account blocked")  # its posted events off the site
 
 
 def delete_user(session: Session, user_id: str) -> None:
     """Sessions, saved events, alerts and their matches go with it (ON DELETE CASCADE); its group
     answers and ownerships explicitly (those columns were added later, without a database FK)."""
+    from partylinks.community.publish import forget_user as forget_poster
     from partylinks.plans.routes import forget_user  # local: plans imports accounts
 
     forget_user(session, user_id)
+    forget_poster(session, user_id)  # its posted events off the site
     session.execute(delete(UserRow).where(UserRow.id == user_id))

@@ -1564,10 +1564,14 @@ def _register_routes(app: FastAPI) -> None:
         return response
 
     @app.get("/go/{event_id:path}", include_in_schema=False)
-    def go(event_id: str, request: Request, session: SessionDep, at: str | None = None) -> RedirectResponse:
+    def go(
+        event_id: str, request: Request, session: SessionDep, at: str | None = None,
+        link: Annotated[int | None, Query(ge=0, le=100)] = None,
+    ) -> RedirectResponse:  # fmt: skip
         """The seller's page of one listing: the only place a ticket link leaves the server
         (one click at a time, rate-limited by SecurityMiddleware), counted, and UTM-tagged for the
-        seller's analytics. ``at`` = where on our page it was clicked (utm.PLACEMENTS)."""
+        seller's analytics. ``at`` = where on our page it was clicked (utm.PLACEMENTS). ``link`` = which
+        of a posted event's ticket links (extra.ticket_links, partylinks.community); else its first."""
         code = shortlinks.normalize(event_id) if ":" not in event_id else None  # listing ids are "source:id"
         row = session.scalar(select(EventRow).where(EventRow.code == code)) if code else session.get(EventRow, event_id)
         headers = {"Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow"}
@@ -1576,7 +1580,11 @@ def _register_routes(app: FastAPI) -> None:
             raise HTTPException(status.HTTP_410_GONE, "event gone", headers=headers)
         if not CRAWLER.search(request.headers.get("user-agent", "")):  # Googlebot checks offers.url: not a click
             clicks.record(session, row, at)
-        url = utm.tagged(row.url, request.app.state.settings.utm, row, at)
+        target = row.url
+        links = (row.extra or {}).get("ticket_links") or []
+        if link is not None and link < len(links) and str(links[link].get("url", "")).startswith("https://"):
+            target = links[link]["url"]
+        url = utm.tagged(target, request.app.state.settings.utm, row, at)
         return RedirectResponse(url, status.HTTP_302_FOUND, headers=headers)
 
     # Before /events/{event_ref}, which would otherwise take "sponsored" for a slug.
@@ -1616,6 +1624,11 @@ def _register_routes(app: FastAPI) -> None:
 
     app.include_router(promote_router)  # the /promote form
     app.include_router(promote_admin_router)
+    from partylinks.community.routes import admin as community_admin_router
+    from partylinks.community.routes import public as community_router
+
+    app.include_router(community_router)  # the /submit form: events users post
+    app.include_router(community_admin_router)
     from partylinks.contact.routes import admin as contact_admin_router
     from partylinks.contact.routes import router as contact_router
 

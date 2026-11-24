@@ -1031,6 +1031,7 @@ import partylinks.artist_links.models
 import partylinks.artistdb
 import partylinks.artwork.models
 import partylinks.bot.models
+import partylinks.community.models
 import partylinks.config_store.models
 import partylinks.contact.models
 import partylinks.home_pins.models

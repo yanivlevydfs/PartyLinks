@@ -18,6 +18,8 @@ class RateLimitSettings(BaseModel):
     promote: int = Field(5, ge=1, le=1000)  # promotion requests sent from /promote (partylinks.promote)
     promote_search: int = Field(120, ge=1, le=5000)  # its event picker's searches (a few per typed name)
     contact: int = Field(3, ge=1, le=1000)  # messages sent from the /contact form (partylinks.contact)
+    community: int = Field(10, ge=1, le=1000)  # posting, editing, deleting one's events (partylinks.community)
+    community_upload: int = Field(20, ge=1, le=1000)  # pictures sent with them
 
 
 class AccountsSettings(BaseModel):
