@@ -15,7 +15,7 @@ one event. The date is the block's first ``D.M.YY`` / ``D.M`` / ``D/M/YY`` that 
 (the post's publish date, the home page's last change) less ``yearless_grace_days``. The hour follows the
 date ("משעה 19:00", "בשעה 09:00-11:00"); without one the event is date-only. The place is one of the known
 ``places`` named in the block (pinned), else the town only. The sign-up link (a Google Form) is the
-purchase link; "ללא תשלום" / "חינם" makes it free. A block with no picture of its own takes its page's
+purchase link and the event's link (our button sends the visitor to it; else the event's own page); "ללא תשלום" / "חינם" makes it free. A block with no picture of its own takes its page's
 og:image. The site has no prices; its two categories (upcoming / past) are no genres, so the genre comes from
 the words the title (else the text) uses (``kinds``).
 """
@@ -305,7 +305,8 @@ def parse_block(
             images.append(re.sub(r"-\d+x\d+(?=\.\w+$)", "", src))  # the full picture, not the thumbnail
     free = any(w in text for w in s.free_words)
     age = AGE.search(text)
-    url = page.url if page.url.rstrip("/") != s.site_url.rstrip("/") else (page_link or page.url)
+    # The event's link (our "tickets / sign-up" button, /go): its sign-up form when it has one, else its own page.
+    url = signup or (page.url if page.url.rstrip("/") != s.site_url.rstrip("/") else (page_link or page.url))
     key = re.sub(r"\W+", "-", title)[:60].strip("-")
     cue = any(w in text[max(0, m.start() - 25) : m.start()] for w in s.date_cues)
     event = ScrapedEvent(

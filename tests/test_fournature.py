@@ -42,6 +42,7 @@ def test_home_page_meetings() -> None:
     assert (wasp.venue_name, wasp.city) == ("מרכז הקיימות הרצליה", "הרצליה")
     assert (wasp.latitude, wasp.longitude) == (32.1745136, 34.8336406)
     assert wasp.extra["purchase_url"] == "https://forms.gle/usokkHpcjmTBDMPZ7"  # the sign-up form
+    assert str(wasp.url) == "https://forms.gle/usokkHpcjmTBDMPZ7"  # our button (/go) leads to it
     assert wasp.min_age == 16
     assert wasp.tickets and wasp.tickets[0].is_free
     assert wasp.source_genres == ["הרצאה"]
