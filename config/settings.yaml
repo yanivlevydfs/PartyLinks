@@ -1083,7 +1083,7 @@ enrichment:
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
   # Israel Music Festival: a concert's text is its programme, and piece names ("מדיטציה ראשונה", "Nostalgia") read as genres.
-  declared_genres_only: [funzing, ticketeams, standupist, israelmusicfest, concertevents, salsavida, bimot, tzavta]  # tzavta: its own categories (its texts named sports for a comedian)
+  declared_genres_only: [fournature, funzing, ticketeams, standupist, israelmusicfest, concertevents, salsavida, bimot, tzavta]  # tzavta: its own categories (its texts named sports for a comedian)
   # Tel Aviv municipality's catch-all category: "אמנות", "מוזיקה", "קלאסית" in its name made every dance class
   # an exhibition, a concert and classical music too. Its events also carry the real category ("מחול").
   declared_ignore: ["מחול אמנות ומוזיקה"]
@@ -2405,6 +2405,7 @@ search:
     bimot: ["בימות גלובל", "bimot global", "bimotglobal", "בימות הפקות"]
     israelshow: ["ישראל שואו", "israel show", "israelshow", "израиль шоу"]
     kzattarbut: ["קצת תרבות", "kzat tarbut", "kzat-tarbut", "kzattarbut"]
+    fournature: ["קהילה למען הטבע", "4nature", "fournature"]
     kolsadna: ["כל סדנה", "kol sadna", "kolsadna"]
     glatticket: ["גלאטיקט", "גלאט טיקט", "glat ticket"]
     salsavida: ["salsa vida", "salsavida", "סלסה וידה"]
@@ -6917,3 +6918,27 @@ sources:
     cron: "49 5,17 * * *"
     http:
       concurrency: 8
+
+  fournature:
+    # Kehila Lemaan Hateva (4nature.org.il, קהילה למען הטבע): a Herzliya volunteers' community for urban nature
+    # (free meetings with a lecture, night / bee / tree tours, a course). WordPress + Elementor, events are free
+    # text blocks. Sections (24.11.2026): home page "סיורים ואירועי קהילה" (read: the coming meetings are only
+    # here, e.g. the wasp lecture 7.12.26); /events/ + its two categories events-future / events-past (read,
+    # 9 posts = all wp-json posts, read too); the animals / birds / living / plants pages, about, press,
+    # contractors, barkaima, nature-certificate, fortrees, glilyam_river, photome (contest pages) and the
+    # contestants sitemap (96 photo entries), contest26/tevadog (a petition): not read, no dated events. Sitemaps:
+    # post (8) and page (22) add nothing over the posts + home page; events/herteva25 is password-protected.
+    # Links out: 4lev.org / 4web.co.il (sister sites, no events), Google Forms (the sign-up = purchase_url).
+    # ~13 requests a run. No platform we read covers it. Answers direct. Courses are kept (the owner asked).
+    enabled: true
+    may_be_empty: true  # a few events a year; nothing dated may be coming
+    cron: "2 6,18 * * *"
+    site_url: https://www.4nature.org.il
+    city: הרצליה
+    places:
+      - {match: ["מרכז הקיימות", "אלתרמן 31", "אלתרמן 33", "אלטרמן 31", "מטאור"], venue_name: מרכז הקיימות הרצליה, address: "נתן אלתרמן 31, הרצליה", latitude: 32.1745136, longitude: 34.8336406}
+      - {match: ["פארק הרצליה"], venue_name: פארק הרצליה, address: "פארק הרצליה, הרצליה", latitude: 32.1681433, longitude: 34.8225986}
+    skip_title_words: ["עצומה", "תמונות מ"]  # a petition; photo galleries of past tours
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0

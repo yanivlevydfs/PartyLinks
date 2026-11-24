@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 174 configured sources, 173 on. Each one has its own module in
+SPOTX collects from 175 configured sources, 174 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -108,6 +108,7 @@ pagination and what the listing and the event page provide.
 | `bimot` | Bimot Global (bimotglobal.co.il, was bimot.co.il): a producer of dance, music, opera and theatre, mostly at the Israeli Opera; the wp-json show list without the archive + the show types + one page per current show (dates, hall, seller link) | 10:47, 22:47 | yes |
 | `israelshow` | IsraelShow (israelshow.co.il): a national listings site selling through its Kupat Bravo white label; ~50 genre / theatre pages list the show ids (the genre pages are its categories), and each show's performances come from the same id on kupatbravo.co.il (the white label's robots.txt disallows all) | 10:19, 22:19 | yes |
 | `kzattarbut` | Kzat Tarbut (kzat-tarbut.com): a culture magazine linking the shows it writes about to its Kupat Bravo white label; the wp-json posts (categories + show links), then each show's performances from the same id / slug on kupatbravo.co.il (the white label's robots.txt disallows all) | 10:29, 22:29 | yes |
+| `fournature` | Kehila Lemaan Hateva (4nature.org.il, קהילה למען הטבע): a Herzliya urban-nature community; the dated Elementor blocks of the home page ("סיורים ואירועי קהילה") and of every wp-json post / /events/ link (one event per post); free meetings with a sign-up form, tours, a course. A few events a year (may be empty) | 06:02, 18:02 | yes |
 | `ticketsi` | Ticketsi (ticketsi.co.il): a show-guide magazine selling through its Kupat Bravo white label; ~14 show calendars (JSON-LD: show ids, the run's days; category pages = its categories) and each current show's performances from the same id on kupatbravo.co.il (start, hall, pin, prices, tickets left); purchase link = the seance's buy page, so dedup merges with `kupatbravo` / `israelshow` | 08:14, 20:14 | yes |
 | `tickster` | Tickster (tickster.co.il): a ticket guide selling through its Kupat Bravo white label and Funzing affiliate links; its /api/ is disallowed, so the sitemap (~880 event pages) and each page's prerendered JSON-LD Event (start, hall, city, price, buy link); no coordinates (geocoded) and no category (genres from the text); buy links merge with `kupatbravo` / `funzing` | 07:28, 19:28 | yes |
 | `glatticket` | Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi and religious public; Tickchak hub search API + each event's page (map pin, tiers, organiser) | 06:23, 18:23 | yes |

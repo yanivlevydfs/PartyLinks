@@ -42,6 +42,7 @@ from partylinks.scrapers.eventpro import EventProScraper
 from partylinks.scrapers.feelbeit import FeelBeitScraper
 from partylinks.scrapers.festivalim import FestivalimScraper
 from partylinks.scrapers.fever import FeverScraper
+from partylinks.scrapers.fournature import FourNatureScraper
 from partylinks.scrapers.friendshist import FriendsHistScraper
 from partylinks.scrapers.funzing import FunzingScraper
 from partylinks.scrapers.ganeyyehoshua import GaneyYehoshuaScraper
@@ -297,6 +298,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         BimotScraper,
         IsraelShowScraper,
         KzatTarbutScraper,
+        FourNatureScraper,
         KolSadnaScraper,
         GlatticketScraper,
         SalsaVidaScraper,
