@@ -259,6 +259,23 @@ def pictures(block: LexborNode) -> list[LexborNode]:
     return []
 
 
+def linked(block: LexborNode, lines: list[str], base: str) -> list[str]:
+    """The text with each link's address: a button's label ("להרשמה", "לפרטים") becomes a Markdown link to where it
+    leads (the event page renders those), else the link is added at the end ("בהרשמה מראש בקישור:" then the form)."""
+    out = list(lines)
+    for a in block.css("a[href]"):
+        href = urljoin(base, a.attributes.get("href") or "")
+        label = clean_str(a.text())
+        if not href.startswith(("https://", "http://")) or not label or href in "\n".join(out):
+            continue
+        link = f"[{label}]({href})"
+        if label in out:
+            out[out.index(label)] = link
+        else:
+            out.append(link)
+    return out
+
+
 def parse_block(
     block: LexborNode, page: Page, s: FourNatureSettings, timezone: str
 ) -> tuple[ScrapedEvent, bool] | None:
@@ -322,7 +339,7 @@ def parse_block(
         city=s.city,
         latitude=place.latitude if place else None,
         longitude=place.longitude if place else None,
-        description="\n".join(lines),
+        description="\n".join(linked(block, lines, page.url)),
         source_genres=kinds(title, text, s),
         images=list(dict.fromkeys(images)),
         organizer="קהילה למען הטבע",
