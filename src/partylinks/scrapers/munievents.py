@@ -387,10 +387,22 @@ def parse_listing(page_html: str, base: str, timezone: str, today: date | None =
     return list(cards.values())
 
 
+_PHONE = re.compile(r"[\d\s()+*-]{7,}")
+
+
 def _split_place(place: str | None) -> tuple[str | None, str | None]:
-    """Venue and address of "מרכז פיס תורני - רח' המתמיד 23"; several places stay whole."""
+    """Venue and address of "מרכז פיס תורני - רח' המתמיד 23"; several places stay whole.
+
+    A phone after a "|" is no place ("מרכז מטאור, אלתרמן 33 | 050-9166345", herzliya-matnasim, Nov 2026:
+    the number was the venue's name on every source grouped with it): dropped.
+    """
+    if place and "|" in place:
+        parts = [p for p in (clean_str(p) for p in place.split("|")) if p and not _PHONE.fullmatch(p)]
+        if len(parts) == 2 and re.search(r"\d", parts[1]) and not re.search(r"\d", parts[0]):
+            return parts[0], parts[1]  # "הבית הקהילתי|הרצוג 14|0522742205": venue | address
+        place = " | ".join(parts)
     if not place or "|" in place:
-        return place, None
+        return place or None, None
     venue, *address = re.split(r"\s+-\s+|,\s+", place, maxsplit=1)
     return clean_str(venue), clean_str(address[0]) if address else None
 

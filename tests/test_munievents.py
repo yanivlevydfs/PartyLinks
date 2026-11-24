@@ -12,6 +12,7 @@ from partylinks.parsing import zone
 from partylinks.scrapers.munievents import (
     Card,
     MuniSite,
+    _split_place,
     build_event,
     by_start,
     parse_categories,
@@ -156,6 +157,18 @@ def test_page_fills_date_hour_and_place() -> None:
     assert (e.venue_name, e.address) == ("בית האומנויות", "נאות סמדר")  # add-to-calendar location
     assert e.city == "מועצה אזורית חבל אילות"  # a kibbutz too small to be a known locality
     assert e.description and e.description.startswith("קשה לדמיין")
+
+
+def test_phone_after_a_bar_is_no_place() -> None:
+    assert _split_place("מרכז מטאור, אלתרמן 33 | 050-9166345") == ("מרכז מטאור", "אלתרמן 33")
+    assert _split_place("היכל התרבות | 09-9591234 | אולם ב'") == ("היכל התרבות | אולם ב'", None)
+    assert _split_place('מתנ"ס נווה עמל | מרכז יד התשעה') == ('מתנ"ס נווה עמל | מרכז יד התשעה', None)
+    assert _split_place("הבית הקהילתי|הרצוג 14|0522742205") == ("הבית הקהילתי", "הרצוג 14")
+    assert _split_place("מרכז נינא, דוד אלרואי 1 (מול בר כוכבא 90) | 09-9707900") == (
+        "מרכז נינא",
+        "דוד אלרואי 1 (מול בר כוכבא 90)",
+    )
+    assert _split_place("| 050-9166345") == (None, None)
 
 
 def test_regional_council_city_is_the_named_locality() -> None:
