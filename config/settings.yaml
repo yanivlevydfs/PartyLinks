@@ -923,7 +923,7 @@ enrichment:
                 "קונצרט", "הופעה", "ההופעה", "נגנים", "concert", "live", "band", "tribute",
                 "תזמורת", "כליזמר", "מחווה ל", "פסקול", "שרים", "מנגנת", "מנגנים", "אנסמבל", "קוורטט", "מארח את",
                 "konzert", "koncert", "julekoncert", "konsertti", "the music of"]
-    stand_up: ["סטנדאפ", "סטנד אפ", "סטנדאפיסט", "קומיקאי", "open mic", "stand up", "comedian"]
+    stand_up: ["סטנדאפ", "סטנד אפ", "סטנדאפיסט", "קומיקאי", "open mic", "stand up", "comedian", "comedy show"]
     lectures: ["הרצאה", "מרצה", "הרצאות", "הרצאתה", "הרצאתו", "lecture", "talk", "ד\"ר", "פרופ'", "מפגש ב-zoom", "סדרה בזום", "סמסטר", "lesung"]
     workshops: ["סדנה", "סדנת", "סדנאות", "workshop", "חוג", "קורס"]
     tours: ["סיור", "סיורים", "סיורי", "guided tour", "führung", "stadtführung", "טיול", "טיולים", "טיולי"]
@@ -1006,6 +1006,7 @@ enrichment:
     ogo: [culture]          # city guide: talks, circles, community events
     ogo_us: [culture]       # same guide, USA
     ogo_de: [culture]       # same guide, Germany
+    tickettailor: [culture] # organizers' box offices (stand-up tours, community nights): no categories
     makore: [culture]
     music80s: [throwback]   # 80s / 90s party guide
     iwant: [nightclubs]     # party box office; some events have no genre ("אחר" or empty)
@@ -2360,6 +2361,7 @@ search:
     tiuli: ["טיולי"]
     ogo: ["אוגו"]
     ogo_us: ["ogo usa", "אוגו ארהב"]
+    tickettailor: ["ticket tailor", "tickettailor", "טיקט טיילור"]
     ogo_de: ["ogo germany", "אוגו גרמניה"]
     muzi: ["מוזי"]
     standupist: ["סטנדאפיסט פורטל", "פורטל סטנדאפיסט"]
@@ -5255,6 +5257,24 @@ sources:
     http:
       concurrency: 4
       impersonate: chrome
+
+  tickettailor:
+    # Ticket Tailor (tickettailor.com): organizers' own box offices, in Israel and abroad. No catalogue (no
+    # events sitemap, no keyless API; /discover is ~20 hand-picked events): the organizers below plus every
+    # one another source links (linked_urls: Ozen, Ogo, Ogo USA). Per organizer: its /events/<organizer>
+    # page, then each event page's schema.org Event per date (place + ISO country, offers, artwork).
+    # sections: /events/<organizer> of each organizer, every event page it lists (gilliaptercomedy 18 pages =
+    # 23 dates, yehudi1 3, kii 9 on 24.11.2026); not read: /discover and /discover/categories/* (curated, no
+    # Israeli event, no location filter), the marketing sitemap (no events), /checkout (robots.txt).
+    # Overlap: Ozen and Ogo link Gilli Apter's Tel Aviv dates, Ogo USA yehudi1 / kii: dedup merges them.
+    enabled: true
+    cron: "5 7,19 * * *"
+    organizers: [gilliaptercomedy, yehudi1, kii]
+    organizer_cities: {kii: New York}   # Kii's hubs (LES, FiDi): Manhattan; its places name no town
+    skip_title_words: ["קורס", "course", "workshop series", "private event"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
 
   ogo_us:
     # OGO USA (us.ogo.events): OGO's guide to events in the USA, same platform as `ogo`: sitemap index,

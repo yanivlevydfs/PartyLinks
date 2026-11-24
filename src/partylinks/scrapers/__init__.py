@@ -152,6 +152,7 @@ from partylinks.scrapers.ticketingo import TicketingoScraper
 from partylinks.scrapers.ticketmaster import TicketmasterScraper
 from partylinks.scrapers.ticketplace import TicketPlaceScraper
 from partylinks.scrapers.ticketsi import TicketsiScraper
+from partylinks.scrapers.tickettailor import TicketTailorScraper
 from partylinks.scrapers.tickster import TicksterScraper
 from partylinks.scrapers.tiktik import TiktikScraper
 from partylinks.scrapers.tiuli import TiuliScraper
@@ -251,6 +252,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         MegaeventsScraper,
         ViagogoScraper,
         OgoUsScraper,
+        TicketTailorScraper,
         OgoDeScraper,
         HamenagenScraper,
         HatarbutScraper,
