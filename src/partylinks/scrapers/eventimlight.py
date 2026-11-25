@@ -194,7 +194,13 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
                     reraise=True,
                 ):
                     with attempt:
-                        response = await client.get(endpoint, params=params)
+                        try:
+                            response = await client.get(endpoint, params=params)
+                        finally:
+                            # Its own client, so the stall watchdog sees no answers: each one (or failed try)
+                            # is progress; the discovery stays capped by cdx_budget_seconds. Without it every
+                            # run since the 1,000-crawl reach (24.11.2026) was "stuck" before the shops.
+                            self.progress()
                         if response.status_code != 404:  # 404: nothing of this host in that crawl
                             response.raise_for_status()
                         return response
