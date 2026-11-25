@@ -519,6 +519,19 @@ def _merged_cities(rows: Iterable[Any]) -> list[tuple[str, int]]:
     return sorted(merged, key=lambda c: -c[1])
 
 
+def _city_heads(city: str) -> list[str]:
+    """The shorter names of a city named with its river or region: "Ludwigshafen am Rhein" -> "Ludwigshafen",
+    "Frankfurt / Main" -> "Frankfurt" (a seller stores the short name; "my location" may give the long one).
+    Only before a lower-case word or a separator: "Frankfurt Oder" is another city than "Frankfurt"."""
+    words = re.split(r"(\s+|[/(,])", city.strip())
+    for i in range(2, len(words), 2):
+        word = words[i - 1].strip() or words[i]
+        if word and (word[0] in "/(," or word[0].islower()):
+            head = "".join(words[: i - 1]).strip(" -")
+            return [head] if len(head) >= 3 else []
+    return []
+
+
 def _city_names(city: str, country: str | None) -> list[str]:
     """``city`` and, for a city abroad, its other names ("פריז" -> "Paris")."""
     found = city_abroad(city, country.upper() if country else None)
@@ -948,10 +961,15 @@ def build_event_filters(
     if venue_slug:
         filters.append(EventRow.venue_slug == venue_slug)
     if city:
-        filters.append(or_(*(
-            cond for name in _city_names(city, country)
-            for cond in (EventRow.city.ilike(_contains(name), escape="\\"), EventRow.address.ilike(_contains(name), escape="\\"))
-        )))  # fmt: skip
+        names = _city_names(city, country)
+        filters.append(or_(
+            *(cond for name in names
+              for cond in (EventRow.city.ilike(_contains(name), escape="\\"), EventRow.address.ilike(_contains(name), escape="\\"))),
+            # Abroad only (a country chosen; Israel's search is untouched): "Ludwigshafen am Rhein" is also the
+            # events a seller stored as "Ludwigshafen" (that name exactly).
+            *(EventRow.city.ilike(_contains(head)[1:-1], escape="\\")
+              for name in (names if country else []) for head in _city_heads(name)),
+        ))  # fmt: skip
     if in_target_city is not None:
         filters.append(EventRow.in_target_city.is_(in_target_city))
     # Search, an artist's or a venue's page and the artist / venue indexes cover every event, abroad too.

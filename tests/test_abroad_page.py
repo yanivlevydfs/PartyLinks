@@ -8,7 +8,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from partylinks.api import create_app
+from partylinks.api import _city_heads, create_app
 from partylinks.models import ScrapedEvent
 from tests.test_storage_api import event, seed, settings_for
 
@@ -61,3 +61,16 @@ def test_a_probe_learns_nothing_from_the_errors(tmp_path: Path) -> None:
         assert '"input"' not in body and '"ctx"' not in body and "start_at" not in body and "DEU" not in body
     assert bad.json()["detail"] == [{"loc": ["query", "sort"], "msg": "invalid value"}]
     assert quoted.status_code == 200 and quoted.json()["total"] == 0  # a bound value, matched as text
+
+
+def test_a_city_named_with_its_river_finds_the_short_name_too(tmp_path: Path) -> None:
+    with _client(tmp_path) as client:
+        long = client.get("/events", params={"abroad": "true", "country": "DE", "city": "Ludwigshafen am Rhein"}).json()
+    assert [e["source_event_id"] for e in long["items"]] == ["lu"]  # stored as "Ludwigshafen"
+
+
+def test_short_names_only_before_a_lower_case_word_or_a_separator() -> None:
+    assert _city_heads("Ludwigshafen am Rhein") == ["Ludwigshafen"]
+    assert _city_heads("Frankfurt / Main") == _city_heads("Frankfurt/Main") == ["Frankfurt"]
+    assert _city_heads("Halle (Saale)") == ["Halle"] and _city_heads("Mülheim an der Ruhr") == ["Mülheim"]
+    assert _city_heads("Frankfurt Oder") == _city_heads("New York") == _city_heads("Berlin") == []
