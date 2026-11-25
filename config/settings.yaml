@@ -964,6 +964,7 @@ enrichment:
     tickster: [culture]  # no category on the site (its app's API is off limits): a quartet or a tarot evening names none
     parties247: [nightclubs]  # a party guide: a party on no genre list is a club night
     newacropolis: [lectures]  # a philosophy school: no categories; talks and open evenings
+    eshkolot: [tours]  # a festival of guided tours: every event is a tour
     fournature: [lectures]  # a nature community: its categories are upcoming / past; meetings are lectures
     hamesila: [culture]  # community house: lectures, shows, family events
     glatticket: [culture]  # a few sellers' categories have no name on the hub (844: a Petah Tikva drama)
@@ -1095,7 +1096,7 @@ enrichment:
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.
   # Israel Music Festival: a concert's text is its programme, and piece names ("מדיטציה ראשונה", "Nostalgia") read as genres.
-  declared_genres_only: [fournature, funzing, ticketeams, standupist, israelmusicfest, concertevents, salsavida, bimot, tzavta]  # tzavta: its own categories (its texts named sports for a comedian)
+  declared_genres_only: [eshkolot, fournature, funzing, ticketeams, standupist, israelmusicfest, concertevents, salsavida, bimot, tzavta]  # tzavta: its own categories (its texts named sports for a comedian)
   # Tel Aviv municipality's catch-all category: "אמנות", "מוזיקה", "קלאסית" in its name made every dance class
   # an exhibition, a concert and classical music too. Its events also carry the real category ("מחול").
   declared_ignore: ["מחול אמנות ומוזיקה"]
@@ -2422,6 +2423,7 @@ search:
     cultureuniverse: ["culture universe", "cultureuniverse", "cu-cultureuniverse", "יקום התרבות"]
     kzattarbut: ["קצת תרבות", "kzat tarbut", "kzat-tarbut", "kzattarbut"]
     fournature: ["קהילה למען הטבע", "4nature", "fournature"]
+    eshkolot: ["אשכולות", "eshkolot", "eshkolot-il", "חנוכה ישראלי"]
     kolsadna: ["כל סדנה", "kol sadna", "kolsadna"]
     glatticket: ["גלאטיקט", "גלאט טיקט", "glat ticket"]
     salsavida: ["salsa vida", "salsavida", "סלסה וידה"]
@@ -6978,6 +6980,49 @@ sources:
       - {match: ["מרכז הקיימות", "אלתרמן 31", "אלתרמן 33", "אלטרמן 31", "מטאור"], venue_name: מרכז הקיימות הרצליה, address: "נתן אלתרמן 31, הרצליה", latitude: 32.1745136, longitude: 34.8336406}
       - {match: ["פארק הרצליה"], venue_name: פארק הרצליה, address: "פארק הרצליה, הרצליה", latitude: 32.1681433, longitude: 34.8225986}
     skip_title_words: ["עצומה", "תמונות מ"]  # a petition; photo galleries of past tours
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+
+  eshkolot:
+    # Eshkolot (eshkolot-il.com, אשכולות - מרכזי הסיור והתודעה הישראלית), Lod: festivals of guided tours across
+    # the country. A static site; every page of the sitemap (15) and of the home page's menu is read, and each one
+    # with article.f-tour cards is a festival. Sections (25.11.2026): /hanuka "חנוכה ישראלי" (read: 70 tours of
+    # js/fest-hanuka.js, 146 tour-days = the page's 70 cards; 10 / 45 ILS, sign-up /tashlum?t=N), /manhigut
+    # "שבילי מנהיגות ואחדות" (read: 4 free tours x 3 days x 2 departures = 24); /api/availability gives the seats
+    # left. Not read (no public events): nofesh-shkola / nofesh-kinar / nofesh-pnima (closed vacations: bereaved
+    # families, wounded soldiers' wives; sign-up closed or past), sherut-leumi / leumi, merkazim / centers,
+    # batei-archa / blank-3, madrichim / blank-7, sratonim / videos, alon / magazine, tsor-kesher / blank-5, terms,
+    # money, index-en (no tour pages). No HTML site map, no subdomains, no other platform (git grep: none).
+    # ~20 requests a run. Answers direct. Empty between festivals (Hanukkah, Pesach...).
+    enabled: true
+    may_be_empty: true  # festivals a few times a year; nothing may be on between them
+    cron: "21 11,23 * * *"
+    site_url: https://www.eshkolot-il.com
+    cities:  # nature sites and villages the nearest big town misnames (the card's place word -> its town)
+      "תל יודפת": יודפת
+      "ראש הנקרה": ראש הנקרה
+      "אכזיב": גשר הזיו
+      "מבוא חמה": מבוא חמה
+      "תל צרעה": צרעה
+      "חורבת בורגין": נווה מיכאל
+      "חורבת מדרס": גבעת ישעיהו
+      "יער בן שמן": בן שמן
+      "יער אשתאול": אשתאול
+      "דרך בורמה": אשתאול
+      "נווה אילן": נווה אילן
+      "נבי סמואל": ירושלים
+      "חברון": חברון
+      "גוש עציון": אלון שבות
+      "מעלה לבונה": מעלה לבונה
+      "עיינות פצאל": פצאל
+      "נחל הבשור": אורים
+      "ניצן": ניצן
+      "חצר כנרת": כנרת
+      "דיר עזיז": כנף
+      "פקיעין": פקיעין
+      "מחולה": מחולה
+    skip_title_words: ["השתלמות", "קורס"]  # guide trainings / courses, if one is ever listed as a tour
     http:
       concurrency: 2
       request_delay_seconds: 1.0

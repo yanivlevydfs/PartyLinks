@@ -46,6 +46,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   cultureuniverse: ["https://www.cu-cultureuniverse.co.il", "tickets"],
   kzattarbut: ["https://www.kzat-tarbut.com", "guide"],
   fournature: ["https://www.4nature.org.il", "culture"],
+  eshkolot: ["https://www.eshkolot-il.com", "culture"],
   kolsadna: ["https://kolsadna.co.il", "guide"],
   salsavida: ["https://www.salsavida.com/guides/israel/", "guide"], arthurmurray: ["https://www.arthurmurray.co.il/the-salon", "venue"],
   yadvashem: ["https://online-reservations.yadvashem.org/he/home", "culture"],

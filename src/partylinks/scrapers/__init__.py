@@ -34,6 +34,7 @@ from partylinks.scrapers.dungeon import DungeonScraper
 from partylinks.scrapers.easytix import EasytixScraper
 from partylinks.scrapers.efokulam import EfoKulamScraper
 from partylinks.scrapers.epgb import EpgbScraper
+from partylinks.scrapers.eshkolot import EshkolotScraper
 from partylinks.scrapers.eventbrite import EventbriteScraper
 from partylinks.scrapers.eventbuzz import EventbuzzScraper
 from partylinks.scrapers.eventer import EventerScraper
@@ -301,6 +302,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         CultureUniverseScraper,
         KzatTarbutScraper,
         FourNatureScraper,
+        EshkolotScraper,
         KolSadnaScraper,
         GlatticketScraper,
         SalsaVidaScraper,
