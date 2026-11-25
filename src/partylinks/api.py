@@ -1115,6 +1115,26 @@ def create_app(
                     except Exception:  # a cold page is only slower
                         log.exception("cache warm-up of %s failed", path)
 
+        async def warm_filters() -> None:
+            """The filters' counts kept warm (api.warm_filters_minutes): the select boxes of the home page, of
+            /abroad and of its busiest countries never wait for a cold build (2-12 s each, 25.11.2026)."""
+            every = settings.api.warm_filters_minutes * 60
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost") as client:
+                while True:
+                    await asyncio.sleep(every)
+                    try:
+                        abroad = await client.get("/categories?abroad=true&lists=false")
+                        countries = [c["value"] for c in abroad.json().get("countries", [])][
+                            : settings.api.warm_countries
+                        ]
+                        for path in [
+                            "/categories",
+                            *(f"/categories?abroad=true&country={c}&lists=false" for c in countries),
+                        ]:
+                            await client.get(path)  # one at a time: never more than one build slot
+                    except Exception:  # a cold filter is only slower
+                        log.exception("filter warm-up failed")
+
         async def snapshots() -> None:
             """The cached pages saved every cache_snapshot_minutes: a crash, not only a deploy, keeps them."""
             while True:
@@ -1127,6 +1147,8 @@ def create_app(
         jobs = [] if worker_process else [maintenance()]  # the worker runs the startup passes itself
         if visitors:
             jobs.append(warm())
+            if settings.api.warm_filters_minutes:
+                jobs.append(warm_filters())
             if settings.api.cache_snapshot_minutes:
                 jobs.append(snapshots())
         if app.state.worker:
@@ -1204,7 +1226,7 @@ def create_app(
 
     app.state.response_cache = ResponseCache(
         ttl=settings.api.cache_ttl_seconds, min_fresh=settings.api.cache_min_fresh_seconds,
-        build_wait=settings.api.cache_build_wait_seconds,
+        build_wait=settings.api.cache_build_wait_seconds, max_stale=settings.api.json_max_stale_seconds,
     )  # fmt: skip
     sign_in_state(app, settings)  # innermost: only the Google sign-in routes read it
     app.add_middleware(CachedPages)  # inside gzip and security: a cached page is still compressed and guarded
