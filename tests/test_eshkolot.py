@@ -133,3 +133,27 @@ def test_page_without_cards() -> None:
     assert (
         parse_festival(f"{SITE}/", "<html><body><main><h1>x</h1></main></body></html>", None, SETTINGS, TODAY) is None
     )
+
+
+def test_google_short_link_targets() -> None:
+    assert map_point("https://www.google.com/maps/search/32.507850,+35.495716?entry=tts") == (32.50785, 35.495716)
+    place = (
+        "https://www.google.com/maps/place/x/@31.7765307,35.227734,18.96z/data=!4m6!8m2!3d31.7765094!4d35.2275793!16s"
+    )
+    assert map_point(place) == (31.776509, 35.227579)  # the place's own pin, not the map's centre
+    assert map_point("https://www.waze.com/live-map/directions?to=place.w.23396679.233639113.492806") == (None, None)
+
+
+def test_share_pins_by_meeting_point_then_config() -> None:
+    from partylinks.scrapers.eshkolot import Tour, share_pins
+
+    tours = [
+        Tour(tid="40", title="a", meet="שער יפו", lat=31.77, lon=35.22),
+        Tour(tid="41", title="b", meet="שער יפו"),
+        Tour(tid="66", title="c", meet="חניון מערת המכפלה"),
+        Tour(tid="3", title="d", meet="גבעת קובי, שדרות"),
+    ]
+    share_pins(tours, {"מערת המכפלה": (31.52, 35.11)})
+    assert (tours[1].lat, tours[1].lon) == (31.77, 35.22)
+    assert (tours[2].lat, tours[2].lon) == (31.52, 35.11)
+    assert tours[3].lat is None

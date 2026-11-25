@@ -919,7 +919,7 @@ enrichment:
     kids: ["familie", "kinderveranstaltung", "הפעלה", "عائلة", "kids", "children", "גילי 3-18", "family", "ילדים", "לילדים", "טף", "משפחה", "משפחות", "הורות", "הורים לילדים",
            "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך", "רמתגנצ'יק", "שבת משפחתי", "שנה עד שנתיים", "זחילה עד שנה", "שלוש עד ארבע", "לידה עד זחילה", "שנתיים עד שלוש", "ארבע עד חמש", "אחר-צהריים ר\"גוע"]
     lectures: ["vortrag", "literatur", "שיח קהילתי", "lecture", "lectures", "עונת תרבות", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "פאנל דוברים", "foredrag", "העצמה אישית", "אנתרופולוגיה", "יחסים ואהבה", "קריירה", "מנטורינג וקואוצ׳ינג", "עסקים וכלכלה", "סמינר", "אסכולות", "מיניות", "הערים המרתקות", "עניין"]
-    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre", "חווית המבקר", "סיורי חנוכיות", "אדריכלות",
+    tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre", "חווית המבקר", "סיורי חנוכיות", "סיורי יום", "סיורי ערב", "סיורי בוטיק", "אדריכלות",
             "führungen & rundfahrten", "führungen", "führung", "rundfahrten", "stadtführung"]
     dance: ["tanz", "عرض راقص", "dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט", "tanssi", "dans", "danza", "danse"]
     conference: ["conferences", "messe", "messen"]  # Eventer's category (the text genre matches "conference" alone)
@@ -7022,6 +7022,13 @@ sources:
       "דיר עזיז": כנף
       "פקיעין": פקיעין
       "מחולה": מחולה
+    pins:  # meeting points whose card links to a Waze place id (no coordinates): Nominatim, 25.11.2026
+      "מערת המכפלה": [31.5247777, 35.1107846]
+      "צומת גוש עציון": [31.645502, 35.131782]
+      "האוניברסיטה העברית": [31.7926862, 35.2449854]   # Mount Scopus campus, gate A
+      "מבוא חמה": [32.7363463, 35.6556132]             # the village; its cemetery is at its edge
+      "ארמון הנציב": [31.755102, 35.227854]            # the promenade: the Waze pin of tour 33 (same meeting point)
+    # No pin known: גבעת קובי (Sderot) and נחל גשרון עליון (Eilat mountains): their address is geocoded.
     skip_title_words: ["השתלמות", "קורס"]  # guide trainings / courses, if one is ever listed as a tour
     http:
       concurrency: 2

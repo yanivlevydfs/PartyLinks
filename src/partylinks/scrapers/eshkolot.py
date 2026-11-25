@@ -18,8 +18,9 @@ place, text, meeting point, a Waze link to the meeting point, the sign-up link).
 - ``/api/availability?f=<festival>``: the seats left per tour and day (and departure): 0 = full.
 
 One event per tour, day and departure. The meeting point's pin comes from the card's Waze link (a geohash
-``waze.com/ul/h<hash>``, ``ll=lat,lon``, a Google Maps ``q=lat,lon``); other links (a Waze place id, a short
-link) leave the meeting point and its town to geocoding. The town is the place the card names (a GeoNames
+``waze.com/ul/h<hash>``, ``ll=lat,lon``, a Google Maps ``q=lat,lon``); a short link (maps.app.goo.gl, did.li) is
+followed once and the page it opens read; a Waze place id has none: the pin of another tour at the same meeting point,
+else ``pins`` in config, else geocoding. The town is the place the card names (a GeoNames
 locality), else the nearest locality to the pin, else ``cities`` in config (nature sites: "המכתש הגדול").
 The festival's genres are its name, "סיורים" and the tour's type. The pages' pictures are the festival's
 artwork (og:image, the flyer); the cards have none.
@@ -67,6 +68,11 @@ class EshkolotSettings(SourceSettings):
     cities: dict[str, str] = Field(default_factory=dict)
     nearest_town_km: float = 12.0  # a pin farther than this from every locality takes ``cities`` / none
     tour_genre: str = "סיורים"
+    # Map short links (Google Maps / did.li): followed once, the page they open carries the pin.
+    short_link_hosts: list[str] = Field(default_factory=lambda: ["maps.app.goo.gl", "goo.gl", "did.li"])
+    # Meeting points whose card links to a Waze place id (no coordinates in it): words of the meeting point ->
+    # [lat, lon] (Nominatim, 25.11.2026).
+    pins: dict[str, tuple[float, float]] = Field(default_factory=dict)
     # Holidays a festival's title or heading names: its genre ("חנוכה ישראלי" is no Israeli music). The festival's
     # own name is no genre: "ישראלי" in it read as Israeli music.
     holiday_words: list[str] = Field(
@@ -93,6 +99,7 @@ class Tour:
     lat: float | None = None
     lon: float | None = None
     off: bool = False
+    map_link: str | None = None  # the card's map link, for a short link to resolve
 
 
 @dataclass
@@ -138,6 +145,7 @@ class EshkolotScraper(BaseScraper[EshkolotSettings]):
                 self.get_json(s.site_url + s.availability_path.format(group=fest.group), expect=dict),
             )
             seats = (left or {}).get("left") or {}
+            await self._pin(fest)
             for tour in fest.tours:
                 try:
                     events.extend(tour_events(fest, tour, seats if isinstance(seats, dict) else {}, s, self.timezone))
@@ -146,6 +154,18 @@ class EshkolotScraper(BaseScraper[EshkolotSettings]):
         current = [e for e in events if is_current(e.start_at, e.end_at, RetentionSettings(), self.timezone)]
         for event in sorted(current, key=lambda e: (e.start_at, e.source_event_id)):
             yield event
+
+    async def _pin(self, fest: Festival) -> None:
+        """Pins for the cards whose link has none: a short link followed, else a sibling tour's pin at the same
+        meeting point, else ``pins`` in config."""
+        s = self.settings
+        for tour in fest.tours:
+            link = tour.map_link or ""
+            if tour.lat is None and urlparse(link).netloc in s.short_link_hosts:
+                response = await self.optional(f"map link {tour.tid}", self.request("GET", link))
+                if response is not None:
+                    tour.lat, tour.lon = map_point(str(response.url))
+        share_pins(fest.tours, s.pins)
 
     async def _pages(self) -> list[str]:
         """Every page the sitemap or the home page's menu names, the site's own hosts only."""
@@ -287,6 +307,7 @@ def parse_card(card: LexborNode, rows: dict[str, dict[str, Any]], page_url: str,
         lat=lat,
         lon=lon,
         off=bool(row.get("off")) or card.attributes.get("data-status") == "off",
+        map_link=waze.attributes.get("href") if waze is not None else None,
     )
 
 
@@ -309,7 +330,7 @@ def geohash_point(code: str) -> tuple[float, float] | None:
 
 
 def map_point(href: str | None) -> tuple[float | None, float | None]:
-    """The meeting point a Waze / Google Maps link pins; (None, None) for a place id or a short link."""
+    """The meeting point a Waze / Google Maps link pins; (None, None) for a place id or an unresolved short link."""
     if not href:
         return None, None
     parts = urlparse(href)
@@ -323,9 +344,34 @@ def map_point(href: str | None) -> tuple[float | None, float | None]:
             if m := re.fullmatch(r"\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*", value):
                 point = float(m.group(1)), float(m.group(2))
                 break
+        # A Google Maps page a short link opens: the place's own "!3d<lat>!4d<lon>", a "/search/<lat>,+<lon>",
+        # else the map's centre "@<lat>,<lon>".
+        path = unquote(parts.path + "?" + parts.query)
+        for pattern in (
+            r"!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)",
+            r"/search/(-?\d+\.\d+),\+?\s*(-?\d+\.\d+)",
+            r"/@(-?\d+\.\d+),(-?\d+\.\d+)",
+        ):
+            if point is None and (m := re.search(pattern, path)):
+                point = float(m.group(1)), float(m.group(2))
     if point is None or not (29 < point[0] < 34 and 34 < point[1] < 36.5):  # Israel only: a bad link pins nothing
         return None, None
     return round(point[0], 6), round(point[1], 6)
+
+
+def share_pins(tours: list[Tour], pins: dict[str, tuple[float, float]]) -> None:
+    """A tour without a pin takes another tour's at the same meeting point, else a configured one."""
+    known = {t.meet: (t.lat, t.lon) for t in tours if t.meet and t.lat is not None}
+    for tour in tours:
+        if tour.lat is not None:
+            continue
+        if tour.meet in known:
+            tour.lat, tour.lon = known[tour.meet]
+            continue
+        for words, (lat, lon) in pins.items():
+            if words in (tour.meet or ""):
+                tour.lat, tour.lon = lat, lon
+                break
 
 
 def _km(a: tuple[float, float], b: tuple[float, float]) -> float:
