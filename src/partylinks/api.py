@@ -906,6 +906,10 @@ def _sounds_like(request: Request, q: str) -> list[str]:
 
 
 # Built in the background on startup (an empty cache made the first visits after a deploy take 3-12 s).
+# The map's pins with the exact query its page sends (MapPage: filterParams sorted by start, api.ts useMapEvents
+# compact): "/events/map" alone was another cache key, so the first visitor after a deploy waited 7-17 s.
+MAP_WARM_PATH = "/events/map?sort=start_at&compact=true"
+
 WARM_PATHS = (
     "/",
     "/artists",
@@ -1108,7 +1112,7 @@ def create_app(
                 # The JSON the first screens fetch, with the exact query the web app sends (the cache is keyed
                 # by it): the venues / artists index's first page and the map's pins (7-8 s cold after a deploy).
                 size = settings.site.web.index_page_size
-                api = [f"/facets/{kind}?page_size={size}&page=1" for kind in ("venues", "artists")] + ["/events/map"]
+                api = [f"/facets/{kind}?page_size={size}&page=1" for kind in ("venues", "artists")] + [MAP_WARM_PATH]
                 for path in (*WARM_PATHS, *api):
                     try:
                         await client.get(path)
@@ -1129,6 +1133,7 @@ def create_app(
                         ]
                         for path in [
                             "/categories",
+                            MAP_WARM_PATH,
                             *(f"/categories?abroad=true&country={c}&lists=false" for c in countries),
                         ]:
                             await client.get(path)  # one at a time: never more than one build slot
