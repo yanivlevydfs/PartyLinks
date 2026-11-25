@@ -2419,6 +2419,7 @@ search:
     jerusalemarts: ["פסטיבל ירושלים לאמנויות", "jerusalem arts festival", "jerusalemarts"]
     bimot: ["בימות גלובל", "bimot global", "bimotglobal", "בימות הפקות"]
     israelshow: ["ישראל שואו", "israel show", "israelshow", "израиль шоу"]
+    cultureuniverse: ["culture universe", "cultureuniverse", "cu-cultureuniverse", "יקום התרבות"]
     kzattarbut: ["קצת תרבות", "kzat tarbut", "kzat-tarbut", "kzattarbut"]
     fournature: ["קהילה למען הטבע", "4nature", "fournature"]
     kolsadna: ["כל סדנה", "kol sadna", "kolsadna"]
@@ -6212,6 +6213,27 @@ sources:
     enabled: true
     cron: "28 7,19 * * *"
     site_url: https://www.tickster.co.il
+    skip_title_words: ["קורס", "סדנת העשרה", "השתלמות"]
+    http:
+      concurrency: 4
+      request_delay_seconds: 0.2
+
+  cultureuniverse:
+    # Culture Universe (cu-cultureuniverse.co.il, יקום התרבות): a national culture guide / box office (Next.js) selling
+    # Kupat Bravo seances. /api/ is robots-disallowed: each event page is server-rendered (JSON-LD Event per
+    # performance + the payload's schedules: hall, city, price, sold out, Kupat Bravo buy link), 1 request per page.
+    # purchase_url = the seance's kupatbravo.co.il/announce/buy/<id>: dedup merges with kupatbravo / israelshow /
+    # ticketsi / tickster. No coordinates (hall + city geocoded). Answers direct (25.11.2026).
+    # sections (25.11.2026): read = the sitemap (221 /event/ entries), every category page /category/1..28 (the menu's
+    # 28; 29+ answer 404; up to 80 events a page, so 5 קונצרט and 20 הופעות are capped at 80: the sitemap and the id
+    # scan give the rest), its 21 /events/city/* pages, the home page; together 226 ids (categories add 5 and
+    # cities 5 over the sitemap; the sitemap 13 over categories + cities). Slugs: the /event/<id> scan from 4400
+    # to 40 misses past the highest id (~1,200 pages, ~23 KB each gzipped) found 507 unlisted pages, 2 with coming
+    # dates (5256, 5261); the rest are past shows with no date. Not read: /api/, /account, /checkout, /my-universe,
+    # /s/ (robots), /club, /gift-card, /about, /legal, /support, /producer-info (no events); /search (the same ids).
+    enabled: true
+    cron: "46 9,21 * * *"
+    site_url: https://www.cu-cultureuniverse.co.il
     skip_title_words: ["קורס", "סדנת העשרה", "השתלמות"]
     http:
       concurrency: 4

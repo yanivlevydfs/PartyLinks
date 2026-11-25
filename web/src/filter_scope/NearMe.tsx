@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Chip, useT } from "../ui";
 import { useFilters } from "./scope";
 
-export type Where = { region: string | null; city: string | null };
+/** Abroad: `country` and `abroad_city`, the nearest city with coming events there (the /abroad page's "my location"). */
+export type Where = { region: string | null; city: string | null; country?: string; abroad_city?: string };
 
 /** The visitor's region and city, or null (no permission, no fix, outside our map). */
 export function locate(): Promise<Where | null> {

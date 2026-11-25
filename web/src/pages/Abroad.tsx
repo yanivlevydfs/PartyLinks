@@ -3,11 +3,13 @@
 // /abroad/<country>/<city>: one city there (its names come from the server too); .../tonight, .../weekend, .../<genre>: its sub-pages.
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
-import { useCategories, useLandingInfo } from "../api";
+import { useCategories, useLandingInfo, useSuggest } from "../api";
 import { CityBar } from "../city/CityBar";
+import { ScopedEvents } from "../filter_scope/ScopedEvents";
+import { locate } from "../filter_scope/NearMe";
 import { whenParams } from "../Filters";
 import type { Facet } from "../types";
-import { EventGrid, Hero, Related, Select, useT, useTitle } from "../ui";
+import { Chip, Hero, Related, Select, useT, useTitle } from "../ui";
 import { useWeb } from "../site_params/useWeb";
 
 const UNKNOWN = "ZZ"; // the server's code for an event abroad in an unknown country
@@ -41,9 +43,21 @@ export default function Abroad() {
   // A city's page: the server's name for it (the API finds its other spellings: "Paris" is "פריז" too).
   const where = place ? info?.city?.en : city || undefined;
   const subParams = sub === "tonight" || sub === "weekend" ? whenParams(sub) : sub ? { genre: sub } : {};
-  const all = useCategories({ abroad: "true" }).data;
+  // Without the venue and artist lists (lists=false): the page shows neither, and they were most of Germany's 782 KB.
+  const all = useCategories({ abroad: "true", lists: "false" }).data;
   // A country's cities only: the list follows the chosen country.
-  const cities = useCategories({ abroad: "true", country: code }).data?.cities ?? [];
+  const cities = useCategories({ abroad: "true", country: code, lists: "false" }).data?.cities ?? [];
+  // Artists and venues as typed, from the server's index (a few names), not the whole list in the page.
+  const named = useSuggest(text.trim()).data;
+  // "My location": the nearest city abroad with coming events (GET /locate), its country and city picked.
+  const [near, setNear] = useState<"idle" | "busy" | "fail">("idle");
+  const nearMe = async () => {
+    setNear("busy");
+    const found = await locate();
+    if (!found?.country || !found.abroad_city || (country && found.country !== code)) return setNear("fail");
+    setNear("idle");
+    go(country ? { city: found.abroad_city, q: "" } : { country: found.country, city: found.abroad_city, q: "" });
+  };
   const names = useMemo(() => new Intl.DisplayNames([lang], { type: "region" }), [lang]);
   const name = (c: string) => {
     if (c === UNKNOWN) return t.abroad.unknownCountry;
@@ -65,7 +79,7 @@ export default function Abroad() {
           <input className="search" type="search" value={text} onChange={(e) => setText(e.target.value)}
             placeholder={t.abroad.searchHint} aria-label={t.search} />
           {suggest && all && (
-            <Suggestions text={text} countries={country ? [] : countries} cities={place ? [] : all.cities} artists={all.lineup} venues={all.venues}
+            <Suggestions text={text} countries={country ? [] : countries} cities={place ? [] : all.cities} artists={named?.artists ?? []} venues={named?.venues ?? []}
               countryName={name} onCountry={(c) => go({ country: c, city: "", q: "" })} onCity={(c) => go({ city: c, q: "" })}
               onText={(v) => { setText(v); go({ q: v }); }} />
           )}
@@ -86,14 +100,11 @@ export default function Abroad() {
               options={[["", t.abroad.allCities], ...byName(cities).map((c): [string, string] => [c.value, `${c.value} (${c.events})`])]} />
           </div>
         )}
-        <label className="sort">
-          <span className="sort-label">{t.abroad.from}</span>
-          <input type="date" value={from} max={to || undefined} onChange={(e) => set({ from: e.target.value })} aria-label={t.abroad.from} />
-        </label>
-        <label className="sort">
-          <span className="sort-label">{t.abroad.to}</span>
-          <input type="date" value={to} min={from || undefined} onChange={(e) => set({ to: e.target.value })} aria-label={t.abroad.to} />
-        </label>
+        {!place && (
+          <Chip on={false} onClick={nearMe} className="near">
+            📍 {near === "busy" ? t.quiz.locating : near === "fail" ? t.abroad.noNear : t.abroad.near}
+          </Chip>
+        )}
         {(pick || city || from || to || q || source) && (
           <button className="f-clear" onClick={() => { setText(""); set({ q: "", country: "", city: "", from: "", to: "", source: "" }); }}>{t.abroad.clear}</button>
         )}
@@ -101,8 +112,11 @@ export default function Abroad() {
       <main className="wrap">
         {place && <CityBar />}
         {(!country || info?.country) && (!place || where) && (
-          <EventGrid
-            params={{
+          // The site's full filter (dates, genres, price, shops, time of day, sort), counted within this country / city.
+          // Old links' ?from= / ?to= / ?source= still narrow the base. Keyed by place: a new place starts a clean filter.
+          <ScopedEvents
+            key={`${code ?? ""}|${where ?? ""}|${sub ?? ""}`}
+            base={{
               abroad: "true", country: code, city: where, q: q.length >= 2 ? q : undefined,
               date_from: from ? `${from}T00:00:00` : undefined, date_to: to ? `${to}T23:59:59` : undefined,
               source: source || undefined, ...subParams,

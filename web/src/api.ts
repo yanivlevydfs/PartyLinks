@@ -57,13 +57,36 @@ export function toQuery(params: Params): string {
   return qs.toString();
 }
 
+// The first page of the last few lists abroad, kept in localStorage: a return visit (or a reload) draws the cards
+// at once while the fresh page loads behind them, instead of a loader for the 1-3 s a cold city takes on the server.
+const KEPT_PAGES = "q:events-kept";
+const KEPT_MAX = 12;
+type KeptPage = { qs: string; at: number; page: EventPage };
+function keptPages(): KeptPage[] {
+  try { return (JSON.parse(localStorage.getItem(KEPT_PAGES) ?? "[]") as KeptPage[]) ?? []; } catch { return []; }
+}
+function keepPage(qs: string, page: EventPage) {
+  try {
+    const rest = keptPages().filter((k) => k.qs !== qs).slice(0, KEPT_MAX - 1);
+    localStorage.setItem(KEPT_PAGES, JSON.stringify([{ qs, at: Date.now(), page }, ...rest]));
+  } catch { /* full or blocked: only slower */ }
+}
+
 /** `onProgress`: the first page's share received (0-1), for the loader's real percent. */
 export function useEvents(params: Params, onProgress?: (share: number) => void) {
   const qs = toQuery({ page_size: String(useWeb().events_page_size), ...params });
+  const keep = params.abroad === "true";
+  const kept = keep ? keptPages().find((k) => k.qs === qs) : undefined;
   return useInfiniteQuery({
     queryKey: ["events", qs],
     // signal: a request overtaken by the next keystroke or filter is cancelled, not left to load the server.
-    queryFn: ({ pageParam, signal }) => getWith<EventPage>(`/events?${qs}&page=${pageParam}`, pageParam === 1 ? onProgress : undefined, signal),
+    queryFn: async ({ pageParam, signal }) => {
+      const page = await getWith<EventPage>(`/events?${qs}&page=${pageParam}`, pageParam === 1 ? onProgress : undefined, signal);
+      if (keep && pageParam === 1) keepPage(qs, page);
+      return page;
+    },
+    initialData: kept ? { pages: [kept.page], pageParams: [1] } : undefined,
+    initialDataUpdatedAt: kept?.at,
     placeholderData: (prev) => prev, // the old results stay (dimmed) while the new ones load: no flash of skeletons
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < 40 && last.page * last.page_size < last.total ? last.page + 1 : undefined), // 40: the API's max_page

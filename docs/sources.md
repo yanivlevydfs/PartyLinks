@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 175 configured sources, 174 on. Each one has its own module in
+SPOTX collects from 176 configured sources, 175 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -111,6 +111,7 @@ pagination and what the listing and the event page provide.
 | `fournature` | Kehila Lemaan Hateva (4nature.org.il, קהילה למען הטבע): a Herzliya urban-nature community; the dated Elementor blocks of the home page ("סיורים ואירועי קהילה") and of every wp-json post / /events/ link (one event per post); free meetings with a sign-up form, tours, a course. A few events a year (may be empty) | 06:02, 18:02 | yes |
 | `ticketsi` | Ticketsi (ticketsi.co.il): a show-guide magazine selling through its Kupat Bravo white label; ~14 show calendars (JSON-LD: show ids, the run's days; category pages = its categories) and each current show's performances from the same id on kupatbravo.co.il (start, hall, pin, prices, tickets left); purchase link = the seance's buy page, so dedup merges with `kupatbravo` / `israelshow` | 08:14, 20:14 | yes |
 | `tickster` | Tickster (tickster.co.il): a ticket guide selling through its Kupat Bravo white label and Funzing affiliate links; its /api/ is disallowed, so the sitemap (~880 event pages) and each page's prerendered JSON-LD Event (start, hall, city, price, buy link); no coordinates (geocoded) and no category (genres from the text); buy links merge with `kupatbravo` / `funzing` | 07:28, 19:28 | yes |
+| `cultureuniverse` | Culture Universe (cu-cultureuniverse.co.il, יקום התרבות): a national culture guide / box office selling Kupat Bravo seances; event ids from the sitemap, every category page (1..28), every city page, the home page and an /event/<id> scan; each server-rendered event page gives every performance (JSON-LD + the payload's schedules: hall, city, price, sold out, the seance's buy link), so dedup merges with `kupatbravo` | 09:46, 21:46 | yes |
 | `glatticket` | Glatticket (home.glatticket.co.il): Tickchak's box office for the Haredi and religious public; Tickchak hub search API + each event's page (map pin, tiers, organiser) | 06:23, 18:23 | yes |
 | `arthurmurray` | Arthur Murray Israel (arthurmurray.co.il): the ballroom school's public evening "The Salon" in Ra'anana; the Wix page's embedded landing (read through the page JSON): date, doors and start, single / couple tickets on PayMe | 07:44, 19:44 | yes |
 | `basalon` | Basalon (basalon.co.il): talks, stand-up, shows, plays, kids' shows and workshops in living rooms, pubs and studios nationwide; every category's dated cards (the site's own pagination call, to the last page), then each event page's JSON-LD and booking calendar, every coming date (no appointment-only, private or at-home listings) | 03:37, 15:37 | yes |

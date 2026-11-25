@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 import httpx
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.exception_handlers import http_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
@@ -263,7 +264,9 @@ class EventSummaryOut(_Out):
     bookable: bool = False  # matched to an Ontopo venue (partylinks.placeinfo)
     was_price: float | None = None  # the price before a recent drop (partylinks.smartrails)
     pinned: bool = False  # pinned by the owner to the home rows: shown first (partylinks.home_pins)
-    is_sponsored: bool = False  # paid right now: pinned or a sponsored placement (events.is_sponsored, partylinks.ads.paid)
+    is_sponsored: bool = (
+        False  # paid right now: pinned or a sponsored placement (events.is_sponsored, partylinks.ads.paid)
+    )
     weekly: str | None = None  # a weekly line's weekday, "thursday" (partylinks.lines)
 
     @model_validator(mode="after")
@@ -438,7 +441,11 @@ class FacetValue(BaseModel):
 
 
 def venue_facets(
-    facets: list[FacetValue], venue_area: dict[str, str], rows: Sequence[Any], profiles: list[VenueProfile], linked: dict[str, str]
+    facets: list[FacetValue],
+    venue_area: dict[str, str],
+    rows: Sequence[Any],
+    profiles: list[VenueProfile],
+    linked: dict[str, str],
 ) -> list[FacetValue]:
     """Venue counts with their area, and the logo / links of the venues a ticket site curates."""
     spots: dict[str, tuple[float, float] | None] = {f.value: None for f in facets}
@@ -450,7 +457,12 @@ def venue_facets(
     for f in facets:
         update: dict[str, Any] = {"area": venue_area.get(f.value)}
         if p := found.get(f.value):
-            update |= {"verified": True, "image_url": venue_logo_path(p), "profile_url": p.profile_url, "links": p.links or None}
+            update |= {
+                "verified": True,
+                "image_url": venue_logo_path(p),
+                "profile_url": p.profile_url,
+                "links": p.links or None,
+            }
         out.append(f.model_copy(update=update))
     return out
 
@@ -511,6 +523,7 @@ def _city_names(city: str, country: str | None) -> list[str]:
     """``city`` and, for a city abroad, its other names ("פריז" -> "Paris")."""
     found = city_abroad(city, country.upper() if country else None)
     return list(dict.fromkeys([city, *(found[1] if found else ())]))
+
 
 # Missing values (no date, no price) sort as the smallest: first ascending, last descending.
 _SORT_COLUMNS = {
@@ -798,7 +811,11 @@ def _body_length(send: Any) -> Any:
         if message["type"] == "http.response.start":
             headers = {bytes(k).lower(): bytes(v) for k, v in message.get("headers", [])}
             size = headers.get(b"content-length")
-            if size and b"x-body-length" not in headers and headers.get(b"content-type", b"").startswith(b"application/json"):
+            if (
+                size
+                and b"x-body-length" not in headers
+                and headers.get(b"content-type", b"").startswith(b"application/json")
+            ):
                 message = {**message, "headers": [*message.get("headers", []), (b"x-body-length", size)]}
         await send(message)
 
@@ -857,7 +874,24 @@ def _sounds_like(request: Request, q: str) -> list[str]:
 
 
 # Built in the background on startup (an empty cache made the first visits after a deploy take 3-12 s).
-WARM_PATHS = ("/", "/artists", "/venues", "/stores", "/tonight", "/weekend", "/map", "/abroad", "/blog", "/posts", "/posts?lang=en", "/categories", "/categories?anywhere=true", "/ticket-sites", "/events/rails", "/sitemap.xml")
+WARM_PATHS = (
+    "/",
+    "/artists",
+    "/venues",
+    "/stores",
+    "/tonight",
+    "/weekend",
+    "/map",
+    "/abroad",
+    "/blog",
+    "/posts",
+    "/posts?lang=en",
+    "/categories",
+    "/categories?anywhere=true",
+    "/ticket-sites",
+    "/events/rails",
+    "/sitemap.xml",
+)
 
 
 def build_event_filters(
@@ -981,7 +1015,9 @@ def build_event_filters(
 
 
 def create_app(
-    settings: Settings | None = None, start_scheduler: bool | None = None, worker_process: bool = False,
+    settings: Settings | None = None,
+    start_scheduler: bool | None = None,
+    worker_process: bool = False,
     overrides: bool = False,
 ) -> FastAPI:
     """``worker_process``: the scheduler and sources run in the worker process (partylinks/worker);
@@ -1007,6 +1043,7 @@ def create_app(
         app.state.settings, app.state.db, app.state.service, app.state.scheduler = settings, db, service, scheduler
         app.state.worker = WorkerLink(db, settings.scheduler) if worker_process else None
         app.state.tasks = set()
+
         async def maintenance() -> None:
             """Before any source writes: artwork still in the database moves to files. Then genres are re-read if their config changed, the scrapers start, and map coordinates are
             filled for address-only events."""
@@ -1107,6 +1144,20 @@ def create_app(
         log.info("request: %s %s refused by the database: %s", request.method, request.url.path, exc.orig)
         return JSONResponse({"detail": "invalid value"}, status_code=status.HTTP_400_BAD_REQUEST)
 
+    @app.exception_handler(RequestValidationError)
+    async def _invalid(request: Request, exc: RequestValidationError) -> JSONResponse:
+        # Which field and why, never the value sent back or the accepted values (``input`` / ``ctx``): a probe
+        # walking the query parameters (?sort=x, ?country=DEU) learnt the API's enums from the echo. A form's
+        # body keeps its message (the /submit and /contact forms show it); a query parameter only "invalid value".
+        errors = [
+            {
+                "loc": list(e.get("loc", ())),
+                "msg": e.get("msg", "") if e.get("loc", ("",))[0] == "body" else "invalid value",
+            }
+            for e in exc.errors()
+        ]
+        return JSONResponse({"detail": errors}, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
     @app.exception_handler(CacheBusy)
     async def _busy(request: Request, exc: CacheBusy) -> Response:
         log.info("busy: %s waited %ss for a build slot", request.url.path, settings.api.cache_build_wait_seconds)
@@ -1163,7 +1214,13 @@ def _best_deals(session: Session, rows: Sequence[EventRow]) -> dict[str, DealOut
     if not ids:
         return {}
     deal_columns = load_only(
-        EventRow.id, EventRow.code, EventRow.source, EventRow.url, EventRow.min_price, EventRow.has_free_entry, EventRow.entry_type
+        EventRow.id,
+        EventRow.code,
+        EventRow.source,
+        EventRow.url,
+        EventRow.min_price,
+        EventRow.has_free_entry,
+        EventRow.entry_type,
     )
     return {
         d.id: DealOut.model_validate(d)
@@ -1201,14 +1258,18 @@ def _group_covers(session: Session, rows: Sequence[EventRow]) -> dict[str, str]:
     return found
 
 
-def _summary_extras(session: Session, rows: Sequence[EventRow], cfg: Settings | None = None) -> dict[str, dict[str, Any]]:
+def _summary_extras(
+    session: Session, rows: Sequence[EventRow], cfg: Settings | None = None
+) -> dict[str, dict[str, Any]]:
     cfg = cfg or get_settings()
     deals = _best_deals(session, rows)
     sources = _group_sources(session, rows)
     covers = _group_covers(session, rows)
     # Only with no picture of its own or its group's: a real picture always wins (artwork package).
     # Own stored > duplicate's stored > own URL still loading > drawn card (partylinks.pictures).
-    drawn = artwork.urls(session, [r.id for r in rows if not (r.cover_url or covers.get(r.group_id or "") or live_image_url(r))])
+    drawn = artwork.urls(
+        session, [r.id for r in rows if not (r.cover_url or covers.get(r.group_id or "") or live_image_url(r))]
+    )
     liked = popularity.counts(session, [r.id for r in rows])  # likes and views
     places = placecards.card_extras(session, rows)
     was = smartrails.was_prices(session, cfg, rows, datetime.now(UTC))
@@ -1277,7 +1338,8 @@ def _register_routes(app: FastAPI) -> None:
             "name": site.name,
             "base_url": site.base_url,
             "email": hide_email(site.contact_email),
-            "accessibility": site.accessibility.model_dump(mode="json") | {"email": hide_email(site.accessibility.email)},
+            "accessibility": site.accessibility.model_dump(mode="json")
+            | {"email": hide_email(site.accessibility.email)},
             "privacy": site.privacy.model_dump(mode="json") | {"email": hide_email(site.privacy.email)},
             "accounts": request.app.state.settings.accounts.ready,  # any account UI at all
             "providers": request.app.state.settings.accounts.providers,  # the "Continue with ..." buttons
@@ -1313,7 +1375,9 @@ def _register_routes(app: FastAPI) -> None:
         worker_state = worker.state() if worker else None
         if worker:  # the scheduler runs in the worker process: its heartbeat says how it is
             report["checks"]["scheduler"] = (
-                "down (no worker heartbeat)" if not worker_state or not worker_state["alive"] else worker_state["scheduler"]
+                "down (no worker heartbeat)"
+                if not worker_state or not worker_state["alive"]
+                else worker_state["scheduler"]
             )
         else:
             report["checks"]["scheduler"] = (
@@ -1360,15 +1424,21 @@ def _register_routes(app: FastAPI) -> None:
             str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="DJ / performer in the lineup")
         ] = None,
         venue: Annotated[
-            str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="Venue name (the whole name, any case)")
+            str | None,
+            Query(min_length=2, max_length=MAX_TEXT_PARAM, description="Venue name (the whole name, any case)"),
         ] = None,
         venue_slug: Annotated[str | None, Query(description="Exact venue slug")] = None,
         city: Annotated[str | None, Query(min_length=2, max_length=MAX_TEXT_PARAM, description="City contains")] = None,
         in_target_city: Annotated[bool | None, Query(description="Matched to the configured target city")] = None,
         abroad: Annotated[
-            bool | None, Query(description="Events abroad instead of events in Israel (default: Israel, both for an artist or venue)")
+            bool | None,
+            Query(
+                description="Events abroad instead of events in Israel (default: Israel, both for an artist or venue)"
+            ),
         ] = None,
-        country: Annotated[str | None, Query(min_length=2, max_length=2, description="Country code (ISO 3166 alpha-2), events abroad")] = None,
+        country: Annotated[
+            str | None, Query(min_length=2, max_length=2, description="Country code (ISO 3166 alpha-2), events abroad")
+        ] = None,
         anywhere: Annotated[bool, Query(description="Events in Israel and abroad")] = False,
         entry_type: Annotated[
             list[EntryType] | None, Query(max_length=MAX_LIST_PARAMS, description="free / paid / free_and_paid")
@@ -1412,7 +1482,9 @@ def _register_routes(app: FastAPI) -> None:
         """WHERE clauses of the event filters, shared by the list and the map."""
         params = dict(locals())  # every query parameter, by name
         del params["request"]
-        return build_event_filters(request.app.state.settings, sounds_like=_sounds_like(request, q) if q else (), **params)
+        return build_event_filters(
+            request.app.state.settings, sounds_like=_sounds_like(request, q) if q else (), **params
+        )
 
     # A default, not Annotated: string annotations (``from __future__``) cannot see this local function.
     event_filters_dep = Depends(event_filters)
@@ -1441,10 +1513,16 @@ def _register_routes(app: FastAPI) -> None:
 
         def build(session: Session) -> EventPage:
             # Cards never show the long text columns.
-            card = select(EventRow).options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
+            card = select(EventRow).options(
+                selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra)
+            )
             # Paid matches lead page 1 and are left out of the rest, so every later page starts that
             # many places earlier: the total and the paging stay those of the plain list.
-            paid = ads.promoted_for(session, card, filters, page, min(cfg.api.sponsored_results, size)) if sponsored else None
+            paid = (
+                ads.promoted_for(session, card, filters, page, min(cfg.api.sponsored_results, size))
+                if sponsored
+                else None
+            )
             first, drop = paid if paid else ([], [])
             where = [*filters, EventRow.id.not_in(drop)] if drop else filters
             where = [*where, placecards.first_opening(where)]  # a place is one card, not one per day
@@ -1465,26 +1543,34 @@ def _register_routes(app: FastAPI) -> None:
                 if q and sort is EventSort.start_asc and not abroad:  # a search covers abroad too: Israel's first
                     order = (EventRow.country.is_not(None), *order)
                 rows = session.scalars(
-                    card.where(*where)
-                    .order_by(*order, EventRow.id)
-                    .offset(start)
-                    .limit(stop - start)
+                    card.where(*where).order_by(*order, EventRow.id).offset(start).limit(stop - start)
                 ).all()
                 return total, rows
 
-            def by_rank(where: list[ColumnElement[bool]], q: str, alike: list[str]) -> tuple[int, Sequence[EventRow], set[str]]:
+            def by_rank(
+                where: list[ColumnElement[bool]], q: str, alike: list[str]
+            ) -> tuple[int, Sequence[EventRow], set[str]]:
                 # Ranking reads every match anyway, so one pass gives both the order and the total
                 # (measured at 35k events: as fast as the count + page it replaces). Within a rank,
                 # events in Israel before those abroad (the search covers both), then by date.
                 # A search matching thousands ("מסיבה") is listed by date: ranking reads every match
                 # (measured: ~0.1 ms a row), and its matches are mostly the same kind anyway.
-                if (session.scalar(select(func.count()).select_from(select(EventRow.id).where(*where).limit(RANK_MAX + 1).subquery())) or 0) > RANK_MAX:
+                if (
+                    session.scalar(
+                        select(func.count()).select_from(
+                            select(EventRow.id).where(*where).limit(RANK_MAX + 1).subquery()
+                        )
+                    )
+                    or 0
+                ) > RANK_MAX:
                     return (*by_date(where), set())
                 cols = ranked_columns(*where)
                 rank = relevance(q, cfg, alike, cols)
                 assert rank is not None
                 ranked = session.execute(
-                    select(cols.c.id, rank).order_by(rank, cols.c.country.is_not(None), cols.c.start_at.asc().nulls_first(), cols.c.id)
+                    select(cols.c.id, rank).order_by(
+                        rank, cols.c.country.is_not(None), cols.c.start_at.asc().nulls_first(), cols.c.id
+                    )
                 ).all()
                 wanted = [i for i, _ in ranked[start:stop]]
                 weak = {i for i, r in ranked[start:stop] if tier(r) == 2} if names_only else set()
@@ -1497,13 +1583,19 @@ def _register_routes(app: FastAPI) -> None:
                 total, rows, weak = by_rank(where, q or "", _sounds_like(request, q or ""))
             suggestion = widened = widened_q = None
             # Nothing found: each word no title or name has, spelled as the closest one that has ("omer adm").
-            fixed = correct_spelling(q, _name_index(request), cfg.search.typo_cutoff) if q and not total and not drop else None
+            fixed = (
+                correct_spelling(q, _name_index(request), cfg.search.typo_cutoff)
+                if q and not total and not drop
+                else None
+            )
             if fixed:
                 alike = _sounds_like(request, fixed)
                 respelled = [*filters[:-1], *smart_filters(fixed, cfg, alike)]  # the search is the last filter
                 respelled.append(placecards.first_opening(respelled))
                 again = relevance(fixed, cfg, alike) if rank is not None else None
-                total, rows, weak = by_rank(respelled, fixed, alike) if again is not None else (*by_date(respelled), set())
+                total, rows, weak = (
+                    by_rank(respelled, fixed, alike) if again is not None else (*by_date(respelled), set())
+                )
                 if total:
                     widened, widened_q = "spelling", fixed
             total += len(drop)
@@ -1529,11 +1621,19 @@ def _register_routes(app: FastAPI) -> None:
                     suggestion = near
             extras = _summary_extras(session, rows, cfg)
             items = [
-                EventSummaryOut.model_validate(r).model_copy(update=extras[r.id] | {"sponsored": promoted.get(r.id), "in_text": r.id in weak})
+                EventSummaryOut.model_validate(r).model_copy(
+                    update=extras[r.id] | {"sponsored": promoted.get(r.id), "in_text": r.id in weak}
+                )
                 for r in rows
             ]
             return EventPage(
-                total=total, page=page, page_size=size, items=items, did_you_mean=suggestion, widened=widened, widened_q=widened_q
+                total=total,
+                page=page,
+                page_size=size,
+                items=items,
+                did_you_mean=suggestion,
+                widened=widened,
+                widened_q=widened_q,
             )
 
         response = _cached(request, build)
@@ -1674,7 +1774,9 @@ def _register_routes(app: FastAPI) -> None:
             smart = smartrails.rail_filters(cfg, now, lambda **kw: event_filters(request, **kw), slots)
             # The coming holiday's row, from rail_days before it (partylinks.holiday_pages).
             soon = now.date() + timedelta(days=cfg.holiday_pages.rail_days)
-            coming = next(((h, n) for h, n in holiday_pages.with_pages(session, cfg, now.date()) if h.start <= soon), None)
+            coming = next(
+                ((h, n) for h, n in holiday_pages.with_pages(session, cfg, now.date()) if h.start <= soon), None
+            )
             if coming:
                 holiday, n = coming
                 out.holiday = HolidayOut(key=holiday.key, he=holiday.he, en=holiday.en, start=holiday.start, end=holiday.end,
@@ -1702,7 +1804,9 @@ def _register_routes(app: FastAPI) -> None:
                     if spec.multi:
                         filters.append(EventRow.group_size > 1)
                     if spec.exclude:
-                        filters.append(not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec.exclude))))
+                        filters.append(
+                            not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec.exclude)))
+                        )
                     with session.begin_nested():  # a failed query rolls back to here, the other rows still load
                         out.rails[spec.key], wheres[spec.key] = load(filters, cfg.home_rails.pool), filters
                 except Exception:  # noqa: BLE001 - an admin's bad row must not take the home page down
@@ -1751,11 +1855,13 @@ def _register_routes(app: FastAPI) -> None:
         return EventOut.model_validate(row).model_copy(
             update={
                 "alternatives": [
-                    AlternativeOut.model_validate(a).model_copy(update={
-                        "resale": bool((a.extra or {}).get("resale")),
-                        # viagogo rows its feed dropped are never re-read (unlist_missing off): no seller then, none now.
-                        "is_sold_out": a.is_sold_out or (a.extra or {}).get("has_listings") is False,
-                    })
+                    AlternativeOut.model_validate(a).model_copy(
+                        update={
+                            "resale": bool((a.extra or {}).get("resale")),
+                            # viagogo rows its feed dropped are never re-read (unlist_missing off): no seller then, none now.
+                            "is_sold_out": a.is_sold_out or (a.extra or {}).get("has_listings") is False,
+                        }
+                    )
                     for a in alternatives
                 ],
                 "changes": [DealChangeOut.model_validate(c) for c in changes],
@@ -1866,13 +1972,22 @@ def _register_routes(app: FastAPI) -> None:
         request: Request,
         filters: list[ColumnElement[bool]] = event_filters_dep,
         upcoming: bool = True,
+        lists: Annotated[
+            bool,
+            Query(
+                description="With the venue and artist lists (false: the filter's counts only, a far smaller answer)"
+            ),
+        ] = True,
     ) -> Response:
         """Facet counts of the events matching the list's filters (none: every upcoming event)."""
         cache: ResponseCache = request.app.state.response_cache
 
         def body() -> bytes:  # not _cached: build_categories opens its own short session
             built = build_categories(request, filters, upcoming)
-            return built.model_dump_json(by_alias=True, exclude_none=True).encode()
+            # A filter needs no venue / artist names: abroad's were 4,567 + 1,709 of its 782 KB (Germany, 25.11.2026),
+            # handed to every visitor of the page, a copy of the whole index in one call.
+            drop = None if lists else {"venues", "lineup"}
+            return built.model_dump_json(by_alias=True, exclude_none=True, exclude=drop).encode()
 
         return Response(cache.get((request.url.path, request.url.query), body)[0], media_type="application/json")
 
@@ -1939,7 +2054,8 @@ def _register_routes(app: FastAPI) -> None:
         lat: Annotated[float, Query(ge=-90, le=90)],
         lng: Annotated[float, Query(ge=-180, le=180)],
     ) -> dict[str, str | None]:
-        """Region (and canonical city, when inside one) of a point: "near me" on the home page."""
+        """Region (and canonical city, when inside one) of a point: "near me" on the home page. Outside Israel:
+        ``country`` and ``abroad_city``, the nearest city there ("near me" on /abroad)."""
         cfg: Settings = request.app.state.settings
         here = (lat, lng)
         city = min(
@@ -1951,7 +2067,27 @@ def _register_routes(app: FastAPI) -> None:
             return {"region": "tel_aviv", "city": None}
         region = request.app.state.service.enricher.areas.region(None, None, None, lat, lng)
         known = region not in (ABROAD_AREA, OUTSIDE_AREA)
-        return {"region": region if known else None, "city": city.he if city else None}
+        found: dict[str, str | None] = {"region": region if known else None, "city": city.he if city else None}
+        if region == ABROAD_AREA and (near := _nearest_abroad(request, here)):
+            found |= {"country": near[0], "abroad_city": near[1]}
+        return found
+
+    def _nearest_abroad(request: Request, here: tuple[float, float]) -> tuple[str, str] | None:
+        """(country, city) of the city abroad with coming events nearest to ``here``, within 150 km: the
+        city as our events name it (the /abroad page filters by it), placed at its events' mean point."""
+        state = request.app.state
+        built, cities = getattr(state, "abroad_city_points", (0.0, None))
+        if cities is None or time.monotonic() - built > 600:  # rebuilt every 10 minutes (one grouped read)
+            with state.db.session(write=False) as session:
+                cities = session.execute(
+                    select(EventRow.country, EventRow.city, func.avg(EventRow.latitude), func.avg(EventRow.longitude))
+                    .where(EventRow.country.is_not(None), EventRow.city.is_not(None), EventRow.latitude.is_not(None),
+                           EventRow.is_primary.is_(True), upcoming_filter())
+                    .group_by(EventRow.country, EventRow.city)
+                ).all()  # fmt: skip
+            state.abroad_city_points = (time.monotonic(), cities)
+        best = min(((meters(here, (lat, lng)), country, city) for country, city, lat, lng in cities), default=None)
+        return (best[1], best[2]) if best and best[0] <= 150_000 else None
 
     def build_categories(request: Request, filters: list[ColumnElement[bool]], upcoming: bool) -> Categories:
         # Only the facet columns (not descriptions/extra JSON); each real event counted once.
@@ -2018,7 +2154,8 @@ def _register_routes(app: FastAPI) -> None:
             genres=genres,
             genre_groups=[
                 FacetValue(value=g, events=counts[g], members=members)
-                for g, members in enrichment.genre_groups.items() if g in counts
+                for g, members in enrichment.genre_groups.items()
+                if g in counts
             ],
             genre_families=enrichment.genre_families,
             dates=sorted(facet(lambda r: [r.local_date]), key=lambda f: f.value),

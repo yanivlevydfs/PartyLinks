@@ -12,6 +12,12 @@ import { byName, Chip, label, Loader, Select, sourceName, today, tomorrow, TZ, u
 // The one home-page filter: its state lives in the store, the API query comes from filterParams(),
 // and every landing page (/tonight, /genre/x, /city/x) only presets that same state.
 
+/** The counts a page's own filter asks for: without the venue and artist lists, which no row of the filter
+ *  shows (abroad's were most of a 782 KB answer). The home filter keeps the shared full query the home page reads. */
+function catsParams(base: Params, local: boolean): Params {
+  return local ? { ...base, lists: "false" } : base;
+}
+
 /** Query for /events from the filter state. */
 export function filterParams(f: FilterState): Params {
   return {
@@ -100,7 +106,7 @@ function useMedia(query: string) {
 export function Filters() {
   const { t, lang } = useT();
   const { f, set, base, local } = useFilters();
-  const cats = useCategories(base).data;
+  const cats = useCategories(catsParams(base, local)).data;
   const mobile = useMedia(MOBILE);
   const sheet = useRef<HTMLDialogElement>(null);
   // The phone sheet reopens after a remount (see useDrawer).
@@ -314,9 +320,10 @@ function Pill({ children, onClear }: { children: ReactNode; onClear: () => void 
 /** One drawer's rows (desktop), or all of them (the phone sheet). */
 function Rows({ only }: { only?: Panel }) {
   const { t, lang } = useT();
-  const { f, set, base } = useFilters();
-  const cats = useCategories(base).data;
-  const show = (p: Panel) => !only || only === p;
+  const { f, set, base, local } = useFilters();
+  const cats = useCategories(catsParams(base, local)).data;
+  // Abroad has no regions of its own (its one "area" is abroad): the page's country and city pickers place it.
+  const show = (p: Panel) => (!only || only === p) && !(p === "area" && base.abroad === "true");
 
   const regionKeys = new Set(cats?.regions?.map((r) => r.value));
   // Under Tel Aviv alone: its neighbourhoods. Under another region alone: its cities.

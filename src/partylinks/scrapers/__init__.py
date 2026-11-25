@@ -27,6 +27,7 @@ from partylinks.scrapers.cinematheque_tlv import JerusalemCinemathequeScraper, T
 from partylinks.scrapers.cluberim import CluberimScraper
 from partylinks.scrapers.comy import ComyScraper
 from partylinks.scrapers.concertevents import ConcertEventsScraper
+from partylinks.scrapers.cultureuniverse import CultureUniverseScraper
 from partylinks.scrapers.dice import DiceScraper
 from partylinks.scrapers.drop import DropScraper
 from partylinks.scrapers.dungeon import DungeonScraper
@@ -297,6 +298,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         JerusalemArtsScraper,
         BimotScraper,
         IsraelShowScraper,
+        CultureUniverseScraper,
         KzatTarbutScraper,
         FourNatureScraper,
         KolSadnaScraper,
