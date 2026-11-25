@@ -20,8 +20,6 @@ const KINDS: Record<Kind, Record<Lang, string>> = {
   abroad: { he: "חו״ל", en: "Abroad" },
 };
 const KIND_ORDER = Object.keys(KINDS) as Kind[];
-const OFFICES_SHOWN = 24; // box offices before "show more" (the list runs to hundreds)
-const GROUP_SHOWN = 8; // stores per kind before "show all" (two rows on a wide screen)
 const CITY_CHIPS = 12; // the cities with the most box-office events get a chip
 
 // Store home page and kind; a source missing here still shows, without a link.
@@ -203,14 +201,12 @@ export default function StoresPage() {
   const query = fold(useDeferredValue(typed).trim());
   const [kind, setKind] = useState<Kind | null>(null);
   const [city, setCity] = useState<string | null>(null);
-  const [showAll, setShowAll] = useState(false);
-  const [open, setOpen] = useState<Set<Kind>>(new Set());
-  const toggle = (k: Kind) => setOpen((o) => { const n = new Set(o); if (!n.delete(k)) n.add(k); return n; });
   const num = (n: number) => n.toLocaleString(strings.locale);
 
-  // A store with nothing upcoming says nothing here; the rest by kind, biggest first (the API's order).
+  // Every store is shown, all of them, none behind "show more" (the owner's rule, 25.11.2026): by kind,
+  // biggest first (the API's order); a store with nothing upcoming right now is listed too, with 0.
   const rows = useMemo<Row[]>(
-    () => (stores ?? []).filter((s) => s.events > 0).map((site) => {
+    () => (stores ?? []).map((site) => {
       const [url, k] = STORES[site.name] ?? [null, "tickets"];
       return { site, url, kind: k };
     }),
@@ -228,7 +224,7 @@ export default function StoresPage() {
     return [...by].sort((a, b) => b[1] - a[1]).slice(0, CITY_CHIPS).map(([c]) => c);
   }, [offices]);
   const officesFound = offices.filter((o) => (!city || o.city === city) && matches(o.name, o.city, domain(o.url)));
-  const officesShown = showAll || query ? officesFound : officesFound.slice(0, OFFICES_SHOWN);
+  const officesShown = officesFound; // every box office, none behind "show more"
 
   return (
     <>
@@ -263,9 +259,7 @@ export default function StoresPage() {
             </div>
             {groups.map((g) => {
               const max = g.rows[0]?.site.events || 1;
-              // One kind chosen, or a search: every match; otherwise each kind's biggest, the rest a click away.
-              const whole = !!kind || !!query || open.has(g.kind) || g.rows.length <= GROUP_SHOWN + 2;
-              const shown = whole ? g.rows : g.rows.slice(0, GROUP_SHOWN);
+              const shown = g.rows; // every store of the kind
               return (
                 <div key={g.kind} className="store-group">
                   <h3 className="section-title">{KINDS[g.kind][lang]} <small>{g.rows.length}</small></h3>
@@ -291,11 +285,6 @@ export default function StoresPage() {
                       </li>
                     ))}
                   </ol>
-                  {!kind && !query && g.rows.length > GROUP_SHOWN + 2 && (
-                    <button className="store-group-more" aria-expanded={whole} onClick={() => toggle(g.kind)}>
-                      {whole ? t.less : t.allOf(g.rows.length)}
-                    </button>
-                  )}
                 </div>
               );
             })}
@@ -325,9 +314,6 @@ export default function StoresPage() {
                 </li>
               ))}
             </ul>
-            {officesShown.length < officesFound.length && (
-              <div className="more"><button onClick={() => setShowAll(true)}>{t.more(officesFound.length - officesShown.length)}</button></div>
-            )}
           </section>
         )}
       </main>
