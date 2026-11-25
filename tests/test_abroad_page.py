@@ -27,6 +27,7 @@ def _client(tmp_path: Path) -> TestClient:
         _abroad("lu", "Ludwigshafen", 49.4774, 8.4452),
         _abroad("ma", "Mannheim", 49.4875, 8.4660),
         _abroad("be", "Berlin", 52.5200, 13.4050),
+        _abroad("lr", "Ludwigshafen am Rhein", 49.4800, 8.4400),  # nearest to "my location", the long name
     ])  # fmt: skip
     return TestClient(create_app(settings, start_scheduler=False))
 
@@ -37,7 +38,8 @@ def test_filter_counts_without_the_name_lists(tmp_path: Path) -> None:
         slim = client.get("/categories?abroad=true&country=DE&lists=false").json()
     assert full["venues"] and "lineup" in full
     assert "venues" not in slim and "lineup" not in slim
-    assert {c["value"] for c in slim["cities"]} == {"Ludwigshafen", "Mannheim", "Berlin"}
+    # "Ludwigshafen am Rhein" is one entry with "Ludwigshafen" (the name its other events use).
+    assert {c["value"]: c["events"] for c in slim["cities"]} == {"Ludwigshafen": 2, "Mannheim": 1, "Berlin": 1}
     assert slim["countries"] == full["countries"] and slim["genres"] == full["genres"]
 
 
@@ -66,7 +68,9 @@ def test_a_probe_learns_nothing_from_the_errors(tmp_path: Path) -> None:
 def test_a_city_named_with_its_river_finds_the_short_name_too(tmp_path: Path) -> None:
     with _client(tmp_path) as client:
         long = client.get("/events", params={"abroad": "true", "country": "DE", "city": "Ludwigshafen am Rhein"}).json()
-    assert [e["source_event_id"] for e in long["items"]] == ["lu"]  # stored as "Ludwigshafen"
+        short = client.get("/events", params={"abroad": "true", "country": "DE", "city": "Ludwigshafen"}).json()
+    assert {e["source_event_id"] for e in long["items"]} == {"lu", "lr"}  # "lu" stored as "Ludwigshafen"
+    assert {e["source_event_id"] for e in short["items"]} == {"lu", "lr"}  # the city box's entry: both
 
 
 def test_short_names_only_before_a_lower_case_word_or_a_separator() -> None:

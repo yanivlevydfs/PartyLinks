@@ -509,7 +509,11 @@ _IS_PLACE = func.coalesce(EventRow.extra[PLACE_LISTING].as_boolean(), False)
 def _merged_cities(rows: Iterable[Any]) -> list[tuple[str, int]]:
     """Cities with their event counts, busiest first. A city abroad named in two languages by different
     sellers ("Paris" / "פריז") is one entry, shown in its most used spelling."""
-    counts = Counter((r.city, r.country) for r in rows if r.city)
+    counts: Counter[tuple[str, Any]] = Counter()
+    pairs = Counter((r.city, r.country) for r in rows if r.city)
+    short = _short_cities(pairs)
+    for (city, country), n in pairs.items():
+        counts[(short.get((city, country), city), country)] += n
     spellings: dict[Any, Counter[str]] = {}
     for (city, country), n in counts.items():
         found = city_abroad(city, country) if country else None
@@ -530,6 +534,21 @@ def _city_heads(city: str) -> list[str]:
             head = "".join(words[: i - 1]).strip(" -")
             return [head] if len(head) >= 3 else []
     return []
+
+
+def _short_cities(pairs: Iterable[tuple[str, Any]]) -> dict[tuple[str, Any], str]:
+    """(city, country) -> the short name the same country's events also use, abroad only: "Ludwigshafen am Rhein"
+    -> "Ludwigshafen" when some events say "Ludwigshafen" (one entry in the city box, and "my location" picks it)."""
+    pairs = list(pairs)
+    known = {(country, city.casefold()): city for city, country in pairs if country}
+    found = {}
+    for city, country in pairs:
+        if country:
+            for head in _city_heads(city):
+                if (stored := known.get((country, head.casefold()))) is not None:
+                    found[(city, country)] = stored
+                    break
+    return found
 
 
 def _city_names(city: str, country: str | None) -> list[str]:
@@ -2107,7 +2126,11 @@ def _register_routes(app: FastAPI) -> None:
                 ).all()  # fmt: skip
             state.abroad_city_points = (time.monotonic(), cities)
         best = min(((meters(here, (lat, lng)), country, city) for country, city, lat, lng in cities), default=None)
-        return (best[1], best[2]) if best and best[0] <= 150_000 else None
+        if not best or best[0] > 150_000:
+            return None
+        # The name the city box shows: "Ludwigshafen am Rhein" (2 events) is listed as "Ludwigshafen" (107).
+        short = _short_cities((city, country) for country, city, _, _ in cities)
+        return best[1], short.get((best[2], best[1]), best[2])
 
     def build_categories(request: Request, filters: list[ColumnElement[bool]], upcoming: bool) -> Categories:
         # Only the facet columns (not descriptions/extra JSON); each real event counted once.
