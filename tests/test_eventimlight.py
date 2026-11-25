@@ -10,13 +10,16 @@ from decimal import Decimal
 from pathlib import Path
 
 import httpx
+import pytest
 
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
+from partylinks.parsing import ParseError
 from partylinks.scrapers import build_scraper
 from partylinks.scrapers.eventimlight import (
     EventimLightScraper,
     cookie_redirect,
+    event_text,
     load_known,
     parse_series,
     parse_shop,
@@ -33,6 +36,26 @@ def _scraper() -> EventimLightScraper:
     scraper = build_scraper("eventimlight", Settings())
     assert isinstance(scraper, EventimLightScraper)
     return scraper
+
+
+def _event_page(event_id: str = "69efc35b560489cfe92b7678") -> str:
+    return (FIXTURES / "event.html").read_text(encoding="utf-8").replace("69efc35b560489cfe92b7678", event_id)
+
+
+def test_event_page_gives_the_full_text_and_the_price_notes() -> None:
+    text = event_text(_event_page(), "69efc35b560489cfe92b7678")
+    assert text is not None
+    assert text.startswith("DE\nHier ist der Ort für alle Kleinen und Großen Windelfreunde.")
+    assert "Make new friends and experience many more exciting moments." in text  # the English half too
+    assert "Mindestverzehr von 5 EUR" in text and "Admission from 18 years, ID check." in text  # priceInfo
+    assert "<p>" not in text
+
+
+def test_a_page_of_another_event_or_no_event_is_not_its_text() -> None:
+    with pytest.raises(ParseError):
+        event_text(_event_page(), "000000000000000000000000")
+    with pytest.raises(ParseError):
+        event_text(_shop(), "69cd89f7bca63b14867bb35c")  # the shop page (a Queue-it pass gone wrong)
 
 
 def _shop(**replace: str) -> str:
@@ -118,6 +141,8 @@ def test_cookie_test_page_is_followed_once_on_its_own_host(tmp_path: Path) -> No
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append(f"{request.url.host}{request.url.path}")
         url = str(request.url)
+        if "/e/" in request.url.path:  # the event's own page (the pass already taken): its full text
+            return httpx.Response(200, text=_event_page("69cd89f7bca63b14867bb35c"))
         if request.url.path == "/de/a/000000000000000000000000/":
             return httpx.Response(404, text="gone")
         if request.url.host == "www.eventim-light.com" and "queueittoken" not in url and "passed" not in url:
@@ -134,7 +159,12 @@ def test_cookie_test_page_is_followed_once_on_its_own_host(tmp_path: Path) -> No
     known = tmp_path / "shops.json"
     known.write_text(json.dumps({"shops": ["de/000000000000000000000000"], "collections": ["CC-MAIN-2026-43"]}))
     scraper.settings = scraper.settings.model_copy(
-        update={"known_file": known, "cdx_collections": 0, "seed_shops": [SHOP]}
+        update={
+            "known_file": known,
+            "details_file": tmp_path / "details.json",
+            "cdx_collections": 0,
+            "seed_shops": [SHOP],
+        }
     )
     scraper.http.request_delay_seconds = 0
 
@@ -148,6 +178,12 @@ def test_cookie_test_page_is_followed_once_on_its_own_host(tmp_path: Path) -> No
     assert "eventimlight.queue-it.net/" in seen and not scraper.failures
     # The closed shop (404) leaves the known set; the crawls already read stay read.
     assert load_known(known) == {"shops": [], "collections": ["CC-MAIN-2026-43"]}
+    # The shop lists only the teaser: the full text comes from the event's own page, read once.
+    assert events[0].description is not None and events[0].description.startswith("DE\nHier ist der Ort")
+    reads = sum("/e/" in path for path in seen)
+    assert reads == 1
+    again = asyncio.run(go())
+    assert again[0].description == events[0].description and sum("/e/" in path for path in seen) == reads
 
 
 def test_common_crawl_lines_give_shops_per_market() -> None:

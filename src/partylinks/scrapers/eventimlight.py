@@ -11,6 +11,10 @@ lowest price, sold out, and the venue with its address, country and coordinates.
 gives its events, not itself. A series (``"type":
 "series"``: dates at several venues) carries no venue there: its own page (``/s/<seriesId>``) lists its
 dates, each with its venue, one request per series. Cancelled and past events are skipped. Israeli venues go to Israel, the rest abroad (the venue's country).
+The shop page gives only an event's short teaser: its full text (``description``, HTML, and ``priceInfo``: minimum
+spend, age, ID check, refunds) is on the event's own page (``/e/<id>``, the same JSON). Each event page is read
+once and kept in ``details_file`` (on the data volume), read again after ``detail_refresh_days``; at most
+``max_details_per_run`` pages a run (the first fill of ~21,600 events spreads over a few runs, Nov 2026).
 
 Access: Akamai refuses Python's TLS handshake and shops pass through a Queue-it check; speaking as
 Chrome (``http.impersonate``, curl_cffi) passes both. A shop first answers with a small cookie-test page
@@ -36,7 +40,17 @@ from tenacity import AsyncRetrying, retry_if_exception, stop_after_attempt, wait
 from partylinks.config import project_path
 from partylinks.countries import country_code
 from partylinks.models import ScrapedEvent
-from partylinks.parsing import ParseError, clean_str, jsonld_nodes, parse_iso, schema_types, to_decimal, to_float
+from partylinks.parsing import (
+    ParseError,
+    clean_str,
+    html_to_text,
+    jsonld_nodes,
+    parse_iso,
+    schema_types,
+    tidy_text,
+    to_decimal,
+    to_float,
+)
 from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 _COOKIE_REDIRECT = re.compile(r"document\.location\.href\s*=\s*decodeURIComponent\('([^']+)'\)")
@@ -70,6 +84,10 @@ class EventimLightSettings(SourceSettings):
     max_shops: int = Field(100_000, ge=1)
     # Shops fetched in parallel after one of them renews the Queue-it pass (see scrape).
     chunk_shops: int = Field(200, ge=1)
+    # Each event's full text from its own page, kept here (event id -> text and when it was read).
+    details_file: Path = Path("data/eventimlight_details.json")
+    detail_refresh_days: float = Field(30, gt=0)  # an organiser may edit the text: read again after this
+    max_details_per_run: int = Field(3000, ge=0)  # event pages read per run (the rest by the next runs)
     # Eventim Light's category names (lower case) as the category words the enrichment knows.
     categories: dict[str, list[str]] = Field(default_factory=dict)
 
@@ -80,6 +98,9 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         known = await asyncio.to_thread(load_known, self.settings.known_file)
+        details = await asyncio.to_thread(load_details, self.settings.details_file)
+        seen: set[str] = set()
+        budget = [self.settings.max_details_per_run]
         try:
             if self.settings.cdx_collections:
                 # Crawls left unread by the budget are read by the next runs.
@@ -102,7 +123,7 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
             events = parse_shop(page, shop, self.settings)
             for series in series_in_shop(page, shop):
                 events += parse_series(await self.shop_page(shop, series), shop, self.settings)
-            return events
+            return [await self._with_details(event, details, seen, budget) for event in events]
 
         # Shops go in chunks of one market, each led by one shop alone: it takes (or renews) the Queue-it
         # pass, a cookie that lets the chunk's other shops answer at once. Started all in parallel, every
@@ -123,13 +144,38 @@ class EventimLightScraper(BaseScraper[EventimLightSettings]):
         finally:
             known["shops"] = sorted(set(known["shops"]) - gone)
             save_known(self.settings.known_file, known)  # direct: on shutdown the thread pool is closed
+            save_details(self.settings.details_file, details, seen, self.settings.detail_refresh_days)
         self.log.debug("%d of %d shops closed", len(gone), len(shops))
 
     async def shop_page(self, shop: str, series: str | None = None) -> str:
         """A shop's page (or one of its series' pages), past its cookie-test redirect."""
         country, _, org = shop.partition("/")
         path = self.settings.series_path if series else self.settings.shop_path
-        url = self.settings.site_url + path.format(country=country, shop=org, series=series)
+        return await self.page(self.settings.site_url + path.format(country=country, shop=org, series=series))
+
+    async def _with_details(
+        self, event: ScrapedEvent, details: dict[str, dict], seen: set[str], budget: list[int]
+    ) -> ScrapedEvent:
+        """The event with its full text from its own page: the stored copy, or the page read now (new, or
+        stored more than ``detail_refresh_days`` ago, while the run's budget lasts). Unread, the teaser stays."""
+        seen.add(event.source_event_id)
+        stored = details.get(event.source_event_id) or {}
+        read_at = parse_iso(stored.get("at"))
+        age_days = (datetime.now(UTC) - read_at).total_seconds() / 86400 if read_at else None
+        if (age_days is None or age_days > self.settings.detail_refresh_days) and budget[0] > 0:
+            budget[0] -= 1
+            try:
+                text = event_text(await self.page(str(event.url)), event.source_event_id)
+            except (httpx.HTTPError, ParseError, ValueError) as exc:  # a Queue-it page, a gone event: next run
+                self.log.debug("%s: event page not read: %s %s", event.url, type(exc).__name__, exc)
+            else:
+                stored = {"text": text, "at": datetime.now(UTC).isoformat()}
+                details[event.source_event_id] = stored
+        text = stored.get("text")
+        return event.model_copy(update={"description": text}) if text else event
+
+    async def page(self, url: str) -> str:
+        """A page of the site, past its cookie-test redirect."""
         response = await self.request("GET", url)
         if target := cookie_redirect(response.text):
             response = await self.request("GET", urljoin(str(response.url), target))
@@ -322,6 +368,41 @@ def _events(
             )
         )
     return events
+
+
+def event_text(page_html: str, event_id: str) -> str | None:
+    """An event page's full text: its description (HTML) and its price notes (minimum spend, age, refunds)."""
+    data = _context(page_html, event_id).get("data")
+    if not isinstance(data, dict) or str(data.get("id")) != event_id:
+        raise ParseError(f"{event_id}: not the event's page")
+    parts = [html_to_text(clean_str(data.get("description"))), tidy_text(clean_str(data.get("priceInfo")))]
+    return "\n\n".join(p for p in parts if p) or None
+
+
+def load_details(path: Path) -> dict[str, dict]:
+    try:
+        data = json.loads(project_path(path).read_text("utf-8"))
+        return {str(k): v for k, v in data.items() if isinstance(v, dict)} if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_details(path: Path, details: dict[str, dict], seen: set[str], keep_days: float) -> None:
+    """Keep the events listed this run, and the others read in the last ``keep_days`` (a shop that failed)."""
+    now = datetime.now(UTC)
+
+    def fresh(entry: dict) -> bool:
+        read_at = parse_iso(entry.get("at"))
+        return read_at is not None and (now - read_at).total_seconds() < keep_days * 86400
+
+    kept = {k: v for k, v in details.items() if k in seen or fresh(v)}
+    target = project_path(path)
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.with_suffix(".tmp").write_text(json.dumps(kept, ensure_ascii=False), "utf-8")
+        target.with_suffix(".tmp").replace(target)
+    except OSError as exc:
+        logging.getLogger(__name__).warning("eventimlight event texts not saved: %s", exc)
 
 
 def load_known(path: Path) -> dict[str, list[str]]:
