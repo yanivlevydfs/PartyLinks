@@ -888,6 +888,8 @@ WARM_PATHS = (
     "/posts?lang=en",
     "/categories",
     "/categories?anywhere=true",
+    # The abroad page's country and city boxes (Abroad.tsx, its exact query): 14 s cold over 120k events (25.11.2026).
+    "/categories?abroad=true&lists=false",
     "/ticket-sites",
     "/events/rails",
     "/sitemap.xml",
