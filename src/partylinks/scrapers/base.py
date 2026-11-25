@@ -545,8 +545,10 @@ class BaseScraper[S: SourceSettings](ABC):
     def record_failure(self, what: str, exc: BaseException) -> None:
         """Record one skipped item. Not while shutting down: a deploy closes the thread pools and every
         item left fails alike ("cannot schedule new futures after shutdown", 120 lines): the run stops."""
-        # The same at shutdown when the run's HTTP client is already closed (posh, 2026-11-15).
-        if isinstance(exc, RuntimeError) and ("cannot schedule new futures" in str(exc) or "client has been closed" in str(exc)):
+        # The same at shutdown when the run's HTTP client is already closed (posh, 2026-11-15), or already gone:
+        # items still in flight after the run ended as interrupted (eventbrite, posh at a deploy, 2026-11-25).
+        shutdown = ("cannot schedule new futures", "client has been closed", "must be used as an async context manager")
+        if isinstance(exc, RuntimeError) and any(text in str(exc) for text in shutdown):
             raise exc
         if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (404, 410):
             # The site removed that page (a stale sitemap entry, a cancelled show): not a scraper fault, so not a
