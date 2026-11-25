@@ -753,3 +753,10 @@ def test_candidate_pairs_are_every_pair_the_place_does_not_part() -> None:
     assert wanted <= set(got)  # none missing; the grid's neighbours a bit further off are parted by _contradict
     assert all(parted(listings[i], listings[j]) for i, j in set(got) - wanted)
     assert any(listings[i].city != listings[j].city and listings[i].city and listings[j].city for i, j in got)
+
+
+def test_url_key_pres_booking_link_is_its_order_page() -> None:
+    from partylinks.dedup import url_key
+
+    booking = "https://tickets.kupat.co.il/booking/features/3122?display=list&prsntId=56872&utm_source=spotx"
+    assert url_key(booking) == url_key("https://tickets.kupat.co.il/order/56872") == "tickets.kupat.co.il/order/56872"

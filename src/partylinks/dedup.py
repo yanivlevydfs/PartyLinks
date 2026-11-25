@@ -150,6 +150,9 @@ def url_key(url: str | None) -> str:
         return f"{host}/event/{show}"
     if bravo := _BRAVO_SEANCE.match(path):
         return f"kupatbravo.co.il/announce/buy/{bravo.group(1)}"
+    # A PRES presentation: Kupat's own link "/booking/features/<show>?prsntId=<id>" is its "/order/<id>".
+    if path.startswith("/booking/features/") and (prsnt := dict(parse_qsl(parsed.query)).get("prsntId", "")).isdigit():
+        return f"{host}/order/{prsnt}"
     return f"{host}{path}{query}"
 
 

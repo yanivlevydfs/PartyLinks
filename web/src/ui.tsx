@@ -382,10 +382,10 @@ export function Card({ e }: { e: EventSummary }) {
         {!e.is_sold_out && freeLabel && <p className="meta free-until">{freeLabel}</p>}
         {(e.venue_name || e.area || e.country) && (
           // Abroad: city and country, so "Madarae" alone does not read as a place in Israel.
-          <p className="meta">📍 {[e.venue_name, e.country ? [e.city, countryName(e.country, lang)].filter(Boolean).join(", ")
+          <p className="meta" dir="auto">📍 {[e.venue_name, e.country ? [e.city, countryName(e.country, lang)].filter(Boolean).join(", ")
             : e.area && label(t.areas, e.area)].filter(Boolean).join(" · ")}</p>
         )}
-        {e.lineup.length > 0 && <p className="meta">🎧 {e.lineup.slice(0, web.card_lineup_shown).join(" · ")}</p>}
+        {e.lineup.length > 0 && <p className="meta" dir="auto">🎧 {e.lineup.slice(0, web.card_lineup_shown).join(" · ")}</p>}
         {e.in_text && <p className="meta">🔍 {t.inText}</p>}
         <EventStats e={e} compact />
         <div className="tags">

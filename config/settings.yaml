@@ -2854,7 +2854,7 @@ sources:
     event_page_path: /order/{id}
     skip_titles: ["בדיקה", "שוברים", "תשלום בקופה", "כרטיס כניסה למוזיאון", "כוכבים במוזא", "מצוינות במוז", "מוזות: מפגשים לנוער", "משחקיה", "גן עם אמא"]
     hosts:
-      - {key: kupat, name: "קופת תל אביב", url: "https://tickets.kupat.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
+      - {key: kupat, name: "קופת תל אביב", url: "https://tickets.kupat.co.il", event_page_path: "/booking/features/{feature_id}?display=list&prsntId={id}", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
       - {key: comy, name: "קומדי בר - Comy", url: "https://tickets.comy.co.il", use_venue_location: false, ticket_groups_method: POST, image_path: "/api/features/{feature_id}/media/contentDesktopImage?raw=1"}
       # Hosts without artwork in the API read it from the theatre's site (exact by presentation id).
       # Eretz Israel Museum (MUZA): gallery talks, guided tours, family workshops (admission and school programmes: skip_titles).

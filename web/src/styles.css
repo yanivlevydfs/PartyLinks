@@ -817,6 +817,8 @@ em.soon {
 .e-side-head > div { display: grid; gap: 2px; justify-items: start; min-width: 0; }
 .e-side-head small { color: var(--pink); font-size: 12px; font-weight: 700; }
 .e-side-head b { font: 800 16px/1.25 var(--display); overflow-wrap: anywhere; }
+/* A title's own direction (dir=auto): an English one starts on the left, a Hebrew one on the right. */
+.e-side-head b[dir="auto"] { justify-self: stretch; text-align: start; }
 .e-side-head em.soon { margin: 0 0 2px; }
 .date-tile {
   flex: none; display: grid; place-items: center; width: 56px; height: 60px; border-radius: 12px; overflow: hidden;

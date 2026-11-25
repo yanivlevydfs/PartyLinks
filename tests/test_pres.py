@@ -37,6 +37,7 @@ def _scrape(monkeypatch, cls: Any = pres.PresScraper) -> tuple[dict[str, Any], l
             pres.PresHost(
                 key="kupat",
                 url=KUPAT,
+                event_page_path="/booking/features/{feature_id}?display=list&prsntId={id}",
                 use_venue_location=False,
                 ticket_groups_method="POST",
                 image_path="/api/features/{feature_id}/media/contentDesktopImage?raw=1",
@@ -102,7 +103,9 @@ def test_scrape_hosts(monkeypatch) -> None:
     boaz = events["kupat:55025"]
     assert boaz.title == "בעז שרעבי והאופרה הקאמרית הישראלית"
     assert boaz.start_at == datetime(2026, 10, 20, 21, 0, tzinfo=ZoneInfo(TZ))
-    assert str(boaz.url) == f"{KUPAT}/order/55025"
+    # Kupat's own booking link (its /order/{id} page fails); other hosts keep /order/{id}.
+    assert str(boaz.url) == f"{KUPAT}/booking/features/{boaz.extra['feature_id']}?display=list&prsntId=55025"
+    assert str(events["lessin:45126"].url) == f"{LESSIN}/order/45126"
     assert (boaz.venue_name, boaz.city, boaz.address) == (
         'היכל התרבות ת"א',
         "תל אביב",

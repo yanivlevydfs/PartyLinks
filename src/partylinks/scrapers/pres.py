@@ -88,6 +88,10 @@ class PresHost(BaseModel):
     artwork_image: str | None = None
     # Added to every show's categories: a museum host's shows are not the source's default (theatre).
     source_genres: list[str] = Field(default_factory=list)
+    # The host's own event link, formatted with ``id`` (presentation) and ``feature_id``, when its
+    # ``/order/{id}`` page fails: Kupat's shows "תקלה בהצגת נתוני האירוע" there (25.11.2026) and its own site links
+    # to /booking/features/{feature_id}?display=list&prsntId={id}. Default: the source's ``event_page_path``.
+    event_page_path: str | None = None
 
 
 class PresSettings(SourceSettings):
@@ -328,7 +332,7 @@ def parse_event(
     return ScrapedEvent(
         source=PresScraper.name,
         source_event_id=f"{host.key}:{presentation_id}",
-        url=host.url + s.event_page_path.format(id=presentation_id),
+        url=host.url + (host.event_page_path or s.event_page_path).format(id=presentation_id, feature_id=feature_id),
         title=clean_str(p.get("featureName")) or clean_str(feature.get("name")) or "",
         description=html_to_text(feature.get("synopsis")),
         start_at=parse_iso(p.get("dateTime"), timezone),
