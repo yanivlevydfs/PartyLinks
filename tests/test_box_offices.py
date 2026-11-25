@@ -119,3 +119,12 @@ def test_path_branch_and_seller_host_stores() -> None:
     assert "https://www.cinema.co.il" not in offices  # the source's own site is no extra store
     assert "https://grayclub.co.il" not in offices  # another source's own site: a store already
     assert "https://www.tickettailor.com" not in offices  # 3 events of an unlisted organizer: below the floor
+
+
+def test_brand_front_doors_and_tenants() -> None:
+    from partylinks.box_offices import _brand
+
+    assert _brand("eventbrite.co.uk") == ("eventbrite", True)
+    assert _brand("eventbrite.com.au") == ("eventbrite", True)
+    assert _brand("tickchak.co.il") == _brand("live.tickchak.co.il") == ("tickchak", True)
+    assert _brand("gveret-rabia.tickchak.co.il") == ("tickchak", False)  # a producer's own box office

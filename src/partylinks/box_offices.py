@@ -78,10 +78,20 @@ def _site_hosts(settings: SourceSettings) -> set[str]:
     return hosts
 
 
-def _brand(host: str) -> str:
-    """eventbrite.co.uk / eventbrite.de / www.eventbrite.com -> "eventbrite": one store in many countries."""
-    parts = [p for p in host.split(".") if p not in {"www", "co", "com", "org", "net", "il", "gov", "muni", "ac"}]
-    return parts[-2] if len(parts) >= 2 else (parts[0] if parts else host)
+_GENERIC_LABELS = {"com", "co", "org", "net", "gov", "muni", "ac", "xyz", "info", "io"}
+_FRONT_LABELS = {"www", "live", "web"}  # a site's own front doors, not a tenant
+
+
+def _brand(host: str) -> tuple[str, bool]:
+    """(brand, is a front door): "eventbrite.co.uk" -> ("eventbrite", True), "live.tickchak.co.il" ->
+    ("tickchak", True), "gveret-rabia.tickchak.co.il" -> ("tickchak", False): a tenant's own store."""
+    labels = host.lower().split(".")
+    core = [x for x in labels if x not in _GENERIC_LABELS and len(x) > 2]
+    if not core:
+        return host, True
+    brand = core[-1]
+    front = all(x in _FRONT_LABELS for x in labels[: labels.index(brand)])
+    return brand, front
 
 
 def _same_town(a: str, b: str) -> bool:
@@ -141,12 +151,13 @@ def box_offices(session: Session, sources: dict[str, SourceSettings]) -> list[Bo
                     events=len({g for g, _, c, _ in events if c and _same_town(c, branch.city)}),
                 )
         own = _site_hosts(settings) | {h for h, _, _ in hosts}
-        brands = {_brand(h) for h in own}
+        brands = {_brand(h)[0] for h in own}
         for host, n in counts.items():
             if not host or n < SELLER_HOST_MIN_EVENTS:
                 continue
             bare = host.removeprefix("www.")
-            if bare in own or bare in every_site or _brand(bare) in brands or host in offices:
+            brand, front = _brand(bare)
+            if bare in own or bare in every_site or (front and brand in brands) or host in offices:
                 continue
             cities = Counter(c for g, u, c, _ in events if c and urlsplit(u).hostname == host)
             offices[host] = BoxOfficeOut(
