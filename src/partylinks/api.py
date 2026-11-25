@@ -32,7 +32,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
-from sqlalchemy import ColumnElement, String, and_, cast, func, not_, or_, select
+from sqlalchemy import ColumnElement, String, and_, cast, func, not_, null, or_, select
 from sqlalchemy.exc import DataError
 from sqlalchemy.orm import Session, aliased, defer, load_only, selectinload, undefer
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -1275,6 +1275,55 @@ def _chunks(items: list[str], size: int) -> Iterator[list[str]]:
         yield items[start : start + size]
 
 
+def _utc_seconds(value: datetime | None) -> int | None:
+    return int(_aware_utc(value).timestamp()) if value is not None else None
+
+
+def map_columns(rows: Sequence[Any], unplaced: int, sources: dict[str, list[str]]) -> dict[str, Any]:
+    """The map's pins as columns (GET /events/map?compact=true): the same values as MapEventOut, a fifth of
+    the bytes. 68k pins were 32 MB as objects (5.7 MB gzipped; 25.11.2026): every key repeated per pin, the
+    slug (only needed without a short code: eventPath), and the same venue / zone / ticket-site names over and
+    over. Repeated strings are indexes into ``venues`` / ``zones`` / ``site_sets``; times are Unix seconds
+    (UTC); a point keeps 5 decimals (about a metre). web/src/api.ts mapPins expands it back."""
+    tables: dict[str, dict[Any, int]] = {"venues": {}, "zones": {}, "site_sets": {}}
+
+    def index(table: str, value: Any) -> int | None:
+        if value is None:
+            return None
+        return tables[table].setdefault(value, len(tables[table]))
+
+    out = []
+    for r in rows:
+        out.append([
+            r.id, r.code, None if r.code else r.slug, r.title,
+            _utc_seconds(r.start_at), _utc_seconds(r.end_at), 0 if r.time_known is False else 1,
+            index("zones", r.time_zone), r.local_date.isoformat() if r.local_date else None, index("venues", r.venue_name),
+            round(r.latitude, 5), round(r.longitude, 5), index("site_sets", tuple(sources.get(r.id) or [r.source])),
+        ])  # fmt: skip
+    return {
+        "fields": [
+            "id",
+            "code",
+            "slug",
+            "title",
+            "start",
+            "end",
+            "time_known",
+            "zone",
+            "local_date",
+            "venue",
+            "lat",
+            "lng",
+            "sites",
+        ],
+        "rows": out,
+        "venues": list(tables["venues"]),
+        "zones": list(tables["zones"]),
+        "site_sets": [list(t) for t in tables["site_sets"]],
+        "unplaced": unplaced,
+    }
+
+
 def _group_sources(session: Session, rows: Sequence[EventRow]) -> dict[str, list[str]]:
     """Ticket sites per duplicate group, loaded in one query for a whole page."""
     groups = sorted({r.group_id for r in rows if r.group_id})
@@ -1693,10 +1742,16 @@ def _register_routes(app: FastAPI) -> None:
         return response
 
     @app.get("/events/map", response_model=MapOut, tags=["events"])
-    def map_events(request: Request, filters: list[ColumnElement[bool]] = event_filters_dep) -> Response:
+    def map_events(
+        request: Request,
+        filters: list[ColumnElement[bool]] = event_filters_dep,
+        compact: Annotated[
+            bool, Query(description="Columns and lookup tables instead of one object per pin (map_columns)")
+        ] = False,
+    ) -> Response:
         """All matching events with coordinates at once (the list's filters, no paging)."""
 
-        def build(session: Session) -> MapOut:
+        def read(session: Session) -> tuple[list[Any], int, dict[str, list[str]]]:
             # A Zoom talk has no place: never a pin, even with its organiser's address (counted as unplaced).
             located = and_(EventRow.latitude.is_not(None), EventRow.longitude.is_not(None), in_person())
             rows = session.execute(
@@ -1709,11 +1764,25 @@ def _register_routes(app: FastAPI) -> None:
                 .order_by(_START, EventRow.id)
             ).all()  # fmt: skip
             unplaced = session.scalar(select(func.count()).select_from(EventRow).where(*filters, not_(located))) or 0
-            sources = _group_sources(session, rows)  # type: ignore[arg-type]
+            return list(rows), unplaced, _group_sources(session, rows)  # type: ignore[arg-type]
+
+        def build(session: Session) -> MapOut:
+            rows, unplaced, sources = read(session)
             items = [MapEventOut.model_validate(r).model_copy(update={"sources": sources[r.id]}) for r in rows]
             return MapOut(items=items, unplaced=unplaced)
 
-        response = _cached(request, build)
+        if compact:
+            cache: ResponseCache = request.app.state.response_cache
+
+            def body() -> bytes:
+                with request.app.state.db.session(write=False) as session:
+                    return json.dumps(map_columns(*read(session)), ensure_ascii=False, separators=(",", ":")).encode()
+
+            response = Response(
+                cache.get((request.url.path, request.url.query), body)[0], media_type="application/json"
+            )
+        else:
+            response = _cached(request, build)
         # The JSON's size before gzip: the map counts the bytes as they arrive (unzipped) for its real
         # percent; Content-Length is the zipped size, so it can't tell (MapPage, api.ts getJSONProgress).
         response.headers["X-Body-Length"] = str(len(response.body))
@@ -2031,7 +2100,7 @@ def _register_routes(app: FastAPI) -> None:
         cache: ResponseCache = request.app.state.response_cache
 
         def body() -> bytes:  # not _cached: build_categories opens its own short session
-            built = build_categories(request, filters, upcoming)
+            built = build_categories(request, filters, upcoming, lists)
             # A filter needs no venue / artist names: abroad's were 4,567 + 1,709 of its 782 KB (Germany, 25.11.2026),
             # handed to every visitor of the page, a copy of the whole index in one call.
             drop = None if lists else {"venues", "lineup"}
@@ -2141,11 +2210,16 @@ def _register_routes(app: FastAPI) -> None:
         short = _short_cities((city, country) for country, city, _, _ in cities)
         return best[1], short.get((best[2], best[1]), best[2])
 
-    def build_categories(request: Request, filters: list[ColumnElement[bool]], upcoming: bool) -> Categories:
+    def build_categories(
+        request: Request, filters: list[ColumnElement[bool]], upcoming: bool, lists: bool = True
+    ) -> Categories:
+        """``lists=False``: no venue and artist lists, not even counted (the filter's counts only: a country's
+        cities on /abroad were 3-9 s cold, most of it the name lists thrown away after, 25.11.2026)."""
         # Only the facet columns (not descriptions/extra JSON); each real event counted once.
+        lineup = EventRow.lineup if lists else null().label("lineup")  # the line-ups' JSON: only for the list
         query = select(
             EventRow.genres, EventRow.local_date, EventRow.day_of_week, EventRow.time_slot, EventRow.area,
-            EventRow.group_entry_type, EventRow.venue_name, EventRow.city, EventRow.lineup, EventRow.event_types,
+            EventRow.group_entry_type, EventRow.venue_name, EventRow.city, lineup, EventRow.event_types,
             EventRow.source, EventRow.in_target_city, EventRow.country, EventRow.latitude, EventRow.longitude,
         ).where(*filters)  # fmt: skip
         # Per ticket site: real events it sells (every listing of a group counts, once per group), within the
@@ -2160,7 +2234,9 @@ def _register_routes(app: FastAPI) -> None:
         with db.session(write=False) as session:
             rows = session.execute(query).all()
             listed = session.execute(listings).all()
-            venue_profiles, linked = cached_venue_profiles(session), linked_venue_names(session)
+            venue_profiles, linked = (
+                (cached_venue_profiles(session), linked_venue_names(session)) if lists else ([], {})
+            )
         group_sources = Counter(source for _, source in listed)
 
         def facet(values: Callable[[Any], list[Any]]) -> list[FacetValue]:
@@ -2216,10 +2292,12 @@ def _register_routes(app: FastAPI) -> None:
             areas=facet(lambda r: [r.area]),
             regions=facet(lambda r: [region(r)]),
             entry_types=facet(lambda r: [r.group_entry_type]),
-            venues=venue_facets(facet(lambda r: [r.venue_name]), venue_area, rows, venue_profiles, linked),
+            venues=venue_facets(facet(lambda r: [r.venue_name]), venue_area, rows, venue_profiles, linked)
+            if lists
+            else [],
             cities=[FacetValue(value=c, events=n, area=city_region.get(c)) for c, n in _merged_cities(rows)],
             countries=facet(lambda r: [r.country]),
-            lineup=artist_facet(),
+            lineup=artist_facet() if lists else [],
             event_types=facet(lambda r: r.event_types or []),
             sources=[FacetValue(value=s, events=n) for s, n in group_sources.most_common()],
         )

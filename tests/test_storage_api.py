@@ -1613,3 +1613,24 @@ def test_map_reads_the_ticket_sites_in_chunks(tmp_path: Path, monkeypatch: pytes
     with TestClient(create_app(settings)) as client:
         pins = client.get("/events/map").json()["items"]
     assert sorted(p["id"] for p in pins) == ["test:a", "test:b", "test:c"]
+
+
+def test_compact_map_carries_the_same_pins_in_columns(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    start = datetime.now(UTC) + timedelta(days=1)
+    seed(settings, [event(i, start, latitude=32.06 + n / 100, longitude=34.77) for n, i in enumerate("ab")])
+    with TestClient(create_app(settings)) as client:
+        full = client.get("/events/map").json()
+        compact = client.get("/events/map?compact=true").json()
+    fields = compact["fields"]
+    assert compact["unplaced"] == full["unplaced"] and len(compact["rows"]) == len(full["items"])
+    for pin, row in zip(full["items"], compact["rows"], strict=True):
+        got = dict(zip(fields, row, strict=True))
+        assert (got["id"], got["code"], got["title"]) == (pin["id"], pin["code"], pin["title"])
+        assert got["slug"] is None if pin["code"] else got["slug"] == pin["slug"]  # eventPath: the code first
+        start_at = datetime.fromisoformat(pin["start_at"]).replace(microsecond=0)  # the test's start has microseconds
+        assert datetime.fromtimestamp(got["start"], UTC) == start_at
+        assert (got["lat"], got["lng"]) == (round(pin["latitude"], 5), round(pin["longitude"], 5))
+        assert compact["site_sets"][got["sites"]] == pin["sources"]
+        assert (compact["venues"][got["venue"]] if got["venue"] is not None else None) == pin["venue_name"]
+        assert got["local_date"] == pin["local_date"] and bool(got["time_known"]) == pin["time_known"]

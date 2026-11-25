@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { useWeb } from "./site_params/useWeb";
-import type { Categories, EventDetail, EventPage, EventSummary, MapPins, Post, PostList, SponsoredRails } from "./types";
+import type { Categories, EventDetail, EventPage, EventSummary, MapEvent, MapPins, Post, PostList, SponsoredRails } from "./types";
 
 export type Params = Record<string, string | string[] | undefined>;
 
@@ -128,11 +128,39 @@ export function useCitiesIndex(lang: string, enabled = true, onProgress?: (share
 /** Every event matching the filter that has coordinates, in one request, for the map. `onProgress`:
  *  the share of the answer received so far (0-1), for the loader's real percent. */
 export function useMapEvents(params: Params = {}, onProgress: (share: number) => void = () => {}) {
-  const qs = toQuery(params);
+  const qs = toQuery({ ...params, compact: "true" });
   return useQuery({
     queryKey: ["events", "map", qs],
-    queryFn: ({ signal }) => getJSONProgress<MapPins>(`/events/map?${qs}`, onProgress, signal),
+    queryFn: async ({ signal }) => mapPins(await getJSONProgress<MapColumns>(`/events/map?${qs}`, onProgress, signal)),
   });
+}
+
+/** GET /events/map?compact=true (partylinks.api map_columns): one row of values per pin, repeated names as
+ *  indexes into the lookup tables, times in Unix seconds. 68k pins were 32 MB as objects (25.11.2026). */
+type MapColumns = {
+  rows: [string, string | null, string | null, string, number | null, number | null, 0 | 1, number | null, string | null, number | null, number, number, number][];
+  venues: string[];
+  zones: string[];
+  site_sets: string[][];
+  unplaced: number;
+};
+
+const isoAt = (seconds: number | null) => (seconds == null ? null : new Date(seconds * 1000).toISOString());
+
+/** The compact answer as the pins the map works with (MapEvent, the same fields as before). */
+export function mapPins(c: MapColumns): MapPins {
+  return {
+    unplaced: c.unplaced,
+    items: c.rows.map(([id, code, slug, title, start, end, known, zone, day, venue, lat, lng, sites]) => {
+      const sources = c.site_sets[sites] ?? [];
+      return {
+        id, code, slug, title, start_at: isoAt(start), end_at: isoAt(end), time_known: known === 1,
+        time_zone: zone == null ? null : c.zones[zone], local_date: day,
+        venue_name: venue == null ? null : c.venues[venue],
+        latitude: lat, longitude: lng, source: sources[0] ?? "", sources,
+      } satisfies MapEvent;
+    }),
+  };
 }
 
 /** An event page's request answered 410 (the event is over) or 404 (no such event). */
