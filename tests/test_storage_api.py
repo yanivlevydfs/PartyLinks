@@ -1600,3 +1600,16 @@ def test_every_routed_json_answer_carries_its_size_before_gzip(tmp_path: Path) -
             answer = client.get(path, headers={"Accept-Encoding": "gzip"})
             assert answer.status_code == 200, path
             assert answer.headers["x-body-length"] == str(len(answer.content)), path
+
+
+def test_map_reads_the_ticket_sites_in_chunks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Every event at once passed Postgres's 65,535 parameters in one IN list (68k groups, 25.11.2026: a 500)."""
+    import partylinks.api
+
+    monkeypatch.setattr(partylinks.api, "_IN_CHUNK", 1)  # one group per query: every chunk read
+    settings = settings_for(tmp_path)
+    start = datetime.now(UTC) + timedelta(days=1)
+    seed(settings, [event(i, start, latitude=32.06 + n / 100, longitude=34.77) for n, i in enumerate("abc")])
+    with TestClient(create_app(settings)) as client:
+        pins = client.get("/events/map").json()["items"]
+    assert sorted(p["id"] for p in pins) == ["test:a", "test:b", "test:c"]

@@ -1267,13 +1267,22 @@ def _best_deals(session: Session, rows: Sequence[EventRow]) -> dict[str, DealOut
     }
 
 
+_IN_CHUNK = 20_000  # values per IN list: a query takes at most 65,535 parameters
+
+
+def _chunks(items: list[str], size: int) -> Iterator[list[str]]:
+    for start in range(0, len(items), size):
+        yield items[start : start + size]
+
+
 def _group_sources(session: Session, rows: Sequence[EventRow]) -> dict[str, list[str]]:
     """Ticket sites per duplicate group, loaded in one query for a whole page."""
-    groups = {r.group_id for r in rows if r.group_id}
+    groups = sorted({r.group_id for r in rows if r.group_id})
     found: dict[str, set[str]] = {}
-    if groups:
+    # In chunks: the map's every event abroad and in Israel passed Postgres's 65,535 parameters (25.11.2026, a 500).
+    for chunk in _chunks(groups, _IN_CHUNK):
         for group_id, source in session.execute(
-            select(EventRow.group_id, EventRow.source).where(EventRow.group_id.in_(groups)).distinct()
+            select(EventRow.group_id, EventRow.source).where(EventRow.group_id.in_(chunk)).distinct()
         ):
             if group_id:
                 found.setdefault(group_id, set()).add(source)
@@ -1283,13 +1292,13 @@ def _group_sources(session: Session, rows: Sequence[EventRow]) -> dict[str, list
 def _group_covers(session: Session, rows: Sequence[EventRow]) -> dict[str, str]:
     """A duplicate listing's stored picture for events with no stored picture of their own: an own URL
     that never downloaded (a favicon, a 403) used to block it (partylinks.pictures)."""
-    groups = {r.group_id for r in rows if r.group_id and not r.cover_url}
+    groups = sorted({r.group_id for r in rows if r.group_id and not r.cover_url})
     found: dict[str, str] = {}
-    if groups:
+    for chunk in _chunks(groups, _IN_CHUNK):  # under Postgres's 65,535 parameters (as _group_sources)
         for group_id, image_id, url in session.execute(
             select(EventRow.group_id, ImageRow.id, ImageRow.url)
             .join(ImageRow.event)
-            .where(EventRow.group_id.in_(groups), ImageRow.downloaded_at.is_not(None))
+            .where(EventRow.group_id.in_(chunk), ImageRow.downloaded_at.is_not(None))
             .order_by(ImageRow.position, ImageRow.id)
         ):
             if group_id and not is_site_logo(url):
