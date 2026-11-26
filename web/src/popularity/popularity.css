@@ -2,3 +2,6 @@
 .pop-large { margin: 8px 0 0; font-size: 14px; }
 .pop-live { color: #ff5a7a; font-weight: 600; }
 .pop-live::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-inline-end: 6px; border-radius: 50%; background: currentColor; vertical-align: middle; }
+/* The map popup's .pop (styles.css) is min-width 200px: on a card the stats line is .meta.pop too, and below
+   200px of card body it widened the body, so in RTL every left-to-right line (English titles) was cut on the left. */
+.meta.pop { min-width: 0; }
