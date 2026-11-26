@@ -884,7 +884,7 @@ enrichment:
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
     online: ["online", "אונליין", "zoom", "זום", "virtual", "וירטואלי", "webinar", "וובינר", "online events", "אירועים מקוונים"]
-    reggaeton_latin: ["música latina", "urban kiz", "אורבן קיז"]  # Havana Club's urban kizomba nights
+    reggaeton_latin: ["música latina", "urban kiz", "אורבן קיז", "לאטין"]  # Havana Club's urban kizomba nights
     flamenco: ["música flamenca"]
     melodic_techno: ["melodic", "מלודיק", "מלודי"]  # beatradar / getin's genre label; hypd's and beatradar's Hebrew tags
     electronic: ["música electrónica", "אלקטרו", "אלקטרוניקה", "דאנס"]  # iwant / beatradar tags (source audit, Nov 2026)
@@ -905,7 +905,7 @@ enrichment:
     literature: ["literatur", "literature", "ספרות", "כתיבה ושירה", "writing", "lesung", "lesungen", "בוק קלאב"]
     museums: ["מוזיאון", "מוזיאונים", "museum", "museums", "מוזיאונים ומרכזי מבקרים"]
     circus_magic: ["קרקס", "קסמים וקרקס", "שובו של הקרקס", "zirkus", "circus", "magia", "magic"]
-    meditation: ["meditation", "מדיטציה", "spirituality", "רוחניות"]
+    meditation: ["meditation", "מדיטציה", "spirituality", "רוחניות", "mindfulness"]
     sports_matches: ["wrestling", "eishockey", "motorsport", "צ׳מפיונשיפ", "יורו 2028", "nba", "football", "soccer",
                      "basketball", "כדורגל", "כדורסל", "ליגה", "ליגת"]
     running: ["ריצה", "מרוץ", "running"]
@@ -934,14 +934,14 @@ enrichment:
     # box offices, guides (OGO tags, some in Russian), viagogo / abroad sellers.
     live_show: ["konsert", "konserter", "koncert", "konzerte", "singer-songwriter", "clubkonzerte", "schlager & volksmusik", "במות פתוחות", "קרקס", "live music", "livemusic", "international artists", "concert", "concerts", "other concerts", "מופעי לילה",
                 "show", "shows", "performances", "music", "הופעות", "הופעה", "הופעות מוזיקה", "מופע", "מופעים",
-                "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki", "קונצרטים", "מופעי מבוגרים", "קסמים וקרקס", "שובו של הקרקס", "موسيقى", "אנסמבל", "תזמורת המהפכה", "candlelight", "הפעלה מוזיקאלית", "magia", "cabaret"]  # concets: Eventer's spelling of its concerts category
+                "מוזיקה", "מוסיקה", "concets", "tribute acts", "קונצרט", "זמר", "musiikki", "קונצרטים", "מופעי מבוגרים", "קסמים וקרקס", "שובו של הקרקס", "موسيقى", "אנסמבל", "תזמורת המהפכה", "candlelight", "הפעלה מוזיקאלית", "magia", "cabaret", "tribute", "מחוות", "open-mic", "במה פתוחה", "פולק"]  # concets: Eventer's spelling of its concerts category
     festival: ["music festivals", "music festival", "festival", "festivals", "פסטיבל", "פסטיבלים", "фестиваль", "festspiele", "חשיפה בינלאומית", "tomorrowland"]
     # Not "קהילה" / "קהילתי": community centres tag every event so (kids' shows, workshops), a place, not a meetup.
     meetups: ["فعاليات اجتماعية", "meetups", "community", "meeting", "פעילות חברתית", "ערב חברתי", "языковой клуб", "משחקי קופסא", "ברים פאבים", "דייטינג", "לזוגות", "מפגשים חברתיים", "митап"]
     culture: ["culture highlights", "culture", "תרבות ופנאי", "כללי", "אירועי תרבות", "ספריה", "ספרייה", "ספריה עירונית", "תרבות", "קהילה", "קהילות", "אירועים קהילתיים", "מרכזים קהילתיים", "אירועי מרכזים קהילתיים", "פעילות קהילתית", "המרכז לאומנויות", "אירוע", "אירועים", "תרבות מבוגרים", "שבת תרבות", "מפגשי שכונות", "הבוטיק מועדון תרבות", "החיים הטובים", "לא שיגרתי"]
     photography: ["צילום", "photography", "photo", "צילום ואמנות", "צילום ועריכה"]
     exhibitions: ["exhibitions", "exhibition", "art", "taidenäyttely", "תערוכה", "תערוכות", "אמנות", "גלריה", "מוזיאון", "כניסה למוזיאון", "museum", "יום המוזיאונים", "אירועי קומיקס", "tentoonstellingen",
-                  "ausstellungen", "ausstellung", "exposicion", "exposición", "exposiciones", "udstilling", "utställning"]
+                  "ausstellungen", "ausstellung", "exposicion", "exposición", "exposiciones", "udstilling", "utställning", "fine arts"]
     workshops: ["יצירה", "בישול", "ورشات", "workshop", "workshops", "סדנה", "סדנאות", "קורס", "קורסים", "групповое занятие", "квест", "course", "courses", "craft", "baking", "יצירה ומלאכה", "תחביבים", "ציור וצביעה", "עיצוב", "טיפוח וקוסמטיקה", "אופנה ולייף סטייל", "תכשיטים וצורפות", "פיסול ונגרות", "צילום", "סריגה ותפירה", "כתיבה ושירה", "גינון", "מייקרס", "סטודיו פתוח", "אומנות", "בישול ואפייה"]
     cinema: ["kino", "film", "סרט", "أفلام", "movies", "sceening", "screening", "screenings", "קולנוע", "סינמטק", "סרטים", "cinema", "documentary", "סינמה", "דוקאביב", "מזרח אסיה על המסך הגדול"]
     stand_up: ["kabarett", "comedia", "komödie", "comedy club", "ستاند اب كوميدي", "comedy", "קומדיה", "בידור", "מופעי בידור", "סטנד אפ", "comy", "סאטירה", "קומדי בר", "סטנד-אפ", "סטנדאפ", "stand-up", "kleinkunst", "monólogo", "comédie"]
@@ -951,7 +951,7 @@ enrichment:
     religious: ["religious", "דת", "מסורת", "יהדות", "מוזיקה יהודית", "חסידי", "הקהל הדתי", "шабат", "chassidic", "religion"]
     holidays: ["טו בשבט", "عروض عيد الميلاد", "holidays", "halloween", "חגים", "חג", "праздник", "hanukkah", "chanukah", "christmas", "new year",
                "thanksgiving", "חנוכה", "פורים", "סילבסטר", "weihnachten", "silvester", "silvester & neujahr", "karneval",
-               "fasching", "ostern", "valentinstag", "navidad", "kerst"]
+               "fasching", "ostern", "valentinstag", "navidad", "kerst", "holiday"]
     lgbt: ["pride", "הקהילה הגאה"]
     sport: ["nba", "ליגה", "ליגת", "יורוליג", "טניס", "צ׳מפיונשיפ", "כושר גופני", "sport", "sports", "fussball", "kampfsport", "soccer", "football", "basketball", "tennis", "ספורט", "כדורגל", "כדורסל", "ריצה",
             "מרוץ", "אופניים", "אימוני כושר", "קבוצת הליכה", "פוצ'יוולי", "footvolley", "urheilu", "אקסטרים"]
@@ -983,7 +983,7 @@ enrichment:
            "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך", "רמתגנצ'יק", "שבת משפחתי", "שנה עד שנתיים", "זחילה עד שנה", "שלוש עד ארבע", "לידה עד זחילה", "שנתיים עד שלוש", "ארבע עד חמש", "אחר-צהריים ר\"גוע"]
     lectures: ["vortrag", "literatur", "שיח קהילתי", "lecture", "lectures", "עונת תרבות", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "פאנל דוברים", "foredrag", "העצמה אישית", "אנתרופולוגיה", "יחסים ואהבה", "קריירה", "מנטורינג וקואוצ׳ינג", "עסקים וכלכלה", "סמינר", "אסכולות", "מיניות", "הערים המרתקות", "עניין"]
     tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre", "חווית המבקר", "סיורי חנוכיות", "סיורי יום", "סיורי ערב", "סיורי בוטיק", "אדריכלות",
-            "führungen & rundfahrten", "führungen", "führung", "rundfahrten", "stadtführung", "travelling", "trips adventures", "hiking"]
+            "führungen & rundfahrten", "führungen", "führung", "rundfahrten", "stadtführung", "travelling", "trips adventures", "hiking", "heritage walk", "history"]
     dance: ["tanz", "عرض راقص", "dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט", "tanssi", "dans", "danza", "danse"]
     conference: ["conferences", "messe", "messen"]  # Eventer's category (the text genre matches "conference" alone)
   # Last resort, for an event no category, title word or source default placed: words a show's text uses
