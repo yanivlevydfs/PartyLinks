@@ -5835,6 +5835,15 @@ sources:
     # tribute concerts. wp-json lists the `events` posts (1 call) and names their taxonomy (1 call); each event
     # page (~10) gives the day, price and seller. Most are sold on its Smarticket box office (smarticket
     # `hamesila-bet`: the link is kept as purchase_url, dedup merges); lectures sold on tarbuta.com are only here.
+    # Sections (26.11.2026): `events` (wp-json, 9 posts: 8 events + the exhibition "יש מאין", opening hours only,
+    # its gallery talk is an event) read; `course_workshop` (35 posts) read: only a dated session one can book
+    # alone (a one-off workshop, a series sold per meeting: 5 of 35, ~10 sessions); weekly classes with no
+    # days and courses sold whole are no events. Not read: `hm_theme_page` (2 hub pages, "דצמבר של אור" /
+    # "קיימות במסילה": they only link the events and workshops above), the pages (about, space rental, cafe,
+    # stations), `course_by_station` (classes), 1 blog post. The Smarticket box office holds 2 shows, both here.
+    # Slugs: the sitemaps (events 8, course_workshop 35, hm_theme_page 2) name nothing the wp-json lists miss;
+    # the 26 pages (page / post sitemaps, home) link no other event; their 49 other links are the Arbox sign-ups
+    # of classes and trial lessons ("שבוע הכרות" in September, "אגדה ב'" in summer, Dida's classes): no events.
     enabled: true
     cron: "17 6,18 * * *"
     site_url: https://hamesila.org.il
@@ -5843,7 +5852,9 @@ sources:
     city: הרצליה
     latitude: 32.1702435    # OSM way 1250701832 "המסילה" (amenity=community_centre)
     longitude: 34.8189553
-    skip_title_words: ["קורס", "חוג ", "סדנה", "סדנת", "סדנא"]   # "חוג " not "חוג": "חוגגים" is a party
+    # Courses and classes are no events ("חוג " not "חוג": "חוגגים" is a party); a dated one-off workshop is
+    # (parse_workshop keeps only sessions sold alone), so "סדנה" / "סדנת" / "סדנא" are not skipped.
+    skip_title_words: ["קורס", "חוג "]
     http:
       concurrency: 2
       request_delay_seconds: 1.0
