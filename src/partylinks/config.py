@@ -755,8 +755,12 @@ class SecuritySettings(BaseModel):
     # copying every picture by id needs thousands.
     images_rate_limit_per_minute: int = Field(300, ge=1)
     images_rate_limit_per_hour: int = Field(3000, ge=1)
+    # /weather and /weather/many per IP, outside the site-wide limit: over it = 429, no strike.
+    weather_rate_limit_per_minute: int = Field(120, ge=1)
     # Vulnerability probes (/.env, /wp-login.php...), failed admin logins and rate-limit hits are
-    # strikes; this many within ban_minutes bans the IP for ban_minutes.
+    # strikes; this many within ban_minutes bans the IP for ban_minutes. bans: false turns every ban off
+    # (strikes, the trap link's instant ban): requests are refused or rate limited, never an address locked out.
+    bans: bool = True
     ban_after_strikes: int = Field(5, ge=1)
     ban_minutes: float = Field(60, gt=0)
     max_body_bytes: int = Field(1_000_000, ge=1)

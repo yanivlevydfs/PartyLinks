@@ -147,3 +147,31 @@ def test_slots_past_max_days_are_dropped(tmp_path: Path, monkeypatch: pytest.Mon
     monkeypatch.setattr(weather, "_fetch", fetch)
     kept = asyncio.run(weather.forecast(32.0, 34.8, "test", tmp_path / "w.json", WeatherSettings(max_days=7)))
     assert kept == slots[:2]
+
+
+def test_many_places_in_one_request(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A page of cards asks every cell in one /weather/many (40 /weather at once banned the owner):
+    each key answers its own slots, duplicates and malformed keys are dropped, an unavailable one is []."""
+    from fastapi.testclient import TestClient
+
+    from partylinks.api import create_app
+    from tests.test_storage_api import settings_for
+
+    asked: list[tuple[float, float]] = []
+
+    async def forecast(lat: float, lng: float, *_: Any) -> list[list[Any]]:
+        asked.append((lat, lng))
+        return [] if lat > 33 else [["2026-11-27T18:00:00Z", "clearsky_night", lat, 0, 1]]
+
+    monkeypatch.setattr(weather, "forecast", forecast)
+    app = create_app(settings_for(tmp_path), start_scheduler=False)
+    with TestClient(app) as client:
+        res = client.get("/weather/many", params={"p": ["32.1,34.8", "31.8,35.2", "32.1,34.8", "33.5,35.5", "x,y"]})
+        assert res.status_code == 200
+        assert res.json()["slots"] == {
+            "32.1,34.8": [["2026-11-27T18:00:00Z", "clearsky_night", 32.1, 0, 1]],
+            "31.8,35.2": [["2026-11-27T18:00:00Z", "clearsky_night", 31.8, 0, 1]],
+            "33.5,35.5": [],  # MET down for it: no pill, not a failed page
+        }
+        assert sorted(asked) == [(31.8, 35.2), (32.1, 34.8), (33.5, 35.5)]  # one forecast per distinct place
+        assert client.get("/weather/many", params={"p": [f"32.{i},34.8" for i in range(61)]}).status_code == 422

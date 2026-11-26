@@ -46,6 +46,41 @@ export function iconFor(symbol: string, night: boolean): [string, Word] {
   return [`partly-cloudy-${dn}`, "partly"]; // fair, partlycloudy
 }
 
+/** A place's key for /weather/many: "32.1,34.8" (0.1° cell) or "city:<name>". */
+export const weatherKey = (lat: number | null, lng: number | null, city?: string | null) =>
+  lat != null && lng != null ? `${lat.toFixed(1)},${lng.toFixed(1)}` : city ? `city:${city.slice(0, 60)}` : null;
+
+// Every place asked within one tick goes in one /weather/many request: a page of 40 cards sent 40
+// /weather requests at once, and the burst rate limited (and banned) the visitor's address.
+const MANY_MAX = 60; // the server's cap per request
+let queue = new Map<string, { resolve: (s: Slot[]) => void; reject: (e: Error) => void }[]>();
+let timer: ReturnType<typeof setTimeout> | null = null;
+
+async function flush() {
+  const batch = queue;
+  queue = new Map();
+  timer = null;
+  const keys = [...batch.keys()];
+  for (let i = 0; i < keys.length; i += MANY_MAX) {
+    const part = keys.slice(i, i + MANY_MAX);
+    try {
+      const res = await fetch(`/weather/many?${part.map((k) => `p=${encodeURIComponent(k)}`).join("&")}`);
+      if (!res.ok) throw new Error(`${res.status} /weather/many`);
+      const { slots } = (await res.json()) as { slots: Record<string, Slot[]> };
+      for (const k of part) for (const w of batch.get(k) ?? []) w.resolve(slots[k] ?? []);
+    } catch (e) {
+      for (const k of part) for (const w of batch.get(k) ?? []) w.reject(e as Error);
+    }
+  }
+}
+
+export function loadWeather(key: string): Promise<Slot[]> {
+  return new Promise((resolve, reject) => {
+    queue.set(key, [...(queue.get(key) ?? []), { resolve, reject }]);
+    timer ??= setTimeout(flush, 15);
+  });
+}
+
 /** The slot whose window holds `start` (an event already under way takes the first slot). */
 export function slotAt(slots: Slot[], start: number): Slot | undefined {
   if (slots.length && start < Date.parse(slots[0][0]) && start > Date.now() - 6 * 3600e3) return slots[0];
@@ -78,14 +113,10 @@ export function Weather({ lat, lng, city, start, zone, full = false }: {
   const { lang } = useT();
   const when = start ? Date.parse(start) : NaN;
   const near = Number.isFinite(when) && when > Date.now() - 6 * 3600e3 && when < Date.now() + 11 * 864e5;
-  const cell = lat != null && lng != null ? `lat=${lat.toFixed(1)}&lng=${lng.toFixed(1)}` : city ? `city=${encodeURIComponent(city)}` : null;
+  const cell = weatherKey(lat, lng, city);
   const { data, isLoading } = useQuery({
     queryKey: ["weather", cell],
-    queryFn: async () => {
-      const res = await fetch(`/weather?${cell}`);
-      if (!res.ok) throw new Error(`${res.status} /weather`);
-      return ((await res.json()) as { slots: Slot[] }).slots;
-    },
+    queryFn: () => loadWeather(cell!),
     enabled: !!cell && near,
     staleTime: 15 * 60e3,
     retry: false,

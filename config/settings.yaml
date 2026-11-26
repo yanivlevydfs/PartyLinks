@@ -363,6 +363,11 @@ security:
   admin_rate_limit_per_minute: 30
   # Ticket links (/go/...): the sellers' URLs are handed out one click at a time.
   go_rate_limit_per_minute: 20
+  # Forecasts (/weather, /weather/many): their own limit, outside the one above; over it = 429, no strike.
+  weather_rate_limit_per_minute: 120
+  # Off (the owner's call, 26.11.2026): a check's reloads banned the owner's own address for an hour.
+  # Rate limits still answer 429; no address is locked out.
+  bans: false
   ban_after_strikes: 5
   ban_minutes: 60
   max_body_bytes: 1000000

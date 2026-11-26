@@ -6,7 +6,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useLandingInfo } from "../api";
 import { SiteShare } from "../share/SiteShare";
 import { useT } from "../ui";
-import { iconFor, iconUrl, WX_WORDS, type Slot } from "../Weather";
+import { iconFor, iconUrl, loadWeather, weatherKey, WX_WORDS, type Slot } from "../Weather";
 import "./city.css";
 
 const SITE = "https://spotx.fun";
@@ -53,14 +53,10 @@ export function days(slots: Slot[], zone: string, n = DAYS): Day[] {
 function Forecast({ center, zone, city }: { center: [number, number]; zone: string; city?: string }) {
   const { lang, t } = useT();
   const p = TEXT[lang];
-  const cell = `lat=${center[0].toFixed(1)}&lng=${center[1].toFixed(1)}`;
+  const cell = weatherKey(center[0], center[1])!;
   const { data } = useQuery({
-    queryKey: ["weather", cell], // the same cell (and cache) as the cards' forecast pills
-    queryFn: async () => {
-      const res = await fetch(`/weather?${cell}`);
-      if (!res.ok) throw new Error(`${res.status} /weather`);
-      return ((await res.json()) as { slots: Slot[] }).slots;
-    },
+    queryKey: ["weather", cell], // the same cell (and cache, and batched request) as the cards' forecast pills
+    queryFn: () => loadWeather(cell),
     staleTime: 15 * 60e3,
     retry: false,
   });

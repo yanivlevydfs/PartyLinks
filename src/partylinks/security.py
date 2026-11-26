@@ -55,6 +55,8 @@ STATIC_PATHS = ("/images/", "/artwork/", "/assets/", "/icons/", "/favicon")
 # Chat apps' webhooks (partylinks.bot): every user's message comes from the app's few servers, so a
 # per-IP limit would ban the app; the route checks its own secret on every request.
 WEBHOOK_PATHS = ("/bot/telegram",)
+# Event forecasts (/weather, /weather/many): their own per-IP limit, not the site-wide one.
+WEATHER_PATHS = ("/weather",)
 
 CSP = "; ".join([  # noqa: FLY002 - one directive per line
     "default-src 'self'",
@@ -204,6 +206,8 @@ class Guard:
         return until is not None
 
     def strike(self, ip: str, cfg: SecuritySettings, reason: str, now: float) -> None:
+        if not cfg.bans:  # bans off (security.bans): no strike leads anywhere
+            return
         window = self.strikes[ip]
         window.append(now)
         if self._count(window, now, cfg.ban_minutes * 60) >= cfg.ban_after_strikes:
@@ -263,7 +267,7 @@ class SecurityMiddleware:
             ]})  # fmt: skip
             await send({"type": "http.response.body", "body": body})
 
-        if not local and self.guard.is_banned(ip, now):  # first, token or not: a ban also stops token guessing
+        if cfg.bans and not local and self.guard.is_banned(ip, now):  # first, token or not: a ban also stops token guessing
             return await reject(403, "forbidden")
         # The owner's own scripts (the valid admin token) are not rate limited: checks that sent many
         # requests banned the owner for an hour. A wrong token still strikes (below), so guessing is not helped.
@@ -303,7 +307,13 @@ class SecurityMiddleware:
             or self.guard.over_limit(ip, "images-hour", cfg.images_rate_limit_per_hour, now, 3600)
         ):
             return await reject(429, "too many requests", [(b"retry-after", b"60")])
-        if not local and not owner and not path.startswith((*STATIC_PATHS, *WEBHOOK_PATHS)):
+        # Forecasts: a page of cards asks one per cell, a burst a browser sends on its own. Their own limit,
+        # outside the site-wide one: a 429 there drops a card's pill, never a strike (40 at once banned the owner).
+        if not local and not owner and path.startswith(WEATHER_PATHS) and self.guard.over_limit(
+            ip, "weather", cfg.weather_rate_limit_per_minute, now
+        ):
+            return await reject(429, "too many requests", [(b"retry-after", b"60")])
+        if not local and not owner and not path.startswith((*STATIC_PATHS, *WEBHOOK_PATHS, *WEATHER_PATHS)):
             limit = cfg.admin_rate_limit_per_minute if admin else cfg.rate_limit_per_minute
             if self.guard.over_limit(ip, "admin" if admin else "all", limit, now):
                 self.guard.strike(ip, cfg, "rate limit", now)
@@ -322,8 +332,9 @@ class SecurityMiddleware:
                 return await reject(429, "too many requests", [(b"retry-after", b"60")])
         # The trap link (partylinks.page_guard): only a client ignoring robots.txt and nofollow gets here.
         if cfg.trap_path and path == cfg.trap_path and not local and not await page_guard.real_crawler(ip, agent, cfg):
-            self.guard.banned[ip] = now + cfg.ban_minutes * 60
-            log.warning("banned %s for %g min: fetched the trap link (%s)", ip, cfg.ban_minutes, agent[:80])
+            if cfg.bans:
+                self.guard.banned[ip] = now + cfg.ban_minutes * 60
+                log.warning("banned %s for %g min: fetched the trap link (%s)", ip, cfg.ban_minutes, agent[:80])
             return await reject(410, "gone")
         # Pages: a share per IP, so the event pages can't all be copied (partylinks.page_guard).
         pages = not local and not owner and scope["method"] == "GET" and not path.startswith(

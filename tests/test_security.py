@@ -93,6 +93,20 @@ def test_cache_and_compression(tmp_path: Path) -> None:
         assert outsider.get("/health").status_code == 403
 
 
+def test_bans_off(tmp_path: Path) -> None:
+    """security.bans false: wrong tokens and probes still fail, but no address is ever locked out."""
+    settings = settings_for(tmp_path)
+    settings.admin.token = SecretStr("s3cret")
+    settings.security.ban_after_strikes = 1
+    settings.security.bans = False
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app, client=("198.51.100.4", 1)) as outsider:
+        for _ in range(3):
+            assert outsider.post("/maintenance/retention", headers={"authorization": "Bearer nope"}).status_code == 401
+        assert outsider.get("/health").status_code == 200
+        assert not app.state.guard.banned  # type: ignore[attr-defined]
+
+
 def test_spoofed_forwarded_for_is_ignored(tmp_path: Path) -> None:
     """Behind a proxy (trusted_proxies ["*"]) the visitor writes the first X-Forwarded-For entry: a
     fake 127.0.0.1 there must not make the request local (no limits, no bans)."""
@@ -359,3 +373,25 @@ def test_host_header_does_not_poison_cached_pages(tmp_path: Path) -> None:
         poisoned = c.get("/privacy", headers={"host": "evil.example", "x-forwarded-host": "evil.example"})
         assert "evil.example" not in poisoned.text
         assert "evil.example" not in c.get("/privacy").text
+
+
+def test_weather_has_its_own_limit_and_never_strikes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A page's forecast burst (40 /weather at once) rate limited and banned the owner: forecasts have their
+    own limit, outside the site-wide one, and going over it is a 429 without a strike."""
+    from partylinks import weather
+
+    async def forecast(*_: Any) -> list[list[Any]]:
+        return [["2026-11-27T18:00:00Z", "clearsky_night", 20.0, 0, 1]]
+
+    monkeypatch.setattr(weather, "forecast", forecast)
+    settings = settings_for(tmp_path)
+    settings.security.rate_limit_per_minute = 3
+    settings.security.weather_rate_limit_per_minute = 6
+    settings.security.bans = True  # on, so a strike would show as a ban
+    settings.security.ban_after_strikes = 1
+    app = create_app(settings, start_scheduler=False)
+    with TestClient(app, client=("203.0.113.9", 5000)) as visitor:
+        codes = [visitor.get("/weather", params={"lat": 32.1, "lng": 34.8}).status_code for _ in range(6)]
+        assert codes == [200] * 6  # over the site-wide 3, under the forecasts' own 6
+        assert visitor.get("/weather/many", params={"p": "32.1,34.8"}).status_code == 429
+        assert visitor.get("/health").status_code == 200  # no strike, no ban

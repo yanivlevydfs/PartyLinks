@@ -232,6 +232,29 @@ async def _looked_up(settings: Settings, name: str, path: Path) -> tuple[float, 
     return (point[0], point[1]) if point else None
 
 
+async def _place_slots(
+    settings: Settings, lat: float | None, lng: float | None, city: str | None
+) -> tuple[list[list[Any]] | None, int]:
+    """A place's slots and how long a browser may keep them; None: the forecast is unavailable (MET down)."""
+    cfg = settings.weather
+    # An event placed only by its city (no exact point) takes the city centre's forecast: the configured
+    # cities, then every GeoNames town (ערד, כפר ויתקין, מעלה אדומים... were 404s with the first alone).
+    if lat is None or lng is None:
+        # "קיבוץ יגור" / "מושב בית יצחק": the lists and Nominatim know the bare name.
+        name = re.sub(r"^(קיבוץ|מושב|מושבה)\s+", "", (city or "").strip()) if city else ""
+        center = _city_center(settings, city or "") or (name != city and _city_center(settings, name) or None)
+        if center is None and name:
+            center = await _looked_up(settings, name, cache_file(settings).with_name("weather_places.json"))
+        if center is None:
+            # Empty, not 404: an unknown place just shows no forecast, without a red line in every console.
+            # Kept long only when the lookup answered; one skipped (upstream down, fetch cap) is asked again soon.
+            known = not name or name.strip() in _found
+            return [], cfg.unknown_place_cache_seconds if known else int(cfg.failure_ttl_seconds)
+        lat, lng = center
+    slots = await forecast(lat, lng, f"SPOTX/1.0 (+{settings.site.base_url})", cache_file(settings), cfg)
+    return (slots, cfg.browser_cache_seconds) if slots else (None, int(cfg.failure_ttl_seconds))
+
+
 @router.get("/weather", summary="Forecast slots for a place (events pick their start time's slot)")
 async def weather(
     request: Request,
@@ -240,26 +263,34 @@ async def weather(
     lng: Annotated[float | None, Query(ge=-180, le=180)] = None,
     city: Annotated[str | None, Query(max_length=60, description="A configured city's Hebrew name: its centre")] = None,
 ) -> dict[str, list[list[Any]]]:
-    settings: Settings = request.app.state.settings
-    cfg = settings.weather
-    # An event placed only by its city (no exact point) takes the city centre's forecast: the configured
-    # cities, then every GeoNames town (ערד, כפר ויתקין, מעלה אדומים... were 404s with the first alone).
-    if lat is None or lng is None:
-        # "קיבוץ יגור" / "מושב בית יצחק": the lists and Nominatim know the bare name.
-        name = re.sub(r"^(קיבוץ|מושב|מושבה)\s+", "",(city or "").strip()) if city else ""
-        center = _city_center(settings, city or "") or (name != city and _city_center(settings, name) or None)
-        if center is None and name:
-            center = await _looked_up(settings, name, cache_file(settings).with_name("weather_places.json"))
-        if center is None:
-            # Empty, not 404: an unknown place just shows no forecast, without a red line in every console.
-            # Kept long only when the lookup answered; one skipped (upstream down, fetch cap) is asked again soon.
-            known = not name or name.strip() in _found
-            age = cfg.unknown_place_cache_seconds if known else int(cfg.failure_ttl_seconds)
-            response.headers["Cache-Control"] = f"public, max-age={age}"
-            return {"slots": []}
-        lat, lng = center
-    slots = await forecast(lat, lng, f"SPOTX/1.0 (+{settings.site.base_url})", cache_file(settings), cfg)
-    if not slots:
+    slots, age = await _place_slots(request.app.state.settings, lat, lng, city)
+    if slots is None:
         raise HTTPException(status_code=503, detail="forecast unavailable")
-    response.headers["Cache-Control"] = f"public, max-age={cfg.browser_cache_seconds}"
+    response.headers["Cache-Control"] = f"public, max-age={age}"
     return {"slots": slots}
+
+
+MANY_MAX = 60  # places per /weather/many request (a page of cards asks a few dozen cells at most)
+_POINT = re.compile(r"^(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$")
+
+
+@router.get("/weather/many", summary="Forecast slots for several places in one request (a page of cards)")
+async def weather_many(
+    request: Request,
+    response: Response,
+    p: Annotated[list[str], Query(max_length=MANY_MAX, description='Places: "lat,lng" or "city:<name>"')],
+) -> dict[str, dict[str, list[list[Any]]]]:
+    """One request for every card on a page, not one per cell: a page of 40 cards sent 40 /weather
+    requests at once, and the burst got the visitor's address rate limited and banned. A place whose
+    forecast is unavailable or unknown answers [] (the card shows none)."""
+    settings: Settings = request.app.state.settings
+    places: dict[str, tuple[float | None, float | None, str | None]] = {}
+    for key in dict.fromkeys(p):
+        if key.startswith("city:") and 0 < len(key) - 5 <= 60:
+            places[key] = (None, None, key[5:])
+        elif (m := _POINT.match(key)) and abs(float(m[1])) <= 90 and abs(float(m[2])) <= 180:
+            places[key] = (float(m[1]), float(m[2]), None)
+    answers = await asyncio.gather(*(_place_slots(settings, *place) for place in places.values()))
+    age = min((a for _, a in answers), default=settings.weather.browser_cache_seconds)
+    response.headers["Cache-Control"] = f"public, max-age={age}"
+    return {"slots": {key: slots or [] for key, (slots, _) in zip(places, answers, strict=True)}}
