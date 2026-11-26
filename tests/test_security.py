@@ -21,6 +21,7 @@ from tests.test_storage_api import event, seed, settings_for
 
 def test_headers_probes_bots_and_bans(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
+    settings.security.bans = True  # bans are off in settings.yaml; this test checks them
     settings.security.ban_after_strikes = 3
     settings.security.rate_limit_per_minute = 5
     app = create_app(settings, start_scheduler=False)
@@ -43,6 +44,7 @@ def test_headers_probes_bots_and_bans(tmp_path: Path) -> None:
 
 def test_rate_limit_and_admin_brute_force(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
+    settings.security.bans = True  # bans are off in settings.yaml; this test checks them
     settings.security.rate_limit_per_minute = 3
     settings.security.ban_after_strikes = 2
     settings.admin.token = SecretStr("s3cret")
@@ -61,6 +63,7 @@ def test_rate_limit_and_admin_brute_force(tmp_path: Path) -> None:
 
 def test_owner_is_not_rate_limited_and_lifts_bans(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
+    settings.security.bans = True  # bans are off in settings.yaml; this test checks them
     settings.security.rate_limit_per_minute = 3
     settings.security.ban_after_strikes = 2
     settings.admin.token = SecretStr("s3cret")
@@ -80,6 +83,7 @@ def test_owner_is_not_rate_limited_and_lifts_bans(tmp_path: Path) -> None:
 
 def test_cache_and_compression(tmp_path: Path) -> None:
     settings = settings_for(tmp_path)
+    settings.security.bans = True  # bans are off in settings.yaml; this test checks them
     settings.admin.token = SecretStr("s3cret")
     settings.security.ban_after_strikes = 1
     app = create_app(settings, start_scheduler=False)
@@ -358,6 +362,7 @@ def test_event_page_escapes_scraped_text(tmp_path: Path) -> None:
 def test_banned_visitor_gets_no_cached_page(tmp_path: Path) -> None:
     """Cached pages answer before routing, but still inside the security middleware."""
     settings = settings_for(tmp_path)
+    settings.security.bans = True  # bans are off in settings.yaml; this test checks them
     settings.security.ban_after_strikes = 1
     app = create_app(settings, start_scheduler=False)
     with TestClient(app) as local, TestClient(app, client=("198.51.100.23", 1)) as outsider:

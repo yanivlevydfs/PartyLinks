@@ -219,6 +219,7 @@ def test_guessing_the_secret_ends_in_a_ban(tmp_path: Path, monkeypatch: pytest.M
 
     monkeypatch.setattr(webhook, "start", start)
     settings = _bot_settings(tmp_path)
+    settings.security.bans = True  # bans are off in settings.yaml; this test checks them
     seed(settings, [])
     with TestClient(create_app(settings, start_scheduler=False), client=("198.51.100.30", 1)) as c:
         codes = [c.post(PATH, json={}, headers={SECRET_HEADER: f"guess-{i}", "user-agent": "x"}).status_code for i in range(12)]
