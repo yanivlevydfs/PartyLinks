@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Loader, TZ } from "../ui";
+import NotFound from "./NotFound";
 import { useTicketSites } from "../api";
 import { Sponsored } from "../ads/AdminSponsored";
 import { AdminPins } from "../home_pins/AdminPins";
@@ -96,7 +97,13 @@ function Admin() {
   useEffect(() => { history.replaceState(null, "", `#${tab}`); }, [tab]);
 
   const authError = ov.error instanceof HttpError && (ov.error.status === 401 || ov.error.status === 403) ? ov.error : null;
-  if (authError) return <Login error={authError} onLogin={() => qc.invalidateQueries()} />;
+  // Not an admin: the site's own "page not found", as for any wrong address; nothing tells the console is
+  // here. The token form opens only at /admin?login (linked nowhere) or after a token was tried.
+  if (authError) {
+    const login = new URLSearchParams(location.search).has("login") || !!readToken();
+    return login ? <Login error={authError} onLogin={() => qc.invalidateQueries()} /> : <NotFound />;
+  }
+  if (ov.isPending) return <Loader />; // no console shell before the server says this is an admin
 
   const logout = () => {
     try { sessionStorage.removeItem(TOKEN_KEY); } catch {}

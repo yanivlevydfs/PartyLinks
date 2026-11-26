@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 178 configured sources, 177 on. Each one has its own module in
+SPOTX collects from 179 configured sources, 178 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -144,6 +144,7 @@ pagination and what the listing and the event page provide.
 | `halutz` | HaHalutz 33 (halutz.co.il): culture bar in Be'er Sheva's Old City, second stage in Sderot | 07:16, 19:16 | yes |
 | `viagogo` | viagogo (viagogo.com/il): international ticket resale, events in Israel | 06:44, 18:44 | yes |
 | `swaptix` | SwapTix (swaptix.co.il): Israeli ticket resale; events with tickets on sale | 07:09, 19:09 | yes |
+| `fomo` | FOMO (fomo-events.co): self-service box office and resale; its public API catalogue + each upcoming event | 09:26, 21:26 | yes |
 
 ## Cinema
 

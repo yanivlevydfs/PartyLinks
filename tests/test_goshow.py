@@ -7,7 +7,17 @@ from pathlib import Path
 
 from partylinks.config import get_settings
 from partylinks.enrichment import Enricher
-from partylinks.scrapers.goshow import GoShowSettings, add_page, card_event, date_event, parse_listing, parse_more_dates
+from partylinks.scrapers.goshow import (
+    GoShowSettings,
+    add_page,
+    card_event,
+    date_event,
+    parse_listing,
+    parse_more_dates,
+    parse_results,
+    place_ids,
+    total_pages,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures" / "goshow"
 TZ = "Asia/Jerusalem"
@@ -42,6 +52,7 @@ def test_date_page_gives_title_artwork_prices_and_producer() -> None:
     assert (event.min_price, event.max_price) == (Decimal(73), Decimal(73))
     assert event.extra["producer"] == "קומדי בר"
     # The venue's Google Maps embed: "!2d<lon>!3d<lat>".
+    assert event.latitude is not None and event.longitude is not None
     assert (round(event.latitude, 5), round(event.longitude, 5)) == (32.0743, 34.78427)
     enriched = Enricher(get_settings().enrichment, TZ).enrich(event)
     assert enriched is not None and "stand_up" in enriched.genres
@@ -95,7 +106,7 @@ def test_other_date_reuses_its_show_page_and_keeps_its_own_date_place_and_price(
     same, other = (date_event(c, SETTINGS, genres, {"14087": show}) for c in parse_more_dates(MORE, TZ))
     assert (same.source_event_id, str(same.url)) == ("57389", "https://www.goshow.co.il/show/14087/57389/")
     assert (same.venue_name, same.city) == ("מועדון תאטרון גבעתיים", "גבעתיים")
-    assert same.start_at.isoformat() == "2026-11-26T22:00:00+02:00"
+    assert same.start_at is not None and same.start_at.isoformat() == "2026-11-26T22:00:00+02:00"
     assert same.images == show.images and same.description == show.description and same.tickets == show.tickets
     assert same.extra["producer"] == "קומדי בר" and same.source_genres == ["standup"]
     assert same.latitude is None  # another venue than the show page's map: geocoding places it
@@ -114,3 +125,15 @@ def test_category_card_is_absolute_and_maps_to_a_genre() -> None:
     event = card_event(card, SETTINGS, {"14420": {"standup"}})
     enriched = Enricher(get_settings().enrichment, TZ).enrich(event)
     assert enriched is not None and "stand_up" in enriched.genres
+
+
+def test_result_list_cards_and_load_more_pages() -> None:
+    page = (FIXTURES / "results.html").read_text(encoding="utf-8")
+    first, second = parse_results(page, TZ)  # the concert package (no date) is no card
+    assert (first["show_id"], first["date_id"], first["title"]) == ("22292", "57941", "Adi Gigi – Trio Live")
+    assert (first["venue"], first["city"]) == ("AMAMA", "תל אביב-יפו")
+    assert first["start"].isoformat() == "2026-12-09T20:30:00+02:00"
+    assert second["date_id"] != first["date_id"]
+    assert total_pages(page) == 6 and total_pages("<html></html>") == 1
+    places = place_ids(page)
+    assert len(places) == len(set(places)) > 30 and all(p.isdigit() for p in places)

@@ -107,6 +107,7 @@ REASONS: dict[str, dict[str, Any]] = {
     "selector": {"city": _SECRET, "map": _SECRET},
     "drop": {"city": _SECRET, "map": _SECRET},
     "vibez": {"city": _SECRET, "map": _SECRET + " ('Nature of Israel', 'To be announced')"},
+    "fomo": {"city": _SECRET + " ('ישראל', 'צפון', 'בטבע היפה שלנו')", "map": _SECRET},
     "yotzim": {"city": _SECRET, "map": _SECRET + ", and festivals abroad named in Hebrew (Koh Phangan)"},
     "beatradar": {"city": _SECRET, "map": "festivals named by district only ('מחוז הצפון', 'North District')"},
     "zygo": {"city": _SECRET + " ('HaSharon, Israel', 'North District')"},

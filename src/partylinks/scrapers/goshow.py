@@ -34,6 +34,9 @@ _HREF = re.compile(r"/event/(\d+)/(\d+)/")  # relative on the home page, absolut
 _MORE_DATE = re.compile(r"(\d{1,2})/(\d{1,2})/(\d{4})")
 _MORE_TIME = re.compile(r"(\d{1,2}):(\d{2})")
 _PRICE = re.compile(r"(\d+(?:\.\d+)?)")
+_RESULT_DATE = re.compile(r"(\d{1,2})\.(\d{1,2})\.(\d{4})\s+בשעה\s+(\d{1,2}):(\d{2})")
+_TOTAL_PAGES = re.compile(r"var\s+totalPages\s*=\s*(\d+)")
+_PLACE = re.compile(r"/pages/place/(\d+)")
 _EMBED_POINT = re.compile(r"!2d(-?\d+\.\d+)!3d(-?\d+\.\d+)")  # Google Maps embed: !2d<lon>!3d<lat>
 
 
@@ -42,10 +45,13 @@ class GoShowSettings(SourceSettings):
     listing_path: str = "/"
     show_path: str = "/show/{show_id}/{date_id}/"
     category_path: str = "/event/category/{slug}"
-    # The site's categories that map to genres ("misc" maps to none).
+    # The menu's categories, every one (מוסיקה, סטנד אפ, ילדים, הצגות, מסיבות, הרצאות, שונות, and the
+    # festivals page outside the menu); "misc" maps to no genre but still gives dates.
     categories: list[str] = Field(
-        default_factory=lambda: ["music", "standup", "kids", "lectures", "festivals", "shows"]
+        default_factory=lambda: ["music", "standup", "kids", "shows", "party", "lectures", "misc", "festivals"]
     )
+    # The "מקומות" menu: one page per venue (/pages/place/<id>), listed on every page.
+    place_path: str = "/pages/place/{id}"
 
 
 class GoShowScraper(BaseScraper[GoShowSettings]):
@@ -54,13 +60,17 @@ class GoShowScraper(BaseScraper[GoShowSettings]):
 
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         s = self.settings
-        cards = parse_listing(await self.get_text(s.site_url + s.listing_path), self.timezone)
+        home = await self.get_text(s.site_url + s.listing_path)
+        cards = parse_listing(home, self.timezone)
         genres: dict[str, set[str]] = {}  # show id -> its site categories
         dates: dict[str, dict[str, Any]] = {}  # every other date seen, by date id
         for slug in s.categories:
-            url = s.site_url + s.category_path.format(slug=slug)
-            for card in parse_listing(await self.optional(f"category {slug}", self.get_text(url)) or "", self.timezone):
+            for card in await self._category(slug):
                 genres.setdefault(card["show_id"], set()).add(slug)
+                dates.setdefault(card["date_id"], card)
+        for place in place_ids(home):
+            url = s.site_url + s.place_path.format(id=place)
+            for card in parse_results(await self.optional(f"place {place}", self.get_text(url)) or "", self.timezone):
                 dates.setdefault(card["date_id"], card)
         today = datetime.now(zone(self.timezone)).date()
         cards = [c for c in cards if c["start"].date() >= today]
@@ -85,6 +95,53 @@ class GoShowScraper(BaseScraper[GoShowSettings]):
         for card in dates.values():
             if card["date_id"] not in listed and current(event := date_event(card, s, genres, shows)):
                 yield event
+
+    async def _category(self, slug: str) -> list[dict[str, Any]]:
+        """Every card of one category: page 1 (its carousel and the first 30 results), then the "load more"
+        pages (POST page=N, to the page's own ``totalPages``). A failed page costs only its own cards."""
+        url = self.settings.site_url + self.settings.category_path.format(slug=slug)
+        first = await self.optional(f"category {slug}", self.get_text(url)) or ""
+        found = parse_listing(first, self.timezone) + parse_results(first, self.timezone)
+        for page in range(2, total_pages(first) + 1):
+            more = await self.optional(f"category {slug} page {page}", self._post(url, {"page": str(page)}))
+            found += parse_results(more or "", self.timezone)
+        return found
+
+    async def _post(self, url: str, data: dict[str, str]) -> str:
+        return (await self.request("POST", url, data=data)).text
+
+
+def total_pages(page_html: str) -> int:
+    """A category page's "load more" script: ``var totalPages = N;``."""
+    m = _TOTAL_PAGES.search(page_html)
+    return int(m.group(1)) if m else 1
+
+
+def place_ids(page_html: str) -> list[str]:
+    """The "מקומות" menu's venue pages, in menu order."""
+    return list(dict.fromkeys(_PLACE.findall(page_html)))
+
+
+def parse_results(page_html: str, timezone: str) -> list[dict[str, Any]]:
+    """A category's or venue's result list (``.resultData``: title link, "venue, city", "dd.mm.yyyy בשעה
+    HH:MM") -> cards as parse_listing gives them. A row with no date (a concert package) is skipped."""
+    cards: dict[str, dict[str, Any]] = {}
+    for node in LexborHTMLParser(page_html).css("li"):
+        link = node.css_first(".resultLiText a")
+        when = _RESULT_DATE.search(_text(node, ".closeShowDateNew"))
+        if not link or not when or not (m := _HREF.search(link.attributes.get("href") or "")) or m.group(2) in cards:
+            continue
+        day, month, year, hour, minute = (int(g) for g in when.groups())
+        venue, _, city = (clean_str(_text(node, ".closeShowTitleNew")) or "").rpartition(",")
+        cards[m.group(2)] = {
+            "show_id": m.group(1),
+            "date_id": m.group(2),
+            "title": clean_str(link.text()) or "",
+            "venue": clean_str(venue) or clean_str(city),
+            "city": clean_str(city) if venue else None,
+            "start": datetime.combine(date(year, month, day), time(hour, minute), zone(timezone)),
+        }
+    return list(cards.values())
 
 
 def parse_listing(page_html: str, timezone: str) -> list[dict[str, Any]]:

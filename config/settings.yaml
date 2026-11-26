@@ -2291,6 +2291,7 @@ search:
     motj: ["מוזיאון הסובלנות", "museum of tolerance"]
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
+    fomo: ["פומו איוונטס", "fomo events", "fomo-events"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
     tzavta: ["צוותא", "tzavta"]
     smarticket: ["סמרטיקט"]
@@ -4716,6 +4717,24 @@ sources:
     event_page_path: /order/{event_id}
     # package_fee: 175  # USD the site adds to every package; a price-mismatch warning means it changed
 
+  fomo:
+    # FOMO (fomo-events.co): self-service box office + resale. /api/events is the whole public catalogue
+    # in one call (past and test rows too), /api/events/<id> each upcoming one (tickets in agorot, fee).
+    # 1 + N requests a run (N = 2 on 26.11.2026). Sections: /he/events and its category chips
+    # (Comedy, Festivals, Music, Sports, Theater, Workshops: all the same API rows), every organiser
+    # page /he/o/<slug> (15 from /api/organizers: no event beyond the API), the home sliders (FOMO
+    # rows = API; "אירועי ספורט" / "מופעים והופעות" are Ticketmaster mirrors: tm-<id> pages sending to
+    # ticketmaster.com / .co.il, Israeli ones = our ticketmaster source, not read). No sitemap, no
+    # robots.txt (404). Private events (isPrivate) are not listings. Secret-spot parties ("ישראל",
+    # "צפון"): no venue, no city. A new platform: empty between parties.
+    enabled: true
+    cron: "26 9,21 * * *"
+    may_be_empty: true
+    skip_title_words: ["test", "טסט", "בדיקה", "יום הולדת", "היום הולדת", "קורס", "סדנה"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
+
   swaptix:
     # SwapTix: Israeli ticket resale marketplace. The catalogue API + each event's listings; only events
     # with tickets on sale, one per date, the listings as tickets. ~160 requests a run.
@@ -6427,7 +6446,13 @@ sources:
     # GoShow: box office of Tel Aviv's small stages (AMAMA, Stand Up Factory, Comedy Bar, Bar Giora,
     # Enav) and pubs nationwide. The home page lists every show's next date (~280); each show page
     # (~280 requests) adds title, artwork, text, prices and the producer's other dates (~500 dates in
-    # all); 6 category pages give the site's categories.
+    # all); category pages give the site's categories.
+    # sections (26.11.2026): home (276 shows' next dates); every menu category to its last "load more" page
+    # (POST page=N to totalPages: music 6, standup 6, kids 2, shows / party / lectures / misc 1; festivals
+    # outside the menu, 0) - their pages add categories (misc 25, shows 2, party 1 were missing), no show
+    # beyond the home page; the 43 "מקומות" venue pages (/pages/place/N): 97 dates past home + categories,
+    # all already in the shows' "more dates"; each show page's other dates. sitemap.xml: stale (show ids ~150,
+    # category filter URLs), adds nothing. Not read: articles, photo pages, minisites (no dates). 430 events.
     enabled: true
     cron: "21 7,19 * * *"
     site_url: https://www.goshow.co.il
