@@ -88,7 +88,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   hulyo: ["https://www.hulyo.co.il", "abroad"], kishreyteufa: ["https://www.kishrey-teufa.co.il", "abroad"],
   ticketplace: ["https://ticketplace.co.il", "abroad"], livevents: ["https://livevents.co.il", "abroad"],
   issta: ["https://www.issta.co.il", "abroad"], megaevents: ["https://www.mega-events.co.il", "abroad"],
-  viagogo: ["https://www.viagogo.com", "abroad"], swaptix: ["https://swaptix.co.il", "tickets"], fomo: ["https://www.fomo-events.co/he", "tickets"], bonire: ["https://bonire.live/he", "guide"], stayhappening: ["https://stayhappening.com/tel+aviv", "guide"], happeningnext: ["https://happeningnext.com/tel+aviv", "guide"], xplorer: ["https://www.xplorer.co.il", "abroad"],
+  viagogo: ["https://www.viagogo.com", "abroad"], swaptix: ["https://swaptix.co.il", "tickets"], fomo: ["https://www.fomo-events.co/he", "tickets"], bonire: ["https://bonire.live/he", "guide"], stayhappening: ["https://stayhappening.com/tel+aviv", "guide"], happeningnext: ["https://happeningnext.com/tel+aviv", "guide"], kaspit: ["https://kaspit-art.co.il/%d7%94%d7%95%d7%a4%d7%a2%d7%95%d7%aa/", "guide"], xplorer: ["https://www.xplorer.co.il", "abroad"],
   livetickets: ["https://www.livetickets.co.il", "abroad"], tickethouse: ["https://www.ticket-house.com", "abroad"],
   secrettelaviv: ["https://www.secrettelaviv.com", "guide"], secrettelavivapp: ["https://secrettelaviv.app", "guide"], klika: ["https://klika.live", "tickets"], gototlv: ["https://gototlv.co.il", "guide"], inperson: ["https://inperson.social/events", "guide"], nbn: ["https://www.nbn.org.il/all-events/", "guide"],
   beatradar: ["https://beatradar.co.il", "guide"],

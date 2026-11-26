@@ -85,6 +85,7 @@ from partylinks.scrapers.jaffatheatre import JaffaTheatreScraper
 from partylinks.scrapers.jerusalemarts import JerusalemArtsScraper
 from partylinks.scrapers.jerusalemmuni import JerusalemMuniScraper
 from partylinks.scrapers.jerusalemtheatre import JerusalemTheatreScraper
+from partylinks.scrapers.kaspit import KaspitScraper
 from partylinks.scrapers.kfarsabamuseum import KfarSabaMuseumScraper
 from partylinks.scrapers.kikarhamusica import KikarHamusicaScraper
 from partylinks.scrapers.kishreyteufa import KishreyTeufaScraper
@@ -327,6 +328,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         BonireScraper,
         StayHappeningScraper,
         HappeningNextScraper,
+        KaspitScraper,
         EventProScraper,
         JaffaTheatreScraper,
         TzavtaScraper,

@@ -2356,6 +2356,7 @@ search:
     bonire: ["bonire", "bonire.live", "בונייר"]
     stayhappening: ["stayhappening", "stay happening"]
     happeningnext: ["happeningnext", "happening next"]
+    kaspit: ["kaspit", "kaspit-art", "כספית ייצוג אמנים"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
     tzavta: ["צוותא", "tzavta"]
     smarticket: ["סמרטיקט"]
@@ -4864,6 +4865,36 @@ sources:
     http:
       concurrency: 3
       request_delay_seconds: 0.5
+
+  kaspit:
+    # Kaspit (kaspit-art.co.il): an artist agency (Idan Raichel, Ehud Banai, Gidi Gov, Danny Robas,
+    # Shazamat...); its "לוח הופעות" page lists every coming show: month + day (no year), artist, time,
+    # venue as typed, a note, the seller link (Barby, Zappa, Eventer, Smarticket, Ticketmaster, Tomix,
+    # Zygo...). One request a run: 36 shows on 27.11.2026. Sections: the listing (read); the events
+    # sitemap (35 ids, all on the listing; each /events/<id>/ page is empty), the home page (6, all on
+    # the listing), the artist pages (/artists/<slug>: bios, no shows), about / contact (not events).
+    # The shows' REST type is not exposed. Overlap: barby, zappa, eventer, smarticket (d-one), tomix,
+    # zygo, goshow, ticketmaster, yellowsubmarine sell the same dates; dedup merges by the seller link.
+    enabled: true
+    cron: "17 5,17 * * *"
+    venue_cities:
+      "בארבי": תל אביב-יפו
+      "האנגר 11": תל אביב-יפו
+      "רידינג 3": תל אביב-יפו
+      "up town": תל אביב-יפו
+      "d-one": נווה ירק
+      "די וואן": נווה ירק
+      "הפטריה": דן
+      "המנפטה": יסוד המעלה      # Menafta, Agamon HaHula (tickchak: "מנפטה, אגמון החולה")
+      "פילוסופ": הגושרים
+      "מוצקין": קריית מוצקין
+      "עשרת": עשרת
+      "הזורע": הזורע
+    known_cities: ["תל אביב", "ירושלים", "חיפה", "אילת", "הרצליה", "מודיעין", "ראשון לציון"]
+    skip_title_words: ["סדנה", "קורס"]
+    http:
+      concurrency: 1
+      request_delay_seconds: 1.0
 
   swaptix:
     # SwapTix: Israeli ticket resale marketplace. The catalogue API + each event's listings; only events

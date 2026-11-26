@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 182 configured sources, 181 on. Each one has its own module in
+SPOTX collects from 183 configured sources, 182 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -201,6 +201,7 @@ many of them free.
 | `bonire` | Bonire (bonire.live): an Israeli events guide gathering the box offices' dates (Eventer, Go-Out, muzi, Kupat, Smarticket, the cinema chains); its "load more" JSON for every category (~17,000 dates), every movie page's screenings, and the events named on its festival / organiser / venue / artist pages; each date links to its seller and merges with it by dedup | 02:07, 14:07 | yes |
 | `stayhappening` | StayHappening (stayhappening.com): an English city guide mirroring allevents.in; each Israeli town's page, by category when the page is at its 100-event cap, then each event page (time, tags, seller link) | 03:11, 15:11 | yes |
 | `happeningnext` | HappeningNext (happeningnext.com): the second allevents.in mirror; every Israeli town by category, then each event page (no seller link: its button opens the allevents app) | 04:13, 16:13 | yes |
+| `kaspit` | Kaspit (kaspit-art.co.il): an artist agency's show calendar (Idan Raichel, Ehud Banai, Gidi Gov...): one listing page, each show's venue, time and seller link; merges with the box offices by dedup | 05:17, 17:17 | yes |
 
 ## Tech and community
 
