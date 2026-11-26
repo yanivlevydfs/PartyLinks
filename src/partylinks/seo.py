@@ -83,6 +83,7 @@ TEXT: dict[str, dict[str, str]] = {
         "about_event": "על האירוע",
         "tickets": "לכרטיסים",
         "not_found": "העמוד לא נמצא",
+        "event_over": "המסיבה הזאת כבר נגמרה",
         "locale": "he_IL",
     },
     "en": {
@@ -103,6 +104,7 @@ TEXT: dict[str, dict[str, str]] = {
         "about_event": "About the event",
         "tickets": "Tickets",
         "not_found": "Page not found",
+        "event_over": "This party is over",
         "locale": "en_US",
     },
 }
@@ -663,12 +665,41 @@ def moved_to(session: Session, request: Request, ref: str) -> str | None:
     if short and code is None:
         return None
     where = EventRow.code == code if short else or_(EventRow.id == ref, EventRow.slug == ref)
-    row = session.scalar(select(EventRow).where(where))
+    row = session.scalar(select(EventRow).where(where)) or (None if short else successor(session, ref))
     target = row and primary_listing(session, row)
     if target is None or not target.code:
         return None  # gone (410), or not given a code yet: the page as it is
     dest = shortlinks.path(target.code)
     return None if request.url.path == dest else dest
+
+
+_SLUG_PARTS = re.compile(r"^(?P<base>.+-\d{4}-\d{2}-\d{2})-(?P<source>[a-z0-9_]+)-[0-9a-f]{6,8}$")
+
+
+def successor(session: Session, slug: str) -> EventRow | None:
+    """The same event under a new address: an old ``<title>-<date>-<source>-<hash>`` slug no row has any
+    more, when the site gave the event a new id (makore's Chopin marathon, Nov 2026: its old link answered
+    "this party is over" while the event was still on sale). An upcoming primary listing of that local
+    date whose slug has the same title and date (the redirect goes to the group's primary anyway); the same
+    source first. None: no such event (it is over)."""
+    if not (m := _SLUG_PARTS.match(slug)):
+        return None
+    try:
+        day = date.fromisoformat(m["base"][-10:])
+    except ValueError:
+        return None
+    rows = session.scalars(
+        select(EventRow).where(
+            # One day's primaries by the local_date index, not a scan of every slug: bots ask for hundreds
+            # of gone addresses an hour.
+            EventRow.local_date == day,
+            EventRow.is_primary.is_(True),
+            EventRow.slug.startswith(m["base"] + "-", autoescape=True),
+            upcoming_filter(),
+        )
+    ).all()
+    rows = [r for r in rows if (p := _SLUG_PARTS.match(r.slug or "")) and p["base"] == m["base"]]
+    return min(rows, key=lambda r: (r.source != m["source"], r.id), default=None)
 
 
 def event_redirect(request: Request, ref: str) -> Response | None:
@@ -1967,7 +1998,7 @@ def register(app: FastAPI, site_dir: Path) -> None:
     )  # fmt: skip
     app.state.html_cache = rendered  # api.CachedPages serves hits before routing
 
-    def page(request: Request, build: Any, missing: int = 410) -> HTMLResponse:  # 410: drop it, like every missing page
+    def page(request: Request, build: Any, missing: int = 410, gone: str = "not_found") -> HTMLResponse:  # 410: drop it
         lang = "en" if request.query_params.get("lang") == "en" else "he"
         settings, db = cfg(request), request.app.state.db
 
@@ -1978,8 +2009,9 @@ def register(app: FastAPI, site_dir: Path) -> None:
                 alt = build(session, settings, "he" if lang == "en" else "en") if result and len(result.langs) > 1 else None
             if result is None:
                 t = TEXT[lang]
-                result = Page(t["not_found"], t["site_desc"], request.url.path, lang, noindex=True, status=missing,
-                              body=f"<h1>{t['not_found']}</h1>")  # fmt: skip
+                # An event's address says the party is over (what its page shows), never "page not found".
+                result = Page(t[gone], t["site_desc"], request.url.path, lang, noindex=True, status=missing,
+                              body=f"<h1>{t[gone]}</h1>")  # fmt: skip
             return render(index.read_text(encoding="utf-8"), result, settings, alt).encode(), result.status
 
         try:
@@ -2019,9 +2051,10 @@ def register(app: FastAPI, site_dir: Path) -> None:
             return event_page(session, settings, lang, ref)
 
         try:
-            return page(request, build)
+            return page(request, build, gone="event_over")
         except Uncached:  # merged between the check above and the build
-            return event_redirect(request, ref) or page(request, lambda s, c, lang: event_page(s, c, lang, ref))
+            again = page(request, lambda s, c, lang: event_page(s, c, lang, ref), gone="event_over")
+            return event_redirect(request, ref) or again
 
     @app.get("/event/{ref}", include_in_schema=False)
     def event(ref: str, request: Request) -> Response:

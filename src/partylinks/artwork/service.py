@@ -21,6 +21,7 @@ import asyncio
 import hashlib
 import logging
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, cast
@@ -41,6 +42,7 @@ log = logging.getLogger(__name__)
 # ponytail: threads, bounded by the worker's CPUs (Pillow's heavy steps release the GIL); a process pool
 # if drawing ever becomes the worker's bottleneck.
 CONCURRENCY = max(1, min(4, os.cpu_count() or 1))
+_MIRRORED = re.compile(r"[()\[\]{}<>]")  # brackets the bidi step mirrors in a Hebrew title
 
 
 @dataclass(frozen=True)
@@ -78,6 +80,8 @@ def _signature(row: EventRow, sources: list[str]) -> str:
     names = draw.store_names()
     parts = [row.title or "", ",".join(names.get(s, s) for s in sources), row.start_at.isoformat() if row.start_at else "",
              row.city or "", str(row.time_known)]  # fmt: skip
+    if draw.HEBREW.search(row.title or "") and _MIRRORED.search(row.title or ""):
+        parts.append("mirrored")  # cards drawn before brackets were mirrored (Nov 2026) are drawn again
     return hashlib.sha1("|".join(parts).encode()).hexdigest()
 
 

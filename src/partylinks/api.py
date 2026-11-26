@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import contextlib
 import gzip
 import json
 import logging
@@ -73,7 +74,9 @@ from partylinks.event_text.group import group_description
 from partylinks.holiday_pages import core as holiday_pages
 from partylinks.holiday_pages.routes import HolidayOut
 from partylinks.home_pins import rails as home_pins
+from partylinks.home_rails import RowCache
 from partylinks.home_rails import log_once as broken_home_rail
+from partylinks.home_rails.config import HomeRail
 from partylinks.lines.weekly import weekly as lines_weekly
 from partylinks.logs import setup_logging
 from partylinks.mail.images import router as mail_images_router
@@ -695,6 +698,11 @@ class ResponseCache:
             self._bytes += len(body)
         return body, code
 
+    def body(self, key: tuple[str, str]) -> bytes | None:
+        """The cached body of ``key``, fresh or stale, without refreshing it."""
+        hit = self._items.get(key)
+        return hit[2] if hit else None
+
     def forget(self, key: tuple[str, str]) -> None:
         with self._lock:
             if old := self._items.pop(key, None):
@@ -1134,6 +1142,7 @@ def create_app(
                         for path in [
                             "/categories",
                             MAP_WARM_PATH,
+                            "/events/rails",  # the home rows: refreshed in turns (home_rails.RowCache), never cold
                             *(f"/categories?abroad=true&country={c}&lists=false" for c in countries),
                         ]:
                             await client.get(path)  # one at a time: never more than one build slot
@@ -1233,6 +1242,7 @@ def create_app(
         ttl=settings.api.cache_ttl_seconds, min_fresh=settings.api.cache_min_fresh_seconds,
         build_wait=settings.api.cache_build_wait_seconds, max_stale=settings.api.json_max_stale_seconds,
     )  # fmt: skip
+    app.state.home_rows = RowCache()  # each home row's cards (/events/rails), refreshed in turns
     sign_in_state(app, settings)  # innermost: only the Google sign-in routes read it
     app.add_middleware(CachedPages)  # inside gzip and security: a cached page is still compressed and guarded
     app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -1449,6 +1459,28 @@ def hide_email(address: str) -> str:
 def _json_contains(column: Any, values: list[str]) -> ColumnElement[bool]:
     """Any-of match on a JSON string array (its JSONB text holds each string quoted)."""
     return or_(*(cast(column, String).ilike(f'%"{v}"%') for v in values))
+
+
+def _home_row_filters(
+    filters_of: Callable[..., list[ColumnElement[bool]]], cfg: Settings, spec: HomeRail, now: datetime
+) -> list[ColumnElement[bool]]:
+    """A home_rails row's WHERE clauses: the API's event filters (``filters_of``) and the row's own conditions."""
+    window = spec.window(now.date())  # a holiday's or a month's next dates, however far
+    filters = filters_of(
+        date_to=now + timedelta(days=366 if window else spec.days), genre=spec.genre or None,
+        time_slot=spec.time_slot or None, free_entry=spec.free_entry or None,
+        on_date=now.date() if spec.today else None, weekend=spec.weekend or None,
+        abroad=spec.abroad or None, discount=spec.discount or None, max_price=spec.max_price,
+    )  # fmt: skip
+    if window:
+        filters += [EventRow.local_date >= window[0], EventRow.local_date <= window[1]]
+    if spec.max_price:
+        filters.append(EventRow.group_min_price > 0)
+    if spec.multi:
+        filters.append(EventRow.group_size > 1)
+    if spec.exclude:
+        filters.append(not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec.exclude))))
+    return filters
 
 
 def _register_routes(app: FastAPI) -> None:
@@ -1928,35 +1960,40 @@ def _register_routes(app: FastAPI) -> None:
                 smart = {"holiday": [*event_filters(request, date_to=now + timedelta(days=cfg.holiday_pages.ahead_days)),
                                      *holiday_pages.where(holiday)], **smart}  # fmt: skip
             wheres = dict(smart)  # each row's filters, for the pinned events (partylinks.home_pins)
-            if cfg.smart_rails.after not in {r.key for r in cfg.home_rails.rows}:
-                out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
-            for spec in cfg.home_rails.rows:
-                if spec.holiday and out.holiday and out.holiday.key == spec.holiday:
-                    continue  # the coming holiday's own row already shows it
+            specs = [r for r in cfg.home_rails.rows if not (r.holiday and out.holiday and out.holiday.key == r.holiday)]
+            for spec in specs:  # the coming holiday's own row already shows its row's events
                 try:
-                    window = spec.window(now.date())  # a holiday's or a month's next dates, however far
-                    filters = event_filters(
-                        request, date_to=now + timedelta(days=366 if window else spec.days), genre=spec.genre or None,
-                        time_slot=spec.time_slot or None, free_entry=spec.free_entry or None,
-                        on_date=now.date() if spec.today else None, weekend=spec.weekend or None,
-                        abroad=spec.abroad or None, discount=spec.discount or None, max_price=spec.max_price,
-                    )  # fmt: skip
-                    if window:
-                        filters += [EventRow.local_date >= window[0], EventRow.local_date <= window[1]]
-                    if spec.max_price:
-                        filters.append(EventRow.group_min_price > 0)
-                    if spec.multi:
-                        filters.append(EventRow.group_size > 1)
-                    if spec.exclude:
-                        filters.append(
-                            not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec.exclude)))
-                        )
-                    with session.begin_nested():  # a failed query rolls back to here, the other rows still load
-                        out.rails[spec.key], wheres[spec.key] = load(filters, cfg.home_rails.pool), filters
+                    wheres[spec.key] = _home_row_filters(lambda **kw: event_filters(request, **kw), cfg, spec, now)
                 except Exception:  # noqa: BLE001 - an admin's bad row must not take the home page down
                     broken_home_rail(spec.key)
-                if spec.key == cfg.smart_rails.after:
-                    out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
+            tags = {r.key: r.cache_tag(now.date()) for r in specs if r.key in wheres}
+            rows_cache: RowCache = request.app.state.home_rows
+            if rows_cache.empty() and (old := request.app.state.response_cache.body((request.url.path, ""))):
+                with contextlib.suppress(ValueError, KeyError, TypeError):  # an older response: rows to start from
+                    kept = json.loads(old)["rails"]
+                    rows_cache.seed(  # without its pins: home_pins adds the live ones on top
+                        {
+                            k: [EventSummaryOut.model_validate(c) for c in v if not c.get("pinned")]
+                            for k, v in kept.items()
+                        },
+                        tags,
+                    )
+
+            def build_row(key: str) -> list[EventSummaryOut]:
+                with session.begin_nested():  # a failed query rolls back to here, the other rows still load
+                    return load(wheres[key], cfg.home_rails.pool)
+
+            rows = rows_cache.rows(tags, build_row, cfg.home_rails.row_ttl_seconds, cfg.home_rails.rows_per_build)
+
+            def add_smart() -> None:
+                out.rails.update({k: load(f, cfg.smart_rails.pool) for k, f in smart.items()})
+
+            if cfg.smart_rails.after not in rows:  # no such row (or it failed): they lead
+                add_smart()
+            for key, cards in rows.items():
+                out.rails[key] = cards
+                if key == cfg.smart_rails.after:
+                    add_smart()
             home_pins.pin(session, out.rails, wheres, event_filters(request), load)
             return out
 

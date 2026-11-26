@@ -129,8 +129,10 @@ def test_event_data_shows_the_drawn_card_or_a_duplicates_picture(tmp_path: Path)
     service.run(settings, db)
     with db.session() as s:
         bare = s.get(EventRow, "test:bare")
+        assert bare is not None
         assert "/artwork/" in event_jsonld(bare, settings)["image"][0]
         twin = s.get(EventRow, "test:twin")  # its duplicate on another site has a picture: that one
+        assert twin is not None
         s.add(EventRow(**{c: getattr(twin, c) for c in ("start_at", "title")}, id="other:twin", source="other",
                        source_event_id="twin", url="https://o.example/twin", group_id=twin.group_id, is_primary=False))  # fmt: skip
         s.flush()
@@ -138,3 +140,10 @@ def test_event_data_shows_the_drawn_card_or_a_duplicates_picture(tmp_path: Path)
                        content_type="image/jpeg", downloaded_at=datetime.now(UTC)))  # fmt: skip
         s.flush()
         assert "/images/" in event_jsonld(twin, settings)["image"][0]
+
+
+def test_hebrew_brackets_are_mirrored() -> None:
+    # Drawn left to right: "(פרטי)" reads right only when each bracket is mirrored in the Hebrew run.
+    assert draw._visual("אירוע ערב (פרטי)") == "(יטרפ) ברע עוריא"
+    assert draw._visual("אירוע (DJ set) ערב") == "ברע (DJ set) עוריא"
+    assert draw._visual("DJ set (live)") == "DJ set (live)"

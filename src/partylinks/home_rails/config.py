@@ -38,6 +38,11 @@ class HomeRail(BaseModel):
             raise ValueError(f"unknown holiday {value!r} (one of {', '.join(HOLIDAY_NAMES)})")
         return value
 
+    def cache_tag(self, today: date) -> str:
+        """Its settings, and the day for a row whose dates move with it: either changing rebuilds it at once."""
+        daily = self.today or self.weekend or self.holiday or self.month
+        return self.model_dump_json() + (today.isoformat() if daily else "")
+
     def window(self, today: date) -> tuple[date, date] | None:
         """The row's own dates (its holiday's or month's next ones), or None: from now to `days` ahead."""
         from partylinks.search import _next_holiday, _next_month
@@ -52,6 +57,10 @@ class HomeRailsSettings(BaseModel):
     rows: list[HomeRail] = Field(default_factory=list)
     # Cards per row's pool (the page shows a random dozen of them).
     pool: int = Field(30, ge=3, le=100)
+    # Each row's cards are kept this long (home_rails.RowCache), however often the whole response is rebuilt...
+    row_ttl_seconds: float = Field(900, ge=0)
+    # ...and one rebuild refreshes at most this many stale rows (a row is ~0.5 s of queries on prod).
+    rows_per_build: int = Field(10, ge=1)
 
     @field_validator("rows")
     @classmethod

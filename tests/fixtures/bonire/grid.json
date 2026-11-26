@@ -1,0 +1,498 @@
+{
+ "items": [
+  {
+   "type": "event",
+   "data": {
+    "id": "5846f26c-536e-495b-a48c-e8d840fb934d",
+    "category": "music",
+    "showRoute": null,
+    "eventType": null,
+    "title": "Lushi",
+    "titleI18n": {
+     "en": "Lushi"
+    },
+    "eventLabelI18n": null,
+    "premiere": null,
+    "danceCompany": null,
+    "danceCompanyI18n": null,
+    "choreographer": null,
+    "choreographerI18n": null,
+    "productionCompany": null,
+    "productionCompanyI18n": null,
+    "director": null,
+    "directorI18n": null,
+    "annotationI18n": null,
+    "eventDate": "2026-11-25T22:00:00.000Z",
+    "endDate": null,
+    "endDateSource": null,
+    "eventTime": null,
+    "eventTimezone": "Asia/Jerusalem",
+    "isSoldOut": false,
+    "price": null,
+    "priceInfo": null,
+    "priceInfoI18n": null,
+    "priceMinAmount": null,
+    "priceMaxAmount": null,
+    "priceCurrency": null,
+    "priceIsFree": false,
+    "ticketUrl": "https://www.instagram.com/p/DgDcDzNDUvK/",
+    "sourcePostUrl": "https://www.instagram.com/p/DgDcDzNDUvK/",
+    "sourcePostUrlI18n": null,
+    "eventLanguage": null,
+    "subtitleLanguages": null,
+    "imageUrls": [
+     "/api/images/images/10331e003cbc845b398d00eadbb749ad23700355b4ac28b92732e04b81e6bfa8.webp"
+    ],
+    "featuredEnabled": false,
+    "featuringTier": "none",
+    "locationHint": null,
+    "venue": {
+     "id": "0881e569-af40-4348-8ff9-2bc557aa9e48",
+     "name": "Early Bar",
+     "nameI18n": {
+      "en": "Early Bar"
+     },
+     "slug": "earlyclub",
+     "citySlug": "tel-aviv-yafo",
+     "cityNameEn": "Tel Aviv",
+     "cityNameRu": "Тель-Авив",
+     "cityNameHe": "תל אביב",
+     "address": "Shenkin 38",
+     "addressI18n": {
+      "en": "Shenkin 38",
+      "he": "38 שינקין",
+      "ru": "Шенкин 38"
+     },
+     "lat": 32.06885,
+     "lng": 34.774563,
+     "website": "https://www.instagram.com/early_bar_shenkin38/",
+     "isUndisclosed": false
+    },
+    "genres": [
+     {
+      "id": "90603f05-5cd6-423c-a4cf-f41b28f4ba07",
+      "slug": "dj-set",
+      "nameEn": "Dance/Parties",
+      "nameRu": "Вечеринки",
+      "nameHe": "מסיבות"
+     }
+    ],
+    "sourceArtistCount": 1,
+    "artists": [
+     {
+      "id": "6316d590-4846-4359-bac3-71485e1480a6",
+      "slug": "lushi",
+      "canonicalSource": "profile",
+      "profileId": "6316d590-4846-4359-bac3-71485e1480a6",
+      "profileSlug": "lushi",
+      "legacyArtistId": null,
+      "legacyArtistSlug": null,
+      "name": "LUSHI",
+      "genre": null,
+      "nameI18n": {
+       "en": "LUSHI"
+      }
+     }
+    ],
+    "sourceOwnerArtist": null,
+    "openingHours": null,
+    "showId": null,
+    "productionId": null,
+    "movieId": null,
+    "occurrences": [
+     {
+      "id": "5846f26c-536e-495b-a48c-e8d840fb934d",
+      "eventDate": "2026-11-25T22:00:00.000Z",
+      "eventTime": null,
+      "eventTimezone": "Asia/Jerusalem",
+      "isSoldOut": false,
+      "price": null,
+      "priceInfo": null,
+      "priceInfoI18n": null,
+      "priceMinAmount": null,
+      "priceMaxAmount": null,
+      "priceCurrency": null,
+      "priceIsFree": false,
+      "ticketUrl": "https://www.instagram.com/p/DgDcDzNDUvK/",
+      "sourcePostUrl": "https://www.instagram.com/p/DgDcDzNDUvK/",
+      "sourcePostUrlI18n": null
+     }
+    ]
+   }
+  },
+  {
+   "type": "event",
+   "data": {
+    "id": "12d753a0-cee4-4608-9f93-ea9f090c8308",
+    "category": "theater",
+    "showRoute": {
+     "slug": "qrqs-huba-cuba",
+     "publicId": "292d31da932e"
+    },
+    "eventType": "theater",
+    "title": "קרקס Huba Cuba",
+    "titleI18n": {
+     "he": "קרקס Huba Cuba"
+    },
+    "eventLabelI18n": null,
+    "premiere": null,
+    "danceCompany": null,
+    "danceCompanyI18n": null,
+    "choreographer": null,
+    "choreographerI18n": null,
+    "productionCompany": "והטעמים שמרגישים בלב - אל אוהל הקרקס הגדול!",
+    "productionCompanyI18n": {
+     "he": "והטעמים שמרגישים בלב - אל אוהל הקרקס הגדול!"
+    },
+    "director": null,
+    "directorI18n": null,
+    "annotationI18n": null,
+    "eventDate": "2026-11-27T11:30:00.000Z",
+    "endDate": null,
+    "endDateSource": null,
+    "eventTime": "13:30",
+    "eventTimezone": "Asia/Jerusalem",
+    "isSoldOut": false,
+    "price": "129 ₪",
+    "priceInfo": "129 ₪",
+    "priceInfoI18n": null,
+    "priceMinAmount": 129,
+    "priceMaxAmount": 129,
+    "priceCurrency": "ILS",
+    "priceIsFree": false,
+    "ticketUrl": "https://tickets.kupat.co.il/booking/features/2766?prsntId=55937",
+    "sourcePostUrl": "https://www.kupat.co.il/huba_cuba",
+    "sourcePostUrlI18n": null,
+    "eventLanguage": "he",
+    "subtitleLanguages": null,
+    "imageUrls": [
+     "/api/images/images/9ad61b92002ddd7da55cd9e82db07b1e03ba536bf80684e0b2d8c93299e2767c.webp"
+    ],
+    "featuredEnabled": false,
+    "featuringTier": "none",
+    "locationHint": null,
+    "venue": {
+     "id": "8a2393d2-e626-4177-8c6e-f17cdd1b5d40",
+     "name": "The Big Circus Tent – Hof Ashkelon",
+     "nameI18n": {
+      "en": "The Big Circus Tent — Hof Ashkelon",
+      "he": "אוהל הקרקס הגדול — חוף אשקלון"
+     },
+     "slug": "the-big-circus-tent-hof-ashkelon",
+     "citySlug": "ashkelon",
+     "cityNameEn": "Ashkelon",
+     "cityNameRu": "Ашкелон",
+     "cityNameHe": "אשקלון",
+     "address": null,
+     "addressI18n": null,
+     "lat": 31.693222,
+     "lng": 34.566055,
+     "website": "https://www.kupat.co.il/show/circus",
+     "isUndisclosed": false
+    },
+    "genres": [],
+    "sourceArtistCount": 0,
+    "artists": [],
+    "sourceOwnerArtist": null,
+    "openingHours": null,
+    "showId": "19661b3e-0043-4c93-af7b-4f12853a9120",
+    "productionId": "f3b02d40-303d-41e6-8d59-336b1b162d10",
+    "movieId": null,
+    "occurrences": [
+     {
+      "id": "12d753a0-cee4-4608-9f93-ea9f090c8308",
+      "eventDate": "2026-11-27T11:30:00.000Z",
+      "eventTime": "13:30",
+      "eventTimezone": "Asia/Jerusalem",
+      "isSoldOut": false,
+      "price": "129 ₪",
+      "priceInfo": "129 ₪",
+      "priceInfoI18n": null,
+      "priceMinAmount": 129,
+      "priceMaxAmount": 129,
+      "priceCurrency": "ILS",
+      "priceIsFree": false,
+      "ticketUrl": "https://tickets.kupat.co.il/booking/features/2766?prsntId=55937",
+      "sourcePostUrl": "https://www.kupat.co.il/huba_cuba",
+      "sourcePostUrlI18n": null
+     },
+     {
+      "id": "2b64b047-981f-4906-b0d5-266e05137bfe",
+      "eventDate": "2026-11-28T08:00:00.000Z",
+      "eventTime": "10:00",
+      "eventTimezone": "Asia/Jerusalem",
+      "isSoldOut": false,
+      "price": "129 ₪",
+      "priceInfo": "129 ₪",
+      "priceInfoI18n": null,
+      "priceMinAmount": 129,
+      "priceMaxAmount": 129,
+      "priceCurrency": "ILS",
+      "priceIsFree": false,
+      "ticketUrl": "https://tickets.kupat.co.il/booking/features/2766?prsntId=55952",
+      "sourcePostUrl": "https://www.kupat.co.il/huba_cuba",
+      "sourcePostUrlI18n": null
+     },
+     {
+      "id": "d72ddc70-65b7-4d3f-8544-8a0032ea476a",
+      "eventDate": "2026-11-28T10:30:00.000Z",
+      "eventTime": "12:30",
+      "eventTimezone": "Asia/Jerusalem",
+      "isSoldOut": false,
+      "price": "129 ₪",
+      "priceInfo": "129 ₪",
+      "priceInfoI18n": null,
+      "priceMinAmount": 129,
+      "priceMaxAmount": 129,
+      "priceCurrency": "ILS",
+      "priceIsFree": false,
+      "ticketUrl": "https://tickets.kupat.co.il/booking/features/2766?prsntId=55953",
+      "sourcePostUrl": "https://www.kupat.co.il/huba_cuba",
+      "sourcePostUrlI18n": null
+     }
+    ]
+   }
+  },
+  {
+   "type": "event",
+   "data": {
+    "id": "5d7cc577-cb05-4bc7-afe4-491cd5e73682",
+    "category": "exhibitions",
+    "showRoute": null,
+    "eventType": "exhibition",
+    "title": "מאפר לעפר",
+    "titleI18n": {
+     "he": "מאפר לעפר"
+    },
+    "eventLabelI18n": {
+     "he": "מחשבות על כדי קבורה"
+    },
+    "premiere": null,
+    "danceCompany": null,
+    "danceCompanyI18n": null,
+    "choreographer": null,
+    "choreographerI18n": null,
+    "productionCompany": null,
+    "productionCompanyI18n": null,
+    "director": null,
+    "directorI18n": null,
+    "annotationI18n": null,
+    "eventDate": "2026-11-26T17:30:00.000Z",
+    "endDate": "2027-01-09T12:00:00.000Z",
+    "endDateSource": "explicit",
+    "eventTime": null,
+    "eventTimezone": "Asia/Jerusalem",
+    "isSoldOut": false,
+    "price": null,
+    "priceInfo": null,
+    "priceInfoI18n": null,
+    "priceMinAmount": null,
+    "priceMaxAmount": null,
+    "priceCurrency": null,
+    "priceIsFree": false,
+    "ticketUrl": null,
+    "sourcePostUrl": "https://www.benyaminiceramics.org/%d7%aa%d7%a2%d7%a8%d7%95%d7%9b%d7%95%d7%aa-%d7%a7%d7%a8%d7%9e%d7%99%d7%a7%d7%94/%d7%aa%d7%a2%d7%a8%d7%95%d7%9b%d7%95%d7%aa-%d7%94%d7%a2%d7%aa%d7%99%d7%93/%d7%9e%d7%90%d7%a4%d7%a8-%d7%9c%d7%a2%d7%a4%d7%a8-%d7%9e%d7%97%d7%a9%d7%91%d7%95%d7%aa-%d7%a2%d7%9c-%d7%9b%d7%93%d7%99-%d7%a7%d7%91%d7%95%d7%a8%d7%94/",
+    "sourcePostUrlI18n": null,
+    "eventLanguage": null,
+    "subtitleLanguages": null,
+    "imageUrls": [
+     "/api/images/images/dfc66d52c4ffd070424817811c21b3664adfb0dfc0e3b6f6ff0a9e19a82e688b.webp"
+    ],
+    "featuredEnabled": false,
+    "featuringTier": "none",
+    "locationHint": null,
+    "venue": {
+     "id": "9fb54a0c-d2a7-43bb-9178-09471753fa85",
+     "name": "Benyamini Contemporary Ceramics Center",
+     "nameI18n": {
+      "en": "Benyamini Contemporary Ceramics Center",
+      "he": "בית בנימיני — מרכז לקרמיקה עכשווית",
+      "ru": "Центр современной керамики Беньямини"
+     },
+     "slug": "benyamini-center",
+     "citySlug": "tel-aviv-yafo",
+     "cityNameEn": "Tel Aviv",
+     "cityNameRu": "Тель-Авив",
+     "cityNameHe": "תל אביב",
+     "address": "Ha'Amal, 17",
+     "addressI18n": {
+      "en": "Ha'Amal, 17",
+      "he": "17, תל אביב-יפו",
+      "ru": "Ха-Амаль, 17"
+     },
+     "lat": 32.05275,
+     "lng": 34.772896,
+     "website": "https://www.benyaminiceramics.org/",
+     "isUndisclosed": false
+    },
+    "genres": [],
+    "sourceArtistCount": 1,
+    "artists": [
+     {
+      "id": "81570a89-6ba0-48a7-b4ec-a6330fea05b8",
+      "slug": "makhshavot-al-kedei-kvura",
+      "canonicalSource": "profile",
+      "profileId": "81570a89-6ba0-48a7-b4ec-a6330fea05b8",
+      "profileSlug": "makhshavot-al-kedei-kvura",
+      "legacyArtistId": null,
+      "legacyArtistSlug": null,
+      "name": "מחשבות על כדי קבורה",
+      "genre": null,
+      "nameI18n": {
+       "en": "Makhshavot Al Kedei Kvura",
+       "he": "מחשבות על כדי קבורה"
+      }
+     },
+     {
+      "id": "f0b7b0b0-1981-4ab0-8dc8-4da4dbe4b9f5",
+      "slug": "galina-arbeli",
+      "canonicalSource": "profile",
+      "profileId": "f0b7b0b0-1981-4ab0-8dc8-4da4dbe4b9f5",
+      "profileSlug": "galina-arbeli",
+      "legacyArtistId": null,
+      "legacyArtistSlug": null,
+      "name": "גלינה ארבלי",
+      "genre": null,
+      "nameI18n": {
+       "en": "Galina Arbeli",
+       "he": "גלינה ארבלי",
+       "ru": "Галина Арбели"
+      }
+     }
+    ],
+    "sourceOwnerArtist": null,
+    "openingHours": null,
+    "showId": null,
+    "productionId": null,
+    "movieId": null,
+    "occurrences": [
+     {
+      "id": "5d7cc577-cb05-4bc7-afe4-491cd5e73682",
+      "eventDate": "2026-11-26T17:30:00.000Z",
+      "eventTime": null,
+      "eventTimezone": "Asia/Jerusalem",
+      "isSoldOut": false,
+      "price": null,
+      "priceInfo": null,
+      "priceInfoI18n": null,
+      "priceMinAmount": null,
+      "priceMaxAmount": null,
+      "priceCurrency": null,
+      "priceIsFree": false,
+      "ticketUrl": null,
+      "sourcePostUrl": "https://www.benyaminiceramics.org/%d7%aa%d7%a2%d7%a8%d7%95%d7%9b%d7%95%d7%aa-%d7%a7%d7%a8%d7%9e%d7%99%d7%a7%d7%94/%d7%aa%d7%a2%d7%a8%d7%95%d7%9b%d7%95%d7%aa-%d7%94%d7%a2%d7%aa%d7%99%d7%93/%d7%9e%d7%90%d7%a4%d7%a8-%d7%9c%d7%a2%d7%a4%d7%a8-%d7%9e%d7%97%d7%a9%d7%91%d7%95%d7%aa-%d7%a2%d7%9c-%d7%9b%d7%93%d7%99-%d7%a7%d7%91%d7%95%d7%a8%d7%94/",
+      "sourcePostUrlI18n": null
+     }
+    ]
+   }
+  },
+  {
+   "type": "event",
+   "data": {
+    "id": "b52a4c96-9b4e-497a-9d11-64604385ae92",
+    "category": "music",
+    "showRoute": null,
+    "eventType": "concert",
+    "title": "אוהבים אמנות. עושים אמנות. כיכר ביאליק",
+    "titleI18n": {
+     "he": "אוהבים אמנות. עושים אמנות. כיכר ביאליק"
+    },
+    "eventLabelI18n": null,
+    "premiere": null,
+    "danceCompany": null,
+    "danceCompanyI18n": null,
+    "choreographer": null,
+    "choreographerI18n": null,
+    "productionCompany": null,
+    "productionCompanyI18n": null,
+    "director": null,
+    "directorI18n": null,
+    "annotationI18n": null,
+    "eventDate": "2026-11-27T08:00:00.000Z",
+    "endDate": null,
+    "endDateSource": null,
+    "eventTime": "10:00",
+    "eventTimezone": "Asia/Jerusalem",
+    "isSoldOut": false,
+    "price": "0 ₪",
+    "priceInfo": "כניסה חופשית",
+    "priceInfoI18n": null,
+    "priceMinAmount": null,
+    "priceMaxAmount": null,
+    "priceCurrency": "ILS",
+    "priceIsFree": true,
+    "ticketUrl": null,
+    "sourcePostUrl": "https://www.tel-aviv.gov.il/Pages/MainItemPage.aspx?WebID=3af57d92-807c-43c5-8d5f-6fd455eb2776&ListID=969f7de3-0ac9-4a30-88f0-2e1a7281f3d0&ItemID=49968",
+    "sourcePostUrlI18n": {
+     "he": "https://www.tel-aviv.gov.il/Pages/MainItemPage.aspx?WebID=3af57d92-807c-43c5-8d5f-6fd455eb2776&ListID=969f7de3-0ac9-4a30-88f0-2e1a7281f3d0&ItemID=49968"
+    },
+    "eventLanguage": null,
+    "subtitleLanguages": null,
+    "imageUrls": [
+     "/api/images/images/2fbd2dcfdd0f799b19e2d802d1d75d2b484011cfcd14ae4a3bac33e447cc04d5.jpg"
+    ],
+    "featuredEnabled": false,
+    "featuringTier": "none",
+    "locationHint": null,
+    "venue": {
+     "id": "4690ce45-ee61-4401-a7a3-f9487733cd68",
+     "name": "Bialik Square",
+     "nameI18n": {
+      "en": "Bialik Square",
+      "he": "כיכר ביאליק"
+     },
+     "slug": "bialik-square",
+     "citySlug": "tel-aviv-yafo",
+     "cityNameEn": "Tel Aviv",
+     "cityNameRu": "Тель-Авив",
+     "cityNameHe": "תל אביב",
+     "address": "ביאליק 23",
+     "addressI18n": null,
+     "lat": 32.073277,
+     "lng": 34.770695,
+     "website": null,
+     "isUndisclosed": false
+    },
+    "genres": [
+     {
+      "id": "4af18d4d-6447-4f98-9730-e24dccb5083a",
+      "slug": "live-band",
+      "nameEn": "Live",
+      "nameRu": "Live",
+      "nameHe": "מופעים חיים"
+     }
+    ],
+    "sourceArtistCount": 1,
+    "artists": [],
+    "sourceOwnerArtist": null,
+    "openingHours": null,
+    "showId": null,
+    "productionId": null,
+    "movieId": null,
+    "occurrences": [
+     {
+      "id": "b52a4c96-9b4e-497a-9d11-64604385ae92",
+      "eventDate": "2026-11-27T08:00:00.000Z",
+      "eventTime": "10:00",
+      "eventTimezone": "Asia/Jerusalem",
+      "isSoldOut": false,
+      "price": "0 ₪",
+      "priceInfo": "כניסה חופשית",
+      "priceInfoI18n": null,
+      "priceMinAmount": null,
+      "priceMaxAmount": null,
+      "priceCurrency": "ILS",
+      "priceIsFree": true,
+      "ticketUrl": null,
+      "sourcePostUrl": "https://www.tel-aviv.gov.il/Pages/MainItemPage.aspx?WebID=3af57d92-807c-43c5-8d5f-6fd455eb2776&ListID=969f7de3-0ac9-4a30-88f0-2e1a7281f3d0&ItemID=49968",
+      "sourcePostUrlI18n": {
+       "he": "https://www.tel-aviv.gov.il/Pages/MainItemPage.aspx?WebID=3af57d92-807c-43c5-8d5f-6fd455eb2776&ListID=969f7de3-0ac9-4a30-88f0-2e1a7281f3d0&ItemID=49968"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "nextOffset": null,
+ "hasMore": false
+}

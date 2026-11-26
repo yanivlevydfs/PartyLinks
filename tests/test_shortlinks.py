@@ -141,3 +141,24 @@ def test_a_cached_page_of_a_listing_merged_since_answers_its_301(tmp_path: Path)
         while (moved := client.get(f"/e/{dup_code}", headers=UA)).status_code == 200 and time.monotonic() < deadline:
             time.sleep(0.05)  # the stale copy is served once while the refresh finds the merge
         assert moved.status_code == 301 and moved.headers["location"] == f"/e/{code}"
+
+
+def test_an_old_address_of_a_live_event_reaches_it_and_a_gone_one_says_it_is_over(tmp_path: Path) -> None:
+    """Nov 2026: makore gave its Chopin marathon a new id; the old link said "this party is over" while it was
+    on sale. The same title and date under a new hash is the same event: 301. A party that is over says so."""
+    settings = settings_for(tmp_path)
+    soon = datetime.now(UTC) + timedelta(days=3)
+    db = seed(settings, [event("a", soon)])
+    with db.session() as session:
+        a = session.get_one(EventRow, "test:a")
+        assert a.slug and a.code
+        old, code = re.sub(r"-[0-9a-f]{8}$", "-deadbeef", a.slug), a.code
+        other_source = re.sub(r"-test-[0-9a-f]{8}$", "-ogo-0badf00d", a.slug)
+    assert old != a.slug
+    with TestClient(create_app(settings, start_scheduler=False), follow_redirects=False) as client:
+        for gone_address in (old, other_source):
+            moved = client.get(f"/event/{gone_address}", headers=UA)
+            assert moved.status_code == 301 and moved.headers["location"] == f"/e/{code}", gone_address
+        over = client.get(f"/event/{old.replace(soon.date().isoformat(), '2020-01-01')}", headers=UA)
+        assert over.status_code == 410
+        assert "<title>המסיבה הזאת כבר נגמרה" in over.text and "העמוד לא נמצא" not in over.text

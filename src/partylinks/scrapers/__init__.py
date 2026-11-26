@@ -21,6 +21,7 @@ from partylinks.scrapers.beatradar import BeatRadarScraper
 from partylinks.scrapers.beershevatheatre import BeerShevaTheatreScraper
 from partylinks.scrapers.beithagefen import BeitHagefenScraper
 from partylinks.scrapers.bimot import BimotScraper
+from partylinks.scrapers.bonire import BonireScraper
 from partylinks.scrapers.buki import BukiScraper
 from partylinks.scrapers.chillz import ChillzScraper
 from partylinks.scrapers.cinemacity import CinemaCityScraper
@@ -65,6 +66,7 @@ from partylinks.scrapers.halutz import HalutzScraper
 from partylinks.scrapers.hamenagen import HamenagenScraper
 from partylinks.scrapers.hamesila import HaMesilaScraper
 from partylinks.scrapers.hangar11 import Hangar11Scraper
+from partylinks.scrapers.happening import HappeningNextScraper, StayHappeningScraper
 from partylinks.scrapers.happytlv import HappyTlvScraper
 from partylinks.scrapers.hatarbut import HatarbutScraper
 from partylinks.scrapers.havanaclub import HavanaClubScraper
@@ -322,6 +324,9 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         TaMuseumScraper,
         SwapTixScraper,
         FomoScraper,
+        BonireScraper,
+        StayHappeningScraper,
+        HappeningNextScraper,
         EventProScraper,
         JaffaTheatreScraper,
         TzavtaScraper,

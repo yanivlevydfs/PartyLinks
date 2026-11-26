@@ -12,7 +12,9 @@ from functools import cache
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from bidi import get_display
+# The pure-Python algorithm: the Rust get_display of python-bidi 0.6 does not mirror brackets (rule L4),
+# so "ערב (פרטי)" was drawn as "ערב )פרטי(".
+from bidi.algorithm import get_display
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 W, H = 1280, 960  # the cards' 4:3

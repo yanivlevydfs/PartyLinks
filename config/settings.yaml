@@ -172,7 +172,12 @@ popularity:
 # multi (only events on more than one ticket site). The web shows a row only when it has a title for its key
 # (t.rails in web/src/i18n.ts). Change or add rows in the admin config tab; an override of `rows` replaces the list.
 home_rails:
-  pool: 30                # cards per row's pool (the page shows a random dozen)
+  # 20, not 30: ~90 rows in one response (/events/rails); at 30 x 41 rows it was 2.2MB (310KB gzip), 26.11.2026.
+  pool: 20                # cards per row's pool (the page shows a random dozen)
+  # Each row kept on its own (home_rails.RowCache): 81 rows built together took 42 s of queries (prod, 26.11.2026);
+  # the response is rebuilt after writes, refreshing only the stalest rows_per_build rows each time.
+  row_ttl_seconds: 900
+  rows_per_build: 10
   rows:
     - {key: trending, days: 14, multi: true}
     # A night out: evening and night, music, parties and shows only, nothing for kids.
@@ -184,30 +189,75 @@ home_rails:
               rock_indie, jazz, world_balkan, dark_wave, live_show, lgbt, stand_up, karaoke, festival, happy_hour,
               theatre, classical_opera]
       exclude: [kids, lectures, workshops, conference]
+    # Tonight by kind (26.11.2026 on prod: parties 208, live 144, bars 111, clubs after 22:00 84).
+    - {key: parties_tonight, today: true, genre: [g_parties], exclude: [kids, lectures, workshops, conference]}
+    - {key: live_tonight, today: true, genre: [live_show]}
+    - {key: bars_tonight, today: true, genre: [happy_hour, open_bar, nightclubs]}
+    - {key: clubs_tonight, today: true, time_slot: [night], genre: [nightclubs]}
     - {key: weekend, weekend: true, days: 7}
+    - {key: parties_weekend, weekend: true, days: 7, genre: [g_parties], exclude: [kids, lectures, workshops, conference]}
+    - {key: live_weekend, weekend: true, days: 7, genre: [live_show]}
+    - {key: kids_weekend, weekend: true, days: 7, genre: [kids]}
     # Seasonal: the next dates of a holiday / month, however far (shown once 3+ events are listed; a holiday's
     # row gives way to the coming holiday's own row, holiday_pages.rail_days before it).
     - {key: new_year, holiday: new_year, exclude: [kids, lectures, workshops, conference]}
     - {key: purim, holiday: purim, exclude: [kids, lectures, workshops, conference]}
     - {key: pride_month, month: 6, genre: [lgbt, drag_cabaret]}
     - {key: electronic, genre: [techno, house, trance, electronic, edm, drum_and_bass, bass_dubstep, hardstyle]}
+    # Parties by style. Not drum & bass / bass alone (3 events) nor pool parties (0 in November).
+    - {key: techno, genre: [techno]}
+    - {key: house, genre: [house]}
+    - {key: trance, genre: [trance, nature_party]}
+    - {key: afro_house, genre: [afro, amapiano, afro_house, organic_house]}
+    - {key: hiphop, genre: [hip_hop, rnb]}
+    - {key: latin, genre: [reggaeton_latin, afro, dancehall_reggae, brazilian]}
+    - {key: disco, genre: [disco_funk, throwback]}
+    - {key: dark_wave, genre: [dark_wave]}
+    - {key: after_hours, time_slot: [night], genre: [g_parties], exclude: [kids, lectures, workshops, conference]}
+    - {key: big_parties, multi: true, genre: [g_parties], exclude: [kids, lectures, workshops, conference]}
     - {key: deals, discount: true}
     - {key: cheap, max_price: 50}
     - {key: free, free_entry: true}
+    - {key: free_parties, free_entry: true, genre: [g_parties], exclude: [kids, lectures, workshops, conference]}
+    - {key: cheap_parties, max_price: 60, genre: [g_parties], exclude: [kids, lectures, workshops, conference]}
+    - {key: live_free, free_entry: true, genre: [live_show]}
+    - {key: live_cheap, max_price: 80, genre: [live_show]}
     - key: date_night
       time_slot: [evening]
       genre: [jazz, tastings, cooking_class, musicals, sensual, classical_opera, chanson]
       exclude: [kids, conference]
     - {key: singles, genre: [singles_dating], days: 60}
     - {key: friends, genre: [quiz_games, karaoke, gaming, escape_rooms]}
+    # Bars and going out to eat.
+    - {key: happy_hour, genre: [happy_hour]}
+    - {key: open_bar, genre: [open_bar]}
+    - {key: clubs, genre: [nightclubs]}
+    - {key: karaoke, genre: [karaoke]}
+    - {key: quiz, genre: [quiz_games]}
+    - {key: fine_dining, genre: [fine_dining, tastings]}
+    - {key: coffee_carts, genre: [coffee_carts]}
     - {key: abroad_fest, abroad: true, genre: [festival], days: 180}
     - {key: live, genre: [live_show]}
     - {key: israeli, genre: [israeli, mizrahi, greek]}
     - {key: mainstream, genre: [mainstream, hip_hop, rnb, reggaeton_latin, throwback, pop]}
+    # Music by style.
+    - {key: rock, genre: [rock_indie]}
+    - {key: metal, genre: [metal, punk]}
+    - {key: mediterranean, genre: [mizrahi, greek, arabic]}
+    - {key: world, genre: [world_balkan]}
+    - {key: jewish_music, genre: [jewish_music]}
+    - {key: singalong, genre: [singalong]}
+    - {key: chill, genre: [downtempo_chill]}
+    - {key: salsa, genre: [latin_dance, salsa, ballroom]}
     - {key: standup, genre: [stand_up]}
     - {key: festival, genre: [festival]}
     - {key: theatre, genre: [theatre, dance]}
-    - {key: jazz, genre: [jazz, classical_opera]}
+    - {key: jazz, genre: [jazz]}
+    - {key: classical, genre: [classical_opera]}
+    - {key: musicals, genre: [musicals]}
+    - {key: circus, genre: [circus_magic]}
+    - {key: drag, genre: [drag_cabaret]}
+    - {key: cinema, genre: [cinema]}
     - {key: kids, genre: [kids]}
     - {key: food, genre: [food]}
     - {key: wellness, genre: [yoga_wellness, meditation]}
@@ -218,6 +268,14 @@ home_rails:
     - {key: english, genre: [english]}
     - {key: russian, genre: [russian]}
     - {key: lectures, genre: [lectures, workshops, culture, exhibitions]}
+    - {key: exhibitions, genre: [exhibitions]}
+    - {key: tours, genre: [tours]}
+    - {key: markets, genre: [markets]}
+    - {key: escape, genre: [escape_rooms, attractions]}
+    - {key: youth, genre: [youth]}
+    - {key: seniors, genre: [seniors]}
+    - {key: women, genre: [women_only]}
+    - {key: volunteering, genre: [volunteering, environment]}
     # Not "conference" alone: a couples' or a fans' conference is not hi-tech (2026-11-13, as g_tech).
     - {key: hitech, genre: [hi_tech, ai, cyber, software_dev, startups]}
 
@@ -925,7 +983,7 @@ enrichment:
            "שעת סיפור", "שעות סיפור", "הגיל הרך", "גני ילדים", "פעוטות", "childrens_show", "families", "משחקייה", "גיל הרך", "לגיל הרך", "רמתגנצ'יק", "שבת משפחתי", "שנה עד שנתיים", "זחילה עד שנה", "שלוש עד ארבע", "לידה עד זחילה", "שנתיים עד שלוש", "ארבע עד חמש", "אחר-צהריים ר\"גוע"]
     lectures: ["vortrag", "literatur", "שיח קהילתי", "lecture", "lectures", "עונת תרבות", "speaking tour", "вебинар", "הרצאה", "הרצאות", "העשרה", "education", "literature", "עיון", "אקטואליה", "ספרות", "פילוסופיה", "היסטוריה", "פסיכולוגיה", "חקר המוח", "מדע", "סמינרים", "תרבויות", "seminar", "talks and q&a", "פאנל דוברים", "foredrag", "העצמה אישית", "אנתרופולוגיה", "יחסים ואהבה", "קריירה", "מנטורינג וקואוצ׳ינג", "עסקים וכלכלה", "סמינר", "אסכולות", "מיניות", "הערים המרתקות", "עניין"]
     tours: ["tour", "tours", "прогулка", "סיור", "סיורים", "טיול", "טיולים", "trips", "מופע אורקולי", "rundvisning", "visita guiada", "touristik", "viajes y aire libre", "חווית המבקר", "סיורי חנוכיות", "סיורי יום", "סיורי ערב", "סיורי בוטיק", "אדריכלות",
-            "führungen & rundfahrten", "führungen", "führung", "rundfahrten", "stadtführung"]
+            "führungen & rundfahrten", "führungen", "führung", "rundfahrten", "stadtführung", "travelling", "trips adventures", "hiking"]
     dance: ["tanz", "عرض راقص", "dance", "ballet", "dance ballet", "מחול", "ריקוד", "בלט", "tanssi", "dans", "danza", "danse"]
     conference: ["conferences", "messe", "messen"]  # Eventer's category (the text genre matches "conference" alone)
   # Last resort, for an event no category, title word or source default placed: words a show's text uses
@@ -1049,6 +1107,9 @@ enrichment:
     luma: [meetups]
     meetup: [meetups]
     nbn: [meetups]          # olim's community calendar: socials, mixers, talks
+    bonire: [culture]       # a guide of every kind: a row with no genre of its own is culture
+    stayhappening: [culture]  # allevents mirrors: untagged rows (Russian-language concerts, trips)
+    happeningnext: [culture]
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
@@ -2292,6 +2353,9 @@ search:
     eventpro: ["מרכז קהילתי עמק חפר", "מתנס דרום נתניה", "ספריות נתניה", "sifrianet", "eventpro"]
     swaptix: ["סוופטיקס", "סווטיקס", "swap tix"]
     fomo: ["פומו איוונטס", "fomo events", "fomo-events"]
+    bonire: ["bonire", "bonire.live", "בונייר"]
+    stayhappening: ["stayhappening", "stay happening"]
+    happeningnext: ["happeningnext", "happening next"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
     tzavta: ["צוותא", "tzavta"]
     smarticket: ["סמרטיקט"]
@@ -4733,6 +4797,72 @@ sources:
     skip_title_words: ["test", "טסט", "בדיקה", "יום הולדת", "היום הולדת", "קורס", "סדנה"]
     http:
       concurrency: 2
+      request_delay_seconds: 0.5
+
+  bonire:
+    # Bonire (bonire.live): Israeli events guide gathering the box offices' events (Eventer, Go-Out, muzi,
+    # Kupat, Smarticket, the cinema chains), each date linked to its seller. Read: 1) the site's "load
+    # more" JSON /api/afisha/category-grid for every category (music, parties, theater, exhibitions,
+    # stand-up, classic, ballet, talks, kids, festivals) to its last page: ~14,000 items, ~17,000 dates,
+    # ~170 requests (26.11.2026); 2) cinema (the grid answers 400 for it): every movie page of
+    # /sitemap/movies.xml (172), its JSON-LD ScreeningEvents (~3,400 screenings); 3) every slug the grid
+    # does not list: the event ids on every festival (10), organiser (46), venue (234) and artist (3,216)
+    # page and the city cinema pages (/sitemap/listings.xml), plus the event sitemaps' ids, each new one
+    # from its event page's JSON-LD (festival / organiser screenings: ~40 on 10 festival pages; artist and
+    # venue pages added none in samples of 40 / 30). Not read: the other city category pages (the grid's
+    # rows by city), /ru /en copies (the same pages), about / contact / privacy. Overlap: most dates are
+    # also our eventer / goout / muzi / smarticket / cinema sources; dedup merges them by the seller link.
+    enabled: true
+    cron: "7 2,14 * * *"
+    skip_title_words: ["קורס", "סדנה", "סדנת", "חוג", "שיעור"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+      timeout_seconds: 90
+
+  stayhappening:
+    # StayHappening (stayhappening.com): an English city guide mirroring the allevents.in catalogue
+    # (module happening.py, shared with happeningnext). No sitemap, API or city index (sitemap.xml,
+    # /israel, /cities: 404). Sections: each Israeli town's page (/tel+aviv; 404 for a town it lacks;
+    # 21 of the 50 below answer, plus every town an event page names), at most 100 events, so a town at
+    # the cap is read by category too (/tel+aviv--music): the ones its page links (18 in Tel Aviv), the
+    # allevents vocabulary below (46 answer for Tel Aviv; 43 more slugs tried answered 404) and every tag
+    # an event page names: Tel Aviv 100 -> ~160 (26.11.2026); Jerusalem 53 / Haifa 44 (under the cap: no
+    # category adds any). Then each event page (time, description, tags, the seller link in "Find
+    # tickets": bandsintown, eventbrite...). ~250 requests a run. Not read: list-your-event, privacy,
+    # the RSS feed (= the town page), towns abroad. Overlap: happeningnext (the same catalogue; dedup).
+    enabled: true
+    cron: "11 3,15 * * *"
+    site_url: https://stayhappening.com
+    city_path: "/{city}"
+    category_path: "/{city}--{category}"
+    event_marker: "/e/"
+    city_page_cap: 100
+    cities: ["tel aviv", "jerusalem", "haifa", "beer sheva", "eilat", "ramat gan", "ashdod", "holon", "rehovot", "kfar saba", "raanana", "givatayim", "hod hasharon", "modiin", "afula", "hadera", "lod", "safed", "beit shemesh", "kiryat gat", "ness ziona", "netanya", "herzliya", "rishon lezion", "petah tikva", "ashkelon", "bat yam", "nazareth", "tiberias", "acre", "nahariya", "caesarea", "karmiel", "kiryat shmona", "bnei brak", "rosh haayin", "yavne", "ramla", "sderot", "arad", "mitzpe ramon", "zichron yaakov", "jaffa", "tel aviv-yafo", "beersheba", "or yehuda", "yokneam", "kiryat ono", "rosh pina", "dead sea"]
+    categories: ["music", "concerts", "live-music", "parties", "comedy", "theatre", "performing-arts", "exhibitions", "art", "workshops", "festivals", "kids", "food-drinks", "business", "technology", "education", "fitness", "yoga", "health-wellness", "dance", "meditation", "mindfulness", "networking", "entrepreneurship", "marketing", "conferences", "fashion", "photography", "literary-art", "travelling", "trips-adventures", "edm", "hip-hop-music", "jazz", "belly-dance", "candlelight-concerts", "infants", "pregnancy", "medical", "gaming", "christmas", "new-year", "volunteering", "wine", "beer", "shopping"]
+    skip_title_words: ["course", "class", "קורס", "סדנה", "webinar", "online"]
+    http:
+      concurrency: 3
+      request_delay_seconds: 0.5
+
+  happeningnext:
+    # HappeningNext (happeningnext.com): the second allevents.in mirror (module happening.py, see
+    # stayhappening). A town's page is a few sliders (Tel Aviv 27 of ~140), so every town is read by
+    # category (/tel+aviv/music): the linked ones, the allevents vocabulary and every tag an event page
+    # names, then each event page. No sitemap, no API. Its "Get tickets" button opens the allevents app:
+    # no seller link. Overlap: stayhappening (the same events; dedup merges them).
+    enabled: true
+    cron: "13 4,16 * * *"
+    site_url: https://happeningnext.com
+    city_path: "/{city}"
+    category_path: "/{city}/{category}"
+    event_marker: "/event/"
+    city_page_cap: 0
+    cities: ["tel aviv", "jerusalem", "haifa", "beer sheva", "eilat", "ramat gan", "ashdod", "holon", "rehovot", "kfar saba", "raanana", "givatayim", "hod hasharon", "modiin", "afula", "hadera", "lod", "safed", "beit shemesh", "kiryat gat", "ness ziona", "netanya", "herzliya", "rishon lezion", "petah tikva", "ashkelon", "bat yam", "nazareth", "tiberias", "acre", "nahariya", "caesarea", "karmiel", "kiryat shmona", "bnei brak", "rosh haayin", "yavne", "ramla", "sderot", "arad", "mitzpe ramon", "zichron yaakov", "jaffa", "tel aviv-yafo", "beersheba", "or yehuda", "yokneam", "kiryat ono", "rosh pina", "dead sea"]
+    categories: ["music", "concerts", "live-music", "parties", "comedy", "theatre", "performing-arts", "exhibitions", "art", "workshops", "festivals", "kids", "food-drinks", "business", "technology", "education", "fitness", "yoga", "health-wellness", "dance", "meditation", "mindfulness", "networking", "entrepreneurship", "marketing", "conferences", "fashion", "photography", "literary-art", "travelling", "trips-adventures", "edm", "hip-hop-music", "jazz", "belly-dance", "candlelight-concerts", "infants", "pregnancy", "medical", "gaming", "christmas", "new-year", "volunteering", "wine", "beer", "shopping"]
+    skip_title_words: ["course", "class", "קורס", "סדנה", "webinar", "online"]
+    http:
+      concurrency: 3
       request_delay_seconds: 0.5
 
   swaptix:
