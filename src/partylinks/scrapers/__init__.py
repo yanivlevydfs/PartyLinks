@@ -11,6 +11,7 @@ from partylinks.scrapers.agnonhouse import AgnonHouseScraper
 from partylinks.scrapers.agol import AgolScraper
 from partylinks.scrapers.airdrop import AirdropScraper
 from partylinks.scrapers.arthurmurray import ArthurMurrayScraper
+from partylinks.scrapers.ascolot import AscolotScraper
 from partylinks.scrapers.barak import BarakScraper
 from partylinks.scrapers.barby import BarbyScraper
 from partylinks.scrapers.bargiyora import BarGiyoraScraper
@@ -296,6 +297,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         NewAcropolisScraper,
         BeitHagefenScraper,
         HaMesilaScraper,
+        AscolotScraper,
         JerusalemArtsScraper,
         BimotScraper,
         IsraelShowScraper,

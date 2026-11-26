@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 177 configured sources, 176 on. Each one has its own module in
+SPOTX collects from 178 configured sources, 177 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -104,6 +104,7 @@ pagination and what the listing and the event page provide.
 | `newacropolis` | New Acropolis (newacropolis.org.il): philosophy talks, open evenings, fairs and trips at its branches; the Wix Events sitemap's recently updated pages, each its schema.org Event (the course's sessions and volunteering days left out) | 06:08, 18:08 | yes |
 | `beithagefen` | Beit HaGefen (beit-hagefen.com), the Arab-Jewish culture centre in Haifa, and its December festival "חג החגים" (haifahag.com): one CMS; each site's AllEvents cards, then each item page's performances, hall, price, map pin and seller link; the free yard shows and exhibitions are sold nowhere else | 06:13, 18:13 | yes |
 | `hamesila` | HaMesila B' (hamesila.org.il), Herzliya's culture and community house: lectures, family shows, concerts, dated workshops; wp-json `events` and `course_workshop` lists + each page (day, price, seller; a workshop only as sessions sold alone, no weekly classes / whole courses), the venue pinned in config | 06:17, 18:17 | yes |
+| `ascolot` | Askolot (extra-academic.openu.ac.il/sites/ascolot), the Open University's school of enrichment studies: one-off lectures and lecture-concerts in Tel Aviv, Raanana, Jerusalem and Haifa; one listing call (77 courses) + each course page (its groups, halls, days, prices); only groups of one meeting or sold per ticket (the series sold whole are courses), the halls mapped to buildings in config | 09:07, 21:07 | yes |
 | `jerusalemarts` | Jerusalem Arts Festival (jerusalemarts.co.il): two December evenings of theatre, dance, performance and music at the Jerusalem Arts Campus; one wp-json call (each post's schema.org Event) + the tag names | 09:36, 21:36 | yes |
 | `bimot` | Bimot Global (bimotglobal.co.il, was bimot.co.il): a producer of dance, music, opera and theatre, mostly at the Israeli Opera; the wp-json show list without the archive + the show types + one page per current show (dates, hall, seller link) | 10:47, 22:47 | yes |
 | `israelshow` | IsraelShow (israelshow.co.il): a national listings site selling through its Kupat Bravo white label; ~50 genre / theatre pages list the show ids (the genre pages are its categories), and each show's performances come from the same id on kupatbravo.co.il (the white label's robots.txt disallows all) | 10:19, 22:19 | yes |

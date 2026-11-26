@@ -967,6 +967,7 @@ enrichment:
     eshkolot: [tours]  # a festival of guided tours: every event is a tour
     fournature: [lectures]  # a nature community: its categories are upcoming / past; meetings are lectures
     hamesila: [culture]  # community house: lectures, shows, family events
+    ascolot: [lectures]  # a school of enrichment studies: lectures, lecture-concerts
     glatticket: [culture]  # a few sellers' categories have no name on the hub (844: a Petah Tikva drama)
     tickchak: [nightclubs]  # the /parties/ box office
     tiktik: [live_show]
@@ -2417,6 +2418,7 @@ search:
     newacropolis: ["new acropolis", "newacropolis", "אקרופוליס החדשה", "אקרופוליס"]
     beithagefen: ["beit hagefen", "beit ha'gefen", "בית הגפן", "חג החגים", "החג של החגים", "haifahag"]
     hamesila: ["המסילה הרצליה", "המסילה ב", "hamesila herzliya"]
+    ascolot: ["אסכולות", "askolot", "ascolot"]
     jerusalemarts: ["פסטיבל ירושלים לאמנויות", "jerusalem arts festival", "jerusalemarts"]
     bimot: ["בימות גלובל", "bimot global", "bimotglobal", "בימות הפקות"]
     israelshow: ["ישראל שואו", "israel show", "israelshow", "израиль шоу"]
@@ -5829,6 +5831,53 @@ sources:
     http:
       concurrency: 2
       request_delay_seconds: 0.5
+
+  ascolot:
+    # Askolot (extra-academic.openu.ac.il/sites/ascolot, אסכולות), the Open University's school of enrichment
+    # studies: lecture series, concert series, film clubs, tours. One listing call (pageSize over the catalogue:
+    # 77 courses) + one page per course. Almost all are series sold whole (8 meetings, 865 ₪): no events (ZOA /
+    # zoatlv skip "קורס אסכולות" alike). A group of one meeting or sold per ticket ("מחיר כרטיס") is an event, one
+    # per day: 2 of 77 (26.11.2026: Gil Shohat hosts Christina Cooper 30.11, "שיר של יום חולין" 9.3.2027).
+    # Sections (26.11.2026): the 7 regions (area=1..9) and 11 categories (category=1..12, 11 empty) all list
+    # the same 77 courses as the unfiltered list: read through it. Not read: the lecturers (12 pages, they
+    # link only listed courses), about / procedures / study centres, online groups ("מקוון") and tours ("סיור",
+    # sold as series). Slugs: the domain's sitemap.xml (a 2023 Screaming Frog crawl) names 67 courses, 51 not
+    # listed: every one answers 500 (removed). No other box office: registration is the university's own
+    # (/registration/Group?group=<id>: kept as purchase_url).
+    enabled: true
+    cron: "7 9,21 * * *"
+    site_url: https://extra-academic.openu.ac.il
+    may_be_empty: true       # one-off meetings are few: some weeks every group is a series
+    venues:                  # the hall line before " - <hall>" -> its building
+      "רעננה, קמפוס האוניברסיטה הפתוחה": {venue_name: "האוניברסיטה הפתוחה - קמפוס רעננה", city: רעננה, address: "דרך האוניברסיטה 1, רעננה", latitude: 32.1880221, longitude: 34.8876404}   # OSM way 77161070
+      "אולם צ'ייס": {venue_name: "האוניברסיטה הפתוחה - קמפוס רעננה", city: רעננה, address: "דרך האוניברסיטה 1, רעננה", latitude: 32.1880221, longitude: 34.8876404}
+      'מוזיאון ת"א לאמנות': {venue_name: מוזיאון תל אביב לאמנות, city: תל אביב, address: "שדרות שאול המלך 27, תל אביב", latitude: 32.0775956, longitude: 34.7866422}
+      'בית ציוני אמריקה, ת"א': {venue_name: בית ציוני אמריקה, city: תל אביב, address: "דניאל פריש 1, תל אביב", latitude: 32.0746, longitude: 34.7822}
+      'מרכז סוזן דלל ת"א': {venue_name: מרכז סוזן דלל, city: תל אביב, latitude: 32.0602817, longitude: 34.7643775}
+      'האופרה הישראלית, ת"א': {venue_name: האופרה הישראלית, city: תל אביב, address: "שדרות שאול המלך 19, תל אביב"}
+      'בית איילה ת"א': {venue_name: בית איילה, city: תל אביב}
+      'סינמטק ת"א': {venue_name: סינמטק תל אביב, city: תל אביב}
+      'מכון מופ"ת, ת"א': {venue_name: מכון מופ"ת, city: תל אביב}
+      "מוזיאון המדע": {venue_name: מוזיאון המדע בלומפילד, city: ירושלים, latitude: 31.7783803, longitude: 35.2002324}
+      "מוזיאון ארצות המקרא": {venue_name: מוזיאון ארצות המקרא, city: ירושלים}
+      "מוזיאון ישראל, ירושלים": {venue_name: מוזיאון ישראל, city: ירושלים}
+      "קולנוע לב סמדר": {venue_name: קולנוע לב סמדר, city: ירושלים}
+      "קולנוע לב רעננה": {venue_name: קולנוע לב רעננה, city: רעננה}
+      "קולנוע לב דניאל": {venue_name: קולנוע לב דניאל, city: הרצליה}
+      "קולנוע לב עומר": {venue_name: קולנוע לב עומר, city: עומר}
+      "קולנוע רב חן גבעתיים": {venue_name: רב חן גבעתיים, city: גבעתיים}
+      "הוט סינמה אושילנד כפר סבא": {venue_name: הוט סינמה כפר סבא, city: כפר סבא}
+      "הוט סינמה רחובות": {venue_name: הוט סינמה רחובות, city: רחובות}
+      "הוט סינמה קריון": {venue_name: הוט סינמה קריון, city: קריית ביאליק}
+      "מרכז תרבות תאו הרצליה": {venue_name: מרכז תרבות תאו הרצליה, city: הרצליה}
+      "סינמטק חיפה": {venue_name: סינמטק חיפה, city: חיפה}
+      "פלאנט חיפה": {venue_name: פלאנט חיפה, city: חיפה}
+      "פלאנט זכרון יעקב": {venue_name: פלאנט זכרון יעקב, city: זכרון יעקב}
+      "חיפה": {venue_name: אולם רפפורט, city: חיפה}
+    skip_title_words: ["קורס", "חוג "]
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
 
   hamesila:
     # HaMesila (hamesila.org.il), Herzliya's culture and community house (המסילה ב׳): lectures, family shows,
