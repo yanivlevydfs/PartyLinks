@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | `/accessibility` | Accessibility statement, Israeli standard IS 5568 | `site.accessibility` in settings |
 | `/privacy` | Privacy and cookie policy, Privacy Protection Law (Amendment 13) | `site.privacy` in settings, and the storage table in `web/src/consent.tsx` |
-| `/terms` | Terms of use: SPOTX only aggregates listings sold on other sites and owns no event or ticket; automatic sorting (genres, ages, prices, map, merging) may be wrong; sponsored events; adult events and minors; error reports and removal; optional accounts (16+, one per person, best-effort alerts, blocking) | `web/src/pages/Terms.tsx` |
+| `/terms` | Terms of use: SPOTX only aggregates listings sold on other sites and owns no event or ticket; automatic sorting (genres, ages, prices, map, merging) may be wrong; sponsored events; posting an event (admin approval, the poster's own ticket links, sold only on third-party sites); adult events and minors; error reports and removal; optional accounts (16+, one per person, best-effort alerts, blocking) | `web/src/pages/Terms.tsx` |
 
 ## Cookies and tracking
 
