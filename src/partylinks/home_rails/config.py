@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -28,6 +28,9 @@ class HomeRail(BaseModel):
     holiday: str | None = None
     # Only the next such calendar month (6: June, this one's rest while in it), however far; `days` is ignored.
     month: int | None = Field(None, ge=1, le=12)
+    # The cards' order: "trending" (on the most ticket sites first) or "latest" (the latest to end first: the
+    # end time, else the start plus retention.assumed_duration_hours; "open latest tonight").
+    sort: Literal["trending", "latest"] = "trending"
 
     @field_validator("holiday")
     @classmethod

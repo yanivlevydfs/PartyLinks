@@ -33,7 +33,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
-from sqlalchemy import ColumnElement, String, and_, cast, func, not_, null, or_, select
+from sqlalchemy import ColumnElement, Interval, String, and_, cast, func, literal, not_, null, or_, select
 from sqlalchemy.exc import DataError
 from sqlalchemy.orm import Session, aliased, defer, load_only, selectinload, undefer
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -1932,12 +1932,21 @@ def _register_routes(app: FastAPI) -> None:
             now = datetime.now(ZoneInfo(cfg.timezone))
             out = RailsOut()
 
-            def load(filters: list[ColumnElement[bool]], pool: int) -> list[EventSummaryOut]:
+            # "latest" rows: the latest to end first (no end time: the start plus the assumed length, bound as an
+            # interval: a bare timedelta reached Postgres as a timestamp and the row failed).
+            length = literal(timedelta(hours=cfg.retention.assumed_duration_hours), Interval())
+            ends = func.coalesce(EventRow.end_at, EventRow.start_at + length)
+            orders = {
+                "trending": (_SORT_COLUMNS[EventSort.trending], _START),
+                "latest": (ends.desc().nulls_last(), _START),
+            }
+
+            def load(filters: list[ColumnElement[bool]], pool: int, sort: str = "trending") -> list[EventSummaryOut]:
                 where = [*filters, placecards.first_opening(filters)]  # a place is one card
                 rows = session.scalars(
                     select(EventRow)
                     .where(*where, nearest_show(where))  # and so is a show, whatever its dates
-                    .order_by(_SORT_COLUMNS[EventSort.trending], _START, EventRow.id)
+                    .order_by(*orders[sort], EventRow.id)
                     .limit(pool)
                     .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))
                 ).all()
@@ -1979,9 +1988,11 @@ def _register_routes(app: FastAPI) -> None:
                         tags,
                     )
 
+            sorts = {r.key: r.sort for r in specs}
+
             def build_row(key: str) -> list[EventSummaryOut]:
                 with session.begin_nested():  # a failed query rolls back to here, the other rows still load
-                    return load(wheres[key], cfg.home_rails.pool)
+                    return load(wheres[key], cfg.home_rails.pool, sorts.get(key, "trending"))
 
             rows = rows_cache.rows(tags, build_row, cfg.home_rails.row_ttl_seconds, cfg.home_rails.rows_per_build)
 
