@@ -2838,7 +2838,7 @@ sources:
     search_query: "site:eventbuzz.co.il/lp/event"
     search_pages: 5
     # Links seen before any index has them (new events shared on Instagram): their slugs.
-    extra_slugs: [kinorai-burlesque-night, rainn26, dmrt66]  # rainn26 (28.11.2026), dmrt66 (26.11.2026): link-in-bio, in no index
+    extra_slugs: [kinorai-burlesque-night, rainn26, dmrt66, flyday2711]  # rainn26 (28.11.2026), dmrt66 (26.11.2026), flyday2711 (27.11.2026, Friday-Flyday, Ha-Lapid 5 Petah Tikva): link-in-bio, in no index
     # Venues whose show pages link their dates to Eventbuzz (short links /<slug>), missing from /events;
     # their dates' source genres: the venue's, or a mapped WordPress term's (_embed=wp:term).
     venue_pages:
