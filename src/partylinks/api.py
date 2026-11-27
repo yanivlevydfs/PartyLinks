@@ -1475,6 +1475,7 @@ def _home_row_filters(
         time_slot=spec.time_slot or None, free_entry=spec.free_entry or None,
         on_date=day if spec.today else None, weekend=spec.weekend or None,
         abroad=spec.abroad or None, discount=spec.discount or None, max_price=spec.max_price,
+        region=spec.region or None, day_of_week=spec.day_of_week or None,
     )  # fmt: skip
     if window:
         filters += [EventRow.local_date >= window[0], EventRow.local_date <= window[1]]
@@ -1484,6 +1485,18 @@ def _home_row_filters(
         filters.append(EventRow.group_size > 1)
     if spec.places is not None:
         filters.append(placecards.IS_PLACE if spec.places else ~placecards.IS_PLACE)
+    if spec.min_age:
+        filters.append(EventRow.min_age >= spec.min_age)
+    if spec.amenity:
+        filters.append(_json_contains(EventRow.extra["amenities"], spec.amenity))
+    if spec.place_tag:
+        filters.append(_json_contains(EventRow.extra["tags"], spec.place_tag))
+    if spec.min_reviews:
+        filters.append(EventRow.extra["reviews"].as_float() >= spec.min_reviews)
+    if spec.min_price_level:
+        filters.append(placecards.PRICE_LEVEL >= spec.min_price_level)
+    if spec.max_price_level:
+        filters.append(placecards.PRICE_LEVEL <= spec.max_price_level)
     if spec.exclude:
         filters.append(not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec.exclude))))
     return filters
@@ -1980,8 +1993,14 @@ def _register_routes(app: FastAPI) -> None:
                 smart = {"holiday": [*event_filters(request, date_to=now + timedelta(days=cfg.holiday_pages.ahead_days)),
                                      *holiday_pages.where(holiday)], **smart}  # fmt: skip
             wheres = dict(smart)  # each row's filters, for the pinned events (partylinks.home_pins)
-            specs = [r for r in cfg.home_rails.rows if not (r.holiday and out.holiday and out.holiday.key == r.holiday)]
-            for spec in specs:  # the coming holiday's own row already shows its row's events
+            # The coming holiday's own row already shows a plain holiday row's events; one with a genre of its own
+            # ("Hanukkah for kids") is a different row and stays.
+            specs = [
+                r
+                for r in cfg.home_rails.rows
+                if not (r.holiday and not r.genre and out.holiday and out.holiday.key == r.holiday)
+            ]
+            for spec in specs:
                 try:
                     wheres[spec.key] = _home_row_filters(lambda **kw: event_filters(request, **kw), cfg, spec, now)
                 except Exception:  # noqa: BLE001 - an admin's bad row must not take the home page down

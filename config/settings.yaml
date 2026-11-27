@@ -205,10 +205,27 @@ home_rails:
     - {key: parties_weekend, weekend: true, days: 7, genre: [g_parties], exclude: [kids, lectures, workshops, conference]}
     - {key: live_weekend, weekend: true, days: 7, genre: [live_show]}
     - {key: kids_weekend, weekend: true, days: 7, genre: [kids]}
+    # Israel's own outings (prod 28.11.2026: Thursday night 591 cards, Friday noon 691, weekend mornings 893).
+    - {key: thursday_night, days: 7, day_of_week: [thursday], time_slot: [evening, night], genre: [g_parties, g_live, g_stage, happy_hour, open_bar], exclude: [kids, lectures, workshops, conference]}
+    - {key: friday_noon, days: 7, day_of_week: [friday], time_slot: [morning, afternoon], exclude: [kids, conference]}
+    - key: weekend_morning
+      days: 7
+      day_of_week: [friday, saturday]
+      time_slot: [morning]
+      exclude: [nightclubs, conference, kids, parents_babies]
+    # By region: going out away from Tel Aviv (30 days: Jerusalem 1,059, north 1,152, south 705, Sharon 954,
+    # Gush Dan 1,250 cards).
+    - {key: jerusalem, region: [jerusalem], genre: [g_parties, g_live, g_stage, happy_hour, open_bar], exclude: [kids, lectures, workshops, conference]}
+    - {key: north, region: [haifa, galilee], genre: [g_parties, g_live, g_stage, happy_hour, open_bar], exclude: [kids, lectures, workshops, conference]}
+    - {key: south, region: [negev, eilat], genre: [g_parties, g_live, g_stage, happy_hour, open_bar], exclude: [kids, lectures, workshops, conference]}
+    - {key: sharon, region: [sharon], genre: [g_parties, g_live, g_stage, happy_hour, open_bar], exclude: [kids, lectures, workshops, conference]}
+    - {key: gush_dan, region: [gush_dan], genre: [g_parties, g_live, g_stage, happy_hour, open_bar], exclude: [kids, lectures, workshops, conference]}
     # Seasonal: the next dates of a holiday / month, however far (shown once 3+ events are listed; a holiday's
     # row gives way to the coming holiday's own row, holiday_pages.rail_days before it).
     - {key: new_year, holiday: new_year, exclude: [kids, lectures, workshops, conference]}
     - {key: purim, holiday: purim, exclude: [kids, lectures, workshops, conference]}
+    # A holiday row with a genre stays while the coming holiday's own row shows (Hanukkah 2026: 1,800 kids' cards).
+    - {key: hanukkah_kids, holiday: hanukkah, genre: [kids]}
     - {key: pride_month, month: 6, genre: [lgbt, drag_cabaret]}
     - {key: electronic, genre: [techno, house, trance, electronic, edm, drum_and_bass, bass_dubstep, hardstyle]}
     # Parties by style. Not drum & bass / bass alone (3 events) nor pool parties (0 in November).
@@ -234,6 +251,8 @@ home_rails:
       genre: [jazz, tastings, cooking_class, musicals, sensual, classical_opera, chanson]
       exclude: [kids, conference]
     - {key: singles, genre: [singles_dating], days: 60}
+    - {key: age21, min_age: 21, exclude: [kids]}  # a 21+ door policy (233 in 30 days)
+    - {key: meetups, genre: [meetups], exclude: [conference]}  # social nights, language clubs, board games
     # Adult nightlife (18+): kink / BDSM, liberal / swingers, tantra / burlesque. 60 days: few such nights.
     - {key: adult_parties, genre: [kink, liberal, sensual], days: 60}
     - {key: friends, genre: [quiz_games, karaoke, gaming, escape_rooms]}
@@ -253,6 +272,12 @@ home_rails:
     - {key: quiz, genre: [quiz_games]}
     - {key: fine_dining, genre: [fine_dining, tastings]}
     - {key: coffee_carts, genre: [coffee_carts]}
+    # Places by what they offer (happytlv's amenities and tags) and by their Google rating (weighted by reviews).
+    - {key: top_rated, places: true, sort: rating, min_reviews: 300, exclude: [volunteering, work_spaces]}
+    - {key: date_spots, places: true, sort: rating, place_tag: [דייט, קוקטיילים, בר יין]}
+    - {key: dog_friendly, places: true, sort: rating, amenity: [כלבים מותרים]}
+    - {key: kid_friendly_places, places: true, sort: rating, amenity: [מתאים לילדים]}
+    - {key: splurge, places: true, sort: rating, genre: [fine_dining, happy_hour], min_price_level: 3}
     - {key: abroad_fest, abroad: true, genre: [festival], days: 180}
     - {key: live, genre: [live_show]}
     - {key: israeli, genre: [israeli, mizrahi, greek]}
@@ -279,6 +304,7 @@ home_rails:
     - {key: food, genre: [food]}
     - {key: wellness, genre: [yoga_wellness, meditation]}
     - {key: sports, genre: [sports_matches, running]}
+    - {key: active_sport, genre: [sport], exclude: [sports_matches]}  # doing sport: running groups, cycling, workouts
     - {key: lgbt, genre: [lgbt, drag_cabaret]}
     - {key: students, genre: [students]}
     - {key: over40, genre: [over_40, eighties, nineties]}
@@ -286,6 +312,8 @@ home_rails:
     - {key: russian, genre: [russian]}
     - {key: lectures, genre: [lectures, workshops, culture, exhibitions]}
     - {key: exhibitions, genre: [exhibitions]}
+    - {key: museums, genre: [museums]}
+    - {key: workshops, genre: [workshops, cooking_class], exclude: [kids]}  # 2,297 in 30 days
     - {key: tours, genre: [tours]}
     - {key: markets, genre: [markets]}
     - {key: escape, genre: [escape_rooms, attractions]}

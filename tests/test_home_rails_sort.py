@@ -82,3 +82,50 @@ def test_open_latest_after_midnight_is_still_last_night() -> None:
         filters_of, Settings(), HomeRail(key="tonight", today=True), datetime(2026, 11, 28, 1, 40, tzinfo=il)
     )
     assert asked["on_date"] == date(2026, 11, 28)  # other "today" rows keep the calendar day
+
+
+def test_row_filters_region_day_age_and_place_features(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    settings.home_rails.rows = [
+        HomeRail(key="adults", min_age=21),
+        HomeRail(key="dogs", places=True, amenity=["כלבים מותרים"]),
+        HomeRail(key="dates", places=True, place_tag=["דייט"]),
+        HomeRail(key="known", places=True, min_reviews=300),
+        HomeRail(key="posh", places=True, min_price_level=3),
+        HomeRail(key="cheap", places=True, max_price_level=1),
+    ]
+    start = datetime.now(UTC).replace(microsecond=0) + timedelta(days=1)
+
+    def place(key: str, **extra: object):  # type: ignore[no-untyped-def]
+        return event(key, start, url=f"https://example.com/{key}", title=f"Place {key}",
+                     source_genres=["attractions"], extra={"happy_hour": True, **extra})  # fmt: skip
+
+    seed(settings, [
+        event("club21", start, min_age=21, source_genres=["techno"]),
+        event("club18", start, min_age=18, source_genres=["techno"]),
+        place("cafe", amenities=["כלבים מותרים"], tags=["בראנץ׳"], reviews=900, price_level=1),
+        place("bar", amenities=["ישיבה בחוץ"], tags=["דייט"], reviews=40, price_level=3),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        rails = client.get("/events/rails").json()["rails"]
+    ids = {k: [e["id"] for e in v] for k, v in rails.items()}
+    assert ids["adults"] == ["test:club21"]
+    assert ids["dogs"] == ["test:cafe"] and ids["dates"] == ["test:bar"]
+    assert ids["known"] == ["test:cafe"] and ids["posh"] == ["test:bar"] and ids["cheap"] == ["test:cafe"]
+
+
+def test_region_and_day_of_week_reach_the_event_filters() -> None:
+    from zoneinfo import ZoneInfo
+
+    from partylinks.api import _home_row_filters
+    from partylinks.config import Settings
+
+    asked: dict[str, object] = {}
+
+    def filters_of(**kw: object) -> list:  # type: ignore[type-arg]
+        asked.update(kw)
+        return []
+
+    row = HomeRail(key="north_thu", region=["haifa", "galilee"], day_of_week=["thursday"])
+    _home_row_filters(filters_of, Settings(), row, datetime(2026, 11, 28, 20, tzinfo=ZoneInfo("Asia/Jerusalem")))
+    assert asked["region"] == ["haifa", "galilee"] and asked["day_of_week"] == ["thursday"]

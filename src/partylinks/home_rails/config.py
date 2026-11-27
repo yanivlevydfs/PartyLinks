@@ -34,6 +34,15 @@ class HomeRail(BaseModel):
     sort: Literal["trending", "latest", "rating"] = "trending"
     # Places (bars, cafés, attractions: one listing per day they open, partylinks.placecards) only, or events only.
     places: bool | None = None
+    region: list[str] = Field(default_factory=list)  # enrichment.regions keys (jerusalem, haifa, galilee, negev...)
+    day_of_week: list[str] = Field(default_factory=list)  # "thursday", "friday"...: only those days
+    min_age: int | None = Field(None, ge=1, le=99)  # a door policy of at least this age (events' min_age)
+    # A place's own amenities ("כלבים מותרים", "מתאים לילדים") and tags ("דייט", "קוקטיילים"): any of them.
+    amenity: list[str] = Field(default_factory=list)
+    place_tag: list[str] = Field(default_factory=list)
+    min_reviews: int | None = Field(None, ge=1)  # a place's Google reviews, at least
+    min_price_level: int | None = Field(None, ge=1, le=4)  # a place's ₪ to ₪₪₪₪ as 1-4
+    max_price_level: int | None = Field(None, ge=1, le=4)
 
     @field_validator("holiday")
     @classmethod
