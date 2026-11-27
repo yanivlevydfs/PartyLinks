@@ -997,7 +997,10 @@ enrichment:
     jazz: ["ג׳אז חם", "ג'אז חם"]
   fallback_genres:
     theatre: ["הצגה", "ההצגה", "בהצגה", "שחקנים", "בימוי", "ובימוי", "מחזה", "תפאורה", "תלבושות", "תיאטרון",
-              "תאטרון", "דרמה", "קומדיה", "theatre", "theater", "play",
+              "תאטרון", "דרמה", "קומדיה", "theatre", "theater",
+              # Not a bare "play": DJs play, "Let's play" (eventbuzz's FRIDAY-FLYDAY party, 27.11.2026), the band
+              # Radio Play, bingo nights. A play is named as one: 43 upcoming events leant on the bare word (28.11).
+              "stage play", "a play", "the play", "new play", "original play", "short play", "christmas play", "play by",
               # Israel's repertory companies, named in a hall's title ("שלום בית-הקאמרי").
               "הקאמרי", "הבימה", "בית ליסין", "תיאטרון גשר", "החאן", "תיאטרון הספריה"]
     kids: ["לגילאי", "לקטנטנים", "הילדים", "ילדים", "לילדים", "לכל המשפחה", "ההורים", "פעוטות", "kids", "children", "family",
@@ -1019,7 +1022,8 @@ enrichment:
     cinema: ["סינמטק", "נקרין", "מקרינים", "סרטים", "הקרנה"]
     festival: ["festival", "פסטיבל"]
     yoga_wellness: ["טאי צ'י", "יוגה", "פילאטיס", "מדיטציה"]
-    nightclubs: ["מסיבה", "מסיבת", "party", "soirée", "soiree", "festa", "fiesta", "baile", "club night", "pub crawl", "סבב ברים"]
+    nightclubs: ["מסיבה", "מסיבת", "party", "soirée", "soiree", "festa", "fiesta", "baile", "club night", "pub crawl", "סבב ברים",
+                 "חברי מועדון"]  # a club's own members ("חברי מועדון יקרים": FRIDAY-FLYDAY, 27.11.2026)
   # Sources that sell one kind of event: its genre when neither their category nor the text names one
   # (TikTik / LiveEvents / TicketHouse list concerts abroad by artist name; Pres the Cameri and Habima).
   source_default_genres:
