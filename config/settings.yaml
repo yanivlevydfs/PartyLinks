@@ -227,6 +227,8 @@ home_rails:
       genre: [jazz, tastings, cooking_class, musicals, sensual, classical_opera, chanson]
       exclude: [kids, conference]
     - {key: singles, genre: [singles_dating], days: 60}
+    # Adult nightlife (18+): kink / BDSM, liberal / swingers, tantra / burlesque. 60 days: few such nights.
+    - {key: adult_parties, genre: [kink, liberal, sensual], days: 60}
     - {key: friends, genre: [quiz_games, karaoke, gaming, escape_rooms]}
     # Bars and going out to eat.
     - {key: happy_hour, genre: [happy_hour]}
