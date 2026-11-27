@@ -226,7 +226,7 @@ class ScrapeService:
         event meanwhile may be overwritten with its older text's genres until its next run.
         """
         fields = {"genres", "declared_genres", "genre_families", "detect_genres_from_text", "text_ignore",
-                  "talk_keywords", "talk_genres", "declared_text_genres", "declared_genres_beside", "source_default_genres", "title_genres", "fallback_genres",
+                  "talk_keywords", "talk_genres", "declared_text_genres", "declared_genres_beside", "declared_dropped_beside", "source_default_genres", "title_genres", "fallback_genres",
                   "declared_genres_only", "declared_ignore", "extra_genres",
                   "online_places", "online_venues", "online_titles", "online_hybrid"}  # fmt: skip
         config = json.dumps(self.settings.enrichment.model_dump(include=fields), sort_keys=True, ensure_ascii=False)

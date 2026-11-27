@@ -387,6 +387,11 @@ class Enricher:
         found = {genre for genre, pattern in self._genres.items() if pattern.search(declared)}
         # "tech house" is music, not the declared category "tech".
         found |= {genre for genre, pattern in self._declared.items() if pattern.search(declared.replace("tech house", ""))}
+        for genre, beside in self.settings.declared_dropped_beside.items():
+            said = _LINKS.sub(" ", f"{event.title}\n{event.description or ''}".lower()).translate(_QUOTES)
+            named = any(p.search(said) for p in (self._genres.get(genre), self._declared.get(genre)) if p)
+            if genre in found and not named and found & set(self.settings.expand_genres(beside)):
+                found.discard(genre)
         from_text = {genre for genre, pattern in self._genres.items() if pattern.search(text)}
         declared_only = set(self.settings.expand_genres(self.settings.declared_text_genres))
         if not found & declared_only:

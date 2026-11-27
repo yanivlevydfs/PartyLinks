@@ -658,8 +658,9 @@ enrichment:
             "מוזיקה יוונית", "סירטאקי"]
     arabic: ["arabic", "arab", "arabic music", "tarab", "dabke", "maqam", "shaabi", "mahraganat", "umm kulthum",
              "fairuz", "ערבית", "מוזיקה ערבית", "טאראב", "דבקה", "מקאם", "אום כולתום", "פיירוז"]  # not "ערבי": also "evenings of" ("ערבי אלכוהול חופשי")
+    # Not Hebrew "פאנק": nearly always punk ("שש שש שש + מהר וכואב" read as disco, 27.11.2026).
     disco_funk: ["disco", "nu disco", "funk", "boogie", "italo disco", "space disco", "cosmic disco", "eurodisco",
-                 "hi-nrg", "post-disco", "jazz funk", "funky", "דיסקו", "פאנק", "ניו דיסקו", "נו דיסקו", "איטלו דיסקו",
+                 "hi-nrg", "post-disco", "jazz funk", "funky", "דיסקו", "ניו דיסקו", "נו דיסקו", "איטלו דיסקו",
                  "פאנקי"]
     drum_and_bass: ["drum and bass", "drum & bass", "drum n bass", "drum'n'bass", "drum n' bass", "dnb", "d&b", "d'n'b",
                     "liquid dnb", "liquid funk", "neurofunk", "techstep", "darkstep", "ragga jungle", "דראם אנד בייס",
@@ -1231,6 +1232,10 @@ enrichment:
   # "punk hardcore" and "post-hardcore e math rock" are not.
   declared_genres_beside:
     hardstyle: {with: [electronic], without: [rock_indie]}
+  # A source's category dropped beside one of these when the title and description never name it: Go-Out
+  # producers tick "דיסקו" beside "טכנו" for techno / house nights (ROOM 48, 27.11.2026).
+  declared_dropped_beside:
+    disco_funk: [techno, house, trance, hardstyle]
   # Genres read from the title only, never the description ("סדנאות יוגה" at a festival is no workshop).
   # Box-office small print names seniors ("הנחה לאזרחים ותיקים"), a hall a museum, a talk a marathon.
   # Russian / English: OGO translates its listings into Russian, a Hebrew tour is "also in English", a play has subtitles.

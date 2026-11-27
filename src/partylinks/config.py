@@ -427,6 +427,9 @@ class EnrichmentSettings(BaseModel):
     declared_text_genres: list[str] = Field(default_factory=list)
     # A source-only word (declared_genres) read from the text too, beside genres of "with" and none of "without".
     declared_genres_beside: dict[str, dict[str, list[str]]] = Field(default_factory=dict)
+    # A source's category dropped when the same source also declares one of these genres and the title and
+    # description never name it (Go-Out producers tick "דיסקו" beside "טכנו" for a techno / house night).
+    declared_dropped_beside: dict[str, list[str]] = Field(default_factory=dict)
     # Genres read from the title only, never the description.
     title_genres: list[str] = Field(default_factory=list)
     # Genres that only add to an event's others (who it is for, a narrower kind): alone they still let the
