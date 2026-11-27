@@ -1113,6 +1113,8 @@ enrichment:
     bonire: [culture]       # a guide of every kind: a row with no genre of its own is culture
     stayhappening: [culture]  # allevents mirrors: untagged rows (Russian-language concerts, trips)
     happeningnext: [culture]
+    eventati: [culture]     # a box office of concerts, plays and screenings with no categories
+    solidaritytlv: [cinema]  # a film festival's panels and conference
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
@@ -2365,6 +2367,8 @@ search:
     stayhappening: ["stayhappening", "stay happening"]
     happeningnext: ["happeningnext", "happening next"]
     kaspit: ["kaspit", "kaspit-art", "כספית ייצוג אמנים"]
+    eventati: ["eventati", "إڤنتاتي", "إفنتاتي", "איוונטתי"]
+    solidaritytlv: ["solidaritytlv", "פסטיבל סולידריות", "solidarity festival"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
     tzavta: ["צוותא", "tzavta"]
     smarticket: ["סמרטיקט"]
@@ -4903,6 +4907,48 @@ sources:
     http:
       concurrency: 1
       request_delay_seconds: 1.0
+
+  eventati:
+    # Eventati (eventati.org, إڤنتاتي): a Wix box office for culture in Arab society (Nazareth, Haifa,
+    # Umm al-Fahm, Shefa-Amr, Jerusalem...). Sections: /allevents (the events widget: every listed upcoming
+    # event as JSON, hasMore false: 10 on 27.11.2026; /events is the same 10), the event-pages sitemap
+    # (306 pages, read when changed in the last sitemap_days: one upcoming show, mhmd-n-mt-fy-sfya-2 on
+    # 18.12, is on no list), the organisers' pages (dynamic-organization sitemap, 7: their event slugs);
+    # each event from its Hebrew page (/he/event-details/<slug>: the Wix event object + JSON-LD offers).
+    # Not read: shop / store / product pages, gift cards, loyalty, plans, blog, past-events, the sign-up,
+    # payment and landing pages (no events). No categories: genres from the text, else culture. The site
+    # answers a burst with a "Checking Your Request" 403: one request at a time, 5 s apart, direct
+    # (proxied: false), and a run that meets it is recorded as blocked. Overlap: the Solidarity festival's
+    # Galilee screenings (solidaritytlv links them here).
+    enabled: true
+    cron: "8 9,21 * * *"
+    proxied: false
+    skip_title_words: ["ورشة", "دورة", "סדנה", "קורס"]
+    http:
+      concurrency: 1
+      request_delay_seconds: 5.0
+      timeout_seconds: 90
+
+  solidaritytlv:
+    # Solidarity (solidaritytlv.org): the Solidarity Festival for Film and Human Rights at the Tel Aviv
+    # Cinematheque (2026: 10-19.12), a Wix site. Every screening on it links a Cinematheque PRES order and
+    # is read by cinematheque_tlv (27.11.2026: all 33 order ids of films, timetable, specialscreenings,
+    # anateven and the 47 /allfilms/ pages are in its feed), so this source reads only what PRES does not
+    # sell: industry-events (a repeater: the AI panel 13.12 13:30) and conference (13.12, 15:30-21:30, free
+    # with registration). solidarity-galilee: sold on Eventati (read by eventati). Not read: about, faq,
+    # support-us, search, the English mirror solidaritytlveng.org (the same events). "דור חדש של
+    # קולנוענים" is the Cinematheque's own listing "חממת קולנוע פורום רֵאֶה + הקרן החדשה": skipped here.
+    # Empty between editions.
+    enabled: true
+    cron: "12 10,22 * * *"
+    may_be_empty: true
+    skip_title_words: ["דור חדש של קולנוענים"]
+    pages:
+      - {path: /industry-events, kind: repeater}
+      - {path: /conference, kind: day, title: "כנס סולידריות לקולנוע וזכויות אדם", free: true}
+    http:
+      concurrency: 1
+      request_delay_seconds: 2.0
 
   swaptix:
     # SwapTix: Israeli ticket resale marketplace. The catalogue API + each event's listings; only events

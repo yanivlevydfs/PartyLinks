@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 183 configured sources, 182 on. Each one has its own module in
+SPOTX collects from 185 configured sources, 184 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -158,6 +158,7 @@ pagination and what the listing and the event page provide.
 | `movieland` | Movieland (movieland.co.il): cinema screenings of the chain's six branches | 08:02, 20:02 | yes |
 | `cinematheque_tlv` | Tel Aviv Cinematheque (cinema.co.il, "סינמטק תל אביב"): its PRES box office, the whole feed (~8 months ahead); festival pages in `festivals` (Soundtrack, the children's festival, Solidarity 2026) add artwork, the site page and festival genres to their screenings, and their cards PRES does not sell (free entry) are events of their own | 10:05, 22:05 | yes |
 | `cinematheque_jlm` | Jerusalem Cinematheque (jer-cin.org.il), its PRES box office (`cinematheque_tlv.py`); films' pictures from the cinematheque's own film pages at its robots.txt Crawl-delay 180 (up to 15 a run, each film once) | 10:17, 22:17 | yes |
+| `solidaritytlv` | Solidarity festival (solidaritytlv.org): the panels and the conference the Cinematheque's PRES does not sell (its screenings are in `cinematheque_tlv`, the Galilee ones in `eventati`) | 10:12, 22:12 | yes |
 
 ## Cities, community and guides
 
@@ -202,6 +203,7 @@ many of them free.
 | `stayhappening` | StayHappening (stayhappening.com): an English city guide mirroring allevents.in; each Israeli town's page, by category when the page is at its 100-event cap, then each event page (time, tags, seller link) | 03:11, 15:11 | yes |
 | `happeningnext` | HappeningNext (happeningnext.com): the second allevents.in mirror; every Israeli town by category, then each event page (no seller link: its button opens the allevents app) | 04:13, 16:13 | yes |
 | `kaspit` | Kaspit (kaspit-art.co.il): an artist agency's show calendar (Idan Raichel, Ehud Banai, Gidi Gov...): one listing page, each show's venue, time and seller link; merges with the box offices by dedup | 05:17, 17:17 | yes |
+| `eventati` | Eventati (eventati.org, إڤنتاتي): a Wix box office for culture in Arab society (Nazareth, Haifa, Umm al-Fahm...): the events widget, the event sitemap's recent pages and the organisers' pages, each event from its Hebrew page; 5 s between requests, direct | 09:08, 21:08 | yes |
 
 ## Tech and community
 

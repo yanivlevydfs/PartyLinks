@@ -37,6 +37,7 @@ from partylinks.scrapers.easytix import EasytixScraper
 from partylinks.scrapers.efokulam import EfoKulamScraper
 from partylinks.scrapers.epgb import EpgbScraper
 from partylinks.scrapers.eshkolot import EshkolotScraper
+from partylinks.scrapers.eventati import EventatiScraper
 from partylinks.scrapers.eventbrite import EventbriteScraper
 from partylinks.scrapers.eventbuzz import EventbuzzScraper
 from partylinks.scrapers.eventer import EventerScraper
@@ -146,6 +147,7 @@ from partylinks.scrapers.shotgun import ShotgunScraper
 from partylinks.scrapers.showshappening import ShowsHappeningScraper
 from partylinks.scrapers.skiddle import SkiddleScraper
 from partylinks.scrapers.smarticket import SmarticketIsraelScraper, SmarticketScraper
+from partylinks.scrapers.solidaritytlv import SolidarityScraper
 from partylinks.scrapers.standupfactory import StandupFactoryScraper
 from partylinks.scrapers.standupist import StandupistScraper
 from partylinks.scrapers.swaptix import SwapTixScraper
@@ -329,6 +331,8 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         StayHappeningScraper,
         HappeningNextScraper,
         KaspitScraper,
+        EventatiScraper,
+        SolidarityScraper,
         EventProScraper,
         JaffaTheatreScraper,
         TzavtaScraper,
