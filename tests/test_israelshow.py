@@ -80,8 +80,10 @@ def test_run_reads_each_show_once_nearest_first_and_skips_past_cards() -> None:
     scraper.settings.pages = {"standup.asp": "סטנד אפ", "comedy-bar.asp": "", "music.asp": "הופעות מוזיקה"}
     scraper.http.request_delay_seconds = 0
     today = datetime.now(IL).date()
-    soon, later, past = (f"{today + timedelta(days=d):%d.%m.%Y}" for d in (10, 40, -5))
-    show_date = f"{today + timedelta(days=10)}T21:30+02:00"
+    # 10 days ahead, or 11 when that is the fixture's own date (8.12.2026): the show must move (28.11.2026).
+    ahead = 11 if today + timedelta(days=10) == date(2026, 12, 8) else 10
+    soon, later, past = (f"{today + timedelta(days=d):%d.%m.%Y}" for d in (ahead, 40, -5))
+    show_date = f"{today + timedelta(days=ahead)}T21:30+02:00"
     announce = ANNOUNCE.replace("2026-12-08T21:30+02:00", show_date)
     assert announce != ANNOUNCE
     card = (

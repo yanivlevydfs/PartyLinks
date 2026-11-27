@@ -53,7 +53,9 @@ def test_stored_events_get_codes_and_a_clash_takes_the_next_one(tmp_path: Path) 
         session.execute(update(EventRow).where(EventRow.id == "test:b").values(code=shortlinks.candidate("test:c")))
     enricher = Enricher(settings.enrichment, settings.timezone)
     with db.session() as session:
-        upsert_events(session, [e for e in map(enricher.enrich, [event("c", soon), event("a", soon, title="New title")]) if e])
+        upsert_events(
+            session, [e for e in map(enricher.enrich, [event("c", soon), event("a", soon, title="New title")]) if e]
+        )
     with db.session() as session:
         codes = dict(session.execute(select(EventRow.id, EventRow.code)).all())
     assert codes["test:c"] == shortlinks.candidate("test:c", 1)
@@ -136,7 +138,9 @@ def test_a_cached_page_of_a_listing_merged_since_answers_its_301(tmp_path: Path)
     with TestClient(create_app(settings, start_scheduler=False), follow_redirects=False) as client:
         assert client.get(f"/e/{dup_code}", headers=UA).status_code == 200  # its own page, cached
         with db.session() as session:
-            session.execute(update(EventRow).where(EventRow.id == "test:dup").values(group_id="test:a", is_primary=False))
+            session.execute(
+                update(EventRow).where(EventRow.id == "test:dup").values(group_id="test:a", is_primary=False)
+            )
         deadline = time.monotonic() + 10
         while (moved := client.get(f"/e/{dup_code}", headers=UA)).status_code == 200 and time.monotonic() < deadline:
             time.sleep(0.05)  # the stale copy is served once while the refresh finds the merge
@@ -159,6 +163,7 @@ def test_an_old_address_of_a_live_event_reaches_it_and_a_gone_one_says_it_is_ove
         for gone_address in (old, other_source):
             moved = client.get(f"/event/{gone_address}", headers=UA)
             assert moved.status_code == 301 and moved.headers["location"] == f"/e/{code}", gone_address
-        over = client.get(f"/event/{old.replace(soon.date().isoformat(), '2020-01-01')}", headers=UA)
+        # The address's own (Israel) date, not soon's UTC one: from 00:00 to 02:00 in Israel they differ.
+        over = client.get(f"/event/{re.sub(r'\d{4}-\d{2}-\d{2}(?=-test-)', '2020-01-01', old)}", headers=UA)
         assert over.status_code == 410
         assert "<title>המסיבה הזאת כבר נגמרה" in over.text and "העמוד לא נמצא" not in over.text

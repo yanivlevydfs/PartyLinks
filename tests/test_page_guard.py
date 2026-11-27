@@ -43,9 +43,17 @@ def test_a_fake_googlebot_is_limited_and_a_real_one_is_not(app, monkeypatch: pyt
 
 
 def test_the_trap_link_bans_who_follows_it(app) -> None:  # type: ignore[no-untyped-def]
+    app.state.settings.security.bans = True  # production has bans off (26.11.2026): the ban itself, when on
     with TestClient(app, client=("198.51.100.10", 1)) as c:
         page = c.get("/about").text
         assert 'href="/archive/all-events" rel="nofollow" hidden' in page
         assert "Disallow: /archive/all-events" in c.get("/robots.txt").text
         assert c.get("/archive/all-events").status_code == 410
         assert c.get("/about").status_code == 403  # banned
+
+
+def test_with_bans_off_the_trap_answers_gone_and_locks_no_one_out(app) -> None:  # type: ignore[no-untyped-def]
+    app.state.settings.security.bans = False  # the owner's setting since 26.11.2026
+    with TestClient(app, client=("198.51.100.11", 1)) as c:
+        assert c.get("/archive/all-events").status_code == 410
+        assert c.get("/about").status_code == 200
