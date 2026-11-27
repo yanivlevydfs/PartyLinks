@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Hero, HiddenEmail, useT, useTitle } from "../ui";
 
-const UPDATED = "2026-11-24";
+const UPDATED = "2026-11-27";
 
 type Section = { title: string; body: string[]; list?: string[] };
 
@@ -20,6 +20,34 @@ const TEXT = {
         body: [
           "האתר הוא מנוע חיפוש ואיסוף בלבד: הוא אוסף באופן אוטומטי מידע על אירועים שמתפרסמים ונמכרים באתרי כרטיסים ובאתרים אחרים של צדדים שלישיים, ומציג אותו במקום אחד עם קישור לאתר המקורי.",
           "האתר אינו מפיק, אינו מארגן ואינו מוכר כרטיסים לאף אירוע, ואינו צד לעסקה כלשהי בינכם לבין מארגן אירוע או אתר כרטיסים.",
+          "האתר ובעליו אינם בעלי האירועים, המסיבות או המקומות, אינם בעלי הכרטיסים, ואינם סוכן, נציג, משווק או שלוח של מארגן, מקום או אתר כרטיסים כלשהו. כל האחריות לאירוע, לכרטיסים ולמידע עליהם היא של האתרים שמוכרים את הכרטיסים ושל המארגנים בלבד.",
+          "הצגת אירוע באתר, מיקומו ברשימה או בדף הבית, וסימונו כ\"פופולרי\" או \"מומלץ\" אינם המלצה, אישור או התחייבות מצדנו לגבי האירוע, המארגן או אתר הכרטיסים.",
+        ],
+      },
+      {
+        title: "מידע שמסודר ומסווג באופן אוטומטי",
+        body: [
+          "את המידע שנאסף אנחנו מעבדים ומסדרים באופן אוטומטי, בלי בדיקה ידנית של כל אירוע, ולכן ייתכנו טעויות בכל אחד מאלה:",
+        ],
+        list: [
+          "סיווג האירוע לקטגוריות ולז'אנרים, כולל ז'אנר מוזיקלי, סוג האירוע ואופיו.",
+          "התאמה לגיל ולקהל יעד: סימון אירוע כמתאים לילדים, למשפחות, לנוער או למבוגרים בלבד. ההגבלות הקובעות הן של המארגן ואתר הכרטיסים.",
+          "מחירים: הסורק מציג מחיר אחד או טווח מחירים, ואינו מבחין בהכרח בין מחיר לפי גיל, הנחת סטודנט, חייל, אזרח ותיק או מנוי, מחיר מוקדם, דמי שירות או מחיר בדלת. המחיר הנמוך המוצג אינו בהכרח המחיר שישולם.",
+          "מקום, עיר, כתובת והנקודה במפה: הם מחושבים מהכתובת או משם המקום, ועלולים להיות לא מדויקים.",
+          "איחוד אירועים: אותו אירוע שמופיע בכמה אתרים מוצג פעם אחת, ולפעמים שני אירועים שונים יאוחדו בטעות או שאירוע אחד יופיע פעמיים.",
+          "אמנים, קישורים לאמנים, תמונות, טקסטים שמסכמים מידע (למשל דף אמן), סידור התיאור לפסקאות, תרגום, תחזית מזג אוויר ומוני צפיות ושמירות.",
+        ],
+      },
+      {
+        title: "תוכן ממומן",
+        body: [
+          "חלק מהאירועים מוצגים בתשלום, ומסומנים כ\"ממומן\". הקידום אינו המלצה שלנו, ומי שמקדם אירוע אחראי לו ולכל פרטיו כמו כל מארגן.",
+        ],
+      },
+      {
+        title: "אירועים למבוגרים וקטינים",
+        body: [
+          "האתר מציג גם אירועים שמיועדים למבוגרים בלבד (למשל מסיבות 18+, אירועים עם אלכוהול או תוכן מיני). השימוש באתר על ידי קטינים הוא באחריות הוריהם, וההחלטה אם להשתתף באירוע, ובדיקת התאמתו לגיל, הן של המשתתף, הוריו, המארגן ואתר הכרטיסים.",
         ],
       },
       {
@@ -78,6 +106,13 @@ const TEXT = {
         title: "השירות ניתן כמו שהוא (AS IS)",
         body: [
           "האתר ניתן ללא תשלום וכמו שהוא, ללא כל התחייבות או מצג לגבי דיוק, שלמות, עדכניות או זמינות. ייתכנו תקלות, הפסקות שירות, טעויות ואירועים חסרים. ככל שהדין מתיר, האתר ובעליו לא יישאו בכל אחריות לנזק שייגרם משימוש באתר או מחוסר יכולת להשתמש בו.",
+          "התנאים האלה חלים על כל ערוצי השירות: האתר, בוט הטלגרם, ההתראות והמיילים.",
+        ],
+      },
+      {
+        title: "דיווח על טעות או בקשת הסרה",
+        body: [
+          "מצאתם פרט שגוי, אירוע שבוטל, סיווג לא מתאים או תוכן שפוגע בזכויותיכם? כתבו לנו בכתובת שלמטה עם קישור לאירוע, ונתקן או נסיר אותו בהקדם. תיקון פרט באתר אינו מחליף את בדיקתו באתר המוכר.",
         ],
       },
       {
@@ -97,6 +132,7 @@ const TEXT = {
         title: "דין וסמכות שיפוט",
         body: [
           "על התנאים ועל השימוש באתר חלים דיני מדינת ישראל בלבד, וסמכות השיפוט הבלעדית נתונה לבתי המשפט המוסמכים בתל אביב-יפו.",
+          "אם ייקבע שסעיף כלשהו בתנאים אינו תקף, שאר הסעיפים יעמדו בתוקפם. הימנעות שלנו מלהפעיל זכות אינה ויתור עליה.",
         ],
       },
     ] as Section[],
@@ -117,6 +153,34 @@ const TEXT = {
         body: [
           "The site is a search and aggregation service only: it automatically collects information about events published and sold on ticketing sites and other third-party sites, and shows it in one place with a link to the original site.",
           "The site does not produce, organize or sell tickets for any event, and is not a party to any transaction between you and an event organizer or ticketing site.",
+          "The site and its owners do not own the events, parties or venues, do not own the tickets, and are not an agent, representative, reseller or proxy of any organizer, venue or ticketing site. All responsibility for an event, its tickets and the information about them lies solely with the sites selling the tickets and the organizers.",
+          "Showing an event on the site, its place in a list or on the home page, and marking it \"popular\" or \"recommended\" are not a recommendation, endorsement or undertaking by us about the event, the organizer or the ticketing site.",
+        ],
+      },
+      {
+        title: "Information sorted and classified automatically",
+        body: [
+          "We process and sort the collected information automatically, without checking each event by hand, so any of the following may be wrong:",
+        ],
+        list: [
+          "The event's categories and genres, including its music genre, type and character.",
+          "Age and audience: marking an event as suitable for children, families, teens or adults only. The organizer's and the ticketing site's restrictions are the ones that count.",
+          "Prices: the site shows one price or a price range, and does not necessarily tell apart prices by age, student, soldier, senior or member discounts, early-bird prices, service fees or door prices. The lowest price shown is not necessarily the price you will pay.",
+          "Venue, town, address and map pin: worked out from the address or the venue's name, and may be inaccurate.",
+          "Merging: one event listed on several sites is shown once, and sometimes two different events are merged by mistake or one event appears twice.",
+          "Artists, artist links, pictures, texts that summarize information (such as an artist page), splitting descriptions into paragraphs, translation, weather forecasts and view and save counts.",
+        ],
+      },
+      {
+        title: "Sponsored content",
+        body: [
+          "Some events are shown for payment and are marked \"Sponsored\". Promotion is not our recommendation, and whoever promotes an event is responsible for it and all its details like any organizer.",
+        ],
+      },
+      {
+        title: "Adult events and minors",
+        body: [
+          "The site also lists events for adults only (such as 18+ parties, events with alcohol or sexual content). Minors' use of the site is their parents' responsibility, and deciding whether to attend an event, and checking it suits one's age, is up to the attendee, their parents, the organizer and the ticketing site.",
         ],
       },
       {
@@ -175,6 +239,13 @@ const TEXT = {
         title: "Provided as is",
         body: [
           "The site is free and provided as is, with no warranty or representation of accuracy, completeness, timeliness or availability. There may be faults, outages, errors and missing events. To the extent permitted by law, the site and its owners bear no liability for any damage arising from using, or being unable to use, the site.",
+          "These terms apply to every channel of the service: the site, the Telegram bot, alerts and emails.",
+        ],
+      },
+      {
+        title: "Reporting a mistake or asking for removal",
+        body: [
+          "Found a wrong detail, a cancelled event, an unsuitable category or content that infringes your rights? Write to us at the address below with a link to the event, and we will correct or remove it promptly. A correction here does not replace checking the detail on the selling site.",
         ],
       },
       {
@@ -192,6 +263,7 @@ const TEXT = {
         title: "Governing law and jurisdiction",
         body: [
           "These terms and the use of the site are governed solely by the laws of the State of Israel, and the competent courts of Tel Aviv-Jaffa have exclusive jurisdiction.",
+          "If any clause of these terms is held invalid, the rest remain in force. Our not enforcing a right is not a waiver of it.",
         ],
       },
     ] as Section[],

@@ -22,12 +22,14 @@ const TEXT = {
       {
         title: "המידע שאנחנו אוספים",
         body: [
-          "השימוש באתר אינו מחייב הרשמה: כל האירועים, החיפוש והמפה פתוחים לכולם בלי חשבון. מי שבוחר להתחבר עם Google או Facebook מוסר לנו את המידע המפורט בסעיף \"חשבון משתמש (רשות)\". מעבר לכך אין באתר טפסים, רכישות או פרסומות.",
-          "כמו בכל אתר, השרת מקבל בכל בקשה מידע טכני: כתובת IP, סוג הדפדפן ומערכת ההפעלה (User-Agent), הכתובת המבוקשת ושעת הבקשה. המידע משמש אך ורק להפעלת האתר ולאבטחתו:",
+          "השימוש באתר אינו מחייב הרשמה: כל האירועים, החיפוש והמפה פתוחים לכולם בלי חשבון. מי שבוחר להתחבר עם Google או Facebook מוסר לנו את המידע המפורט בסעיף \"חשבון משתמש (רשות)\". מעבר לכך ולטפסי הרשות המתוארים למטה (פרסום אירוע, קידום, צור קשר), אין באתר רכישות; אירועים ממומנים מוצגים בלי שום מעקב אחריכם.",
+          "כמו בכל אתר, השרת מקבל בכל בקשה מידע טכני: כתובת IP, סוג הדפדפן ומערכת ההפעלה (User-Agent), הכתובת המבוקשת ושעת הבקשה. המידע משמש אך ורק להפעלת האתר, לאבטחתו ולספירות אנונימיות:",
         ],
         list: [
           "הגבלת קצב בקשות וחסימה זמנית של כתובות שמבצעות סריקות או ניסיונות תקיפה. מונים אלה נשמרים בזיכרון השרת בלבד ונמחקים תוך דקות עד שעות.",
           "יומן שגיאות טכני (בקשות שנכשלו וחסימות), שנשמר לתקופה קצרה ונמחק במחזוריות.",
+          "מוני צפיות בדפי אירועים (\"צפו\", \"צופים עכשיו\"): שורה אחת לכל אירוע, מבקר ויום, כשהמבקר הוא טביעה חד-כיוונית של כתובת ה-IP וסוג הדפדפן עם מפתח אקראי שמתחלף בכל הפעלה מחדש של השרת. כתובת ה-IP, עוגייה או סוג הדפדפן אינם נשמרים, אי אפשר לשחזר אותם מהטביעה, והשורות נמחקות כשהאירוע מסתיים (ולכל היותר אחרי שנה).",
+          "לחיצות על קישורי כרטיסים נספרות לכל אירוע, בלי כתובת IP, עוגייה או סוג דפדפן. הקישור לאתר המוכר כולל תג שלנו (utm_source=spotx), כדי שהמוכר יידע שהביקור הגיע מאיתנו, ולא מי אתם.",
         ],
       },
       {
@@ -143,12 +145,14 @@ const TEXT = {
       {
         title: "What we collect",
         body: [
-          "Using the site needs no sign-up: every event, the search and the map are open to everyone without an account. If you choose to sign in with Google or Facebook, you give us the data listed under \"User account (optional)\". Beyond that the site has no forms, purchases or ads.",
-          "Like every website, the server receives technical data with each request: IP address, browser and operating system (User-Agent), the requested address and the time. It is used only to run and protect the site:",
+          "Using the site needs no sign-up: every event, the search and the map are open to everyone without an account. If you choose to sign in with Google or Facebook, you give us the data listed under \"User account (optional)\". Beyond that and the optional forms described below (posting an event, promotion, contact), the site has no purchases; sponsored events are shown without any tracking of you.",
+          "Like every website, the server receives technical data with each request: IP address, browser and operating system (User-Agent), the requested address and the time. It is used only to run and protect the site and for anonymous counts:",
         ],
         list: [
           "Rate limiting and temporary blocking of addresses that scan or attack the site. These counters live in server memory only and are gone within minutes to hours.",
           "A technical error log (failed requests and blocks), kept for a short period and rotated.",
+          "View counts on event pages (\"viewed\", \"watching now\"): one row per event, visitor and day, where the visitor is a one-way hash of the IP address and browser type with a random key that changes on every server restart. No IP address, cookie or browser type is kept, the hash cannot be turned back into them, and the rows are deleted once the event is over (after a year at most).",
+          "Ticket-link clicks are counted per event with no IP address, cookie or browser type. The link to the selling site carries our tag (utm_source=spotx) so the seller knows the visit came from us, not who you are.",
         ],
       },
       {

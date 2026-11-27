@@ -4,11 +4,11 @@
 | --- | --- | --- |
 | `/accessibility` | Accessibility statement, Israeli standard IS 5568 | `site.accessibility` in settings |
 | `/privacy` | Privacy and cookie policy, Privacy Protection Law (Amendment 13) | `site.privacy` in settings, and the storage table in `web/src/consent.tsx` |
-| `/terms` | Terms of use: SPOTX only aggregates listings sold on other sites; optional accounts (16+, one per person, best-effort alerts, blocking) | `web/src/pages/Terms.tsx` |
+| `/terms` | Terms of use: SPOTX only aggregates listings sold on other sites and owns no event or ticket; automatic sorting (genres, ages, prices, map, merging) may be wrong; sponsored events; adult events and minors; error reports and removal; optional accounts (16+, one per person, best-effort alerts, blocking) | `web/src/pages/Terms.tsx` |
 
 ## Cookies and tracking
 
-- **No cookies for ads or analytics.** The site sets none.
+- **No advertising cookies.** Google Analytics loads only after consent (the "analytics" category in `consent.tsx`).
 - **Necessary browser storage** (settings, consent choice) needs no consent, but it is listed on
   the privacy page.
 - **The only optional category is external content:** OpenFreeMap map tiles
@@ -36,6 +36,7 @@ unsubscribe; the digest goes only to users who ticked it. See [accounts](account
 ## Server-side records with no personal data
 
 - **Ticket-link clicks** store no IP address, cookie or user agent (see [ticket links](ticket-links.md)).
+- **Event view counts** (`popularity`): one row per event, visitor and day; the visitor is a hash of IP + user agent with a per-process salt, no IP or cookie kept. The privacy page lists it.
 - **UTM tags** go to the seller in the link itself; we set nothing in the visitor's browser.
 
 Adding client-side analytics later would mean updating `consent.tsx` and the privacy page.
