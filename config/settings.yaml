@@ -194,12 +194,13 @@ home_rails:
     - {key: live_tonight, today: true, genre: [live_show]}
     - {key: bars_tonight, today: true, genre: [happy_hour, open_bar, nightclubs]}
     - {key: clubs_tonight, today: true, time_slot: [night], genre: [nightclubs]}
-    # Open latest tonight: tonight's night out, the latest to end first (an end time, else start + 3 h).
+    # The places open latest tonight: bars, cafés, clubs and attractions, the latest to close first (their
+    # opening hours of today, happytlv; 28.11.2026: a billiard hall to 04:30, a club to 04:00).
     - key: latest_tonight
       today: true
+      places: true
       sort: latest
-      genre: [g_parties, nightclubs, happy_hour, open_bar, live_show, karaoke]
-      exclude: [kids, lectures, workshops, conference]
+      exclude: [volunteering, work_spaces]
     - {key: weekend, weekend: true, days: 7}
     - {key: parties_weekend, weekend: true, days: 7, genre: [g_parties], exclude: [kids, lectures, workshops, conference]}
     - {key: live_weekend, weekend: true, days: 7, genre: [live_show]}
@@ -236,12 +237,14 @@ home_rails:
     # Adult nightlife (18+): kink / BDSM, liberal / swingers, tantra / burlesque. 60 days: few such nights.
     - {key: adult_parties, genre: [kink, liberal, sensual], days: 60}
     - {key: friends, genre: [quiz_games, karaoke, gaming, escape_rooms]}
-    # The least usual nights out: circus and magic, drag, nature and pool parties, improv, klezmer and piyut,
-    # flamenco, K-pop, ballroom and folk dance, sing-alongs, literary and photography evenings.
+    # The least usual places: attractions and team activities (billiards, bowling, private karaoke rooms, a
+    # clubhouse...) but not the escape rooms (98 of them: the usual one), the best rated first.
     - key: unusual
-      genre: [circus_magic, drag_cabaret, nature_party, pool_party, improv, klezmer, piyut, flamenco, kpop, ballroom,
-              folk_dance, singalong, literature, photography, hasidic]
-      exclude: [kids, lectures, workshops, conference]  # literary and photography evenings, not their courses
+      places: true
+      sort: rating
+      days: 7
+      genre: [attractions, team_activities]
+      exclude: [escape_rooms]
     # Bars and going out to eat.
     - {key: happy_hour, genre: [happy_hour]}
     - {key: open_bar, genre: [open_bar]}

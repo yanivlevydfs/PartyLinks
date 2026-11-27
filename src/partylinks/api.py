@@ -1478,6 +1478,8 @@ def _home_row_filters(
         filters.append(EventRow.group_min_price > 0)
     if spec.multi:
         filters.append(EventRow.group_size > 1)
+    if spec.places is not None:
+        filters.append(placecards.IS_PLACE if spec.places else ~placecards.IS_PLACE)
     if spec.exclude:
         filters.append(not_(_json_contains(EventRow.genres, cfg.enrichment.expand_genres(spec.exclude))))
     return filters
@@ -1939,6 +1941,7 @@ def _register_routes(app: FastAPI) -> None:
             orders = {
                 "trending": (_SORT_COLUMNS[EventSort.trending], _START),
                 "latest": (ends.desc().nulls_last(), _START),
+                "rating": (EventRow.extra["rating"].as_float().desc().nulls_last(), _START),
             }
 
             def load(filters: list[ColumnElement[bool]], pool: int, sort: str = "trending") -> list[EventSummaryOut]:

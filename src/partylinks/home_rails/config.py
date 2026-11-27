@@ -28,9 +28,12 @@ class HomeRail(BaseModel):
     holiday: str | None = None
     # Only the next such calendar month (6: June, this one's rest while in it), however far; `days` is ignored.
     month: int | None = Field(None, ge=1, le=12)
-    # The cards' order: "trending" (on the most ticket sites first) or "latest" (the latest to end first: the
-    # end time, else the start plus retention.assumed_duration_hours; "open latest tonight").
-    sort: Literal["trending", "latest"] = "trending"
+    # The cards' order: "trending" (on the most ticket sites first), "latest" (the latest to end first: the
+    # end time, else the start plus retention.assumed_duration_hours; a place's closing hour) or "rating" (a
+    # place's Google rating, the best first).
+    sort: Literal["trending", "latest", "rating"] = "trending"
+    # Places (bars, cafés, attractions: one listing per day they open, partylinks.placecards) only, or events only.
+    places: bool | None = None
 
     @field_validator("holiday")
     @classmethod

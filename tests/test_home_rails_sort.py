@@ -30,3 +30,28 @@ def test_latest_lists_the_latest_end_first_and_trending_stays_the_default(tmp_pa
         rails = client.get("/events/rails").json()["rails"]
     assert [e["id"] for e in rails["late"]] == ["test:dawn", "test:open", "test:early"]
     assert [e["id"] for e in rails["usual"]] == ["test:early", "test:dawn", "test:open"]  # by start, no other sites
+
+
+def test_places_rows_by_closing_hour_and_by_rating(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    settings.home_rails.rows = [
+        HomeRail(key="late_places", places=True, sort="latest"),
+        HomeRail(key="best_places", places=True, sort="rating"),
+        HomeRail(key="events_only", places=False),
+    ]
+    opens = datetime.now(UTC).replace(microsecond=0) + timedelta(days=1)
+    place = {"source_genres": ["attractions"], "url": None}
+
+    def bar(key: str, closes: int, rating: float):  # type: ignore[no-untyped-def]
+        fields = place | {"url": f"https://example.com/{key}", "extra": {"happy_hour": True, "rating": rating}}
+        return event(key, opens, end_at=opens + timedelta(hours=closes), title=f"Place {key}", **fields)
+
+    seed(settings, [
+        bar("billiards", 16, 4.1), bar("cafe", 8, 4.9), bar("club", 12, 4.5),
+        event("party", opens, end_at=opens + timedelta(hours=20), source_genres=["techno"]),
+    ])  # fmt: skip
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        rails = client.get("/events/rails").json()["rails"]
+    assert [e["id"] for e in rails["late_places"]] == ["test:billiards", "test:club", "test:cafe"]  # no party
+    assert [e["id"] for e in rails["best_places"]] == ["test:cafe", "test:club", "test:billiards"]
+    assert [e["id"] for e in rails["events_only"]] == ["test:party"]
