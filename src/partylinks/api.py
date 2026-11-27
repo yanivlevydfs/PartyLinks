@@ -1466,10 +1466,14 @@ def _home_row_filters(
 ) -> list[ColumnElement[bool]]:
     """A home_rails row's WHERE clauses: the API's event filters (``filters_of``) and the row's own conditions."""
     window = spec.window(now.date())  # a holiday's or a month's next dates, however far
+    # "Open latest tonight" after midnight is still last night: until the night slot ends (06:00) its day is
+    # yesterday's, the places open now, not the ones opening at noon (01:40, 28.11.2026).
+    night_end = next((s.end_hour for s in cfg.enrichment.time_slots if s.name == "night"), 6)
+    day = now.date() - timedelta(days=1) if spec.sort == "latest" and now.hour < night_end else now.date()
     filters = filters_of(
         date_to=now + timedelta(days=366 if window else spec.days), genre=spec.genre or None,
         time_slot=spec.time_slot or None, free_entry=spec.free_entry or None,
-        on_date=now.date() if spec.today else None, weekend=spec.weekend or None,
+        on_date=day if spec.today else None, weekend=spec.weekend or None,
         abroad=spec.abroad or None, discount=spec.discount or None, max_price=spec.max_price,
     )  # fmt: skip
     if window:
@@ -1938,10 +1942,14 @@ def _register_routes(app: FastAPI) -> None:
             # interval: a bare timedelta reached Postgres as a timestamp and the row failed).
             length = literal(timedelta(hours=cfg.retention.assumed_duration_hours), Interval())
             ends = func.coalesce(EventRow.end_at, EventRow.start_at + length)
+            # "rating" rows: the rating weighted by its reviews (a Bayesian mean toward 4.3 with 50 reviews' weight):
+            # a bare rating put a park and a kids' puppet theatre with a 5.0 of a few reviews first (28.11.2026).
+            reviews = func.coalesce(EventRow.extra["reviews"].as_float(), 0)
+            rated = (EventRow.extra["rating"].as_float() * reviews + 4.3 * 50) / (reviews + 50)
             orders = {
                 "trending": (_SORT_COLUMNS[EventSort.trending], _START),
                 "latest": (ends.desc().nulls_last(), _START),
-                "rating": (EventRow.extra["rating"].as_float().desc().nulls_last(), _START),
+                "rating": (rated.desc().nulls_last(), _START),
             }
 
             def load(filters: list[ColumnElement[bool]], pool: int, sort: str = "trending") -> list[EventSummaryOut]:
