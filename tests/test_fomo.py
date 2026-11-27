@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime, tzinfo
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
+
+import pytest
 
 from partylinks.config import Settings
 from partylinks.enrichment import Enricher
 from partylinks.models import TierStatus
+from partylinks.scrapers import fomo
 from partylinks.scrapers.fomo import FomoSettings, listed, merge, parse_event
 
 FIXTURE = Path(__file__).parent / "fixtures" / "fomo" / "catalogue.json"
@@ -44,7 +48,17 @@ def test_secret_spot_party() -> None:
     assert event.organizer == "chosen people"
 
 
-def test_tickets_in_agorot_with_the_default_fee() -> None:
+class _SavedDay(datetime):
+    """The clock on the day the fixture was saved: the tiers' sale windows are real dates."""
+
+    @classmethod
+    def now(cls, tz: tzinfo | None = None) -> Self:
+        return cls(2026, 11, 26, 12, 0, tzinfo=UTC).astimezone(tz)
+
+
+def test_tickets_in_agorot_with_the_default_fee(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The last tier's sale ends 27.11 21:59 UTC: on the real clock this test failed from 28.11.2026.
+    monkeypatch.setattr(fomo, "datetime", _SavedDay)
     event = parse_event(_merged(CHOSEN), SETTINGS, TZ)
     assert event is not None
     first = event.tickets[0]
