@@ -364,6 +364,33 @@ class RailsOut(BaseModel):
     holiday: HolidayOut | None = None  # the coming holiday its "holiday" row is about (partylinks.holiday_pages)
 
 
+def _kept_rails(cache: ResponseCache, path: str) -> dict[str, list[dict[str, Any]]]:
+    """The last rows the response cache holds, as cards without their pins: the full response's, else the
+    compact one's (what the web asks for, so often the only one a snapshot has)."""
+    with contextlib.suppress(ValueError, KeyError, TypeError, AttributeError):
+        if old := cache.body((path, "")):
+            return {k: [c for c in v if not c.get("pinned")] for k, v in json.loads(old)["rails"].items()}
+        if old := cache.body((path, "compact=true")):
+            data = json.loads(old)
+            events, pinned = data["events"], data.get("pinned") or {}
+            return {
+                k: [events[i] for i in ids if i in events and i not in pinned.get(k, ())]
+                for k, ids in data["rails"].items()
+            }
+    return {}
+
+
+class RailsCompactOut(BaseModel):
+    """The same rows with each event once (``/events/rails?compact=true``, what the web asks): a row is its events'
+    ids. 1,865 cards were 1,176 events, 3.9MB of JSON the browser parsed and kept in localStorage (its ~5MB limit)
+    on every visit (28.11.2026)."""
+
+    events: dict[str, EventSummaryOut] = {}
+    rails: dict[str, list[str]] = {}
+    pinned: dict[str, list[str]] = {}  # per row, the ids pinned there (a card's ``pinned`` is its row's, not its own)
+    holiday: HolidayOut | None = None
+
+
 class MapEventOut(_Out):
     """A pin on the map: only what its popup shows."""
 
@@ -917,6 +944,7 @@ def _sounds_like(request: Request, q: str) -> list[str]:
 # The map's pins with the exact query its page sends (MapPage: filterParams sorted by start, api.ts useMapEvents
 # compact): "/events/map" alone was another cache key, so the first visitor after a deploy waited 7-17 s.
 MAP_WARM_PATH = "/events/map?sort=start_at&compact=true"
+RAILS_WARM_PATH = "/events/rails?compact=true"
 
 WARM_PATHS = (
     "/",
@@ -936,6 +964,7 @@ WARM_PATHS = (
     "/categories?abroad=true&lists=false",
     "/ticket-sites",
     "/events/rails",
+    RAILS_WARM_PATH,
     "/sitemap.xml",
 )
 
@@ -1143,6 +1172,7 @@ def create_app(
                             "/categories",
                             MAP_WARM_PATH,
                             "/events/rails",  # the home rows: refreshed in turns (home_rails.RowCache), never cold
+                            RAILS_WARM_PATH,  # the same rows as the web asks for them (each event once)
                             *(f"/categories?abroad=true&country={c}&lists=false" for c in countries),
                         ]:
                             await client.get(path)  # one at a time: never more than one build slot
@@ -1941,8 +1971,8 @@ def _register_routes(app: FastAPI) -> None:
 
     app.include_router(config_overrides_router)
 
-    @app.get("/events/rails", response_model=RailsOut, tags=["events"])
-    def rails(request: Request) -> Response:
+    @app.get("/events/rails", response_model=RailsOut | RailsCompactOut, tags=["events"])
+    def rails(request: Request, compact: bool = False) -> Response:
         """Every home-page row (settings home_rails) in one cached response, warmed on startup: the busiest
         events of each, from tonight to the row's horizon."""
         cfg: Settings = request.app.state.settings
@@ -2007,15 +2037,11 @@ def _register_routes(app: FastAPI) -> None:
                     broken_home_rail(spec.key)
             tags = {r.key: r.cache_tag(now.date()) for r in specs if r.key in wheres}
             rows_cache: RowCache = request.app.state.home_rows
-            if rows_cache.empty() and (old := request.app.state.response_cache.body((request.url.path, ""))):
-                with contextlib.suppress(ValueError, KeyError, TypeError):  # an older response: rows to start from
-                    kept = json.loads(old)["rails"]
-                    rows_cache.seed(  # without its pins: home_pins adds the live ones on top
-                        {
-                            k: [EventSummaryOut.model_validate(c) for c in v if not c.get("pinned")]
-                            for k, v in kept.items()
-                        },
-                        tags,
+            if rows_cache.empty():
+                kept_cards = _kept_rails(request.app.state.response_cache, request.url.path)
+                if kept_cards:  # an older response: rows to start from, without its pins (home_pins adds the live ones)
+                    rows_cache.seed(
+                        {k: [EventSummaryOut.model_validate(c) for c in v] for k, v in kept_cards.items()}, tags
                     )
 
             sorts = {r.key: r.sort for r in specs}
@@ -2038,7 +2064,20 @@ def _register_routes(app: FastAPI) -> None:
             home_pins.pin(session, out.rails, wheres, event_filters(request), load)
             return out
 
-        return _cached(request, build)
+        def build_compact(session: Session) -> RailsCompactOut:
+            full = build(session)
+            events: dict[str, EventSummaryOut] = {}
+            for cards in full.rails.values():
+                for card in cards:
+                    events.setdefault(card.id, card.model_copy(update={"pinned": False}))
+            return RailsCompactOut(
+                events=events,
+                rails={key: [c.id for c in cards] for key, cards in full.rails.items()},
+                pinned={key: ids for key, cards in full.rails.items() if (ids := [c.id for c in cards if c.pinned])},
+                holiday=full.holiday,
+            )
+
+        return _cached(request, build_compact if compact else build)
 
     @app.get("/events/{event_ref}", response_model=EventOut, tags=["events"])
     def get_event(event_ref: str, session: SessionDep, request: Request) -> EventOut:

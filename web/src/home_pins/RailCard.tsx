@@ -22,7 +22,7 @@ function AdminCard({ e, rail }: { e: EventSummary; rail?: string }) {
   if (gone) return null; // unpinned: off this row at once; the rows refresh within a minute
   const remove = () =>
     confirm(p.unpinAsk) &&
-    unpin.mutate(e.id, { onSuccess: () => { setGone(true); qc.invalidateQueries({ queryKey: ["rails"] }); } });
+    unpin.mutate(e.id, { onSuccess: () => { setGone(true); qc.invalidateQueries({ queryKey: ["rails2"] }); } });
   return (
     <div className="card-wrap pin-card">
       <Card e={e} />

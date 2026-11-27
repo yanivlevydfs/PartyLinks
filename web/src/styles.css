@@ -488,6 +488,8 @@ select option { background: var(--panel-solid); color: var(--text); }
   padding: 6px 0 4px; margin-inline: 22px; /* margin, not padding: no next card peeking in the gutter */
 }
 .trending-row::-webkit-scrollbar { display: none; }
+/* A home row not drawn yet (Home.tsx LazyRow): about one row's height, so the page keeps its length. */
+.rail-placeholder { min-height: 360px; }
 /* Exactly five whole cards in view (four on narrow desktops), never a cut one at the edge. */
 .trending-row > .card-wrap { flex: 0 0 calc((100% - 4 * 16px) / 5); min-width: 0; scroll-snap-align: start; }
 @media (max-width: 1100px) { .trending-row > .card-wrap { flex-basis: calc((100% - 3 * 16px) / 4); } }

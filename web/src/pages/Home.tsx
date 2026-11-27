@@ -202,10 +202,34 @@ export function Trending({ rows }: { rows?: number } = {}) {
   const rails = Object.entries(q.data?.rails ?? {}).slice(0, rows);
   if (q.isPending) return <Rail title={t.trending} sub={t.trendingSub} pool={undefined} />;
   const holiday = q.data?.holiday;
-  return <>{rails.map(([key, pool]) => key === "trending"
-    ? <Rail key={key} rail={key} title={t.trending} sub={t.trendingSub} pool={pool} />
-    : key === "holiday" ? holiday && <Rail key={key} rail={key} title={t.holidayRail(holiday[lang])} sub={t.holidayRailSub} pool={pool} />
-    : t.rails[key] && <Rail key={key} rail={key} title={t.rails[key][0]} sub={t.rails[key][1]} pool={pool} />)}</>;
+  // The first rows draw at once; each later one only as the visitor scrolls near it (~100 rows of 12 cards
+  // drawn together made the home page slow, 28.11.2026).
+  return <>{rails.map(([key, pool], i) => {
+    const row = key === "trending"
+      ? <Rail rail={key} title={t.trending} sub={t.trendingSub} pool={pool} />
+      : key === "holiday" ? holiday && <Rail rail={key} title={t.holidayRail(holiday[lang])} sub={t.holidayRailSub} pool={pool} />
+      : t.rails[key] && <Rail rail={key} title={t.rails[key][0]} sub={t.rails[key][1]} pool={pool} />;
+    return row ? (i < EAGER_ROWS ? <div key={key}>{row}</div> : <LazyRow key={key}>{row}</LazyRow>) : null;
+  })}</>;
+}
+
+const EAGER_ROWS = 6;
+
+/** Its row only once it is near the screen (a row's height of room until then, so the page doesn't jump). */
+function LazyRow({ children }: { children: React.ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = box.current;
+    if (!el || near) return;
+    if (typeof IntersectionObserver === "undefined") { setNear(true); return; }
+    const seen = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { setNear(true); seen.disconnect(); }
+    }, { rootMargin: "800px 0px" });
+    seen.observe(el);
+    return () => seen.disconnect();
+  }, [near]);
+  return <div ref={box} className={near ? undefined : "rail-placeholder"}>{near ? children : null}</div>;
 }
 
 /** A sideways row of cards: a random 12 of the row's pool (undefined: still loading). */

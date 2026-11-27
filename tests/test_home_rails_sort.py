@@ -129,3 +129,36 @@ def test_region_and_day_of_week_reach_the_event_filters() -> None:
     row = HomeRail(key="north_thu", region=["haifa", "galilee"], day_of_week=["thursday"])
     _home_row_filters(filters_of, Settings(), row, datetime(2026, 11, 28, 20, tzinfo=ZoneInfo("Asia/Jerusalem")))
     assert asked["region"] == ["haifa", "galilee"] and asked["day_of_week"] == ["thursday"]
+
+
+def test_compact_rails_send_each_event_once_and_keep_the_pins_per_row(tmp_path: Path) -> None:
+    settings = settings_for(tmp_path)
+    settings.home_rails.rows = [HomeRail(key="a", genre=["techno"]), HomeRail(key="b", genre=["techno"])]
+    start = datetime.now(UTC).replace(microsecond=0) + timedelta(days=2)
+    seed(settings, [event(f"t{i}", start + timedelta(hours=i), source_genres=["techno"]) for i in range(3)])
+    with TestClient(create_app(settings, start_scheduler=False)) as client:
+        full = client.get("/events/rails").json()
+        compact = client.get("/events/rails?compact=true").json()
+    assert set(compact) >= {"events", "rails", "pinned"}
+    assert compact["rails"]["a"] == [c["id"] for c in full["rails"]["a"]] == compact["rails"]["b"]
+    assert sorted(compact["events"]) == ["test:t0", "test:t1", "test:t2"]  # once, though in two rows
+    assert compact["events"]["test:t1"]["title"] == full["rails"]["a"][1]["title"]
+    assert compact["pinned"] == {}
+
+
+def test_kept_rails_seed_from_the_compact_copy() -> None:
+    import json
+
+    from partylinks.api import _kept_rails
+
+    class Cache:
+        def body(self, key: tuple[str, str]) -> bytes | None:
+            if key[1] != "compact=true":
+                return None
+            return json.dumps({
+                "events": {"x": {"id": "x"}, "y": {"id": "y"}},
+                "rails": {"r": ["x", "y"], "s": ["y"]},
+                "pinned": {"r": ["y"]},
+            }).encode()  # fmt: skip
+
+    assert _kept_rails(Cache(), "/events/rails") == {"r": [{"id": "x"}], "s": [{"id": "y"}]}  # type: ignore[arg-type]

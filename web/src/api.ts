@@ -191,9 +191,10 @@ export const usePosts = (lang: string, category?: string, onProgress?: (share: n
   });
 
 /** A query kept in localStorage too: a return visit draws the last copy at once while a fresh one loads. */
-function useKept<T>(key: string, url: string) {
+function useKept<T, R = T>(key: string, url: string, select?: (data: T) => R) {
   const store = `q:${key}`;
   return useQuery({
+    select,
     queryKey: [key],
     queryFn: async () => {
       const data = await getJSON<T>(url);
@@ -225,7 +226,20 @@ export const holidayWhen = (h: Pick<Holiday, "start" | "end">) => `${h.start}~${
 
 /** The home page's rows under "Trending": a pool of the busiest events per row (settings home_rails, admin config tab);
  *  `holiday`: the coming holiday its "holiday" row is about. */
-export const useRails = () => useKept<{ rails: Record<string, EventSummary[]>; holiday?: Holiday | null }>("rails", "/events/rails");
+export interface Rails { rails: Record<string, EventSummary[]>; holiday?: Holiday | null }
+/** /events/rails?compact=true: each event once and a row as its ids (1,865 cards were 1,176 events, 3.9MB parsed and
+ *  kept in localStorage on every visit). The kept copy is this small form; the rows are rebuilt from it. */
+interface CompactRails { events: Record<string, EventSummary>; rails: Record<string, string[]>; pinned?: Record<string, string[]>; holiday?: Holiday | null }
+const expandRails = (c: CompactRails): Rails => ({
+  holiday: c.holiday,
+  rails: Object.fromEntries(Object.entries(c.rails ?? {}).map(([key, ids]) => {
+    const pins = new Set(c.pinned?.[key] ?? []);
+    return [key, ids.flatMap((id) => (c.events[id] ? [pins.has(id) ? { ...c.events[id], pinned: true } : c.events[id]] : []))];
+  })),
+});
+// "rails2": a new key, so the old full copy (q:rails, ~4MB) is not read as the compact one; it is removed below.
+export const useRails = () => useKept<CompactRails, Rails>("rails2", "/events/rails?compact=true", expandRails);
+try { localStorage.removeItem("q:rails"); } catch { /* blocked: nothing kept anyway */ }
 
 export interface TicketSite { name: string; events: number; updated_at: string | null }
 /** A box office inside a platform (a Smarticket tenant: a city's culture hall, a council, a theatre). */
