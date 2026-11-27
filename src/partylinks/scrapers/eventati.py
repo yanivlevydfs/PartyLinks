@@ -29,6 +29,7 @@ from partylinks.models import ScrapedEvent, TicketTier
 from partylinks.parsing import clean_str, jsonld_nodes, parse_iso, schema_types, to_decimal, zone
 from partylinks.retention import is_current
 from partylinks.scrapers.base import BaseScraper, SourceSettings
+from partylinks.scrapers.ticket4u import town_at
 
 _LOC = re.compile(r"<loc>([^<]+)</loc>\s*(?:<lastmod>([^<]+)</lastmod>)?")
 _EVENT_SLUG = re.compile(r"event-details/([a-z0-9][a-z0-9-]*)")
@@ -87,12 +88,15 @@ class EventatiScraper(BaseScraper[EventatiSettings]):
 
 
 def _objects(page_html: str, marker: str) -> Any:
-    """The JSON value after the first ``marker`` (``"event":`` / ``"events":``) in the page's Wix data."""
+    """The JSON value after the first ``marker`` in the page's Wix data. The marker ends with the value's
+    opening (``"event":{"id"``): a page has other, empty ``"event":`` keys before the event's own
+    (``/he/event-details/anhyar``, 27.11.2026: the first is not the event)."""
     start = page_html.find(marker)
     if start < 0:
         return None
+    opening = start + marker.index(":") + 1
     try:
-        value, _ = json.JSONDecoder().raw_decode(page_html, start + len(marker))
+        value, _ = json.JSONDecoder().raw_decode(page_html, opening)
     except json.JSONDecodeError:
         return None
     return value
@@ -100,7 +104,7 @@ def _objects(page_html: str, marker: str) -> Any:
 
 def list_slugs(page_html: str) -> list[str]:
     """The slugs of the events the ``/allevents`` widget lists."""
-    rows = _objects(page_html, '"events":')
+    rows = _objects(page_html, '"events":[{"id"')
     if not isinstance(rows, list):
         return list(dict.fromkeys(_EVENT_SLUG.findall(page_html)))
     return [str(r["slug"]) for r in rows if isinstance(r, dict) and r.get("slug")]
@@ -136,7 +140,7 @@ def _tiers(page_html: str) -> list[TicketTier]:
 def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
     """One event page: the embedded Wix event object, its JSON-LD offers. None for a cancelled or
     undated event ("Date and time is TBD"), or a page without the event."""
-    event = _objects(page_html, '"event":')
+    event = _objects(page_html, '"event":{"id"')
     if not isinstance(event, dict) or not event.get("id") or event.get("status") == _CANCELED:
         return None
     config = (event.get("scheduling") or {}).get("config") or {}
@@ -173,7 +177,8 @@ def parse_event(page_html: str, url: str, timezone: str) -> ScrapedEvent | None:
         time_known=True,
         venue_name=clean_str((location.get("name") or "").strip(" -")),
         address=clean_str(ld_place.get("address")) or clean_str(location.get("address")),
-        city=clean_str(full.get("city")),
+        # The town of the pin: the page writes it in Arabic ("سخنين", "أم الفحم،"), which names no town of ours.
+        city=town_at(coordinates.get("lat"), coordinates.get("lng")) or clean_str(full.get("city")),
         latitude=coordinates.get("lat") if coordinates.get("lng") is not None else None,
         longitude=coordinates.get("lng") if coordinates.get("lat") is not None else None,
         images=[image] if image else [],

@@ -34,7 +34,7 @@ def test_event_page() -> None:
     assert event.title == "קריסה"
     assert event.start_at is not None and event.start_at.isoformat() == "2026-12-14T19:00:00+02:00"
     assert event.end_at is None  # the site hides its end
-    assert event.venue_name == "תיאטרון אלחנין" and event.city == "الناصرة" and event.address == "נצרת"
+    assert event.venue_name == "תיאטרון אלחנין" and event.city == "נצרת" and event.address == "נצרת"  # the pin's town
     assert event.latitude == 32.6898301 and event.longitude == 35.2981048
     assert [(t.name, t.price) for t in event.tickets] == [("כרטיס יחיד", 30)]
     assert event.min_price == 30 and event.extra["purchase_url"] == URL
