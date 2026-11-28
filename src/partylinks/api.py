@@ -362,6 +362,8 @@ class RailsOut(BaseModel):
 
     rails: dict[str, list[EventSummaryOut]] = {}
     holiday: HolidayOut | None = None  # the coming holiday its "holiday" row is about (partylinks.holiday_pages)
+    # Row -> its banner (web/public/holidays/<art>.webp): home_rails.rows[].art; the "holiday" row its holiday's.
+    art: dict[str, str] = {}
 
 
 def _kept_rails(cache: ResponseCache, path: str) -> dict[str, list[dict[str, Any]]]:
@@ -389,6 +391,7 @@ class RailsCompactOut(BaseModel):
     rails: dict[str, list[str]] = {}
     pinned: dict[str, list[str]] = {}  # per row, the ids pinned there (a card's ``pinned`` is its row's, not its own)
     holiday: HolidayOut | None = None
+    art: dict[str, str] = {}
 
 
 class MapEventOut(_Out):
@@ -1495,7 +1498,7 @@ def _home_row_filters(
     filters_of: Callable[..., list[ColumnElement[bool]]], cfg: Settings, spec: HomeRail, now: datetime
 ) -> list[ColumnElement[bool]]:
     """A home_rails row's WHERE clauses: the API's event filters (``filters_of``) and the row's own conditions."""
-    window = spec.window(now.date())  # a holiday's or a month's next dates, however far
+    window = spec.window(now.date(), cfg.holiday_pages.seasons)  # a holiday's or a month's next dates, however far
     # "Open latest tonight" after midnight is still last night: until the night slot ends (06:00) its day is
     # yesterday's, the places open now, not the ones opening at noon (01:40, 28.11.2026).
     night_end = next((s.end_hour for s in cfg.enrichment.time_slots if s.name == "night"), 6)
@@ -2068,6 +2071,10 @@ def _register_routes(app: FastAPI) -> None:
                 if key == cfg.smart_rails.after:
                     add_smart()
             home_pins.pin(session, out.rails, wheres, event_filters(request), load)
+            art = {r.key: r.art for r in cfg.home_rails.rows if r.art}
+            if out.holiday and (holiday_art := cfg.holiday_pages.art.get(out.holiday.key)):
+                art["holiday"] = holiday_art
+            out.art = {k: v for k, v in art.items() if k in out.rails}
             return out
 
         def build_compact(session: Session) -> RailsCompactOut:
@@ -2081,6 +2088,7 @@ def _register_routes(app: FastAPI) -> None:
                 rails={key: [c.id for c in cards] for key, cards in full.rails.items()},
                 pinned={key: ids for key, cards in full.rails.items() if (ids := [c.id for c in cards if c.pinned])},
                 holiday=full.holiday,
+                art=full.art,
             )
 
         return _cached(request, build_compact if compact else build)

@@ -203,27 +203,19 @@ export function Trending({ rows }: { rows?: number } = {}) {
   const rails = Object.entries(q.data?.rails ?? {}).slice(0, rows);
   if (q.isPending) return <Rail title={t.trending} sub={t.trendingSub} pool={undefined} />;
   const holiday = q.data?.holiday;
+  const art = q.data?.art ?? {}; // a row's banner, from the server (home_rails.rows[].art, holiday_pages.art)
   // The first rows draw at once; each later one only as the visitor scrolls near it (~100 rows of 12 cards
   // drawn together made the home page slow, 28.11.2026).
   return <>{rails.map(([key, pool], i) => {
     const row = key === "trending"
       ? <Rail rail={key} title={t.trending} sub={t.trendingSub} pool={pool} />
-      : key === "holiday" ? holiday && <Rail rail={key} title={t.holidayRail(holiday[lang])} sub={t.holidayRailSub} pool={pool} art={artOf(key, holiday.key)} />
-      : t.rails[key] && <Rail rail={key} title={t.rails[key][0]} sub={t.rails[key][1]} pool={pool} art={artOf(key)} />;
+      : key === "holiday" ? holiday && <Rail rail={key} title={t.holidayRail(holiday[lang])} sub={t.holidayRailSub} pool={pool} art={art[key]} />
+      : t.rails[key] && <Rail rail={key} title={t.rails[key][0]} sub={t.rails[key][1]} pool={pool} art={art[key]} />;
     return row ? (i < EAGER_ROWS ? <div key={key}>{row}</div> : <LazyRow key={key}>{row}</LazyRow>) : null;
   })}</>;
 }
 
 const EAGER_ROWS = 6;
-
-/** A holiday row's banner (web/public/holidays, drawn by scripts/holiday_art.py): by the row's key, or the coming
- *  holiday's for the "holiday" row. Christmas rows also get falling snow. */
-const HOLIDAY_ART = new Set(["christmas", "hanukkah", "new_year", "purim", "ramadan"]);
-const ROW_ART: Record<string, string> = { christmas: "christmas", christmas_markets: "christmas", hanukkah_kids: "hanukkah", new_year: "new_year", purim: "purim", ramadan: "ramadan" };
-const artOf = (key: string, holiday?: string): string | undefined => {
-  const art = key === "holiday" ? (holiday === "eid_al_fitr" ? "ramadan" : holiday) : ROW_ART[key];
-  return art && HOLIDAY_ART.has(art) ? art : undefined;
-};
 
 /** Its row only once it is near the screen (a row's height of room until then, so the page doesn't jump). */
 function LazyRow({ children }: { children: React.ReactNode }) {

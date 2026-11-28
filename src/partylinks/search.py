@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import re
 import warnings
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from datetime import date, datetime, timedelta
 from difflib import get_close_matches
 from functools import lru_cache
@@ -36,6 +36,7 @@ from sqlalchemy.orm import aliased
 from partylinks import countries, search_index, seo
 from partylinks.config import Settings, get_settings
 from partylinks.db import _HEBREW_PREFIXES, _TWO_PREFIXES, EventRow, lineup_contains, whole_word
+from partylinks.holiday_pages.config import HolidaySeason
 from partylinks.places import city_abroad
 from partylinks.search_index import norm
 
@@ -91,25 +92,13 @@ HOLIDAY_NAMES = {
     "valentines": ("ולנטיין", "יום האהבה", "valentine", "valentines"),
     "mimouna": ("מימונה", "mimouna", "mimuna"), "jerusalem_day": ("יום ירושלים", "jerusalem day"),
     "sigd": ("סיגד", "sigd"),
-    # Seasons of their own events (GENRE_HOLIDAYS): not date words in a search.
+    # Seasons of their own events (holiday_pages.seasons): not date words in a search.
     "christmas": ("חג המולד", "christmas", "כריסמס", "xmas"), "ramadan": ("רמדאן", "ramadan", "رمضان"),
     "eid_al_fitr": ("חג שבירת הצום", "עיד אל-פיטר", "eid al-fitr", "عيد الفطر"),
     "eid_al_adha": ("חג הקורבן", "עיד אל-אדחא", "eid al-adha", "عيد الأضحى"),
 }  # fmt: skip
-# A holiday whose page and row list its own events (this genre) in its season, not every event on its dates:
-# Christmas markets, concerts and parties run all of December; Ramadan nights for a month.
-GENRE_HOLIDAYS = {
-    "christmas": "christmas",
-    "ramadan": "ramadan",
-    "eid_al_fitr": "ramadan",
-    "eid_al_adha": "eid_al_adha",
-}
 # Same dates every year: (month, day) from, to; parties run in the days before.
-YEARLY_DATES = {
-    "halloween": ((10, 25), (10, 31)), "new_year": ((12, 28), (1, 1)), "valentines": ((2, 10), (2, 14)),
-    # The season: the first Christmas markets to Armenian Christmas in Jerusalem (19.1).
-    "christmas": ((12, 1), (1, 20)),
-}  # fmt: skip
+YEARLY_DATES = {"halloween": ((10, 25), (10, 31)), "new_year": ((12, 28), (1, 1)), "valentines": ((2, 10), (2, 14))}
 # Holidays of the Muslim and Christian calendars (and the Mimouna): their spans (eve to last day) by Google's
 # "Holidays in Israel" calendar, written by scripts/fetch_holiday_dates.py (the Muslim days are tentative).
 DATED: dict[str, list[tuple[date, date]]] = {
@@ -148,8 +137,12 @@ def _next_weekday(today: date, weekday: int) -> tuple[date, date]:
     return d, d
 
 
-def _holiday(year: int, key: str) -> tuple[date, date]:
-    """A holiday in Israel in a Gregorian year, eve to last day."""
+def _holiday(year: int, key: str, seasons: Mapping[str, HolidaySeason] | None = None) -> tuple[date, date]:
+    """A holiday in Israel in a Gregorian year, eve to last day (a season's own days: holiday_pages.seasons)."""
+    season = (seasons or {}).get(key)
+    if season and season.start and season.end:
+        (m1, d1), (m2, d2) = (tuple(int(p) for p in s.split("-")) for s in (season.start, season.end))
+        return date(year, m1, d1), date(year + ((m2, d2) < (m1, d1)), m2, d2)
     if key in DATED:
         spans = [s for s in DATED[key] if s[0].year == year]
         if not spans:
@@ -178,14 +171,17 @@ def _holiday(year: int, key: str) -> tuple[date, date]:
     return d - first * day, d + last * day
 
 
-def _next_holiday(today: date, key: str) -> tuple[date, date] | None:
+def _next_holiday(
+    today: date, key: str, seasons: Mapping[str, HolidaySeason] | None = None
+) -> tuple[date, date] | None:
     """The holiday's next dates (eve to last day; from today once it has begun). None: a fetched holiday
     (DATED) whose known dates are all past (run scripts/fetch_holiday_dates.py)."""
-    if key in DATED:  # a Gregorian year can hold two (Ramadan 2030)
+    season = (seasons or {}).get(key)
+    if key in DATED and not (season and season.start):  # a Gregorian year can hold two (Ramadan 2030)
         span = next(((s, e) for s, e in DATED[key] if e >= today), None)
         return (max(span[0], today), span[1]) if span else None
     for year in (today.year - 1, today.year, today.year + 1):
-        start, end = _holiday(year, key)
+        start, end = _holiday(year, key, seasons)
         if end >= today:
             return max(start, today), end
     raise AssertionError(key)
@@ -212,8 +208,9 @@ def exact_dates(text: str, today: date) -> dict[str, date]:
 
 
 @lru_cache(maxsize=4)
-def date_ranges(today: date) -> dict[str, tuple[date, date]]:
-    """Search phrase -> the dates it means from ``today``: "השבוע", "בדצמבר", "ביום שישי", "חנוכה"."""
+def date_ranges(today: date, seasons: frozenset[str] = frozenset()) -> dict[str, tuple[date, date]]:
+    """Search phrase -> the dates it means from ``today``: "השבוע", "בדצמבר", "ביום שישי", "חנוכה". ``seasons``
+    (holiday_pages.seasons' keys) are no date words: "כריסמס" finds Christmas events, not all of December."""
     week = (today, today + timedelta(days=6))
     sunday = today + timedelta(days=(6 - today.weekday()) % 7 or 7)
     next_week = (sunday, sunday + timedelta(days=6))
@@ -236,7 +233,7 @@ def date_ranges(today: date) -> dict[str, tuple[date, date]]:
     for name, weekday in EN_WEEKDAYS.items():
         out[name] = _next_weekday(today, weekday)
     for key, names in HOLIDAY_NAMES.items():
-        if key in GENRE_HOLIDAYS:  # "כריסמס" finds Christmas events (a genre), not all of December
+        if key in seasons:
             continue
         with warnings.catch_warnings():  # convertdate 2.5.1 calls its own deprecated month_days()
             warnings.filterwarnings("ignore", "month_days is deprecated", DeprecationWarning)
@@ -484,9 +481,8 @@ def relevance(q: str, cfg: Settings, artists: Iterable[str] = (), cols: Any = No
     # Dates, prices and "free" are filters, not title words ("הלילה" is no reason to list "מטבח לילה" first).
     today = datetime.now(ZoneInfo(cfg.timezone)).date()
     text = " " + " ".join(PRICE.sub(" ", text).split()) + " "
-    for name in sorted(
-        {*FREE, *WEEKEND, *DAYS, *date_ranges(today), *exact_dates(text.strip(), today)}, key=len, reverse=True
-    ):
+    dates = date_ranges(today, frozenset(cfg.holiday_pages.seasons))
+    for name in sorted({*FREE, *WEEKEND, *DAYS, *dates, *exact_dates(text.strip(), today)}, key=len, reverse=True):
         text = text.replace(f" {name.casefold()} ", " ")
     words = [
         w for w in norm(text).split() if len(w) >= 2 and not w.isdigit() and w not in FILLER
@@ -633,7 +629,7 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
     exact = exact_dates(text.strip(), today)
     for phrase in take(exact):
         filters.append(EventRow.local_date == exact[phrase])
-    ranges = date_ranges(today)
+    ranges = date_ranges(today, frozenset(cfg.holiday_pages.seasons))
     for phrase in take(ranges):
         filters.append(EventRow.local_date.between(*ranges[phrase]))
     vocab = _vocabulary(cfg)

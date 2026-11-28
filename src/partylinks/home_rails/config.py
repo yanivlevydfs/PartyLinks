@@ -7,7 +7,11 @@ from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from partylinks.holiday_pages.config import HolidaySeason
+
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from partylinks.config import EnrichmentSettings
 
 
@@ -26,6 +30,8 @@ class HomeRail(BaseModel):
     max_price: float | None = Field(None, gt=0)  # cheapest ticket at most this much (free ones excluded)
     # Only the next dates of this holiday (a search.HOLIDAY_NAMES key: purim, new_year...), however far; `days` is ignored.
     holiday: str | None = None
+    # Its banner: a drawn picture (holiday_pages.art's names, web/public/holidays/<art>.webp); none: plain.
+    art: str | None = None
     # Only the next such calendar month (6: June, this one's rest while in it), however far; `days` is ignored.
     month: int | None = Field(None, ge=1, le=12)
     # The cards' order: "trending" (on the most ticket sites first), "latest" (the latest to end first: the
@@ -58,12 +64,14 @@ class HomeRail(BaseModel):
         daily = self.today or self.weekend or self.holiday or self.month
         return self.model_dump_json() + (today.isoformat() if daily else "")
 
-    def window(self, today: date) -> tuple[date, date] | None:
-        """The row's own dates (its holiday's or month's next ones), or None: from now to `days` ahead."""
+    def window(self, today: date, seasons: Mapping[str, HolidaySeason] | None = None) -> tuple[date, date] | None:
+        """The row's own dates (its holiday's or month's next ones), or None: from now to `days` ahead.
+        ``seasons``: holiday_pages.seasons (a season holiday's own days)."""
         from partylinks.search import _next_holiday, _next_month
 
         if self.holiday:  # no known dates left: an empty window (the row hides)
-            return _next_holiday(today, self.holiday) or (today - timedelta(days=1), today - timedelta(days=1))
+            span = _next_holiday(today, self.holiday, seasons)
+            return span or (today - timedelta(days=1), today - timedelta(days=1))
         return _next_month(today, self.month) if self.month else None
 
 

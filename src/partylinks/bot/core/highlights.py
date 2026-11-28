@@ -17,7 +17,7 @@ from partylinks.bot.core.phrases import label
 from partylinks.bot.core.reply import MENU, Button, Reply
 from partylinks.config import Settings
 from partylinks.db import EventRow
-from partylinks.holiday_pages.core import HOLIDAY_ICONS, Holiday, upcoming, where
+from partylinks.holiday_pages.core import Holiday, upcoming, where
 from partylinks.holiday_pages.pages import _dates
 from partylinks.weekly_top.core import top
 
@@ -45,8 +45,8 @@ def _t(key: str, lang: str, **values: object) -> str:
     return TEXT[key][lang].format(**values)
 
 
-def _icon(h: Holiday) -> str:
-    return HOLIDAY_ICONS.get(h.key, "🎊")
+def _icon(cfg: Settings, h: Holiday) -> str:
+    return cfg.holiday_pages.icons.get(h.key, "🎊")
 
 
 def _coming(cfg: Settings) -> list[Holiday]:
@@ -58,7 +58,7 @@ def rows(cfg: Settings, lang: str) -> list[list[Button]]:
     """The menu's row: the week's top and each coming holiday (none: no row)."""
     row = [Button(_t("top_button", lang), PREFIX + FIRST_TOP)] if cfg.weekly_top.enabled else []
     row += [
-        Button(_t("holiday_button", lang, icon=_icon(h), name=h.name(lang)), f"{PREFIX}h:{h.key}:0")
+        Button(_t("holiday_button", lang, icon=_icon(cfg, h), name=h.name(lang)), f"{PREFIX}h:{h.key}:0")
         for h in _coming(cfg)
     ]
     return [row] if row else []
@@ -98,7 +98,7 @@ async def press(conv: Conversation, chat_id: str, lang: str, action: str) -> Rep
     if start:
         intro = "👇"
     elif holiday:
-        intro = _t("holiday", lang, icon=_icon(holiday), name=holiday.name(lang), dates=_dates(holiday))
+        intro = _t("holiday", lang, icon=_icon(cfg, holiday), name=holiday.name(lang), dates=_dates(holiday))
     else:
         intro = _t("top", lang)
     row = [Button(label("more", lang), PREFIX + ":".join([*head, str(start + n)]))] if more else []

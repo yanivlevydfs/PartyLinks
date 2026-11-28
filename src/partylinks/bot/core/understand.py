@@ -85,8 +85,8 @@ def _place_names(given: tuple[str, ...]) -> frozenset[str]:
 
 
 @lru_cache(maxsize=4)
-def _dates(today: date) -> frozenset[str]:
-    return frozenset({*WEEKEND, *DAYS, *date_ranges(today)})
+def _dates(today: date, seasons: frozenset[str]) -> frozenset[str]:
+    return frozenset({*WEEKEND, *DAYS, *date_ranges(today, seasons)})
 
 
 def _found(text: str, phrases: frozenset[str] | set[str] | tuple[str, ...] | list[str]) -> list[str]:
@@ -109,7 +109,7 @@ def without(text: str, phrases: list[str]) -> str:
 def kinds(text: str, cfg: Settings, today: date) -> dict[str, list[str]]:
     """The parts of a search a follow-up can replace: its dates, places, price and free-entry words."""
     return {
-        "date": _found(text, _dates(today)) + list(exact_dates(text, today)),
+        "date": _found(text, _dates(today, frozenset(cfg.holiday_pages.seasons))) + list(exact_dates(text, today)),
         "place": _found(text, _places(cfg)),
         "price": [m[0] for m in PRICE.finditer(text)],
         "free": _found(text, FREE),

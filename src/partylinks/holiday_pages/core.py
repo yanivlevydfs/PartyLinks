@@ -1,7 +1,7 @@
 """Holidays in Israel (Hanukkah, Purim, Pesach, Independence Day, Shavuot, Rosh Hashanah, Sukkot, Lag BaOmer, Tu
 BeAv, Silvester, the Mimouna, Christmas, Ramadan, the Eids...): their next dates, from the search's own calendar
 (``search.HOLIDAY_NAMES``, eve to last day), and the events on them. A season holiday
-(``search.GENRE_HOLIDAYS``: Christmas, Ramadan) lists only its own events (its genre) in its season. Each holiday
+(``holiday_pages.seasons``: Christmas, Ramadan) lists only its own events (its genre) in its season. Each holiday
 has a page (/holiday/<key>) once it has enough events.
 """
 
@@ -19,17 +19,10 @@ from sqlalchemy.orm import Session
 from partylinks.config import Settings
 from partylinks.db import EventRow, upcoming_filter
 from partylinks.placecards import IS_PLACE
-from partylinks.search import GENRE_HOLIDAYS, HOLIDAY_NAMES, _next_holiday
+from partylinks.search import HOLIDAY_NAMES, _next_holiday
 from partylinks.search import _genre as search_genre
 
 _HEBREW = re.compile(r"[֐-׿]")
-# Each holiday's icon (the bot's holiday button).
-HOLIDAY_ICONS = {
-    "hanukkah": "🕎", "purim": "🎭", "passover": "🍷", "shavuot": "🌾", "rosh_hashanah": "🍎", "sukkot": "🌿",
-    "tu_bishvat": "🌳", "lag_baomer": "🔥", "tu_bav": "💞", "independence_day": "🇮🇱", "halloween": "🎃",
-    "new_year": "🎆", "valentines": "💘", "mimouna": "🥞", "jerusalem_day": "🕍", "sigd": "🕊️", "christmas": "🎄",
-    "ramadan": "🌙", "eid_al_fitr": "🌙", "eid_al_adha": "🐑",
-}  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -39,7 +32,7 @@ class Holiday:
     en: str
     start: date  # the eve (parties start there), or today once it has begun
     end: date
-    genre: str | None = None  # a season holiday: only its own events (search.GENRE_HOLIDAYS)
+    genre: str | None = None  # a season holiday: only its own events (holiday_pages.seasons)
 
     def name(self, lang: str) -> str:
         return self.he if lang == "he" else self.en
@@ -60,12 +53,13 @@ def upcoming(cfg: Settings, today: date) -> list[Holiday]:
     horizon = today + timedelta(days=cfg.holiday_pages.ahead_days)
     out = []
     for key in HOLIDAY_NAMES:
-        span = _next_holiday(today, key)
+        span = _next_holiday(today, key, cfg.holiday_pages.seasons)
         if span is None:  # no known dates left (scripts/fetch_holiday_dates.py)
             continue
         start, end = span
         if start <= horizon:
-            out.append(Holiday(key, *_names(key), start, end, GENRE_HOLIDAYS.get(key)))
+            season = cfg.holiday_pages.seasons.get(key)
+            out.append(Holiday(key, *_names(key), start, end, season.genre if season else None))
     return sorted(out, key=lambda h: (h.start, h.key))
 
 

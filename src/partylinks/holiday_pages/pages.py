@@ -34,13 +34,10 @@ def _today(cfg: Settings) -> datetime:
     return datetime.now(ZoneInfo(cfg.timezone))
 
 
-# The holidays with drawn art of their own (web/public/holidays/<art>-og.webp, scripts/holiday_art.py).
-ART = {"christmas": "christmas", "hanukkah": "hanukkah", "new_year": "new_year", "purim": "purim", "ramadan": "ramadan",
-       "eid_al_fitr": "ramadan"}  # fmt: skip
-
-
 def _art(cfg: Settings, key: str) -> str | None:
-    return f"{cfg.site.base_url}/holidays/{ART[key]}-og.webp" if key in ART else None
+    """The holiday's drawn sharing picture (holiday_pages.art, web/public/holidays/<art>-og.webp)."""
+    art = cfg.holiday_pages.art.get(key)
+    return f"{cfg.site.base_url}/holidays/{art}-og.webp" if art else None
 
 
 def holiday_page(session: Session, cfg: Settings, lang: str, key: str) -> seo.Page | None:

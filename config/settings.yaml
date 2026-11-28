@@ -222,14 +222,14 @@ home_rails:
     - {key: gush_dan, region: [gush_dan], genre: [g_parties, g_live, g_stage, happy_hour, open_bar], exclude: [kids, lectures, workshops, conference]}
     # Seasonal: the next dates of a holiday / month, however far (shown once 3+ events are listed; a holiday's
     # row gives way to the coming holiday's own row, holiday_pages.rail_days before it).
-    - {key: new_year, holiday: new_year, exclude: [kids, lectures, workshops, conference]}
-    - {key: purim, holiday: purim, exclude: [kids, lectures, workshops, conference]}
+    - {key: new_year, holiday: new_year, exclude: [kids, lectures, workshops, conference], art: new_year}
+    - {key: purim, holiday: purim, exclude: [kids, lectures, workshops, conference], art: purim}
     # A holiday row with a genre stays while the coming holiday's own row shows (Hanukkah 2026: 1,800 kids' cards).
-    - {key: hanukkah_kids, holiday: hanukkah, genre: [kids]}
+    - {key: hanukkah_kids, holiday: hanukkah, genre: [kids], art: hanukkah}
     # Season holidays (search.GENRE_HOLIDAYS): their own events through the season, beside the dated holiday's row.
-    - {key: christmas_markets, holiday: christmas, genre: [christmas_markets]}
-    - {key: christmas, holiday: christmas, genre: [christmas], exclude: [christmas_markets]}
-    - {key: ramadan, holiday: ramadan, genre: [ramadan]}
+    - {key: christmas_markets, holiday: christmas, genre: [christmas_markets], art: christmas}
+    - {key: christmas, holiday: christmas, genre: [christmas], exclude: [christmas_markets], art: christmas}
+    - {key: ramadan, holiday: ramadan, genre: [ramadan], art: ramadan}
     - {key: pride_month, month: 6, genre: [lgbt, drag_cabaret]}
     - {key: electronic, genre: [techno, house, trance, electronic, edm, drum_and_bass, bass_dubstep, hardstyle]}
     # Parties by style. Not drum & bass / bass alone (3 events) nor pool parties (0 in November).
@@ -385,6 +385,36 @@ holiday_pages:
   ahead_days: 365         # holidays starting within this many days
   min_events: 3           # fewer events on its dates: no page yet (thin content)
   rail_days: 21           # the home row of the next holiday from this many days before it
+  # Season holidays: their page, home rows and bot button list only their own events (the genre) in the season,
+  # not every event on their dates. Christmas: the first markets to Armenian Christmas in Jerusalem (19.1).
+  seasons:
+    christmas: {genre: christmas, start: "12-01", end: "01-20"}
+    ramadan: {genre: ramadan}
+    eid_al_fitr: {genre: ramadan}
+    eid_al_adha: {genre: eid_al_adha}
+  icons:
+    hanukkah: "🕎"
+    purim: "🎭"
+    passover: "🍷"
+    shavuot: "🌾"
+    rosh_hashanah: "🍎"
+    sukkot: "🌿"
+    tu_bishvat: "🌳"
+    lag_baomer: "🔥"
+    tu_bav: "💞"
+    independence_day: "🇮🇱"
+    halloween: "🎃"
+    new_year: "🎆"
+    valentines: "💘"
+    mimouna: "🥞"
+    jerusalem_day: "🕍"
+    sigd: "🕊️"
+    christmas: "🎄"
+    ramadan: "🌙"
+    eid_al_fitr: "🌙"
+    eid_al_adha: "🐑"
+  # Drawn pictures (web/public/holidays, scripts/holiday_art.py): the holiday's row banner and page picture.
+  art: {christmas: christmas, hanukkah: hanukkah, new_year: new_year, purim: purim, ramadan: ramadan, eid_al_fitr: ramadan}
 
 # Weekly lines (src/partylinks/lines): the same title at the same place on the same weekday, on at least
 # min_dates upcoming dates; its card says "🔁 every Thursday".

@@ -226,13 +226,14 @@ export const useHolidays = () =>
 export const holidayWhen = (h: Pick<Holiday, "start" | "end">) => `${h.start}~${h.end}`;
 
 /** The home page's rows under "Trending": a pool of the busiest events per row (settings home_rails, admin config tab);
- *  `holiday`: the coming holiday its "holiday" row is about. */
-export interface Rails { rails: Record<string, EventSummary[]>; holiday?: Holiday | null }
+ *  `holiday`: the coming holiday its "holiday" row is about; `art`: a row's banner (web/public/holidays/<art>.webp). */
+export interface Rails { rails: Record<string, EventSummary[]>; holiday?: Holiday | null; art?: Record<string, string> }
 /** /events/rails?compact=true: each event once and a row as its ids (1,865 cards were 1,176 events, 3.9MB parsed and
  *  kept in localStorage on every visit). The kept copy is this small form; the rows are rebuilt from it. */
-interface CompactRails { events: Record<string, EventSummary>; rails: Record<string, string[]>; pinned?: Record<string, string[]>; holiday?: Holiday | null }
+interface CompactRails { events: Record<string, EventSummary>; rails: Record<string, string[]>; pinned?: Record<string, string[]>; holiday?: Holiday | null; art?: Record<string, string> }
 const expandRails = (c: CompactRails): Rails => ({
   holiday: c.holiday,
+  art: c.art,
   rails: Object.fromEntries(Object.entries(c.rails ?? {}).map(([key, ids]) => {
     const pins = new Set(c.pinned?.[key] ?? []);
     return [key, ids.flatMap((id) => (c.events[id] ? [pins.has(id) ? { ...c.events[id], pinned: true } : c.events[id]] : []))];
