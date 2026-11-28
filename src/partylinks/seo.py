@@ -141,6 +141,7 @@ GENRES_HE = {
     "g_parties": "מסיבות ומועדונים", "g_live": "הופעות ומוזיקה חיה", "g_stage": "במה ומסך", "g_culture": "תרבות והעשרה",
     "g_kids": "ילדים ומשפחה", "g_food": "אוכל ושתייה", "g_leisure": "פנאי וספורט", "g_tech": "הייטק ועסקים",
     "g_community": "קהילה ו-LGBTQ+",
+    "christmas": "חג המולד", "christmas_markets": "שווקי חג המולד", "hanukkah": "חנוכה", "purim": "פורים", "new_year_eve": "סילבסטר", "ramadan": "רמדאן", "eid_al_adha": "עיד אל-אדחא", "g_holidays": "חגים ומועדים",
 }  # fmt: skip
 GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
                  "stand_up": "Stand-up comedy", "eighties": "80s", "nineties": "90s", "live_show": "Live music",
@@ -158,7 +159,9 @@ GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBT
                  "musicals": "Musicals", "russian": "In Russian", "parents_babies": "Parents & Babies", "seniors": "Seniors", "english": "In English & Olim", "literature": "Books & Poetry", "museums": "Museums", "circus_magic": "Circus & Magic", "meditation": "Meditation & Spirituality", "sports_matches": "Sports Matches", "running": "Running & Races", "tastings": "Wine & Beer Tastings", "cooking_class": "Cooking Classes", "singles_dating": "Singles & Dating", "women_only": "For Women", "accessible": "Accessible", "quiz_games": "Trivia & Board Games", "students": "Students", "drag_cabaret": "Drag & Cabaret", "improv": "Improv",
                  "g_parties": "Parties & Clubs", "g_live": "Live Music", "g_stage": "Stage & Screen",
                  "g_culture": "Culture & Learning", "g_kids": "Kids & Family", "g_food": "Food & Drinks",
-                 "g_leisure": "Leisure & Sport", "g_tech": "Tech & Business", "g_community": "Community & LGBTQ+"}  # fmt: skip
+                 "g_leisure": "Leisure & Sport", "g_tech": "Tech & Business", "g_community": "Community & LGBTQ+",
+                 "christmas_markets": "Christmas markets", "new_year_eve": "New Year's Eve", "eid_al_adha": "Eid al-Adha",
+                 "g_holidays": "Holidays"}  # fmt: skip
 # seo.genre_page_min in Settings: fewer upcoming events than this, no landing page (thin content).
 
 

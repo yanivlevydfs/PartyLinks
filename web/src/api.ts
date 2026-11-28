@@ -217,8 +217,9 @@ function useKept<T, R = T>(key: string, url: string, select?: (data: T) => R) {
 /** The home page's paid side rails (picked in the admin). */
 export const useSponsored = () => useKept<SponsoredRails>("sponsored", "/events/sponsored");
 
-/** An Israeli holiday's next dates (GET /holidays/list, partylinks.holiday_pages): eve to last day, local dates. */
-export interface Holiday { key: string; he: string; en: string; start: string; end: string; events: number; page: boolean }
+/** A holiday's next dates (GET /holidays/list, partylinks.holiday_pages): eve to last day, local dates. `genre`: a season
+ *  holiday (Christmas, Ramadan) lists only its own events (this genre) in its season. */
+export interface Holiday { key: string; he: string; en: string; start: string; end: string; genre?: string | null; events: number; page: boolean }
 export const useHolidays = () =>
   useQuery({ queryKey: ["holidays"], queryFn: () => getJSON<{ holidays: Holiday[] }>("/holidays/list"), staleTime: 10 * 60_000 });
 /** A holiday's dates as the filter's `when` range. */

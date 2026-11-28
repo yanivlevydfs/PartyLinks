@@ -226,6 +226,10 @@ home_rails:
     - {key: purim, holiday: purim, exclude: [kids, lectures, workshops, conference]}
     # A holiday row with a genre stays while the coming holiday's own row shows (Hanukkah 2026: 1,800 kids' cards).
     - {key: hanukkah_kids, holiday: hanukkah, genre: [kids]}
+    # Season holidays (search.GENRE_HOLIDAYS): their own events through the season, beside the dated holiday's row.
+    - {key: christmas_markets, holiday: christmas, genre: [christmas_markets]}
+    - {key: christmas, holiday: christmas, genre: [christmas], exclude: [christmas_markets]}
+    - {key: ramadan, holiday: ramadan, genre: [ramadan]}
     - {key: pride_month, month: 6, genre: [lgbt, drag_cabaret]}
     - {key: electronic, genre: [techno, house, trance, electronic, edm, drum_and_bass, bass_dubstep, hardstyle]}
     # Parties by style. Not drum & bass / bass alone (3 events) nor pool parties (0 in November).
@@ -927,6 +931,28 @@ enrichment:
     escape_rooms: ["חדר בריחה", "חדרי בריחה", "escape room"]
     volunteering: ["ערב התרמה", "אירוע התרמה", "אירוע ההתרמה", "מופע התרמה", "fundraiser", "charity gala",
                    "benefit concert", "גאלה", "גאלת", "פילנתרופיה"]  # community galas (ogo_us, Nov 2026)
+    # The holidays one by one (genre_families.holidays), from the title and text (the declared "holidays" is a
+    # source's category only), each with its own page and home rows in its season (search.GENRE_HOLIDAYS).
+    # Not "عيد ميلاد" (a birthday), only "عيد الميلاد"; not "noel" (a name), nor "סנטה" alone (סנטה קרוז, Santana).
+    # Prod 28.11.2026: Hanukkah 9,166 titles, NYE 861, Christmas 494, Purim 372, Christmas markets 41.
+    christmas: ["christmas", "xmas", "x-mas", "כריסמס", "קריסמס", "כריסמאס", "חג המולד", "חג-המולד", "חג מולד",
+                "חנוכריסמס", "عيد الميلاد", "الميلاد المجيد", "كريسماس", "كريسمس", "santa claus", "סנטה קלאוס",
+                "סנטה קלאוז", "של סנטה", "עץ אשוח", "דד מורוז", "деда мороза", "weihnacht", "weihnachten",
+                "weihnachtsmarkt", "navidad", "рождество", "рождественский", "рождественская", "christival",
+                "ded moroz", "дед мороз", "nativity", "midnight mass", "מיסת חצות", "carols", "christmas eve"]
+    christmas_markets: ["christmas market", "christmas markets", "christmas fair", "christmas bazaar", "שוק חג המולד",
+                        "שווקי חג המולד", "שוק כריסמס", "שווקי כריסמס", "שוק קריסמס", "יריד חג המולד", "יריד כריסמס",
+                        "יריד קריסמס", "יריד חנוכריסמס", "рождественская ярмарка", "כריסמס מרקט", "בזאר חג המולד", "בזאר כריסמס", "سوق الميلاد",
+                        "كريسمس ماركت", "كريسماس ماركت", "بازار الميلاد", "weihnachtsmarkt", "christival"]
+    hanukkah: ["חנוכה", "hanukkah", "chanukah", "hanukah", "חנוכריסמס", "חנוכייה", "חנוכיה", "סופגניות", "סופגנייה", "סופגניה",
+               "פסטיגל", "חופשת חנוכה", "חג האורות", "festival of lights", "ханука"]
+    purim: ["פורים", "purim", "עדלאידע", "אדלאידע", "adloyada", "שושן פורים", "מגילת אסתר", "פורימון", "פורימשפיל",
+            "משלוח מנות", "אוזני המן", "пурим"]
+    new_year_eve: ["סילבסטר", "סילווסטר", "ראש השנה האזרחית", "silvester", "sylvester", "new year's eve", "new years eve",
+                   "nye", "נובי גוד", "новый год", "новогодний", "новогодняя", "новогодние", "новогоднее", "ערב השנה החדשה", "رأس السنة الميلادية", "countdown 2027"]
+    ramadan: ["רמדאן", "ramadan", "رمضان", "iftar", "איפטאר", "אפטאר", "إفطار", "سحور", "ليالي رمضان", "עיד אל-פיטר",
+              "eid al-fitr", "eid al fitr", "عيد الفطر"]
+    eid_al_adha: ["עיד אל-אדחא", "eid al-adha", "eid al adha", "عيد الأضحى", "عيد الاضحى"]
   # Genre words matched only against the categories a source declares (Luma, Geektime, Meetup).
   declared_genres:
     online: ["online", "אונליין", "zoom", "זום", "virtual", "וירטואלי", "webinar", "וובינר", "online events", "אירועים מקוונים"]
@@ -1165,6 +1191,9 @@ enrichment:
     undertheradar: [psytrance]  # a psytrance party line
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
+    holidays: [christmas, hanukkah, purim, new_year_eve, ramadan, eid_al_adha]
+    christmas: [christmas_markets]
+    markets: [christmas_markets]
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
     electronic: [techno, house, trance, afro, drum_and_bass, bass_dubstep, hardstyle, edm, downtempo_chill, indie_dance, amapiano]
     israeli: [mizrahi, singalong]
@@ -1212,6 +1241,7 @@ enrichment:
     g_tech: [hi_tech, work_spaces, meetups]
     g_community: [lgbt, liberal, kink, sensual, gender_balance, meetups, seniors, english, russian, women_only,
                   singles_dating, accessible, students]
+    g_holidays: [holidays, christmas, christmas_markets, hanukkah, purim, new_year_eve, ramadan, eid_al_adha]
   detect_genres_from_text: true
   # Sources whose own categories are precise: their text is not read for genres.
   # Ticketeams: "יוטה ג'אז" in a title is the Utah Jazz, not jazz.

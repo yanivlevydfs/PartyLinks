@@ -17,7 +17,7 @@ from partylinks.bot.core.phrases import label
 from partylinks.bot.core.reply import MENU, Button, Reply
 from partylinks.config import Settings
 from partylinks.db import EventRow
-from partylinks.holiday_pages.core import Holiday, upcoming, where
+from partylinks.holiday_pages.core import HOLIDAY_ICONS, Holiday, upcoming, where
 from partylinks.holiday_pages.pages import _dates
 from partylinks.weekly_top.core import top
 
@@ -46,7 +46,7 @@ def _t(key: str, lang: str, **values: object) -> str:
 
 
 def _icon(h: Holiday) -> str:
-    return "🕎" if h.key == "hanukkah" else "🎊"
+    return HOLIDAY_ICONS.get(h.key, "🎊")
 
 
 def _coming(cfg: Settings) -> list[Holiday]:
@@ -78,7 +78,7 @@ async def press(conv: Conversation, chat_id: str, lang: str, action: str) -> Rep
 
     def work(session: Session) -> tuple[list[EventRow], bool, dict[str, dict[str, Any]]]:
         if kind == "h":
-            found = seo._upcoming(session, *where(holiday), limit=start + n + 1) if holiday else []
+            found = seo._upcoming(session, *where(holiday, cfg), limit=start + n + 1) if holiday else []
         else:
             found = top(session, cfg, datetime.now(ZoneInfo(cfg.timezone)))
         page = found[start : start + n]

@@ -21,7 +21,8 @@ def _talk(tmp_path: Path, rail_days: int) -> tuple:
     settings = settings_for(tmp_path)
     settings.bot.results = 2
     settings.holiday_pages.rail_days = rail_days
-    holiday = upcoming(settings, understand.today_in(settings))[0]
+    # A dated holiday: a season one (Christmas) lists only its own genre's events.
+    holiday = next(h for h in upcoming(settings, understand.today_in(settings)) if not h.genre)
     night = datetime.combine(holiday.end, time(21), ZoneInfo(settings.timezone))
     db = seed(settings, [*_events(), event("h", night, title="Holiday Party", tickets=_ticket(80))])
     return Conversation(lambda: settings, db, "telegram"), db, settings, holiday

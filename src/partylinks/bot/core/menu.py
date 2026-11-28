@@ -44,6 +44,7 @@ WHEN = {
 GROUP_ICONS = {
     "g_parties": "🎧", "g_live": "🎤", "g_stage": "🎭", "g_culture": "🖼️", "g_kids": "🧸", "g_food": "🍽️",
     "g_leisure": "🎡", "g_tech": "💻", "g_community": "🌈",
+    "g_holidays": "🎉",
 }  # fmt: skip
 
 

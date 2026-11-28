@@ -22,9 +22,10 @@ const PRICE_PAGES: Record<string, string> = { "under-50": "u50", "50-150": "50_1
 export function landingPath(f: FilterState, holidays: Holiday[] = []): string {
   const rest = { ...f, q: "", sort: DEFAULT_FILTERS.sort, when: "all", genres: [], regions: [], areas: [], city: null, price: "" };
   if (JSON.stringify(rest) !== JSON.stringify(DEFAULT_FILTERS)) return "/";
-  // A holiday's dates alone: its page (/holiday/hanukkah).
-  const holiday = holidays.find((h) => h.page && holidayWhen(h) === f.when);
-  if (holiday) return !f.genres.length && !f.regions.length && !f.areas.length && !f.city && !f.price ? `/holiday/${holiday.key}` : "/";
+  // A holiday's dates alone (a season holiday's: with its genre): its page (/holiday/hanukkah, /holiday/christmas).
+  const own = (h: Holiday) => (h.genre ? f.genres.length === 1 && f.genres[0] === h.genre : !f.genres.length);
+  const holiday = holidays.find((h) => h.page && holidayWhen(h) === f.when && (!h.genre || own(h)));
+  if (holiday) return own(holiday) && !f.regions.length && !f.areas.length && !f.city && !f.price ? `/holiday/${holiday.key}` : "/";
   if (f.price) {
     const slug = Object.keys(PRICE_PAGES).find((k) => PRICE_PAGES[k] === f.price);
     const alone = f.when === "all" && !f.genres.length && !f.regions.length && !f.areas.length && !f.city;
@@ -92,7 +93,7 @@ export default function Home({ landing }: { landing?: "now" | "tonight" | "weeke
   }, [cityName, cityRegion, set]);
   // /holiday/:key: its dates come with the holiday list.
   useEffect(() => {
-    if (holiday) set({ when: holidayWhen(holiday) });
+    if (holiday) set({ when: holidayWhen(holiday), ...(holiday.genre ? { genres: [holiday.genre] } : {}) });
   }, [holiday, set]);
   // Filters picked here move the address to their landing URL (techno: /genre/techno), so it can be shared.
   // Not on mount: a remount (back from an event) keeps the route it came with.
@@ -207,13 +208,22 @@ export function Trending({ rows }: { rows?: number } = {}) {
   return <>{rails.map(([key, pool], i) => {
     const row = key === "trending"
       ? <Rail rail={key} title={t.trending} sub={t.trendingSub} pool={pool} />
-      : key === "holiday" ? holiday && <Rail rail={key} title={t.holidayRail(holiday[lang])} sub={t.holidayRailSub} pool={pool} />
-      : t.rails[key] && <Rail rail={key} title={t.rails[key][0]} sub={t.rails[key][1]} pool={pool} />;
+      : key === "holiday" ? holiday && <Rail rail={key} title={t.holidayRail(holiday[lang])} sub={t.holidayRailSub} pool={pool} art={artOf(key, holiday.key)} />
+      : t.rails[key] && <Rail rail={key} title={t.rails[key][0]} sub={t.rails[key][1]} pool={pool} art={artOf(key)} />;
     return row ? (i < EAGER_ROWS ? <div key={key}>{row}</div> : <LazyRow key={key}>{row}</LazyRow>) : null;
   })}</>;
 }
 
 const EAGER_ROWS = 6;
+
+/** A holiday row's banner (web/public/holidays, drawn by scripts/holiday_art.py): by the row's key, or the coming
+ *  holiday's for the "holiday" row. Christmas rows also get falling snow. */
+const HOLIDAY_ART = new Set(["christmas", "hanukkah", "new_year", "purim", "ramadan"]);
+const ROW_ART: Record<string, string> = { christmas: "christmas", christmas_markets: "christmas", hanukkah_kids: "hanukkah", new_year: "new_year", purim: "purim", ramadan: "ramadan" };
+const artOf = (key: string, holiday?: string): string | undefined => {
+  const art = key === "holiday" ? (holiday === "eid_al_fitr" ? "ramadan" : holiday) : ROW_ART[key];
+  return art && HOLIDAY_ART.has(art) ? art : undefined;
+};
 
 /** Its row only once it is near the screen (a row's height of room until then, so the page doesn't jump). */
 function LazyRow({ children }: { children: React.ReactNode }) {
@@ -233,7 +243,7 @@ function LazyRow({ children }: { children: React.ReactNode }) {
 }
 
 /** A sideways row of cards: a random 12 of the row's pool (undefined: still loading). */
-export function Rail({ title, sub, pool, rail }: { title: string; sub: string; pool: EventSummary[] | undefined; rail?: string }) {
+export function Rail({ title, sub, pool, rail, art }: { title: string; sub: string; pool: EventSummary[] | undefined; rail?: string; art?: string }) {
   const row = useRef<HTMLDivElement>(null);
   const shown = useWeb().home_row_events;
   // Shuffled once per visit: a fresh copy replacing the stored one doesn't reshuffle the row under the visitor.
@@ -253,8 +263,8 @@ export function Rail({ title, sub, pool, rail }: { title: string; sub: string; p
   if (loaded && items.length < 3) return null;
   const scroll = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth, behavior: "smooth" });
   return (
-    <section className="trending">
-      <div className="trending-head">
+    <section className={art ? `trending holiday-art art-${art}` : "trending"}>
+      <div className="trending-head" style={art ? { "--art": `url(/holidays/${art}.webp)` } as React.CSSProperties : undefined}>
         <div>
           <h2>{title} <span aria-hidden>↗</span></h2>
           <p>{sub}</p>

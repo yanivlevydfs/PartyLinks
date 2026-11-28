@@ -23,6 +23,7 @@ class HolidayOut(BaseModel):
     en: str
     start: date  # local dates, the eve to the last day (or today, once it has begun)
     end: date
+    genre: str | None = None  # a season holiday (Christmas, Ramadan): only events of this genre
     events: int
     page: bool  # enough events for /holiday/<key>
 
@@ -33,9 +34,9 @@ class HolidaysOut(BaseModel):
 
 def holidays_out(session: Session, cfg: Settings) -> HolidaysOut:
     holidays = upcoming(cfg, datetime.now(ZoneInfo(cfg.timezone)).date())
-    n = counts(session, holidays)
+    n = counts(session, holidays, cfg)
     return HolidaysOut(holidays=[
-        HolidayOut(key=h.key, he=h.he, en=h.en, start=h.start, end=h.end, events=n[h.key],
+        HolidayOut(key=h.key, he=h.he, en=h.en, start=h.start, end=h.end, genre=h.genre, events=n[h.key],
                    page=n[h.key] >= cfg.holiday_pages.min_events)
         for h in holidays
     ])  # fmt: skip

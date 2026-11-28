@@ -5,12 +5,14 @@ Searches every event, in Israel and abroad."""
 
 from __future__ import annotations
 
+import json
 import re
 import warnings
 from collections.abc import Callable, Iterable
 from datetime import date, datetime, timedelta
 from difflib import get_close_matches
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -87,9 +89,34 @@ HOLIDAY_NAMES = {
     "tu_bav": ("ט״ו באב", 'ט"ו באב', "טו באב", "tu bav"), "independence_day": ("יום העצמאות", "עצמאות", "independence day"),
     "halloween": ("הלואין", "האלווין", "הלווין", "halloween"), "new_year": ("סילבסטר", "new year", "new years eve"),
     "valentines": ("ולנטיין", "יום האהבה", "valentine", "valentines"),
+    "mimouna": ("מימונה", "mimouna", "mimuna"), "jerusalem_day": ("יום ירושלים", "jerusalem day"),
+    "sigd": ("סיגד", "sigd"),
+    # Seasons of their own events (GENRE_HOLIDAYS): not date words in a search.
+    "christmas": ("חג המולד", "christmas", "כריסמס", "xmas"), "ramadan": ("רמדאן", "ramadan", "رمضان"),
+    "eid_al_fitr": ("עיד אל-פיטר", "eid al-fitr", "عيد الفطر"), "eid_al_adha": ("עיד אל-אדחא", "eid al-adha", "عيد الأضحى"),
 }  # fmt: skip
+# A holiday whose page and row list its own events (this genre) in its season, not every event on its dates:
+# Christmas markets, concerts and parties run all of December; Ramadan nights for a month.
+GENRE_HOLIDAYS = {
+    "christmas": "christmas",
+    "ramadan": "ramadan",
+    "eid_al_fitr": "ramadan",
+    "eid_al_adha": "eid_al_adha",
+}
 # Same dates every year: (month, day) from, to; parties run in the days before.
-YEARLY_DATES = {"halloween": ((10, 25), (10, 31)), "new_year": ((12, 28), (1, 1)), "valentines": ((2, 10), (2, 14))}
+YEARLY_DATES = {
+    "halloween": ((10, 25), (10, 31)), "new_year": ((12, 28), (1, 1)), "valentines": ((2, 10), (2, 14)),
+    # The season: the first Christmas markets to Armenian Christmas in Jerusalem (19.1).
+    "christmas": ((12, 1), (1, 20)),
+}  # fmt: skip
+# Holidays of the Muslim and Christian calendars (and the Mimouna): their spans (eve to last day) by Google's
+# "Holidays in Israel" calendar, written by scripts/fetch_holiday_dates.py (the Muslim days are tentative).
+DATED: dict[str, list[tuple[date, date]]] = {
+    key: [(date.fromisoformat(a), date.fromisoformat(b)) for a, b in spans]
+    for key, spans in json.loads((Path(__file__).with_name("holiday_dates.json")).read_text(encoding="utf-8"))[
+        "spans"
+    ].items()
+}
 # Bare "מאי", "יוני", "יולי" are names too: only "במאי", "ביוני", "חודש יולי".
 MONTHS = {
     "ינואר": 1, "פברואר": 2, "מרץ": 3, "מרס": 3, "אפריל": 4, "מאי": 5, "יוני": 6, "יולי": 7, "אוגוסט": 8,
@@ -122,6 +149,11 @@ def _next_weekday(today: date, weekday: int) -> tuple[date, date]:
 
 def _holiday(year: int, key: str) -> tuple[date, date]:
     """A holiday in Israel in a Gregorian year, eve to last day."""
+    if key in DATED:
+        spans = [s for s in DATED[key] if s[0].year == year]
+        if not spans:
+            raise LookupError(f"no {key} dates for {year}: run scripts/fetch_holiday_dates.py")
+        return spans[0]
     if key in YEARLY_DATES:
         (m1, d1), (m2, d2) = YEARLY_DATES[key]
         return date(year, m1, d1), date(year + ((m2, d2) < (m1, d1)), m2, d2)
@@ -129,6 +161,12 @@ def _holiday(year: int, key: str) -> tuple[date, date]:
     if key == "tu_bav":
         d = date(*hebrew.to_gregorian(year + 3760, hebrew.AV, 15))
         return d - day, d
+    if key == "jerusalem_day":  # 28 Iyar
+        d = date(*hebrew.to_gregorian(year + 3760, hebrew.IYYAR, 28))
+        return d - day, d
+    if key == "sigd":  # 29 Cheshvan, 50 days after Yom Kippur (Ethiopian Jews)
+        d = date(*hebrew.to_gregorian(year + 3761, hebrew.HESHVAN, 29))
+        return d, d
     if key == "independence_day":  # 5 Iyar, moved off Friday / Saturday / Monday
         d = date(*hebrew.to_gregorian(year + 3760, hebrew.IYYAR, 5))
         d += {4: -day, 5: -2 * day, 0: day}.get(d.weekday(), 0 * day)
@@ -140,6 +178,9 @@ def _holiday(year: int, key: str) -> tuple[date, date]:
 
 
 def _next_holiday(today: date, key: str) -> tuple[date, date]:
+    if key in DATED:  # a Gregorian year can hold two (Ramadan 2030)
+        start, end = next((s, e) for s, e in DATED[key] if e >= today)
+        return max(start, today), end
     for year in (today.year - 1, today.year, today.year + 1):
         start, end = _holiday(year, key)
         if end >= today:
@@ -192,6 +233,8 @@ def date_ranges(today: date) -> dict[str, tuple[date, date]]:
     for name, weekday in EN_WEEKDAYS.items():
         out[name] = _next_weekday(today, weekday)
     for key, names in HOLIDAY_NAMES.items():
+        if key in GENRE_HOLIDAYS:  # "כריסמס" finds Christmas events (a genre), not all of December
+            continue
         with warnings.catch_warnings():  # convertdate 2.5.1 calls its own deprecated month_days()
             warnings.filterwarnings("ignore", "month_days is deprecated", DeprecationWarning)
             span = _next_holiday(today, key)

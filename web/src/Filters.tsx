@@ -398,7 +398,7 @@ function Rows({ only }: { only?: Panel }) {
 }
 
 export const GROUP_ICON: Record<string, string> = {
-  g_parties: "🎧", g_live: "🎤", g_stage: "🎭", g_culture: "🖼️", g_kids: "🧸", g_food: "🍽️", g_leisure: "🎡", g_tech: "💻", g_community: "🌈",
+  g_parties: "🎧", g_live: "🎤", g_stage: "🎭", g_culture: "🖼️", g_kids: "🧸", g_food: "🍽️", g_leisure: "🎡", g_tech: "💻", g_community: "🌈", g_holidays: "🎉",
 };
 
 /** Genres by family: the families, then the open one's genres (an umbrella genre with its sub-genres).

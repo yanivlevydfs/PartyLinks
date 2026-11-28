@@ -34,6 +34,15 @@ def _today(cfg: Settings) -> datetime:
     return datetime.now(ZoneInfo(cfg.timezone))
 
 
+# The holidays with drawn art of their own (web/public/holidays/<art>-og.webp, scripts/holiday_art.py).
+ART = {"christmas": "christmas", "hanukkah": "hanukkah", "new_year": "new_year", "purim": "purim", "ramadan": "ramadan",
+       "eid_al_fitr": "ramadan"}  # fmt: skip
+
+
+def _art(cfg: Settings, key: str) -> str | None:
+    return f"{cfg.site.base_url}/holidays/{ART[key]}-og.webp" if key in ART else None
+
+
 def holiday_page(session: Session, cfg: Settings, lang: str, key: str) -> seo.Page | None:
     found = next(((h, n) for h, n in with_pages(session, cfg, _today(cfg).date()) if h.key == key), None)
     if found is None:
@@ -41,7 +50,7 @@ def holiday_page(session: Session, cfg: Settings, lang: str, key: str) -> seo.Pa
     h, _ = found
     t, name, dates = TEXT[lang], h.name(lang), _dates(h)
     title = t["title"].format(name=name)
-    rows = seo._upcoming(session, *where(h), limit=cfg.seo.landing_rows)
+    rows = seo._upcoming(session, *where(h, cfg), limit=cfg.seo.landing_rows)
     faq = seo._faq(rows, lang, t["scope"].format(name=name), cfg.site.name)
     faq_ld = {
         "@context": "https://schema.org",
@@ -55,7 +64,7 @@ def holiday_page(session: Session, cfg: Settings, lang: str, key: str) -> seo.Pa
         description=t["desc"].format(name=name, dates=dates),
         path=path,
         lang=lang,
-        image=seo._cover(cfg, rows[0]) if rows else None,
+        image=_art(cfg, h.key) or (seo._cover(cfg, rows[0]) if rows else None),
         jsonld=[seo._item_list(rows[: cfg.seo.list_limit], cfg, title), faq_ld,
                 seo._breadcrumbs(cfg, lang, (t["index"], "/holidays"), (title, path))],
         body=f"<h1>{escape(title)}</h1><p>{escape(t['intro'].format(name=name, dates=dates))}</p>"

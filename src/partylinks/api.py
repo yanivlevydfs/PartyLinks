@@ -2013,15 +2013,21 @@ def _register_routes(app: FastAPI) -> None:
             smart = smartrails.rail_filters(cfg, now, lambda **kw: event_filters(request, **kw), slots)
             # The coming holiday's row, from rail_days before it (partylinks.holiday_pages).
             soon = now.date() + timedelta(days=cfg.holiday_pages.rail_days)
+            # A season holiday (Christmas, Ramadan) is not it: its own rows (home_rails rows with its genre) show it.
             coming = next(
-                ((h, n) for h, n in holiday_pages.with_pages(session, cfg, now.date()) if h.start <= soon), None
+                (
+                    (h, n)
+                    for h, n in holiday_pages.with_pages(session, cfg, now.date())
+                    if h.start <= soon and not h.genre
+                ),
+                None,
             )
             if coming:
                 holiday, n = coming
                 out.holiday = HolidayOut(key=holiday.key, he=holiday.he, en=holiday.en, start=holiday.start, end=holiday.end,
                                          events=n, page=True)  # fmt: skip
                 smart = {"holiday": [*event_filters(request, date_to=now + timedelta(days=cfg.holiday_pages.ahead_days)),
-                                     *holiday_pages.where(holiday)], **smart}  # fmt: skip
+                                     *holiday_pages.where(holiday, cfg)], **smart}  # fmt: skip
             wheres = dict(smart)  # each row's filters, for the pinned events (partylinks.home_pins)
             # The coming holiday's own row already shows a plain holiday row's events; one with a genre of its own
             # ("Hanukkah for kids") is a different row and stays.
