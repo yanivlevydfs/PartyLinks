@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from partylinks.api import create_app
@@ -162,3 +163,14 @@ def test_kept_rails_seed_from_the_compact_copy() -> None:
             }).encode()  # fmt: skip
 
     assert _kept_rails(Cache(), "/events/rails") == {"r": [{"id": "x"}], "s": [{"id": "y"}]}  # type: ignore[arg-type]
+
+
+@pytest.mark.skipif(not (Path(__file__).parents[1] / "web/dist/index.html").is_file(), reason="needs the web build")
+def test_the_home_page_preloads_its_rows_and_other_pages_do_not(tmp_path: Path) -> None:
+    from partylinks.seo import HOME_RAILS_URL
+
+    assert HOME_RAILS_URL == "/events/rails?compact=true"  # what web/src/api.ts useRails fetches
+    preload = f'<link rel="preload" href="{HOME_RAILS_URL}" as="fetch" crossorigin="anonymous" />'
+    with TestClient(create_app(settings_for(tmp_path), start_scheduler=False)) as client:
+        assert preload in client.get("/").text
+        assert preload not in client.get("/privacy").text

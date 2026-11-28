@@ -1728,6 +1728,9 @@ def _jsonld_tag(data: dict[str, Any]) -> str:
     return f'<script type="application/ld+json">{text}</script>'
 
 
+HOME_RAILS_URL = "/events/rails?compact=true"  # what web/src/api.ts useRails asks for
+
+
 def render(template: str, page: Page, cfg: Settings, alt: Page | None = None) -> str:
     """``alt``: the same page in the other language; a pasted link's preview (og/twitter) shows both."""
     canonical = _url(cfg, page.path, page.lang if page.lang in page.langs else page.langs[0])
@@ -1739,6 +1742,9 @@ def render(template: str, page: Page, cfg: Settings, alt: Page | None = None) ->
         preview = _clip(f"{page.description} | {alt.description}", cfg.seo.description_chars)
     head = [
         f"<title>{escape(page.title)}</title>",
+        # The home rows start downloading with the page, not after the app's script has loaded and run (the
+        # app's fetch of the same URL takes this copy: same address, same-origin credentials).
+        *([f'<link rel="preload" href="{HOME_RAILS_URL}" as="fetch" crossorigin="anonymous" />'] if page.path == "/" else []),
         f'<meta name="description" content="{escape(page.description)}" />',
         f'<link rel="canonical" href="{escape(canonical)}" />',
         *(f'<link rel="alternate" hreflang="{code}" href="{escape(_url(cfg, page.path, code))}" />'
