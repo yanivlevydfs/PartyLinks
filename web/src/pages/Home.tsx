@@ -95,6 +95,12 @@ export default function Home({ landing }: { landing?: "now" | "tonight" | "weeke
   useEffect(() => {
     if (holiday) set({ when: holidayWhen(holiday), ...(holiday.genre ? { genres: [holiday.genre] } : {}) });
   }, [holiday, set]);
+  // A season holiday's genre came with its page: other dates picked there are not that page, so it goes with them.
+  const seasonGenre = landing === "holiday" ? holiday?.genre : undefined;
+  useEffect(() => {
+    if (holiday && seasonGenre && f.when !== holidayWhen(holiday) && f.genres.length === 1 && f.genres[0] === seasonGenre)
+      set({ genres: [] });
+  }, [f.when, f.genres, holiday, seasonGenre, set]);
   // Filters picked here move the address to their landing URL (techno: /genre/techno), so it can be shared.
   // Not on mount: a remount (back from an event) keeps the route it came with.
   const navigate = useNavigate();

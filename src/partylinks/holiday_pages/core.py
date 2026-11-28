@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
 
-from sqlalchemy import ColumnElement, func, select
+from sqlalchemy import ColumnElement, and_, func, select
 from sqlalchemy.orm import Session
 
 from partylinks.config import Settings
@@ -73,12 +73,18 @@ def where(h: Holiday, cfg: Settings) -> list[ColumnElement[bool]]:
 
 
 def counts(session: Session, holidays: Sequence[Holiday], cfg: Settings) -> dict[str, int]:
-    """Upcoming events in Israel on each holiday: one query for the dated ones, one per season holiday."""
+    """Upcoming events in Israel on each holiday: one query for the season holidays (a count each), one for the
+    dated ones."""
     if not holidays:
         return {}
     base = [upcoming_filter(), EventRow.is_primary.is_(True), EventRow.country.is_(None)]
-    seasons = {h.key: session.scalar(select(func.count()).select_from(EventRow).where(*base, *where(h, cfg))) or 0
-               for h in holidays if h.genre}  # fmt: skip
+    season_list = [h for h in holidays if h.genre]
+    seasons: dict[str, int] = {}
+    if season_list:
+        row = session.execute(
+            select(*(func.count().filter(and_(*where(h, cfg))) for h in season_list)).select_from(EventRow).where(*base)
+        ).one()
+        seasons = {h.key: n or 0 for h, n in zip(season_list, row, strict=True)}
     holidays = [h for h in holidays if not h.genre]
     if not holidays:
         return seasons
