@@ -2370,6 +2370,12 @@ search:
     melodic_techno: ["מלודיק", "melodic"]
     live_show: ["הופעה", "הופעה חיה", "קונצרט", "concert", "live", "קונצרטים", "concerts", "gig"]
     classical_opera: ["קונצרט", "קונצרטים", "קלאסי", "מוזיקה קלאסית", "תזמורת", "פילהרמונית", "orchestra", "symphony"]
+    # The holidays' other names: "כריסמס" finds an event titled "חג המולד" (a holiday that is a date word, חנוכה /
+    # פורים / סילבסטר, is taken as its dates first: search.date_ranges).
+    christmas: ["כריסמס", "קריסמס", "christmas", "xmas", "חג המולד", "عيد الميلاد", "рождество"]
+    christmas_markets: ["שוק כריסמס", "שווקי כריסמס", "יריד כריסמס", "christmas market", "christmas markets"]
+    ramadan: ["רמדאן", "ramadan", "رمضان", "איפטאר", "iftar"]
+    g_holidays: ["חגים", "holidays"]
     nightclubs: ["מועדון", "קלאב"]
     theatre: ["הצגה", "הצגות", "תאטרון", "מחזמר", "מחזה", "מחזות", "מחזות זמר", "הצגת", "play", "plays", "theater", "musical"]
     cinema: ["סרט", "הקרנה", "הקרנות", "הקרנת", "בכורה", "movie", "movies", "film", "films", "screening"]

@@ -177,10 +177,12 @@ def _holiday(year: int, key: str) -> tuple[date, date]:
     return d - first * day, d + last * day
 
 
-def _next_holiday(today: date, key: str) -> tuple[date, date]:
+def _next_holiday(today: date, key: str) -> tuple[date, date] | None:
+    """The holiday's next dates (eve to last day; from today once it has begun). None: a fetched holiday
+    (DATED) whose known dates are all past (run scripts/fetch_holiday_dates.py)."""
     if key in DATED:  # a Gregorian year can hold two (Ramadan 2030)
-        start, end = next((s, e) for s, e in DATED[key] if e >= today)
-        return max(start, today), end
+        span = next(((s, e) for s, e in DATED[key] if e >= today), None)
+        return (max(span[0], today), span[1]) if span else None
     for year in (today.year - 1, today.year, today.year + 1):
         start, end = _holiday(year, key)
         if end >= today:
@@ -238,6 +240,8 @@ def date_ranges(today: date) -> dict[str, tuple[date, date]]:
         with warnings.catch_warnings():  # convertdate 2.5.1 calls its own deprecated month_days()
             warnings.filterwarnings("ignore", "month_days is deprecated", DeprecationWarning)
             span = _next_holiday(today, key)
+        if span is None:
+            continue
         for name in names:
             out[name] = span
             if re.match(r"[֐-׿]", name):

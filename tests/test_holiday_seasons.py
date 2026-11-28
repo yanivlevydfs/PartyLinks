@@ -80,3 +80,21 @@ def test_the_christmas_page_lists_christmas_events_only(tmp_path: Path) -> None:
         assert "/holidays/christmas-og.webp" in page.text  # its own drawn picture
         listed = {x["key"]: x for x in client.get("/holidays/list").json()["holidays"]}
         assert listed["christmas"]["genre"] == "christmas" and listed["christmas"]["events"] == 3
+
+
+def test_a_fetched_holiday_with_no_dates_left_is_skipped(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    from partylinks import search
+    from partylinks.config import Settings
+    from partylinks.home_rails.config import HomeRail
+
+    monkeypatch.setitem(search.DATED, "ramadan", [(date(2020, 4, 23), date(2020, 5, 23))])  # only past dates known
+    today = date(2026, 11, 28)
+    assert search._next_holiday(today, "ramadan") is None
+    assert "ramadan" not in {h.key for h in upcoming(Settings(), today)}
+    window = HomeRail(key="r", holiday="ramadan").window(today)
+    assert window is not None and window[1] < today  # an empty window: the row hides
+    search.date_ranges.cache_clear()
+    try:
+        assert "מימונה" in search.date_ranges(today)  # the others still work
+    finally:
+        search.date_ranges.cache_clear()

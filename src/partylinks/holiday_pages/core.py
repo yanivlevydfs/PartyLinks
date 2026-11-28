@@ -13,16 +13,17 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
 
-from sqlalchemy import ColumnElement, String, cast, func, or_, select
+from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.orm import Session
 
 from partylinks.config import Settings
 from partylinks.db import EventRow, upcoming_filter
 from partylinks.placecards import IS_PLACE
 from partylinks.search import GENRE_HOLIDAYS, HOLIDAY_NAMES, _next_holiday
+from partylinks.search import _genre as search_genre
 
 _HEBREW = re.compile(r"[֐-׿]")
-# Each holiday's icon (the bot's holiday button; web/src/holidays/art.ts has the same).
+# Each holiday's icon (the bot's holiday button).
 HOLIDAY_ICONS = {
     "hanukkah": "🕎", "purim": "🎭", "passover": "🍷", "shavuot": "🌾", "rosh_hashanah": "🍎", "sukkot": "🌿",
     "tu_bishvat": "🌳", "lag_baomer": "🔥", "tu_bav": "💞", "independence_day": "🇮🇱", "halloween": "🎃",
@@ -59,21 +60,20 @@ def upcoming(cfg: Settings, today: date) -> list[Holiday]:
     horizon = today + timedelta(days=cfg.holiday_pages.ahead_days)
     out = []
     for key in HOLIDAY_NAMES:
-        start, end = _next_holiday(today, key)
+        span = _next_holiday(today, key)
+        if span is None:  # no known dates left (scripts/fetch_holiday_dates.py)
+            continue
+        start, end = span
         if start <= horizon:
             out.append(Holiday(key, *_names(key), start, end, GENRE_HOLIDAYS.get(key)))
     return sorted(out, key=lambda h: (h.start, h.key))
 
 
-def _genre(cfg: Settings, genre: str) -> ColumnElement[bool]:
-    return or_(*(cast(EventRow.genres, String).like(f'%"{g}"%') for g in cfg.enrichment.expand_genres([genre])))
-
-
 def where(h: Holiday, cfg: Settings | None = None) -> list[ColumnElement[bool]]:
     """Events on the holiday's dates (not places open every day); a season holiday's own events only."""
     out = [EventRow.local_date >= h.start, EventRow.local_date <= h.end, ~IS_PLACE]
-    if h.genre:
-        out.append(_genre(cfg or Settings(), h.genre))
+    if h.genre:  # JSONB containment: served by the genres GIN index
+        out.append(search_genre(cfg or Settings(), h.genre))
     return out
 
 

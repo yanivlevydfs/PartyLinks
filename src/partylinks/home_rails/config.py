@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -62,8 +62,8 @@ class HomeRail(BaseModel):
         """The row's own dates (its holiday's or month's next ones), or None: from now to `days` ahead."""
         from partylinks.search import _next_holiday, _next_month
 
-        if self.holiday:
-            return _next_holiday(today, self.holiday)
+        if self.holiday:  # no known dates left: an empty window (the row hides)
+            return _next_holiday(today, self.holiday) or (today - timedelta(days=1), today - timedelta(days=1))
         return _next_month(today, self.month) if self.month else None
 
 
