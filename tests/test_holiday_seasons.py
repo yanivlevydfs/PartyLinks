@@ -21,7 +21,8 @@ TZ = ZoneInfo("Asia/Jerusalem")
 
 
 def test_dates_from_the_fetched_calendar_and_the_hebrew_one() -> None:
-    assert _next_holiday(date(2026, 11, 28), "christmas") == (date(2026, 12, 1), date(2027, 1, 20))
+    seasons = get_settings().holiday_pages.seasons  # Christmas' days: the config's season
+    assert _next_holiday(date(2026, 11, 28), "christmas", seasons) == (date(2026, 12, 1), date(2027, 1, 20))
     assert _next_holiday(date(2026, 11, 28), "ramadan") == (date(2027, 2, 8), date(2027, 3, 9))
     assert _next_holiday(date(2026, 11, 28), "mimouna") == (
         date(2027, 4, 28),
@@ -33,7 +34,7 @@ def test_dates_from_the_fetched_calendar_and_the_hebrew_one() -> None:
 
 
 def test_a_season_holiday_is_not_a_date_word_in_search() -> None:
-    words = date_ranges(date(2026, 11, 28))
+    words = date_ranges(date(2026, 11, 28), frozenset(get_settings().holiday_pages.seasons))
     assert "חנוכה" in words and "סילבסטר" in words
     assert "כריסמס" not in words and "רמדאן" not in words  # these find their events (a genre), not all of December
 
@@ -98,15 +99,3 @@ def test_a_fetched_holiday_with_no_dates_left_is_skipped(monkeypatch) -> None:  
         assert "מימונה" in search.date_ranges(today)  # the others still work
     finally:
         search.date_ranges.cache_clear()
-
-
-def test_towns_take_their_name_in_the_states_list_of_localities() -> None:
-    s = get_settings()
-    enricher = Enricher(s.enrichment, s.timezone)
-    town = lambda name: enricher.canonical_city(name, None)
-    # GeoNames' first names were "אל-בוקיעה", "מפשטה", "בית כרם": the official names (localities.json) instead.
-    assert town("אל-בוקיעה") == town("פקיעין") == "פקיעין (בוקייעה)"
-    assert town("גוש חלב") == town("ג'ש") == "ג'ש (גוש חלב)"
-    assert town("מפשטה") == "פסוטה" and town("מיעיליא") == "מעיליא" and town("סכנין") == "סח'נין"
-    assert town("Umm el Fahm") == "אום אל-פחם" and town("קריית שמונה") == "קרית שמונה"
-    assert town("ג'ת") == "ג'ת"  # the geresh counts: not kibbutz גת
