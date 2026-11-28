@@ -100,8 +100,13 @@ def test_a_fetched_holiday_with_no_dates_left_is_skipped(monkeypatch) -> None:  
         search.date_ranges.cache_clear()
 
 
-def test_towns_take_the_hebrew_name_israelis_write() -> None:
+def test_towns_take_their_name_in_the_states_list_of_localities() -> None:
     s = get_settings()
     enricher = Enricher(s.enrichment, s.timezone)
-    assert enricher.canonical_city("אל-בוקיעה", None) == "פקיעין"  # GeoNames' first name for Peki'in
-    assert enricher.canonical_city("מיעיליא", None) == enricher.canonical_city("Mi'ilya", None) == "מעיליא"
+    town = lambda name: enricher.canonical_city(name, None)
+    # GeoNames' first names were "אל-בוקיעה", "מפשטה", "בית כרם": the official names (localities.json) instead.
+    assert town("אל-בוקיעה") == town("פקיעין") == "פקיעין (בוקייעה)"
+    assert town("גוש חלב") == town("ג'ש") == "ג'ש (גוש חלב)"
+    assert town("מפשטה") == "פסוטה" and town("מיעיליא") == "מעיליא" and town("סכנין") == "סח'נין"
+    assert town("Umm el Fahm") == "אום אל-פחם" and town("קריית שמונה") == "קרית שמונה"
+    assert town("ג'ת") == "ג'ת"  # the geresh counts: not kibbutz גת

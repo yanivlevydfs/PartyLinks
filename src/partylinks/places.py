@@ -10,10 +10,13 @@ probes whatever the number of towns (28k events x ~200 towns of regexes took sec
 
 from __future__ import annotations
 
+import json
 import math
 import re
 import unicodedata
+from difflib import get_close_matches
 from functools import lru_cache
+from pathlib import Path
 
 from partylinks import geonames
 from partylinks.config import CitySettings
@@ -36,12 +39,49 @@ def _radius_m(population: int) -> float:
     return 1000 + 12 * math.sqrt(population)
 
 
-# GeoNames' first Hebrew name is sometimes the Arabic one in Hebrew letters ("אל-בוקיעה" for Peki'in): the name
-# Israelis write, by its GeoNames name (the others stay aliases). Nov 2026: every 500+ town whose first name was.
-HEBREW_NAME = {
-    "Buqei‘a": "פקיעין", "Mi‘ilyā": "מעיליא", "Furaydis": "פוריידיס", "Al-Bi‘na": "בענה", "El Mazra‘a": "מזרעה",
-    "Ghajar": "ע'ג'ר",
-}  # fmt: skip
+@lru_cache(maxsize=1)
+def _official() -> tuple[dict[str, str], dict[str, str]]:
+    """The State's list of localities (src/partylinks/localities.json, scripts/fetch_localities.py): each part of
+    an official name ("פקיעין (בוקייעה)": the whole, "פקיעין", "בוקייעה") -> the official name, and its English
+    name likewise."""
+    rows = json.loads((Path(__file__).with_name("localities.json")).read_text(encoding="utf-8"))["localities"]
+    he: dict[str, str] = {}
+    en: dict[str, str] = {}
+    for row in rows:
+        for part in _name_parts(row["he"]):
+            he.setdefault(_he_key(part), row["he"])
+        for part in _name_parts(row["en"]):
+            if part:
+                en.setdefault(_en_key(part), row["he"])
+    return he, en
+
+
+def _name_parts(name: str) -> list[str]:
+    """A name and, when it has one, its bracketed other name: "ג'ש (גוש חלב)" -> itself, "ג'ש", "גוש חלב"."""
+    m = re.match(r"(.*?)\s*\((.*)\)\s*$", name)
+    return [name, *(p.strip() for p in m.groups())] if m else [name]
+
+
+def _he_key(name: str) -> str:  # the geresh stays: ג'ת (Jatt) is not גת
+    name = re.sub(r"[׳’‘`]", "'", name).replace("״", '"')
+    return re.sub(r"[\s\-־–]+", " ", name).strip()
+
+
+def _en_key(name: str) -> str:
+    return re.sub(r"[^a-z]", "", unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower())
+
+
+def official_name(hebrew: list[str], english: str) -> str | None:
+    """The official Hebrew name of a GeoNames town: by one of its Hebrew names, else by its English name (the
+    same, or nearly: "Umm el Faḥm" / "UMM AL-FAHM"). None: a place the State's list does not have (Jaffa)."""
+    he, en = _official()
+    if found := next((he[_he_key(h)] for h in hebrew if _he_key(h) in he), None):
+        return found
+    key = _en_key(english)
+    if key in en:
+        return en[key]
+    close = get_close_matches(key, list(en), n=2, cutoff=0.85) if key else []
+    return en[close[0]] if len(close) == 1 else None
 
 
 @lru_cache(maxsize=4)
@@ -54,8 +94,10 @@ def israeli_places(min_population: int) -> tuple[CitySettings, ...]:
         hebrew = list(dict.fromkeys(_NIQQUD.sub("", a) for a in c["alternatenames"] if _HEBREW.search(a)))
         if not hebrew:
             continue
-        if preferred := HEBREW_NAME.get(c["name"]):
-            hebrew = [preferred, *(h for h in hebrew if h != preferred)]
+        # Its name in the State's list (פקיעין (בוקייעה), not GeoNames' first: "אל-בוקיעה", "מפשטה" for Fassuta);
+        # every other name, and each part of the official one, stays a way to find it.
+        if official := official_name(hebrew, c["name"]):
+            hebrew = [official, *_name_parts(official)[1:], *(h for h in hebrew if h != official)]
         latin = [a for a in c["alternatenames"] if a.isascii() and len(a) > 2]
         places.append(
             CitySettings(
