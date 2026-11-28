@@ -28,7 +28,7 @@ class HomeRail(BaseModel):
     abroad: bool = False  # events abroad instead of in Israel
     discount: bool = False  # only events with a discount on some ticket site
     max_price: float | None = Field(None, gt=0)  # cheapest ticket at most this much (free ones excluded)
-    # Only the next dates of this holiday (a search.HOLIDAY_NAMES key: purim, new_year...), however far; `days` is ignored.
+    # Only the next dates of this holiday (a holiday_pages.names key: purim, new_year...), however far; `days` is ignored.
     holiday: str | None = None
     # Its banner: a drawn picture (holiday_pages.art's names, web/public/holidays/<art>.webp); none: plain.
     art: str | None = None
@@ -49,15 +49,6 @@ class HomeRail(BaseModel):
     min_reviews: int | None = Field(None, ge=1)  # a place's Google reviews, at least
     min_price_level: int | None = Field(None, ge=1, le=4)  # a place's ₪ to ₪₪₪₪ as 1-4
     max_price_level: int | None = Field(None, ge=1, le=4)
-
-    @field_validator("holiday")
-    @classmethod
-    def _known_holiday(cls, value: str | None) -> str | None:
-        from partylinks.search import HOLIDAY_NAMES  # here: search imports the settings
-
-        if value is not None and value not in HOLIDAY_NAMES:
-            raise ValueError(f"unknown holiday {value!r} (one of {', '.join(HOLIDAY_NAMES)})")
-        return value
 
     def cache_tag(self, today: date) -> str:
         """Its settings, and the day for a row whose dates move with it: either changing rebuilds it at once."""

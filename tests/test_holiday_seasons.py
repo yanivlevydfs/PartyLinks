@@ -15,6 +15,7 @@ from partylinks.enrichment import Enricher
 from partylinks.holiday_pages.core import upcoming
 from partylinks.models import ScrapedEvent
 from partylinks.search import DATED, _next_holiday, date_ranges
+from partylinks.search import holiday_words as search_words
 from tests.test_storage_api import event, seed, settings_for
 
 TZ = ZoneInfo("Asia/Jerusalem")
@@ -34,7 +35,8 @@ def test_dates_from_the_fetched_calendar_and_the_hebrew_one() -> None:
 
 
 def test_a_season_holiday_is_not_a_date_word_in_search() -> None:
-    words = date_ranges(date(2026, 11, 28), frozenset(get_settings().holiday_pages.seasons))
+    cfg = get_settings()
+    words = date_ranges(date(2026, 11, 28), search_words(cfg), frozenset(cfg.holiday_pages.seasons))
     assert "חנוכה" in words and "סילבסטר" in words
     assert "כריסמס" not in words and "רמדאן" not in words  # these find their events (a genre), not all of December
 
@@ -96,6 +98,6 @@ def test_a_fetched_holiday_with_no_dates_left_is_skipped(monkeypatch) -> None:  
     assert window is not None and window[1] < today  # an empty window: the row hides
     search.date_ranges.cache_clear()
     try:
-        assert "מימונה" in search.date_ranges(today)  # the others still work
+        assert "מימונה" in search.date_ranges(today, search.holiday_words(get_settings()))  # the others still work
     finally:
         search.date_ranges.cache_clear()

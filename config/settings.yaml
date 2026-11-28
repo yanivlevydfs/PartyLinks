@@ -385,6 +385,29 @@ holiday_pages:
   ahead_days: 365         # holidays starting within this many days
   min_events: 3           # fewer events on its dates: no page yet (thin content)
   rail_days: 21           # the home row of the next holiday from this many days before it
+  # Each holiday's names (the first Hebrew one and the first Latin one title its page): the words a search reads as
+  # its dates, the bot's too. Its key is the calendar's (search._holiday computes or fetches its dates).
+  names:
+    hanukkah: ["חנוכה", "hanukkah", "chanukah", "hanukah"]
+    purim: ["פורים", "purim"]
+    passover: ["פסח", "passover", "pesach"]
+    shavuot: ["שבועות", "shavuot"]
+    rosh_hashanah: ["ראש השנה", "rosh hashanah"]
+    sukkot: ["סוכות", "sukkot"]
+    tu_bishvat: ["ט״ו בשבט", "ט\"ו בשבט", "טו בשבט", "tu bishvat"]
+    lag_baomer: ["ל״ג בעומר", "ל\"ג בעומר", "לג בעומר", "lag baomer"]
+    tu_bav: ["ט״ו באב", "ט\"ו באב", "טו באב", "tu bav"]
+    independence_day: ["יום העצמאות", "עצמאות", "independence day"]
+    halloween: ["הלואין", "האלווין", "הלווין", "halloween"]
+    new_year: ["סילבסטר", "new year", "new years eve"]
+    valentines: ["ולנטיין", "יום האהבה", "valentine", "valentines"]
+    mimouna: ["מימונה", "mimouna", "mimuna"]
+    jerusalem_day: ["יום ירושלים", "jerusalem day"]
+    sigd: ["סיגד", "sigd"]
+    christmas: ["חג המולד", "christmas", "כריסמס", "xmas"]
+    ramadan: ["רמדאן", "ramadan", "رمضان"]
+    eid_al_fitr: ["חג שבירת הצום", "עיד אל-פיטר", "eid al-fitr", "عيد الفطر"]
+    eid_al_adha: ["חג הקורבן", "עיד אל-אדחא", "eid al-adha", "عيد الأضحى"]
   # Season holidays: their page, home rows and bot button list only their own events (the genre) in the season,
   # not every event on their dates. Christmas: the first markets to Armenian Christmas in Jerusalem (19.1).
   seasons:

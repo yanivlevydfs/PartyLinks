@@ -1,6 +1,6 @@
 """Holidays in Israel (Hanukkah, Purim, Pesach, Independence Day, Shavuot, Rosh Hashanah, Sukkot, Lag BaOmer, Tu
 BeAv, Silvester, the Mimouna, Christmas, Ramadan, the Eids...): their next dates, from the search's own calendar
-(``search.HOLIDAY_NAMES``, eve to last day), and the events on them. A season holiday
+(names: ``holiday_pages.names``; dates: ``search._holiday``, eve to last day), and the events on them. A season holiday
 (``holiday_pages.seasons``: Christmas, Ramadan) lists only its own events (its genre) in its season. Each holiday
 has a page (/holiday/<key>) once it has enough events.
 """
@@ -19,8 +19,8 @@ from sqlalchemy.orm import Session
 from partylinks.config import Settings
 from partylinks.db import EventRow, upcoming_filter
 from partylinks.placecards import IS_PLACE
-from partylinks.search import HOLIDAY_NAMES, _next_holiday
 from partylinks.search import _genre as search_genre
+from partylinks.search import _next_holiday
 
 _HEBREW = re.compile(r"[֐-׿]")
 
@@ -38,9 +38,8 @@ class Holiday:
         return self.he if lang == "he" else self.en
 
 
-def _names(key: str) -> tuple[str, str]:
+def _names(names: list[str], key: str) -> tuple[str, str]:
     """(Hebrew, English) of a holiday: its first name in each script ("חנוכה", "Hanukkah")."""
-    names = HOLIDAY_NAMES[key]
     he = next(n for n in names if _HEBREW.search(n))
     en = next((n for n in names if not _HEBREW.search(n)), key.replace("_", " "))
     return he, en.title()
@@ -52,14 +51,14 @@ def upcoming(cfg: Settings, today: date) -> list[Holiday]:
         return []
     horizon = today + timedelta(days=cfg.holiday_pages.ahead_days)
     out = []
-    for key in HOLIDAY_NAMES:
+    for key, names in cfg.holiday_pages.names.items():
         span = _next_holiday(today, key, cfg.holiday_pages.seasons)
         if span is None:  # no known dates left (scripts/fetch_holiday_dates.py)
             continue
         start, end = span
         if start <= horizon:
             season = cfg.holiday_pages.seasons.get(key)
-            out.append(Holiday(key, *_names(key), start, end, season.genre if season else None))
+            out.append(Holiday(key, *_names(names, key), start, end, season.genre if season else None))
     return sorted(out, key=lambda h: (h.start, h.key))
 
 

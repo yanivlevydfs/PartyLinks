@@ -927,6 +927,24 @@ class Settings(BaseSettings):
             raise ValueError(f"home_rails: unknown genres {', '.join(unknown)}")
         return self
 
+    @model_validator(mode="after")
+    def _holidays_known(self) -> Settings:
+        """Every holiday a setting names is one of holiday_pages.names, and the calendar can date each of those."""
+        from datetime import date as _date
+
+        from partylinks.search import _next_holiday  # here: search imports this module
+
+        h = self.holiday_pages
+        named = {*h.seasons, *h.icons, *h.art, *(r.holiday for r in self.home_rails.rows if r.holiday)}
+        if unknown := sorted(named - set(h.names)):
+            raise ValueError(f"holidays not in holiday_pages.names: {', '.join(unknown)}")
+        for key in h.names:
+            try:
+                _next_holiday(_date.today(), key, h.seasons)
+            except Exception as exc:
+                raise ValueError(f"holiday_pages.names: no dates for {key!r}") from exc
+        return self
+
     @classmethod
     def settings_customise_sources(
         cls,

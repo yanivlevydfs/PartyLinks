@@ -81,22 +81,14 @@ FILLER = {
     "שקל", "שקלים", "לעשות", "לראות", "לשמוע", "שאפשר", "מעניין", "מעניינים", "פעילות", "פעילויות", "activity", "activities",
 }  # fmt: skip
 
-HOLIDAY_NAMES = {
-    "hanukkah": ("חנוכה", "hanukkah", "chanukah", "hanukah"), "purim": ("פורים", "purim"),
-    "passover": ("פסח", "passover", "pesach"), "shavuot": ("שבועות", "shavuot"),
-    "rosh_hashanah": ("ראש השנה", "rosh hashanah"), "sukkot": ("סוכות", "sukkot"),
-    "tu_bishvat": ("ט״ו בשבט", 'ט"ו בשבט', "טו בשבט", "tu bishvat"),
-    "lag_baomer": ("ל״ג בעומר", 'ל"ג בעומר', "לג בעומר", "lag baomer"),
-    "tu_bav": ("ט״ו באב", 'ט"ו באב', "טו באב", "tu bav"), "independence_day": ("יום העצמאות", "עצמאות", "independence day"),
-    "halloween": ("הלואין", "האלווין", "הלווין", "halloween"), "new_year": ("סילבסטר", "new year", "new years eve"),
-    "valentines": ("ולנטיין", "יום האהבה", "valentine", "valentines"),
-    "mimouna": ("מימונה", "mimouna", "mimuna"), "jerusalem_day": ("יום ירושלים", "jerusalem day"),
-    "sigd": ("סיגד", "sigd"),
-    # Seasons of their own events (holiday_pages.seasons): not date words in a search.
-    "christmas": ("חג המולד", "christmas", "כריסמס", "xmas"), "ramadan": ("רמדאן", "ramadan", "رمضان"),
-    "eid_al_fitr": ("חג שבירת הצום", "עיד אל-פיטר", "eid al-fitr", "عيد الفطر"),
-    "eid_al_adha": ("חג הקורבן", "עיד אל-אדחא", "eid al-adha", "عيد الأضحى"),
-}  # fmt: skip
+HolidayWords = tuple[tuple[str, tuple[str, ...]], ...]  # (key, its names): holiday_pages.names, hashable
+
+
+def holiday_words(cfg: Settings) -> HolidayWords:
+    """The holidays' names (holiday_pages.names) as date_ranges takes them."""
+    return tuple((key, tuple(names)) for key, names in cfg.holiday_pages.names.items())
+
+
 # Same dates every year: (month, day) from, to; parties run in the days before.
 YEARLY_DATES = {"halloween": ((10, 25), (10, 31)), "new_year": ((12, 28), (1, 1)), "valentines": ((2, 10), (2, 14))}
 # Holidays of the Muslim and Christian calendars (and the Mimouna): their spans (eve to last day) by Google's
@@ -208,9 +200,12 @@ def exact_dates(text: str, today: date) -> dict[str, date]:
 
 
 @lru_cache(maxsize=4)
-def date_ranges(today: date, seasons: frozenset[str] = frozenset()) -> dict[str, tuple[date, date]]:
-    """Search phrase -> the dates it means from ``today``: "השבוע", "בדצמבר", "ביום שישי", "חנוכה". ``seasons``
-    (holiday_pages.seasons' keys) are no date words: "כריסמס" finds Christmas events, not all of December."""
+def date_ranges(
+    today: date, holidays_: HolidayWords = (), seasons: frozenset[str] = frozenset()
+) -> dict[str, tuple[date, date]]:
+    """Search phrase -> the dates it means from ``today``: "השבוע", "בדצמבר", "ביום שישי", "חנוכה" (``holidays_``:
+    holiday_words(cfg)). ``seasons`` (holiday_pages.seasons' keys) are no date words: "כריסמס" finds Christmas
+    events, not all of December."""
     week = (today, today + timedelta(days=6))
     sunday = today + timedelta(days=(6 - today.weekday()) % 7 or 7)
     next_week = (sunday, sunday + timedelta(days=6))
@@ -232,7 +227,7 @@ def date_ranges(today: date, seasons: frozenset[str] = frozenset()) -> dict[str,
             out[phrase] = _next_weekday(today, weekday)
     for name, weekday in EN_WEEKDAYS.items():
         out[name] = _next_weekday(today, weekday)
-    for key, names in HOLIDAY_NAMES.items():
+    for key, names in holidays_:
         if key in seasons:
             continue
         with warnings.catch_warnings():  # convertdate 2.5.1 calls its own deprecated month_days()
@@ -481,7 +476,7 @@ def relevance(q: str, cfg: Settings, artists: Iterable[str] = (), cols: Any = No
     # Dates, prices and "free" are filters, not title words ("הלילה" is no reason to list "מטבח לילה" first).
     today = datetime.now(ZoneInfo(cfg.timezone)).date()
     text = " " + " ".join(PRICE.sub(" ", text).split()) + " "
-    dates = date_ranges(today, frozenset(cfg.holiday_pages.seasons))
+    dates = date_ranges(today, holiday_words(cfg), frozenset(cfg.holiday_pages.seasons))
     for name in sorted({*FREE, *WEEKEND, *DAYS, *dates, *exact_dates(text.strip(), today)}, key=len, reverse=True):
         text = text.replace(f" {name.casefold()} ", " ")
     words = [
@@ -629,7 +624,7 @@ def smart_filters(q: str, cfg: Settings, artists: Iterable[str] = ()) -> list[Co
     exact = exact_dates(text.strip(), today)
     for phrase in take(exact):
         filters.append(EventRow.local_date == exact[phrase])
-    ranges = date_ranges(today, frozenset(cfg.holiday_pages.seasons))
+    ranges = date_ranges(today, holiday_words(cfg), frozenset(cfg.holiday_pages.seasons))
     for phrase in take(ranges):
         filters.append(EventRow.local_date.between(*ranges[phrase]))
     vocab = _vocabulary(cfg)

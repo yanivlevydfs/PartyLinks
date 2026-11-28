@@ -15,7 +15,7 @@ from partylinks.bot.core import consent, menu
 from partylinks.bot.core.reply import MAX_ACTION_BYTES, MENU
 from partylinks.bot.models import BotChatRow, BotUsageRow
 from partylinks.db import utcnow
-from partylinks.search import ABROAD, DAYS, WEEKEND, _vocabulary, date_ranges
+from partylinks.search import ABROAD, DAYS, WEEKEND, _vocabulary, date_ranges, holiday_words
 from tests.test_bot_features import CHAT, _talk
 from tests.test_storage_api import settings_for
 
@@ -76,7 +76,7 @@ def test_the_entry_screen_fits_a_caption(tmp_path: Path) -> None:
 def test_every_menu_choice_is_words_the_search_reads(tmp_path: Path) -> None:
     cfg = settings_for(tmp_path)
     vocab = _vocabulary(cfg)
-    dates = {*WEEKEND, *DAYS, *date_ranges(utcnow().date())}
+    dates = {*WEEKEND, *DAYS, *date_ranges(utcnow().date(), holiday_words(cfg), frozenset(cfg.holiday_pages.seasons))}
     genres = [*cfg.enrichment.genre_groups, *(g for gs in cfg.enrichment.genre_groups.values() for g in gs)]
     for lang in ("he", "en"):
         for genre in genres:

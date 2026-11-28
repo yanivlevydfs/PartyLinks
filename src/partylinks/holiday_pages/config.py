@@ -32,7 +32,10 @@ class HolidayPagesSettings(BaseModel):
     min_events: int = Field(3, ge=1)
     # The home row of the next holiday shows from this many days before it starts.
     rail_days: int = Field(21, ge=0, le=90)
-    # Season holidays: key (search.HOLIDAY_NAMES) -> its genre and, when fixed, its days.
+    # Each holiday's names: its key (the calendar's, search._holiday) -> the words a search reads as its dates; the
+    # first Hebrew and the first Latin one title its page.
+    names: dict[str, list[str]] = Field(default_factory=dict)
+    # Season holidays: key (of names) -> its genre and, when fixed, its days.
     seasons: dict[str, HolidaySeason] = Field(default_factory=dict)
     # Each holiday's icon (the bot's holiday button); others get a generic one.
     icons: dict[str, str] = Field(default_factory=dict)

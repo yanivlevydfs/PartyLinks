@@ -1257,9 +1257,9 @@ def test_a_typo_of_a_known_name_still_finds_it(tmp_path: Path) -> None:
 def test_search_knows_weeks_months_weekdays_and_holidays() -> None:
     from datetime import date
 
-    from partylinks.search import date_ranges
+    from partylinks.search import date_ranges, holiday_words
 
-    r = date_ranges(date(2026, 10, 27))  # a Tuesday
+    r = date_ranges(date(2026, 10, 27), holiday_words(get_settings()))  # a Tuesday
     assert r["השבוע"] == (date(2026, 10, 27), date(2026, 11, 2))
     assert r["החודש"] == (date(2026, 10, 27), date(2026, 10, 31))
     assert r["בדצמבר"] == (date(2026, 12, 1), date(2026, 12, 31))
