@@ -93,7 +93,8 @@ HOLIDAY_NAMES = {
     "sigd": ("סיגד", "sigd"),
     # Seasons of their own events (GENRE_HOLIDAYS): not date words in a search.
     "christmas": ("חג המולד", "christmas", "כריסמס", "xmas"), "ramadan": ("רמדאן", "ramadan", "رمضان"),
-    "eid_al_fitr": ("עיד אל-פיטר", "eid al-fitr", "عيد الفطر"), "eid_al_adha": ("עיד אל-אדחא", "eid al-adha", "عيد الأضحى"),
+    "eid_al_fitr": ("חג שבירת הצום", "עיד אל-פיטר", "eid al-fitr", "عيد الفطر"),
+    "eid_al_adha": ("חג הקורבן", "עיד אל-אדחא", "eid al-adha", "عيد الأضحى"),
 }  # fmt: skip
 # A holiday whose page and row list its own events (this genre) in its season, not every event on its dates:
 # Christmas markets, concerts and parties run all of December; Ramadan nights for a month.

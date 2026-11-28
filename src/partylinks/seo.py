@@ -141,7 +141,7 @@ GENRES_HE = {
     "g_parties": "מסיבות ומועדונים", "g_live": "הופעות ומוזיקה חיה", "g_stage": "במה ומסך", "g_culture": "תרבות והעשרה",
     "g_kids": "ילדים ומשפחה", "g_food": "אוכל ושתייה", "g_leisure": "פנאי וספורט", "g_tech": "הייטק ועסקים",
     "g_community": "קהילה ו-LGBTQ+",
-    "christmas": "חג המולד", "christmas_markets": "שווקי חג המולד", "hanukkah": "חנוכה", "purim": "פורים", "new_year_eve": "סילבסטר", "ramadan": "רמדאן", "eid_al_adha": "עיד אל-אדחא", "g_holidays": "חגים ומועדים",
+    "christmas": "חג המולד", "christmas_markets": "שווקי חג המולד", "hanukkah": "חנוכה", "purim": "פורים", "new_year_eve": "סילבסטר", "ramadan": "רמדאן", "eid_al_adha": "חג הקורבן", "g_holidays": "חגים ומועדים",
 }  # fmt: skip
 GENRES_EN_FIX = {"rnb": "R&B", "edm": "EDM", "hip_hop": "Hip Hop", "lgbt": "LGBTQ+", "reggaeton_latin": "Reggaeton / Latin",
                  "stand_up": "Stand-up comedy", "eighties": "80s", "nineties": "90s", "live_show": "Live music",
