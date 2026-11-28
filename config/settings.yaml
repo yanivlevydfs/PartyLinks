@@ -1331,7 +1331,9 @@ enrichment:
   # fallback / source-default kind (a museum tour stays a tour, a seniors' talk a lecture).
   extra_genres: [musicals, russian, parents_babies, seniors, english, literature, museums, circus_magic, meditation,
                  sports_matches, running, tastings, cooking_class, singles_dating, women_only, accessible, quiz_games,
-                 students, drag_cabaret, improv, lgbt, youth]
+                 students, drag_cabaret, improv, lgbt, youth,
+                 # A holiday says when, not what: a Hanukkah kids' show stays a kids' show (ticket4u's default).
+                 christmas, christmas_markets, hanukkah, purim, new_year_eve, ramadan, eid_al_adha]
   talk_keywords: ["הרצאה", "הרצאות", "lecture", "סדנה", "סדנת", "workshop", "קפה דעת"]
   # A ticket tier named with one of these and priced 0 is treated as free entry.
   # DJ / performer extraction from descriptions. A line matching a header keyword

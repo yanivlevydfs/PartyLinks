@@ -101,9 +101,10 @@ def test_site_genres_and_the_kids_default_for_an_uncategorised_show() -> None:
 
     live = enricher.enrich(event("גידי גוב", ["הופעות חיות", "אמנים ישראלים"]))
     assert live is not None and "live_show" in live.genres and "kids" not in live.genres
-    # A Hanukkah kids' show whose API product has no category (Nov 2026): the source's default.
+    # A Hanukkah kids' show whose API product has no category (Nov 2026): the source's default, and its holiday
+    # beside it (a holiday says when, not what: enrichment.extra_genres).
     donuts = enricher.enrich(event("חנות סופגניות קטנה ומצחיקה - חנוכה 2026", []))
-    assert donuts is not None and donuts.genres == ["kids"]
+    assert donuts is not None and donuts.genres == ["hanukkah", "kids"]
 
 
 def test_a_region_city_becomes_the_town_at_the_venue_s_pin() -> None:
