@@ -477,15 +477,16 @@ select option { background: var(--panel-solid); color: var(--text); }
 .trending h2 { margin: 0; font: 800 20px/1.2 var(--display); letter-spacing: 1px; text-transform: uppercase; }
 .trending h2 span { color: var(--pink); }
 .trending-head p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
-/* A holiday row (Home.tsx ROW_ART): its banner behind the title (web/public/holidays, scripts/holiday_art.py), the
+/* A holiday row (home_rails.rows[].art, sent as /events/rails' art): its banner behind the title (web/public/holidays, scripts/holiday_art.py), the
    drawing away from the title's side (mirrored in Hebrew) under a shade that keeps the title readable. */
 .trending.holiday-art { padding-top: 0; overflow: hidden; }
 .holiday-art .trending-head { position: relative; isolation: isolate; padding: 22px 22px 18px; margin-bottom: 12px; min-height: 110px; }
+/* Layers: the picture (-3), the shade over it (-2), Christmas' snow (-1), then the title. */
 .holiday-art .trending-head::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; background: var(--art) right center / cover no-repeat;
+  content: ""; position: absolute; inset: 0; z-index: -3; background: var(--art) right center / cover no-repeat;
 }
 .holiday-art .trending-head::after {
-  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  content: ""; position: absolute; inset: 0; z-index: -2; pointer-events: none;
   background: linear-gradient(to right, rgb(7 6 12 / .85), rgb(7 6 12 / .45) 55%, rgb(7 6 12 / .05));
 }
 [dir="rtl"] .holiday-art .trending-head::before { transform: scaleX(-1); }

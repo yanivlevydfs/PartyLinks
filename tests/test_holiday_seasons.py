@@ -1,4 +1,4 @@
-"""Season holidays (search.GENRE_HOLIDAYS: Christmas, Ramadan, the Eids): their own events through the season,
+"""Season holidays (holiday_pages.seasons: Christmas, Ramadan, the Eids): their own events through the season,
 the dates of the calendars we do not compute (src/partylinks/holiday_dates.json), the holiday genres' words."""
 
 from __future__ import annotations
@@ -101,3 +101,19 @@ def test_a_fetched_holiday_with_no_dates_left_is_skipped(monkeypatch) -> None:  
         assert "מימונה" in search.date_ranges(today, search.holiday_words(get_settings()))  # the others still work
     finally:
         search.date_ranges.cache_clear()
+
+
+def test_the_config_check_refuses_broken_holiday_settings() -> None:
+    import pytest
+    from pydantic import ValidationError
+
+    from partylinks.config import Settings
+    from partylinks.holiday_pages.config import HolidaySeason
+
+    with pytest.raises(ValidationError, match="start and end"):
+        HolidaySeason(genre="christmas", start="12-01")  # a start with no end
+    pages = get_settings().holiday_pages.model_dump()
+    with pytest.raises(ValidationError, match="unknown genres"):
+        Settings(holiday_pages=pages | {"seasons": {"christmas": {"genre": "xmas_typo"}}})
+    with pytest.raises(ValidationError, match="no such picture"):
+        Settings(home_rails={"rows": [{"key": "x", "genre": ["christmas"], "art": "nope"}]})

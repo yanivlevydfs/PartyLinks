@@ -942,8 +942,9 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _holidays_known(self) -> Settings:
-        """Every holiday a setting names is one of holiday_pages.names, and the calendar can date each of those."""
-        from datetime import date as _date
+        """Every holiday a setting names is one of holiday_pages.names and the calendar can date each of those; a
+        season's genre is a known one; a row's banner is one of the drawn pictures (holiday_pages.art)."""
+        from datetime import datetime as _datetime
 
         from partylinks.search import _next_holiday  # here: search imports this module
 
@@ -951,9 +952,16 @@ class Settings(BaseSettings):
         named = {*h.seasons, *h.icons, *h.art, *(r.holiday for r in self.home_rails.rows if r.holiday)}
         if unknown := sorted(named - set(h.names)):
             raise ValueError(f"holidays not in holiday_pages.names: {', '.join(unknown)}")
+        e = self.enrichment
+        genres = {*e.genres, *e.declared_genres, *e.genre_families, *e.genre_groups}
+        if unknown := sorted({s.genre for s in h.seasons.values()} - genres):
+            raise ValueError(f"holiday_pages.seasons: unknown genres {', '.join(unknown)}")
+        if unknown := sorted({r.art for r in self.home_rails.rows if r.art} - set(h.art.values())):
+            raise ValueError(f"home_rails.rows[].art: no such picture in holiday_pages.art: {', '.join(unknown)}")
+        today = _datetime.now(ZoneInfo(self.timezone)).date()
         for key in h.names:
             try:
-                _next_holiday(_date.today(), key, h.seasons)
+                _next_holiday(today, key, h.seasons)
             except Exception as exc:
                 raise ValueError(f"holiday_pages.names: no dates for {key!r}") from exc
         return self

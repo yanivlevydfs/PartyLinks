@@ -17,7 +17,7 @@ def _entry(**fields: object) -> CuratedEvent:
 
 
 def test_a_range_is_one_event_over_its_days() -> None:
-    (event,) = events_of(_entry(free=True), TZ)
+    (event,) = events_of(_entry(free=True), TZ, "כניסה חופשית")
     assert event.start_at is not None and event.start_at.isoformat() == "2026-12-16T00:00:00+02:00"
     assert event.end_at is not None and event.end_at.isoformat() == "2026-12-21T00:00:00+02:00"  # the end of the 20th
     assert not event.time_known and event.tickets[0].is_free and event.min_price == 0
@@ -27,7 +27,7 @@ def test_a_range_is_one_event_over_its_days() -> None:
 def test_daily_is_one_event_a_day_with_its_hours() -> None:
     entry = _entry(dates=["2026-12-02..2026-12-03", "2026-12-10"], daily=True, start=time(17), end=time(22),
                    prices=[{"name": "כניסה", "price": 50}, {"name": "ילדים", "price": 10}])  # fmt: skip
-    events = events_of(entry, TZ)
+    events = events_of(entry, TZ, "כניסה חופשית")
     assert [e.source_event_id for e in events] == ["x:2026-12-02", "x:2026-12-03", "x:2026-12-10"]
     first = events[0]
     assert first.start_at is not None and first.start_at.isoformat() == "2026-12-02T17:00:00+02:00"
@@ -41,4 +41,4 @@ def test_the_configured_list_is_valid() -> None:
     ids = [e.id for e in curated.events]
     assert len(ids) == len(set(ids)) and curated.may_be_empty
     for entry in curated.events:
-        assert events_of(entry, TZ), entry.id
+        assert events_of(entry, TZ, curated.free_label), entry.id

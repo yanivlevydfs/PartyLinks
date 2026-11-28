@@ -44,7 +44,9 @@ def test_card_with_three_dates_is_three_evenings() -> None:
     ]
     first = events[0]
     assert first.end_at is not None and first.end_at.hour == 19
-    assert first.source_event_id == "27712-2026-12-05" and first.venue_name == "אולמות האבירים" and first.city == "עכו"
+    # Its page's slug, not the post id (the post comes from an optional call): the same id with or without it.
+    assert first.source_event_id.startswith("שעות-שקטות") and first.source_event_id.endswith("-2026-12-05")
+    assert first.venue_name == "אולמות האבירים" and first.city == "עכו"
     assert first.tickets[0].price == Decimal(10) and first.images[0] == "https://x.test/og.jpg"
     assert first.description and "בלי ההמולה" in first.description
     enriched = Enricher(Settings().enrichment, TZ).enrich(first)

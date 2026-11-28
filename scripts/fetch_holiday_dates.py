@@ -33,8 +33,6 @@ SPANS = {
     "ramadan": ("Ramadan begins", "Eid al-Fitr Eve"),  # the eve of the first fast to the last fast
     "eid_al_fitr": ("Eid al-Fitr Eve", "Eid al-Fitr Holiday"),
     "eid_al_adha": ("Eid al-Adha Eve", "Eid al-Adha Holiday"),
-    "easter": ("Catholic/Protestant Palm Sunday", "Catholic/Protestant Easter Monday"),
-    "orthodox_easter": ("Armenian/Orthodox Palm Sunday", "Armenian/Orthodox Easter Monday"),
     "mimouna": ("Mimouna Day", "Mimouna Day"),
 }
 # Hebcal title -> our key, for the cross-check of the dates we compute (their first day).
@@ -63,8 +61,10 @@ def spans(days: list[tuple[date, str]]) -> dict[str, list[list[str]]]:
             if name != first:
                 continue
             ends = [e for e, n in days if n == last and d <= e <= d + timedelta(days=40)]
+            if not ends:  # its closing day is past the calendar's end (Ramadan 2031): not a span yet
+                continue
             # A run of "... Holiday" days: the last one before the next gap.
-            end = ends[0] if ends else d
+            end = ends[0]
             while any(e == end + timedelta(days=1) and n == last for e, n in days):
                 end += timedelta(days=1)
             # The Mimouna is the night Passover ends: its parties start the evening before its day.

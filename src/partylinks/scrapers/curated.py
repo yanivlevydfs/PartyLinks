@@ -48,6 +48,7 @@ class CuratedEvent(BaseModel):
 
 class CuratedSettings(SourceSettings):
     events: list[CuratedEvent] = Field(default_factory=list)
+    free_label: str = "כניסה חופשית"  # the tier of a free entry
 
 
 def _days(spec: str) -> list[date]:
@@ -58,13 +59,13 @@ def _days(spec: str) -> list[date]:
     return [a + timedelta(days=n) for n in range((b - a).days + 1)]
 
 
-def events_of(entry: CuratedEvent, timezone: str) -> list[ScrapedEvent]:
+def events_of(entry: CuratedEvent, timezone: str, free_label: str) -> list[ScrapedEvent]:
     """The entry's events: one per day (``daily``) or one per range."""
     tz = zone(timezone)
     spans = [[d] for spec in entry.dates for d in _days(spec)] if entry.daily else [_days(s) for s in entry.dates]
     tiers = [TicketTier(name=p.name, price=p.price, currency="ILS", is_free=p.price == 0) for p in entry.prices]
     if entry.free and not tiers:
-        tiers = [TicketTier(name="כניסה חופשית", price=Decimal(0), is_free=True)]
+        tiers = [TicketTier(name=free_label, price=Decimal(0), is_free=True)]
     prices = [t.price for t in tiers if t.price is not None]
     out = []
     for days in spans:
@@ -108,6 +109,6 @@ class CuratedScraper(BaseScraper[CuratedSettings]):
     async def scrape(self) -> AsyncIterator[ScrapedEvent]:
         retention = RetentionSettings()
         for entry in self.settings.events:
-            for event in events_of(entry, self.timezone):
+            for event in events_of(entry, self.timezone, self.settings.free_label):
                 if is_current(event.start_at, event.end_at, retention, self.timezone, time_known=event.time_known):
                     yield event

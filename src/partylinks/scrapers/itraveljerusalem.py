@@ -37,6 +37,8 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 
 class ITravelJerusalemSettings(SourceSettings):
     site_url: str = "https://www.itraveljerusalem.com"
+    ticket_label: str = "כרטיס"  # a priced entry's tier name
+    free_label: str = "כניסה חופשית"  # a free entry's
     list_path: str = "/list/events"
     event_path: str = "/event/"
     locales: list[str] = Field(default_factory=lambda: ["he", "en"])  # the first one preferred
@@ -200,7 +202,7 @@ def parse_event(event: dict[str, Any], card: Card, s: ITravelJerusalemSettings, 
     tickets = []
     if price is not None and str(event.get("priceCurrency") or "ils").lower() == "ils":
         amount = Decimal(str(price))
-        tickets = [TicketTier(name="כניסה חופשית" if amount == 0 else "כרטיס", price=amount, is_free=amount == 0)]
+        tickets = [TicketTier(name=s.free_label if amount == 0 else s.ticket_label, price=amount, is_free=amount == 0)]
     url = f"{s.site_url}{'' if card.locale == 'en' else '/' + card.locale}{s.event_path}{card.slug}"
     events = []
     for occurrence in event.get("event_dates") or []:

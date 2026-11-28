@@ -8,9 +8,11 @@ Hebrew, so before a venue name or address is used (slug, area, map, dedup) it go
 * ``names``: an Arabic-script name or place word -> its Hebrew name (the name the same place already has
   in our other sources where there is one, so the two spellings meet as one venue). Whole words only,
   longest first, ignoring Arabic diacritics and the elongation mark.
-* ``drop_beside_other``: what is still in Arabic script beside Hebrew or Latin text is a translation of
-  it ("Mazkeka מזקקה مزكيكا", "(فندق الأمباسدور) Nablus Rd 5"): dropped. A name wholly in Arabic script
-  that ``names`` does not know is kept as it is (nothing else names the place).
+* ``drop_beside_other``: Arabic script the site wrote beside its own Hebrew or Latin text is a translation
+  of it ("Mazkeka מזקקה مزكيكا", "(فندق الأمباسدور) Nablus Rd 5"): dropped.
+* A name wholly in Arabic script that ``names`` does not cover in full is not shown (None; enrichment keeps
+  the original in ``extra["arabic_venue"]`` / ``extra["arabic_address"]`` so it can be added to ``names``):
+  mapping only its town word ("مسرح الميدان حيفا" -> "חיפה") would make every unlisted venue there one.
 
 Titles and descriptions are not touched: free text is never machine-translated.
 """
@@ -63,20 +65,30 @@ class HebrewPlaces:
     def __init__(self, settings: HebrewPlacesSettings) -> None:
         self.settings = settings
         self._names = {_norm(k): v.strip() for k, v in settings.names.items()}
+        self._hebrew_words = {w for v in self._names.values() for w in v.split()}
         keys = sorted(self._names, key=len, reverse=True)
         words = "|".join(r"\s+".join(map(re.escape, k.split())) for k in keys)
         self._pattern = re.compile(f"(?<![{_ARABIC}])(?:{words})(?![{_ARABIC}])") if keys else None
 
     def __call__(self, text: str | None) -> str | None:
+        """The Hebrew text; None: wholly Arabic and not fully known (not shown)."""
         if not text or not _HAS_ARABIC.search(text):
             return text
         out = _MARKS.sub("", text).translate(_PUNCT)
+        beside = bool(_OTHER_LETTERS.search(_ARABIC_WORD.sub(" ", out)))  # the site's own Hebrew / Latin
         if self._pattern:
             mapped = self._pattern.sub(lambda m: self._names[_norm(m.group(0))], out)
-            if mapped != out:  # "Haifa حيفا חיפה" -> "Haifa חיפה חיפה" -> "Haifa חיפה"
-                out = re.sub(r"(?<!\S)(\S+)(?:\s+\1)+(?!\S)", r"\1", mapped)
-        if _HAS_ARABIC.search(out) and self.settings.drop_beside_other:
-            rest = _ARABIC_WORD.sub(" ", out)
-            if _OTHER_LETTERS.search(rest):
-                out = rest
-        return _tidy(out) or text
+            # "Haifa حيفا חיפה" -> "Haifa חיפה חיפה" -> "Haifa חיפה": only a mapped word said twice ("10 10" stays).
+            out = re.sub(
+                r"(?<!\S)(\S+)(?:\s+\1)+(?!\S)",
+                lambda m: m.group(1) if m.group(1) in self._hebrew_words else m.group(0),
+                mapped,
+            )
+        if _HAS_ARABIC.search(out):
+            # Left in Arabic: a translation beside the site's own Hebrew / Latin goes; a wholly Arabic name that
+            # is not fully known is not shown (a town word alone would make every unlisted venue there one).
+            if not beside:
+                return None
+            if self.settings.drop_beside_other:
+                out = _ARABIC_WORD.sub(" ", out)
+        return _tidy(out) or None

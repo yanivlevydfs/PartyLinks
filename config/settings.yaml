@@ -226,7 +226,7 @@ home_rails:
     - {key: purim, holiday: purim, exclude: [kids, lectures, workshops, conference], art: purim}
     # A holiday row with a genre stays while the coming holiday's own row shows (Hanukkah 2026: 1,800 kids' cards).
     - {key: hanukkah_kids, holiday: hanukkah, genre: [kids], art: hanukkah}
-    # Season holidays (search.GENRE_HOLIDAYS): their own events through the season, beside the dated holiday's row.
+    # Season holidays (holiday_pages.seasons): their own events through the season, beside the dated holiday's row.
     - {key: christmas_markets, holiday: christmas, genre: [christmas_markets], art: christmas}
     - {key: christmas, holiday: christmas, genre: [christmas], exclude: [christmas_markets], art: christmas}
     - {key: ramadan, holiday: ramadan, genre: [ramadan], art: ramadan}
@@ -379,7 +379,7 @@ evening:
     - {key: late, genres: [happy_hour, open_bar, food], when: after, hours: 3}
 
 # Israeli holiday pages (src/partylinks/holiday_pages): /holiday/<key> lists the events from a holiday's eve to
-# its last day (dates: search.HOLIDAY_NAMES), /holidays the coming ones; a home row shows the next one.
+# its last day (names: holiday_pages.names; dates: search._holiday), /holidays the coming ones; a home row shows the next one.
 holiday_pages:
   enabled: true
   ahead_days: 365         # holidays starting within this many days
@@ -1067,7 +1067,7 @@ enrichment:
     volunteering: ["ערב התרמה", "אירוע התרמה", "אירוע ההתרמה", "מופע התרמה", "fundraiser", "charity gala",
                    "benefit concert", "גאלה", "גאלת", "פילנתרופיה"]  # community galas (ogo_us, Nov 2026)
     # The holidays one by one (genre_families.holidays), from the title and text (the declared "holidays" is a
-    # source's category only), each with its own page and home rows in its season (search.GENRE_HOLIDAYS).
+    # source's category only), each with its own page and home rows in its season (holiday_pages.seasons).
     # Not "عيد ميلاد" (a birthday), only "عيد الميلاد"; not "noel" (a name), nor "סנטה" alone (סנטה קרוז, Santana).
     # Prod 28.11.2026: Hanukkah 9,166 titles, NYE 861, Christmas 494, Purim 372, Christmas markets 41.
     christmas: ["christmas", "xmas", "x-mas", "כריסמס", "קריסמס", "כריסמאס", "חג המולד", "חג-המולד", "חג מולד",
@@ -5176,6 +5176,7 @@ sources:
     cron: "12 10,22 * * *"
     may_be_empty: true
     skip_title_words: ["דור חדש של קולנוענים"]
+    free_label: "כניסה חופשית בהרשמה מראש"
     pages:
       - {path: /industry-events, kind: repeater}
       - {path: /conference, kind: day, title: "כנס סולידריות לקולנוע וזכויות אדם", free: true}
@@ -5195,6 +5196,8 @@ sources:
     enabled: true
     cron: "53 10,22 * * *"
     may_be_empty: true
+    name: "מתחת לרדאר"  # the organiser; a party's title when the calendar gives none
+    genres: [psytrance]  # a psytrance line (its WhatsApp group "של הטראנס")
     venues:
       # Go-Out's own pin for "שרביה - Sharabiya" (Pinkhas Ben Ya'ir 3, 28.11.2026).
       sharabiya: {name: שרביה, address: "פנחס בן יאיר 3, תל אביב-יפו", city: תל אביב-יפו, latitude: 32.0546245, longitude: 34.7573914}
@@ -5210,6 +5213,7 @@ sources:
     enabled: true
     cron: "47 11,23 * * *"
     may_be_empty: true  # between the seasons it lists
+    free_label: "כניסה חופשית"
     events:
       - id: nazareth-benedictus-2026
         title: "לילות ילד המערה - מתחם בנדיקטוס, נצרת"
@@ -5643,6 +5647,8 @@ sources:
     enabled: true
     cron: "30 10,22 * * *"
     skip_title_words: ["קורס", "חוג ", "חוגי", "סדנאות שבועיות"]
+    ticket_label: "כרטיס"
+    free_label: "כניסה חופשית"
     http:
       concurrency: 2
       request_delay_seconds: 0.5
@@ -5661,6 +5667,7 @@ sources:
     enabled: true
     cron: "30 9,21 * * *"
     may_be_empty: true  # a few events a season; between them the page lists none with a date
+    ticket_label: "כרטיס"
     skip_title_words: ["מדריך קולי", "קורס", "סדנאות שבועיות"]
     venues:
       "אולמות האבירים": {name: אולמות האבירים, address: "ויצמן 1, עכו", latitude: 32.9235884, longitude: 35.0731056}

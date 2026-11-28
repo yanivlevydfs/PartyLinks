@@ -326,8 +326,11 @@ class Enricher:
         if any(skip.casefold() in title for skip in self.settings.skip_titles):
             return None
         # "فندق رمادا" -> "מלון רמדה": before the slug, area, map and dedup read the place.
-        event.venue_name = self._hebrew_places(event.venue_name)
-        event.address = self._hebrew_places(event.address)
+        for field, kept in (("venue_name", "arabic_venue"), ("address", "arabic_address")):
+            original = getattr(event, field)
+            setattr(event, field, hebrew := self._hebrew_places(original))
+            if original and hebrew is None:  # wholly Arabic, not in hebrew_places.names: kept for the list
+                event.extra[kept] = original
         self._slugs(event)
         event.description = drop_lost_emails(event.description)
         self._drop_social_purchase(event)

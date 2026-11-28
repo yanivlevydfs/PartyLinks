@@ -48,8 +48,11 @@ class UndertheradarSettings(SourceSettings):
     site_url: str = "https://undertheradar.events"
     calendar_path: str = "/api/event/calendar"
     launch_path: str = "/api/event/launch"
-    # The calendar's LOCATION (lowercase, a part of it) -> our venue: the site names the place only.
+    # The calendar's LOCATION (lowercase, a part of it) -> our venue: the site names the place only. A place not
+    # listed is its LOCATION as venue and address ("Sharabiya – Old Jaffa": the town comes from the address).
     venues: dict[str, UtrVenue] = Field(default_factory=dict)
+    name: str = "מתחת לרדאר"  # the organiser, and a party's title when the calendar gives none
+    genres: list[str] = Field(default_factory=list)  # the line's kind, as its own category
 
 
 class UndertheradarScraper(BaseScraper[UndertheradarSettings]):
@@ -107,7 +110,8 @@ def _plain(fragment: str) -> str:
 
 
 def cards(home_html: str, site_url: str) -> dict[str, dict[str, str]]:
-    """The home page's party cards by day (YYYY-MM-DD): id, poster URL, description."""
+    """The home page's party cards by day (YYYY-MM-DD): id, poster URL, description, and "sale" for the card that
+    carries the sale (``data-sale-opens``: the party ``/api/event/launch`` is about)."""
     out: dict[str, dict[str, str]] = {}
     for card_id, inner in _CARD.findall(home_html):
         day = _CARD_DAY.search(card_id)
@@ -119,6 +123,8 @@ def cards(home_html: str, site_url: str) -> dict[str, dict[str, str]]:
             card["poster"] = src if src.startswith("http") else site_url + "/" + src.lstrip("/")
         if description := _DESCRIPTION.search(inner):
             card["description"] = _plain(description.group(1))
+        if "data-sale-opens" in inner:
+            card["sale"] = "1"
         out["-".join(day.groups())] = card
     return out
 
@@ -142,6 +148,7 @@ def parse(
     """One event per calendar entry; the home page's card and, for the party on sale, the launch data."""
     by_day = cards(home_html, s.site_url)
     events = []
+    launch_used = False
     for entry in vevents(ics):
         start = _when(entry.get("DTSTART"), timezone)
         if start is None:
@@ -150,8 +157,9 @@ def parse(
         location = (entry.get("LOCATION") or ({}, ""))[1].strip()
         venue = next((v for key, v in s.venues.items() if key in location.lower()), None)
         card = by_day.get(start.date().isoformat(), {})
-        # The launch data is the coming party's: the one whose card the home page shows with the sale.
-        mine = launch if launch and card and (not launch.get("venue") or launch["venue"] == location) else None
+        # The launch data is the party's whose card carries the sale (once: never a second party's).
+        mine = launch if launch and card.get("sale") and not launch_used else None
+        launch_used = launch_used or mine is not None
         artists, lineup = _lineup(mine) if mine else ([], None)
         description = card.get("description") or (entry.get("DESCRIPTION") or ({}, ""))[1].strip() or None
         summary = (entry.get("SUMMARY") or ({}, ""))[1].strip()
@@ -166,19 +174,19 @@ def parse(
                 source="undertheradar",
                 source_event_id=uid.split("@")[0],
                 url=f"{s.site_url}/#{card.get('id') or start.date().isoformat()}",
-                title=summary or "מתחת לרדאר",
+                title=summary or s.name,
                 description="\n\n".join(p for p in (description, lineup) if p) or None,
                 start_at=start,
                 end_at=end if end and end > start else None,
                 time_known=True,
                 venue_name=venue.name if venue else location or None,
-                address=venue.address if venue else None,
+                address=venue.address if venue else location or None,
                 city=venue.city if venue else None,
                 latitude=venue.latitude if venue else None,
                 longitude=venue.longitude if venue else None,
-                source_genres=["psytrance"],  # a psytrance line (the WhatsApp group "של הטראנס")
+                source_genres=s.genres,
                 artists=artists,
-                organizer="מתחת לרדאר",
+                organizer=s.name,
                 images=[poster] if poster else [],
                 extra={"purchase_url": ticket_url or s.site_url},
             )

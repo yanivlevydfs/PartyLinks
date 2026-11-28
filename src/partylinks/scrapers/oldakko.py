@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
+from urllib.parse import unquote
 
 from pydantic import BaseModel, Field
 from selectolax.lexbor import LexborHTMLParser, LexborNode
@@ -54,6 +55,7 @@ class OldAkkoSettings(SourceSettings):
     api_path: str = "/wp-json/wp/v2/event"
     recent_days: int = 120  # posts edited this recently are read even when no card shows them
     city: str = "עכו"
+    ticket_label: str = "כרטיס"  # a priced entry's tier name
     # A phrase in the title or text (lower case) -> the venue; the first that matches wins.
     venues: dict[str, AkkoVenue] = Field(default_factory=dict)
     default_venue: AkkoVenue = AkkoVenue(name="עכו העתיקה")
@@ -189,11 +191,13 @@ def parse_event(
     venue = _venue(" ".join(p for p in (title, description) if p), s)
     tiers: list[TicketTier] = []
     if card and card.price and (m := _PRICE.search(card.price)):
-        tiers = [TicketTier(name="כרטיס", price=Decimal(m.group(1)))]
+        tiers = [TicketTier(name=s.ticket_label, price=Decimal(m.group(1)))]
     elif content:
         tiers = text_tickets(content)
     url = card.url if card else str((post or {}).get("link"))
-    item_id = str(post["id"]) if post and post.get("id") else _key(url).rsplit("/", 1)[-1][:60]
+    # The page's slug, never the WordPress post id: the post comes from an optional call, and a run without it
+    # would key every event anew (duplicates, unlisted rows).
+    item_id = unquote(_key(url).rsplit("/", 1)[-1])[:60]
     images = [i for i in (image, card.image if card else None) if i]
     tz = zone(timezone)
     events = []

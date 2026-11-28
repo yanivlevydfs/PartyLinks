@@ -37,9 +37,12 @@ PLACES = HebrewPlaces(
         ("(فندق الأمباسدور) Nablus Rd 5, Jerusalem", "Nablus Rd 5, Jerusalem"),
         ("مطعم ابو علي خويص, עומר בן אל-ח'טאב, ירושלים", "עומר בן אל-ח'טאב, ירושלים"),
         ("هاكارن، بيتح تكفا، Israel", "פתח תקווה, Israel"),  # the Arabic comma too
-        ("مكان غير معروف", "مكان غير معروف"),  # wholly Arabic, unlisted: kept
+        ("مكان غير معروف", None),  # wholly Arabic, unlisted: not shown (kept in extra by enrichment)
+        # Only its town word is known: not "חיפה" (every unlisted venue in Haifa would be one venue).
+        ("مسرح الميدان حيفا", None),
         ("Rothschild Blvd 24, Tel Aviv", "Rothschild Blvd 24, Tel Aviv"),
-        ("حيفاوي", "حيفاوي"),  # whole words only
+        ("حيفاوي", None),  # whole words only: "حيفا" inside it is not Haifa, and it is not shown
+        ("אולם 10 10", "אולם 10 10"),  # a repeat the site wrote stays
         (None, None),
     ],
 )
@@ -84,3 +87,20 @@ def test_enrich_makes_tzkrti_venue_hebrew() -> None:
     assert enriched.venue_slug and not any("\u0600" <= ch <= "\u06ff" for ch in enriched.venue_slug)
     assert enriched.address == "Derekh ha-Tsiyonut 29, Nazareth, Israel"
     assert enriched.title == "Christmas Market Ramada"  # titles are never translated
+
+
+def test_enrichment_keeps_an_unknown_arabic_venue_aside() -> None:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from partylinks.config import get_settings
+    from partylinks.enrichment import Enricher
+    from partylinks.models import ScrapedEvent
+
+    s = get_settings()
+    event = ScrapedEvent(source="t", source_event_id="1", url="https://x.example/e", title="ערב מוזיקה",
+                         start_at=datetime(2026, 12, 20, 20, tzinfo=ZoneInfo(s.timezone)),
+                         venue_name="مكان غير معروف", city="נצרת")  # fmt: skip
+    enriched = Enricher(s.enrichment, s.timezone).enrich(event)
+    assert enriched is not None and enriched.venue_name is None
+    assert enriched.extra["arabic_venue"] == "مكان غير معروف"  # for the admin to add to hebrew_places.names

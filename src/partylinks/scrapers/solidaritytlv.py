@@ -58,6 +58,7 @@ class SolidaritySettings(SourceSettings):
     latitude: float = 32.0707072
     longitude: float = 34.7834524
     pages: list[SolidarityPage] = Field(default_factory=list)
+    free_label: str = "כניסה חופשית בהרשמה מראש"  # the tier of a free day with registration
 
 
 class SolidarityScraper(BaseScraper[SolidaritySettings]):
@@ -183,7 +184,7 @@ def day_event(
             start_at=start,
             end_at=end,
             images=[image.group(1)] if image else [],
-            tickets=[TicketTier(name="כניסה חופשית בהרשמה מראש", price=0, is_free=True)] if page.free else [],
+            tickets=[TicketTier(name=s.free_label, price=0, is_free=True)] if page.free else [],
             min_price=0 if page.free else None,
             max_price=0 if page.free else None,
         )

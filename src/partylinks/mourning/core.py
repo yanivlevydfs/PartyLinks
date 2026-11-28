@@ -12,11 +12,12 @@ import json
 import warnings
 from collections.abc import Callable
 from datetime import UTC, date, datetime, time, timedelta
+from functools import lru_cache
 from typing import NamedTuple
 from zoneinfo import ZoneInfo
 
 from convertdate import hebrew
-from sqlalchemy import ColumnElement, String, and_, cast, not_, or_
+from sqlalchemy import ColumnElement, and_, not_, or_
 
 from partylinks.config import Settings
 from partylinks.db import EventRow
@@ -26,10 +27,12 @@ _DAY = timedelta(days=1)
 
 
 def _hebrew(year: int, month: int, day: int) -> date:
-    """A Hebrew date in a Gregorian year (Nisan to Elul fall in Hebrew year ``year + 3760``, Tishrei on in +3761)."""
+    """A Hebrew date in a Gregorian year: Tishrei to Kislev (Sep-Dec) are of Hebrew year ``year + 3761``; Tevet to
+    Adar (Jan-Mar) and Nisan to Elul of ``year + 3760``."""
     with warnings.catch_warnings():  # convertdate 2.5.1 calls its own deprecated month_days()
         warnings.filterwarnings("ignore", "month_days is deprecated", DeprecationWarning)
-        return date(*hebrew.to_gregorian(year + (3761 if month >= hebrew.TISHRI else 3760), month, day))
+        autumn = hebrew.TISHRI <= month <= hebrew.KISLEV
+        return date(*hebrew.to_gregorian(year + (3761 if autumn else 3760), month, day))
 
 
 def yom_hashoah(year: int) -> date:
@@ -64,6 +67,12 @@ RULES: dict[str, Callable[[int], date]] = {
 }
 
 
+@lru_cache(maxsize=64)
+def _day(key: str, year: int) -> date:
+    """A rule's day in a year, worked out once (every events request asks whether a day's hours are on)."""
+    return RULES[key](year)
+
+
 class Window(NamedTuple):
     key: str
     start: datetime  # aware, the eve at eve_hour
@@ -75,7 +84,7 @@ def windows(cfg: Settings, year: int) -> list[Window]:
     s, tz = cfg.mourning, ZoneInfo(cfg.timezone)
     out = []
     for key, day in s.days.items():
-        d = RULES[key](year)
+        d = _day(key, year)
         start = datetime.combine(d - _DAY, time(s.eve_hour), tzinfo=tz)
         end = datetime.combine(d, time(), tzinfo=tz) + timedelta(hours=day.end_hour)
         out.append(Window(key, start, end))
@@ -98,7 +107,7 @@ def clauses(cfg: Settings, now: datetime) -> list[ColumnElement[bool]]:
     if not on:
         return []
     genres = cfg.enrichment.expand_genres(cfg.mourning.genres)
-    party = or_(*(cast(EventRow.genres, String).ilike(f'%"{g}"%') for g in genres))
+    party = or_(*(EventRow.genres.contains([g]) for g in genres))  # JSONB containment: the genres GIN index
     starts = or_(
         *(and_(EventRow.start_at >= w.start.astimezone(UTC), EventRow.start_at < w.end.astimezone(UTC)) for w in on)
     )

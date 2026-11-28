@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class HolidaySeason(BaseModel):
@@ -13,6 +13,12 @@ class HolidaySeason(BaseModel):
     # Same days every year ("MM-DD"); none: the holiday's own dates (search.DATED, the Hebrew calendar).
     start: str | None = None
     end: str | None = None
+
+    @model_validator(mode="after")
+    def _both_or_none(self) -> HolidaySeason:
+        if (self.start is None) != (self.end is None):
+            raise ValueError("a season's start and end come together (or neither: the holiday's own dates)")
+        return self
 
     @field_validator("start", "end")
     @classmethod

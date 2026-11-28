@@ -14,7 +14,7 @@ TZ = "Asia/Jerusalem"
 SHARABIYA = UtrVenue(
     name="שרביה", address="פנחס בן יאיר 3, תל אביב-יפו", city="תל אביב-יפו", latitude=32.0546245, longitude=34.7573914
 )
-SETTINGS = UndertheradarSettings(cron="53 10,22 * * *", venues={"sharabiya": SHARABIYA})
+SETTINGS = UndertheradarSettings(cron="53 10,22 * * *", venues={"sharabiya": SHARABIYA}, genres=["psytrance"])
 
 
 def _read(name: str) -> str:
@@ -64,3 +64,22 @@ def test_enrichment_makes_it_a_psytrance_party_in_tel_aviv() -> None:
         and enriched.city == "תל אביב"
         and enriched.area == "jaffa"
     )
+
+
+def test_a_place_not_listed_is_found_by_its_town() -> None:
+    bare = UndertheradarSettings(cron="53 10,22 * * *", genres=["psytrance"])  # no venues configured
+    (event,) = parse(_read("calendar.ics"), _read("home.html"), _launch(), bare, TZ)
+    assert event.venue_name == event.address == "Sharabiya – Old Jaffa"
+    enriched = Enricher(Settings().enrichment, TZ).enrich(event)
+    assert enriched is not None and enriched.city == "תל אביב"  # "Old Jaffa" in the address
+
+
+def test_the_launch_data_is_only_the_sale_cards_party() -> None:
+    ics = _read("calendar.ics")
+    second = ics.replace("20261204", "20261225").replace("20261205", "20261226")  # another party, no card
+    both = ics.replace("END:VCALENDAR", second[second.index("BEGIN:VEVENT") :])
+    events = parse(both, _read("home.html"), _launch(), SETTINGS, TZ)
+    assert len(events) == 2
+    assert events[0].artists and not events[1].artists  # the lineup and the ticket link are the 4.12 party's
+    assert events[1].extra["purchase_url"] == "https://undertheradar.events"
+    assert events[0].organizer == events[1].organizer == "מתחת לרדאר"

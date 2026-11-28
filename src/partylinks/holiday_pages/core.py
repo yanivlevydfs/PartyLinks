@@ -23,6 +23,7 @@ from partylinks.search import _genre as search_genre
 from partylinks.search import _next_holiday
 
 _HEBREW = re.compile(r"[֐-׿]")
+_LATIN = re.compile(r"[A-Za-z]")
 
 
 @dataclass(frozen=True)
@@ -39,9 +40,10 @@ class Holiday:
 
 
 def _names(names: list[str], key: str) -> tuple[str, str]:
-    """(Hebrew, English) of a holiday: its first name in each script ("חנוכה", "Hanukkah")."""
+    """(Hebrew, English) of a holiday: its first Hebrew and its first Latin name ("חנוכה", "Hanukkah"); never an
+    Arabic one ("رمضان" is a search word, not a title)."""
     he = next(n for n in names if _HEBREW.search(n))
-    en = next((n for n in names if not _HEBREW.search(n)), key.replace("_", " "))
+    en = next((n for n in names if _LATIN.search(n) and not _HEBREW.search(n)), key.replace("_", " "))
     return he, en.title()
 
 
@@ -62,15 +64,15 @@ def upcoming(cfg: Settings, today: date) -> list[Holiday]:
     return sorted(out, key=lambda h: (h.start, h.key))
 
 
-def where(h: Holiday, cfg: Settings | None = None) -> list[ColumnElement[bool]]:
+def where(h: Holiday, cfg: Settings) -> list[ColumnElement[bool]]:
     """Events on the holiday's dates (not places open every day); a season holiday's own events only."""
     out = [EventRow.local_date >= h.start, EventRow.local_date <= h.end, ~IS_PLACE]
     if h.genre:  # JSONB containment: served by the genres GIN index
-        out.append(search_genre(cfg or Settings(), h.genre))
+        out.append(search_genre(cfg, h.genre))
     return out
 
 
-def counts(session: Session, holidays: Sequence[Holiday], cfg: Settings | None = None) -> dict[str, int]:
+def counts(session: Session, holidays: Sequence[Holiday], cfg: Settings) -> dict[str, int]:
     """Upcoming events in Israel on each holiday: one query for the dated ones, one per season holiday."""
     if not holidays:
         return {}
