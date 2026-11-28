@@ -21,8 +21,12 @@ def test_month_row_window_is_the_next_such_month() -> None:
 
 
 def test_unknown_holiday_is_refused() -> None:
-    with pytest.raises(ValidationError):
-        HomeRail(key="x", holiday="purrim")
+    # A row's holiday must be one of holiday_pages.names: checked with the whole config (Settings._holidays_known).
+    from partylinks.config import Settings
+
+    with pytest.raises(ValidationError, match="purrim"):
+        Settings(home_rails={"rows": [{"key": "x", "holiday": "purrim"}]})
+    Settings(home_rails={"rows": [{"key": "x", "holiday": "purim"}]})  # a known one is fine
 
 
 def test_row_cache_refreshes_stale_rows_in_turns(monkeypatch: pytest.MonkeyPatch) -> None:

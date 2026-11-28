@@ -18,6 +18,7 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from partylinks.config import AreaSettings, CitySettings, EnrichmentSettings, RegionSettings
+from partylinks.hebrew_places import HebrewPlaces
 from partylinks.models import ONLINE_GENRE, EntryType, ScrapedEvent, TicketKind, TicketTier
 from partylinks.parsing import drop_lost_emails, slugify
 from partylinks.places import PlaceIndex, all_cities, city_name, city_point, israeli_places, latin_town
@@ -288,6 +289,7 @@ class Enricher:
             if c.center
         } | {a: c.center for c in israeli_places(0) for a in c.aliases if c.center}
         self.areas = AreaMatcher(settings.areas, settings.regions, self.town_point)
+        self._hebrew_places = HebrewPlaces(settings.hebrew_places)
 
     def town_point(self, city: str) -> tuple[float, float] | None:
         """Centre of the town ``city`` names: an Israeli one (GeoNames), else a big city abroad ("Milan")."""
@@ -323,6 +325,9 @@ class Enricher:
         title = event.title.casefold()
         if any(skip.casefold() in title for skip in self.settings.skip_titles):
             return None
+        # "فندق رمادا" -> "מלון רמדה": before the slug, area, map and dedup read the place.
+        event.venue_name = self._hebrew_places(event.venue_name)
+        event.address = self._hebrew_places(event.address)
         self._slugs(event)
         event.description = drop_lost_emails(event.description)
         self._drop_social_purchase(event)

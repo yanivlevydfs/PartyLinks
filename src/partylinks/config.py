@@ -35,10 +35,12 @@ from partylinks.config_store.source import OverridesSource
 from partylinks.contact.config import ContactSettings
 from partylinks.evening.config import EveningSettings
 from partylinks.event_text.config import EventTextSettings
+from partylinks.hebrew_places import HebrewPlacesSettings
 from partylinks.holiday_pages.config import HolidayPagesSettings
 from partylinks.home_rails.config import HomeRailsSettings
 from partylinks.lines.config import LinesSettings
 from partylinks.mail.config import MailSettings
+from partylinks.mourning.config import MourningSettings
 from partylinks.pace import PaceSettings
 from partylinks.placeinfo.config import PlaceInfoSettings
 from partylinks.plans.config import PlansSettings
@@ -379,6 +381,8 @@ class EnrichmentSettings(BaseModel):
     venue_max_spread_degrees: float = 0.001
     # A venue name longer than this is a description a site put in the place field: no venue (and no geocoding).
     venue_name_max_chars: int = Field(130, ge=10)
+    # Venue names / addresses in Arabic script -> Hebrew (partylinks.hebrew_places), before anything reads them.
+    hebrew_places: HebrewPlacesSettings = Field(default_factory=HebrewPlacesSettings)
     # Words a city field puts before the locality's name ("קיבוץ יגור", "מועצה אזורית גדרות"): dropped.
     city_prefixes: list[str] = Field(default_factory=list)
     # City fields that name no city ("ישראל"): no city.
@@ -892,6 +896,7 @@ class Settings(BaseSettings):
     evening: EveningSettings = Field(default_factory=EveningSettings)  # plan the evening (partylinks.evening)
     event_text: EventTextSettings = Field(default_factory=EventTextSettings)  # how a description reads (partylinks.event_text)
     holiday_pages: HolidayPagesSettings = Field(default_factory=HolidayPagesSettings)  # partylinks.holiday_pages
+    mourning: MourningSettings = Field(default_factory=MourningSettings)  # no parties promoted on days of mourning
     lines: LinesSettings = Field(default_factory=LinesSettings)  # weekly lines (partylinks.lines)
     artist_filter: ArtistFilterSettings = Field(default_factory=ArtistFilterSettings)  # the artists index's filter
     similar: SimilarSettings = Field(default_factory=SimilarSettings)  # artists like an artist (partylinks.similar)
@@ -925,6 +930,14 @@ class Settings(BaseSettings):
     def _home_rails_genres(self) -> Settings:
         if unknown := self.home_rails.unknown_genres(self.enrichment):
             raise ValueError(f"home_rails: unknown genres {', '.join(unknown)}")
+        return self
+
+    @model_validator(mode="after")
+    def _mourning_genres(self) -> Settings:
+        e = self.enrichment
+        known = {*e.genres, *e.declared_genres, *e.genre_families, *e.genre_groups}
+        if unknown := sorted(set(self.mourning.genres) - known):
+            raise ValueError(f"mourning: unknown genres {', '.join(unknown)}")
         return self
 
     @model_validator(mode="after")

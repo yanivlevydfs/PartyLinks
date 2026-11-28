@@ -82,6 +82,7 @@ from partylinks.logs import setup_logging
 from partylinks.mail.images import router as mail_images_router
 from partylinks.media import LEGACY_WIDTHS, VARIANT_WIDTHS
 from partylinks.models import EntryType
+from partylinks.mourning import core as mourning
 from partylinks.parsing import TidyText, is_site_logo
 from partylinks.pictures import live_image_url, live_images
 from partylinks.places import city_abroad, city_name
@@ -1727,7 +1728,13 @@ def _register_routes(app: FastAPI) -> None:
             # Paid matches lead page 1 and are left out of the rest, so every later page starts that
             # many places earlier: the total and the paging stay those of the plain list.
             paid = (
-                ads.promoted_for(session, card, filters, page, min(cfg.api.sponsored_results, size))
+                ads.promoted_for(
+                    session,
+                    card,
+                    [*filters, *mourning.clauses(cfg, datetime.now(UTC))],
+                    page,
+                    min(cfg.api.sponsored_results, size),
+                )  # a day of mourning's parties are listed, not paid-first (partylinks.mourning)
                 if sponsored
                 else None
             )
@@ -2031,6 +2038,9 @@ def _register_routes(app: FastAPI) -> None:
                                          events=n, page=True)  # fmt: skip
                 smart = {"holiday": [*event_filters(request, date_to=now + timedelta(days=cfg.holiday_pages.ahead_days)),
                                      *holiday_pages.where(holiday, cfg)], **smart}  # fmt: skip
+            # A day of mourning (partylinks.mourning): no row promotes a party starting in its hours.
+            mourn, mourn_tag = mourning.clauses(cfg, now), mourning.tag(cfg, now)
+            smart = {k: [*f, *mourn] for k, f in smart.items()}
             wheres = dict(smart)  # each row's filters, for the pinned events (partylinks.home_pins)
             # The coming holiday's own row already shows a plain holiday row's events; one with a genre of its own
             # ("Hanukkah for kids") is a different row and stays.
@@ -2041,10 +2051,13 @@ def _register_routes(app: FastAPI) -> None:
             ]
             for spec in specs:
                 try:
-                    wheres[spec.key] = _home_row_filters(lambda **kw: event_filters(request, **kw), cfg, spec, now)
+                    wheres[spec.key] = [
+                        *_home_row_filters(lambda **kw: event_filters(request, **kw), cfg, spec, now),
+                        *mourn,
+                    ]
                 except Exception:  # noqa: BLE001 - an admin's bad row must not take the home page down
                     broken_home_rail(spec.key)
-            tags = {r.key: r.cache_tag(now.date()) for r in specs if r.key in wheres}
+            tags = {r.key: r.cache_tag(now.date()) + mourn_tag for r in specs if r.key in wheres}
             rows_cache: RowCache = request.app.state.home_rows
             if rows_cache.empty():
                 kept_cards = _kept_rails(request.app.state.response_cache, request.url.path)
@@ -2070,7 +2083,7 @@ def _register_routes(app: FastAPI) -> None:
                 out.rails[key] = cards
                 if key == cfg.smart_rails.after:
                     add_smart()
-            home_pins.pin(session, out.rails, wheres, event_filters(request), load)
+            home_pins.pin(session, out.rails, wheres, [*event_filters(request), *mourn], load)
             art = {r.key: r.art for r in cfg.home_rails.rows if r.art}
             if out.holiday and (holiday_art := cfg.holiday_pages.art.get(out.holiday.key)):
                 art["holiday"] = holiday_art

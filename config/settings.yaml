@@ -439,6 +439,21 @@ holiday_pages:
   # Drawn pictures (web/public/holidays, scripts/holiday_art.py): the holiday's row banner and page picture.
   art: {christmas: christmas, hanukkah: hanukkah, new_year: new_year, purim: purim, ramadan: ramadan, eid_al_fitr: ramadan}
 
+# Israel's days of mourning (src/partylinks/mourning): from the eve at eve_hour (Israel time) to the day's end_hour,
+# the home rows, the week's top, the bot's highlights and the paid picks promote no party (genres, with their
+# sub-genres) starting in those hours. Listings and search stay complete. Dates: mourning.core (the Hebrew calendar,
+# each day's own rule); none of these is a holiday page, row or search word.
+mourning:
+  enabled: true
+  eve_hour: 18            # the hours begin on the eve at this hour (sunset, roughly)
+  ahead_hours: 24         # and are applied from this many hours before they begin: no promoting tonight's closed-day party that morning
+  genres: [g_parties, nightclubs, open_bar, happy_hour]
+  days:
+    yom_hashoah: {he: "יום הזיכרון לשואה ולגבורה", end_hour: 24}   # 27 Nisan (Fri: Thu 26, Sun: Mon 28); closed by law
+    memorial_day: {he: "יום הזיכרון לחללי מערכות ישראל", end_hour: 20}   # ends as Independence Day begins
+    tisha_bav: {he: "תשעה באב", end_hour: 24}   # 9 Av (Shabbat: Sunday 10 Av)
+    yom_kippur: {he: "יום הכיפורים", end_hour: 24}   # 10 Tishrei
+
 # Weekly lines (src/partylinks/lines): the same title at the same place on the same weekday, on at least
 # min_dates upcoming dates; its card says "🔁 every Thursday".
 lines:
@@ -625,6 +640,73 @@ enrichment:
   # A "purchase link" on these hosts is a profile or a post, not a seller: dropped for every source.
   social_hosts: [instagram.com, facebook.com, fb.com, fb.me, linktr.ee, wa.me, whatsapp.com, chat.whatsapp.com, t.me,
                  youtube.com, youtu.be, tiktok.com, x.com, twitter.com]
+  # Venue names and addresses some sites send in Arabic script (Tzkrti, Eventati, OGo, Bonire...), shown in Hebrew
+  # (partylinks.hebrew_places): each name / place word below becomes its Hebrew name (whole words, longest first,
+  # Arabic diacritics ignored), the name the same place already has in our other sources where it has one (so both
+  # spellings meet as one venue). With drop_beside_other, Arabic left beside Hebrew or Latin text is a translation
+  # of it and is dropped ("Mazkeka מזקקה مزكيكا" -> "Mazkeka מזקקה"); a name wholly in Arabic that is not listed
+  # stays as it is. Town names (city field) are never changed here; titles and descriptions are never translated.
+  # Measured 28.11.2026: every Arabic-script venue / address of the upcoming events.
+  hebrew_places:
+    drop_beside_other: true
+    names:
+      # Haifa
+      "الاوديتوريم حيفا": "אודיטוריום חיפה"
+      "مسرح سرد": "תיאטרון סרד"
+      "مركز بروفا": "מרכז פרובה"
+      "پروڤا": "מרכז פרובה"
+      "فتوش بار": "פתוש בר"
+      "قاعة كريجر": "מרכז קריגר"
+      "قاعة الكرمل حيفا": "אולם הכרמל חיפה"
+      "كوكو كافيه": "קוקו קפה"
+      "كنيسة مار يوحنا الانجيلي الاسقفية": "כנסיית יוחנן הקדוש (סנט ג'ון) חיפה"
+      "حي عباس": "שכונת עבאס"
+      "حيفا": "חיפה"
+      # Nazareth
+      "فندق رمادا": "מלון רמדה"
+      "رويال جاردنز": "רויאל גרדנס"
+      "قاعة مدرسة مار يوسيف": "אולם בית הספר מאר יוסף"
+      "القصر الثقافي النصراوي": "היכל התרבות נצרת"
+      "مركز ومسرح موال - الناصرة": "מרכז ותיאטרון מוואל - נצרת"
+      "مركز سينمانا الثقافي - الناصرة": "מרכז התרבות סינמאנא - נצרת"
+      "بزيليكا البشارة اللاتين - الناصرة": "בזיליקת הבשורה הלטינית — נצרת"
+      "كنيسة يسوع الشاب السالزيان": "כנסיית ישו הנער"
+      "فندق جولدن كراون الناصرة": "מלון גולדן קראון נצרת"
+      "طريق الجليل": "דרך הגליל"
+      "توفيق زياد": "תאופיק זיאד"
+      "الناصرة": "נצרת"
+      # Shefa-Amr, Galilee, Triangle
+      "مركز سلالم شفاعمرو": "מרכז סלאלם שפרעם"
+      "مسرح الأفق": "תיאטרון אופק"
+      "شارع محمود درويش": "רחוב מחמוד דרוויש"
+      "شفاعمرو": "שפרעם"
+      "مطعم مندولين": "מסעדת מנדולין"
+      "مطعم ليالينا": "מסעדת ליאלינא"
+      "كنيسة الروم الارثوذكسية": "הכנסייה היוונית-אורתודוקסית"
+      "قاعة الرابية معليا": "אולם אל-ראבייה מעיליא"
+      "كنيسة مار الياس فسوطة": "כנסיית מר אליאס, פסוטה"
+      "مركز الشيخ زكي ذياب الجماهيري": "המרכז הקהילתי שייח' זכי דיאב"
+      "القصر الثقافي ترشيحا": "היכל התרבות מעלות תרשיחא"
+      "قصر الثقافة كرميئيل": "היכל התרבות כרמיאל"
+      "المركز الجماهيري - عسفيا": "המרכז הקהילתי - עספיא"
+      "عسفيا": "עספיא"
+      "مسرح وسينماتك ام الفحم": "תיאטרון וסינמטק אום אל-פחם"
+      "المسرح العربي - أم الفحم": "התיאטרון הערבי - אום אל-פחם"
+      "أم الفحم": "אום אל-פחם"
+      "المسرح البلدي باقة الغربية": "התיאטרון העירוני באקה אל-גרבייה"
+      "القصر الثقافي": "היכל התרבות"
+      # Jerusalem
+      "فندق قصر سيرجي": "חצר סרגיי"
+      "مسرح الحكواتي": "תיאטרון אל-חכוואתי"
+      "كاتدرائية نوتردام": "קתדרלת נוטרדאם"
+      "مركز القدس (جامعة المورمون)": "המרכז הירושלמי ללימודי המזרח הקרוב של אוניברסיטת בריגהאם יאנג"
+      "فندق الأمباسدور": "מלון אמבסדור"
+      "شارع السلطان سليمان": "דרך סולטן סולימאן"
+      "القدس": "ירושלים"
+      # Tel Aviv, Petah Tikva
+      "مركز فيليسيا بلومنتال للموسيقى": "מרכז פליציה בלומנטל למוזיקה"
+      "هاكارن & طريق مناحم بيجن": "הקרן ודרך מנחם בגין"
+      "بيتح تكفا": "פתח תקווה"
   target_city:
     name: Tel Aviv
     # Events whose city/address matches none of these are flagged out-of-city.

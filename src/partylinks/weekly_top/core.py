@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, defer, selectinload
 
 from partylinks.config import Settings
 from partylinks.db import EventRow, upcoming_filter
+from partylinks.mourning.core import clauses as mourning
 from partylinks.placecards import IS_PLACE
 from partylinks.popularity.models import EventViewRow
 from partylinks.saved.models import SavedEventRow
@@ -44,7 +45,7 @@ def top(session: Session, cfg: Settings, now: datetime) -> list[EventRow]:
         select(EventRow)
         .outerjoin(likes, likes.c.event_id == EventRow.id)
         .outerjoin(views, views.c.event_id == EventRow.id)
-        .where(*_base(cfg, now))
+        .where(*_base(cfg, now), *mourning(cfg, now))  # no party of a day of mourning's hours (partylinks.mourning)
         .order_by(score.desc(), EventRow.start_at, EventRow.id)
         .limit(s.limit)
         .options(selectinload(EventRow.images), defer(EventRow.description), defer(EventRow.extra))

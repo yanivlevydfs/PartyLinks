@@ -19,6 +19,7 @@ from partylinks.config import Settings
 from partylinks.db import EventRow
 from partylinks.holiday_pages.core import Holiday, upcoming, where
 from partylinks.holiday_pages.pages import _dates
+from partylinks.mourning.core import clauses as mourning
 from partylinks.weekly_top.core import top
 
 if TYPE_CHECKING:
@@ -77,10 +78,15 @@ async def press(conv: Conversation, chat_id: str, lang: str, action: str) -> Rep
     holiday = next((h for h in _coming(cfg) if h.key == key), None) if kind == "h" else None
 
     def work(session: Session) -> tuple[list[EventRow], bool, dict[str, dict[str, Any]]]:
-        if kind == "h":
-            found = seo._upcoming(session, *where(holiday, cfg), limit=start + n + 1) if holiday else []
+        now = datetime.now(ZoneInfo(cfg.timezone))
+        if kind == "h":  # Independence Day's eve is Memorial Day: none of its parties (partylinks.mourning)
+            found = (
+                seo._upcoming(session, *where(holiday, cfg), *mourning(cfg, now), limit=start + n + 1)
+                if holiday
+                else []
+            )
         else:
-            found = top(session, cfg, datetime.now(ZoneInfo(cfg.timezone)))
+            found = top(session, cfg, now)
         page = found[start : start + n]
         usage.record(
             session,
