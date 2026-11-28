@@ -36,6 +36,14 @@ def _radius_m(population: int) -> float:
     return 1000 + 12 * math.sqrt(population)
 
 
+# GeoNames' first Hebrew name is sometimes the Arabic one in Hebrew letters ("אל-בוקיעה" for Peki'in): the name
+# Israelis write, by its GeoNames name (the others stay aliases). Nov 2026: every 500+ town whose first name was.
+HEBREW_NAME = {
+    "Buqei‘a": "פקיעין", "Mi‘ilyā": "מעיליא", "Furaydis": "פוריידיס", "Al-Bi‘na": "בענה", "El Mazra‘a": "מזרעה",
+    "Ghajar": "ע'ג'ר",
+}  # fmt: skip
+
+
 @lru_cache(maxsize=4)
 def israeli_places(min_population: int) -> tuple[CitySettings, ...]:
     """Localities of at least ``min_population`` (smaller ones are often words: "מגדל", "כנרת")."""
@@ -46,6 +54,8 @@ def israeli_places(min_population: int) -> tuple[CitySettings, ...]:
         hebrew = list(dict.fromkeys(_NIQQUD.sub("", a) for a in c["alternatenames"] if _HEBREW.search(a)))
         if not hebrew:
             continue
+        if preferred := HEBREW_NAME.get(c["name"]):
+            hebrew = [preferred, *(h for h in hebrew if h != preferred)]
         latin = [a for a in c["alternatenames"] if a.isascii() and len(a) > 2]
         places.append(
             CitySettings(

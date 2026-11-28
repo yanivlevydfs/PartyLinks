@@ -98,3 +98,10 @@ def test_a_fetched_holiday_with_no_dates_left_is_skipped(monkeypatch) -> None:  
         assert "מימונה" in search.date_ranges(today)  # the others still work
     finally:
         search.date_ranges.cache_clear()
+
+
+def test_towns_take_the_hebrew_name_israelis_write() -> None:
+    s = get_settings()
+    enricher = Enricher(s.enrichment, s.timezone)
+    assert enricher.canonical_city("אל-בוקיעה", None) == "פקיעין"  # GeoNames' first name for Peki'in
+    assert enricher.canonical_city("מיעיליא", None) == enricher.canonical_city("Mi'ilya", None) == "מעיליא"
