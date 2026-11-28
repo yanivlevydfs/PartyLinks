@@ -1582,10 +1582,10 @@ a.chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
   .card { border-radius: 14px; animation-duration: .35s; }
   .card-img { aspect-ratio: 4 / 5; }
   .card-body { padding: 9px 10px 12px; gap: 2px; }
-  .card-body h3 { font-size: 14.5px; line-height: 1.25; margin-bottom: 3px; }
-  .meta { font-size: 12px; }
+  .card-body h3 { font-size: 16px; line-height: 1.25; margin-bottom: 3px; }
+  .meta { font-size: 13.5px; }
   .card .tags { margin-top: 6px; gap: 4px; }
-  .card .tag { font-size: 11px; padding: 2px 8px; }
+  .card .tag { font-size: 12px; padding: 2px 8px; }
   .card .tag:nth-child(n + 3) { display: none; }
   .card-wrap .tags { padding-bottom: 38px; }
   .cal.on-card summary { inset-inline-end: 44px; bottom: 9px; width: 30px; height: 30px; font-size: 13px; }
