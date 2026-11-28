@@ -5197,6 +5197,7 @@ sources:
     cron: "53 10,22 * * *"
     may_be_empty: true
     name: "מתחת לרדאר"  # the organiser; a party's title when the calendar gives none
+    skip_title_words: []  # one party line's own parties: no classes or rentals to leave out
     genres: [psytrance]  # a psytrance line (its WhatsApp group "של הטראנס")
     venues:
       # Go-Out's own pin for "שרביה - Sharabiya" (Pinkhas Ben Ya'ir 3, 28.11.2026).
@@ -5214,6 +5215,7 @@ sources:
     cron: "47 11,23 * * *"
     may_be_empty: true  # between the seasons it lists
     free_label: "כניסה חופשית"
+    skip_title_words: []  # a hand-made list of public events: nothing to leave out
     events:
       - id: nazareth-benedictus-2026
         title: "לילות ילד המערה - מתחם בנדיקטוס, נצרת"
