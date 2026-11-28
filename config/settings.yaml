@@ -1192,6 +1192,7 @@ enrichment:
     eventati: [culture]     # a box office of concerts, plays and screenings with no categories
     solidaritytlv: [cinema]  # a film festival's panels and conference
     undertheradar: [psytrance]  # a psytrance party line
+    curated: [culture]  # SPOTX's own list: each entry names its kinds
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     holidays: [christmas, hanukkah, purim, new_year_eve, ramadan, eid_al_adha]
@@ -1302,7 +1303,8 @@ enrichment:
                 "כולל סיור מודרך",  # a show's add-on ("המפגש כולל סיור מודרך במוזיאון", Rabin Center), not a tour
                 "טכנו-", "טכנו־",  # "techno-" joined to a word ("שיווק טכנו-באנאלי", a lecture): a prefix, not techno
                 # The Latin Patriarchate / church in Jerusalem's Christian Quarter (itraveljerusalem's tours): not Latin music.
-                "פטריארכיה הלטינית", "כנסייה הלטינית", "כנסיה הלטינית", "latin patriarchate"]
+                "פטריארכיה הלטינית", "כנסייה הלטינית", "כנסיה הלטינית", "קהילה הלטינית", "מתחם הלטיני",
+                "latin patriarchate", "latin community"]
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
   # talks: their text is read only for these genres.
@@ -2459,6 +2461,7 @@ search:
     eventati: ["eventati", "إڤنتاتي", "إفنتاتي", "איוונטתי"]
     solidaritytlv: ["solidaritytlv", "פסטיבל סולידריות", "solidarity festival"]
     undertheradar: ["undertheradar", "under the radar", "מתחת לרדאר"]
+    curated: ["spotx picks", "נבחרו ע״י spotx"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
     tzavta: ["צוותא", "tzavta"]
     smarticket: ["סמרטיקט"]
@@ -5061,6 +5064,109 @@ sources:
     http:
       concurrency: 1
       request_delay_seconds: 2.0
+
+  curated:
+    # SPOTX's own list (scrapers/curated.py): public events no site we read lists, each from the page that states
+    # it (its source_url, the event's link). Christmas 2026, checked 28.11.2026 against the JPost programme
+    # (article-915402, 19.11.2026) and omri-travel's Christmas 2026 guide. Left out until a 2026 date is
+    # published: Fassuta's winter festival (2025 only), Mi'ilya's procession ("בבדיקה"). No request is made.
+    enabled: true
+    cron: "47 11,23 * * *"
+    may_be_empty: true  # between the seasons it lists
+    events:
+      - id: nazareth-benedictus-2026
+        title: "לילות ילד המערה - מתחם בנדיקטוס, נצרת"
+        dates: ["2026-12-02..2026-12-06", "2026-12-10..2026-12-13"]
+        daily: true
+        start: "17:00"
+        end: "22:00"
+        venue: "מתחם בנדיקטוס, ליד מלון גליל"
+        address: "מלון גליל, רחוב פאולוס השישי, נצרת"
+        city: "נצרת"
+        description: "פסטיבל חג המולד \"לילות ילד המערה\" בפעם התשיעית, של עמותת אל-מוקב נצרת והקהילה הלטינית: מופעים, דוכנים ופעילויות לכל המשפחה. נפתח ב-2.12 בהדלקת עץ. כניסה 50 ש\"ח (מגיל 6), 10 ש\"ח (גילאי 3-6), עד גיל 3 חינם."
+        source_url: "https://www.jpost.com/travel/article-915402"
+        genres: ["christmas", "festival", "kids"]
+        prices: [{name: "כניסה (מגיל 6)", price: 50}, {name: "גילאי 3-6", price: 10}]
+      - id: nazareth-tree-lighting-2026
+        title: "הדלקת עץ חג המולד ליד הכנסייה האורתודוקסית, נצרת"
+        dates: ["2026-12-06"]
+        venue: "כיכר העץ ליד הכנסייה האורתודוקסית"
+        address: "כיכר מעיין מרים, נצרת"
+        city: "נצרת"
+        latitude: 32.7077  # Mary's Well square, by the Orthodox Church of the Annunciation
+        longitude: 35.3029
+        description: "טקס הדלקת עץ חג המולד המרכזי של נצרת (35 מטר), ליד הכנסייה האורתודוקסית, של הקהילה האורתודוקסית והעירייה. השעה טרם פורסמה."
+        source_url: "https://www.jpost.com/travel/article-915402"
+        genres: ["christmas"]
+        free: true
+      - id: nazareth-christmas-market-2026
+        title: "שוק חג המולד בנצרת - חצר אל-מוטראן"
+        dates: ["2026-12-16..2026-12-20"]
+        venue: "חצר אל-מוטראן, ליד המוסקוביה"
+        address: "המוסקוביה, נצרת"
+        city: "נצרת"
+        description: "שוק חג המולד השלישי של נצרת בחצר אל-מוטראן ליד המוסקוביה: דוכנים, אוכל ומוזיקה. השעות טרם פורסמו."
+        source_url: "https://www.jpost.com/travel/article-915402"
+        genres: ["christmas market"]
+        free: true
+      - id: nazareth-christmas-parade-2026
+        title: "תהלוכת חג המולד ה-41 - מצעד השלום והאחווה, נצרת"
+        dates: ["2026-12-24"]
+        start: "14:00"
+        venue: "רחוב פאולוס השישי עד בזיליקת הבשורה"
+        address: "רחוב פאולוס השישי, נצרת"
+        city: "נצרת"
+        latitude: 32.7021  # the Basilica of the Annunciation, where it ends
+        longitude: 35.2978
+        description: "תהלוכת חג המולד השנתית ה-41 של נצרת, \"מצעד השלום והאחווה\": צופים, להקות ותזמורות לאורך רחוב פאולוס השישי עד בזיליקת הבשורה."
+        source_url: "https://www.jpost.com/travel/article-915402"
+        genres: ["christmas", "festival"]
+        free: true
+      - id: nazareth-little-match-girl-2026
+        title: "הילדה עם הגפרורים - מחזמר חג המולד, נצרת"
+        dates: ["2026-12-17..2026-12-19"]
+        daily: true
+        start: "20:00"
+        venue: "אודיטוריום סנט ג'וזף"
+        address: "סנט ג'וזף, נצרת"
+        city: "נצרת"
+        description: "מחזמר חג המולד \"הילדה עם הגפרורים\" באודיטוריום סנט ג'וזף בנצרת. כרטיס 100 ש\"ח."
+        source_url: "https://www.jpost.com/travel/article-915402"
+        genres: ["christmas", "musical"]
+        prices: [{name: "כרטיס", price: 100}]
+      - id: miilya-christmas-run-2026
+        title: "ריצת חג המולד במעיליא"
+        dates: ["2026-12-18"]
+        venue: "רחובות הכפר מעיליא"
+        address: "מעיליא"
+        city: "מעיליא"
+        description: "ריצת חג המולד התחרותית ברחובות הכפר מעיליא, בשעות הבוקר (השעה המדויקת טרם פורסמה)."
+        source_url: "https://www.omri-travel.co.il/%D7%97%D7%92-%D7%94%D7%9E%D7%95%D7%9C%D7%93-2022/"
+        genres: ["christmas", "running"]
+      - id: miilya-christmas-market-2026
+        title: "שוק כריסמס במעיליא"
+        dates: ["2026-12-19..2026-12-20"]
+        venue: "רחבת הכנסייה, מעיליא"
+        address: "מעיליא"
+        city: "מעיליא"
+        latitude: 33.0280627
+        longitude: 35.25833
+        description: "שוק כריסמס ברחבת הכנסייה במעיליא, בשעות אחר הצהריים והערב: דוכנים, אוכל ומוזיקה בכפר המעוטר לחג."
+        source_url: "https://www.omri-travel.co.il/%D7%97%D7%92-%D7%94%D7%9E%D7%95%D7%9C%D7%93-2022/"
+        genres: ["christmas market"]
+        free: true
+      - id: jish-christmas-2026
+        title: "חגיגת כריסמס ושוק חג המולד בגוש חלב (ג'ש)"
+        dates: ["2026-12-17..2026-12-19"]
+        venue: "גוש חלב (ג'ש)"
+        address: "גוש חלב"
+        city: "גוש חלב"
+        description: "חגיגת כריסמס בכפר גוש חלב: שוק חג המולד, ניחוחות, אוכל ומוזיקה. השעות טרם פורסמו."
+        source_url: "https://www.omri-travel.co.il/%D7%97%D7%92-%D7%94%D7%9E%D7%95%D7%9C%D7%93-2022/"
+        genres: ["christmas market"]
+        free: true
+    http:
+      concurrency: 1
 
   swaptix:
     # SwapTix: Israeli ticket resale marketplace. The catalogue API + each event's listings; only events
