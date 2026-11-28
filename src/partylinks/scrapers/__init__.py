@@ -174,6 +174,7 @@ from partylinks.scrapers.towerofdavid import TowerOfDavidScraper
 from partylinks.scrapers.tribe import BabeBarScraper, GagarinScraper
 from partylinks.scrapers.tzavta import TzavtaScraper
 from partylinks.scrapers.tzkrti import TzkrtiScraper
+from partylinks.scrapers.undertheradar import UndertheradarScraper
 from partylinks.scrapers.viagogo import ViagogoScraper
 from partylinks.scrapers.vibez import VibezScraper
 from partylinks.scrapers.xceed import XceedScraper
@@ -333,6 +334,7 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         KaspitScraper,
         EventatiScraper,
         SolidarityScraper,
+        UndertheradarScraper,
         EventProScraper,
         JaffaTheatreScraper,
         TzavtaScraper,

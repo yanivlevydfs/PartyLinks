@@ -1,0 +1,57 @@
+{
+ "lineup": [
+  {
+   "hours": "15:30–17:00",
+   "artist": "SHMOOP",
+   "bio": "סט הפתיחה בשרבייה. שעה וחצי על הרחבה באור יום, לפני שהאירוע ממשיך אל השקיעה.",
+   "listen": {
+    "label": "להאזנה לסט ב־SoundCloud",
+    "url": "https://on.soundcloud.com/sCtkaOBoJTxMiqU1pE"
+   }
+  },
+  {
+   "hours": "17:00–19:00",
+   "artist": "AMIGDALA",
+   "bio": "הפרויקט של לינוי מורד, יוצרת ודי־ג׳יי שמשלבת פסיטראנס עם השפעות גואה, מלודיות עוטפות וסינתזה אנלוגית. בין ההוצאות שלה New Moon ו־The Source עם ARTMiS.",
+   "listen": {
+    "label": "לסט של אמיגדלה",
+    "url": "https://on.soundcloud.com/U2Q4pSMEKOHJZBMD8A"
+   }
+  },
+  {
+   "hours": "19:00–21:00",
+   "artist": "RITMO",
+   "bio": "דובי דגן, די־ג׳יי ומפיק פרוגרסיב־פסייטראנס. הסטים שלו משלבים גרוב עמוק ומלודיות שמתפתחות בהדרגה. אלבומו Roots יצא ב־Iboga Records, ובין שיתופי הפעולה שלו Astrix, Liquid Soul ו־Ace Ventura.",
+   "listen": {
+    "label": "לסט המלא מ־Ozora 2025",
+    "url": "https://www.youtube.com/watch?v=S2sVkY78KkQ"
+   }
+  },
+  {
+   "hours": "21:00–23:00",
+   "artist": "X-NOIZE",
+   "bio": "פרויקט הפסיטראנס הישראלי של ברק ארגמן ונדב בונן, המשלב בייס חם, גרוב חזק ומלודיות היפנוטיות. אלבום הבכורה Mental Notes יצא ב־HOMmega ב־2005. השניים יצרו גם את הפרויקט Major7.",
+   "listen": {
+    "label": "למיקס In The Mix",
+    "url": "https://www.youtube.com/watch?v=iYwMCGFNBdc"
+   }
+  },
+  {
+   "hours": "23:00–00:30",
+   "artist": "NARKISSI",
+   "bio": "פרויקט פסיטראנס שיצירותיו כוללות את Clear Heart ב־HOMmega ואת I Have To Be ב־X7M Records. שיתופי הפעולה עם X-NOIZE כוללים את Abracadabra. בשרבייה זהו סט הסגירה עד 00:30.",
+   "listen": {
+    "label": "לסט Once Upon A Time",
+    "url": "https://tracktrip.co.il/en/mix/narkissi"
+   }
+  }
+ ],
+ "poster": {
+  "src": "/jaffa-2026-12-04-lineup-square.jpg",
+  "width": 1260,
+  "height": 1253,
+  "alt": "מתחת לרדאר בשרבייה, יפו העתיקה. שישי 4.12, 15:30–00:30. הליינאפ המלא מופיע בכפתור ליינאפ ומידע."
+ },
+ "venue": "Sharabiya – Old Jaffa",
+ "ticketUrl": "https://easytix.co.il/event/u/UnderTheRadarOldJaffa"
+}

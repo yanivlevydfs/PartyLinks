@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Under The Radar//Event Calendar//HE
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:under-the-radar-20261204@undertheradar.events
+DTSTAMP:20261128T083736Z
+DTSTART;TZID=Asia/Jerusalem:20261204T153000
+DTEND;TZID=Asia/Jerusalem:20261205T003000
+SUMMARY:מתחת לרדאר · Sharabiya – Old Jaffa
+LOCATION:Sharabiya – Old Jaffa
+DESCRIPTION:הפעם יוצאים למסע בין החומות של יפו העתיקה. הכנו ליינאפ מרגש שייקח אותנו מהצהריים עמוק אל תוך הלילה\, בלוקיישן מיוחד כמו שאנחנו אוהבים במתחת לרדאר. ואם יהיה לנו קשה להיפרד\, אולי נמשיך גם לאפטר קטן :)\nhttps://undertheradar.events
+URL:https://undertheradar.events
+END:VEVENT
+END:VCALENDAR

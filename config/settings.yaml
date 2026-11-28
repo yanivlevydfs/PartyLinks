@@ -1162,6 +1162,7 @@ enrichment:
     happeningnext: [culture]
     eventati: [culture]     # a box office of concerts, plays and screenings with no categories
     solidaritytlv: [cinema]  # a film festival's panels and conference
+    undertheradar: [psytrance]  # a psytrance party line
   # Umbrella genres: choosing the parent also shows every sub-genre's events (and counts them).
   genre_families:
     hi_tech: [ai, cyber, software_dev, data, cloud_devops, startups, product, gaming, web3]
@@ -2416,6 +2417,7 @@ search:
     kaspit: ["kaspit", "kaspit-art", "כספית ייצוג אמנים"]
     eventati: ["eventati", "إڤنتاتي", "إفنتاتي", "איוונטתי"]
     solidaritytlv: ["solidaritytlv", "פסטיבל סולידריות", "solidarity festival"]
+    undertheradar: ["undertheradar", "under the radar", "מתחת לרדאר"]
     jaffatheatre: ["תיאטרון יפו", "jaffa theatre", "סראיא"]
     tzavta: ["צוותא", "tzavta"]
     smarticket: ["סמרטיקט"]
@@ -4993,6 +4995,25 @@ sources:
     pages:
       - {path: /industry-events, kind: repeater}
       - {path: /conference, kind: day, title: "כנס סולידריות לקולנוע וזכויות אדם", free: true}
+    http:
+      concurrency: 1
+      request_delay_seconds: 2.0
+
+  undertheradar:
+    # Under The Radar (undertheradar.events, "מתחת לרדאר"): a psytrance party line's one-page site, one
+    # party at a time (28.11.2026: 4.12, Sharabiya, Old Jaffa, 15:30-00:30). Sections: the calendar feed
+    # /api/event/calendar (every coming party: 1) -> read; the home page's party card (poster, text) ->
+    # read; /api/event/launch (lineup, venue, ticket link, out when the sale opens) -> read; not read:
+    # /past-events (archive), the ride board, the birthday / business / partnership forms, the photos.
+    # No sitemap (robots.txt and sitemap.xml are 404). Tickets on EASYTIX (/event/u/UnderTheRadarOldJaffa:
+    # not in easytix's public listings, nor in our DB 28.11.2026). Cloudflare challenges abroad (Germany:
+    # 403); from the production container it answers plainly: direct. Empty between parties.
+    enabled: true
+    cron: "53 10,22 * * *"
+    may_be_empty: true
+    venues:
+      # Go-Out's own pin for "שרביה - Sharabiya" (Pinkhas Ben Ya'ir 3, 28.11.2026).
+      sharabiya: {name: שרביה, address: "פנחס בן יאיר 3, תל אביב-יפו", city: תל אביב-יפו, latitude: 32.0546245, longitude: 34.7573914}
     http:
       concurrency: 1
       request_delay_seconds: 2.0
