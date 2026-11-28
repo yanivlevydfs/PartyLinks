@@ -52,7 +52,9 @@ def holiday_page(session: Session, cfg: Settings, lang: str, key: str) -> seo.Pa
     faq_ld = {
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq],
+        "mainEntity": [
+            {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq
+        ],
     }
     path = f"/holiday/{h.key}"
     faq_html = "".join(f"<h3>{escape(q)}</h3><p>{escape(a)}</p>" for q, a in faq)
