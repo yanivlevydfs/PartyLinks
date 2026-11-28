@@ -92,7 +92,7 @@ const STORES: Record<string, [string | null, Kind]> = {
   livetickets: ["https://www.livetickets.co.il", "abroad"], tickethouse: ["https://www.ticket-house.com", "abroad"],
   secrettelaviv: ["https://www.secrettelaviv.com", "guide"], secrettelavivapp: ["https://secrettelaviv.app", "guide"], klika: ["https://klika.live", "tickets"], gototlv: ["https://gototlv.co.il", "guide"], inperson: ["https://inperson.social/events", "guide"], nbn: ["https://www.nbn.org.il/all-events/", "guide"],
   beatradar: ["https://beatradar.co.il", "guide"],
-  happytlv: ["https://www.happytlv.com", "guide"], tiuli: ["https://www.tiuli.com", "guide"], meety: ["https://meety.co.il", "guide"],
+  happytlv: ["https://www.happytlv.com", "guide"], tiuli: ["https://www.tiuli.com", "guide"], bgalil: ["https://www.bgalil.co.il/events", "guide"], oldakko: ["https://www.akko.org.il/events/", "venue"], itraveljerusalem: ["https://www.itraveljerusalem.com/he/list/events", "guide"], meety: ["https://meety.co.il", "guide"],
   funzing: ["https://il.funzing.com", "tickets"], easytix: ["https://easytix.co.il", "tickets"], ticketeams: ["https://ticketeams.co.il", "abroad"],
   festivalim: ["https://www.festivalim.co.il", "guide"], ogo: ["https://www.ogo.co.il", "guide"], ogo_us: ["https://us.ogo.events", "abroad"], tickettailor: ["https://www.tickettailor.com", "tickets"], ogo_de: ["https://de.ogo.events", "abroad"], muzi: ["https://muzi.co.il", "guide"], mugics: ["https://mugics.com", "guide"], efokulam: ["https://efokulam.co.il", "guide"], liveisrael: ["https://liveisrael.co", "guide"],
   plusparty: ["https://plusparty.co.il", "guide"], standupist: ["https://standupist.co.il", "tickets"],

@@ -1096,6 +1096,9 @@ enrichment:
   # Sources that sell one kind of event: its genre when neither their category nor the text names one
   # (TikTik / LiveEvents / TicketHouse list concerts abroad by artist name; Pres the Cameri and Habima).
   source_default_genres:
+    itraveljerusalem: [culture]  # tourism board's calendar: its types label most; the rest are tours or culture
+    oldakko: [culture]  # Old Akko's evenings, shows and holiday markets; no categories
+    bgalil: [attractions]  # a tourism board's items: tours, workshops, attractions; the title names the rest
     eventimlight: [culture]  # small organisers; most declare only "sonstiges" / "freizeit"
     issta: [live_show]  # concert trips abroad
     hangar11: [live_show]  # a concert hall: every night is a show; its CATEGORIES are the site's ~50 tags
@@ -1297,7 +1300,9 @@ enrichment:
                 "מסיבה זו", "מסיבות שונות", "מסיבות טכניות", "מסיבות בטיחות", "מסיבות שאינן",  # "for this reason", not a party
                 "חורש ים תיכוני", "חורש ים-תיכוני", "חורש ים־תיכוני",  # Mediterranean woodland (a nature tour), not Mizrahi music
                 "כולל סיור מודרך",  # a show's add-on ("המפגש כולל סיור מודרך במוזיאון", Rabin Center), not a tour
-                "טכנו-", "טכנו־"]  # "techno-" joined to a word ("שיווק טכנו-באנאלי", a lecture): a prefix, not techno
+                "טכנו-", "טכנו־",  # "techno-" joined to a word ("שיווק טכנו-באנאלי", a lecture): a prefix, not techno
+                # The Latin Patriarchate / church in Jerusalem's Christian Quarter (itraveljerusalem's tours): not Latin music.
+                "פטריארכיה הלטינית", "כנסייה הלטינית", "כנסיה הלטינית", "latin patriarchate"]
   # Titles of talks: their description names genres as a subject, so it is not scanned for genres.
   # Tech events, conferences ("Israeli startups") and films (a drive-in's plot is not its music) are
   # talks: their text is read only for these genres.
@@ -2368,14 +2373,14 @@ search:
     hasidic: ["חסידי", "חסידית"]
     jewish_music: ["חזנות"]
     melodic_techno: ["מלודיק", "melodic"]
-    live_show: ["הופעה", "הופעה חיה", "קונצרט", "concert", "live", "קונצרטים", "concerts", "gig"]
-    classical_opera: ["קונצרט", "קונצרטים", "קלאסי", "מוזיקה קלאסית", "תזמורת", "פילהרמונית", "orchestra", "symphony"]
     # The holidays' other names: "כריסמס" finds an event titled "חג המולד" (a holiday that is a date word, חנוכה /
     # פורים / סילבסטר, is taken as its dates first: search.date_ranges).
     christmas: ["כריסמס", "קריסמס", "christmas", "xmas", "חג המולד", "عيد الميلاد", "рождество"]
     christmas_markets: ["שוק כריסמס", "שווקי כריסמס", "יריד כריסמס", "christmas market", "christmas markets"]
     ramadan: ["רמדאן", "ramadan", "رمضان", "איפטאר", "iftar"]
     g_holidays: ["חגים", "holidays"]
+    live_show: ["הופעה", "הופעה חיה", "קונצרט", "concert", "live", "קונצרטים", "concerts", "gig"]
+    classical_opera: ["קונצרט", "קונצרטים", "קלאסי", "מוזיקה קלאסית", "תזמורת", "פילהרמונית", "orchestra", "symphony"]
     nightclubs: ["מועדון", "קלאב"]
     theatre: ["הצגה", "הצגות", "תאטרון", "מחזמר", "מחזה", "מחזות", "מחזות זמר", "הצגת", "play", "plays", "theater", "musical"]
     cinema: ["סרט", "הקרנה", "הקרנות", "הקרנת", "בכורה", "movie", "movies", "film", "films", "screening"]
@@ -2565,6 +2570,9 @@ search:
     xplorer: ["אקספלורר"]
     livetickets: ["live tickets", "לייב טיקטס"]
     tiuli: ["טיולי"]
+    itraveljerusalem: ["itraveljerusalem", "itravel jerusalem", "איטרבל ירושלים", "אי טראוול ירושלים"]
+    oldakko: ["akko.org.il", "החברה לפיתוח עכו העתיקה"]  # not "עכו העתיקה": a place people search
+    bgalil: ["bgalil", "תיירות גליל מערבי", "תיירות הגליל המערבי", "western galilee tourism"]
     ogo: ["אוגו"]
     ogo_us: ["ogo usa", "אוגו ארהב"]
     tickettailor: ["ticket tailor", "tickettailor", "טיקט טיילור"]
@@ -5375,6 +5383,74 @@ sources:
     http:
       timeout_seconds: 60       # one ~9 MB response
 
+  itraveljerusalem:
+    # iTravelJerusalem (itraveljerusalem.com): the Jerusalem tourism board's events calendar. Next.js
+    # over Strapi: /he/list/events (__NEXT_DATA__, 20 cards a page, soonest first, ?pageNumber=N to the
+    # last: 6 pages, 106 events, 28.11.2026), each filter of it with events (?event_types=<id>,
+    # ?seasons=<id>: the site's categories, ~30 requests), each event's page (every coming date,
+    # text, address, pin, price, ticket link): ~150 requests a run. Then /list/events (English, 28):
+    # only the events with no Hebrew version (4). One event per date (1,545 dates, 28.11.2026).
+    # Overlap: jerusalemmuni, towerofdavid, jerusalemtheatre, jerusalemarts, cinematheque_jlm list some of
+    # the same evenings; dedup merges them.
+    # sections: read: /he/list/events (every page), its event_types (19 with events) and seasons filters
+    # (חנוכה 38, חג המולד 7, ...), /list/events (en); not read: weather seasons / "כל השנה" (no category),
+    # the other languages (de, fr, ru, es, it, ar: translations), sitemap.xml (~800 /event/ URLs, past
+    # ones too: the list holds every coming event), the lists of attractions, tours, restaurants and
+    # hotels (places, no dates), the other filters (audiences, areas, kashrut, accessibility: no category).
+    enabled: true
+    cron: "30 10,22 * * *"
+    skip_title_words: ["קורס", "חוג ", "חוגי", "סדנאות שבועיות"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.5
+  oldakko:
+    # Old Akko (akko.org.il): the Old Akko and Nazareth development company's events in the Knights'
+    # Halls, the citadel and the Crusader courtyard. /events/ (a card per coming event: date line,
+    # hours, price, quick-buy link) + one wp-json call for the event posts edited in the last 120 days
+    # (their text: the dates of a post no card shows) + each event's page (og:image): ~5 requests a run.
+    # Overlap: munievents reads akko.muni.il (the municipality: another site, city-wide events), bgalil
+    # links the Knights' Halls' Hanukkah-Christmas page here; dedup merges the same evening.
+    # sections: read: /events/ (4 cards, 1 dated: "שעות שקטות", 5-7.12.2026), the event post type (71
+    # posts in event-sitemap.xml / wp-json, 70 past or undated, Nov 2026); not read: /attractions/,
+    # /routes/, /culinary/, /around-akko/, /akko-with-a-local/, /hotels-vaction-rentals/ (places and
+    # opening hours, no dated events), the translations (/en/, /ar/, /ru/, ...: the same events), the
+    # post / page / local sitemaps (company news, tenders, people).
+    enabled: true
+    cron: "30 9,21 * * *"
+    may_be_empty: true  # a few events a season; between them the page lists none with a date
+    skip_title_words: ["מדריך קולי", "קורס", "סדנאות שבועיות"]
+    venues:
+      "אולמות האבירים": {name: אולמות האבירים, address: "ויצמן 1, עכו", latitude: 32.9235884, longitude: 35.0731056}
+      "המצודה": {name: אולמות האבירים, address: "ויצמן 1, עכו", latitude: 32.9235884, longitude: 35.0731056}
+      "החצר הצלבנית": {name: אולמות האבירים, address: "ויצמן 1, עכו", latitude: 32.9235884, longitude: 35.0731056}
+      "חמאם": {name: חמאם אל-באשה, address: "עכו העתיקה", latitude: 32.9232, longitude: 35.0705}
+    default_venue: {name: עכו העתיקה, address: "ויצמן 1, עכו", latitude: 32.9235884, longitude: 35.0731056}
+    http:
+      concurrency: 2
+      request_delay_seconds: 1.0
+  bgalil:
+    # Western Galilee tourism (bgalil.co.il, "תיירות גליל מערבי"): the regional tourism association's
+    # guide. Cards from /events ("אירועי החודש") and the eight sub-pages of "חנוכריסמס בגליל המערבי"
+    # (labels below), then each dated item's page (text, address, map pin, booking link, pictures). The
+    # site has no date field: the date is in the title, else in the text; undated items (restaurants,
+    # zimmers, open attractions) are skipped. ~125 items, ~70 pages a run at 2 at a time.
+    # Overlap: the Knights' Halls (akko.org.il), Nahariya / Akko municipal events (munievents akko.muni.il,
+    # nahariya.muni.il), Rosh HaNikra; dedup merges them.
+    # sections: read: /events (88 cards), Attractions-Events (36), B-B (18), tarbutvomanotbagalilhmaravi
+    # (47), kolinryiabgalilhamaravi (51), Workshops (17), Content-tours (21), siyorimbatevabagalilhmaravi
+    # (22), Shows-Events (20): 123 items (35 not on /events, all past olive-branch days or undated
+    # businesses, Nov 2026); not read: the business directory (Accommodation-sites, Attractions,
+    # Restaurants, spa, beaches, trails, Single-bicycle, Tour-Guides, content-tours, Tour-Galil packages,
+    # Events-and-fun-days: company fun days, Shows-in-the-Western-Galilee: venue profiles, Festivals: the
+    # 2020 editions): no dates; sitemap.xml (2019, 116 old directory pages, no event); the English
+    # mirror bgalil.com (the same items by id, empty titles).
+    enabled: true
+    cron: "30 8,20 * * *"
+    may_be_empty: true  # a monthly board: between seasons it can name no dated item
+    skip_title_words: ["מבצע", "קורס", "חוג ", "חוגי", "סדנאות שבועיות", "אירועי חברה", "ימי כיף"]
+    http:
+      concurrency: 2
+      request_delay_seconds: 0.7
   munievents:
     # Every city / council / matnas site on the A.S. Bina CMS (binaa.co.il). Per site: the FullCalendar
     # feed /events/json/ (one request, all upcoming events; a recurring one kept once at its next date)

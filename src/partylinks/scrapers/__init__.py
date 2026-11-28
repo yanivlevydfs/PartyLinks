@@ -20,6 +20,7 @@ from partylinks.scrapers.base import BaseScraper, SourceSettings
 from partylinks.scrapers.beatradar import BeatRadarScraper
 from partylinks.scrapers.beershevatheatre import BeerShevaTheatreScraper
 from partylinks.scrapers.beithagefen import BeitHagefenScraper
+from partylinks.scrapers.bgalil import BgalilScraper
 from partylinks.scrapers.bimot import BimotScraper
 from partylinks.scrapers.bonire import BonireScraper
 from partylinks.scrapers.buki import BukiScraper
@@ -81,6 +82,7 @@ from partylinks.scrapers.ironit import IronitScraper
 from partylinks.scrapers.israelmusicfest import IsraelMusicFestScraper
 from partylinks.scrapers.israelshow import IsraelShowScraper
 from partylinks.scrapers.issta import IsstaScraper
+from partylinks.scrapers.itraveljerusalem import ITravelJerusalemScraper
 from partylinks.scrapers.iwant import IwantScraper
 from partylinks.scrapers.jaffatheatre import JaffaTheatreScraper
 from partylinks.scrapers.jerusalemarts import JerusalemArtsScraper
@@ -121,6 +123,7 @@ from partylinks.scrapers.newacropolis import NewAcropolisScraper
 from partylinks.scrapers.nikonitai import NikoNitaiScraper
 from partylinks.scrapers.ogo import OgoScraper
 from partylinks.scrapers.ogo_abroad import OgoDeScraper, OgoUsScraper
+from partylinks.scrapers.oldakko import OldAkkoScraper
 from partylinks.scrapers.onecity import OneCityScraper
 from partylinks.scrapers.ozen import OzenScraper
 from partylinks.scrapers.parks import ParksScraper
@@ -335,6 +338,9 @@ SCRAPERS: dict[str, type[BaseScraper]] = {
         EventatiScraper,
         SolidarityScraper,
         UndertheradarScraper,
+        BgalilScraper,
+        OldAkkoScraper,
+        ITravelJerusalemScraper,
         EventProScraper,
         JaffaTheatreScraper,
         TzavtaScraper,

@@ -1,6 +1,6 @@
 # Sources
 
-SPOTX collects from 186 configured sources, 185 on. Each one has its own module in
+SPOTX collects from 189 configured sources, 188 on. Each one has its own module in
 `src/partylinks/scrapers/` and its own block under `sources:` in `config/settings.yaml`.
 
 - **Schedule:** every source runs twice a day, on its own staggered minute (Israel time, the
@@ -191,6 +191,9 @@ many of them free.
 | `efokulam` | EfoKulam (efokulam.co.il, "איפה כולם"): nightlife guide (club nights, parties, festivals, mostly Tel Aviv); read from its wp-json `events` post type, every page to `X-WP-Total` (8 requests, 18 current events of 634 rows, Nov 2026 = the /events/ archive's 18); no coordinates (addresses geocoded), no venue field; prices from the article's highlighted chips, artists from its "ליינאפ" block (chips / ✓ list); seller links (Go-Out, Eventer) merge with those sources | 08:43, 20:43 | yes |
 | `liveisrael` | LiveIsrael (liveisrael.co): party guide (club nights, trance / nature parties, festivals, all of Israel); read from its wp-json `party_events` post type (~6 requests, ~45 current events of ~440 rows), Chrome TLS (Mod_Security refuses plain clients); lineup from its `lineup_artists` field, time / place / age from the article's details list; secret spots keep only the tag city; no price; seller links (Zygo, bit.ly) merge with Zygo | 09:53, 21:53 | yes |
 | `tiuli` | Tiuli (tiuli.com): trips and leisure guide, its events section | 04:39, 16:39 | yes |
+| `itraveljerusalem` | iTravelJerusalem (itraveljerusalem.com): the Jerusalem tourism board's events calendar; the Hebrew list (every page, its type and holiday filters as categories) + each event's page (every coming date), English-only events added | 10:30, 22:30 | yes |
+| `oldakko` | Old Akko (akko.org.il): the development company's events in the Knights' Halls and the citadel; the events page's cards (dates, hours, price, quick-buy link) + recent event posts from wp-json | 09:30, 21:30 | yes |
+| `bgalil` | Western Galilee tourism (bgalil.co.il, "תיירות גליל מערבי"): the events board and the Hanukkah-Christmas section's eight sub-pages; dates from each title or page text, map pin, booking link | 08:30, 20:30 | yes |
 | `festivalim` | Festivalim (festivalim.co.il): festivals, carnivals and street celebrations | 04:26, 16:26 | yes |
 | `poalimatarim` | Poalim Atarim (poalimatarim.com): Bank Hapoalim's free entry to ~50 museums, parks, heritage sites (seasonal) | 09:54, 21:54 | yes |
 | `meety` | Meety (meety.co.il): social meetups: salsa and bachata nights, folk dancing, running groups, board games | 06:47, 18:47 | yes |

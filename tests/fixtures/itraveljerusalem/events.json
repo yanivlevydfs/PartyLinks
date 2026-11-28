@@ -1,0 +1,196 @@
+{
+ "santas-house-experience-the-magic-of-christmas": {
+  "id": 298779,
+  "documentId": "c10rhe51sd4abccsch1zqg75",
+  "name": "הו הו הו! ברוכים הבאים לבית סנטה בארץ הקודש",
+  "subtitle": "הבזאר של סנטה חוזר לבית סנטה לאורך כל חודש נובמבר, עם קישוטים חגיגיים, מתנות ייחודיות ורגעים קסומים לחג בלב העיר העתיקה של ירושלים.",
+  "body": "<h3>הבזאר של סנטה בירושלים</h3><p>חגגו את עונת החגים בבזאר של סנטה בעיר העתיקה של ירושלים. טיילו בין קישוטים חגיגיים ומתנות ייחודיות, ספגו את אווירת החג ושמרו על זיכרון מיוחד מביקור עם המשפחה והחברים.</p><h3>ביקור בבית סנטה</h3><p>בית סנטה, השוכן בבית אבן היסטורי ברובע הנוצרי בעיר העתיקה, מזמין את המבקרים לפגוש את סנטה קלאוס וליהנות מרוח החג באווירה חמה וחגיגית.</p><p><strong>מתי:</strong> ימי חמישי, שישי ושבת, 5-28 בנובמבר 2026<br><strong>שעות:</strong> 17:00-20:00<br><strong>איפה:</strong> בית סנטה, רחוב סנט פיטר 2, הרובע הנוצרי, העיר העתיקה, ירושלים</p><p>הביאו את שמחת החג ובואו לחגוג איתנו. נשמח לקבל את פניכם!</p>",
+  "notes": [],
+  "address": "בית סנטה, העיר העתיקה, ירושלים",
+  "location": {
+   "id": 64494,
+   "Latitude": 31.7779149,
+   "Longitude": 35.227022499999975
+  },
+  "preview": {
+   "url": "https://assets.itraveljerusalem.com/JDA_christmas_tour_1_2_b04548d883.jpg"
+  },
+  "bigImage": null,
+  "gallery": [
+   {
+    "isHidden": null,
+    "image": {
+     "url": "https://assets.itraveljerusalem.com/wp-content/uploads/2018/10/IMG_4687.jpg"
+    }
+   },
+   {
+    "isHidden": null,
+    "image": {
+     "url": "https://assets.itraveljerusalem.com/wp-content/uploads/2018/10/FullSizeRender-1.jpg"
+    }
+   }
+  ],
+  "getTickets_url": null,
+  "website": "https://jerusalem-santa.com/",
+  "priceAmount": null,
+  "minPrice": null,
+  "priceCurrency": null,
+  "fullyBooked": false,
+  "event_dates": [
+   {
+    "id": 12084511,
+    "documentId": "ljvqe9qzo96han5mlpynnek5",
+    "date": "2026-11-28T15:00:00.000Z",
+    "endTime": "20:00:00"
+   }
+  ],
+  "localizations": [
+   {
+    "id": 1714,
+    "documentId": "c10rhe51sd4abccsch1zqg75",
+    "locale": "de"
+   },
+   {
+    "id": 1715,
+    "documentId": "c10rhe51sd4abccsch1zqg75",
+    "locale": "ru"
+   },
+   {
+    "id": 1716,
+    "documentId": "c10rhe51sd4abccsch1zqg75",
+    "locale": "it"
+   },
+   {
+    "id": 1719,
+    "documentId": "c10rhe51sd4abccsch1zqg75",
+    "locale": "fr"
+   },
+   {
+    "id": 1720,
+    "documentId": "c10rhe51sd4abccsch1zqg75",
+    "locale": "es"
+   },
+   {
+    "id": 1721,
+    "documentId": "c10rhe51sd4abccsch1zqg75",
+    "locale": "ar"
+   },
+   {
+    "id": 298778,
+    "documentId": "c10rhe51sd4abccsch1zqg75",
+    "locale": "en"
+   }
+  ],
+  "slug": "santas-house-experience-the-magic-of-christmas",
+  "locale": "he"
+ },
+ "ymca-christmas-tree-1": {
+  "id": 299021,
+  "documentId": "vnd6ps5nk7b4snz7m66346w1",
+  "name": "טקס הדלקת האורות על עץ חג המולד של ימק״א",
+  "subtitle": "ערב חגיגי של אור, מוזיקה ואווירת חג קסומה בלב ירושלים",
+  "body": "<p>בואו לחוות את הקסם החורפי של ירושלים באחד האירועים המרגשים והאהובים של השנה – טקס הדלקת האורות המסורתי על עץ חג המולד של ימק״א. המתחם ההיסטורי מתמלא באווירת חג חמה ומזמינה, עם מוזיקה מרוממת, תאורה מרהיבה ורגעים מיוחדים לכל המשפחה. זו הזדמנות נפלאה לעצור לרגע, לספוג את היופי של העיר בעונה הקרה וליהנות מערב מלא אור ושמחה!</p><p><strong>עלות כניסה: 25 ש״ח למבוגר | 10 ש״ח לילד (עד גיל 10).</strong></p>",
+  "notes": [],
+  "address": "דוד המלך 26, ירושלים",
+  "location": null,
+  "preview": {
+   "url": "https://assets.itraveljerusalem.com/wp-content/uploads/2018/12/ymca-christmas-1.png"
+  },
+  "bigImage": null,
+  "gallery": [
+   {
+    "isHidden": null,
+    "image": {
+     "url": "https://assets.itraveljerusalem.com/wp-content/uploads/2018/12/ymca-christmas-1.png"
+    }
+   }
+  ],
+  "getTickets_url": null,
+  "website": null,
+  "priceAmount": null,
+  "minPrice": null,
+  "priceCurrency": null,
+  "fullyBooked": false,
+  "event_dates": [
+   {
+    "id": 12082938,
+    "documentId": "tbxto7bft4we62wjjggeccjl",
+    "date": "2026-11-29T15:00:00.000Z",
+    "endTime": "19:00:00"
+   }
+  ],
+  "localizations": [
+   {
+    "id": 299041,
+    "documentId": "vnd6ps5nk7b4snz7m66346w1",
+    "locale": "en"
+   }
+  ],
+  "slug": "ymca-christmas-tree-1",
+  "locale": "he"
+ },
+ "hanukkah-of-journeys": {
+  "id": 299069,
+  "documentId": "jo5y9zg9eh0gzgw3mogsxz92",
+  "name": "חנוכה של מסעות – תיאטרון הקרון",
+  "subtitle": "חגיגת חנוכה קסומה בתיאטרון הקרון בירושלים! שלושה ימים של הצגות ילדים חדשות ואורחות, סדנאות יצירה, סיורים בתערוכה והדלקת נרות חגיגית לכל המשפחה. בואו לצאת איתנו למסע מלא דמיון, סיפורים ודמויות מופלאות בין התאריכים 6–8 בדצמבר 2026.",
+  "body": "<p>בחנוכה הקרוב (6–8 בדצמבר 2026) תיאטרון הקרון בירושלים מזמין אתכם ואת הילדים לארוז את הדמיון ולצאת להרפתקה משפחתית בלתי נשכחת באירועי חנוכה של מסעות. במשך שלושה ימים חגיגיים יהפוך מתחם התיאטרון שבגן הפעמון לתחנת יציאה לעולמות רחוקים ומופלאים: מהצגות בובות וצלליות חדשות ואורחות על מסעותיו של מרקו פולו, דרקונים ובקתות מכשפות, ועד סדנאות יצירה של גלויות מסע, סיורים חווייתיים בתערוכה והדלקת נרות חגיגית משותפת מדי ערב.</p>",
+  "notes": [
+   {
+    "id": 103240,
+    "title": null,
+    "content": "<p><strong>• הצגות המשתתפות בפסטיבל:</strong> בכל יום עולות שתי הצגות שונות באולמות התיאטרון, ובהן ההצגה החדשה מרקו פולו (בשיתוף וביוזמת הספרייה הלאומית), ציפור הגשם – אגדת נייר (תיאטרון בובות וצלליות), וההצגות האורחות הבקתה (כולל בית קפה של מכשפות), הרפתקאות הדרקון פיץ וקונצרטינה.<br><strong>• סדנאות, סיורים וחוויות נוספות: </strong>לצד ההצגות מתקיימות סדנת היצירה מסע בגלויה, סיורים מודרכים בתערוכה עם כיוון הרוח, פעילות סיפורי מסעות וערכת הנדודים האינטראקטיבית טיול להורה ולילד/ה.</p>",
+    "showOnSite": null
+   }
+  ],
+  "address": "גן פעמון הדרור, ירושלים",
+  "location": null,
+  "preview": {
+   "url": "https://assets.itraveljerusalem.com/_a7ca81a8a6.jpg"
+  },
+  "bigImage": null,
+  "gallery": [
+   {
+    "isHidden": null,
+    "image": {
+     "url": "https://assets.itraveljerusalem.com/_a7ca81a8a6.jpg"
+    }
+   }
+  ],
+  "getTickets_url": "https://traintheater.co.il/he/schedule/hanukkah",
+  "website": null,
+  "priceAmount": 45,
+  "minPrice": null,
+  "priceCurrency": "ils",
+  "fullyBooked": false,
+  "event_dates": [
+   {
+    "id": 12084501,
+    "documentId": "upkqrs9p9o7kqz3fy72c7h2g",
+    "date": "2026-12-06T14:00:00.000Z",
+    "endTime": "18:30:00"
+   },
+   {
+    "id": 12084502,
+    "documentId": "r99rsws3a6vmwffx1j94rf0e",
+    "date": "2026-12-07T14:00:00.000Z",
+    "endTime": "18:30:00"
+   },
+   {
+    "id": 12084503,
+    "documentId": "u9hlr7l3pp2zag1gk9zjja8u",
+    "date": "2026-12-08T14:00:00.000Z",
+    "endTime": "18:30:00"
+   }
+  ],
+  "localizations": [
+   {
+    "id": 299084,
+    "documentId": "jo5y9zg9eh0gzgw3mogsxz92",
+    "locale": "en"
+   }
+  ],
+  "slug": "hanukkah-of-journeys",
+  "locale": "he"
+ }
+}
